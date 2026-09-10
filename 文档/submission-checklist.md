@@ -12,7 +12,8 @@
 | ../源码/op_host/add_rms_norm_bias.cpp | [x] 已提供 | 算子注册/InferShape/Tiling |
 | ../源码/CMakeLists.txt / CMakePresets.json / build.sh | [x] 已提供 | 源码清单与真机构建入口；CANN 工程需由 msopgen 生成 |
 | source-build.md | [x] 已提供 | 生成与编译步骤 |
-| 提交包目录 ../提交/ | [ ] 未生成 | 待真机验证通过后打包（打包脚本见待办） |
+| ../提交/首版/kernel.asc | [x] 源码候选 | 已按平台直调模板组织；尚未在 CANN/NPU 编译和运行 |
+| 提交包目录 ../提交/ | [ ] 未确认 | CANNJudge 上传字段和封装方式仍需登录提交页确认 |
 
 ## 2. 编译入口（真机）
 
@@ -45,6 +46,7 @@ ASCENDC_GENERATED_PROJECT_DIR=<target> ./源码/build.sh
 ## 4. 本地验证项目（真机阶段）
 
 - [ ] 用 msopst 或自建用例（pytest+昇腾 ND 样例）跑通 15 个测试点。
+- [ ] 先在平台直调模板中跑通 `提交/首版/kernel.asc` 的默认 FP16 `[1,64]` 用例。
 - [x] CPU 语义模拟：117 组中 115 组通过本地诊断，2 组 BF16 D=32768 边界差异；详见 `../调研/validation-host-notes.md`。
 - [ ] 数值对照基准：在 NPU 上按题面实际参考实现确认 FP32、FP16、BF16 的误差口径。
 - 覆盖矩阵（记录到 ../提交/result-<date>.md）：
@@ -71,7 +73,7 @@ ASCENDC_GENERATED_PROJECT_DIR=<target> ./源码/build.sh
 ## 6. 上传前内容核对
 
 - [ ] 源码内无凭据/Token/Cookie/授权头（全局 grep：`password|token|secret|api[_-]?key|cookie|authorization`，大小写不敏感）。
-- [ ] 仅含必要文件：原型 json、op_host、op_kernel、build 脚本/CMake；不含 build_out/.git/临时产物、不含本机绝对路径。
+- [ ] 仅含平台要求的必要文件：直调模式通常为 `kernel.asc`，msopgen 模式按页面字段上传；不含 build_out/.git/临时产物、不含本机绝对路径。
 - [ ] 无写死测试输入/输出；无 Host 代算代码。
 - [ ] 公开 Skill 记录了 `tiling_h`、`tiling_key_h`、`host_cpp`、`kernel_cpp` 字段；登录提交页确认本题实际字段和上传格式与平台示例一致。
 

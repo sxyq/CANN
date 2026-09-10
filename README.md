@@ -13,7 +13,7 @@
 
 完整入口文档见 [文档/README.md](文档/README.md)。
 
-目标远端仓库：`https://github.com/sxyq/CANN.git`。截至 2026-09-11，从本机执行 `git ls-remote` 未返回引用；GitHub API 先返回过 404，后续请求又触发匿名额度限制，因此暂时无法确认远端仓库的存在性或访问权限。已配置 `origin`，本地首次提交可以完成，尚未推送。
+目标远端仓库：`https://github.com/sxyq/CANN.git`。本地 `main` 已与 `origin/main` 对齐，初始工作区提交为 `ff7ba7987fe544efcaf82f5f95ad80abfef5bbce`。当前首版候选文件为 `提交/首版/kernel.asc`；源码和文档已完成本机静态审阅，真机编译、精度与性能仍待 CANN/NPU 环境确认。
 
 OpenAI 关于 Navier-Stokes 与 Erdős unit distance problem 的公开资料，以及可迁移到本题的 Agent 研究组织方式，见 [调研/openai-agent-research.md](调研/openai-agent-research.md)；多平台源码和社区证据见 [调研/多Agent研究/研究简报.md](调研/多Agent研究/研究简报.md)。
 

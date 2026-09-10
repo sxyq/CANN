@@ -24,6 +24,7 @@
  * 有版本差异时（例如 queue 初始化方式），按模板自带代码微调。
  */
 
+#include <cmath>
 #include "kernel_operator.h"
 
 using namespace AscendC;

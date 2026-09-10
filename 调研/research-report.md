@@ -123,6 +123,7 @@ OpenAI 官方公开材料没有给出完整的 Agent 调度、提示词、模型
 
 ## 9. Issue / Release / 版本兼容信息（C 级，需真机复核）
 
+- 官方 CANN 9.0.X 文档入口：<https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/900/>（A 级入口证据，访问日期 2026-09-11）。本报告引用的 `DataCopyPad` 与 `ReduceSum` 参数细节来自公开的 CANN 8.x API 页面；CANN 9.0.0 的本机头文件和目标 SoC 支持矩阵仍未取得。
 - CANN 9.0.0 相对 8.x 的 DataCopyPad 支持矩阵未见公开变更公告；按“A2 系列支持 DataCopyPad 无 mode 版本”的 8.0 手册推断 9.0.0 兼容，**未验证**。
 - ops-transformer master 分支持续活跃（2026-09 仍有合并），其 AddRmsNorm 系列接口在较新 CANN 上可用；但其代码针对 server 版 CANN（含 libascend），与判题“vector 核函数工程”环境的适配度待真机确认。
 - msopst（单算子 ST 测试）工具随 CANN 包提供，可用作真机精度/性能验证入口。

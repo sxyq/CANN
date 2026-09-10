@@ -57,5 +57,6 @@
 | 50 | AniketWathore/Ramanujan | https://github.com/AniketWathore/Ramanujan | `main` / commit 未确认 | 2026-09-11 | 多模型并行、数学工具和计算检查设计 | C（源码树已读取；本机未运行） |
 | 51 | 47thtechcorner/RayCodes_OpenAI_Navier_Stokes | https://github.com/47thtechcorner/RayCodes_OpenAI_Navier_Stokes | `main` / commit 未确认 | 2026-09-11 | Navier-Stokes 解释性资料线索 | C（仅 README） |
 | 52 | az9713/openai-navier-stokes-results | https://github.com/az9713/openai-navier-stokes-results | `main` / commit 未确认 | 2026-09-11 | 交互式说明站点的前端组织参考 | C（仅说明站点源码） |
+| 53 | CANN 9.0.X 官方文档入口 | https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/900/ | 9.0.X | 2026-09-11 | 记录目标版本文档入口；本机未安装对应工具链，具体头文件签名待真机确认 | A（入口可访问，API 细节未在本机验证） |
 
 **未使用/未验证来源**：所有 B/C 级内容均未在本机复现运行；仅作为 API 语义与实现模式的参考。真机编译前需以实际安装的 CANN 9.0.0 头文件与手册为准。
