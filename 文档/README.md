@@ -47,13 +47,13 @@ output  = z + bias                        # 逐通道偏置（融合关键点）
 
 | 项目 | 结果 |
 | --- | --- |
-| git 状态 | 独立 Git 仓库，分支 `main`；当前尚未提交初始版本 |
+| git 状态 | 独立 Git 仓库，分支 `main`；当前提交版本为 `V001` |
 | CANN 工具链（ccec/ccec_compiler/bisheng/msopgen/msopst） | 未找到（PATH 与常见安装路径均无） |
 | npu-smi / ascend-dmi | 未找到 |
 | CANN 环境变量 / /usr/local/Ascend | 无 |
 | NPU 设备 | 无（本机为 macOS 笔记本，无昇腾设备） |
 | Docker / 昇腾镜像 | 无 Docker |
-| 既有比赛源码 / 提交包 / 下载资料 | 已从 `master-goods` 迁移到当前独立目录；提交包仍未生成 |
+| 既有比赛源码 / 提交包 / 下载资料 | 已从 `master-goods` 迁移到当前独立目录；`提交/V001/kernel.asc` 已生成 |
 
 **结论：本机为「无 CANN、无 NPU」环境。** 依据用户要求（规则 6），本工作区**不宣称**任何 NPU 编译、精度或性能通过；所有 NPU 侧结论一律标注为“未在真实 NPU 验证”。
 
@@ -80,7 +80,8 @@ cann/
 │   ├── sources.md                   #   来源清单
 │   ├── validation-host-notes.md     #   CPU 辅助验证记录
 │   └── 工具/reference_verify.py     #   参考验证脚本
-├── 提交/                            # 待上传的提交包
+├── 提交/                            # 按 V001、V002、V003 管理的提交包
+│   └── V001/kernel.asc              # 当前提交版本
 ├── 缓存/                            # 公开资料缓存
 └── 临时/                            # 临时验证结果
 ```
