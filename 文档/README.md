@@ -1,7 +1,7 @@
 # 2026 CANN 挑战赛 · 西南赛区（初赛）AddRmsNormBias
 
 > 独立 CANN 比赛工作区。本目录为 2026 年 CANN 挑战赛西南赛区初赛题 AddRmsNormBias 的全部准备、源码与验证记录，并单独使用 Git 管理。
-> 目录结构见下文「目录说明」；所有外链来源与证据等级见 `../调研/sources.md`（来源清单）。
+> 目录结构见下文「目录说明」；所有外链来源与证据等级见 `../调研/归档/调研2/sources.md`（来源总表，235 条 S001–S291）。
 
 ## 1. 比赛概况
 
@@ -16,10 +16,14 @@
 | 开始 | 2026/09/05 00:00:00 |
 | 截止 | 2026/10/17 18:00:00 |
 | 提交限制 | 每天最多 50 次（用户提供，平台页面未明文） |
-| 数据规模 | 15 个测试点，全部通过才计分（用户提供，平台页面未明文） |
+| 数据规模 | 15 个测试点，全部通过才计分（平台题目 API desc 明文，2026-09-11 核实） |
 | 平台当前数据(2026-09-10) | 通过率 53%，通过 39 人 / 尝试 74 人 |
 
-*注：上表两处“用户提供”条目需在能登录提交页后复核平台规则页/判题说明确认；平台抓取页面未展示该信息。*
+*注：上表"每天 50 次"条目需在能登录提交页后复核平台规则页/判题说明确认；平台抓取页面未展示该信息。"15 个测试点"已由题目 API（https://cannjudge.cn/api/problems/6a9a9a99bf41025d6013eb85）的 desc 原文确认为官方明文。*
+
+> **方向定夺请先读 [调研2 综合报告](../调研/归档/调研2/research-report.md)**：全项目的"方向建议 / 推荐路线 / 风险与下一步"汇总文档（**2026-09-12 十代理深度调研后重做**）。配套文件：来源总表 `../调研/归档/调研2/sources.md`（235 条）、统一方案矩阵 `../调研/归档/调研2/方案矩阵.md`、精度测试矩阵 `../调研/归档/调研2/精度测试矩阵.md`、本机 CPU 验证记录 `../调研/归档/调研6/validation-host-notes.md`、覆盖计划 `../调研/归档/调研2/覆盖计划.md`，以及 10 份子代理报告 `../调研/归档/调研2/`。
+>
+> 说明：`调研/归档/调研1/` 是 2026-09-11 上一轮的调研归档，若干结论（如 `DataCopyPadExtParams` 字段顺序、`ReduceSum` count 上限、写方向 padding 语义）在 `文档/problem-add-rms-norm-bias.md` 中仍有记录，本轮已由调研2 独立复核并升级，**以调研2 为准**。
 
 ### 算子语义（已确认，来自官网题面）
 
@@ -37,8 +41,8 @@ output  = z + bias                        # 逐通道偏置（融合关键点）
 
 - [x] 阶段一 环境核对：**本机无 CANN / 无 NPU**（结论见下「环境结论」），本地只能静态审阅 + Host 参考验证。
 - [x] 阶段二 工作区整理：已迁移到独立目录 `/Users/sunyiyang/Desktop/Project/cann/`，不再属于 `master-goods` 的 Git 工作区。
-- [x] 阶段三 文档：本 README + `competition-rules.md` + `problem-add-rms-norm-bias.md` + `../调研/research-report.md` + `submission-checklist.md`。
-- [x] 阶段四 调研：见 `../调研/research-report.md`；关键 API 能力（ReduceSum FP32、DataCopyPad 双向非对齐、Atlas A2 支持）已确认。
+- [x] 阶段三 文档：本 README + `competition-rules.md` + `problem-add-rms-norm-bias.md` + `../调研/归档/调研1/research-report.md` + `submission-checklist.md`。
+- [x] 阶段四 调研：见 `../调研/归档/调研1/research-report.md`；关键 API 能力（ReduceSum FP32、DataCopyPad 双向非对齐、Atlas A2 支持）已确认。
 - [x] 阶段五 源码：`../源码/` 下已按 msopgen 工程结构编写 op_host / op_kernel。
 - [x] 阶段六 验证：无 NPU 环境下完成源码静态审阅 + Host 参考实现数值验证；117 组中 115 组通过本地诊断口径，2 组为 BF16、D=32768 的量化边界差异。
 - [ ] 阶段七 上报：本 README 为汇报的一部分，最终如需上传/提交需用户明确确认（见 `submission-checklist.md`）。
@@ -53,7 +57,7 @@ output  = z + bias                        # 逐通道偏置（融合关键点）
 | CANN 环境变量 / /usr/local/Ascend | 无 |
 | NPU 设备 | 无（本机为 macOS 笔记本，无昇腾设备） |
 | Docker / 昇腾镜像 | 无 Docker |
-| 既有比赛源码 / 提交包 / 下载资料 | 已从 `master-goods` 迁移到当前独立目录；`提交/V001/kernel.asc` 已生成 |
+| 既有比赛源码 / 提交包 / 下载资料 | 已从 `master-goods` 迁移到当前独立目录；`提交/混合方案/H001-正确性优先/V001/kernel.asc` 已生成 |
 
 **结论：本机为「无 CANN、无 NPU」环境。** 依据用户要求（规则 6），本工作区**不宣称**任何 NPU 编译、精度或性能通过；所有 NPU 侧结论一律标注为“未在真实 NPU 验证”。
 
@@ -74,12 +78,16 @@ cann/
 │   ├── op_host/                     #   Host 侧：原型注册 + tiling
 │   └── op_kernel/                   #   Kernel 侧：Ascend C 核函数
 ├── 调研/                            # 调研和验证资料
-│   ├── research-report.md           #   调研报告
+│   ├── README.md                    #   调研入口
 │   ├── openai-agent-research.md     #   OpenAI 公开 Agent 研究方式与迁移边界
 │   ├── 多Agent研究/                  #   多 Agent、数学复核和算子竞赛流程证据
-│   ├── sources.md                   #   来源清单
-│   ├── validation-host-notes.md     #   CPU 辅助验证记录
-│   └── 工具/reference_verify.py     #   参考验证脚本
+│   ├── 工具/reference_verify.py     #   参考验证脚本
+│   └── 调研1/                       #   2026-09-11 多代理深度调研归档
+│       ├── research-report.md       #     综合调研报告（15 章）
+│       ├── sources.md               #     来源总表
+│       ├── validation-host-notes.md #     CPU 辅助验证记录
+│       ├── 方向建议.md              #     唯一方向建议
+│       └── Agent01~10-*.md          #     10 份子代理报告
 ├── 提交/                            # 按 V001、V002、V003 管理的提交包
 │   └── V001/kernel.asc              # 当前提交版本
 ├── 缓存/                            # 公开资料缓存
