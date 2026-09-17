@@ -14,7 +14,7 @@
 
 用法示例：
   python3 调研/工具/cannjudge.py preflight 提交/混合方案/H001-正确性优先/V005/kernel.txt
-  python3 调研/工具/cannjudge.py poll 6aaa74eeb0477ec41e147510 --interval 15
+  python3 调研/工具/cannjudge.py poll 6aaa74eeb0477ec41e147510 --interval 2
   python3 调研/工具/cannjudge.py poll <id> --official          # 额外取公开排行的官方总分
   python3 调研/工具/cannjudge.py problem --token addrmsnormbias
 """
@@ -415,7 +415,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     po = sub.add_parser("poll", help="轮询 GET /api/submissions/{id} 直到终态")
     po.add_argument("submission_id", help="提交后从页面 URL 取到的 submissionId")
-    po.add_argument("--interval", type=float, default=15.0, help="轮询间隔秒，默认 15")
+    po.add_argument("--interval", type=float, default=2.0, help="轮询间隔秒，默认 2")
     po.add_argument("--max-wait", type=float, default=1800.0, help="最长等待秒，默认 1800")
     po.add_argument("--once", action="store_true", help="只查一次，不等终态")
     po.add_argument("--official", action="store_true",
