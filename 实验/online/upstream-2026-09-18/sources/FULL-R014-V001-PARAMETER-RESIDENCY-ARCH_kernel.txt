@@ -1,0 +1,1140 @@
+#include <cmath>
+#include <cstdint>
+#include "kernel_operator.h"
+
+/*
+ * AddRmsNormBias - FULL-R014-V001-PARAMETER-RESIDENCY-ARCH
+ *
+ * Branch:
+ *   R014 / parameter-residency-centric architecture.
+ *
+ * This is a branch-level rewrite.  The design is not a B0 patch and does not
+ * descend from FULL-R006.  The only semantic contract inherited is the Golden:
+ *
+ *   y = x + residual
+ *   rms = sqrt(mean(y * y) + epsilon)
+ *   out = y / rms * gamma + bias
+ *
+ * Architecture objective:
+ *   Make gamma/bias residency in UB the central design decision.
+ *
+ * Main path (D <= 8192):
+ *   1. Each vector core receives a contiguous row interval.
+ *   2. Before processing its rows, the core loads the complete gamma and bias
+ *      vectors exactly once and promotes them to persistent FP32 UB storage.
+ *   3. All rows assigned to the core reuse those resident FP32 parameters.
+ *   4. The row work tile is 4096 elements, chosen so two resident D=8192 FP32
+ *      parameter vectors coexist with input/output/reduction working storage.
+ *   5. The output pass therefore has no gamma/bias GM traffic and no repeated
+ *      low-precision parameter casts.
+ *
+ * Fallback path (D > 8192):
+ *   Parameters are streamed per tile.  This fallback intentionally stays
+ *   simple; the first-submit question for R014 is whether full per-core
+ *   parameter residency is valuable where it fits naturally.
+ *
+ * Explicitly absent:
+ *   - retained-y cache;
+ *   - wide cached-row architecture;
+ *   - multi-row vector batching;
+ *   - double-buffer/ping-pong pipeline;
+ *   - hierarchical partial collector from R006;
+ *   - row-group scheduling from R012;
+ *   - aligned DataCopy fast path from R009;
+ *   - manual-tail split from R010;
+ *   - reciprocal/Muls normalization from R019;
+ *   - R031 multimode architecture.
+ *
+ * Correctness scheduling:
+ *   Naturally 32-byte-aligned rows use ordinary multicore distribution.
+ *   Non-aligned rows use one core so DataCopyPad stores cannot race on a
+ *   partially shared 32-byte GM block.  This is deliberately conservative
+ *   and is not the R012 optimization.
+ *
+ * File format:
+ *   Delivered as .txt. Rename to kernel.asc for submission if required.
+ */
+
+template <typename T>
+class ParameterResidencyKernel {
+public:
+    static constexpr int32_t kWorkTileElems = 4096;
+    static constexpr int32_t kResidentMaxWidth = 8192;
+    static constexpr int32_t kScalarElems = 16;
+    static constexpr int32_t kScalarAlignedOffset = 8;
+
+    __aicore__ inline void Init(
+        GM_ADDR x,
+        GM_ADDR residual,
+        GM_ADDR gamma,
+        GM_ADDR bias,
+        GM_ADDR output,
+        uint64_t rowWidth)
+    {
+        xGm_.SetGlobalBuffer((__gm__ T*)x);
+        residualGm_.SetGlobalBuffer((__gm__ T*)residual);
+        gammaGm_.SetGlobalBuffer((__gm__ T*)gamma);
+        biasGm_.SetGlobalBuffer((__gm__ T*)bias);
+        outputGm_.SetGlobalBuffer((__gm__ T*)output);
+
+        residentMode_ =
+            rowWidth <= static_cast<uint64_t>(kResidentMaxWidth);
+
+        /*
+         * Working-set layout.
+         *
+         * Worst-case resident mode for T=float:
+         *   gammaResident_ : 8192 * 4 = 32 KiB
+         *   biasResident_  : 8192 * 4 = 32 KiB
+         *   xNative_       : 4096 * 4 = 16 KiB
+         *   rNative_       : 4096 * 4 = 16 KiB
+         *   outNative_     : 4096 * 4 = 16 KiB
+         *   valueFp32_     : 4096 * 4 = 16 KiB
+         *   auxFp32_       : 4096 * 4 = 16 KiB
+         *   reduceFp32_    : 4096 * 4 = 16 KiB
+         *   scalar_        : 64 B
+         *
+         * Total ~160 KiB, leaving headroom under the target UB budget.
+         */
+        pipe_.InitBuffer(
+            xNative_,
+            kWorkTileElems * sizeof(T));
+        pipe_.InitBuffer(
+            rNative_,
+            kWorkTileElems * sizeof(T));
+        pipe_.InitBuffer(
+            outNative_,
+            kWorkTileElems * sizeof(T));
+
+        pipe_.InitBuffer(
+            valueFp32_,
+            kWorkTileElems * sizeof(float));
+        pipe_.InitBuffer(
+            auxFp32_,
+            kWorkTileElems * sizeof(float));
+        pipe_.InitBuffer(
+            reduceFp32_,
+            kWorkTileElems * sizeof(float));
+
+        pipe_.InitBuffer(
+            scalar_,
+            kScalarElems * sizeof(float));
+
+        if (residentMode_) {
+            pipe_.InitBuffer(
+                gammaResident_,
+                kResidentMaxWidth * sizeof(float));
+            pipe_.InitBuffer(
+                biasResident_,
+                kResidentMaxWidth * sizeof(float));
+        }
+    }
+
+    __aicore__ inline void Run(
+        uint64_t rowCount,
+        uint64_t rowWidth,
+        uint32_t blockCount,
+        float invRowWidth,
+        float epsilon)
+    {
+        const uint64_t blockIdx =
+            static_cast<uint64_t>(AscendC::GetBlockIdx());
+
+        /*
+         * Contiguous row ownership is intentional for this route: one core
+         * prepares one resident parameter image and then consumes it over its
+         * complete local row interval.
+         */
+        const uint64_t baseRows =
+            rowCount / static_cast<uint64_t>(blockCount);
+        const uint64_t extraRows =
+            rowCount % static_cast<uint64_t>(blockCount);
+
+        const uint64_t beginRow =
+            blockIdx * baseRows +
+            (blockIdx < extraRows ? blockIdx : extraRows);
+
+        const uint64_t localRows =
+            baseRows +
+            (blockIdx < extraRows ? 1ULL : 0ULL);
+
+        const uint64_t endRow =
+            beginRow + localRows;
+
+        if (localRows == 0) {
+            return;
+        }
+
+        if (residentMode_) {
+            PrepareResidentParameters(rowWidth);
+
+            for (uint64_t row = beginRow;
+                 row < endRow;
+                 ++row) {
+                ProcessResidentRow(
+                    row,
+                    rowWidth,
+                    invRowWidth,
+                    epsilon);
+            }
+            return;
+        }
+
+        for (uint64_t row = beginRow;
+             row < endRow;
+             ++row) {
+            ProcessStreamingRow(
+                row,
+                rowWidth,
+                invRowWidth,
+                epsilon);
+        }
+    }
+
+private:
+    __aicore__ inline int32_t TileLength(
+        uint64_t remaining) const
+    {
+        return static_cast<int32_t>(
+            remaining >
+                    static_cast<uint64_t>(kWorkTileElems)
+                ? kWorkTileElems
+                : remaining);
+    }
+
+    __aicore__ inline void LoadNative(
+        const AscendC::LocalTensor<T>& dst,
+        const AscendC::GlobalTensor<T>& src,
+        uint64_t offset,
+        int32_t count)
+    {
+        const AscendC::DataCopyExtParams params(
+            1,
+            static_cast<uint32_t>(
+                count *
+                static_cast<int32_t>(sizeof(T))),
+            0,
+            0,
+            0);
+
+        const AscendC::DataCopyPadExtParams<T> pad;
+
+        AscendC::DataCopyPad(
+            dst,
+            src[offset],
+            params,
+            pad);
+    }
+
+    __aicore__ inline void StoreNative(
+        const AscendC::GlobalTensor<T>& dst,
+        uint64_t offset,
+        const AscendC::LocalTensor<T>& src,
+        int32_t count)
+    {
+        const AscendC::DataCopyExtParams params(
+            1,
+            static_cast<uint32_t>(
+                count *
+                static_cast<int32_t>(sizeof(T))),
+            0,
+            0,
+            0);
+
+        AscendC::DataCopyPad(
+            dst[offset],
+            src,
+            params);
+    }
+
+    __aicore__ inline void ToFp32(
+        const AscendC::LocalTensor<float>& dst,
+        const AscendC::LocalTensor<T>& src,
+        int32_t count)
+    {
+        if constexpr (
+            AscendC::IsSameType<T, float>::value) {
+            AscendC::Adds(
+                dst,
+                src,
+                0.0f,
+                count);
+        } else {
+            AscendC::Cast(
+                dst,
+                src,
+                AscendC::RoundMode::CAST_NONE,
+                count);
+        }
+    }
+
+    __aicore__ inline void FromFp32(
+        const AscendC::LocalTensor<T>& dst,
+        const AscendC::LocalTensor<float>& src,
+        int32_t count)
+    {
+        if constexpr (
+            AscendC::IsSameType<T, float>::value) {
+            AscendC::Adds(
+                dst,
+                src,
+                0.0f,
+                count);
+        } else {
+            AscendC::Cast(
+                dst,
+                src,
+                AscendC::RoundMode::CAST_RINT,
+                count);
+        }
+    }
+
+    __aicore__ inline void SyncMte2ToVector()
+    {
+        AscendC::SetFlag<
+            AscendC::HardEvent::MTE2_V>(0);
+        AscendC::WaitFlag<
+            AscendC::HardEvent::MTE2_V>(0);
+    }
+
+    __aicore__ inline void SyncVectorToMte2()
+    {
+        AscendC::SetFlag<
+            AscendC::HardEvent::V_MTE2>(0);
+        AscendC::WaitFlag<
+            AscendC::HardEvent::V_MTE2>(0);
+    }
+
+    __aicore__ inline void SyncVectorToMte3()
+    {
+        AscendC::SetFlag<
+            AscendC::HardEvent::V_MTE3>(0);
+        AscendC::WaitFlag<
+            AscendC::HardEvent::V_MTE3>(0);
+    }
+
+    __aicore__ inline void SyncMte3ToVector()
+    {
+        AscendC::SetFlag<
+            AscendC::HardEvent::MTE3_V>(0);
+        AscendC::WaitFlag<
+            AscendC::HardEvent::MTE3_V>(0);
+    }
+
+    __aicore__ inline void SyncVectorToScalar()
+    {
+        AscendC::SetFlag<
+            AscendC::HardEvent::V_S>(0);
+        AscendC::WaitFlag<
+            AscendC::HardEvent::V_S>(0);
+    }
+
+    __aicore__ inline void SyncScalarToVector()
+    {
+        AscendC::SetFlag<
+            AscendC::HardEvent::S_V>(0);
+        AscendC::WaitFlag<
+            AscendC::HardEvent::S_V>(0);
+    }
+
+    /*
+     * Resident parameter image:
+     *
+     * gamma and bias are promoted once into FP32 UB.  The native staging
+     * buffers are then free for row data for the rest of this core's work.
+     */
+    __aicore__ inline void PrepareResidentParameters(
+        uint64_t rowWidth)
+    {
+        AscendC::LocalTensor<T> gammaStage =
+            xNative_.Get<T>();
+        AscendC::LocalTensor<T> biasStage =
+            rNative_.Get<T>();
+
+        AscendC::LocalTensor<float> gammaResident =
+            gammaResident_.Get<float>();
+        AscendC::LocalTensor<float> biasResident =
+            biasResident_.Get<float>();
+
+        for (uint64_t col = 0;
+             col < rowWidth;
+             col += static_cast<uint64_t>(
+                 kWorkTileElems)) {
+            const int32_t valid =
+                TileLength(rowWidth - col);
+
+            LoadNative(
+                gammaStage,
+                gammaGm_,
+                col,
+                valid);
+            LoadNative(
+                biasStage,
+                biasGm_,
+                col,
+                valid);
+
+            SyncMte2ToVector();
+
+            ToFp32(
+                gammaResident[col],
+                gammaStage,
+                valid);
+            ToFp32(
+                biasResident[col],
+                biasStage,
+                valid);
+
+            AscendC::PipeBarrier<PIPE_V>();
+
+            /*
+             * Do not refill the native staging buffers until their conversion
+             * has fully consumed them.
+             */
+            SyncVectorToMte2();
+        }
+    }
+
+    /*
+     * Form x + residual in FP32.
+     *
+     * valueFp32_ receives y.  auxFp32_ is temporary conversion storage.
+     * This function is shared by reduction and output passes.
+     */
+    __aicore__ inline void LoadAndFormY(
+        uint64_t gmOffset,
+        int32_t valid)
+    {
+        AscendC::LocalTensor<T> xLocal =
+            xNative_.Get<T>();
+        AscendC::LocalTensor<T> rLocal =
+            rNative_.Get<T>();
+
+        AscendC::LocalTensor<float> value =
+            valueFp32_.Get<float>();
+        AscendC::LocalTensor<float> aux =
+            auxFp32_.Get<float>();
+
+        LoadNative(
+            xLocal,
+            xGm_,
+            gmOffset,
+            valid);
+        LoadNative(
+            rLocal,
+            residualGm_,
+            gmOffset,
+            valid);
+
+        SyncMte2ToVector();
+
+        if constexpr (
+            AscendC::IsSameType<T, float>::value) {
+            AscendC::Add(
+                value,
+                xLocal,
+                rLocal,
+                valid);
+        } else {
+            /*
+             * value temporarily receives x; aux receives residual.  The final
+             * Add is safe in-place on value.
+             */
+            ToFp32(
+                value,
+                xLocal,
+                valid);
+            ToFp32(
+                aux,
+                rLocal,
+                valid);
+
+            AscendC::PipeBarrier<PIPE_V>();
+
+            AscendC::Add(
+                value,
+                value,
+                aux,
+                valid);
+        }
+
+        AscendC::PipeBarrier<PIPE_V>();
+    }
+
+    /*
+     * Row RMS reduction.
+     *
+     * Two scalar slots are deliberately separated by eight FP32 elements
+     * (32 bytes), matching the alignment pattern used by the validated
+     * correctness/reference implementations.
+     */
+    __aicore__ inline float ComputeRms(
+        uint64_t rowOffset,
+        uint64_t rowWidth,
+        float invRowWidth,
+        float epsilon)
+    {
+        AscendC::LocalTensor<float> scalarSlots =
+            scalar_.Get<float>();
+
+        AscendC::LocalTensor<float> partial =
+            scalarSlots;
+
+        AscendC::LocalTensor<float> rowSum =
+            scalarSlots[kScalarAlignedOffset];
+
+        AscendC::LocalTensor<float> value =
+            valueFp32_.Get<float>();
+
+        AscendC::LocalTensor<float> aux =
+            auxFp32_.Get<float>();
+
+        AscendC::LocalTensor<float> reduceTmp =
+            reduceFp32_.Get<float>();
+
+        AscendC::Duplicate(
+            rowSum,
+            0.0f,
+            1);
+        AscendC::PipeBarrier<PIPE_V>();
+
+        for (uint64_t col = 0;
+             col < rowWidth;
+             col += static_cast<uint64_t>(
+                 kWorkTileElems)) {
+            const int32_t valid =
+                TileLength(rowWidth - col);
+
+            LoadAndFormY(
+                rowOffset + col,
+                valid);
+
+            /*
+             * aux becomes y^2; value remains available only until this point
+             * and is intentionally not retained across passes in R014.
+             */
+            AscendC::Mul(
+                aux,
+                value,
+                value,
+                valid);
+            AscendC::PipeBarrier<PIPE_V>();
+
+            AscendC::ReduceSum(
+                partial,
+                aux,
+                reduceTmp,
+                valid);
+            AscendC::PipeBarrier<PIPE_V>();
+
+            AscendC::Add(
+                rowSum,
+                rowSum,
+                partial,
+                1);
+            AscendC::PipeBarrier<PIPE_V>();
+
+            SyncVectorToMte2();
+        }
+
+        AscendC::Muls(
+            rowSum,
+            rowSum,
+            invRowWidth,
+            1);
+        AscendC::PipeBarrier<PIPE_V>();
+
+        AscendC::Adds(
+            rowSum,
+            rowSum,
+            epsilon,
+            1);
+        AscendC::PipeBarrier<PIPE_V>();
+
+        AscendC::Sqrt(
+            rowSum,
+            rowSum,
+            1);
+        AscendC::PipeBarrier<PIPE_V>();
+
+        SyncVectorToScalar();
+
+        const float rmsValue =
+            rowSum.GetValue(0);
+
+        SyncScalarToVector();
+
+        return rmsValue;
+    }
+
+    /*
+     * Resident output path.
+     *
+     * No GM parameter load occurs here.  The output tile only reloads
+     * x/residual, normalizes y, then consumes gamma/bias directly from the
+     * persistent FP32 resident vectors.
+     */
+    __aicore__ inline void WriteResidentOutput(
+        uint64_t rowOffset,
+        uint64_t rowWidth,
+        float rmsValue)
+    {
+        AscendC::LocalTensor<float> gammaResident =
+            gammaResident_.Get<float>();
+        AscendC::LocalTensor<float> biasResident =
+            biasResident_.Get<float>();
+
+        AscendC::LocalTensor<float> value =
+            valueFp32_.Get<float>();
+        AscendC::LocalTensor<float> aux =
+            auxFp32_.Get<float>();
+
+        AscendC::LocalTensor<T> outLocal =
+            outNative_.Get<T>();
+
+        for (uint64_t col = 0;
+             col < rowWidth;
+             col += static_cast<uint64_t>(
+                 kWorkTileElems)) {
+            const int32_t valid =
+                TileLength(rowWidth - col);
+
+            LoadAndFormY(
+                rowOffset + col,
+                valid);
+
+            AscendC::Duplicate(
+                aux,
+                rmsValue,
+                valid);
+            AscendC::PipeBarrier<PIPE_V>();
+
+            AscendC::Div(
+                value,
+                value,
+                aux,
+                valid);
+            AscendC::PipeBarrier<PIPE_V>();
+
+            AscendC::Mul(
+                value,
+                value,
+                gammaResident[col],
+                valid);
+            AscendC::PipeBarrier<PIPE_V>();
+
+            AscendC::Add(
+                value,
+                value,
+                biasResident[col],
+                valid);
+            AscendC::PipeBarrier<PIPE_V>();
+
+            if constexpr (
+                AscendC::IsSameType<T, float>::value) {
+                SyncVectorToMte3();
+
+                StoreNative(
+                    outputGm_,
+                    rowOffset + col,
+                    value,
+                    valid);
+
+                SyncMte3ToVector();
+            } else {
+                FromFp32(
+                    outLocal,
+                    value,
+                    valid);
+                AscendC::PipeBarrier<PIPE_V>();
+
+                SyncVectorToMte3();
+
+                StoreNative(
+                    outputGm_,
+                    rowOffset + col,
+                    outLocal,
+                    valid);
+
+                SyncMte3ToVector();
+            }
+
+            /*
+             * LoadAndFormY on the next tile reuses the native x/residual
+             * staging buffers.
+             */
+            SyncVectorToMte2();
+        }
+    }
+
+    /*
+     * Streaming output fallback for D > resident capacity.
+     *
+     * This path deliberately does not introduce another optimization family.
+     */
+    __aicore__ inline void WriteStreamingOutput(
+        uint64_t rowOffset,
+        uint64_t rowWidth,
+        float rmsValue)
+    {
+        AscendC::LocalTensor<T> xLocal =
+            xNative_.Get<T>();
+        AscendC::LocalTensor<T> rLocal =
+            rNative_.Get<T>();
+        AscendC::LocalTensor<T> outLocal =
+            outNative_.Get<T>();
+
+        AscendC::LocalTensor<float> value =
+            valueFp32_.Get<float>();
+        AscendC::LocalTensor<float> aux =
+            auxFp32_.Get<float>();
+        AscendC::LocalTensor<float> biasFp32 =
+            reduceFp32_.Get<float>();
+
+        for (uint64_t col = 0;
+             col < rowWidth;
+             col += static_cast<uint64_t>(
+                 kWorkTileElems)) {
+            const int32_t valid =
+                TileLength(rowWidth - col);
+
+            LoadAndFormY(
+                rowOffset + col,
+                valid);
+
+            AscendC::Duplicate(
+                aux,
+                rmsValue,
+                valid);
+            AscendC::PipeBarrier<PIPE_V>();
+
+            AscendC::Div(
+                value,
+                value,
+                aux,
+                valid);
+            AscendC::PipeBarrier<PIPE_V>();
+
+            /*
+             * y is complete; native x/residual buffers can now stage
+             * gamma/bias for this channel tile.
+             */
+            SyncVectorToMte2();
+
+            LoadNative(
+                xLocal,
+                gammaGm_,
+                col,
+                valid);
+            LoadNative(
+                rLocal,
+                biasGm_,
+                col,
+                valid);
+
+            SyncMte2ToVector();
+
+            if constexpr (
+                AscendC::IsSameType<T, float>::value) {
+                AscendC::Mul(
+                    value,
+                    value,
+                    xLocal,
+                    valid);
+                AscendC::PipeBarrier<PIPE_V>();
+
+                AscendC::Add(
+                    value,
+                    value,
+                    rLocal,
+                    valid);
+            } else {
+                ToFp32(
+                    aux,
+                    xLocal,
+                    valid);
+                ToFp32(
+                    biasFp32,
+                    rLocal,
+                    valid);
+
+                AscendC::PipeBarrier<PIPE_V>();
+
+                AscendC::Mul(
+                    value,
+                    value,
+                    aux,
+                    valid);
+                AscendC::PipeBarrier<PIPE_V>();
+
+                AscendC::Add(
+                    value,
+                    value,
+                    biasFp32,
+                    valid);
+            }
+
+            AscendC::PipeBarrier<PIPE_V>();
+
+            if constexpr (
+                AscendC::IsSameType<T, float>::value) {
+                SyncVectorToMte3();
+
+                StoreNative(
+                    outputGm_,
+                    rowOffset + col,
+                    value,
+                    valid);
+
+                SyncMte3ToVector();
+            } else {
+                FromFp32(
+                    outLocal,
+                    value,
+                    valid);
+                AscendC::PipeBarrier<PIPE_V>();
+
+                SyncVectorToMte3();
+
+                StoreNative(
+                    outputGm_,
+                    rowOffset + col,
+                    outLocal,
+                    valid);
+
+                SyncMte3ToVector();
+            }
+
+            SyncVectorToMte2();
+        }
+    }
+
+    __aicore__ inline void ProcessResidentRow(
+        uint64_t row,
+        uint64_t rowWidth,
+        float invRowWidth,
+        float epsilon)
+    {
+        const uint64_t rowOffset =
+            row * rowWidth;
+
+        const float rmsValue =
+            ComputeRms(
+                rowOffset,
+                rowWidth,
+                invRowWidth,
+                epsilon);
+
+        WriteResidentOutput(
+            rowOffset,
+            rowWidth,
+            rmsValue);
+    }
+
+    __aicore__ inline void ProcessStreamingRow(
+        uint64_t row,
+        uint64_t rowWidth,
+        float invRowWidth,
+        float epsilon)
+    {
+        const uint64_t rowOffset =
+            row * rowWidth;
+
+        const float rmsValue =
+            ComputeRms(
+                rowOffset,
+                rowWidth,
+                invRowWidth,
+                epsilon);
+
+        WriteStreamingOutput(
+            rowOffset,
+            rowWidth,
+            rmsValue);
+    }
+
+private:
+    AscendC::TPipe pipe_;
+
+    AscendC::TBuf<
+        AscendC::TPosition::VECCALC>
+        xNative_;
+
+    AscendC::TBuf<
+        AscendC::TPosition::VECCALC>
+        rNative_;
+
+    AscendC::TBuf<
+        AscendC::TPosition::VECCALC>
+        outNative_;
+
+    AscendC::TBuf<
+        AscendC::TPosition::VECCALC>
+        valueFp32_;
+
+    AscendC::TBuf<
+        AscendC::TPosition::VECCALC>
+        auxFp32_;
+
+    AscendC::TBuf<
+        AscendC::TPosition::VECCALC>
+        reduceFp32_;
+
+    AscendC::TBuf<
+        AscendC::TPosition::VECCALC>
+        scalar_;
+
+    AscendC::TBuf<
+        AscendC::TPosition::VECCALC>
+        gammaResident_;
+
+    AscendC::TBuf<
+        AscendC::TPosition::VECCALC>
+        biasResident_;
+
+    AscendC::GlobalTensor<T> xGm_;
+    AscendC::GlobalTensor<T> residualGm_;
+    AscendC::GlobalTensor<T> gammaGm_;
+    AscendC::GlobalTensor<T> biasGm_;
+    AscendC::GlobalTensor<T> outputGm_;
+
+    bool residentMode_;
+};
+
+template <typename T>
+__global__ __vector__ void add_rms_norm_bias_r014(
+    GM_ADDR x,
+    GM_ADDR residual,
+    GM_ADDR gamma,
+    GM_ADDR bias,
+    GM_ADDR output,
+    uint64_t rowCount,
+    uint64_t rowWidth,
+    uint32_t blockCount,
+    float invRowWidth,
+    float epsilon)
+{
+    ParameterResidencyKernel<T> kernel;
+
+    kernel.Init(
+        x,
+        residual,
+        gamma,
+        bias,
+        output,
+        rowWidth);
+
+    kernel.Run(
+        rowCount,
+        rowWidth,
+        blockCount,
+        invRowWidth,
+        epsilon);
+}
+
+#if !defined(ASCENDC_CPU_DEBUG)
+extern "C" void run_kernel(
+    GM_ADDR x,
+    const TensorGroupInfo& info_x,
+    GM_ADDR residual,
+    const TensorGroupInfo& info_residual,
+    GM_ADDR gamma,
+    const TensorGroupInfo& info_gamma,
+    GM_ADDR bias,
+    const TensorGroupInfo& info_bias,
+    GM_ADDR output,
+    const TensorGroupInfo& info_output,
+    int64_t availableCoreNum,
+    aclrtStream stream,
+    float epsilon)
+{
+    if (x == nullptr ||
+        residual == nullptr ||
+        gamma == nullptr ||
+        bias == nullptr ||
+        output == nullptr ||
+        info_x.tensors == nullptr ||
+        info_residual.tensors == nullptr ||
+        info_gamma.tensors == nullptr ||
+        info_bias.tensors == nullptr ||
+        info_output.tensors == nullptr ||
+        info_x.numTensors < 1 ||
+        info_residual.numTensors < 1 ||
+        info_gamma.numTensors < 1 ||
+        info_bias.numTensors < 1 ||
+        info_output.numTensors < 1) {
+        return;
+    }
+
+    const TensorInfo& xInfo =
+        info_x.tensors[0];
+    const TensorInfo& residualInfo =
+        info_residual.tensors[0];
+    const TensorInfo& gammaInfo =
+        info_gamma.tensors[0];
+    const TensorInfo& biasInfo =
+        info_bias.tensors[0];
+    const TensorInfo& outputInfo =
+        info_output.tensors[0];
+
+    if (xInfo.shape == nullptr ||
+        residualInfo.shape == nullptr ||
+        gammaInfo.shape == nullptr ||
+        biasInfo.shape == nullptr ||
+        outputInfo.shape == nullptr ||
+        xInfo.numDims < 1 ||
+        residualInfo.numDims != xInfo.numDims ||
+        outputInfo.numDims != xInfo.numDims ||
+        gammaInfo.numDims != 1 ||
+        biasInfo.numDims != 1 ||
+        xInfo.dtype != residualInfo.dtype ||
+        xInfo.dtype != gammaInfo.dtype ||
+        xInfo.dtype != biasInfo.dtype ||
+        xInfo.dtype != outputInfo.dtype) {
+        return;
+    }
+
+    if (xInfo.dtype != 0 &&
+        xInfo.dtype != 1 &&
+        xInfo.dtype != 2) {
+        return;
+    }
+
+    const int64_t widthSigned =
+        xInfo.shape[xInfo.numDims - 1];
+
+    if (widthSigned <= 0 ||
+        gammaInfo.shape[0] != widthSigned ||
+        biasInfo.shape[0] != widthSigned ||
+        residualInfo.shape[
+            xInfo.numDims - 1] != widthSigned ||
+        outputInfo.shape[
+            xInfo.numDims - 1] != widthSigned) {
+        return;
+    }
+
+    const uint64_t maxU64 =
+        ~static_cast<uint64_t>(0);
+
+    uint64_t rowCount = 1;
+
+    for (int64_t dim = 0;
+         dim < xInfo.numDims - 1;
+         ++dim) {
+        const int64_t extentSigned =
+            xInfo.shape[dim];
+
+        if (extentSigned <= 0 ||
+            residualInfo.shape[dim] != extentSigned ||
+            outputInfo.shape[dim] != extentSigned) {
+            return;
+        }
+
+        const uint64_t extent =
+            static_cast<uint64_t>(extentSigned);
+
+        if (rowCount > maxU64 / extent) {
+            return;
+        }
+
+        rowCount *= extent;
+    }
+
+    if (rowCount == 0) {
+        return;
+    }
+
+    const uint64_t rowWidth =
+        static_cast<uint64_t>(widthSigned);
+
+    if (rowCount > maxU64 / rowWidth) {
+        return;
+    }
+
+    const uint64_t elementBytes =
+        xInfo.dtype == 0 ? 4ULL : 2ULL;
+
+    if (rowWidth > maxU64 / elementBytes) {
+        return;
+    }
+
+    const uint64_t rowBytes =
+        rowWidth * elementBytes;
+
+    const bool naturallyAligned =
+        (rowBytes & 31ULL) == 0ULL;
+
+    uint64_t requestedBlocks =
+        naturallyAligned &&
+        availableCoreNum > 0
+            ? static_cast<uint64_t>(
+                  availableCoreNum)
+            : 1ULL;
+
+    if (requestedBlocks > rowCount) {
+        requestedBlocks = rowCount;
+    }
+
+    if (requestedBlocks == 0) {
+        requestedBlocks = 1;
+    }
+
+    if (requestedBlocks >
+        static_cast<uint64_t>(
+            0xffffffffU)) {
+        requestedBlocks =
+            static_cast<uint64_t>(
+                0xffffffffU);
+    }
+
+    const uint32_t blockCount =
+        static_cast<uint32_t>(
+            requestedBlocks);
+
+    const float invRowWidth =
+        1.0f /
+        static_cast<float>(
+            widthSigned);
+
+    if (xInfo.dtype == 0) {
+        add_rms_norm_bias_r014<float>
+            <<<blockCount, nullptr, stream>>>(
+                x,
+                residual,
+                gamma,
+                bias,
+                output,
+                rowCount,
+                rowWidth,
+                blockCount,
+                invRowWidth,
+                epsilon);
+    } else if (xInfo.dtype == 1) {
+        add_rms_norm_bias_r014<half>
+            <<<blockCount, nullptr, stream>>>(
+                x,
+                residual,
+                gamma,
+                bias,
+                output,
+                rowCount,
+                rowWidth,
+                blockCount,
+                invRowWidth,
+                epsilon);
+    } else {
+        add_rms_norm_bias_r014<bfloat16_t>
+            <<<blockCount, nullptr, stream>>>(
+                x,
+                residual,
+                gamma,
+                bias,
+                output,
+                rowCount,
+                rowWidth,
+                blockCount,
+                invRowWidth,
+                epsilon);
+    }
+}
+#endif
