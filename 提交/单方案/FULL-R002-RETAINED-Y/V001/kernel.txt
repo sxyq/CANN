@@ -333,11 +333,15 @@ private:
             xNative_.Get<T>();
 
         if constexpr (AscendC::IsSameType<T, float>::value) {
+            AscendC::SetFlag<AscendC::HardEvent::V_MTE3>(0);
+            AscendC::WaitFlag<AscendC::HardEvent::V_MTE3>(0);
             StoreNative(
                 outputGm_,
                 gmOffset,
                 y,
                 valid);
+            AscendC::SetFlag<AscendC::HardEvent::MTE3_V>(0);
+            AscendC::WaitFlag<AscendC::HardEvent::MTE3_V>(0);
         } else {
             /* The native input slot is dead after y formation. */
             FromFp32(
@@ -345,14 +349,16 @@ private:
                 y,
                 valid);
             AscendC::PipeBarrier<PIPE_V>();
+            AscendC::SetFlag<AscendC::HardEvent::V_MTE3>(0);
+            AscendC::WaitFlag<AscendC::HardEvent::V_MTE3>(0);
             StoreNative(
                 outputGm_,
                 gmOffset,
                 native,
                 valid);
+            AscendC::SetFlag<AscendC::HardEvent::MTE3_V>(0);
+            AscendC::WaitFlag<AscendC::HardEvent::MTE3_V>(0);
         }
-
-        AscendC::PipeBarrier<PIPE_ALL>();
     }
 
     __aicore__ inline float ReadRms(
@@ -457,14 +463,16 @@ private:
                 outputGm_,
                 gmOffset,
                 valid);
-            AscendC::PipeBarrier<PIPE_ALL>();
+            AscendC::SetFlag<AscendC::HardEvent::MTE2_V>(0);
+            AscendC::WaitFlag<AscendC::HardEvent::MTE2_V>(0);
         } else {
             LoadNative(
                 native,
                 outputGm_,
                 gmOffset,
                 valid);
-            AscendC::PipeBarrier<PIPE_ALL>();
+            AscendC::SetFlag<AscendC::HardEvent::MTE2_V>(0);
+            AscendC::WaitFlag<AscendC::HardEvent::MTE2_V>(0);
             ToFp32(
                 y,
                 native,
