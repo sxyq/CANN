@@ -253,7 +253,8 @@ private:
             rowOffset + col,
             valid);
 
-        AscendC::PipeBarrier<PIPE_ALL>();
+        AscendC::SetFlag<AscendC::HardEvent::MTE2_V>(0);
+        AscendC::WaitFlag<AscendC::HardEvent::MTE2_V>(0);
     }
 
     __aicore__ inline void FormRetainedY(
@@ -527,7 +528,8 @@ private:
             biasGm_,
             col,
             valid);
-        AscendC::PipeBarrier<PIPE_ALL>();
+        AscendC::SetFlag<AscendC::HardEvent::MTE2_V>(0);
+        AscendC::WaitFlag<AscendC::HardEvent::MTE2_V>(0);
 
         ToFp32(
             gammaFp32,
@@ -554,11 +556,15 @@ private:
         AscendC::PipeBarrier<PIPE_V>();
 
         if constexpr (AscendC::IsSameType<T, float>::value) {
+            AscendC::SetFlag<AscendC::HardEvent::V_MTE3>(0);
+            AscendC::WaitFlag<AscendC::HardEvent::V_MTE3>(0);
             StoreNative(
                 outputGm_,
                 rowOffset + col,
                 y,
                 valid);
+            AscendC::SetFlag<AscendC::HardEvent::MTE3_V>(0);
+            AscendC::WaitFlag<AscendC::HardEvent::MTE3_V>(0);
         } else {
             /* xNative_ is dead after gamma conversion. */
             FromFp32(
@@ -566,14 +572,16 @@ private:
                 y,
                 valid);
             AscendC::PipeBarrier<PIPE_V>();
+            AscendC::SetFlag<AscendC::HardEvent::V_MTE3>(0);
+            AscendC::WaitFlag<AscendC::HardEvent::V_MTE3>(0);
             StoreNative(
                 outputGm_,
                 rowOffset + col,
                 xLocal,
                 valid);
+            AscendC::SetFlag<AscendC::HardEvent::MTE3_V>(0);
+            AscendC::WaitFlag<AscendC::HardEvent::MTE3_V>(0);
         }
-
-        AscendC::PipeBarrier<PIPE_ALL>();
     }
 
     __aicore__ inline void SecondPhase(
