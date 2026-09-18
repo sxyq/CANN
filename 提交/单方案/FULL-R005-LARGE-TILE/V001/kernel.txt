@@ -343,8 +343,6 @@ private:
             valueFp32_.Get<float>();
         AscendC::LocalTensor<float> aux =
             auxFp32_.Get<float>();
-        AscendC::LocalTensor<float> output =
-            outputFp32_.Get<float>();
         AscendC::LocalTensor<float> scalarSlots =
             scalarFp32_.Get<float>();
 
@@ -368,23 +366,23 @@ private:
             LoadInputTile(rowOffset, col, valid);
             SyncMTE2ToV();
 
-            /* Promote both inputs, then keep y in outputFp32. */
+            /* Promote both inputs, then keep y in valueFp32 in-place. */
             Promote(value, nativeX, valid);
             Promote(aux, nativeResidual, valid);
             AscendC::PipeBarrier<PIPE_V>();
 
             AscendC::Add(
-                output,
+                value,
                 value,
                 aux,
                 valid);
             AscendC::PipeBarrier<PIPE_V>();
 
-            /* aux becomes the square buffer; value becomes reduce scratch. */
+            /* Reuse value for y and aux for its square. */
             AscendC::Mul(
                 aux,
-                output,
-                output,
+                value,
+                value,
                 valid);
             AscendC::PipeBarrier<PIPE_V>();
 
