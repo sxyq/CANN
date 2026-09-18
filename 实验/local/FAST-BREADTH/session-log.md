@@ -17,3 +17,4 @@
 2026-09-18：R019-L003 线上结果为 15/15 Pass，Official Score `18.68`；submission `6aad5c03b0477ec41e73a5b7`，完整结果位于 `实验/online/FULL-R019-NORMALIZATION/L003/6aad5c03b0477ec41e73a5b7/result.json`。
 2026-09-19：R010-L001 线上结果为 15/15 Pass，Official Score `17.66`；submission `6aad6c97b0477ec41e7b50df`，完整结果位于 `实验/online/FULL-R010-TAIL-CENTRIC/V001/6aad6c97b0477ec41e7b50df/result.json`。
 2026-09-19：R012-L001 线上结果为 15/15 Pass，Official Score `22.96`；submission `6aad70a5b0477ec41e7cf41b`，完整结果位于 `实验/online/FULL-R012-ALIGNMENT-ROWGROUP/V001/6aad70a5b0477ec41e7cf41b/result.json`。
+2026-09-19：R009-L002 线上结果为 15/15 Pass，Official Score `18.61`；submission `6aad748eb0477ec41e7e6b20`，完整结果位于 `实验/online/FULL-R009-COPY-CENTRIC/L002/6aad748eb0477ec41e7e6b20/result.json`。
