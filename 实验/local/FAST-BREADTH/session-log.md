@@ -11,3 +11,5 @@
 资源规则：只有 `AVAILABLE_DISK < 15G` 才停止新的编译、运行或 profiling；现有 NPU 服务不停止、不迁移、不清理。每个 lane 同时最多使用一张卡。
 
 首轮候选已登记，后续只追加一行，不为单个候选创建独立报告。
+
+2026-09-18：R005-L002 已完成一次线上提交，submission `6aad349bb0477ec41e606254`，15/15 Pass，Official Score `25.71`；原始结果位于 `实验/online/FULL-R005-LARGE-TILE/V001/6aad349bb0477ec41e606254/result.json`。
