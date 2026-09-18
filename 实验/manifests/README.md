@@ -9,4 +9,4 @@
 - 历史分数大多没有 submission / commit 绑定，见 `文档/代码与结果溯源.md`；存量缺口不做倒推修补。
 - 新提交按 `文档/实验纪律.md`：候选阶段即绑定 SHA-256 与 git commit，提交后补记 submission id。
 
-当前状态：目录刚建立，尚无清单文件。
+当前状态：已保存 FULL-R002、FULL-R013、FULL-R030 的清单；其余 FAST-BREADTH 线上绑定关系见 `实验/local/FAST-BREADTH/online-baseline-matrix.tsv`。
