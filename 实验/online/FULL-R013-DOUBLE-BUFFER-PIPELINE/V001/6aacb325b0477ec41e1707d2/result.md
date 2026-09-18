@@ -27,7 +27,7 @@
 ## 本地证据
 
 - 服务器 CANN 9.0 工具链完成编译和链接，返回码 `0`。
-- 服务器真实 NPU 精度和性能未采集：项目盘使用率为 `98%`，8 张 NPU 均有其他任务。
+- 服务器真实 NPU 精度和性能未采集：8 张 NPU 均有其他任务。
 - 静态核验记录了 `kernel.txt:162` 的 `DataCopyPadExtParams<T>` 聚合初始化问题；线上 V001 源码保持 exact upstream 内容。
 - 服务器日志目录：`/home/data4t2/lelinfeng/cann/实验/FULL-R013-DOUBLE-BUFFER-PIPELINE/V001-agent3-validation/`。
 
