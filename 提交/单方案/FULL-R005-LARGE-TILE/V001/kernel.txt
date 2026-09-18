@@ -1,0 +1,801 @@
+#include <cmath>
+#include <cstdint>
+#include "kernel_operator.h"
+
+/*
+ * AddRmsNormBias - FULL-R005-LARGE-TILE-V001
+ *
+ * The route is organized around one wide work tile per row:
+ *
+ *   - kWorkTileElems is 8192, so rows that fit in the tile have no internal
+ *     tile transition;
+ *   - every row is processed by two deliberate passes in FP32;
+ *   - the same UB work areas change ownership at explicit phase boundaries;
+ *   - input and parameter vectors are streamed for the current tile only;
+ *   - the tail uses DataCopyPad and is always computed/stored with its valid
+ *     element count.
+ *
+ * Pass 1:
+ *   load x/residual -> promote -> y -> y^2 -> ReduceSum
+ *
+ * Pass 2:
+ *   reload x/residual -> promote -> y/rms -> load gamma/bias -> output
+ *
+ * UB lifetime plan for one tile (worst case T=float is about 160 KiB):
+ *   nativeX/nativeR:
+ *       x,residual in pass 1; gamma,bias in the output phase;
+ *   valueFp32/auxFp32:
+ *       promoted inputs, then square/reduction scratch, then parameters;
+ *   outputFp32:
+ *       y for both passes and the final FP32 result;
+ *   scalarFp32:
+ *       one accumulated sum and one RMS scalar.
+ *
+ * The semantic contract is:
+ *   y = x + residual
+ *   rms = sqrt(mean(y * y) + epsilon)
+ *   output = y / rms * gamma + bias
+ */
+
+template <typename T>
+class LargeTileKernel {
+public:
+    static constexpr int32_t kWorkTileElems = 8192;
+    static constexpr int32_t kScalarElems = 16;
+    static constexpr int32_t kRmsSlot = 8;
+
+    __aicore__ inline void Init(
+        GM_ADDR x,
+        GM_ADDR residual,
+        GM_ADDR gamma,
+        GM_ADDR bias,
+        GM_ADDR output)
+    {
+        xGm_.SetGlobalBuffer((__gm__ T*)x);
+        residualGm_.SetGlobalBuffer((__gm__ T*)residual);
+        gammaGm_.SetGlobalBuffer((__gm__ T*)gamma);
+        biasGm_.SetGlobalBuffer((__gm__ T*)bias);
+        outputGm_.SetGlobalBuffer((__gm__ T*)output);
+
+        /*
+         * A single wide work area is intentionally used for each lifetime.
+         * No queue or second tile is allocated: the route trades overlap for
+         * fewer transitions and a larger contiguous vector operation.
+         */
+        pipe_.InitBuffer(
+            nativeX_,
+            kWorkTileElems * sizeof(T));
+        pipe_.InitBuffer(
+            nativeResidual_,
+            kWorkTileElems * sizeof(T));
+
+        pipe_.InitBuffer(
+            valueFp32_,
+            kWorkTileElems * sizeof(float));
+        pipe_.InitBuffer(
+            auxFp32_,
+            kWorkTileElems * sizeof(float));
+        pipe_.InitBuffer(
+            outputFp32_,
+            kWorkTileElems * sizeof(float));
+
+        pipe_.InitBuffer(
+            scalarFp32_,
+            kScalarElems * sizeof(float));
+    }
+
+    __aicore__ inline void Process(
+        uint64_t rowCount,
+        uint64_t rowWidth,
+        uint64_t rowGroup,
+        uint64_t groupCount,
+        uint32_t blockCount,
+        float invRowWidth,
+        float epsilon)
+    {
+        if (blockCount == 0 || rowGroup == 0) {
+            return;
+        }
+
+        const uint64_t blockIdx =
+            static_cast<uint64_t>(AscendC::GetBlockIdx());
+
+        if (blockIdx >= static_cast<uint64_t>(blockCount)) {
+            return;
+        }
+
+        const uint64_t baseGroups =
+            groupCount / static_cast<uint64_t>(blockCount);
+        const uint64_t extraGroups =
+            groupCount % static_cast<uint64_t>(blockCount);
+
+        const uint64_t beginGroup =
+            blockIdx * baseGroups +
+            (blockIdx < extraGroups ? blockIdx : extraGroups);
+
+        const uint64_t localGroups =
+            baseGroups +
+            (blockIdx < extraGroups ? 1ULL : 0ULL);
+
+        const uint64_t endGroup =
+            beginGroup + localGroups;
+
+        for (uint64_t group = beginGroup;
+             group < endGroup;
+             ++group) {
+            const uint64_t beginRow =
+                group * rowGroup;
+
+            uint64_t endRow =
+                beginRow + rowGroup;
+
+            if (endRow > rowCount) {
+                endRow = rowCount;
+            }
+
+            for (uint64_t row = beginRow;
+                 row < endRow;
+                 ++row) {
+                ProcessRow(
+                    row,
+                    rowWidth,
+                    invRowWidth,
+                    epsilon);
+            }
+        }
+    }
+
+private:
+    __aicore__ inline int32_t TileLength(
+        uint64_t remaining) const
+    {
+        return static_cast<int32_t>(
+            remaining > static_cast<uint64_t>(kWorkTileElems)
+                ? kWorkTileElems
+                : remaining);
+    }
+
+    __aicore__ inline void LoadNative(
+        AscendC::LocalTensor<T> dst,
+        AscendC::GlobalTensor<T>& src,
+        uint64_t offset,
+        int32_t valid)
+    {
+        const AscendC::DataCopyExtParams copyParams(
+            1,
+            static_cast<uint32_t>(
+                valid * static_cast<int32_t>(sizeof(T))),
+            0,
+            0,
+            0);
+
+        const AscendC::DataCopyPadExtParams<T> padParams{
+            false,
+            0,
+            0,
+            0};
+
+        AscendC::DataCopyPad<T>(
+            dst,
+            src[offset],
+            copyParams,
+            padParams);
+    }
+
+    __aicore__ inline void StoreNative(
+        AscendC::GlobalTensor<T>& dst,
+        uint64_t offset,
+        AscendC::LocalTensor<T> src,
+        int32_t valid)
+    {
+        const AscendC::DataCopyExtParams copyParams(
+            1,
+            static_cast<uint32_t>(
+                valid * static_cast<int32_t>(sizeof(T))),
+            0,
+            0,
+            0);
+
+        AscendC::DataCopyPad<T>(
+            dst[offset],
+            src,
+            copyParams);
+    }
+
+    __aicore__ inline void Promote(
+        AscendC::LocalTensor<float> dst,
+        AscendC::LocalTensor<T> src,
+        int32_t valid)
+    {
+        if constexpr (AscendC::IsSameType<T, float>::value) {
+            AscendC::Adds(
+                dst,
+                src,
+                0.0f,
+                valid);
+        } else {
+            AscendC::Cast(
+                dst,
+                src,
+                AscendC::RoundMode::CAST_NONE,
+                valid);
+        }
+    }
+
+    __aicore__ inline void SyncMTE2ToV()
+    {
+        AscendC::SetFlag<AscendC::HardEvent::MTE2_V>(0);
+        AscendC::WaitFlag<AscendC::HardEvent::MTE2_V>(0);
+    }
+
+    __aicore__ inline void SyncVToMTE2()
+    {
+        AscendC::SetFlag<AscendC::HardEvent::V_MTE2>(0);
+        AscendC::WaitFlag<AscendC::HardEvent::V_MTE2>(0);
+    }
+
+    __aicore__ inline void SyncVToMTE3()
+    {
+        AscendC::SetFlag<AscendC::HardEvent::V_MTE3>(0);
+        AscendC::WaitFlag<AscendC::HardEvent::V_MTE3>(0);
+    }
+
+    __aicore__ inline void SyncMTE3ToV()
+    {
+        AscendC::SetFlag<AscendC::HardEvent::MTE3_V>(0);
+        AscendC::WaitFlag<AscendC::HardEvent::MTE3_V>(0);
+    }
+
+    __aicore__ inline void SyncVToS()
+    {
+        AscendC::SetFlag<AscendC::HardEvent::V_S>(0);
+        AscendC::WaitFlag<AscendC::HardEvent::V_S>(0);
+    }
+
+    __aicore__ inline void SyncSToV()
+    {
+        AscendC::SetFlag<AscendC::HardEvent::S_V>(0);
+        AscendC::WaitFlag<AscendC::HardEvent::S_V>(0);
+    }
+
+    __aicore__ inline void LoadInputTile(
+        uint64_t rowOffset,
+        uint64_t col,
+        int32_t valid)
+    {
+        LoadNative(
+            nativeX_.Get<T>(),
+            xGm_,
+            rowOffset + col,
+            valid);
+
+        LoadNative(
+            nativeResidual_.Get<T>(),
+            residualGm_,
+            rowOffset + col,
+            valid);
+    }
+
+    __aicore__ inline void LoadParameterTile(
+        uint64_t col,
+        int32_t valid)
+    {
+        LoadNative(
+            nativeX_.Get<T>(),
+            gammaGm_,
+            col,
+            valid);
+
+        LoadNative(
+            nativeResidual_.Get<T>(),
+            biasGm_,
+            col,
+            valid);
+    }
+
+    __aicore__ inline float FinishRms(
+        AscendC::LocalTensor<float> scalarSlots,
+        float invRowWidth,
+        float epsilon)
+    {
+        AscendC::LocalTensor<float> sum =
+            scalarSlots[kRmsSlot];
+        AscendC::LocalTensor<float> rms = scalarSlots;
+
+        AscendC::Muls(
+            rms,
+            sum,
+            invRowWidth,
+            1);
+        AscendC::PipeBarrier<PIPE_V>();
+
+        AscendC::Adds(
+            rms,
+            rms,
+            epsilon,
+            1);
+        AscendC::PipeBarrier<PIPE_V>();
+
+        AscendC::Sqrt(
+            rms,
+            rms,
+            1);
+        AscendC::PipeBarrier<PIPE_V>();
+
+        SyncVToS();
+        const float value = rms.GetValue(0);
+        SyncSToV();
+        return value;
+    }
+
+    __aicore__ inline float ReductionPass(
+        uint64_t rowOffset,
+        uint64_t rowWidth,
+        float invRowWidth,
+        float epsilon)
+    {
+        AscendC::LocalTensor<T> nativeX =
+            nativeX_.Get<T>();
+        AscendC::LocalTensor<T> nativeResidual =
+            nativeResidual_.Get<T>();
+
+        AscendC::LocalTensor<float> value =
+            valueFp32_.Get<float>();
+        AscendC::LocalTensor<float> aux =
+            auxFp32_.Get<float>();
+        AscendC::LocalTensor<float> output =
+            outputFp32_.Get<float>();
+        AscendC::LocalTensor<float> scalarSlots =
+            scalarFp32_.Get<float>();
+
+        AscendC::LocalTensor<float> partial = scalarSlots;
+        AscendC::LocalTensor<float> sum =
+            scalarSlots[kRmsSlot];
+
+        AscendC::Duplicate(
+            sum,
+            0.0f,
+            1);
+        AscendC::PipeBarrier<PIPE_V>();
+
+        for (uint64_t col = 0;
+             col < rowWidth;
+             col += static_cast<uint64_t>(kWorkTileElems)) {
+            const int32_t valid =
+                TileLength(rowWidth - col);
+
+            /* Native input lifetime begins here. */
+            LoadInputTile(rowOffset, col, valid);
+            SyncMTE2ToV();
+
+            /* Promote both inputs, then keep y in outputFp32. */
+            Promote(value, nativeX, valid);
+            Promote(aux, nativeResidual, valid);
+            AscendC::PipeBarrier<PIPE_V>();
+
+            AscendC::Add(
+                output,
+                value,
+                aux,
+                valid);
+            AscendC::PipeBarrier<PIPE_V>();
+
+            /* aux becomes the square buffer; value becomes reduce scratch. */
+            AscendC::Mul(
+                aux,
+                output,
+                output,
+                valid);
+            AscendC::PipeBarrier<PIPE_V>();
+
+            AscendC::ReduceSum(
+                partial,
+                aux,
+                value,
+                valid);
+            AscendC::PipeBarrier<PIPE_V>();
+
+            AscendC::Add(
+                sum,
+                sum,
+                partial,
+                1);
+            AscendC::PipeBarrier<PIPE_V>();
+
+            /* The whole work area can now accept the next wide tile. */
+            SyncVToMTE2();
+        }
+
+        return FinishRms(
+            scalarSlots,
+            invRowWidth,
+            epsilon);
+    }
+
+    __aicore__ inline void OutputPass(
+        uint64_t rowOffset,
+        uint64_t rowWidth,
+        float rmsValue)
+    {
+        AscendC::LocalTensor<T> nativeX =
+            nativeX_.Get<T>();
+        AscendC::LocalTensor<T> nativeResidual =
+            nativeResidual_.Get<T>();
+
+        AscendC::LocalTensor<float> value =
+            valueFp32_.Get<float>();
+        AscendC::LocalTensor<float> aux =
+            auxFp32_.Get<float>();
+        AscendC::LocalTensor<float> output =
+            outputFp32_.Get<float>();
+
+        for (uint64_t col = 0;
+             col < rowWidth;
+             col += static_cast<uint64_t>(kWorkTileElems)) {
+            const int32_t valid =
+                TileLength(rowWidth - col);
+
+            /* Reconstruct y from the original inputs for this output tile. */
+            LoadInputTile(rowOffset, col, valid);
+            SyncMTE2ToV();
+
+            Promote(value, nativeX, valid);
+            Promote(aux, nativeResidual, valid);
+            AscendC::PipeBarrier<PIPE_V>();
+
+            AscendC::Add(
+                output,
+                value,
+                aux,
+                valid);
+            AscendC::PipeBarrier<PIPE_V>();
+
+            /* aux is now a scalar-expanded denominator. */
+            AscendC::Duplicate(
+                aux,
+                rmsValue,
+                valid);
+            AscendC::PipeBarrier<PIPE_V>();
+
+            AscendC::Div(
+                output,
+                output,
+                aux,
+                valid);
+            AscendC::PipeBarrier<PIPE_V>();
+
+            /* Input native buffers change ownership to gamma and bias. */
+            SyncVToMTE2();
+            LoadParameterTile(col, valid);
+            SyncMTE2ToV();
+
+            Promote(value, nativeX, valid);
+            Promote(aux, nativeResidual, valid);
+            AscendC::PipeBarrier<PIPE_V>();
+
+            AscendC::Mul(
+                output,
+                output,
+                value,
+                valid);
+            AscendC::PipeBarrier<PIPE_V>();
+
+            AscendC::Add(
+                output,
+                output,
+                aux,
+                valid);
+            AscendC::PipeBarrier<PIPE_V>();
+
+            if constexpr (AscendC::IsSameType<T, float>::value) {
+                SyncVToMTE3();
+                StoreNative(
+                    outputGm_,
+                    rowOffset + col,
+                    output,
+                    valid);
+                SyncMTE3ToV();
+            } else {
+                /* nativeX is free after gamma promotion. */
+                AscendC::Cast(
+                    nativeX,
+                    output,
+                    AscendC::RoundMode::CAST_RINT,
+                    valid);
+                AscendC::PipeBarrier<PIPE_V>();
+
+                SyncVToMTE3();
+                StoreNative(
+                    outputGm_,
+                    rowOffset + col,
+                    nativeX,
+                    valid);
+                SyncMTE3ToV();
+            }
+
+            /* Release all vector work before the next MTE2 ownership change. */
+            SyncVToMTE2();
+        }
+    }
+
+    __aicore__ inline void ProcessRow(
+        uint64_t row,
+        uint64_t rowWidth,
+        float invRowWidth,
+        float epsilon)
+    {
+        const uint64_t rowOffset =
+            row * rowWidth;
+
+        const float rmsValue =
+            ReductionPass(
+                rowOffset,
+                rowWidth,
+                invRowWidth,
+                epsilon);
+
+        OutputPass(
+            rowOffset,
+            rowWidth,
+            rmsValue);
+    }
+
+private:
+    AscendC::TPipe pipe_;
+
+    AscendC::TBuf<AscendC::TPosition::VECCALC>
+        nativeX_;
+    AscendC::TBuf<AscendC::TPosition::VECCALC>
+        nativeResidual_;
+    AscendC::TBuf<AscendC::TPosition::VECCALC>
+        valueFp32_;
+    AscendC::TBuf<AscendC::TPosition::VECCALC>
+        auxFp32_;
+    AscendC::TBuf<AscendC::TPosition::VECCALC>
+        outputFp32_;
+    AscendC::TBuf<AscendC::TPosition::VECCALC>
+        scalarFp32_;
+
+    AscendC::GlobalTensor<T> xGm_;
+    AscendC::GlobalTensor<T> residualGm_;
+    AscendC::GlobalTensor<T> gammaGm_;
+    AscendC::GlobalTensor<T> biasGm_;
+    AscendC::GlobalTensor<T> outputGm_;
+};
+
+template <typename T>
+__global__ __vector__ void add_rms_norm_bias_r005(
+    GM_ADDR x,
+    GM_ADDR residual,
+    GM_ADDR gamma,
+    GM_ADDR bias,
+    GM_ADDR output,
+    uint64_t rowCount,
+    uint64_t rowWidth,
+    uint64_t rowGroup,
+    uint64_t groupCount,
+    uint32_t blockCount,
+    float invRowWidth,
+    float epsilon)
+{
+    LargeTileKernel<T> op;
+
+    op.Init(
+        x,
+        residual,
+        gamma,
+        bias,
+        output);
+
+    op.Process(
+        rowCount,
+        rowWidth,
+        rowGroup,
+        groupCount,
+        blockCount,
+        invRowWidth,
+        epsilon);
+}
+
+#if !defined(ASCENDC_CPU_DEBUG)
+
+extern "C" void run_kernel(
+    GM_ADDR x,
+    const TensorGroupInfo& info_x,
+    GM_ADDR residual,
+    const TensorGroupInfo& info_residual,
+    GM_ADDR gamma,
+    const TensorGroupInfo& info_gamma,
+    GM_ADDR bias,
+    const TensorGroupInfo& info_bias,
+    GM_ADDR output,
+    const TensorGroupInfo& info_output,
+    int64_t availableCoreNum,
+    aclrtStream stream,
+    float epsilon)
+{
+    if (x == nullptr ||
+        residual == nullptr ||
+        gamma == nullptr ||
+        bias == nullptr ||
+        output == nullptr ||
+        info_x.tensors == nullptr ||
+        info_residual.tensors == nullptr ||
+        info_gamma.tensors == nullptr ||
+        info_bias.tensors == nullptr ||
+        info_output.tensors == nullptr ||
+        info_x.numTensors < 1 ||
+        info_residual.numTensors < 1 ||
+        info_gamma.numTensors < 1 ||
+        info_bias.numTensors < 1 ||
+        info_output.numTensors < 1) {
+        return;
+    }
+
+    const TensorInfo& xInfo = info_x.tensors[0];
+    const TensorInfo& residualInfo = info_residual.tensors[0];
+    const TensorInfo& gammaInfo = info_gamma.tensors[0];
+    const TensorInfo& biasInfo = info_bias.tensors[0];
+    const TensorInfo& outputInfo = info_output.tensors[0];
+
+    if (xInfo.shape == nullptr ||
+        residualInfo.shape == nullptr ||
+        gammaInfo.shape == nullptr ||
+        biasInfo.shape == nullptr ||
+        outputInfo.shape == nullptr ||
+        xInfo.numDims < 1 ||
+        residualInfo.numDims != xInfo.numDims ||
+        outputInfo.numDims != xInfo.numDims ||
+        gammaInfo.numDims != 1 ||
+        biasInfo.numDims != 1 ||
+        xInfo.dtype != residualInfo.dtype ||
+        xInfo.dtype != gammaInfo.dtype ||
+        xInfo.dtype != biasInfo.dtype ||
+        xInfo.dtype != outputInfo.dtype) {
+        return;
+    }
+
+    if (xInfo.dtype != 0 &&
+        xInfo.dtype != 1 &&
+        xInfo.dtype != 2) {
+        return;
+    }
+
+    const int64_t widthSigned =
+        xInfo.shape[xInfo.numDims - 1];
+
+    if (widthSigned <= 0 ||
+        gammaInfo.shape[0] != widthSigned ||
+        biasInfo.shape[0] != widthSigned) {
+        return;
+    }
+
+    const uint64_t maxU64 =
+        ~static_cast<uint64_t>(0);
+
+    uint64_t rowCount = 1;
+    for (int64_t dim = 0;
+         dim < xInfo.numDims - 1;
+         ++dim) {
+        const int64_t extentSigned = xInfo.shape[dim];
+
+        if (extentSigned <= 0 ||
+            residualInfo.shape[dim] != extentSigned ||
+            outputInfo.shape[dim] != extentSigned) {
+            return;
+        }
+
+        const uint64_t extent =
+            static_cast<uint64_t>(extentSigned);
+
+        if (rowCount > maxU64 / extent) {
+            return;
+        }
+        rowCount *= extent;
+    }
+
+    if (residualInfo.shape[xInfo.numDims - 1] != widthSigned ||
+        outputInfo.shape[xInfo.numDims - 1] != widthSigned ||
+        rowCount == 0) {
+        return;
+    }
+
+    const uint64_t rowWidth =
+        static_cast<uint64_t>(widthSigned);
+    const uint64_t elementBytes =
+        xInfo.dtype == 0 ? 4ULL : 2ULL;
+
+    if (rowWidth > maxU64 / elementBytes ||
+        rowCount > maxU64 / rowWidth) {
+        return;
+    }
+
+    /* Group rows only when a narrow row could share a partial 32B block. */
+    const uint64_t rowBytes = rowWidth * elementBytes;
+    uint64_t gcdA = rowBytes;
+    uint64_t gcdB = 32;
+
+    while (gcdB != 0) {
+        const uint64_t remainder = gcdA % gcdB;
+        gcdA = gcdB;
+        gcdB = remainder;
+    }
+
+    const uint64_t rowGroup = 32 / gcdA;
+    const uint64_t groupCount =
+        rowCount / rowGroup +
+        (rowCount % rowGroup == 0 ? 0 : 1);
+
+    uint64_t requestedBlocks =
+        availableCoreNum > 0
+            ? static_cast<uint64_t>(availableCoreNum)
+            : 1ULL;
+
+    if (requestedBlocks > groupCount) {
+        requestedBlocks = groupCount;
+    }
+
+    const uint64_t maxBlockCount =
+        static_cast<uint64_t>(0xffffffffU);
+
+    if (requestedBlocks > maxBlockCount) {
+        requestedBlocks = maxBlockCount;
+    }
+    if (requestedBlocks == 0) {
+        requestedBlocks = 1;
+    }
+
+    const uint32_t blockCount =
+        static_cast<uint32_t>(requestedBlocks);
+    const float invRowWidth =
+        1.0f / static_cast<float>(widthSigned);
+
+    if (xInfo.dtype == 0) {
+        add_rms_norm_bias_r005<float>
+            <<<blockCount, nullptr, stream>>>(
+                x,
+                residual,
+                gamma,
+                bias,
+                output,
+                rowCount,
+                rowWidth,
+                rowGroup,
+                groupCount,
+                blockCount,
+                invRowWidth,
+                epsilon);
+    } else if (xInfo.dtype == 1) {
+        add_rms_norm_bias_r005<half>
+            <<<blockCount, nullptr, stream>>>(
+                x,
+                residual,
+                gamma,
+                bias,
+                output,
+                rowCount,
+                rowWidth,
+                rowGroup,
+                groupCount,
+                blockCount,
+                invRowWidth,
+                epsilon);
+    } else {
+        add_rms_norm_bias_r005<bfloat16_t>
+            <<<blockCount, nullptr, stream>>>(
+                x,
+                residual,
+                gamma,
+                bias,
+                output,
+                rowCount,
+                rowWidth,
+                rowGroup,
+                groupCount,
+                blockCount,
+                invRowWidth,
+                epsilon);
+    }
+}
+
+#endif
