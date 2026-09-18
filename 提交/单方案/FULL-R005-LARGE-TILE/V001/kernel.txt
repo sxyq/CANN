@@ -450,7 +450,14 @@ private:
                 valid);
             AscendC::PipeBarrier<PIPE_V>();
 
-            /* aux is now a scalar-expanded denominator. */
+            /*
+             * The native input buffers are dead after y is formed. Start the
+             * parameter DMA now, while Vector performs normalization in the
+             * independent FP32 work areas.
+             */
+            SyncVToMTE2();
+            LoadParameterTile(col, valid);
+
             AscendC::Duplicate(
                 aux,
                 rmsValue,
@@ -464,9 +471,7 @@ private:
                 valid);
             AscendC::PipeBarrier<PIPE_V>();
 
-            /* Input native buffers change ownership to gamma and bias. */
-            SyncVToMTE2();
-            LoadParameterTile(col, valid);
+            /* Wait only when Vector needs the newly loaded parameters. */
             SyncMTE2ToV();
 
             Promote(value, nativeX, valid);
