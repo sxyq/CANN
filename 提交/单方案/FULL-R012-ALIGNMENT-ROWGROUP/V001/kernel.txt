@@ -80,11 +80,22 @@ public:
             static_cast<uint64_t>(AscendC::GetBlockNum());
 
         /*
-         * FULL-R012:
-         * one complete 32-byte-aligned row-group is the scheduling unit.
-         * No other part of the kernel is specialized by shape.
+         * FULL-R012 L002 mutation:
+         * keep complete row-groups as the ownership unit, but give each core
+         * one contiguous group interval. This preserves group boundaries
+         * while reducing ownership jumps between adjacent groups.
          */
-        for (uint64_t group = coreIdx; group < groupCount; group += coreNum) {
+        const uint64_t baseGroups = groupCount / coreNum;
+        const uint64_t extraGroups = groupCount % coreNum;
+        const uint64_t beginGroup =
+            coreIdx * baseGroups +
+            (coreIdx < extraGroups ? coreIdx : extraGroups);
+        const uint64_t localGroups =
+            baseGroups +
+            (coreIdx < extraGroups ? 1ULL : 0ULL);
+        const uint64_t endGroup = beginGroup + localGroups;
+
+        for (uint64_t group = beginGroup; group < endGroup; ++group) {
             const uint64_t firstRow = group * rowGroup;
             uint64_t endRow = firstRow + rowGroup;
             if (endRow > rowCount) {
