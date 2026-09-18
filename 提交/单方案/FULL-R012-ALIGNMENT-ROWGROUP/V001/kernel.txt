@@ -411,13 +411,24 @@ extern "C" void run_kernel(
         rowCount / rowGroup +
         ((rowCount % rowGroup) == 0ULL ? 0ULL : 1ULL);
 
+    /*
+     * FULL-R012 L003 mutation:
+     * when a partial tail group exists, attach it to the last full-group
+     * owner instead of launching a tail-only core. Exact groups are unchanged;
+     * rows smaller than one group still use one core.
+     */
+    const uint64_t fullGroupCount =
+        rowCount / rowGroup;
+    const uint64_t maxUsefulBlocks =
+        fullGroupCount > 0ULL ? fullGroupCount : 1ULL;
+
     uint64_t requestedBlocks =
         availableCoreNum > 0
             ? static_cast<uint64_t>(availableCoreNum)
             : 1ULL;
 
-    if (requestedBlocks > groupCount) {
-        requestedBlocks = groupCount;
+    if (requestedBlocks > maxUsefulBlocks) {
+        requestedBlocks = maxUsefulBlocks;
     }
     if (requestedBlocks == 0) {
         requestedBlocks = 1;
