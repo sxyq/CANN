@@ -3,8 +3,13 @@
 本目录是独立路线 I001 的 Ascend C Vector 直调工程。实现目标是沿最后一维执行
 `x + residual`、RMS 归一化、`gamma` 缩放和 `bias` 加法，核心归约采用向量折半累加。
 
-I001 按空 Kernel、tiling/Host、Kernel 核心逻辑三个提交阶段推进。当前第一阶段只验证
-工程骨架和直调编译链；不包含本地运行、NPU 运行、精度、性能、profiling 或线上提交。
+I001 按空 Kernel、tiling/Host、Kernel 核心逻辑三个阶段推进。Kernel 使用 FP32 输入和中间累加，
+最后一维按 `TILE_LENGTH` 分块，两遍处理分别完成平方和归约与输出变换；归约主体是向量 `Add`
+的折半累加，没有把 `ReduceSum` 作为实现路径。
+
+本目录只完成 server3 CANN 9.0 编译。没有执行本地运行、NPU 正确性、CPU/精度、性能、profiling、
+PyTorch 或线上提交。标量归约结果通过 `LocalTensor::GetValue(0)` 取出后继续完成平方根和归一化，
+这是当前实现中需要后续性能评估的明确位置。
 
 manual_vector_reduction 算子的 Kernel 直调实现示例，同时支持 PyTorch 对接。
 
