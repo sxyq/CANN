@@ -3,10 +3,6 @@
 // the dtype-specialized kernels. All arithmetic, including RMS reduction,
 // remains in the Ascend C kernel.
 
-#include <algorithm>
-#include <cstdint>
-#include <type_traits>
-
 #include "acl/acl.h"
 #include "kernel_operator.h"
 
@@ -241,8 +237,13 @@ inline uint32_t ChooseTile(uint32_t d, uint32_t dtype)
     const uint32_t sourceBytes = dtype == 0 ? 4U : 2U;
     const uint32_t bytesPerElement = sourceBytes * 4U + sizeof(float) * 8U;
     uint32_t capacity = kUbBudgetBytes / bytesPerElement;
-    capacity = std::max(kMinTileElements, std::min(kMaxTileElements, capacity));
-    return std::min(d, capacity);
+    if (capacity < kMinTileElements) {
+        capacity = kMinTileElements;
+    }
+    if (capacity > kMaxTileElements) {
+        capacity = kMaxTileElements;
+    }
+    return d < capacity ? d : capacity;
 }
 
 inline RuntimeMode ChooseMode(uint32_t d, uint32_t outer, uint32_t cores)
@@ -288,9 +289,12 @@ extern "C" void run_kernel(GM_ADDR x, TensorGroupInfo info_x, GM_ADDR residual,
     const TensorInfo& xInfo = info_x.tensors[0];
     const uint32_t d = static_cast<uint32_t>(xInfo.shape[xInfo.numDims - 1]);
     const uint32_t outer = ProductExceptLast(xInfo);
-    const uint32_t cores = std::max<uint32_t>(1, static_cast<uint32_t>(availableCoreNum));
+    uint32_t cores = static_cast<uint32_t>(availableCoreNum);
+    if (cores == 0) {
+        cores = 1;
+    }
     const RuntimeMode mode = ChooseMode(d, outer, cores);
-    const uint32_t blockNum = std::max<uint32_t>(1, std::min(cores, outer));
+    const uint32_t blockNum = (outer < cores ? outer : cores);
 
     R029TilingData tiling{};
     tiling.outer = outer;
