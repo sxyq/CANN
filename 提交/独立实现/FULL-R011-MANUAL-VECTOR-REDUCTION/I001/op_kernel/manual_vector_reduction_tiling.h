@@ -15,7 +15,7 @@
 
 #pragma once
 
-#include <cstdint>
+#include <stdint.h>
 
 // [CONFIG] 单次搬运/处理的数据量（元素数），影响 UB 内存占用
 // 常用值: float32 用 4096/8192，float16 用 8192/16384

@@ -15,7 +15,7 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <fstream>
+#include <stdio.h>
 
 #define ERROR_LOG(fmt, args...) fprintf(stdout, "[ERROR]  " fmt "\n", ##args)
 
@@ -27,7 +27,7 @@
  * @param [in] bufferLen: buffer length
  * @return read result
  */
-inline bool ReadFile(const std::string &filePath, size_t bufferSize, void *buffer, size_t bufferLen)
+inline bool ReadFile(const char *filePath, size_t bufferSize, void *buffer, size_t bufferLen)
 {
     if (buffer == nullptr) {
         ERROR_LOG("buffer is nullptr");
@@ -38,30 +38,30 @@ inline bool ReadFile(const std::string &filePath, size_t bufferSize, void *buffe
         return false;
     }
 
-    std::ifstream file(filePath, std::ios::binary);
-    if (!file.is_open()) {
-        ERROR_LOG("Open file failed. path = %s", filePath.c_str());
+    FILE *file = fopen(filePath, "rb");
+    if (file == nullptr) {
+        ERROR_LOG("Open file failed. path = %s", filePath);
         return false;
     }
 
-    file.seekg(0, std::ios::end);
-    size_t fileSize = file.tellg();
-    file.seekg(0, std::ios::beg);
-
-    if (fileSize != bufferSize) {
-        ERROR_LOG("file size %zu != expected size %zu", fileSize, bufferSize);
-        file.close();
+    if (fseek(file, 0, SEEK_END) != 0) {
+        fclose(file);
         return false;
     }
-
-    file.read(static_cast<char *>(buffer), bufferSize);
-    if (!file) {
+    long end = ftell(file);
+    if (end < 0 || (size_t)end != bufferSize) {
+        ERROR_LOG("file size mismatch");
+        fclose(file);
+        return false;
+    }
+    rewind(file);
+    size_t n = fread(buffer, 1, bufferSize, file);
+    if (n != bufferSize) {
         ERROR_LOG("Read file failed");
-        file.close();
+        fclose(file);
         return false;
     }
-    
-    file.close();
+    fclose(file);
     return true;
 }
 
@@ -72,7 +72,7 @@ inline bool ReadFile(const std::string &filePath, size_t bufferSize, void *buffe
  * @param [in] size: size to write
  * @return write result
  */
-inline bool WriteFile(const std::string &filePath, const void *buffer, size_t size)
+inline bool WriteFile(const char *filePath, const void *buffer, size_t size)
 {
     if (buffer == nullptr) {
         ERROR_LOG("Write file failed. buffer is nullptr");
@@ -81,7 +81,7 @@ inline bool WriteFile(const std::string &filePath, const void *buffer, size_t si
 
     int fd = open(filePath.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
     if (fd < 0) {
-        ERROR_LOG("Open file failed. path = %s", filePath.c_str());
+        ERROR_LOG("Open file failed. path = %s", filePath);
         return false;
     }
 
