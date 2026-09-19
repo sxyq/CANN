@@ -9,6 +9,7 @@
 - Compile log: `实验/local/FAST-BREADTH/lane-a/R004/V001/compilefix-c.log`
 - Environment log: `实验/local/FAST-BREADTH/lane-a/R004/V001/environment-compilefix-c-retry.log`
 - Remote build: `/home/data4t2/lelinfeng/cann/实验/FAST-BREADTH/lane-a/R004/V001/compilefix-c/build-fix-c/add_rms_norm_bias_custom`
-- Minimum NPU run: PENDING; all eight NPU devices were occupied by existing model tasks
+- Minimum NPU run: NOT_STARTED (`RUN_SECONDS=NOT_RUN`); no input files and no clear idle-device window
+- Run log: `实验/local/FAST-BREADTH/lane-a/R004/V001/minimum-run.log`
 - CANNJudge: NOT_TRIGGERED
 - ONLINE_READY: NO
