@@ -211,18 +211,18 @@ extern "C" void run_kernel(GM_ADDR x, const TensorGroupInfo& info_x, GM_ADDR res
     (void)info_bias;
     (void)info_output;
     if (info_x.tensors == nullptr || info_x.numTensors <= 0 || info_x.tensors[0].shape == nullptr ||
-        info_x.numDims <= 0 || availableCoreNum <= 0) {
+        info_x.tensors[0].numDims <= 0 || availableCoreNum <= 0) {
         return;
     }
 
     const int64_t *shape = info_x.tensors[0].shape;
-    const int64_t dimValue = shape[info_x.numDims - 1];
+    const int64_t dimValue = shape[info_x.tensors[0].numDims - 1];
     if (dimValue <= 0) {
         return;
     }
 
     int64_t outerValue = 1;
-    for (int64_t axis = 0; axis + 1 < info_x.numDims; ++axis) {
+    for (int64_t axis = 0; axis + 1 < info_x.tensors[0].numDims; ++axis) {
         if (shape[axis] <= 0) {
             return;
         }
