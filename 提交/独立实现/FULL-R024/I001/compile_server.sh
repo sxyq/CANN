@@ -10,6 +10,7 @@ export LD_LIBRARY_PATH="${LD_LIBRARY_PATH:-}"
 export PYTHONPATH="${PYTHONPATH:-}"
 export CMAKE_PREFIX_PATH="${CMAKE_PREFIX_PATH:-}"
 export CPLUS_INCLUDE_PATH="/usr/include/c++/11:/usr/include/aarch64-linux-gnu/c++/11:${CPLUS_INCLUDE_PATH:-}"
+export LIBRARY_PATH="/usr/lib/gcc/aarch64-linux-gnu/11:/usr/lib/aarch64-linux-gnu:${LIBRARY_PATH:-}"
 source "${TOOLCHAIN_ROOT}/set_env.sh"
 
 # The Mac worktree keeps source text as .txt; server compilation materializes .asc.
