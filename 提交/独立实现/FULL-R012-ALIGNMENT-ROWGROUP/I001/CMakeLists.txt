@@ -54,6 +54,11 @@ target_link_libraries(add_rms_norm_bias PRIVATE
     graph_base
 )
 
+target_link_directories(add_rms_norm_bias PRIVATE
+    /usr/lib/gcc/aarch64-linux-gnu/11
+    /usr/lib/aarch64-linux-gnu
+)
+
 target_include_directories(add_rms_norm_bias PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/op_kernel
     ${CMAKE_CURRENT_SOURCE_DIR}/op_host
