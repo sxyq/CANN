@@ -32,3 +32,11 @@
 2026-09-19：R020-V001 完成 CANNJudge 线上提交，submission `6aae31cbb0477ec41ec2dcb4`，15/15 Pass，Official Score `23.41`；完整结果位于 `实验/online/FULL-R020-SQRT-NORMALIZATION/V001/6aae31cbb0477ec41ec2dcb4/result.json`。
 2026-09-19：R007-V001 完成 CANNJudge 线上提交，submission `6aae32e4b0477ec41ec37a64`，15/15 Pass，Official Score `20.91`；完整结果位于 `实验/online/FULL-R007-REDUCE-SUM/V001/6aae32e4b0477ec41ec37a64/result.json`。
 2026-09-19：R008-V001 完成 CANNJudge 线上提交，submission `6aae33a6b0477ec41ec3e2f1`，15/15 Pass，Official Score `21.73`；完整结果位于 `实验/online/FULL-R008-TILE-CROSS-CORE/V001/6aae33a6b0477ec41ec3e2f1/result.json`。
+2026-09-19：R025-V001 完成 CANNJudge 线上提交，submission `6aae3c14b0477ec41ec89958`，15/15 Pass，Official Score `25.73`；完整结果位于 `实验/online/FULL-R025-SUBMISSION-INTEGRITY/V001/6aae3c14b0477ec41ec89958/result.json`。
+2026-09-19：R026-V001 完成 CANNJudge 线上提交，submission `6aae3d6db0477ec41ec974fe`，15/15 Pass，Official Score `25.65`；完整结果位于 `实验/online/FULL-R026-PERFORMANCE-MEASUREMENT/V001/6aae3d6db0477ec41ec974fe/result.json`。
+2026-09-19：R027-V001 完成 CANNJudge 线上提交，submission `6aae3f98b0477ec41ecac90c`，2/15 Pass，终态 Wrong Answer；完整结果位于 `实验/online/FULL-R027-GPU-MIGRATION-REFERENCE/V001/6aae3f98b0477ec41ecac90c/result.json`。
+2026-09-19：R028-V001 完成 CANNJudge 线上提交，submission `6aae40ffb0477ec41ecd02bc`，15/15 Pass，Official Score `25.06`；完整结果位于 `实验/online/FULL-R028-SCALAR-SYNC-REDUCTION/V001/6aae40ffb0477ec41ecd02bc/result.json`。
+2026-09-19：R030-V001 新代表候选完成 CANNJudge 线上提交，submission `6aae421ab0477ec41ecde49f`，4/15 Pass，终态 Runtime Error；完整结果位于 `实验/online/FULL-R030-WIDE-PARAM-REUSE/V001/6aae421ab0477ec41ecde49f/result.json`。
+2026-09-19：R001-V001 完成 CANNJudge 线上提交，submission `6aae444eb0477ec41ecf404a`，15/15 Pass，Official Score `23.21`；完整结果位于 `实验/online/FULL-R001-TWO-PASS-SCAN/V001/6aae444eb0477ec41ecf404a/result.json`。
+2026-09-19：R003-V001 完成 CANNJudge 线上提交，submission `6aae4506b0477ec41ecfae21`，15/15 Pass，Official Score `25.31`；完整结果位于 `实验/online/FULL-R003-PURE-ASCENDC-DIRECT/V001/6aae4506b0477ec41ecfae21/result.json`。
+2026-09-19：R004-V001 CompileFix-C 完成 CANNJudge 线上提交，submission `6aae46c2b0477ec41ed0bae8`，13/15 Pass，终态 Wrong Answer；完整结果位于 `实验/online/FULL-R004-LOW-PRECISION-MIDDLE/V001/6aae46c2b0477ec41ed0bae8/result.json`。
