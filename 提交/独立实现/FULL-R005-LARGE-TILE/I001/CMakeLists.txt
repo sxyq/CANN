@@ -18,9 +18,9 @@ add_custom_command(
             --npu-arch=${KERNEL_ARCH}
             -std=c++17
             -I${ASCEND_HOME_PATH}/include
+            -I${ASCEND_HOME_PATH}/aarch64-linux/asc
             -I${ASCEND_HOME_PATH}/aarch64-linux/asc/include
             -I${ASCEND_HOME_PATH}/aarch64-linux/asc/include/basic_api
-            -I${ASCEND_HOME_PATH}/aarch64-linux/asc/impl/basic_api
             -I${ASCEND_HOME_PATH}/aarch64-linux/asc/impl/basic_api
             -DINPUT_T=half
             -c "${CMAKE_CURRENT_SOURCE_DIR}/kernel.txt"
