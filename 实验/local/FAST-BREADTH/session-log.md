@@ -40,3 +40,4 @@
 2026-09-19：R001-V001 完成 CANNJudge 线上提交，submission `6aae444eb0477ec41ecf404a`，15/15 Pass，Official Score `23.21`；完整结果位于 `实验/online/FULL-R001-TWO-PASS-SCAN/V001/6aae444eb0477ec41ecf404a/result.json`。
 2026-09-19：R003-V001 完成 CANNJudge 线上提交，submission `6aae4506b0477ec41ecfae21`，15/15 Pass，Official Score `25.31`；完整结果位于 `实验/online/FULL-R003-PURE-ASCENDC-DIRECT/V001/6aae4506b0477ec41ecfae21/result.json`。
 2026-09-19：R004-V001 CompileFix-C 完成 CANNJudge 线上提交，submission `6aae46c2b0477ec41ed0bae8`，13/15 Pass，终态 Wrong Answer；完整结果位于 `实验/online/FULL-R004-LOW-PRECISION-MIDDLE/V001/6aae46c2b0477ec41ed0bae8/result.json`。
+2026-09-19：R024-V001 完成 CANNJudge 线上提交，submission `6aae4901b0477ec41ed222a1`，15/15 Pass，Official Score `22.89`；完整结果位于 `实验/online/FULL-R024-CPU-VALIDATION-MATRIX/V001/6aae4901b0477ec41ed222a1/result.json`。R001–R029 已全部取得线上终态。
