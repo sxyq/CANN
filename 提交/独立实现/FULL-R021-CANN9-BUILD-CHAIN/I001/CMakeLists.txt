@@ -10,7 +10,6 @@ target_compile_options(add_rms_norm_bias_custom PRIVATE
     $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=${SOC_ARCH}>
     $<$<COMPILE_LANGUAGE:ASC>:-I/usr/include/c++/11>
     $<$<COMPILE_LANGUAGE:ASC>:-I/usr/include/aarch64-linux-gnu/c++/11>
-    $<$<COMPILE_LANGUAGE:ASC>:-I/usr/lib/gcc/aarch64-linux-gnu/11/include>
 )
 target_link_libraries(add_rms_norm_bias_custom PRIVATE
     tiling_api
