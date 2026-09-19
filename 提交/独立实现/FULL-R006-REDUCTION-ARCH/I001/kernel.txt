@@ -1,11 +1,23 @@
-#include <cstdint>
-#include <type_traits>
+#include <stdint.h>
 #include "kernel_operator.h"
 
 namespace full_r006_reduction_arch {
 
 constexpr uint32_t kChunkElements = 2048;
 constexpr uint32_t kChunkStorageElements = kChunkElements + 16;
+
+struct FloatTag {};
+struct OtherTag {};
+
+template <typename T>
+struct FloatTypeTag {
+    typedef OtherTag type;
+};
+
+template <>
+struct FloatTypeTag<float> {
+    typedef FloatTag type;
+};
 
 template <typename T>
 class IndependentReductionKernel {
@@ -91,7 +103,7 @@ private:
     __aicore__ inline void ConvertToFloat(AscendC::LocalTensor<float>& dst,
         const AscendC::LocalTensor<T>& src, uint32_t count)
     {
-        ConvertToFloatImpl(dst, src, count, std::is_same<T, float>());
+        ConvertToFloatImpl(dst, src, count, typename FloatTypeTag<T>::type());
     }
 
     __aicore__ inline void ConvertToFloatImpl(AscendC::LocalTensor<float>& dst,
@@ -109,7 +121,7 @@ private:
     __aicore__ inline void ConvertFromFloat(AscendC::LocalTensor<T>& dst,
         const AscendC::LocalTensor<float>& src, uint32_t count)
     {
-        ConvertFromFloatImpl(dst, src, count, std::is_same<T, float>());
+        ConvertFromFloatImpl(dst, src, count, typename FloatTypeTag<T>::type());
     }
 
     __aicore__ inline void ConvertFromFloatImpl(AscendC::LocalTensor<T>& dst,
