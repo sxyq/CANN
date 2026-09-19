@@ -55,6 +55,8 @@ target_link_libraries(manual_vector_reduction PRIVATE
 target_include_directories(manual_vector_reduction PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/op_kernel
     ${CMAKE_CURRENT_SOURCE_DIR}/op_host
+    /usr/include/c++/11
+    /usr/include/aarch64-linux-gnu/c++/11
 )
 
 # [CONFIG] NPU 架构配置

@@ -79,7 +79,7 @@ inline bool WriteFile(const char *filePath, const void *buffer, size_t size)
         return false;
     }
 
-    int fd = open(filePath.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+    int fd = open(filePath, O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
     if (fd < 0) {
         ERROR_LOG("Open file failed. path = %s", filePath);
         return false;
