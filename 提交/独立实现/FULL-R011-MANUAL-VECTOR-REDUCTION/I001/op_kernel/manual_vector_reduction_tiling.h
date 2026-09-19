@@ -25,7 +25,9 @@ constexpr uint32_t DOUBLE_BUFFER = 2;
 // [MODIFY] Tiling 数据结构 - 向核函数传递的运行时参数
 struct ManualVectorReductionTilingData {
     uint32_t blockNum;
-    uint64_t totalLength;
-    uint64_t numPerCore;
-    uint64_t tailNumLastCore;
+    uint32_t outer;
+    uint32_t lastDim;
+    uint32_t rowsPerCore;
+    uint32_t tailRowsLastCore;
+    float epsilon;
 };
