@@ -3,13 +3,14 @@
 #include "kernel_operator.h"
 
 /*
- * AddRmsNormBias - FULL-R005-LARGE-TILE-V001
+ * AddRmsNormBias - FULL-R028-SCALAR-SYNC-REDUCTION-V001
  *
- * The route is organized around one wide work tile per row:
+ * The route keeps the wide-row data path and batches scalar handoffs:
  *
  *   - kWorkTileElems is 8192, so rows that fit in the tile have no internal
  *     tile transition;
- *   - every row is processed by two deliberate passes in FP32;
+ *   - two rows compute independent FP32 reductions before scalar access;
+ *   - one V_S/S_V pair transfers both RMS values from the vector pipeline;
  *   - the same UB work areas change ownership at explicit phase boundaries;
  *   - input and parameter vectors are streamed for the current tile only;
  *   - the tail uses DataCopyPad and is always computed/stored with its valid
@@ -31,17 +32,17 @@
  *   scalarFp32:
  *       one accumulated sum and one RMS scalar.
  *
- * The semantic contract is:
+ * The semantic equations are:
  *   y = x + residual
  *   rms = sqrt(mean(y * y) + epsilon)
  *   output = y / rms * gamma + bias
  */
 
 template <typename T>
-class LargeTileKernel {
+class ScalarSyncReductionKernel {
 public:
     static constexpr int32_t kWorkTileElems = 8192;
-    static constexpr int32_t kScalarElems = 16;
+    static constexpr int32_t kScalarElems = 24;
     static constexpr int32_t kRmsSlot = 8;
 
     __aicore__ inline void Init(
@@ -133,9 +134,15 @@ public:
                 endRow = rowCount;
             }
 
-            for (uint64_t row = beginRow;
-                 row < endRow;
-                 ++row) {
+            uint64_t row = beginRow;
+            for (; row + 1 < endRow; row += 2) {
+                ProcessTwoRowsSyncBatch(
+                    row,
+                    rowWidth,
+                    invRowWidth,
+                    epsilon);
+            }
+            for (; row < endRow; ++row) {
                 ProcessRow(
                     row,
                     rowWidth,
@@ -412,6 +419,93 @@ private:
             epsilon);
     }
 
+    __aicore__ inline void FinishRmsToSlot(
+        AscendC::LocalTensor<float> scalarSlots,
+        int32_t slot,
+        float invRowWidth,
+        float epsilon)
+    {
+        AscendC::LocalTensor<float> rms = scalarSlots[slot];
+        AscendC::Muls(rms, rms, invRowWidth, 1);
+        AscendC::PipeBarrier<PIPE_V>();
+        AscendC::Adds(rms, rms, epsilon, 1);
+        AscendC::PipeBarrier<PIPE_V>();
+        AscendC::Sqrt(rms, rms, 1);
+        AscendC::PipeBarrier<PIPE_V>();
+    }
+
+    __aicore__ inline void ReductionPassToSlot(
+        uint64_t rowOffset,
+        uint64_t rowWidth,
+        float invRowWidth,
+        float epsilon,
+        int32_t sumSlot)
+    {
+        AscendC::LocalTensor<T> nativeX = nativeX_.Get<T>();
+        AscendC::LocalTensor<T> nativeResidual = nativeResidual_.Get<T>();
+        AscendC::LocalTensor<float> value = valueFp32_.Get<float>();
+        AscendC::LocalTensor<float> aux = auxFp32_.Get<float>();
+        AscendC::LocalTensor<float> output = outputFp32_.Get<float>();
+        AscendC::LocalTensor<float> scalarSlots = scalarFp32_.Get<float>();
+        AscendC::LocalTensor<float> partial = scalarSlots;
+        AscendC::LocalTensor<float> sum = scalarSlots[sumSlot];
+
+        AscendC::Duplicate(sum, 0.0f, 1);
+        AscendC::PipeBarrier<PIPE_V>();
+
+        for (uint64_t col = 0;
+             col < rowWidth;
+             col += static_cast<uint64_t>(kWorkTileElems)) {
+            const int32_t valid = TileLength(rowWidth - col);
+            LoadInputTile(rowOffset, col, valid);
+            SyncMTE2ToV();
+            Promote(value, nativeX, valid);
+            Promote(aux, nativeResidual, valid);
+            AscendC::PipeBarrier<PIPE_V>();
+            AscendC::Add(output, value, aux, valid);
+            AscendC::PipeBarrier<PIPE_V>();
+            AscendC::Mul(aux, output, output, valid);
+            AscendC::PipeBarrier<PIPE_V>();
+            AscendC::ReduceSum(partial, aux, value, valid);
+            AscendC::PipeBarrier<PIPE_V>();
+            AscendC::Add(sum, sum, partial, 1);
+            AscendC::PipeBarrier<PIPE_V>();
+            SyncVToMTE2();
+        }
+
+        FinishRmsToSlot(scalarSlots, sumSlot, invRowWidth, epsilon);
+    }
+
+    __aicore__ inline void ProcessTwoRowsSyncBatch(
+        uint64_t firstRow,
+        uint64_t rowWidth,
+        float invRowWidth,
+        float epsilon)
+    {
+        constexpr int32_t kRmsRow0 = 8;
+        constexpr int32_t kRmsRow1 = 16;
+        ReductionPassToSlot(
+            firstRow * rowWidth,
+            rowWidth,
+            invRowWidth,
+            epsilon,
+            kRmsRow0);
+        ReductionPassToSlot(
+            (firstRow + 1) * rowWidth,
+            rowWidth,
+            invRowWidth,
+            epsilon,
+            kRmsRow1);
+
+        AscendC::LocalTensor<float> scalarSlots = scalarFp32_.Get<float>();
+        SyncVToS();
+        const float rms0 = scalarSlots[kRmsRow0].GetValue(0);
+        const float rms1 = scalarSlots[kRmsRow1].GetValue(0);
+        SyncSToV();
+        OutputPass(firstRow * rowWidth, rowWidth, rms0);
+        OutputPass((firstRow + 1) * rowWidth, rowWidth, rms1);
+    }
+
     __aicore__ inline void OutputPass(
         uint64_t rowOffset,
         uint64_t rowWidth,
@@ -569,7 +663,7 @@ private:
 };
 
 template <typename T>
-__global__ __vector__ void add_rms_norm_bias_r005(
+__global__ __vector__ void add_rms_norm_bias_r028(
     GM_ADDR x,
     GM_ADDR residual,
     GM_ADDR gamma,
@@ -583,7 +677,7 @@ __global__ __vector__ void add_rms_norm_bias_r005(
     float invRowWidth,
     float epsilon)
 {
-    LargeTileKernel<T> op;
+    ScalarSyncReductionKernel<T> op;
 
     op.Init(
         x,
@@ -756,7 +850,7 @@ extern "C" void run_kernel(
         1.0f / static_cast<float>(widthSigned);
 
     if (xInfo.dtype == 0) {
-        add_rms_norm_bias_r005<float>
+        add_rms_norm_bias_r028<float>
             <<<blockCount, nullptr, stream>>>(
                 x,
                 residual,
@@ -771,7 +865,7 @@ extern "C" void run_kernel(
                 invRowWidth,
                 epsilon);
     } else if (xInfo.dtype == 1) {
-        add_rms_norm_bias_r005<half>
+        add_rms_norm_bias_r028<half>
             <<<blockCount, nullptr, stream>>>(
                 x,
                 residual,
@@ -786,7 +880,7 @@ extern "C" void run_kernel(
                 invRowWidth,
                 epsilon);
     } else {
-        add_rms_norm_bias_r005<bfloat16_t>
+        add_rms_norm_bias_r028<bfloat16_t>
             <<<blockCount, nullptr, stream>>>(
                 x,
                 residual,
