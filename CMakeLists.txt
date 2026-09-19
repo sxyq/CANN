@@ -13,6 +13,7 @@ else()
 endif()
 
 set(HCC_TARGET_ROOT "$ENV{ASCEND_HOME_PATH}/tools/hcc/aarch64-target-linux-gnu")
+set(HCC_LIB_DIR "${HCC_TARGET_ROOT}/lib64")
 file(GLOB HCC_CXX_INCLUDE_DIRS "${HCC_TARGET_ROOT}/include/c++/*")
 list(SORT HCC_CXX_INCLUDE_DIRS)
 list(GET HCC_CXX_INCLUDE_DIRS 0 HCC_CXX_INCLUDE_DIR)
@@ -31,6 +32,10 @@ target_link_libraries(full_r008_tile_cross_core_i001 PRIVATE
 
 target_include_directories(full_r008_tile_cross_core_i001 PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+target_link_directories(full_r008_tile_cross_core_i001 PRIVATE
+    ${HCC_LIB_DIR}
 )
 
 target_compile_options(full_r008_tile_cross_core_i001 PRIVATE
