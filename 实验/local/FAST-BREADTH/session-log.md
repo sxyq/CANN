@@ -25,3 +25,4 @@
 2026-09-19：阶段范围按新要求扩展为独立 FULL-R001–R029 V001 线上覆盖；现有独立线上证据覆盖 12/29（R002、R005、R006、R009、R010、R012、R013、R014、R015、R016、R019、R029），R030 作为额外路线保留。R001、R003、R004、R007、R008、R011、R017、R018、R020、R021、R022、R023、R024、R025、R026、R027、R028 已进入 `route-queue.tsv`，在 29/29 前不开始 V002/V003、Mix、Router 或已完成路线深挖。
 2026-09-19：R021-V001 完成 CANNJudge 线上提交，submission `6aae26f0b0477ec41ebcb50d`，15/15 Pass，Official Score `24.01`；完整结果位于 `实验/online/FULL-R021-CANN9-BUILD-CHAIN/V001/6aae26f0b0477ec41ebcb50d/result.json`。
 2026-09-19：R022-V001 完成 CANNJudge 线上提交，submission `6aae2922b0477ec41ebe0671`，15/15 Pass，Official Score `24.11`；完整结果位于 `实验/online/FULL-R022-AUTO-CODEGEN/V001/6aae2922b0477ec41ebe0671/result.json`。
+2026-09-19：R023-V001 完成 CANNJudge 线上提交，submission `6aae2d7fb0477ec41ec0638b`，15/15 Pass，Official Score `24.04`；完整结果位于 `实验/online/FULL-R023-ENGINEERING-CONVENTION/V001/6aae2d7fb0477ec41ec0638b/result.json`。
