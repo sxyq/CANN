@@ -5,13 +5,10 @@
 #ifndef DATA_UTILS_H
 #define DATA_UTILS_H
 
-#include <fcntl.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <cerrno>
-#include <fstream>
+#include <stdio.h>
+#include <stddef.h>
 
-inline bool ReadFile(const std::string &filePath, size_t bufferSize, void *buffer, size_t bufferLen)
+inline bool ReadFile(const char *filePath, size_t bufferSize, void *buffer, size_t bufferLen)
 {
     if (buffer == nullptr) {
         return false;
@@ -20,65 +17,41 @@ inline bool ReadFile(const std::string &filePath, size_t bufferSize, void *buffe
         return false;
     }
 
-    std::ifstream file(filePath, std::ios::binary);
-    if (!file.is_open()) {
+    FILE *file = fopen(filePath, "rb");
+    if (file == nullptr) {
         return false;
     }
-
-    file.seekg(0, std::ios::end);
-    auto pos = file.tellg();
-    if (pos < 0) {
-        file.close();
+    if (fseek(file, 0, SEEK_END) != 0) {
+        fclose(file);
         return false;
     }
-    size_t fileSize = static_cast<size_t>(pos);
-    file.seekg(0, std::ios::beg);
-
-    if (fileSize != bufferSize) {
-        file.close();
+    long fileSize = ftell(file);
+    if (fileSize < 0 || static_cast<size_t>(fileSize) != bufferSize) {
+        fclose(file);
         return false;
     }
-
-    file.read(static_cast<char *>(buffer), bufferSize);
-    if (!file) {
-        file.close();
+    if (fseek(file, 0, SEEK_SET) != 0) {
+        fclose(file);
         return false;
     }
-
-    file.close();
-    return true;
+    size_t readSize = fread(buffer, 1, bufferSize, file);
+    fclose(file);
+    return readSize == bufferSize;
 }
 
-inline bool WriteFile(const std::string &filePath, const void *buffer, size_t size)
+inline bool WriteFile(const char *filePath, const void *buffer, size_t size)
 {
     if (buffer == nullptr && size > 0) {
         return false;
     }
 
-    int fd = open(filePath.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
-    if (fd < 0) {
+    FILE *file = fopen(filePath, "wb");
+    if (file == nullptr) {
         return false;
     }
-
-    size_t totalWritten = 0;
-    while (totalWritten < size) {
-        ssize_t w = write(fd, static_cast<const char *>(buffer) + totalWritten, size - totalWritten);
-        if (w < 0) {
-            if (errno == EINTR) continue;
-            close(fd);
-            return false;
-        }
-        if (w == 0) {
-            close(fd);
-            return false;
-        }
-        totalWritten += static_cast<size_t>(w);
-    }
-    if (close(fd) != 0) {
-        return false;
-    }
-
-    return true;
+    size_t written = fwrite(buffer, 1, size, file);
+    int closeResult = fclose(file);
+    return written == size && closeResult == 0;
 }
 
 #endif
