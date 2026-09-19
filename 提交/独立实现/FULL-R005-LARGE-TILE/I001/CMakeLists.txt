@@ -20,6 +20,8 @@ add_custom_command(
             -I${ASCEND_HOME_PATH}/include
             -I${ASCEND_HOME_PATH}/aarch64-linux/asc/include
             -I${ASCEND_HOME_PATH}/aarch64-linux/asc/include/basic_api
+            -I${ASCEND_HOME_PATH}/aarch64-linux/asc/impl/basic_api
+            -I${ASCEND_HOME_PATH}/aarch64-linux/asc/impl/basic_api
             -DINPUT_T=half
             -c "${CMAKE_CURRENT_SOURCE_DIR}/kernel.txt"
             -o "${KERNEL_OBJECT}"
