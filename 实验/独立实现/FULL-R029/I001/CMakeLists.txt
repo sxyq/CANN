@@ -20,6 +20,9 @@ target_link_libraries(full_r029_i001 PRIVATE
     m
     graph_base
 )
+target_link_options(full_r029_i001 PRIVATE
+    $<$<LINK_LANGUAGE:ASC>:-L/usr/lib/gcc/aarch64-linux-gnu/11>
+)
 target_include_directories(full_r029_i001 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_options(full_r029_i001 PRIVATE
     $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=${SOC_ARCH}>
