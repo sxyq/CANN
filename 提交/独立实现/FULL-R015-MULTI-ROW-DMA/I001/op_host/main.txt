@@ -1,0 +1,24 @@
+#include <cstdint>
+#include <vector>
+#include "acl/acl.h"
+#include "../op_kernel/tiling.h"
+#include "../op_kernel/kernel.asc"
+
+int main()
+{
+    aclInit(nullptr);
+    aclrtSetDevice(0);
+    aclrtStream stream = nullptr;
+    aclrtCreateStream(&stream);
+    AddRmsNormBiasTilingData tiling{8, 1024, MULTI_ROW_TILE, 1024, 1e-5f};
+    uint8_t *tilingDevice = nullptr;
+    aclrtMalloc((void **)&tilingDevice, sizeof(tiling), ACL_MEM_MALLOC_HUGE_FIRST);
+    aclrtMemcpy(tilingDevice, sizeof(tiling), &tiling, sizeof(tiling), ACL_MEMCPY_HOST_TO_DEVICE);
+    add_rms_norm_bias_kernel<<<1, nullptr, stream>>>(nullptr, nullptr, nullptr, nullptr, nullptr, tilingDevice);
+    aclrtSynchronizeStream(stream);
+    aclrtFree(tilingDevice);
+    aclrtDestroyStream(stream);
+    aclrtResetDevice(0);
+    aclFinalize();
+    return 0;
+}
