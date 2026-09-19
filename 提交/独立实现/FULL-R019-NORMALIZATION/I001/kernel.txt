@@ -14,7 +14,8 @@ public:
     __aicore__ inline AddRmsNormBiasKernel(AscendC::TPipe* pipe) : pipe_(pipe) {}
 
     __aicore__ inline void Init(GM_ADDR x, GM_ADDR residual, GM_ADDR gamma, GM_ADDR bias, GM_ADDR output,
-        const uint64_t rowStart, const uint64_t rowEnd, const uint32_t dim, const float epsilon)
+        const uint64_t rowStart, const uint64_t rowEnd, const uint32_t dim, const float reciprocalDim,
+        const float epsilon)
     {
         xGm_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(x));
         residualGm_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(residual));
@@ -24,6 +25,7 @@ public:
         rowStart_ = rowStart;
         rowEnd_ = rowEnd;
         dim_ = dim;
+        reciprocalDim_ = reciprocalDim;
         epsilon_ = epsilon;
 
         pipe_->InitBuffer(xBuf_, kBatchRows * kTileElements * sizeof(T));
@@ -121,13 +123,13 @@ private:
                 AscendC::Mul(yLocal[offset], yLocal[offset], yLocal[offset], count);
                 AscendC::ReduceSum(invRmsLocal[batch], yLocal[offset], tmpLocal[offset], count);
             }
-            AscendC::PipeBarrier<AscendC::PIPE_V>();
+            AscendC::PipeBarrier<PIPE_V>();
         }
 
-        AscendC::Muls(invRmsLocal, invRmsLocal, 1.0f / static_cast<float>(dim_), batchRows);
+        AscendC::Muls(invRmsLocal, invRmsLocal, reciprocalDim_, batchRows);
         AscendC::Adds(invRmsLocal, invRmsLocal, epsilon_, batchRows);
         AscendC::Rsqrt(invRmsLocal, invRmsLocal, batchRows);
-        AscendC::PipeBarrier<AscendC::PIPE_V>();
+        AscendC::PipeBarrier<PIPE_V>();
 
         auto eventIdVToS = pipe_->FetchEventID(AscendC::HardEvent::V_S);
         AscendC::SetFlag<AscendC::HardEvent::V_S>(eventIdVToS);
@@ -187,13 +189,14 @@ private:
     uint64_t rowStart_ = 0;
     uint64_t rowEnd_ = 0;
     uint32_t dim_ = 0;
+    float reciprocalDim_ = 0.0f;
     float epsilon_ = 0.0f;
 };
 
 template <typename T>
 __global__ __vector__ void add_rms_norm_bias_kernel(GM_ADDR x, GM_ADDR residual, GM_ADDR gamma, GM_ADDR bias,
     GM_ADDR output, const uint64_t groupsPerBlock, const uint64_t rowsPerGroup, const uint64_t outer,
-    const uint32_t dim, const float epsilon)
+    const uint32_t dim, const float reciprocalDim, const float epsilon)
 {
     const uint32_t blockIdx = AscendC::GetBlockIdx();
     const uint64_t rowStart = static_cast<uint64_t>(blockIdx) * groupsPerBlock * rowsPerGroup;
@@ -207,7 +210,7 @@ __global__ __vector__ void add_rms_norm_bias_kernel(GM_ADDR x, GM_ADDR residual,
 
     AscendC::TPipe pipe;
     AddRmsNormBiasKernel<T> op(&pipe);
-    op.Init(x, residual, gamma, bias, output, rowStart, rowEnd, dim, epsilon);
+    op.Init(x, residual, gamma, bias, output, rowStart, rowEnd, dim, reciprocalDim, epsilon);
     op.Process();
 }
 
@@ -233,7 +236,8 @@ void LaunchAddRmsNormBias(GM_ADDR x, GM_ADDR residual, GM_ADDR gamma, GM_ADDR bi
     blockNum = (groupCount + groupsPerBlock - 1) / groupsPerBlock;
 
     add_rms_norm_bias_kernel<T><<<static_cast<uint32_t>(blockNum), nullptr, stream>>>(
-        x, residual, gamma, bias, output, groupsPerBlock, rowsPerGroup, outer, dim, epsilon);
+        x, residual, gamma, bias, output, groupsPerBlock, rowsPerGroup, outer, dim,
+        1.0f / static_cast<float>(dim), epsilon);
 }
 
 } // namespace
