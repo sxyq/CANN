@@ -28,6 +28,10 @@ target_include_directories(full_r020_sqrt_normalization PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
+target_link_directories(full_r020_sqrt_normalization PRIVATE
+    /usr/lib/gcc/aarch64-linux-gnu/11
+)
+
 target_compile_options(full_r020_sqrt_normalization PRIVATE
     $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=${SOC_ARCH}>
     $<$<COMPILE_LANGUAGE:ASC>:-isystem/usr/include/c++/11>
