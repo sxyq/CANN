@@ -1,6 +1,17 @@
 #include "kernel_operator.h"
 
-extern "C" __global__ __vector__ void add_rms_norm_bias_custom_kernel()
+struct CopyCentricTilingData {
+    uint64_t outer;
+    uint32_t cols;
+    uint32_t blockNum;
+    uint64_t rowsPerBlock;
+    uint32_t tileElements;
+    int32_t dtype;
+};
+
+extern "C" __global__ __vector__ void add_rms_norm_bias_custom_kernel(
+    GM_ADDR x, GM_ADDR residual, GM_ADDR gamma, GM_ADDR bias, GM_ADDR output,
+    GM_ADDR tiling)
 {
 }
 
@@ -11,17 +22,49 @@ extern "C" void run_kernel(GM_ADDR x, const TensorGroupInfo& info_x,
     GM_ADDR output, const TensorGroupInfo& info_output,
     int64_t availableCoreNum, aclrtStream stream, float epsilon)
 {
-    (void)x;
-    (void)info_x;
-    (void)residual;
     (void)info_residual;
-    (void)gamma;
     (void)info_gamma;
-    (void)bias;
     (void)info_bias;
-    (void)output;
     (void)info_output;
-    (void)availableCoreNum;
     (void)epsilon;
-    add_rms_norm_bias_custom_kernel<<<1, nullptr, stream>>>();
+
+    if (info_x.numTensors <= 0 || availableCoreNum <= 0) {
+        return;
+    }
+
+    const TensorInfo& xTensor = info_x.tensors[0];
+    if (xTensor.numDims <= 0) {
+        return;
+    }
+
+    uint64_t outer = 1;
+    for (int64_t i = 0; i + 1 < xTensor.numDims; ++i) {
+        outer *= static_cast<uint64_t>(xTensor.shape[i]);
+    }
+    uint32_t cols = static_cast<uint32_t>(xTensor.shape[xTensor.numDims - 1]);
+    if (outer == 0 || cols == 0) {
+        return;
+    }
+
+    uint32_t blockNum = static_cast<uint32_t>(availableCoreNum);
+    if (static_cast<uint64_t>(blockNum) > outer) {
+        blockNum = static_cast<uint32_t>(outer);
+    }
+
+    CopyCentricTilingData tiling;
+    tiling.outer = outer;
+    tiling.cols = cols;
+    tiling.blockNum = blockNum;
+    tiling.rowsPerBlock = (outer + blockNum - 1) / blockNum;
+    tiling.tileElements = 2048;
+    tiling.dtype = xTensor.dtype;
+
+    uint8_t* tilingDevice = nullptr;
+    aclrtMalloc(reinterpret_cast<void**>(&tilingDevice), sizeof(tiling), ACL_MEM_MALLOC_HUGE_FIRST);
+    aclrtMemcpy(tilingDevice, sizeof(tiling), &tiling, sizeof(tiling), ACL_MEMCPY_HOST_TO_DEVICE);
+
+    add_rms_norm_bias_custom_kernel<<<blockNum, nullptr, stream>>>(
+        x, residual, gamma, bias, output, (GM_ADDR)tilingDevice);
+
+    aclrtFree(tilingDevice);
 }
