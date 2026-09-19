@@ -5,15 +5,24 @@ using namespace AscendC;
 namespace {
 
 template <typename T>
-__aicore__ inline float LoadScalar(GM_ADDR address, uint64_t index) {
-    const __gm__ T *pointer = reinterpret_cast<const __gm__ T *>(address);
+__aicore__ inline float ReadValue(const __gm__ T *pointer, uint64_t index) {
     return static_cast<float>(pointer[index]);
 }
 
 template <typename T>
-__aicore__ inline void StoreScalar(GM_ADDR address, uint64_t index, float value) {
-    __gm__ T *pointer = reinterpret_cast<__gm__ T *>(address);
+__aicore__ inline void WriteValue(__gm__ T *pointer, uint64_t index, float value) {
     pointer[index] = static_cast<T>(value);
+}
+
+__aicore__ inline float ReadValue(const __gm__ uint16_t *pointer, uint64_t index) {
+    const uint32_t bits = static_cast<uint32_t>(pointer[index]) << 16;
+    return __builtin_bit_cast(float, bits);
+}
+
+__aicore__ inline void WriteValue(__gm__ uint16_t *pointer, uint64_t index, float value) {
+    const uint32_t bits = __builtin_bit_cast(uint32_t, value);
+    const uint32_t rounded = bits + 0x7FFFu + ((bits >> 16) & 1u);
+    pointer[index] = static_cast<uint16_t>(rounded >> 16);
 }
 
 inline uint64_t ProductBeforeLast(const TensorGroupInfo &info) {
@@ -47,8 +56,7 @@ __global__ __vector__ void AddRmsNormBiasKernel(
         float square_sum = 0.0f;
         for (uint32_t column = 0; column < dim; ++column) {
             const uint64_t offset = row_base + static_cast<uint64_t>(column);
-            const float value = static_cast<float>(x_ptr[offset]) +
-                                static_cast<float>(residual_ptr[offset]);
+            const float value = ReadValue(x_ptr, offset) + ReadValue(residual_ptr, offset);
             square_sum += value * value;
         }
 
@@ -56,12 +64,11 @@ __global__ __vector__ void AddRmsNormBiasKernel(
         float rms = sqrt(mean_square + epsilon);
         for (uint32_t column = 0; column < dim; ++column) {
             const uint64_t offset = row_base + static_cast<uint64_t>(column);
-            const float value = static_cast<float>(x_ptr[offset]) +
-                                static_cast<float>(residual_ptr[offset]);
+            const float value = ReadValue(x_ptr, offset) + ReadValue(residual_ptr, offset);
             const float normalized = value / rms;
-            const float result = normalized * static_cast<float>(gamma_ptr[column]) +
-                                 static_cast<float>(bias_ptr[column]);
-            output_ptr[offset] = static_cast<T>(result);
+            const float result = normalized * ReadValue(gamma_ptr, column) +
+                                 ReadValue(bias_ptr, column);
+            WriteValue(output_ptr, offset, result);
         }
     }
 }
@@ -100,7 +107,7 @@ extern "C" void run_kernel(
         AddRmsNormBiasKernel<half><<<1, nullptr, stream>>>(
             x, residual, gamma, bias, output, outer, dim, dim_as_float, epsilon);
     } else {
-        AddRmsNormBiasKernel<bfloat16_t><<<1, nullptr, stream>>>(
+        AddRmsNormBiasKernel<uint16_t><<<1, nullptr, stream>>>(
             x, residual, gamma, bias, output, outer, dim, dim_as_float, epsilon);
     }
 }
