@@ -56,6 +56,7 @@ public:
         pipe_->InitBuffer(outputFp32Buf_, kTileElements * sizeof(float));
         pipe_->InitBuffer(partialBuf_, kRowsPerBatch * kMaxPartials * kPartialStride * sizeof(float));
         pipe_->InitBuffer(reduceWorkBuf_, kReduceWorkElements * sizeof(float));
+        pipe_->InitBuffer(statsBuf_, kRowsPerBatch * kPartialStride * sizeof(float));
     }
 
     __aicore__ inline void Process()
@@ -144,6 +145,22 @@ private:
         pipe_->ReleaseEventID<HardEvent::V_S>(eventId);
     }
 
+    __aicore__ inline void WaitForBatchRms()
+    {
+        TEventID eventId = pipe_->FetchEventID(HardEvent::V_S);
+        SetFlag<HardEvent::V_S>(eventId);
+        WaitFlag<HardEvent::V_S>(eventId);
+        pipe_->ReleaseEventID<HardEvent::V_S>(eventId);
+    }
+
+    __aicore__ inline void WaitForScalarStats()
+    {
+        TEventID eventId = pipe_->FetchEventID(HardEvent::S_V);
+        SetFlag<HardEvent::S_V>(eventId);
+        WaitFlag<HardEvent::S_V>(eventId);
+        pipe_->ReleaseEventID<HardEvent::S_V>(eventId);
+    }
+
     __aicore__ inline void ComputeBatchSums(int64_t batchStart, uint32_t batchRows)
     {
         LocalTensor<T> xRaw = xBuf_.Get<T>();
@@ -178,16 +195,30 @@ private:
     __aicore__ inline void ComputeBatchOutputs(int64_t batchStart, uint32_t batchRows)
     {
         LocalTensor<float> partial = partialBuf_.Get<float>();
+        LocalTensor<float> stats = statsBuf_.Get<float>();
         float rms[kRowsPerBatch];
         const uint32_t partialCount = static_cast<uint32_t>((dim_ + kTileElements - 1) / kTileElements);
 
+        for (uint32_t i = 0; i < batchRows * kPartialStride; ++i) {
+            stats.SetValue(i, 0.0f);
+        }
         for (uint32_t rowSlot = 0; rowSlot < batchRows; ++rowSlot) {
             float sum = 0.0f;
             for (uint32_t part = 0; part < partialCount; ++part) {
                 const uint32_t partialOffset = (rowSlot * kMaxPartials + part) * kPartialStride;
                 sum += partial.GetValue(partialOffset);
             }
-            rms[rowSlot] = sqrtf(sum / static_cast<float>(dim_) + epsilon_);
+            stats.SetValue(rowSlot * kPartialStride, sum);
+        }
+
+        WaitForScalarStats();
+        const int32_t statsCount = static_cast<int32_t>(batchRows * kPartialStride);
+        Muls(stats, stats, 1.0f / static_cast<float>(dim_), statsCount);
+        Adds(stats, stats, epsilon_, statsCount);
+        Sqrt(stats, stats, statsCount);
+        WaitForBatchRms();
+        for (uint32_t rowSlot = 0; rowSlot < batchRows; ++rowSlot) {
+            rms[rowSlot] = stats.GetValue(rowSlot * kPartialStride);
         }
 
         LocalTensor<T> xRaw = xBuf_.Get<T>();
@@ -258,6 +289,7 @@ private:
     TBuf<TPosition::VECCALC> outputFp32Buf_;
     TBuf<TPosition::VECCALC> partialBuf_;
     TBuf<TPosition::VECCALC> reduceWorkBuf_;
+    TBuf<TPosition::VECCALC> statsBuf_;
     int64_t outer_ = 0;
     int64_t dim_ = 0;
     int64_t groupRows_ = 1;
