@@ -25,5 +25,5 @@ done
 cp "${SCRIPT_DIR}/kernel.txt" "${SCRIPT_DIR}/kernel.asc"
 cp "${SCRIPT_DIR}/main.txt" "${SCRIPT_DIR}/main.asc"
 
-cmake -S "${SCRIPT_DIR}" -B "${BUILD_DIR}" -DNPU_ARCH="${NPU_ARCH}"
+cmake -S "${SCRIPT_DIR}" -B "${BUILD_DIR}" -DSOC_ARCH="${NPU_ARCH}"
 cmake --build "${BUILD_DIR}" --parallel "${BUILD_JOBS:-2}"
