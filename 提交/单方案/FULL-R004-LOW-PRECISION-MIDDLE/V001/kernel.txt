@@ -43,6 +43,11 @@ public:
         pipe_.InitBuffer(work_, WORK_LEN * sizeof(T));
         pipe_.InitBuffer(sum_, SUM_LEN * sizeof(T));
         pipe_.InitBuffer(rms_scalar_, sizeof(float));
+        pipe_.InitBuffer(x_float_, tile_len_ * sizeof(float));
+        pipe_.InitBuffer(residual_float_, tile_len_ * sizeof(float));
+        pipe_.InitBuffer(value_float_, tile_len_ * sizeof(float));
+        pipe_.InitBuffer(work_float_, WORK_LEN * sizeof(float));
+        pipe_.InitBuffer(sum_float_, SUM_LEN * sizeof(float));
     }
 
     __aicore__ inline void Process(float inv_dim)
@@ -54,7 +59,7 @@ public:
         uint32_t first = block * each + (block < extra ? block : extra);
         uint32_t count = each + (block < extra ? 1 : 0);
         for (uint32_t row = first; row < first + count; ++row) {
-            float square_sum = ReduceRow(row);
+            float square_sum = ReduceRow(row, static_cast<T*>(nullptr));
             LocalTensor<float> rms_tensor = rms_scalar_.Get<float>();
             Duplicate(rms_tensor, square_sum, 1);
             Muls(rms_tensor, rms_tensor, inv_dim, 1);
@@ -68,7 +73,7 @@ public:
             event_t event_sv = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::S_V));
             SetFlag<HardEvent::S_V>(event_sv);
             WaitFlag<HardEvent::S_V>(event_sv);
-            NormalizeRow(row, 1.0f / rms);
+            NormalizeRow(row, 1.0f / rms, static_cast<T*>(nullptr));
         }
     }
 
@@ -116,21 +121,52 @@ private:
         Add(value, value, bias, len);
     }
 
-    __aicore__ inline float ReduceRow(uint32_t row)
+    __aicore__ inline float ReduceRow(uint32_t row, half*)
+    {
+        return ReduceRowNative(row);
+    }
+
+    __aicore__ inline float ReduceRow(uint32_t row, float*)
+    {
+        return ReduceRowNative(row);
+    }
+
+    // DAV_C220 vector arithmetic and ReduceSum do not accept bfloat16_t.
+    // Keep the route's low-precision path for half and use the existing FP32
+    // API path only for the BF16 type instantiation.
+    __aicore__ inline float ReduceRow(uint32_t row, bfloat16_t*)
+    {
+        return ReduceRowFloat(row);
+    }
+
+    __aicore__ inline float ReduceRowNative(uint32_t row)
     {
         float total = 0.0f;
         uint32_t offset = 0;
         uint32_t base = row * dim_;
         while (offset < dim_) {
             uint32_t valid_len = dim_ - offset < tile_len_ ? dim_ - offset : tile_len_;
-            CopyAndReduce(base + offset, valid_len, AlignedLen(valid_len), total);
+            CopyAndReduceNative(base + offset, valid_len, AlignedLen(valid_len), total);
             offset += valid_len;
         }
         return total;
     }
 
-    __aicore__ inline void CopyAndReduce(uint32_t offset, uint32_t valid_len,
-                                         uint32_t calc_len, float& total)
+    __aicore__ inline float ReduceRowFloat(uint32_t row)
+    {
+        float total = 0.0f;
+        uint32_t offset = 0;
+        uint32_t base = row * dim_;
+        while (offset < dim_) {
+            uint32_t valid_len = dim_ - offset < tile_len_ ? dim_ - offset : tile_len_;
+            CopyAndReduceFloat(base + offset, valid_len, AlignedLen(valid_len), total);
+            offset += valid_len;
+        }
+        return total;
+    }
+
+    __aicore__ inline void CopyAndReduceNative(uint32_t offset, uint32_t valid_len,
+                                               uint32_t calc_len, float& total)
     {
         LocalTensor<T> x_local = x_queue_.AllocTensor<T>();
         LocalTensor<T> residual_local = residual_queue_.AllocTensor<T>();
@@ -143,15 +179,16 @@ private:
 
         // Work on the full padded tile so vector operations stay aligned.
         LocalTensor<T> value = value_native_.Get<T>();
+        LocalTensor<T> sum = sum_.Get<T>();
+        LocalTensor<T> work = work_.Get<T>();
         MakeValue(value, x_local, residual_local, calc_len);
         Mul(value, value, value, calc_len);
-        ReduceSum(sum_.Get<T>(), value, work_.Get<T>(),
-                  static_cast<int32_t>(calc_len));
+        ReduceSum(sum, value, work, static_cast<int32_t>(calc_len));
         PipeBarrier<PIPE_V>();
         event_t event_vs = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::V_S));
         SetFlag<HardEvent::V_S>(event_vs);
         WaitFlag<HardEvent::V_S>(event_vs);
-        total += static_cast<float>(sum_.Get<T>().GetValue(0));
+        total += static_cast<float>(sum.GetValue(0));
         event_t event_sv = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::S_V));
         SetFlag<HardEvent::S_V>(event_sv);
         WaitFlag<HardEvent::S_V>(event_sv);
@@ -161,7 +198,58 @@ private:
         residual_queue_.FreeTensor(residual_local);
     }
 
-    __aicore__ inline void NormalizeRow(uint32_t row, float scale)
+    __aicore__ inline void CopyAndReduceFloat(uint32_t offset, uint32_t valid_len,
+                                              uint32_t calc_len, float& total)
+    {
+        LocalTensor<T> x_local = x_queue_.AllocTensor<T>();
+        LocalTensor<T> residual_local = residual_queue_.AllocTensor<T>();
+        CopyIn(x_local, x_, offset, valid_len);
+        CopyIn(residual_local, residual_, offset, valid_len);
+        x_queue_.EnQue(x_local);
+        residual_queue_.EnQue(residual_local);
+        x_local = x_queue_.DeQue<T>();
+        residual_local = residual_queue_.DeQue<T>();
+
+        LocalTensor<float> x_float = x_float_.Get<float>();
+        LocalTensor<float> residual_float = residual_float_.Get<float>();
+        LocalTensor<float> value = value_float_.Get<float>();
+        LocalTensor<float> sum = sum_float_.Get<float>();
+        LocalTensor<float> work = work_float_.Get<float>();
+        Cast(x_float, x_local, RoundMode::CAST_NONE, calc_len);
+        Cast(residual_float, residual_local, RoundMode::CAST_NONE, calc_len);
+        Add(value, x_float, residual_float, calc_len);
+        Mul(value, value, value, calc_len);
+        ReduceSum(sum, value, work, static_cast<int32_t>(calc_len));
+        PipeBarrier<PIPE_V>();
+        event_t event_vs = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::V_S));
+        SetFlag<HardEvent::V_S>(event_vs);
+        WaitFlag<HardEvent::V_S>(event_vs);
+        total += sum.GetValue(0);
+        event_t event_sv = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::S_V));
+        SetFlag<HardEvent::S_V>(event_sv);
+        WaitFlag<HardEvent::S_V>(event_sv);
+        PipeBarrier<PIPE_V>();
+
+        x_queue_.FreeTensor(x_local);
+        residual_queue_.FreeTensor(residual_local);
+    }
+
+    __aicore__ inline void NormalizeRow(uint32_t row, float scale, half*)
+    {
+        NormalizeRowNative(row, scale);
+    }
+
+    __aicore__ inline void NormalizeRow(uint32_t row, float scale, float*)
+    {
+        NormalizeRowNative(row, scale);
+    }
+
+    __aicore__ inline void NormalizeRow(uint32_t row, float scale, bfloat16_t*)
+    {
+        NormalizeRowFloat(row, scale);
+    }
+
+    __aicore__ inline void NormalizeRowNative(uint32_t row, float scale)
     {
         uint32_t offset = 0;
         uint32_t base = row * dim_;
@@ -207,6 +295,57 @@ private:
         }
     }
 
+    __aicore__ inline void NormalizeRowFloat(uint32_t row, float scale)
+    {
+        uint32_t offset = 0;
+        uint32_t base = row * dim_;
+        while (offset < dim_) {
+            uint32_t valid_len = dim_ - offset < tile_len_ ? dim_ - offset : tile_len_;
+            uint32_t calc_len = AlignedLen(valid_len);
+            LocalTensor<T> x_local = x_queue_.AllocTensor<T>();
+            LocalTensor<T> residual_local = residual_queue_.AllocTensor<T>();
+            LocalTensor<T> gamma_local = gamma_queue_.AllocTensor<T>();
+            LocalTensor<T> bias_local = bias_queue_.AllocTensor<T>();
+            CopyIn(x_local, x_, base + offset, valid_len);
+            CopyIn(residual_local, residual_, base + offset, valid_len);
+            CopyIn(gamma_local, gamma_, offset, valid_len);
+            CopyIn(bias_local, bias_, offset, valid_len);
+            x_queue_.EnQue(x_local);
+            residual_queue_.EnQue(residual_local);
+            gamma_queue_.EnQue(gamma_local);
+            bias_queue_.EnQue(bias_local);
+            x_local = x_queue_.DeQue<T>();
+            residual_local = residual_queue_.DeQue<T>();
+            gamma_local = gamma_queue_.DeQue<T>();
+            bias_local = bias_queue_.DeQue<T>();
+
+            LocalTensor<float> x_float = x_float_.Get<float>();
+            LocalTensor<float> residual_float = residual_float_.Get<float>();
+            LocalTensor<float> value = value_float_.Get<float>();
+            Cast(x_float, x_local, RoundMode::CAST_NONE, calc_len);
+            Cast(residual_float, residual_local, RoundMode::CAST_NONE, calc_len);
+            Add(value, x_float, residual_float, calc_len);
+            Muls(value, value, scale, calc_len);
+            Cast(x_float, gamma_local, RoundMode::CAST_NONE, calc_len);
+            Cast(residual_float, bias_local, RoundMode::CAST_NONE, calc_len);
+            Mul(value, value, x_float, calc_len);
+            Add(value, value, residual_float, calc_len);
+
+            LocalTensor<T> output_local = output_queue_.AllocTensor<T>();
+            Cast(output_local, value, RoundMode::CAST_RINT, calc_len);
+            output_queue_.EnQue(output_local);
+            output_local = output_queue_.DeQue<T>();
+            CopyOut(output_local, output_, base + offset, valid_len);
+            output_queue_.FreeTensor(output_local);
+
+            x_queue_.FreeTensor(x_local);
+            residual_queue_.FreeTensor(residual_local);
+            gamma_queue_.FreeTensor(gamma_local);
+            bias_queue_.FreeTensor(bias_local);
+            offset += valid_len;
+        }
+    }
+
     TPipe pipe_;
     TQue<QuePosition::VECIN, BUFFER_NUM> x_queue_;
     TQue<QuePosition::VECIN, BUFFER_NUM> residual_queue_;
@@ -218,6 +357,11 @@ private:
     TBuf<TPosition::VECCALC> work_;
     TBuf<TPosition::VECCALC> sum_;
     TBuf<TPosition::VECCALC> rms_scalar_;
+    TBuf<TPosition::VECCALC> x_float_;
+    TBuf<TPosition::VECCALC> residual_float_;
+    TBuf<TPosition::VECCALC> value_float_;
+    TBuf<TPosition::VECCALC> work_float_;
+    TBuf<TPosition::VECCALC> sum_float_;
     GlobalTensor<T> x_;
     GlobalTensor<T> residual_;
     GlobalTensor<T> gamma_;
