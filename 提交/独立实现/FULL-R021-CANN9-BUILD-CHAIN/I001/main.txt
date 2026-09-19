@@ -1,0 +1,19 @@
+#include <cstdint>
+
+// The platform direct-invocation harness supplies the same value layout before
+// including kernel.asc.  This local host shell is intentionally minimal: the
+// compile lane validates the CANN toolchain and kernel translation unit without
+// starting an NPU workload.
+struct TensorGroupInfo {
+    int64_t shape[4];
+    int32_t rank;
+    int32_t dtype;
+};
+
+using aclrtStream = void *;
+
+#include "kernel.asc"
+
+int main() {
+    return 0;
+}
