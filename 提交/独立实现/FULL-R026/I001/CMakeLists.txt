@@ -29,5 +29,7 @@ target_include_directories(add_rms_norm_bias_full_r026_i001 PRIVATE
 )
 
 target_compile_options(add_rms_norm_bias_full_r026_i001 PRIVATE
+    $<$<COMPILE_LANGUAGE:ASC>:-I/usr/include/c++/11>
+    $<$<COMPILE_LANGUAGE:ASC>:-I/usr/include/aarch64-linux-gnu/c++/11>
     $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=${SOC_ARCH}>
 )
