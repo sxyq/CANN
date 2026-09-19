@@ -24,6 +24,10 @@ target_link_libraries(add_rms_norm_bias_custom PRIVATE
     graph_base
 )
 
+target_link_options(add_rms_norm_bias_custom PRIVATE
+    "-L$ENV{ASCEND_HOME_PATH}/tools/hcc/aarch64-target-linux-gnu/lib64"
+)
+
 target_include_directories(add_rms_norm_bias_custom PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     /usr/include/c++/11
