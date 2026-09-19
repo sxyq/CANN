@@ -1,6 +1,5 @@
-#include <cmath>
-#include <cstdint>
-#include <type_traits>
+#include <math.h>
+#include <stdint.h>
 
 #include "kernel_operator.h"
 
@@ -13,6 +12,16 @@ constexpr uint32_t kRowsPerBatch = 4;
 constexpr uint32_t kMaxPartials = 128;
 constexpr uint32_t kPartialStride = 2;
 constexpr uint32_t kReduceWorkElements = 1024;
+
+template <typename T>
+struct IsFloat {
+    static constexpr bool value = false;
+};
+
+template <>
+struct IsFloat<float> {
+    static constexpr bool value = true;
+};
 
 template <typename T>
 class AddRmsNormBiasKernel {
@@ -90,7 +99,7 @@ private:
     {
         DataCopyExtParams copyParams;
         MakeCopyParams(copyParams, valid);
-        if constexpr (std::is_same<T, float>::value) {
+        if constexpr (IsFloat<T>::value) {
             DataCopyPad(fp32, src[offset], copyParams, MakeFloatPadParams(valid));
         } else {
             DataCopyPadExtParams<T> padParams;
@@ -114,7 +123,7 @@ private:
     {
         DataCopyExtParams copyParams;
         MakeCopyParams(copyParams, valid);
-        if constexpr (std::is_same<T, float>::value) {
+        if constexpr (IsFloat<T>::value) {
             DataCopyPad(gammaFp32Buf_.Get<float>(), gammaGm_[offset], copyParams, MakeFloatPadParams(valid));
             DataCopyPad(biasFp32Buf_.Get<float>(), biasGm_[offset], copyParams, MakeFloatPadParams(valid));
         } else {
@@ -207,7 +216,7 @@ private:
                 Add(outputFp32, outputFp32, biasFp32, static_cast<int32_t>(valid));
 
                 const DataCopyExtParams copyParams = MakeOutputCopyParams(valid);
-                if constexpr (std::is_same<T, float>::value) {
+                if constexpr (IsFloat<T>::value) {
                     DataCopyPad(outputGm_[rowBase + offset], outputFp32, copyParams);
                 } else {
                     Cast(output, outputFp32, RoundMode::CAST_RINT, valid);
