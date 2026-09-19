@@ -6,8 +6,7 @@ template_dir="${TEMPLATE_DIR:-/home/data4t2/lelinfeng/addrmsnormbias_problem_174
 stage_dir="${STAGE_DIR:-${route_dir}/build-compile}"
 
 mkdir -p "${stage_dir}"
-cp "${template_dir}/main.asc" "${stage_dir}/main.asc"
-cp "${template_dir}/data_utils.h" "${stage_dir}/data_utils.h"
+cp "${route_dir}/main.asc" "${stage_dir}/main.asc"
 cp "${route_dir}/CMakeLists.txt" "${stage_dir}/CMakeLists.txt"
 cp "${route_dir}/kernel.txt" "${stage_dir}/kernel.asc"
 
