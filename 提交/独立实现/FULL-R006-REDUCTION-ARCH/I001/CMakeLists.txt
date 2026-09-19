@@ -27,6 +27,10 @@ target_include_directories(full_r006_reduction_arch_i001 PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
+target_link_directories(full_r006_reduction_arch_i001 PRIVATE
+    /usr/lib/gcc/aarch64-linux-gnu/11
+)
+
 target_compile_options(full_r006_reduction_arch_i001 PRIVATE
     $<$<COMPILE_LANGUAGE:ASC>:-I/usr/include/c++/11>
     $<$<COMPILE_LANGUAGE:ASC>:-I/usr/include/aarch64-linux-gnu/c++/11>
