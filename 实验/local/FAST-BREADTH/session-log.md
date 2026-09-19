@@ -26,3 +26,9 @@
 2026-09-19：R021-V001 完成 CANNJudge 线上提交，submission `6aae26f0b0477ec41ebcb50d`，15/15 Pass，Official Score `24.01`；完整结果位于 `实验/online/FULL-R021-CANN9-BUILD-CHAIN/V001/6aae26f0b0477ec41ebcb50d/result.json`。
 2026-09-19：R022-V001 完成 CANNJudge 线上提交，submission `6aae2922b0477ec41ebe0671`，15/15 Pass，Official Score `24.11`；完整结果位于 `实验/online/FULL-R022-AUTO-CODEGEN/V001/6aae2922b0477ec41ebe0671/result.json`。
 2026-09-19：R023-V001 完成 CANNJudge 线上提交，submission `6aae2d7fb0477ec41ec0638b`，15/15 Pass，Official Score `24.04`；完整结果位于 `实验/online/FULL-R023-ENGINEERING-CONVENTION/V001/6aae2d7fb0477ec41ec0638b/result.json`。
+2026-09-19：R011-L002 完成 CANNJudge 线上提交，submission `6aae2edab0477ec41ec128fc`，15/15 Pass，Official Score `16.18`；完整结果位于 `实验/online/FULL-R011-MANUAL-VECTOR-REDUCTION/V001/6aae2edab0477ec41ec128fc/result.json`。
+2026-09-19：R017-L001 完成 CANNJudge 线上提交，submission `6aae2fceb0477ec41ec1a82c`，15/15 Pass，Official Score `27.16`；完整结果位于 `实验/online/FULL-R017-FP32-ALL-MIDDLE/V001/6aae2fceb0477ec41ec1a82c/result.json`。
+2026-09-19：R018-L002 完成 CANNJudge 线上提交，submission `6aae30acb0477ec41ec2283b`，15/15 Pass，Official Score `23.42`；完整结果位于 `实验/online/FULL-R018-CAST-RINT-OUTPUT/V001/6aae30acb0477ec41ec2283b/result.json`。
+2026-09-19：R020-V001 完成 CANNJudge 线上提交，submission `6aae31cbb0477ec41ec2dcb4`，15/15 Pass，Official Score `23.41`；完整结果位于 `实验/online/FULL-R020-SQRT-NORMALIZATION/V001/6aae31cbb0477ec41ec2dcb4/result.json`。
+2026-09-19：R007-V001 完成 CANNJudge 线上提交，submission `6aae32e4b0477ec41ec37a64`，15/15 Pass，Official Score `20.91`；完整结果位于 `实验/online/FULL-R007-REDUCE-SUM/V001/6aae32e4b0477ec41ec37a64/result.json`。
+2026-09-19：R008-V001 完成 CANNJudge 线上提交，submission `6aae33a6b0477ec41ec3e2f1`，15/15 Pass，Official Score `21.73`；完整结果位于 `实验/online/FULL-R008-TILE-CROSS-CORE/V001/6aae33a6b0477ec41ec3e2f1/result.json`。
