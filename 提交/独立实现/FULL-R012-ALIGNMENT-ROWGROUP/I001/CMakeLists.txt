@@ -40,9 +40,12 @@ set(ACL_LIB_DIR "$ENV{ASCEND_HOME_PATH}/lib64")
 # ============================================================================
 
 # [MODIFY] 目标名和源文件名
+set(RNB_STANDARD_KERNEL_SOURCE
+    "${CMAKE_CURRENT_SOURCE_DIR}/op_kernel/add_rms_norm_bias_kernel.asc")
+
 add_executable(add_rms_norm_bias
     op_host/add_rms_norm_bias.asc
-    op_kernel/add_rms_norm_bias_kernel.asc)
+    ${RNB_STANDARD_KERNEL_SOURCE})
 
 target_link_libraries(add_rms_norm_bias PRIVATE
     tiling_api
