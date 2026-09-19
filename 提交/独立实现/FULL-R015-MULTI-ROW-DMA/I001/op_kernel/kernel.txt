@@ -121,7 +121,7 @@ private:
     uint32_t rowsThisBlock_ = 0;
 };
 
-extern "C" __global__ __vector__ void add_rms_norm_bias_kernel(
+__aicore__ inline void add_rms_norm_bias_kernel_impl(
     GM_ADDR x, GM_ADDR residual, GM_ADDR gamma, GM_ADDR bias, GM_ADDR y, GM_ADDR tiling)
 {
     AscendC::TPipe pipe;
@@ -129,4 +129,16 @@ extern "C" __global__ __vector__ void add_rms_norm_bias_kernel(
     op.Init(x, residual, gamma, bias, y,
             (__gm__ AddRmsNormBiasTilingData *)tiling);
     op.Process();
+}
+
+extern "C" __global__ __vector__ void add_rms_norm_bias_kernel(
+    GM_ADDR x, GM_ADDR residual, GM_ADDR gamma, GM_ADDR bias, GM_ADDR y, GM_ADDR tiling)
+{
+    add_rms_norm_bias_kernel_impl(x, residual, gamma, bias, y, tiling);
+}
+
+extern "C" __global__ __vector__ void run_kernel(
+    GM_ADDR x, GM_ADDR residual, GM_ADDR gamma, GM_ADDR bias, GM_ADDR y, GM_ADDR tiling)
+{
+    add_rms_norm_bias_kernel_impl(x, residual, gamma, bias, y, tiling);
 }
