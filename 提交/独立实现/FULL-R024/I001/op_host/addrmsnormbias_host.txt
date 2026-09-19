@@ -69,22 +69,23 @@ int main()
     tiling.rowsPerBlock = (outer + blockNum - 1) / blockNum;
     tiling.tailRows = outer - tiling.rowsPerBlock * (blockNum - 1);
     tiling.epsilon = 1.0e-5f;
+    tiling.invDim = 1.0f / static_cast<float>(dim);
 
     const size_t inputBytes = static_cast<size_t>(outer) * dim * elementBytes;
     const size_t parameterBytes = static_cast<size_t>(dim) * elementBytes;
-    void *x = nullptr;
-    void *residual = nullptr;
-    void *gamma = nullptr;
-    void *bias = nullptr;
-    void *y = nullptr;
-    void *tilingDevice = nullptr;
-    if (!CheckAcl("aclrtMalloc(x)", aclrtMalloc(&x, inputBytes, ACL_MEM_MALLOC_HUGE_FIRST)) ||
-        !CheckAcl("aclrtMalloc(residual)", aclrtMalloc(&residual, inputBytes, ACL_MEM_MALLOC_HUGE_FIRST)) ||
-        !CheckAcl("aclrtMalloc(gamma)", aclrtMalloc(&gamma, parameterBytes, ACL_MEM_MALLOC_HUGE_FIRST)) ||
-        !CheckAcl("aclrtMalloc(bias)", aclrtMalloc(&bias, parameterBytes, ACL_MEM_MALLOC_HUGE_FIRST)) ||
-        !CheckAcl("aclrtMalloc(y)", aclrtMalloc(&y, inputBytes, ACL_MEM_MALLOC_HUGE_FIRST)) ||
+    uint8_t *x = nullptr;
+    uint8_t *residual = nullptr;
+    uint8_t *gamma = nullptr;
+    uint8_t *bias = nullptr;
+    uint8_t *y = nullptr;
+    uint8_t *tilingDevice = nullptr;
+    if (!CheckAcl("aclrtMalloc(x)", aclrtMalloc(reinterpret_cast<void **>(&x), inputBytes, ACL_MEM_MALLOC_HUGE_FIRST)) ||
+        !CheckAcl("aclrtMalloc(residual)", aclrtMalloc(reinterpret_cast<void **>(&residual), inputBytes, ACL_MEM_MALLOC_HUGE_FIRST)) ||
+        !CheckAcl("aclrtMalloc(gamma)", aclrtMalloc(reinterpret_cast<void **>(&gamma), parameterBytes, ACL_MEM_MALLOC_HUGE_FIRST)) ||
+        !CheckAcl("aclrtMalloc(bias)", aclrtMalloc(reinterpret_cast<void **>(&bias), parameterBytes, ACL_MEM_MALLOC_HUGE_FIRST)) ||
+        !CheckAcl("aclrtMalloc(y)", aclrtMalloc(reinterpret_cast<void **>(&y), inputBytes, ACL_MEM_MALLOC_HUGE_FIRST)) ||
         !CheckAcl("aclrtMalloc(tiling)",
-                  aclrtMalloc(&tilingDevice, sizeof(tiling), ACL_MEM_MALLOC_HUGE_FIRST))) {
+                  aclrtMalloc(reinterpret_cast<void **>(&tilingDevice), sizeof(tiling), ACL_MEM_MALLOC_HUGE_FIRST))) {
         aclrtFree(x);
         aclrtFree(residual);
         aclrtFree(gamma);
@@ -107,9 +108,7 @@ int main()
         return 1;
     }
     addrmsnormbias_fp16_kernel<<<blockNum, nullptr, stream>>>(
-        reinterpret_cast<GM_ADDR>(x), reinterpret_cast<GM_ADDR>(residual),
-        reinterpret_cast<GM_ADDR>(gamma), reinterpret_cast<GM_ADDR>(bias),
-        reinterpret_cast<GM_ADDR>(y), reinterpret_cast<GM_ADDR>(tilingDevice));
+        x, residual, gamma, bias, y, tilingDevice);
     const aclError syncRet = aclrtSynchronizeStream(stream);
 
     aclrtDestroyStream(stream);

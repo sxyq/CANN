@@ -22,4 +22,5 @@ struct AddrRmsNormBiasTilingData {
     uint64_t rowsPerBlock;
     uint64_t tailRows;
     float epsilon;
+    float invDim;
 };

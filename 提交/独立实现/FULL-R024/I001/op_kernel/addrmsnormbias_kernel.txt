@@ -72,7 +72,7 @@ private:
         AscendC::DataCopyExtParams copyParams{
             1, count * static_cast<uint32_t>(sizeof(T)), 0, 0, 0};
         AscendC::DataCopyPadExtParams<T> padParams{
-            true, 0, tiling_->tileDimAligned - count, static_cast<T>(0)};
+            false, 0, 0, static_cast<T>(0)};
         AscendC::DataCopyPad(dst, src[offset], copyParams, padParams);
     }
 
@@ -226,6 +226,8 @@ private:
     {
         auto sum = sumBuf_.Get<float>();
         AscendC::Duplicate<float>(sum, 0.0f, 1);
+        const float invDim = tiling_->invDim;
+        const float epsilon = tiling_->epsilon;
         const uint64_t rowBase = row * tiling_->dim;
         uint32_t offset = 0;
         while (offset < tiling_->dim) {
@@ -238,8 +240,8 @@ private:
 
         auto one = oneBuf_.Get<float>();
         auto scale = scaleBuf_.Get<float>();
-        AscendC::Muls<float>(sum, sum, 1.0f / static_cast<float>(tiling_->dim), 1);
-        AscendC::Adds<float>(sum, sum, tiling_->epsilon, 1);
+        AscendC::Muls<float>(sum, sum, invDim, 1);
+        AscendC::Adds<float>(sum, sum, epsilon, 1);
         AscendC::Sqrt<float>(sum, sum, 1);
         AscendC::Duplicate<float>(one, 1.0f, 1);
         AscendC::Div<float>(scale, one, sum, 1);
