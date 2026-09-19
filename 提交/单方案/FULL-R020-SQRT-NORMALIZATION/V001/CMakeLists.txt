@@ -30,4 +30,6 @@ target_include_directories(full_r020_sqrt_normalization PRIVATE
 
 target_compile_options(full_r020_sqrt_normalization PRIVATE
     $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=${SOC_ARCH}>
+    $<$<COMPILE_LANGUAGE:ASC>:-isystem/usr/include/c++/11>
+    $<$<COMPILE_LANGUAGE:ASC>:-isystem/usr/include/aarch64-linux-gnu/c++/11>
 )
