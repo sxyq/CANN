@@ -7,7 +7,7 @@ endif()
 
 set(ASCEND_HOME_PATH "$ENV{ASCEND_HOME_PATH}")
 set(BISHENG "$ENV{ASCEND_HOME_PATH}/bin/bisheng")
-set(KERNEL_ARCH "dav-c2201")
+set(KERNEL_ARCH "dav-2201")
 set(KERNEL_OBJECT "${CMAKE_CURRENT_BINARY_DIR}/kernel.o")
 
 add_custom_command(
