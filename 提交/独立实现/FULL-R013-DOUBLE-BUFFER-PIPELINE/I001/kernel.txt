@@ -15,6 +15,7 @@ struct RmsNormBiasTiling {
     uint64_t width;
     uint32_t blockNum;
     float epsilon;
+    float invWidth;
 };
 
 __aicore__ inline void ToFp32(const AscendC::LocalTensor<float>& dst,
@@ -224,8 +225,10 @@ private:
     {
         AscendC::LocalTensor<float> sumSquares = sumSquaresBuf_.Get<float>();
         AscendC::LocalTensor<float> scalar = normScalarBuf_.Get<float>();
-        AscendC::Muls(sumSquares, sumSquares, 1.0f / static_cast<float>(width_), kFp32ScalarCount);
-        AscendC::Adds(sumSquares, sumSquares, tiling_->epsilon, kFp32ScalarCount);
+        const float invWidth = tiling_->invWidth;
+        const float epsilon = tiling_->epsilon;
+        AscendC::Muls(sumSquares, sumSquares, invWidth, kFp32ScalarCount);
+        AscendC::Adds(sumSquares, sumSquares, epsilon, kFp32ScalarCount);
         AscendC::Sqrt<float>(sumSquares, sumSquares, kFp32ScalarCount);
         AscendC::Duplicate(scalar, 1.0f, kFp32ScalarCount);
         AscendC::Div<float>(scalar, scalar, sumSquares, kFp32ScalarCount);
@@ -412,7 +415,8 @@ void run_kernel(GM_ADDR x, TensorGroupInfo info_x, GM_ADDR residual, TensorGroup
         width,
         static_cast<uint32_t>((outer < static_cast<uint64_t>(availableCoreNum))
             ? outer : static_cast<uint64_t>(availableCoreNum)),
-        epsilon};
+        epsilon,
+        1.0f / static_cast<float>(width)};
     if (tilingHost.blockNum == 0) {
         return;
     }
@@ -422,8 +426,8 @@ void run_kernel(GM_ADDR x, TensorGroupInfo info_x, GM_ADDR residual, TensorGroup
         ACL_MEM_MALLOC_HUGE_FIRST) != ACL_SUCCESS) {
         return;
     }
-    if (aclrtMemcpy(tilingDevice, sizeof(RmsNormBiasTiling), &tilingHost,
-        sizeof(RmsNormBiasTiling), ACL_MEMCPY_HOST_TO_DEVICE) != ACL_SUCCESS) {
+    if (aclrtMemcpy(tilingDevice, sizeof(full_r013::RmsNormBiasTiling), &tilingHost,
+        sizeof(full_r013::RmsNormBiasTiling), ACL_MEMCPY_HOST_TO_DEVICE) != ACL_SUCCESS) {
         aclrtFree(tilingDevice);
         return;
     }
