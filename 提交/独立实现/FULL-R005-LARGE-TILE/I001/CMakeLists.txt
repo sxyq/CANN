@@ -14,9 +14,9 @@ add_custom_command(
     OUTPUT "${KERNEL_OBJECT}"
     COMMAND "${BISHENG}"
             -x cce
-            --cce-aicore-only
             --npu-arch=${KERNEL_ARCH}
             -std=c++17
+            -include "${CMAKE_CURRENT_SOURCE_DIR}/direct_types.h"
             -I${ASCEND_HOME_PATH}/include
             -I${ASCEND_HOME_PATH}/aarch64-linux/asc
             -I${ASCEND_HOME_PATH}/aarch64-linux/asc/include
