@@ -24,6 +24,10 @@ target_link_libraries(full_r002_retained_y_i001 PRIVATE
     graph_base
 )
 
+target_link_directories(full_r002_retained_y_i001 PRIVATE
+    "$ENV{ASCEND_HOME_PATH}/tools/hcc/aarch64-target-linux-gnu/lib64"
+)
+
 target_include_directories(full_r002_retained_y_i001 PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     "$ENV{ASCEND_HOME_PATH}/tools/hcc/aarch64-target-linux-gnu/include/c++/7.3.0"
