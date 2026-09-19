@@ -15,4 +15,6 @@ target_link_libraries(tail_centric PRIVATE
 target_compile_options(tail_centric PRIVATE
     $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=dav-2201>)
 target_compile_options(tail_centric_kernel PRIVATE
-    $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=dav-2201>)
+    $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=dav-2201>
+    $<$<COMPILE_LANGUAGE:ASC>:-isystem/usr/include/c++/11>
+    $<$<COMPILE_LANGUAGE:ASC>:-isystem/usr/include/aarch64-linux-gnu/c++/11>)
