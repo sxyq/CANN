@@ -1,13 +1,14 @@
 #include "kernel_operator.h"
 
-// The platform direct-invocation harness supplies the same value layout before
-// including kernel.asc.  This local host shell is intentionally minimal: the
-// compile lane validates the CANN toolchain and kernel translation unit without
-// starting an NPU workload.
+struct TensorInfo {
+    const int64_t *shape;
+    int64_t numDims;
+    int32_t dtype;
+};
+
 struct TensorGroupInfo {
-    long long shape[4];
-    int rank;
-    int dtype;
+    const TensorInfo *tensors;
+    int64_t numTensors;
 };
 
 using aclrtStream = void *;
