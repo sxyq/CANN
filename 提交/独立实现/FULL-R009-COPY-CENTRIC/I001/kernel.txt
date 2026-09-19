@@ -1,5 +1,4 @@
 #include "kernel_operator.h"
-#include <math.h>
 
 struct CopyCentricTilingData {
     uint64_t outer;
@@ -8,6 +7,7 @@ struct CopyCentricTilingData {
     uint64_t rowsPerBlock;
     uint32_t tileElements;
     int32_t dtype;
+    float invCols;
 };
 
 template <typename T>
@@ -60,8 +60,11 @@ public:
         }
         for (uint64_t row = rowBegin_; row < rowEnd_; ++row) {
             float squareSum = AccumulateRow(row);
-            const float meanSquare = squareSum / static_cast<float>(cols_);
-            const float invRms = 1.0f / sqrtf(meanSquare + epsilon_);
+            AscendC::LocalTensor<float> work = workBuffer_.Get<float>();
+            AscendC::LocalTensor<float> rmsScalar = work[5 * tileCapacity_];
+            rmsScalar.SetValue(0, squareSum * tiling_->invCols + epsilon_);
+            AscendC::Sqrt<float>(rmsScalar, rmsScalar, 1);
+            float invRms = 1.0f / rmsScalar.GetValue(0);
             WriteRow(row, invRms);
         }
     }
@@ -85,7 +88,7 @@ private:
         AscendC::DataCopyExtParams copyParams{
             1, static_cast<uint32_t>(count * sizeof(T)), 0, 0, 0};
         AscendC::DataCopyPadExtParams<T> padParams{
-            true, 0, paddedCount - count, static_cast<T>(0)};
+            true, 0, static_cast<uint8_t>(paddedCount - count), static_cast<T>(0)};
         AscendC::DataCopyPad(local, global[offset], copyParams, padParams);
     }
 
@@ -296,6 +299,7 @@ extern "C" void run_kernel(GM_ADDR x, const TensorGroupInfo& info_x,
     tiling.rowsPerBlock = (outer + blockNum - 1) / blockNum;
     tiling.tileElements = 2048;
     tiling.dtype = xTensor.dtype;
+    tiling.invCols = 1.0f / static_cast<float>(cols);
 
     uint8_t* tilingDevice = nullptr;
     aclrtMalloc(reinterpret_cast<void**>(&tilingDevice), sizeof(tiling), ACL_MEM_MALLOC_HUGE_FIRST);
