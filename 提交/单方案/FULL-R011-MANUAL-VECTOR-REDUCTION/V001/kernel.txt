@@ -329,55 +329,67 @@ private:
     }
 
     /*
-     * Reduce by alternating two FP32 vectors.  Each pass halves the live
-     * prefix and adds adjacent values, avoiding the scalar dependency and the
-     * hardware ReduceSum primitive that this route is measuring.
+     * Reduce aligned FP32 blocks with Vector adds, then read only the final
+     * eight lanes in Scalar.  This avoids the hardware ReduceSum primitive
+     * while keeping every Vector source address 32-byte aligned.
      */
-    __aicore__ inline void ManualVectorReduce(
-        AscendC::LocalTensor<float> dst,
+    __aicore__ inline float ManualVectorReduce(
         AscendC::LocalTensor<float> src,
-        AscendC::LocalTensor<float> scratch,
+        AscendC::LocalTensor<float> scratchA,
+        AscendC::LocalTensor<float> scratchB,
         int32_t valid)
     {
-        AscendC::Adds(
-            dst,
-            src,
-            0.0f,
-            valid);
-        AscendC::PipeBarrier<PIPE_V>();
+        const int32_t aligned = (valid / 8) * 8;
+        float total = 0.0f;
 
-        int32_t active = valid;
-        bool scratchIsCurrent = false;
-        for (int32_t stride = 1;
-             stride < active;
-             stride <<= 1) {
-            const int32_t count = active - stride;
-            if (scratchIsCurrent) {
-                AscendC::Add(
-                    dst,
-                    scratch,
-                    scratch[stride],
-                    count);
-            } else {
-                AscendC::Add(
-                    scratch,
-                    dst,
-                    dst[stride],
-                    count);
-            }
-            AscendC::PipeBarrier<PIPE_V>();
-            scratchIsCurrent = !scratchIsCurrent;
-            active = count;
-        }
-
-        if (scratchIsCurrent) {
+        if (aligned > 0) {
             AscendC::Adds(
-                dst,
-                scratch,
+                scratchA,
+                src,
                 0.0f,
-                1);
+                aligned);
             AscendC::PipeBarrier<PIPE_V>();
+
+            /*
+             * A reduction unit is exactly eight FP32 values (32 bytes).
+             * Accumulating one aligned block at a time keeps every UB source
+             * address aligned while retaining a Vector-only partial path.
+             */
+            for (int32_t block = 1;
+                 block < aligned / 8;
+                 ++block) {
+                AscendC::Add(
+                    scratchA,
+                    scratchA,
+                    scratchA[block * 8],
+                    8);
+                AscendC::PipeBarrier<PIPE_V>();
+            }
+
+            AscendC::SetFlag<AscendC::HardEvent::V_S>(0);
+            AscendC::WaitFlag<AscendC::HardEvent::V_S>(0);
+            for (int32_t lane = 0; lane < 8; ++lane) {
+                total += scratchA.GetValue(lane);
+            }
+            AscendC::SetFlag<AscendC::HardEvent::S_V>(0);
+            AscendC::WaitFlag<AscendC::HardEvent::S_V>(0);
         }
+
+        /* The final incomplete block is read only by Scalar. */
+        if (aligned < valid) {
+            AscendC::SetFlag<AscendC::HardEvent::V_S>(0);
+            AscendC::WaitFlag<AscendC::HardEvent::V_S>(0);
+            for (int32_t index = aligned;
+                 index < valid;
+                 ++index) {
+                total += src.GetValue(index);
+            }
+            AscendC::SetFlag<AscendC::HardEvent::S_V>(0);
+            AscendC::WaitFlag<AscendC::HardEvent::S_V>(0);
+        }
+
+        (void)scratchB;
+        return total;
     }
 
     __aicore__ inline float ReductionPass(
@@ -400,9 +412,9 @@ private:
         AscendC::LocalTensor<float> scalarSlots =
             scalarFp32_.Get<float>();
 
-        AscendC::LocalTensor<float> partial = scalarSlots;
         AscendC::LocalTensor<float> sum =
             scalarSlots[kRmsSlot];
+        float rowTotal = 0.0f;
 
         AscendC::Duplicate(
             sum,
@@ -440,22 +452,21 @@ private:
                 valid);
             AscendC::PipeBarrier<PIPE_V>();
 
-            ManualVectorReduce(
-                partial,
+            rowTotal += ManualVectorReduce(
                 aux,
                 value,
+                output,
                 valid);
-
-            AscendC::Add(
-                sum,
-                sum,
-                partial,
-                1);
-            AscendC::PipeBarrier<PIPE_V>();
 
             /* The whole work area can now accept the next wide tile. */
             SyncVToMTE2();
         }
+
+        AscendC::Duplicate(
+            sum,
+            rowTotal,
+            1);
+        AscendC::PipeBarrier<PIPE_V>();
 
         return FinishRms(
             scalarSlots,
