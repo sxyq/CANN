@@ -27,5 +27,6 @@ Evidence paths:
 - Remote configure log: `/home/data4t2/lelinfeng/cann/fast/full-r024-cpu-validation-matrix-v001/R024/compile-config.log`
 - Remote build log: `/home/data4t2/lelinfeng/cann/fast/full-r024-cpu-validation-matrix-v001/R024/compile-build.log`
 - Remote resource record: `/home/data4t2/lelinfeng/cann/fast/full-r024-cpu-validation-matrix-v001/R024/resource-before.txt`
+- Remote end resource record: `/home/data4t2/lelinfeng/cann/fast/full-r024-cpu-validation-matrix-v001/R024/resource-after.txt`
 
 The CPU matrix is independent evidence for the mathematical chain and transfer plan. It does not supply data to the device output.
