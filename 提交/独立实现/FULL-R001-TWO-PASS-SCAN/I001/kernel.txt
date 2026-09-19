@@ -103,8 +103,10 @@ public:
         uint64_t rowStart,
         uint64_t rowEnd,
         float epsilon,
+        float inverseDim,
         AscendC::TPipe* pipe)
-        : pipe_(pipe), dim_(dim), rowStart_(rowStart), rowEnd_(rowEnd), epsilon_(epsilon)
+        : pipe_(pipe), dim_(dim), rowStart_(rowStart), rowEnd_(rowEnd),
+          epsilon_(epsilon), inverseDim_(inverseDim)
     {
         xGm_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(x));
         residualGm_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(residual));
@@ -182,7 +184,7 @@ private:
             offset += count;
         }
 
-        AscendC::Duplicate(scalar, sum / static_cast<float>(dim_) + epsilon_, 1);
+        AscendC::Duplicate(scalar, sum * inverseDim_ + epsilon_, 1);
         AscendC::Sqrt(scalar, scalar, 1);
         AscendC::PipeBarrier<PIPE_V>();
         return scalar.GetValue(0);
@@ -234,7 +236,7 @@ private:
             biasLocal = parameterQueue_.DeQue<T>();
             ConvertToFloat<T>(biasFloat, biasLocal, alignedCount);
             AscendC::Add(yFloat, xFloat, residualFloat, alignedCount);
-            AscendC::Divs(yFloat, yFloat, rms, count);
+            AscendC::Muls(yFloat, yFloat, 1.0f / rms, count);
             AscendC::Mul(yFloat, yFloat, gammaFloat, count);
             AscendC::Add(yFloat, yFloat, biasFloat, count);
             ConvertFromFloat<T>(outputLocal, yFloat, count);
@@ -275,6 +277,7 @@ private:
     uint64_t rowStart_;
     uint64_t rowEnd_;
     float epsilon_;
+    float inverseDim_;
     uint32_t alignedTileElements_;
 };
 
@@ -289,7 +292,8 @@ __aicore__ inline void LaunchKernel(
     uint64_t outer,
     uint64_t groupRows,
     uint64_t groupsPerBlock,
-    float epsilon)
+    float epsilon,
+    float inverseDim)
 {
     const uint64_t blockIndex = static_cast<uint64_t>(AscendC::GetBlockIdx());
     const uint64_t startGroup = blockIndex * groupsPerBlock;
@@ -298,7 +302,7 @@ __aicore__ inline void LaunchKernel(
     const uint64_t rowEnd = endGroup * groupRows < outer ? endGroup * groupRows : outer;
     AscendC::TPipe pipe;
     TwoPassScanKernel<T> kernel(x, residual, gamma, bias, output,
-        dim, rowStart, rowEnd, epsilon, &pipe);
+        dim, rowStart, rowEnd, epsilon, inverseDim, &pipe);
     kernel.Process();
 }
 
@@ -306,26 +310,32 @@ __aicore__ inline void LaunchKernel(
 
 __global__ __vector__ void add_rms_norm_bias_fp32(
     GM_ADDR x, GM_ADDR residual, GM_ADDR gamma, GM_ADDR bias, GM_ADDR output,
-    uint64_t dim, uint64_t outer, uint64_t groupRows, uint64_t groupsPerBlock, float epsilon)
+    uint64_t dim, uint64_t outer, uint64_t groupRows, uint64_t groupsPerBlock,
+    float epsilon, float inverseDim)
 {
     full_r001_two_pass_scan::LaunchKernel<float>(
-        x, residual, gamma, bias, output, dim, outer, groupRows, groupsPerBlock, epsilon);
+        x, residual, gamma, bias, output, dim, outer, groupRows, groupsPerBlock,
+        epsilon, inverseDim);
 }
 
 __global__ __vector__ void add_rms_norm_bias_fp16(
     GM_ADDR x, GM_ADDR residual, GM_ADDR gamma, GM_ADDR bias, GM_ADDR output,
-    uint64_t dim, uint64_t outer, uint64_t groupRows, uint64_t groupsPerBlock, float epsilon)
+    uint64_t dim, uint64_t outer, uint64_t groupRows, uint64_t groupsPerBlock,
+    float epsilon, float inverseDim)
 {
     full_r001_two_pass_scan::LaunchKernel<half>(
-        x, residual, gamma, bias, output, dim, outer, groupRows, groupsPerBlock, epsilon);
+        x, residual, gamma, bias, output, dim, outer, groupRows, groupsPerBlock,
+        epsilon, inverseDim);
 }
 
 __global__ __vector__ void add_rms_norm_bias_bf16(
     GM_ADDR x, GM_ADDR residual, GM_ADDR gamma, GM_ADDR bias, GM_ADDR output,
-    uint64_t dim, uint64_t outer, uint64_t groupRows, uint64_t groupsPerBlock, float epsilon)
+    uint64_t dim, uint64_t outer, uint64_t groupRows, uint64_t groupsPerBlock,
+    float epsilon, float inverseDim)
 {
     full_r001_two_pass_scan::LaunchKernel<bfloat16_t>(
-        x, residual, gamma, bias, output, dim, outer, groupRows, groupsPerBlock, epsilon);
+        x, residual, gamma, bias, output, dim, outer, groupRows, groupsPerBlock,
+        epsilon, inverseDim);
 }
 
 extern "C" void run_kernel(
@@ -368,15 +378,19 @@ extern "C" void run_kernel(
     const uint32_t blockCount = static_cast<uint32_t>(
         groupCount < requestedBlocks ? groupCount : requestedBlocks);
     const uint64_t groupsPerBlock = (groupCount + blockCount - 1) / blockCount;
+    const float inverseDim = 1.0f / static_cast<float>(dim);
 
     if (xInfo.dtype == 0) {
         add_rms_norm_bias_fp32<<<blockCount, nullptr, stream>>>(
-            x, residual, gamma, bias, output, dim, outer, groupRows, groupsPerBlock, epsilon);
+            x, residual, gamma, bias, output, dim, outer, groupRows, groupsPerBlock,
+            epsilon, inverseDim);
     } else if (xInfo.dtype == 1) {
         add_rms_norm_bias_fp16<<<blockCount, nullptr, stream>>>(
-            x, residual, gamma, bias, output, dim, outer, groupRows, groupsPerBlock, epsilon);
+            x, residual, gamma, bias, output, dim, outer, groupRows, groupsPerBlock,
+            epsilon, inverseDim);
     } else if (xInfo.dtype == 2) {
         add_rms_norm_bias_bf16<<<blockCount, nullptr, stream>>>(
-            x, residual, gamma, bias, output, dim, outer, groupRows, groupsPerBlock, epsilon);
+            x, residual, gamma, bias, output, dim, outer, groupRows, groupsPerBlock,
+            epsilon, inverseDim);
     }
 }
