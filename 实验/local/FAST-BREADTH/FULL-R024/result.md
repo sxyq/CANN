@@ -6,7 +6,7 @@
 | version | `V001` |
 | candidate commit | `6a39489` |
 | CPU matrix commit | `103ab8e` |
-| compile evidence commit | pending |
+| compile evidence commit | `02ce11f` |
 | source | `提交/单方案/FULL-R024-CPU-VALIDATION-MATRIX/V001/kernel.txt` |
 | source SHA-256 | `7f4be21082e5aeb9b82b2b80471824673c1352383be90f30354c5904c1d26118` |
 | CPU matrix | `1080/1080` |
@@ -14,7 +14,7 @@
 | CANN environment | server3, CANN 9.0 project toolchain, `dav-2201`, Ascend 910B3 |
 | configure | PASS, `0.30s` |
 | compile | PASS, config and link PASS, `11.72s` |
-| minimum run | NOT RUN: all 8 NPU devices had pre-existing model processes |
+| minimum run | NOT RUN: all 8 NPU devices had pre-existing model processes; compile-pass retained as representative evidence |
 | run seconds | `UNKNOWN` |
 | CANNJudge | not performed |
 
