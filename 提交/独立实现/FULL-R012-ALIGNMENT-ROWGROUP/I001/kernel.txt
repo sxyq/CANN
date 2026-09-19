@@ -1,7 +1,22 @@
 #include <stdint.h>
 #include "kernel_operator.h"
 
+struct TensorInfo;
+struct TensorGroupInfo;
+typedef void* aclrtStream;
+
 constexpr float RNB_EPSILON = 1.0e-5f;
+
+struct RnbTensorInfoView {
+    const int64_t* shape;
+    int64_t numDims;
+    int32_t dtype;
+};
+
+struct RnbTensorGroupInfoView {
+    const RnbTensorInfoView* tensors;
+    int64_t numTensors;
+};
 
 struct AddRmsNormBiasTilingData {
     uint32_t blockNum;
@@ -158,19 +173,33 @@ extern "C" void run_kernel(
     int64_t availableCoreNum, aclrtStream stream, float epsilon)
 {
     if (x == nullptr || residual == nullptr || gamma == nullptr || bias == nullptr ||
-        out == nullptr || info_x.tensors == nullptr || info_residual.tensors == nullptr ||
-        info_gamma.tensors == nullptr || info_bias.tensors == nullptr ||
-        info_out.tensors == nullptr || info_x.numTensors < 1 ||
-        info_residual.numTensors < 1 || info_gamma.numTensors < 1 ||
-        info_bias.numTensors < 1 || info_out.numTensors < 1) {
+        out == nullptr) {
         return;
     }
 
-    const TensorInfo& xInfo = info_x.tensors[0];
-    const TensorInfo& residualInfo = info_residual.tensors[0];
-    const TensorInfo& gammaInfo = info_gamma.tensors[0];
-    const TensorInfo& biasInfo = info_bias.tensors[0];
-    const TensorInfo& outInfo = info_out.tensors[0];
+    const RnbTensorGroupInfoView& xGroup =
+        reinterpret_cast<const RnbTensorGroupInfoView&>(info_x);
+    const RnbTensorGroupInfoView& residualGroup =
+        reinterpret_cast<const RnbTensorGroupInfoView&>(info_residual);
+    const RnbTensorGroupInfoView& gammaGroup =
+        reinterpret_cast<const RnbTensorGroupInfoView&>(info_gamma);
+    const RnbTensorGroupInfoView& biasGroup =
+        reinterpret_cast<const RnbTensorGroupInfoView&>(info_bias);
+    const RnbTensorGroupInfoView& outGroup =
+        reinterpret_cast<const RnbTensorGroupInfoView&>(info_out);
+    if (xGroup.tensors == nullptr || residualGroup.tensors == nullptr ||
+        gammaGroup.tensors == nullptr || biasGroup.tensors == nullptr ||
+        outGroup.tensors == nullptr || xGroup.numTensors < 1 ||
+        residualGroup.numTensors < 1 || gammaGroup.numTensors < 1 ||
+        biasGroup.numTensors < 1 || outGroup.numTensors < 1) {
+        return;
+    }
+
+    const RnbTensorInfoView& xInfo = xGroup.tensors[0];
+    const RnbTensorInfoView& residualInfo = residualGroup.tensors[0];
+    const RnbTensorInfoView& gammaInfo = gammaGroup.tensors[0];
+    const RnbTensorInfoView& biasInfo = biasGroup.tensors[0];
+    const RnbTensorInfoView& outInfo = outGroup.tensors[0];
     if (xInfo.shape == nullptr || residualInfo.shape == nullptr ||
         gammaInfo.shape == nullptr || biasInfo.shape == nullptr ||
         outInfo.shape == nullptr || xInfo.numDims < 1 ||
