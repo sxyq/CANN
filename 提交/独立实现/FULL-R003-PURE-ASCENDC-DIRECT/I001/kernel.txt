@@ -59,12 +59,14 @@ public:
         GM_ADDR output,
         uint64_t outer,
         uint32_t dim,
+        float dimFloat,
         uint32_t rowsPerGroup,
         uint32_t blockCount,
         float epsilon,
         AscendC::TPipe* pipe)
         : outer_(outer),
           dim_(dim),
+          dimFloat_(dimFloat),
           rowsPerGroup_(rowsPerGroup),
           blockCount_(blockCount),
           epsilon_(epsilon),
@@ -115,6 +117,7 @@ private:
         pipe_->InitBuffer(biasFloatBuf_, floatTileBytes);
         pipe_->InitBuffer(squareFloatBuf_, floatTileBytes);
         pipe_->InitBuffer(sumBuf_, kBytesPerDataBlock);
+        pipe_->InitBuffer(rmsBuf_, floatTileBytes);
         pipe_->InitBuffer(reduceTmpBuf_, kBytesPerDataBlock * 64);
     }
 
@@ -231,7 +234,7 @@ private:
             offset += validCount;
         }
 
-        const float rms = sqrtf(sumSquares / static_cast<float>(dim_) + epsilon_);
+        float rms = sqrtf(sumSquares / dimFloat_ + epsilon_);
 
         for (uint32_t offset = 0; offset < dim_;) {
             const uint32_t remaining = dim_ - offset;
@@ -245,10 +248,12 @@ private:
             auto xFloat = xFloatBuf_.Get<float>();
             auto gammaFloat = gammaFloatBuf_.Get<float>();
             auto biasFloat = biasFloatBuf_.Get<float>();
+            auto rmsFloat = rmsBuf_.Get<float>();
             auto outputLocal = outputQueue_.AllocTensor<T>();
 
             AscendC::Add(xFloat, xFloat, residualFloatBuf_.Get<float>(), alignedCount);
-            AscendC::Divs(xFloat, xFloat, rms, validCount);
+            AscendC::Duplicate(rmsFloat, rms, alignedCount);
+            AscendC::Div(xFloat, xFloat, rmsFloat, validCount);
             AscendC::Mul(xFloat, xFloat, gammaFloat, validCount);
             AscendC::Add(xFloat, xFloat, biasFloat, validCount);
             TypeOps<T>::FromFloat(outputLocal, xFloat, validCount, alignedCount);
@@ -263,6 +268,7 @@ private:
 
     uint64_t outer_;
     uint32_t dim_;
+    float dimFloat_;
     uint32_t rowsPerGroup_;
     uint32_t blockCount_;
     float epsilon_;
@@ -286,6 +292,7 @@ private:
     AscendC::TBuf<AscendC::TPosition::VECCALC> biasFloatBuf_;
     AscendC::TBuf<AscendC::TPosition::VECCALC> squareFloatBuf_;
     AscendC::TBuf<AscendC::TPosition::VECCALC> sumBuf_;
+    AscendC::TBuf<AscendC::TPosition::VECCALC> rmsBuf_;
     AscendC::TBuf<AscendC::TPosition::VECCALC> reduceTmpBuf_;
 };
 
@@ -298,13 +305,14 @@ __global__ __vector__ void AddRmsNormBiasKernelEntry(
     GM_ADDR output,
     uint64_t outer,
     uint32_t dim,
+    float dimFloat,
     uint32_t rowsPerGroup,
     uint32_t blockCount,
     float epsilon)
 {
     AscendC::TPipe pipe;
     AddRmsNormBiasKernel<T> kernel(
-        x, residual, gamma, bias, output, outer, dim, rowsPerGroup, blockCount,
+        x, residual, gamma, bias, output, outer, dim, dimFloat, rowsPerGroup, blockCount,
         epsilon, &pipe);
     kernel.Process();
 }
@@ -401,17 +409,17 @@ extern "C" void run_kernel(
     if (xInfo.dtype == 0) {
         full_r003_pure_direct::AddRmsNormBiasKernelEntry<float>
             <<<blockCount, nullptr, stream>>>(
-                x, residual, gamma, bias, output, outer, dim, rowsPerGroup,
-                blockCount, epsilon);
+                x, residual, gamma, bias, output, outer, dim, static_cast<float>(dim),
+                rowsPerGroup, blockCount, epsilon);
     } else if (xInfo.dtype == 1) {
         full_r003_pure_direct::AddRmsNormBiasKernelEntry<half>
             <<<blockCount, nullptr, stream>>>(
-                x, residual, gamma, bias, output, outer, dim, rowsPerGroup,
-                blockCount, epsilon);
+                x, residual, gamma, bias, output, outer, dim, static_cast<float>(dim),
+                rowsPerGroup, blockCount, epsilon);
     } else if (xInfo.dtype == 2) {
         full_r003_pure_direct::AddRmsNormBiasKernelEntry<bfloat16_t>
             <<<blockCount, nullptr, stream>>>(
-                x, residual, gamma, bias, output, outer, dim, rowsPerGroup,
-                blockCount, epsilon);
+                x, residual, gamma, bias, output, outer, dim, static_cast<float>(dim),
+                rowsPerGroup, blockCount, epsilon);
     }
 }
