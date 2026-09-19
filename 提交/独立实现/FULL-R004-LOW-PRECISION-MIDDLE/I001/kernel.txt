@@ -14,13 +14,14 @@ struct LowPrecisionTilingData {
     uint32_t blockNum;
     int32_t dtype;
     float epsilon;
+    float invDim;
 };
 
 template <typename T, typename Queue>
 __aicore__ inline void CopyIn(Queue& queue, AscendC::GlobalTensor<T>& source,
     uint64_t offset, uint32_t count)
 {
-    AscendC::LocalTensor<T> local = queue.AllocTensor<T>();
+    AscendC::LocalTensor<T> local = queue.template AllocTensor<T>();
 
     AscendC::DataCopyExtParams copyParams;
     copyParams.blockCount = 1;
@@ -98,7 +99,7 @@ private:
     __aicore__ inline void ProcessRow(uint64_t row)
     {
         const uint64_t rowOffset = row * dim_;
-        T sum = static_cast<T>(0);
+        float sum = 0.0f;
 
         for (uint64_t offset = 0; offset < dim_; offset += kTileLength) {
             uint32_t count = static_cast<uint32_t>(dim_ - offset);
@@ -118,18 +119,17 @@ private:
             AscendC::Add(y, x, residual, count);
             AscendC::Mul(square, y, y, count);
             AscendC::ReduceSum<T, true>(partial, square, reduceTmp, count);
-            sum = sum + partial.GetValue(0);
+            sum = sum + static_cast<float>(partial.GetValue(0));
 
             xQueue_.FreeTensor(x);
             residualQueue_.FreeTensor(residual);
         }
 
-        T mean = sum / static_cast<T>(dim_);
-        mean = mean + static_cast<T>(tiling_->epsilon);
+        float mean = sum * tiling_->invDim + tiling_->epsilon;
         AscendC::LocalTensor<T> scalar = sumBuffer_.Get<T>();
-        AscendC::Duplicate(scalar, mean, 1);
+        AscendC::Duplicate(scalar, static_cast<T>(mean), 1);
         AscendC::Sqrt(scalar, scalar, 1);
-        T rms = scalar.GetValue(0);
+        float rms = static_cast<float>(scalar.GetValue(0));
 
         for (uint64_t offset = 0; offset < dim_; offset += kTileLength) {
             uint32_t count = static_cast<uint32_t>(dim_ - offset);
@@ -151,7 +151,7 @@ private:
             AscendC::LocalTensor<T> output = outputQueue_.AllocTensor<T>();
 
             AscendC::Add(y, x, residual, count);
-            AscendC::Duplicate(denominator, rms, count);
+            AscendC::Duplicate(denominator, static_cast<T>(rms), count);
             AscendC::Div(y, y, denominator, count);
             AscendC::Mul(output, y, gamma, count);
             AscendC::Add(output, output, bias, count);
@@ -268,7 +268,7 @@ private:
             residualQueue_.FreeTensor(residual);
         }
 
-        float mean = sum / static_cast<float>(dim_);
+        float mean = sum * tiling_->invDim;
         mean = mean + tiling_->epsilon;
         AscendC::LocalTensor<float> scalar = sumBuffer_.Get<float>();
         AscendC::Duplicate(scalar, mean, 1);
@@ -412,6 +412,7 @@ void run_kernel(GM_ADDR x, const TensorGroupInfo& info_x,
     tiling.blockNum = blockNum;
     tiling.dtype = xInfo.dtype;
     tiling.epsilon = epsilon;
+    tiling.invDim = 1.0f / static_cast<float>(dim);
 
     uint8_t* tilingDevice = nullptr;
     aclrtMalloc(reinterpret_cast<void**>(&tilingDevice), sizeof(tiling), ACL_MEM_MALLOC_HUGE_FIRST);
