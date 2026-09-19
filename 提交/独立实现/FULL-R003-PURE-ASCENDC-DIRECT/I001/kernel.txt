@@ -59,14 +59,14 @@ public:
         GM_ADDR output,
         uint64_t outer,
         uint32_t dim,
-        float dimFloat,
+        float invDim,
         uint32_t rowsPerGroup,
         uint32_t blockCount,
         float epsilon,
         AscendC::TPipe* pipe)
         : outer_(outer),
           dim_(dim),
-          dimFloat_(dimFloat),
+          invDim_(invDim),
           rowsPerGroup_(rowsPerGroup),
           blockCount_(blockCount),
           epsilon_(epsilon),
@@ -234,7 +234,13 @@ private:
             offset += validCount;
         }
 
-        float rms = sqrtf(sumSquares / dimFloat_ + epsilon_);
+        auto sumLocal = sumBuf_.Get<float>();
+        AscendC::Duplicate(sumLocal, sumSquares, 8);
+        AscendC::Muls(sumLocal, sumLocal, invDim_, 8);
+        AscendC::Adds(sumLocal, sumLocal, epsilon_, 8);
+        AscendC::Sqrt(sumLocal, sumLocal, 8);
+        AscendC::PipeBarrier<PIPE_ALL>();
+        float rms = sumLocal.GetValue(0);
 
         for (uint32_t offset = 0; offset < dim_;) {
             const uint32_t remaining = dim_ - offset;
@@ -268,7 +274,7 @@ private:
 
     uint64_t outer_;
     uint32_t dim_;
-    float dimFloat_;
+    float invDim_;
     uint32_t rowsPerGroup_;
     uint32_t blockCount_;
     float epsilon_;
@@ -305,14 +311,14 @@ __global__ __vector__ void AddRmsNormBiasKernelEntry(
     GM_ADDR output,
     uint64_t outer,
     uint32_t dim,
-    float dimFloat,
+    float invDim,
     uint32_t rowsPerGroup,
     uint32_t blockCount,
     float epsilon)
 {
     AscendC::TPipe pipe;
     AddRmsNormBiasKernel<T> kernel(
-        x, residual, gamma, bias, output, outer, dim, dimFloat, rowsPerGroup, blockCount,
+        x, residual, gamma, bias, output, outer, dim, invDim, rowsPerGroup, blockCount,
         epsilon, &pipe);
     kernel.Process();
 }
@@ -409,17 +415,17 @@ extern "C" void run_kernel(
     if (xInfo.dtype == 0) {
         full_r003_pure_direct::AddRmsNormBiasKernelEntry<float>
             <<<blockCount, nullptr, stream>>>(
-                x, residual, gamma, bias, output, outer, dim, static_cast<float>(dim),
+                x, residual, gamma, bias, output, outer, dim, 1.0f / static_cast<float>(dim),
                 rowsPerGroup, blockCount, epsilon);
     } else if (xInfo.dtype == 1) {
         full_r003_pure_direct::AddRmsNormBiasKernelEntry<half>
             <<<blockCount, nullptr, stream>>>(
-                x, residual, gamma, bias, output, outer, dim, static_cast<float>(dim),
+                x, residual, gamma, bias, output, outer, dim, 1.0f / static_cast<float>(dim),
                 rowsPerGroup, blockCount, epsilon);
     } else if (xInfo.dtype == 2) {
         full_r003_pure_direct::AddRmsNormBiasKernelEntry<bfloat16_t>
             <<<blockCount, nullptr, stream>>>(
-                x, residual, gamma, bias, output, outer, dim, static_cast<float>(dim),
+                x, residual, gamma, bias, output, outer, dim, 1.0f / static_cast<float>(dim),
                 rowsPerGroup, blockCount, epsilon);
     }
 }
