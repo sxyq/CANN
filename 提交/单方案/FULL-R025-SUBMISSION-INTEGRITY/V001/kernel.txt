@@ -165,16 +165,16 @@ void run_kernel(GM_ADDR x,
 
     int32_t dtype = infoX.tensors[0].dtype;
     if (dtype == 0) {
-        ACLRT_LAUNCH_KERNEL(rms_norm_bias_f32)(blockDim, stream)(x, residual, gamma, bias, output,
-                                                                  rows, width, inverseWidth, gammaElements,
-                                                                  biasElements, outputElements, epsilon);
+        rms_norm_bias_f32<<<blockDim, nullptr, stream>>>(x, residual, gamma, bias, output,
+                                                          rows, width, inverseWidth, gammaElements,
+                                                          biasElements, outputElements, epsilon);
     } else if (dtype == 1) {
-        ACLRT_LAUNCH_KERNEL(rms_norm_bias_f16)(blockDim, stream)(x, residual, gamma, bias, output,
-                                                                  rows, width, inverseWidth, gammaElements,
-                                                                  biasElements, outputElements, epsilon);
+        rms_norm_bias_f16<<<blockDim, nullptr, stream>>>(x, residual, gamma, bias, output,
+                                                          rows, width, inverseWidth, gammaElements,
+                                                          biasElements, outputElements, epsilon);
     } else if (dtype == 2) {
-        ACLRT_LAUNCH_KERNEL(rms_norm_bias_bf16)(blockDim, stream)(x, residual, gamma, bias, output,
-                                                                   rows, width, inverseWidth, gammaElements,
-                                                                   biasElements, outputElements, epsilon);
+        rms_norm_bias_bf16<<<blockDim, nullptr, stream>>>(x, residual, gamma, bias, output,
+                                                           rows, width, inverseWidth, gammaElements,
+                                                           biasElements, outputElements, epsilon);
     }
 }
