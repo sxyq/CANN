@@ -65,5 +65,7 @@ target_include_directories(add_rms_norm_bias PRIVATE
 # 更多架构详见 npu-arch skill
 # [MODIFY] 工程名 - add_custom → <your_op>
 target_compile_options(add_rms_norm_bias PRIVATE
+    $<$<COMPILE_LANGUAGE:ASC>:-isystem/usr/include/c++/11>
+    $<$<COMPILE_LANGUAGE:ASC>:-isystem/usr/include/aarch64-linux-gnu/c++/11>
     $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=dav-2201>
 )
