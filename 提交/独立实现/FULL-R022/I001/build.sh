@@ -12,7 +12,7 @@ cpp_target_include="${cpp_include}/aarch64-target-linux-gnu"
 gcc_include="${ASCEND_HOME_PATH}/tools/hcc/aarch64-target-linux-gnu/include"
 sys_include="${ASCEND_HOME_PATH}/tools/hcc/aarch64-target-linux-gnu/sys-include"
 mkdir -p build
-bisheng -c -x c++ --cce-aicore-only --cce-aicore-arch=dav-c220-vec \
+bisheng -c -x cce --cce-aicore-only --cce-aicore-arch=dav-c220-vec \
     -std=c++17 -O2 -I"${toolchain_include}" -I"${ascendc_include}" \
     -I"${ascendc_impl}" -I"${ascendc_interface}" -I"${runtime_include}" \
     -I"${cpp_include}" -I"${cpp_target_include}" -I"${gcc_include}" -I"${sys_include}" \
