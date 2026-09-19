@@ -12,6 +12,11 @@ else()
     set(SOC_ARCH "dav-2201")
 endif()
 
+set(HCC_TARGET_INCLUDE "$ENV{ASCEND_HOME_PATH}/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include")
+set(HCC_CXX_INCLUDE "$ENV{ASCEND_HOME_PATH}/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0")
+set(HCC_CXX_TARGET_INCLUDE "$ENV{ASCEND_HOME_PATH}/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0/aarch64-target-linux-gnu")
+set(HCC_CXX_BACKWARD_INCLUDE "$ENV{ASCEND_HOME_PATH}/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0/backward")
+
 add_executable(add_rms_norm_bias_full_r013 main.asc)
 
 target_link_libraries(add_rms_norm_bias_full_r013 PRIVATE
@@ -30,4 +35,8 @@ target_include_directories(add_rms_norm_bias_full_r013 PRIVATE
 
 target_compile_options(add_rms_norm_bias_full_r013 PRIVATE
     $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=${SOC_ARCH}>
+    $<$<COMPILE_LANGUAGE:ASC>:-isystem${HCC_TARGET_INCLUDE}>
+    $<$<COMPILE_LANGUAGE:ASC>:-isystem${HCC_CXX_INCLUDE}>
+    $<$<COMPILE_LANGUAGE:ASC>:-isystem${HCC_CXX_TARGET_INCLUDE}>
+    $<$<COMPILE_LANGUAGE:ASC>:-isystem${HCC_CXX_BACKWARD_INCLUDE}>
 )
