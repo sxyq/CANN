@@ -1,0 +1,120 @@
+#include <acl/acl.h>
+
+#include <algorithm>
+#include <cstdint>
+#include <cstdio>
+
+#include "../op_kernel/addrmsnormbias_tiling.h"
+#include "../op_kernel/addrmsnormbias_kernel.asc"
+
+namespace {
+
+uint32_t AlignElements(uint32_t elements, uint32_t elementBytes)
+{
+    const uint32_t alignElements = ADDRMSNORMBIAS_ALIGN_BYTES / elementBytes;
+    return ((elements + alignElements - 1) / alignElements) * alignElements;
+}
+
+bool CheckAcl(const char *name, aclError ret)
+{
+    if (ret != ACL_SUCCESS) {
+        std::fprintf(stderr, "%s failed: %d\n", name, static_cast<int>(ret));
+        return false;
+    }
+    return true;
+}
+
+}  // namespace
+
+int main()
+{
+    if (!CheckAcl("aclInit", aclInit(nullptr))) {
+        return 1;
+    }
+
+    constexpr int32_t deviceId = 0;
+    if (!CheckAcl("aclrtSetDevice", aclrtSetDevice(deviceId))) {
+        aclFinalize();
+        return 1;
+    }
+
+    int64_t vectorCoreCount = 1;
+    if (!CheckAcl("aclrtGetDeviceInfo",
+                  aclrtGetDeviceInfo(deviceId, ACL_DEV_ATTR_VECTOR_CORE_NUM, &vectorCoreCount))) {
+        aclrtResetDevice(deviceId);
+        aclFinalize();
+        return 1;
+    }
+
+    // The executable is a launch smoke target; the kernel accepts arbitrary outer/D/dtype.
+    constexpr uint32_t outer = 2;
+    constexpr uint32_t dim = 33;
+    constexpr uint32_t elementBytes = sizeof(half);
+    const uint32_t blockNum = std::max<uint32_t>(
+        1, std::min<uint32_t>(outer, static_cast<uint32_t>(vectorCoreCount)));
+    const uint32_t tileDim = std::min<uint32_t>(dim, ADDRMSNORMBIAS_TILE_D);
+
+    AddrRmsNormBiasTilingData tiling{};
+    tiling.blockNum = blockNum;
+    tiling.outer = outer;
+    tiling.dim = dim;
+    tiling.tileDim = tileDim;
+    tiling.tileDimAligned = AlignElements(tileDim, elementBytes);
+    tiling.dtype = static_cast<uint32_t>(AddrRmsNormBiasDType::FP16);
+    tiling.rowsPerBlock = (outer + blockNum - 1) / blockNum;
+    tiling.tailRows = outer - tiling.rowsPerBlock * (blockNum - 1);
+    tiling.epsilon = 1.0e-5f;
+
+    const size_t inputBytes = static_cast<size_t>(outer) * dim * elementBytes;
+    const size_t parameterBytes = static_cast<size_t>(dim) * elementBytes;
+    void *x = nullptr;
+    void *residual = nullptr;
+    void *gamma = nullptr;
+    void *bias = nullptr;
+    void *y = nullptr;
+    void *tilingDevice = nullptr;
+    if (!CheckAcl("aclrtMalloc(x)", aclrtMalloc(&x, inputBytes, ACL_MEM_MALLOC_HUGE_FIRST)) ||
+        !CheckAcl("aclrtMalloc(residual)", aclrtMalloc(&residual, inputBytes, ACL_MEM_MALLOC_HUGE_FIRST)) ||
+        !CheckAcl("aclrtMalloc(gamma)", aclrtMalloc(&gamma, parameterBytes, ACL_MEM_MALLOC_HUGE_FIRST)) ||
+        !CheckAcl("aclrtMalloc(bias)", aclrtMalloc(&bias, parameterBytes, ACL_MEM_MALLOC_HUGE_FIRST)) ||
+        !CheckAcl("aclrtMalloc(y)", aclrtMalloc(&y, inputBytes, ACL_MEM_MALLOC_HUGE_FIRST)) ||
+        !CheckAcl("aclrtMalloc(tiling)",
+                  aclrtMalloc(&tilingDevice, sizeof(tiling), ACL_MEM_MALLOC_HUGE_FIRST))) {
+        aclrtFree(x);
+        aclrtFree(residual);
+        aclrtFree(gamma);
+        aclrtFree(bias);
+        aclrtFree(y);
+        aclrtFree(tilingDevice);
+        aclrtResetDevice(deviceId);
+        aclFinalize();
+        return 1;
+    }
+
+    if (!CheckAcl("aclrtMemcpy(tiling)",
+                  aclrtMemcpy(tilingDevice, sizeof(tiling), &tiling,
+                              sizeof(tiling), ACL_MEMCPY_HOST_TO_DEVICE))) {
+        return 1;
+    }
+
+    aclrtStream stream = nullptr;
+    if (!CheckAcl("aclrtCreateStream", aclrtCreateStream(&stream))) {
+        return 1;
+    }
+    addrmsnormbias_fp16_kernel<<<blockNum, nullptr, stream>>>(
+        reinterpret_cast<GM_ADDR>(x), reinterpret_cast<GM_ADDR>(residual),
+        reinterpret_cast<GM_ADDR>(gamma), reinterpret_cast<GM_ADDR>(bias),
+        reinterpret_cast<GM_ADDR>(y), reinterpret_cast<GM_ADDR>(tilingDevice));
+    const aclError syncRet = aclrtSynchronizeStream(stream);
+
+    aclrtDestroyStream(stream);
+    aclrtFree(tilingDevice);
+    aclrtFree(y);
+    aclrtFree(bias);
+    aclrtFree(gamma);
+    aclrtFree(residual);
+    aclrtFree(x);
+    aclrtResetDevice(deviceId);
+    aclFinalize();
+    return syncRet == ACL_SUCCESS ? 0 : 1;
+}
