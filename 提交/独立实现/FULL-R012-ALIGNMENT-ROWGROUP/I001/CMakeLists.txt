@@ -40,7 +40,9 @@ set(ACL_LIB_DIR "$ENV{ASCEND_HOME_PATH}/lib64")
 # ============================================================================
 
 # [MODIFY] 目标名和源文件名
-add_executable(add_rms_norm_bias op_host/add_rms_norm_bias.asc)
+add_executable(add_rms_norm_bias
+    op_host/add_rms_norm_bias.asc
+    op_kernel/add_rms_norm_bias_kernel.asc)
 
 target_link_libraries(add_rms_norm_bias PRIVATE
     tiling_api
