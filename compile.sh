@@ -19,7 +19,9 @@ if [[ ! -f data_utils.h ]]; then
     ln -s "${TEMPLATE_DIR}/data_utils.h" data_utils.h
 fi
 
+set +u
 source "${TOOLCHAIN_ENV}"
+set -u
 
 rm -rf build
 cmake -S . -B build -DNPU_ARCH="${NPU_ARCH:-dav-2201}"
