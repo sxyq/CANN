@@ -12,6 +12,11 @@ else()
     set(SOC_ARCH "dav-2201")
 endif()
 
+set(HCC_TARGET_ROOT "$ENV{ASCEND_HOME_PATH}/tools/hcc/aarch64-target-linux-gnu")
+file(GLOB HCC_CXX_INCLUDE_DIRS "${HCC_TARGET_ROOT}/include/c++/*")
+list(SORT HCC_CXX_INCLUDE_DIRS)
+list(GET HCC_CXX_INCLUDE_DIRS 0 HCC_CXX_INCLUDE_DIR)
+
 add_executable(full_r008_tile_cross_core_i001 main.asc)
 
 target_link_libraries(full_r008_tile_cross_core_i001 PRIVATE
@@ -30,4 +35,8 @@ target_include_directories(full_r008_tile_cross_core_i001 PRIVATE
 
 target_compile_options(full_r008_tile_cross_core_i001 PRIVATE
     $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=${SOC_ARCH}>
+    $<$<COMPILE_LANGUAGE:ASC>:-isystem${HCC_CXX_INCLUDE_DIR}>
+    $<$<COMPILE_LANGUAGE:ASC>:-isystem${HCC_CXX_INCLUDE_DIR}/aarch64-target-linux-gnu>
+    $<$<COMPILE_LANGUAGE:ASC>:-isystem${HCC_CXX_INCLUDE_DIR}/backward>
+    $<$<COMPILE_LANGUAGE:ASC>:-isystem${HCC_TARGET_ROOT}/include>
 )
