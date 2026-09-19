@@ -14,8 +14,8 @@ PyTorch 或线上提交。标量归约结果通过 `LocalTensor::GetValue(0)` �
 平台直接提交入口为同目录 `kernel.asc`。该文件自包含手工向量折半归约核心，并实现题目模板要求的
 `extern "C" void run_kernel(...)`。在 server3 的实验构建目录中，模板文件与该 `kernel.asc` 放在同一目录，
 使用 `cmake . && make -j4` 只编译，不执行生成的程序。
-server3 的 CANN 9.0 ASC 编译器需要显式补充 GCC C++ 头文件目录：
-`cmake -DCMAKE_CXX_FLAGS='-I/usr/include/c++/11 -I/usr/include/aarch64-linux-gnu/c++/11' .`。
+本目录的 `platform-build/CMakeLists.txt` 是同一提交入口的 server3 构建适配，补充了 GCC C++ 头文件目录；
+在实验构建目录中复制该 CMake 文件后使用 `cmake . && make -j4`。
 
 manual_vector_reduction 算子的 Kernel 直调实现示例，同时支持 PyTorch 对接。
 
