@@ -24,6 +24,11 @@ target_link_libraries(full_r007_reduce_sum PRIVATE
     graph_base
 )
 
+target_link_directories(full_r007_reduce_sum PRIVATE
+    /usr/lib/gcc/aarch64-linux-gnu/11
+    /usr/lib/aarch64-linux-gnu
+)
+
 target_include_directories(full_r007_reduce_sum PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     /usr/include/c++/11
