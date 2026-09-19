@@ -28,9 +28,6 @@ target_include_directories(add_rms_norm_bias_custom PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     /usr/include/c++/11
     /usr/include/aarch64-linux-gnu/c++/11
-    /usr/lib/gcc/aarch64-linux-gnu/11/include
-    /usr/include/aarch64-linux-gnu
-    /usr/include
 )
 
 target_compile_options(add_rms_norm_bias_custom PRIVATE
