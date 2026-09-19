@@ -125,9 +125,7 @@ private:
             AscendC::DataCopyPad(typed, src[offset],
                 {1, static_cast<uint16_t>(count * sizeof(T)), 0, 0}, {false, 0, 0, 0});
         }
-        for (uint32_t i = 0; i < count; ++i) {
-            dst.SetValue(i, static_cast<float>(typed.GetValue(i)));
-        }
+        AscendC::Cast<float, T>(dst, typed, AscendC::RoundMode::CAST_NONE, count);
         inTyped_.FreeTensor(typed);
     }
 
@@ -137,9 +135,7 @@ private:
                                 uint32_t count, bool fullAligned)
     {
         AscendC::LocalTensor<T> typed = inTyped_.AllocTensor<T>();
-        for (uint32_t i = 0; i < count; ++i) {
-            typed.SetValue(i, static_cast<T>(src.GetValue(i)));
-        }
+        AscendC::Cast<T, float>(typed, src, AscendC::RoundMode::CAST_ROUND, count);
         if (fullAligned) {
             AscendC::DataCopy(dst[offset], typed, count);
         } else {
