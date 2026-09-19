@@ -17,7 +17,6 @@ set(HCC_CXX_INCLUDE "$ENV{ASCEND_HOME_PATH}/toolkit/toolchain/hcc/aarch64-target
 set(HCC_CXX_TARGET_INCLUDE "$ENV{ASCEND_HOME_PATH}/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0/aarch64-target-linux-gnu")
 set(HCC_CXX_BACKWARD_INCLUDE "$ENV{ASCEND_HOME_PATH}/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0/backward")
 set(HCC_TARGET_LIB "$ENV{ASCEND_HOME_PATH}/toolkit/toolchain/hcc/aarch64-target-linux-gnu/lib64")
-set(HCC_SYSROOT_LIB "$ENV{ASCEND_HOME_PATH}/toolkit/toolchain/hcc/sysroot/usr/lib64")
 
 add_executable(add_rms_norm_bias_full_r013 main.asc)
 
@@ -37,7 +36,6 @@ target_include_directories(add_rms_norm_bias_full_r013 PRIVATE
 
 target_link_directories(add_rms_norm_bias_full_r013 PRIVATE
     ${HCC_TARGET_LIB}
-    ${HCC_SYSROOT_LIB}
 )
 
 target_compile_options(add_rms_norm_bias_full_r013 PRIVATE
