@@ -28,6 +28,11 @@ target_include_directories(full_r003_pure_ascendc_direct_i001 PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
+target_include_directories(full_r003_pure_ascendc_direct_i001 SYSTEM PRIVATE
+    /usr/include/c++/11
+    /usr/include/aarch64-linux-gnu/c++/11
+)
+
 target_compile_options(full_r003_pure_ascendc_direct_i001 PRIVATE
     $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=${SOC_ARCH}>
 )
