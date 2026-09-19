@@ -23,3 +23,4 @@
 2026-09-19：R002 与 R013 的线上记录已从各自实验分支同步到当前活动分支；R012 的线上源码 SHA 与候选 commit 文件 SHA 不一致，已在矩阵中单列。
 2026-09-19：R030-L004 线上终态为 Runtime Error，4/15；submission `6aad8c4db0477ec41e864499`，完整结果位于 `实验/online/FULL-R030-WIDE-PARAM-REUSE/V001/6aad8c4db0477ec41e864499/result.json`。13 条 FULL V001 均已有线上终态，停止本阶段。
 2026-09-19：阶段范围按新要求扩展为独立 FULL-R001–R029 V001 线上覆盖；现有独立线上证据覆盖 12/29（R002、R005、R006、R009、R010、R012、R013、R014、R015、R016、R019、R029），R030 作为额外路线保留。R001、R003、R004、R007、R008、R011、R017、R018、R020、R021、R022、R023、R024、R025、R026、R027、R028 已进入 `route-queue.tsv`，在 29/29 前不开始 V002/V003、Mix、Router 或已完成路线深挖。
+2026-09-19：R021-V001 完成 CANNJudge 线上提交，submission `6aae26f0b0477ec41ebcb50d`，15/15 Pass，Official Score `24.01`；完整结果位于 `实验/online/FULL-R021-CANN9-BUILD-CHAIN/V001/6aae26f0b0477ec41ebcb50d/result.json`。
