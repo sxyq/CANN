@@ -26,6 +26,10 @@ target_include_directories(add_rms_norm_bias_custom PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
+target_link_directories(add_rms_norm_bias_custom PRIVATE
+    "$ENV{ASCEND_HOME_PATH}/tools/hcc/aarch64-target-linux-gnu/lib64"
+)
+
 target_compile_options(add_rms_norm_bias_custom PRIVATE
     $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=${SOC_ARCH}>
     $<$<COMPILE_LANGUAGE:ASC>:-isystem$ENV{ASCEND_HOME_PATH}/tools/hcc/aarch64-target-linux-gnu/include/c++/7.3.0>
