@@ -25,6 +25,6 @@ target_compile_options(full_r029_i001 PRIVATE
     $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=${SOC_ARCH}>
     $<$<COMPILE_LANGUAGE:ASC>:-cxx-isystem>
     $<$<COMPILE_LANGUAGE:ASC>:/usr/include/c++/11>
-    $<$<COMPILE_LANGUAGE:ASC>:-cxx-isystem>
+    $<$<COMPILE_LANGUAGE:ASC>:-isystem>
     $<$<COMPILE_LANGUAGE:ASC>:/usr/include/aarch64-linux-gnu/c++/11>
 )
