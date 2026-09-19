@@ -3,8 +3,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OUT_DIR="${SCRIPT_DIR}/build"
-ASCEND_HOME_PATH="${ASCEND_HOME_PATH:-/usr/local/Ascend/ascend-toolkit/latest}"
-COMPILER="${ASCEND_HOME_PATH}/compiler/ccec_compiler/bin/bisheng"
+ASCEND_HOME_PATH="${ASCEND_HOME_PATH:-/home/data4t2/lelinfeng/cann_game/.toolchains/cann-9.0/cann-9.0.0}"
+COMPILER="${ASCEND_HOME_PATH}/aarch64-linux/bin/bisheng"
 
 if [[ ! -x "${COMPILER}" ]]; then
     echo "bisheng not found: ${COMPILER}" >&2

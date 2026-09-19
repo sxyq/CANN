@@ -120,7 +120,13 @@ struct AddRmsNormBiasKernel {
 
         SetFlag<HardEvent::V_S>(vectorToScalar);
         WaitFlag<HardEvent::V_S>(vectorToScalar);
-        float invRms = 1.0f / __builtin_sqrtf(sumSquares / dimAsFloat + epsilon);
+        Duplicate(sumTensor, sumSquares, kTileElements);
+        Muls(sumTensor, sumTensor, 1.0f / dimAsFloat, kTileElements);
+        Adds(sumTensor, sumTensor, epsilon, kTileElements);
+        Sqrt(sumTensor, sumTensor, static_cast<int32_t>(kTileElements));
+        SetFlag<HardEvent::V_S>(vectorToScalar);
+        WaitFlag<HardEvent::V_S>(vectorToScalar);
+        float invRms = 1.0f / sumTensor.GetValue(0);
         SetFlag<HardEvent::S_V>(scalarToVector);
         WaitFlag<HardEvent::S_V>(scalarToVector);
 
