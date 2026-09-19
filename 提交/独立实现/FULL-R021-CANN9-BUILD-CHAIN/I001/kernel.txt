@@ -16,7 +16,7 @@ __aicore__ inline void StoreScalar(GM_ADDR address, uint64_t index, float value)
     pointer[index] = static_cast<T>(value);
 }
 
-__aicore__ inline uint64_t ProductBeforeLast(const TensorGroupInfo &info) {
+inline uint64_t ProductBeforeLast(const TensorGroupInfo &info) {
     uint64_t outer = 1;
     const int32_t rank = info.rank < 1 ? 1 : info.rank;
     for (int32_t axis = 0; axis + 1 < rank; ++axis) {
@@ -34,6 +34,7 @@ __global__ __vector__ void AddRmsNormBiasKernel(
     GM_ADDR output,
     uint64_t outer,
     uint32_t dim,
+    float dim_as_float,
     float epsilon) {
     const __gm__ T *x_ptr = reinterpret_cast<const __gm__ T *>(x);
     const __gm__ T *residual_ptr = reinterpret_cast<const __gm__ T *>(residual);
@@ -51,8 +52,8 @@ __global__ __vector__ void AddRmsNormBiasKernel(
             square_sum += value * value;
         }
 
-        const float mean_square = square_sum / static_cast<float>(dim);
-        const float rms = sqrtf(mean_square + epsilon);
+        float mean_square = square_sum / dim_as_float;
+        float rms = sqrt(mean_square + epsilon);
         for (uint32_t column = 0; column < dim; ++column) {
             const uint64_t offset = row_base + static_cast<uint64_t>(column);
             const float value = static_cast<float>(x_ptr[offset]) +
@@ -90,15 +91,16 @@ extern "C" void run_kernel(
     const uint64_t outer = ProductBeforeLast(info_x);
     const int32_t rank = info_x.rank < 1 ? 1 : info_x.rank;
     const uint32_t dim = static_cast<uint32_t>(info_x.shape[rank - 1]);
+    const float dim_as_float = static_cast<float>(dim);
 
     if (info_x.dtype == 0) {
         AddRmsNormBiasKernel<float><<<1, nullptr, stream>>>(
-            x, residual, gamma, bias, output, outer, dim, epsilon);
+            x, residual, gamma, bias, output, outer, dim, dim_as_float, epsilon);
     } else if (info_x.dtype == 1) {
         AddRmsNormBiasKernel<half><<<1, nullptr, stream>>>(
-            x, residual, gamma, bias, output, outer, dim, epsilon);
+            x, residual, gamma, bias, output, outer, dim, dim_as_float, epsilon);
     } else {
         AddRmsNormBiasKernel<bfloat16_t><<<1, nullptr, stream>>>(
-            x, residual, gamma, bias, output, outer, dim, epsilon);
+            x, residual, gamma, bias, output, outer, dim, dim_as_float, epsilon);
     }
 }
