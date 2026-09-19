@@ -1,4 +1,19 @@
+#include <acl/acl.h>
 #include "kernel_operator.h"
+
+#ifndef TENSOR_GROUP_INFO_DEFINED
+#define TENSOR_GROUP_INFO_DEFINED
+struct TensorInfo {
+    const int64_t *shape;
+    int64_t numDims;
+    int32_t dtype;
+};
+
+struct TensorGroupInfo {
+    const TensorInfo *tensors;
+    int64_t numTensors;
+};
+#endif
 
 using namespace AscendC;
 
@@ -130,13 +145,8 @@ __aicore__ inline void StoreValue(GM_ADDR base, uint32_t index, uint32_t dtype, 
 }
 
 __aicore__ inline void ProcessRows(GM_ADDR x, GM_ADDR residual, GM_ADDR gamma, GM_ADDR bias, GM_ADDR y,
-                                   GM_ADDR tiling)
+                                   uint32_t outer, uint32_t dim, uint32_t dtype, float epsilon)
 {
-    __gm__ const RmsNormBiasConfig *config = reinterpret_cast<__gm__ const RmsNormBiasConfig *>(tiling);
-    const uint32_t outer = config->outer;
-    const uint32_t dim = config->dim;
-    const uint32_t dtype = config->dtype;
-    const float epsilon = config->epsilon;
     const uint32_t block = GetBlockIdx();
     const uint32_t blockCount = GetBlockNum();
     for (uint32_t row = block; row < outer; row += blockCount) {
@@ -160,18 +170,83 @@ __aicore__ inline void ProcessRows(GM_ADDR x, GM_ADDR residual, GM_ADDR gamma, G
     }
 }
 
+__aicore__ inline void ProcessRowsFromTiling(GM_ADDR x, GM_ADDR residual, GM_ADDR gamma, GM_ADDR bias, GM_ADDR y,
+                                             GM_ADDR tiling)
+{
+    __gm__ const RmsNormBiasConfig *config = reinterpret_cast<__gm__ const RmsNormBiasConfig *>(tiling);
+    ProcessRows(x, residual, gamma, bias, y, config->outer, config->dim, config->dtype, config->epsilon);
+}
+
 }  // namespace full_r022_i001
 
 extern "C" __global__ __aicore__ void AddRmsNormBias(GM_ADDR x, GM_ADDR residual, GM_ADDR gamma, GM_ADDR bias,
                                                       GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
 {
     (void)workspace;
-    full_r022_i001::ProcessRows(x, residual, gamma, bias, y, tiling);
+    full_r022_i001::ProcessRowsFromTiling(x, residual, gamma, bias, y, tiling);
 }
 
 extern "C" __global__ __aicore__ void add_rms_norm_bias(GM_ADDR x, GM_ADDR residual, GM_ADDR gamma, GM_ADDR bias,
                                                          GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
 {
     (void)workspace;
-    full_r022_i001::ProcessRows(x, residual, gamma, bias, y, tiling);
+    full_r022_i001::ProcessRowsFromTiling(x, residual, gamma, bias, y, tiling);
+}
+
+extern "C" __global__ __vector__ void add_rms_norm_bias_custom(GM_ADDR x, GM_ADDR residual, GM_ADDR gamma,
+                                                                GM_ADDR bias, GM_ADDR output, uint32_t outer,
+                                                                uint32_t dim, uint32_t dtype, float epsilon)
+{
+    full_r022_i001::ProcessRows(x, residual, gamma, bias, output, outer, dim, dtype, epsilon);
+}
+
+extern "C" void run_kernel(GM_ADDR x, const TensorGroupInfo& info_x, GM_ADDR residual,
+                            const TensorGroupInfo& info_residual, GM_ADDR gamma, const TensorGroupInfo& info_gamma,
+                            GM_ADDR bias, const TensorGroupInfo& info_bias, GM_ADDR output,
+                            const TensorGroupInfo& info_output, int64_t availableCoreNum, aclrtStream stream,
+                            float epsilon)
+{
+    (void)info_residual;
+    (void)info_gamma;
+    (void)info_bias;
+    (void)info_output;
+    if (info_x.tensors == nullptr || info_x.numTensors <= 0 || info_x.tensors[0].shape == nullptr ||
+        info_x.numDims <= 0 || availableCoreNum <= 0) {
+        return;
+    }
+
+    const int64_t *shape = info_x.tensors[0].shape;
+    const int64_t dimValue = shape[info_x.numDims - 1];
+    if (dimValue <= 0) {
+        return;
+    }
+
+    int64_t outerValue = 1;
+    for (int64_t axis = 0; axis + 1 < info_x.numDims; ++axis) {
+        if (shape[axis] <= 0) {
+            return;
+        }
+        outerValue *= shape[axis];
+    }
+    if (outerValue <= 0) {
+        return;
+    }
+
+    uint32_t internalDtype = 0U;
+    if (info_x.tensors[0].dtype == 0) {
+        internalDtype = 2U;
+    } else if (info_x.tensors[0].dtype == 1) {
+        internalDtype = 0U;
+    } else if (info_x.tensors[0].dtype == 2) {
+        internalDtype = 1U;
+    } else {
+        return;
+    }
+
+    const uint32_t outer = static_cast<uint32_t>(outerValue);
+    const uint32_t dim = static_cast<uint32_t>(dimValue);
+    const uint32_t available = static_cast<uint32_t>(availableCoreNum);
+    const uint32_t blockNum = outer < available ? outer : available;
+    add_rms_norm_bias_custom<<<blockNum, nullptr, stream>>>(x, residual, gamma, bias, output, outer, dim,
+                                                             internalDtype, epsilon);
 }
