@@ -30,6 +30,11 @@ target_include_directories(add_rms_norm_bias_custom PRIVATE
     /usr/include/aarch64-linux-gnu/c++/11
 )
 
+target_link_directories(add_rms_norm_bias_custom PRIVATE
+    /usr/lib/gcc/aarch64-linux-gnu/11
+    /usr/lib/aarch64-linux-gnu
+)
+
 target_compile_options(add_rms_norm_bias_custom PRIVATE
     $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=${SOC_ARCH}>
 )
