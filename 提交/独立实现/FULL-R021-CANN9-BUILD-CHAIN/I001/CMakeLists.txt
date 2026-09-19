@@ -8,9 +8,9 @@ set(SOC_ARCH "dav-2201" CACHE STRING "Ascend C target architecture")
 add_executable(add_rms_norm_bias_custom main.asc)
 target_compile_options(add_rms_norm_bias_custom PRIVATE
     $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=${SOC_ARCH}>
-    $<$<COMPILE_LANGUAGE:ASC>:-isystem;/usr/include/c++/11>
-    $<$<COMPILE_LANGUAGE:ASC>:-isystem;/usr/include/aarch64-linux-gnu/c++/11>
-    $<$<COMPILE_LANGUAGE:ASC>:-isystem;/usr/lib/gcc/aarch64-linux-gnu/11/include>
+    $<$<COMPILE_LANGUAGE:ASC>:-I/usr/include/c++/11>
+    $<$<COMPILE_LANGUAGE:ASC>:-I/usr/include/aarch64-linux-gnu/c++/11>
+    $<$<COMPILE_LANGUAGE:ASC>:-I/usr/lib/gcc/aarch64-linux-gnu/11/include>
 )
 target_link_libraries(add_rms_norm_bias_custom PRIVATE
     tiling_api
