@@ -72,8 +72,9 @@ private:
                 inResidual_.FreeTensor(rLocal);
             }
 
-            const float meanSquare = rowSumSquares / static_cast<float>(width_);
-            const float epsilon = *reinterpret_cast<const float*>(&tiling_->epsilonBits);
+            float meanSquare = 0.0f;
+            meanSquare = rowSumSquares / width_;
+            float epsilon = tiling_->epsilon;
             AscendC::LocalTensor<float> normScalar = out_.AllocTensor<float>();
             normScalar.SetValue(0, meanSquare + epsilon);
             AscendC::Sqrt(normScalar, normScalar, 1);

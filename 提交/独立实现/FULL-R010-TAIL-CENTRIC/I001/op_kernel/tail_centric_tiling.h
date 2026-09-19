@@ -12,7 +12,7 @@ struct TailCentricTilingData {
     unsigned int outer;
     unsigned int width;
     unsigned int tileElements;
-    unsigned int epsilonBits;
+    float epsilon;
     unsigned long long elementsPerBlock;
     unsigned long long tailElements;
 };
