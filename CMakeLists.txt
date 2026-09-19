@@ -30,4 +30,7 @@ target_include_directories(add_rms_norm_bias_custom PRIVATE
 
 target_compile_options(add_rms_norm_bias_custom PRIVATE
     $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=${SOC_ARCH}>
+    $<$<COMPILE_LANGUAGE:ASC>:-isystem/usr/include/c++/11>
+    $<$<COMPILE_LANGUAGE:ASC>:-isystem/usr/include/aarch64-linux-gnu/c++/11>
+    $<$<COMPILE_LANGUAGE:ASC>:-isystem/usr/include/c++/11/backward>
 )
