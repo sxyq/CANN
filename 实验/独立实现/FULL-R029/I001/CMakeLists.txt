@@ -23,6 +23,8 @@ target_link_libraries(full_r029_i001 PRIVATE
 target_include_directories(full_r029_i001 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_options(full_r029_i001 PRIVATE
     $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=${SOC_ARCH}>
-    $<$<COMPILE_LANGUAGE:ASC>:-cxx-isystem=/usr/include/c++/11>
-    $<$<COMPILE_LANGUAGE:ASC>:-cxx-isystem=/usr/include/aarch64-linux-gnu/c++/11>
+    $<$<COMPILE_LANGUAGE:ASC>:-cxx-isystem>
+    $<$<COMPILE_LANGUAGE:ASC>:/usr/include/c++/11>
+    $<$<COMPILE_LANGUAGE:ASC>:-cxx-isystem>
+    $<$<COMPILE_LANGUAGE:ASC>:/usr/include/aarch64-linux-gnu/c++/11>
 )
