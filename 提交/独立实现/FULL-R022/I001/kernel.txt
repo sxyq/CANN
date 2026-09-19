@@ -147,8 +147,9 @@ __aicore__ inline void ProcessRows(GM_ADDR x, GM_ADDR residual, GM_ADDR gamma, G
             const float value = LoadValue(x, index, dtype) + LoadValue(residual, index, dtype);
             squareSum += value * value;
         }
-        const float meanSquare = squareSum / static_cast<float>(dim);
-        const float inverseRms = 1.0f / sqrtf(meanSquare + epsilon);
+        const float dimension = AscendC::Cast<uint32_t, float, RoundMode::CAST_RINT>(dim);
+        const float meanSquare = squareSum / dimension;
+        const float inverseRms = 1.0f / sqrt(meanSquare + epsilon);
         for (uint32_t col = 0U; col < dim; ++col) {
             const uint32_t index = rowStart + col;
             const float value = LoadValue(x, index, dtype) + LoadValue(residual, index, dtype);
