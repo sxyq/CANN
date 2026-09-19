@@ -10,5 +10,4 @@ target_compile_options(full_r027_compile PRIVATE
     $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=${SOC_ARCH}>
     $<$<COMPILE_LANGUAGE:ASC>:-isystem/usr/include/c++/11>
     $<$<COMPILE_LANGUAGE:ASC>:-isystem/usr/include/aarch64-linux-gnu/c++/11>
-    $<$<COMPILE_LANGUAGE:ASC>:-isystem/usr/lib/gcc/aarch64-linux-gnu/11/include>
 )
