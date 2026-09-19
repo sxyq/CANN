@@ -38,6 +38,7 @@ struct R029TilingData {
     uint32_t mode;
     uint32_t dtype;
     float epsilon;
+    float invD;
 };
 
 constexpr uint32_t kUbBudgetBytes = 96 * 1024;
@@ -49,7 +50,7 @@ __aicore__ inline uint32_t MinU32(uint32_t a, uint32_t b)
     return a < b ? a : b;
 }
 
-__aicore__ inline uint32_t CeilDivU32(uint32_t a, uint32_t b)
+inline uint32_t CeilDivU32(uint32_t a, uint32_t b)
 {
     return (a + b - 1U) / b;
 }
@@ -131,7 +132,7 @@ public:
             }
 
             // The scalar value is formed only after the complete row reduction.
-            scale_.SetValue(0, sumSquares / static_cast<float>(tiling_->d) + tiling_->epsilon);
+            scale_.SetValue(0, sumSquares * tiling_->invD + tiling_->epsilon);
             AscendC::Sqrt(scale_, scale_, 1);
             const float rms = scale_.GetValue(0);
             scale_.SetValue(0, 1.0f / rms);
@@ -305,6 +306,7 @@ extern "C" void run_kernel(GM_ADDR x, TensorGroupInfo info_x, GM_ADDR residual,
     tiling.mode = static_cast<uint32_t>(mode);
     tiling.dtype = static_cast<uint32_t>(xInfo.dtype);
     tiling.epsilon = epsilon;
+    tiling.invD = 1.0f / static_cast<float>(d);
 
     R029TilingData* tilingDevice = nullptr;
     (void)aclrtMalloc(reinterpret_cast<void**>(&tilingDevice), sizeof(R029TilingData), ACL_MEM_MALLOC_HUGE_FIRST);
@@ -312,13 +314,13 @@ extern "C" void run_kernel(GM_ADDR x, TensorGroupInfo info_x, GM_ADDR residual,
 
     if (xInfo.dtype == 0) {
         add_rms_norm_bias_kernel<float><<<blockNum, nullptr, stream>>>(x, residual, gamma, bias, output,
-                                                                        reinterpret_cast<GM_ADDR>(tilingDevice));
+                                                                        (GM_ADDR)tilingDevice);
     } else if (xInfo.dtype == 2) {
         add_rms_norm_bias_kernel<bfloat16_t><<<blockNum, nullptr, stream>>>(x, residual, gamma, bias, output,
-                                                                             reinterpret_cast<GM_ADDR>(tilingDevice));
+                                                                             (GM_ADDR)tilingDevice);
     } else {
         add_rms_norm_bias_kernel<half><<<blockNum, nullptr, stream>>>(x, residual, gamma, bias, output,
-                                                                       reinterpret_cast<GM_ADDR>(tilingDevice));
+                                                                       (GM_ADDR)tilingDevice);
     }
     (void)aclrtSynchronizeStream(stream);
     (void)aclrtFree(tilingDevice);
