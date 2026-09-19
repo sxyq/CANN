@@ -30,6 +30,10 @@ target_include_directories(add_rms_norm_bias_custom PRIVATE
     /usr/include/aarch64-linux-gnu/c++/11
 )
 
+target_link_directories(add_rms_norm_bias_custom PRIVATE
+    /home/data4t2/lelinfeng/cann_game/.toolchains/cann-9.0/cann-9.0.0/tools/hcc/aarch64-target-linux-gnu/lib64
+)
+
 target_compile_options(add_rms_norm_bias_custom PRIVATE
     $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=${SOC_ARCH}>
 )
