@@ -11,6 +11,10 @@ I001 按空 Kernel、tiling/Host、Kernel 核心逻辑三个阶段推进。Kerne
 PyTorch 或线上提交。标量归约结果通过 `LocalTensor::GetValue(0)` 取出后继续完成平方根和归一化，
 这是当前实现中需要后续性能评估的明确位置。
 
+平台直接提交入口为同目录 `kernel.asc`。该文件自包含手工向量折半归约核心，并实现题目模板要求的
+`extern "C" void run_kernel(...)`。在 server3 的实验构建目录中，模板文件与该 `kernel.asc` 放在同一目录，
+使用 `cmake . && make -j4` 只编译，不执行生成的程序。
+
 manual_vector_reduction 算子的 Kernel 直调实现示例，同时支持 PyTorch 对接。
 
 详细代码说明见 `op_kernel/manual_vector_reduction_kernel.asc` 和 `op_kernel/manual_vector_reduction_tiling.h` 中的注释（搜索 `[MODIFY]` 标记）。
