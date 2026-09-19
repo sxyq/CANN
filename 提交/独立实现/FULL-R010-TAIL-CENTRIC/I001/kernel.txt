@@ -1,12 +1,33 @@
+#include <cmath>
+#include <cstdint>
 #include "kernel_operator.h"
-#include "tail_centric_tiling.h"
+
+enum class TailCentricDType : uint32_t {
+    FP32 = 0,
+    FP16 = 1,
+    BF16 = 2,
+};
+
+struct TailCentricTilingData {
+    uint32_t blockNum;
+    uint32_t dtype;
+    uint32_t outer;
+    uint32_t width;
+    uint32_t tileElements;
+    float epsilon;
+    uint64_t elementsPerBlock;
+    uint64_t tailElements;
+};
+
+constexpr uint32_t kTileElements = 2048;
+constexpr uint32_t kDoubleBuffer = 2;
 
 class TailCentricKernel {
 public:
     __aicore__ explicit TailCentricKernel(AscendC::TPipe* pipe) : pipe_(pipe) {}
 
     __aicore__ void Init(GM_ADDR x, GM_ADDR residual, GM_ADDR gamma, GM_ADDR bias,
-                         GM_ADDR output, const __gm__ TailCentricTilingData* tiling)
+                         GM_ADDR output, const TailCentricTilingData* tiling)
     {
         tiling_ = tiling;
         const uint32_t block = AscendC::GetBlockIdx();
@@ -45,6 +66,75 @@ public:
     }
 
 private:
+    __aicore__ inline void ConvertToFloat(
+        AscendC::LocalTensor<float> dst,
+        AscendC::LocalTensor<float> src,
+        uint32_t count)
+    {
+        for (uint32_t i = 0; i < count; ++i) {
+            dst.SetValue(i, src.GetValue(i));
+        }
+    }
+
+    __aicore__ inline void ConvertToFloat(
+        AscendC::LocalTensor<float> dst,
+        AscendC::LocalTensor<half> src,
+        uint32_t count)
+    {
+        for (uint32_t i = 0; i < count; ++i) {
+            dst.SetValue(i, static_cast<float>(src.GetValue(i)));
+        }
+    }
+
+    __aicore__ inline void ConvertToFloat(
+        AscendC::LocalTensor<float> dst,
+        AscendC::LocalTensor<bfloat16_t> src,
+        uint32_t count)
+    {
+        for (uint32_t i = 0; i < count; ++i) {
+            bfloat16_t value = src.GetValue(i);
+            const uint16_t bf16Bits = *reinterpret_cast<const uint16_t*>(&value);
+            const uint32_t floatBits = static_cast<uint32_t>(bf16Bits) << 16;
+            dst.SetValue(i, *reinterpret_cast<const float*>(&floatBits));
+        }
+    }
+
+    __aicore__ inline void ConvertFromFloat(
+        AscendC::LocalTensor<float> dst,
+        AscendC::LocalTensor<float> src,
+        uint32_t count)
+    {
+        for (uint32_t i = 0; i < count; ++i) {
+            dst.SetValue(i, src.GetValue(i));
+        }
+    }
+
+    __aicore__ inline void ConvertFromFloat(
+        AscendC::LocalTensor<half> dst,
+        AscendC::LocalTensor<float> src,
+        uint32_t count)
+    {
+        for (uint32_t i = 0; i < count; ++i) {
+            dst.SetValue(i, static_cast<half>(src.GetValue(i)));
+        }
+    }
+
+    __aicore__ inline void ConvertFromFloat(
+        AscendC::LocalTensor<bfloat16_t> dst,
+        AscendC::LocalTensor<float> src,
+        uint32_t count)
+    {
+        for (uint32_t i = 0; i < count; ++i) {
+            const float value = src.GetValue(i);
+            const uint32_t floatBits = *reinterpret_cast<const uint32_t*>(&value);
+            const uint32_t roundBias = 0x7fffU + ((floatBits >> 16) & 1U);
+            const uint16_t bf16Bits = static_cast<uint16_t>((floatBits + roundBias) >> 16);
+            bfloat16_t converted;
+            *reinterpret_cast<uint16_t*>(&converted) = bf16Bits;
+            dst.SetValue(i, converted);
+        }
+    }
+
     template <typename T>
     __aicore__ void ProcessType()
     {
@@ -125,7 +215,7 @@ private:
             AscendC::DataCopyPad(typed, src[offset],
                 {1, static_cast<uint16_t>(count * sizeof(T)), 0, 0}, {false, 0, 0, 0});
         }
-        AscendC::Cast<float, T>(dst, typed, AscendC::RoundMode::CAST_NONE, count);
+        ConvertToFloat(dst, typed, count);
         inTyped_.FreeTensor(typed);
     }
 
@@ -135,7 +225,7 @@ private:
                                 uint32_t count, bool fullAligned)
     {
         AscendC::LocalTensor<T> typed = inTyped_.AllocTensor<T>();
-        AscendC::Cast<T, float>(typed, src, AscendC::RoundMode::CAST_ROUND, count);
+        ConvertFromFloat(typed, src, count);
         if (fullAligned) {
             AscendC::DataCopy(dst[offset], typed, count);
         } else {
@@ -146,7 +236,7 @@ private:
     }
 
     AscendC::TPipe* pipe_;
-    const __gm__ TailCentricTilingData* tiling_;
+    const TailCentricTilingData* tiling_;
     AscendC::GlobalTensor<float> x_;
     AscendC::GlobalTensor<float> residual_;
     AscendC::GlobalTensor<float> gamma_;
@@ -160,12 +250,89 @@ private:
     uint32_t tileElements_ = 0;
 };
 
-extern "C" __global__ __vector__ void tail_centric_kernel(
-    GM_ADDR x, GM_ADDR residual, GM_ADDR gamma, GM_ADDR bias, GM_ADDR output, GM_ADDR tiling)
+__global__ __vector__ void tail_centric_kernel(
+    GM_ADDR x, GM_ADDR residual, GM_ADDR gamma, GM_ADDR bias, GM_ADDR output,
+    uint32_t blockNum, uint32_t dtype, uint32_t outer, uint32_t width,
+    uint32_t tileElements, float epsilon)
 {
+    TailCentricTilingData tiling;
+    tiling.blockNum = blockNum;
+    tiling.dtype = dtype;
+    tiling.outer = outer;
+    tiling.width = width;
+    tiling.tileElements = tileElements;
+    tiling.epsilon = epsilon;
+    tiling.elementsPerBlock = 0;
+    tiling.tailElements = 0;
+
     AscendC::TPipe pipe;
     TailCentricKernel op(&pipe);
     op.Init(x, residual, gamma, bias, output,
-            reinterpret_cast<const __gm__ TailCentricTilingData*>(tiling));
+            &tiling);
     op.Process();
+}
+
+extern "C" void run_kernel(
+    GM_ADDR x, const TensorGroupInfo& info_x,
+    GM_ADDR residual, const TensorGroupInfo& info_residual,
+    GM_ADDR gamma, const TensorGroupInfo& info_gamma,
+    GM_ADDR bias, const TensorGroupInfo& info_bias,
+    GM_ADDR output, const TensorGroupInfo& info_output,
+    int64_t availableCoreNum, aclrtStream stream, float epsilon)
+{
+    (void)info_residual;
+    (void)info_gamma;
+    (void)info_bias;
+    (void)info_output;
+
+    if (info_x.tensors == nullptr || info_x.numTensors < 1 ||
+        availableCoreNum <= 0) {
+        return;
+    }
+
+    const TensorInfo& xInfo = info_x.tensors[0];
+    if (xInfo.shape == nullptr || xInfo.numDims < 1) {
+        return;
+    }
+    const int64_t widthSigned = xInfo.shape[xInfo.numDims - 1];
+    if (widthSigned <= 0) {
+        return;
+    }
+
+    uint64_t outer = 1;
+    for (int64_t i = 0; i < xInfo.numDims - 1; ++i) {
+        const int64_t extent = xInfo.shape[i];
+        if (extent <= 0 || outer > 0xffffffffULL / static_cast<uint64_t>(extent)) {
+            return;
+        }
+        outer *= static_cast<uint64_t>(extent);
+    }
+    if (static_cast<uint64_t>(widthSigned) > 0xffffffffULL || outer == 0) {
+        return;
+    }
+
+    uint64_t requestedBlocks = static_cast<uint64_t>(availableCoreNum);
+    if (requestedBlocks > outer) {
+        requestedBlocks = outer;
+    }
+    if (requestedBlocks == 0 || requestedBlocks > 0xffffffffULL) {
+        return;
+    }
+
+    uint32_t dtype = 0;
+    if (xInfo.dtype == 0) {
+        dtype = static_cast<uint32_t>(TailCentricDType::FP32);
+    } else if (xInfo.dtype == 1) {
+        dtype = static_cast<uint32_t>(TailCentricDType::FP16);
+    } else if (xInfo.dtype == 2) {
+        dtype = static_cast<uint32_t>(TailCentricDType::BF16);
+    } else {
+        return;
+    }
+
+    const uint32_t blockCount = static_cast<uint32_t>(requestedBlocks);
+    tail_centric_kernel<<<blockCount, nullptr, stream>>>(
+        x, residual, gamma, bias, output, blockCount, dtype,
+        static_cast<uint32_t>(outer), static_cast<uint32_t>(widthSigned),
+        kTileElements, epsilon);
 }
