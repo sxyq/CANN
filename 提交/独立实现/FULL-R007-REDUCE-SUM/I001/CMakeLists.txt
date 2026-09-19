@@ -26,6 +26,9 @@ target_link_libraries(full_r007_reduce_sum PRIVATE
 
 target_include_directories(full_r007_reduce_sum PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
+    /usr/include/c++/11
+    /usr/include/aarch64-linux-gnu/c++/11
+    /usr/lib/gcc/aarch64-linux-gnu/11/include
 )
 
 target_compile_options(full_r007_reduce_sum PRIVATE
