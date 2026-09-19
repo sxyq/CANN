@@ -58,7 +58,9 @@ public:
 private:
     static constexpr uint32_t kTileElems = 2048;
     static constexpr uint32_t kPartialSlots = 8;
-    static constexpr uint32_t kScalarSlots = 16;
+    static constexpr uint32_t kPartialStride = 8;
+    static constexpr uint32_t kRmsSlot = kPartialSlots * kPartialStride;
+    static constexpr uint32_t kScalarSlots = kRmsSlot + 8;
 
     __aicore__ inline int32_t TileLength(uint64_t remaining) const
     {
@@ -167,16 +169,13 @@ private:
         AscendC::LocalTensor<float> reduceTmp = reduceTmpBuf_.Get<float>();
         AscendC::LocalTensor<float> sumSlots = sumBuf_.Get<float>();
         AscendC::LocalTensor<float> partial = sumSlots;
-        // Keep the scalar work areas on separate 32B UB boundaries.
-        AscendC::LocalTensor<float> rms = sumSlots[8];
+        // Keep every reduction result on its own 32B UB boundary.
+        AscendC::LocalTensor<float> rms = sumSlots[kRmsSlot];
 
         AscendC::Duplicate(rms, 0.0f, 1);
         AscendC::PipeBarrier<PIPE_V>();
 
         // First pass: form bounded partial groups, then reduce each group.
-        AscendC::LocalTensor<float> groupSum = sumSlots[9];
-        AscendC::Duplicate(groupSum, 0.0f, 1);
-        AscendC::PipeBarrier<PIPE_V>();
         uint32_t partialCount = 0;
         for (uint64_t col = 0; col < rowWidth; col += kTileElems) {
             const int32_t valid = TileLength(rowWidth - col);
@@ -191,13 +190,28 @@ private:
             AscendC::PipeBarrier<PIPE_V>();
             AscendC::Mul(xFp32, yFp32, yFp32, valid);
             AscendC::PipeBarrier<PIPE_V>();
-            AscendC::ReduceSum(partial[partialCount], xFp32, reduceTmp, valid);
+            AscendC::ReduceSum(
+                partial[partialCount * kPartialStride],
+                xFp32,
+                reduceTmp,
+                valid);
             AscendC::PipeBarrier<PIPE_V>();
             ++partialCount;
             if (partialCount == kPartialSlots || col + kTileElems >= rowWidth) {
-                AscendC::ReduceSum(groupSum, partial, reduceTmp, partialCount);
-                AscendC::PipeBarrier<PIPE_V>();
-                AscendC::Add(rms, rms, groupSum, 1);
+                // Pairwise reduction keeps all vector destinations aligned.
+                for (uint32_t stride = 1; stride < partialCount; stride *= 2) {
+                    for (uint32_t index = 0;
+                         index + stride < partialCount;
+                         index += 2 * stride) {
+                        AscendC::Add(
+                            partial[index * kPartialStride],
+                            partial[index * kPartialStride],
+                            partial[(index + stride) * kPartialStride],
+                            1);
+                        AscendC::PipeBarrier<PIPE_V>();
+                    }
+                }
+                AscendC::Add(rms, rms, partial, 1);
                 AscendC::PipeBarrier<PIPE_V>();
                 partialCount = 0;
             }
