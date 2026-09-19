@@ -225,7 +225,14 @@ private:
 extern "C" __global__ __aicore__ void add_rms_norm_bias(
     GM_ADDR x, GM_ADDR residual, GM_ADDR gamma, GM_ADDR bias, GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
 {
-    auto tilingData = *reinterpret_cast<__gm__ AddRmsNormBiasTilingData*>(tiling);
+    auto tilingGm = reinterpret_cast<__gm__ AddRmsNormBiasTilingData*>(tiling);
+    AddRmsNormBiasTilingData tilingData;
+    tilingData.outer = tilingGm->outer;
+    tilingData.dim = tilingGm->dim;
+    tilingData.rowStride = tilingGm->rowStride;
+    tilingData.tileRows = tilingGm->tileRows;
+    tilingData.epsilon = tilingGm->epsilon;
+    tilingData.invDim = tilingGm->invDim;
     AddRmsNormBiasLargeTile<InputT> op;
     op.Init(x, residual, gamma, bias, y, tilingData);
     op.Process();
