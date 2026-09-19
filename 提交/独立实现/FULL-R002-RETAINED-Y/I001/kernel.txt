@@ -30,6 +30,7 @@ struct RetainedYTiling {
     uint64_t groupsPerBlock;
     uint32_t blockNum;
     uint32_t tileElements;
+    float invDim;
     float epsilon;
 };
 
@@ -131,6 +132,7 @@ public:
         pipe_->InitBuffer(squareBuf_, kTileElements * sizeof(float));
         pipe_->InitBuffer(reduceBuf_, kTileElements * sizeof(float));
         pipe_->InitBuffer(sumBuf_, kDmaAlignment);
+        eventVToS_ = static_cast<int32_t>(pipe_->AllocEventID<AscendC::HardEvent::V_S>());
     }
 
     __aicore__ inline void Process()
@@ -177,8 +179,8 @@ private:
             AscendC::Mul<float>(squareLocal, yLocal, yLocal, count);
             AscendC::ReduceSum<float, true>(tileSum, squareLocal, reduceTmp,
                                              static_cast<int32_t>(count));
-            AscendC::SetFlag<AscendC::HardEvent::V_S>();
-            AscendC::WaitFlag<AscendC::HardEvent::V_S>();
+            AscendC::SetFlag<AscendC::HardEvent::V_S>(eventVToS_);
+            AscendC::WaitFlag<AscendC::HardEvent::V_S>(eventVToS_);
             sumSquares += tileSum.GetValue(0);
 
             AscendC::DataCopyExtParams outputParams = MakeCopyParams(count * sizeof(float));
@@ -213,6 +215,7 @@ private:
     AscendC::TBuf<AscendC::TPosition::VECCALC> sumBuf_;
     uint64_t rowBegin_ = 0;
     uint64_t rowEnd_ = 0;
+    int32_t eventVToS_ = 0;
 };
 
 template <typename T>
@@ -243,6 +246,7 @@ public:
         pipe_->InitBuffer(statBuf_, kDmaAlignment);
         pipe_->InitBuffer(reduceBuf_, kTileElements * sizeof(float));
         pipe_->InitBuffer(statQueue_, 1, kDmaAlignment);
+        eventVToS_ = static_cast<int32_t>(pipe_->AllocEventID<AscendC::HardEvent::V_S>());
     }
 
     __aicore__ inline void Process()
@@ -257,16 +261,18 @@ private:
     {
         AscendC::LocalTensor<float> stat = statQueue_.AllocTensor<float>();
         AscendC::DataCopyExtParams copyParams = MakeCopyParams(sizeof(float));
-        AscendC::DataCopyPad(stat, rowSumsGm_[row], copyParams);
+        AscendC::DataCopyPad(stat, rowSumsGm_[row], copyParams, MakeInputPad<float>(1));
         statQueue_.EnQue(stat);
         stat = statQueue_.DeQue<float>();
 
         AscendC::LocalTensor<float> scalar = statBuf_.Get<float>();
-        AscendC::Muls<float>(scalar, stat, 1.0f / static_cast<float>(tiling_->dim), 1);
-        AscendC::Adds<float>(scalar, scalar, tiling_->epsilon, 1);
+        float invDim = tiling_->invDim;
+        float epsilon = tiling_->epsilon;
+        AscendC::Muls<float>(scalar, stat, invDim, 1);
+        AscendC::Adds<float>(scalar, scalar, epsilon, 1);
         AscendC::Sqrt<float>(scalar, scalar, 1);
-        AscendC::SetFlag<AscendC::HardEvent::V_S>();
-        AscendC::WaitFlag<AscendC::HardEvent::V_S>();
+        AscendC::SetFlag<AscendC::HardEvent::V_S>(eventVToS_);
+        AscendC::WaitFlag<AscendC::HardEvent::V_S>(eventVToS_);
         float rms = scalar.GetValue(0);
         statQueue_.FreeTensor(stat);
         return rms;
@@ -306,7 +312,9 @@ private:
             AscendC::LocalTensor<float> normalized = normBuf_.Get<float>();
             AscendC::LocalTensor<T> outputLocal = outputQueue_.AllocTensor<T>();
 
-            AscendC::Divs<float>(yLocal, yLocal, rms, count);
+            AscendC::LocalTensor<float> divisor = reduceBuf_.Get<float>();
+            AscendC::Duplicate<float>(divisor, rms, count);
+            AscendC::Div<float>(yLocal, yLocal, divisor, count);
             InputToFloat<T>::Run(gammaFloat, gammaLocal, count);
             InputToFloat<T>::Run(biasFloat, biasLocal, count);
             AscendC::Mul<float>(normalized, yLocal, gammaFloat, count);
@@ -344,6 +352,7 @@ private:
     AscendC::TBuf<AscendC::TPosition::VECCALC> reduceBuf_;
     uint64_t rowBegin_ = 0;
     uint64_t rowEnd_ = 0;
+    int32_t eventVToS_ = 0;
 };
 
 template <typename T>
@@ -448,6 +457,7 @@ extern "C" void run_kernel(GM_ADDR x, const TensorGroupInfo &info_x,
     tiling.groupsPerBlock = (groupCount + blockNum - 1) / blockNum;
     tiling.blockNum = blockNum;
     tiling.tileElements = retained_y_i001::kTileElements;
+    tiling.invDim = 1.0f / static_cast<float>(dim);
     tiling.epsilon = epsilon;
 
     uint64_t totalElements = outer * dim;
@@ -458,8 +468,8 @@ extern "C" void run_kernel(GM_ADDR x, const TensorGroupInfo &info_x,
                     ACL_MEM_MALLOC_HUGE_FIRST) != ACL_SUCCESS) {
         return;
     }
-    GM_ADDR retainedY = reinterpret_cast<GM_ADDR>(workspace);
-    GM_ADDR rowSums = reinterpret_cast<GM_ADDR>(workspace + retainedBytes);
+    GM_ADDR retainedY = workspace;
+    GM_ADDR rowSums = workspace + retainedBytes;
 
     if (xInfo.dtype == 0) {
         retained_y_i001::LaunchRetainedY<float>(x, residual, gamma, bias, output,
