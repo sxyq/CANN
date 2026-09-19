@@ -54,6 +54,7 @@ public:
     static constexpr int32_t kScalarElems = 16;
     static constexpr int32_t kWideCachedTileElems = 6912;
     static constexpr uint64_t kWideParamReuseMaxWidth = 16384ULL;
+    static constexpr int32_t kWideParamReuseTileElems = 4096;
 
     static constexpr int32_t kWideFp16CachedTileElems = 7680;
     static constexpr uint64_t kWideFp16CachedRowMaxWidth = 32768ULL;
@@ -134,23 +135,25 @@ public:
         /*
          * Shared FP16/BF16 wide cached-row UB layout.
          *
-         * Approximate D=32768 payload:
+         * R030 D=16384 payload:
          *
          * x native tile        15 KiB
          * residual native     15 KiB
-         * full FP32 y         128 KiB
-         * value FP32          30 KiB
-         * x FP32              30 KiB
-         * residual FP32       30 KiB
+         * retained-y FP16      32 KiB at D=16384
+         * value FP32           16 KiB
+         * x FP32               16 KiB
+         * residual FP32        16 KiB
          *
-         * ~= 238 KiB + scalar slots with 6912-element segments.
+         * ~= 160 KiB + scalar slots with 4096-element segments.
          */
         if (wideFp16CachedMode_ ||
             wideBf16CachedMode_ ||
             wideParamReuseMode_) {
 
             const int32_t wideTileElems =
-                kWideCachedTileElems;
+                wideParamReuseMode_
+                    ? kWideParamReuseTileElems
+                    : kWideCachedTileElems;
 
             tpipe.InitBuffer(
                 xBuf_,
@@ -162,10 +165,20 @@ public:
                 wideTileElems *
                     sizeof(T));
 
-            tpipe.InitBuffer(
-                outputBuf_,
-                rowWidth *
-                    sizeof(float));
+            if (wideParamReuseMode_) {
+
+                tpipe.InitBuffer(
+                    outputBuf_,
+                    rowWidth *
+                        sizeof(half));
+
+            } else {
+
+                tpipe.InitBuffer(
+                    outputBuf_,
+                    rowWidth *
+                        sizeof(float));
+            }
 
             tpipe.InitBuffer(
                 valueFp32Buf_,
@@ -188,6 +201,7 @@ public:
                     sizeof(float));
 
             if (wideParamReuseMode_) {
+
                 tpipe.InitBuffer(
                     gammaWideBuf_,
                     rowWidth *
@@ -197,6 +211,7 @@ public:
                     biasWideBuf_,
                     rowWidth *
                         sizeof(T));
+
             }
 
             return;
@@ -859,8 +874,8 @@ private:
             AscendC::LocalTensor<T> residualLocal =
                 residualBuf_.Get<T>();
 
-            AscendC::LocalTensor<float> cachedY =
-                outputBuf_.Get<float>();
+            AscendC::LocalTensor<half> cachedY =
+                outputBuf_.Get<half>();
 
             AscendC::LocalTensor<float> valueFp32 =
                 valueFp32Buf_.Get<float>();
@@ -879,14 +894,14 @@ private:
             for (uint64_t col = 0;
                  col < rowWidth;
                  col +=
-                     kWideCachedTileElems) {
+                     kWideParamReuseTileElems) {
 
                 const int32_t valid =
                     static_cast<int32_t>(
                         rowWidth - col >
                                 static_cast<uint64_t>(
-                                    kWideCachedTileElems)
-                            ? kWideCachedTileElems
+                                kWideParamReuseTileElems)
+                            ? kWideParamReuseTileElems
                             : rowWidth - col);
 
                 Load(
@@ -923,10 +938,10 @@ private:
 
                 AscendC::PipeBarrier<PIPE_V>();
 
-                AscendC::Adds(
+                AscendC::Cast(
                     cachedY[col],
                     valueFp32,
-                    0.0f,
+                    AscendC::RoundMode::CAST_RINT,
                     valid);
 
                 AscendC::PipeBarrier<PIPE_V>();
@@ -993,19 +1008,27 @@ private:
             for (uint64_t col = 0;
                  col < rowWidth;
                  col +=
-                     kWideCachedTileElems) {
+                     kWideParamReuseTileElems) {
 
                 const int32_t valid =
                     static_cast<int32_t>(
                         rowWidth - col >
                                 static_cast<uint64_t>(
-                                    kWideCachedTileElems)
-                            ? kWideCachedTileElems
+                                kWideParamReuseTileElems)
+                            ? kWideParamReuseTileElems
                             : rowWidth - col);
+
+                AscendC::Cast(
+                    valueFp32,
+                    cachedY[col],
+                    AscendC::RoundMode::CAST_NONE,
+                    valid);
+
+                AscendC::PipeBarrier<PIPE_V>();
 
                 AscendC::Muls(
                     valueFp32,
-                    cachedY[col],
+                    valueFp32,
                     invRms,
                     valid);
 
