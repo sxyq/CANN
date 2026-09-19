@@ -13,6 +13,7 @@ fi
 
 mkdir -p "${OUT_DIR}"
 "${COMPILER}" -x cce -c "${SCRIPT_DIR}/kernel.txt" \
+    -DFULL_R023_AICORE_COMPILE=1 \
     --cce-aicore-arch=dav-c220 -std=c++17 \
     -I"${ASCEND_HOME_PATH}/aarch64-linux/include" \
     -I"${ASCEND_HOME_PATH}/aarch64-linux/include/ascendc/basic_api" \

@@ -220,3 +220,46 @@ extern "C" __global__ __aicore__ void add_rms_norm_bias_fp32(
 {
     full_r023_i001::RunAddRmsNormBias<float>(x, residual, gamma, bias, y, outer, dim, dimFloat, epsilon);
 }
+
+#if !defined(FULL_R023_AICORE_COMPILE)
+extern "C" void run_kernel(
+    GM_ADDR x, const TensorGroupInfo& info_x,
+    GM_ADDR residual, const TensorGroupInfo& info_residual,
+    GM_ADDR gamma, const TensorGroupInfo& info_gamma,
+    GM_ADDR bias, const TensorGroupInfo& info_bias,
+    GM_ADDR y, const TensorGroupInfo& info_y,
+    int64_t availableCoreNum, aclrtStream stream, float epsilon)
+{
+    (void)info_residual;
+    (void)info_gamma;
+    (void)info_bias;
+    (void)info_y;
+
+    const TensorInfo& xInfo = info_x.tensors[0];
+    const int64_t rank = xInfo.numDims;
+    uint64_t outer = 1;
+    for (int64_t index = 0; index + 1 < rank; ++index) {
+        outer *= static_cast<uint64_t>(xInfo.shape[index]);
+    }
+    const uint64_t dim = static_cast<uint64_t>(xInfo.shape[rank - 1]);
+    const float dimFloat = static_cast<float>(dim);
+    const uint32_t blockCount = static_cast<uint32_t>(availableCoreNum);
+
+    switch (xInfo.dtype) {
+        case 0:
+            add_rms_norm_bias_fp32<<<blockCount, nullptr, stream>>>(
+                x, residual, gamma, bias, y, outer, dim, dimFloat, epsilon);
+            break;
+        case 1:
+            add_rms_norm_bias_fp16<<<blockCount, nullptr, stream>>>(
+                x, residual, gamma, bias, y, outer, dim, dimFloat, epsilon);
+            break;
+        case 2:
+            add_rms_norm_bias_bf16<<<blockCount, nullptr, stream>>>(
+                x, residual, gamma, bias, y, outer, dim, dimFloat, epsilon);
+            break;
+        default:
+            break;
+    }
+}
+#endif
