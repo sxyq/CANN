@@ -18,6 +18,9 @@ fi
 if [[ ! -f data_utils.h ]]; then
     ln -s "${TEMPLATE_DIR}/data_utils.h" data_utils.h
 fi
+if [[ ! -f kernel.asc ]]; then
+    ln -s kernel.txt kernel.asc
+fi
 
 set +u
 source "${TOOLCHAIN_ENV}"
