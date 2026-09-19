@@ -28,5 +28,7 @@ target_include_directories(full_r006_reduction_arch_i001 PRIVATE
 )
 
 target_compile_options(full_r006_reduction_arch_i001 PRIVATE
+    $<$<COMPILE_LANGUAGE:ASC>:-I/usr/include/c++/11>
+    $<$<COMPILE_LANGUAGE:ASC>:-I/usr/include/aarch64-linux-gnu/c++/11>
     $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=${SOC_ARCH}>
 )
