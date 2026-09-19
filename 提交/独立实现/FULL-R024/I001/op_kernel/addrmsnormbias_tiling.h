@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cstdint>
+#include <stdint.h>
 
 enum class AddrRmsNormBiasDType : uint32_t {
     FP16 = 0,

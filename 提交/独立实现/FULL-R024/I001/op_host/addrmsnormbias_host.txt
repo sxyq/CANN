@@ -1,8 +1,7 @@
 #include <acl/acl.h>
 
-#include <algorithm>
-#include <cstdint>
-#include <cstdio>
+#include <stddef.h>
+#include <stdio.h>
 
 #include "../op_kernel/addrmsnormbias_tiling.h"
 #include "../op_kernel/addrmsnormbias_kernel.asc"
@@ -18,7 +17,7 @@ uint32_t AlignElements(uint32_t elements, uint32_t elementBytes)
 bool CheckAcl(const char *name, aclError ret)
 {
     if (ret != ACL_SUCCESS) {
-        std::fprintf(stderr, "%s failed: %d\n", name, static_cast<int>(ret));
+        printf("%s failed: %d\n", name, static_cast<int>(ret));
         return false;
     }
     return true;
@@ -50,9 +49,15 @@ int main()
     constexpr uint32_t outer = 2;
     constexpr uint32_t dim = 33;
     constexpr uint32_t elementBytes = sizeof(half);
-    const uint32_t blockNum = std::max<uint32_t>(
-        1, std::min<uint32_t>(outer, static_cast<uint32_t>(vectorCoreCount)));
-    const uint32_t tileDim = std::min<uint32_t>(dim, ADDRMSNORMBIAS_TILE_D);
+    uint32_t availableCores = static_cast<uint32_t>(vectorCoreCount);
+    if (availableCores == 0) {
+        availableCores = 1;
+    }
+    uint32_t blockNum = outer < availableCores ? outer : availableCores;
+    if (blockNum == 0) {
+        blockNum = 1;
+    }
+    const uint32_t tileDim = dim < ADDRMSNORMBIAS_TILE_D ? dim : ADDRMSNORMBIAS_TILE_D;
 
     AddrRmsNormBiasTilingData tiling{};
     tiling.blockNum = blockNum;
