@@ -17,7 +17,8 @@ add_custom_command(
             --cce-aicore-only
             --npu-arch=${KERNEL_ARCH}
             -std=c++17
-            -I"${ASCEND_HOME_PATH}/include"
+            -I${ASCEND_HOME_PATH}/include
+            -I${ASCEND_HOME_PATH}/aarch64-linux/asc/include
             -DINPUT_T=half
             -c "${CMAKE_CURRENT_SOURCE_DIR}/kernel.txt"
             -o "${KERNEL_OBJECT}"
