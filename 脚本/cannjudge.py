@@ -13,10 +13,10 @@
   problem [token]    只读：解析题目的 problemId 与 15 个测试点公开基准 tbest
 
 用法示例：
-  python3 调研/工具/cannjudge.py preflight 提交/混合方案/H001-正确性优先/V005/kernel.txt
-  python3 调研/工具/cannjudge.py poll 6aaa74eeb0477ec41e147510 --interval 2
-  python3 调研/工具/cannjudge.py poll <id> --official          # 额外取公开排行的官方总分
-  python3 调研/工具/cannjudge.py problem --token addrmsnormbias
+  python3 脚本/cannjudge.py preflight /absolute/path/kernel.txt
+  python3 脚本/cannjudge.py poll <submissionId> --interval 2
+  python3 脚本/cannjudge.py poll <submissionId> --official
+  python3 脚本/cannjudge.py problem --token addrmsnormbias
 """
 
 from __future__ import annotations
@@ -35,7 +35,7 @@ BASE = "https://cannjudge.cn"
 DEFAULT_PROBLEM_TOKEN = "addrmsnormbias"
 UA = "cannjudge-readonly-cli/1.0 (+GET only; no credentials)"
 
-# 平台提交入口的固定文件名（AGENTS.md：本机 .txt，平台入口 kernel.asc）
+# 平台提交入口固定文件名为 kernel.asc
 SUBMISSION_ENTRY_NAME = "kernel.asc"
 
 # 终态 / 非终态关键词。前端 ui/shared.js 的 statusKey() 把未知值都当作 waiting，
@@ -180,7 +180,7 @@ def cmd_preflight(args) -> int:
     print(f"本机源码文件  : {info['本机源码文件']}")
     print(f"本机文件名    : {name}")
     print(f"平台入口名    : {SUBMISSION_ENTRY_NAME}"
-          + ("" if name == "kernel.txt" else "   ← ⚠ 本机未使用 .txt 命名，见 AGENTS.md"))
+          + ("" if name == "kernel.txt" else "   ← ⚠ 本机未使用 .txt 命名；平台提交入口固定文件名为 kernel.asc"))
     print(f"行数          : {info['行数']}")
     print(f"字节数        : {info['字节数']}")
     print(f"SHA-256       : {sha}")
