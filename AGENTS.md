@@ -114,6 +114,131 @@
 
 后续主 Agent 负责拆分 CANN 技术路线、分配验证任务和合并证据；子 Agent 的推理任务可通过服务器模型服务执行，但子 Agent 不得直接修改其他工作目录、停止模型进程或改变 NPU 配置。每个验证任务必须带有路线编号、源码版本、实验目录、输入规模、预期产出和停止条件。
 
+### 阶段 3A：主 Agent 只做调度
+
+本节适用于 `FULL-R001`–`FULL-R029` 的盲化独立实现阶段，以及用户明确要求采用同一调度方式的路线实验。本节优先于本文件中允许主 Agent 直接处理路线目录的通用描述。
+
+#### 主 Agent 的边界
+
+阶段 3A 中，主 Agent 是调度器和状态观察者，不是路线实现者。主 Agent 可以：
+
+- 查看子 Agent 的 `active`、`done`、`failed` 状态；
+- 创建、恢复、重新分配和关闭子 Agent；
+- 保存 `Route -> Agent` 的归属关系；
+- 接收子 Agent 返回的 Git commit、编译结果和日志路径；
+- 对已经由子 Agent 报告 `compile PASS` 的候选执行 CANNJudge 提交；
+- 保存线上 submission/result，并更新极简全局状态；
+- 在一个 Agent 完成后，把它分配到下一条未完成路线。
+
+主 Agent 严禁直接：
+
+- 编写或修改 `kernel.txt`；
+- 修改 `CMakeLists.txt`、`compile.sh` 或其他构建文件；
+- 修复 include path、API、类型、架构参数或其他编译问题；
+- 修改 Route 目录中的任何实现文件；
+- SSH 到 server3 为某条 Route 执行编译；
+- 分析某条 Route 的编译错误并亲自处理；
+- 代替子 Agent 完成代码、编译或 CompileFix。
+
+即使子 Agent 留下未提交文件、构建错误或未完成的 CompileFix，主 Agent 也不得接管。必须把该 Route 交回原负责人，或在原负责人不可用时创建新的同路线负责人。
+
+#### Route 文件所有权
+
+每条正在执行的 Route 必须记录一个 `ROUTE_OWNER`。只有该 Route 的负责人可以写入：
+
+```text
+提交/独立实现/FULL-Rxxx/I001/
+```
+
+其中包括 `kernel.txt`、`CMakeLists.txt`、`compile.sh`、Route 专用构建文件和该 Route 的编译日志。主 Agent 对这些文件只允许确认路径或文件是否存在，不打开源码内容，不修改、不暂存、不提交，也不替换未提交改动。
+
+每条 Route 使用独立 branch 或 worktree。不同 Route 的源码、构建目录和 CompileFix 不得交叉复用；子 Agent 不得读取其他 Route 的 I001 或任何既有实现。
+
+#### 编译与 CompileFix 流程
+
+路线负责人自行完成以下链条：
+
+```text
+独立编写
+→ Git commit
+→ server3 CANN compile
+→ 必要 CompileFix
+→ 再次 commit 与 compile
+→ compile PASS
+→ 向主 Agent 报告
+```
+
+编译失败时，主 Agent 只向同一 Route 的负责人发送失败信息和日志位置，要求其继续处理。例如：
+
+```text
+R005 compile failed，请继续处理你自己的 I001 CompileFix，完成 commit、server3 compile，并返回 PASS/FAIL 与日志路径。
+```
+
+主 Agent 不得打开 CMake、修改 include、复制头文件路径或代跑编译。只有负责人明确返回 `compile PASS` 后，主 Agent 才能进入线上提交队列；线上提交仍遵守本文件既有的外部操作确认要求。
+
+#### Agent 槽位不足
+
+出现 `agent thread limit reached` 时，主 Agent 只能：
+
+- 等待现有 Agent；
+- 关闭已完成且不再需要的 Agent；
+- 重试创建或恢复 Agent；
+- 向用户报告当前并发上限。
+
+槽位不足不能成为主 Agent 自己写代码、改构建文件或执行 Route 编译的理由。没有负责人时宁可暂缓该 Route，也不能改变独立实验的归属关系。
+
+#### 异步 Agent 留下未提交改动
+
+如果只观察到某个 Agent 已提交 commit，但其 Route 目录仍有未提交改动：
+
+1. 记录该 Route 的原负责人；
+2. 恢复原 Agent，或创建只负责该 Route 的新 Agent；
+3. 只告诉它“你自己的 Route 有未完成 CompileFix，请继续完成”；
+4. 保留工作树现状，等待它返回新的 commit 和编译结论。
+
+主 Agent 不得为清理工作树而回退、覆盖、暂存、提交或修改这些文件。
+
+#### 主 Agent 可维护的共享状态
+
+阶段 3A 中，主 Agent 最多维护以下共享状态文件：
+
+```text
+实验/independent-breadth/results.tsv
+实验/independent-breadth/scheduler-state.tsv
+```
+
+只能写入路线、Agent、状态、commit、compile、submission、online_status、pass_count、official_score 和备注等状态字段，不得把 Route 实现代码或构建修复写入状态文件。线上结果目录可以按既有提交流程保存，但源码仍由 Route 负责人提供。
+
+#### 盲化上下文
+
+Route Agent 只接收题目语义、官方 Ascend C/CANN API 约束、server3 编译方式和本 Route 的技术思想。不得查看任何既有 V001、其他 Route 的 I001、R030、R031、B0、PURE、Mix、历史 external 或当前最优源码；不得把其他 Route 的代码、辅助函数、UB 布局或构建入口带入当前实现。
+
+#### 主 Agent 工作循环
+
+```text
+poll Agent
+→ 发现 Agent 完成或需要继续
+→ 读取结构化状态报告
+→ compile PASS：进入 CANNJudge 提交流程
+→ 保存线上结果
+→ 关闭已完成 Agent
+→ 立即分配下一条未完成 Route
+→ 继续 poll
+```
+
+如果 Agent 尚未完成，主 Agent 只能继续观察、发送边界清晰的调度消息或处理不涉及 Route 源码的共享状态；不得转为直接实现、修复或编译。
+
+阶段状态输出保持简短，使用以下字段：
+
+```text
+ACTIVE AGENTS:
+WAITING:
+ONLINE READY:
+NEW ONLINE:
+INDEPENDENT COVERAGE:
+NEXT:
+```
+
 ### 路线逐项穷尽策略
 
 - 路线按 `R001` 到 `R029` 组成待验证队列。主 Agent 一次只激活一个当前路线，当前路线没有达到停止条件前，不切换到下一条路线。
