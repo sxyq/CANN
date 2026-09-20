@@ -77,7 +77,7 @@ class MultiModeKernel {
 public:
     __aicore__ inline void Init(GM_ADDR x, GM_ADDR residual, GM_ADDR gamma, GM_ADDR bias,
                                 GM_ADDR output, uint64_t rowCount, uint32_t dim,
-                                float epsilon, uint32_t tile, uint32_t batchRows,
+                                float epsilon, float invDim, uint32_t tile, uint32_t batchRows,
                                 uint32_t reuseParams)
     {
         xGm_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(x));
@@ -89,6 +89,7 @@ public:
         rowCount_ = rowCount;
         dim_ = dim;
         epsilon_ = epsilon;
+        invDim_ = invDim;
         tile_ = tile;
         batchRows_ = batchRows;
         reuseParams_ = reuseParams != 0;
@@ -236,7 +237,7 @@ private:
         AscendC::Add<float>(yFp, xFp, residualFp, static_cast<int32_t>(valid));
         AscendC::Mul<float>(yFp, yFp, yFp, static_cast<int32_t>(valid));
         AscendC::ReduceSum<float>(sumSlot, yFp, reduceTmp, static_cast<int32_t>(valid));
-        AscendC::Muls<float>(sumSlot, sumSlot, 1.0f / static_cast<float>(dim_), 1);
+        AscendC::Muls<float>(sumSlot, sumSlot, invDim_, 1);
         AscendC::Adds<float>(sumSlot, sumSlot, epsilon_, 1);
         AscendC::Sqrt<float>(rmsSlot, sumSlot, 1);
         float rms = rmsSlot.GetValue(0);
@@ -244,7 +245,8 @@ private:
         ToFp32<T>(xFp, xRaw, valid);
         ToFp32<T>(residualFp, residualRaw, valid);
         AscendC::Add<float>(yFp, xFp, residualFp, static_cast<int32_t>(valid));
-        AscendC::Divs<float>(yFp, yFp, rms, static_cast<int32_t>(valid));
+        float invRms = 1.0f / rms;
+        AscendC::Muls<float>(yFp, yFp, invRms, static_cast<int32_t>(valid));
         AscendC::Mul<float>(yFp, yFp, gammaFp, static_cast<int32_t>(valid));
         AscendC::Add<float>(yFp, yFp, biasFp, static_cast<int32_t>(valid));
 
@@ -282,6 +284,7 @@ private:
     uint32_t tile_ = kMaxTile;
     uint32_t batchRows_ = 1;
     float epsilon_ = 1e-5f;
+    float invDim_ = 1.0f;
     bool reuseParams_ = false;
 };
 
@@ -289,11 +292,11 @@ template <typename T>
 __global__ __vector__ void AddRmsNormBiasD001Kernel(
     GM_ADDR x, GM_ADDR residual, GM_ADDR gamma, GM_ADDR bias, GM_ADDR output,
     uint64_t rowCount, uint32_t dim, float epsilon, uint32_t tile,
-    uint32_t batchRows, uint32_t reuseParams)
+    float invDim, uint32_t batchRows, uint32_t reuseParams)
 {
     MultiModeKernel<T> kernel;
     kernel.Init(x, residual, gamma, bias, output, rowCount, dim, epsilon,
-                tile, batchRows, reuseParams);
+                invDim, tile, batchRows, reuseParams);
     kernel.Process();
 }
 
@@ -326,6 +329,7 @@ void LaunchD001(GM_ADDR x, GM_ADDR residual, GM_ADDR gamma, GM_ADDR bias, GM_ADD
     uint32_t tile = 4096;
     uint32_t batchRows = 1;
     uint32_t reuseParams = 0;
+    float invDim = 1.0f / static_cast<float>(dim);
     if (plan == kSmallFew || plan == kUnaligned) {
         tile = 1024;
     } else if (plan == kMediumMany) {
@@ -340,7 +344,7 @@ void LaunchD001(GM_ADDR x, GM_ADDR residual, GM_ADDR gamma, GM_ADDR bias, GM_ADD
 
     AddRmsNormBiasD001Kernel<T><<<blockCount, nullptr, stream>>>(
         x, residual, gamma, bias, output, rowCount, dim, epsilon,
-        tile, batchRows, reuseParams);
+        tile, invDim, batchRows, reuseParams);
 }
 
 }  // namespace multimode_r031_d001
