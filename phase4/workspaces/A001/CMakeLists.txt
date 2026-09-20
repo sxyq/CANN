@@ -26,8 +26,19 @@ set(CMAKE_ASC_COMPILE_OBJECT
 add_library(add_rms_norm_bias_kernel OBJECT
     op_kernel/add_rms_norm_bias_kernel.asc)
 
+# Compile the direct-invocation adapter as the exact source shape sent to the
+# judge. The locked base implementation above remains a separate target.
+add_library(a001_submission OBJECT
+    submission.asc)
+
 target_include_directories(add_rms_norm_bias_kernel PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/op_kernel)
 
 target_compile_options(add_rms_norm_bias_kernel PRIVATE
+    $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=dav-2201>)
+
+target_include_directories(a001_submission PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR})
+
+target_compile_options(a001_submission PRIVATE
     $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=dav-2201>)

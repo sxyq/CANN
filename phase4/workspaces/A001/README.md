@@ -20,3 +20,14 @@ cmake --build build -j2
 
 The captured logs are `build/configure.log` and `build/compile.log`.
 
+## Direct-invocation submission
+
+`submission.asc` is the A001-only direct-invocation adapter. It derives the
+flattened row count and last dimension from `TensorGroupInfo`, selects a
+participating-core count, and launches the row-resident device kernel with
+scalar launch metadata. The base implementation remains in
+`op_kernel/add_rms_norm_bias_kernel.asc`; the adapter does not alter it.
+
+The adapter was compiled on `cann-server3` with the same toolchain. The
+captured records are `build/configure-adapter.log` and
+`build/compile-adapter.log`.
