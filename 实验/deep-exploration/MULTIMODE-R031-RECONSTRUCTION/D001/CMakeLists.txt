@@ -24,6 +24,10 @@ target_link_libraries(multimode_r031_d001 PRIVATE
     graph_base
 )
 
+target_link_directories(multimode_r031_d001 PRIVATE
+    /usr/lib/gcc/aarch64-linux-gnu/11
+)
+
 target_include_directories(multimode_r031_d001 PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
