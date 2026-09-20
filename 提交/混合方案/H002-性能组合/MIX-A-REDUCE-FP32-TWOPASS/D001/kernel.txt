@@ -1,4 +1,3 @@
-#include <math.h>
 #include "kernel_operator.h"
 
 using namespace AscendC;
@@ -83,7 +82,7 @@ template <typename T>
 class RmsNormKernel {
 public:
     __aicore__ inline void Init(GM_ADDR x, GM_ADDR residual, GM_ADDR gamma,
-        GM_ADDR bias, GM_ADDR output, uint64_t outer, uint32_t dim, float epsilon)
+        GM_ADDR bias, GM_ADDR output, uint64_t outer, uint32_t dim, float inverseDim, float epsilon)
     {
         xGm.SetGlobalBuffer(reinterpret_cast<__gm__ T *>(x), outer * dim);
         residualGm.SetGlobalBuffer(reinterpret_cast<__gm__ T *>(residual), outer * dim);
@@ -92,6 +91,7 @@ public:
         outputGm.SetGlobalBuffer(reinterpret_cast<__gm__ T *>(output), outer * dim);
         outer_ = outer;
         dim_ = dim;
+        inverseDim_ = inverseDim;
         epsilon_ = epsilon;
 
         uint32_t rawBytes = kPaddedTileElements * static_cast<uint32_t>(sizeof(T));
@@ -170,8 +170,16 @@ private:
             residualFp32Queue.FreeTensor(residualFp32);
         }
 
-        float meanSquare = squareSum / static_cast<float>(dim_);
-        float inverseRms = 1.0f / sqrtf(meanSquare + epsilon_);
+        float meanSquare = squareSum * inverseDim_;
+        LocalTensor<float> rmsInput = sumQueue.AllocTensor<float>();
+        LocalTensor<float> rmsOutput = yQueue.AllocTensor<float>();
+        rmsInput.SetValue(0, meanSquare + epsilon_);
+        PipeBarrier<PIPE_ALL>();
+        Sqrt(rmsOutput, rmsInput, 1);
+        PipeBarrier<PIPE_V>();
+        float inverseRms = 1.0f / rmsOutput.GetValue(0);
+        sumQueue.FreeTensor(rmsInput);
+        yQueue.FreeTensor(rmsOutput);
 
         // Pass 2: reread x/residual and apply the FP32 affine epilogue.
         for (uint32_t offset = 0; offset < dim_; offset += kTileElements) {
@@ -239,6 +247,7 @@ private:
     GlobalTensor<T> outputGm;
     uint64_t outer_ = 0;
     uint32_t dim_ = 0;
+    float inverseDim_ = 0.0f;
     float epsilon_ = 0.0f;
 
     TPipe tpipe;
@@ -259,10 +268,11 @@ private:
 
 template <typename T>
 __global__ __vector__ void AddRmsNormBiasKernel(GM_ADDR x, GM_ADDR residual,
-    GM_ADDR gamma, GM_ADDR bias, GM_ADDR output, uint64_t outer, uint32_t dim, float epsilon)
+    GM_ADDR gamma, GM_ADDR bias, GM_ADDR output, uint64_t outer, uint32_t dim,
+    float inverseDim, float epsilon)
 {
     RmsNormKernel<T> kernel;
-    kernel.Init(x, residual, gamma, bias, output, outer, dim, epsilon);
+    kernel.Init(x, residual, gamma, bias, output, outer, dim, inverseDim, epsilon);
     kernel.Process();
 }
 
@@ -284,6 +294,7 @@ extern "C" void run_kernel(GM_ADDR x, const TensorGroupInfo& info_x, GM_ADDR res
         outer *= static_cast<uint64_t>(xInfo.shape[i]);
     }
     uint32_t dim = static_cast<uint32_t>(xInfo.shape[xInfo.numDims - 1]);
+    float inverseDim = 1.0f / static_cast<float>(dim);
     uint32_t blockNum = static_cast<uint32_t>(availableCoreNum);
     if (blockNum > outer) {
         blockNum = static_cast<uint32_t>(outer);
@@ -294,12 +305,12 @@ extern "C" void run_kernel(GM_ADDR x, const TensorGroupInfo& info_x, GM_ADDR res
 
     if (xInfo.dtype == 0) {
         MixAReduceFp32TwoPass::AddRmsNormBiasKernel<float>
-            <<<blockNum, nullptr, stream>>>(x, residual, gamma, bias, output, outer, dim, epsilon);
+            <<<blockNum, nullptr, stream>>>(x, residual, gamma, bias, output, outer, dim, inverseDim, epsilon);
     } else if (xInfo.dtype == 1) {
         MixAReduceFp32TwoPass::AddRmsNormBiasKernel<half>
-            <<<blockNum, nullptr, stream>>>(x, residual, gamma, bias, output, outer, dim, epsilon);
+            <<<blockNum, nullptr, stream>>>(x, residual, gamma, bias, output, outer, dim, inverseDim, epsilon);
     } else if (xInfo.dtype == 2) {
         MixAReduceFp32TwoPass::AddRmsNormBiasKernel<bfloat16_t>
-            <<<blockNum, nullptr, stream>>>(x, residual, gamma, bias, output, outer, dim, epsilon);
+            <<<blockNum, nullptr, stream>>>(x, residual, gamma, bias, output, outer, dim, inverseDim, epsilon);
     }
 }
