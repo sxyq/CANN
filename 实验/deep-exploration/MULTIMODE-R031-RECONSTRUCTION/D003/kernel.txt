@@ -1,0 +1,408 @@
+#include <stdint.h>
+#include "kernel_operator.h"
+
+namespace multimode_r031_d003 {
+
+constexpr uint32_t kMaxTile = 4096;
+constexpr uint32_t kScratchFloats = 1024;
+
+enum PlanKind : uint32_t {
+    kSmallFew = 0,
+    kMediumMany = 1,
+    kWideMany = 2,
+    kLargeFew = 3,
+    kUnaligned = 4,
+};
+
+template <typename SrcT>
+__aicore__ inline void ToFp32(const AscendC::LocalTensor<float>& dst,
+                              const AscendC::LocalTensor<SrcT>& src,
+                              uint32_t count);
+
+template <>
+__aicore__ inline void ToFp32<float>(const AscendC::LocalTensor<float>& dst,
+                                     const AscendC::LocalTensor<float>& src,
+                                     uint32_t count)
+{
+    AscendC::Adds<float>(dst, src, 0.0f, static_cast<int32_t>(count));
+}
+
+template <>
+__aicore__ inline void ToFp32<half>(const AscendC::LocalTensor<float>& dst,
+                                    const AscendC::LocalTensor<half>& src,
+                                    uint32_t count)
+{
+    AscendC::Cast<float, half>(dst, src, AscendC::RoundMode::CAST_NONE, count);
+}
+
+template <>
+__aicore__ inline void ToFp32<bfloat16_t>(const AscendC::LocalTensor<float>& dst,
+                                          const AscendC::LocalTensor<bfloat16_t>& src,
+                                          uint32_t count)
+{
+    AscendC::Cast<float, bfloat16_t>(dst, src, AscendC::RoundMode::CAST_NONE, count);
+}
+
+template <typename DstT>
+__aicore__ inline void FromFp32(const AscendC::LocalTensor<DstT>& dst,
+                                const AscendC::LocalTensor<float>& src,
+                                uint32_t count);
+
+template <>
+__aicore__ inline void FromFp32<float>(const AscendC::LocalTensor<float>& dst,
+                                       const AscendC::LocalTensor<float>& src,
+                                       uint32_t count)
+{
+    AscendC::Adds<float>(dst, src, 0.0f, static_cast<int32_t>(count));
+}
+
+template <>
+__aicore__ inline void FromFp32<half>(const AscendC::LocalTensor<half>& dst,
+                                      const AscendC::LocalTensor<float>& src,
+                                      uint32_t count)
+{
+    AscendC::Cast<half, float>(dst, src, AscendC::RoundMode::CAST_RINT, count);
+}
+
+template <>
+__aicore__ inline void FromFp32<bfloat16_t>(const AscendC::LocalTensor<bfloat16_t>& dst,
+                                            const AscendC::LocalTensor<float>& src,
+                                            uint32_t count)
+{
+    AscendC::Cast<bfloat16_t, float>(dst, src, AscendC::RoundMode::CAST_RINT, count);
+}
+
+template <typename T>
+class MultiModeKernel {
+public:
+    __aicore__ inline void Init(GM_ADDR x, GM_ADDR residual, GM_ADDR gamma, GM_ADDR bias,
+                                GM_ADDR output, uint64_t rowCount, uint32_t dim,
+                                float epsilon, float invDim, uint32_t tile, uint32_t batchRows,
+                                uint32_t reuseParams)
+    {
+        xGm_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(x));
+        residualGm_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(residual));
+        gammaGm_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(gamma));
+        biasGm_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(bias));
+        outputGm_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(output));
+
+        rowCount_ = rowCount;
+        dim_ = dim;
+        epsilon_ = epsilon;
+        invDim_ = invDim;
+        tile_ = tile;
+        batchRows_ = batchRows;
+        reuseParams_ = reuseParams != 0;
+
+        uint32_t rawElems = AlignElements(kMaxTile);
+        uint32_t rawBytes = rawElems * sizeof(T);
+        pipe.InitBuffer(xQueue_, 1, rawBytes);
+        pipe.InitBuffer(residualQueue_, 1, rawBytes);
+        pipe.InitBuffer(gammaQueue_, 1, rawBytes);
+        pipe.InitBuffer(biasQueue_, 1, rawBytes);
+        pipe.InitBuffer(outputQueue_, 1, rawBytes);
+
+        uint32_t workBytes = (5 * kMaxTile + kScratchFloats) * sizeof(float);
+        pipe.InitBuffer(workBuf_, workBytes);
+    }
+
+    __aicore__ inline void Process()
+    {
+        uint32_t blockId = AscendC::GetBlockIdx();
+        uint32_t blockCount = AscendC::GetBlockNum();
+        if (blockCount == 0 || static_cast<uint64_t>(blockId) >= rowCount_) {
+            return;
+        }
+
+        uint64_t baseRows = rowCount_ / blockCount;
+        uint64_t extraRows = rowCount_ % blockCount;
+        uint64_t beginRow = static_cast<uint64_t>(blockId) * baseRows;
+        if (static_cast<uint64_t>(blockId) < extraRows) {
+            beginRow += blockId;
+        } else {
+            beginRow += extraRows;
+        }
+        uint64_t localRows = baseRows + (static_cast<uint64_t>(blockId) < extraRows ? 1 : 0);
+
+        for (uint64_t batchStart = 0; batchStart < localRows; batchStart += batchRows_) {
+            uint64_t batchEnd = batchStart + batchRows_;
+            if (batchEnd > localRows) {
+                batchEnd = localRows;
+            }
+
+            for (uint32_t tileOffset = 0; tileOffset < dim_; tileOffset += tile_) {
+                uint32_t remaining = dim_ - tileOffset;
+                uint32_t valid = remaining < tile_ ? remaining : tile_;
+                if (valid == 0) {
+                    break;
+                }
+
+                AscendC::LocalTensor<float> work = workBuf_.Get<float>();
+                AscendC::LocalTensor<float> gammaFp = work[3 * tile_];
+                AscendC::LocalTensor<float> biasFp = work[4 * tile_];
+                if (reuseParams_) {
+                    LoadParams(tileOffset, valid, gammaFp, biasFp);
+                }
+
+                for (uint64_t rowInBatch = batchStart; rowInBatch < batchEnd; ++rowInBatch) {
+                    if (!reuseParams_) {
+                        LoadParams(tileOffset, valid, gammaFp, biasFp);
+                    }
+                    ProcessRow(beginRow + rowInBatch, tileOffset, valid, gammaFp, biasFp, work);
+                }
+            }
+        }
+    }
+
+private:
+    __aicore__ inline uint32_t AlignElements(uint32_t elements) const
+    {
+        uint32_t elementsPerBlock = 32 / sizeof(T);
+        return ((elements + elementsPerBlock - 1) / elementsPerBlock) * elementsPerBlock;
+    }
+
+    __aicore__ inline void SetCopyInParams(AscendC::DataCopyExtParams& params,
+                                           AscendC::DataCopyPadExtParams<T>& pad,
+                                           uint32_t valid) const
+    {
+        uint32_t padded = AlignElements(valid);
+        params.blockCount = 1;
+        params.blockLen = valid * sizeof(T);
+        params.srcStride = 0;
+        params.dstStride = 0;
+        params.rsv = 0;
+
+        pad.isPad = true;
+        pad.leftPadding = 0;
+        pad.rightPadding = padded - valid;
+        pad.paddingValue = static_cast<T>(0);
+    }
+
+    __aicore__ inline void LoadParams(uint32_t tileOffset, uint32_t valid,
+                                      AscendC::LocalTensor<float>& gammaFp,
+                                      AscendC::LocalTensor<float>& biasFp)
+    {
+        AscendC::LocalTensor<T> gammaRaw = gammaQueue_.AllocTensor<T>();
+        AscendC::LocalTensor<T> biasRaw = biasQueue_.AllocTensor<T>();
+        AscendC::DataCopyExtParams gammaParams;
+        AscendC::DataCopyExtParams biasParams;
+        AscendC::DataCopyPadExtParams<T> gammaPad;
+        AscendC::DataCopyPadExtParams<T> biasPad;
+        SetCopyInParams(gammaParams, gammaPad, valid);
+        SetCopyInParams(biasParams, biasPad, valid);
+        AscendC::DataCopyPad(gammaRaw, gammaGm_[tileOffset], gammaParams, gammaPad);
+        AscendC::DataCopyPad(biasRaw, biasGm_[tileOffset], biasParams, biasPad);
+        gammaQueue_.EnQue(gammaRaw);
+        biasQueue_.EnQue(biasRaw);
+        gammaRaw = gammaQueue_.DeQue<T>();
+        biasRaw = biasQueue_.DeQue<T>();
+        ToFp32<T>(gammaFp, gammaRaw, valid);
+        ToFp32<T>(biasFp, biasRaw, valid);
+        gammaQueue_.FreeTensor(gammaRaw);
+        biasQueue_.FreeTensor(biasRaw);
+    }
+
+    __aicore__ inline void ProcessRow(uint64_t row, uint32_t tileOffset, uint32_t valid,
+                                      AscendC::LocalTensor<float>& gammaFp,
+                                      AscendC::LocalTensor<float>& biasFp,
+                                      AscendC::LocalTensor<float>& work)
+    {
+        AscendC::LocalTensor<T> xRaw = xQueue_.AllocTensor<T>();
+        AscendC::LocalTensor<T> residualRaw = residualQueue_.AllocTensor<T>();
+        AscendC::DataCopyExtParams xParams;
+        AscendC::DataCopyExtParams residualParams;
+        AscendC::DataCopyPadExtParams<T> xPad;
+        AscendC::DataCopyPadExtParams<T> residualPad;
+        SetCopyInParams(xParams, xPad, valid);
+        SetCopyInParams(residualParams, residualPad, valid);
+
+        uint64_t offset = row * static_cast<uint64_t>(dim_) + tileOffset;
+        AscendC::DataCopyPad(xRaw, xGm_[offset], xParams, xPad);
+        AscendC::DataCopyPad(residualRaw, residualGm_[offset], residualParams, residualPad);
+        xQueue_.EnQue(xRaw);
+        residualQueue_.EnQue(residualRaw);
+        xRaw = xQueue_.DeQue<T>();
+        residualRaw = residualQueue_.DeQue<T>();
+
+        AscendC::LocalTensor<float> xFp = work[0];
+        AscendC::LocalTensor<float> residualFp = work[tile_];
+        AscendC::LocalTensor<float> yFp = work[2 * tile_];
+        AscendC::LocalTensor<float> scratch = work[5 * tile_];
+        AscendC::LocalTensor<float> sumSlot = scratch[0];
+        AscendC::LocalTensor<float> rmsSlot = scratch[16];
+        AscendC::LocalTensor<float> reduceTmp = scratch[32];
+
+        ToFp32<T>(xFp, xRaw, valid);
+        ToFp32<T>(residualFp, residualRaw, valid);
+        AscendC::Add<float>(yFp, xFp, residualFp, static_cast<int32_t>(valid));
+        AscendC::Mul<float>(yFp, yFp, yFp, static_cast<int32_t>(valid));
+        AscendC::ReduceSum<float>(sumSlot, yFp, reduceTmp, static_cast<int32_t>(valid));
+        AscendC::Muls<float>(sumSlot, sumSlot, invDim_, 1);
+        AscendC::Adds<float>(sumSlot, sumSlot, epsilon_, 1);
+        AscendC::Sqrt<float>(rmsSlot, sumSlot, 1);
+        float rms = rmsSlot.GetValue(0);
+
+        ToFp32<T>(xFp, xRaw, valid);
+        ToFp32<T>(residualFp, residualRaw, valid);
+        AscendC::Add<float>(yFp, xFp, residualFp, static_cast<int32_t>(valid));
+        float invRms = 1.0f / rms;
+        AscendC::Muls<float>(yFp, yFp, invRms, static_cast<int32_t>(valid));
+        AscendC::Mul<float>(yFp, yFp, gammaFp, static_cast<int32_t>(valid));
+        AscendC::Add<float>(yFp, yFp, biasFp, static_cast<int32_t>(valid));
+
+        AscendC::LocalTensor<T> outputRaw = outputQueue_.AllocTensor<T>();
+        FromFp32<T>(outputRaw, yFp, valid);
+        outputQueue_.EnQue(outputRaw);
+        outputRaw = outputQueue_.DeQue<T>();
+        AscendC::DataCopyExtParams outputParams;
+        outputParams.blockCount = 1;
+        outputParams.blockLen = valid * sizeof(T);
+        outputParams.srcStride = 0;
+        outputParams.dstStride = 0;
+        outputParams.rsv = 0;
+        AscendC::DataCopyPad(outputGm_[offset], outputRaw, outputParams);
+        outputQueue_.FreeTensor(outputRaw);
+
+        xQueue_.FreeTensor(xRaw);
+        residualQueue_.FreeTensor(residualRaw);
+    }
+
+    AscendC::TPipe pipe;
+    AscendC::TQue<AscendC::TPosition::VECIN, 1> xQueue_;
+    AscendC::TQue<AscendC::TPosition::VECIN, 1> residualQueue_;
+    AscendC::TQue<AscendC::TPosition::VECIN, 1> gammaQueue_;
+    AscendC::TQue<AscendC::TPosition::VECIN, 1> biasQueue_;
+    AscendC::TQue<AscendC::TPosition::VECOUT, 1> outputQueue_;
+    AscendC::TBuf<AscendC::TPosition::VECCALC> workBuf_;
+    AscendC::GlobalTensor<T> xGm_;
+    AscendC::GlobalTensor<T> residualGm_;
+    AscendC::GlobalTensor<T> gammaGm_;
+    AscendC::GlobalTensor<T> biasGm_;
+    AscendC::GlobalTensor<T> outputGm_;
+    uint64_t rowCount_ = 0;
+    uint32_t dim_ = 0;
+    uint32_t tile_ = kMaxTile;
+    uint32_t batchRows_ = 1;
+    float epsilon_ = 1e-5f;
+    float invDim_ = 1.0f;
+    bool reuseParams_ = false;
+};
+
+template <typename T>
+__global__ __vector__ void AddRmsNormBiasD003Kernel(
+    GM_ADDR x, GM_ADDR residual, GM_ADDR gamma, GM_ADDR bias, GM_ADDR output,
+    uint64_t rowCount, uint32_t dim, float epsilon, uint32_t tile,
+    float invDim, uint32_t batchRows, uint32_t reuseParams)
+{
+    MultiModeKernel<T> kernel;
+    kernel.Init(x, residual, gamma, bias, output, rowCount, dim, epsilon,
+                invDim, tile, batchRows, reuseParams);
+    kernel.Process();
+}
+
+template <typename T>
+void LaunchD003(GM_ADDR x, GM_ADDR residual, GM_ADDR gamma, GM_ADDR bias, GM_ADDR output,
+                uint64_t rowCount, uint32_t dim, int64_t availableCoreNum,
+                aclrtStream stream, float epsilon, uint32_t forceSingleRow)
+{
+    uint64_t requested = availableCoreNum > 0 ? static_cast<uint64_t>(availableCoreNum) : 1;
+    uint64_t capped = requested < rowCount ? requested : rowCount;
+    if (capped == 0) {
+        capped = 1;
+    }
+    uint32_t blockCount = capped > 0xffffffffULL ? 0xffffffffU : static_cast<uint32_t>(capped);
+    uint32_t elemsPerBlock = 32 / sizeof(T);
+    uint32_t rowAligned = (dim % elemsPerBlock) == 0 ? 1 : 0;
+    uint64_t avgRows = rowCount / blockCount;
+
+    uint32_t plan = kLargeFew;
+    if (forceSingleRow != 0) {
+        plan = kLargeFew;
+    } else if (!rowAligned) {
+        plan = kUnaligned;
+    } else if (dim <= 1024 || avgRows <= 1) {
+        plan = kSmallFew;
+    } else if (dim > 8192 && avgRows >= 2) {
+        plan = kWideMany;
+    } else if (dim <= 4096 && avgRows >= 4) {
+        plan = kMediumMany;
+    }
+
+    uint32_t tile = 4096;
+    uint32_t batchRows = 1;
+    uint32_t reuseParams = 0;
+    float invDim = 1.0f / static_cast<float>(dim);
+    if (plan == kSmallFew || plan == kUnaligned) {
+        tile = 1024;
+    } else if (plan == kMediumMany) {
+        tile = 2048;
+        batchRows = 4;
+        reuseParams = 1;
+    } else if (plan == kWideMany) {
+        tile = 4096;
+        batchRows = 2;
+        reuseParams = 1;
+    }
+
+    AddRmsNormBiasD003Kernel<T><<<blockCount, nullptr, stream>>>(
+        x, residual, gamma, bias, output, rowCount, dim, epsilon,
+        tile, invDim, batchRows, reuseParams);
+}
+
+}  // namespace multimode_r031_d003
+
+extern "C" void run_kernel(
+    GM_ADDR x, const TensorGroupInfo& info_x,
+    GM_ADDR residual, const TensorGroupInfo& info_residual,
+    GM_ADDR gamma, const TensorGroupInfo& info_gamma,
+    GM_ADDR bias, const TensorGroupInfo& info_bias,
+    GM_ADDR output, const TensorGroupInfo& info_output,
+    int64_t availableCoreNum, aclrtStream stream, float epsilon)
+{
+    if (x == nullptr || residual == nullptr || gamma == nullptr || bias == nullptr || output == nullptr) {
+        return;
+    }
+    if (info_x.numTensors < 1 || info_residual.numTensors < 1 ||
+        info_gamma.numTensors < 1 || info_bias.numTensors < 1 || info_output.numTensors < 1) {
+        return;
+    }
+
+    const TensorInfo& xInfo = info_x.tensors[0];
+    const TensorInfo& residualInfo = info_residual.tensors[0];
+    const TensorInfo& gammaInfo = info_gamma.tensors[0];
+    const TensorInfo& biasInfo = info_bias.tensors[0];
+    const TensorInfo& outputInfo = info_output.tensors[0];
+    if (xInfo.shape == nullptr || residualInfo.shape == nullptr || gammaInfo.shape == nullptr ||
+        biasInfo.shape == nullptr || outputInfo.shape == nullptr || xInfo.numDims < 1) {
+        return;
+    }
+
+    int64_t dim64 = xInfo.shape[xInfo.numDims - 1];
+    if (dim64 <= 0 || dim64 > 0xffffffffLL || gammaInfo.numDims != 1 || biasInfo.numDims != 1 ||
+        gammaInfo.shape[0] != dim64 || biasInfo.shape[0] != dim64) {
+        return;
+    }
+
+    uint64_t rowCount = 1;
+    for (int64_t i = 0; i + 1 < xInfo.numDims; ++i) {
+        if (xInfo.shape[i] <= 0 || rowCount > 0xffffffffffffffffULL / static_cast<uint64_t>(xInfo.shape[i])) {
+            return;
+        }
+        rowCount *= static_cast<uint64_t>(xInfo.shape[i]);
+    }
+    if (rowCount == 0 || rowCount > 0xffffffffULL) {
+        return;
+    }
+
+    uint32_t dim = static_cast<uint32_t>(dim64);
+    if (xInfo.dtype == 0) {
+        multimode_r031_d003::LaunchD003<float>(x, residual, gamma, bias, output,
+                                                rowCount, dim, availableCoreNum, stream, epsilon, 0);
+    } else if (xInfo.dtype == 1) {
+        multimode_r031_d003::LaunchD003<half>(x, residual, gamma, bias, output,
+                                              rowCount, dim, availableCoreNum, stream, epsilon, 0);
+    } else if (xInfo.dtype == 2) {
+        multimode_r031_d003::LaunchD003<bfloat16_t>(x, residual, gamma, bias, output,
+                                                    rowCount, dim, availableCoreNum, stream, epsilon, 1);
+    }
+}
