@@ -26,8 +26,8 @@ target_link_libraries(add_rms_norm_bias_custom PRIVATE
 
 target_include_directories(add_rms_norm_bias_custom PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
-    /usr/include/c++/12
-    /usr/include/aarch64-linux-gnu/c++/12
+    /usr/include/c++/11
+    /usr/include/aarch64-linux-gnu/c++/11
 )
 
 target_compile_options(add_rms_norm_bias_custom PRIVATE
