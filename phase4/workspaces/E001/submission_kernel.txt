@@ -1,0 +1,450 @@
+#include <cstdint>
+#include "acl/acl.h"
+#include "graph/tensor.h"
+#include "tiling/normalization/rmsnorm_tiling.h"
+#include "kernel_operator.h"
+#include "normalization/rmsnorm.h"
+#include "normalization/rmsnorm_tiling.h"
+
+#include "kernel_tiling/kernel_tiling.h"
+
+// Submission-only inline of the shared tiling record. The implementation
+// source remains unchanged; this keeps the one-file judge package self-contained.
+struct E001TilingData {
+    uint32_t rank;
+    uint32_t rows;
+    uint32_t width;
+    uint32_t block_num;
+    uint32_t rows_per_block;
+    uint32_t rows_last_block;
+    uint32_t tile_rows;
+    uint32_t dtype_code;
+    uint32_t hot_path;
+    uint32_t rms_tmp_bytes;
+    uint32_t chunk_elements;
+    uint32_t reserved;
+    uint64_t workspace_bytes;
+    float epsilon;
+    float reciprocal_width;
+    RmsNormTiling rms_tiling;
+};
+
+static_assert(sizeof(E001TilingData) % 8 == 0, "tiling record must be 8-byte aligned");
+
+constexpr uint32_t E001_DAV2201_VEC_WORKSPACE = 184U * 1024U;
+constexpr uint32_t E001_TILE_ROWS_DEFAULT = 4;
+constexpr uint32_t E001_FALLBACK_CHUNK_ELEMENTS = 2048;
+
+using namespace AscendC;
+
+namespace e001 {
+
+constexpr uint32_t kQueueDepth = 1;
+constexpr uint32_t kBytesPerBlock = 32;
+
+template <typename T>
+__aicore__ inline void CopyIn(const GlobalTensor<T>& gm, const LocalTensor<T>& ub,
+    const uint32_t count, const bool aligned)
+{
+    if (aligned) {
+        DataCopy(ub, gm, count);
+    } else {
+        DataCopyPadParams pad;
+        DataCopyParams params;
+        params.blockCount = 1;
+        params.blockLen = static_cast<uint16_t>(count * sizeof(T));
+        params.srcStride = 0;
+        params.dstStride = 0;
+        DataCopyPad(ub, gm, params, pad);
+    }
+}
+
+template <typename T>
+__aicore__ inline void CopyOut(const GlobalTensor<T>& gm, const LocalTensor<T>& ub,
+    const uint32_t count, const bool aligned)
+{
+    if (aligned) {
+        DataCopy(gm, ub, count);
+    } else {
+        DataCopyParams params;
+        params.blockCount = 1;
+        params.blockLen = static_cast<uint16_t>(count * sizeof(T));
+        params.srcStride = 0;
+        params.dstStride = 0;
+        DataCopyPad(gm, ub, params);
+    }
+}
+
+template <typename T>
+class KernelE001 {
+public:
+    __aicore__ inline KernelE001(TPipe* pipe) : pipe_(pipe) {}
+
+    __aicore__ inline void Init(GM_ADDR x, GM_ADDR residual, GM_ADDR gamma, GM_ADDR bias,
+        GM_ADDR output, GM_ADDR workspace, const __gm__ E001TilingData* tiling)
+    {
+        tiling_ = tiling;
+        const uint32_t block = GetBlockIdx();
+        const uint32_t rows = block + 1U == tiling_->block_num
+            ? tiling_->rows_last_block : tiling_->rows_per_block;
+        row_begin_ = block * tiling_->rows_per_block;
+        row_count_ = rows;
+        width_ = tiling_->width;
+        dtype_bytes_ = sizeof(T);
+        aligned_row_ = (width_ * dtype_bytes_) % kBytesPerBlock == 0;
+
+        x_gm_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(x) + row_begin_ * width_, row_count_ * width_);
+        residual_gm_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(residual) + row_begin_ * width_, row_count_ * width_);
+        gamma_gm_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(gamma), width_);
+        bias_gm_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(bias), width_);
+        output_gm_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(output) + row_begin_ * width_, row_count_ * width_);
+        workspace_gm_.SetGlobalBuffer(reinterpret_cast<__gm__ uint8_t*>(workspace), tiling_->workspace_bytes);
+
+        if (tiling_->hot_path != 0) {
+            pipe_->InitBuffer(in_x_, kQueueDepth, width_ * sizeof(T));
+            pipe_->InitBuffer(in_residual_, kQueueDepth, width_ * sizeof(T));
+            pipe_->InitBuffer(gamma_, kQueueDepth, width_ * sizeof(T));
+            pipe_->InitBuffer(bias_, kQueueDepth, width_ * sizeof(T));
+            pipe_->InitBuffer(u_, width_ * sizeof(T));
+            pipe_->InitBuffer(y_, kQueueDepth, width_ * sizeof(T));
+            pipe_->InitBuffer(rms_tmp_, tiling_->rms_tmp_bytes);
+        } else {
+            pipe_->InitBuffer(in_x_, kQueueDepth, E001_FALLBACK_CHUNK_ELEMENTS * sizeof(T));
+            pipe_->InitBuffer(in_residual_, kQueueDepth, E001_FALLBACK_CHUNK_ELEMENTS * sizeof(T));
+            pipe_->InitBuffer(gamma_, kQueueDepth, E001_FALLBACK_CHUNK_ELEMENTS * sizeof(T));
+            pipe_->InitBuffer(bias_, kQueueDepth, E001_FALLBACK_CHUNK_ELEMENTS * sizeof(T));
+            pipe_->InitBuffer(u_, E001_FALLBACK_CHUNK_ELEMENTS * sizeof(T));
+            pipe_->InitBuffer(y_, kQueueDepth, E001_FALLBACK_CHUNK_ELEMENTS * sizeof(T));
+            pipe_->InitBuffer(rms_tmp_, E001_FALLBACK_CHUNK_ELEMENTS * sizeof(float));
+            pipe_->InitBuffer(scalar_, 2U * E001_FALLBACK_CHUNK_ELEMENTS * sizeof(float));
+        }
+    }
+
+    __aicore__ inline void Process()
+    {
+        if constexpr (IsSameType<T, half>::value || IsSameType<T, float>::value) {
+            if (tiling_->hot_path != 0) {
+                ProcessHotPath();
+            } else {
+                ProcessFallback();
+            }
+        } else {
+            ProcessFallback();
+        }
+    }
+
+private:
+    __aicore__ inline void ProcessHotPath()
+    {
+        LocalTensor<T> gamma_local = gamma_.AllocTensor<T>();
+        LocalTensor<T> bias_local = bias_.AllocTensor<T>();
+        CopyIn(gamma_gm_, gamma_local, width_, aligned_row_);
+        CopyIn(bias_gm_, bias_local, width_, aligned_row_);
+        gamma_.EnQue(gamma_local);
+        bias_.EnQue(bias_local);
+        gamma_local = gamma_.DeQue<T>();
+        bias_local = bias_.DeQue<T>();
+
+        for (uint32_t row = 0; row < row_count_;) {
+            const uint32_t rows = tiling_->tile_rows < row_count_ - row ? tiling_->tile_rows : row_count_ - row;
+            const uint32_t count = width_;
+            LocalTensor<T> x_local = in_x_.AllocTensor<T>();
+            LocalTensor<T> residual_local = in_residual_.AllocTensor<T>();
+            LocalTensor<T> u_local = u_.AllocTensor<T>();
+            LocalTensor<T> y_local = y_.AllocTensor<T>();
+            const bool aligned = (count * dtype_bytes_) % kBytesPerBlock == 0;
+            CopyIn(x_gm_[row * width_], x_local, count, aligned);
+            CopyIn(residual_gm_[row * width_], residual_local, count, aligned);
+            Add(u_local, x_local, residual_local, count);
+            PipeBarrier<PIPE_V>();
+            LocalTensor<uint8_t> rms_local = rms_tmp_.Get<uint8_t>();
+            RmsNormTiling rms_tiling;
+            rms_tiling.bLength = tiling_->rms_tiling.bLength;
+            rms_tiling.sLength = tiling_->rms_tiling.sLength;
+            rms_tiling.hLength = tiling_->rms_tiling.hLength;
+            rms_tiling.originalHLength = tiling_->rms_tiling.originalHLength;
+            rms_tiling.reciprocalOfHLength = tiling_->rms_tiling.reciprocalOfHLength;
+            rms_tiling.mainBshLength = tiling_->rms_tiling.mainBshLength;
+            rms_tiling.mainBsLength = tiling_->rms_tiling.mainBsLength;
+            rms_tiling.mainBsLengthAlign = tiling_->rms_tiling.mainBsLengthAlign;
+            rms_tiling.loopRound = tiling_->rms_tiling.loopRound;
+            rms_tiling.inputTailPos = tiling_->rms_tiling.inputTailPos;
+            rms_tiling.tailBshLength = tiling_->rms_tiling.tailBshLength;
+            rms_tiling.tailBsLength = tiling_->rms_tiling.tailBsLength;
+            AscendC::RmsNorm<T, false>(y_local, u_local, gamma_local, rms_local,
+                static_cast<T>(tiling_->epsilon), rms_tiling);
+            Add(y_local, y_local, bias_local, count);
+            PipeBarrier<PIPE_V>();
+            CopyOut(output_gm_[row * width_], y_local, count, aligned);
+            in_x_.FreeTensor(x_local);
+            in_residual_.FreeTensor(residual_local);
+            u_.FreeTensor(u_local);
+            y_.FreeTensor(y_local);
+            row += rows;
+        }
+        gamma_.FreeTensor(gamma_local);
+        bias_.FreeTensor(bias_local);
+    }
+
+    template <typename V>
+    __aicore__ inline void ProcessFallbackTyped()
+    {
+        const uint32_t chunk = E001_FALLBACK_CHUNK_ELEMENTS;
+        GlobalTensor<V> x_gm = x_gm_;
+        GlobalTensor<V> residual_gm = residual_gm_;
+        GlobalTensor<V> gamma_gm = gamma_gm_;
+        GlobalTensor<V> bias_gm = bias_gm_;
+        GlobalTensor<V> output_gm = output_gm_;
+        for (uint32_t row = 0; row < row_count_; ++row) {
+            float sum = 0.0f;
+            for (uint32_t col = 0; col < width_; col += chunk) {
+                const uint32_t n = chunk < width_ - col ? chunk : width_ - col;
+                LocalTensor<V> x_local = in_x_.AllocTensor<V>();
+                LocalTensor<V> residual_local = in_residual_.AllocTensor<V>();
+                LocalTensor<V> u_local = u_.AllocTensor<V>();
+                CopyIn(x_gm[row * width_ + col], x_local, n, (n * sizeof(V)) % kBytesPerBlock == 0);
+                CopyIn(residual_gm[row * width_ + col], residual_local, n, (n * sizeof(V)) % kBytesPerBlock == 0);
+                if constexpr (IsSameType<V, float>::value) {
+                    Add(u_local, x_local, residual_local, n);
+                    PipeBarrier<PIPE_V>();
+                    LocalTensor<float> sq = rms_tmp_.Get<float>();
+                    Mul(sq, u_local, u_local, n);
+                    PipeBarrier<PIPE_V>();
+                    sum += ReduceScalar(sq, n);
+                } else {
+                    LocalTensor<float> xf = rms_tmp_.Get<float>();
+                    LocalTensor<float> rf = scalar_.Get<float>();
+                    Cast(xf, x_local, RoundMode::CAST_NONE, n);
+                    Cast(rf, residual_local, RoundMode::CAST_NONE, n);
+                    PipeBarrier<PIPE_V>();
+                    Add(xf, xf, rf, n);
+                    PipeBarrier<PIPE_V>();
+                    Mul(rf, xf, xf, n);
+                    PipeBarrier<PIPE_V>();
+                    sum += ReduceScalar(rf, n);
+                    Cast(u_local, xf, RoundMode::CAST_RINT, n);
+                    PipeBarrier<PIPE_V>();
+                }
+                in_x_.FreeTensor(x_local);
+                in_residual_.FreeTensor(residual_local);
+                u_.FreeTensor(u_local);
+            }
+
+            LocalTensor<float> norm_scalar = scalar_.Get<float>();
+            Duplicate(norm_scalar, sum * tiling_->reciprocal_width + tiling_->epsilon, 1);
+            Sqrt(norm_scalar, norm_scalar, 1);
+            PipeBarrier<PIPE_V>();
+            event_t norm_event = static_cast<event_t>(pipe_->FetchEventID(HardEvent::V_S));
+            SetFlag<HardEvent::V_S>(norm_event);
+            WaitFlag<HardEvent::V_S>(norm_event);
+            const float inv = 1.0f / norm_scalar.GetValue(0);
+            norm_event = static_cast<event_t>(pipe_->FetchEventID(HardEvent::S_V));
+            SetFlag<HardEvent::S_V>(norm_event);
+            WaitFlag<HardEvent::S_V>(norm_event);
+            for (uint32_t col = 0; col < width_; col += chunk) {
+                const uint32_t n = chunk < width_ - col ? chunk : width_ - col;
+                LocalTensor<float> f = rms_tmp_.Get<float>();
+                LocalTensor<V> y_local = y_.AllocTensor<V>();
+                LocalTensor<V> gamma_local = gamma_.AllocTensor<V>();
+                LocalTensor<V> bias_local = bias_.AllocTensor<V>();
+                CopyIn(x_gm[row * width_ + col], y_local, n, (n * sizeof(V)) % kBytesPerBlock == 0);
+                CopyIn(residual_gm[row * width_ + col], gamma_local, n, (n * sizeof(V)) % kBytesPerBlock == 0);
+                if constexpr (IsSameType<V, float>::value) {
+                    Add(f, y_local, gamma_local, n);
+                } else {
+                    LocalTensor<float> xf = scalar_.Get<float>();
+                    LocalTensor<float> rf = scalar_.Get<float>()[E001_FALLBACK_CHUNK_ELEMENTS];
+                    Cast(xf, y_local, RoundMode::CAST_NONE, n);
+                    Cast(rf, gamma_local, RoundMode::CAST_NONE, n);
+                    Add(f, xf, rf, n);
+                }
+                CopyIn(gamma_gm[row * width_ + col], gamma_local, n, (n * sizeof(V)) % kBytesPerBlock == 0);
+                CopyIn(bias_gm[row * width_ + col], bias_local, n, (n * sizeof(V)) % kBytesPerBlock == 0);
+                PipeBarrier<PIPE_V>();
+                Muls(f, f, inv, n);
+                PipeBarrier<PIPE_V>();
+                if constexpr (IsSameType<V, float>::value) {
+                    Mul(y_local, f, gamma_local, n);
+                    PipeBarrier<PIPE_V>();
+                    Add(y_local, y_local, bias_local, n);
+                } else {
+                    LocalTensor<float> gf = scalar_.Get<float>();
+                    LocalTensor<float> bf = scalar_.Get<float>()[n];
+                    Cast(gf, gamma_local, RoundMode::CAST_NONE, n);
+                    Cast(bf, bias_local, RoundMode::CAST_NONE, n);
+                    PipeBarrier<PIPE_V>();
+                    Mul(f, f, gf, n);
+                    Add(f, f, bf, n);
+                    PipeBarrier<PIPE_V>();
+                    Cast(y_local, f, RoundMode::CAST_RINT, n);
+                }
+                CopyOut(output_gm[row * width_ + col], y_local, n, (n * sizeof(V)) % kBytesPerBlock == 0);
+                y_.FreeTensor(y_local);
+                gamma_.FreeTensor(gamma_local);
+                bias_.FreeTensor(bias_local);
+            }
+        }
+    }
+
+    __aicore__ inline float ReduceScalar(const LocalTensor<float>& value, const uint32_t count)
+    {
+        LocalTensor<float> scalar = scalar_.Get<float>();
+        ReduceSum(scalar, value, rms_tmp_.Get<float>(), count);
+        PipeBarrier<PIPE_V>();
+        event_t event = static_cast<event_t>(pipe_->FetchEventID(HardEvent::V_S));
+        SetFlag<HardEvent::V_S>(event);
+        WaitFlag<HardEvent::V_S>(event);
+        const float result = scalar.GetValue(0);
+        event = static_cast<event_t>(pipe_->FetchEventID(HardEvent::S_V));
+        SetFlag<HardEvent::S_V>(event);
+        WaitFlag<HardEvent::S_V>(event);
+        return result;
+    }
+
+    __aicore__ inline void ProcessFallback()
+    {
+        ProcessFallbackTyped<T>();
+    }
+
+    TPipe* pipe_;
+    const __gm__ E001TilingData* tiling_;
+    GlobalTensor<T> x_gm_, residual_gm_, gamma_gm_, bias_gm_, output_gm_;
+    GlobalTensor<uint8_t> workspace_gm_;
+    TQue<QuePosition::VECIN, kQueueDepth> in_x_, in_residual_, gamma_, bias_;
+    TQue<QuePosition::VECOUT, kQueueDepth> y_;
+    TBuf<TPosition::VECCALC> u_, rms_tmp_, scalar_;
+    uint32_t row_begin_ = 0;
+    uint32_t row_count_ = 0;
+    uint32_t width_ = 0;
+    uint32_t dtype_bytes_ = 0;
+    bool aligned_row_ = false;
+};
+
+}  // namespace e001
+
+extern "C" __global__ __vector__ void e001_add_rms_norm_bias(
+    GM_ADDR x, GM_ADDR residual, GM_ADDR gamma, GM_ADDR bias, GM_ADDR output,
+    GM_ADDR workspace, GM_ADDR tiling)
+{
+    TPipe pipe;
+    const auto* data = reinterpret_cast<const __gm__ E001TilingData*>(tiling);
+    if (data->dtype_code == 2) {
+        e001::KernelE001<float> op(&pipe);
+        op.Init(x, residual, gamma, bias, output, workspace, data);
+        op.Process();
+    } else if (data->dtype_code == 1) {
+        e001::KernelE001<half> op(&pipe);
+        op.Init(x, residual, gamma, bias, output, workspace, data);
+        op.Process();
+    } else {
+        e001::KernelE001<bfloat16_t> op(&pipe);
+        op.Init(x, residual, gamma, bias, output, workspace, data);
+        op.Process();
+    }
+}
+
+namespace e001_submission {
+
+static bool BuildRmsTiling(uint32_t rows, uint32_t width, uint32_t type_size,
+    E001TilingData& tiling)
+{
+    ge::Shape shape({1, static_cast<int64_t>(rows), static_cast<int64_t>(width)});
+    uint32_t max_tmp = 0;
+    uint32_t min_tmp = 0;
+    if (!AscendC::GetRmsNormMaxMinTmpSize(shape, type_size, max_tmp, min_tmp, false)) {
+        return false;
+    }
+    RmsNormTiling rms_tiling{};
+    if (!AscendC::GetRmsNormTilingInfo(shape, shape, min_tmp, type_size,
+        rms_tiling, false)) {
+        return false;
+    }
+    tiling.rms_tmp_bytes = min_tmp;
+    tiling.rms_tiling = rms_tiling;
+    return true;
+}
+
+static bool BuildTiling(const TensorGroupInfo& info_x, const TensorGroupInfo& info_gamma,
+    int64_t available_core_num, float epsilon, E001TilingData& tiling)
+{
+    if (info_x.tensors == nullptr || info_x.numTensors < 1 ||
+        info_gamma.tensors == nullptr || info_gamma.numTensors < 1) {
+        return false;
+    }
+    const TensorInfo& x_info = info_x.tensors[0];
+    if (x_info.shape == nullptr || x_info.numDims < 1 || x_info.numDims > 4) {
+        return false;
+    }
+    const int64_t width64 = x_info.shape[x_info.numDims - 1];
+    if (width64 < 64 || width64 > 32768) {
+        return false;
+    }
+    uint64_t rows64 = 1;
+    for (int64_t dim = 0; dim + 1 < x_info.numDims; ++dim) {
+        if (x_info.shape[dim] <= 0) {
+            return false;
+        }
+        rows64 *= static_cast<uint64_t>(x_info.shape[dim]);
+    }
+    if (rows64 == 0 || rows64 > UINT32_MAX || width64 > UINT32_MAX) {
+        return false;
+    }
+
+    const uint32_t rows = static_cast<uint32_t>(rows64);
+    const uint32_t width = static_cast<uint32_t>(width64);
+    const uint32_t type_size = x_info.dtype == 0 ? 4U : 2U;
+    tiling = E001TilingData{};
+    tiling.rank = static_cast<uint32_t>(x_info.numDims);
+    tiling.rows = rows;
+    tiling.width = width;
+    tiling.block_num = available_core_num > 0 &&
+        static_cast<uint64_t>(available_core_num) < rows
+        ? static_cast<uint32_t>(available_core_num) : rows;
+    if (tiling.block_num == 0) {
+        tiling.block_num = 1;
+    }
+    tiling.rows_per_block = (rows + tiling.block_num - 1U) / tiling.block_num;
+    tiling.rows_last_block = rows - (tiling.block_num - 1U) * tiling.rows_per_block;
+    tiling.tile_rows = E001_TILE_ROWS_DEFAULT;
+    tiling.chunk_elements = E001_FALLBACK_CHUNK_ELEMENTS;
+    tiling.dtype_code = x_info.dtype == 0 ? 2U : (x_info.dtype == 1 ? 1U : 0U);
+    tiling.epsilon = epsilon;
+    tiling.reciprocal_width = 1.0f / static_cast<float>(width);
+    tiling.workspace_bytes = 0;
+
+    const bool supported_dtype = x_info.dtype == 0 || x_info.dtype == 1;
+    const bool aligned_width = (static_cast<uint64_t>(width) * type_size) % 32U == 0;
+    const bool complete_tiles = rows % E001_TILE_ROWS_DEFAULT == 0;
+    const bool api_ok = supported_dtype && BuildRmsTiling(rows, width, type_size, tiling);
+    const uint64_t ub_bytes = 6ULL * width * type_size + tiling.rms_tmp_bytes;
+    tiling.hot_path = api_ok && aligned_width && complete_tiles &&
+        ub_bytes <= E001_DAV2201_VEC_WORKSPACE ? 1U : 0U;
+    return true;
+}
+
+}  // namespace e001_submission
+
+extern "C" void run_kernel(
+    GM_ADDR x, const TensorGroupInfo& info_x,
+    GM_ADDR residual, const TensorGroupInfo& info_residual,
+    GM_ADDR gamma, const TensorGroupInfo& info_gamma,
+    GM_ADDR bias, const TensorGroupInfo& info_bias,
+    GM_ADDR output, const TensorGroupInfo& info_output,
+    int64_t availableCoreNum, aclrtStream stream, float epsilon)
+{
+    E001TilingData tiling{};
+    if (!e001_submission::BuildTiling(info_x, info_gamma, availableCoreNum, epsilon, tiling)) {
+        return;
+    }
+    GM_ADDR device_tiling = nullptr;
+    if (aclrtMalloc((void**)&device_tiling, sizeof(E001TilingData), ACL_MEM_MALLOC_HUGE_FIRST) != 0) {
+        return;
+    }
+    if (aclrtMemcpy(device_tiling, sizeof(E001TilingData), &tiling,
+        sizeof(E001TilingData), ACL_MEMCPY_HOST_TO_DEVICE) != 0) {
+        return;
+    }
+    e001_add_rms_norm_bias<<<tiling.block_num, nullptr, stream>>>(
+        x, residual, gamma, bias, output, nullptr,
+        device_tiling);
+}
