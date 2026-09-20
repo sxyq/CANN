@@ -1,0 +1,359 @@
+#include <cmath>
+#include <cstdint>
+#include "acl/acl.h"
+#include "kernel_operator.h"
+
+using namespace AscendC;
+
+namespace c001 {
+
+// One row-group owns one row at a time. Four vector cores make the partials;
+// the first core performs the scalar merge before the second group barrier.
+constexpr uint32_t kGroupSize = 4;
+constexpr uint32_t kMaxGroups = 10;
+constexpr uint32_t kBarrierBytesPerGroup = 2048;  // 4 cache-line slots.
+constexpr uint32_t kPartialOffset = kBarrierBytesPerGroup;
+constexpr uint32_t kRmsOffset = kPartialOffset + kGroupSize * 32;
+constexpr uint32_t kGroupWorkspaceBytes = kRmsOffset + 32;
+
+struct C001TilingData {
+    uint64_t rows;
+    uint64_t d;
+    uint64_t group_count;
+    uint64_t block_dim;
+    float epsilon;
+};
+
+template <typename T>
+__aicore__ inline float ToScalar(T value)
+{
+    if constexpr (IsSameType<T, bfloat16_t>::value) {
+        return AscendC::ToFloat(value);
+    } else {
+        return static_cast<float>(value);
+    }
+}
+
+template <typename T>
+__aicore__ inline T FromScalar(float value)
+{
+    if constexpr (IsSameType<T, bfloat16_t>::value) {
+        return AscendC::ToBfloat16(value);
+    } else {
+        return static_cast<T>(value);
+    }
+}
+
+template <typename T>
+class CooperativeRmsNormBias {
+public:
+    __aicore__ inline void Init(GM_ADDR x, GM_ADDR residual, GM_ADDR gamma, GM_ADDR bias,
+                                GM_ADDR output, GM_ADDR workspace, GM_ADDR tiling)
+    {
+        valid_ = workspace != nullptr;
+        if (workspace == nullptr) {
+            return;
+        }
+        x_ = reinterpret_cast<__gm__ const T *>(x);
+        residual_ = reinterpret_cast<__gm__ const T *>(residual);
+        gamma_ = reinterpret_cast<__gm__ const T *>(gamma);
+        bias_ = reinterpret_cast<__gm__ const T *>(bias);
+        output_ = reinterpret_cast<__gm__ T *>(output);
+        SetSysWorkspaceForce(workspace);
+        workspace_ = GetUserWorkspace(workspace);
+        tiling_ = reinterpret_cast<__gm__ const C001TilingData *>(tiling);
+    }
+
+    __aicore__ inline void Process()
+    {
+        if (!valid_) {
+            return;
+        }
+        const uint64_t rows = tiling_->rows;
+        const uint64_t d = tiling_->d;
+        const float epsilon = tiling_->epsilon;
+        uint32_t groupCount = static_cast<uint32_t>(tiling_->group_count);
+        if (groupCount == 0) {
+            groupCount = rows < kMaxGroups ? static_cast<uint32_t>(rows) : kMaxGroups;
+        }
+        if (groupCount == 0 || groupCount > kMaxGroups) {
+            GenericFallback(rows, d, epsilon);
+            return;
+        }
+
+        const uint64_t block = static_cast<uint64_t>(GetBlockIdx());
+        const uint32_t group = static_cast<uint32_t>(block / kGroupSize);
+        const uint32_t lane = static_cast<uint32_t>(block % kGroupSize);
+        if (group >= groupCount) {
+            return;
+        }
+
+        // Aligned D is the steady-state path. The scalar path below remains
+        // the private complete fallback for D tails and unusual launch data.
+        if (d >= 64 && d <= 32768 && (d % 32) == 0) {
+            HotPath(rows, d, epsilon, groupCount, group, lane);
+        } else {
+            GenericFallback(rows, d, epsilon);
+        }
+    }
+
+private:
+    __aicore__ inline void HotPath(uint64_t rows, uint64_t d, float epsilon,
+                                   uint32_t groupCount, uint32_t group, uint32_t lane)
+    {
+        TPipe pipe;
+        GM_ADDR groupWorkspace = reinterpret_cast<GM_ADDR>(
+            reinterpret_cast<__gm__ uint8_t *>(workspace_) + group * kGroupWorkspaceBytes);
+        GroupBarrier<PipeMode::MTE3_MODE> barrier(groupWorkspace, kGroupSize, kGroupSize);
+
+        const uint64_t first = (d * lane) / kGroupSize;
+        const uint64_t last = (d * (lane + 1)) / kGroupSize;
+        const int32_t dInt = static_cast<int32_t>(d);
+        const float dFloat = static_cast<float>(dInt);
+        __gm__ uint8_t *groupBytes = reinterpret_cast<__gm__ uint8_t *>(groupWorkspace);
+        __gm__ volatile float *partial = reinterpret_cast<__gm__ volatile float *>(
+            groupBytes + kPartialOffset + lane * 32);
+        __gm__ volatile float *rms = reinterpret_cast<__gm__ volatile float *>(groupBytes + kRmsOffset);
+
+        for (uint64_t row = group; row < rows; row += groupCount) {
+            const uint64_t rowOffset = row * d;
+            float partialSum = 0.0f;
+            for (uint64_t col = first; col < last; ++col) {
+                const uint64_t index = rowOffset + col;
+                const float u = ToScalar(x_[index]) + ToScalar(residual_[index]);
+                partialSum += u * u;
+            }
+            *partial = partialSum;
+
+            barrier.Arrive(lane);
+            barrier.Wait(lane);
+
+            if (lane == 0) {
+                float sum = 0.0f;
+                for (uint32_t i = 0; i < kGroupSize; ++i) {
+                    const __gm__ volatile float *peer = reinterpret_cast<__gm__ volatile float *>(
+                        groupBytes + kPartialOffset + i * 32);
+                    sum += *peer;
+                }
+                *rms = 1.0f / sqrt(sum / dFloat + epsilon);
+            }
+
+            barrier.Arrive(lane);
+            barrier.Wait(lane);
+
+            const float invRms = *rms;
+            for (uint64_t col = first; col < last; ++col) {
+                const uint64_t index = rowOffset + col;
+                const float u = ToScalar(x_[index]) + ToScalar(residual_[index]);
+                const float value = u * invRms * ToScalar(gamma_[col]) + ToScalar(bias_[col]);
+                output_[index] = FromScalar<T>(value);
+            }
+        }
+    }
+
+    __aicore__ inline void GenericFallback(uint64_t rows, uint64_t d, float epsilon)
+    {
+        // Only block zero enters this path. It has no barrier, so a launch
+        // with extra blocks cannot strand a core when the row count is small.
+        if (GetBlockIdx() != 0) {
+            return;
+        }
+        for (uint64_t row = 0; row < rows; ++row) {
+            const uint64_t rowOffset = row * d;
+            float sum = 0.0f;
+            for (uint64_t col = 0; col < d; ++col) {
+                const uint64_t index = rowOffset + col;
+                const float u = ToScalar(x_[index]) + ToScalar(residual_[index]);
+                sum += u * u;
+            }
+            int32_t dInt = static_cast<int32_t>(d);
+            float dFloat = static_cast<float>(dInt);
+            float invRms = 1.0f / sqrt(sum / dFloat + epsilon);
+            for (uint64_t col = 0; col < d; ++col) {
+                const uint64_t index = rowOffset + col;
+                const float u = ToScalar(x_[index]) + ToScalar(residual_[index]);
+                const float value = u * invRms * ToScalar(gamma_[col]) + ToScalar(bias_[col]);
+                output_[index] = FromScalar<T>(value);
+            }
+        }
+    }
+
+    __gm__ const T *x_;
+    __gm__ const T *residual_;
+    __gm__ const T *gamma_;
+    __gm__ const T *bias_;
+    __gm__ T *output_;
+    GM_ADDR workspace_;
+    __gm__ const C001TilingData *tiling_;
+    bool valid_;
+};
+
+template <typename T>
+__aicore__ inline void Run(GM_ADDR x, GM_ADDR residual, GM_ADDR gamma, GM_ADDR bias,
+                           GM_ADDR output, GM_ADDR workspace, GM_ADDR tiling)
+{
+    CooperativeRmsNormBias<T> op;
+    op.Init(x, residual, gamma, bias, output, workspace, tiling);
+    op.Process();
+}
+
+}  // namespace c001
+
+extern "C" __global__ __vector__ void c001_add_rms_norm_bias_fp16(
+    GM_ADDR x, GM_ADDR residual, GM_ADDR gamma, GM_ADDR bias, GM_ADDR output,
+    GM_ADDR workspace, GM_ADDR tiling)
+{
+    KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);
+    c001::Run<half>(x, residual, gamma, bias, output, workspace, tiling);
+}
+
+extern "C" __global__ __vector__ void c001_add_rms_norm_bias_bf16(
+    GM_ADDR x, GM_ADDR residual, GM_ADDR gamma, GM_ADDR bias, GM_ADDR output,
+    GM_ADDR workspace, GM_ADDR tiling)
+{
+    KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);
+    c001::Run<bfloat16_t>(x, residual, gamma, bias, output, workspace, tiling);
+}
+
+extern "C" __global__ __vector__ void c001_add_rms_norm_bias_fp32(
+    GM_ADDR x, GM_ADDR residual, GM_ADDR gamma, GM_ADDR bias, GM_ADDR output,
+    GM_ADDR workspace, GM_ADDR tiling)
+{
+    KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);
+    c001::Run<float>(x, residual, gamma, bias, output, workspace, tiling);
+}
+
+
+#ifndef TENSOR_GROUP_INFO_DEFINED
+#define TENSOR_GROUP_INFO_DEFINED
+struct TensorInfo {
+    const int64_t* shape;
+    int64_t numDims;
+    int32_t dtype;
+};
+struct TensorGroupInfo {
+    const TensorInfo* tensors;
+    int64_t numTensors;
+};
+#endif
+
+static uint64_t C001ShapeNumel(const TensorInfo& info)
+{
+    if (info.shape == nullptr || info.numDims <= 0) {
+        return 0;
+    }
+    uint64_t result = 1;
+    for (int64_t axis = 0; axis < info.numDims; ++axis) {
+        const int64_t dim = info.shape[axis];
+        if (dim <= 0) {
+            return 0;
+        }
+        result *= static_cast<uint64_t>(dim);
+    }
+    return result;
+}
+
+static uint32_t C001KernelDType(uint32_t dtype)
+{
+    if (dtype == static_cast<uint32_t>(ACL_FLOAT16)) {
+        return 1U;
+    }
+    if (dtype == static_cast<uint32_t>(ACL_BF16) || dtype == 2U) {
+        return 2U;
+    }
+    return 0U;
+}
+
+extern "C" void run_kernel(
+    GM_ADDR x, const TensorGroupInfo& info_x,
+    GM_ADDR residual, const TensorGroupInfo& info_residual,
+    GM_ADDR gamma, const TensorGroupInfo& info_gamma,
+    GM_ADDR bias, const TensorGroupInfo& info_bias,
+    GM_ADDR output, const TensorGroupInfo& info_output,
+    int64_t availableCoreNum, aclrtStream stream, float epsilon)
+{
+    (void)info_residual;
+    (void)info_bias;
+    (void)info_output;
+
+    if (info_x.tensors == nullptr || info_x.numTensors < 1 ||
+        info_x.tensors[0].shape == nullptr || info_x.tensors[0].numDims < 2 ||
+        info_gamma.tensors == nullptr || info_gamma.numTensors < 1 ||
+        info_gamma.tensors[0].shape == nullptr || info_gamma.tensors[0].numDims != 1 ||
+        info_bias.tensors == nullptr || info_bias.numTensors < 1 ||
+        info_output.tensors == nullptr || info_output.numTensors < 1 ||
+        availableCoreNum <= 0) {
+        return;
+    }
+
+    const TensorInfo& xInfo = info_x.tensors[0];
+    const TensorInfo& gammaInfo = info_gamma.tensors[0];
+    const uint64_t rowsAndD = C001ShapeNumel(xInfo);
+    const uint32_t d = static_cast<uint32_t>(xInfo.shape[xInfo.numDims - 1]);
+    if (rowsAndD == 0 || d == 0 ||
+        static_cast<uint64_t>(gammaInfo.shape[0]) != d || rowsAndD % d != 0) {
+        return;
+    }
+
+    const uint64_t rows = rowsAndD / d;
+    const uint64_t maxGroupsByCore =
+        static_cast<uint64_t>(availableCoreNum) / c001::kGroupSize;
+    if (maxGroupsByCore == 0) {
+        return;
+    }
+    uint64_t groups64 = rows;
+    if (groups64 > maxGroupsByCore) {
+        groups64 = maxGroupsByCore;
+    }
+    if (groups64 > c001::kMaxGroups) {
+        groups64 = c001::kMaxGroups;
+    }
+    if (groups64 == 0) {
+        return;
+    }
+
+    c001::C001TilingData tiling;
+    tiling.rows = rows;
+    tiling.d = d;
+    tiling.group_count = groups64;
+    tiling.block_dim = groups64 * c001::kGroupSize;
+    tiling.epsilon = epsilon;
+
+    const uint32_t dtype = C001KernelDType(static_cast<uint32_t>(xInfo.dtype));
+    constexpr size_t kReservedWorkspaceBytes = 16U * 1024U * 1024U;
+    const size_t userWorkspaceBytes =
+        static_cast<size_t>(groups64) * c001::kGroupWorkspaceBytes;
+    const size_t workspaceBytes = kReservedWorkspaceBytes + userWorkspaceBytes;
+
+    GM_ADDR tilingDevice = nullptr;
+    GM_ADDR workspaceDevice = nullptr;
+    if (aclrtMalloc(reinterpret_cast<void**>(&tilingDevice), sizeof(tiling),
+                    ACL_MEM_MALLOC_HUGE_FIRST) != ACL_SUCCESS) {
+        return;
+    }
+    if (aclrtMemcpy(tilingDevice, sizeof(tiling), &tiling, sizeof(tiling),
+                    ACL_MEMCPY_HOST_TO_DEVICE) != ACL_SUCCESS) {
+        aclrtFree(tilingDevice);
+        return;
+    }
+    if (aclrtMalloc(reinterpret_cast<void**>(&workspaceDevice), workspaceBytes,
+                    ACL_MEM_MALLOC_HUGE_FIRST) != ACL_SUCCESS) {
+        aclrtFree(tilingDevice);
+        return;
+    }
+
+    const uint32_t blockDim = static_cast<uint32_t>(tiling.block_dim);
+    if (dtype == 1U) {
+        c001_add_rms_norm_bias_fp16<<<blockDim, nullptr, stream>>>(
+            x, residual, gamma, bias, output, workspaceDevice, tilingDevice);
+    } else if (dtype == 2U) {
+        c001_add_rms_norm_bias_bf16<<<blockDim, nullptr, stream>>>(
+            x, residual, gamma, bias, output, workspaceDevice, tilingDevice);
+    } else {
+        c001_add_rms_norm_bias_fp32<<<blockDim, nullptr, stream>>>(
+            x, residual, gamma, bias, output, workspaceDevice, tilingDevice);
+    }
+    aclrtSynchronizeStream(stream);
+    aclrtFree(workspaceDevice);
+    aclrtFree(tilingDevice);
+}
