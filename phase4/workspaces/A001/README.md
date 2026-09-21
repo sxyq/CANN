@@ -43,3 +43,15 @@ dtype conversion, or the reduction algorithm.
 
 The V003 target was compiled on `cann-server3` with CANN `8.5.0.alpha002` and
 `dav-2201`. Logs are `build/configure-v003.log` and `build/compile-v003.log`.
+
+## V004 focused update
+
+V003 measured `118631.29 us` for testcase 14 and `11909.16 us` for testcase
+15; testcase 14 represented `89.17%` of the measured 15-case total. V004
+removes the separate FP32 `xFloat_` buffer: `x` is converted directly into the
+already-required `u` work buffer before adding the residual. The freed UB is
+spent on larger streamed chunks (`3584` half/bfloat16 elements and `2560`
+FP32 elements), reducing chunk-loop and transfer setup work on long rows.
+
+The V004 target was compiled on `cann-server3` with CANN `8.5.0.alpha002` and
+`dav-2201`. Logs are `build/configure-v004.log` and `build/compile-v004.log`.

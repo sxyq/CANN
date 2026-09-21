@@ -159,3 +159,18 @@ non-32B-aligned D and the final partial chunk.
 - Server compile target: Ascend910B3 / `dav-2201` with CANN
   `8.5.0.alpha002`; target `a001_submission_v003` passed. Logs:
   `build/configure-v003.log` and `build/compile-v003.log`.
+
+## A001-V004 focused update
+
+- Evidence: V003 measured testcase 14 at `118631.29 us` and testcase 15 at
+  `11909.16 us`; testcase 14 was `89.17%` of the measured total.
+- Change: the output of the x conversion now goes directly into the existing
+  `u` buffer, removing the separate FP32 `xFloat_` buffer and its allocation.
+  The freed UB capacity allows streamed chunks of 3584 half/bfloat16 elements
+  or 2560 FP32 elements, reducing long-row chunk iterations.
+- Scope: the row-resident mapping, complete-row ownership, FP32 reduction,
+  aligned `DataCopy`/tail `DataCopyPad` dispatch, and submission ABI remain
+  unchanged.
+- Server compile target: Ascend910B3 / `dav-2201` with CANN
+  `8.5.0.alpha002`; target `a001_submission_v004` passed. Logs:
+  `build/configure-v004.log` and `build/compile-v004.log`.
