@@ -16,9 +16,12 @@ fallback entry. The hot entry is selected when the row width is 32-byte aligned;
 otherwise the fallback uses the same complete dtype and shape domain with a
 single-row panel.
 
-V002 uses the launcher dtype values `float=0`, `float16=1`, and `bf16=27`.
-Unsupported dtype values return before allocation, so a two-byte BF16 tensor is
-never passed to the four-byte FP32 entry.
+V003 uses the launcher dtype values `float=0`, `float16=1`, and `bf16=2`.
+The dispatch also accepts `27` as an ACL_BF16 compatibility value. Unsupported
+dtype values return before allocation, so a two-byte BF16 tensor is never passed
+to the four-byte FP32 entry. This keeps all 15 testcase launches active; the
+previous V002 path returned before launch for the three BF16 cases (60 launches
+instead of the required 75 over five iterations).
 
 ## 2D UB layout
 

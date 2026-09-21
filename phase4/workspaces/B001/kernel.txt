@@ -23,8 +23,10 @@ constexpr uint32_t B001_DOUBLE_BUFFER = 2;
 constexpr uint32_t B001_REDUCE_TMP_BYTES = 8192;
 constexpr int32_t B001_DTYPE_FLOAT = 0;
 constexpr int32_t B001_DTYPE_FLOAT16 = 1;
-// ACL_BF16 is 27 in the TensorInfo dtype enum used by the launcher.
-constexpr int32_t B001_DTYPE_BF16 = 27;
+// The npu_kernel_dev TensorInfo contract uses 2 for BF16. Keep 27 as an
+// accepted compatibility value for callers that pass ACL_BF16 directly.
+constexpr int32_t B001_DTYPE_BF16 = 2;
+constexpr int32_t B001_DTYPE_BF16_ACL = 27;
 
 template <typename T>
 struct B001TypeOps {
@@ -416,7 +418,8 @@ extern "C" void run_kernel(
     uint32_t elemBytes = 0;
     if (dtype == B001_DTYPE_FLOAT) {
         elemBytes = 4U;
-    } else if (dtype == B001_DTYPE_FLOAT16 || dtype == B001_DTYPE_BF16) {
+    } else if (dtype == B001_DTYPE_FLOAT16 || dtype == B001_DTYPE_BF16 ||
+               dtype == B001_DTYPE_BF16_ACL) {
         elemBytes = 2U;
     } else {
         return;
@@ -470,7 +473,7 @@ extern "C" void run_kernel(
         } else {
             b001_panel_fallback_fp16<<<blockNum, nullptr, stream>>>(x, residual, gamma, bias, output, tilingDevice);
         }
-    } else if (dtype == B001_DTYPE_BF16) {
+    } else if (dtype == B001_DTYPE_BF16 || dtype == B001_DTYPE_BF16_ACL) {
         if (hot) {
             b001_panel_hot_bf16<<<blockNum, nullptr, stream>>>(x, residual, gamma, bias, output, tilingDevice);
         } else {
