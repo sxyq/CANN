@@ -8,7 +8,7 @@
 
 The input is viewed as `R` contiguous rows of width `D`. Each Vector Core owns a contiguous row interval. A hot-path row is copied to UB, residual is added before normalization, the official DAV_2201 `RmsNorm` primitive computes the normalized row, and bias is added after normalization. The primitive tiling is built for one row because the kernel invokes it on one row-sized UB tensor at a time. A row is processed independently, so no cross-core synchronization or reduction workspace is needed.
 
-The generic path keeps the same row ownership. It evaluates the row in fixed-size chunks, accumulates the squared sum in FP32, recomputes the row in the same order, applies gamma and bias, and writes only valid tail elements. This path is used for BF16, non-aligned `D`, unsupported official tiles, and any shape whose official temporary area does not fit the local budget.
+The generic path keeps the same row ownership. It evaluates the row in fixed-size chunks, accumulates the squared sum in FP32, recomputes the row in the same order, applies gamma and bias, and writes only valid tail elements. V003 routes the full legal domain through this path while the primitive row contract is investigated; the primitive code remains compiled but is not dispatched.
 
 ## Core mapping
 

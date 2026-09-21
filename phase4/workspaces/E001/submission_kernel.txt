@@ -423,8 +423,12 @@ static bool BuildTiling(const TensorGroupInfo& info_x, const TensorGroupInfo& in
     // 40).
     const bool api_ok = supported_dtype && BuildRmsTiling(1U, width, type_size, tiling);
     const uint64_t ub_bytes = 6ULL * width * type_size + tiling.rms_tmp_bytes;
-    tiling.hot_path = api_ok && aligned_width &&
-        ub_bytes <= E001_DAV2201_VEC_WORKSPACE ? 1U : 0U;
+    // V003 diagnostic: route the full legal domain through the private
+    // scalar fallback until the primitive's row contract is verified.
+    (void)api_ok;
+    (void)aligned_width;
+    (void)ub_bytes;
+    tiling.hot_path = 0U;
     return true;
 }
 
