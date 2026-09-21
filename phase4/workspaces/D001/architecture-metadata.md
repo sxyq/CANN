@@ -23,6 +23,7 @@
 - Workspace layout per double-buffer slot: `rowBatch * usedCores` float partials followed by `rowBatch` float merged scalars. Slots alternate by row batch, so the maximum workspace is `2 * 32 * (40 + 1) * 4 = 10,496` bytes.
 - Local working set: two 128-element float gamma/bias tiles (1,024 bytes) plus 32 float row accumulators (128 bytes). There are no TQue slots or temporary tensors in this scalar-compatible implementation; 32-byte alignment loss is bounded by 64 bytes. The fixed workspace, local buffers, and a 8 KiB framework/synchronization reserve are all below the 184 KiB candidate budget.
 - The source keeps a private scalar generic fallback for all legal ranks, D tails, unaligned D, NaN/Inf, and epsilon values. The fallback is correctness-only; the persistent stripe path is the hot route.
+- V003 uses the target `bfloat16_t` conversion helpers (`ToFloat` / `ToBfloat16`) instead of reinterpreting BF16 storage through `uint16_t`; stripe ownership and synchronization are unchanged.
 
 ## Compile evidence
 
