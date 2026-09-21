@@ -39,3 +39,10 @@
 - Changes: cache-visible block-major reduction slots, exact proportional stripe bounds, and restored `__builtin_sqrtf` in both hot and fallback paths.
 - Source: `phase4/workspaces/D001/submission_v004.asc` (also copied to `kernel_v004.asc`).
 - V004 server compile log: `phase4/workspaces/D001/compile_v004.log`.
+
+## V005 handoff
+
+- Change: replaced the scalar square-root expression in the hot path and generic fallback with the target-compatible `sqrt(static_cast<float>(value))` form. Stripe ownership, block-major workspace, cache flushes, synchronization count, dtype dispatch, fallback routing, and workspace sizing are unchanged.
+- Source: `phase4/workspaces/D001/submission_v005.asc` (identical copy: `phase4/workspaces/D001/kernel_v005.asc`).
+- Device compile: PASS on `cann-server3` (`Ascend910B3`, `dav-2201`, CANN `8.5.0.alpha002`); log: `phase4/workspaces/D001/compile_v005_core.log`.
+- Full submission compile/link: PASS with the same `bisheng` toolchain and a wrapper that supplies the judge's tensor and ACL runtime declarations; log: `phase4/workspaces/D001/compile_v005.log`. The link completed with only the existing nested-pointer address-space warnings and no unresolved scalar math symbol.
