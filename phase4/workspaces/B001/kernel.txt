@@ -21,6 +21,10 @@ struct B001TilingData {
 constexpr uint32_t B001_MAX_PANEL_ROWS = 8;
 constexpr uint32_t B001_DOUBLE_BUFFER = 2;
 constexpr uint32_t B001_REDUCE_TMP_BYTES = 8192;
+constexpr int32_t B001_DTYPE_FLOAT = 0;
+constexpr int32_t B001_DTYPE_FLOAT16 = 1;
+// ACL_BF16 is 27 in the TensorInfo dtype enum used by the launcher.
+constexpr int32_t B001_DTYPE_BF16 = 27;
 
 template <typename T>
 struct B001TypeOps {
@@ -88,6 +92,7 @@ public:
         pipe_->InitBuffer(gammaFloatBuffer_, tiling_->rowAlignCols * sizeof(float));
         pipe_->InitBuffer(biasFloatBuffer_, tiling_->rowAlignCols * sizeof(float));
         pipe_->InitBuffer(reduceTmpBuffer_, B001_REDUCE_TMP_BYTES);
+        pipe_->InitBuffer(partialBuffer_, 32);
     }
 
     __aicore__ inline void Process()
@@ -183,7 +188,8 @@ private:
         auto residualFloat = residualFloatBuffer_.Get<float>();
         auto valueFloat = valueFloatBuffer_.Get<float>();
         auto reduceTmp = reduceTmpBuffer_.Get<float>();
-        auto partial = valueFloat[0];
+        auto partial = partialBuffer_.Get<float>();
+        const uint32_t workCols = AlignChunk(colsThis);
 
         for (uint32_t row = 0; row < rowsThis; ++row) {
             const uint32_t offset = row * tiling_->rowAlignCols;
@@ -192,14 +198,14 @@ private:
             auto xFloatRow = xFloat[offset];
             auto residualFloatRow = residualFloat[offset];
             auto valueRow = valueFloat[offset];
-            B001TypeOps<T>::ToFloat(xFloatRow, xRow, colsThis);
-            B001TypeOps<T>::ToFloat(residualFloatRow, residualRow, colsThis);
+            B001TypeOps<T>::ToFloat(xFloatRow, xRow, workCols);
+            B001TypeOps<T>::ToFloat(residualFloatRow, residualRow, workCols);
             AscendC::Add(valueRow, xFloatRow, residualFloatRow,
-                         static_cast<int32_t>(colsThis));
+                         static_cast<int32_t>(workCols));
             AscendC::Mul(valueRow, valueRow, valueRow,
-                         static_cast<int32_t>(colsThis));
+                         static_cast<int32_t>(workCols));
             AscendC::ReduceSum<float, true>(partial, valueRow, reduceTmp,
-                                            static_cast<int32_t>(colsThis));
+                                            static_cast<int32_t>(workCols));
             rowSums[row] += partial.GetValue(0);
         }
 
@@ -224,9 +230,10 @@ private:
         auto biasFloat = biasFloatBuffer_.Get<float>();
         auto outputLocal = outputQueue_.AllocTensor<T>();
         auto scalar = valueFloat[0];
+        const uint32_t workCols = AlignChunk(colsThis);
 
-        B001TypeOps<T>::ToFloat(gammaFloat, gammaLocal, colsThis);
-        B001TypeOps<T>::ToFloat(biasFloat, biasLocal, colsThis);
+        B001TypeOps<T>::ToFloat(gammaFloat, gammaLocal, workCols);
+        B001TypeOps<T>::ToFloat(biasFloat, biasLocal, workCols);
         for (uint32_t row = 0; row < rowsThis; ++row) {
             const uint32_t offset = row * tiling_->rowAlignCols;
             const float meanSquare = rowSums[row] * tiling_->inverseCols;
@@ -239,17 +246,17 @@ private:
             auto residualFloatRow = residualFloat[offset];
             auto valueRow = valueFloat[offset];
             auto outputRow = outputLocal[offset];
-            B001TypeOps<T>::ToFloat(xFloatRow, xRow, colsThis);
-            B001TypeOps<T>::ToFloat(residualFloatRow, residualRow, colsThis);
+            B001TypeOps<T>::ToFloat(xFloatRow, xRow, workCols);
+            B001TypeOps<T>::ToFloat(residualFloatRow, residualRow, workCols);
             AscendC::Add(valueRow, xFloatRow, residualFloatRow,
-                         static_cast<int32_t>(colsThis));
+                         static_cast<int32_t>(workCols));
             AscendC::Muls(valueRow, valueRow, inverseRms,
-                          static_cast<int32_t>(colsThis));
+                          static_cast<int32_t>(workCols));
             AscendC::Mul(valueRow, valueRow, gammaFloat,
-                         static_cast<int32_t>(colsThis));
+                         static_cast<int32_t>(workCols));
             AscendC::Add(valueRow, valueRow, biasFloat,
-                         static_cast<int32_t>(colsThis));
-            B001TypeOps<T>::FromFloat(outputRow, valueRow, colsThis);
+                         static_cast<int32_t>(workCols));
+            B001TypeOps<T>::FromFloat(outputRow, valueRow, workCols);
         }
 
         outputQueue_.EnQue(outputLocal);
@@ -319,6 +326,7 @@ private:
     AscendC::TBuf<AscendC::TPosition::VECCALC> gammaFloatBuffer_;
     AscendC::TBuf<AscendC::TPosition::VECCALC> biasFloatBuffer_;
     AscendC::TBuf<AscendC::TPosition::VECCALC> reduceTmpBuffer_;
+    AscendC::TBuf<AscendC::TPosition::VECCALC> partialBuffer_;
 };
 
 template <typename T, bool HOT_PATH>
@@ -405,7 +413,14 @@ extern "C" void run_kernel(
     const uint32_t rows32 = static_cast<uint32_t>(rows);
     const uint32_t cols = static_cast<uint32_t>(cols64);
     const int32_t dtype = xInfo.dtype;
-    const uint32_t elemBytes = dtype == 0 ? 4U : 2U;
+    uint32_t elemBytes = 0;
+    if (dtype == B001_DTYPE_FLOAT) {
+        elemBytes = 4U;
+    } else if (dtype == B001_DTYPE_FLOAT16 || dtype == B001_DTYPE_BF16) {
+        elemBytes = 2U;
+    } else {
+        return;
+    }
     const uint32_t elemBlock = 32U / elemBytes;
     const bool alignedD = (cols % elemBlock) == 0;
     const bool hot = alignedD && rows32 >= 1;
@@ -449,13 +464,13 @@ extern "C" void run_kernel(
         return;
     }
 
-    if (dtype == 1) {
+    if (dtype == B001_DTYPE_FLOAT16) {
         if (hot) {
             b001_panel_hot_fp16<<<blockNum, nullptr, stream>>>(x, residual, gamma, bias, output, tilingDevice);
         } else {
             b001_panel_fallback_fp16<<<blockNum, nullptr, stream>>>(x, residual, gamma, bias, output, tilingDevice);
         }
-    } else if (dtype == 2) {
+    } else if (dtype == B001_DTYPE_BF16) {
         if (hot) {
             b001_panel_hot_bf16<<<blockNum, nullptr, stream>>>(x, residual, gamma, bias, output, tilingDevice);
         } else {

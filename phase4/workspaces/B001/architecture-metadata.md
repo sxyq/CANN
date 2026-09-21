@@ -16,6 +16,10 @@ fallback entry. The hot entry is selected when the row width is 32-byte aligned;
 otherwise the fallback uses the same complete dtype and shape domain with a
 single-row panel.
 
+V002 uses the launcher dtype values `float=0`, `float16=1`, and `bf16=27`.
+Unsupported dtype values return before allocation, so a two-byte BF16 tensor is
+never passed to the four-byte FP32 entry.
+
 ## 2D UB layout
 
 The hot path uses `panelRows=8` and `chunkCols=min(D, 512)` elements. Every
@@ -37,6 +41,12 @@ maximum hot-path chunk and the three FP32 panel buffers occupy 48 KiB. The
 gamma/bias buffers and reduction scratch are included in the allocation above;
 the complete maximum allocation is below 184 KiB, including queue depth two.
 The fallback uses one row and a 256-element chunk, with queue depth one.
+
+For a final non-aligned chunk, DMA pads to `AlignChunk(colsThis)` and both
+passes compute over that padded width. The padded inputs, gamma, and bias are
+zero-filled; output DMA writes only the original `colsThis` elements. The
+reduction result uses a separate scalar buffer rather than the first element of
+the value panel.
 
 ## Panel DMA
 
@@ -79,6 +89,6 @@ workspace; each row's reduction is complete within its owning panel core.
 - Rank: 2D, 3D, and 4D are flattened into R rows.
 - D: 64 through 32768, including non-32-byte-aligned widths.
 - Rows: full panels and tail panels.
-- Values: NaN and Inf propagate through IEEE arithmetic; epsilon is passed per
+- Values: NaN and Inf retain IEEE arithmetic behavior; epsilon is passed per
   invocation and is used in the row RMS denominator.
 - Determinism: fixed row order, fixed chunk order, and no atomics.
