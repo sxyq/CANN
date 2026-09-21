@@ -144,3 +144,18 @@ non-32B-aligned D and the final partial chunk.
   and epsilon values retain the existing dispatch and fallback behavior.
 - Server compile target: Ascend910B3 / `dav-2201` with CANN
   `8.5.0.alpha002`; target `a001_submission_v002` passed.
+
+## A001-V003 focused update
+
+- Evidence: the V002 result reports 124949.87 us for testcase 14 and
+  12187.19 us for testcase 15. Testcase 14 remains the dominant long-D
+  latency case.
+- Change: `submission_v003.asc` dispatches complete 32B-aligned GM transfers
+  through `DataCopy`; partial or unaligned row/chunk transfers retain
+  `DataCopyPad`. The alignment predicate covers both byte length and source or
+  destination element offset.
+- Scope: row ownership, D ownership, FP32 reduction, dtype handling, and the
+  3072-element half/bfloat16 or 2048-element FP32 stream chunks are unchanged.
+- Server compile target: Ascend910B3 / `dav-2201` with CANN
+  `8.5.0.alpha002`; target `a001_submission_v003` passed. Logs:
+  `build/configure-v003.log` and `build/compile-v003.log`.

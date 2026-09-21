@@ -31,3 +31,15 @@ scalar launch metadata. The base implementation remains in
 The adapter was compiled on `cann-server3` with the same toolchain. The
 captured records are `build/configure-adapter.log` and
 `build/compile-adapter.log`.
+
+## V003 focused update
+
+The V002 result recorded 124949.87 us for testcase 14 and 12187.19 us for
+testcase 15; testcase 14 was the dominant long-D latency case. `submission_v003.asc`
+keeps `DataCopyPad` for partial or unaligned transfers, while complete transfers
+whose GM byte offset and length are both 32B aligned use `DataCopy`. This avoids
+the padding path on the majority of full chunks without changing row ownership,
+dtype conversion, or the reduction algorithm.
+
+The V003 target was compiled on `cann-server3` with CANN `8.5.0.alpha002` and
+`dav-2201`. Logs are `build/configure-v003.log` and `build/compile-v003.log`.
