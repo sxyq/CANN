@@ -129,3 +129,18 @@ non-32B-aligned D and the final partial chunk.
 
 `tiling.d > 1024`
 
+## A001-V002 focused update
+
+- Evidence: `phase4/online/A001/result.json` testcase 14 took 118093.53 us,
+  which is 87.76% of the 15-case total. The update targets the streamed
+  large-D path while keeping row ownership and arithmetic unchanged.
+- Change: `submission_v002.asc` raises the half/bfloat16 chunk from 2048 to
+  3072 elements and the FP32 chunk from 1024 to 2048 elements.
+- UB estimate for half/bfloat16: 10 queue slots × 3072 × 2 plus eight FP32
+  work buffers × 3072 × 4, scalar state, and the 2048 B reserve = 161856 B.
+- UB estimate for FP32: 10 queue slots × 2048 × 4 plus eight FP32 work
+  buffers × 2048 × 4, scalar state, and the 2048 B reserve = 149568 B.
+- Tail handling remains on `DataCopyPad`; all legal dtypes, rows, D tails,
+  and epsilon values retain the existing dispatch and fallback behavior.
+- Server compile target: Ascend910B3 / `dav-2201` with CANN
+  `8.5.0.alpha002`; target `a001_submission_v002` passed.
