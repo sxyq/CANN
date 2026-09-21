@@ -156,6 +156,7 @@ private:
             const bool aligned = (count * dtype_bytes_) % kBytesPerBlock == 0;
             CopyIn(x_gm_[row * width_], x_local, count, aligned);
             CopyIn(residual_gm_[row * width_], residual_local, count, aligned);
+            PipeBarrier<PIPE_MTE2>();
             Add(u_local, x_local, residual_local, count);
             PipeBarrier<PIPE_V>();
             LocalTensor<uint8_t> rms_local = rms_tmp_.Get<uint8_t>();
@@ -204,6 +205,7 @@ private:
                 LocalTensor<V> u_local = u_.AllocTensor<V>();
                 CopyIn(x_gm[row * width_ + col], x_local, n, (n * sizeof(V)) % kBytesPerBlock == 0);
                 CopyIn(residual_gm[row * width_ + col], residual_local, n, (n * sizeof(V)) % kBytesPerBlock == 0);
+                PipeBarrier<PIPE_MTE2>();
                 if constexpr (IsSameType<V, float>::value) {
                     Add(u_local, x_local, residual_local, n);
                     PipeBarrier<PIPE_V>();
@@ -247,6 +249,7 @@ private:
                 LocalTensor<V> bias_local = bias_.AllocTensor<V>();
                 CopyIn(x_gm[row * width_ + col], y_local, n, (n * sizeof(V)) % kBytesPerBlock == 0);
                 CopyIn(residual_gm[row * width_ + col], gamma_local, n, (n * sizeof(V)) % kBytesPerBlock == 0);
+                PipeBarrier<PIPE_MTE2>();
                 if constexpr (IsSameType<V, float>::value) {
                     Add(f, y_local, gamma_local, n);
                 } else {
@@ -258,6 +261,7 @@ private:
                 }
                 CopyIn(gamma_gm[col], gamma_local, n, (n * sizeof(V)) % kBytesPerBlock == 0);
                 CopyIn(bias_gm[col], bias_local, n, (n * sizeof(V)) % kBytesPerBlock == 0);
+                PipeBarrier<PIPE_MTE2>();
                 PipeBarrier<PIPE_V>();
                 Muls(f, f, inv, n);
                 PipeBarrier<PIPE_V>();
