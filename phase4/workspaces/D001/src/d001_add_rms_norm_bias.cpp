@@ -156,6 +156,7 @@ extern "C" __global__ __aicore__ void d001_add_rms_norm_bias(
     GM_ADDR x, GM_ADDR residual, GM_ADDR gamma, GM_ADDR bias, GM_ADDR output,
     GM_ADDR workspace, GM_ADDR tiling)
 {
+    KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_AIV_ONLY);
     const auto* configGm = reinterpret_cast<__gm__ const d001::D001TilingData*>(tiling);
     d001::D001TilingData config;
     config.rows = configGm->rows;
