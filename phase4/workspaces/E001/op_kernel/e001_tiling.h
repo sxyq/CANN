@@ -28,5 +28,7 @@ struct E001TilingData {
 static_assert(sizeof(E001TilingData) % 8 == 0, "tiling record must be 8-byte aligned");
 
 constexpr uint32_t E001_DAV2201_VEC_WORKSPACE = 184U * 1024U;
-constexpr uint32_t E001_TILE_ROWS_DEFAULT = 4;
+// The primitive is invoked once per UB row.  Keeping the record explicit
+// avoids deriving a multi-row primitive tile from the global row count.
+constexpr uint32_t E001_TILE_ROWS_DEFAULT = 1;
 constexpr uint32_t E001_FALLBACK_CHUNK_ELEMENTS = 2048;

@@ -32,7 +32,9 @@ struct E001TilingData {
 static_assert(sizeof(E001TilingData) % 8 == 0, "tiling record must be 8-byte aligned");
 
 constexpr uint32_t E001_DAV2201_VEC_WORKSPACE = 184U * 1024U;
-constexpr uint32_t E001_TILE_ROWS_DEFAULT = 4;
+// The primitive is invoked once per UB row.  Keeping the record explicit
+// avoids deriving a multi-row primitive tile from the global row count.
+constexpr uint32_t E001_TILE_ROWS_DEFAULT = 1;
 constexpr uint32_t E001_FALLBACK_CHUNK_ELEMENTS = 2048;
 
 using namespace AscendC;
@@ -49,7 +51,7 @@ __aicore__ inline void CopyIn(const GlobalTensor<T>& gm, const LocalTensor<T>& u
     if (aligned) {
         DataCopy(ub, gm, count);
     } else {
-        DataCopyPadParams pad;
+        DataCopyPadParams pad{};
         DataCopyParams params;
         params.blockCount = 1;
         params.blockLen = static_cast<uint16_t>(count * sizeof(T));
@@ -145,8 +147,7 @@ private:
         gamma_local = gamma_.DeQue<T>();
         bias_local = bias_.DeQue<T>();
 
-        for (uint32_t row = 0; row < row_count_;) {
-            const uint32_t rows = tiling_->tile_rows < row_count_ - row ? tiling_->tile_rows : row_count_ - row;
+        for (uint32_t row = 0; row < row_count_; ++row) {
             const uint32_t count = width_;
             LocalTensor<T> x_local = in_x_.AllocTensor<T>();
             LocalTensor<T> residual_local = in_residual_.AllocTensor<T>();
@@ -180,7 +181,6 @@ private:
             in_residual_.FreeTensor(residual_local);
             u_.FreeTensor(u_local);
             y_.FreeTensor(y_local);
-            row += rows;
         }
         gamma_.FreeTensor(gamma_local);
         bias_.FreeTensor(bias_local);
@@ -211,19 +211,17 @@ private:
                     Mul(sq, u_local, u_local, n);
                     PipeBarrier<PIPE_V>();
                     sum += ReduceScalar(sq, n);
-                } else {
-                    LocalTensor<float> xf = rms_tmp_.Get<float>();
-                    LocalTensor<float> rf = scalar_.Get<float>();
-                    Cast(xf, x_local, RoundMode::CAST_NONE, n);
-                    Cast(rf, residual_local, RoundMode::CAST_NONE, n);
-                    PipeBarrier<PIPE_V>();
-                    Add(xf, xf, rf, n);
-                    PipeBarrier<PIPE_V>();
-                    Mul(rf, xf, xf, n);
-                    PipeBarrier<PIPE_V>();
-                    sum += ReduceScalar(rf, n);
-                    Cast(u_local, xf, RoundMode::CAST_RINT, n);
-                    PipeBarrier<PIPE_V>();
+        } else {
+            LocalTensor<float> xf = rms_tmp_.Get<float>();
+            LocalTensor<float> rf = scalar_.Get<float>();
+            Cast(xf, x_local, RoundMode::CAST_NONE, n);
+            Cast(rf, residual_local, RoundMode::CAST_NONE, n);
+            PipeBarrier<PIPE_V>();
+            Add(xf, xf, rf, n);
+            PipeBarrier<PIPE_V>();
+            Mul(xf, xf, xf, n);
+            PipeBarrier<PIPE_V>();
+            sum += ReduceScalar(xf, n);
                 }
                 in_x_.FreeTensor(x_local);
                 in_residual_.FreeTensor(residual_local);
@@ -258,8 +256,8 @@ private:
                     Cast(rf, gamma_local, RoundMode::CAST_NONE, n);
                     Add(f, xf, rf, n);
                 }
-                CopyIn(gamma_gm[row * width_ + col], gamma_local, n, (n * sizeof(V)) % kBytesPerBlock == 0);
-                CopyIn(bias_gm[row * width_ + col], bias_local, n, (n * sizeof(V)) % kBytesPerBlock == 0);
+                CopyIn(gamma_gm[col], gamma_local, n, (n * sizeof(V)) % kBytesPerBlock == 0);
+                CopyIn(bias_gm[col], bias_local, n, (n * sizeof(V)) % kBytesPerBlock == 0);
                 PipeBarrier<PIPE_V>();
                 Muls(f, f, inv, n);
                 PipeBarrier<PIPE_V>();
@@ -289,7 +287,8 @@ private:
     __aicore__ inline float ReduceScalar(const LocalTensor<float>& value, const uint32_t count)
     {
         LocalTensor<float> scalar = scalar_.Get<float>();
-        ReduceSum(scalar, value, rms_tmp_.Get<float>(), count);
+        LocalTensor<float> scratch = scalar_.Get<float>()[E001_FALLBACK_CHUNK_ELEMENTS];
+        ReduceSum(scalar, value, scratch, count);
         PipeBarrier<PIPE_V>();
         event_t event = static_cast<event_t>(pipe_->FetchEventID(HardEvent::V_S));
         SetFlag<HardEvent::V_S>(event);
@@ -403,7 +402,10 @@ static bool BuildTiling(const TensorGroupInfo& info_x, const TensorGroupInfo& in
     if (tiling.block_num == 0) {
         tiling.block_num = 1;
     }
-    tiling.rows_per_block = (rows + tiling.block_num - 1U) / tiling.block_num;
+    // Keep every block's row interval valid when block_num is larger than
+    // one.  The final block receives the remainder; the previous ceil-based
+    // formula could underflow rows_last_block for non-divisible shapes.
+    tiling.rows_per_block = rows / tiling.block_num;
     tiling.rows_last_block = rows - (tiling.block_num - 1U) * tiling.rows_per_block;
     tiling.tile_rows = E001_TILE_ROWS_DEFAULT;
     tiling.chunk_elements = E001_FALLBACK_CHUNK_ELEMENTS;
@@ -414,10 +416,14 @@ static bool BuildTiling(const TensorGroupInfo& info_x, const TensorGroupInfo& in
 
     const bool supported_dtype = x_info.dtype == 0 || x_info.dtype == 1;
     const bool aligned_width = (static_cast<uint64_t>(width) * type_size) % 32U == 0;
-    const bool complete_tiles = rows % E001_TILE_ROWS_DEFAULT == 0;
-    const bool api_ok = supported_dtype && BuildRmsTiling(rows, width, type_size, tiling);
+    // KernelE001 invokes RmsNorm on exactly one row-sized UB tensor.  Build
+    // the primitive record for that same shape even when the launch has many
+    // rows or many blocks; using the global row count makes the primitive
+    // walk past the per-block UB allocation (the observed 507035 at blockDim
+    // 40).
+    const bool api_ok = supported_dtype && BuildRmsTiling(1U, width, type_size, tiling);
     const uint64_t ub_bytes = 6ULL * width * type_size + tiling.rms_tmp_bytes;
-    tiling.hot_path = api_ok && aligned_width && complete_tiles &&
+    tiling.hot_path = api_ok && aligned_width &&
         ub_bytes <= E001_DAV2201_VEC_WORKSPACE ? 1U : 0U;
     return true;
 }

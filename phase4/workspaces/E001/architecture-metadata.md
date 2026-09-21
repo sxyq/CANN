@@ -6,15 +6,15 @@
 
 ## Architecture hypothesis
 
-The input is viewed as `R` contiguous rows of width `D`. Each Vector Core owns a contiguous row interval. A hot-path row is copied to UB, residual is added before normalization, the official DAV_2201 `RmsNorm` primitive computes the normalized row, and bias is added after normalization. A row is processed independently, so no cross-core synchronization or reduction workspace is needed.
+The input is viewed as `R` contiguous rows of width `D`. Each Vector Core owns a contiguous row interval. A hot-path row is copied to UB, residual is added before normalization, the official DAV_2201 `RmsNorm` primitive computes the normalized row, and bias is added after normalization. The primitive tiling is built for one row because the kernel invokes it on one row-sized UB tensor at a time. A row is processed independently, so no cross-core synchronization or reduction workspace is needed.
 
 The generic path keeps the same row ownership. It evaluates the row in fixed-size chunks, accumulates the squared sum in FP32, recomputes the row in the same order, applies gamma and bias, and writes only valid tail elements. This path is used for BF16, non-aligned `D`, unsupported official tiles, and any shape whose official temporary area does not fit the local budget.
 
 ## Core mapping
 
 - `block_num = min(R, available_vector_cores)` for normal scheduling.
-- `rows_per_block = ceil(R / block_num)`.
-- The final block owns `rows_last_block`; no unused block enters a wait.
+- `rows_per_block = floor(R / block_num)`.
+- The final block owns the remaining rows in `rows_last_block`; no unused block enters a wait.
 - A core reads and writes only its own row interval.
 - Cross-core synchronization count: zero.
 
@@ -59,7 +59,7 @@ Hot path requires:
 - dtype FP16 or FP32;
 - `64 <= D <= 32768`;
 - official `GetRmsNormMaxMinTmpSize` succeeds;
-- official `GetRmsNormTilingInfo` succeeds with the selected temporary size;
+- official `GetRmsNormTilingInfo` succeeds for the one-row primitive shape with the selected temporary size;
 - the complete allocation plan fits within 184 KiB;
 - row and gamma/bias copies satisfy the selected aligned or padded transfer form.
 
@@ -76,4 +76,3 @@ FP16 and BF16 inputs are accumulated in FP32 on the generic path. The row traver
 - Tiling probe: `phase4/workspaces/E001/op_host/e001_tiling_probe.cpp`
 - Build file: `phase4/workspaces/E001/CMakeLists.txt`
 - Target: `Ascend910B3`, `dav-2201`, CANN `8.5.0.alpha002`
-
