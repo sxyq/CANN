@@ -1,0 +1,56 @@
+{
+  "candidate": "G001",
+  "architecture": "Fresh One-Read / Resident-Y",
+  "source": "phase4/workspaces/G001/src/add_rms_norm_bias.cpp",
+  "build_file": "phase4/workspaces/G001/CMakeLists.txt",
+  "kernel_entry": "g001_add_rms_norm_bias",
+  "target": {
+    "server": "cann-server3",
+    "soc_version": "Ascend910B3",
+    "npu_arch": "dav-2201",
+    "cann": "8.5.0.alpha002"
+  },
+  "tiling_data": {
+    "fields": [
+      "rows:int32",
+      "dim:int32",
+      "epsilon:float",
+      "dtype:uint32 (0=FP16, 1=BF16, 2=FP32)",
+      "mode:uint32 (0=resident, nonzero=generic)",
+      "reserved:int32[2]"
+    ],
+    "leading_dims_flattened_to_rows": true
+  },
+  "domain": {
+    "rank": [2, 3, 4],
+    "dtype": ["FP16", "BF16", "FP32"],
+    "d_min": 64,
+    "d_max": 32768,
+    "tail_rows": true,
+    "d_tail": true,
+    "nan_inf": true
+  },
+  "hot_path": {
+    "name": "RunResidentRows",
+    "source_reads": "x and residual are consumed once per row",
+    "resident_value": "native dtype u=x+residual remains in one UB row",
+    "accumulator": "FP32"
+  },
+  "generic_path": {
+    "name": "RunGenericRows",
+    "selection": "tiling.mode != 0",
+    "coverage": "FP16/BF16/FP32 and all legal rows and D"
+  },
+  "compile": {
+    "status": "PASS",
+    "configure_log": "phase4/workspaces/G001/logs/compile-configure.log",
+    "build_log": "phase4/workspaces/G001/logs/compile-build.log",
+    "direct_log": "phase4/workspaces/G001/logs/compile-direct.log",
+    "device_objects_cleaned": true,
+    "remote_build_removed": true
+  },
+  "submission": {
+    "git": false,
+    "cannjudge": false
+  }
+}
