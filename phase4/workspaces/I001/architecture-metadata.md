@@ -1,50 +1,56 @@
-# I001 V001 Architecture Metadata
+# I001 V002 Architecture Metadata
 
 candidate: I001
-revision: V001
-architecture hypothesis: Wide-D streaming is dominated by GM rereads and tiny D-tiles. Retained-y for rows that fit UB, large-tile two-pass otherwise, and a low-sync D-stripe when batch is tiny and D is huge.
+revision: V002
+main_change: self-contained judge-facing kernel.asc (no acl.h, no local type defs, template-conformant)
 
-core mapping: row-parallel by default (contiguous row ranges per Vector Core). D-stripe mode splits the reduction dimension across cores.
+architecture hypothesis: Wide-D is hurt by tiny D-tiles and full GM rereads. Retained-y when the FP32 row fits UB, large-tile two-pass streaming otherwise.
 
-blockDim strategy: min(availableCoreNum, 40, rows) for row modes. D-stripe uses min(availableCoreNum, 40, ceil(D/512)).
+core mapping: row-parallel, contiguous row ranges per Vector Core.
 
-row ownership: each core owns a contiguous row range in row modes. D-stripe owns no full row.
+blockDim strategy: min(availableCoreNum, 40, rows).
 
-D ownership: full D per row in row modes. D-stripe owns a contiguous D stripe for every row.
+row ownership: each core owns a contiguous row range.
+D ownership: full D per row.
 
 UB allocation estimate:
-- tile T buffers x/r/g/b: 4 * tile * sizeof(T)
-- FP32 work fA/fB: 2 * tile * 4
+- x/r/scratch T tiles: 3 * tile * sizeof(T)
+- fA/fB float tiles: 2 * tile * 4
 - reduce tmp: 128 B
 - retained u row: D * 4 only when mode=retained
-- budget target <= 184 KiB usable (192 KiB TOTAL_UB_SIZE minus TMP/sync)
+- budget target <= 150 KiB working set for retain decision
 
-TQue allocation: 4 x TQue VECIN depth 1 (x, residual, gamma, bias). TBuf for fA/fB/tmp/uRow.
+TQue allocation: 3 x TQue VECIN depth 1 (x, residual, scratch). TBuf for fA/fB/uRow/tmp.
 
-parameter residency lifetime: gamma/bias loaded per D-tile (or whole row in retained mode). Not cached across rows in V001.
+parameter residency lifetime: gamma/bias loaded per D-tile per row.
 
-reduction topology: intra-core ReduceSum over sum(u*u). D-stripe adds a 2-phase core reduce via GM workspace + SyncAll.
+reduction topology: intra-core ReduceSum over sum(u*u). No cross-core sync in V002.
 
-cross-core synchronization strategy: none in row modes. D-stripe uses SyncAll twice (after partial write, after total write).
-
-cross-core synchronization count: 0 (row modes) or 2 (D-stripe, all rows amortized).
+cross-core synchronization strategy: none.
+cross-core synchronization count: 0.
 
 expected x rereads: 1 (retained) or 2 (two-pass).
 expected residual rereads: 1 (retained) or 2 (two-pass).
-expected gamma reload groups: 1 per D-tile per row (row modes); 1 per D-tile per row in stripe.
+expected gamma reload groups: 1 per D-tile per row.
 expected bias reload groups: same as gamma.
 
-workspace usage: D-stripe only, float[cores * R + R], device malloc, zeroed.
+workspace usage: none (V002 dropped D-stripe/aclrtMalloc to fix online CE).
 
 hot-path domain:
-- retained: retainNeed <= 150 KiB (covers most D<=8192 FP32 and larger for half)
-- two-pass row: retainNeed > 150 KiB and rows > 8
-- D-stripe: retainNeed > 150 KiB and rows <= 8 and D >= 4096
+- retained: retainNeed <= 150 KiB
+- two-pass row: retainNeed > 150 KiB
 
 hot-path dispatch condition: host-side in run_kernel from shape/dtype.
 
-fallback domain: same kernels cover FP32/FP16/BF16, rank 2/3/4 via R=prod(leading), D=shape[-1], all D in 64..32768 including unaligned D via DataCopyPad + exact counts.
+fallback domain: FP32/FP16/BF16, rank 2/3/4 via R=prod(leading), D=shape[-1], D 64..32768 including unaligned D via DataCopyPad + exact counts.
 
-fallback dispatch condition: any legal input falls into one of the three modes; no separate copy of other candidates.
+fallback dispatch condition: any legal input falls into retained or two-pass.
 
-parameter-stripe / wide batch: V001 keeps gamma/bias tile-local. Next revision can batch 2+ rows per param tile.
+online compile notes:
+- first line #include <cmath>
+- last line }
+- extern "C" void run_kernel
+- __global__ __vector__ entry with __gm__ uint8_t* params
+- DataCopyPadExtParams via constructor (no aggregate = {)
+- no acl/acl.h
+- no TensorInfo/TensorGroupInfo redefinition

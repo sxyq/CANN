@@ -2,12 +2,13 @@ cmake_minimum_required(VERSION 3.16)
 
 set(CMAKE_ASC_ARCHITECTURES "dav-2201" CACHE STRING "NPU architecture: dav-2201")
 set(SOC_VERSION "Ascend910B3" CACHE STRING "SoC version")
+set(I001_REV "V002" CACHE STRING "Revision folder name")
 
 find_package(ASC REQUIRED)
 
-project(i001_v001 LANGUAGES ASC CXX)
+project(i001_v002 LANGUAGES ASC CXX)
 
-set(I001_SUBMISSION ${CMAKE_CURRENT_SOURCE_DIR}/V001/add_rms_norm_bias_v001.asc)
+set(I001_SUBMISSION ${CMAKE_CURRENT_SOURCE_DIR}/${I001_REV}/kernel.asc)
 set(I001_TYPES ${CMAKE_CURRENT_SOURCE_DIR}/V001/judge_types.hpp)
 
 set(I001_HOST_INCLUDES
@@ -23,34 +24,34 @@ set(I001_LINK_DIRS
     /usr/lib/aarch64-linux-gnu
 )
 
-function(i001_setup target)
-    target_include_directories(${target} PRIVATE ${I001_HOST_INCLUDES})
-    target_link_directories(${target} PRIVATE ${I001_LINK_DIRS})
-    target_link_libraries(${target} PRIVATE stdc++ m dl)
-    set_target_properties(${target} PROPERTIES LINKER_LANGUAGE ASC)
-    target_compile_options(${target} PRIVATE
-        $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=${CMAKE_ASC_ARCHITECTURES}>
-    )
-endfunction()
-
-# 1) device compile: submission source (kernels + run_kernel) as object
-add_library(v001_device OBJECT ${I001_SUBMISSION})
-target_include_directories(v001_device PRIVATE ${I001_HOST_INCLUDES})
-target_compile_options(v001_device PRIVATE
+# 1) device compile: object from submission
+add_library(v002_device OBJECT ${I001_SUBMISSION})
+target_include_directories(v002_device PRIVATE ${I001_HOST_INCLUDES})
+target_compile_options(v002_device PRIVATE
     $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=${CMAKE_ASC_ARCHITECTURES}>
     $<$<COMPILE_LANGUAGE:ASC>:-include>
     $<$<COMPILE_LANGUAGE:ASC>:${I001_TYPES}>
 )
 
-# 2) submission compile: same source, local helper provides TensorInfo/TensorGroupInfo
-add_library(v001_submission OBJECT ${I001_SUBMISSION})
-target_include_directories(v001_submission PRIVATE ${I001_HOST_INCLUDES})
-target_compile_options(v001_submission PRIVATE
+# 2) submission compile: same TU, local types only
+add_library(v002_submission OBJECT ${I001_SUBMISSION})
+target_include_directories(v002_submission PRIVATE ${I001_HOST_INCLUDES})
+target_compile_options(v002_submission PRIVATE
     $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=${CMAKE_ASC_ARCHITECTURES}>
     $<$<COMPILE_LANGUAGE:ASC>:-include>
     $<$<COMPILE_LANGUAGE:ASC>:${I001_TYPES}>
 )
 
-# 3) full link: local driver includes types + submission and references run_kernel
-add_executable(v001_full ${CMAKE_CURRENT_SOURCE_DIR}/local_full.asc)
-i001_setup(v001_full)
+# 3) full link: local driver includes types + submission
+add_executable(v002_full ${CMAKE_CURRENT_SOURCE_DIR}/local_full.asc)
+target_include_directories(v002_full PRIVATE ${I001_HOST_INCLUDES})
+target_link_directories(v002_full PRIVATE ${I001_LINK_DIRS})
+target_link_libraries(v002_full PRIVATE stdc++ m dl)
+set_target_properties(v002_full PROPERTIES LINKER_LANGUAGE ASC)
+target_compile_options(v002_full PRIVATE
+    $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=${CMAKE_ASC_ARCHITECTURES}>
+)
+target_include_directories(v002_full PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/${I001_REV}
+)
