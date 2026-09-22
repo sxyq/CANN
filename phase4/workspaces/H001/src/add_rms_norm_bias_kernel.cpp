@@ -197,20 +197,20 @@ private:
         biasQueue_.FreeTensor(bias);
     }
 
+    // V008 single change vs V007: ReduceSum for wide-path sum(u*u) too (hot ApplyRow already uses it).
     __aicore__ inline float ChunkSumSquares(AscendC::LocalTensor<T> xRow, AscendC::LocalTensor<T> residualRow,
         uint32_t count)
     {
         AscendC::LocalTensor<float> x32 = workABuf_.Get<float>();
         AscendC::LocalTensor<float> r32 = workBBuf_.Get<float>();
+        AscendC::LocalTensor<float> partial = partialBuf_.Get<float>();
+        AscendC::LocalTensor<float> reduceTmp = reduceTmpBuf_.Get<float>();
         H001TypeOps<T>::ToFloat(x32, xRow, count);
         H001TypeOps<T>::ToFloat(r32, residualRow, count);
         AscendC::Add(x32, x32, r32, static_cast<int32_t>(count));
-        float sum = 0.0f;
-        for (uint32_t col = 0; col < count; ++col) {
-            const float u = x32.GetValue(col);
-            sum += u * u;
-        }
-        return sum;
+        AscendC::Mul(r32, x32, x32, static_cast<int32_t>(count));
+        AscendC::ReduceSum<float, true>(partial, r32, reduceTmp, static_cast<int32_t>(count));
+        return partial.GetValue(0);
     }
 
     __aicore__ inline void ApplyInvRms(AscendC::LocalTensor<T> outputRow, AscendC::LocalTensor<T> xRow,

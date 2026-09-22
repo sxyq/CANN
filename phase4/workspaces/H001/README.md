@@ -5,14 +5,14 @@ Small-D / high-R on Ascend910B3/DAV_2201 Vector Core.
 ## Status
 
 - V004: 15/15, 12.54
-- V005: 0/15 TLE (depth-2 TQue deadlock) — do not retry Alloc-before-Free
-- V006: 15/15, 12.55 (fused ApplyRow only — flat)
-- V007: V006 + **one** change: `ReduceSum` for `sum(u*u)` in hot `ApplyRow` only (wide `ChunkSumSquares` still scalar)
+- V005: 0/15 TLE — depth-2 TQue Alloc-before-Free; do not retry
+- V006: 15/15, 12.55 (fused ApplyRow — flat)
+- V007: 15/15, **23.29 best** — ReduceSum in hot `ApplyRow` (T03/T04/T06–T08/T10/T14 collapsed)
+- V008: V007 + **one** change: `ReduceSum` in wide `ChunkSumSquares` (T05/T09/T11–T13/T15)
 
-## V007 only delta vs V006
+## V008 only delta vs V007
 
-Hot `ApplyRow`: `Mul(u,u)` + `ReduceSum<float,true>` replaces the scalar GetValue loop.
-New `partialBuf_` (32B) + `reduceTmpBuf_` (8KiB), disjoint from workA/workB. Queues stay depth 1.
+`ChunkSumSquares` (wide pass1) uses `Mul`+`ReduceSum<float,true>` instead of the scalar GetValue loop. Same partial/reduceTmp as hot path. Everything else identical to V007.
 
 ## Template (npu_kernel_dev / B001)
 
@@ -20,4 +20,4 @@ New `partialBuf_` (32B) + `reduceTmpBuf_` (8KiB), disjoint from workA/workB. Que
 
 ## Build
 
-`build_server3.sh` on cann-server3. Log: `logs/compile-10.log`.
+`build_server3.sh` on cann-server3. Log: `logs/compile-11.log`.

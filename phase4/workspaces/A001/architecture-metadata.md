@@ -463,3 +463,26 @@ non-32B-aligned D and the final partial chunk.
 - Server compile target: Ascend910B3 / `dav-2201` with CANN
   `8.5.0.alpha002`; target `a001_submission_v016` passed. Logs:
   `build/configure-v016.log` and `build/compile-v016.log`.
+
+## A001-V017 focused update
+
+- Evidence: V016 is 15/15 and official score `36.35` (new fresh best). The
+  single-GetValue Resident change is validated; T14 moved `53260 -> 50830`.
+  T14 is still `r = 13.6` and dominates the total. V015's combined
+  double-buffer + D-split edit RE'd at T05, so those must be isolated.
+- Hypothesis: add Resident x/res double-buffer alone (issue tile i+1 before
+  consuming tile i) to overlap MTE with vector work on long rows. No D-split
+  change. Accurate `peakTile` so the 2-slot queues cannot overflow UB the way
+  a naive slot doubling might.
+- Change: `submission_v017.asc` is V016 with one Resident delta:
+  1. x/res queues are 2-slot; `IssueLoadU`/`ConsumeLoadU` implement the
+     issue-ahead loop in `BuildUKeepSum`. Out/param queues stay single-slot.
+  2. `peakTile` is now `6 * sizeof(T) + 5 * sizeof(float)` per element,
+     matching x2+res2+out1+param1 plus the five FP32 work buffers.
+  3. FastKernel, host dispatch, single-GetValue path, and D-split are
+     unchanged from V016.
+- Scope: FP32 `u` / RMS math, dtype dispatch, legal D range, `run_kernel` ABI,
+  and the judge type no-redefinition rule are unchanged.
+- Server compile target: Ascend910B3 / `dav-2201` with CANN
+  `8.5.0.alpha002`; target `a001_submission_v017` passed. Logs:
+  `build/configure-v017.log` and `build/compile-v017.log`.

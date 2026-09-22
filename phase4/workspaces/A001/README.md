@@ -191,3 +191,13 @@ D-split, FastKernel and host dispatch byte-identical to V014.
 
 The V016 target was compiled on `cann-server3` with CANN `8.5.0.alpha002` and
 `dav-2201`. Logs are `build/configure-v016.log` and `build/compile-v016.log`.
+
+## V017 focused update
+
+V017 is V016 with one isolated Resident change: 2-slot x/res queues and an
+issue-ahead of tile i+1 before consuming tile i in `BuildUKeepSum`. No
+D-split. FastKernel and host dispatch unchanged. `peakTile` now matches the
+real buffer set so the extra slot cannot overflow UB.
+
+The V017 target was compiled on `cann-server3` with CANN `8.5.0.alpha002` and
+`dav-2201`. Logs are `build/configure-v017.log` and `build/compile-v017.log`.
