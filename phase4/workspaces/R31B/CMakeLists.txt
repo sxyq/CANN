@@ -75,3 +75,9 @@ target_include_directories(r31b_submission_v009 PRIVATE ${CMAKE_CURRENT_SOURCE_D
 target_compile_options(r31b_submission_v009 PRIVATE
     $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=dav-2201>)
 target_link_libraries(r31b_submission_v009 PRIVATE stdc++ m dl)
+
+add_executable(r31b_submission_v010 compile_adapter_v010.asc)
+target_include_directories(r31b_submission_v010 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_compile_options(r31b_submission_v010 PRIVATE
+    $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=dav-2201>)
+target_link_libraries(r31b_submission_v010 PRIVATE stdc++ m dl)
