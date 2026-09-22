@@ -14,6 +14,7 @@ set(ASCEND_LIB64 "${CANN_ROOT}/aarch64-linux/lib64")
 
 set(H001_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/src/add_rms_norm_bias_kernel.cpp")
 set(H001_ADAPTER "${CMAKE_CURRENT_SOURCE_DIR}/src/compile_adapter.hpp")
+set(H001_MOCK_JUDGE "${CMAKE_CURRENT_SOURCE_DIR}/src/mock_judge_local.cpp")
 set(H001_DEVICE_OBJ "${CMAKE_CURRENT_BINARY_DIR}/add_rms_norm_bias_device.o")
 set(H001_SUBMISSION_OBJ "${CMAKE_CURRENT_BINARY_DIR}/add_rms_norm_bias_submission.o")
 set(H001_LINK_SO "${CMAKE_CURRENT_BINARY_DIR}/libh001_add_rms_norm_bias.so")
@@ -25,6 +26,7 @@ set(H001_COMMON_FLAGS
     -O2 -std=c++17
     -isystem ${CXX_INCLUDE}
     -isystem ${CXX_TARGET_INCLUDE}
+    -I${CMAKE_CURRENT_SOURCE_DIR}/src
     -I${ASCEND_UTIL_INCLUDE}
     -I${ASCENDC_INCLUDE}
     -I${ASCENDC_ROOT}/include/basic_api/impl
@@ -32,28 +34,26 @@ set(H001_COMMON_FLAGS
     -I${ASCEND_INCLUDE}
 )
 
-# 1) Device compile: Vector kernel only, all dtypes instantiated.
+# 1) Device compile: Vector kernel entry, all dtypes.
 add_custom_command(
     OUTPUT "${H001_DEVICE_OBJ}"
     COMMAND "${BISHENG}" -c ${H001_COMMON_FLAGS}
             --cce-aicore-only
-            -DH001_DEVICE_ONLY
+            -include "${H001_ADAPTER}"
             "${H001_SOURCE}" -o "${H001_DEVICE_OBJ}"
-    DEPENDS "${H001_SOURCE}"
+    DEPENDS "${H001_SOURCE}" "${H001_ADAPTER}"
     VERBATIM)
 
-# 2) Submission compile: kernel + run_kernel with judge ABI stand-ins.
+# 2) Submission compile: mock judge.asc includes kernel.asc (npu_kernel_dev).
 add_custom_command(
     OUTPUT "${H001_SUBMISSION_OBJ}"
     COMMAND "${BISHENG}" -c ${H001_COMMON_FLAGS}
             -fPIC
-            -include "${H001_ADAPTER}"
-            "${H001_SOURCE}" -o "${H001_SUBMISSION_OBJ}"
-    DEPENDS "${H001_SOURCE}" "${H001_ADAPTER}"
+            "${H001_MOCK_JUDGE}" -o "${H001_SUBMISSION_OBJ}"
+    DEPENDS "${H001_MOCK_JUDGE}" "${H001_SOURCE}" "${H001_ADAPTER}"
     VERBATIM)
 
-# 3) Full link: submission object + ASC default runtime set (shared).
-# Mirrors ASC FindASC.cmake default libs so run_kernel launch symbols resolve.
+# 3) Full link: shared object + ASC runtime set.
 add_custom_command(
     OUTPUT "${H001_LINK_SO}"
     COMMAND "${BISHENG}" -shared

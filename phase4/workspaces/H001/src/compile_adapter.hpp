@@ -1,10 +1,11 @@
 #ifndef H001_COMPILE_ADAPTER_HPP
 #define H001_COMPILE_ADAPTER_HPP
 
+// Local-only stand-ins for types the judge predefines before including kernel.asc.
+// Mirrors npu_kernel_dev / judge.asc field layout. Never submitted.
+
 #include <cstdint>
 
-// Local compile-only stand-ins for judge-provided ABI types.
-// The submission source must NOT redefine these.
 struct TensorInfo {
     const int64_t *shape;
     int64_t numDims;
