@@ -18,7 +18,7 @@ struct B001TilingData {
     float inverseCols;
 };
 
-constexpr uint32_t B001_MAX_PANEL_ROWS = 8;
+constexpr uint32_t B001_MAX_PANEL_ROWS = 12;
 constexpr uint32_t B001_DOUBLE_BUFFER = 2;
 constexpr uint32_t B001_REDUCE_TMP_BYTES = 8192;
 constexpr int32_t B001_DTYPE_FLOAT = 0;
@@ -286,8 +286,7 @@ private:
         if (rowsThis > tiling_->panelRows) {
             rowsThis = tiling_->panelRows;
         }
-        float rowSums[B001_MAX_PANEL_ROWS] = {0.0f, 0.0f, 0.0f, 0.0f,
-                                              0.0f, 0.0f, 0.0f, 0.0f};
+        float rowSums[B001_MAX_PANEL_ROWS] = {};
 
         for (uint32_t colStart = 0; colStart < tiling_->cols;) {
             uint32_t colsThis = tiling_->cols - colStart;
@@ -427,7 +426,8 @@ extern "C" void run_kernel(
     const uint32_t elemBlock = 32U / elemBytes;
     const bool alignedD = (cols % elemBlock) == 0;
     const bool hot = alignedD && rows32 >= 1;
-    const uint32_t panelRows = hot ? 8U : 1U;
+    const uint32_t panelRows =
+        hot ? ((elemBytes == 2U) ? 12U : 8U) : 1U;
     uint32_t chunkCols = hot ? 512U : 256U;
     if (chunkCols > cols) {
         chunkCols = cols;

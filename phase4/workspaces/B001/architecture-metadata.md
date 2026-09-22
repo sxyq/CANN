@@ -25,9 +25,10 @@ instead of the required 75 over five iterations).
 
 ## 2D UB layout
 
-The hot path uses `panelRows=8` and `chunkCols=min(D, 512)` elements. Every
-panel is stored row-major in UB with a fixed `rowAlignCols`, rounded to a
-32-byte row start. The active layout is:
+The hot path uses `panelRows=12` for FP16/BF16 and `panelRows=8` for FP32,
+with `chunkCols=min(D, 512)` elements. Every panel is stored row-major in UB
+with a fixed `rowAlignCols`, rounded to a 32-byte row start. The active layout
+is:
 
 | Region | Shape | Role |
 | --- | --- | --- |
@@ -39,11 +40,12 @@ panel is stored row-major in UB with a fixed `rowAlignCols`, rounded to a
 | `outputQueue` | `[panelRows, rowAlignCols]` | converted output panel |
 | reduction scratch | 8192 bytes | `ReduceSum<float>` temporary storage |
 
-For FP16/BF16, the three panel input/output queues occupy 24 KiB at the
-maximum hot-path chunk and the three FP32 panel buffers occupy 48 KiB. The
-gamma/bias buffers and reduction scratch are included in the allocation above;
-the complete maximum allocation is below 184 KiB, including queue depth two.
-The fallback uses one row and a 256-element chunk, with queue depth one.
+For FP16/BF16, `panelRows=12` and `chunkCols=512` use about 163,872 bytes,
+below the 184 KiB DAV_2201 working limit, including queue depth two,
+gamma/bias buffers, and reduction scratch. FP32 keeps `panelRows=8` and uses
+about 167,968 bytes because its input/output queues are twice as wide in
+bytes. The fallback uses one row and a 256-element chunk, with queue depth
+one.
 
 For a final non-aligned chunk, DMA pads to `AlignChunk(colsThis)` and both
 passes compute over that padded width. The padded inputs, gamma, and bias are
@@ -75,8 +77,10 @@ in a panel and performs one `ReduceSum<float>` per row on the squared values,
 accumulating the scalar partials across column chunks. The second sweep reloads
 the same 2D panels, computes the row RMS inverse, applies gamma and bias, and
 writes the whole panel. Tail rows use `rowsThis < panelRows` while preserving
-the same panel layout. The fallback has the same two-sweep flow with
-`panelRows=1` for complete non-aligned coverage.
+the same panel layout. FP16/BF16 use `panelRows=12` to reduce panel scheduling
+and repeated gamma/bias loads; FP32 remains at `panelRows=8` to stay within the
+same working limit. The fallback has the same two-sweep flow with `panelRows=1`
+for complete non-aligned coverage.
 
 ## Core partition and workspace accounting
 
@@ -89,6 +93,7 @@ workspace; each row's reduction is complete within its owning panel core.
 ## Domain coverage
 
 - Dtypes: FP16, BF16, FP32.
+- Hot-path panel rows: FP16/BF16 = 12, FP32 = 8; fallback = 1.
 - Rank: 2D, 3D, and 4D are flattened into R rows.
 - D: 64 through 32768, including non-32-byte-aligned widths.
 - Rows: full panels and tail panels.
