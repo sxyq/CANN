@@ -174,3 +174,33 @@ non-32B-aligned D and the final partial chunk.
 - Server compile target: Ascend910B3 / `dav-2201` with CANN
   `8.5.0.alpha002`; target `a001_submission_v004` passed. Logs:
   `build/configure-v004.log` and `build/compile-v004.log`.
+
+## A001-V005 focused update
+
+- Evidence: the online result stayed at 15/15 and `25.97`; testcase 14 was
+  `124365 us` and testcase 15 was `11955 us`. The reciprocal-hoisting change
+  did not show a confirmed latency improvement over the prior control.
+- Change: `submission_v005.asc` computes one row-level reciprocal after the
+  RMS square root and reuses it for all output chunks.
+- Scope: chunk sizes, queue allocation, row ownership, D ownership, transfer
+  selection, arithmetic precision, and the submission ABI are unchanged.
+- Server compile target: Ascend910B3 / `dav-2201` with CANN
+  `8.5.0.alpha002`; target `a001_submission_v005` passed. Logs:
+  `build/configure-v005.log` and `build/compile-v005.log`.
+
+## A001-V006 focused update
+
+- Hypothesis: the V005 streamed implementation immediately dequeues each
+  transfer, so double-buffer slots do not overlap MTE movement with vector
+  work. Single-slot queues should recover workspace for fewer long-row tile
+  iterations without changing the row or D ownership model.
+- Change: `submission_v006.asc` uses one slot for the x, residual, gamma, bias,
+  and output queues, and raises the streamed chunk to `4096` half/bfloat16 or
+  `3072` FP32 elements.
+- UB estimate: approximately `174144 B` for half/bfloat16 and `161856 B` for
+  FP32, including scalar state and the existing planning reserve.
+- Scope: the hot path, row ownership, FP32 reduction, aligned `DataCopy`/tail
+  `DataCopyPad` dispatch, dtype handling, and submission ABI are unchanged.
+- Server compile target: Ascend910B3 / `dav-2201` with CANN
+  `8.5.0.alpha002`; target `a001_submission_v006` passed. Logs:
+  `build/configure-v006.log` and `build/compile-v006.log`.

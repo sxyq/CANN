@@ -55,3 +55,26 @@ FP32 elements), reducing chunk-loop and transfer setup work on long rows.
 
 The V004 target was compiled on `cann-server3` with CANN `8.5.0.alpha002` and
 `dav-2201`. Logs are `build/configure-v004.log` and `build/compile-v004.log`.
+
+## V005 focused update
+
+V005 used the V003 streamed layout and moved the RMS reciprocal calculation
+outside the output chunk loop. The online result remained 15/15 at `25.97`,
+with testcase 14 at `124365 us` and testcase 15 at `11955 us`; this did not
+show a confirmed latency improvement over the prior control.
+
+The V005 target was compiled on `cann-server3` with CANN `8.5.0.alpha002` and
+`dav-2201`. Logs are `build/configure-v005.log` and `build/compile-v005.log`.
+
+## V006 focused update
+
+V006 targets the long-D streamed path after the V005 result. The five queues
+are single-slot because every transfer is consumed immediately by a matching
+`DeQue`, so there is no cross-tile overlap in this implementation. The freed
+workspace is spent on larger streamed chunks: `4096` half/bfloat16 elements
+and `3072` FP32 elements. Row ownership, the two-pass FP32 reduction, aligned
+`DataCopy`/tail `DataCopyPad` selection, and the direct-invocation ABI remain
+unchanged.
+
+The V006 target was compiled on `cann-server3` with CANN `8.5.0.alpha002` and
+`dav-2201`. Logs are `build/configure-v006.log` and `build/compile-v006.log`.
