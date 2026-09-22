@@ -244,3 +244,22 @@ non-32B-aligned D and the final partial chunk.
 - Server compile target: Ascend910B3 / `dav-2201` with CANN
   `8.5.0.alpha002`; target `a001_submission_v008` passed. Logs:
   `build/configure-v008.log` and `build/compile-v008.log`.
+
+- Online validation: 15/15, official score `28.10`; testcase 14 was
+  `118183.70 us` and testcase 15 was `11402.05 us`.
+
+## A001-V009 focused update
+
+- Hypothesis: the wide-D FP32 case spends a full second pass rereading
+  `x` and `residual` and rebuilding `u`. Retaining exact FP32 `u` tiles in
+  output GM during the first pass should remove those reads and the repeated
+  conversion/addition from the second pass.
+- Change: `submission_v009.asc` adds a compile-time retained-`u` path selected
+  for FP32 inputs with `D >= 16384`. It stores `u` through the existing output
+  queue, loads it through the x input queue, then runs the unchanged output
+  epilogue. Other dtypes and shapes use the V008 path.
+- Scope: FP32 arithmetic order, row ownership, chunk sizes, transfer alignment
+  handling, dtype fallback behavior, and submission ABI remain unchanged.
+- Server compile target: Ascend910B3 / `dav-2201` with CANN
+  `8.5.0.alpha002`; target `a001_submission_v009` passed. Logs:
+  `build/configure-v009.log` and `build/compile-v009.log`.

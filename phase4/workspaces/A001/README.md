@@ -107,3 +107,18 @@ iterations without changing the row mapping, arithmetic order, or ABI.
 
 The V008 target was compiled on `cann-server3` with CANN `8.5.0.alpha002` and
 `dav-2201`. Logs are `build/configure-v008.log` and `build/compile-v008.log`.
+
+V008 online validation remained 15/15 with an official score of `28.10`.
+Testcase 14 measured `118183.70 us` and testcase 15 measured `11402.05 us`.
+
+## V009 focused update
+
+V009 adds an architecture branch for wide FP32 rows (`D >= 16384`). The first
+pass retains the exact FP32 `u = x + residual` tiles in the output GM buffer;
+the second pass reads those retained tiles before applying RMS normalization,
+gamma, and bias. This avoids rereading `x` and `residual` and repeating their
+conversion/addition for the wide-D case. Half, bfloat16, and narrower FP32
+rows retain the V008 path, so their precision behavior is unchanged.
+
+The V009 target was compiled on `cann-server3` with CANN `8.5.0.alpha002` and
+`dav-2201`. Logs are `build/configure-v009.log` and `build/compile-v009.log`.
