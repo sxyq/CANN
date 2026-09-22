@@ -223,3 +223,24 @@ non-32B-aligned D and the final partial chunk.
 - Server compile target: Ascend910B3 / `dav-2201` with CANN
   `8.5.0.alpha002`; target `a001_submission_v007` passed. Logs:
   `build/configure-v007.log` and `build/compile-v007.log`.
+
+- Online validation: 15/15, official score `27.24`; testcase 14 was
+  `124964.64 us` and testcase 15 was `10653.88 us`.
+
+## A001-V008 focused update
+
+- Hypothesis: V007 still allocates a separate FP32 residual staging buffer,
+  although `squareFloat_` is idle until `LoadU` returns. Reusing that buffer
+  should recover workspace for larger streamed tiles without changing the
+  reduction order.
+- Change: `submission_v008.asc` removes `residualFloat_`, uses
+  `squareFloat_` for residual conversion inside `LoadU`, and raises the
+  streamed chunk to `5120` half/bfloat16 or `4096` FP32 elements.
+- UB estimate: approximately `176192 B` for half/bfloat16 and `182336 B` for
+  FP32, including scalar state and the existing planning reserve.
+- Scope: the V007 single-slot queues, hot-path dispatch, row ownership, FP32
+  arithmetic, transfer selection, dtype handling, and submission ABI remain
+  unchanged.
+- Server compile target: Ascend910B3 / `dav-2201` with CANN
+  `8.5.0.alpha002`; target `a001_submission_v008` passed. Logs:
+  `build/configure-v008.log` and `build/compile-v008.log`.

@@ -92,3 +92,18 @@ ownership, chunk scheduling, arithmetic precision, or the submission ABI.
 
 The V007 target was compiled on `cann-server3` with CANN `8.5.0.alpha002` and
 `dav-2201`. Logs are `build/configure-v007.log` and `build/compile-v007.log`.
+
+V007 online validation remained 15/15 with an official score of `27.24`.
+Testcase 14 measured `124964.64 us` and testcase 15 measured `10653.88 us`.
+
+## V008 focused update
+
+V008 keeps the V007 single-slot queues and removes the separate FP32
+`residualFloat_` allocation. `LoadU` temporarily reuses `squareFloat_` for
+residual conversion; the square buffer is consumed only after `LoadU` returns
+in the reduction stage. The recovered workspace increases streamed chunks to
+`5120` half/bfloat16 elements or `4096` FP32 elements, reducing long-row tile
+iterations without changing the row mapping, arithmetic order, or ABI.
+
+The V008 target was compiled on `cann-server3` with CANN `8.5.0.alpha002` and
+`dav-2201`. Logs are `build/configure-v008.log` and `build/compile-v008.log`.
