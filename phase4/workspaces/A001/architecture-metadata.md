@@ -204,3 +204,22 @@ non-32B-aligned D and the final partial chunk.
 - Server compile target: Ascend910B3 / `dav-2201` with CANN
   `8.5.0.alpha002`; target `a001_submission_v006` passed. Logs:
   `build/configure-v006.log` and `build/compile-v006.log`.
+- Online validation: 15/15, official score `27.30`; testcase 14 was
+  `125075.65 us` and testcase 15 was `10677.60 us`.
+
+## A001-V007 focused update
+
+- Hypothesis: the V006 streamed path keeps an extra FP32 `xFloat_` buffer even
+  though `u` is consumed immediately by the add. Converting `x` directly into
+  `u` should reduce local buffer traffic while preserving the V006 chunk plan.
+- Change: `submission_v007.asc` removes `xFloat_` allocation and performs
+  `ToFloat(u, xSrc, count)` followed by the in-place `Add(u, u, residualFloat,
+  count)`.
+- UB estimate: approximately `157760 B` for half/bfloat16 and `149568 B` for
+  FP32, including scalar state and the existing planning reserve.
+- Scope: the V006 single-slot queues, `4096` half/bfloat16 chunk, `3072` FP32
+  chunk, row ownership, reduction order, transfer selection, dtype handling,
+  and submission ABI remain unchanged.
+- Server compile target: Ascend910B3 / `dav-2201` with CANN
+  `8.5.0.alpha002`; target `a001_submission_v007` passed. Logs:
+  `build/configure-v007.log` and `build/compile-v007.log`.

@@ -78,3 +78,17 @@ unchanged.
 
 The V006 target was compiled on `cann-server3` with CANN `8.5.0.alpha002` and
 `dav-2201`. Logs are `build/configure-v006.log` and `build/compile-v006.log`.
+
+V006 online validation remained 15/15 with an official score of `27.30`.
+Testcase 14 measured `125075.65 us` and testcase 15 measured `10677.60 us`.
+
+## V007 focused update
+
+V007 keeps the V006 single-slot queues and streamed chunk sizes. It removes
+the temporary FP32 `xFloat_` buffer by converting `x` directly into the
+existing `u` buffer before adding the residual. This reduces one intermediate
+buffer and one local write/read pair per streamed chunk without changing row
+ownership, chunk scheduling, arithmetic precision, or the submission ABI.
+
+The V007 target was compiled on `cann-server3` with CANN `8.5.0.alpha002` and
+`dav-2201`. Logs are `build/configure-v007.log` and `build/compile-v007.log`.
