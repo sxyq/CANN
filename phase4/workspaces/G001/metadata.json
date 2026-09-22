@@ -1,6 +1,6 @@
 {
   "candidate": "G001",
-  "revision": "V003",
+  "revision": "V004",
   "architecture": "Fresh One-Read / Resident-Y",
   "source": "phase4/workspaces/G001/src/add_rms_norm_bias.cpp",
   "build_file": "phase4/workspaces/G001/CMakeLists.txt",
@@ -34,9 +34,9 @@
   "hot_path": {
     "name": "RunResidentRows",
     "source_reads": "x and residual are consumed once per row",
-    "resident_value": "FP32 u (native-quantized x+residual) remains in one UB row",
+    "resident_value": "FP32 u=x+residual remains in one UB row",
     "accumulator": "FP32",
-    "precision": "native-quantize u after FP32 add; RMS/norm/bias all FP32; single cast at output"
+    "precision": "all math FP32; single RNE cast to native dtype at output"
   },
   "generic_path": {
     "name": "RunGenericRows",
@@ -49,20 +49,21 @@
     "device_status": "PASS",
     "submission_status": "PASS",
     "link_status": "PASS",
-    "submission_log": "phase4/workspaces/G001/logs/submission-v003-build.log",
+    "submission_log": "phase4/workspaces/G001/logs/submission-v004-build.log",
     "device_objects_cleaned": true,
     "remote_build_removed": true
   },
-  "v003_changes": {
-    "native_u_quantize": "u = ToFloat(FromFloat<T>(float(x)+float(residual))) so the add matches native-dtype semantics before RMS (golden: quantize input -> FP32 -> cast out)",
-    "invrms_chain": "value = u * invRms * gamma + bias with invRms = 1/sqrt(mean+eps) matching PyTorch x * rsqrt(var+eps) * weight",
-    "formula": "output = u * (1/rms) * gamma + bias with rms = sqrt(mean(u*u)+eps)"
+  "v004_changes": {
+    "revert_v003": "removed AddNativeU native-u quantize and invRms chain; restored V002 arithmetic (FP32 u unquantized, (u/rms)*gamma+bias)",
+    "explicit_rne_half": "FromFloat<half> uses explicit round-to-nearest-even bit manipulation instead of static_cast (golden CAST_RINT = RNE)",
+    "explicit_rne_bf16": "FromFloat<bfloat16_t> uses explicit RNE with proper Inf/NaN/sign handling (replaces add-bias trick)",
+    "formula": "output = (u / rms) * gamma + bias with rms = sqrt(mean(u*u)+eps), all FP32, one RNE cast at output"
   },
   "submission": {
     "ready": true,
     "cannjudge": false,
     "source": "phase4/workspaces/G001/src/add_rms_norm_bias.cpp",
-    "integration": "G001 Child V003: native u quantize + invRms multiply chain",
-    "runtime_validation": "pending V003 online result"
+    "integration": "G001 Child V004: revert V003 regression, explicit RNE output cast for half and BF16",
+    "runtime_validation": "pending V004 online result"
   }
 }

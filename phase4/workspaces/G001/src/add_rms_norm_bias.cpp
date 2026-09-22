@@ -40,6 +40,67 @@ __aicore__ inline T FromFloat(float value)
     return static_cast<T>(value);
 }
 
+// Explicit round-to-nearest-even float -> half.
+// static_cast<half> rounding mode is not guaranteed; CAST_RINT (golden) is RNE.
+template <>
+__aicore__ inline half FromFloat<half>(float value)
+{
+    union Bits {
+        uint32_t u;
+        float f;
+    } bitsValue;
+    bitsValue.f = value;
+    const uint32_t x = bitsValue.u;
+    const uint16_t sign = static_cast<uint16_t>((x >> 16) & 0x8000u);
+    const uint32_t absX = x & 0x7FFFFFFFu;
+
+    if (absX >= 0x7F800000u) {
+        if (absX == 0x7F800000u) {
+            const uint16_t r = static_cast<uint16_t>(sign | 0x7C00u);
+            return reinterpret_cast<const half &>(r);
+        }
+        const uint16_t r = static_cast<uint16_t>(sign | 0x7E00u | ((absX >> 13) & 0x3FFu));
+        return reinterpret_cast<const half &>(r);
+    }
+
+    int32_t exp = static_cast<int32_t>(absX >> 23) - 127 + 15;
+    const uint32_t mant = absX & 0x7FFFFFu;
+
+    if (exp >= 31) {
+        const uint16_t r = static_cast<uint16_t>(sign | 0x7C00u);
+        return reinterpret_cast<const half &>(r);
+    }
+
+    if (exp <= 0) {
+        if (exp < -10) {
+            const uint16_t r = sign;
+            return reinterpret_cast<const half &>(r);
+        }
+        const uint32_t fullMant = mant | ((absX >> 23) ? 0x800000u : 0u);
+        const uint32_t rshift = static_cast<uint32_t>(14 - exp);
+        const uint32_t halfMant = fullMant >> rshift;
+        const uint32_t roundBit = (fullMant >> (rshift - 1)) & 1u;
+        const uint32_t sticky = (rshift > 1) ? (fullMant & ((1u << (rshift - 1)) - 1u)) : 0u;
+        uint32_t result = sign | (halfMant & 0x3FFu);
+        if (roundBit && (sticky || (halfMant & 1u))) {
+            result++;
+        }
+        const uint16_t r = static_cast<uint16_t>(result);
+        return reinterpret_cast<const half &>(r);
+    }
+
+    const uint32_t halfMant = mant >> 13;
+    const uint32_t roundBit = (mant >> 12) & 1u;
+    const uint32_t sticky = mant & 0xFFFu;
+    uint32_t result = sign | (static_cast<uint32_t>(exp) << 10) | halfMant;
+    if (roundBit && (sticky || (halfMant & 1u))) {
+        result++;
+    }
+    const uint16_t r = static_cast<uint16_t>(result);
+    return reinterpret_cast<const half &>(r);
+}
+
+// Explicit round-to-nearest-even float -> bfloat16 (BF16 lives in bits 31:16).
 template <>
 __aicore__ inline bfloat16_t FromFloat<bfloat16_t>(float value)
 {
@@ -48,11 +109,27 @@ __aicore__ inline bfloat16_t FromFloat<bfloat16_t>(float value)
         float f;
     } bitsValue;
     bitsValue.f = value;
-    // Round-to-nearest-even float -> bfloat16 (BF16 value lives in bits 31:16).
-    const uint32_t roundingBias = 0x7FFFu + ((bitsValue.u >> 16) & 1u);
-    bitsValue.u += roundingBias;
-    const uint16_t result = static_cast<uint16_t>(bitsValue.u >> 16);
-    return reinterpret_cast<const bfloat16_t &>(result);
+    const uint32_t x = bitsValue.u;
+    const uint16_t sign = static_cast<uint16_t>((x >> 16) & 0x8000u);
+    const uint32_t absX = x & 0x7FFFFFFFu;
+
+    if (absX >= 0x7F800000u) {
+        if (absX == 0x7F800000u) {
+            const uint16_t r = static_cast<uint16_t>(sign | 0x7F80u);
+            return reinterpret_cast<const bfloat16_t &>(r);
+        }
+        const uint16_t r = static_cast<uint16_t>(sign | 0x7FC0u | ((absX >> 16) & 0x7Fu));
+        return reinterpret_cast<const bfloat16_t &>(r);
+    }
+
+    const uint32_t halfMant = absX >> 16;
+    const uint32_t truncated = absX & 0xFFFFu;
+    uint32_t result = sign | halfMant;
+    if (truncated > 0x8000u || (truncated == 0x8000u && (halfMant & 1u))) {
+        result++;
+    }
+    const uint16_t r = static_cast<uint16_t>(result);
+    return reinterpret_cast<const bfloat16_t &>(r);
 }
 
 __aicore__ inline float SqrtF(float x)
@@ -60,19 +137,10 @@ __aicore__ inline float SqrtF(float x)
     return __builtin_cce_sqrtf(x);
 }
 
-// u = x + residual in native dtype semantics (FP32 add then one native
-// quantize). RMS / norm / bias then run entirely in FP32 with a single
-// output cast, matching the golden chain: quantize input -> FP32 -> cast out.
-template <typename T>
-__aicore__ inline float AddNativeU(T xv, T rv)
-{
-    const float raw = ToFloat(xv) + ToFloat(rv);
-    return ToFloat(FromFloat<T>(raw));
-}
-
 // Hot path (Fresh One-Read / Resident-Y):
-// each x/residual element is consumed once; FP32 u (native-quantized x+residual)
-// stays resident in one UB row and is reused for RMS and for norm + bias.
+// each x/residual element is consumed once; FP32 u = x + residual stays
+// resident in one UB row and is reused for RMS and for norm + bias.
+// All arithmetic is FP32; one native cast at output (RNE).
 template <typename T>
 __aicore__ inline void RunResidentRows(GM_ADDR xAddr, GM_ADDR residualAddr, GM_ADDR gammaAddr, GM_ADDR biasAddr,
     GM_ADDR outputAddr, const TilingData &cfg)
@@ -89,7 +157,6 @@ __aicore__ inline void RunResidentRows(GM_ADDR xAddr, GM_ADDR residualAddr, GM_A
     bias.SetGlobalBuffer(reinterpret_cast<__gm__ T *>(biasAddr), cfg.dim);
     output.SetGlobalBuffer(reinterpret_cast<__gm__ T *>(outputAddr), total);
 
-    // FP32 resident row. Max dim 32768 * 4B = 128 KiB < 184 KiB vector workspace.
     AscendC::LocalMemAllocator<> allocator;
     AscendC::LocalTensor<float> resident = allocator.Alloc<float>(cfg.dim);
 
@@ -100,17 +167,16 @@ __aicore__ inline void RunResidentRows(GM_ADDR xAddr, GM_ADDR residualAddr, GM_A
         float sumSquares = 0.0f;
 
         for (int32_t i = 0; i < cfg.dim; ++i) {
-            const float u = AddNativeU<T>(x.GetValue(rowBase + i), residual.GetValue(rowBase + i));
+            const float u = ToFloat(x.GetValue(rowBase + i)) + ToFloat(residual.GetValue(rowBase + i));
             resident.SetValue(i, u);
             sumSquares += u * u;
         }
 
         const float mean = sumSquares / static_cast<float>(cfg.dim);
-        // PyTorch chain: x * rsqrt(var + eps) * weight + bias
-        const float invRms = 1.0f / SqrtF(mean + cfg.epsilon);
+        const float rms = SqrtF(mean + cfg.epsilon);
         for (int32_t i = 0; i < cfg.dim; ++i) {
             const float u = resident.GetValue(i);
-            const float value = u * invRms * ToFloat(gamma.GetValue(i)) + ToFloat(bias.GetValue(i));
+            const float value = (u / rms) * ToFloat(gamma.GetValue(i)) + ToFloat(bias.GetValue(i));
             output.SetValue(rowBase + i, FromFloat<T>(value));
         }
     }
@@ -139,14 +205,14 @@ __aicore__ inline void RunGenericRows(GM_ADDR xAddr, GM_ADDR residualAddr, GM_AD
         const uint64_t rowBase = row * static_cast<uint64_t>(cfg.dim);
         float sumSquares = 0.0f;
         for (int32_t i = 0; i < cfg.dim; ++i) {
-            const float u = AddNativeU<T>(x.GetValue(rowBase + i), residual.GetValue(rowBase + i));
+            const float u = ToFloat(x.GetValue(rowBase + i)) + ToFloat(residual.GetValue(rowBase + i));
             sumSquares += u * u;
         }
         const float mean = sumSquares / static_cast<float>(cfg.dim);
-        const float invRms = 1.0f / SqrtF(mean + cfg.epsilon);
+        const float rms = SqrtF(mean + cfg.epsilon);
         for (int32_t i = 0; i < cfg.dim; ++i) {
-            const float u = AddNativeU<T>(x.GetValue(rowBase + i), residual.GetValue(rowBase + i));
-            const float value = u * invRms * ToFloat(gamma.GetValue(i)) + ToFloat(bias.GetValue(i));
+            const float u = ToFloat(x.GetValue(rowBase + i)) + ToFloat(residual.GetValue(rowBase + i));
+            const float value = (u / rms) * ToFloat(gamma.GetValue(i)) + ToFloat(bias.GetValue(i));
             output.SetValue(rowBase + i, FromFloat<T>(value));
         }
     }
