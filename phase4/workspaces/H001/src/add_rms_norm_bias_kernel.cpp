@@ -74,14 +74,18 @@ public:
             hotRows_ = 1;
         }
         const uint32_t tileBytes = (tiling_->mode == 1) ? (hotRows_ * rowPadBytes) : (H001_CHUNK_D * sizeof(T));
+        // V009: wide-path resident gamma/bias FP32 when they fit with chunk work buffers.
+        const uint32_t paramStore = colsPad * (static_cast<uint32_t>(sizeof(T)) + sizeof(float)) * 2U;
+        residentParams_ = (tiling_->mode == 1) || (paramStore <= 80U * 1024U);
+        const uint32_t paramElems = residentParams_ ? colsPad : H001_CHUNK_D;
         const uint32_t workElems = (tiling_->mode == 1) ? colsPad : H001_CHUNK_D;
         pipe_->InitBuffer(xQueue_, 1, tileBytes);
         pipe_->InitBuffer(residualQueue_, 1, tileBytes);
         pipe_->InitBuffer(outputQueue_, 1, tileBytes);
-        pipe_->InitBuffer(gammaQueue_, 1, workElems * sizeof(T));
-        pipe_->InitBuffer(biasQueue_, 1, workElems * sizeof(T));
-        pipe_->InitBuffer(gammaF32Buf_, workElems * sizeof(float));
-        pipe_->InitBuffer(biasF32Buf_, workElems * sizeof(float));
+        pipe_->InitBuffer(gammaQueue_, 1, paramElems * sizeof(T));
+        pipe_->InitBuffer(biasQueue_, 1, paramElems * sizeof(T));
+        pipe_->InitBuffer(gammaF32Buf_, paramElems * sizeof(float));
+        pipe_->InitBuffer(biasF32Buf_, paramElems * sizeof(float));
         pipe_->InitBuffer(workABuf_, workElems * sizeof(float));
         pipe_->InitBuffer(workBBuf_, workElems * sizeof(float));
         pipe_->InitBuffer(partialBuf_, 32);
@@ -291,6 +295,9 @@ private:
         AscendC::LocalTensor<float> biasF32 = biasF32Buf_.Get<float>();
         AscendC::LocalTensor<float> rmsTmp = workABuf_.Get<float>();
         const uint32_t cols = tiling_->cols;
+        if (residentParams_) {
+            LoadGammaBiasResident();
+        }
         for (uint32_t row = rowBegin; row < rowEnd; ++row) {
             const uint64_t rowOff = static_cast<uint64_t>(row) * cols;
             float sum = 0.0f;
@@ -323,24 +330,35 @@ private:
                 const uint32_t chunkBytes = count * static_cast<uint32_t>(sizeof(T));
                 AscendC::LocalTensor<T> xAlloc = xQueue_.AllocTensor<T>();
                 AscendC::LocalTensor<T> residualAlloc = residualQueue_.AllocTensor<T>();
-                AscendC::LocalTensor<T> gammaAlloc = gammaQueue_.AllocTensor<T>();
-                AscendC::LocalTensor<T> biasAlloc = biasQueue_.AllocTensor<T>();
                 CopyRow(xAlloc, xGm_[rowOff + colBegin], chunkBytes);
                 CopyRow(residualAlloc, residualGm_[rowOff + colBegin], chunkBytes);
-                CopyRow(gammaAlloc, gammaGm_[colBegin], chunkBytes);
-                CopyRow(biasAlloc, biasGm_[colBegin], chunkBytes);
+                AscendC::LocalTensor<T> gamma;
+                AscendC::LocalTensor<T> bias;
+                if (!residentParams_) {
+                    AscendC::LocalTensor<T> gammaAlloc = gammaQueue_.AllocTensor<T>();
+                    AscendC::LocalTensor<T> biasAlloc = biasQueue_.AllocTensor<T>();
+                    CopyRow(gammaAlloc, gammaGm_[colBegin], chunkBytes);
+                    CopyRow(biasAlloc, biasGm_[colBegin], chunkBytes);
+                    gammaQueue_.EnQue(gammaAlloc);
+                    biasQueue_.EnQue(biasAlloc);
+                }
                 xQueue_.EnQue(xAlloc);
                 residualQueue_.EnQue(residualAlloc);
-                gammaQueue_.EnQue(gammaAlloc);
-                biasQueue_.EnQue(biasAlloc);
                 AscendC::LocalTensor<T> x = xQueue_.DeQue<T>();
                 AscendC::LocalTensor<T> residual = residualQueue_.DeQue<T>();
-                AscendC::LocalTensor<T> gamma = gammaQueue_.DeQue<T>();
-                AscendC::LocalTensor<T> bias = biasQueue_.DeQue<T>();
-                H001TypeOps<T>::ToFloat(gammaF32, gamma, count);
-                H001TypeOps<T>::ToFloat(biasF32, bias, count);
+                AscendC::LocalTensor<float> gammaChunk = gammaF32;
+                AscendC::LocalTensor<float> biasChunk = biasF32;
+                if (!residentParams_) {
+                    gamma = gammaQueue_.DeQue<T>();
+                    bias = biasQueue_.DeQue<T>();
+                    H001TypeOps<T>::ToFloat(gammaF32, gamma, count);
+                    H001TypeOps<T>::ToFloat(biasF32, bias, count);
+                } else {
+                    gammaChunk = gammaF32[colBegin];
+                    biasChunk = biasF32[colBegin];
+                }
                 AscendC::LocalTensor<T> outputAlloc = outputQueue_.AllocTensor<T>();
-                ApplyInvRms(outputAlloc, x, residual, gammaF32, biasF32, invRms, count);
+                ApplyInvRms(outputAlloc, x, residual, gammaChunk, biasChunk, invRms, count);
                 outputQueue_.EnQue(outputAlloc);
                 AscendC::LocalTensor<T> output = outputQueue_.DeQue<T>();
                 AscendC::DataCopyExtParams copyParams;
@@ -349,8 +367,10 @@ private:
                 outputQueue_.FreeTensor(output);
                 xQueue_.FreeTensor(x);
                 residualQueue_.FreeTensor(residual);
-                gammaQueue_.FreeTensor(gamma);
-                biasQueue_.FreeTensor(bias);
+                if (!residentParams_) {
+                    gammaQueue_.FreeTensor(gamma);
+                    biasQueue_.FreeTensor(bias);
+                }
             }
         }
     }
@@ -374,6 +394,7 @@ private:
     AscendC::TBuf<AscendC::TPosition::VECCALC> partialBuf_;
     AscendC::TBuf<AscendC::TPosition::VECCALC> reduceTmpBuf_;
     uint32_t hotRows_;
+    bool residentParams_;
 };
 
 template <typename T>

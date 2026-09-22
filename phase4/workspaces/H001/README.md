@@ -7,12 +7,13 @@ Small-D / high-R on Ascend910B3/DAV_2201 Vector Core.
 - V004: 15/15, 12.54
 - V005: 0/15 TLE — depth-2 TQue Alloc-before-Free; do not retry
 - V006: 15/15, 12.55 (fused ApplyRow — flat)
-- V007: 15/15, **23.29 best** — ReduceSum in hot `ApplyRow` (T03/T04/T06–T08/T10/T14 collapsed)
-- V008: V007 + **one** change: `ReduceSum` in wide `ChunkSumSquares` (T05/T09/T11–T13/T15)
+- V007: 15/15, 23.29 — ReduceSum in hot ApplyRow
+- V008: 15/15, **29.04 best** — ReduceSum in wide ChunkSumSquares
+- V009: V008 + **one** change: wide-path resident gamma/bias FP32 when `colsPad*(sizeof(T)+4)*2 ≤ 80KiB`
 
-## V008 only delta vs V007
+## V009 only delta vs V008
 
-`ChunkSumSquares` (wide pass1) uses `Mul`+`ReduceSum<float,true>` instead of the scalar GetValue loop. Same partial/reduceTmp as hot path. Everything else identical to V007.
+`ProcessWide` loads gamma/bias FP32 once (`LoadGammaBiasResident`) and indexes `gammaF32[colBegin]` in pass2. Skips per-chunk gamma/bias DMA/queue/Cast when resident. Falls back to V008 chunked params when D is huge (e.g. 32768). Hot path unchanged.
 
 ## Template (npu_kernel_dev / B001)
 
@@ -20,4 +21,4 @@ Small-D / high-R on Ascend910B3/DAV_2201 Vector Core.
 
 ## Build
 
-`build_server3.sh` on cann-server3. Log: `logs/compile-11.log`.
+`build_server3.sh` on cann-server3. Log: `logs/compile-12.log`.
