@@ -133,3 +133,13 @@ and adds 2D row/column decomposition with an output-GM partial reduce when
 
 The V010 target was compiled on `cann-server3` with CANN `8.5.0.alpha002` and
 `dav-2201`. Logs are `build/configure-v010.log` and `build/compile-v010.log`.
+
+## V011 focused update
+
+V011 keeps the V010 architecture and adds a `FastKernel` for small totals
+(`D <= 8192 && R * D <= 262144`) so tiny shapes skip residency setup, and
+tightens `ResidentKernel` to one `GetValue` per row with double-buffered
+x/res loads. Target: recover T01/T02/T05 and cut T14/T08 per-row overhead.
+
+The V011 target was compiled on `cann-server3` with CANN `8.5.0.alpha002` and
+`dav-2201`. Logs are `build/configure-v011.log` and `build/compile-v011.log`.

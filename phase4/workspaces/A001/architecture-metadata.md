@@ -299,3 +299,33 @@ non-32B-aligned D and the final partial chunk.
 - Server compile target: Ascend910B3 / `dav-2201` with CANN
   `8.5.0.alpha002`; target `a001_submission_v010` passed. Logs:
   `build/configure-v010.log` and `build/compile-v010.log`.
+
+## A001-V011 focused update
+
+- Evidence: V010 reached 15/15 and official score `33.25` (new fresh best).
+  T14 dropped 55% but still dominated the total at `53176.88 us` (`r = 14.2`).
+  Small cases regressed: T01 `7.36` (was `4.97`), T02 `7.98` (was `3.87`),
+  T05 `19.80` (was `13.94`). V010 spent two `GetValue` pipeline drains per row
+  and charged every shape the full-u / cache / D-split machinery.
+- Hypothesis: (1) tiny/medium shapes pay residency setup they never amortize;
+  (2) large-R shapes still pay two scalar syncs per row and fully serialized
+  MTE against vector work. A lighter path for small totals, a single `GetValue`
+  per row, and double-buffered tiles should recover the small-case regression
+  and cut the T14/T08 per-row overhead without losing the V010 structure.
+- Change: `submission_v011.asc` adds two kernels selected in `run_kernel`:
+  1. `FastKernel` when `D <= 8192 && R * D <= 262144`. Row-split only, full
+     row in UB, `gamma`/`bias` resident as FP32 up front, one pass, one
+     `GetValue` per row. No D-split, no partial scratch, no double buffering.
+  2. `ResidentKernel` otherwise (V010 architecture) with three fixes: `BuildUKeepSum`
+     leaves the reduction in a tensor so `InvRmsFromSum` performs the only
+     `GetValue` per row; the D-split path writes/reads partials as raw floats
+     through `DataCopyPad` and reduces them in UB before that same single
+     `GetValue`; x/res queues are 2-slot and the load of tile `i+1` is issued
+     before tile `i` is consumed, overlapping MTE with vector work. Output
+     stores remain immediate-`DeQue`.
+- Scope: FP32 `u` formation and RMS math, dtype dispatch, legal D range,
+  `run_kernel` ABI, and the no-redefinition rule for judge tensor types are
+  unchanged. V008/V010 files stay intact.
+- Server compile target: Ascend910B3 / `dav-2201` with CANN
+  `8.5.0.alpha002`; target `a001_submission_v011` passed. Logs:
+  `build/configure-v011.log` and `build/compile-v011.log`.
