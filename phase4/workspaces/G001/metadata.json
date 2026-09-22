@@ -1,6 +1,6 @@
 {
   "candidate": "G001",
-  "revision": "V008",
+  "revision": "V009",
   "architecture": "Fresh One-Read / Resident-Y",
   "source": "phase4/workspaces/G001/src/add_rms_norm_bias.cpp",
   "build_file": "phase4/workspaces/G001/CMakeLists.txt",
@@ -36,7 +36,7 @@
     "source_reads": "x and residual are consumed once per row",
     "resident_value": "FP32 u=x+residual remains in one UB row",
     "accumulator": "FP32",
-    "precision": "all math FP32; pairwise sumSquares; one native cast at output"
+    "precision": "all math FP32; sequential sumSquares; one native cast at output"
   },
   "generic_path": {
     "name": "RunGenericRows",
@@ -49,20 +49,20 @@
     "device_status": "PASS",
     "submission_status": "PASS",
     "link_status": "PASS",
-    "submission_log": "phase4/workspaces/G001/logs/submission-v008-build.log",
+    "submission_log": "phase4/workspaces/G001/logs/submission-v009-build.log",
     "device_objects_cleaned": true,
     "remote_build_removed": true
   },
-  "v008_changes": {
-    "baseline": "V002 arithmetic restored exactly (no intermediate cast, no u-quantize, no invRms, V002 formula (u/rms)*gamma+bias)",
-    "single_change": "mean reduction style: pairwise binary-counter summation of u*u (O(log D) rounding) replaces sequential accumulator (O(D) rounding)",
-    "rationale": "last untested isolated lever; matches vectorised golden reductions more closely; no extra cast so no large-D overflow risk"
+  "v009_changes": {
+    "baseline": "exact V002 arithmetic restored (sequential sumSquares, (u/rms)*gamma+bias, no intermediate cast, no u-quantize, no invRms, V002 FromFloat)",
+    "performance": "gamma/bias cached in UB across rows when dim*(4+2*sizeof(T)) <= 160KiB; falls back to GM reads otherwise",
+    "rationale": "all numerical levers exhausted on T02/T04/T06/T07; shift to performance on the 11 passing cases while preserving resident-y one-read"
   },
   "submission": {
     "ready": true,
     "cannjudge": false,
     "source": "phase4/workspaces/G001/src/add_rms_norm_bias.cpp",
-    "integration": "G001 Child V008: V002 baseline + pairwise sumSquares single change",
-    "runtime_validation": "pending V008 online result"
+    "integration": "G001 Child V009: V002 restore + gamma/bias UB cache",
+    "runtime_validation": "pending V009 online result"
   }
 }

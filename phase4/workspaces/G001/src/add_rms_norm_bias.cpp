@@ -64,6 +64,7 @@ __aicore__ inline float SqrtF(float x)
 // each x/residual element is consumed once; FP32 u = x + residual stays
 // resident in one UB row and is reused for RMS and for norm + bias.
 // All arithmetic is FP32; one native cast at output.
+// V009: exact V002 arithmetic restored + gamma/bias cached in UB across rows.
 template <typename T>
 __aicore__ inline void RunResidentRows(GM_ADDR xAddr, GM_ADDR residualAddr, GM_ADDR gammaAddr, GM_ADDR biasAddr,
     GM_ADDR outputAddr, const TilingData &cfg)
@@ -83,39 +84,40 @@ __aicore__ inline void RunResidentRows(GM_ADDR xAddr, GM_ADDR residualAddr, GM_A
     AscendC::LocalMemAllocator<> allocator;
     AscendC::LocalTensor<float> resident = allocator.Alloc<float>(cfg.dim);
 
+    // Cache gamma/bias in UB when the budget allows: dim*4 (resident)
+    // + dim*sizeof(T)*2 (params) <= 160 KiB.
+    const bool cacheParams =
+        (static_cast<uint64_t>(cfg.dim) * (4ull + 2ull * sizeof(T))) <= 160ull * 1024ull;
+    AscendC::LocalTensor<T> gammaCache;
+    AscendC::LocalTensor<T> biasCache;
+    if (cacheParams) {
+        gammaCache = allocator.Alloc<T>(cfg.dim);
+        biasCache = allocator.Alloc<T>(cfg.dim);
+        for (int32_t i = 0; i < cfg.dim; ++i) {
+            gammaCache.SetValue(i, gamma.GetValue(i));
+            biasCache.SetValue(i, bias.GetValue(i));
+        }
+    }
+
     const uint64_t core = static_cast<uint64_t>(AscendC::GetBlockIdx());
     const uint64_t cores = static_cast<uint64_t>(AscendC::GetBlockNum());
     for (uint64_t row = core; row < static_cast<uint64_t>(cfg.rows); row += cores) {
         const uint64_t rowBase = row * static_cast<uint64_t>(cfg.dim);
+        float sumSquares = 0.0f;
 
-        // V008 single change vs V002: pairwise (binary-counter) summation of
-        // u*u instead of a single sequential accumulator.  O(log D) rounding
-        // vs O(D) — matches vectorised golden reductions more closely.
-        float partial[32] = {0.0f};
         for (int32_t i = 0; i < cfg.dim; ++i) {
             const float u = ToFloat(x.GetValue(rowBase + i)) + ToFloat(residual.GetValue(rowBase + i));
             resident.SetValue(i, u);
-            float val = u * u;
-            unsigned n = static_cast<unsigned>(i);
-            int k = 0;
-            while (n & 1u) {
-                val = partial[k] + val;
-                partial[k] = 0.0f;
-                n >>= 1;
-                ++k;
-            }
-            partial[k] = val;
-        }
-        float sumSquares = 0.0f;
-        for (int k = 31; k >= 0; --k) {
-            sumSquares += partial[k];
+            sumSquares += u * u;
         }
 
         const float mean = sumSquares / static_cast<float>(cfg.dim);
         const float rms = SqrtF(mean + cfg.epsilon);
         for (int32_t i = 0; i < cfg.dim; ++i) {
             const float u = resident.GetValue(i);
-            const float value = (u / rms) * ToFloat(gamma.GetValue(i)) + ToFloat(bias.GetValue(i));
+            const T gammaV = cacheParams ? gammaCache.GetValue(i) : gamma.GetValue(i);
+            const T biasV = cacheParams ? biasCache.GetValue(i) : bias.GetValue(i);
+            const float value = (u / rms) * ToFloat(gammaV) + ToFloat(biasV);
             output.SetValue(rowBase + i, FromFloat<T>(value));
         }
     }
@@ -138,33 +140,36 @@ __aicore__ inline void RunGenericRows(GM_ADDR xAddr, GM_ADDR residualAddr, GM_AD
     bias.SetGlobalBuffer(reinterpret_cast<__gm__ T *>(biasAddr), cfg.dim);
     output.SetGlobalBuffer(reinterpret_cast<__gm__ T *>(outputAddr), total);
 
+    AscendC::LocalMemAllocator<> allocator;
+    const bool cacheParams =
+        (static_cast<uint64_t>(cfg.dim) * (2ull * sizeof(T))) <= 160ull * 1024ull;
+    AscendC::LocalTensor<T> gammaCache;
+    AscendC::LocalTensor<T> biasCache;
+    if (cacheParams) {
+        gammaCache = allocator.Alloc<T>(cfg.dim);
+        biasCache = allocator.Alloc<T>(cfg.dim);
+        for (int32_t i = 0; i < cfg.dim; ++i) {
+            gammaCache.SetValue(i, gamma.GetValue(i));
+            biasCache.SetValue(i, bias.GetValue(i));
+        }
+    }
+
     const uint64_t core = static_cast<uint64_t>(AscendC::GetBlockIdx());
     const uint64_t cores = static_cast<uint64_t>(AscendC::GetBlockNum());
     for (uint64_t row = core; row < static_cast<uint64_t>(cfg.rows); row += cores) {
         const uint64_t rowBase = row * static_cast<uint64_t>(cfg.dim);
-        float partial[32] = {0.0f};
+        float sumSquares = 0.0f;
         for (int32_t i = 0; i < cfg.dim; ++i) {
             const float u = ToFloat(x.GetValue(rowBase + i)) + ToFloat(residual.GetValue(rowBase + i));
-            float val = u * u;
-            unsigned n = static_cast<unsigned>(i);
-            int k = 0;
-            while (n & 1u) {
-                val = partial[k] + val;
-                partial[k] = 0.0f;
-                n >>= 1;
-                ++k;
-            }
-            partial[k] = val;
-        }
-        float sumSquares = 0.0f;
-        for (int k = 31; k >= 0; --k) {
-            sumSquares += partial[k];
+            sumSquares += u * u;
         }
         const float mean = sumSquares / static_cast<float>(cfg.dim);
         const float rms = SqrtF(mean + cfg.epsilon);
         for (int32_t i = 0; i < cfg.dim; ++i) {
             const float u = ToFloat(x.GetValue(rowBase + i)) + ToFloat(residual.GetValue(rowBase + i));
-            const float value = (u / rms) * ToFloat(gamma.GetValue(i)) + ToFloat(bias.GetValue(i));
+            const T gammaV = cacheParams ? gammaCache.GetValue(i) : gamma.GetValue(i);
+            const T biasV = cacheParams ? biasCache.GetValue(i) : bias.GetValue(i);
+            const float value = (u / rms) * ToFloat(gammaV) + ToFloat(biasV);
             output.SetValue(rowBase + i, FromFloat<T>(value));
         }
     }
