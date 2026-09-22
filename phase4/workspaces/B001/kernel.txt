@@ -23,7 +23,7 @@ constexpr uint32_t B001_DOUBLE_BUFFER = 2;
 constexpr uint32_t B001_REDUCE_TMP_BYTES = 8192;
 constexpr int32_t B001_DTYPE_FLOAT = 0;
 constexpr int32_t B001_DTYPE_FLOAT16 = 1;
-// The npu_kernel_dev TensorInfo contract uses 2 for BF16. Keep 27 as an
+// The npu_kernel_dev TensorInfo interface uses 2 for BF16. Keep 27 as an
 // accepted compatibility value for callers that pass ACL_BF16 directly.
 constexpr int32_t B001_DTYPE_BF16 = 2;
 constexpr int32_t B001_DTYPE_BF16_ACL = 27;
@@ -428,7 +428,7 @@ extern "C" void run_kernel(
     const bool hot = alignedD && rows32 >= 1;
     const uint32_t panelRows =
         hot ? ((elemBytes == 2U) ? 12U : 8U) : 1U;
-    uint32_t chunkCols = hot ? 512U : 256U;
+    uint32_t chunkCols = hot ? 544U : 256U;
     if (chunkCols > cols) {
         chunkCols = cols;
     }

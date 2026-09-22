@@ -26,7 +26,7 @@ instead of the required 75 over five iterations).
 ## 2D UB layout
 
 The hot path uses `panelRows=12` for FP16/BF16 and `panelRows=8` for FP32,
-with `chunkCols=min(D, 512)` elements. Every panel is stored row-major in UB
+with `chunkCols=min(D, 544)` elements. Every panel is stored row-major in UB
 with a fixed `rowAlignCols`, rounded to a 32-byte row start. The active layout
 is:
 
@@ -40,10 +40,10 @@ is:
 | `outputQueue` | `[panelRows, rowAlignCols]` | converted output panel |
 | reduction scratch | 8192 bytes | `ReduceSum<float>` temporary storage |
 
-For FP16/BF16, `panelRows=12` and `chunkCols=512` use about 163,872 bytes,
+For FP16/BF16, `panelRows=12` and `chunkCols=544` use about 173,600 bytes,
 below the 184 KiB DAV_2201 working limit, including queue depth two,
 gamma/bias buffers, and reduction scratch. FP32 keeps `panelRows=8` and uses
-about 167,968 bytes because its input/output queues are twice as wide in
+about 177,952 bytes because its input/output queues are twice as wide in
 bytes. The fallback uses one row and a 256-element chunk, with queue depth
 one.
 
@@ -79,8 +79,10 @@ the same 2D panels, computes the row RMS inverse, applies gamma and bias, and
 writes the whole panel. Tail rows use `rowsThis < panelRows` while preserving
 the same panel layout. FP16/BF16 use `panelRows=12` to reduce panel scheduling
 and repeated gamma/bias loads; FP32 remains at `panelRows=8` to stay within the
-same working limit. The fallback has the same two-sweep flow with `panelRows=1`
-for complete non-aligned coverage.
+same working limit. V005 increases the hot-path chunk width to 544 elements to
+reduce repeated column-panel setup on the large-D cases while retaining the
+same two-sweep flow. The fallback has the same flow with `panelRows=1` for
+complete non-aligned coverage.
 
 ## Core partition and workspace accounting
 
@@ -94,6 +96,7 @@ workspace; each row's reduction is complete within its owning panel core.
 
 - Dtypes: FP16, BF16, FP32.
 - Hot-path panel rows: FP16/BF16 = 12, FP32 = 8; fallback = 1.
+- Hot-path chunk width: `min(D, 544)`; fallback chunk width: `min(D, 256)`.
 - Rank: 2D, 3D, and 4D are flattened into R rows.
 - D: 64 through 32768, including non-32-byte-aligned widths.
 - Rows: full panels and tail panels.
