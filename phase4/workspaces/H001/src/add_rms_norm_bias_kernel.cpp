@@ -129,13 +129,14 @@ private:
         uint32_t rowCount, uint32_t rowBytes)
     {
         const uint32_t cols = tiling_->cols;
+        const uint64_t srcBase = static_cast<uint64_t>(rowBegin) * cols;
         if (rowCount > 1 && rowBytes % H001_BYTES_PER_BLOCK == 0 &&
             tiling_->colsPad * static_cast<uint32_t>(sizeof(T)) == rowBytes) {
             AscendC::DataCopyExtParams copyParams;
             FillCopy(copyParams, rowCount, rowBytes);
             AscendC::DataCopyPadExtParams<T> padParams;
             FillPad(padParams, false);
-            AscendC::DataCopyPad(dst, src[rowBegin * cols], copyParams, padParams);
+            AscendC::DataCopyPad(dst, src[srcBase], copyParams, padParams);
             return;
         }
         for (uint32_t row = 0; row < rowCount; ++row) {
@@ -143,7 +144,7 @@ private:
             FillCopy(copyParams, 1, rowBytes);
             AscendC::DataCopyPadExtParams<T> padParams;
             FillPad(padParams, true);
-            AscendC::DataCopyPad(dst[row * tiling_->colsPad], src[(rowBegin + row) * cols], copyParams, padParams);
+            AscendC::DataCopyPad(dst[row * tiling_->colsPad], src[srcBase + row * cols], copyParams, padParams);
         }
     }
 
@@ -160,17 +161,18 @@ private:
         uint32_t rowCount, uint32_t rowBytes)
     {
         const uint32_t cols = tiling_->cols;
+        const uint64_t dstBase = static_cast<uint64_t>(rowBegin) * cols;
         if (rowCount > 1 && rowBytes % H001_BYTES_PER_BLOCK == 0 &&
             tiling_->colsPad * static_cast<uint32_t>(sizeof(T)) == rowBytes) {
             AscendC::DataCopyExtParams copyParams;
             FillCopy(copyParams, rowCount, rowBytes);
-            AscendC::DataCopyPad(dst[rowBegin * cols], src, copyParams);
+            AscendC::DataCopyPad(dst[dstBase], src, copyParams);
             return;
         }
         for (uint32_t row = 0; row < rowCount; ++row) {
             AscendC::DataCopyExtParams copyParams;
             FillCopy(copyParams, 1, rowBytes);
-            AscendC::DataCopyPad(dst[(rowBegin + row) * cols], src[row * tiling_->colsPad], copyParams);
+            AscendC::DataCopyPad(dst[dstBase + row * cols], src[row * tiling_->colsPad], copyParams);
         }
     }
 
@@ -193,9 +195,8 @@ private:
         biasQueue_.FreeTensor(bias);
     }
 
-    __aicore__ inline void ApplyRow(AscendC::LocalTensor<T> outputRow, AscendC::LocalTensor<T> xRow,
-        AscendC::LocalTensor<T> residualRow, AscendC::LocalTensor<float> gammaF32,
-        AscendC::LocalTensor<float> biasF32, uint32_t count)
+    __aicore__ inline float ChunkSumSquares(AscendC::LocalTensor<T> xRow, AscendC::LocalTensor<T> residualRow,
+        uint32_t count)
     {
         AscendC::LocalTensor<float> x32 = workABuf_.Get<float>();
         AscendC::LocalTensor<float> r32 = workBBuf_.Get<float>();
@@ -207,9 +208,15 @@ private:
             const float u = x32.GetValue(col);
             sum += u * u;
         }
-        AscendC::Duplicate(r32, sum * tiling_->colsInv + tiling_->epsilon, 1);
-        AscendC::Sqrt<float>(r32, r32, 1);
-        const float invRms = 1.0f / r32.GetValue(0);
+        return sum;
+    }
+
+    __aicore__ inline void ApplyInvRms(AscendC::LocalTensor<T> outputRow, AscendC::LocalTensor<T> xRow,
+        AscendC::LocalTensor<T> residualRow, AscendC::LocalTensor<float> gammaF32,
+        AscendC::LocalTensor<float> biasF32, float invRms, uint32_t count)
+    {
+        AscendC::LocalTensor<float> x32 = workABuf_.Get<float>();
+        AscendC::LocalTensor<float> r32 = workBBuf_.Get<float>();
         H001TypeOps<T>::ToFloat(x32, xRow, count);
         H001TypeOps<T>::ToFloat(r32, residualRow, count);
         AscendC::Add(x32, x32, r32, static_cast<int32_t>(count));
@@ -217,6 +224,18 @@ private:
         AscendC::Mul(x32, x32, gammaF32, static_cast<int32_t>(count));
         AscendC::Add(x32, x32, biasF32, static_cast<int32_t>(count));
         H001TypeOps<T>::FromFloat(outputRow, x32, count);
+    }
+
+    __aicore__ inline void ApplyRow(AscendC::LocalTensor<T> outputRow, AscendC::LocalTensor<T> xRow,
+        AscendC::LocalTensor<T> residualRow, AscendC::LocalTensor<float> gammaF32,
+        AscendC::LocalTensor<float> biasF32, uint32_t count)
+    {
+        const float sum = ChunkSumSquares(xRow, residualRow, count);
+        AscendC::LocalTensor<float> r32 = workBBuf_.Get<float>();
+        AscendC::Duplicate(r32, sum * tiling_->colsInv + tiling_->epsilon, 1);
+        AscendC::Sqrt<float>(r32, r32, 1);
+        const float invRms = 1.0f / r32.GetValue(0);
+        ApplyInvRms(outputRow, xRow, residualRow, gammaF32, biasF32, invRms, count);
     }
 
     __aicore__ inline void ProcessHot(uint32_t rowBegin, uint32_t rowEnd)
@@ -256,8 +275,32 @@ private:
     {
         AscendC::LocalTensor<float> gammaF32 = gammaF32Buf_.Get<float>();
         AscendC::LocalTensor<float> biasF32 = biasF32Buf_.Get<float>();
+        AscendC::LocalTensor<float> rmsTmp = workABuf_.Get<float>();
         const uint32_t cols = tiling_->cols;
         for (uint32_t row = rowBegin; row < rowEnd; ++row) {
+            const uint64_t rowOff = static_cast<uint64_t>(row) * cols;
+            float sum = 0.0f;
+            for (uint32_t colBegin = 0; colBegin < cols; colBegin += H001_CHUNK_D) {
+                uint32_t count = cols - colBegin;
+                if (count > H001_CHUNK_D) {
+                    count = H001_CHUNK_D;
+                }
+                const uint32_t chunkBytes = count * static_cast<uint32_t>(sizeof(T));
+                AscendC::LocalTensor<T> xAlloc = xQueue_.AllocTensor<T>();
+                AscendC::LocalTensor<T> residualAlloc = residualQueue_.AllocTensor<T>();
+                CopyRow(xAlloc, xGm_[rowOff + colBegin], chunkBytes);
+                CopyRow(residualAlloc, residualGm_[rowOff + colBegin], chunkBytes);
+                xQueue_.EnQue(xAlloc);
+                residualQueue_.EnQue(residualAlloc);
+                AscendC::LocalTensor<T> x = xQueue_.DeQue<T>();
+                AscendC::LocalTensor<T> residual = residualQueue_.DeQue<T>();
+                sum += ChunkSumSquares(x, residual, count);
+                xQueue_.FreeTensor(x);
+                residualQueue_.FreeTensor(residual);
+            }
+            AscendC::Duplicate(rmsTmp, sum * tiling_->colsInv + tiling_->epsilon, 1);
+            AscendC::Sqrt<float>(rmsTmp, rmsTmp, 1);
+            const float invRms = 1.0f / rmsTmp.GetValue(0);
             for (uint32_t colBegin = 0; colBegin < cols; colBegin += H001_CHUNK_D) {
                 uint32_t count = cols - colBegin;
                 if (count > H001_CHUNK_D) {
@@ -268,8 +311,8 @@ private:
                 AscendC::LocalTensor<T> residualAlloc = residualQueue_.AllocTensor<T>();
                 AscendC::LocalTensor<T> gammaAlloc = gammaQueue_.AllocTensor<T>();
                 AscendC::LocalTensor<T> biasAlloc = biasQueue_.AllocTensor<T>();
-                CopyRow(xAlloc, xGm_[row * cols + colBegin], chunkBytes);
-                CopyRow(residualAlloc, residualGm_[row * cols + colBegin], chunkBytes);
+                CopyRow(xAlloc, xGm_[rowOff + colBegin], chunkBytes);
+                CopyRow(residualAlloc, residualGm_[rowOff + colBegin], chunkBytes);
                 CopyRow(gammaAlloc, gammaGm_[colBegin], chunkBytes);
                 CopyRow(biasAlloc, biasGm_[colBegin], chunkBytes);
                 xQueue_.EnQue(xAlloc);
@@ -283,12 +326,12 @@ private:
                 H001TypeOps<T>::ToFloat(gammaF32, gamma, count);
                 H001TypeOps<T>::ToFloat(biasF32, bias, count);
                 AscendC::LocalTensor<T> outputAlloc = outputQueue_.AllocTensor<T>();
-                ApplyRow(outputAlloc, x, residual, gammaF32, biasF32, count);
+                ApplyInvRms(outputAlloc, x, residual, gammaF32, biasF32, invRms, count);
                 outputQueue_.EnQue(outputAlloc);
                 AscendC::LocalTensor<T> output = outputQueue_.DeQue<T>();
                 AscendC::DataCopyExtParams copyParams;
                 FillCopy(copyParams, 1, chunkBytes);
-                AscendC::DataCopyPad(outputGm_[row * cols + colBegin], output, copyParams);
+                AscendC::DataCopyPad(outputGm_[rowOff + colBegin], output, copyParams);
                 outputQueue_.FreeTensor(output);
                 xQueue_.FreeTensor(x);
                 residualQueue_.FreeTensor(residual);

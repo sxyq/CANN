@@ -1,0 +1,58 @@
+=== H001 V004 build 2026-09-22T15:05:31+00:00 ===
+BUILD_DIR=/tmp/codex-h001/build
+TOOLKIT=/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002
+
+=== template preflight (npu_kernel_dev) ===
+first_line=#include <cmath>
+last_line=}
+has_run_kernel=1
+has_vector_entry=3
+redefines_tensorinfo=0
+has_type_traits=0
+has_std_is_same=0
+has_brace_pad_init=0
+
+=== cmake configure ===
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /tmp/codex-h001/build
+
+=== device compile ===
+[100%] Generating add_rms_norm_bias_device.o
+/tmp/codex-h001/src/add_rms_norm_bias_kernel.cpp:474:21: warning: reinterpret_cast from '__gm__ unsigned char **' to 'void **' changes address space of nested pointers [-Wincompatible-pointer-types-discards-qualifiers]
+    if (aclrtMalloc(reinterpret_cast<void**>(&tilingDevice), sizeof(tiling),
+                    ^                        ~~~~~~~~~~~~~
+1 warning generated.
+/tmp/codex-h001/src/add_rms_norm_bias_kernel.cpp:474:21: warning: reinterpret_cast from '__gm__ unsigned char **' to 'void **' changes address space of nested pointers [-Wincompatible-pointer-types-discards-qualifiers]
+    if (aclrtMalloc(reinterpret_cast<void**>(&tilingDevice), sizeof(tiling),
+                    ^                        ~~~~~~~~~~~~~
+1 warning generated.
+[100%] Built target h001_device
+DEVICE_COMPILE=PASS
+
+=== submission compile (mock judge.asc include) ===
+[100%] Generating add_rms_norm_bias_submission.o
+In file included from /tmp/codex-h001/src/mock_judge_local.cpp:9:
+/tmp/codex-h001/src/add_rms_norm_bias_kernel.cpp:474:21: warning: reinterpret_cast from '__gm__ unsigned char **' to 'void **' changes address space of nested pointers [-Wincompatible-pointer-types-discards-qualifiers]
+    if (aclrtMalloc(reinterpret_cast<void**>(&tilingDevice), sizeof(tiling),
+                    ^                        ~~~~~~~~~~~~~
+1 warning generated.
+In file included from /tmp/codex-h001/src/mock_judge_local.cpp:9:
+/tmp/codex-h001/src/add_rms_norm_bias_kernel.cpp:474:21: warning: reinterpret_cast from '__gm__ unsigned char **' to 'void **' changes address space of nested pointers [-Wincompatible-pointer-types-discards-qualifiers]
+    if (aclrtMalloc(reinterpret_cast<void**>(&tilingDevice), sizeof(tiling),
+                    ^                        ~~~~~~~~~~~~~
+1 warning generated.
+[100%] Built target h001_submission
+SUBMISSION_COMPILE=PASS
+
+=== full link ===
+[ 50%] Generating libh001_add_rms_norm_bias.so
+[100%] Built target h001_link
+FULL_LINK=PASS
+
+=== artifacts ===
+-rw-rw-r-- 1 lelinfeng lelinfeng 86752 Sep 22 15:05 /tmp/codex-h001/build/add_rms_norm_bias_device.o
+-rw-rw-r-- 1 lelinfeng lelinfeng 90968 Sep 22 15:05 /tmp/codex-h001/build/add_rms_norm_bias_submission.o
+-rwxrwxr-x 1 lelinfeng lelinfeng 93920 Sep 22 15:05 /tmp/codex-h001/build/libh001_add_rms_norm_bias.so
+
+ALL_STAGES=PASS
