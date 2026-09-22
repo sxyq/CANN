@@ -1,32 +1,15 @@
-# I001 V003 Architecture Metadata
+# I001 V004 Architecture Metadata
 
 candidate: I001
-revision: V003
-main_change: ABI-matched minimal kernel (GM_ADDR, const TensorGroupInfo&, int64_t cores, aclrtStream)
+revision: V004
+main_change: aligned DataCopyPad (rightPadding), ReduceSum<float,true> with 8KiB tmp + separate dst, exact-n store, tile=256
 
-architecture hypothesis: Online CE was ABI/template shape, not wide-D math. V003 copies only B001's entry/ABI shape and keeps a simple two-pass row-parallel body.
+fixes vs V003:
+- T02 99% WA: unaligned D copies (rightPadding=0 on unaligned blockLen)
+- T11 91% WA: same unaligned path on larger D
+- T13 RE: ReduceSum sharedTmp was 128B overlapping dst; now 8KiB separate + partial dst
 
-core mapping: row-parallel, contiguous row ranges.
-blockDim: min(availableCoreNum, 40, rows).
+ABI: unchanged from V003 (online compile+run).
+body: two-pass row-parallel, workN=align(n, 32/sizeof(T)), store exactly n.
 
-UB: 3 TQue tiles + 2 float tiles + 128B reduce tmp. No retained full-row path in V003 (minimize).
-
-reduction: intra-core ReduceSum(sum(u*u)). No cross-core sync.
-
-x/residual rereads: 2 (two-pass).
-gamma/bias reloads: 1 per D-tile per row.
-
-hot path: all legal inputs use the same two-pass body (fp32/fp16/bf16 via I003Ops).
-fallback: same body.
-
-template shape (from online-pass B001, architecture not copied):
-- #include <cmath> then kernel_operator.h
-- extern "C" __global__ __vector__ with GM_ADDR args
-- extern "C" void run_kernel(GM_ADDR, const TensorGroupInfo&, ..., int64_t availableCoreNum, aclrtStream, float)
-- DataCopyExtParams / DataCopyPadExtParams default-ctor + field assign
-- Cast<float,T> / Cast<T,float> with CAST_NONE / CAST_ROUND
-- no if constexpr, no auto, no nested templates, no acl.h, no aggregate = {
-
-online identity:
-lines=277 bytes≈9480
-see preflight SHA-256 in build handoff
+UB: 3*TQue(256*sizeof(T)) + 2*256*4 + 64 + 8192 ≈ 20KiB float / less for half.
