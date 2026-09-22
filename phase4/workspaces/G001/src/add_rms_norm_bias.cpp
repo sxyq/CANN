@@ -99,10 +99,11 @@ __aicore__ inline void RunResidentRows(GM_ADDR xAddr, GM_ADDR residualAddr, GM_A
         const float rms = SqrtF(mean + cfg.epsilon);
         for (int32_t i = 0; i < cfg.dim; ++i) {
             const float u = resident.GetValue(i);
-            // V006 single change vs V002: gamma applied before divide by rms.
-            //   V002: (u / rms) * gamma + bias
-            //   V006: u * gamma / rms + bias
-            const float value = u * ToFloat(gamma.GetValue(i)) / rms + ToFloat(bias.GetValue(i));
+            // V007 single change vs V002: cast u/rms (O(1) normalized) to native
+            // before *gamma.  V002: T(u/rms * gamma + bias).
+            //                     V007: T(T(u/rms) * gamma + bias).
+            const T normNative = FromFloat<T>(u / rms);
+            const float value = ToFloat(normNative) * ToFloat(gamma.GetValue(i)) + ToFloat(bias.GetValue(i));
             output.SetValue(rowBase + i, FromFloat<T>(value));
         }
     }
@@ -138,7 +139,8 @@ __aicore__ inline void RunGenericRows(GM_ADDR xAddr, GM_ADDR residualAddr, GM_AD
         const float rms = SqrtF(mean + cfg.epsilon);
         for (int32_t i = 0; i < cfg.dim; ++i) {
             const float u = ToFloat(x.GetValue(rowBase + i)) + ToFloat(residual.GetValue(rowBase + i));
-            const float value = u * ToFloat(gamma.GetValue(i)) / rms + ToFloat(bias.GetValue(i));
+            const T normNative = FromFloat<T>(u / rms);
+            const float value = ToFloat(normNative) * ToFloat(gamma.GetValue(i)) + ToFloat(bias.GetValue(i));
             output.SetValue(rowBase + i, FromFloat<T>(value));
         }
     }

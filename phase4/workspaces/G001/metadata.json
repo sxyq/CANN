@@ -1,6 +1,6 @@
 {
   "candidate": "G001",
-  "revision": "V006",
+  "revision": "V007",
   "architecture": "Fresh One-Read / Resident-Y",
   "source": "phase4/workspaces/G001/src/add_rms_norm_bias.cpp",
   "build_file": "phase4/workspaces/G001/CMakeLists.txt",
@@ -36,33 +36,33 @@
     "source_reads": "x and residual are consumed once per row",
     "resident_value": "FP32 u=x+residual remains in one UB row",
     "accumulator": "FP32",
-    "precision": "all math FP32; one native cast at output"
+    "precision": "FP32 u/rms cast to native (O(1)), then *gamma+bias in FP32, one cast at output"
   },
   "generic_path": {
     "name": "RunGenericRows",
     "selection": "tiling.mode != 0",
     "coverage": "FP16/BF16/FP32 and all legal rows and D",
-    "precision": "same arithmetic chain as hot path"
+    "precision": "same NormNative chain as hot path"
   },
   "compile": {
     "status": "PASS",
     "device_status": "PASS",
     "submission_status": "PASS",
     "link_status": "PASS",
-    "submission_log": "phase4/workspaces/G001/logs/submission-v006-build.log",
+    "submission_log": "phase4/workspaces/G001/logs/submission-v007-build.log",
     "device_objects_cleaned": true,
     "remote_build_removed": true
   },
-  "v006_changes": {
-    "baseline": "V002 arithmetic restored exactly (no intermediate cast, no u-quantize, no invRms chain)",
-    "single_change": "gamma apply order: u * gamma / rms + bias (was (u / rms) * gamma + bias in V002)",
-    "rationale": "isolated A/B of formula association; 1-ULP FP32 difference cannot overflow large-D cases"
+  "v007_changes": {
+    "baseline": "V002 arithmetic restored exactly (no u-quantize, no invRms, no bias-after-cast, V002 gamma order)",
+    "single_change": "intermediate cast of u/rms (O(1)) to native before *gamma: T(T(u/rms)*gamma+bias) was T(u/rms*gamma+bias)",
+    "rationale": "isolated A/B of normalized-value quantize; O(1) magnitude cannot overflow large-D cases"
   },
   "submission": {
     "ready": true,
     "cannjudge": false,
     "source": "phase4/workspaces/G001/src/add_rms_norm_bias.cpp",
-    "integration": "G001 Child V006: V002 baseline + gamma-apply-order single change",
-    "runtime_validation": "pending V006 online result"
+    "integration": "G001 Child V007: V002 baseline + u/rms intermediate cast single change",
+    "runtime_validation": "pending V007 online result"
   }
 }
