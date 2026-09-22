@@ -1,8 +1,10 @@
+#include <cmath>
+#include <cstdint>
 #include "kernel_operator.h"
 
 namespace g001 {
 
-// The launcher writes this compact record immediately before launching the kernel.
+// The entry receives the fields as scalar launch arguments.
 // dtype: 0 = fp16, 1 = bf16, 2 = fp32.
 struct TilingData {
     int32_t rows;
@@ -89,7 +91,7 @@ __aicore__ inline void RunResidentRows(GM_ADDR xAddr, GM_ADDR residualAddr, GM_A
         }
 
         const float mean = sumSquares / static_cast<float>(cfg.dim);
-        const float inverseRms = 1.0f / __builtin_sqrtf(mean + cfg.epsilon);
+        const float inverseRms = 1.0f / __builtin_cce_sqrtf(mean + cfg.epsilon);
         for (int32_t i = 0; i < cfg.dim; ++i) {
             const float u = ToFloat(resident.GetValue(i));
             const float value = u * inverseRms * ToFloat(gamma.GetValue(i)) + ToFloat(bias.GetValue(i));
@@ -125,7 +127,7 @@ __aicore__ inline void RunGenericRows(GM_ADDR xAddr, GM_ADDR residualAddr, GM_AD
             const float u = ToFloat(x.GetValue(rowBase + i)) + ToFloat(residual.GetValue(rowBase + i));
             sumSquares += u * u;
         }
-        const float inverseRms = 1.0f / __builtin_sqrtf(sumSquares / static_cast<float>(cfg.dim) + cfg.epsilon);
+        const float inverseRms = 1.0f / __builtin_cce_sqrtf(sumSquares / static_cast<float>(cfg.dim) + cfg.epsilon);
         for (int32_t i = 0; i < cfg.dim; ++i) {
             const float u = ToFloat(x.GetValue(rowBase + i)) + ToFloat(residual.GetValue(rowBase + i));
             const float value = u * inverseRms * ToFloat(gamma.GetValue(i)) + ToFloat(bias.GetValue(i));
@@ -136,17 +138,16 @@ __aicore__ inline void RunGenericRows(GM_ADDR xAddr, GM_ADDR residualAddr, GM_AD
 
 } // namespace g001
 
-extern "C" __global__ __aicore__ void g001_add_rms_norm_bias(
-    GM_ADDR x, GM_ADDR residual, GM_ADDR gamma, GM_ADDR bias, GM_ADDR output, GM_ADDR workspace, GM_ADDR tiling)
+extern "C" __global__ __vector__ void g001_add_rms_norm_bias(
+    GM_ADDR x, GM_ADDR residual, GM_ADDR gamma, GM_ADDR bias, GM_ADDR output,
+    int32_t rows, int32_t dim, float epsilon, uint32_t dtype, uint32_t mode)
 {
-    (void)workspace;
-    const __gm__ g001::TilingData *cfgGm = reinterpret_cast<const __gm__ g001::TilingData *>(tiling);
     g001::TilingData cfg;
-    cfg.rows = cfgGm->rows;
-    cfg.dim = cfgGm->dim;
-    cfg.epsilon = cfgGm->epsilon;
-    cfg.dtype = cfgGm->dtype;
-    cfg.mode = cfgGm->mode;
+    cfg.rows = rows;
+    cfg.dim = dim;
+    cfg.epsilon = epsilon;
+    cfg.dtype = dtype;
+    cfg.mode = mode;
     if (cfg.dtype == 0) {
         if (cfg.mode == 0) {
             g001::RunResidentRows<half>(x, residual, gamma, bias, output, cfg);
@@ -169,3 +170,49 @@ extern "C" __global__ __aicore__ void g001_add_rms_norm_bias(
         g001::RunGenericRows<float>(x, residual, gamma, bias, output, cfg);
     }
 }
+
+#if !defined(G001_DEVICE_ONLY)
+extern "C" void run_kernel(
+    GM_ADDR x, const TensorGroupInfo &info_x,
+    GM_ADDR residual, const TensorGroupInfo &info_residual,
+    GM_ADDR gamma, const TensorGroupInfo &info_gamma,
+    GM_ADDR bias, const TensorGroupInfo &info_bias,
+    GM_ADDR output, const TensorGroupInfo &info_output,
+    int64_t availableCoreNum, aclrtStream stream, float epsilon)
+{
+    if (info_x.numTensors < 1 || info_x.tensors == nullptr) {
+        return;
+    }
+    const auto &info = info_x.tensors[0];
+    if (info.shape == nullptr || info.numDims < 2 || info.numDims > 4) {
+        return;
+    }
+    const int64_t dim = info.shape[info.numDims - 1];
+    if (dim < 64 || dim > 32768) {
+        return;
+    }
+    uint64_t rows = 1;
+    for (int64_t axis = 0; axis + 1 < info.numDims; ++axis) {
+        if (info.shape[axis] <= 0 || rows > INT32_MAX / static_cast<uint64_t>(info.shape[axis])) {
+            return;
+        }
+        rows *= static_cast<uint64_t>(info.shape[axis]);
+    }
+    uint32_t dtype;
+    if (info.dtype == 0) {
+        dtype = 2;
+    } else if (info.dtype == 1) {
+        dtype = 0;
+    } else if (info.dtype == 2) {
+        dtype = 1;
+    } else {
+        return;
+    }
+    uint64_t blocks = availableCoreNum > 0 ? static_cast<uint64_t>(availableCoreNum) : 1;
+    blocks = blocks > 40 ? 40 : blocks;
+    blocks = blocks > rows ? rows : blocks;
+    g001_add_rms_norm_bias<<<static_cast<uint32_t>(blocks), nullptr, stream>>>(
+        x, residual, gamma, bias, output, static_cast<int32_t>(rows),
+        static_cast<int32_t>(dim), epsilon, dtype, 0);
+}
+#endif
