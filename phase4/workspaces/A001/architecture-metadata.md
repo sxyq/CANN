@@ -439,3 +439,27 @@ non-32B-aligned D and the final partial chunk.
 - Server compile target: Ascend910B3 / `dav-2201` with CANN
   `8.5.0.alpha002`; target `a001_submission_v015` passed. Logs:
   `build/configure-v015.log` and `build/compile-v015.log`.
+
+## A001-V016 focused update
+
+- Evidence: V015 RE'd at T05 once Resident double-buffer and the wideFew
+  D-split were introduced together. V014 (`35.89`, 15/15) is the Fresh Best
+  and its FastKernel domain (T01-T04) is online-stable.
+- Hypothesis: isolate Resident changes. Ship V014 byte-stable with exactly one
+  Resident delta — a single post-reduce `GetValue` per row — and leave
+  double-buffer and D-split out until they can be tested alone.
+- Change: `submission_v016.asc` is V014 with a minimal ResidentKernel edit
+  (diff-verified against V014):
+  1. `colParallel == 1` path calls `BuildUKeepSum` then `StoreRow(gRow,
+     InvRmsFromSum())`, so the only scalar drain is inside `InvRmsFromSum`.
+  2. `StoreRow` now takes `inverseRms`; the mean/eps/sqrt prologue moved to
+     `InvRmsFromSum`. The D-split path still uses `BuildU`/scratch `GetValue`
+     as in V014 and then `Duplicate(total)` + `InvRmsFromSum` before store.
+  3. FastKernel, host dispatch, queue depths (single-slot), and the
+     `D <= 4096 && R * D <= 262144 && fastUb <= 160000` gate are byte-identical
+     to V014. No double-buffer. No D-split change.
+- Scope: FP32 `u` / RMS math, dtype dispatch, legal D range, `run_kernel` ABI,
+  and the judge type no-redefinition rule are unchanged.
+- Server compile target: Ascend910B3 / `dav-2201` with CANN
+  `8.5.0.alpha002`; target `a001_submission_v016` passed. Logs:
+  `build/configure-v016.log` and `build/compile-v016.log`.

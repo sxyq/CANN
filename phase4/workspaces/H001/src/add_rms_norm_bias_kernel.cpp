@@ -84,6 +84,8 @@ public:
         pipe_->InitBuffer(biasF32Buf_, workElems * sizeof(float));
         pipe_->InitBuffer(workABuf_, workElems * sizeof(float));
         pipe_->InitBuffer(workBBuf_, workElems * sizeof(float));
+        pipe_->InitBuffer(partialBuf_, 32);
+        pipe_->InitBuffer(reduceTmpBuf_, 8192);
     }
 
     __aicore__ inline void Process()
@@ -226,21 +228,21 @@ private:
         H001TypeOps<T>::FromFloat(outputRow, x32, count);
     }
 
-    // V006 single change vs V004: compute u=x+res once and reuse for sum and normalize.
+    // V007 single change vs V006: ReduceSum for sum(u*u) on the hot ApplyRow path.
     __aicore__ inline void ApplyRow(AscendC::LocalTensor<T> outputRow, AscendC::LocalTensor<T> xRow,
         AscendC::LocalTensor<T> residualRow, AscendC::LocalTensor<float> gammaF32,
         AscendC::LocalTensor<float> biasF32, uint32_t count)
     {
         AscendC::LocalTensor<float> x32 = workABuf_.Get<float>();
         AscendC::LocalTensor<float> r32 = workBBuf_.Get<float>();
+        AscendC::LocalTensor<float> partial = partialBuf_.Get<float>();
+        AscendC::LocalTensor<float> reduceTmp = reduceTmpBuf_.Get<float>();
         H001TypeOps<T>::ToFloat(x32, xRow, count);
         H001TypeOps<T>::ToFloat(r32, residualRow, count);
         AscendC::Add(x32, x32, r32, static_cast<int32_t>(count));
-        float sum = 0.0f;
-        for (uint32_t col = 0; col < count; ++col) {
-            const float u = x32.GetValue(col);
-            sum += u * u;
-        }
+        AscendC::Mul(r32, x32, x32, static_cast<int32_t>(count));
+        AscendC::ReduceSum<float, true>(partial, r32, reduceTmp, static_cast<int32_t>(count));
+        const float sum = partial.GetValue(0);
         AscendC::Duplicate(r32, sum * tiling_->colsInv + tiling_->epsilon, 1);
         AscendC::Sqrt<float>(r32, r32, 1);
         const float invRms = 1.0f / r32.GetValue(0);
@@ -369,6 +371,8 @@ private:
     AscendC::TBuf<AscendC::TPosition::VECCALC> biasF32Buf_;
     AscendC::TBuf<AscendC::TPosition::VECCALC> workABuf_;
     AscendC::TBuf<AscendC::TPosition::VECCALC> workBBuf_;
+    AscendC::TBuf<AscendC::TPosition::VECCALC> partialBuf_;
+    AscendC::TBuf<AscendC::TPosition::VECCALC> reduceTmpBuf_;
     uint32_t hotRows_;
 };
 

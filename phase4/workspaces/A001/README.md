@@ -182,3 +182,12 @@ wide-D few-row shapes (`D >= 8192 && R <= 2 * cores`).
 
 The V015 target was compiled on `cann-server3` with CANN `8.5.0.alpha002` and
 `dav-2201`. Logs are `build/configure-v015.log` and `build/compile-v015.log`.
+
+## V016 focused update
+
+V016 is V014 with exactly one ResidentKernel change: a single post-reduce
+GetValue per row (`BuildUKeepSum` + `InvRmsFromSum`). No double-buffer, no
+D-split, FastKernel and host dispatch byte-identical to V014.
+
+The V016 target was compiled on `cann-server3` with CANN `8.5.0.alpha002` and
+`dav-2201`. Logs are `build/configure-v016.log` and `build/compile-v016.log`.
