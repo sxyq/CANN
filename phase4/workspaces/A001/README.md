@@ -122,3 +122,14 @@ rows retain the V008 path, so their precision behavior is unchanged.
 
 The V009 target was compiled on `cann-server3` with CANN `8.5.0.alpha002` and
 `dav-2201`. Logs are `build/configure-v009.log` and `build/compile-v009.log`.
+
+## V010 focused update
+
+V010 is an architecture-level rewrite from V008 (V009 is not the base). It
+removes the second GM read of `x`/`residual` by keeping the FP32 `u` slice in
+UB across reduction and epilogue, caches `gamma`/`bias` in UB when they fit,
+and adds 2D row/column decomposition with an output-GM partial reduce when
+`R < core_count` so wide-D few-row shapes can use the full Vector Core count.
+
+The V010 target was compiled on `cann-server3` with CANN `8.5.0.alpha002` and
+`dav-2201`. Logs are `build/configure-v010.log` and `build/compile-v010.log`.

@@ -263,3 +263,39 @@ non-32B-aligned D and the final partial chunk.
 - Server compile target: Ascend910B3 / `dav-2201` with CANN
   `8.5.0.alpha002`; target `a001_submission_v009` passed. Logs:
   `build/configure-v009.log` and `build/compile-v009.log`.
+
+## A001-V010 focused update
+
+- Hypothesis: V008 pays two structural GM taxes. (1) Every row rereads `x` and
+  `residual` to rebuild `u` after the RMS reduction. (2) `gamma`/`bias` are
+  reloaded from GM on every output chunk of every row even though they are
+  shared across rows. When `R < core_count`, row-only mapping also leaves most
+  Vector Cores idle on wide-D shapes, which matches the T14/T07/T04/T06/T08
+  ratio gaps.
+- Change: `submission_v010.asc` is an architecture rewrite, not a chunk tweak:
+  1. Full-`u` UB residency: the FP32 `u = x + residual` slice is kept in UB
+     across the RMS reduction and the normalize epilogue, so `x`/`residual` are
+     read once and `u` is never rebuilt.
+  2. Persistent `gamma`/`bias` cache in native dtype when it fits beside `u`;
+     otherwise params stream per tile but still amortize over the retained `u`.
+  3. 2D work decomposition: when `R >= cores` the map is pure row-split
+     (zero cross-core traffic); when `R < cores` the kernel also splits D into
+     column groups so `blockDim = rowP * colP` can reach the full core count.
+  4. Cross-core RMS reduction via a float partial scratch placed at the tail of
+     the output GM buffer, with `SyncAll` barriers. Scratch is bounded by
+     `colP * R * 4` and is disabled when it cannot fit in the output.
+- UB estimate: `u` slice is `colsThisCore * 4` bytes, peak tiles are
+  `3 * tile * sizeof(T) + 4 * tile * 4`, optional param cache is
+  `2 * colsThisCore * sizeof(T)`. Tile width is chosen at runtime so the total
+  stays inside the 184 KiB Vector workspace. For `D = 32768` FP32 with
+  `colP = 1` this is a 128 KiB `u` buffer plus streamed tiles; for mid-D the
+  param cache is also resident.
+- Expected traffic change per row (large-R path): V008 was `7 * D * sizeof(T)`
+  including param reloads; V010 is `3 * D * sizeof(T)` data plus one-time
+  param load when the cache fits, or `5 * D * sizeof(T)` when it does not.
+- Scope: FP32 arithmetic order for `u` and the RMS statistic, dtype dispatch
+  (`0/1/2`), legal D range `64..32768`, and the `run_kernel` ABI are unchanged.
+  `TensorInfo`/`TensorGroupInfo` are not redefined.
+- Server compile target: Ascend910B3 / `dav-2201` with CANN
+  `8.5.0.alpha002`; target `a001_submission_v010` passed. Logs:
+  `build/configure-v010.log` and `build/compile-v010.log`.
