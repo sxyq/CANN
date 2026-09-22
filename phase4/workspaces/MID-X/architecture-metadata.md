@@ -63,11 +63,19 @@ Ascend 910B3 / DAV_2201 / `--npu-arch=dav-2201` / CANN 8.5.0.alpha002 on cann-se
 
 | Rev | Change | Compile | Notes |
 |---|---|---|---|
-| V001 | mid multi-row batch + resident params + batch ReduceSum + TQue depth 2 | device/submission/full PASS | Online 2/15. Mid speed real (T04 14.11 vs champ 18.79, T07 34.67 vs 52). WA classes: ~75% (T02/T03/T09/T11/T13), 4-13% tail/mean, T15 RE. |
-| V002 | correctness: aligned ReduceSum slot0 + host/device invRms; DataCopyPad rightPadding in bytes; CAST_RINT out; mid domain D<=4096 + 25% UB headroom; generic single-block tile 256 | device/submission/full PASS | Target 15/15 then keep mid wins. |
+| V001 | mid multi-row batch + resident params + batch ReduceSum + TQue depth 2 | PASS | Online 2/15. Mid speed real (T04 14.11, T07 34.67). WA classes + T15 RE. |
+| V002 | full correctness rewrite (aligned ReduceSum, byte pad, safe generic) | PASS | Online 1/15. T02 RE — over-rewrite broke the path that used to run. |
+| V003 | V001 base + ONE change: D<=128 GetValue golden (FP32 GetValue sum; vector Cast I/O; no ReduceSum). Mid/generic untouched. | device/submission/full PASS | Target T02/T03 first online Pass. Next (only if tiny green): mid ReduceSum 8-slot alignment. |
 
-## V002 root-cause notes (from V001 online)
+## V003 tiny golden (D<=128)
 
-1. ~75% WA — `ReduceSum` dest was `sumSq[r]` (float-stride, breaks 8-slot/32B alignment). V002 always reduces into `scalar[0]`.
-2. 4-13% WA — pad/mean. V002 `rightPadding` is 32B remainder **in bytes**; reduce/mean counts are `d_` only.
-3. T15 RE — generic UB / multi-block init. V002 generic launches 1 core, tile 256, early return on other blocks before TPipe.
+1. DataCopyPad x/res row.
+2. Vector Cast to FP32, `u = x+res`.
+3. `sum(u*u)` via FP32 `GetValue` accumulate (no ReduceSum).
+4. `invRms = 1/sqrt(sum*invD+eps)` via 1-elem Sqrt + GetValue.
+5. `y = u*invRms*g+b` in FP32, Cast out.
+6. Multi-row core split; resident FP32 gamma/bias.
+
+## V002 root-cause notes (online T02 RE)
+
+Over-rewrite (PipeBarrier/byte pad/generic early-out) is not safe as one patch. Prefer V001 that runs, then one lever at a time.

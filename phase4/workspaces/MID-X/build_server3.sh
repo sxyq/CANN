@@ -17,7 +17,7 @@ export CMAKE_PREFIX_PATH="${TOOLKIT}/aarch64-linux/tikcpp/ascendc_kernel_cmake:$
 export CPLUS_INCLUDE_PATH="/usr/include/c++/11:/usr/include/aarch64-linux-gnu/c++/11${CPLUS_INCLUDE_PATH:+:$CPLUS_INCLUDE_PATH}"
 export C_INCLUDE_PATH="/usr/include:/usr/include/aarch64-linux-gnu${C_INCLUDE_PATH:+:$C_INCLUDE_PATH}"
 
-REV="${REV:-V002}"
+REV="${REV:-V003}"
 SRC="${ROOT}/${REV}/kernel.asc"
 STAMP="$(date +%Y%m%d_%H%M%S)"
 
