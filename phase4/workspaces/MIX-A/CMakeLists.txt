@@ -31,7 +31,7 @@ set(CMAKE_CXX_COMPILER "${BISHENG}" CACHE FILEPATH "Ascend C compiler" FORCE)
 project(mix_a_add_rms_norm_bias LANGUAGES CXX)
 
 add_library(mix_a_submission OBJECT compile_adapter.cpp)
-add_library(mix_a_device OBJECT MIX-A-V003-device.cpp)
+add_library(mix_a_device OBJECT MIX-A-V004-device.cpp)
 target_include_directories(mix_a_submission PRIVATE
     "${ASCENDC_INCLUDE_DIR}"
     "${ASCENDC_INTERNAL_INCLUDE_DIR}"

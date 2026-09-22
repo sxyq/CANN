@@ -1,0 +1,20 @@
+# MIX-A-V004 compile on cann-server3
+# Target: Ascend910B3 / dav-2201 / CANN 8.5.0.alpha002 / bisheng
+#
+# CONFIGURE     RC=0  (configure-v004-server3.log)
+# DEVICE        RC=0  MIX-A-V004-device.cpp.o 131320 B
+# SUBMISSION    RC=0  compile_adapter.cpp.o 131320 B
+# FULL LINK     RC=0  MIX-A-V004-device.alink 130576 B
+#                   MIX-A-V004-submission.alink 130568 B
+#   symbols: add_rms_norm_bias_custom<float|half|bfloat16_t>
+#
+# ONLINE_READY source: MIX-A-V004-submission.asc
+#
+# V004 delta vs V003 (15/15 44.69):
+#   T01-class A001 FastKernel extension:
+#   - in-gate tiny D<=128 any occupancy (was generic Process)
+#   - in-gate aligned multi-row SmallFp32 (was ContiguousBatched/Batched)
+#   - FP16/BF16 tiny via expanded mid/tiny dispatch block
+#   T04-class (multi-row, D>128, unaligned) still original N-MID-OVERLAP.
+#   V003 single-row mid Fast (T03) and V_MTE2 release unchanged.
+#   Target: T01 5.34 -> ~4.0-4.25, mean 44.69 -> ~45.0 (beat 44.70).
