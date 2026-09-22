@@ -60,9 +60,19 @@ __aicore__ inline float SqrtF(float x)
     return __builtin_cce_sqrtf(x);
 }
 
+// u = x + residual in native dtype semantics (FP32 add then one native
+// quantize). RMS / norm / bias then run entirely in FP32 with a single
+// output cast, matching the golden chain: quantize input -> FP32 -> cast out.
+template <typename T>
+__aicore__ inline float AddNativeU(T xv, T rv)
+{
+    const float raw = ToFloat(xv) + ToFloat(rv);
+    return ToFloat(FromFloat<T>(raw));
+}
+
 // Hot path (Fresh One-Read / Resident-Y):
-// each x/residual element is consumed once; FP32 u = x + residual stays
-// resident in one UB row and is reused for RMS and for norm + bias.
+// each x/residual element is consumed once; FP32 u (native-quantized x+residual)
+// stays resident in one UB row and is reused for RMS and for norm + bias.
 template <typename T>
 __aicore__ inline void RunResidentRows(GM_ADDR xAddr, GM_ADDR residualAddr, GM_ADDR gammaAddr, GM_ADDR biasAddr,
     GM_ADDR outputAddr, const TilingData &cfg)
@@ -90,23 +100,23 @@ __aicore__ inline void RunResidentRows(GM_ADDR xAddr, GM_ADDR residualAddr, GM_A
         float sumSquares = 0.0f;
 
         for (int32_t i = 0; i < cfg.dim; ++i) {
-            const float u = ToFloat(x.GetValue(rowBase + i)) + ToFloat(residual.GetValue(rowBase + i));
+            const float u = AddNativeU<T>(x.GetValue(rowBase + i), residual.GetValue(rowBase + i));
             resident.SetValue(i, u);
             sumSquares += u * u;
         }
 
         const float mean = sumSquares / static_cast<float>(cfg.dim);
-        const float rms = SqrtF(mean + cfg.epsilon);
+        // PyTorch chain: x * rsqrt(var + eps) * weight + bias
+        const float invRms = 1.0f / SqrtF(mean + cfg.epsilon);
         for (int32_t i = 0; i < cfg.dim; ++i) {
             const float u = resident.GetValue(i);
-            const float value = (u / rms) * ToFloat(gamma.GetValue(i)) + ToFloat(bias.GetValue(i));
+            const float value = u * invRms * ToFloat(gamma.GetValue(i)) + ToFloat(bias.GetValue(i));
             output.SetValue(rowBase + i, FromFloat<T>(value));
         }
     }
 }
 
-// Generic fallback: two-pass over sources, all math in FP32, one final cast.
-// Covers every legal rows / dim / dtype without relying on resident UB.
+// Generic fallback: two-pass over sources, same arithmetic as the hot path.
 template <typename T>
 __aicore__ inline void RunGenericRows(GM_ADDR xAddr, GM_ADDR residualAddr, GM_ADDR gammaAddr, GM_ADDR biasAddr,
     GM_ADDR outputAddr, const TilingData &cfg)
@@ -129,14 +139,14 @@ __aicore__ inline void RunGenericRows(GM_ADDR xAddr, GM_ADDR residualAddr, GM_AD
         const uint64_t rowBase = row * static_cast<uint64_t>(cfg.dim);
         float sumSquares = 0.0f;
         for (int32_t i = 0; i < cfg.dim; ++i) {
-            const float u = ToFloat(x.GetValue(rowBase + i)) + ToFloat(residual.GetValue(rowBase + i));
+            const float u = AddNativeU<T>(x.GetValue(rowBase + i), residual.GetValue(rowBase + i));
             sumSquares += u * u;
         }
         const float mean = sumSquares / static_cast<float>(cfg.dim);
-        const float rms = SqrtF(mean + cfg.epsilon);
+        const float invRms = 1.0f / SqrtF(mean + cfg.epsilon);
         for (int32_t i = 0; i < cfg.dim; ++i) {
-            const float u = ToFloat(x.GetValue(rowBase + i)) + ToFloat(residual.GetValue(rowBase + i));
-            const float value = (u / rms) * ToFloat(gamma.GetValue(i)) + ToFloat(bias.GetValue(i));
+            const float u = AddNativeU<T>(x.GetValue(rowBase + i), residual.GetValue(rowBase + i));
+            const float value = u * invRms * ToFloat(gamma.GetValue(i)) + ToFloat(bias.GetValue(i));
             output.SetValue(rowBase + i, FromFloat<T>(value));
         }
     }

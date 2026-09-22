@@ -1,6 +1,6 @@
 {
   "candidate": "G001",
-  "revision": "V002",
+  "revision": "V003",
   "architecture": "Fresh One-Read / Resident-Y",
   "source": "phase4/workspaces/G001/src/add_rms_norm_bias.cpp",
   "build_file": "phase4/workspaces/G001/CMakeLists.txt",
@@ -34,38 +34,35 @@
   "hot_path": {
     "name": "RunResidentRows",
     "source_reads": "x and residual are consumed once per row",
-    "resident_value": "FP32 u=x+residual remains in one UB row",
+    "resident_value": "FP32 u (native-quantized x+residual) remains in one UB row",
     "accumulator": "FP32",
-    "precision": "all intermediate math FP32; single cast to native dtype at output"
+    "precision": "native-quantize u after FP32 add; RMS/norm/bias all FP32; single cast at output"
   },
   "generic_path": {
     "name": "RunGenericRows",
     "selection": "tiling.mode != 0",
     "coverage": "FP16/BF16/FP32 and all legal rows and D",
-    "precision": "all intermediate math FP32; single cast to native dtype at output"
+    "precision": "same arithmetic chain as hot path"
   },
   "compile": {
     "status": "PASS",
     "device_status": "PASS",
     "submission_status": "PASS",
     "link_status": "PASS",
-    "submission_log": "phase4/workspaces/G001/logs/submission-v002-build.log",
+    "submission_log": "phase4/workspaces/G001/logs/submission-v003-build.log",
     "device_objects_cleaned": true,
     "remote_build_removed": true
   },
-  "v002_changes": {
-    "dtype_mapping": "kernel now uses judge contract 0=FP32,1=FP16,2=BF16 end-to-end; run_kernel passes info.dtype through unchanged",
-    "fp32_intermediate": "u=x+residual and RMS/norm math all FP32; native cast only at output (was quantizing u to native before sum-of-squares)",
-    "bf16_fromfloat": "fixed endian bug that returned low 16 bits instead of BF16 bits 31:16",
-    "resident_row": "resident UB row is FP32 (4*dim bytes) so u is reused without native quantization",
-    "mode_dispatch": "run_kernel selects mode 0 when 4*dim <= 160KiB else generic fallback",
-    "formula": "output = (u / rms) * gamma + bias with rms = sqrt(mean(u*u)+eps)"
+  "v003_changes": {
+    "native_u_quantize": "u = ToFloat(FromFloat<T>(float(x)+float(residual))) so the add matches native-dtype semantics before RMS (golden: quantize input -> FP32 -> cast out)",
+    "invrms_chain": "value = u * invRms * gamma + bias with invRms = 1/sqrt(mean+eps) matching PyTorch x * rsqrt(var+eps) * weight",
+    "formula": "output = u * (1/rms) * gamma + bias with rms = sqrt(mean(u*u)+eps)"
   },
   "submission": {
     "ready": true,
     "cannjudge": false,
     "source": "phase4/workspaces/G001/src/add_rms_norm_bias.cpp",
-    "integration": "G001 Child V002: FP32 intermediate, BF16 cast fix, judge dtype encoding",
-    "runtime_validation": "pending V002 online result"
+    "integration": "G001 Child V003: native u quantize + invRms multiply chain",
+    "runtime_validation": "pending V003 online result"
   }
 }
