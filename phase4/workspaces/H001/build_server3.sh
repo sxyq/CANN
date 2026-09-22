@@ -5,7 +5,7 @@ ROOT=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 BUILD_DIR="${H001_BUILD_DIR:-$ROOT/build}"
 TOOLKIT=/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002
 LOG_DIR="$ROOT/logs"
-LOG_FILE="$LOG_DIR/compile-08.log"
+LOG_FILE="$LOG_DIR/compile-09.log"
 
 mkdir -p "$LOG_DIR"
 rm -rf "$BUILD_DIR"
@@ -20,7 +20,7 @@ fi
 SRC="$ROOT/src/add_rms_norm_bias_kernel.cpp"
 
 {
-  echo "=== H001 V005 build $(date -Iseconds) ==="
+  echo "=== H001 V006 build $(date -Iseconds) ==="
   echo "BUILD_DIR=$BUILD_DIR"
   echo "TOOLKIT=$TOOLKIT"
   echo
