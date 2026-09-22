@@ -1,0 +1,20 @@
+# MIX-A-V002 compile on cann-server3
+# Target: Ascend910B3 / dav-2201 / CANN 8.5.0.alpha002 / bisheng
+# Path: /home/data4t2/lelinfeng/phase4-workspaces/MIX-A
+#
+# CONFIGURE     RC=0  (configure-v002-server3.log)
+# DEVICE        RC=0  (compile-v002-device-server3.log)
+#   MIX-A-V002-device.cpp.o 130240 B
+# SUBMISSION    RC=0  (compile-v002-submission-server3.log)
+#   compile_adapter.cpp.o 130240 B
+# FULL LINK     RC=0  ld.lld -m aicorelinux -Ttext=0 ... -static
+#   MIX-A-V002-device.alink 130576 B
+#   MIX-A-V002-submission.alink 130568 B
+#   symbols: add_rms_norm_bias_custom<float|half|bfloat16_t>
+#
+# ONLINE_READY source: MIX-A-V002-submission.asc
+#
+# V002 delta vs V001: ProcessNarrowMidFast reduce now uses
+#   Duplicate(sum,0,8); ReduceSum<float,true>; vector mean/eps/sqrt
+# matching A001-V017. V001 used plain ReduceSum then V ops on dest (wrong
+# for isReuseSource=false) which produced T04 WA 55% via stale invRms.
