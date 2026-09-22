@@ -63,4 +63,11 @@ Ascend 910B3 / DAV_2201 / `--npu-arch=dav-2201` / CANN 8.5.0.alpha002 on cann-se
 
 | Rev | Change | Compile | Notes |
 |---|---|---|---|
-| V001 | mid multi-row batch + resident params + batch ReduceSum + TQue depth 2 | device/submission/full PASS | first MID-X revision; enough coverage for 15 cases |
+| V001 | mid multi-row batch + resident params + batch ReduceSum + TQue depth 2 | device/submission/full PASS | Online 2/15. Mid speed real (T04 14.11 vs champ 18.79, T07 34.67 vs 52). WA classes: ~75% (T02/T03/T09/T11/T13), 4-13% tail/mean, T15 RE. |
+| V002 | correctness: aligned ReduceSum slot0 + host/device invRms; DataCopyPad rightPadding in bytes; CAST_RINT out; mid domain D<=4096 + 25% UB headroom; generic single-block tile 256 | device/submission/full PASS | Target 15/15 then keep mid wins. |
+
+## V002 root-cause notes (from V001 online)
+
+1. ~75% WA — `ReduceSum` dest was `sumSq[r]` (float-stride, breaks 8-slot/32B alignment). V002 always reduces into `scalar[0]`.
+2. 4-13% WA — pad/mean. V002 `rightPadding` is 32B remainder **in bytes**; reduce/mean counts are `d_` only.
+3. T15 RE — generic UB / multi-block init. V002 generic launches 1 core, tile 256, early return on other blocks before TPipe.

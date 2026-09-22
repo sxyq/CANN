@@ -2,11 +2,11 @@ cmake_minimum_required(VERSION 3.16)
 
 set(CMAKE_ASC_ARCHITECTURES "dav-2201" CACHE STRING "NPU architecture: dav-2201")
 set(SOC_VERSION "Ascend910B3" CACHE STRING "SoC version")
-set(MIDX_REV "V001" CACHE STRING "Revision folder name")
+set(MIDX_REV "V002" CACHE STRING "Revision folder name")
 
 find_package(ASC REQUIRED)
 
-project(mid_x_v001 LANGUAGES ASC CXX)
+project(mid_x_v002 LANGUAGES ASC CXX)
 
 set(MIDX_SUBMISSION ${CMAKE_CURRENT_SOURCE_DIR}/${MIDX_REV}/kernel.asc)
 set(MIDX_TYPES ${CMAKE_CURRENT_SOURCE_DIR}/local_types.h)
