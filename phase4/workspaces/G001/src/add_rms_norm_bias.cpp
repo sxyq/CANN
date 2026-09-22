@@ -60,21 +60,10 @@ __aicore__ inline float SqrtF(float x)
     return __builtin_cce_sqrtf(x);
 }
 
-// Golden chain: output = norm + bias where norm = u / rms * gamma is already
-// in native dtype (RMSNorm casts to input dtype).  So the bias add happens
-// AFTER the native cast of the scaled norm, not in one FP32 fused expression.
-template <typename T>
-__aicore__ inline T NormPlusBias(float u, float rms, T gammaV, T biasV)
-{
-    const float scaled = (u / rms) * ToFloat(gammaV);
-    const T normNative = FromFloat<T>(scaled);
-    const float value = ToFloat(normNative) + ToFloat(biasV);
-    return FromFloat<T>(value);
-}
-
 // Hot path (Fresh One-Read / Resident-Y):
 // each x/residual element is consumed once; FP32 u = x + residual stays
 // resident in one UB row and is reused for RMS and for norm + bias.
+// All arithmetic is FP32; one native cast at output.
 template <typename T>
 __aicore__ inline void RunResidentRows(GM_ADDR xAddr, GM_ADDR residualAddr, GM_ADDR gammaAddr, GM_ADDR biasAddr,
     GM_ADDR outputAddr, const TilingData &cfg)
@@ -110,7 +99,11 @@ __aicore__ inline void RunResidentRows(GM_ADDR xAddr, GM_ADDR residualAddr, GM_A
         const float rms = SqrtF(mean + cfg.epsilon);
         for (int32_t i = 0; i < cfg.dim; ++i) {
             const float u = resident.GetValue(i);
-            output.SetValue(rowBase + i, NormPlusBias<T>(u, rms, gamma.GetValue(i), bias.GetValue(i)));
+            // V006 single change vs V002: gamma applied before divide by rms.
+            //   V002: (u / rms) * gamma + bias
+            //   V006: u * gamma / rms + bias
+            const float value = u * ToFloat(gamma.GetValue(i)) / rms + ToFloat(bias.GetValue(i));
+            output.SetValue(rowBase + i, FromFloat<T>(value));
         }
     }
 }
@@ -145,7 +138,8 @@ __aicore__ inline void RunGenericRows(GM_ADDR xAddr, GM_ADDR residualAddr, GM_AD
         const float rms = SqrtF(mean + cfg.epsilon);
         for (int32_t i = 0; i < cfg.dim; ++i) {
             const float u = ToFloat(x.GetValue(rowBase + i)) + ToFloat(residual.GetValue(rowBase + i));
-            output.SetValue(rowBase + i, NormPlusBias<T>(u, rms, gamma.GetValue(i), bias.GetValue(i)));
+            const float value = u * ToFloat(gamma.GetValue(i)) / rms + ToFloat(bias.GetValue(i));
+            output.SetValue(rowBase + i, FromFloat<T>(value));
         }
     }
 }
