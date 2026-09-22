@@ -31,7 +31,7 @@ set(CMAKE_CXX_COMPILER "${BISHENG}" CACHE FILEPATH "Ascend C compiler" FORCE)
 project(r31a_add_rms_norm_bias LANGUAGES CXX)
 
 add_library(r31a_submission OBJECT compile_adapter.cpp)
-add_library(r31a_device OBJECT R31A-V007-device.cpp)
+add_library(r31a_device OBJECT R31A-V008-device.cpp)
 target_include_directories(r31a_submission PRIVATE
     "${ASCENDC_INCLUDE_DIR}"
     "${ASCENDC_INTERNAL_INCLUDE_DIR}"
