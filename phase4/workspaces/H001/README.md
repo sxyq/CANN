@@ -1,9 +1,22 @@
 # H001 AddRmsNormBias
 
-This candidate targets small `D` and high `R` on Ascend910B3/DAV_2201.
+This candidate targets small `D` and high `R` on Ascend910B3/DAV_2201 Vector Core.
 
-- `D <= 1024`: eight rows are staged per tile, gamma and bias stay resident for the whole invocation, and 32-byte-aligned tiles use one padded DMA for multiple rows.
-- `D > 1024`: a one-row chunked fallback handles every legal width without assuming row alignment.
-- FP16, BF16, and FP32 have separate kernel entry points and accumulate the RMS in FP32.
+## Architecture
 
-The only source entry points are in `src/add_rms_norm_bias_kernel.cpp`. `build_server3.sh` is intended to run from a server3 checkout with CANN 8.5.0.alpha002.
+- `D <= 1024`: hot path stages many rows per tile (adaptive, up to 64). Gamma and bias stay resident in FP32 for the whole invocation. 32-byte-aligned tiles use one multi-block `DataCopyPad` for many rows. RMS uses batch scalar accumulation on FP32 (`u = x + residual`) without ReduceSum/queue setup. Normalize uses vector `Muls`/`Mul`/`Add` (vector repeat).
+- `D > 1024`: one-row chunked fallback covers every legal width without assuming row alignment.
+- FP16, BF16, FP32 share one Vector entry `add_rms_norm_bias` with dtype buckets (`0=FP32, 1=FP16, 2=BF16`).
+- BF16 scalar conversion uses `AscendC::ToFloat` / `AscendC::ToBfloat16` (never unsupported backend cast forms). Bulk conversion uses vector `Cast`.
+
+## Submission ABI
+
+`src/add_rms_norm_bias_kernel.cpp` is the submitted source. It must not redefine `TensorInfo` / `TensorGroupInfo`. Local compile uses `src/compile_adapter.hpp` then includes the submission source.
+
+`run_kernel` argument order: x, x_info, residual, residual_info, gamma, gamma_info, bias, bias_info, output, output_info, availableCoreNum, stream, epsilon.
+
+Judge dtype encoding at entry: `0=FP32`, `1=FP16`, `2=BF16`.
+
+## Build
+
+`build_server3.sh` on `cann-server3` (CANN 8.5.0.alpha002) runs device compile, submission compile, and full link. Log: `logs/compile-04.log`.
