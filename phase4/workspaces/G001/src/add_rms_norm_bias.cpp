@@ -87,23 +87,35 @@ __aicore__ inline void RunResidentRows(GM_ADDR xAddr, GM_ADDR residualAddr, GM_A
     const uint64_t cores = static_cast<uint64_t>(AscendC::GetBlockNum());
     for (uint64_t row = core; row < static_cast<uint64_t>(cfg.rows); row += cores) {
         const uint64_t rowBase = row * static_cast<uint64_t>(cfg.dim);
-        float sumSquares = 0.0f;
 
+        // V008 single change vs V002: pairwise (binary-counter) summation of
+        // u*u instead of a single sequential accumulator.  O(log D) rounding
+        // vs O(D) — matches vectorised golden reductions more closely.
+        float partial[32] = {0.0f};
         for (int32_t i = 0; i < cfg.dim; ++i) {
             const float u = ToFloat(x.GetValue(rowBase + i)) + ToFloat(residual.GetValue(rowBase + i));
             resident.SetValue(i, u);
-            sumSquares += u * u;
+            float val = u * u;
+            unsigned n = static_cast<unsigned>(i);
+            int k = 0;
+            while (n & 1u) {
+                val = partial[k] + val;
+                partial[k] = 0.0f;
+                n >>= 1;
+                ++k;
+            }
+            partial[k] = val;
+        }
+        float sumSquares = 0.0f;
+        for (int k = 31; k >= 0; --k) {
+            sumSquares += partial[k];
         }
 
         const float mean = sumSquares / static_cast<float>(cfg.dim);
         const float rms = SqrtF(mean + cfg.epsilon);
         for (int32_t i = 0; i < cfg.dim; ++i) {
             const float u = resident.GetValue(i);
-            // V007 single change vs V002: cast u/rms (O(1) normalized) to native
-            // before *gamma.  V002: T(u/rms * gamma + bias).
-            //                     V007: T(T(u/rms) * gamma + bias).
-            const T normNative = FromFloat<T>(u / rms);
-            const float value = ToFloat(normNative) * ToFloat(gamma.GetValue(i)) + ToFloat(bias.GetValue(i));
+            const float value = (u / rms) * ToFloat(gamma.GetValue(i)) + ToFloat(bias.GetValue(i));
             output.SetValue(rowBase + i, FromFloat<T>(value));
         }
     }
@@ -130,17 +142,29 @@ __aicore__ inline void RunGenericRows(GM_ADDR xAddr, GM_ADDR residualAddr, GM_AD
     const uint64_t cores = static_cast<uint64_t>(AscendC::GetBlockNum());
     for (uint64_t row = core; row < static_cast<uint64_t>(cfg.rows); row += cores) {
         const uint64_t rowBase = row * static_cast<uint64_t>(cfg.dim);
-        float sumSquares = 0.0f;
+        float partial[32] = {0.0f};
         for (int32_t i = 0; i < cfg.dim; ++i) {
             const float u = ToFloat(x.GetValue(rowBase + i)) + ToFloat(residual.GetValue(rowBase + i));
-            sumSquares += u * u;
+            float val = u * u;
+            unsigned n = static_cast<unsigned>(i);
+            int k = 0;
+            while (n & 1u) {
+                val = partial[k] + val;
+                partial[k] = 0.0f;
+                n >>= 1;
+                ++k;
+            }
+            partial[k] = val;
+        }
+        float sumSquares = 0.0f;
+        for (int k = 31; k >= 0; --k) {
+            sumSquares += partial[k];
         }
         const float mean = sumSquares / static_cast<float>(cfg.dim);
         const float rms = SqrtF(mean + cfg.epsilon);
         for (int32_t i = 0; i < cfg.dim; ++i) {
             const float u = ToFloat(x.GetValue(rowBase + i)) + ToFloat(residual.GetValue(rowBase + i));
-            const T normNative = FromFloat<T>(u / rms);
-            const float value = ToFloat(normNative) * ToFloat(gamma.GetValue(i)) + ToFloat(bias.GetValue(i));
+            const float value = (u / rms) * ToFloat(gamma.GetValue(i)) + ToFloat(bias.GetValue(i));
             output.SetValue(rowBase + i, FromFloat<T>(value));
         }
     }
