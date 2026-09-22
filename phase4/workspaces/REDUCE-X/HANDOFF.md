@@ -1,36 +1,32 @@
-# REDUCE-X V001 HANDOFF
+# REDUCE-X V002 HANDOFF
 
 ROUTE: REDUCE-X
-REVISION: V001
-HYPOTHESIS: Multi-row simultaneous ReduceSum plus vector-side Rsqrt/Brcb scale removes the per-row V/S handoff (SyncVToS + GetValue) from the hot path. Large-D uses hierarchical two-pass reduce; generic fallback keeps the shared safe idiom for full 15-case coverage.
-CHANGED: Fresh reduction-centric kernel. Batched multi-row ReduceSum into packed sum[B]. Zero-scalar scale via Brcb 8-wide inv block + 8-wide tiled Mul (0 GetValue). Hierarchical chunked sum(u*u) for D>8192 with vector-side inv. Epilogue fusion u*inv*gamma+bias. Rsqrt multiplier instead of Sqrt+Div. Private generic fallback with 1 GetValue per row.
+REVISION: V002
+HYPOTHESIS: V001 100% WA + T03 RE was Brcb workspace overflow (Brcb writes 8x32B=256B per repeat into a 32B scratch), plus ReduceSum dst 8B misalignment on odd batch slots. Fixing workspace size + alignment restores Brcb zero-VS numerics; tiny shapes use GetValue golden to lock 15/15.
+CHANGED: (1) Brcb dest workspace sized to 64 floats / 256B. (2) ReduceSum dst slots stride-2 for 8B alignment. (3) GetValue golden path for D<=256 or tiny batches (T01/T02/T03 class): ReduceSum + SyncVToS + GetValue + Muls. (4) Zero-VS Brcb+tiled-Mul batch path for larger hot rows. (5) Hierarchical two-pass kept for D>8192. (6) Dedicated 512B work + 8KiB reduce tmp.
 COMPILE: device compile PASS; submission compile PASS; full link PASS (cann-server3, Ascend910B3, dav-2201, CANN 8.5.0.alpha002)
 SOURCE: /Users/sunyiyang/Desktop/Project/cann/phase4/workspaces/REDUCE-X/submission.asc
 COMPILE_LOG: /Users/sunyiyang/Desktop/Project/cann/phase4/workspaces/REDUCE-X/compile.log
-CLEANUP: none required this round; remote /tmp/reduce_x holds build cache only
+CLEANUP: none required this round
 ONLINE_READY: yes
-EXPECTED_AFFECTED_CASES: all 15 (full domain coverage via hot + wide + fallback)
-REDUCTION_DESIGN: multi-row ReduceSum -> packed sum[B] -> vector Rsqrt -> Brcb 8-wide inv -> tiled Mul scale; wide path hierarchical chunk Add + final ReduceSum; fallback ReduceSum+GetValue after SyncVToS
-V_S_HANDOFF_COUNT_PER_ROW: 0 on hot and wide paths; 1 on generic fallback
+EXPECTED_AFFECTED_CASES: all 15 (T01/T02/T03 via golden; remaining via fixed Brcb batch + hierarchical + fallback)
+REDUCTION_DESIGN: multi-row ReduceSum into 8B-aligned sum[2i]; golden = GetValue+Muls; zero-VS = Brcb 256B work -> Rsqrt inv8 -> 8-wide tiled Mul; wide = hierarchical chunk Add + final ReduceSum
+V_S_HANDOFF_COUNT_PER_ROW: 0 on zero-VS batch and wide; 1 on golden/fallback (tiny)
+
+## Root cause (V001 -> V002)
+
+| Bug | Effect | Fix |
+|-----|--------|-----|
+| Brcb scratch 32B but writes 256B | 100% WA, UB corruption, T03 RE | work buffer 64 floats |
+| ReduceSum dst at odd float slots | misaligned reduce, wrong sum | sum[2*i] stride |
+| Tiny-shape Brcb association untested | T01/T02 WA | GetValue golden for D<=256 |
 
 ## Preflight
 
-- 首行 `#include <cmath>` PASS
-- 末行 `}` PASS
-- `extern "C" void run_kernel` PASS
-- `__global__ __vector__` PASS
-- 无 DataCopyPadExtParams 聚合初始化 PASS
-- SHA-256: 9617dd041122c6d1f83862d1eba2cbb2af1ebc5759cbe773adfcc1f06ec055bb
-- 行数 542 / 字节 17972
-
-## Portable mechanisms
-
-1. Multi-row ReduceSum into packed sum[B] before any scalar use
-2. Brcb 8-wide inv block + 8-wide tiled Mul as zero-GetValue scale
-3. Rsqrt-as-multiplier epilogue (no Div-by-sqrt)
-4. Hierarchical chunk + final ReduceSum when D > single-tile residency
-5. Batch amortize SyncVToS when a scalar fallback is required
+- 5/5 template checks PASS
+- SHA-256: 0419b9a47fba2f998ac1bc16bb969a245747b4cbb90c59968b064b6b45ea4fc8
+- 行数 612 / 字节 20711
 
 ## Next experiment
 
-Wait for online 15-point data. If WA on large-D tails, inspect chunk ReduceSum scratch lifetime. If latency high on small-D, raise B and overlap MTE with reduce (TQue depth 2 is reserved but not yet double-buffered in V001).
+After online 15/15: switch tiny shapes from golden to fixed Brcb and re-measure V/S win; overlap MTE with reduce (TQue depth 2).

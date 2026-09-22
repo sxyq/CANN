@@ -33,3 +33,5 @@ hot path.
 ## Changed
 
 V001 first reduction-centric kernel. Fresh design. No historical compute reuse.
+V002 fix Brcb 256B workspace overflow + ReduceSum 8B alignment; GetValue golden
+for tiny rows; zero-VS Brcb for larger hot batches; hierarchical wide path kept.
