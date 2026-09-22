@@ -30,8 +30,8 @@ set(BISHENG
 set(CMAKE_CXX_COMPILER "${BISHENG}" CACHE FILEPATH "Ascend C compiler" FORCE)
 project(r31a_add_rms_norm_bias LANGUAGES CXX)
 
-add_library(r31a_submission OBJECT compile_adapter.asc)
-set_source_files_properties(compile_adapter.asc PROPERTIES LANGUAGE CXX)
+add_library(r31a_submission OBJECT compile_adapter.cpp)
+add_library(r31a_device OBJECT R31A-V003-device.cpp)
 target_include_directories(r31a_submission PRIVATE
     "${ASCENDC_INCLUDE_DIR}"
     "${ASCENDC_INTERNAL_INCLUDE_DIR}"
@@ -53,4 +53,26 @@ target_compile_options(r31a_submission PRIVATE
     "--npu-arch=${CCE_AICORE_ARCH}"
     "--npu-soc=${SOC_VERSION}"
     "-std=c++17")
+target_include_directories(r31a_device PRIVATE
+    "${ASCENDC_INCLUDE_DIR}"
+    "${ASCENDC_INTERNAL_INCLUDE_DIR}"
+    "${ASCENDC_IMPL_INCLUDE_DIR}"
+    "${ASCENDC_ROOT_INCLUDE_DIR}"
+    "${ASCENDC_ASC_ROOT_DIR}"
+    "${ASCENDC_PUBLIC_INCLUDE_DIR}"
+    "${ASCENDC_PUBLIC_BASIC_INCLUDE_DIR}"
+    "${ASCENDC_PUBLIC_INTERFACE_INCLUDE_DIR}"
+    "${HCC_TOOLCHAIN}/aarch64-target-linux-gnu/include"
+    "${HCC_TOOLCHAIN}/aarch64-target-linux-gnu/include/c++/7.3.0"
+    "${HCC_TOOLCHAIN}/aarch64-target-linux-gnu/include/c++/7.3.0/aarch64-target-linux-gnu"
+    "${HCC_TOOLCHAIN}/aarch64-target-linux-gnu/include/c++/7.3.0/backward")
+target_compile_options(r31a_device PRIVATE
+    "--cce-aicore-lang"
+    "--cce-aicore-arch=dav-c220-vec"
+    "--cce-aicore-only"
+    "--cce-auto-sync"
+    "--npu-arch=${CCE_AICORE_ARCH}"
+    "--npu-soc=${SOC_VERSION}"
+    "-std=c++17")
 set_target_properties(r31a_submission PROPERTIES POSITION_INDEPENDENT_CODE OFF)
+set_target_properties(r31a_device PROPERTIES POSITION_INDEPENDENT_CODE OFF)
