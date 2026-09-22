@@ -2,11 +2,11 @@ cmake_minimum_required(VERSION 3.16)
 
 set(CMAKE_ASC_ARCHITECTURES "dav-2201" CACHE STRING "NPU architecture: dav-2201")
 set(SOC_VERSION "Ascend910B3" CACHE STRING "SoC version")
-set(I001_REV "V006" CACHE STRING "Revision folder name")
+set(I001_REV "V007" CACHE STRING "Revision folder name")
 
 find_package(ASC REQUIRED)
 
-project(i001_v006 LANGUAGES ASC CXX)
+project(i001_v007 LANGUAGES ASC CXX)
 
 set(I001_SUBMISSION ${CMAKE_CURRENT_SOURCE_DIR}/${I001_REV}/kernel.asc)
 set(I001_TYPES ${CMAKE_CURRENT_SOURCE_DIR}/V001/judge_types.hpp)

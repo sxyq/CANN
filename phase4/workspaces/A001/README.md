@@ -201,3 +201,13 @@ real buffer set so the extra slot cannot overflow UB.
 
 The V017 target was compiled on `cann-server3` with CANN `8.5.0.alpha002` and
 `dav-2201`. Logs are `build/configure-v017.log` and `build/compile-v017.log`.
+
+## V018 focused update
+
+V018 is V017 with one host-only change: D-split for wide few-row shapes
+(`D >= 8192 && R <= 2 * cores`) even when `R >= cores`, using up to 4 column
+groups. Kernel is byte-identical to V017 (double-buffer and single-GetValue
+stay as validated there).
+
+The V018 target was compiled on `cann-server3` with CANN `8.5.0.alpha002` and
+`dav-2201`. Logs are `build/configure-v018.log` and `build/compile-v018.log`.

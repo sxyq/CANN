@@ -486,3 +486,23 @@ non-32B-aligned D and the final partial chunk.
 - Server compile target: Ascend910B3 / `dav-2201` with CANN
   `8.5.0.alpha002`; target `a001_submission_v017` passed. Logs:
   `build/configure-v017.log` and `build/compile-v017.log`.
+
+## A001-V018 focused update
+
+- Evidence: V017 is 15/15 and official score `36.41` (new fresh best).
+  Double-buffer is online-validated (T05 did not RE). T14 is still `50050 us`
+  (r=13.3). The kernel `colParallel > 1` path is already exercised whenever
+  `R < cores` and is part of the green V017 run.
+- Hypothesis: enable D-split for wide few-row shapes (`D >= 8192 && R <= 2
+  * cores`) even when `R >= cores`, so those rows also get column sharding.
+  This is a host-only change; the kernel is byte-identical to V017.
+- Change: `submission_v018.asc` is V017 with one host delta. When `wideFew`,
+  `rowParallel` is `cores / min(4, cores)` so up to 4 column groups engage;
+  the existing col-split / scratch-fit logic is unchanged. FastKernel,
+  ResidentKernel, double-buffer, and single-GetValue are byte-identical to
+  V017.
+- Scope: FP32 `u` / RMS math, dtype dispatch, legal D range, `run_kernel` ABI,
+  and the judge type no-redefinition rule are unchanged.
+- Server compile target: Ascend910B3 / `dav-2201` with CANN
+  `8.5.0.alpha002`; target `a001_submission_v018` passed. Logs:
+  `build/configure-v018.log` and `build/compile-v018.log`.
