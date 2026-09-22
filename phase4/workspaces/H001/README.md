@@ -2,32 +2,24 @@
 
 Small-D / high-R on Ascend910B3/DAV_2201 Vector Core.
 
-## V004: fix wide-D WA (full-row RMS)
+## Status
 
-V003 was 9/15 online (T05/T09/T11/T12/T13/T15 ~99.9% error). Those are D>1024.
-`ProcessWide` computed RMS from each 1024-chunk only while still dividing by full `1/D`.
+- V004: **15/15 online**, score 12.54 (baseline). Small-D T01–T04 are the specialist zone (r≈3–11).
+- V005: hot-path speed only. Keep 15/15. Wide path unchanged (correct, slow OK).
 
-V004 two-pass wide path:
+## V005 hot-path changes
 
-1. accumulate `sum(u*u)` over **all** chunks of the row
-2. `invRms = 1/sqrt(sum/D + eps)` once per row
-3. second pass: `(u * invRms * gamma + bias)` per chunk and store
+1. **Fused `ApplyRow`**: one Cast/Add of `u=x+res`, then ReduceSum(`u*u`) → invRms → Muls/Mul/Add on the same `u` (was two Cast/Add passes).
+2. **ReduceSum** for RMS sum instead of scalar GetValue loop.
+3. **Double-buffer** x/residual TQue depth 2: prefetch next tile while computing current.
+4. **Larger tiles**: budget 140KiB / 5 buffers, max 128 rows/tile (was 64 / 3).
 
-Also GM row offsets are `uint64_t` (`row * cols` no longer wraps on large R*D).
+Wide D>1024 two-pass full-row RMS from V004 kept.
 
-Hot path D<=1024 (T01–T04,T06–T08,T10,T14) unchanged.
+## Template (npu_kernel_dev / B001 shape)
 
-## Template (npu_kernel_dev, B001 shape)
-
-`src/add_rms_norm_bias_kernel.cpp` → platform `kernel.asc`.
-
-- first `#include <cmath>`, second `"kernel_operator.h"`, last `}`
-- no nested namespace / `type_traits` / `PipeBarrier` / `__builtin_sqrtf` / `.template Get`
-- TQue EnQue/DeQue; `AscendC::Sqrt`+`Duplicate`; field-assigned DataCopy params
-- three `__global__ __vector__` entries; `run_kernel` with GM tiling + aclrtMalloc
-- dtype 0=FP32, 1=FP16, 2=BF16 (27→BF16)
+`src/add_rms_norm_bias_kernel.cpp` → `kernel.asc`. First `#include <cmath>`, TQue EnQue/DeQue, three `__global__ __vector__` entries, GM tiling + `run_kernel` ABI. dtype 0=FP32, 1=FP16, 2=BF16.
 
 ## Build
 
-`build_server3.sh` on cann-server3. Log: `logs/compile-07.log`.
-Local-only: `src/compile_adapter.hpp`, `src/mock_judge_local.cpp`.
+`build_server3.sh` on cann-server3. Log: `logs/compile-08.log`.

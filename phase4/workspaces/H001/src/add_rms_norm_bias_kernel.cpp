@@ -17,8 +17,8 @@ struct H001TilingData {
 
 constexpr uint32_t H001_BYTES_PER_BLOCK = 32;
 constexpr uint32_t H001_HOT_D = 1024;
-constexpr uint32_t H001_MAX_HOT_ROWS = 64;
-constexpr uint32_t H001_HOT_BUDGET = 96 * 1024;
+constexpr uint32_t H001_MAX_HOT_ROWS = 128;
+constexpr uint32_t H001_HOT_BUDGET = 140 * 1024;
 constexpr uint32_t H001_CHUNK_D = 1024;
 constexpr int32_t H001_DTYPE_F32 = 0;
 constexpr int32_t H001_DTYPE_F16 = 1;
@@ -75,8 +75,9 @@ public:
         }
         const uint32_t tileBytes = (tiling_->mode == 1) ? (hotRows_ * rowPadBytes) : (H001_CHUNK_D * sizeof(T));
         const uint32_t workElems = (tiling_->mode == 1) ? colsPad : H001_CHUNK_D;
-        pipe_->InitBuffer(xQueue_, 1, tileBytes);
-        pipe_->InitBuffer(residualQueue_, 1, tileBytes);
+        const uint32_t queueDepth = (tiling_->mode == 1) ? 2U : 1U;
+        pipe_->InitBuffer(xQueue_, queueDepth, tileBytes);
+        pipe_->InitBuffer(residualQueue_, queueDepth, tileBytes);
         pipe_->InitBuffer(outputQueue_, 1, tileBytes);
         pipe_->InitBuffer(gammaQueue_, 1, workElems * sizeof(T));
         pipe_->InitBuffer(biasQueue_, 1, workElems * sizeof(T));
@@ -84,6 +85,8 @@ public:
         pipe_->InitBuffer(biasF32Buf_, workElems * sizeof(float));
         pipe_->InitBuffer(workABuf_, workElems * sizeof(float));
         pipe_->InitBuffer(workBBuf_, workElems * sizeof(float));
+        pipe_->InitBuffer(partialBuf_, 32);
+        pipe_->InitBuffer(reduceTmpBuf_, 8192);
     }
 
     __aicore__ inline void Process()
@@ -200,15 +203,14 @@ private:
     {
         AscendC::LocalTensor<float> x32 = workABuf_.Get<float>();
         AscendC::LocalTensor<float> r32 = workBBuf_.Get<float>();
+        AscendC::LocalTensor<float> partial = partialBuf_.Get<float>();
+        AscendC::LocalTensor<float> reduceTmp = reduceTmpBuf_.Get<float>();
         H001TypeOps<T>::ToFloat(x32, xRow, count);
         H001TypeOps<T>::ToFloat(r32, residualRow, count);
         AscendC::Add(x32, x32, r32, static_cast<int32_t>(count));
-        float sum = 0.0f;
-        for (uint32_t col = 0; col < count; ++col) {
-            const float u = x32.GetValue(col);
-            sum += u * u;
-        }
-        return sum;
+        AscendC::Mul(r32, x32, x32, static_cast<int32_t>(count));
+        AscendC::ReduceSum<float, true>(partial, r32, reduceTmp, static_cast<int32_t>(count));
+        return partial.GetValue(0);
     }
 
     __aicore__ inline void ApplyInvRms(AscendC::LocalTensor<T> outputRow, AscendC::LocalTensor<T> xRow,
@@ -230,12 +232,23 @@ private:
         AscendC::LocalTensor<T> residualRow, AscendC::LocalTensor<float> gammaF32,
         AscendC::LocalTensor<float> biasF32, uint32_t count)
     {
-        const float sum = ChunkSumSquares(xRow, residualRow, count);
+        AscendC::LocalTensor<float> x32 = workABuf_.Get<float>();
         AscendC::LocalTensor<float> r32 = workBBuf_.Get<float>();
+        AscendC::LocalTensor<float> partial = partialBuf_.Get<float>();
+        AscendC::LocalTensor<float> reduceTmp = reduceTmpBuf_.Get<float>();
+        H001TypeOps<T>::ToFloat(x32, xRow, count);
+        H001TypeOps<T>::ToFloat(r32, residualRow, count);
+        AscendC::Add(x32, x32, r32, static_cast<int32_t>(count));
+        AscendC::Mul(r32, x32, x32, static_cast<int32_t>(count));
+        AscendC::ReduceSum<float, true>(partial, r32, reduceTmp, static_cast<int32_t>(count));
+        const float sum = partial.GetValue(0);
         AscendC::Duplicate(r32, sum * tiling_->colsInv + tiling_->epsilon, 1);
         AscendC::Sqrt<float>(r32, r32, 1);
         const float invRms = 1.0f / r32.GetValue(0);
-        ApplyInvRms(outputRow, xRow, residualRow, gammaF32, biasF32, invRms, count);
+        AscendC::Muls(x32, x32, invRms, static_cast<int32_t>(count));
+        AscendC::Mul(x32, x32, gammaF32, static_cast<int32_t>(count));
+        AscendC::Add(x32, x32, biasF32, static_cast<int32_t>(count));
+        H001TypeOps<T>::FromFloat(outputRow, x32, count);
     }
 
     __aicore__ inline void ProcessHot(uint32_t rowBegin, uint32_t rowEnd)
@@ -244,19 +257,37 @@ private:
         AscendC::LocalTensor<float> gammaF32 = gammaF32Buf_.Get<float>();
         AscendC::LocalTensor<float> biasF32 = biasF32Buf_.Get<float>();
         const uint32_t rowBytes = tiling_->cols * static_cast<uint32_t>(sizeof(T));
-        for (uint32_t tileBegin = rowBegin; tileBegin < rowEnd; tileBegin += hotRows_) {
-            uint32_t tileRows = rowEnd - tileBegin;
-            if (tileRows > hotRows_) {
-                tileRows = hotRows_;
-            }
-            AscendC::LocalTensor<T> xAlloc = xQueue_.AllocTensor<T>();
-            AscendC::LocalTensor<T> residualAlloc = residualQueue_.AllocTensor<T>();
-            CopyRows(xAlloc, xGm_, tileBegin, tileRows, rowBytes);
-            CopyRows(residualAlloc, residualGm_, tileBegin, tileRows, rowBytes);
-            xQueue_.EnQue(xAlloc);
-            residualQueue_.EnQue(residualAlloc);
+        uint32_t tileBegin = rowBegin;
+        uint32_t tileRows = rowEnd - tileBegin;
+        if (tileRows > hotRows_) {
+            tileRows = hotRows_;
+        }
+        AscendC::LocalTensor<T> xAlloc = xQueue_.AllocTensor<T>();
+        AscendC::LocalTensor<T> residualAlloc = residualQueue_.AllocTensor<T>();
+        CopyRows(xAlloc, xGm_, tileBegin, tileRows, rowBytes);
+        CopyRows(residualAlloc, residualGm_, tileBegin, tileRows, rowBytes);
+        xQueue_.EnQue(xAlloc);
+        residualQueue_.EnQue(residualAlloc);
+
+        while (tileBegin < rowEnd) {
             AscendC::LocalTensor<T> x = xQueue_.DeQue<T>();
             AscendC::LocalTensor<T> residual = residualQueue_.DeQue<T>();
+
+            uint32_t nextBegin = tileBegin + tileRows;
+            uint32_t nextRows = 0;
+            if (nextBegin < rowEnd) {
+                nextRows = rowEnd - nextBegin;
+                if (nextRows > hotRows_) {
+                    nextRows = hotRows_;
+                }
+                AscendC::LocalTensor<T> xNext = xQueue_.AllocTensor<T>();
+                AscendC::LocalTensor<T> residualNext = residualQueue_.AllocTensor<T>();
+                CopyRows(xNext, xGm_, nextBegin, nextRows, rowBytes);
+                CopyRows(residualNext, residualGm_, nextBegin, nextRows, rowBytes);
+                xQueue_.EnQue(xNext);
+                residualQueue_.EnQue(residualNext);
+            }
+
             AscendC::LocalTensor<T> outputAlloc = outputQueue_.AllocTensor<T>();
             for (uint32_t row = 0; row < tileRows; ++row) {
                 ApplyRow(outputAlloc[row * tiling_->colsPad], x[row * tiling_->colsPad],
@@ -268,6 +299,9 @@ private:
             outputQueue_.FreeTensor(output);
             xQueue_.FreeTensor(x);
             residualQueue_.FreeTensor(residual);
+
+            tileBegin = nextBegin;
+            tileRows = nextRows;
         }
     }
 
@@ -357,6 +391,8 @@ private:
     AscendC::TBuf<AscendC::TPosition::VECCALC> biasF32Buf_;
     AscendC::TBuf<AscendC::TPosition::VECCALC> workABuf_;
     AscendC::TBuf<AscendC::TPosition::VECCALC> workBBuf_;
+    AscendC::TBuf<AscendC::TPosition::VECCALC> partialBuf_;
+    AscendC::TBuf<AscendC::TPosition::VECCALC> reduceTmpBuf_;
     uint32_t hotRows_;
 };
 
@@ -448,7 +484,7 @@ extern "C" void run_kernel(
     tiling.colsInv = 1.0f / static_cast<float>(cols);
 
     const uint32_t rowPadBytes = tiling.colsPad * elemBytes;
-    uint32_t maxRows = H001_HOT_BUDGET / (3U * rowPadBytes);
+    uint32_t maxRows = H001_HOT_BUDGET / (5U * rowPadBytes);
     if (maxRows < 1U) {
         maxRows = 1U;
     }
