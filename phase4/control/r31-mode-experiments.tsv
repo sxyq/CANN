@@ -1,2 +1,4 @@
 revision	changed_mode	dispatch_condition	affected_testcases	before_time	after_time	score_before	score_after	conclusion
-R31A-V003	W-F32-BATCH	FP32 wide batch, tile 6112->5760	likely T07/T14/T15	T14 16479.72 us; T15 9673.69 us	T14 16672.80 us; T15 9671.60 us	43.87	43.16	Regression; retain V002 as Champion
+R31A-V003	W-F32-BATCH	FP32 D>8192 and floor(R/blockCount)>=2; tile 6112->5760	UNOBSERVED_MODE_HITS	T07 61.02; T09 71.68; T14 16479.72; T15 9673.69 us	T07 60.95; T09 75.28; T14 16672.80; T15 9671.60 us	43.87	43.16	Aggregate regression; timing deltas do not establish testcase shapes; retain V002
+R31A-V004	W-F32-BATCH	Same computation as V003; comments differ	NONE_NEW			43.87		Not submitted; normalized computation is identical to V003
+R31B-V002	WIDE-FULL-Y-CACHE	FP32 8193<=D<=16384 and floor(R/blockCount)>=2	UNOBSERVED_MODE_HITS	T04 21.20; T07 61.00; T09 73.08; T14 16607.27; T15 9656.48 us	T04 18.97; T07 60.65; T09 73.12; T14 16495.76; T15 9663.10 us	43.19	43.78	15/15; T04 improved 10.52%; T07/T14 changed less than 1%; shape-to-mode mapping remains unknown
