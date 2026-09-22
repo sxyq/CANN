@@ -358,3 +358,32 @@ non-32B-aligned D and the final partial chunk.
 - Server compile target: Ascend910B3 / `dav-2201` with CANN
   `8.5.0.alpha002`; target `a001_submission_v012` passed. Logs:
   `build/configure-v012.log` and `build/compile-v012.log`.
+
+## A001-V013 focused update
+
+- Evidence: V012 is 15/15 and official score `34.38` (new fresh best). T01/T02
+  improved via FastKernel (3.97 / 3.80). T04 is `89.58` (r=13.4) even though
+  V011 FastKernel ran it at `18.08` and V010 Resident at `23.66` — V012 reloads
+  gamma/bias from GM on every row. T14 remains the dominant case at `53243 us`
+  (r=14.2, 82% of total). T08 is `205 us` (r=6.8).
+- Hypothesis: (1) FastKernel must load gamma/bias once per core through the
+  param queue and reuse the FP32 buffers across rows — per-row GM reload is
+  what regressed T04. (2) The `R*D <= 262144` gate is what keeps T04/T06/T07
+  off FastKernel or on a slow variant; the real limit is the UB footprint.
+  (3) ResidentKernel can shed per-row scalar syncs and overlap MTE for T14/T08.
+- Change: `submission_v013.asc`:
+  1. FastKernel `LoadFloatParamsOnce` runs at the start of Process through the
+     single-slot param queue (Alloc/EnQue/DeQue/Free) into FP32 `gammaF_`/`biasF_`
+     and is reused for every row. No per-row param GM traffic.
+  2. FastKernel element gate raised to `R * D <= 2097152`; the host still
+     requires `D * (4 * elemSize + 20) + 512 <= 184 KiB` so one-shot D cannot
+     overflow UB (the V011 T05 class of failure).
+  3. ResidentKernel keeps the V010 full-u / 2D-split / output-tail partial
+     reduce, and adds a single `GetValue` per row (`BuildUKeepSum` +
+     `InvRmsFromSum`) plus 2-slot x/res queues with issue-ahead of tile i+1
+     before consuming tile i.
+- Scope: FP32 `u` / RMS math, dtype dispatch, legal D range, `run_kernel` ABI,
+  and the judge type no-redefinition rule are unchanged.
+- Server compile target: Ascend910B3 / `dav-2201` with CANN
+  `8.5.0.alpha002`; target `a001_submission_v013` passed. Logs:
+  `build/configure-v013.log` and `build/compile-v013.log`.

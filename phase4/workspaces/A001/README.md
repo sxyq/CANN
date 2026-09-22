@@ -153,3 +153,13 @@ the V010 score while keeping the small-case speed that T02/T03/T04 showed.
 
 The V012 target was compiled on `cann-server3` with CANN `8.5.0.alpha002` and
 `dav-2201`. Logs are `build/configure-v012.log` and `build/compile-v012.log`.
+
+## V013 focused update
+
+V013 keeps the V012 split and fixes the T04 param-reload regression: FastKernel
+loads gamma/bias once per core through the param queue and reuses them, and the
+element gate is widened to 2M with the UB footprint still enforced. ResidentKernel
+adds one GetValue per row and double-buffered x/res loads for T14/T08.
+
+The V013 target was compiled on `cann-server3` with CANN `8.5.0.alpha002` and
+`dav-2201`. Logs are `build/configure-v013.log` and `build/compile-v013.log`.
