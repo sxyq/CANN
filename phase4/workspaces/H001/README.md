@@ -1,26 +1,25 @@
 # H001 AddRmsNormBias
 
-This candidate targets small `D` and high `R` on Ascend910B3/DAV_2201 Vector Core.
+Small-D / high-R on Ascend910B3/DAV_2201 Vector Core.
 
-## V002 online-compile fixes (npu_kernel_dev)
+## V003 (online-compile aligned to B001 npu_kernel_dev shape)
 
-Submitted file is `src/add_rms_norm_bias_kernel.cpp` (platform entry `kernel.asc`):
+Submitted body: `src/add_rms_norm_bias_kernel.cpp` (platform entry `kernel.asc`).
 
-- First line `#include <cmath>`, second `#include "kernel_operator.h"`, last line `}`
-- No `TensorInfo` / `TensorGroupInfo` redefinition; no `<type_traits>` / `std::is_same`
-- BF16 via vector `Cast` only (`H001Convert`); no scalar `static_cast` bf16 forms
-- `DataCopyExtParams` / `DataCopyPadExtParams` default-constructed then field-assigned (no brace init)
-- `run_kernel` ABI: x/x_info … output/output_info, availableCoreNum, stream, epsilon
-- Entry: `extern "C" __global__ __vector__ void add_rms_norm_bias`
-- `PipeBarrier<PIPE_*>` unqualified; `AscendC::GetBlockIdx`; `__builtin_sqrtf`
+Matches the 15/15 B001 template skeleton (shape only, H001 compute kept):
 
-## Architecture
+- first `#include <cmath>`, second `#include "kernel_operator.h"`, last `}`
+- no anonymous / nested namespace, no `<type_traits>`, no `std::is_same`, no `if constexpr`
+- no `PipeBarrier`, no `__builtin_sqrtf`, no `.template Get`
+- `TQue` EnQue/DeQue sync; `AscendC::Sqrt` / `Duplicate` for RMS
+- field-assigned `DataCopyExtParams` / `DataCopyPadExtParams`
+- three `extern "C" __global__ __vector__` entries (fp16/bf16/fp32)
+- `run_kernel` B001 shape: tiling on GM via `aclrtMalloc`/`Memcpy`/`Free`, `aclrtSynchronizeStream`
+- dtype map 0=FP32, 1=FP16, 2=BF16 (27 accepted as BF16)
 
-- `D <= 1024`: adaptive multi-row tile (up to 64), resident FP32 gamma/bias, batch scalar RMS, vector Muls/Mul/Add
-- `D > 1024`: one-row chunked fallback
-- dtype buckets: 0=FP32, 1=FP16, 2=BF16
+H001 architecture: D<=1024 multi-row tile + resident FP32 gamma/bias + batch scalar RMS; D>1024 chunked fallback.
 
 ## Build
 
-`build_server3.sh` (cann-server3) runs device + submission (mock judge.asc include) + full link. Log: `logs/compile-05.log`.
-Local-only: `src/compile_adapter.hpp`, `src/mock_judge_local.cpp`.
+`build_server3.sh` on cann-server3: device + mock-judge submission + full link. Log: `logs/compile-06.log`.
+Local-only helpers: `src/compile_adapter.hpp`, `src/mock_judge_local.cpp`.

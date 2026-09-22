@@ -1,9 +1,13 @@
-// Local compile helper only. The online submission must NOT redefine these types.
-// Judge notes: dtype encoding 0=FP32, 1=FP16, 2=BF16.
+// Local compile helper only. Must match judge TensorInfo / TensorGroupInfo layout.
 #pragma once
 
 typedef signed long i001_i64;
 typedef signed int i001_i32;
+
+#ifndef ACLRT_STREAM_T
+#define ACLRT_STREAM_T
+typedef void* aclrtStream;
+#endif
 
 struct TensorInfo {
     const i001_i64* shape;
