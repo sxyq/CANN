@@ -143,3 +143,13 @@ x/res loads. Target: recover T01/T02/T05 and cut T14/T08 per-row overhead.
 
 The V011 target was compiled on `cann-server3` with CANN `8.5.0.alpha002` and
 `dav-2201`. Logs are `build/configure-v011.log` and `build/compile-v011.log`.
+
+## V012 focused update
+
+V012 repairs the V011 FastKernel (queue-synced gamma/bias, UB size check that
+falls back when `D` is too wide for one-shot buffers) and uses the V010
+ResidentKernel as the safe path for every other shape. Goal: 15/15 at or above
+the V010 score while keeping the small-case speed that T02/T03/T04 showed.
+
+The V012 target was compiled on `cann-server3` with CANN `8.5.0.alpha002` and
+`dav-2201`. Logs are `build/configure-v012.log` and `build/compile-v012.log`.

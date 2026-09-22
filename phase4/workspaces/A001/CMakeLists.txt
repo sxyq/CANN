@@ -61,6 +61,9 @@ add_library(a001_submission_v010 OBJECT
 add_library(a001_submission_v011 OBJECT
     submission_v011.asc)
 
+add_library(a001_submission_v012 OBJECT
+    submission_v012.asc)
+
 target_include_directories(add_rms_norm_bias_kernel PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/op_kernel)
 
@@ -131,4 +134,10 @@ target_include_directories(a001_submission_v011 PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_compile_options(a001_submission_v011 PRIVATE
+    $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=dav-2201>)
+
+target_include_directories(a001_submission_v012 PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR})
+
+target_compile_options(a001_submission_v012 PRIVATE
     $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=dav-2201>)

@@ -329,3 +329,32 @@ non-32B-aligned D and the final partial chunk.
 - Server compile target: Ascend910B3 / `dav-2201` with CANN
   `8.5.0.alpha002`; target `a001_submission_v011` passed. Logs:
   `build/configure-v011.log` and `build/compile-v011.log`.
+
+## A001-V012 focused update
+
+- Evidence: V011 online run was 3/15. T01 was 100% WA on the FastKernel path,
+  T05 RE crashed and skipped T06-T15. T02/T03/T04 that did run were faster
+  than V010 (3.25 / 6.55 / 18.08 vs 7.98 / 9.30 / 23.66), so the FastKernel
+  split is sound when correct. Fresh best remains V010 `33.25`.
+- Hypothesis: (1) V011 FastKernel loaded gamma/bias into TBufs at Init through
+  raw MTE without queue sync, so the epilogue could read stale parameters —
+  that matches T01 100% WA. (2) FastKernel's one-shot D buffers
+  (`4 * D * sizeof(T) + 5 * D * 4`) overflow the 184 KiB UB near `D = 8192`,
+  which matches the T05 runtime error. (3) V011's untested ResidentKernel
+  changes should not ship again until FastKernel is correct.
+- Change: `submission_v012.asc` is a correctness repair plus a conservative
+  fallback:
+  1. FastKernel loads gamma/bias per row through the single-slot param queue
+     with Alloc/EnQue/DeQue/Free, the same sync pattern V008 validated. No
+     Init-time TBuf writes. One x/res read, u kept in UB, one GetValue.
+  2. Host selects FastKernel only when `R * D <= 262144` and the exact buffer
+     footprint `D * (4 * elemSize + 20) + 512` fits the 184 KiB budget.
+     Anything else falls through.
+  3. Fallback is the V010 `ResidentKernel` (full-u, optional param cache, 2D
+     split, output-tail partial reduce) — the known 15/15 / 33.25 path — not
+     the V011 rewrite.
+- Scope: FP32 `u` / RMS math, dtype dispatch, legal D range, `run_kernel` ABI,
+  and the judge type no-redefinition rule are unchanged.
+- Server compile target: Ascend910B3 / `dav-2201` with CANN
+  `8.5.0.alpha002`; target `a001_submission_v012` passed. Logs:
+  `build/configure-v012.log` and `build/compile-v012.log`.
