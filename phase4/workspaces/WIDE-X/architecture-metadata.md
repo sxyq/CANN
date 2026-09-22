@@ -1,46 +1,33 @@
-# WIDE-X V001 — Hierarchical UB Reduction
+# WIDE-X V002 — Hierarchical UB Reduction (RE-hardened)
 
 ## Route
 
-Non-D-slice wide-D specialist. Fresh workspace. Target Ascend 910B3 / DAV_2201.
+Non-D-slice wide-D specialist. Target Ascend 910B3 / DAV_2201.
 
 ## Hypothesis
 
 Wide-D AddRmsNormBias is bound by sum-of-squares reduction latency and by
 re-reading x/residual for the normalize stage. D-slice across cores does not
-pay for T14-class (few-row, wide D) because cross-core combine and SyncAll
-overhead dominate.
+pay for T14-class (few-row, wide D).
 
-V001 explores **hierarchical UB reduction** with single-core full/near-full `u`
-residency:
+V002 keeps **hierarchical UB reduction** with single-core full/near-full `u`
+residency, and fixes V001 online T02 RE:
 
-1. Each vector core owns whole rows (row-block split). No D-slice, no SyncAll.
-2. `u = x + residual` is kept resident in UB as FP32 when the row fits the
-   184 KiB budget (true for all legal D ≤ 32768 after fixed buffers).
-3. `sum(u*u)` is a two-level UB tree: leaf `ReduceSum` over 256-wide groups into
-   an 8B-aligned leaf slot, then running `Add` combine.
-4. `inv_rms = Rsqrt(mean(u*u)+eps)` via one-element vector Rsqrt.
-5. Epilogue `y = u * inv_rms * gamma + bias` streams gamma/bias tiles —
-   x/residual are not re-read on the hot path.
-6. Generic stream fallback recomputes `u` per leaf when residency does not apply.
-7. dtype-specific compute: FP32 native; FP16/BF16 upcast to FP32, round on store.
+1. Row-block ownership only. No D-slice, no SyncAll.
+2. `u = x + residual` resident in UB as FP32 when the row fits 184 KiB.
+3. `sum(u*u)`: 64-wide leaf `ReduceSum` (8B-aligned `leafBuf`) → running `Add`.
+4. `inv_rms = 1/Sqrt(mean+eps)` + one Newton polish.
+5. Epilogue streams gamma/bias; FP32 resident path stores the row once.
+6. TQue EnQue/DeQue with full FreeTensor; FetchEventID (not shared event 0).
+7. Level-2 ops use explicit `int32_t` counts and `kVecChunk=64`.
+8. dtype-specific: FP32 native; FP16/BF16 upcast, `CAST_ROUND` on store.
 
-## Difference from R31 D-slice thinking
+## Difference from R31 D-slice
 
-- No D-stripe / no more-cores / no slice-count sweep.
-- No cross-core partial GM combine and no global SyncAll.
-- Reduction hierarchy is inside one core's UB, not across cores.
+No D-stripe / more-cores / slice-count sweep. Reduction hierarchy is in one
+core's UB, not across cores.
 
 ## Files
 
-- `submission.asc` — judge source (`#include <cmath>` first, `run_kernel`,
-  `extern "C" __global__ __vector__ wide_x_hier_ub`, no TensorInfo redefine).
-- `local_types.h` / `device_shim.asc` / `submission_shim.asc` — local compile only.
-- `main.asc` — full-link harness (rank-3 FP16 D=2048 smoke).
-- `CMakeLists.txt` — device / submission / full-link targets.
-- `scripts/build_server3.sh` — three-stage compile on cann-server3.
-- `scripts/gen_data_pure.py` / `scripts/verify_pure.py` — smoke golden without numpy.
+See HANDOFF_V002.md.
 
-## Smoke verification
-
-Rank-3 FP16 `(2,3,2048)` on 910B3: `max_abs=0.0078125`, `bad=0` vs golden.

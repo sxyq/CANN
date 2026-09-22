@@ -1,4 +1,4 @@
-# WIDE-X V001 Handoff
+# WIDE-X V001 Handoff (superseded by V002)
 
 ROUTE: WIDE-X (non-D-slice wide-D, hierarchical UB reduction)
 REVISION: V001
