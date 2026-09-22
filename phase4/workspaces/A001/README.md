@@ -173,3 +173,12 @@ the fallback. Target 15/15 at or above `34.38`.
 
 The V014 target was compiled on `cann-server3` with CANN `8.5.0.alpha002` and
 `dav-2201`. Logs are `build/configure-v014.log` and `build/compile-v014.log`.
+
+## V015 focused update
+
+V015 keeps the V014 FastKernel untouched and attacks T14 on ResidentKernel:
+one GetValue per row, double-buffered x/res with issue-ahead, and D-split for
+wide-D few-row shapes (`D >= 8192 && R <= 2 * cores`).
+
+The V015 target was compiled on `cann-server3` with CANN `8.5.0.alpha002` and
+`dav-2201`. Logs are `build/configure-v015.log` and `build/compile-v015.log`.

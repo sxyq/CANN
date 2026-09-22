@@ -412,3 +412,30 @@ non-32B-aligned D and the final partial chunk.
 - Server compile target: Ascend910B3 / `dav-2201` with CANN
   `8.5.0.alpha002`; target `a001_submission_v014` passed. Logs:
   `build/configure-v014.log` and `build/compile-v014.log`.
+
+## A001-V015 focused update
+
+- Evidence: V014 is 15/15 and official score `35.89` (new fresh best). T14 is
+  still `53260 us` (r=14.2, 82% of total) and is unchanged since V010, so the
+  remaining T14 cost is Resident per-row overhead, not the FastKernel domain.
+  FastKernel is now online-stable under V014's tight gate.
+- Hypothesis: Resident pays two `GetValue` pipeline drains per row and fully
+  serialized MTE against vector work on long rows. A single post-reduce
+  `GetValue`, double-buffered x/res with issue-ahead of tile i+1, and D-split
+  for wide-D few-row shapes (`D >= 8192 && R <= 2 * cores`) should cut T14
+  without touching the proven FastKernel path.
+- Change: `submission_v015.asc` keeps FastKernel byte-stable and changes only
+  ResidentKernel plus the host split:
+  1. `BuildUKeepSum` leaves the reduction in a tensor; `InvRmsFromSum` is the
+     only `GetValue` per row. The D-split path writes partials with
+     `DataCopyPad` of the sum tensor and reduces them in UB before that same
+     single `GetValue`.
+  2. x/res queues are 2-slot; tile i+1 is issued before tile i is consumed.
+  3. Host enables D-split when `D >= 8192 && R <= 2 * cores` even if
+     `R >= cores`, targeting few-row wide-D. Large-R row-split is unchanged.
+- Scope: FP32 `u` / RMS math, dtype dispatch, legal D range, `run_kernel` ABI,
+  and the judge type no-redefinition rule are unchanged. FastKernel gate and
+  param-once behavior match V014 exactly.
+- Server compile target: Ascend910B3 / `dav-2201` with CANN
+  `8.5.0.alpha002`; target `a001_submission_v015` passed. Logs:
+  `build/configure-v015.log` and `build/compile-v015.log`.

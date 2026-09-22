@@ -1,15 +1,20 @@
-# I001 V004 Architecture Metadata
+# I001 V005 Architecture Metadata
 
 candidate: I001
-revision: V004
-main_change: aligned DataCopyPad (rightPadding), ReduceSum<float,true> with 8KiB tmp + separate dst, exact-n store, tile=256
+revision: V005
+main_change: wide-D modes — retained-y, large-tile two-pass, few-row D-split. ABI = V003/V004 (15/15).
 
-fixes vs V003:
-- T02 99% WA: unaligned D copies (rightPadding=0 on unaligned blockLen)
-- T11 91% WA: same unaligned path on larger D
-- T13 RE: ReduceSum sharedTmp was 128B overlapping dst; now 8KiB separate + partial dst
+modes (host dispatch in run_kernel):
+- mode 1 retained-y: cols*4 + tile workspace <= 140KiB. One GM read pair; u kept in UB.
+- mode 0 two-pass stream: large tile 2048; two-pass sum then normalize.
+- mode 2 D-split: rows<=4 && cols>=4096 && retain too big. Cores stripe D, 2x SyncAll, aclrtMalloc ws.
 
-ABI: unchanged from V003 (online compile+run).
-body: two-pass row-parallel, workN=align(n, 32/sizeof(T)), store exactly n.
+correctness carried from V004:
+- DataCopyPad rightPadding align(n, 32/sizeof(T)); store exact n
+- ReduceSum<float,true> with 8KiB separate tmp
 
-UB: 3*TQue(256*sizeof(T)) + 2*256*4 + 64 + 8192 ≈ 20KiB float / less for half.
+UB:
+- row modes: 3*2048*sizeof(T) + 2*2048*4 + 64 + 8KiB [+ D*4 if retained]
+- split: same without full u row
+
+expected wins: T13 (retained/stream), T14/T15 (D-split if few-row wide, else large-tile + retained).
