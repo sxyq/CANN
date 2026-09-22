@@ -387,3 +387,28 @@ non-32B-aligned D and the final partial chunk.
 - Server compile target: Ascend910B3 / `dav-2201` with CANN
   `8.5.0.alpha002`; target `a001_submission_v013` passed. Logs:
   `build/configure-v013.log` and `build/compile-v013.log`.
+
+## A001-V014 focused update
+
+- Evidence: V013 T01-T04 were excellent (3.93 / 3.49 / 7.17 / 19.22, all pass)
+  with FastKernel + param-once, but T05 RE'd again once the element gate rose
+  to 2M — the same crash class as V011. V012 (gate 262144 + UB check) is the
+  known 15/15 / `34.38` baseline and its T05 (`19.92`) matches V010 Resident
+  (`19.80`), so T05 was never on FastKernel there.
+- Hypothesis: keep the V013 param-once FastKernel (T01-T04 wins are real) but
+  do not let uncertain shapes enter it. Any size check that is not clearly
+  safe must fall back to the V012/V010 ResidentKernel. Do not ship V013
+  Resident double-buffer / single-GetValue until FastKernel is stable online.
+- Change: `submission_v014.asc` is V012 plus two FastKernel deltas only:
+  1. `LoadFloatParamsOnce` at the start of Process (queue-synced, FP32
+     `gammaF_`/`biasF_` reused across rows). ResidentKernel is the V012 copy
+     of V010, unchanged.
+  2. Host gate is `D <= 4096 && R * D <= 262144 && fastUb <= 160000`, with
+     `fastUb = D * (4 * elemSize + 20) + 512`. The 160000 cap leaves headroom
+     for TPipe/queue overhead that a pure InitBuffer sum misses. Everything
+     else uses ResidentKernel.
+- Scope: FP32 `u` / RMS math, dtype dispatch, legal D range, `run_kernel` ABI,
+  and the judge type no-redefinition rule are unchanged.
+- Server compile target: Ascend910B3 / `dav-2201` with CANN
+  `8.5.0.alpha002`; target `a001_submission_v014` passed. Logs:
+  `build/configure-v014.log` and `build/compile-v014.log`.

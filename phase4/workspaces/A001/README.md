@@ -163,3 +163,13 @@ adds one GetValue per row and double-buffered x/res loads for T14/T08.
 
 The V013 target was compiled on `cann-server3` with CANN `8.5.0.alpha002` and
 `dav-2201`. Logs are `build/configure-v013.log` and `build/compile-v013.log`.
+
+## V014 focused update
+
+V014 keeps the V013 param-once FastKernel (T01-T04 speed) but tightens the
+gate to `D <= 4096 && R * D <= 262144 && fastUb <= 160000` so T05-class shapes
+cannot enter FastKernel, and uses the V012/V010 ResidentKernel unchanged as
+the fallback. Target 15/15 at or above `34.38`.
+
+The V014 target was compiled on `cann-server3` with CANN `8.5.0.alpha002` and
+`dav-2201`. Logs are `build/configure-v014.log` and `build/compile-v014.log`.
