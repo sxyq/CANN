@@ -107,12 +107,14 @@ PROJECT
     ├── MIX-A-V003 44.69
     ├── WIDE-X-FRESH4
     ├── MODE-X-R015C
-    └── EPI-X-FRESH
+    └── EXT-ASCEND-X (NOT_STARTED)
 ```
 
 R31A / R31B 是固定 EXPLOIT，不得写进 4 条 EXPLORE 方向。详见 `phase4/control/next-round-plan.md`。
 
-## 当前流水线（本轮不启 Agent、不启 Kernel 实验）
+EPI-X-FRESH is PARKED; retain its source and local result. The six Route Agents, isolated worktrees, branches, and contexts await a session that can create them. Do not treat shared source-seed directories or previous Agent IDs as current ownership.
+
+## 当前阶段（同步完成，等待 Agent-capable session）
 
 ```text
 ✅ Source Recovery
@@ -122,8 +124,10 @@ R31A / R31B 是固定 EXPLOIT，不得写进 4 条 EXPLORE 方向。详见 `phas
 ✅ Full Review
 ✅ Local/Online Calibration
 ✅ Champion Review
-✅ Route Classification Fixed
-🔵 Commit / Push  →  WAIT FOR REVIEW
+✅ Six-route state and parent rules synchronized
+🔵 Create six isolated Route Agents / worktrees / branches / contexts
+
+No Kernel experiment, server3 run, or CANNJudge submission is part of this synchronization.
 ```
 
 ## Revision evidence format

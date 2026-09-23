@@ -156,4 +156,10 @@ PROJECT
 
 ## Next
 
-See `phase4/control/next-round-plan.md`. WAIT FOR REVIEW before agents.
+The route classification above records the state at the time of this review. See the current six-slot state in `phase4/control/next-round-plan.md` and `phase4/control/scheduler.tsv`.
+
+## Current Slot State Addendum
+
+The active lineup is now R31B and R31A as the two Exploit routes, plus MIX-A, WIDE-X-FRESH4, MODE-X-R015C, and EXT-ASCEND-X as the four Explore routes. EXT-ASCEND-X is ACTIVE / NOT_STARTED. EPI-X-FRESH is PARKED; its source and local result remain retained.
+
+This is a state synchronization only. No Agent, isolated worktree, branch, or context was created in this turn. The historical results and local evidence above are unchanged.

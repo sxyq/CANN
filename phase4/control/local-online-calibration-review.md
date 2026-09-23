@@ -48,7 +48,9 @@ Proxy quality:
 | H001 | V008 | 15/15 | 29.04 | PASS (server3) | NOT_RUN | NO | NO | NO | COMPILE_ONLY | — | NO_COMPARABLE_LOCAL_DATA | NO_DATA |
 | I001 | V004 | 15/15 | 15.53 | PASS (server3) | NOT_RUN | NO | NO | NO | COMPILE_ONLY | — | NO_COMPARABLE_LOCAL_DATA | NO_DATA |
 
-## Active local slots (not online Bests)
+## Local slot evidence at review time
+
+The rows below preserve evidence as recorded for this calibration review. Current slot ownership is in `scheduler.tsv`: EPI-X-FRESH is PARKED and EXT-ASCEND-X is ACTIVE / NOT_STARTED. This synchronization does not change local measurements or correctness records.
 
 | route | local_compile | local_correctness | latency | decision | evidence_class | note |
 |---|---|---|---|---|---|---|
