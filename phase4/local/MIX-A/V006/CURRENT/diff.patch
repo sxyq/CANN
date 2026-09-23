@@ -1,0 +1,52 @@
+--- a/MIX-A/V003/submission.asc
++++ b/MIX-A/V006/submission.asc
+@@ -2,20 +2,18 @@
+ #include <cstdint>
+ #include "kernel_operator.h"
+ /*
+- * MIX-A-V003  (R31A-V010 x A001-V017 FastKernel)
++ * MIX-A-V006  (R31A-V010 x A001-V017 FastKernel)
+  *
+- * Base: MIX-A-V002.  V002 still T04 WA 53.8% after ReduceSum<float,true>.
++ * Base: MIX-A-V003 (MIX-A best 15/15, 44.69).  One delta: ultra-tight T01
++ * gate only — FP32, localRows==1, D<=128, in-gate → ProcessNarrowMidFast.
+  *
+- * V003 fix: multi-row xBuf_/resBuf_ reuse race + multi-row gate.
+- * ProcessNarrowMidFast let FromFloat write xBuf_ (V) then the next row's
+- * Load overwrite it (MTE2) with no V_MTE2 release.  A001 FreeTensor covers
+- * this; the flag transplant did not.  Single-row cores (T03 class) never
+- * raced and passed; multi-row (T04 class) corrupted rows at ~54% WA.
+- * FastKernel now SyncVToMTE2 before every Load pair, AND runs only for
+- * localRows==1.  Multi-row mid stays on original N-MID-OVERLAP so T04 is
+- * correct by construction (prefer 15/15).  T07 out-of-gate unchanged.
++ * V004/V005 showed any wider tiny/SmallFp32 Fast has collateral:
++ * V004 SmallFp32 multi-row Fast hurt T03/T09; V005 tiny any-occupancy Fast
++ * still hit T03's multi-row D<=128 cores (5.04→5.97) and T11.  T01's win
++ * (5.34→4.4x) needs to be taken without those regimes.
+  *
+- * MODE_REPLACED: ProcessNarrowMidOverlap in-gate single-row subset only
++ * MODE_REPLACED: FP32 single-row tiny D<=128 in-gate only
++ *                (plus V003's ProcessNarrowMidOverlap in-gate single-row)
+  * DONOR_SOURCE:  A001-V017 FastKernel
+  *
+  * Gate (A001 proven domain): D<=4096 && R*D<=262144 && fastUb<=160000.
+@@ -197,6 +195,19 @@
+             if (rowWidth == static_cast<uint64_t>(kCacheElems) && localRows > 1) {
+                 ProcessFp32FullRowOutputPipelined(beginRow, localRows, invRowWidth, epsilon);
+                 return;
++            }
++            // T01-only ultra-tight Fast: FP32 single-row tiny D<=128 in-gate.
++            // Multi-row tiny / SmallFp32 stay on ContiguousBatched (T03 safe).
++            if (localRows == 1 && rowWidth <= static_cast<uint64_t>(kMidRowMinWidth)) {
++                const uint64_t fastUb =
++                    rowWidth * (static_cast<uint64_t>(sizeof(T)) * 4ULL + 20ULL) + 512ULL;
++                const bool inGate = (rowWidth <= 262144ULL) &&
++                    (rowCount <= 262144ULL / rowWidth) &&
++                    (fastUb <= 160000ULL);
++                if (inGate) {
++                    ProcessNarrowMidFast(beginRow, localRows, rowWidth, invRowWidth, epsilon);
++                    return;
++                }
+             }
+             // For aligned small rows, x/residual for a short row group are
+             // contiguous in GM.  One batch DMA and vector add/square remove

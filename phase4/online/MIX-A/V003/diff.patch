@@ -1,0 +1,63 @@
+--- a/MIX-A/V002/submission.asc
++++ b/MIX-A/V003/submission.asc
+@@ -2,19 +2,20 @@
+ #include <cstdint>
+ #include "kernel_operator.h"
+ /*
+- * MIX-A-V002  (R31A-V010 x A001-V017 FastKernel)
++ * MIX-A-V003  (R31A-V010 x A001-V017 FastKernel)
+  *
+- * Base: MIX-A-V001 (R31A-V010 with ProcessNarrowMidOverlap in-gate subset
+- * swapped to A001 FastKernel).  V001 was 14/15 calc 44.35 with T04 WA 55%.
++ * Base: MIX-A-V002.  V002 still T04 WA 53.8% after ReduceSum<float,true>.
+  *
+- * V002 fix: ProcessNarrowMidFast used plain ReduceSum then immediately did
+- * Muls/Adds/Sqrt on its dest.  That V-on-dest sequence is only valid with
+- * A001's ReduceSum<float,true> (isReuseSource).  Plain ReduceSum leaves the
+- * result behind a V/S boundary, so invRms was computed from stale sum[0] and
+- * T04 output scaled wrong (~55% error).  Now matches A001: Duplicate 8 zeros,
+- * ReduceSum<float,true>, vector mean/eps/sqrt, single GetValue.
++ * V003 fix: multi-row xBuf_/resBuf_ reuse race + multi-row gate.
++ * ProcessNarrowMidFast let FromFloat write xBuf_ (V) then the next row's
++ * Load overwrite it (MTE2) with no V_MTE2 release.  A001 FreeTensor covers
++ * this; the flag transplant did not.  Single-row cores (T03 class) never
++ * raced and passed; multi-row (T04 class) corrupted rows at ~54% WA.
++ * FastKernel now SyncVToMTE2 before every Load pair, AND runs only for
++ * localRows==1.  Multi-row mid stays on original N-MID-OVERLAP so T04 is
++ * correct by construction (prefer 15/15).  T07 out-of-gate unchanged.
+  *
+- * MODE_REPLACED: ProcessNarrowMidOverlap (N-MID-OVERLAP narrow/mid bucket)
++ * MODE_REPLACED: ProcessNarrowMidOverlap in-gate single-row subset only
+  * DONOR_SOURCE:  A001-V017 FastKernel
+  *
+  * Gate (A001 proven domain): D<=4096 && R*D<=262144 && fastUb<=160000.
+@@ -249,14 +250,15 @@
+                 return;
+             }
+         }
+-        // Mid-size single-tile rows (T07 bucket).  In-gate subset uses the
+-        // A001 FastKernel path (param-once, single GetValue, full-u one-pass).
+-        // Out-of-gate keeps N-MID-OVERLAP so T07-class mid rows are unchanged.
++        // Mid-size single-tile rows (T07 bucket).  FastKernel only for
++        // in-gate single-row cores (proven on T03-class).  Multi-row mid
++        // (T04-class) and out-of-gate keep original N-MID-OVERLAP.
+         if (rowWidth > static_cast<uint64_t>(kMidRowMinWidth) &&
+             rowWidth <= static_cast<uint64_t>(kTileElems)) {
+             const uint64_t fastUb =
+                 rowWidth * (static_cast<uint64_t>(sizeof(T)) * 4ULL + 20ULL) + 512ULL;
+-            const bool useMidFast = (rowWidth <= 262144ULL) &&
++            const bool useMidFast = (localRows == 1) &&
++                (rowWidth <= 262144ULL) &&
+                 (rowCount <= 262144ULL / rowWidth) &&
+                 (fastUb <= 160000ULL);
+             if (useMidFast) {
+@@ -1160,6 +1162,9 @@
+             const uint64_t rowOffset = row * rowWidth;
+             AscendC::LocalTensor<T> xLocal = xBuf_.Get<T>();
+             AscendC::LocalTensor<T> residualLocal = residualBuf_.Get<T>();
++            // Prior row FromFloat wrote xBuf_ on V and Add/ToFloat read
++            // residualBuf_ on V.  Release both to MTE2 before the next Load.
++            SyncVToMTE2();
+             Load(xLocal, xGm_, rowOffset, valid);
+             Load(residualLocal, residualGm_, rowOffset, valid);
+             SyncMTE2ToV();
