@@ -65,3 +65,54 @@ The remaining Git worktree count is 1. The six scheduler-ACTIVE route directorie
 - The six ACTIVE route directories retained identical SHA256 manifests before and after archive creation: 227 files, `ACTIVE_SOURCE_DIGESTS_UNCHANGED=YES`.
 - No Active Candidate file was staged or changed by this cleanup.
 - No performance experiment, server3 benchmark, CANNJudge action, profiling, new Kernel revision, or agent dispatch was performed.
+
+## SECOND-PASS WORKTREE DELETION
+
+This section records the second pass using the current Git state and current scheduler. It supersedes the first-pass route labels where the current scheduler differs.
+
+### SECOND-PASS INVENTORY
+
+- Local HEAD: `4ba313099c7a903660f212943c13958010a1eca5`
+- Remote HEAD: `4ba313099c7a903660f212943c13958010a1eca5`
+- Initial second-pass worktree count: 1
+- `git worktree list --porcelain` returned only `/Users/sunyiyang/Desktop/Project/cann` on `exp/independent-breadth`.
+- The six current ACTIVE route rows are source-seed directories inside the main worktree; scheduler records their isolated worktrees as `NOT_CREATED`.
+
+### DELETED WORKTREES
+
+None. No secondary Git worktree was present, so `git worktree remove` was not run.
+
+### DELETED BRANCHES
+
+None. No worktree was removed and no local branch met the branch cleanup condition.
+
+### KEEP_ACTIVE
+
+- Main worktree `/Users/sunyiyang/Desktop/Project/cann` remains retained.
+- Scheduler-ACTIVE source-seed directories retained in place: `R31B`, `R31A`, `MIX-A`, `WIDE-X-FRESH4`, `MODE-X-R015C`, and `EXT-ASCEND-X` (the last is `NOT_CREATED` in the workspace tree).
+- No Active Candidate file was edited, staged, or removed by this second pass.
+
+### DIRTY_UNRESOLVED
+
+None as a separate Git worktree. The main worktree still contains the pre-existing dirty Candidate files and untracked route source; they remain untouched. The PARKED dirty source snapshots from the first pass remain available and passed the second-pass archive validation.
+
+### ARCHIVE VALIDATION
+
+| Route | Source match | SHA256 manifest | Diff | Metadata |
+| --- | --- | --- | --- | --- |
+| `EPI-X` | YES | PASS | present | valid JSON |
+| `MODE-X` | YES | PASS | present | valid JSON |
+| `WIDE-X` | YES | PASS | present | valid JSON |
+| `WIDE-X-FRESH` | YES | PASS | present | valid JSON |
+
+### REMAINING WORKTREES
+
+Final second-pass count: 1
+
+```text
+worktree /Users/sunyiyang/Desktop/Project/cann
+HEAD 4ba313099c7a903660f212943c13958010a1eca5
+branch refs/heads/exp/independent-breadth
+```
+
+The local and remote target branches are equal. No scheduler file, Active Candidate, Kernel source, or other policy file was changed in this second pass. No performance experiment, server3 run, CANNJudge action, or Agent dispatch was performed.
