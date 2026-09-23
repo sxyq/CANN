@@ -1,0 +1,140 @@
+--- a/A001/V016/submission.asc
++++ b/A001/V017/submission.asc
+@@ -6,6 +6,7 @@
+ namespace a001_submission {
+ 
+ constexpr uint32_t kSingleBuffer = 1;
++constexpr uint32_t kDoubleBuffer = 2;
+ constexpr uint32_t kUbBudget = 188416;
+ 
+ __aicore__ inline uint32_t A001AlignBytes(uint64_t bytes)
+@@ -262,8 +263,10 @@
+         if (tile > 4096) {
+             tile = 4096;
+         }
++        // x2 + res2 + out1 + param1 = 6 * tile * sizeof(T)
++        // workA, workB, gammaF, biasF, reduceTmp = 5 * tile * 4
+         const uint64_t peakTile =
+-            static_cast<uint64_t>(sizeof(T)) * 3 + static_cast<uint64_t>(sizeof(float)) * 4;
++            static_cast<uint64_t>(sizeof(T)) * 6 + static_cast<uint64_t>(sizeof(float)) * 5;
+         while (tile > 64 && tile * peakTile > remain) {
+             tile /= 2;
+         }
+@@ -276,8 +279,8 @@
+         tile_ = tile;
+ 
+         pipe_->InitBuffer(uFull_, A001AlignBytes(colsThisCore_ * sizeof(float)));
+-        pipe_->InitBuffer(xQueue_, kSingleBuffer, A001AlignBytes(tile_ * sizeof(T)));
+-        pipe_->InitBuffer(resQueue_, kSingleBuffer, A001AlignBytes(tile_ * sizeof(T)));
++        pipe_->InitBuffer(xQueue_, kDoubleBuffer, A001AlignBytes(tile_ * sizeof(T)));
++        pipe_->InitBuffer(resQueue_, kDoubleBuffer, A001AlignBytes(tile_ * sizeof(T)));
+         pipe_->InitBuffer(outQueue_, kSingleBuffer, A001AlignBytes(tile_ * sizeof(T)));
+         pipe_->InitBuffer(paramQueue_, kSingleBuffer, A001AlignBytes(tile_ * sizeof(T)));
+         pipe_->InitBuffer(workA_, A001AlignBytes(tile_ * sizeof(float)));
+@@ -403,42 +406,67 @@
+         CopyIn(biasCache, bias_, firstCol_, n);
+     }
+ 
++    __aicore__ inline void IssueLoadU(uint64_t gRow, uint64_t col, uint32_t count)
++    {
++        const uint64_t gOffset = gRow * d_ + firstCol_ + col;
++        auto xIn = xQueue_.AllocTensor<T>();
++        CopyIn(xIn, x_, gOffset, count);
++        xQueue_.EnQue(xIn);
++        auto resIn = resQueue_.AllocTensor<T>();
++        CopyIn(resIn, residual_, gOffset, count);
++        resQueue_.EnQue(resIn);
++    }
++
++    __aicore__ inline void ConsumeLoadU(uint64_t col, uint32_t count)
++    {
++        auto xSrc = xQueue_.DeQue<T>();
++        auto resSrc = resQueue_.DeQue<T>();
++        auto workA = workA_.Get<float>();
++        auto workB = workB_.Get<float>();
++        AscendC::LocalTensor<float> uFull = uFull_.Get<float>();
++        AscendC::LocalTensor<float> uTile = uFull[col];
++        ToFloat(uTile, xSrc, count);
++        ToFloat(workA, resSrc, count);
++        AscendC::Add(uTile, uTile, workA, count);
++        xQueue_.FreeTensor(xSrc);
++        resQueue_.FreeTensor(resSrc);
++
++        auto reduceTmp = reduceTmp_.Get<float>();
++        AscendC::Mul(workB, uTile, uTile, count);
++        auto part = rms_.Get<float>();
++        AscendC::Duplicate(part, 0.0f, 8);
++        AscendC::ReduceSum<float, true>(part, workB, reduceTmp, count);
++        auto sum = sum_.Get<float>();
++        AscendC::Add(sum, sum, part, 8);
++    }
++
++    // Double-buffered: issue tile i+1 before consuming tile i.
+     __aicore__ inline void BuildUKeepSum(uint64_t gRow)
+     {
+         auto sum = sum_.Get<float>();
+         AscendC::Duplicate(sum, 0.0f, 8);
+-        AscendC::LocalTensor<float> uFull = uFull_.Get<float>();
+ 
+-        for (uint64_t col = 0; col < colsThisCore_; col += tile_) {
+-            const uint32_t count = static_cast<uint32_t>(
+-                col + tile_ <= colsThisCore_ ? tile_ : colsThisCore_ - col);
+-            const uint64_t gOffset = gRow * d_ + firstCol_ + col;
++        const uint64_t nTiles = (colsThisCore_ + tile_ - 1) / tile_;
++        if (nTiles == 0) {
++            return;
++        }
+ 
+-            auto xIn = xQueue_.AllocTensor<T>();
+-            CopyIn(xIn, x_, gOffset, count);
+-            xQueue_.EnQue(xIn);
+-            auto xSrc = xQueue_.DeQue<T>();
++        uint64_t col = 0;
++        uint32_t count = static_cast<uint32_t>(
++            tile_ <= colsThisCore_ ? tile_ : colsThisCore_);
++        IssueLoadU(gRow, col, count);
+ 
+-            auto resIn = resQueue_.AllocTensor<T>();
+-            CopyIn(resIn, residual_, gOffset, count);
+-            resQueue_.EnQue(resIn);
+-            auto resSrc = resQueue_.DeQue<T>();
+-
+-            auto workA = workA_.Get<float>();
+-            auto workB = workB_.Get<float>();
+-            AscendC::LocalTensor<float> uTile = uFull[col];
+-            ToFloat(uTile, xSrc, count);
+-            ToFloat(workA, resSrc, count);
+-            AscendC::Add(uTile, uTile, workA, count);
+-            xQueue_.FreeTensor(xSrc);
+-            resQueue_.FreeTensor(resSrc);
+-
+-            auto reduceTmp = reduceTmp_.Get<float>();
+-            AscendC::Mul(workB, uTile, uTile, count);
+-            auto part = rms_.Get<float>();
+-            AscendC::Duplicate(part, 0.0f, 8);
+-            AscendC::ReduceSum<float, true>(part, workB, reduceTmp, count);
+-            AscendC::Add(sum, sum, part, 8);
++        for (uint64_t t = 0; t < nTiles; ++t) {
++            const uint64_t nextCol = col + tile_;
++            if (t + 1 < nTiles) {
++                const uint32_t nextCount = static_cast<uint32_t>(
++                    nextCol + tile_ <= colsThisCore_ ? tile_ : colsThisCore_ - nextCol);
++                IssueLoadU(gRow, nextCol, nextCount);
++            }
++            ConsumeLoadU(col, count);
++            col = nextCol;
++            count = static_cast<uint32_t>(
++                col + tile_ <= colsThisCore_ ? tile_ : colsThisCore_ - col);
+         }
+     }
+ 
+@@ -527,7 +555,8 @@
+     float inverseD_ = 1.0f;
+     AscendC::GlobalTensor<T> x_, residual_, gamma_, bias_, output_;
+     AscendC::GlobalTensor<float> partials_;
+-    AscendC::TQue<AscendC::TPosition::VECIN, 1> xQueue_, resQueue_, paramQueue_;
++    AscendC::TQue<AscendC::TPosition::VECIN, 2> xQueue_, resQueue_;
++    AscendC::TQue<AscendC::TPosition::VECIN, 1> paramQueue_;
+     AscendC::TQue<AscendC::TPosition::VECOUT, 1> outQueue_;
+     AscendC::TBuf<AscendC::TPosition::VECCALC> uFull_;
+     AscendC::TBuf<AscendC::TPosition::VECCALC> workA_, workB_;
