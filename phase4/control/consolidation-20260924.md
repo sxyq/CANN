@@ -96,3 +96,4 @@ All six based on canonical HEAD `ae46d7c`.
 | UB-LIVENESS-X | V001 | FAIL | N/A | LOCAL_REJECTED; assign V002 correctness-only |
 
 Shared blocker: persistent root/zhangkaijie VLLM + HBM saturation; agents cannot create clean window alone.
+| UB-LIVENESS-X | V002 | partial improve still FAIL | raw invalid | LOCAL_REJECTED; assign V003 pass1 acc fix |
