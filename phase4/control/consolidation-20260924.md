@@ -81,3 +81,5 @@ All six based on canonical HEAD `ae46d7c`.
 | SCHED-ROWGROUP-X | V001 | PASS | PASS | LOAD_CONTAMINATED; aligned control also moved | NEEDS_ONE_MORE_LOCAL |
 | REDUCE-INVSCALE-X | V001 | PASS | FAIL D>6144 parent partial-align | PARTIAL_CONTAMINATION | LOCAL_REJECTED; assign V002 correctness-only |
 | ALIGN-TAIL-X | V001 | PASS | PASS pair_max_abs=0 | LOAD_CONTAMINATED | NEEDS_ONE_MORE_LOCAL |
+| SCHED-ROWGROUP-X | V001 r2 | PASS | PASS | set1/set2 disagree; aligned control opposite | NEEDS_ONE_MORE_LOCAL; require VLLM stop |
+| ASYNC-TRIPLE-X | V001 | - | - | worker general-1 UnknownError | replacement worker same route |
