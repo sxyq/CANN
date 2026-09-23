@@ -56,3 +56,18 @@ Those historical branch commits are still not ancestors of canonical; they are r
 - DELETE_SAFE worktrees: none
 - ACTIVE_KEEP: all six `cann-sixlane/*` worktrees
 - DIRTY_UNRESOLVED: none blocking second round; canonical dirty PARKED candidates remain untracked by design
+
+## SECOND SIX-LANE CREATED
+
+Container: `/Users/sunyiyang/Desktop/Project/cann-next6/` (not a worktree)
+
+| Route | Branch | Brief |
+|---|---|---|
+| ASYNC-TRIPLE-X | exp/next6-async-triple-x | ROUTE-BRIEF.md |
+| BATCH-RESIDENT-X | exp/next6-batch-resident-x | ROUTE-BRIEF.md |
+| SCHED-ROWGROUP-X | exp/next6-sched-rowgroup-x | ROUTE-BRIEF.md |
+| REDUCE-INVSCALE-X | exp/next6-reduce-invscale-x | ROUTE-BRIEF.md |
+| ALIGN-TAIL-X | exp/next6-align-tail-x | ROUTE-BRIEF.md |
+| UB-LIVENESS-X | exp/next6-ub-liveness-x | ROUTE-BRIEF.md |
+
+All six based on canonical HEAD `ae46d7c`.

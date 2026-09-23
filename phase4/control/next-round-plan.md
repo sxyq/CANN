@@ -1,8 +1,21 @@
 # Six-Lane Execution State
 
-This is the current six-slot handoff. It supersedes older route lists in dated review notes; their measured results remain historical evidence. This synchronization turn changes documentation only: no candidate source, server3 run, local experiment, or CANNJudge submission was performed.
+This file tracks the first-round six-slot handoff. A second independent six-lane EXPLORE round now runs in parallel under `cann-next6/`; see `consolidation-20260924.md` and `scheduler.tsv` rows `NEXT6-*`. First-round measured results remain historical evidence.
 
-## Fixed Slots
+## Second Six-Lane (NEXT6, parallel ACTIVE)
+
+| Slot | Route | Worktree | Branch | Parent | Hypothesis |
+|---:|---|---|---|---|---|
+| N1 | ASYNC-TRIPLE-X | `cann-next6/ASYNC-TRIPLE-X` | `exp/next6-async-triple-x` | R013-derived | add MTE3 store overlap for true MTE2/V/MTE3 triple overlap |
+| N2 | BATCH-RESIDENT-X | `cann-next6/BATCH-RESIDENT-X` | `exp/next6-batch-resident-x` | R014 residency checkpoint | contiguous multi-row batch DMA after gamma/bias residency |
+| N3 | SCHED-ROWGROUP-X | `cann-next6/SCHED-ROWGROUP-X` | `exp/next6-sched-rowgroup-x` | R016 scheduling baseline | add 32B-safe row-group ownership only |
+| N4 | REDUCE-INVSCALE-X | `cann-next6/REDUCE-INVSCALE-X` | `exp/next6-reduce-invscale-x` | R006-derived | add R019 invscale normalization only |
+| N5 | ALIGN-TAIL-X | `cann-next6/ALIGN-TAIL-X` | `exp/next6-align-tail-x` | R009 aligned-copy baseline | add explicit tail specialization only |
+| N6 | UB-LIVENESS-X | `cann-next6/UB-LIVENESS-X` | `exp/next6-ub-liveness-x` | none (fresh) | UB lifetime/alias architecture only |
+
+NEXT6 policy: all EXPLORE; one conceptual donor per revision; local-first; write ONLINE candidates to `online-candidate-pool.tsv` and freeze source; do not fight first Main for CANNJudge ownership.
+
+## Fixed Slots (first round)
 
 | Slot | Lane | Route | Parent | Current route state |
 |---:|---|---|---|---|
