@@ -72,3 +72,16 @@ Local results remain separate from Judge results. Screen locally before selectiv
 Main may use exact Git blobs to recover historical submitted sources and create parent diffs for this evidence migration. This exception does not authorize Route Agents to read unrelated historical or archived implementations. It does not change any recorded score or Candidate computation.
 
 `phase4/champions/current.tsv` indexes the Overall Champion, each Route Best with a valid online result, and active slots that have only local evidence. Champion source paths point to the corresponding online snapshot.
+
+## Judge payload provenance
+
+`EXACT_GIT_BLOB` means the route source bytes were recovered from Git and match the online snapshot. It is **not** proof of the judge compile unit.
+
+Record separately in `source-meta.json`:
+
+- `route_source_status` / `route_source_sha256`
+- `judge_payload_status` (`EXACT_VERIFIED` | `TRANSFORMED_VERIFIED` | `UNVERIFIED` | `MISSING`)
+- `judge_payload_sha256`
+- `judge_payload_generation`
+
+CANNJudge upload puts the source into `files[0].path=kernel.asc`. The judge then compiles a multi-file template whose `main.asc` `#include "kernel.asc"`. Prefer `TRANSFORMED_VERIFIED` when that wrapper is documented. `result.json` `source.sha256` is a submit-client hash of uploaded content, not a judge-returned digest. See `phase4/control/judge-payload-provenance-audit.md`.
