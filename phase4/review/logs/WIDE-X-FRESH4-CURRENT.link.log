@@ -1,0 +1,485 @@
+Consolidate compiler generated dependencies of target submission
+[ 50%] device compile submission.asc
+bisheng: error: cannot compile ASC file and CCE file together.
+[100%] Building CXX object CMakeFiles/submission.dir/src/adapter.cpp.o
+gmake[3]: *** [CMakeFiles/device.dir/build.make:73: device.o] Error 1
+gmake[2]: *** [CMakeFiles/Makefile2:85: CMakeFiles/device.dir/all] Error 2
+gmake[2]: *** Waiting for unfinished jobs....
+In file included from /home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/adapter.cpp:1:
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:109:41: error: no matching function for call to 'sqrtf'
+            const float invRms = 1.0f / sqrtf(sum / static_cast<float>(width_) + epsilon_);
+                                        ^~~~~
+/usr/include/aarch64-linux-gnu/bits/mathcalls.h:143:1: note: candidate function not viable: call to [host] function from [aicore] function
+__MATHCALL (sqrt,, (_Mdouble_ __x));
+^
+/usr/include/math.h:287:3: note: expanded from macro '__MATHCALL'
+  __MATHDECL (_Mdouble_,function,suffix, args)
+  ^
+/usr/include/math.h:289:3: note: expanded from macro '__MATHDECL'
+  __MATHDECL_1(type, function,suffix, args); \
+  ^
+/usr/include/math.h:299:3: note: expanded from macro '__MATHDECL_1'
+  __MATHDECL_1_IMPL(type, function, suffix, args)
+  ^
+/usr/include/math.h:297:15: note: expanded from macro '__MATHDECL_1_IMPL'
+  extern type __MATH_PRECNAME(function,suffix) args __THROW
+              ^
+/usr/include/math.h:326:34: note: expanded from macro '__MATH_PRECNAME'
+# define __MATH_PRECNAME(name,r) name##f##r
+                                 ^
+<scratch space>:33:1: note: expanded from here
+sqrtf
+^
+In file included from /home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/adapter.cpp:1:
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:130:25: error: non-constant-expression cannot be narrowed from type 'unsigned long' to 'uint32_t' (aka 'unsigned int') in initializer list [-Wc++11-narrowing]
+                    {1, count * sizeof(T), 0, 0, 0});
+                        ^~~~~~~~~~~~~~~~~
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:183:8: note: in instantiation of member function '(anonymous namespace)::AddRmsNormBiasKernel<float, 2048>::Process' requested here
+    op.Process();
+       ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:192:9: note: in instantiation of function template specialization '(anonymous namespace)::RunTyped<float, 2048U>' requested here
+        RunTyped<float, TILE>(x, residual, gamma, bias, output, rows, width, epsilon);
+        ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:206:9: note: in instantiation of function template specialization '(anonymous namespace)::DispatchType<2048U>' requested here
+        DispatchType<kWideTile>(x, residual, gamma, bias, output, dtype, rows, width, epsilon);
+        ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:130:25: note: insert an explicit cast to silence this issue
+                    {1, count * sizeof(T), 0, 0, 0});
+                        ^~~~~~~~~~~~~~~~~
+                        static_cast<uint32_t>( )
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:147:17: error: non-constant-expression cannot be narrowed from type 'unsigned long' to 'uint32_t' (aka 'unsigned int') in initializer list [-Wc++11-narrowing]
+            {1, count * sizeof(T), 0, 0, 0},
+                ^~~~~~~~~~~~~~~~~
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:96:26: note: in instantiation of member function '(anonymous namespace)::AddRmsNormBiasKernel<float, 2048>::LoadInput' requested here
+                auto x = LoadInput(xQueue_, x_[r * width_ + start], count);
+                         ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:183:8: note: in instantiation of member function '(anonymous namespace)::AddRmsNormBiasKernel<float, 2048>::Process' requested here
+    op.Process();
+       ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:192:9: note: in instantiation of function template specialization '(anonymous namespace)::RunTyped<float, 2048U>' requested here
+        RunTyped<float, TILE>(x, residual, gamma, bias, output, rows, width, epsilon);
+        ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:206:9: note: in instantiation of function template specialization '(anonymous namespace)::DispatchType<2048U>' requested here
+        DispatchType<kWideTile>(x, residual, gamma, bias, output, dtype, rows, width, epsilon);
+        ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:147:17: note: insert an explicit cast to silence this issue
+            {1, count * sizeof(T), 0, 0, 0},
+                ^~~~~~~~~~~~~~~~~
+                static_cast<uint32_t>( )
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:130:25: error: non-constant-expression cannot be narrowed from type 'unsigned long' to 'uint32_t' (aka 'unsigned int') in initializer list [-Wc++11-narrowing]
+                    {1, count * sizeof(T), 0, 0, 0});
+                        ^~~~~~~~~~~~~~~~~
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:183:8: note: in instantiation of member function '(anonymous namespace)::AddRmsNormBiasKernel<half, 2048>::Process' requested here
+    op.Process();
+       ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:194:9: note: in instantiation of function template specialization '(anonymous namespace)::RunTyped<half, 2048U>' requested here
+        RunTyped<half, TILE>(x, residual, gamma, bias, output, rows, width, epsilon);
+        ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:206:9: note: in instantiation of function template specialization '(anonymous namespace)::DispatchType<2048U>' requested here
+        DispatchType<kWideTile>(x, residual, gamma, bias, output, dtype, rows, width, epsilon);
+        ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:130:25: note: insert an explicit cast to silence this issue
+                    {1, count * sizeof(T), 0, 0, 0});
+                        ^~~~~~~~~~~~~~~~~
+                        static_cast<uint32_t>( )
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:147:17: error: non-constant-expression cannot be narrowed from type 'unsigned long' to 'uint32_t' (aka 'unsigned int') in initializer list [-Wc++11-narrowing]
+            {1, count * sizeof(T), 0, 0, 0},
+                ^~~~~~~~~~~~~~~~~
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:96:26: note: in instantiation of member function '(anonymous namespace)::AddRmsNormBiasKernel<half, 2048>::LoadInput' requested here
+                auto x = LoadInput(xQueue_, x_[r * width_ + start], count);
+                         ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:183:8: note: in instantiation of member function '(anonymous namespace)::AddRmsNormBiasKernel<half, 2048>::Process' requested here
+    op.Process();
+       ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:194:9: note: in instantiation of function template specialization '(anonymous namespace)::RunTyped<half, 2048U>' requested here
+        RunTyped<half, TILE>(x, residual, gamma, bias, output, rows, width, epsilon);
+        ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:206:9: note: in instantiation of function template specialization '(anonymous namespace)::DispatchType<2048U>' requested here
+        DispatchType<kWideTile>(x, residual, gamma, bias, output, dtype, rows, width, epsilon);
+        ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:147:17: note: insert an explicit cast to silence this issue
+            {1, count * sizeof(T), 0, 0, 0},
+                ^~~~~~~~~~~~~~~~~
+                static_cast<uint32_t>( )
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:130:25: error: non-constant-expression cannot be narrowed from type 'unsigned long' to 'uint32_t' (aka 'unsigned int') in initializer list [-Wc++11-narrowing]
+                    {1, count * sizeof(T), 0, 0, 0});
+                        ^~~~~~~~~~~~~~~~~
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:183:8: note: in instantiation of member function '(anonymous namespace)::AddRmsNormBiasKernel<__bf16, 2048>::Process' requested here
+    op.Process();
+       ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:196:9: note: in instantiation of function template specialization '(anonymous namespace)::RunTyped<__bf16, 2048U>' requested here
+        RunTyped<bfloat16_t, TILE>(x, residual, gamma, bias, output, rows, width, epsilon);
+        ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:206:9: note: in instantiation of function template specialization '(anonymous namespace)::DispatchType<2048U>' requested here
+        DispatchType<kWideTile>(x, residual, gamma, bias, output, dtype, rows, width, epsilon);
+        ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:130:25: note: insert an explicit cast to silence this issue
+                    {1, count * sizeof(T), 0, 0, 0});
+                        ^~~~~~~~~~~~~~~~~
+                        static_cast<uint32_t>( )
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:147:17: error: non-constant-expression cannot be narrowed from type 'unsigned long' to 'uint32_t' (aka 'unsigned int') in initializer list [-Wc++11-narrowing]
+            {1, count * sizeof(T), 0, 0, 0},
+                ^~~~~~~~~~~~~~~~~
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:96:26: note: in instantiation of member function '(anonymous namespace)::AddRmsNormBiasKernel<__bf16, 2048>::LoadInput' requested here
+                auto x = LoadInput(xQueue_, x_[r * width_ + start], count);
+                         ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:183:8: note: in instantiation of member function '(anonymous namespace)::AddRmsNormBiasKernel<__bf16, 2048>::Process' requested here
+    op.Process();
+       ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:196:9: note: in instantiation of function template specialization '(anonymous namespace)::RunTyped<__bf16, 2048U>' requested here
+        RunTyped<bfloat16_t, TILE>(x, residual, gamma, bias, output, rows, width, epsilon);
+        ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:206:9: note: in instantiation of function template specialization '(anonymous namespace)::DispatchType<2048U>' requested here
+        DispatchType<kWideTile>(x, residual, gamma, bias, output, dtype, rows, width, epsilon);
+        ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:147:17: note: insert an explicit cast to silence this issue
+            {1, count * sizeof(T), 0, 0, 0},
+                ^~~~~~~~~~~~~~~~~
+                static_cast<uint32_t>( )
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:130:25: error: non-constant-expression cannot be narrowed from type 'unsigned long' to 'uint32_t' (aka 'unsigned int') in initializer list [-Wc++11-narrowing]
+                    {1, count * sizeof(T), 0, 0, 0});
+                        ^~~~~~~~~~~~~~~~~
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:183:8: note: in instantiation of member function '(anonymous namespace)::AddRmsNormBiasKernel<float, 512>::Process' requested here
+    op.Process();
+       ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:192:9: note: in instantiation of function template specialization '(anonymous namespace)::RunTyped<float, 512U>' requested here
+        RunTyped<float, TILE>(x, residual, gamma, bias, output, rows, width, epsilon);
+        ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:208:9: note: in instantiation of function template specialization '(anonymous namespace)::DispatchType<512U>' requested here
+        DispatchType<kFallbackTile>(x, residual, gamma, bias, output, dtype, rows, width, epsilon);
+        ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:130:25: note: insert an explicit cast to silence this issue
+                    {1, count * sizeof(T), 0, 0, 0});
+                        ^~~~~~~~~~~~~~~~~
+                        static_cast<uint32_t>( )
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:147:17: error: non-constant-expression cannot be narrowed from type 'unsigned long' to 'uint32_t' (aka 'unsigned int') in initializer list [-Wc++11-narrowing]
+            {1, count * sizeof(T), 0, 0, 0},
+                ^~~~~~~~~~~~~~~~~
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:96:26: note: in instantiation of member function '(anonymous namespace)::AddRmsNormBiasKernel<float, 512>::LoadInput' requested here
+                auto x = LoadInput(xQueue_, x_[r * width_ + start], count);
+                         ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:183:8: note: in instantiation of member function '(anonymous namespace)::AddRmsNormBiasKernel<float, 512>::Process' requested here
+    op.Process();
+       ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:192:9: note: in instantiation of function template specialization '(anonymous namespace)::RunTyped<float, 512U>' requested here
+        RunTyped<float, TILE>(x, residual, gamma, bias, output, rows, width, epsilon);
+        ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:208:9: note: in instantiation of function template specialization '(anonymous namespace)::DispatchType<512U>' requested here
+        DispatchType<kFallbackTile>(x, residual, gamma, bias, output, dtype, rows, width, epsilon);
+        ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:147:17: note: insert an explicit cast to silence this issue
+            {1, count * sizeof(T), 0, 0, 0},
+                ^~~~~~~~~~~~~~~~~
+                static_cast<uint32_t>( )
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:130:25: error: non-constant-expression cannot be narrowed from type 'unsigned long' to 'uint32_t' (aka 'unsigned int') in initializer list [-Wc++11-narrowing]
+                    {1, count * sizeof(T), 0, 0, 0});
+                        ^~~~~~~~~~~~~~~~~
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:183:8: note: in instantiation of member function '(anonymous namespace)::AddRmsNormBiasKernel<half, 512>::Process' requested here
+    op.Process();
+       ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:194:9: note: in instantiation of function template specialization '(anonymous namespace)::RunTyped<half, 512U>' requested here
+        RunTyped<half, TILE>(x, residual, gamma, bias, output, rows, width, epsilon);
+        ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:208:9: note: in instantiation of function template specialization '(anonymous namespace)::DispatchType<512U>' requested here
+        DispatchType<kFallbackTile>(x, residual, gamma, bias, output, dtype, rows, width, epsilon);
+        ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:130:25: note: insert an explicit cast to silence this issue
+                    {1, count * sizeof(T), 0, 0, 0});
+                        ^~~~~~~~~~~~~~~~~
+                        static_cast<uint32_t>( )
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:147:17: error: non-constant-expression cannot be narrowed from type 'unsigned long' to 'uint32_t' (aka 'unsigned int') in initializer list [-Wc++11-narrowing]
+            {1, count * sizeof(T), 0, 0, 0},
+                ^~~~~~~~~~~~~~~~~
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:96:26: note: in instantiation of member function '(anonymous namespace)::AddRmsNormBiasKernel<half, 512>::LoadInput' requested here
+                auto x = LoadInput(xQueue_, x_[r * width_ + start], count);
+                         ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:183:8: note: in instantiation of member function '(anonymous namespace)::AddRmsNormBiasKernel<half, 512>::Process' requested here
+    op.Process();
+       ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:194:9: note: in instantiation of function template specialization '(anonymous namespace)::RunTyped<half, 512U>' requested here
+        RunTyped<half, TILE>(x, residual, gamma, bias, output, rows, width, epsilon);
+        ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:208:9: note: in instantiation of function template specialization '(anonymous namespace)::DispatchType<512U>' requested here
+        DispatchType<kFallbackTile>(x, residual, gamma, bias, output, dtype, rows, width, epsilon);
+        ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:147:17: note: insert an explicit cast to silence this issue
+            {1, count * sizeof(T), 0, 0, 0},
+                ^~~~~~~~~~~~~~~~~
+                static_cast<uint32_t>( )
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:130:25: error: non-constant-expression cannot be narrowed from type 'unsigned long' to 'uint32_t' (aka 'unsigned int') in initializer list [-Wc++11-narrowing]
+                    {1, count * sizeof(T), 0, 0, 0});
+                        ^~~~~~~~~~~~~~~~~
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:183:8: note: in instantiation of member function '(anonymous namespace)::AddRmsNormBiasKernel<__bf16, 512>::Process' requested here
+    op.Process();
+       ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:196:9: note: in instantiation of function template specialization '(anonymous namespace)::RunTyped<__bf16, 512U>' requested here
+        RunTyped<bfloat16_t, TILE>(x, residual, gamma, bias, output, rows, width, epsilon);
+        ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:208:9: note: in instantiation of function template specialization '(anonymous namespace)::DispatchType<512U>' requested here
+        DispatchType<kFallbackTile>(x, residual, gamma, bias, output, dtype, rows, width, epsilon);
+        ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:130:25: note: insert an explicit cast to silence this issue
+                    {1, count * sizeof(T), 0, 0, 0});
+                        ^~~~~~~~~~~~~~~~~
+                        static_cast<uint32_t>( )
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:147:17: error: non-constant-expression cannot be narrowed from type 'unsigned long' to 'uint32_t' (aka 'unsigned int') in initializer list [-Wc++11-narrowing]
+            {1, count * sizeof(T), 0, 0, 0},
+                ^~~~~~~~~~~~~~~~~
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:96:26: note: in instantiation of member function '(anonymous namespace)::AddRmsNormBiasKernel<__bf16, 512>::LoadInput' requested here
+                auto x = LoadInput(xQueue_, x_[r * width_ + start], count);
+                         ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:183:8: note: in instantiation of member function '(anonymous namespace)::AddRmsNormBiasKernel<__bf16, 512>::Process' requested here
+    op.Process();
+       ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:196:9: note: in instantiation of function template specialization '(anonymous namespace)::RunTyped<__bf16, 512U>' requested here
+        RunTyped<bfloat16_t, TILE>(x, residual, gamma, bias, output, rows, width, epsilon);
+        ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:208:9: note: in instantiation of function template specialization '(anonymous namespace)::DispatchType<512U>' requested here
+        DispatchType<kFallbackTile>(x, residual, gamma, bias, output, dtype, rows, width, epsilon);
+        ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:147:17: note: insert an explicit cast to silence this issue
+            {1, count * sizeof(T), 0, 0, 0},
+                ^~~~~~~~~~~~~~~~~
+                static_cast<uint32_t>( )
+13 errors generated.
+In file included from /home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/adapter.cpp:1:
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:109:41: error: no matching function for call to 'sqrtf'
+            const float invRms = 1.0f / sqrtf(sum / static_cast<float>(width_) + epsilon_);
+                                        ^~~~~
+/usr/include/aarch64-linux-gnu/bits/mathcalls.h:143:1: note: candidate function not viable: call to [host] function from [aicore] function
+__MATHCALL (sqrt,, (_Mdouble_ __x));
+^
+/usr/include/math.h:287:3: note: expanded from macro '__MATHCALL'
+  __MATHDECL (_Mdouble_,function,suffix, args)
+  ^
+/usr/include/math.h:289:3: note: expanded from macro '__MATHDECL'
+  __MATHDECL_1(type, function,suffix, args); \
+  ^
+/usr/include/math.h:299:3: note: expanded from macro '__MATHDECL_1'
+  __MATHDECL_1_IMPL(type, function, suffix, args)
+  ^
+/usr/include/math.h:297:15: note: expanded from macro '__MATHDECL_1_IMPL'
+  extern type __MATH_PRECNAME(function,suffix) args __THROW
+              ^
+/usr/include/math.h:326:34: note: expanded from macro '__MATH_PRECNAME'
+# define __MATH_PRECNAME(name,r) name##f##r
+                                 ^
+<scratch space>:33:1: note: expanded from here
+sqrtf
+^
+In file included from /home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/adapter.cpp:1:
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:130:25: error: non-constant-expression cannot be narrowed from type 'unsigned long' to 'uint32_t' (aka 'unsigned int') in initializer list [-Wc++11-narrowing]
+                    {1, count * sizeof(T), 0, 0, 0});
+                        ^~~~~~~~~~~~~~~~~
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:183:8: note: in instantiation of member function '(anonymous namespace)::AddRmsNormBiasKernel<float, 2048>::Process' requested here
+    op.Process();
+       ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:192:9: note: in instantiation of function template specialization '(anonymous namespace)::RunTyped<float, 2048U>' requested here
+        RunTyped<float, TILE>(x, residual, gamma, bias, output, rows, width, epsilon);
+        ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:206:9: note: in instantiation of function template specialization '(anonymous namespace)::DispatchType<2048U>' requested here
+        DispatchType<kWideTile>(x, residual, gamma, bias, output, dtype, rows, width, epsilon);
+        ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:130:25: note: insert an explicit cast to silence this issue
+                    {1, count * sizeof(T), 0, 0, 0});
+                        ^~~~~~~~~~~~~~~~~
+                        static_cast<uint32_t>( )
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:147:17: error: non-constant-expression cannot be narrowed from type 'unsigned long' to 'uint32_t' (aka 'unsigned int') in initializer list [-Wc++11-narrowing]
+            {1, count * sizeof(T), 0, 0, 0},
+                ^~~~~~~~~~~~~~~~~
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:96:26: note: in instantiation of member function '(anonymous namespace)::AddRmsNormBiasKernel<float, 2048>::LoadInput' requested here
+                auto x = LoadInput(xQueue_, x_[r * width_ + start], count);
+                         ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:183:8: note: in instantiation of member function '(anonymous namespace)::AddRmsNormBiasKernel<float, 2048>::Process' requested here
+    op.Process();
+       ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:192:9: note: in instantiation of function template specialization '(anonymous namespace)::RunTyped<float, 2048U>' requested here
+        RunTyped<float, TILE>(x, residual, gamma, bias, output, rows, width, epsilon);
+        ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:206:9: note: in instantiation of function template specialization '(anonymous namespace)::DispatchType<2048U>' requested here
+        DispatchType<kWideTile>(x, residual, gamma, bias, output, dtype, rows, width, epsilon);
+        ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:147:17: note: insert an explicit cast to silence this issue
+            {1, count * sizeof(T), 0, 0, 0},
+                ^~~~~~~~~~~~~~~~~
+                static_cast<uint32_t>( )
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:130:25: error: non-constant-expression cannot be narrowed from type 'unsigned long' to 'uint32_t' (aka 'unsigned int') in initializer list [-Wc++11-narrowing]
+                    {1, count * sizeof(T), 0, 0, 0});
+                        ^~~~~~~~~~~~~~~~~
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:183:8: note: in instantiation of member function '(anonymous namespace)::AddRmsNormBiasKernel<half, 2048>::Process' requested here
+    op.Process();
+       ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:194:9: note: in instantiation of function template specialization '(anonymous namespace)::RunTyped<half, 2048U>' requested here
+        RunTyped<half, TILE>(x, residual, gamma, bias, output, rows, width, epsilon);
+        ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:206:9: note: in instantiation of function template specialization '(anonymous namespace)::DispatchType<2048U>' requested here
+        DispatchType<kWideTile>(x, residual, gamma, bias, output, dtype, rows, width, epsilon);
+        ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:130:25: note: insert an explicit cast to silence this issue
+                    {1, count * sizeof(T), 0, 0, 0});
+                        ^~~~~~~~~~~~~~~~~
+                        static_cast<uint32_t>( )
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:147:17: error: non-constant-expression cannot be narrowed from type 'unsigned long' to 'uint32_t' (aka 'unsigned int') in initializer list [-Wc++11-narrowing]
+            {1, count * sizeof(T), 0, 0, 0},
+                ^~~~~~~~~~~~~~~~~
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:96:26: note: in instantiation of member function '(anonymous namespace)::AddRmsNormBiasKernel<half, 2048>::LoadInput' requested here
+                auto x = LoadInput(xQueue_, x_[r * width_ + start], count);
+                         ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:183:8: note: in instantiation of member function '(anonymous namespace)::AddRmsNormBiasKernel<half, 2048>::Process' requested here
+    op.Process();
+       ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:194:9: note: in instantiation of function template specialization '(anonymous namespace)::RunTyped<half, 2048U>' requested here
+        RunTyped<half, TILE>(x, residual, gamma, bias, output, rows, width, epsilon);
+        ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:206:9: note: in instantiation of function template specialization '(anonymous namespace)::DispatchType<2048U>' requested here
+        DispatchType<kWideTile>(x, residual, gamma, bias, output, dtype, rows, width, epsilon);
+        ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:147:17: note: insert an explicit cast to silence this issue
+            {1, count * sizeof(T), 0, 0, 0},
+                ^~~~~~~~~~~~~~~~~
+                static_cast<uint32_t>( )
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:130:25: error: non-constant-expression cannot be narrowed from type 'unsigned long' to 'uint32_t' (aka 'unsigned int') in initializer list [-Wc++11-narrowing]
+                    {1, count * sizeof(T), 0, 0, 0});
+                        ^~~~~~~~~~~~~~~~~
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:183:8: note: in instantiation of member function '(anonymous namespace)::AddRmsNormBiasKernel<__bf16, 2048>::Process' requested here
+    op.Process();
+       ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:196:9: note: in instantiation of function template specialization '(anonymous namespace)::RunTyped<__bf16, 2048U>' requested here
+        RunTyped<bfloat16_t, TILE>(x, residual, gamma, bias, output, rows, width, epsilon);
+        ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:206:9: note: in instantiation of function template specialization '(anonymous namespace)::DispatchType<2048U>' requested here
+        DispatchType<kWideTile>(x, residual, gamma, bias, output, dtype, rows, width, epsilon);
+        ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:130:25: note: insert an explicit cast to silence this issue
+                    {1, count * sizeof(T), 0, 0, 0});
+                        ^~~~~~~~~~~~~~~~~
+                        static_cast<uint32_t>( )
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:147:17: error: non-constant-expression cannot be narrowed from type 'unsigned long' to 'uint32_t' (aka 'unsigned int') in initializer list [-Wc++11-narrowing]
+            {1, count * sizeof(T), 0, 0, 0},
+                ^~~~~~~~~~~~~~~~~
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:96:26: note: in instantiation of member function '(anonymous namespace)::AddRmsNormBiasKernel<__bf16, 2048>::LoadInput' requested here
+                auto x = LoadInput(xQueue_, x_[r * width_ + start], count);
+                         ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:183:8: note: in instantiation of member function '(anonymous namespace)::AddRmsNormBiasKernel<__bf16, 2048>::Process' requested here
+    op.Process();
+       ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:196:9: note: in instantiation of function template specialization '(anonymous namespace)::RunTyped<__bf16, 2048U>' requested here
+        RunTyped<bfloat16_t, TILE>(x, residual, gamma, bias, output, rows, width, epsilon);
+        ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:206:9: note: in instantiation of function template specialization '(anonymous namespace)::DispatchType<2048U>' requested here
+        DispatchType<kWideTile>(x, residual, gamma, bias, output, dtype, rows, width, epsilon);
+        ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:147:17: note: insert an explicit cast to silence this issue
+            {1, count * sizeof(T), 0, 0, 0},
+                ^~~~~~~~~~~~~~~~~
+                static_cast<uint32_t>( )
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:130:25: error: non-constant-expression cannot be narrowed from type 'unsigned long' to 'uint32_t' (aka 'unsigned int') in initializer list [-Wc++11-narrowing]
+                    {1, count * sizeof(T), 0, 0, 0});
+                        ^~~~~~~~~~~~~~~~~
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:183:8: note: in instantiation of member function '(anonymous namespace)::AddRmsNormBiasKernel<float, 512>::Process' requested here
+    op.Process();
+       ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:192:9: note: in instantiation of function template specialization '(anonymous namespace)::RunTyped<float, 512U>' requested here
+        RunTyped<float, TILE>(x, residual, gamma, bias, output, rows, width, epsilon);
+        ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:208:9: note: in instantiation of function template specialization '(anonymous namespace)::DispatchType<512U>' requested here
+        DispatchType<kFallbackTile>(x, residual, gamma, bias, output, dtype, rows, width, epsilon);
+        ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:130:25: note: insert an explicit cast to silence this issue
+                    {1, count * sizeof(T), 0, 0, 0});
+                        ^~~~~~~~~~~~~~~~~
+                        static_cast<uint32_t>( )
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:147:17: error: non-constant-expression cannot be narrowed from type 'unsigned long' to 'uint32_t' (aka 'unsigned int') in initializer list [-Wc++11-narrowing]
+            {1, count * sizeof(T), 0, 0, 0},
+                ^~~~~~~~~~~~~~~~~
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:96:26: note: in instantiation of member function '(anonymous namespace)::AddRmsNormBiasKernel<float, 512>::LoadInput' requested here
+                auto x = LoadInput(xQueue_, x_[r * width_ + start], count);
+                         ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:183:8: note: in instantiation of member function '(anonymous namespace)::AddRmsNormBiasKernel<float, 512>::Process' requested here
+    op.Process();
+       ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:192:9: note: in instantiation of function template specialization '(anonymous namespace)::RunTyped<float, 512U>' requested here
+        RunTyped<float, TILE>(x, residual, gamma, bias, output, rows, width, epsilon);
+        ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:208:9: note: in instantiation of function template specialization '(anonymous namespace)::DispatchType<512U>' requested here
+        DispatchType<kFallbackTile>(x, residual, gamma, bias, output, dtype, rows, width, epsilon);
+        ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:147:17: note: insert an explicit cast to silence this issue
+            {1, count * sizeof(T), 0, 0, 0},
+                ^~~~~~~~~~~~~~~~~
+                static_cast<uint32_t>( )
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:130:25: error: non-constant-expression cannot be narrowed from type 'unsigned long' to 'uint32_t' (aka 'unsigned int') in initializer list [-Wc++11-narrowing]
+                    {1, count * sizeof(T), 0, 0, 0});
+                        ^~~~~~~~~~~~~~~~~
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:183:8: note: in instantiation of member function '(anonymous namespace)::AddRmsNormBiasKernel<half, 512>::Process' requested here
+    op.Process();
+       ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:194:9: note: in instantiation of function template specialization '(anonymous namespace)::RunTyped<half, 512U>' requested here
+        RunTyped<half, TILE>(x, residual, gamma, bias, output, rows, width, epsilon);
+        ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:208:9: note: in instantiation of function template specialization '(anonymous namespace)::DispatchType<512U>' requested here
+        DispatchType<kFallbackTile>(x, residual, gamma, bias, output, dtype, rows, width, epsilon);
+        ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:130:25: note: insert an explicit cast to silence this issue
+                    {1, count * sizeof(T), 0, 0, 0});
+                        ^~~~~~~~~~~~~~~~~
+                        static_cast<uint32_t>( )
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:147:17: error: non-constant-expression cannot be narrowed from type 'unsigned long' to 'uint32_t' (aka 'unsigned int') in initializer list [-Wc++11-narrowing]
+            {1, count * sizeof(T), 0, 0, 0},
+                ^~~~~~~~~~~~~~~~~
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:96:26: note: in instantiation of member function '(anonymous namespace)::AddRmsNormBiasKernel<half, 512>::LoadInput' requested here
+                auto x = LoadInput(xQueue_, x_[r * width_ + start], count);
+                         ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:183:8: note: in instantiation of member function '(anonymous namespace)::AddRmsNormBiasKernel<half, 512>::Process' requested here
+    op.Process();
+       ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:194:9: note: in instantiation of function template specialization '(anonymous namespace)::RunTyped<half, 512U>' requested here
+        RunTyped<half, TILE>(x, residual, gamma, bias, output, rows, width, epsilon);
+        ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:208:9: note: in instantiation of function template specialization '(anonymous namespace)::DispatchType<512U>' requested here
+        DispatchType<kFallbackTile>(x, residual, gamma, bias, output, dtype, rows, width, epsilon);
+        ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:147:17: note: insert an explicit cast to silence this issue
+            {1, count * sizeof(T), 0, 0, 0},
+                ^~~~~~~~~~~~~~~~~
+                static_cast<uint32_t>( )
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:130:25: error: non-constant-expression cannot be narrowed from type 'unsigned long' to 'uint32_t' (aka 'unsigned int') in initializer list [-Wc++11-narrowing]
+                    {1, count * sizeof(T), 0, 0, 0});
+                        ^~~~~~~~~~~~~~~~~
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:183:8: note: in instantiation of member function '(anonymous namespace)::AddRmsNormBiasKernel<__bf16, 512>::Process' requested here
+    op.Process();
+       ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:196:9: note: in instantiation of function template specialization '(anonymous namespace)::RunTyped<__bf16, 512U>' requested here
+        RunTyped<bfloat16_t, TILE>(x, residual, gamma, bias, output, rows, width, epsilon);
+        ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:208:9: note: in instantiation of function template specialization '(anonymous namespace)::DispatchType<512U>' requested here
+        DispatchType<kFallbackTile>(x, residual, gamma, bias, output, dtype, rows, width, epsilon);
+        ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:130:25: note: insert an explicit cast to silence this issue
+                    {1, count * sizeof(T), 0, 0, 0});
+                        ^~~~~~~~~~~~~~~~~
+                        static_cast<uint32_t>( )
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:147:17: error: non-constant-expression cannot be narrowed from type 'unsigned long' to 'uint32_t' (aka 'unsigned int') in initializer list [-Wc++11-narrowing]
+            {1, count * sizeof(T), 0, 0, 0},
+                ^~~~~~~~~~~~~~~~~
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:96:26: note: in instantiation of member function '(anonymous namespace)::AddRmsNormBiasKernel<__bf16, 512>::LoadInput' requested here
+                auto x = LoadInput(xQueue_, x_[r * width_ + start], count);
+                         ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:183:8: note: in instantiation of member function '(anonymous namespace)::AddRmsNormBiasKernel<__bf16, 512>::Process' requested here
+    op.Process();
+       ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:196:9: note: in instantiation of function template specialization '(anonymous namespace)::RunTyped<__bf16, 512U>' requested here
+        RunTyped<bfloat16_t, TILE>(x, residual, gamma, bias, output, rows, width, epsilon);
+        ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:208:9: note: in instantiation of function template specialization '(anonymous namespace)::DispatchType<512U>' requested here
+        DispatchType<kFallbackTile>(x, residual, gamma, bias, output, dtype, rows, width, epsilon);
+        ^
+/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc:147:17: note: insert an explicit cast to silence this issue
+            {1, count * sizeof(T), 0, 0, 0},
+                ^~~~~~~~~~~~~~~~~
+                static_cast<uint32_t>( )
+13 errors generated.
+gmake[3]: *** [CMakeFiles/submission.dir/build.make:76: CMakeFiles/submission.dir/src/adapter.cpp.o] Error 1
+gmake[2]: *** [CMakeFiles/Makefile2:111: CMakeFiles/submission.dir/all] Error 2
+gmake[1]: *** [CMakeFiles/Makefile2:145: CMakeFiles/full_link.dir/rule] Error 2
+gmake: *** [Makefile:150: full_link] Error 2
