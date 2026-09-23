@@ -1,0 +1,265 @@
+#include "kernel_operator.h"
+
+using namespace AscendC;
+
+namespace full_r023_i001 {
+
+constexpr uint32_t kTileElements = 256;
+constexpr uint32_t kQueueDepth = 1;
+
+template <typename T>
+struct AddRmsNormBiasKernel {
+    GlobalTensor<T> xGm;
+    GlobalTensor<T> residualGm;
+    GlobalTensor<T> gammaGm;
+    GlobalTensor<T> biasGm;
+    GlobalTensor<T> yGm;
+    uint64_t outer;
+    uint64_t dim;
+    float dimAsFloat;
+    float epsilon;
+
+    __aicore__ inline void Init(GM_ADDR x, GM_ADDR residual, GM_ADDR gamma,
+                                GM_ADDR bias, GM_ADDR y, uint64_t outerRows,
+                                uint64_t lastDim, float lastDimFloat, float eps)
+    {
+        xGm.SetGlobalBuffer(reinterpret_cast<__gm__ T *>(x));
+        residualGm.SetGlobalBuffer(reinterpret_cast<__gm__ T *>(residual));
+        gammaGm.SetGlobalBuffer(reinterpret_cast<__gm__ T *>(gamma));
+        biasGm.SetGlobalBuffer(reinterpret_cast<__gm__ T *>(bias));
+        yGm.SetGlobalBuffer(reinterpret_cast<__gm__ T *>(y));
+        outer = outerRows;
+        dim = lastDim;
+        dimAsFloat = lastDimFloat;
+        epsilon = eps;
+    }
+
+    __aicore__ inline uint32_t TileSize(uint64_t offset) const
+    {
+        uint64_t remaining = dim - offset;
+        return static_cast<uint32_t>(remaining > kTileElements ? kTileElements : remaining);
+    }
+
+    __aicore__ inline void LoadInput(TQue<QuePosition::VECIN, kQueueDepth> &queue,
+                                     LocalTensor<T> &tensor, GlobalTensor<T> &source,
+                                     uint64_t offset, uint32_t count)
+    {
+        tensor = queue.AllocTensor<T>();
+        DataCopy(tensor, source[offset], count);
+        queue.EnQue(tensor);
+    }
+
+    __aicore__ inline void ToFloat(LocalTensor<float> &dst, LocalTensor<T> &src,
+                                   uint32_t count)
+    {
+        Cast(dst, src, RoundMode::CAST_NONE, count);
+    }
+
+    __aicore__ inline void FromFloat(LocalTensor<T> &dst, LocalTensor<float> &src,
+                                     uint32_t count)
+    {
+        Cast(dst, src, RoundMode::CAST_RINT, count);
+    }
+
+    __aicore__ inline void ProcessRow(uint64_t row, TPipe &pipe)
+    {
+        TQue<QuePosition::VECIN, kQueueDepth> xQueue;
+        TQue<QuePosition::VECIN, kQueueDepth> residualQueue;
+        TQue<QuePosition::VECIN, kQueueDepth> gammaQueue;
+        TQue<QuePosition::VECIN, kQueueDepth> biasQueue;
+        TQue<QuePosition::VECOUT, kQueueDepth> outQueue;
+        TBuf<TPosition::VECCALC> xFloatBuf;
+        TBuf<TPosition::VECCALC> residualFloatBuf;
+        TBuf<TPosition::VECCALC> sumBuf;
+        TBuf<TPosition::VECCALC> gammaFloatBuf;
+        TBuf<TPosition::VECCALC> biasFloatBuf;
+        TBuf<TPosition::VECCALC> normBuf;
+
+        pipe.InitBuffer(xQueue, kQueueDepth, kTileElements * sizeof(T));
+        pipe.InitBuffer(residualQueue, kQueueDepth, kTileElements * sizeof(T));
+        pipe.InitBuffer(gammaQueue, kQueueDepth, kTileElements * sizeof(T));
+        pipe.InitBuffer(biasQueue, kQueueDepth, kTileElements * sizeof(T));
+        pipe.InitBuffer(outQueue, kQueueDepth, kTileElements * sizeof(T));
+        pipe.InitBuffer(xFloatBuf, kTileElements * sizeof(float));
+        pipe.InitBuffer(residualFloatBuf, kTileElements * sizeof(float));
+        pipe.InitBuffer(sumBuf, kTileElements * sizeof(float));
+        pipe.InitBuffer(gammaFloatBuf, kTileElements * sizeof(float));
+        pipe.InitBuffer(biasFloatBuf, kTileElements * sizeof(float));
+        pipe.InitBuffer(normBuf, kTileElements * sizeof(float));
+
+        TEventID vectorToScalar = pipe.FetchEventID<HardEvent::V_S>();
+        TEventID scalarToVector = pipe.FetchEventID<HardEvent::S_V>();
+
+        LocalTensor<float> sumTensor = sumBuf.Get<float>();
+        Duplicate(sumTensor, 0.0f, kTileElements);
+        float sumSquares = 0.0f;
+        uint64_t rowBase = row * dim;
+
+        for (uint64_t offset = 0; offset < dim;) {
+            uint32_t count = TileSize(offset);
+            LocalTensor<T> xLocal;
+            LocalTensor<T> residualLocal;
+            LoadInput(xQueue, xLocal, xGm, rowBase + offset, count);
+            LoadInput(residualQueue, residualLocal, residualGm, rowBase + offset, count);
+            xLocal = xQueue.DeQue<T>();
+            residualLocal = residualQueue.DeQue<T>();
+
+            LocalTensor<float> xFloat = xFloatBuf.Get<float>();
+            LocalTensor<float> residualFloat = residualFloatBuf.Get<float>();
+            ToFloat(xFloat, xLocal, count);
+            ToFloat(residualFloat, residualLocal, count);
+            Add(xFloat, xFloat, residualFloat, count);
+            Mul(xFloat, xFloat, xFloat, count);
+            ReduceSum(sumTensor, xFloat, sumTensor, count);
+            sumSquares += sumTensor.GetValue(0);
+
+            xQueue.FreeTensor(xLocal);
+            residualQueue.FreeTensor(residualLocal);
+            offset += count;
+        }
+
+        SetFlag<HardEvent::V_S>(vectorToScalar);
+        WaitFlag<HardEvent::V_S>(vectorToScalar);
+        Duplicate(sumTensor, sumSquares, kTileElements);
+        Muls(sumTensor, sumTensor, 1.0f / dimAsFloat, kTileElements);
+        Adds(sumTensor, sumTensor, epsilon, kTileElements);
+        Sqrt(sumTensor, sumTensor, static_cast<int32_t>(kTileElements));
+        SetFlag<HardEvent::V_S>(vectorToScalar);
+        WaitFlag<HardEvent::V_S>(vectorToScalar);
+        float invRms = 1.0f / sumTensor.GetValue(0);
+        SetFlag<HardEvent::S_V>(scalarToVector);
+        WaitFlag<HardEvent::S_V>(scalarToVector);
+
+        for (uint64_t offset = 0; offset < dim;) {
+            uint32_t count = TileSize(offset);
+            LocalTensor<T> xLocal;
+            LocalTensor<T> residualLocal;
+            LocalTensor<T> gammaLocal;
+            LocalTensor<T> biasLocal;
+            LoadInput(xQueue, xLocal, xGm, rowBase + offset, count);
+            LoadInput(residualQueue, residualLocal, residualGm, rowBase + offset, count);
+            LoadInput(gammaQueue, gammaLocal, gammaGm, offset, count);
+            LoadInput(biasQueue, biasLocal, biasGm, offset, count);
+            xLocal = xQueue.DeQue<T>();
+            residualLocal = residualQueue.DeQue<T>();
+            gammaLocal = gammaQueue.DeQue<T>();
+            biasLocal = biasQueue.DeQue<T>();
+
+            LocalTensor<float> xFloat = xFloatBuf.Get<float>();
+            LocalTensor<float> residualFloat = residualFloatBuf.Get<float>();
+            LocalTensor<float> gammaFloat = gammaFloatBuf.Get<float>();
+            LocalTensor<float> biasFloat = biasFloatBuf.Get<float>();
+            LocalTensor<float> normFloat = normBuf.Get<float>();
+            ToFloat(xFloat, xLocal, count);
+            ToFloat(residualFloat, residualLocal, count);
+            ToFloat(gammaFloat, gammaLocal, count);
+            ToFloat(biasFloat, biasLocal, count);
+            Add(normFloat, xFloat, residualFloat, count);
+            Muls(normFloat, normFloat, invRms, count);
+            Mul(normFloat, normFloat, gammaFloat, count);
+            Add(normFloat, normFloat, biasFloat, count);
+
+            LocalTensor<T> outLocal = outQueue.AllocTensor<T>();
+            FromFloat(outLocal, normFloat, count);
+            outQueue.EnQue(outLocal);
+            outLocal = outQueue.DeQue<T>();
+            DataCopy(yGm[rowBase + offset], outLocal, count);
+            outQueue.FreeTensor(outLocal);
+
+            xQueue.FreeTensor(xLocal);
+            residualQueue.FreeTensor(residualLocal);
+            gammaQueue.FreeTensor(gammaLocal);
+            biasQueue.FreeTensor(biasLocal);
+            offset += count;
+        }
+
+        pipe.ReleaseEventID<HardEvent::V_S>(vectorToScalar);
+        pipe.ReleaseEventID<HardEvent::S_V>(scalarToVector);
+    }
+
+    __aicore__ inline void Process()
+    {
+        TPipe pipe;
+        uint32_t blockCount = GetBlockNum();
+        uint32_t blockIndex = GetBlockIdx();
+        for (uint64_t row = blockIndex; row < outer; row += blockCount) {
+            ProcessRow(row, pipe);
+        }
+    }
+};
+
+template <typename T>
+__aicore__ inline void RunAddRmsNormBias(GM_ADDR x, GM_ADDR residual, GM_ADDR gamma,
+                                         GM_ADDR bias, GM_ADDR y, uint64_t outer,
+                                         uint64_t dim, float dimFloat, float epsilon)
+{
+    AddRmsNormBiasKernel<T> kernel;
+    kernel.Init(x, residual, gamma, bias, y, outer, dim, dimFloat, epsilon);
+    kernel.Process();
+}
+
+} // namespace full_r023_i001
+
+extern "C" __global__ __aicore__ void add_rms_norm_bias_fp16(
+    GM_ADDR x, GM_ADDR residual, GM_ADDR gamma, GM_ADDR bias, GM_ADDR y,
+    uint64_t outer, uint64_t dim, float dimFloat, float epsilon)
+{
+    full_r023_i001::RunAddRmsNormBias<half>(x, residual, gamma, bias, y, outer, dim, dimFloat, epsilon);
+}
+
+extern "C" __global__ __aicore__ void add_rms_norm_bias_bf16(
+    GM_ADDR x, GM_ADDR residual, GM_ADDR gamma, GM_ADDR bias, GM_ADDR y,
+    uint64_t outer, uint64_t dim, float dimFloat, float epsilon)
+{
+    full_r023_i001::RunAddRmsNormBias<bfloat16_t>(x, residual, gamma, bias, y, outer, dim, dimFloat, epsilon);
+}
+
+extern "C" __global__ __aicore__ void add_rms_norm_bias_fp32(
+    GM_ADDR x, GM_ADDR residual, GM_ADDR gamma, GM_ADDR bias, GM_ADDR y,
+    uint64_t outer, uint64_t dim, float dimFloat, float epsilon)
+{
+    full_r023_i001::RunAddRmsNormBias<float>(x, residual, gamma, bias, y, outer, dim, dimFloat, epsilon);
+}
+
+#if !defined(FULL_R023_AICORE_COMPILE)
+extern "C" void run_kernel(
+    GM_ADDR x, const TensorGroupInfo& info_x,
+    GM_ADDR residual, const TensorGroupInfo& info_residual,
+    GM_ADDR gamma, const TensorGroupInfo& info_gamma,
+    GM_ADDR bias, const TensorGroupInfo& info_bias,
+    GM_ADDR y, const TensorGroupInfo& info_y,
+    int64_t availableCoreNum, aclrtStream stream, float epsilon)
+{
+    (void)info_residual;
+    (void)info_gamma;
+    (void)info_bias;
+    (void)info_y;
+
+    const TensorInfo& xInfo = info_x.tensors[0];
+    const int64_t rank = xInfo.numDims;
+    uint64_t outer = 1;
+    for (int64_t index = 0; index + 1 < rank; ++index) {
+        outer *= static_cast<uint64_t>(xInfo.shape[index]);
+    }
+    const uint64_t dim = static_cast<uint64_t>(xInfo.shape[rank - 1]);
+    const float dimFloat = static_cast<float>(dim);
+    const uint32_t blockCount = static_cast<uint32_t>(availableCoreNum);
+
+    switch (xInfo.dtype) {
+        case 0:
+            add_rms_norm_bias_fp32<<<blockCount, nullptr, stream>>>(
+                x, residual, gamma, bias, y, outer, dim, dimFloat, epsilon);
+            break;
+        case 1:
+            add_rms_norm_bias_fp16<<<blockCount, nullptr, stream>>>(
+                x, residual, gamma, bias, y, outer, dim, dimFloat, epsilon);
+            break;
+        case 2:
+            add_rms_norm_bias_bf16<<<blockCount, nullptr, stream>>>(
+                x, residual, gamma, bias, y, outer, dim, dimFloat, epsilon);
+            break;
+        default:
+            break;
+    }
+}
+#endif

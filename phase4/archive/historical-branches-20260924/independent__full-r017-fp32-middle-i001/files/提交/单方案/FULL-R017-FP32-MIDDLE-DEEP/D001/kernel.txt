@@ -1,0 +1,309 @@
+#include <stdint.h>
+#include "kernel_operator.h"
+
+namespace r017_fp32_detail {
+
+constexpr uint32_t kTileElements = 4096;
+constexpr uint32_t kScalarElements = 8;
+
+__aicore__ inline void CastToFp32(AscendC::LocalTensor<float> dst,
+                                  AscendC::LocalTensor<float> src,
+                                  uint32_t count)
+{
+    AscendC::Adds(dst, src, 0.0f, count);
+}
+
+__aicore__ inline void CastToFp32(AscendC::LocalTensor<float> dst,
+                                  AscendC::LocalTensor<half> src,
+                                  uint32_t count)
+{
+    AscendC::Cast<float, half>(dst, src, AscendC::RoundMode::CAST_NONE, count);
+}
+
+__aicore__ inline void CastToFp32(AscendC::LocalTensor<float> dst,
+                                  AscendC::LocalTensor<bfloat16_t> src,
+                                  uint32_t count)
+{
+    AscendC::Cast<float, bfloat16_t>(dst, src, AscendC::RoundMode::CAST_NONE, count);
+}
+
+__aicore__ inline void CastFromFp32(AscendC::LocalTensor<float> dst,
+                                    AscendC::LocalTensor<float> src,
+                                    uint32_t count)
+{
+    AscendC::Adds(dst, src, 0.0f, count);
+}
+
+__aicore__ inline void CastFromFp32(AscendC::LocalTensor<half> dst,
+                                    AscendC::LocalTensor<float> src,
+                                    uint32_t count)
+{
+    AscendC::Cast<half, float>(dst, src, AscendC::RoundMode::CAST_RINT, count);
+}
+
+__aicore__ inline void CastFromFp32(AscendC::LocalTensor<bfloat16_t> dst,
+                                    AscendC::LocalTensor<float> src,
+                                    uint32_t count)
+{
+    AscendC::Cast<bfloat16_t, float>(dst, src, AscendC::RoundMode::CAST_RINT, count);
+}
+
+template <typename T>
+class KernelRmsNormFp32 {
+public:
+    __aicore__ inline KernelRmsNormFp32(AscendC::TPipe* pipe) : pipe_(pipe) {}
+
+    __aicore__ inline void Init(GM_ADDR x, GM_ADDR residual, GM_ADDR gamma, GM_ADDR bias,
+                                GM_ADDR output, uint64_t outer, uint32_t dim,
+                                uint64_t rowBegin, uint64_t rowEnd, float epsilon,
+                                float invDim)
+    {
+        outer_ = outer;
+        dim_ = dim;
+        rowBegin_ = rowBegin;
+        rowEnd_ = rowEnd;
+        epsilon_ = epsilon;
+        invDim_ = invDim;
+
+        xGm_.SetGlobalBuffer((__gm__ T*)x, outer_ * dim_);
+        residualGm_.SetGlobalBuffer((__gm__ T*)residual, outer_ * dim_);
+        gammaGm_.SetGlobalBuffer((__gm__ T*)gamma, dim_);
+        biasGm_.SetGlobalBuffer((__gm__ T*)bias, dim_);
+        outputGm_.SetGlobalBuffer((__gm__ T*)output, outer_ * dim_);
+
+        pipe_->InitBuffer(xQueue_, 1, kTileElements * sizeof(T));
+        pipe_->InitBuffer(residualQueue_, 1, kTileElements * sizeof(T));
+        pipe_->InitBuffer(gammaQueue_, 1, kTileElements * sizeof(T));
+        pipe_->InitBuffer(biasQueue_, 1, kTileElements * sizeof(T));
+        pipe_->InitBuffer(outputQueue_, 1, kTileElements * sizeof(T));
+        pipe_->InitBuffer(sumBuffer_, kScalarElements * sizeof(float));
+        pipe_->InitBuffer(valueBuffer_, kTileElements * sizeof(float));
+        pipe_->InitBuffer(squareBuffer_, kTileElements * sizeof(float));
+        pipe_->InitBuffer(reduceBuffer_, kTileElements * sizeof(float));
+    }
+
+    __aicore__ inline void Process()
+    {
+        for (uint64_t row = rowBegin_; row < rowEnd_; ++row) {
+            float sum = SumOfSquares(row);
+            float mean = sum * invDim_ + epsilon_;
+            AscendC::LocalTensor<float> scalar = sumBuffer_.Get<float>();
+            AscendC::Duplicate(scalar, mean, kScalarElements);
+            AscendC::Sqrt(scalar, scalar, kScalarElements);
+            float rms = scalar.GetValue(0);
+            NormalizeRow(row, rms);
+        }
+    }
+
+private:
+    __aicore__ inline uint32_t AlignCount(uint32_t count) const
+    {
+        constexpr uint32_t elementsPerBlock = 32 / sizeof(T);
+        return ((count + elementsPerBlock - 1) / elementsPerBlock) * elementsPerBlock;
+    }
+
+    __aicore__ inline void CopyIn(AscendC::TQue<AscendC::TPosition::VECIN, 1>& queue,
+                                  AscendC::GlobalTensor<T>& source,
+                                  uint64_t offset, uint32_t count, uint32_t padded)
+    {
+        AscendC::LocalTensor<T> local = queue.AllocTensor<T>();
+        AscendC::DataCopyExtParams copyParams;
+        copyParams.blockCount = 1;
+        copyParams.blockLen = count * sizeof(T);
+        copyParams.srcStride = 0;
+        copyParams.dstStride = 0;
+        copyParams.rsv = 0;
+
+        AscendC::DataCopyPadExtParams<T> padParams;
+        padParams.isPad = true;
+        padParams.leftPadding = 0;
+        padParams.rightPadding = padded - count;
+        padParams.paddingValue = static_cast<T>(0);
+
+        AscendC::DataCopyPad(local, source[offset], copyParams, padParams);
+        queue.EnQue(local);
+    }
+
+    __aicore__ inline void CopyOut(AscendC::LocalTensor<T> local,
+                                   uint64_t offset, uint32_t count)
+    {
+        AscendC::DataCopyExtParams copyParams;
+        copyParams.blockCount = 1;
+        copyParams.blockLen = count * sizeof(T);
+        copyParams.srcStride = 0;
+        copyParams.dstStride = 0;
+        copyParams.rsv = 0;
+        AscendC::DataCopyPad(outputGm_[offset], local, copyParams);
+    }
+
+    __aicore__ inline void LoadXAndResidual(uint64_t rowOffset,
+                                            uint32_t count, uint32_t padded)
+    {
+        CopyIn(xQueue_, xGm_, rowOffset, count, padded);
+        CopyIn(residualQueue_, residualGm_, rowOffset, count, padded);
+    }
+
+    __aicore__ inline void LoadAll(uint64_t rowOffset, uint32_t channelOffset,
+                                   uint32_t count, uint32_t padded)
+    {
+        CopyIn(xQueue_, xGm_, rowOffset, count, padded);
+        CopyIn(residualQueue_, residualGm_, rowOffset, count, padded);
+        CopyIn(gammaQueue_, gammaGm_, channelOffset, count, padded);
+        CopyIn(biasQueue_, biasGm_, channelOffset, count, padded);
+    }
+
+    __aicore__ inline float SumOfSquares(uint64_t row)
+    {
+        float total = 0.0f;
+        for (uint32_t offset = 0; offset < dim_; offset += kTileElements) {
+            uint32_t remaining = dim_ - offset;
+            uint32_t count = remaining < kTileElements ? remaining : kTileElements;
+            uint32_t padded = AlignCount(count);
+            uint64_t rowOffset = row * static_cast<uint64_t>(dim_) + offset;
+
+            LoadXAndResidual(rowOffset, count, padded);
+            AscendC::LocalTensor<T> xLocal = xQueue_.DeQue<T>();
+            AscendC::LocalTensor<T> residualLocal = residualQueue_.DeQue<T>();
+            AscendC::LocalTensor<float> values = valueBuffer_.Get<float>();
+            AscendC::LocalTensor<float> squares = squareBuffer_.Get<float>();
+            AscendC::LocalTensor<float> reduced = sumBuffer_.Get<float>();
+            AscendC::LocalTensor<float> reduceTmp = reduceBuffer_.Get<float>();
+
+            CastToFp32(values, xLocal, padded);
+            CastToFp32(squares, residualLocal, padded);
+            AscendC::Add(values, values, squares, padded);
+            AscendC::Mul(squares, values, values, padded);
+            AscendC::ReduceSum<float, true>(reduced, squares, reduceTmp,
+                                             static_cast<int32_t>(padded));
+            total += reduced.GetValue(0);
+
+            xQueue_.FreeTensor(xLocal);
+            residualQueue_.FreeTensor(residualLocal);
+        }
+        return total;
+    }
+
+    __aicore__ inline void NormalizeRow(uint64_t row, float rms)
+    {
+        for (uint32_t offset = 0; offset < dim_; offset += kTileElements) {
+            uint32_t remaining = dim_ - offset;
+            uint32_t count = remaining < kTileElements ? remaining : kTileElements;
+            uint32_t padded = AlignCount(count);
+            uint64_t rowOffset = row * static_cast<uint64_t>(dim_) + offset;
+
+            LoadAll(rowOffset, offset, count, padded);
+            AscendC::LocalTensor<T> xLocal = xQueue_.DeQue<T>();
+            AscendC::LocalTensor<T> residualLocal = residualQueue_.DeQue<T>();
+            AscendC::LocalTensor<T> gammaLocal = gammaQueue_.DeQue<T>();
+            AscendC::LocalTensor<T> biasLocal = biasQueue_.DeQue<T>();
+            AscendC::LocalTensor<T> outputLocal = outputQueue_.AllocTensor<T>();
+            AscendC::LocalTensor<float> values = valueBuffer_.Get<float>();
+            AscendC::LocalTensor<float> work = squareBuffer_.Get<float>();
+
+            CastToFp32(values, xLocal, padded);
+            CastToFp32(work, residualLocal, padded);
+            AscendC::Add(values, values, work, padded);
+            AscendC::Duplicate(work, rms, padded);
+            AscendC::Div(values, values, work, padded);
+            CastToFp32(work, gammaLocal, padded);
+            AscendC::Mul(values, values, work, padded);
+            CastToFp32(work, biasLocal, padded);
+            AscendC::Add(values, values, work, padded);
+            CastFromFp32(outputLocal, values, padded);
+
+            outputQueue_.EnQue(outputLocal);
+            AscendC::LocalTensor<T> outputReady = outputQueue_.DeQue<T>();
+            CopyOut(outputReady, rowOffset, count);
+
+            xQueue_.FreeTensor(xLocal);
+            residualQueue_.FreeTensor(residualLocal);
+            gammaQueue_.FreeTensor(gammaLocal);
+            biasQueue_.FreeTensor(biasLocal);
+            outputQueue_.FreeTensor(outputReady);
+        }
+    }
+
+    AscendC::TPipe* pipe_;
+    AscendC::GlobalTensor<T> xGm_;
+    AscendC::GlobalTensor<T> residualGm_;
+    AscendC::GlobalTensor<T> gammaGm_;
+    AscendC::GlobalTensor<T> biasGm_;
+    AscendC::GlobalTensor<T> outputGm_;
+
+    AscendC::TQue<AscendC::TPosition::VECIN, 1> xQueue_;
+    AscendC::TQue<AscendC::TPosition::VECIN, 1> residualQueue_;
+    AscendC::TQue<AscendC::TPosition::VECIN, 1> gammaQueue_;
+    AscendC::TQue<AscendC::TPosition::VECIN, 1> biasQueue_;
+    AscendC::TQue<AscendC::TPosition::VECOUT, 1> outputQueue_;
+    AscendC::TBuf<AscendC::TPosition::VECCALC> sumBuffer_;
+    AscendC::TBuf<AscendC::TPosition::VECCALC> valueBuffer_;
+    AscendC::TBuf<AscendC::TPosition::VECCALC> squareBuffer_;
+    AscendC::TBuf<AscendC::TPosition::VECCALC> reduceBuffer_;
+
+    uint64_t outer_;
+    uint32_t dim_;
+    uint64_t rowBegin_;
+    uint64_t rowEnd_;
+    float epsilon_;
+    float invDim_;
+};
+
+template <typename T>
+__global__ __vector__ void RmsNormFp32KernelEntry(GM_ADDR x, GM_ADDR residual,
+                                                   GM_ADDR gamma, GM_ADDR bias,
+                                                   GM_ADDR output, uint64_t outer,
+                                                   uint32_t dim, uint64_t rowBegin,
+                                                   uint64_t rowEnd, uint32_t blockNum,
+                                                   float epsilon, float invDim)
+{
+    uint32_t blockIdx = AscendC::GetBlockIdx();
+    rowBegin = outer * blockIdx / blockNum;
+    rowEnd = outer * (blockIdx + 1) / blockNum;
+    AscendC::TPipe pipe;
+    KernelRmsNormFp32<T> kernel(&pipe);
+    kernel.Init(x, residual, gamma, bias, output, outer, dim, rowBegin, rowEnd, epsilon, invDim);
+    kernel.Process();
+}
+
+}  // namespace r017_fp32_detail
+
+extern "C" void run_kernel(GM_ADDR x, const TensorGroupInfo& info_x,
+                            GM_ADDR residual, const TensorGroupInfo& info_residual,
+                            GM_ADDR gamma, const TensorGroupInfo& info_gamma,
+                            GM_ADDR bias, const TensorGroupInfo& info_bias,
+                            GM_ADDR output, const TensorGroupInfo& info_output,
+                            int64_t availableCoreNum, aclrtStream stream, float epsilon)
+{
+    (void)info_residual;
+    (void)info_gamma;
+    (void)info_bias;
+    (void)info_output;
+
+    const TensorInfo& xInfo = info_x.tensors[0];
+    uint32_t dim = static_cast<uint32_t>(xInfo.shape[xInfo.numDims - 1]);
+    float invDim = 1.0f / static_cast<float>(dim);
+    uint64_t outer = 1;
+    for (int64_t i = 0; i + 1 < xInfo.numDims; ++i) {
+        outer *= static_cast<uint64_t>(xInfo.shape[i]);
+    }
+
+    uint32_t blockNum = static_cast<uint32_t>(availableCoreNum > 0 ? availableCoreNum : 1);
+    if (outer < blockNum) {
+        blockNum = static_cast<uint32_t>(outer);
+    }
+    if (blockNum == 0) {
+        blockNum = 1;
+    }
+
+    int32_t dtype = xInfo.dtype;
+    if (dtype == 0) {
+        r017_fp32_detail::RmsNormFp32KernelEntry<float><<<blockNum, nullptr, stream>>>(
+            x, residual, gamma, bias, output, outer, dim, 0, 0, blockNum, epsilon, invDim);
+    } else if (dtype == 1) {
+        r017_fp32_detail::RmsNormFp32KernelEntry<half><<<blockNum, nullptr, stream>>>(
+            x, residual, gamma, bias, output, outer, dim, 0, 0, blockNum, epsilon, invDim);
+    } else if (dtype == 2) {
+        r017_fp32_detail::RmsNormFp32KernelEntry<bfloat16_t><<<blockNum, nullptr, stream>>>(
+            x, residual, gamma, bias, output, outer, dim, 0, 0, blockNum, epsilon, invDim);
+    }
+}

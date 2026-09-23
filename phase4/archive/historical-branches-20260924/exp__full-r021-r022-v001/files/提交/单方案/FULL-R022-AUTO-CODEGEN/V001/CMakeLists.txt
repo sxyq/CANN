@@ -1,0 +1,28 @@
+cmake_minimum_required(VERSION 3.16)
+find_package(ASC REQUIRED)
+project(full_r022_auto_codegen LANGUAGES ASC CXX)
+set(CMAKE_CXX_STANDARD 14)
+if(DEFINED NPU_ARCH)
+    set(SOC_ARCH ${NPU_ARCH})
+else()
+    set(SOC_ARCH "dav-2201")
+endif()
+add_executable(full_r022_auto_codegen main.asc)
+target_link_libraries(full_r022_auto_codegen PRIVATE
+    tiling_api register platform unified_dlog dl m graph_base)
+target_include_directories(full_r022_auto_codegen PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_compile_options(full_r022_auto_codegen PRIVATE
+    $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=${SOC_ARCH}>)
+if(DEFINED ENV{ASCEND_HOME_PATH})
+    set(CANN_HCC_CXX_INCLUDE "$ENV{ASCEND_HOME_PATH}/tools/hcc/aarch64-target-linux-gnu/include/c++/7.3.0")
+    set(CANN_HCC_CXX_TARGET_INCLUDE "${CANN_HCC_CXX_INCLUDE}/aarch64-target-linux-gnu")
+    set(CANN_HCC_CXX_LIBRARY "$ENV{ASCEND_HOME_PATH}/tools/hcc/aarch64-target-linux-gnu/lib64")
+    if(EXISTS "${CANN_HCC_CXX_INCLUDE}/cstdint" AND EXISTS "${CANN_HCC_CXX_TARGET_INCLUDE}/bits/c++config.h")
+        target_compile_options(full_r022_auto_codegen PRIVATE
+            $<$<COMPILE_LANGUAGE:ASC>:-isystem${CANN_HCC_CXX_INCLUDE}>
+            $<$<COMPILE_LANGUAGE:ASC>:-isystem${CANN_HCC_CXX_TARGET_INCLUDE}>)
+    endif()
+    if(EXISTS "${CANN_HCC_CXX_LIBRARY}/libstdc++.so")
+        target_link_directories(full_r022_auto_codegen PRIVATE "${CANN_HCC_CXX_LIBRARY}")
+    endif()
+endif()

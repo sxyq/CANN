@@ -116,3 +116,13 @@ branch refs/heads/exp/independent-breadth
 ```
 
 The local and remote target branches are equal. No scheduler file, Active Candidate, Kernel source, or other policy file was changed in this second pass. No performance experiment, server3 run, CANNJudge action, or Agent dispatch was performed.
+
+## THIRD-PASS CONSOLIDATION (2026-09-24)
+
+See `phase4/control/consolidation-20260924.md`.
+
+- First-round sixlane worktrees: ACTIVE_KEEP (no deletion).
+- Active local evidence copied into canonical `phase4/local/**`.
+- Historical non-merged branch unique trees archived under `phase4/archive/historical-branches-20260924/`.
+- R31B V011 `submission.asc` restored.
+- Ready for second six-lane container `cann-next6/`.

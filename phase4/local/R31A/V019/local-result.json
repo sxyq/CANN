@@ -1,0 +1,41 @@
+{
+  "route": "R31A",
+  "revision": "V019",
+  "direct_parent": "R31A-V016",
+  "parent_source_sha": "dd13093823c885e785a650abff4863827e652eb8607ad0621a96eb31b6764fa0",
+  "parent_score": 45.0,
+  "candidate_source_sha": "13b9a00d6d7ba9e11bfd5dea271c01d28182310df327eb7e02566238c2e22dfe",
+  "compile": {
+    "status": "PASS",
+    "host": "cann-server3",
+    "cmake_source": "/home/data4t2/lelinfeng/phase4-worktrees/R31A/V019-direct/phase4/workspaces/R31A",
+    "build": "/home/data4t2/lelinfeng/phase4-worktrees/R31A/V019-direct/build",
+    "targets": ["r31a_device", "r31a_submission"]
+  },
+  "link": {
+    "status": "PASS",
+    "linker": "ld.lld -m aicorelinux -Ttext=0",
+    "artifacts": ["R31A-V019-device.alink", "R31A-V019-submission.alink"]
+  },
+  "probe_build": {
+    "status": "PASS",
+    "executables": ["probe_v016", "probe_v019"],
+    "role": "auxiliary correctness and timing harness; no timing was started"
+  },
+  "correctness": [
+    {"source": "V016", "device": 4, "rows": 2, "width": 32768, "blocks": 1, "status": "PASS", "max_abs": 4.83928943e-07},
+    {"source": "V019", "device": 4, "rows": 2, "width": 32768, "blocks": 1, "status": "FAIL", "acl_status": 507035},
+    {"source": "V016", "device": 5, "rows": 2, "width": 32768, "blocks": 1, "status": "PASS", "max_abs": 4.83928943e-07},
+    {"source": "V019", "device": 5, "rows": 2, "width": 32768, "blocks": 1, "status": "FAIL", "acl_status": 507035},
+    {"source": "V019", "device": 5, "rows": 2, "width": 24576, "blocks": 1, "status": "PASS", "max_abs": 3.48268474e-07}
+  ],
+  "local_probes": [],
+  "load_quality": {
+    "recorded_at_local": "2026-09-24T00:56:20+0800",
+    "observation": "All 8 NPUs have existing VLLM/python processes; AICore ~31-49% on devices 0-3 and 7, 0% on 4-6, HBM heavily occupied on all devices.",
+    "probe_classification": "LOAD_CONTAMINATED",
+    "timing_interpretation": "No timing was started because candidate correctness failed; any small latency delta under this load must not be treated as improvement."
+  },
+  "decision": "LOCAL_REJECTED",
+  "notes": "The candidate target fails before timing while the direct parent passes on the same target shape and devices. No online submission."
+}

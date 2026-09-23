@@ -1,0 +1,1406 @@
+#include <cmath>
+#include <cstdint>
+#include "kernel_operator.h"
+
+/*
+ * AddRmsNormBias - FULL-R015-L004-PAIR-INPUT-REUSE-ARCH
+ *
+ * Branch:
+ *   R015 / adjacent two-row merged DMA with an explicit multi-row UB layout.
+ *
+ * The route keeps the inherited scalar/vector math path as its local starting
+ * point, but adds a distinct small-row dataflow: two adjacent rows are read
+ * as one contiguous GM interval into one UB slot, then processed through two
+ * row slices with independent reduction scalars.
+ *
+ * Golden semantics:
+ *   y   = x + residual
+ *   rms = sqrt(mean(y * y) + epsilon)
+ *   out = y / rms * gamma + bias
+ *
+ * Dominant architecture:
+ *   - pair ownership assigns one adjacent row pair to one AI core;
+ *   - for rowWidth <= 1536, one DataCopyPad reads two contiguous rows into
+ *     one native UB slot for each input;
+ *   - the slot is addressed as [row0 | row1], while row0 and row1 keep
+ *     separate RMS scalar state;
+ *   - the merged transfer is repeated for the output pass so the pair layout
+ *     remains the defining movement unit;
+ *   - odd row counts use the existing single-row fallback for the last row;
+ *   - L003 admits the pair layout only when one row occupies a 32-byte
+ *     aligned span, otherwise it uses the inherited single-row path;
+ *   - L004 keeps the merged pair inputs resident between reduction and
+ *     output, removing the second pair GM reload;
+ *   - wider rows retain the tile pipeline because two full rows do not
+ *     fit in the selected UB slot.
+ *
+ * The route intentionally does NOT contain:
+ *   - parameter residency;
+ *   - retained-y row cache;
+ *   - hierarchical partial collectors;
+ *   - row-group alignment scheduling;
+ *   - aligned DataCopy specialization;
+ *   - manual tail split;
+ *   - reciprocal normalization;
+ *   - wide cached-row specialization;
+ *   - R031 multimode dispatch.
+ *
+ * Correctness scheduling:
+ *   32-byte-aligned rows use ordinary row-level multicore ownership.
+ *   Non-aligned rows use one core to avoid cross-core partial-block stores.
+ *   This is a correctness gate, not the R012 row-group optimization.
+ *
+ * File format:
+ *   Delivered as .txt. Rename to kernel.asc if needed by the submission UI.
+ */
+
+template <typename T>
+class R015MultiRowDmaKernel {
+public:
+    static constexpr int32_t kTileElems = 3072;
+    static constexpr int32_t kScalarElems = 16;
+    static constexpr int32_t kScalarOffset = 8;
+
+    __aicore__ inline void Init(
+        GM_ADDR x,
+        GM_ADDR residual,
+        GM_ADDR gamma,
+        GM_ADDR bias,
+        GM_ADDR output)
+    {
+        xGm_.SetGlobalBuffer((__gm__ T*)x);
+        residualGm_.SetGlobalBuffer((__gm__ T*)residual);
+        gammaGm_.SetGlobalBuffer((__gm__ T*)gamma);
+        biasGm_.SetGlobalBuffer((__gm__ T*)bias);
+        outputGm_.SetGlobalBuffer((__gm__ T*)output);
+
+        /*
+         * Native ping-pong input slots.
+         * Worst case T=float: 4 * 3072 * 4 = 48 KiB.
+         */
+        pipe_.InitBuffer(xSlot0_, kTileElems * sizeof(T));
+        pipe_.InitBuffer(rSlot0_, kTileElems * sizeof(T));
+        pipe_.InitBuffer(xSlot1_, kTileElems * sizeof(T));
+        pipe_.InitBuffer(rSlot1_, kTileElems * sizeof(T));
+
+        /*
+         * Independent parameter staging.  Keeping this separate is essential:
+         * the next x/residual tile may already occupy the alternate input slot
+         * while gamma/bias for the current tile are transferred.
+         */
+        pipe_.InitBuffer(gammaStage_, kTileElems * sizeof(T));
+        pipe_.InitBuffer(biasStage_, kTileElems * sizeof(T));
+
+        pipe_.InitBuffer(outNative_, kTileElems * sizeof(T));
+
+        /*
+         * FP32 vector workspace.
+         * xFp32_ is also reused for y^2 in the reduction pass.
+         * rFp32_ is dead after y formation and is reused as ReduceSum workspace
+         * or as the repeated denominator vector in the second pass.
+         */
+        pipe_.InitBuffer(xFp32_, kTileElems * sizeof(float));
+        pipe_.InitBuffer(rFp32_, kTileElems * sizeof(float));
+        pipe_.InitBuffer(yFp32_, kTileElems * sizeof(float));
+
+        pipe_.InitBuffer(scalar_, kScalarElems * sizeof(float));
+    }
+
+    __aicore__ inline void Process(
+        uint64_t rowCount,
+        uint64_t rowWidth,
+        float invRowWidth,
+        float epsilon)
+    {
+        const uint64_t coreIdx =
+            static_cast<uint64_t>(AscendC::GetBlockIdx());
+
+        const uint64_t coreNum =
+            static_cast<uint64_t>(AscendC::GetBlockNum());
+
+        if (coreNum == 0ULL) {
+            return;
+        }
+
+        const uint64_t elementBytes =
+            static_cast<uint64_t>(sizeof(T));
+
+        const uint64_t maxU64 =
+            ~static_cast<uint64_t>(0);
+
+        const bool pairRowAligned =
+            rowWidth <= maxU64 / elementBytes &&
+            ((rowWidth * elementBytes) & 31ULL) == 0ULL;
+
+        /*
+         * Two adjacent rows fit in one native slot when each row is at most
+         * half the selected tile.  Pair ownership keeps both rows on one
+         * core, so the merged transfer never crosses a core boundary.
+         */
+        if (pairRowAligned &&
+            rowWidth <= static_cast<uint64_t>(kTileElems / 2)) {
+            const uint64_t pairCount = rowCount / 2ULL;
+
+            for (uint64_t pair = coreIdx;
+                 pair < pairCount;
+                 pair += coreNum) {
+                ProcessMergedPair(
+                    pair,
+                    rowWidth,
+                    invRowWidth,
+                    epsilon);
+            }
+
+            if ((rowCount & 1ULL) != 0ULL &&
+                coreIdx == (pairCount % coreNum)) {
+                ProcessRow(
+                    rowCount - 1ULL,
+                    rowWidth,
+                    invRowWidth,
+                    epsilon);
+            }
+
+            return;
+        }
+
+        for (uint64_t row = coreIdx;
+             row < rowCount;
+             row += coreNum) {
+            ProcessRow(
+                row,
+                rowWidth,
+                invRowWidth,
+                epsilon);
+        }
+    }
+
+private:
+    __aicore__ inline int32_t TileLength(
+        uint64_t remaining) const
+    {
+        return static_cast<int32_t>(
+            remaining > static_cast<uint64_t>(kTileElems)
+                ? kTileElems
+                : remaining);
+    }
+
+    __aicore__ inline uint64_t TileCount(
+        uint64_t rowWidth) const
+    {
+        return rowWidth / static_cast<uint64_t>(kTileElems) +
+               ((rowWidth % static_cast<uint64_t>(kTileElems)) == 0ULL
+                    ? 0ULL
+                    : 1ULL);
+    }
+
+    __aicore__ inline void LoadNative(
+        AscendC::LocalTensor<T> dst,
+        AscendC::GlobalTensor<T>& src,
+        uint64_t offset,
+        int32_t valid)
+    {
+        AscendC::DataCopyExtParams copyParams{
+            1,
+            static_cast<uint32_t>(
+                valid * static_cast<int32_t>(sizeof(T))),
+            0,
+            0,
+            0
+        };
+
+        AscendC::DataCopyPadExtParams<T> padParams{
+            false,
+            0,
+            0,
+            0
+        };
+
+        AscendC::DataCopyPad<T>(
+            dst,
+            src[offset],
+            copyParams,
+            padParams);
+    }
+
+    __aicore__ inline void StoreNative(
+        AscendC::GlobalTensor<T>& dst,
+        uint64_t offset,
+        AscendC::LocalTensor<T> src,
+        int32_t valid)
+    {
+        AscendC::DataCopyExtParams copyParams{
+            1,
+            static_cast<uint32_t>(
+                valid * static_cast<int32_t>(sizeof(T))),
+            0,
+            0,
+            0
+        };
+
+        AscendC::DataCopyPad<T>(
+            dst[offset],
+            src,
+            copyParams);
+    }
+
+    __aicore__ inline void ToFp32(
+        AscendC::LocalTensor<float> dst,
+        AscendC::LocalTensor<T> src,
+        int32_t valid)
+    {
+        if constexpr (AscendC::IsSameType<T, float>::value) {
+            AscendC::Adds(
+                dst,
+                src,
+                0.0f,
+                valid);
+        } else {
+            AscendC::Cast(
+                dst,
+                src,
+                AscendC::RoundMode::CAST_NONE,
+                valid);
+        }
+    }
+
+    __aicore__ inline void FromFp32(
+        AscendC::LocalTensor<T> dst,
+        AscendC::LocalTensor<float> src,
+        int32_t valid)
+    {
+        if constexpr (AscendC::IsSameType<T, float>::value) {
+            AscendC::Adds(
+                dst,
+                src,
+                0.0f,
+                valid);
+        } else {
+            AscendC::Cast(
+                dst,
+                src,
+                AscendC::RoundMode::CAST_RINT,
+                valid);
+        }
+    }
+
+    __aicore__ inline AscendC::LocalTensor<T> XSlot(
+        bool second)
+    {
+        if (second) {
+            return xSlot1_.Get<T>();
+        }
+        return xSlot0_.Get<T>();
+    }
+
+    __aicore__ inline AscendC::LocalTensor<T> RSlot(
+        bool second)
+    {
+        if (second) {
+            return rSlot1_.Get<T>();
+        }
+        return rSlot0_.Get<T>();
+    }
+
+    __aicore__ inline void LoadInputSlot(
+        bool second,
+        uint64_t gmOffset,
+        int32_t valid)
+    {
+        AscendC::LocalTensor<T> xLocal = XSlot(second);
+        AscendC::LocalTensor<T> rLocal = RSlot(second);
+
+        LoadNative(
+            xLocal,
+            xGm_,
+            gmOffset,
+            valid);
+
+        LoadNative(
+            rLocal,
+            residualGm_,
+            gmOffset,
+            valid);
+    }
+
+    __aicore__ inline void LoadMergedPair(
+        bool second,
+        uint64_t gmOffset,
+        int32_t rowWidth)
+    {
+        AscendC::LocalTensor<T> xLocal = XSlot(second);
+        AscendC::LocalTensor<T> rLocal = RSlot(second);
+
+        const uint32_t mergedBytes = static_cast<uint32_t>(
+            2 * rowWidth * static_cast<int32_t>(sizeof(T)));
+
+        AscendC::DataCopyExtParams copyParams{
+            1,
+            mergedBytes,
+            0,
+            0,
+            0
+        };
+
+        AscendC::DataCopyPadExtParams<T> padParams{
+            false,
+            0,
+            0,
+            0
+        };
+
+        AscendC::DataCopyPad<T>(
+            xLocal,
+            xGm_[gmOffset],
+            copyParams,
+            padParams);
+
+        AscendC::DataCopyPad<T>(
+            rLocal,
+            residualGm_[gmOffset],
+            copyParams,
+            padParams);
+    }
+
+    __aicore__ inline void FormYFromLoaded(
+        bool second,
+        int32_t base,
+        int32_t valid)
+    {
+        AscendC::LocalTensor<T> xLocal = XSlot(second)[base];
+        AscendC::LocalTensor<T> rLocal = RSlot(second)[base];
+
+        AscendC::LocalTensor<float> xFp32 =
+            xFp32_.Get<float>();
+
+        AscendC::LocalTensor<float> rFp32 =
+            rFp32_.Get<float>();
+
+        AscendC::LocalTensor<float> yFp32 =
+            yFp32_.Get<float>();
+
+        if constexpr (AscendC::IsSameType<T, float>::value) {
+            AscendC::Add(
+                yFp32,
+                xLocal,
+                rLocal,
+                valid);
+        } else {
+            ToFp32(
+                xFp32,
+                xLocal,
+                valid);
+
+            ToFp32(
+                rFp32,
+                rLocal,
+                valid);
+
+            AscendC::PipeBarrier<PIPE_V>();
+
+            AscendC::Add(
+                yFp32,
+                xFp32,
+                rFp32,
+                valid);
+        }
+
+        AscendC::PipeBarrier<PIPE_V>();
+    }
+
+    __aicore__ inline void FormYFromSlot(
+        bool second,
+        int32_t valid)
+    {
+        FormYFromLoaded(second, 0, valid);
+    }
+
+    __aicore__ inline float ReadVectorScalar(
+        AscendC::LocalTensor<float> tensor)
+    {
+        AscendC::SetFlag<AscendC::HardEvent::V_S>(0);
+        AscendC::WaitFlag<AscendC::HardEvent::V_S>(0);
+
+        const float value = tensor.GetValue(0);
+
+        AscendC::SetFlag<AscendC::HardEvent::S_V>(0);
+        AscendC::WaitFlag<AscendC::HardEvent::S_V>(0);
+
+        return value;
+    }
+
+    /*
+     * First pass, single tile.
+     * There is nothing to overlap, so avoid event allocation overhead.
+     */
+    __aicore__ inline float FirstPassLoaded(
+        bool second,
+        int32_t base,
+        int32_t valid,
+        float invRowWidth,
+        float epsilon)
+    {
+        AscendC::LocalTensor<float> scalarSlots =
+            scalar_.Get<float>();
+
+        AscendC::LocalTensor<float> partial =
+            scalarSlots;
+
+        AscendC::LocalTensor<float> rowSum =
+            scalarSlots[kScalarOffset];
+
+        AscendC::LocalTensor<float> xFp32 =
+            xFp32_.Get<float>();
+
+        AscendC::LocalTensor<float> rFp32 =
+            rFp32_.Get<float>();
+
+        AscendC::LocalTensor<float> yFp32 =
+            yFp32_.Get<float>();
+
+        FormYFromLoaded(
+            second,
+            base,
+            valid);
+
+        AscendC::Mul(
+            xFp32,
+            yFp32,
+            yFp32,
+            valid);
+
+        AscendC::PipeBarrier<PIPE_V>();
+
+        AscendC::ReduceSum(
+            partial,
+            xFp32,
+            rFp32,
+            valid);
+
+        AscendC::PipeBarrier<PIPE_V>();
+
+        AscendC::Muls(
+            rowSum,
+            partial,
+            invRowWidth,
+            1);
+
+        AscendC::PipeBarrier<PIPE_V>();
+
+        AscendC::Adds(
+            rowSum,
+            rowSum,
+            epsilon,
+            1);
+
+        AscendC::PipeBarrier<PIPE_V>();
+
+        AscendC::Sqrt(
+            rowSum,
+            rowSum,
+            1);
+
+        AscendC::PipeBarrier<PIPE_V>();
+
+        return ReadVectorScalar(rowSum);
+    }
+
+    __aicore__ inline float FirstPassSingleTile(
+        uint64_t rowOffset,
+        uint64_t rowWidth,
+        float invRowWidth,
+        float epsilon)
+    {
+        const int32_t valid =
+            TileLength(rowWidth);
+
+        AscendC::LocalTensor<float> scalarSlots =
+            scalar_.Get<float>();
+
+        AscendC::LocalTensor<float> partial =
+            scalarSlots;
+
+        AscendC::LocalTensor<float> rowSum =
+            scalarSlots[kScalarOffset];
+
+        AscendC::LocalTensor<float> xFp32 =
+            xFp32_.Get<float>();
+
+        AscendC::LocalTensor<float> rFp32 =
+            rFp32_.Get<float>();
+
+        AscendC::LocalTensor<float> yFp32 =
+            yFp32_.Get<float>();
+
+        LoadInputSlot(
+            false,
+            rowOffset,
+            valid);
+
+        AscendC::PipeBarrier<PIPE_ALL>();
+
+        FormYFromSlot(
+            false,
+            valid);
+
+        AscendC::Mul(
+            xFp32,
+            yFp32,
+            yFp32,
+            valid);
+
+        AscendC::PipeBarrier<PIPE_V>();
+
+        AscendC::ReduceSum(
+            partial,
+            xFp32,
+            rFp32,
+            valid);
+
+        AscendC::PipeBarrier<PIPE_V>();
+
+        AscendC::Muls(
+            rowSum,
+            partial,
+            invRowWidth,
+            1);
+
+        AscendC::PipeBarrier<PIPE_V>();
+
+        AscendC::Adds(
+            rowSum,
+            rowSum,
+            epsilon,
+            1);
+
+        AscendC::PipeBarrier<PIPE_V>();
+
+        AscendC::Sqrt(
+            rowSum,
+            rowSum,
+            1);
+
+        AscendC::PipeBarrier<PIPE_V>();
+
+        return ReadVectorScalar(rowSum);
+    }
+
+    /*
+     * First pass, pipelined tiles.
+     *
+     * Slot state machine:
+     *   MTE2 load -> MTE2_V ready -> Vector consume -> V_MTE2 free.
+     *
+     * While Vector consumes slot S for tile N, MTE2 is allowed to fill the
+     * alternate slot for tile N+1.
+     */
+    __aicore__ inline float FirstPassPipelined(
+        uint64_t rowOffset,
+        uint64_t rowWidth,
+        float invRowWidth,
+        float epsilon)
+    {
+        AscendC::LocalTensor<float> scalarSlots =
+            scalar_.Get<float>();
+
+        AscendC::LocalTensor<float> partial =
+            scalarSlots;
+
+        AscendC::LocalTensor<float> rowSum =
+            scalarSlots[kScalarOffset];
+
+        AscendC::LocalTensor<float> xFp32 =
+            xFp32_.Get<float>();
+
+        AscendC::LocalTensor<float> rFp32 =
+            rFp32_.Get<float>();
+
+        AscendC::LocalTensor<float> yFp32 =
+            yFp32_.Get<float>();
+
+        AscendC::Duplicate(
+            rowSum,
+            0.0f,
+            1);
+
+        AscendC::PipeBarrier<PIPE_V>();
+
+        const AscendC::TEventID ready0 =
+            pipe_.AllocEventID<AscendC::HardEvent::MTE2_V>();
+
+        const AscendC::TEventID ready1 =
+            pipe_.AllocEventID<AscendC::HardEvent::MTE2_V>();
+
+        const AscendC::TEventID free0 =
+            pipe_.AllocEventID<AscendC::HardEvent::V_MTE2>();
+
+        const AscendC::TEventID free1 =
+            pipe_.AllocEventID<AscendC::HardEvent::V_MTE2>();
+
+        bool pendingFree0 = false;
+        bool pendingFree1 = false;
+
+        const uint64_t tileCount =
+            TileCount(rowWidth);
+
+        const int32_t firstValid =
+            TileLength(rowWidth);
+
+        LoadInputSlot(
+            false,
+            rowOffset,
+            firstValid);
+
+        AscendC::SetFlag<AscendC::HardEvent::MTE2_V>(ready0);
+
+        for (uint64_t tile = 0;
+             tile < tileCount;
+             ++tile) {
+            const bool second =
+                (tile & 1ULL) != 0ULL;
+
+            if (second) {
+                AscendC::WaitFlag<AscendC::HardEvent::MTE2_V>(ready1);
+            } else {
+                AscendC::WaitFlag<AscendC::HardEvent::MTE2_V>(ready0);
+            }
+
+            /*
+             * Prefetch tile N+1 before launching Vector work for tile N.
+             */
+            if (tile + 1ULL < tileCount) {
+                const bool nextSecond = !second;
+
+                if (nextSecond) {
+                    if (pendingFree1) {
+                        AscendC::WaitFlag<AscendC::HardEvent::V_MTE2>(free1);
+                        pendingFree1 = false;
+                    }
+                } else {
+                    if (pendingFree0) {
+                        AscendC::WaitFlag<AscendC::HardEvent::V_MTE2>(free0);
+                        pendingFree0 = false;
+                    }
+                }
+
+                const uint64_t nextCol =
+                    (tile + 1ULL) *
+                    static_cast<uint64_t>(kTileElems);
+
+                const int32_t nextValid =
+                    TileLength(rowWidth - nextCol);
+
+                LoadInputSlot(
+                    nextSecond,
+                    rowOffset + nextCol,
+                    nextValid);
+
+                if (nextSecond) {
+                    AscendC::SetFlag<AscendC::HardEvent::MTE2_V>(ready1);
+                } else {
+                    AscendC::SetFlag<AscendC::HardEvent::MTE2_V>(ready0);
+                }
+            }
+
+            const uint64_t col =
+                tile * static_cast<uint64_t>(kTileElems);
+
+            const int32_t valid =
+                TileLength(rowWidth - col);
+
+            FormYFromSlot(
+                second,
+                valid);
+
+            AscendC::Mul(
+                xFp32,
+                yFp32,
+                yFp32,
+                valid);
+
+            AscendC::PipeBarrier<PIPE_V>();
+
+            AscendC::ReduceSum(
+                partial,
+                xFp32,
+                rFp32,
+                valid);
+
+            AscendC::PipeBarrier<PIPE_V>();
+
+            AscendC::Add(
+                rowSum,
+                rowSum,
+                partial,
+                1);
+
+            AscendC::PipeBarrier<PIPE_V>();
+
+            if (second) {
+                AscendC::SetFlag<AscendC::HardEvent::V_MTE2>(free1);
+                pendingFree1 = true;
+            } else {
+                AscendC::SetFlag<AscendC::HardEvent::V_MTE2>(free0);
+                pendingFree0 = true;
+            }
+        }
+
+        AscendC::Muls(
+            rowSum,
+            rowSum,
+            invRowWidth,
+            1);
+
+        AscendC::PipeBarrier<PIPE_V>();
+
+        AscendC::Adds(
+            rowSum,
+            rowSum,
+            epsilon,
+            1);
+
+        AscendC::PipeBarrier<PIPE_V>();
+
+        AscendC::Sqrt(
+            rowSum,
+            rowSum,
+            1);
+
+        AscendC::PipeBarrier<PIPE_V>();
+
+        const float rmsValue =
+            ReadVectorScalar(rowSum);
+
+        if (pendingFree0) {
+            AscendC::WaitFlag<AscendC::HardEvent::V_MTE2>(free0);
+        }
+
+        if (pendingFree1) {
+            AscendC::WaitFlag<AscendC::HardEvent::V_MTE2>(free1);
+        }
+
+        pipe_.ReleaseEventID<AscendC::HardEvent::MTE2_V>(ready0);
+        pipe_.ReleaseEventID<AscendC::HardEvent::MTE2_V>(ready1);
+        pipe_.ReleaseEventID<AscendC::HardEvent::V_MTE2>(free0);
+        pipe_.ReleaseEventID<AscendC::HardEvent::V_MTE2>(free1);
+
+        return rmsValue;
+    }
+
+    __aicore__ inline void ApplyParametersAndStore(
+        uint64_t rowOffset,
+        uint64_t col,
+        int32_t valid,
+        float rmsValue)
+    {
+        AscendC::LocalTensor<T> gammaLocal =
+            gammaStage_.Get<T>();
+
+        AscendC::LocalTensor<T> biasLocal =
+            biasStage_.Get<T>();
+
+        AscendC::LocalTensor<T> outLocal =
+            outNative_.Get<T>();
+
+        AscendC::LocalTensor<float> xFp32 =
+            xFp32_.Get<float>();
+
+        AscendC::LocalTensor<float> rFp32 =
+            rFp32_.Get<float>();
+
+        AscendC::LocalTensor<float> yFp32 =
+            yFp32_.Get<float>();
+
+        /* rFp32 is dead after y formation; use it as denominator vector. */
+        AscendC::Duplicate(
+            rFp32,
+            rmsValue,
+            valid);
+
+        AscendC::PipeBarrier<PIPE_V>();
+
+        AscendC::Div(
+            yFp32,
+            yFp32,
+            rFp32,
+            valid);
+
+        AscendC::PipeBarrier<PIPE_V>();
+
+        LoadNative(
+            gammaLocal,
+            gammaGm_,
+            col,
+            valid);
+
+        LoadNative(
+            biasLocal,
+            biasGm_,
+            col,
+            valid);
+
+        AscendC::PipeBarrier<PIPE_ALL>();
+
+        if constexpr (AscendC::IsSameType<T, float>::value) {
+            AscendC::Mul(
+                yFp32,
+                yFp32,
+                gammaLocal,
+                valid);
+
+            AscendC::PipeBarrier<PIPE_V>();
+
+            AscendC::Add(
+                yFp32,
+                yFp32,
+                biasLocal,
+                valid);
+        } else {
+            ToFp32(
+                xFp32,
+                gammaLocal,
+                valid);
+
+            ToFp32(
+                rFp32,
+                biasLocal,
+                valid);
+
+            AscendC::PipeBarrier<PIPE_V>();
+
+            AscendC::Mul(
+                yFp32,
+                yFp32,
+                xFp32,
+                valid);
+
+            AscendC::PipeBarrier<PIPE_V>();
+
+            AscendC::Add(
+                yFp32,
+                yFp32,
+                rFp32,
+                valid);
+        }
+
+        AscendC::PipeBarrier<PIPE_V>();
+
+        FromFp32(
+            outLocal,
+            yFp32,
+            valid);
+
+        AscendC::PipeBarrier<PIPE_ALL>();
+
+        StoreNative(
+            outputGm_,
+            rowOffset + col,
+            outLocal,
+            valid);
+
+        AscendC::PipeBarrier<PIPE_ALL>();
+    }
+
+    __aicore__ inline void SecondPassSingleTile(
+        uint64_t rowOffset,
+        uint64_t rowWidth,
+        float rmsValue)
+    {
+        const int32_t valid =
+            TileLength(rowWidth);
+
+        LoadInputSlot(
+            false,
+            rowOffset,
+            valid);
+
+        AscendC::PipeBarrier<PIPE_ALL>();
+
+        FormYFromSlot(
+            false,
+            valid);
+
+        ApplyParametersAndStore(
+            rowOffset,
+            0ULL,
+            valid,
+            rmsValue);
+    }
+
+    /*
+     * Small-row multi-row path.  One merged input transfer populates
+     * [row0 | row1] in the native slot; the two rows then reuse the same
+     * layout while keeping independent normalization scalars.
+     */
+    __aicore__ inline void ProcessMergedPair(
+        uint64_t pair,
+        uint64_t rowWidth,
+        float invRowWidth,
+        float epsilon)
+    {
+        const int32_t valid = static_cast<int32_t>(rowWidth);
+        const uint64_t rowOffset =
+            pair * 2ULL * rowWidth;
+
+        LoadMergedPair(
+            false,
+            rowOffset,
+            valid);
+
+        AscendC::PipeBarrier<PIPE_ALL>();
+
+        const float rms0 = FirstPassLoaded(
+            false,
+            0,
+            valid,
+            invRowWidth,
+            epsilon);
+
+        const float rms1 = FirstPassLoaded(
+            false,
+            valid,
+            valid,
+            invRowWidth,
+            epsilon);
+
+        /* The first merged load remains resident for the output pass. */
+        FormYFromLoaded(
+            false,
+            0,
+            valid);
+
+        ApplyParametersAndStore(
+            rowOffset,
+            0ULL,
+            valid,
+            rms0);
+
+        FormYFromLoaded(
+            false,
+            valid,
+            valid);
+
+        ApplyParametersAndStore(
+            rowOffset + rowWidth,
+            0ULL,
+            valid,
+            rms1);
+    }
+
+    /*
+     * Second pass pipeline.
+     *
+     * The alternate x/residual slot is prefetched before Vector consumes the
+     * current one.  gamma/bias live in separate staging buffers, so parameter
+     * traffic cannot overwrite either ping-pong input slot.
+     */
+    __aicore__ inline void SecondPassPipelined(
+        uint64_t rowOffset,
+        uint64_t rowWidth,
+        float rmsValue)
+    {
+        const AscendC::TEventID ready0 =
+            pipe_.AllocEventID<AscendC::HardEvent::MTE2_V>();
+
+        const AscendC::TEventID ready1 =
+            pipe_.AllocEventID<AscendC::HardEvent::MTE2_V>();
+
+        const AscendC::TEventID free0 =
+            pipe_.AllocEventID<AscendC::HardEvent::V_MTE2>();
+
+        const AscendC::TEventID free1 =
+            pipe_.AllocEventID<AscendC::HardEvent::V_MTE2>();
+
+        bool pendingFree0 = false;
+        bool pendingFree1 = false;
+
+        const uint64_t tileCount =
+            TileCount(rowWidth);
+
+        const int32_t firstValid =
+            TileLength(rowWidth);
+
+        LoadInputSlot(
+            false,
+            rowOffset,
+            firstValid);
+
+        AscendC::SetFlag<AscendC::HardEvent::MTE2_V>(ready0);
+
+        for (uint64_t tile = 0;
+             tile < tileCount;
+             ++tile) {
+            const bool second =
+                (tile & 1ULL) != 0ULL;
+
+            if (second) {
+                AscendC::WaitFlag<AscendC::HardEvent::MTE2_V>(ready1);
+            } else {
+                AscendC::WaitFlag<AscendC::HardEvent::MTE2_V>(ready0);
+            }
+
+            if (tile + 1ULL < tileCount) {
+                const bool nextSecond = !second;
+
+                if (nextSecond) {
+                    if (pendingFree1) {
+                        AscendC::WaitFlag<AscendC::HardEvent::V_MTE2>(free1);
+                        pendingFree1 = false;
+                    }
+                } else {
+                    if (pendingFree0) {
+                        AscendC::WaitFlag<AscendC::HardEvent::V_MTE2>(free0);
+                        pendingFree0 = false;
+                    }
+                }
+
+                const uint64_t nextCol =
+                    (tile + 1ULL) *
+                    static_cast<uint64_t>(kTileElems);
+
+                const int32_t nextValid =
+                    TileLength(rowWidth - nextCol);
+
+                LoadInputSlot(
+                    nextSecond,
+                    rowOffset + nextCol,
+                    nextValid);
+
+                if (nextSecond) {
+                    AscendC::SetFlag<AscendC::HardEvent::MTE2_V>(ready1);
+                } else {
+                    AscendC::SetFlag<AscendC::HardEvent::MTE2_V>(ready0);
+                }
+            }
+
+            const uint64_t col =
+                tile * static_cast<uint64_t>(kTileElems);
+
+            const int32_t valid =
+                TileLength(rowWidth - col);
+
+            FormYFromSlot(
+                second,
+                valid);
+
+            /*
+             * y has consumed this input slot.  Release the native slot before
+             * parameter processing for the current tile.
+             */
+            if (second) {
+                AscendC::SetFlag<AscendC::HardEvent::V_MTE2>(free1);
+                pendingFree1 = true;
+            } else {
+                AscendC::SetFlag<AscendC::HardEvent::V_MTE2>(free0);
+                pendingFree0 = true;
+            }
+
+            ApplyParametersAndStore(
+                rowOffset,
+                col,
+                valid,
+                rmsValue);
+        }
+
+        if (pendingFree0) {
+            AscendC::WaitFlag<AscendC::HardEvent::V_MTE2>(free0);
+        }
+
+        if (pendingFree1) {
+            AscendC::WaitFlag<AscendC::HardEvent::V_MTE2>(free1);
+        }
+
+        pipe_.ReleaseEventID<AscendC::HardEvent::MTE2_V>(ready0);
+        pipe_.ReleaseEventID<AscendC::HardEvent::MTE2_V>(ready1);
+        pipe_.ReleaseEventID<AscendC::HardEvent::V_MTE2>(free0);
+        pipe_.ReleaseEventID<AscendC::HardEvent::V_MTE2>(free1);
+    }
+
+    __aicore__ inline void ProcessRow(
+        uint64_t row,
+        uint64_t rowWidth,
+        float invRowWidth,
+        float epsilon)
+    {
+        const uint64_t rowOffset =
+            row * rowWidth;
+
+        const bool multiTile =
+            rowWidth > static_cast<uint64_t>(kTileElems);
+
+        float rmsValue = 0.0f;
+
+        if (multiTile) {
+            rmsValue = FirstPassPipelined(
+                rowOffset,
+                rowWidth,
+                invRowWidth,
+                epsilon);
+
+            SecondPassPipelined(
+                rowOffset,
+                rowWidth,
+                rmsValue);
+        } else {
+            rmsValue = FirstPassSingleTile(
+                rowOffset,
+                rowWidth,
+                invRowWidth,
+                epsilon);
+
+            SecondPassSingleTile(
+                rowOffset,
+                rowWidth,
+                rmsValue);
+        }
+    }
+
+private:
+    AscendC::TPipe pipe_;
+
+    AscendC::TBuf<AscendC::TPosition::VECCALC> xSlot0_;
+    AscendC::TBuf<AscendC::TPosition::VECCALC> rSlot0_;
+    AscendC::TBuf<AscendC::TPosition::VECCALC> xSlot1_;
+    AscendC::TBuf<AscendC::TPosition::VECCALC> rSlot1_;
+
+    AscendC::TBuf<AscendC::TPosition::VECCALC> gammaStage_;
+    AscendC::TBuf<AscendC::TPosition::VECCALC> biasStage_;
+    AscendC::TBuf<AscendC::TPosition::VECCALC> outNative_;
+
+    AscendC::TBuf<AscendC::TPosition::VECCALC> xFp32_;
+    AscendC::TBuf<AscendC::TPosition::VECCALC> rFp32_;
+    AscendC::TBuf<AscendC::TPosition::VECCALC> yFp32_;
+    AscendC::TBuf<AscendC::TPosition::VECCALC> scalar_;
+
+    AscendC::GlobalTensor<T> xGm_;
+    AscendC::GlobalTensor<T> residualGm_;
+    AscendC::GlobalTensor<T> gammaGm_;
+    AscendC::GlobalTensor<T> biasGm_;
+    AscendC::GlobalTensor<T> outputGm_;
+};
+
+template <typename T>
+__global__ __vector__ void add_rms_norm_bias_r015(
+    GM_ADDR x,
+    GM_ADDR residual,
+    GM_ADDR gamma,
+    GM_ADDR bias,
+    GM_ADDR output,
+    uint64_t rowCount,
+    uint64_t rowWidth,
+    float invRowWidth,
+    float epsilon)
+{
+    R015MultiRowDmaKernel<T> kernel;
+
+    kernel.Init(
+        x,
+        residual,
+        gamma,
+        bias,
+        output);
+
+    kernel.Process(
+        rowCount,
+        rowWidth,
+        invRowWidth,
+        epsilon);
+}
+
+#if !defined(ASCENDC_CPU_DEBUG)
+extern "C" void run_kernel(
+    GM_ADDR x,
+    const TensorGroupInfo& info_x,
+    GM_ADDR residual,
+    const TensorGroupInfo& info_residual,
+    GM_ADDR gamma,
+    const TensorGroupInfo& info_gamma,
+    GM_ADDR bias,
+    const TensorGroupInfo& info_bias,
+    GM_ADDR output,
+    const TensorGroupInfo& info_output,
+    int64_t availableCoreNum,
+    aclrtStream stream,
+    float epsilon)
+{
+    if (x == nullptr ||
+        residual == nullptr ||
+        gamma == nullptr ||
+        bias == nullptr ||
+        output == nullptr ||
+        info_x.tensors == nullptr ||
+        info_residual.tensors == nullptr ||
+        info_gamma.tensors == nullptr ||
+        info_bias.tensors == nullptr ||
+        info_output.tensors == nullptr ||
+        info_x.numTensors < 1 ||
+        info_residual.numTensors < 1 ||
+        info_gamma.numTensors < 1 ||
+        info_bias.numTensors < 1 ||
+        info_output.numTensors < 1) {
+        return;
+    }
+
+    const TensorInfo& xInfo =
+        info_x.tensors[0];
+
+    const TensorInfo& residualInfo =
+        info_residual.tensors[0];
+
+    const TensorInfo& gammaInfo =
+        info_gamma.tensors[0];
+
+    const TensorInfo& biasInfo =
+        info_bias.tensors[0];
+
+    const TensorInfo& outputInfo =
+        info_output.tensors[0];
+
+    if (xInfo.shape == nullptr ||
+        residualInfo.shape == nullptr ||
+        gammaInfo.shape == nullptr ||
+        biasInfo.shape == nullptr ||
+        outputInfo.shape == nullptr ||
+        xInfo.numDims < 1 ||
+        residualInfo.numDims != xInfo.numDims ||
+        outputInfo.numDims != xInfo.numDims ||
+        gammaInfo.numDims != 1 ||
+        biasInfo.numDims != 1 ||
+        xInfo.dtype != residualInfo.dtype ||
+        xInfo.dtype != gammaInfo.dtype ||
+        xInfo.dtype != biasInfo.dtype ||
+        xInfo.dtype != outputInfo.dtype) {
+        return;
+    }
+
+    if (xInfo.dtype != 0 &&
+        xInfo.dtype != 1 &&
+        xInfo.dtype != 2) {
+        return;
+    }
+
+    const int64_t widthSigned =
+        xInfo.shape[xInfo.numDims - 1];
+
+    if (widthSigned <= 0 ||
+        gammaInfo.shape[0] != widthSigned ||
+        biasInfo.shape[0] != widthSigned ||
+        residualInfo.shape[xInfo.numDims - 1] != widthSigned ||
+        outputInfo.shape[xInfo.numDims - 1] != widthSigned) {
+        return;
+    }
+
+    const uint64_t maxU64 =
+        ~static_cast<uint64_t>(0);
+
+    uint64_t rowCount = 1ULL;
+
+    for (int64_t dim = 0;
+         dim < xInfo.numDims - 1;
+         ++dim) {
+        const int64_t extentSigned =
+            xInfo.shape[dim];
+
+        if (extentSigned <= 0 ||
+            residualInfo.shape[dim] != extentSigned ||
+            outputInfo.shape[dim] != extentSigned) {
+            return;
+        }
+
+        const uint64_t extent =
+            static_cast<uint64_t>(extentSigned);
+
+        if (rowCount > maxU64 / extent) {
+            return;
+        }
+
+        rowCount *= extent;
+    }
+
+    if (rowCount == 0ULL) {
+        return;
+    }
+
+    const uint64_t rowWidth =
+        static_cast<uint64_t>(widthSigned);
+
+    if (rowCount > maxU64 / rowWidth) {
+        return;
+    }
+
+    const uint64_t elementBytes =
+        xInfo.dtype == 0 ? 4ULL : 2ULL;
+
+    if (rowWidth > maxU64 / elementBytes) {
+        return;
+    }
+
+    const uint64_t rowBytes =
+        rowWidth * elementBytes;
+
+    const bool rowNaturallyAligned =
+        (rowBytes & 31ULL) == 0ULL;
+
+    uint64_t requestedBlocks =
+        rowNaturallyAligned && availableCoreNum > 0
+            ? static_cast<uint64_t>(availableCoreNum)
+            : 1ULL;
+
+    if (requestedBlocks > rowCount) {
+        requestedBlocks = rowCount;
+    }
+
+    if (requestedBlocks == 0ULL) {
+        requestedBlocks = 1ULL;
+    }
+
+    if (requestedBlocks >
+        static_cast<uint64_t>(0xffffffffU)) {
+        requestedBlocks =
+            static_cast<uint64_t>(0xffffffffU);
+    }
+
+    const uint32_t blockCount =
+        static_cast<uint32_t>(requestedBlocks);
+
+    const float invRowWidth =
+        1.0f / static_cast<float>(widthSigned);
+
+    if (xInfo.dtype == 0) {
+        add_rms_norm_bias_r015<float>
+            <<<blockCount, nullptr, stream>>>(
+                x,
+                residual,
+                gamma,
+                bias,
+                output,
+                rowCount,
+                rowWidth,
+                invRowWidth,
+                epsilon);
+    } else if (xInfo.dtype == 1) {
+        add_rms_norm_bias_r015<half>
+            <<<blockCount, nullptr, stream>>>(
+                x,
+                residual,
+                gamma,
+                bias,
+                output,
+                rowCount,
+                rowWidth,
+                invRowWidth,
+                epsilon);
+    } else {
+        add_rms_norm_bias_r015<bfloat16_t>
+            <<<blockCount, nullptr, stream>>>(
+                x,
+                residual,
+                gamma,
+                bias,
+                output,
+                rowCount,
+                rowWidth,
+                invRowWidth,
+                epsilon);
+    }
+}
+#endif

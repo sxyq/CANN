@@ -1,0 +1,53 @@
+{
+  "ROUTE": "MIX-A",
+  "REVISION": "V007",
+  "DIRECT_PARENT": "MIX-A-V003",
+  "PARENT_SOURCE_SHA": "1a1857a945ce1f04e3877437882b21a3d5071dddcd697103d7b539a0feb5c706",
+  "PARENT_SCORE": 44.69,
+  "SINGLE_HYPOTHESIS": "With V003's localRows == 1 dispatch gate unchanged, remove the pre-load SyncVToMTE2 in ProcessNarrowMidFast; no prior row can have written xBuf_/residualBuf_, so this release synchronization is redundant for the single-row path.",
+  "CONTEXT_CLASS": "HYBRID",
+  "FILES_CHANGED": [
+    "phase4/local/MIX-A/V007/source-meta.json",
+    "phase4/workspaces/MIX-A/MIX-A-V007-submission.asc",
+    "phase4/workspaces/MIX-A/MIX-A-V007-device.cpp",
+    "phase4/workspaces/MIX-A/compile_adapter.asc",
+    "phase4/workspaces/MIX-A/CMakeLists.txt",
+    "phase4/workspaces/MIX-A/configure-v007-server3.log",
+    "phase4/workspaces/MIX-A/compile-v007-device-server3.log",
+    "phase4/workspaces/MIX-A/compile-v007-submission-server3.log",
+    "phase4/workspaces/MIX-A/compile-v007-link-server3.log",
+    "phase4/local/MIX-A/V007/submission.asc",
+    "phase4/local/MIX-A/V007/submission.sha256",
+    "phase4/local/MIX-A/V007/diff.patch",
+    "phase4/local/MIX-A/V007/local-result.json",
+    "phase4/local/MIX-A/V007/support/CMakeLists.txt",
+    "phase4/local/MIX-A/V007/support/local_types.h",
+    "phase4/local/MIX-A/V007/support/runner_main.inc",
+    "phase4/local/MIX-A/V007/support/runner_v003.asc",
+    "phase4/local/MIX-A/V007/support/runner_v007.asc",
+    "phase4/local/MIX-A/V007/support/run_probes.sh",
+    "phase4/local/MIX-A/V007/support/results/"
+  ],
+  "SOURCE_SHA": "a63ad29a997ae2fe8a1238c1a47a9d5ddfb14d16f725fca975ce5c55523f28eb",
+  "COMPILE": "PASS (server3 CANN 8.5.0.alpha002 / Ascend910B3 / dav-2201; device and submission compile)",
+  "LINK": "PASS (server3 ld.lld -m aicorelinux; device and submission alink)",
+  "CORRECTNESS": "PASS: rows=1, D=256, FP32/FP16/BF16; bad=0 for V003 and V007 reference checks; paired outputs exactly equal (max_abs=0)",
+  "LOCAL_PROBES": [
+    {"pair": 1, "timestamp_utc": "2026-09-23T17:27:34+00:00", "V003_us": 109.111, "V007_us": 170.122, "status": "LOAD_CONTAMINATED"},
+    {"pair": 2, "timestamp_utc": "2026-09-23T17:27:48+00:00", "V003_us": 160.601, "V007_us": 111.831, "status": "LOAD_CONTAMINATED"},
+    {"pair": 3, "timestamp_utc": "2026-09-23T17:28:03+00:00", "V003_us": 103.101, "V007_us": 117.011, "status": "LOAD_CONTAMINATED"},
+    {"pair": 4, "timestamp_utc": "2026-09-23T17:28:17+00:00", "V003_us": 128.231, "V007_us": 115.141, "status": "LOAD_CONTAMINATED"}
+  ],
+  "LOCAL_DELTA": "Not inferable: all four paired probes LOAD_CONTAMINATED. Raw mean V003=125.261 us, V007=128.526 us (+2.61%); pairwise deltas inconsistent and not evidence of a performance regression or gain.",
+  "LOAD_QUALITY": "Main dispatch observation recorded for this route: \"all 8 NPUs have existing VLLM/python processes; AICore ~31-49% on devices 0-3 and 7, 0% on devices 4-6, HBM heavily occupied on all devices.\" Main message timestamp was not exposed. Route-side server3 verification timestamp: 2026-09-23T17:04:41+00:00; per-probe snapshots: 2026-09-23T17:27:34+00:00, 17:27:48+00:00, 17:28:03+00:00, 17:28:17+00:00. Snapshot processes: VLLMWorker_TP on 0-3 and 5-6, VLLMEngineCor on 4, python on 7; HBM 59,948-65,535 / 65,536 pages. All probe pairs marked LOAD_CONTAMINATED; no latency improvement claim.",
+  "ARCHITECTURE_NOVELTY": "None. V007 isolates removal of one V003 single-row release synchronization while retaining the existing FastKernel.",
+  "RISKS": [
+    "No uncontaminated performance evidence; four paired probes varied substantially under the recorded shared NPU load.",
+    "The hypothesis applies only while ProcessNarrowMidFast is dispatched for exactly one local row; do not widen its dispatch gate based on V007.",
+    "V003 itself is MULTI_CHANGE; V007 isolates one mechanism but its performance must be judged against direct parent V003."
+  ],
+  "DECISION": "NEEDS_ONE_MORE_LOCAL",
+  "NEXT_CANDIDATE_HYPOTHESIS": "Repeat the same V003-versus-V007 D=256 FP32 paired probe on the designated device only after Main confirms a sufficiently clear, uncontaminated load window; do not alter the source hypothesis before Main review.",
+  "CLEANUP": "None. No files or remote objects deleted.",
+  "ADDITIONAL_LOAD_OBSERVATION": "2026-09-23T19:35:28+00:00 through 2026-09-23T19:36:24+00:00 UTC, six samples at 10-second intervals: device 6 AICore stayed 0% and HBM stayed 59875/65536 pages; VLLM::Worker_TP1 PID 91228 and other VLLM Engine/Worker processes remained present. Device 7 was 0%, 0%, 0%, 0%, 14%, 0% with HBM 65526, 65526, 65527, 65527, 65527, 64997 / 65536 pages. Evidence: support/results/load-window-observation-20260924-session02.txt. No paired probe was run; window classified NO_COMPARABLE_WINDOW / LOAD_CONTAMINATED."
+}

@@ -1,0 +1,368 @@
+#include <cmath>
+#include <cstdint>
+#include "kernel_operator.h"
+
+using namespace AscendC;
+
+namespace {
+// FULL-R004-LOW-PRECISION-MIDDLE-V001: tile arithmetic stays in T. FP32 is
+// used only for the scalar RMS value and launch parameters.
+constexpr uint32_t BUFFER_NUM = 1;
+constexpr uint32_t TILE_HALF = 4096;
+constexpr uint32_t TILE_FLOAT = 2048;
+constexpr uint32_t WORK_LEN = 1024;
+constexpr uint32_t SUM_LEN = 16;
+constexpr uint32_t MAX_DIM = 32768;
+constexpr uint64_t MAX_ELEMENTS = 0xffffffffULL;
+
+template <typename T>
+class AddRmsNormBiasKernel {
+public:
+    __aicore__ inline void Init(GM_ADDR x, GM_ADDR residual, GM_ADDR gamma,
+                                GM_ADDR bias, GM_ADDR output, uint32_t outer,
+                                uint32_t dim, float epsilon)
+    {
+        outer_ = outer;
+        dim_ = dim;
+        epsilon_ = epsilon;
+        tile_len_ = sizeof(T) == sizeof(float) ? TILE_FLOAT : TILE_HALF;
+
+        x_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(x), outer_ * dim_);
+        residual_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(residual), outer_ * dim_);
+        gamma_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(gamma), dim_);
+        bias_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(bias), dim_);
+        output_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(output), outer_ * dim_);
+
+        pipe_.InitBuffer(x_queue_, BUFFER_NUM, tile_len_ * sizeof(T));
+        pipe_.InitBuffer(residual_queue_, BUFFER_NUM, tile_len_ * sizeof(T));
+        pipe_.InitBuffer(gamma_queue_, BUFFER_NUM, tile_len_ * sizeof(T));
+        pipe_.InitBuffer(bias_queue_, BUFFER_NUM, tile_len_ * sizeof(T));
+        pipe_.InitBuffer(output_queue_, BUFFER_NUM, tile_len_ * sizeof(T));
+        pipe_.InitBuffer(value_native_, tile_len_ * sizeof(T));
+        pipe_.InitBuffer(scale_native_, tile_len_ * sizeof(T));
+        pipe_.InitBuffer(work_, WORK_LEN * sizeof(T));
+        pipe_.InitBuffer(sum_, SUM_LEN * sizeof(T));
+        pipe_.InitBuffer(rms_scalar_, sizeof(float));
+    }
+
+    __aicore__ inline void Process(float inv_dim)
+    {
+        uint32_t block = GetBlockIdx();
+        uint32_t blocks = GetBlockNum();
+        uint32_t each = outer_ / blocks;
+        uint32_t extra = outer_ % blocks;
+        uint32_t first = block * each + (block < extra ? block : extra);
+        uint32_t count = each + (block < extra ? 1 : 0);
+        for (uint32_t row = first; row < first + count; ++row) {
+            float square_sum = ReduceRow(row);
+            LocalTensor<float> rms_tensor = rms_scalar_.Get<float>();
+            Duplicate(rms_tensor, square_sum, 1);
+            Muls(rms_tensor, rms_tensor, inv_dim, 1);
+            Adds(rms_tensor, rms_tensor, epsilon_, 1);
+            Sqrt(rms_tensor, rms_tensor, 1);
+            PipeBarrier<PIPE_V>();
+            event_t event_vs = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::V_S));
+            SetFlag<HardEvent::V_S>(event_vs);
+            WaitFlag<HardEvent::V_S>(event_vs);
+            float rms = rms_tensor.GetValue(0);
+            event_t event_sv = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::S_V));
+            SetFlag<HardEvent::S_V>(event_sv);
+            WaitFlag<HardEvent::S_V>(event_sv);
+            NormalizeRow(row, 1.0f / rms);
+        }
+    }
+
+private:
+    __aicore__ inline void CopyIn(LocalTensor<T>& dst, const GlobalTensor<T>& src,
+                                  uint32_t offset, uint32_t len)
+    {
+        // DataCopyPad also handles rows whose starting address is not 32-byte aligned.
+        uint32_t aligned_len = AlignedLen(len);
+        uint32_t right_padding = aligned_len - len;
+        DataCopyExtParams params{1, static_cast<uint32_t>(len * sizeof(T)), 0, 0, 0};
+        DataCopyPadExtParams<T> pad{
+            right_padding != 0, 0, static_cast<uint8_t>(right_padding), static_cast<T>(0)};
+        DataCopyPad(dst, src[offset], params, pad);
+    }
+
+    __aicore__ inline void CopyOut(const LocalTensor<T>& src,
+                                   const GlobalTensor<T>& dst,
+                                   uint32_t offset, uint32_t len)
+    {
+        DataCopyExtParams params{1, static_cast<uint32_t>(len * sizeof(T)), 0, 0, 0};
+        DataCopyPad(dst[offset], src, params);
+    }
+
+    __aicore__ inline uint32_t AlignedLen(uint32_t len) const
+    {
+        const uint32_t elements_per_block = 32 / sizeof(T);
+        return ((len + elements_per_block - 1) / elements_per_block) * elements_per_block;
+    }
+
+    __aicore__ inline void MakeValue(LocalTensor<T>& value,
+                                     const LocalTensor<T>& x,
+                                     const LocalTensor<T>& residual,
+                                     uint32_t len)
+    {
+        Add(value, x, residual, len);
+    }
+
+    __aicore__ inline void ApplyAffine(LocalTensor<T>& value,
+                                       const LocalTensor<T>& gamma,
+                                       const LocalTensor<T>& bias,
+                                       uint32_t len)
+    {
+        Mul(value, value, gamma, len);
+        Add(value, value, bias, len);
+    }
+
+    __aicore__ inline float ReduceRow(uint32_t row)
+    {
+        float total = 0.0f;
+        uint32_t offset = 0;
+        uint32_t base = row * dim_;
+        while (offset < dim_) {
+            uint32_t valid_len = dim_ - offset < tile_len_ ? dim_ - offset : tile_len_;
+            CopyAndReduce(base + offset, valid_len, AlignedLen(valid_len), total);
+            offset += valid_len;
+        }
+        return total;
+    }
+
+    __aicore__ inline void CopyAndReduce(uint32_t offset, uint32_t valid_len,
+                                         uint32_t calc_len, float& total)
+    {
+        LocalTensor<T> x_local = x_queue_.AllocTensor<T>();
+        LocalTensor<T> residual_local = residual_queue_.AllocTensor<T>();
+        CopyIn(x_local, x_, offset, valid_len);
+        CopyIn(residual_local, residual_, offset, valid_len);
+        x_queue_.EnQue(x_local);
+        residual_queue_.EnQue(residual_local);
+        x_local = x_queue_.DeQue<T>();
+        residual_local = residual_queue_.DeQue<T>();
+
+        // Work on the full padded tile so vector operations stay aligned.
+        LocalTensor<T> value = value_native_.Get<T>();
+        MakeValue(value, x_local, residual_local, calc_len);
+        Mul(value, value, value, calc_len);
+        ReduceSum(sum_.Get<T>(), value, work_.Get<T>(),
+                  static_cast<int32_t>(calc_len));
+        PipeBarrier<PIPE_V>();
+        event_t event_vs = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::V_S));
+        SetFlag<HardEvent::V_S>(event_vs);
+        WaitFlag<HardEvent::V_S>(event_vs);
+        total += static_cast<float>(sum_.Get<T>().GetValue(0));
+        event_t event_sv = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::S_V));
+        SetFlag<HardEvent::S_V>(event_sv);
+        WaitFlag<HardEvent::S_V>(event_sv);
+        PipeBarrier<PIPE_V>();
+
+        x_queue_.FreeTensor(x_local);
+        residual_queue_.FreeTensor(residual_local);
+    }
+
+    __aicore__ inline void NormalizeRow(uint32_t row, float scale)
+    {
+        uint32_t offset = 0;
+        uint32_t base = row * dim_;
+        while (offset < dim_) {
+            uint32_t valid_len = dim_ - offset < tile_len_ ? dim_ - offset : tile_len_;
+            uint32_t calc_len = AlignedLen(valid_len);
+            LocalTensor<T> x_local = x_queue_.AllocTensor<T>();
+            LocalTensor<T> residual_local = residual_queue_.AllocTensor<T>();
+            LocalTensor<T> gamma_local = gamma_queue_.AllocTensor<T>();
+            LocalTensor<T> bias_local = bias_queue_.AllocTensor<T>();
+            CopyIn(x_local, x_, base + offset, valid_len);
+            CopyIn(residual_local, residual_, base + offset, valid_len);
+            CopyIn(gamma_local, gamma_, offset, valid_len);
+            CopyIn(bias_local, bias_, offset, valid_len);
+            x_queue_.EnQue(x_local);
+            residual_queue_.EnQue(residual_local);
+            gamma_queue_.EnQue(gamma_local);
+            bias_queue_.EnQue(bias_local);
+            x_local = x_queue_.DeQue<T>();
+            residual_local = residual_queue_.DeQue<T>();
+            gamma_local = gamma_queue_.DeQue<T>();
+            bias_local = bias_queue_.DeQue<T>();
+
+            LocalTensor<T> value = value_native_.Get<T>();
+            LocalTensor<T> scale_native = scale_native_.Get<T>();
+            MakeValue(value, x_local, residual_local, calc_len);
+            Duplicate(scale_native, static_cast<T>(scale), calc_len);
+            Mul(value, value, scale_native, calc_len);
+            ApplyAffine(value, gamma_local, bias_local, calc_len);
+
+            LocalTensor<T> output_local = output_queue_.AllocTensor<T>();
+            DataCopy(output_local, value, calc_len);
+            output_queue_.EnQue(output_local);
+            output_local = output_queue_.DeQue<T>();
+            CopyOut(output_local, output_, base + offset, valid_len);
+            output_queue_.FreeTensor(output_local);
+
+            x_queue_.FreeTensor(x_local);
+            residual_queue_.FreeTensor(residual_local);
+            gamma_queue_.FreeTensor(gamma_local);
+            bias_queue_.FreeTensor(bias_local);
+            offset += valid_len;
+        }
+    }
+
+    TPipe pipe_;
+    TQue<QuePosition::VECIN, BUFFER_NUM> x_queue_;
+    TQue<QuePosition::VECIN, BUFFER_NUM> residual_queue_;
+    TQue<QuePosition::VECIN, BUFFER_NUM> gamma_queue_;
+    TQue<QuePosition::VECIN, BUFFER_NUM> bias_queue_;
+    TQue<QuePosition::VECOUT, BUFFER_NUM> output_queue_;
+    TBuf<TPosition::VECCALC> value_native_;
+    TBuf<TPosition::VECCALC> scale_native_;
+    TBuf<TPosition::VECCALC> work_;
+    TBuf<TPosition::VECCALC> sum_;
+    TBuf<TPosition::VECCALC> rms_scalar_;
+    GlobalTensor<T> x_;
+    GlobalTensor<T> residual_;
+    GlobalTensor<T> gamma_;
+    GlobalTensor<T> bias_;
+    GlobalTensor<T> output_;
+    uint32_t outer_ = 0;
+    uint32_t dim_ = 0;
+    uint32_t tile_len_ = 0;
+    float epsilon_ = 1e-5f;
+};
+
+template <typename T>
+__aicore__ inline void RunKernel(GM_ADDR x, GM_ADDR residual, GM_ADDR gamma,
+                                 GM_ADDR bias, GM_ADDR output, uint32_t outer,
+                                 uint32_t dim, float epsilon, float inv_dim)
+{
+    AddRmsNormBiasKernel<T> kernel;
+    kernel.Init(x, residual, gamma, bias, output, outer, dim, epsilon);
+    kernel.Process(inv_dim);
+}
+
+inline bool IsSingleTensorGroup(const TensorGroupInfo& info)
+{
+    return info.tensors != nullptr && info.numTensors == 1 &&
+           info.tensors[0].shape != nullptr;
+}
+
+inline bool IsPositiveShape(const TensorInfo& tensor)
+{
+    if (tensor.numDims < 1 || tensor.numDims > 4) {
+        return false;
+    }
+    for (int64_t i = 0; i < tensor.numDims; ++i) {
+        if (tensor.shape[i] <= 0) {
+            return false;
+        }
+    }
+    return true;
+}
+
+inline bool SameShape(const TensorInfo& lhs, const TensorInfo& rhs)
+{
+    if (lhs.numDims != rhs.numDims) {
+        return false;
+    }
+    for (int64_t i = 0; i < lhs.numDims; ++i) {
+        if (lhs.shape[i] != rhs.shape[i]) {
+            return false;
+        }
+    }
+    return true;
+}
+
+inline bool IsSupportedDType(int32_t dtype)
+{
+    return dtype == 0 || dtype == 1 || dtype == 2;
+}
+
+inline bool ValidateInputs(const TensorGroupInfo& info_x,
+                           const TensorGroupInfo& info_residual,
+                           const TensorGroupInfo& info_gamma,
+                           const TensorGroupInfo& info_bias,
+                           const TensorGroupInfo& info_output,
+                           uint32_t& outer, uint32_t& dim, uint32_t& dtype)
+{
+    if (!IsSingleTensorGroup(info_x) || !IsSingleTensorGroup(info_residual) ||
+        !IsSingleTensorGroup(info_gamma) || !IsSingleTensorGroup(info_bias) ||
+        !IsSingleTensorGroup(info_output)) {
+        return false;
+    }
+
+    const TensorInfo& x = info_x.tensors[0];
+    const TensorInfo& residual = info_residual.tensors[0];
+    const TensorInfo& gamma = info_gamma.tensors[0];
+    const TensorInfo& bias = info_bias.tensors[0];
+    const TensorInfo& output = info_output.tensors[0];
+    if (!IsPositiveShape(x) || !IsPositiveShape(residual) ||
+        !IsPositiveShape(gamma) || !IsPositiveShape(bias) ||
+        !IsPositiveShape(output) || x.numDims < 2 ||
+        !SameShape(x, residual) || !SameShape(x, output)) {
+        return false;
+    }
+    if (gamma.numDims != 1 || bias.numDims != 1 ||
+        gamma.shape[0] != x.shape[x.numDims - 1] ||
+        bias.shape[0] != x.shape[x.numDims - 1] ||
+        x.dtype != residual.dtype || x.dtype != gamma.dtype ||
+        x.dtype != bias.dtype || x.dtype != output.dtype ||
+        !IsSupportedDType(x.dtype)) {
+        return false;
+    }
+
+    uint64_t element_count = 1;
+    for (int64_t i = 0; i < x.numDims; ++i) {
+        if (x.shape[i] > static_cast<int64_t>(MAX_ELEMENTS) ||
+            element_count > MAX_ELEMENTS / static_cast<uint64_t>(x.shape[i])) {
+            return false;
+        }
+        element_count *= static_cast<uint64_t>(x.shape[i]);
+    }
+    const int64_t last_dim = x.shape[x.numDims - 1];
+    if (last_dim > static_cast<int64_t>(MAX_DIM)) {
+        return false;
+    }
+
+    outer = static_cast<uint32_t>(element_count / static_cast<uint64_t>(last_dim));
+    dim = static_cast<uint32_t>(last_dim);
+    dtype = static_cast<uint32_t>(x.dtype);
+    return outer > 0 && dim > 0;
+}
+}
+
+extern "C" __global__ __vector__ void add_rms_norm_bias_kernel(
+    GM_ADDR x, GM_ADDR residual, GM_ADDR gamma, GM_ADDR bias, GM_ADDR output,
+    uint32_t outer, uint32_t dim, float epsilon, uint32_t dtype, float inv_dim)
+{
+    if (dtype == 1) {
+        RunKernel<half>(x, residual, gamma, bias, output, outer, dim, epsilon, inv_dim);
+    } else if (dtype == 2) {
+        RunKernel<bfloat16_t>(x, residual, gamma, bias, output, outer, dim, epsilon, inv_dim);
+    } else {
+        RunKernel<float>(x, residual, gamma, bias, output, outer, dim, epsilon, inv_dim);
+    }
+}
+
+extern "C" void run_kernel(
+    GM_ADDR x, const TensorGroupInfo& info_x, GM_ADDR residual,
+    const TensorGroupInfo& info_residual, GM_ADDR gamma,
+    const TensorGroupInfo& info_gamma, GM_ADDR bias,
+    const TensorGroupInfo& info_bias, GM_ADDR output,
+    const TensorGroupInfo& info_output, int64_t availableCoreNum,
+    aclrtStream stream, float epsilon)
+{
+    uint32_t outer = 0;
+    uint32_t dim = 0;
+    uint32_t dtype = 0;
+    if (!ValidateInputs(info_x, info_residual, info_gamma, info_bias,
+                        info_output, outer, dim, dtype)) {
+        return;
+    }
+
+    uint32_t blocks = availableCoreNum > 0 ? static_cast<uint32_t>(availableCoreNum) : 1;
+    if (blocks > outer) {
+        blocks = outer;
+    }
+    const float invDim = 1.0f / static_cast<float>(dim);
+    add_rms_norm_bias_kernel<<<blocks, nullptr, stream>>>(
+        x, residual, gamma, bias, output, outer, dim, epsilon, dtype, invDim);
+}
