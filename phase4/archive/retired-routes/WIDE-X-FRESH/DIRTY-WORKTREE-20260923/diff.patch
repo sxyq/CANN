@@ -1,0 +1,278 @@
+diff --git a/phase4/workspaces/WIDE-X-FRESH/kernel.txt b/phase4/workspaces/WIDE-X-FRESH/kernel.txt
+new file mode 100644
+index 0000000..07a5fe8
+--- /dev/null
++++ b/phase4/workspaces/WIDE-X-FRESH/kernel.txt
+@@ -0,0 +1,272 @@
++#include <cmath>
++#include <cstdint>
++#include <type_traits>
++
++#if defined(__CCE_AICORE__)
++#include "kernel_operator.h"
++
++namespace wide_x_fresh {
++
++using AscendC::DataCopyExtParams;
++using AscendC::DataCopyPadExtParams;
++using AscendC::GlobalTensor;
++using AscendC::LocalTensor;
++using AscendC::TBuf;
++using AscendC::TPosition;
++using AscendC::TPipe;
++using AscendC::TQue;
++
++template <typename T>
++class RowNorm {
++public:
++    __aicore__ inline void Init(__gm__ uint8_t* x, __gm__ uint8_t* residual,
++        __gm__ uint8_t* gamma, __gm__ uint8_t* bias, __gm__ uint8_t* output,
++        uint32_t rows, uint32_t cols, float epsilon, uint32_t tileElems)
++    {
++        xGm_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(x));
++        residualGm_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(residual));
++        gammaGm_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(gamma));
++        biasGm_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(bias));
++        outputGm_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(output));
++        rows_ = rows;
++        cols_ = cols;
++        epsilon_ = epsilon;
++        tileElems_ = tileElems;
++
++        pipe_.InitBuffer(xQueue_, 2, tileElems_ * sizeof(T));
++        pipe_.InitBuffer(residualQueue_, 2, tileElems_ * sizeof(T));
++        pipe_.InitBuffer(constQueue_, 1, tileElems_ * sizeof(T));
++        pipe_.InitBuffer(outputQueue_, 1, tileElems_ * sizeof(T));
++        pipe_.InitBuffer(work0_, tileElems_ * sizeof(float));
++        pipe_.InitBuffer(work1_, tileElems_ * sizeof(float));
++        pipe_.InitBuffer(reduceTmp_, tileElems_ * sizeof(float));
++        pipe_.InitBuffer(reduceOut_, 32);
++    }
++
++    __aicore__ inline void Run()
++    {
++        uint32_t blockIdx = static_cast<uint32_t>(AscendC::GetBlockIdx());
++        uint32_t blockNum = static_cast<uint32_t>(AscendC::GetBlockNum());
++        if (blockNum == 0) {
++            blockNum = 1;
++        }
++        for (uint32_t row = blockIdx; row < rows_; row += blockNum) {
++            ProcessRow(row);
++        }
++    }
++
++private:
++    __aicore__ inline void SetCopyParams(DataCopyExtParams& params, uint32_t elems) const
++    {
++        params.blockCount = 1;
++        params.blockLen = elems * sizeof(T);
++        params.srcStride = 0;
++        params.dstStride = 0;
++        params.rsv = 0;
++    }
++
++    __aicore__ inline void SetPadParams(DataCopyPadExtParams<T>& params) const
++    {
++        params.isPad = false;
++        params.leftPadding = 0;
++        params.rightPadding = 0;
++        params.paddingValue = static_cast<T>(0);
++    }
++
++    __aicore__ inline void CopyIn(const GlobalTensor<T>& gm, const LocalTensor<T>& local,
++        uint64_t offset, uint32_t elems)
++    {
++        DataCopyExtParams copyParams;
++        SetCopyParams(copyParams, elems);
++        DataCopyPadExtParams<T> padParams;
++        SetPadParams(padParams);
++        AscendC::DataCopyPad(local, gm[offset], copyParams, padParams);
++    }
++
++    __aicore__ inline void ToFloat(const LocalTensor<float>& dst, const LocalTensor<T>& src,
++        uint32_t elems)
++    {
++        if constexpr (std::is_same<T, float>::value) {
++            AscendC::DataCopy(dst, src, elems);
++        } else {
++            AscendC::Cast<float, T>(dst, src, AscendC::RoundMode::CAST_NONE, elems);
++        }
++    }
++
++    __aicore__ inline void ToOutput(const LocalTensor<T>& dst, const LocalTensor<float>& src,
++        uint32_t elems)
++    {
++        if constexpr (std::is_same<T, float>::value) {
++            AscendC::DataCopy(dst, src, elems);
++        } else {
++            AscendC::Cast<T, float>(dst, src, AscendC::RoundMode::CAST_ROUND, elems);
++        }
++    }
++
++    __aicore__ inline float AccumulateChunk(uint64_t offset, uint32_t elems)
++    {
++        LocalTensor<T> xLocal = xQueue_.AllocTensor<T>();
++        LocalTensor<T> residualLocal = residualQueue_.AllocTensor<T>();
++        CopyIn(xGm_, xLocal, offset, elems);
++        CopyIn(residualGm_, residualLocal, offset, elems);
++        xQueue_.EnQue(xLocal);
++        residualQueue_.EnQue(residualLocal);
++
++        xLocal = xQueue_.DeQue<T>();
++        residualLocal = residualQueue_.DeQue<T>();
++        LocalTensor<float> xFloat = work0_.Get<float>();
++        LocalTensor<float> residualFloat = work1_.Get<float>();
++        ToFloat(xFloat, xLocal, elems);
++        ToFloat(residualFloat, residualLocal, elems);
++        AscendC::Add<float>(xFloat, xFloat, residualFloat, elems);
++        AscendC::Mul<float>(residualFloat, xFloat, xFloat, elems);
++
++        LocalTensor<float> sum = reduceOut_.Get<float>();
++        LocalTensor<float> reduceTmp = reduceTmp_.Get<float>();
++        AscendC::ReduceSum<float, true>(sum, residualFloat, reduceTmp,
++            static_cast<int32_t>(elems));
++        AscendC::PipeBarrier<AscendC::PIPE_V>();
++        float value = sum.GetValue(0);
++        xQueue_.FreeTensor(xLocal);
++        residualQueue_.FreeTensor(residualLocal);
++        return value;
++    }
++
++    __aicore__ inline void EmitChunk(uint64_t offset, uint32_t elems, float invRms)
++    {
++        LocalTensor<T> xLocal = xQueue_.AllocTensor<T>();
++        LocalTensor<T> residualLocal = residualQueue_.AllocTensor<T>();
++        CopyIn(xGm_, xLocal, offset, elems);
++        CopyIn(residualGm_, residualLocal, offset, elems);
++        xQueue_.EnQue(xLocal);
++        residualQueue_.EnQue(residualLocal);
++
++        xLocal = xQueue_.DeQue<T>();
++        residualLocal = residualQueue_.DeQue<T>();
++        LocalTensor<float> xFloat = work0_.Get<float>();
++        LocalTensor<float> residualFloat = work1_.Get<float>();
++        ToFloat(xFloat, xLocal, elems);
++        ToFloat(residualFloat, residualLocal, elems);
++        AscendC::Add<float>(xFloat, xFloat, residualFloat, elems);
++        AscendC::Muls<float>(xFloat, xFloat, invRms, elems);
++
++        LocalTensor<T> constLocal = constQueue_.AllocTensor<T>();
++        CopyIn(gammaGm_, constLocal, offset, elems);
++        constQueue_.EnQue(constLocal);
++        constLocal = constQueue_.DeQue<T>();
++        AscendC::Cast<float, T>(residualFloat, constLocal,
++            AscendC::RoundMode::CAST_NONE, elems);
++        AscendC::Mul<float>(xFloat, xFloat, residualFloat, elems);
++        constQueue_.FreeTensor(constLocal);
++
++        constLocal = constQueue_.AllocTensor<T>();
++        CopyIn(biasGm_, constLocal, offset, elems);
++        constQueue_.EnQue(constLocal);
++        constLocal = constQueue_.DeQue<T>();
++        AscendC::Cast<float, T>(residualFloat, constLocal,
++            AscendC::RoundMode::CAST_NONE, elems);
++        AscendC::Add<float>(xFloat, xFloat, residualFloat, elems);
++        constQueue_.FreeTensor(constLocal);
++
++        LocalTensor<T> outputLocal = outputQueue_.AllocTensor<T>();
++        ToOutput(outputLocal, xFloat, elems);
++        outputQueue_.EnQue(outputLocal);
++        outputLocal = outputQueue_.DeQue<T>();
++        DataCopyExtParams copyParams;
++        SetCopyParams(copyParams, elems);
++        AscendC::DataCopyPad(outputGm_[offset], outputLocal, copyParams);
++        outputQueue_.FreeTensor(outputLocal);
++        xQueue_.FreeTensor(xLocal);
++        residualQueue_.FreeTensor(residualLocal);
++    }
++
++    __aicore__ inline void ProcessRow(uint32_t row)
++    {
++        uint64_t rowOffset = static_cast<uint64_t>(row) * cols_;
++        float sumSquares = 0.0f;
++        for (uint32_t col = 0; col < cols_;) {
++            uint32_t elems = cols_ - col;
++            if (elems > tileElems_) {
++                elems = tileElems_;
++            }
++            sumSquares += AccumulateChunk(rowOffset + col, elems);
++            col += elems;
++        }
++        float meanSquare = sumSquares / static_cast<float>(cols_);
++        float invRms = 1.0f / sqrtf(meanSquare + epsilon_);
++        for (uint32_t col = 0; col < cols_;) {
++            uint32_t elems = cols_ - col;
++            if (elems > tileElems_) {
++                elems = tileElems_;
++            }
++            EmitChunk(rowOffset + col, elems, invRms);
++            col += elems;
++        }
++    }
++
++    TPipe pipe_;
++    TQue<TPosition::VECIN, 1> xQueue_;
++    TQue<TPosition::VECIN, 1> residualQueue_;
++    TQue<TPosition::VECIN, 1> constQueue_;
++    TQue<TPosition::VECOUT, 1> outputQueue_;
++    TBuf<TPosition::VECCALC> work0_;
++    TBuf<TPosition::VECCALC> work1_;
++    TBuf<TPosition::VECCALC> reduceTmp_;
++    TBuf<TPosition::VECCALC> reduceOut_;
++    GlobalTensor<T> xGm_;
++    GlobalTensor<T> residualGm_;
++    GlobalTensor<T> gammaGm_;
++    GlobalTensor<T> biasGm_;
++    GlobalTensor<T> outputGm_;
++    uint32_t rows_ = 0;
++    uint32_t cols_ = 0;
++    uint32_t tileElems_ = 0;
++    float epsilon_ = 0.0f;
++};
++
++template <typename T>
++__aicore__ inline void RunTyped(__gm__ uint8_t* x, __gm__ uint8_t* residual,
++    __gm__ uint8_t* gamma, __gm__ uint8_t* bias, __gm__ uint8_t* output,
++    uint32_t rows, uint32_t cols, float epsilon, bool widePath)
++{
++    constexpr uint32_t kWideTileFp16 = 6144;
++    constexpr uint32_t kWideTileFp32 = 4096;
++    constexpr uint32_t kGenericTileFp16 = 2048;
++    constexpr uint32_t kGenericTileFp32 = 1024;
++    const bool isFloat = std::is_same<T, float>::value;
++    uint32_t tileElems = widePath
++        ? (isFloat ? kWideTileFp32 : kWideTileFp16)
++        : (isFloat ? kGenericTileFp32 : kGenericTileFp16);
++    RowNorm<T> op;
++    op.Init(x, residual, gamma, bias, output, rows, cols, epsilon, tileElems);
++    op.Run();
++}
++
++}  // namespace wide_x_fresh
++
++extern "C" __global__ __aicore__ void add_rms_norm_bias_fp16(
++    __gm__ uint8_t* x, __gm__ uint8_t* residual, __gm__ uint8_t* gamma,
++    __gm__ uint8_t* bias, __gm__ uint8_t* output, uint32_t rows, uint32_t cols,
++    float epsilon, bool widePath)
++{
++    wide_x_fresh::RunTyped<half>(x, residual, gamma, bias, output, rows, cols, epsilon, widePath);
++}
++
++extern "C" __global__ __aicore__ void add_rms_norm_bias_bf16(
++    __gm__ uint8_t* x, __gm__ uint8_t* residual, __gm__ uint8_t* gamma,
++    __gm__ uint8_t* bias, __gm__ uint8_t* output, uint32_t rows, uint32_t cols,
++    float epsilon, bool widePath)
++{
++    wide_x_fresh::RunTyped<bfloat16_t>(x, residual, gamma, bias, output, rows, cols, epsilon, widePath);
++}
++
++extern "C" __global__ __aicore__ void add_rms_norm_bias_fp32(
++    __gm__ uint8_t* x, __gm__ uint8_t* residual, __gm__ uint8_t* gamma,
++    __gm__ uint8_t* bias, __gm__ uint8_t* output, uint32_t rows, uint32_t cols,
++    float epsilon, bool widePath)
++{
++    wide_x_fresh::RunTyped<float>(x, residual, gamma, bias, output, rows, cols, epsilon, widePath);
++}
++
++#endif
++

@@ -1,0 +1,1406 @@
+diff --git a/phase4/workspaces/MODE-X/CMakeLists.txt b/phase4/workspaces/MODE-X/CMakeLists.txt
+new file mode 100644
+index 0000000..ee3b4aa
+--- /dev/null
++++ b/phase4/workspaces/MODE-X/CMakeLists.txt
+@@ -0,0 +1,48 @@
++cmake_minimum_required(VERSION 3.16)
++
++set(CMAKE_ASC_ARCHITECTURES "dav-2201" CACHE STRING "NPU architecture: dav-2201")
++set(SOC_VERSION "Ascend910B3" CACHE STRING "SoC version")
++
++find_package(ASC REQUIRED)
++
++project(mode_x_addrmsnormbias LANGUAGES ASC CXX)
++
++set(CMAKE_CXX_STANDARD 17)
++
++set(MODE_X_TYPES ${CMAKE_CURRENT_SOURCE_DIR}/local_types.h)
++set(MODE_X_HOST_INCLUDES
++    /usr/include/c++/11
++    /usr/include/aarch64-linux-gnu/c++/11
++    /usr/include
++    /usr/include/aarch64-linux-gnu
++    $ENV{ASCEND_HOME_PATH}/include
++    $ENV{ASCEND_HOME_PATH}/compiler/tikcpp/tikcfw
++)
++set(MODE_X_LINK_DIRS
++    /usr/lib/gcc/aarch64-linux-gnu/11
++    /usr/lib/aarch64-linux-gnu
++)
++
++# 1) Device compile: __global__ __vector__ entry (host run_kernel compiled out).
++add_library(mode_x_device OBJECT ${CMAKE_CURRENT_SOURCE_DIR}/device_shim.asc)
++target_include_directories(mode_x_device PRIVATE ${MODE_X_HOST_INCLUDES} ${CMAKE_CURRENT_SOURCE_DIR})
++target_compile_options(mode_x_device PRIVATE
++    $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=${CMAKE_ASC_ARCHITECTURES}>
++)
++
++# 2) Submission compile: judge-shaped source with local TensorInfo types supplied first.
++add_library(mode_x_submission OBJECT ${CMAKE_CURRENT_SOURCE_DIR}/submission_shim.asc)
++target_include_directories(mode_x_submission PRIVATE ${MODE_X_HOST_INCLUDES} ${CMAKE_CURRENT_SOURCE_DIR})
++target_compile_options(mode_x_submission PRIVATE
++    $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=${CMAKE_ASC_ARCHITECTURES}>
++)
++
++# 3) Full link: host main + run_kernel + device kernel into one executable.
++add_executable(mode_x_full_link ${CMAKE_CURRENT_SOURCE_DIR}/local_full.asc)
++target_include_directories(mode_x_full_link PRIVATE ${MODE_X_HOST_INCLUDES} ${CMAKE_CURRENT_SOURCE_DIR})
++target_link_directories(mode_x_full_link PRIVATE ${MODE_X_LINK_DIRS})
++target_link_libraries(mode_x_full_link PRIVATE stdc++ m dl)
++set_target_properties(mode_x_full_link PROPERTIES LINKER_LANGUAGE ASC)
++target_compile_options(mode_x_full_link PRIVATE
++    $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=${CMAKE_ASC_ARCHITECTURES}>
++)
+diff --git a/phase4/workspaces/MODE-X/HANDOFF_V001.md b/phase4/workspaces/MODE-X/HANDOFF_V001.md
+new file mode 100644
+index 0000000..24f9109
+--- /dev/null
++++ b/phase4/workspaces/MODE-X/HANDOFF_V001.md
+@@ -0,0 +1,24 @@
++# MODE-X V001 Handoff
++
++ROUTE: MODE-X (R029 official tiling five-mode dispatch, own kernel ABI)
++REVISION: V001
++HYPOTHESIS: Runtime selection of SINGLE_N / MERGE_N / MULTI_N / SPLIT_D / NORMAL from (D, R, UB) beats a single fixed schedule across 64..32768 and R=1..large; SPLIT_D is intra-core D-tile running reduce (not cross-core SyncAll D-slice), NORMAL is the two-pass fallback.
++CHANGED: Fresh workspace MODE-X; new submission.asc five-mode dispatch kernel + FP32 intermediate full dtype/rank run_kernel; UB-budget-derived tile (SelectTile) and batch (SelectMergeK); no R31 compute copy; no official tiling ABI.
++COMPILE: device=OK (mode_x_device), submission=OK (mode_x_submission), full_link=OK (mode_x_full_link) on cann-server3 / dav-2201 / Ascend910B3 / CANN 8.5.0.alpha002.
++SOURCE: /Users/sunyiyang/Desktop/Project/cann/phase4/workspaces/MODE-X/submission.asc
++COMPILE_LOG: /Users/sunyiyang/Desktop/Project/cann/phase4/workspaces/MODE-X/logs/{configure_V001_20260922_182606,compile_device_V001_20260922_182606,compile_submission_V001_20260922_182606,compile_fulllink_V001_20260922_182606,build_summary_V001_20260922_182606}.log
++CLEANUP: server build kept at /home/data4t2/lelinfeng/phase4-workspaces/MODE-X/build; no source deleted; local logs synced.
++ONLINE_READY: true (device+submission+full link; ABI checks cmath-first, vector entry, run_kernel, rightPadding-bytes, ReduceSum 8KiB, launch nullptr smdesc, no TensorInfo redefine)
++EXPECTED_AFFECTED_CASES: 15/15 potential; focus T14/T15 wide D (SPLIT_D), mid-D multi-row (MERGE_N), large-R (MULTI_N), R=1 full-u (SINGLE_N).
++
++## MODE_TABLE
++
++| Mode | Trigger (UB / D / R) | Core mapping | Compute |
++|------|----------------------|--------------|---------|
++| SINGLE_N | full-u fits, R==1 | 1 core | full FP32 u in UB; one x/r read; normalize from resident u |
++| MERGE_N | full-u fits, R>1, K>=2 rows batch fits, D<=8192 | ceil(R/K) batches, sliced over cores | multi-row contiguous DataCopyPad of K rows (x,r); per-row RMS; shared u workspace |
++| MULTI_N | full-u fits, R>1, not MERGE_N | min(R, cores) row-parallel | each core owns a row slice; per-row full-u (SINGLE_N inner) |
++| SPLIT_D | full-u does not fit under 75% UB budget, tile fits | min(R, cores) row-parallel | D tiles + running sum(u*u); two-phase inside core (no SyncAll); tile = SelectTile(UB) |
++| NORMAL | tile degenerate / last resort | min(R, cores) row-parallel | two-pass fallback, chunk-sized tiles, always-correct |
++
++UB budget: 180 KiB of 184 KiB TOTAL_VEC_LOCAL_SIZE; ReduceSum tmp 8 KiB 8B-aligned dest; DataCopyPad rightPadding in BYTES; launch `<<<blockDim, nullptr, stream>>>`.
+diff --git a/phase4/workspaces/MODE-X/build_server3.sh b/phase4/workspaces/MODE-X/build_server3.sh
+new file mode 100755
+index 0000000..e08e9c5
+--- /dev/null
++++ b/phase4/workspaces/MODE-X/build_server3.sh
+@@ -0,0 +1,51 @@
++#!/bin/bash
++# MODE-X compile: device object + submission object + full link on cann-server3
++set -eo pipefail
++ROOT="$(cd "$(dirname "$0")" && pwd)"
++cd "$ROOT"
++export LD_LIBRARY_PATH="${LD_LIBRARY_PATH:-}"
++export PATH="${PATH:-/usr/bin:/bin}"
++export PYTHONPATH="${PYTHONPATH:-}"
++source /usr/local/Ascend/ascend-toolkit/set_env.sh
++export ASCEND_HOME_PATH="${ASCEND_HOME_PATH:-/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002}"
++export ASC_DIR="${ASCEND_HOME_PATH}/aarch64-linux/tikcpp/ascendc_kernel_cmake"
++export CMAKE_PREFIX_PATH="${ASC_DIR}${CMAKE_PREFIX_PATH:+:${CMAKE_PREFIX_PATH}}"
++HCC_ROOT="${ASCEND_HOME_PATH}/toolkit/toolchain/hcc"
++export CPLUS_INCLUDE_PATH="${HCC_ROOT}/aarch64-target-linux-gnu/include/c++/7.3.0:${HCC_ROOT}/aarch64-target-linux-gnu/include/c++/7.3.0/aarch64-target-linux-gnu:${HCC_ROOT}/aarch64-target-linux-gnu/include/c++/7.3.0/backward:${CPLUS_INCLUDE_PATH:-}"
++export C_INCLUDE_PATH="${HCC_ROOT}/aarch64-target-linux-gnu/include:${C_INCLUDE_PATH:-}"
++set -u
++
++REV="${REV:-V001}"
++STAMP="$(date +%Y%m%d_%H%M%S)"
++mkdir -p logs
++rm -rf build/*
++mkdir -p build
++cd build
++
++echo "=== configure ${REV} ${STAMP} ===" | tee "../logs/configure_${REV}_${STAMP}.log"
++cmake .. -DCMAKE_ASC_ARCHITECTURES=dav-2201 -DSOC_VERSION=Ascend910B3 2>&1 | tee -a "../logs/configure_${REV}_${STAMP}.log"
++
++echo "=== device compile (mode_x_device) ===" | tee "../logs/compile_device_${REV}_${STAMP}.log"
++make mode_x_device -j8 2>&1 | tee -a "../logs/compile_device_${REV}_${STAMP}.log"
++
++echo "=== submission compile (mode_x_submission) ===" | tee "../logs/compile_submission_${REV}_${STAMP}.log"
++make mode_x_submission -j8 2>&1 | tee -a "../logs/compile_submission_${REV}_${STAMP}.log"
++
++echo "=== full link (mode_x_full_link) ===" | tee "../logs/compile_fulllink_${REV}_${STAMP}.log"
++make mode_x_full_link -j8 2>&1 | tee -a "../logs/compile_fulllink_${REV}_${STAMP}.log"
++
++{
++  echo "MODE-X ${REV} build summary ${STAMP}"
++  echo "SOURCE=${ROOT}/submission.asc"
++  echo "has_cmath_first=$(head -1 ${ROOT}/submission.asc | grep -c '#include <cmath>' || true)"
++  echo "has_vector_entry=$(grep -c '__global__ __vector__' ${ROOT}/submission.asc || true)"
++  echo "has_run_kernel=$(grep -c 'extern \"C\" void run_kernel' ${ROOT}/submission.asc || true)"
++  echo "has_rightPadding=$(grep -c 'rightPadding' ${ROOT}/submission.asc || true)"
++  echo "has_reduce_tmp_8k=$(grep -c 'kReduceTmpBytes = 8' ${ROOT}/submission.asc || true)"
++  echo "has_launch_null_smdesc=$(grep -c '<<<.*, nullptr, stream>>>' ${ROOT}/submission.asc || true)"
++  echo "has_tensorinfo_redefine=$(grep -c 'struct TensorInfo' ${ROOT}/submission.asc || true)"
++  echo "mode_select=$(grep -c 'MODE_SPLIT_D\|MODE_SINGLE_N\|MODE_MERGE_N\|MODE_MULTI_N\|MODE_NORMAL' ${ROOT}/submission.asc || true)"
++} | tee "../logs/build_summary_${REV}_${STAMP}.log"
++
++echo "=== ALL COMPILE STAGES DONE ==="
++ls -la mode_x_device* mode_x_submission* mode_x_full_link 2>/dev/null || find . -name 'mode_x_*' | head
+diff --git a/phase4/workspaces/MODE-X/data_utils.h b/phase4/workspaces/MODE-X/data_utils.h
+new file mode 100644
+index 0000000..3930947
+--- /dev/null
++++ b/phase4/workspaces/MODE-X/data_utils.h
+@@ -0,0 +1,75 @@
++#ifndef MODE_X_DATA_UTILS_H
++#define MODE_X_DATA_UTILS_H
++
++#include <fcntl.h>
++#include <sys/stat.h>
++#include <unistd.h>
++#include <cerrno>
++#include <fstream>
++#include <string>
++
++inline bool ReadFile(const std::string& filePath, size_t bufferSize, void* buffer, size_t bufferLen)
++{
++    if (buffer == nullptr) {
++        return false;
++    }
++    if (bufferSize > bufferLen) {
++        return false;
++    }
++    std::ifstream file(filePath, std::ios::binary);
++    if (!file.is_open()) {
++        return false;
++    }
++    file.seekg(0, std::ios::end);
++    auto pos = file.tellg();
++    if (pos < 0) {
++        file.close();
++        return false;
++    }
++    size_t fileSize = static_cast<size_t>(pos);
++    file.seekg(0, std::ios::beg);
++    if (fileSize != bufferSize) {
++        file.close();
++        return false;
++    }
++    file.read(static_cast<char*>(buffer), bufferSize);
++    if (!file) {
++        file.close();
++        return false;
++    }
++    file.close();
++    return true;
++}
++
++inline bool WriteFile(const std::string& filePath, const void* buffer, size_t size)
++{
++    if (buffer == nullptr && size > 0) {
++        return false;
++    }
++    int fd = open(filePath.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
++    if (fd < 0) {
++        return false;
++    }
++    size_t totalWritten = 0;
++    while (totalWritten < size) {
++        ssize_t w = write(fd, static_cast<const char*>(buffer) + totalWritten, size - totalWritten);
++        if (w < 0) {
++            if (errno == EINTR) {
++                continue;
++            }
++            close(fd);
++            return false;
++        }
++        if (w == 0) {
++            close(fd);
++            return false;
++        }
++        totalWritten += static_cast<size_t>(w);
++    }
++    if (close(fd) != 0) {
++        return false;
++    }
++    return true;
++}
++
++#endif
+diff --git a/phase4/workspaces/MODE-X/device_shim.asc b/phase4/workspaces/MODE-X/device_shim.asc
+new file mode 100644
+index 0000000..1dd2171
+--- /dev/null
++++ b/phase4/workspaces/MODE-X/device_shim.asc
+@@ -0,0 +1,3 @@
++#include "local_types.h"
++#define MODE_X_DEVICE_ONLY 1
++#include "submission.asc"
+diff --git a/phase4/workspaces/MODE-X/local_full.asc b/phase4/workspaces/MODE-X/local_full.asc
+new file mode 100644
+index 0000000..dfdfc33
+--- /dev/null
++++ b/phase4/workspaces/MODE-X/local_full.asc
+@@ -0,0 +1,120 @@
++// Local full-link driver. Not submitted.
++#include <cstdint>
++#include <cstdio>
++#include <cstdlib>
++#include <cmath>
++#include "acl/acl.h"
++
++#ifndef TENSOR_GROUP_INFO_DEFINED
++#define TENSOR_GROUP_INFO_DEFINED
++struct TensorInfo {
++    const int64_t* shape;
++    int64_t numDims;
++    int32_t dtype;
++};
++struct TensorGroupInfo {
++    const TensorInfo* tensors;
++    int64_t numTensors;
++};
++#endif
++
++#include <vector>
++#include "data_utils.h"
++
++#define ACL_CHECK(expr) \
++    do { \
++        aclError _ret = (expr); \
++        if (_ret != 0) { \
++            fprintf(stderr, "[ERROR] %s failed at %s:%d, ret=%d\n", #expr, __FILE__, __LINE__, _ret); \
++            return 1; \
++        } \
++    } while (0)
++#define FILE_CHECK(expr) \
++    do { \
++        if (!(expr)) { \
++            fprintf(stderr, "[ERROR] File I/O failed at %s:%d\n", __FILE__, __LINE__); \
++            return 1; \
++        } \
++    } while (0)
++
++#include "submission.asc"
++
++// Usage: mode_x_full_link rows d dtype
++// reads ./input/{x,residual,gamma,bias}.bin writes ./output/output.bin
++int main(int argc, char** argv)
++{
++    if (argc < 4) {
++        fprintf(stderr, "usage: %s rows d dtype\n", argv[0]);
++        return 2;
++    }
++    const int64_t rows = atoll(argv[1]);
++    const int64_t d = atoll(argv[2]);
++    const int32_t dtype = atoi(argv[3]);
++    const size_t es = dtype == 0 ? 4u : 2u;
++    const size_t xyBytes = (size_t)rows * (size_t)d * es;
++    const size_t gbBytes = (size_t)d * es;
++    float epsilon = 1e-5f;
++
++    int32_t deviceId = 0;
++    int64_t availableCoreNum = 0;
++    aclrtStream stream = nullptr;
++    ACL_CHECK(aclInit(nullptr));
++    ACL_CHECK(aclrtSetDevice(deviceId));
++    ACL_CHECK(aclrtGetDeviceInfo(deviceId, ACL_DEV_ATTR_VECTOR_CORE_NUM, &availableCoreNum));
++    ACL_CHECK(aclrtCreateStream(&stream));
++
++    int64_t x_shape[] = {rows, d};
++    int64_t g_shape[] = {d};
++    TensorInfo x_t[] = {{x_shape, 2, dtype}};
++    TensorInfo r_t[] = {{x_shape, 2, dtype}};
++    TensorInfo g_t[] = {{g_shape, 1, dtype}};
++    TensorInfo b_t[] = {{g_shape, 1, dtype}};
++    TensorInfo o_t[] = {{x_shape, 2, dtype}};
++    TensorGroupInfo info_x = {x_t, 1};
++    TensorGroupInfo info_r = {r_t, 1};
++    TensorGroupInfo info_g = {g_t, 1};
++    TensorGroupInfo info_b = {b_t, 1};
++    TensorGroupInfo info_o = {o_t, 1};
++
++    uint8_t *hx = nullptr, *dx = nullptr, *hr = nullptr, *dr = nullptr;
++    uint8_t *hg = nullptr, *dg = nullptr, *hb = nullptr, *db = nullptr;
++    uint8_t *ho = nullptr, *doo = nullptr;
++    ACL_CHECK(aclrtMallocHost((void**)&hx, xyBytes));
++    ACL_CHECK(aclrtMalloc((void**)&dx, xyBytes, ACL_MEM_MALLOC_HUGE_FIRST));
++    ACL_CHECK(aclrtMallocHost((void**)&hr, xyBytes));
++    ACL_CHECK(aclrtMalloc((void**)&dr, xyBytes, ACL_MEM_MALLOC_HUGE_FIRST));
++    ACL_CHECK(aclrtMallocHost((void**)&hg, gbBytes));
++    ACL_CHECK(aclrtMalloc((void**)&dg, gbBytes, ACL_MEM_MALLOC_HUGE_FIRST));
++    ACL_CHECK(aclrtMallocHost((void**)&hb, gbBytes));
++    ACL_CHECK(aclrtMalloc((void**)&db, gbBytes, ACL_MEM_MALLOC_HUGE_FIRST));
++    ACL_CHECK(aclrtMallocHost((void**)&ho, xyBytes));
++    ACL_CHECK(aclrtMalloc((void**)&doo, xyBytes, ACL_MEM_MALLOC_HUGE_FIRST));
++    FILE_CHECK(ReadFile("./input/x.bin", xyBytes, hx, xyBytes));
++    FILE_CHECK(ReadFile("./input/residual.bin", xyBytes, hr, xyBytes));
++    FILE_CHECK(ReadFile("./input/gamma.bin", gbBytes, hg, gbBytes));
++    FILE_CHECK(ReadFile("./input/bias.bin", gbBytes, hb, gbBytes));
++    ACL_CHECK(aclrtMemcpy(dx, xyBytes, hx, xyBytes, ACL_MEMCPY_HOST_TO_DEVICE));
++    ACL_CHECK(aclrtMemcpy(dr, xyBytes, hr, xyBytes, ACL_MEMCPY_HOST_TO_DEVICE));
++    ACL_CHECK(aclrtMemcpy(dg, gbBytes, hg, gbBytes, ACL_MEMCPY_HOST_TO_DEVICE));
++    ACL_CHECK(aclrtMemcpy(db, gbBytes, hb, gbBytes, ACL_MEMCPY_HOST_TO_DEVICE));
++
++    run_kernel((GM_ADDR)dx, info_x, (GM_ADDR)dr, info_r, (GM_ADDR)dg, info_g, (GM_ADDR)db, info_b,
++        (GM_ADDR)doo, info_o, availableCoreNum, stream, epsilon);
++    auto sync_ret_ = aclrtSynchronizeStreamWithTimeout(stream, 30000);
++    if (sync_ret_ != 0) {
++        fprintf(stderr, "[ERROR] sync ret=%d\n", sync_ret_);
++        return 1;
++    }
++    ACL_CHECK(aclrtMemcpy(ho, xyBytes, doo, xyBytes, ACL_MEMCPY_DEVICE_TO_HOST));
++    FILE_CHECK(WriteFile("./output/output.bin", ho, xyBytes));
++
++    aclrtFree(dx); aclrtFreeHost(hx);
++    aclrtFree(dr); aclrtFreeHost(hr);
++    aclrtFree(dg); aclrtFreeHost(hg);
++    aclrtFree(db); aclrtFreeHost(hb);
++    aclrtFree(doo); aclrtFreeHost(ho);
++    aclrtDestroyStream(stream);
++    aclrtResetDevice(deviceId);
++    aclFinalize();
++    return 0;
++}
+diff --git a/phase4/workspaces/MODE-X/local_types.h b/phase4/workspaces/MODE-X/local_types.h
+new file mode 100644
+index 0000000..30e71ce
+--- /dev/null
++++ b/phase4/workspaces/MODE-X/local_types.h
+@@ -0,0 +1,20 @@
++// Local compile helper only. Judge predefines TensorInfo / TensorGroupInfo.
++#ifndef MODE_X_LOCAL_TYPES_H
++#define MODE_X_LOCAL_TYPES_H
++
++#include <cstdint>
++
++#ifndef TENSOR_GROUP_INFO_DEFINED
++#define TENSOR_GROUP_INFO_DEFINED
++struct TensorInfo {
++    const int64_t* shape;
++    int64_t numDims;
++    int32_t dtype;
++};
++struct TensorGroupInfo {
++    const TensorInfo* tensors;
++    int64_t numTensors;
++};
++#endif
++
++#endif
+diff --git a/phase4/workspaces/MODE-X/logs/build_summary_V001_20260922_182606.log b/phase4/workspaces/MODE-X/logs/build_summary_V001_20260922_182606.log
+new file mode 100644
+index 0000000..e6fd2e5
+--- /dev/null
++++ b/phase4/workspaces/MODE-X/logs/build_summary_V001_20260922_182606.log
+@@ -0,0 +1,10 @@
++MODE-X V001 build summary 20260922_182606
++SOURCE=/home/data4t2/lelinfeng/phase4-workspaces/MODE-X/submission.asc
++has_cmath_first=1
++has_vector_entry=1
++has_run_kernel=1
++has_rightPadding=2
++has_reduce_tmp_8k=1
++has_launch_null_smdesc=2
++has_tensorinfo_redefine=0
++mode_select=20
+diff --git a/phase4/workspaces/MODE-X/logs/compile_device_V001_20260922_182533.log b/phase4/workspaces/MODE-X/logs/compile_device_V001_20260922_182533.log
+new file mode 100644
+index 0000000..9ab0d18
+--- /dev/null
++++ b/phase4/workspaces/MODE-X/logs/compile_device_V001_20260922_182533.log
+@@ -0,0 +1,12 @@
++=== device compile (mode_x_device) ===
++[100%] Building ASC object CMakeFiles/mode_x_device.dir/device_shim.asc.o
++In file included from /home/data4t2/lelinfeng/phase4-workspaces/MODE-X/device_shim.asc:3:
++/home/data4t2/lelinfeng/phase4-workspaces/MODE-X/submission.asc:180:18: error: no matching function for call to 'MinU32'
++Fatal Err: A fatal error occurred in iternel process, and Diagnostic info can not be reported correctly
++In file included from /home/data4t2/lelinfeng/phase4-workspaces/MODE-X/device_shim.asc:3:
++/home/data4t2/lelinfeng/phase4-workspaces/MODE-X/submission.asc:180:18: error: no matching function for call to 'MinU32'
++Fatal Err: A fatal error occurred in iternel process, and Diagnostic info can not be reported correctly
++make[3]: *** [CMakeFiles/mode_x_device.dir/build.make:76: CMakeFiles/mode_x_device.dir/device_shim.asc.o] Error 1
++make[2]: *** [CMakeFiles/Makefile2:87: CMakeFiles/mode_x_device.dir/all] Error 2
++make[1]: *** [CMakeFiles/Makefile2:94: CMakeFiles/mode_x_device.dir/rule] Error 2
++make: *** [Makefile:124: mode_x_device] Error 2
+diff --git a/phase4/workspaces/MODE-X/logs/compile_device_V001_20260922_182606.log b/phase4/workspaces/MODE-X/logs/compile_device_V001_20260922_182606.log
+new file mode 100644
+index 0000000..043de5b
+--- /dev/null
++++ b/phase4/workspaces/MODE-X/logs/compile_device_V001_20260922_182606.log
+@@ -0,0 +1,3 @@
++=== device compile (mode_x_device) ===
++[100%] Building ASC object CMakeFiles/mode_x_device.dir/device_shim.asc.o
++[100%] Built target mode_x_device
+diff --git a/phase4/workspaces/MODE-X/logs/compile_fulllink_V001_20260922_182606.log b/phase4/workspaces/MODE-X/logs/compile_fulllink_V001_20260922_182606.log
+new file mode 100644
+index 0000000..dbcc2be
+--- /dev/null
++++ b/phase4/workspaces/MODE-X/logs/compile_fulllink_V001_20260922_182606.log
+@@ -0,0 +1,81 @@
++=== full link (mode_x_full_link) ===
++[ 50%] Building ASC object CMakeFiles/mode_x_full_link.dir/local_full.asc.o
++/home/data4t2/lelinfeng/phase4-workspaces/MODE-X/local_full.asc:101:17: warning: 'cce_global' attribute ignored when parsing type [-Wignored-attributes]
++    run_kernel((GM_ADDR)dx, info_x, (GM_ADDR)dr, info_r, (GM_ADDR)dg, info_g, (GM_ADDR)db, info_b,
++                ^~~~~~~
++/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/compiler/tikcpp/tikcfw/impl/utils/kernel_utils_macros.h:18:17: note: expanded from macro 'GM_ADDR'
++#define GM_ADDR __gm__ uint8_t*
++                ^~~~~~
++/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/lib/clang/15.0.5/include/__clang_cce_defines.h:47:31: note: expanded from macro '__gm__'
++#define __gm__ __attribute__((cce_global))
++                              ^~~~~~~~~~
++/home/data4t2/lelinfeng/phase4-workspaces/MODE-X/local_full.asc:101:38: warning: 'cce_global' attribute ignored when parsing type [-Wignored-attributes]
++    run_kernel((GM_ADDR)dx, info_x, (GM_ADDR)dr, info_r, (GM_ADDR)dg, info_g, (GM_ADDR)db, info_b,
++                                     ^~~~~~~
++/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/compiler/tikcpp/tikcfw/impl/utils/kernel_utils_macros.h:18:17: note: expanded from macro 'GM_ADDR'
++#define GM_ADDR __gm__ uint8_t*
++                ^~~~~~
++/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/lib/clang/15.0.5/include/__clang_cce_defines.h:47:31: note: expanded from macro '__gm__'
++#define __gm__ __attribute__((cce_global))
++                              ^~~~~~~~~~
++/home/data4t2/lelinfeng/phase4-workspaces/MODE-X/local_full.asc:101:59: warning: 'cce_global' attribute ignored when parsing type [-Wignored-attributes]
++    run_kernel((GM_ADDR)dx, info_x, (GM_ADDR)dr, info_r, (GM_ADDR)dg, info_g, (GM_ADDR)db, info_b,
++                                                          ^~~~~~~
++/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/compiler/tikcpp/tikcfw/impl/utils/kernel_utils_macros.h:18:17: note: expanded from macro 'GM_ADDR'
++#define GM_ADDR __gm__ uint8_t*
++                ^~~~~~
++/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/lib/clang/15.0.5/include/__clang_cce_defines.h:47:31: note: expanded from macro '__gm__'
++#define __gm__ __attribute__((cce_global))
++                              ^~~~~~~~~~
++/home/data4t2/lelinfeng/phase4-workspaces/MODE-X/local_full.asc:101:80: warning: 'cce_global' attribute ignored when parsing type [-Wignored-attributes]
++    run_kernel((GM_ADDR)dx, info_x, (GM_ADDR)dr, info_r, (GM_ADDR)dg, info_g, (GM_ADDR)db, info_b,
++                                                                               ^~~~~~~
++/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/compiler/tikcpp/tikcfw/impl/utils/kernel_utils_macros.h:18:17: note: expanded from macro 'GM_ADDR'
++#define GM_ADDR __gm__ uint8_t*
++                ^~~~~~
++/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/lib/clang/15.0.5/include/__clang_cce_defines.h:47:31: note: expanded from macro '__gm__'
++#define __gm__ __attribute__((cce_global))
++                              ^~~~~~~~~~
++/home/data4t2/lelinfeng/phase4-workspaces/MODE-X/local_full.asc:102:10: warning: 'cce_global' attribute ignored when parsing type [-Wignored-attributes]
++        (GM_ADDR)doo, info_o, availableCoreNum, stream, epsilon);
++         ^~~~~~~
++/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/compiler/tikcpp/tikcfw/impl/utils/kernel_utils_macros.h:18:17: note: expanded from macro 'GM_ADDR'
++#define GM_ADDR __gm__ uint8_t*
++                ^~~~~~
++/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/lib/clang/15.0.5/include/__clang_cce_defines.h:47:31: note: expanded from macro '__gm__'
++#define __gm__ __attribute__((cce_global))
++                              ^~~~~~~~~~
++5 warnings generated.
++/home/data4t2/lelinfeng/phase4-workspaces/MODE-X/local_full.asc:101:17: warning: 'cce_global' attribute ignored when parsing type [-Wignored-attributes]
++/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/compiler/tikcpp/tikcfw/impl/utils/kernel_utils_macros.h:18:17: note: expanded from macro 'GM_ADDR'
++/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/lib/clang/15.0.5/include/__clang_cce_defines.h:47:31: note: expanded from macro '__gm__'
++/home/data4t2/lelinfeng/phase4-workspaces/MODE-X/local_full.asc:101:38: warning: 'cce_global' attribute ignored when parsing type [-Wignored-attributes]
++/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/compiler/tikcpp/tikcfw/impl/utils/kernel_utils_macros.h:18:17: note: expanded from macro 'GM_ADDR'
++/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/lib/clang/15.0.5/include/__clang_cce_defines.h:47:31: note: expanded from macro '__gm__'
++/home/data4t2/lelinfeng/phase4-workspaces/MODE-X/local_full.asc:101:59: warning: 'cce_global' attribute ignored when parsing type [-Wignored-attributes]
++/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/compiler/tikcpp/tikcfw/impl/utils/kernel_utils_macros.h:18:17: note: expanded from macro 'GM_ADDR'
++/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/lib/clang/15.0.5/include/__clang_cce_defines.h:47:31: note: expanded from macro '__gm__'
++/home/data4t2/lelinfeng/phase4-workspaces/MODE-X/local_full.asc:101:80: warning: 'cce_global' attribute ignored when parsing type [-Wignored-attributes]
++/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/compiler/tikcpp/tikcfw/impl/utils/kernel_utils_macros.h:18:17: note: expanded from macro 'GM_ADDR'
++/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/lib/clang/15.0.5/include/__clang_cce_defines.h:47:31: note: expanded from macro '__gm__'
++/home/data4t2/lelinfeng/phase4-workspaces/MODE-X/local_full.asc:102:10: warning: 'cce_global' attribute ignored when parsing type [-Wignored-attributes]
++/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/compiler/tikcpp/tikcfw/impl/utils/kernel_utils_macros.h:18:17: note: expanded from macro 'GM_ADDR'
++/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/lib/clang/15.0.5/include/__clang_cce_defines.h:47:31: note: expanded from macro '__gm__'
++5 warnings generated.
++Warning: please refer to the above warning message. 
++Warning: please refer to the above warning message. 
++Warning: please refer to the above warning message. 
++Warning: please refer to the above warning message. 
++Warning: please refer to the above warning message. 
++Warning: please refer to the above warning message. 
++Warning: please refer to the above warning message. 
++Warning: please refer to the above warning message. 
++Warning: please refer to the above warning message. 
++Warning: please refer to the above warning message. 
++Warning: please refer to the above warning message. 
++Warning: please refer to the above warning message. 
++Warning: please refer to the above warning message. 
++Warning: please refer to the above warning message. 
++Warning: please refer to the above warning message. 
++[100%] Linking ASC executable mode_x_full_link
++[100%] Built target mode_x_full_link
+diff --git a/phase4/workspaces/MODE-X/logs/compile_submission_V001_20260922_182606.log b/phase4/workspaces/MODE-X/logs/compile_submission_V001_20260922_182606.log
+new file mode 100644
+index 0000000..9fc62ea
+--- /dev/null
++++ b/phase4/workspaces/MODE-X/logs/compile_submission_V001_20260922_182606.log
+@@ -0,0 +1,3 @@
++=== submission compile (mode_x_submission) ===
++[100%] Building ASC object CMakeFiles/mode_x_submission.dir/submission_shim.asc.o
++[100%] Built target mode_x_submission
+diff --git a/phase4/workspaces/MODE-X/logs/configure_V001_20260922_182533.log b/phase4/workspaces/MODE-X/logs/configure_V001_20260922_182533.log
+new file mode 100644
+index 0000000..1d3a475
+--- /dev/null
++++ b/phase4/workspaces/MODE-X/logs/configure_V001_20260922_182533.log
+@@ -0,0 +1,23 @@
++=== configure V001 20260922_182533 ===
++-- CMAKE_ASC_COMPILER: /usr/local/Ascend/ascend-toolkit/latest/compiler/ccec_compiler/bin/bisheng
++CMake Warning at /usr/local/Ascend/ascend-toolkit/latest/aarch64-linux/tikcpp/ascendc_kernel_cmake/ASC_CMake/CMakeDetermineASCCompiler.cmake:57 (message):
++  CMAKE_INSTALL_PREFIX is not set.  Set to default value
++  /home/data4t2/lelinfeng/phase4-workspaces/MODE-X/out.
++Call Stack (most recent call first):
++  CMakeLists.txt:8 (project)
++
++
++-- SOC_VERSION: Ascend910B3
++-- CMAKE_BUILD_TYPE: Release
++-- CMAKE_INSTALL_PREFIX: /home/data4t2/lelinfeng/phase4-workspaces/MODE-X/out
++-- ASCEND_CANN_PACKAGE_PATH: /usr/local/Ascend/ascend-toolkit/latest
++-- CMAKE_ASC_LLD_LINKER: /usr/local/Ascend/ascend-toolkit/latest/tools/ccec_compiler/bin/ld.lld
++-- The CXX compiler identification is GNU 11.4.0
++-- Detecting CXX compiler ABI info
++-- Detecting CXX compiler ABI info - done
++-- Check for working CXX compiler: /usr/bin/c++ - skipped
++-- Detecting CXX compile features
++-- Detecting CXX compile features - done
++-- Configuring done
++-- Generating done
++-- Build files have been written to: /home/data4t2/lelinfeng/phase4-workspaces/MODE-X/build
+diff --git a/phase4/workspaces/MODE-X/logs/configure_V001_20260922_182606.log b/phase4/workspaces/MODE-X/logs/configure_V001_20260922_182606.log
+new file mode 100644
+index 0000000..3425cc6
+--- /dev/null
++++ b/phase4/workspaces/MODE-X/logs/configure_V001_20260922_182606.log
+@@ -0,0 +1,23 @@
++=== configure V001 20260922_182606 ===
++-- CMAKE_ASC_COMPILER: /usr/local/Ascend/ascend-toolkit/latest/compiler/ccec_compiler/bin/bisheng
++CMake Warning at /usr/local/Ascend/ascend-toolkit/latest/aarch64-linux/tikcpp/ascendc_kernel_cmake/ASC_CMake/CMakeDetermineASCCompiler.cmake:57 (message):
++  CMAKE_INSTALL_PREFIX is not set.  Set to default value
++  /home/data4t2/lelinfeng/phase4-workspaces/MODE-X/out.
++Call Stack (most recent call first):
++  CMakeLists.txt:8 (project)
++
++
++-- SOC_VERSION: Ascend910B3
++-- CMAKE_BUILD_TYPE: Release
++-- CMAKE_INSTALL_PREFIX: /home/data4t2/lelinfeng/phase4-workspaces/MODE-X/out
++-- ASCEND_CANN_PACKAGE_PATH: /usr/local/Ascend/ascend-toolkit/latest
++-- CMAKE_ASC_LLD_LINKER: /usr/local/Ascend/ascend-toolkit/latest/tools/ccec_compiler/bin/ld.lld
++-- The CXX compiler identification is GNU 11.4.0
++-- Detecting CXX compiler ABI info
++-- Detecting CXX compiler ABI info - done
++-- Check for working CXX compiler: /usr/bin/c++ - skipped
++-- Detecting CXX compile features
++-- Detecting CXX compile features - done
++-- Configuring done
++-- Generating done
++-- Build files have been written to: /home/data4t2/lelinfeng/phase4-workspaces/MODE-X/build
+diff --git a/phase4/workspaces/MODE-X/smoke_golden.py b/phase4/workspaces/MODE-X/smoke_golden.py
+new file mode 100644
+index 0000000..16bb171
+--- /dev/null
++++ b/phase4/workspaces/MODE-X/smoke_golden.py
+@@ -0,0 +1,131 @@
++#!/usr/bin/env python3
++"""Local golden smoke for MODE-X mode_x_full_link. Not submitted."""
++import os, struct, sys, math, subprocess, tempfile, shutil
++
++def write_bin(path, arr, dtype):
++    import array
++    if dtype == 0:
++        a = array.array('f', arr)
++    elif dtype == 2:
++        a = array.array('H', [bf16_bits(v) for v in arr])
++    else:
++        # store as fp16 bits via struct
++        a = array.array('H', [fp16_bits(v) for v in arr])
++    with open(path, 'wb') as f:
++        f.write(a.tobytes())
++
++def fp16_bits(v):
++    import struct
++    # IEEE754 binary16 via numpy if available else manual
++    try:
++        import numpy as np
++        return int(np.float16(v).view(np.uint16))
++    except Exception:
++        # simple round-to-nearest via float32 truncation path
++        return struct.unpack('<H', struct.pack('<e', float(v)))[0]
++
++def bf16_bits(v):
++    return struct.unpack('<I', struct.pack('<f', float(v)))[0] >> 16
++
++def read_bin(path, n, dtype):
++    import array
++    if dtype == 0:
++        a = array.array('f')
++        a.frombytes(open(path,'rb').read())
++        return list(a)
++    else:
++        a = array.array('H')
++        a.frombytes(open(path,'rb').read())
++        try:
++            import numpy as np
++            if dtype == 2:
++                return [struct.unpack('<f', struct.pack('<I', int(x) << 16))[0] for x in a]
++            return [float(np.uint16(x).view(np.float16)) for x in a]
++        except Exception:
++            if dtype == 2:
++                return [struct.unpack('<f', struct.pack('<I', int(x) << 16))[0] for x in a]
++            return [struct.unpack('<e', struct.pack('<H', x))[0] for x in a]
++
++def golden(x, r, g, b, eps=1e-5):
++    d = len(g)
++    out = []
++    rows = len(x)//d
++    for i in range(rows):
++        u = [x[i*d+j] + r[i*d+j] for j in range(d)]
++        s = sum(v*v for v in u) / d + eps
++        rms = math.sqrt(s)
++        inv = 1.0/rms
++        for j in range(d):
++            out.append(u[j]*inv*g[j] + b[j])
++    return out
++
++def run_case(bin_dir, rows, d, dtype, tag):
++    os.makedirs(os.path.join(bin_dir, 'input'), exist_ok=True)
++    os.makedirs(os.path.join(bin_dir, 'output'), exist_ok=True)
++    es = 4 if dtype == 0 else 2
++    n = rows * d
++    # deterministic pseudo data in [-1,1]
++    x = [((i * 37 + 11) % 1000) / 500.0 - 1.0 for i in range(n)]
++    r = [((i * 17 + 3) % 1000) / 500.0 - 1.0 for i in range(n)]
++    g = [1.0 + ((j * 13) % 100) / 200.0 for j in range(d)]
++    b = [((j * 7) % 100) / 200.0 - 0.25 for j in range(d)]
++    write_bin(os.path.join(bin_dir, 'input/x.bin'), x, dtype)
++    write_bin(os.path.join(bin_dir, 'input/residual.bin'), r, dtype)
++    write_bin(os.path.join(bin_dir, 'input/gamma.bin'), g, dtype)
++    write_bin(os.path.join(bin_dir, 'input/bias.bin'), b, dtype)
++    exe = os.path.join(bin_dir, 'mode_x_full_link')
++    p = subprocess.run([exe, str(rows), str(d), str(dtype)], cwd=bin_dir,
++                       stdout=subprocess.PIPE, stderr=subprocess.PIPE)
++    if p.returncode != 0:
++        print(f'{tag} RUN_FAIL rc={p.returncode} {p.stderr.decode()[:300]}')
++        return False
++    out = read_bin(os.path.join(bin_dir, 'output/output.bin'), n, dtype)
++    if dtype == 1:
++        x = read_bin(os.path.join(bin_dir, 'input/x.bin'), n, dtype)
++        r = read_bin(os.path.join(bin_dir, 'input/residual.bin'), n, dtype)
++        g = read_bin(os.path.join(bin_dir, 'input/gamma.bin'), d, dtype)
++        b = read_bin(os.path.join(bin_dir, 'input/bias.bin'), d, dtype)
++    elif dtype == 2:
++        x = read_bin(os.path.join(bin_dir, 'input/x.bin'), n, dtype)
++        r = read_bin(os.path.join(bin_dir, 'input/residual.bin'), n, dtype)
++        g = read_bin(os.path.join(bin_dir, 'input/gamma.bin'), d, dtype)
++        b = read_bin(os.path.join(bin_dir, 'input/bias.bin'), d, dtype)
++    ref = golden(x, r, g, b)
++    max_abs = 0.0
++    bad = 0
++    for i in range(n):
++        e = abs(out[i] - ref[i])
++        # scale-aware tolerance: fp16 ~2e-3 relative; fp32 tighter
++        tol = 2e-3 if dtype != 0 else 1e-4
++        if e > tol * max(1.0, abs(ref[i])):
++            bad += 1
++        if e > max_abs:
++            max_abs = e
++    print(f'{tag} rows={rows} d={d} dtype={dtype} max_abs={max_abs:.6g} bad={bad}')
++    return bad == 0
++
++def main():
++    root = os.path.dirname(os.path.abspath(__file__))
++    exe_src = os.path.join(root, 'build', 'mode_x_full_link')
++    work = os.path.join(root, 'smoke_work')
++    os.makedirs(work, exist_ok=True)
++    shutil.copy(exe_src, os.path.join(work, 'mode_x_full_link'))
++    cases = [
++        (1, 64, 0, 'SINGLE_N_fp32_tiny'),
++        (1, 2048, 1, 'SINGLE_N_fp16_mid'),
++        (4, 256, 2, 'MERGE_N_bf16'),
++        (32, 128, 0, 'MERGE_N_fp32'),
++        (64, 512, 1, 'MULTI_N_fp16'),
++        (3, 32768, 0, 'SPLIT_D_fp32_wide'),
++        (2, 32768, 1, 'SPLIT_D_fp16_wide'),
++        (1, 100, 1, 'NORMAL_odd_d'),  # D not 32B-aligned in bytes for fp16? 200B, still ok
++        (5, 77, 0, 'tail_D_fp32'),
++    ]
++    ok = True
++    for rows, d, dtype, tag in cases:
++        if not run_case(work, rows, d, dtype, tag):
++            ok = False
++    sys.exit(0 if ok else 1)
++
++if __name__ == '__main__':
++    main()
+diff --git a/phase4/workspaces/MODE-X/submission.asc b/phase4/workspaces/MODE-X/submission.asc
+new file mode 100644
+index 0000000..1c0bc63
+--- /dev/null
++++ b/phase4/workspaces/MODE-X/submission.asc
+@@ -0,0 +1,675 @@
++#include <cmath>
++#include "acl/acl.h"
++#include "kernel_operator.h"
++
++// MODE-X V001 — Official Tiling Five-Mode Dispatch (R029 taxonomy, own ABI)
++// Modes: SINGLE_N / MERGE_N / MULTI_N / SPLIT_D / NORMAL
++// Select at runtime from (D, R, UB). No cross-core SyncAll. No official tiling ABI copy.
++// Judge ABI: DataCopyPad rightPadding in BYTES; ReduceSum 8KiB tmp 8B-aligned dest;
++//            launch <<<blockDim, nullptr, stream>>>; no TensorInfo redefine in this file.
++
++namespace mode_x_v001 {
++
++constexpr uint32_t kReduceTmpBytes = 8 * 1024;
++constexpr uint32_t kVecChunk = 128;
++constexpr uint32_t kUbBudget = 180 * 1024;
++constexpr uint32_t kFixedBytes = kReduceTmpBytes + 768;
++constexpr uint32_t kMaxMergeK = 16;
++constexpr uint32_t kMinTile = 256;
++
++enum Mode : int32_t {
++    MODE_SINGLE_N = 0,
++    MODE_MERGE_N = 1,
++    MODE_MULTI_N = 2,
++    MODE_SPLIT_D = 3,
++    MODE_NORMAL = 4
++};
++
++__aicore__ inline uint32_t Align32(uint32_t bytes)
++{
++    return (bytes + 31U) & ~31U;
++}
++
++__aicore__ inline uint32_t MinU32(uint32_t a, uint32_t b)
++{
++    return a < b ? a : b;
++}
++
++__aicore__ inline uint32_t MaxU32(uint32_t a, uint32_t b)
++{
++    return a > b ? a : b;
++}
++
++// Host-side clones for mode selection (not __aicore__).
++inline uint32_t HostAlign32(uint32_t bytes)
++{
++    return (bytes + 31U) & ~31U;
++}
++
++inline uint32_t HostMinU32(uint32_t a, uint32_t b)
++{
++    return a < b ? a : b;
++}
++
++inline uint32_t HostMaxU32(uint32_t a, uint32_t b)
++{
++    return a > b ? a : b;
++}
++
++// rightPadding unit is BYTES (32B remainder), not elements.
++__aicore__ inline uint8_t RightPadBytes(uint32_t bytes)
++{
++    const uint32_t rem = bytes % 32U;
++    return rem == 0U ? static_cast<uint8_t>(0) : static_cast<uint8_t>(32U - rem);
++}
++
++template <typename T>
++__aicore__ inline void CopyInPad(AscendC::LocalTensor<T> dst, const AscendC::GlobalTensor<T>& src, uint32_t len)
++{
++    if (len == 0) {
++        return;
++    }
++    const uint32_t bytes = len * static_cast<uint32_t>(sizeof(T));
++    const uint8_t rpad = RightPadBytes(bytes);
++    AscendC::DataCopyExtParams copyParams{1, bytes, 0, 0, 0};
++    AscendC::DataCopyPadExtParams<T> padParams{rpad != 0, 0, rpad, 0};
++    AscendC::DataCopyPad(dst, src, copyParams, padParams);
++}
++
++template <typename T>
++__aicore__ inline void CopyOutPad(const AscendC::GlobalTensor<T>& dst, AscendC::LocalTensor<T> src, uint32_t len)
++{
++    if (len == 0) {
++        return;
++    }
++    const uint32_t bytes = len * static_cast<uint32_t>(sizeof(T));
++    AscendC::DataCopyExtParams copyParams{1, bytes, 0, 0, 0};
++    AscendC::DataCopyPad(dst, src, copyParams);
++}
++
++__aicore__ inline void SyncVToS()
++{
++    const auto ev = GetTPipePtr()->FetchEventID(AscendC::HardEvent::V_S);
++    AscendC::SetFlag<AscendC::HardEvent::V_S>(ev);
++    AscendC::WaitFlag<AscendC::HardEvent::V_S>(ev);
++}
++
++__aicore__ inline void SyncMte2ToV()
++{
++    const auto ev = GetTPipePtr()->FetchEventID(AscendC::HardEvent::MTE2_V);
++    AscendC::SetFlag<AscendC::HardEvent::MTE2_V>(ev);
++    AscendC::WaitFlag<AscendC::HardEvent::MTE2_V>(ev);
++}
++
++__aicore__ inline void SyncVToMte3()
++{
++    const auto ev = GetTPipePtr()->FetchEventID(AscendC::HardEvent::V_MTE3);
++    AscendC::SetFlag<AscendC::HardEvent::V_MTE3>(ev);
++    AscendC::WaitFlag<AscendC::HardEvent::V_MTE3>(ev);
++}
++
++// ---- runtime mode selection (host, from D / R / UB) ----
++inline uint32_t ElemSize(int32_t dtype)
++{
++    return dtype == 0 ? 4u : 2u;
++}
++
++inline uint32_t SelectTile(uint32_t d, uint32_t es)
++{
++    const uint32_t per = 4u + 5u * es;  // u fp32 + x,r,g,b,o
++    uint32_t room = (kUbBudget > kFixedBytes) ? (kUbBudget - kFixedBytes) / per : kMinTile;
++    room = (room / 32u) * 32u;
++    uint32_t tile = HostMinU32(d, HostMaxU32(kMinTile, room));
++    if (tile > 8192u) {
++        tile = 8192u;
++    }
++    return tile == 0 ? 1u : tile;
++}
++
++inline uint32_t SelectMergeK(uint32_t rows, uint32_t d, uint32_t es)
++{
++    const uint32_t rowBytes = 3u * es * d;  // x,r,out per row in batch
++    const uint32_t fixed = 4u * d + 2u * es * d + kFixedBytes;
++    uint32_t k = 1;
++    if (rowBytes > 0 && kUbBudget > fixed) {
++        k = (kUbBudget - fixed) / rowBytes;
++    }
++    if (k < 1) {
++        k = 1;
++    }
++    if (k > kMaxMergeK) {
++        k = kMaxMergeK;
++    }
++    if (k > rows) {
++        k = rows;
++    }
++    return k;
++}
++
++inline bool FullUFits(uint32_t d, uint32_t es)
++{
++    const uint32_t uBytes = HostAlign32((d + 32u) * 4u);
++    const uint32_t minQ = 5u * HostAlign32((kVecChunk + 32u) * es) + 2u * HostAlign32((kVecChunk + 32u) * 4u) + 256u;
++    // Keep 25% UB free for pipeline depth beyond residency + fixed.
++    return (uBytes + kFixedBytes + minQ) <= (kUbBudget * 3u / 4u);
++}
++
++inline int32_t SelectMode(uint32_t rows, uint32_t d, uint32_t es)
++{
++    if (rows == 0 || d == 0) {
++        return MODE_NORMAL;
++    }
++    const bool fullU = FullUFits(d, es);
++    if (!fullU) {
++        const uint32_t tile = SelectTile(d, es);
++        if (tile >= kMinTile && tile < d) {
++            return MODE_SPLIT_D;
++        }
++        return MODE_NORMAL;
++    }
++    if (rows == 1) {
++        return MODE_SINGLE_N;
++    }
++    const uint32_t k = SelectMergeK(rows, d, es);
++    // Batch only when several rows fit and D is not huge (batch DMA wins on mid/narrow).
++    if (k >= 2 && d <= 8192u) {
++        return MODE_MERGE_N;
++    }
++    return MODE_MULTI_N;
++}
++
++template <typename T>
++class ModeXOp {
++public:
++    __aicore__ inline ModeXOp(AscendC::TPipe* pipe) : pipe_(pipe) {}
++
++    __aicore__ inline void Init(GM_ADDR x, GM_ADDR residual, GM_ADDR gamma, GM_ADDR bias, GM_ADDR output,
++        uint32_t rows, uint32_t d, float epsilon, float invD, uint32_t usedCores,
++        uint32_t mode, uint32_t tileElems, uint32_t mergeK)
++    {
++        rows_ = rows;
++        d_ = d;
++        epsilon_ = epsilon;
++        invD_ = invD;
++        mode_ = mode;
++        es_ = static_cast<uint32_t>(sizeof(T));
++        chunk_ = MinU32(kVecChunk, d_);
++        if (chunk_ == 0) {
++            chunk_ = 1;
++        }
++        tile_ = tileElems == 0 ? chunk_ : tileElems;
++        if (tile_ > d_) {
++            tile_ = d_;
++        }
++        if (tile_ == 0) {
++            tile_ = 1;
++        }
++        mergeK_ = mergeK == 0 ? 1u : mergeK;
++        usedCores_ = usedCores == 0 ? 1u : usedCores;
++
++        // Contiguous row (or merge-batch) slice for this core. No cross-core wait.
++        const uint32_t bid = AscendC::GetBlockIdx();
++        if (mode_ == MODE_MERGE_N) {
++            const uint32_t units = (rows_ + mergeK_ - 1) / mergeK_;
++            const uint32_t per = (units + usedCores_ - 1) / usedCores_;
++            if (bid >= usedCores_ || per == 0) {
++                firstRow_ = 0;
++                rowCount_ = 0;
++            } else {
++                const uint32_t u0 = bid * per;
++                const uint32_t u1 = MinU32(units, u0 + per);
++                if (u0 >= u1) {
++                    firstRow_ = 0;
++                    rowCount_ = 0;
++                } else {
++                    firstRow_ = u0 * mergeK_;
++                    rowCount_ = MinU32(rows_ - firstRow_, (u1 - u0) * mergeK_);
++                }
++            }
++        } else {
++            const uint32_t per = (rows_ + usedCores_ - 1) / usedCores_;
++            if (bid >= usedCores_ || per == 0) {
++                firstRow_ = 0;
++                rowCount_ = 0;
++            } else {
++                firstRow_ = bid * per;
++                if (firstRow_ >= rows_) {
++                    firstRow_ = 0;
++                    rowCount_ = 0;
++                } else {
++                    rowCount_ = MinU32(rows_ - firstRow_, per);
++                }
++            }
++        }
++
++        xGm_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(x), static_cast<uint64_t>(rows_) * d_);
++        rGm_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(residual), static_cast<uint64_t>(rows_) * d_);
++        gGm_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(gamma), d_);
++        bGm_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(bias), d_);
++        oGm_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(output), static_cast<uint64_t>(rows_) * d_);
++
++        // Workspace plan driven by mode + UB budget.
++        const uint32_t inBytes = Align32((chunk_ + 32u) * es_);
++        const uint32_t workBytes = Align32((chunk_ + 32u) * 4u);
++        uint32_t uElems = d_ + 32u;
++        if (mode_ == MODE_SPLIT_D || mode_ == MODE_NORMAL) {
++            uElems = tile_ + 32u;
++        }
++        const uint32_t uBytes = Align32(uElems * 4u);
++
++        // MERGE_N: multi-row contiguous batch of x/r/o.
++        uint32_t batchElems = 0;
++        if (mode_ == MODE_MERGE_N) {
++            uint32_t krows = mergeK_;
++            if (krows > rowCount_) {
++                krows = rowCount_;
++            }
++            batchElems = krows * d_ + 32u;
++        }
++        const uint32_t batchBytes = batchElems == 0 ? inBytes : Align32(batchElems * es_);
++
++        pipe_->InitBuffer(xQue_, 1, batchBytes);
++        pipe_->InitBuffer(rQue_, 1, batchBytes);
++        pipe_->InitBuffer(oQue_, 1, batchBytes);
++        pipe_->InitBuffer(gQue_, 1, inBytes);
++        pipe_->InitBuffer(bQue_, 1, inBytes);
++        pipe_->InitBuffer(uBuf_, uBytes);
++        pipe_->InitBuffer(workA_, workBytes);
++        pipe_->InitBuffer(workB_, workBytes);
++        // 8B-aligned ReduceSum dest (32B alloc) + dedicated 8KiB tmp.
++        pipe_->InitBuffer(leafBuf_, 32);
++        pipe_->InitBuffer(reduceTmp_, kReduceTmpBytes);
++        pipe_->InitBuffer(scalarBuf_, 64);
++    }
++
++    __aicore__ inline void Process()
++    {
++        if (rowCount_ == 0) {
++            return;
++        }
++        switch (mode_) {
++            case MODE_SINGLE_N:
++                ProcessFullU(firstRow_, firstRow_ + 1);
++                break;
++            case MODE_MERGE_N:
++                ProcessMerge();
++                break;
++            case MODE_MULTI_N:
++                ProcessFullU(firstRow_, firstRow_ + rowCount_);
++                break;
++            case MODE_SPLIT_D:
++                ProcessSplit(tile_);
++                break;
++            case MODE_NORMAL:
++            default:
++                ProcessSplit(chunk_);
++                break;
++        }
++    }
++
++private:
++    __aicore__ inline void AddIntoU(AscendC::LocalTensor<float> uSeg, uint32_t gmOff, uint32_t len)
++    {
++        for (uint32_t off = 0; off < len; off += chunk_) {
++            const uint32_t n32 = MinU32(chunk_, len - off);
++            const int32_t n = static_cast<int32_t>(n32);
++            AscendC::LocalTensor<T> xLocal = xQue_.AllocTensor<T>();
++            AscendC::LocalTensor<T> rLocal = rQue_.AllocTensor<T>();
++            CopyInPad<T>(xLocal, xGm_[gmOff + off], n32);
++            CopyInPad<T>(rLocal, rGm_[gmOff + off], n32);
++            xQue_.EnQue(xLocal);
++            rQue_.EnQue(rLocal);
++            xLocal = xQue_.DeQue<T>();
++            rLocal = rQue_.DeQue<T>();
++            if constexpr (sizeof(T) == 4) {
++                AscendC::LocalTensor<float> xF = xLocal;
++                AscendC::LocalTensor<float> rF = rLocal;
++                AscendC::Add<float>(uSeg[off], xF, rF, n);
++            } else {
++                AscendC::LocalTensor<float> xF = workB_.Get<float>();
++                AscendC::LocalTensor<float> rF = workA_.Get<float>();
++                AscendC::Cast<float, T>(xF, xLocal, AscendC::RoundMode::CAST_NONE, n);
++                AscendC::Cast<float, T>(rF, rLocal, AscendC::RoundMode::CAST_NONE, n);
++                AscendC::PipeBarrier<PIPE_V>();
++                AscendC::Add<float>(uSeg[off], xF, rF, n);
++            }
++            AscendC::PipeBarrier<PIPE_V>();
++            xQue_.FreeTensor(xLocal);
++            rQue_.FreeTensor(rLocal);
++        }
++    }
++
++    __aicore__ inline float ReduceSquares(AscendC::LocalTensor<float> uSeg, uint32_t len)
++    {
++        AscendC::LocalTensor<float> reduceTmp = reduceTmp_.Get<float>();
++        AscendC::LocalTensor<float> acc = scalarBuf_.Get<float>();
++        AscendC::LocalTensor<float> leaf = leafBuf_.Get<float>();
++        AscendC::LocalTensor<float> sq = workA_.Get<float>();
++        const int32_t one = 1;
++        AscendC::Duplicate<float>(acc, 0.0f, one);
++        for (uint32_t off = 0; off < len; off += kVecChunk) {
++            const uint32_t n32 = MinU32(kVecChunk, len - off);
++            const uint32_t reduceN = (n32 + 7U) & ~7U;
++            const int32_t n = static_cast<int32_t>(n32);
++            AscendC::Mul<float>(sq, uSeg[off], uSeg[off], n);
++            if (reduceN > n32) {
++                AscendC::Duplicate<float>(sq[n32], 0.0f, static_cast<int32_t>(reduceN - n32));
++            }
++            AscendC::PipeBarrier<PIPE_V>();
++            AscendC::ReduceSum<float, true>(leaf, sq, reduceTmp, static_cast<int32_t>(reduceN));
++            AscendC::PipeBarrier<PIPE_V>();
++            AscendC::Add<float>(acc, acc, leaf, one);
++            AscendC::PipeBarrier<PIPE_V>();
++        }
++        SyncVToS();
++        return acc.GetValue(0);
++    }
++
++    __aicore__ inline float InvRmsFromSumSq(float sumSq)
++    {
++        AscendC::LocalTensor<float> s = scalarBuf_.Get<float>();
++        AscendC::LocalTensor<float> tmp = workA_.Get<float>();
++        AscendC::LocalTensor<float> oneT = workB_.Get<float>();
++        const int32_t one = 1;
++        const float mean = sumSq * invD_ + epsilon_;
++        s.SetValue(0, mean);
++        oneT.SetValue(0, 1.0f);
++        AscendC::Sqrt<float>(tmp, s, one);
++        AscendC::Div<float>(s, oneT, tmp, one);
++        SyncVToS();
++        return s.GetValue(0);
++    }
++
++    __aicore__ inline void ApplyRow(AscendC::LocalTensor<float> uSeg, uint32_t gmOff, uint32_t len, float invRms)
++    {
++        for (uint32_t off = 0; off < len; off += chunk_) {
++            const uint32_t n32 = MinU32(chunk_, len - off);
++            const int32_t n = static_cast<int32_t>(n32);
++            AscendC::LocalTensor<T> gLocal = gQue_.AllocTensor<T>();
++            AscendC::LocalTensor<T> bLocal = bQue_.AllocTensor<T>();
++            AscendC::LocalTensor<T> oLocal = oQue_.AllocTensor<T>();
++            CopyInPad<T>(gLocal, gGm_[off], n32);
++            CopyInPad<T>(bLocal, bGm_[off], n32);
++            gQue_.EnQue(gLocal);
++            bQue_.EnQue(bLocal);
++            gLocal = gQue_.DeQue<T>();
++            bLocal = bQue_.DeQue<T>();
++            AscendC::LocalTensor<float> y = workA_.Get<float>();
++            AscendC::LocalTensor<float> gF = workB_.Get<float>();
++            if constexpr (sizeof(T) == 4) {
++                AscendC::LocalTensor<float> gg = gLocal;
++                AscendC::Mul<float>(y, uSeg[off], gg, n);
++            } else {
++                AscendC::Cast<float, T>(gF, gLocal, AscendC::RoundMode::CAST_NONE, n);
++                AscendC::PipeBarrier<PIPE_V>();
++                AscendC::Mul<float>(y, uSeg[off], gF, n);
++            }
++            AscendC::PipeBarrier<PIPE_V>();
++            AscendC::Muls<float>(y, y, invRms, n);
++            AscendC::PipeBarrier<PIPE_V>();
++            if constexpr (sizeof(T) == 4) {
++                AscendC::LocalTensor<float> bb = bLocal;
++                AscendC::Add<float>(y, y, bb, n);
++                AscendC::LocalTensor<float> oo = oLocal;
++                AscendC::DataCopy(oo, y, n);
++            } else {
++                AscendC::Cast<float, T>(gF, bLocal, AscendC::RoundMode::CAST_NONE, n);
++                AscendC::PipeBarrier<PIPE_V>();
++                AscendC::Add<float>(y, y, gF, n);
++                AscendC::Cast<T, float>(oLocal, y, AscendC::RoundMode::CAST_RINT, n);
++            }
++            AscendC::PipeBarrier<PIPE_V>();
++            SyncVToMte3();
++            CopyOutPad<T>(oGm_[gmOff + off], oLocal, n32);
++            oQue_.FreeTensor(oLocal);
++            gQue_.FreeTensor(gLocal);
++            bQue_.FreeTensor(bLocal);
++        }
++    }
++
++    // Full-u residency: one x/r read, u kept in UB, then normalize.
++    __aicore__ inline void ProcessFullU(uint32_t rowBegin, uint32_t rowEnd)
++    {
++        AscendC::LocalTensor<float> uSeg = uBuf_.Get<float>();
++        for (uint32_t r = rowBegin; r < rowEnd; ++r) {
++            const uint32_t gmOff = r * d_;
++            AddIntoU(uSeg, gmOff, d_);
++            const float sumSq = ReduceSquares(uSeg, d_);
++            const float invRms = InvRmsFromSumSq(sumSq);
++            ApplyRow(uSeg, gmOff, d_, invRms);
++        }
++    }
++
++    // Multi-row batch: one contiguous DataCopyPad for K rows of x/r, then per-row rms.
++    __aicore__ inline void ProcessMerge()
++    {
++        AscendC::LocalTensor<float> uSeg = uBuf_.Get<float>();
++        uint32_t remaining = rowCount_;
++        uint32_t row = firstRow_;
++        while (remaining > 0) {
++            const uint32_t krows = MinU32(mergeK_, remaining);
++            const uint32_t batchLen = krows * d_;
++            const uint32_t batchOff = row * d_;
++
++            AscendC::LocalTensor<T> xBatch = xQue_.AllocTensor<T>();
++            AscendC::LocalTensor<T> rBatch = rQue_.AllocTensor<T>();
++            CopyInPad<T>(xBatch, xGm_[batchOff], batchLen);
++            CopyInPad<T>(rBatch, rGm_[batchOff], batchLen);
++            xQue_.EnQue(xBatch);
++            rQue_.EnQue(rBatch);
++            xBatch = xQue_.DeQue<T>();
++            rBatch = rQue_.DeQue<T>();
++            SyncMte2ToV();
++
++            for (uint32_t i = 0; i < krows; ++i) {
++                const uint32_t rowOff = i * d_;
++                for (uint32_t off = 0; off < d_; off += chunk_) {
++                    const uint32_t n32 = MinU32(chunk_, d_ - off);
++                    const int32_t n = static_cast<int32_t>(n32);
++                    if constexpr (sizeof(T) == 4) {
++                        AscendC::LocalTensor<float> xF = xBatch[rowOff + off];
++                        AscendC::LocalTensor<float> rF = rBatch[rowOff + off];
++                        AscendC::Add<float>(uSeg[off], xF, rF, n);
++                    } else {
++                        AscendC::LocalTensor<float> xF = workB_.Get<float>();
++                        AscendC::LocalTensor<float> rF = workA_.Get<float>();
++                        AscendC::Cast<float, T>(xF, xBatch[rowOff + off], AscendC::RoundMode::CAST_NONE, n);
++                        AscendC::Cast<float, T>(rF, rBatch[rowOff + off], AscendC::RoundMode::CAST_NONE, n);
++                        AscendC::PipeBarrier<PIPE_V>();
++                        AscendC::Add<float>(uSeg[off], xF, rF, n);
++                    }
++                    AscendC::PipeBarrier<PIPE_V>();
++                }
++                const float sumSq = ReduceSquares(uSeg, d_);
++                const float invRms = InvRmsFromSumSq(sumSq);
++                ApplyRow(uSeg, (row + i) * d_, d_, invRms);
++            }
++            xQue_.FreeTensor(xBatch);
++            rQue_.FreeTensor(rBatch);
++            row += krows;
++            remaining -= krows;
++        }
++    }
++
++    // D-tile running reduce (NOT cross-core SyncAll D-slice).
++    // Phase 1 accumulates sum(u*u) over tiles; Phase 2 re-applies normalize.
++    __aicore__ inline void ProcessSplit(uint32_t tileElems)
++    {
++        AscendC::LocalTensor<float> uSeg = uBuf_.Get<float>();
++        const uint32_t tile = tileElems == 0 ? chunk_ : tileElems;
++        for (uint32_t r = firstRow_; r < firstRow_ + rowCount_; ++r) {
++            const uint32_t gmOff = r * d_;
++            AscendC::LocalTensor<float> acc = scalarBuf_.Get<float>();
++            AscendC::LocalTensor<float> leaf = leafBuf_.Get<float>();
++            AscendC::LocalTensor<float> reduceTmp = reduceTmp_.Get<float>();
++            AscendC::LocalTensor<float> sq = workA_.Get<float>();
++            const int32_t one = 1;
++            AscendC::Duplicate<float>(acc, 0.0f, one);
++            for (uint32_t col = 0; col < d_; col += tile) {
++                const uint32_t len = MinU32(tile, d_ - col);
++                AddIntoU(uSeg, gmOff + col, len);
++                for (uint32_t off = 0; off < len; off += kVecChunk) {
++                    const uint32_t n32 = MinU32(kVecChunk, len - off);
++                    const uint32_t reduceN = (n32 + 7U) & ~7U;
++                    const int32_t n = static_cast<int32_t>(n32);
++                    AscendC::Mul<float>(sq, uSeg[off], uSeg[off], n);
++                    if (reduceN > n32) {
++                        AscendC::Duplicate<float>(sq[n32], 0.0f, static_cast<int32_t>(reduceN - n32));
++                    }
++                    AscendC::PipeBarrier<PIPE_V>();
++                    AscendC::ReduceSum<float, true>(leaf, sq, reduceTmp, static_cast<int32_t>(reduceN));
++                    AscendC::PipeBarrier<PIPE_V>();
++                    AscendC::Add<float>(acc, acc, leaf, one);
++                    AscendC::PipeBarrier<PIPE_V>();
++                }
++            }
++            SyncVToS();
++            const float sumSq = acc.GetValue(0);
++            const float invRms = InvRmsFromSumSq(sumSq);
++            for (uint32_t col = 0; col < d_; col += tile) {
++                const uint32_t len = MinU32(tile, d_ - col);
++                AddIntoU(uSeg, gmOff + col, len);
++                ApplyRow(uSeg, gmOff + col, len, invRms);
++            }
++        }
++    }
++
++    AscendC::TPipe* pipe_{nullptr};
++    AscendC::TQue<AscendC::QuePosition::VECIN, 1> xQue_;
++    AscendC::TQue<AscendC::QuePosition::VECIN, 1> rQue_;
++    AscendC::TQue<AscendC::QuePosition::VECIN, 1> gQue_;
++    AscendC::TQue<AscendC::QuePosition::VECIN, 1> bQue_;
++    AscendC::TQue<AscendC::QuePosition::VECOUT, 1> oQue_;
++    AscendC::TBuf<AscendC::QuePosition::VECCALC> uBuf_;
++    AscendC::TBuf<AscendC::QuePosition::VECCALC> workA_;
++    AscendC::TBuf<AscendC::QuePosition::VECCALC> workB_;
++    AscendC::TBuf<AscendC::QuePosition::VECCALC> leafBuf_;
++    AscendC::TBuf<AscendC::QuePosition::VECCALC> reduceTmp_;
++    AscendC::TBuf<AscendC::QuePosition::VECCALC> scalarBuf_;
++
++    AscendC::GlobalTensor<T> xGm_;
++    AscendC::GlobalTensor<T> rGm_;
++    AscendC::GlobalTensor<T> gGm_;
++    AscendC::GlobalTensor<T> bGm_;
++    AscendC::GlobalTensor<T> oGm_;
++
++    uint32_t rows_{0};
++    uint32_t d_{0};
++    float epsilon_{1e-5f};
++    float invD_{1.0f};
++    uint32_t firstRow_{0};
++    uint32_t rowCount_{0};
++    uint32_t usedCores_{1};
++    uint32_t mode_{0};
++    uint32_t es_{2};
++    uint32_t chunk_{128};
++    uint32_t tile_{128};
++    uint32_t mergeK_{1};
++};
++
++template <typename T>
++__aicore__ inline void RunMode(GM_ADDR x, GM_ADDR residual, GM_ADDR gamma, GM_ADDR bias, GM_ADDR output,
++    uint32_t rows, uint32_t d, float epsilon, float invD, uint32_t usedCores,
++    uint32_t mode, uint32_t tileElems, uint32_t mergeK)
++{
++    AscendC::TPipe pipe;
++    ModeXOp<T> op(&pipe);
++    op.Init(x, residual, gamma, bias, output, rows, d, epsilon, invD, usedCores, mode, tileElems, mergeK);
++    op.Process();
++}
++
++}  // namespace mode_x_v001
++
++extern "C" __global__ __vector__ void mode_x_add_rms_norm_bias(GM_ADDR x, GM_ADDR residual, GM_ADDR gamma,
++    GM_ADDR bias, GM_ADDR output, uint32_t rows, uint32_t d, float epsilon, float invD, uint32_t usedCores,
++    uint32_t mode, uint32_t tileElems, uint32_t mergeK, int32_t dtype)
++{
++    if (x == nullptr || residual == nullptr || gamma == nullptr || bias == nullptr || output == nullptr) {
++        return;
++    }
++    if (rows == 0 || d == 0 || usedCores == 0) {
++        return;
++    }
++    if (dtype == 0) {
++        mode_x_v001::RunMode<float>(x, residual, gamma, bias, output, rows, d, epsilon, invD, usedCores,
++            mode, tileElems, mergeK);
++    } else if (dtype == 1) {
++        mode_x_v001::RunMode<half>(x, residual, gamma, bias, output, rows, d, epsilon, invD, usedCores,
++            mode, tileElems, mergeK);
++    } else if (dtype == 2) {
++        mode_x_v001::RunMode<bfloat16_t>(x, residual, gamma, bias, output, rows, d, epsilon, invD, usedCores,
++            mode, tileElems, mergeK);
++    }
++}
++
++#ifndef MODE_X_DEVICE_ONLY
++namespace mode_x_v001 {
++namespace {
++
++inline bool GroupPresent(const TensorGroupInfo& g)
++{
++    return g.tensors != nullptr && g.numTensors > 0 && g.tensors[0].shape != nullptr && g.tensors[0].numDims > 0;
++}
++
++inline void ShapeRD(const TensorGroupInfo& g, uint32_t& rows, uint32_t& d)
++{
++    const TensorInfo& t = g.tensors[0];
++    d = static_cast<uint32_t>(t.shape[t.numDims - 1]);
++    uint64_t r = 1;
++    for (int64_t i = 0; i < t.numDims - 1; ++i) {
++        r *= static_cast<uint64_t>(t.shape[i]);
++    }
++    rows = static_cast<uint32_t>(r);
++}
++
++}  // namespace
++}  // namespace mode_x_v001
++
++extern "C" void run_kernel(GM_ADDR x, const TensorGroupInfo& info_x, GM_ADDR residual,
++    const TensorGroupInfo& info_residual, GM_ADDR gamma, const TensorGroupInfo& info_gamma, GM_ADDR bias,
++    const TensorGroupInfo& info_bias, GM_ADDR output, const TensorGroupInfo& info_output,
++    int64_t availableCoreNum, aclrtStream stream, float epsilon)
++{
++    if (x == nullptr || residual == nullptr || gamma == nullptr || bias == nullptr || output == nullptr) {
++        return;
++    }
++    if (!mode_x_v001::GroupPresent(info_x) || !mode_x_v001::GroupPresent(info_residual) ||
++        !mode_x_v001::GroupPresent(info_gamma) || !mode_x_v001::GroupPresent(info_bias) ||
++        !mode_x_v001::GroupPresent(info_output)) {
++        return;
++    }
++    uint32_t rows = 0;
++    uint32_t d = 0;
++    mode_x_v001::ShapeRD(info_x, rows, d);
++    if (rows == 0 || d == 0 || availableCoreNum <= 0) {
++        return;
++    }
++    const int32_t dtype = info_x.tensors[0].dtype;
++    if (dtype < 0 || dtype > 2) {
++        return;
++    }
++    const uint32_t es = mode_x_v001::ElemSize(dtype);
++    const int32_t mode = mode_x_v001::SelectMode(rows, d, es);
++    const uint32_t tileElems = mode_x_v001::SelectTile(d, es);
++    const uint32_t mergeK = mode_x_v001::SelectMergeK(rows, d, es);
++    const float invD = 1.0f / static_cast<float>(d);
++
++    uint32_t usedCores = rows;
++    if (mode == mode_x_v001::MODE_MERGE_N) {
++        const uint32_t k = mergeK == 0 ? 1u : mergeK;
++        usedCores = (rows + k - 1) / k;
++    }
++    if (static_cast<int64_t>(usedCores) > availableCoreNum) {
++        usedCores = static_cast<uint32_t>(availableCoreNum);
++    }
++    if (usedCores == 0) {
++        return;
++    }
++
++    // Row-parallel (or batch-parallel) partition. SINGLE_N uses 1 core / 1 row.
++    // Each core takes a contiguous slice of rows; SPLIT_D/NORMAL tile D inside the core.
++    // No SyncAll: idle cores exit, workers never wait on non-workers.
++    mode_x_add_rms_norm_bias<<<usedCores, nullptr, stream>>>(x, residual, gamma, bias, output, rows, d, epsilon,
++        invD, usedCores, static_cast<uint32_t>(mode), tileElems, mergeK, dtype);
++}
++#endif  // MODE_X_DEVICE_ONLY
+diff --git a/phase4/workspaces/MODE-X/submission_shim.asc b/phase4/workspaces/MODE-X/submission_shim.asc
+new file mode 100644
+index 0000000..ef59fef
+--- /dev/null
++++ b/phase4/workspaces/MODE-X/submission_shim.asc
+@@ -0,0 +1,2 @@
++#include "local_types.h"
++#include "submission.asc"
