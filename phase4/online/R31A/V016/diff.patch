@@ -1,0 +1,66 @@
+--- a/R31A/V015/submission.asc
++++ b/R31A/V016/submission.asc
+@@ -2,22 +2,22 @@
+ #include <cstdint>
+ #include "kernel_operator.h"
+ /*
+- * R31A-V015-W-LP-PIPE3
++ * R31A-V016-W-F32-Y32K
+  *
+- * Base: R31A-V013 (W-BF16-PIPE2, 15/15, Official 44.70 champion).
+- * Keep every V013 path including N-TINY-MID and W-BF16-PIPE2.  One
+- * attributable change: deepen the wide low-precision multi-row input row
+- * pipeline from 2 to 3 (third x/res pair in the idle second halves of
+- * xBuf_/residualBuf_), without any tile-size change.
++ * Base: R31A-V015 (W-LP-PIPE3, 15/15, Official 44.75 champion).
++ * Keep every V015 path including N-TINY-MID, W-BF16-PIPE2 and W-LP-PIPE3.
++ * One attributable change: FP32 wide multi-row at D=32768 routes to the
++ * full-y CachedRows path (keep u, one input read) instead of the batch
++ * path (re-read x/res in the epilogue).
+  *
+- * Attribution: W-LP-PIPE3.  R31B-V011's LP row pipeline hit 45.16, so
+- * deeper LP row overlap is the live lead.  V014's FP32 depth-3 attempt
+- * cost the tile shrink 6112→4096 and lost 0.45 — this change keeps every
+- * tile width and only adds one MTE2-staging pair in UB that is already
+- * free (xBuf_/residualBuf_ second halves are unused in the 2-deep packing).
+- * T14 sat out V013's BF16-only pipe, so if T14 is FP16 wide multi-row this
+- * is the first depth change that covers it.  Math unchanged; FP16 keeps T
+- * gamma/bias, BF16 keeps FP32 add and FP32 gamma/bias.
++ * Attribution: W-F32-Y32K.  T14 (r=4.5) sat out D-slice (FP32 few-row),
++ * full-y (FP32 D8193-16384 — wrong D range), V013's BF16 pipe and V015's
++ * LP pipe (wrong dtype), and V014's FP32 depth-3 (tile shrink cost the
++ * win).  The one large-R wide bucket still doing 2× input reads is FP32
++ * multi-row at D=32768: batch path re-reads x/res in the epilogue while
++ * CachedRows already keeps a full u row and only reads x/res once.  A
++ * one-line dispatch change sends D=32768 multi-row to that full-y path.
++ * Math unchanged.
+  */
+ 
+ /*
+@@ -69,8 +69,11 @@
+                 // Once every core owns multiple rows, cache one 8192-channel
+                 // gamma/bias tile and consume it across a row batch.  The
+                 // smaller data tile leaves room for a second input/output
+-                // triplet, so MTE2/V/MTE3 can overlap adjacent rows.
+-                wideFp32BatchPath_ = rowCount / static_cast<uint64_t>(blockCount) >= 2;
++                // triplet, so MTE2/V/MTE3 can overlap adjacent rows.  D=32768
++                // multi-row stays on the full-y CachedRows path below: one
++                // input read beats the batch path's re-read at that width.
++                wideFp32BatchPath_ = rowCount / static_cast<uint64_t>(blockCount) >= 2 &&
++                    rowWidth < static_cast<uint64_t>(kWideFp32CachedRowMaxWidth);
+                 if (wideFp32BatchPath_) {
+                     pipe_.InitBuffer(xBuf_, kWideFp32BatchTileElems * sizeof(float));
+                     pipe_.InitBuffer(residualBuf_, kWideFp32BatchTileElems * sizeof(float));
+@@ -81,9 +84,9 @@
+                     pipe_.InitBuffer(residualFp32Buf_, kWideFp32BatchTileElems * sizeof(float));
+                     pipe_.InitBuffer(outputBuf_, kWideFp32BatchTileElems * sizeof(float));
+                 } else if (rowWidth <= static_cast<uint64_t>(kWideFp32CachedRowMaxWidth)) {
+-                    // A core with fewer than two rows cannot reuse channel
+-                    // parameters. Keep its complete x + residual row instead
+-                    // and eliminate the second input read in the output pass.
++                    // Keep the complete x + residual row in UB and eliminate
++                    // the second input read in the output pass.  Serves both
++                    // few-row launches and D=32768 multi-row.
+                     wideFp32CachedRowPath_ = true;
+                     pipe_.InitBuffer(xBuf_, kWideFp32CachedTileElems * sizeof(float));
+                     pipe_.InitBuffer(residualBuf_, kWideFp32CachedTileElems * sizeof(float));
