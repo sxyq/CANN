@@ -1,0 +1,173 @@
+--- a/G001/V001/submission.asc
++++ b/G001/V002/submission.asc
+@@ -4,8 +4,8 @@
+ 
+ namespace g001 {
+ 
+-// The entry receives the fields as scalar launch arguments.
+-// dtype: 0 = fp16, 1 = bf16, 2 = fp32.
++// Judge TensorInfo.dtype contract: 0=FP32, 1=FP16, 2=BF16.
++// Internal dtype codes follow the same encoding so run_kernel can pass through.
+ struct TilingData {
+     int32_t rows;
+     int32_t dim;
+@@ -48,11 +48,21 @@
+         float f;
+     } bitsValue;
+     bitsValue.f = value;
+-    const uint32_t rounding = 0x7FFFu + ((bitsValue.u >> 16) & 1u);
+-    bitsValue.u += rounding;
+-    return reinterpret_cast<const bfloat16_t &>(bitsValue.u);
++    // Round-to-nearest-even float -> bfloat16 (BF16 value lives in bits 31:16).
++    const uint32_t roundingBias = 0x7FFFu + ((bitsValue.u >> 16) & 1u);
++    bitsValue.u += roundingBias;
++    const uint16_t result = static_cast<uint16_t>(bitsValue.u >> 16);
++    return reinterpret_cast<const bfloat16_t &>(result);
+ }
+ 
++__aicore__ inline float SqrtF(float x)
++{
++    return __builtin_cce_sqrtf(x);
++}
++
++// Hot path (Fresh One-Read / Resident-Y):
++// each x/residual element is consumed once; FP32 u = x + residual stays
++// resident in one UB row and is reused for RMS and for norm + bias.
+ template <typename T>
+ __aicore__ inline void RunResidentRows(GM_ADDR xAddr, GM_ADDR residualAddr, GM_ADDR gammaAddr, GM_ADDR biasAddr,
+     GM_ADDR outputAddr, const TilingData &cfg)
+@@ -69,43 +79,38 @@
+     bias.SetGlobalBuffer(reinterpret_cast<__gm__ T *>(biasAddr), cfg.dim);
+     output.SetGlobalBuffer(reinterpret_cast<__gm__ T *>(outputAddr), total);
+ 
+-    // One UB row holds u=x+residual. This is 128 KiB at the largest FP32 D,
+-    // leaving the remaining UB for runtime bookkeeping and alignment.
++    // FP32 resident row. Max dim 32768 * 4B = 128 KiB < 184 KiB vector workspace.
+     AscendC::LocalMemAllocator<> allocator;
+-    AscendC::LocalTensor<T> resident = allocator.Alloc<T>(cfg.dim);
++    AscendC::LocalTensor<float> resident = allocator.Alloc<float>(cfg.dim);
+ 
+     const uint64_t core = static_cast<uint64_t>(AscendC::GetBlockIdx());
+     const uint64_t cores = static_cast<uint64_t>(AscendC::GetBlockNum());
+     for (uint64_t row = core; row < static_cast<uint64_t>(cfg.rows); row += cores) {
+-        const uint64_t rowBase = row * cfg.dim;
++        const uint64_t rowBase = row * static_cast<uint64_t>(cfg.dim);
+         float sumSquares = 0.0f;
+ 
+-        // Fresh one-read: each source element is consumed once while the
+-        // native-precision u value stays resident until y is written.
+         for (int32_t i = 0; i < cfg.dim; ++i) {
+             const float u = ToFloat(x.GetValue(rowBase + i)) + ToFloat(residual.GetValue(rowBase + i));
+-            const T nativeU = FromFloat<T>(u);
+-            resident.SetValue(i, nativeU);
+-            const float storedU = ToFloat(nativeU);
+-            sumSquares += storedU * storedU;
++            resident.SetValue(i, u);
++            sumSquares += u * u;
+         }
+ 
+         const float mean = sumSquares / static_cast<float>(cfg.dim);
+-        const float inverseRms = 1.0f / __builtin_cce_sqrtf(mean + cfg.epsilon);
++        const float rms = SqrtF(mean + cfg.epsilon);
+         for (int32_t i = 0; i < cfg.dim; ++i) {
+-            const float u = ToFloat(resident.GetValue(i));
+-            const float value = u * inverseRms * ToFloat(gamma.GetValue(i)) + ToFloat(bias.GetValue(i));
++            const float u = resident.GetValue(i);
++            const float value = (u / rms) * ToFloat(gamma.GetValue(i)) + ToFloat(bias.GetValue(i));
+             output.SetValue(rowBase + i, FromFloat<T>(value));
+         }
+     }
+ }
+ 
++// Generic fallback: two-pass over sources, all math in FP32, one final cast.
++// Covers every legal rows / dim / dtype without relying on resident UB.
+ template <typename T>
+ __aicore__ inline void RunGenericRows(GM_ADDR xAddr, GM_ADDR residualAddr, GM_ADDR gammaAddr, GM_ADDR biasAddr,
+     GM_ADDR outputAddr, const TilingData &cfg)
+ {
+-    // The scalar path keeps the same arithmetic and row mapping for a fallback
+-    // dtype code without relying on the resident UB allocation.
+     AscendC::GlobalTensor<T> x;
+     AscendC::GlobalTensor<T> residual;
+     AscendC::GlobalTensor<T> gamma;
+@@ -121,16 +126,17 @@
+     const uint64_t core = static_cast<uint64_t>(AscendC::GetBlockIdx());
+     const uint64_t cores = static_cast<uint64_t>(AscendC::GetBlockNum());
+     for (uint64_t row = core; row < static_cast<uint64_t>(cfg.rows); row += cores) {
+-        const uint64_t rowBase = row * cfg.dim;
++        const uint64_t rowBase = row * static_cast<uint64_t>(cfg.dim);
+         float sumSquares = 0.0f;
+         for (int32_t i = 0; i < cfg.dim; ++i) {
+             const float u = ToFloat(x.GetValue(rowBase + i)) + ToFloat(residual.GetValue(rowBase + i));
+             sumSquares += u * u;
+         }
+-        const float inverseRms = 1.0f / __builtin_cce_sqrtf(sumSquares / static_cast<float>(cfg.dim) + cfg.epsilon);
++        const float mean = sumSquares / static_cast<float>(cfg.dim);
++        const float rms = SqrtF(mean + cfg.epsilon);
+         for (int32_t i = 0; i < cfg.dim; ++i) {
+             const float u = ToFloat(x.GetValue(rowBase + i)) + ToFloat(residual.GetValue(rowBase + i));
+-            const float value = u * inverseRms * ToFloat(gamma.GetValue(i)) + ToFloat(bias.GetValue(i));
++            const float value = (u / rms) * ToFloat(gamma.GetValue(i)) + ToFloat(bias.GetValue(i));
+             output.SetValue(rowBase + i, FromFloat<T>(value));
+         }
+     }
+@@ -148,23 +154,24 @@
+     cfg.epsilon = epsilon;
+     cfg.dtype = dtype;
+     cfg.mode = mode;
++    // dtype: 0=FP32, 1=FP16, 2=BF16 (judge contract).
+     if (cfg.dtype == 0) {
+         if (cfg.mode == 0) {
+-            g001::RunResidentRows<half>(x, residual, gamma, bias, output, cfg);
++            g001::RunResidentRows<float>(x, residual, gamma, bias, output, cfg);
+         } else {
+-            g001::RunGenericRows<half>(x, residual, gamma, bias, output, cfg);
++            g001::RunGenericRows<float>(x, residual, gamma, bias, output, cfg);
+         }
+     } else if (cfg.dtype == 1) {
+         if (cfg.mode == 0) {
+-            g001::RunResidentRows<bfloat16_t>(x, residual, gamma, bias, output, cfg);
++            g001::RunResidentRows<half>(x, residual, gamma, bias, output, cfg);
+         } else {
+-            g001::RunGenericRows<bfloat16_t>(x, residual, gamma, bias, output, cfg);
++            g001::RunGenericRows<half>(x, residual, gamma, bias, output, cfg);
+         }
+     } else if (cfg.dtype == 2) {
+         if (cfg.mode == 0) {
+-            g001::RunResidentRows<float>(x, residual, gamma, bias, output, cfg);
++            g001::RunResidentRows<bfloat16_t>(x, residual, gamma, bias, output, cfg);
+         } else {
+-            g001::RunGenericRows<float>(x, residual, gamma, bias, output, cfg);
++            g001::RunGenericRows<bfloat16_t>(x, residual, gamma, bias, output, cfg);
+         }
+     } else {
+         g001::RunGenericRows<float>(x, residual, gamma, bias, output, cfg);
+@@ -198,21 +205,19 @@
+         }
+         rows *= static_cast<uint64_t>(info.shape[axis]);
+     }
+-    uint32_t dtype;
+-    if (info.dtype == 0) {
+-        dtype = 2;
+-    } else if (info.dtype == 1) {
+-        dtype = 0;
+-    } else if (info.dtype == 2) {
+-        dtype = 1;
+-    } else {
++    // Judge dtype: 0=FP32, 1=FP16, 2=BF16. Pass through unchanged.
++    const uint32_t dtype = static_cast<uint32_t>(info.dtype);
++    if (dtype > 2) {
+         return;
+     }
++    // mode 0 = resident one-read hot path (FP32 u row fits in UB).
++    // mode 1 = generic two-pass fallback when the FP32 row would not fit.
++    const uint32_t mode = (static_cast<uint64_t>(dim) * 4ull <= 160ull * 1024ull) ? 0u : 1u;
+     uint64_t blocks = availableCoreNum > 0 ? static_cast<uint64_t>(availableCoreNum) : 1;
+     blocks = blocks > 40 ? 40 : blocks;
+     blocks = blocks > rows ? rows : blocks;
+     g001_add_rms_norm_bias<<<static_cast<uint32_t>(blocks), nullptr, stream>>>(
+         x, residual, gamma, bias, output, static_cast<int32_t>(rows),
+-        static_cast<int32_t>(dim), epsilon, dtype, 0);
++        static_cast<int32_t>(dim), epsilon, dtype, mode);
+ }
+ #endif
