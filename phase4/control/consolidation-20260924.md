@@ -83,3 +83,16 @@ All six based on canonical HEAD `ae46d7c`.
 | ALIGN-TAIL-X | V001 | PASS | PASS pair_max_abs=0 | LOAD_CONTAMINATED | NEEDS_ONE_MORE_LOCAL |
 | SCHED-ROWGROUP-X | V001 r2 | PASS | PASS | set1/set2 disagree; aligned control opposite | NEEDS_ONE_MORE_LOCAL; require VLLM stop |
 | ASYNC-TRIPLE-X | V001 | - | - | worker general-1 UnknownError | replacement worker same route |
+
+### NEXT6 batch review after first full handoffs
+
+| route | rev | correctness | local | decision |
+|---|---|---|---|---|
+| ASYNC-TRIPLE-X | V001 | PASS | contaminated noise>signal | NEEDS_ONE_MORE_LOCAL + PROBES PARKED |
+| BATCH-RESIDENT-X | V001 | PASS batch path | no clean window | NEEDS_ONE_MORE_LOCAL + PROBES PARKED |
+| SCHED-ROWGROUP-X | V001 | PASS | set1/set2 disagree; no VLLM-free | NEEDS_ONE_MORE_LOCAL + PROBE PARKED |
+| REDUCE-INVSCALE-X | V002 | PASS D<=32768 | repair cost below noise | correctness ACCEPTED; R019 perf deferred; PROBES PARKED; align hypothesis refuted; sync-only approved |
+| ALIGN-TAIL-X | V001 | PASS | no clean window 81min | NEEDS_ONE_MORE_LOCAL + PROBES PARKED |
+| UB-LIVENESS-X | V001 | FAIL | N/A | LOCAL_REJECTED; assign V002 correctness-only |
+
+Shared blocker: persistent root/zhangkaijie VLLM + HBM saturation; agents cannot create clean window alone.
