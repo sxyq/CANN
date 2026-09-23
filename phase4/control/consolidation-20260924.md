@@ -71,3 +71,9 @@ Container: `/Users/sunyiyang/Desktop/Project/cann-next6/` (not a worktree)
 | UB-LIVENESS-X | exp/next6-ub-liveness-x | ROUTE-BRIEF.md |
 
 All six based on canonical HEAD `ae46d7c`.
+
+## NEXT6 MAIN REVIEWS
+
+| route | rev | audit | correctness | local | decision |
+|---|---|---|---|---|---|
+| ALIGN-TAIL-X | V001 | PASS | PASS pair_max_abs=0 | LOAD_CONTAMINATED 4 probes | NEEDS_ONE_MORE_LOCAL |
