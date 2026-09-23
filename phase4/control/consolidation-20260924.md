@@ -77,3 +77,7 @@ All six based on canonical HEAD `ae46d7c`.
 | route | rev | audit | correctness | local | decision |
 |---|---|---|---|---|---|
 | ALIGN-TAIL-X | V001 | PASS | PASS pair_max_abs=0 | LOAD_CONTAMINATED 4 probes | NEEDS_ONE_MORE_LOCAL |
+| BATCH-RESIDENT-X | V001 | PASS | PASS batch path; col-split parent-inherited | LOAD_CONTAMINATED inconsistent | NEEDS_ONE_MORE_LOCAL |
+| SCHED-ROWGROUP-X | V001 | PASS | PASS | LOAD_CONTAMINATED; aligned control also moved | NEEDS_ONE_MORE_LOCAL |
+| REDUCE-INVSCALE-X | V001 | PASS | FAIL D>6144 parent partial-align | PARTIAL_CONTAMINATION | LOCAL_REJECTED; assign V002 correctness-only |
+| ALIGN-TAIL-X | V001 | PASS | PASS pair_max_abs=0 | LOAD_CONTAMINATED | NEEDS_ONE_MORE_LOCAL |
