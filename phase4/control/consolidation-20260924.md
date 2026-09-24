@@ -97,3 +97,4 @@ All six based on canonical HEAD `ae46d7c`.
 
 Shared blocker: persistent root/zhangkaijie VLLM + HBM saturation; agents cannot create clean window alone.
 | UB-LIVENESS-X | V002 | partial improve still FAIL | raw invalid | LOCAL_REJECTED; assign V003 pass1 acc fix |
+| UB-LIVENESS-X | V003 | PASS bad=0 full battery | alias probes inconclusive | ONLINE_CANDIDATE frozen to pool; Judge Owner only |
