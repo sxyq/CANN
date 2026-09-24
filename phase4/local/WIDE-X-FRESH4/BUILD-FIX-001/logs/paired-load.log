@@ -1,0 +1,232 @@
+===== paired probe load snapshot: before runs =====
++ echo '===== paired probe load snapshot: before runs ====='
++ date +%Y-%m-%dT%H:%M:%S%z
+2026-09-23T20:21:18+0000
++ echo '+ npu-smi info'
++ npu-smi info
++ npu-smi info
++------------------------------------------------------------------------------------------------+
+| npu-smi 25.0.rc1.1               Version: 25.0.rc1.1                                           |
++---------------------------+---------------+----------------------------------------------------+
+| NPU   Name                | Health        | Power(W)    Temp(C)           Hugepages-Usage(page)|
+| Chip                      | Bus-Id        | AICore(%)   Memory-Usage(MB)  HBM-Usage(MB)        |
++===========================+===============+====================================================+
+| 0     910B3               | OK            | 148.2       43                0    / 0             |
+| 0                         | 0000:C1:00.0  | 33          0    / 0          59957/ 65536         |
++===========================+===============+====================================================+
+| 1     910B3               | OK            | 140.3       42                0    / 0             |
+| 0                         | 0000:C2:00.0  | 32          0    / 0          60006/ 65536         |
++===========================+===============+====================================================+
+| 2     910B3               | OK            | 136.2       44                0    / 0             |
+| 0                         | 0000:81:00.0  | 32          0    / 0          59949/ 65536         |
++===========================+===============+====================================================+
+| 3     910B3               | OK            | 145.4       44                0    / 0             |
+| 0                         | 0000:82:00.0  | 33          0    / 0          59951/ 65536         |
++===========================+===============+====================================================+
+| 4     910B3               | OK            | 100.7       43                0    / 0             |
+| 0                         | 0000:01:00.0  | 0           0    / 0          59240/ 65536         |
++===========================+===============+====================================================+
+| 5     910B3               | OK            | 93.2        40                0    / 0             |
+| 0                         | 0000:02:00.0  | 0           0    / 0          59876/ 65536         |
++===========================+===============+====================================================+
+| 6     910B3               | OK            | 96.8        43                0    / 0             |
+| 0                         | 0000:41:00.0  | 0           0    / 0          59928/ 65536         |
++===========================+===============+====================================================+
+| 7     910B3               | OK            | 109.6       44                0    / 0             |
+| 0                         | 0000:42:00.0  | 0           0    / 0          65072/ 65536         |
++===========================+===============+====================================================+
++---------------------------+---------------+----------------------------------------------------+
+| NPU     Chip              | Process id    | Process name             | Process memory(MB)      |
++===========================+===============+====================================================+
+| 0       0                 | 89395         | VLLMWorker_TP            | 56434                   |
++===========================+===============+====================================================+
+| 1       0                 | 91055         | VLLMWorker_TP            | 56434                   |
++===========================+===============+====================================================+
+| 2       0                 | 92813         | VLLMWorker_TP            | 56435                   |
++===========================+===============+====================================================+
+| 3       0                 | 94498         | VLLMWorker_TP            | 56435                   |
++===========================+===============+====================================================+
+| 4       0                 | 2572468       | async_triple_x_          | 104                     |
+| 4       0                 | 2999855       | VLLMEngineCor            | 55664                   |
++===========================+===============+====================================================+
+| 5       0                 | 89602         | VLLMWorker_TP            | 56354                   |
++===========================+===============+====================================================+
+| 6       0                 | 2582482       | atx_parent_prob          | 103                     |
+| 6       0                 | 91228         | VLLMWorker_TP            | 56355                   |
++===========================+===============+====================================================+
+| 7       0                 | 3458196       | python                   | 62020                   |
++===========================+===============+====================================================+
++ npu-smi info -t usages -i 0
++ for device in 0 1 2 3 4 5 6 7
++ echo '+ npu-smi info -t usages -i 0'
++ npu-smi info -t usages -i 0
+	NPU ID                         : 0
+	Chip Count                     : 1
+
+	DDR Capacity(MB)               : 0
+	DDR Usage Rate(%)              : 0
+	DDR Hugepages Total(page)      : 0
+	DDR Hugepages Usage Rate(%)    : 0
+	HBM Capacity(MB)               : 65536
+	HBM Usage Rate(%)              : 91
+	Aicore Usage Rate(%)           : 33
+	Aivector Usage Rate(%)         : 24
+	Aicpu Usage Rate(%)            : 0
+	Ctrlcpu Usage Rate(%)          : 7
+	DDR Bandwidth Usage Rate(%)    : 0
+	HBM Bandwidth Usage Rate(%)    : 29
+	Chip ID                        : 0
+
++ for device in 0 1 2 3 4 5 6 7
++ npu-smi info -t usages -i 1
++ echo '+ npu-smi info -t usages -i 1'
++ npu-smi info -t usages -i 1
+	NPU ID                         : 1
+	Chip Count                     : 1
+
+	DDR Capacity(MB)               : 0
+	DDR Usage Rate(%)              : 0
+	DDR Hugepages Total(page)      : 0
+	DDR Hugepages Usage Rate(%)    : 0
+	HBM Capacity(MB)               : 65536
+	HBM Usage Rate(%)              : 91
+	Aicore Usage Rate(%)           : 33
+	Aivector Usage Rate(%)         : 24
+	Aicpu Usage Rate(%)            : 0
+	Ctrlcpu Usage Rate(%)          : 10
+	DDR Bandwidth Usage Rate(%)    : 0
+	HBM Bandwidth Usage Rate(%)    : 29
+	Chip ID                        : 0
+
++ for device in 0 1 2 3 4 5 6 7
++ npu-smi info -t usages -i 2
++ echo '+ npu-smi info -t usages -i 2'
++ npu-smi info -t usages -i 2
+	NPU ID                         : 2
+	Chip Count                     : 1
+
+	DDR Capacity(MB)               : 0
+	DDR Usage Rate(%)              : 0
+	DDR Hugepages Total(page)      : 0
+	DDR Hugepages Usage Rate(%)    : 0
+	HBM Capacity(MB)               : 65536
+	HBM Usage Rate(%)              : 91
+	Aicore Usage Rate(%)           : 32
+	Aivector Usage Rate(%)         : 24
+	Aicpu Usage Rate(%)            : 0
+	Ctrlcpu Usage Rate(%)          : 12
+	DDR Bandwidth Usage Rate(%)    : 0
+	HBM Bandwidth Usage Rate(%)    : 29
+	Chip ID                        : 0
+
++ for device in 0 1 2 3 4 5 6 7
++ echo '+ npu-smi info -t usages -i 3'
++ npu-smi info -t usages -i 3
++ npu-smi info -t usages -i 3
+	NPU ID                         : 3
+	Chip Count                     : 1
+
+	DDR Capacity(MB)               : 0
+	DDR Usage Rate(%)              : 0
+	DDR Hugepages Total(page)      : 0
+	DDR Hugepages Usage Rate(%)    : 0
+	HBM Capacity(MB)               : 65536
+	HBM Usage Rate(%)              : 91
+	Aicore Usage Rate(%)           : 33
+	Aivector Usage Rate(%)         : 24
+	Aicpu Usage Rate(%)            : 0
+	Ctrlcpu Usage Rate(%)          : 5
+	DDR Bandwidth Usage Rate(%)    : 0
+	HBM Bandwidth Usage Rate(%)    : 29
+	Chip ID                        : 0
+
++ npu-smi info -t usages -i 4
++ for device in 0 1 2 3 4 5 6 7
++ echo '+ npu-smi info -t usages -i 4'
++ npu-smi info -t usages -i 4
+	NPU ID                         : 4
+	Chip Count                     : 1
+
+	DDR Capacity(MB)               : 0
+	DDR Usage Rate(%)              : 0
+	DDR Hugepages Total(page)      : 0
+	DDR Hugepages Usage Rate(%)    : 0
+	HBM Capacity(MB)               : 65536
+	HBM Usage Rate(%)              : 90
+	Aicore Usage Rate(%)           : 0
+	Aivector Usage Rate(%)         : 5
+	Aicpu Usage Rate(%)            : 0
+	Ctrlcpu Usage Rate(%)          : 11
+	DDR Bandwidth Usage Rate(%)    : 0
+	HBM Bandwidth Usage Rate(%)    : 0
+	Chip ID                        : 0
+
++ npu-smi info -t usages -i 5
++ for device in 0 1 2 3 4 5 6 7
++ echo '+ npu-smi info -t usages -i 5'
++ npu-smi info -t usages -i 5
+	NPU ID                         : 5
+	Chip Count                     : 1
+
+	DDR Capacity(MB)               : 0
+	DDR Usage Rate(%)              : 0
+	DDR Hugepages Total(page)      : 0
+	DDR Hugepages Usage Rate(%)    : 0
+	HBM Capacity(MB)               : 65536
+	HBM Usage Rate(%)              : 91
+	Aicore Usage Rate(%)           : 0
+	Aivector Usage Rate(%)         : 0
+	Aicpu Usage Rate(%)            : 0
+	Ctrlcpu Usage Rate(%)          : 4
+	DDR Bandwidth Usage Rate(%)    : 0
+	HBM Bandwidth Usage Rate(%)    : 0
+	Chip ID                        : 0
+
++ for device in 0 1 2 3 4 5 6 7
++ echo '+ npu-smi info -t usages -i 6'
++ npu-smi info -t usages -i 6
++ npu-smi info -t usages -i 6
+	NPU ID                         : 6
+	Chip Count                     : 1
+
+	DDR Capacity(MB)               : 0
+	DDR Usage Rate(%)              : 0
+	DDR Hugepages Total(page)      : 0
+	DDR Hugepages Usage Rate(%)    : 0
+	HBM Capacity(MB)               : 65536
+	HBM Usage Rate(%)              : 91
+	Aicore Usage Rate(%)           : 0
+	Aivector Usage Rate(%)         : 0
+	Aicpu Usage Rate(%)            : 0
+	Ctrlcpu Usage Rate(%)          : 8
+	DDR Bandwidth Usage Rate(%)    : 0
+	HBM Bandwidth Usage Rate(%)    : 0
+	Chip ID                        : 0
+
++ npu-smi info -t usages -i 7
++ for device in 0 1 2 3 4 5 6 7
++ echo '+ npu-smi info -t usages -i 7'
++ npu-smi info -t usages -i 7
+	NPU ID                         : 7
+	Chip Count                     : 1
+
+	DDR Capacity(MB)               : 0
+	DDR Usage Rate(%)              : 0
+	DDR Hugepages Total(page)      : 0
+	DDR Hugepages Usage Rate(%)    : 0
+	HBM Capacity(MB)               : 65536
+	HBM Usage Rate(%)              : 99
+	Aicore Usage Rate(%)           : 0
+	Aivector Usage Rate(%)         : 0
+	Aicpu Usage Rate(%)            : 0
+	Ctrlcpu Usage Rate(%)          : 28
+	DDR Bandwidth Usage Rate(%)    : 0
+	HBM Bandwidth Usage Rate(%)    : 7
+	Chip ID                        : 0
+
++ ps -eo pid,ppid,user,pcpu,pmem,etime,args | rg -i "vllm|python"
++ echo '+ ps -eo pid,ppid,user,pcpu,pmem,etime,args | rg -i "vllm|python"'
++ ps -eo pid,ppid,user,pcpu,pmem,etime,args
++ rg -i 'vllm|python'
+bash: line 11: rg: command not found
++ true

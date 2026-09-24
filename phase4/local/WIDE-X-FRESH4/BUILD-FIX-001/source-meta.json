@@ -1,0 +1,123 @@
+{
+  "route": "WIDE-X-FRESH4",
+  "revision": "BUILD-FIX-001",
+  "record_type": "revision_evidence",
+  "direct_parent": "CURRENT",
+  "parent_status": "APPLIES",
+  "parent_source_sha": "bc4608dcb1028b61de50fc8a74d4a72661945c02c3caccb8b60dd543bdf6677c",
+  "parent_source_path": "phase4/local/WIDE-X-FRESH4/CURRENT/submission.asc",
+  "single_hypothesis": "BUILD/CORRECTNESS FIX: only replace host sqrtf with Ascend C Sqrt, narrow DataCopyPad byte lengths to uint32_t, and preserve FP32 output values while retaining FP16/BF16 CAST_RINT; no performance mechanism.",
+  "context_class": "FRESH_BLIND",
+  "source_path": "submission.asc",
+  "source_sha256": "5d0ee01165e46a281cbb7d1605feba3605ad59883845400a063e97704f27f2be",
+  "previous_candidate_source_sha": "bf67df69bc5d8c52572343be7f4fa5ac890e32cb89d5e4a6d1d88b78f9b42274",
+  "diff_path": "diff.patch",
+  "build": {
+    "host": "cann-server3",
+    "status": "PASS",
+    "exit_code": 0,
+    "log": "logs/build.log",
+    "command": "bash ./build_server3.sh with ASC_DIR and CMAKE_PREFIX_PATH set to /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/tikcpp/ascendc_kernel_cmake plus GCC 11 include/library paths"
+  },
+  "link": {
+    "host": "cann-server3",
+    "status": "PASS",
+    "exit_code": 0,
+    "log": "logs/link.log",
+    "artifact": "build-server3/libwide_x_fresh4.so",
+    "artifact_sha256": "b54a6fbdffcef7a6131ed264c4e45a6ac29467651bd2251fdfc568d47fae1cbe"
+  },
+  "correctness": {
+    "host": "cann-server3",
+    "status": "PASS",
+    "exit_code": 0,
+    "log": "logs/correctness.log",
+    "case_count": 9,
+    "cases": "FP32/FP16/BF16 x width 2048/16384/32768",
+    "max_abs_error": {
+      "fp32": 3.5762787e-07,
+      "fp16": 0.0009765625,
+      "bf16": 0
+    }
+  },
+  "local_probes": {
+    "status": "PASS_HOST_SHIM",
+    "count": 2,
+    "kind": "paired host numerical shim timing probes; no NPU kernel timing",
+    "same_inputs": true,
+    "warmup_runs": 2,
+    "measured_runs": 8,
+    "cases": [
+      {
+        "case": "D=16384 R=2",
+        "load_classification": "LOAD_CONTAMINATED",
+        "current": {
+          "local_correctness": "PASS_HOST_SHIM",
+          "device_correctness": "NOT_RUN",
+          "exit_code": 0,
+          "max_abs_error": 0,
+          "latency_ns": [139881, 137551, 136831, 136461, 136181, 136712, 136221, 136451]
+        },
+        "build_fix_001": {
+          "local_correctness": "PASS_HOST_SHIM",
+          "device_correctness": "PASS_NPU_RECORDED_SEPARATELY",
+          "exit_code": 0,
+          "max_abs_error": 0,
+          "latency_ns": [176351, 173662, 173431, 173172, 172571, 174372, 186051, 173902]
+        }
+      },
+      {
+        "case": "D=32768 R=2",
+        "load_classification": "LOAD_CONTAMINATED",
+        "current": {
+          "local_correctness": "PASS_HOST_SHIM",
+          "device_correctness": "NOT_RUN",
+          "exit_code": 0,
+          "max_abs_error": 0,
+          "latency_ns": [301043, 306833, 295232, 293853, 288672, 288252, 287173, 308222]
+        },
+        "build_fix_001": {
+          "local_correctness": "PASS_HOST_SHIM",
+          "device_correctness": "PASS_NPU_RECORDED_SEPARATELY",
+          "exit_code": 0,
+          "max_abs_error": 0,
+          "latency_ns": [299903, 289722, 287423, 285102, 284503, 288752, 284202, 289323]
+        }
+      }
+    ],
+    "compile_log": "logs/paired-probe-compile.log",
+    "load_log": "logs/paired-load.log",
+    "run_log": "logs/paired-local-probe.log",
+    "device_timing": {
+      "status": "NO_COMPARABLE_WINDOW",
+      "load_classification": "LOAD_CONTAMINATED",
+      "observation_log": "logs/device-timing-window.log",
+      "comparable_local_execution": "NO_COMPARABLE_WINDOW",
+      "current_npu_execution": "NOT_RUN",
+      "build_fix_001_npu_execution": "NOT_RUN",
+      "reason": "Five server3 observations over about 20 seconds found VLLM/engine/python processes on all eight NPUs. Devices 0-3 stayed around 31-32 percent AICore, device 4 around 65 percent, devices 5-6 at 0 percent while occupied, and device 7 HBM stayed around 65192-65504/65536 MB. No comparable device-load window appeared, so neither side was executed for NPU timing."
+    },
+    "interpretation": "Raw host-shim timings are recorded for paired inputs only. The load is contaminated and no device-performance or improvement conclusion is made."
+  },
+  "load_quality": {
+    "classification": "LOAD_CONTAMINATED",
+    "observation": "During paired probes, existing VLLM/python processes remained on the NPUs. The recorded snapshots show HBM usage about 90-99 percent, AICore about 31-33 percent on devices 0-3 and 0 percent on devices 4-7; exact device and process output is in the paired probe log.",
+    "pre_run_log": "logs/paired-load.log",
+    "paired_probe_log": "logs/paired-local-probe.log",
+    "device_timing_window_log": "logs/device-timing-window.log",
+    "note": "No latency or performance claim is made."
+  },
+  "main_review_self_audit": {
+    "status": "PASS",
+    "scope": "The diff contains only the device sqrt API replacement, two uint32_t DataCopyPad length conversions, and the FP32 output copy while retaining FP16/BF16 CAST_RINT. No tile, buffer, queue, ownership, timing, or profiling mechanism was added."
+  },
+  "decision": "NEEDS_ONE_MORE_LOCAL",
+  "route_execution_state": "PAUSED_WAITING_FOR_MAIN",
+  "control_status": "CONTROL_NOT_READY",
+  "resume_condition": "Main provides a runnable exact-source Parent control path or parks the route.",
+  "performance_timing_measured": true,
+  "timing_scope": "host numerical shim only; no NPU kernel timing",
+  "performance_claim": false,
+  "online_submission": false,
+  "other_routes_changed": false
+}

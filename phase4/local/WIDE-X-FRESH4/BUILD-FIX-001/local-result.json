@@ -1,0 +1,76 @@
+{
+  "route": "WIDE-X-FRESH4",
+  "revision": "BUILD-FIX-001",
+  "source_sha256": "5d0ee01165e46a281cbb7d1605feba3605ad59883845400a063e97704f27f2be",
+  "direct_parent": "CURRENT",
+  "parent_source_sha": "bc4608dcb1028b61de50fc8a74d4a72661945c02c3caccb8b60dd543bdf6677c",
+  "context_class": "FRESH_BLIND",
+  "compile": "PASS",
+  "link": "PASS",
+  "correctness": "PASS_9_OF_9_NPU",
+  "probes": [
+    {
+      "case": "D=16384 R=2",
+      "load_quality": "LOAD_CONTAMINATED",
+      "same_input": true,
+      "warmup_runs": 2,
+      "measured_runs": 8,
+      "current": {
+        "local_correctness": "PASS_HOST_SHIM",
+        "device_correctness": "NOT_RUN",
+        "exit_code": 0,
+        "max_abs_error": 0,
+        "latency_ns": [139881, 137551, 136831, 136461, 136181, 136712, 136221, 136451]
+      },
+      "build_fix_001": {
+        "local_correctness": "PASS_HOST_SHIM",
+        "device_correctness": "PASS_NPU_RECORDED_SEPARATELY",
+        "exit_code": 0,
+        "max_abs_error": 0,
+        "latency_ns": [176351, 173662, 173431, 173172, 172571, 174372, 186051, 173902]
+      }
+    },
+    {
+      "case": "D=32768 R=2",
+      "load_quality": "LOAD_CONTAMINATED",
+      "same_input": true,
+      "warmup_runs": 2,
+      "measured_runs": 8,
+      "current": {
+        "local_correctness": "PASS_HOST_SHIM",
+        "device_correctness": "NOT_RUN",
+        "exit_code": 0,
+        "max_abs_error": 0,
+        "latency_ns": [301043, 306833, 295232, 293853, 288672, 288252, 287173, 308222]
+      },
+      "build_fix_001": {
+        "local_correctness": "PASS_HOST_SHIM",
+        "device_correctness": "PASS_NPU_RECORDED_SEPARATELY",
+        "exit_code": 0,
+        "max_abs_error": 0,
+        "latency_ns": [299903, 289722, 287423, 285102, 284503, 288752, 284202, 289323]
+      }
+    }
+  ],
+  "probe_logs": {
+    "compile": "logs/paired-probe-compile.log",
+    "load": "logs/paired-load.log",
+    "run": "logs/paired-local-probe.log",
+    "device_timing_window": "logs/device-timing-window.log"
+  },
+  "performance_timing_measured": true,
+  "timing_scope": "host numerical shim only; no NPU kernel timing",
+  "device_paired_timing": "NO_COMPARABLE_WINDOW",
+  "comparable_local_execution": "NO_COMPARABLE_WINDOW",
+  "current_npu_execution": "NOT_RUN",
+  "build_fix_001_npu_execution": "NOT_RUN",
+  "device_timing_reason": "Five server3 observations over about 20 seconds found VLLM/engine/python processes on all eight NPUs; devices 0-3 stayed around 31-32 percent AICore, device 4 around 65 percent, devices 5-6 at 0 percent while occupied, and device 7 HBM stayed around 65192-65504/65536 MB.",
+  "performance_claim": false,
+  "load_quality": "LOAD_CONTAMINATED",
+  "decision": "NEEDS_ONE_MORE_LOCAL",
+  "route_execution_state": "PAUSED_WAITING_FOR_MAIN",
+  "control_status": "CONTROL_NOT_READY",
+  "resume_condition": "Main provides a runnable exact-source Parent control path or parks the route.",
+  "online_submission": false,
+  "notes": "Local probes are host numerical probes. No latency or performance claim is made."
+}
