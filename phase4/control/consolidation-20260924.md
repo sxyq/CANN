@@ -136,3 +136,13 @@ Policy update: compile/link is CPU (no HBM need) and may parallelize on server3.
 | ASYNC-TRIPLE-X | window qual | - | d6+d4 FAIL 2/2 | WINDOW_UNQUALIFIED; NEEDS_ONE_MORE_LOCAL+MEASUREMENT_BLOCKED |
 | REDUCE-INVSCALE-X | window qual | P/C SHA OK | d6+d4 FAIL 2/2 candidate0 independent | WINDOW_UNQUALIFIED; NEEDS_ONE_MORE_LOCAL+MEASUREMENT_BLOCKED |
 | WINDOW_QUAL_SUMMARY | five routes | - | all 2/2 UNQUALIFIED CV<=0.15 maxmin<=1.30 | stop timing today; SERVER_RESOURCE_BLOCKED; UB JUDGE_READY |
+
+## Harness audit + timing protocol (2026-09-24 afternoon)
+
+No Candidate source, no new revision, no timing retry, no CANNJudge submit.
+
+- UB V003 package re-verified: submission.asc SHA256 matches sidecar `2eb9b5d0…`, source-meta DECISION=ONLINE_CANDIDATE / AUDIT=PASS / CORRECTNESS=PASS, diff.patch 14578 B, pool row + judge-handoff present, `phase4/online/UB-LIVENESS-X/` absent. Status remains READY_FOR_FORMAL_SUBMISSION for unified Judge Owner only.
+- Measurement audit across five runners: primary method is CPU wall-clock around launch+sync (SCHED/ALIGN/REDUCE/BATCH); ASYNC uses device events over a repeat batch. Warmup only 3–5; each window-qual rep is a cold process (aclInit/finalize). Alloc/H2D outside timed loop (OK). Host launch + sync wait sit inside wall-clock samples. Persistent VLLM + ~90% HBM on d4/d6 remains. Observed parent CV 0.21–0.90 and max/min up to 9.0 within same binary/device/shape.
+- Reference harness designated: SCHED `support/runner_main.inc` (sample+jitter dump). Unified rules in `phase4/control/local-timing-protocol.md`.
+- Same-binary noise floor: NOT_RUN today. Next clean window validates SAME vs SAME before any Candidate pair; then SCHED → ALIGN → BATCH → ASYNC → REDUCE.
+- Five routes stay NEEDS_ONE_MORE_LOCAL + MEASUREMENT_BLOCKED (SERVER_RESOURCE_BLOCKED), attempts 2/2. SCHED keeps STRONG_POSITIVE_LOCAL_SIGNAL BUT LOAD_NOT_QUALIFIED.
