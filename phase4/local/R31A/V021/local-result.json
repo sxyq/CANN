@@ -1,0 +1,268 @@
+{
+  "ROUTE": "R31A",
+  "REVISION": "V021",
+  "DIRECT_PARENT": "R31A-V016",
+  "PARENT_SOURCE_SHA": "dd13093823c885e785a650abff4863827e652eb8607ad0621a96eb31b6764fa0",
+  "PARENT_SCORE": 45.00,
+  "SINGLE_HYPOTHESIS": "In the R31A-V016 FP32 wide CachedRows output pass, keep kWideFp32CachedTileElems at 7680 and defer the per-tile MTE3-to-V completion wait until after all output tiles of each row; each value tile is written once and not reused, so MTE3 stores can overlap subsequent MTE2/vector tiles while the RMS first pass, dispatch, arithmetic, and all non-FP32 paths remain unchanged.",
+  "CONTEXT_CLASS": "HISTORICAL_EXPLOIT",
+  "FILES_CHANGED": [
+    "phase4/local/R31A/V021/source-meta.json: declaration",
+    "phase4/local/R31A/V021/submission.asc: one FP32 CachedRows output-fence placement change",
+    "phase4/workspaces/R31A/CMakeLists.txt: V021 build target wiring",
+    "phase4/workspaces/R31A/compile_adapter_v021.asc",
+    "phase4/workspaces/R31A/compile_adapter_v021.cpp",
+    "phase4/workspaces/R31A/R31A-V021-device.cpp",
+    "phase4/local/R31A/V021/support/*: auxiliary V016/V021 correctness and probe harness",
+    "phase4/local/R31A/V021/local-result.json: handoff record"
+  ],
+  "SOURCE_SHA": "4f5bfc319b72d1f0bcfd453bc92e80ac64216719898757292daf1aa1b73b6063",
+  "COMPILE": "PASS: server3 direct route CMake; /home/data4t2/lelinfeng/phase4-worktrees/R31A/V021-direct/compile-v021-server3.log",
+  "LINK": "PASS: server3 direct ld.lld; /home/data4t2/lelinfeng/phase4-worktrees/R31A/V021-direct/build/R31A-V021-device.alink and R31A-V021-submission.alink; /home/data4t2/lelinfeng/phase4-worktrees/R31A/V021-direct/link-v021-server3.log",
+  "CORRECTNESS": {
+    "candidate_target": "PASS: device=4, rows=2, D=32768, blocks=1, max_abs=4.83928943e-07",
+    "candidate_control": "PASS: device=4, rows=2, D=24576, blocks=1, max_abs=3.48268474e-07",
+    "tail_coverage": "Both widths exercise the final non-full 7680-element tile; no device=5 correctness run was required."
+  },
+  "LOCAL_PROBES": [
+    {
+      "pair": "target D=32768",
+      "command_shape": "device=4 rows=2 blocks=1 warmup=2 repeats=10",
+      "parent_v016_device_us": 40.746,
+      "candidate_v021_device_us": 31.020,
+      "raw_delta_us": -9.726,
+      "classification": "LOAD_CONTAMINATED"
+    },
+    {
+      "pair": "control D=24576",
+      "command_shape": "device=4 rows=2 blocks=1 warmup=2 repeats=10",
+      "parent_v016_device_us": 28.706,
+      "candidate_v021_device_us": 31.908,
+      "raw_delta_us": 3.202,
+      "classification": "LOAD_CONTAMINATED"
+    }
+  ],
+  "LOCAL_DELTA": "Target -9.726 us and control +3.202 us; both LOAD_CONTAMINATED, so no performance improvement claim.",
+  "LOAD_QUALITY": {
+    "recorded_at_local": "2026-09-24T00:56:20+0800",
+    "report_source": "Main dispatch observation",
+    "observation": "All 8 NPUs have existing VLLM/python processes; AICore ~31-49% on devices 0-3 and 7, 0% on 4-6, HBM heavily occupied on all devices.",
+    "probe_classification": "LOAD_CONTAMINATED",
+    "interpretation": "Do not interpret small latency deltas as improvement under this load.",
+    "latest_snapshot": {
+      "recorded_at_server_utc": "2026-09-23T23:34:28+0000",
+      "recorded_at_local": "2026-09-24T07:34:28+0800",
+      "observation": "All 8 NPUs had resident processes: device0 VLLMWorker_TP pid89395, device1 VLLMWorker_TP pid91055, device2 VLLMWorker_TP pid92813, device3 VLLMWorker_TP pid94498, device4 VLLMEngineCor pid2999855, device5 VLLMWorker_TP pid89602, device6 VLLMWorker_TP pid91228, device7 python pid3458196; AICore 32%,32%,32%,32%,69%,0%,0%,0% on devices 0-7; HBM 59957,60007,59949,59951,59187,59877,59876,65530 MB / 65536 MB.",
+      "probe_window_decision": "NO_COMPARABLE_WINDOW",
+      "probe_classification": "LOAD_CONTAMINATED"
+    }
+  },
+  "FOLLOW_UP_LOAD_OBSERVATIONS": [
+    {
+      "recorded_at_local": "2026-09-24T05:01:19+0800",
+      "recorded_at_server_utc": "2026-09-23T21:01:19+0000",
+      "observation": "All 8 NPUs still had resident VLLM/python processes; AICore was 18%, 9%, 9%, 9%, 0%, 0%, 0%, 0% on devices 0-7; HBM was 59957, 60007, 59948, 59951, 59190, 59876, 59927, 64527 MB out of 65536 MB.",
+      "probe_classification": "LOAD_CONTAMINATED"
+    },
+    {
+      "recorded_at_local": "2026-09-24T05:02:27+0800",
+      "recorded_at_server_utc": "2026-09-23T21:02:27+0000",
+      "observation": "After a 30-second wait, all 8 NPUs still had resident VLLM/python processes; AICore was 33%, 33%, 30%, 33%, 0%, 0%, 0%, 0% on devices 0-7; HBM was 59957, 60006, 59949, 59951, 59187, 59876, 59876, 65041 MB out of 65536 MB.",
+      "probe_classification": "LOAD_CONTAMINATED"
+    },
+    {
+      "recorded_at_server_utc": "2026-09-23T22:27:24+0000",
+      "observation": "All 8 NPUs had resident VLLM/python processes; AICore 33%,34%,34%,33%,0%,0%,0%,0%; HBM 59957,60006,59949,59951,59187,59877,59875,65534 MB / 65536 MB.",
+      "probe_classification": "LOAD_CONTAMINATED"
+    },
+    {
+      "recorded_at_server_utc": "2026-09-23T22:30:11+0000",
+      "observation": "Same 8 resident processes; AICore 32%,32%,32%,32%,0%,0%,0%,13%; HBM 59956,60007,59949,59951,59190,59878,59875,65531 MB / 65536 MB.",
+      "probe_classification": "LOAD_CONTAMINATED"
+    },
+    {
+      "recorded_at_server_utc": "2026-09-23T22:32:06+0000",
+      "observation": "Same 8 resident processes; AICore 33%,34%,33%,33%,0%,0%,0%,0%; HBM 59957,60006,59949,59951,59188,59877,59876,65534 MB / 65536 MB.",
+      "probe_classification": "LOAD_CONTAMINATED"
+    },
+    {
+      "recorded_at_server_utc": "2026-09-23T22:34:42+0000",
+      "observation": "Same 8 resident processes; AICore 33%,34%,34%,34%,0%,0%,0%,0%; HBM 59957,60006,59949,59951,59188,59877,59875,65534 MB / 65536 MB.",
+      "probe_classification": "LOAD_CONTAMINATED"
+    },
+    {
+      "recorded_at_server_utc": "2026-09-23T22:36:27+0000",
+      "observation": "Same 8 resident processes; AICore 33%,34%,33%,33%,0%,0%,0%,0%; HBM 59957,60006,59949,59951,59187,59877,59876,65251 MB / 65536 MB.",
+      "probe_classification": "LOAD_CONTAMINATED"
+    },
+    {
+      "recorded_at_server_utc": "2026-09-23T22:37:34+0000",
+      "observation": "Same 8 resident processes; AICore 31%,31%,31%,31%,0%,0%,0%,0%; HBM 59957,60006,59949,59951,59188,59877,59875,65529 MB / 65536 MB.",
+      "probe_classification": "LOAD_CONTAMINATED"
+    },
+    {
+      "recorded_at_server_utc": "2026-09-23T22:38:43+0000",
+      "observation": "Same 8 resident processes; AICore 31%,32%,32%,31%,0%,0%,0%,0%; HBM 59957,60007,59949,59951,59188,59877,59875,65533 MB / 65536 MB.",
+      "probe_classification": "LOAD_CONTAMINATED"
+    },
+    {
+      "recorded_at_server_utc": "2026-09-23T22:40:14+0000",
+      "observation": "Same 8 resident processes; AICore 32%,32%,32%,32%,0%,0%,0%,0%; HBM 59957,60006,59949,59951,59188,59877,59875,65529 MB / 65536 MB.",
+      "probe_classification": "LOAD_CONTAMINATED"
+    },
+    {
+      "recorded_at_server_utc": "2026-09-23T22:41:33+0000",
+      "observation": "Same 8 resident processes; AICore 33%,33%,33%,33%,0%,0%,0%,0%; HBM 59957,60006,59949,59951,59187,59877,59875,65529 MB / 65536 MB.",
+      "probe_classification": "LOAD_CONTAMINATED"
+    },
+    {
+      "recorded_at_local": "2026-09-24T06:43:33+0800",
+      "recorded_at_server_utc": "2026-09-23T22:43:33+0000",
+      "observation": "Same 8 resident VLLM/python processes; AICore 32%,19%,19%,19%,0%,0%,0%,0%; HBM 59957,60006,59949,59951,59187,59877,59875,64658 MB / 65536 MB.",
+      "probe_classification": "LOAD_CONTAMINATED"
+    },
+    {
+      "recorded_at_local": "2026-09-24T06:46:56+0800",
+      "recorded_at_server_utc": "2026-09-23T22:46:56+0000",
+      "observation": "Same 8 resident processes: device0 VLLMWorker_TP pid89395, device1 VLLMWorker_TP pid91055, device2 VLLMWorker_TP pid92813, device3 VLLMWorker_TP pid94498, device4 VLLMEngineCor pid2999855, device5 VLLMWorker_TP pid89602, device6 VLLMWorker_TP pid91228, device7 python pid3458196; AICore 30%,31%,31%,30%,0%,0%,0%,8%; HBM 59957,60006,59949,59951,59187,59877,59897,65533 MB / 65536 MB.",
+      "probe_classification": "LOAD_CONTAMINATED"
+    }
+  ],
+  "HOST_SIDE_PREPARATION": {
+    "prepared_at_local": "2026-09-24T11:55:15+0800",
+    "state": "READY_WAITING_FOR_MAIN_DEVICE_SLOT",
+    "scope": "Host-side only. No NPU load query, probe executable, or timing command was run during this preparation.",
+    "device_slot_note": "ASYNC V001 owns the current device slot. Start only after Main explicitly schedules R31A, then capture pre-run and post-run server3 npu-smi snapshots. Run only if the snapshots establish a comparable load window; otherwise record LOAD_CONTAMINATED and stop.",
+    "source_identity": {
+      "V016_parent_source": {
+        "path": "phase4/workspaces/R31A/R31A-V016-submission.asc",
+        "sha256": "dd13093823c885e785a650abff4863827e652eb8607ad0621a96eb31b6764fa0"
+      },
+      "V016_probe_included_source": {
+        "path": "phase4/local/R31A/V021/support/parent_v016_submission.asc",
+        "sha256": "dd13093823c885e785a650abff4863827e652eb8607ad0621a96eb31b6764fa0"
+      },
+      "V021_candidate_source": {
+        "path": "phase4/local/R31A/V021/submission.asc",
+        "sha256": "4f5bfc319b72d1f0bcfd453bc92e80ac64216719898757292daf1aa1b73b6063"
+      },
+      "dependency_evidence": "On server3, probe_v016.asc.o.d includes support/parent_v016_submission.asc; probe_v021.asc.o.d includes ../submission.asc. Both object targets and executables are present in probe-build; compile-probe-v021-server3.log records each target built and linked."
+    },
+    "server3_artifacts": {
+      "directory": "/home/data4t2/lelinfeng/phase4-worktrees/R31A/V021-direct/probe-build",
+      "probe_v016": {
+        "binary_sha256": "5513076e24b067864ea625ff9a0cfe9e8d1adb89262de3cebd9a3ab198df3f78",
+        "object_sha256": "97af0df474c8f56d7828d66e33f5ede191151c06fbdfd8ba1ebf544b2b0f524c",
+        "probe_source_sha256": "a8450a002e6a61940d548b6afb915942c736b1c29e7ae6f680a11b1d92d32271",
+        "build_log": "/home/data4t2/lelinfeng/phase4-worktrees/R31A/V021-direct/compile-probe-v021-server3.log"
+      },
+      "probe_v021": {
+        "binary_sha256": "62092bb490d61e2604e6561e2971856aace504d7875427dceb06039ace163bf0",
+        "object_sha256": "a5411c11649722fb58c08592c4b44d56c9b3ff433791aca761cd72d5867e1536",
+        "probe_source_sha256": "f92db18020839ead189e3df99cd7e92aab72f29cb3a20635e76cfef765493c15",
+        "build_log": "/home/data4t2/lelinfeng/phase4-worktrees/R31A/V021-direct/compile-probe-v021-server3.log"
+      }
+    },
+    "setup_commands": [
+      "source /usr/local/Ascend/ascend-toolkit/set_env.sh",
+      "cd /home/data4t2/lelinfeng/phase4-worktrees/R31A/V021-direct/probe-build"
+    ],
+    "paired_probe_order": [
+      {"pair": 1, "case": "target D=32768", "command": "./probe_v016 4 2 32768 1 2 10"},
+      {"pair": 1, "case": "target D=32768", "command": "./probe_v021 4 2 32768 1 2 10"},
+      {"pair": 2, "case": "control D=24576", "command": "./probe_v021 4 2 24576 1 2 10"},
+      {"pair": 2, "case": "control D=24576", "command": "./probe_v016 4 2 24576 1 2 10"},
+      {"pair": 3, "case": "target D=32768", "command": "./probe_v021 4 2 32768 1 2 10"},
+      {"pair": 3, "case": "target D=32768", "command": "./probe_v016 4 2 32768 1 2 10"},
+      {"pair": 4, "case": "control D=24576", "command": "./probe_v016 4 2 24576 1 2 10"},
+      {"pair": 4, "case": "control D=24576", "command": "./probe_v021 4 2 24576 1 2 10"}
+    ],
+    "measurement_parameters": "device=4 rows=2 blocks=1 warmup=2 repeats=10; two parent/candidate pairs each for target and control, alternating execution order.",
+    "execution_authorization": "Wait for explicit Main scheduling and a clear comparable load snapshot; do not run while ASYNC V001 owns the device slot."
+  },
+  "MAIN1_PCPC_HARNESS": {
+    "prepared_at_local": "2026-09-24T12:27:07+0800",
+    "state": "PREPARED_FOR_MAIN_REVIEW_NO_LEASE",
+    "ownership_basis": {
+      "canonical_scheduler": "/Users/sunyiyang/Desktop/Project/cann/phase4/control/scheduler.tsv",
+      "route_owner": "01a0ceef-aa76-7e62-b14f-f728a27e2514",
+      "worktree": "/Users/sunyiyang/Desktop/Project/cann-sixlane/R31A",
+      "branch": "exec/sixlane-20260923-r31a",
+      "observed_route_state": "ACTIVE_EXPLOIT; MAIN_REVIEW_NEEDS_ONE_MORE_LOCAL"
+    },
+    "candidate_source_sha256": "4f5bfc319b72d1f0bcfd453bc92e80ac64216719898757292daf1aa1b73b6063",
+    "parent_source_sha256": "dd13093823c885e785a650abff4863827e652eb8607ad0621a96eb31b6764fa0",
+    "validated_artifacts": {
+      "probe_v016": {
+        "path": "/home/data4t2/lelinfeng/phase4-worktrees/R31A/V021-direct/probe-build/probe_v016",
+        "binary_sha256": "5513076e24b067864ea625ff9a0cfe9e8d1adb89262de3cebd9a3ab198df3f78",
+        "included_parent_source_sha256": "dd13093823c885e785a650abff4863827e652eb8607ad0621a96eb31b6764fa0"
+      },
+      "probe_v021": {
+        "path": "/home/data4t2/lelinfeng/phase4-worktrees/R31A/V021-direct/probe-build/probe_v021",
+        "binary_sha256": "62092bb490d61e2604e6561e2971856aace504d7875427dceb06039ace163bf0",
+        "included_candidate_source_sha256": "4f5bfc319b72d1f0bcfd453bc92e80ac64216719898757292daf1aa1b73b6063"
+      },
+      "validation": "Server3 binary and object SHA256 values match the existing host preparation record. Dependency files show probe_v016 includes parent_v016_submission.asc and probe_v021 includes ../submission.asc. No executable was launched."
+    },
+    "setup_commands_for_later_authorized_run": [
+      "source /usr/local/Ascend/ascend-toolkit/set_env.sh",
+      "cd /home/data4t2/lelinfeng/phase4-worktrees/R31A/V021-direct/probe-build"
+    ],
+    "parameters": {
+      "device": 4,
+      "rows": 2,
+      "blocks": 1,
+      "warmup": 2,
+      "repeats_per_invocation": 10,
+      "order": "parent/candidate/parent/candidate",
+      "parent_binary": "probe_v016",
+      "candidate_binary": "probe_v021"
+    },
+    "commands_by_shape": {
+      "target_D32768": [
+        "./probe_v016 4 2 32768 1 2 10",
+        "./probe_v021 4 2 32768 1 2 10",
+        "./probe_v016 4 2 32768 1 2 10",
+        "./probe_v021 4 2 32768 1 2 10"
+      ],
+      "control_D24576": [
+        "./probe_v016 4 2 24576 1 2 10",
+        "./probe_v021 4 2 24576 1 2 10",
+        "./probe_v016 4 2 24576 1 2 10",
+        "./probe_v021 4 2 24576 1 2 10"
+      ]
+    },
+    "load_snapshots": {
+      "status": "NO_COMPARABLE_WINDOW_MAIN_REPORTED_CONTAMINATED",
+      "main_reported_observation": "Server3 remains load-contaminated across all 8 devices and no Main-1 lease is active.",
+      "main_observation_timestamp": null,
+      "capture_points": ["before_target", "between_target_and_control", "after_control"],
+      "required_fields": "Timestamp and full npu-smi device table for all 8 NPUs: device id, HBM usage/capacity, AICore utilization, and process id/name/memory. Capture only after Main grants the uncontested R31A slot; compare snapshots for stability.",
+      "device_access_this_preparation": "NONE"
+    },
+    "statistics_to_record": {
+      "per_shape_inputs": ["P1 device_us", "C1 device_us", "P2 device_us", "C2 device_us"],
+      "parent_jitter_spread_us": "abs(P2-P1)",
+      "candidate_jitter_spread_us": "abs(C2-C1)",
+      "paired_delta_us": ["C1-P1", "C2-P2"],
+      "median_delta_us": "median of the two paired deltas (their arithmetic mean for n=2); negative favors V021, positive favors V016.",
+      "within_shape_direction_consistency": "Consistent only when both paired deltas have the same nonzero sign; otherwise MIXED or INDETERMINATE.",
+      "target_control_direction_consistency": "Record whether target and control median deltas have matching or opposing signs; report INDETERMINATE if either is zero or missing.",
+      "sampling_note": "Each device_us is an average over 10 measured invocations; the two-point spread describes between-invocation-run variation and is not a high-sample variance estimate."
+    },
+    "execution_boundary": "No Main-1 lease is active and Main reports all 8 devices remain load-contaminated. Stop at Main Review without querying device load or launching probes. ASYNC Main-1 is frozen and must not be run. Do not create V022, modify candidate source/CMake/runner, or submit Online.",
+    "results": {
+      "target_D32768": null,
+      "control_D24576": null,
+      "overall_direction_consistency": "PENDING"
+    }
+  },
+  "FOLLOW_UP_PROBES": "NOT_RUN: P/C/P/C harness identity and commands are prepared and validated. Main reports load contamination across all 8 devices and no Main-1 lease; stop at Main Review. This turn performed no device query, load snapshot, executable launch, or timing.",
+  "STATUS": "HOST_PREPARATION_COMPLETE_MAIN_REVIEW",
+  "ARCHITECTURE_NOVELTY": "NONE: existing MTE3/V synchronization primitive with a changed wait placement only.",
+  "RISKS": "Correctness passed target and control on device 4, but both latency pairs are load-contaminated and have opposing deltas. The deferred MTE3 completion relies on each value tile remaining untouched until the row-level wait.",
+  "DECISION": "NEEDS_ONE_MORE_LOCAL",
+  "NEXT_CANDIDATE_HYPOTHESIS": "None declared; await Main Review. Any later revision must return to R31A-V016.",
+  "CLEANUP": "NONE: no files or server3 build directories deleted or cleaned."
+}

@@ -1,0 +1,48 @@
+{
+  "ROUTE": "R31A",
+  "REVISION": "V019",
+  "DIRECT_PARENT": "R31A-V016",
+  "PARENT_SOURCE_SHA": "dd13093823c885e785a650abff4863827e652eb8607ad0621a96eb31b6764fa0",
+  "PARENT_SCORE": 45.00,
+  "SINGLE_HYPOTHESIS": "In the V016 FP32 wide full-y cached-row path, increasing the tile width from 7680 to 8192 will reduce D=32768 processing from five tiles to four and lower per-tile DMA/barrier/vector-loop overhead; all dispatch, math, and other dtype paths remain unchanged.",
+  "CONTEXT_CLASS": "HISTORICAL_EXPLOIT",
+  "LOAD_QUALITY": {
+    "recorded_at_local": "2026-09-24T00:56:20+0800",
+    "report_source": "Main dispatch observation; exact original dispatch wall-clock was not supplied.",
+    "observation": "All 8 NPUs have existing VLLM/python processes; AICore ~31-49% on devices 0-3 and 7, 0% on 4-6, HBM heavily occupied on all devices.",
+    "probe_classification": "LOAD_CONTAMINATED",
+    "interpretation": "Do not interpret small latency deltas as improvement under this load."
+  },
+  "SOURCE_SHA": "13b9a00d6d7ba9e11bfd5dea271c01d28182310df327eb7e02566238c2e22dfe",
+  "FILES_CHANGED": [
+    "phase4/local/R31A/V019/submission.asc: one constant, kWideFp32CachedTileElems 7680 to 8192",
+    "phase4/workspaces/R31A/CMakeLists.txt: route-local direct build target points to V019 wrappers",
+    "phase4/workspaces/R31A/compile_adapter_v019.asc",
+    "phase4/workspaces/R31A/compile_adapter_v019.cpp",
+    "phase4/workspaces/R31A/R31A-V019-device.cpp",
+    "phase4/local/R31A/V019/support/*: auxiliary compile and probe harness"
+  ],
+  "COMPILE": "PASS: server3 direct route CMake; r31a_device and r31a_submission",
+  "LINK": "PASS: server3 direct ld.lld; R31A-V019-device.alink and R31A-V019-submission.alink",
+  "CORRECTNESS": {
+    "parent_v016": "PASS: device=4 and device=5, rows=2, D=32768, blocks=1, max_abs=4.83928943e-07",
+    "candidate_v019_target": "FAIL: device=4 and device=5, rows=2, D=32768, blocks=1, aclrtSynchronizeStream status=507035",
+    "candidate_v019_control": "PASS: device=5, rows=2, D=24576, blocks=1, max_abs=3.48268474e-07"
+  },
+  "LOCAL_PROBES": "NOT_RUN: candidate target correctness failed before timing",
+  "LOCAL_DELTA": "N/A: no latency measurement was started",
+  "DECISION": "LOCAL_REJECTED",
+  "NEXT_CANDIDATE_HYPOTHESIS": "None started; Main may choose a later UB-fitting FP32 cached-row tile width below 8192 under a new declaration.",
+  "CLEANUP": "NONE: no files or server3 build directories deleted or cleaned",
+  "SUPPORT_FILES": {
+    "phase4/local/R31A/V019/support/CMakeLists.txt": "b6147695f07f75345fa6a95151602af34601938b04e7ac584308acf1c3ccfd4e",
+    "phase4/local/R31A/V019/support/compile_adapter.asc": "144eaf144de94c1eda95287a3a7c07887e866d17d320847af04d36b4e7f92071",
+    "phase4/local/R31A/V019/support/compile_adapter.cpp": "7917cb84a5c22be2c6a2b11510933bef2f2e0754d4654f894e90dbb191b87507",
+    "phase4/local/R31A/V019/support/device.cpp": "7917cb84a5c22be2c6a2b11510933bef2f2e0754d4654f894e90dbb191b87507",
+    "phase4/local/R31A/V019/support/parent_v016_submission.asc": "dd13093823c885e785a650abff4863827e652eb8607ad0621a96eb31b6764fa0",
+    "phase4/local/R31A/V019/support/probe_main.inc": "ea30de09f34b26ea8b9069a806769594e2f0c04ed3671d2f5c258d645d1fe265",
+    "phase4/local/R31A/V019/support/probe_prelude.inc": "b4f96bc019bd5c0e3e11846649c1f0466a1dbb629ca4d177908b8791ea6aa5b8",
+    "phase4/local/R31A/V019/support/probe_v016.asc": "a8450a002e6a61940d548b6afb915942c736b1c29e7ae6f680a11b1d92d32271",
+    "phase4/local/R31A/V019/support/probe_v019.asc": "f92db18020839ead189e3df99cd7e92aab72f29cb3a20635e76cfef765493c15"
+  }
+}
