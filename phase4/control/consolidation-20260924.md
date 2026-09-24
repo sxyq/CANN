@@ -127,3 +127,4 @@ Policy update: compile/link is CPU (no HBM need) and may parallelize on server3.
 | ALIGN-TAIL-X | R2 baseline | N/A candidate | parent UNSTABLE d4/d5/d6 CV0.27-0.32 | MEASUREMENT_BLOCKED + NEEDS_ONE_MORE_LOCAL |
 | BATCH-RESIDENT-X | R2 baseline | N/A candidate | parent UNSTABLE d4/5/6 | MEASUREMENT_BLOCKED + NEEDS_ONE_MORE_LOCAL; pair3 OUTLIER |
 | ASYNC-TRIPLE-X | R2 baseline | N/A candidate | parent UNSTABLE d4/5/6 | MEASUREMENT_BLOCKED + NEEDS_ONE_MORE_LOCAL |
+| REDUCE-INVSCALE-X | R2 baseline | SHA P!=C verified | parent UNSTABLE d4/5/6 candidate0 | MEASUREMENT_BLOCKED + NEEDS_ONE_MORE_LOCAL |
