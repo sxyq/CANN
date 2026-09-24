@@ -1,0 +1,128 @@
+{
+  "route": "MIX-A",
+  "revision": "V007",
+  "direct_parent": "MIX-A-V003",
+  "parent_source_sha": "1a1857a945ce1f04e3877437882b21a3d5071dddcd697103d7b539a0feb5c706",
+  "parent_score": 44.69,
+  "single_hypothesis": "With V003's localRows == 1 dispatch gate unchanged, remove the pre-load SyncVToMTE2 in ProcessNarrowMidFast; no prior row can have written xBuf_/residualBuf_, so this release synchronization is redundant for the single-row path.",
+  "context_class": "HYBRID",
+  "source_sha256": "a63ad29a997ae2fe8a1238c1a47a9d5ddfb14d16f725fca975ce5c55523f28eb",
+  "compile": {
+    "device": "PASS",
+    "submission": "PASS",
+    "toolchain": "cann-server3 / Ascend910B3 / dav-2201 / CANN 8.5.0.alpha002"
+  },
+  "link": {
+    "device_alink": "PASS",
+    "submission_alink": "PASS",
+    "method": "ld.lld -m aicorelinux -Ttext=0 -static, linked separately"
+  },
+  "correctness": {
+    "status": "PASS",
+    "shapes": [{"rows": 1, "width": 256}],
+    "dtypes": {
+      "FP32": {"V003_reference_bad": 0, "V007_reference_bad": 0, "pair_max_abs": 0.0, "max_reference_abs": 7.152557e-7},
+      "FP16": {"V003_reference_bad": 0, "V007_reference_bad": 0, "pair_max_abs": 0.0, "max_reference_abs": 0.0},
+      "BF16": {"V003_reference_bad": 0, "V007_reference_bad": 0, "pair_max_abs": 0.0, "max_reference_abs": 0.0}
+    }
+  },
+  "local_probes": {
+    "shape": "FP32 rows=1 width=256",
+    "device_id": 6,
+    "warmups": 3,
+    "repeats_per_variant": 11,
+    "pairs": [
+      {"pair": 1, "timestamp_utc": "2026-09-23T17:27:34+00:00", "order": ["V003", "V007"], "V003_us": 109.111, "V007_us": 170.122, "status": "LOAD_CONTAMINATED"},
+      {"pair": 2, "timestamp_utc": "2026-09-23T17:27:48+00:00", "order": ["V007", "V003"], "V003_us": 160.601, "V007_us": 111.831, "status": "LOAD_CONTAMINATED"},
+      {"pair": 3, "timestamp_utc": "2026-09-23T17:28:03+00:00", "order": ["V003", "V007"], "V003_us": 103.101, "V007_us": 117.011, "status": "LOAD_CONTAMINATED"},
+      {"pair": 4, "timestamp_utc": "2026-09-23T17:28:17+00:00", "order": ["V007", "V003"], "V003_us": 128.231, "V007_us": 115.141, "status": "LOAD_CONTAMINATED"}
+    ],
+    "local_delta": {"status": "NOT_INFERABLE_LOAD_CONTAMINATED", "v003_mean_us": 125.261, "v007_mean_us": 128.526, "raw_delta_percent": 2.61, "interpretation": "Pairwise direction is inconsistent under substantial shared load; do not claim performance gain or regression."}
+  },
+  "load_quality": {
+    "main_dispatch_date": "2026-09-24 Asia/Shanghai; exact time not provided",
+    "main_observation_exact": "all 8 NPUs have existing VLLM/python processes; AICore ~31-49% on devices 0-3 and 7, 0% on devices 4-6, HBM heavily occupied on all devices.",
+    "probe_snapshot_timestamps_utc": ["2026-09-23T17:27:34+00:00", "2026-09-23T17:27:48+00:00", "2026-09-23T17:28:03+00:00", "2026-09-23T17:28:17+00:00"],
+    "probe_snapshot_files": ["support/results/probe-pair-01.npu-smi.txt", "support/results/probe-pair-02.npu-smi.txt", "support/results/probe-pair-03.npu-smi.txt", "support/results/probe-pair-04.npu-smi.txt"],
+    "observed_processes": "VLLMWorker_TP on devices 0-3 and 5-6, VLLMEngineCor on device 4, python on device 7",
+    "observed_hbm": "59,948-65,535 / 65,536 pages across the eight devices in probe snapshots",
+    "probe_classification": "All four pairs LOAD_CONTAMINATED.",
+    "additional_observation_session": {
+      "status": "NO_COMPARABLE_WINDOW",
+      "interval_utc": "2026-09-23T19:35:28+00:00 through 2026-09-23T19:36:24+00:00",
+      "sample_period_seconds": 10,
+      "sample_count": 6,
+      "device": 6,
+      "device6_aicore_percent": [0, 0, 0, 0, 0, 0],
+      "device6_hbm_pages": [59875, 59875, 59875, 59875, 59875, 59875],
+      "device7_aicore_percent": [0, 0, 0, 0, 14, 0],
+      "device7_hbm_pages": [65526, 65526, 65527, 65527, 65527, 64997],
+      "persistent_processes": ["VLLM::EngineCore", "VLLM::Worker_TP0", "VLLM::Worker_TP1", "VLLM::Worker_TP2", "VLLM::Worker_TP3", "vllm serve", "python"],
+      "device6_worker_pid": 91228,
+      "evidence_file": "support/results/load-window-observation-20260924-session02.txt",
+      "action": "No V003/V007 probe was run because the shared model process and high HBM occupancy remained present."
+    },
+    "additional_observation_session_03": {
+      "status": "NO_COMPARABLE_WINDOW",
+      "interval_utc": "2026-09-23T22:26:15+00:00 through 2026-09-23T22:27:12+00:00",
+      "sample_period_seconds": 10,
+      "sample_count": 6,
+      "device": 6,
+      "device6_aicore_percent": [0, 0, 0, 0, 0, 0],
+      "device6_hbm_pages": [59897, 59876, 59876, 59876, 59875, 59875],
+      "device7_aicore_percent": [2, 1, 0, 0, 0, 0],
+      "device7_hbm_pages": [65535, 65535, 65534, 65535, 65535, 65535],
+      "persistent_processes": ["VLLM::EngineCore", "VLLM::Worker_TP0", "VLLM::Worker_TP1", "VLLM::Worker_TP2", "VLLM::Worker_TP3", "vllm serve"],
+      "device6_worker_pid": 91228,
+      "evidence_file": "support/results/load-window-observation-20260924-session03.txt",
+      "action": "No V003/V007 probe was run; device 6 remained occupied by the shared VLLM process and high HBM allocation."
+    },
+    "additional_observation_session_04": {
+      "status": "NO_COMPARABLE_WINDOW",
+      "interval_utc": "2026-09-23T22:35:42+00:00 through 2026-09-23T22:36:40+00:00",
+      "sample_period_seconds": 10,
+      "sample_count": 6,
+      "device": 6,
+      "device6_aicore_percent": [0, 0, 0, 0, 0, 0],
+      "device6_hbm_pages": [59877, 59876, 59876, 59876, 59875, 59875],
+      "device7_aicore_percent": [12, 0, 0, 0, 0, 12],
+      "device7_hbm_pages": [65531, 65535, 65535, 65535, 65535, 65531],
+      "device0_to_3_aicore_percent": "32-33 across samples",
+      "persistent_processes": ["VLLM::EngineCore", "VLLM::Worker_TP0", "VLLM::Worker_TP1", "VLLM::Worker_TP2", "VLLM::Worker_TP3", "vllm serve", "python"],
+      "device6_worker_pid": 91228,
+      "evidence_file": "support/results/load-window-observation-20260924-session04.txt",
+      "action": "No V003/V007 probe was run; device 6 retained the shared VLLM worker and approximately 91% HBM occupancy, so the window was LOAD_CONTAMINATED."
+    },
+    "additional_observation_session_05": {
+      "status": "NO_COMPARABLE_WINDOW",
+      "interval_utc": "2026-09-23T22:45:38+00:00 through 2026-09-23T22:46:35+00:00",
+      "sample_period_seconds": 10,
+      "sample_count": 6,
+      "device": 6,
+      "device6_aicore_percent": [0, 0, 0, 0, 0, 0],
+      "device6_hbm_pages": [59897, 59876, 59875, 59875, 59875, 59875],
+      "device7_aicore_percent": [0, 0, 0, 0, 0, 8],
+      "device7_hbm_pages": [65530, 65529, 65529, 65532, 65070, 65532],
+      "device0_to_3_aicore_percent": [[32, 32, 32, 32], [32, 32, 32, 32], [32, 32, 32, 32], [32, 32, 32, 32], [9, 10, 11, 13], [33, 32, 33, 32]],
+      "persistent_processes": ["VLLM::EngineCore", "VLLM::Worker_TP0", "VLLM::Worker_TP1", "VLLM::Worker_TP2", "VLLM::Worker_TP3", "vllm serve"],
+      "device6_worker_pid": 91228,
+      "evidence_file": "support/results/load-window-observation-20260924-session05.txt",
+      "action": "No V003/V007 probe was run; device 6 retained the shared VLLM worker and approximately 91% HBM occupancy, so the window was LOAD_CONTAMINATED."
+    }
+  },
+  "architecture_novelty": "None; this revision tests one existing release synchronization in the already-present single-row FastKernel.",
+  "risks": [
+    "No uncontaminated performance evidence.",
+    "The removed synchronization is safe only under the unchanged localRows == 1 dispatch; do not widen this path.",
+    "V003 has MULTI_CHANGE provenance; this local result tests one isolated mechanism against V003 only."
+  ],
+  "decision": "NEEDS_ONE_MORE_LOCAL",
+  "next_candidate_hypothesis": "No new hypothesis before Main review. If Main requests another local run, repeat the same V003-versus-V007 D=256 FP32 paired probe during a sufficiently clear load window, with the same source and runner.",
+  "cleanup": "None; no files or remote objects deleted.",
+  "artifacts": {
+    "probe_source": "support/runner_main.inc",
+    "probe_script": "support/run_probes.sh",
+    "probe_results": "support/results/",
+    "compile_logs": ["../../../workspaces/MIX-A/configure-v007-server3.log", "../../../workspaces/MIX-A/compile-v007-device-server3.log", "../../../workspaces/MIX-A/compile-v007-submission-server3.log", "../../../workspaces/MIX-A/compile-v007-link-server3.log"]
+  }
+}

@@ -26,12 +26,16 @@ set(HCC_TOOLCHAIN
     "${ASCEND_CANN_PACKAGE_PATH}/toolkit/toolchain/hcc")
 set(BISHENG
     "${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ccec_compiler/bin/bisheng")
+set(ASCENDC_LLD "${ASCEND_CANN_PACKAGE_PATH}/tools/ccec_compiler/bin/ld.lld")
+if(NOT EXISTS "${ASCENDC_LLD}")
+    set(ASCENDC_LLD "${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ccec_compiler/bin/ld.lld")
+endif()
 
 set(CMAKE_CXX_COMPILER "${BISHENG}" CACHE FILEPATH "Ascend C compiler" FORCE)
 project(mix_a_add_rms_norm_bias LANGUAGES CXX)
 
 add_library(mix_a_submission OBJECT compile_adapter.cpp)
-add_library(mix_a_device OBJECT MIX-A-V006-device.cpp)
+add_library(mix_a_device OBJECT MIX-A-V007-device.cpp)
 target_include_directories(mix_a_submission PRIVATE
     "${ASCENDC_INCLUDE_DIR}"
     "${ASCENDC_INTERNAL_INCLUDE_DIR}"
@@ -74,5 +78,14 @@ target_compile_options(mix_a_device PRIVATE
     "--npu-arch=${CCE_AICORE_ARCH}"
     "--npu-soc=${SOC_VERSION}"
     "-std=c++17")
+add_custom_target(mix_a_full_link
+    COMMAND "${ASCENDC_LLD}" -m aicorelinux -Ttext=0 -static
+            -o "${CMAKE_CURRENT_BINARY_DIR}/MIX-A-V007-device.alink"
+            $<TARGET_OBJECTS:mix_a_device>
+    COMMAND "${ASCENDC_LLD}" -m aicorelinux -Ttext=0 -static
+            -o "${CMAKE_CURRENT_BINARY_DIR}/MIX-A-V007-submission.alink"
+            $<TARGET_OBJECTS:mix_a_submission>
+    DEPENDS mix_a_device mix_a_submission
+    VERBATIM)
 set_target_properties(mix_a_submission PROPERTIES POSITION_INDEPENDENT_CODE OFF)
 set_target_properties(mix_a_device PROPERTIES POSITION_INDEPENDENT_CODE OFF)
