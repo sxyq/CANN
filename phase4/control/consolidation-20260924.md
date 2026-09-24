@@ -122,3 +122,5 @@ Policy update: compile/link is CPU (no HBM need) and may parallelize on server3.
 | ALIGN-TAIL-X | L002 controlled | PASS | MODERATE DIR3/4 median+19% slower | NEEDS_ONE_MORE_LOCAL; d4 free |
 | BATCH-RESIDENT-X | exclusive set3 | PASS | exclusive interleaved; DIR 3/4 pair3 +185% | NEEDS_ONE_MORE_LOCAL (prior exclusive) |
 | SCHED-ROWGROUP-X | L004 controlled | PASS | LOAD_CONTAMINATED sofm0.305 DIR0.5 | NEEDS_ONE_MORE_LOCAL; d4 free |
+| ASYNC-TRIPLE-X | L006 controlled | PASS path triple | LOAD_CONTAMINATED CV29% DIR3/6 | NEEDS_ONE_MORE_LOCAL; d4 free |
+| REDUCE-INVSCALE-X | L005 controlled | PASS both D6144 | LOAD_CONTAMINATED jitter78% | NEEDS_ONE_MORE_LOCAL; d4 free |
