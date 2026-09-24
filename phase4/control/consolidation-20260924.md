@@ -121,3 +121,4 @@ Policy update: compile/link is CPU (no HBM need) and may parallelize on server3.
 | BATCH-RESIDENT-X | set2 | PASS | DIR 3/4 median -23.9% concurrent | **EXCLUSIVE_DEV4 GRANTED for set3** |
 | ALIGN-TAIL-X | L002 controlled | PASS | MODERATE DIR3/4 median+19% slower | NEEDS_ONE_MORE_LOCAL; d4 free |
 | BATCH-RESIDENT-X | exclusive set3 | PASS | exclusive interleaved; DIR 3/4 pair3 +185% | NEEDS_ONE_MORE_LOCAL (prior exclusive) |
+| SCHED-ROWGROUP-X | L004 controlled | PASS | LOAD_CONTAMINATED sofm0.305 DIR0.5 | NEEDS_ONE_MORE_LOCAL; d4 free |
