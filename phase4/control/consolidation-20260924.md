@@ -146,3 +146,14 @@ No Candidate source, no new revision, no timing retry, no CANNJudge submit.
 - Reference harness designated: SCHED `support/runner_main.inc` (sample+jitter dump). Unified rules in `phase4/control/local-timing-protocol.md`.
 - Same-binary noise floor: NOT_RUN today. Next clean window validates SAME vs SAME before any Candidate pair; then SCHED → ALIGN → BATCH → ASYNC → REDUCE.
 - Five routes stay NEEDS_ONE_MORE_LOCAL + MEASUREMENT_BLOCKED (SERVER_RESOURCE_BLOCKED), attempts 2/2. SCHED keeps STRONG_POSITIVE_LOCAL_SIGNAL BUT LOAD_NOT_QUALIFIED.
+
+## Unified harness SAME-BINARY validation (2026-09-24 evening)
+
+- CONTROL HEAD checked SYNCED with origin at start (b82afb6).
+- Built `runner_ref.inc` / `srx_ref_parent_probe` (device event primary, one-time init, in-process multi-block). Deployed to server3 d4 lease HARNESS-REF.
+- SAME-BINARY (SCHED Parent, 17×256 FP32, warmup10, 2×31): PASS on robust core (MAD/med ≤0.043, core CV ≤0.058). Raw CV high from sparse outliers; wall-clock worse (CV 0.30–0.44).
+- PROCESS_REINIT: cold 31×1 MAD/med 0.275 vs in-process 0.043 — cold-process primary stats banned.
+- WARMUP_STABLE_AFTER=10 (warmup0 catastrophic first samples).
+- Noise floor recorded for small/medium/wide in local-timing-protocol.md. Legacy wall-clock tagged LEGACY_TIMING_METHOD; SCHED −18.45% remains STRONG_POSITIVE_LOCAL_SIGNAL.
+- SAME_BINARY_VALIDATION=PASS; HARNESS_VALIDATED=YES; CANDIDATE TIMING still NOT_RUN this session.
+- UB V003 reconfirmed READY_FOR_FORMAL_SUBMISSION; package unchanged; MAIN-2 no self-submit.

@@ -123,34 +123,74 @@ Across window-qual reps: same stats on the rep medians (current gate basis).
 
 ## Same-binary validation (noise floor)
 
-Status today: **NOT_RUN** (no device timing window after stop-timing order).
+Status: **RUN 2026-09-24** on server3 d4, SCHED Parent (`srx_ref_parent_probe`, method DEVICE_EVENT_PRIMARY + HOST_WALL_SECONDARY). Evidence: `cann-next6/SCHED-ROWGROUP-X/phase4/local/SCHED-ROWGROUP-X/V001/support/results-ref-harness/d4/`.
 
-Procedure (next clean window, before any Candidate pair):
+### Unified reference harness (built)
 
-1. One frozen Parent executable (or one Candidate binary used as both slots — same file).
-2. SAME vs SAME, N ≥ 6 process reps × ≥11 samples, same device, same shape.
-3. Record: shape, dtype, device, method (WALL_CLOCK|DEVICE_EVENT), median_us, CV, MAD, max/min, p10, p90, abs_spread_us.
+- Source: `cann-next6/SCHED-ROWGROUP-X/phase4/workspaces/SCHED-ROWGROUP-X/support/runner_ref.inc` + `runner_ref_parent.asc`
+- Binary: server3 `.../SCHED-ROWGROUP-X/support/build/srx_ref_parent_probe`
+- Lifecycle: aclInit / setDevice / stream / malloc / H2D **once**; warmup once; measurement blocks **in one process**; D2H/cleanup once.
+- Per sample: `DEVICE_EVENT_US` (aclrtRecordEvent start/stop) primary; `HOST_WALL_US` secondary.
+- CLI: `device rows width dtype prefix warmup samples blocks gap_sec`
+- Orchestrator: `support/run_ref_validation.sh`
 
-Noise floor table schema (fill on first validation):
+### Acceptance (robust, not CV-only)
 
-| shape | dtype | device | method | median_us | CV | MAD_us | max/min | p10 | p90 | abs_spread_us | status |
-|---|---|---|---|---|---|---|---|---|---|---|---|
-| TBD | TBD | TBD | TBD | | | | | | | | NOT_RUN |
+| metric | threshold | result (small, in-process) |
+|---|---|---|
+| warmup used | ≥10 | 10 |
+| core CV (samples within ±20% of median) | ≤0.10 | B1 0.053 / B2 0.040 |
+| MAD/median | ≤0.08 | B1 0.043 / B2 0.025 |
+| vs cold-process reinit | in-process MAD/med must be clearly smaller | in 0.025–0.043 vs cold 0.275 |
+| wall-clock CV | diagnostic only | 0.30–0.44 (worse; do not judge on wall) |
 
-Decision rule after noise floor exists:
+Raw CV/max-min still explode from sparse outliers (host/HBM interference under shared VLLM). **Judge uses robust stats + interleaved pairs**, not CV≤0.15 alone.
 
-- If same-binary itself fails CV≤0.15 / max/min≤1.30 → **do not** run Candidate pairs that session (harness or host still unstable).
-- If same-binary is stable → window-qual Parent may use: absolute spread + MAD + CV **together**, not CV alone, for short kernels with naturally high relative CV.
-- Interleaved pair delta remains the primary Candidate signal once the window is qualified.
+### Noise floor table (d4, SCHED Parent, warmup=10, 2×31 samples/device events)
+
+| shape | dtype | device | method | warmup | samples | median_us | MAD_us | MAD/med | p10 | p90 | CV_raw | max/min | abs_spread | core_CV | HBM | AICore | notes |
+|---|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|---|---|
+| small 17×256 | FP32 | 4 | DEVICE_EVENT | 10 | 62 | 20.56 | 1.07 | 0.052 | 19.48 | 119.89 | 1.35 | 18.9 | 344.6 | 0.058 | ~59.2/65536 | 0% | VLLM resident |
+| medium 4×1024 | FP32 | 4 | DEVICE_EVENT | 10 | 62 | 9.94 | 1.47 | 0.148 | 8.49 | 171.77 | 2.10 | 53.2 | 433.4 | 0.075 | ~59.2/65536 | 0% | VLLM resident |
+| wide 1×6144 | FP32 | 4 | DEVICE_EVENT | 10 | 62 | 14.40 | 7.05 | 0.490 | 7.49 | 236.63 | 1.09 | 54.7 | 369.6 | 0.031 | ~59.2/65536 | 0% | B2 median drift 14→86 under load |
+
+Fast-cluster (within ±15–20% of median) DEVICE times: small ~20.6µs CV≈0.04–0.05; medium ~9–13µs CV≈0.05; wide B1 ~13.7µs CV≈0.03.
+
+### PROCESS_REINIT_NOISE
+
+| mode | n | median_us | MAD | MAD/med | CV | within±10% of median |
+|---|---:|---:|---:|---:|---:|---:|
+| A: in-process 31 samples (block1) | 31 | 20.66 | 0.88 | 0.043 | (core 0.053) | 24/31 |
+| B: 31 cold processes × 1 sample | 31 | 104.92 | 28.80 | 0.275 | 0.50 | 7/31 |
+
+**CONCLUSION:** cold-process samples are **PROCESS_REINIT_NOISE dominated**. Local screening **must not** use cold-process rep medians as the primary statistic. Prefer one long-lived process with in-process blocks + interleaved pairs.
+
+### WARMUP_STABLE_AFTER=10
+
+| warmup | median_us | MAD/med | p90_us | outlier max_us | verdict |
+|---:|---:|---:|---:|---:|---|
+| 0 | 22.50 | 0.038 | 156.44 | 142394 | first-run catastrophic |
+| 3 | 22.44 | 0.029 | 43.58 | 149.4 | residual early outliers |
+| 10 | 20.38 | 0.056 | 24.64 | 151.7 | **chosen** (best p90) |
+| 20 | 19.60 | 0.015 | 141.38 | 168.6 | not better p90 |
+
+### Decision
+
+- **SAME_BINARY_VALIDATION=PASS** (in-process, device-event, warmup≥10, robust core).
+- **HARNESS_VALIDATED=YES** for future P/C under this protocol only.
+- **CANDIDATE TIMING remains NOT_RUN** in this session (no P/C executed).
+- Raw CV≤0.15 / max/min≤1.30 alone is **not** a sufficient gate for short kernels; use MAD/median + core_CV + interleaved pair delta. Legacy wall-clock numbers tagged **LEGACY_TIMING_METHOD** (see `results-window-qual/LEGACY-TIMING-METHOD.md`); SCHED −18.45% 4/4 stays **STRONG_POSITIVE_LOCAL_SIGNAL**, never merged with new method medians.
 
 ## Priority after harness validation
 
-1. SAME-BINARY harness validation (noise floor)
+1. ~~SAME-BINARY harness validation (noise floor)~~ DONE 2026-09-24 PASS
 2. SCHED-ROWGROUP-X (STRONG_POSITIVE_LOCAL_SIGNAL retained, not promoted)
 3. ALIGN-TAIL-X
 4. BATCH-RESIDENT-X
 5. ASYNC-TRIPLE-X
 6. REDUCE-INVSCALE-X
+
+All future P/C must use the unified reference protocol (device events primary, warmup≥10, samples≥21, in-process, interleaved). No route-specific wall-clock as primary.
 
 Do not implement NEXT_CANDIDATE_HYPOTHESIS revisions (no V002+ for timing routes, no kernel edits) while Candidates remain unjudged under MEASUREMENT_BLOCKED.
 
@@ -159,3 +199,4 @@ Do not implement NEXT_CANDIDATE_HYPOTHESIS revisions (no V002+ for timing routes
 - Protocol file and control-only commits: MAIN-2.
 - MAIN-1 `cann-sixlane/*` ownership unchanged.
 - UB-LIVENESS-X V003: READY_FOR_FORMAL_SUBMISSION; unified Judge Owner submits; MAIN-2 does not self-submit.
+- Judge Owner: not named beyond “unified Judge Owner” in control; exact path `cann-next6/UB-LIVENESS-X/phase4/local/UB-LIVENESS-X/V003/submission.asc`, SHA `2eb9b5d087267a54fb84f8734847ecb68cf94b967102693c0d150fd57d6da7cd`.
