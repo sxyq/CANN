@@ -1,0 +1,50 @@
+diff --git a/phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc b/phase4/workspaces/DTYPE-SPECIAL-X/V001/submission.asc
+index 6adb6f5..36ca6df 100644
+--- a/phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
++++ b/phase4/workspaces/DTYPE-SPECIAL-X/V001/submission.asc
+@@ -1,6 +1,7 @@
+ #include <cmath>
+ #include <cstdint>
+ #include "kernel_operator.h"
++/* DTYPE-SPECIAL-X V001 revision of R31B-V011. */
+ /*
+  * R31B-V011-LP-ROW-PIPELINE
+  *
+@@ -3386,9 +3387,16 @@ private:
+                                    const AscendC::LocalTensor<T>& src, int32_t count)
+     {
+         if constexpr (AscendC::IsSameType<T, float>::value) {
+-            // AscendC has no useful FP32->FP32 Cast; an add-zero is an exact
+-            // vector copy and keeps the generic path uniform.
+-            AscendC::Adds(dst, src, 0.0f, count);
++            constexpr uint64_t copyAlignBytes = 32;
++            const bool canCopy = count > 0 &&
++                (static_cast<uint64_t>(count) * sizeof(float)) % copyAlignBytes == 0 &&
++                dst.GetPhyAddr() % copyAlignBytes == 0 &&
++                src.GetPhyAddr() % copyAlignBytes == 0;
++            if (canCopy) {
++                AscendC::DataCopy(dst, src, static_cast<uint32_t>(count));
++            } else {
++                AscendC::Adds(dst, src, 0.0f, count);
++            }
+         } else {
+             AscendC::Cast(dst, src, AscendC::RoundMode::CAST_NONE, count);
+         }
+@@ -3398,7 +3406,16 @@ private:
+                                      const AscendC::LocalTensor<float>& src, int32_t count)
+     {
+         if constexpr (AscendC::IsSameType<T, float>::value) {
+-            AscendC::Adds(dst, src, 0.0f, count);
++            constexpr uint64_t copyAlignBytes = 32;
++            const bool canCopy = count > 0 &&
++                (static_cast<uint64_t>(count) * sizeof(float)) % copyAlignBytes == 0 &&
++                dst.GetPhyAddr() % copyAlignBytes == 0 &&
++                src.GetPhyAddr() % copyAlignBytes == 0;
++            if (canCopy) {
++                AscendC::DataCopy(dst, src, static_cast<uint32_t>(count));
++            } else {
++                AscendC::Adds(dst, src, 0.0f, count);
++            }
+         } else {
+             // CAST_ROUND matches the round-to-nearest conversion used by the
+             // reference implementation when it restores FP16/BF16 output.

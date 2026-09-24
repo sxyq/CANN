@@ -1,0 +1,57 @@
+{
+  "route": "DTYPE-SPECIAL-X",
+  "revision": "V001",
+  "direct_parent": "R31B-V011",
+  "parent_source_sha": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "parent_score": 45.16,
+  "target_dtype": "FP32",
+  "single_hypothesis": "For aligned FP32 local copies, replace Adds(..., 0) with same-type DataCopy in both shared conversion helpers; unaligned cases retain Adds.",
+  "context_class": "HISTORICAL_DERIVED",
+  "source_path": "phase4/workspaces/DTYPE-SPECIAL-X/V001/submission.asc",
+  "source_sha256": "e2717055199f541d98d85ceef2e011e52e2749d932ca954dc887868de7db880f",
+  "source_copy": "submission.asc",
+  "source_copy_sha256": "e2717055199f541d98d85ceef2e011e52e2749d932ca954dc887868de7db880f",
+  "diff_path": "diff.patch",
+  "build_fix": {
+    "scope": "BUILD_ONLY",
+    "change": "Provide server3 GCC 11 host C++ and C include paths; use the existing ASC host direct-invocation target and libraries for the correctness runner.",
+    "kernel_source_changed": false,
+    "math_changed": false,
+    "tiling_changed": false,
+    "scheduling_changed": false,
+    "precision_policy_changed": false
+  },
+  "build": {
+    "host": "cann-server3",
+    "cann": "8.5.0.alpha002",
+    "soc": "Ascend910B3",
+    "npu_arch": "dav-2201",
+    "compile": "PASS",
+    "link": "PASS",
+    "status_log": "logs/server3-source-env-20260924T190042Z-status.txt",
+    "compile_link_log": "logs/server3-source-env-20260924T190042Z-build-link.log",
+    "executable_sha256": "14cdc6cf6f986fd49f92662b4ff180266d0265cafdc0145706e37153b984a90b"
+  },
+  "cpu_correctness": {
+    "status": "PASS",
+    "case_count": 39,
+    "log": "logs/cpu-correctness.json"
+  },
+  "npu_correctness": {
+    "status": "PASS",
+    "case_count": 39,
+    "device": 4,
+    "rank_cases": [2, 3, 4],
+    "widths": [1, 7, 8, 9, 63, 64, 65, 127, 128, 129, 1024, 4096, 8192],
+    "max_abs_error": 2.6226044e-06,
+    "timing": "NOT_RUN",
+    "log": "logs/server3-source-env-20260924T190042Z-correctness.log",
+    "status_log": "logs/server3-source-env-20260924T190042Z-status.txt"
+  },
+  "load_quality_for_performance": "LOAD_CONTAMINATED",
+  "decision": "NEEDS_ONE_MORE_LOCAL",
+  "official_score": null,
+  "performance_claim": false,
+  "online_submission": false,
+  "next_step": "Wait for an available device before paired local performance probes."
+}
