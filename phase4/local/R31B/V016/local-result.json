@@ -1,0 +1,63 @@
+{
+  "route": "R31B",
+  "revision": "V016",
+  "direct_parent": "R31B-V011",
+  "parent_score": 45.16,
+  "parent_source_sha": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "source_sha": "9f5c353e65a13a740fe97dc7e6415df032d27560831a3ad142c77592b8208eb5",
+  "submission": "phase4/local/R31B/V016/submission.asc",
+  "decision": "NEEDS_ONE_MORE_LOCAL",
+  "compile": "PASS",
+  "link": "PASS",
+  "correctness": {
+    "change_domain": "PASS",
+    "fp16_bf16_widths": [8192, 12288, 16384, 32768],
+    "fp32_control_width": 8192,
+    "fp32_width_16384": {
+      "v011_parent": {
+        "status": "FAIL",
+        "failures": 27605,
+        "max_abs": 0.0964607,
+        "max_rel": 63.790886
+      },
+      "v016_candidate": {
+        "status": "FAIL",
+        "failures": 25707,
+        "max_abs": 0.092531443,
+        "max_rel": 117.22115
+      },
+      "classification": "INHERITED_OR_HARNESS_ISSUE"
+    }
+  },
+  "paired_local_probes": {
+    "count": 4,
+    "device": 4,
+    "rows": 2,
+    "warmup": 1,
+    "repeats": 3,
+    "timing_status": "LOAD_CONTAMINATED",
+    "performance_conclusion": "NONE",
+    "cases": [
+      {"dtype": "fp16", "width": 12288, "v011_median_us": 69.290, "v016_median_us": 226.191, "raw_delta_us": 156.901},
+      {"dtype": "fp16", "width": 32768, "v011_median_us": 235.411, "v016_median_us": 207.590, "raw_delta_us": -27.821},
+      {"dtype": "bf16", "width": 12288, "v011_median_us": 122.900, "v016_median_us": 162.820, "raw_delta_us": 39.920},
+      {"dtype": "bf16", "width": 32768, "v011_median_us": 151.020, "v016_median_us": 206.721, "raw_delta_us": 55.701}
+    ]
+  },
+  "load_quality": {
+    "dispatch_observation": "All 8 NPUs had VLLM/python processes; AICore approximately 31-49% on devices 0-3 and 7, 0% on devices 4-6; HBM heavily occupied.",
+    "probe_before": "2026-09-24T04:44:29+0800 device4 AICore=0%, AIVector=0%, HBM=90%, HBM temperature=42 C, CtrlCPU=6%",
+    "probe_after": "2026-09-24T04:46:25+0800 device4 AICore=0%, AIVector=0%, HBM=90%, HBM temperature=43 C, CtrlCPU=18%",
+    "window_audit": "2026-09-24T04:51:11+0800, 04:52:27+0800, 04:53:39+0800: no clear window; VLLM services and worker processes remained present"
+  },
+  "logs": [
+    "phase4/local/R31B/V016/compile-evidence.txt",
+    "phase4/local/R31B/V016/correctness-evidence.txt",
+    "phase4/local/R31B/V016/local-probe-evidence.txt",
+    "phase4/local/R31B/V016/LOAD_QUALITY",
+    "server3:/home/data4t2/lelinfeng/phase4-review-repro/R31B-V016/build-candidate-v016-r2/configure-clean.log",
+    "server3:/home/data4t2/lelinfeng/phase4-review-repro/R31B-V016/build-candidate-v016-r2/build-clean.log",
+    "server3:/home/data4t2/lelinfeng/phase4-review-repro/R31B-V016/probe-build/build-runner-final.log"
+  ],
+  "next_candidate_hypothesis": "NONE; retain V016 hypothesis and await a clean local load window"
+}

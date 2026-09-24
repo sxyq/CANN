@@ -1,0 +1,38 @@
+route=R31B
+revision=V016
+direct_parent=R31B-V011
+load_label_for_local_probes=LOAD_CONTAMINATED
+
+Main dispatch observation (reported 2026-09-24; exact wall-clock time was not included in the dispatch message):
+All 8 NPUs had existing VLLM/python processes. AICore was approximately 31-49% on devices 0-3 and 7, and 0% on devices 4-6. HBM was heavily occupied on all devices. Small latency deltas under this load must not be interpreted as improvements.
+
+Independent server3 snapshot captured_at=2026-09-24T01:07:09+0800 (server clock 2026-09-23T17:07:10+00:00):
+All devices are Ascend 910B3. Existing processes were VLLMWorker_TP on devices 0,1,2,3,5,6; VLLMEngineCor on device 4; python on device 7. AICore utilization was 32%,32%,32%,32%,0%,0%,0%,0%. HBM usage was 59957,60007,59949,59951,59184,59876,59875,65066 MiB out of 65536 MiB, respectively.
+
+Probe interpretation:
+Every local latency probe in this revision is LOAD_CONTAMINATED. Preserve paired raw measurements, but do not claim a small delta as a performance gain or loss from those values. Correctness execution is allowed and is not held for global server-idle.
+
+Source-scope audit recorded 2026-09-24: V016 keeps the V011 FP32 wide-row seed at 4096 elements and applies the 8192 seed only to the FP16/BF16 Init branches. The single hypothesis remains low-precision wide-row tile seeding; no FP32 performance change is declared.
+
+Correctness load snapshot captured_at=2026-09-24T04:14:09+0800 (server UTC 2026-09-23T20:14:09+0000), immediately before V016 correctness on device 4:
+AICore=0%, HBM=90% of 65536 MiB, HBM temperature=41 C, HBM clock=1600 MHz, CtrlCPU=5%, HBM bandwidth=0%.
+Correctness output was collected with one launch per case and repeats=0; no latency was collected. Any future local latency run remains LOAD_CONTAMINATED under the dispatch observation above.
+
+Targeted parent/candidate FP32 D=16384 snapshot captured_at=2026-09-24T04:25:24+0800 (server UTC 2026-09-23T20:25:24+0000), device 4:
+AICore=0%, AIVector=10%, HBM=90% of 65536 MiB, HBM temperature=36 C, HBM clock=1600 MHz, CtrlCPU=4%, HBM bandwidth=0%.
+Both parent and candidate targeted runs were correctness-only single launches with no timing.
+
+Paired local probe load before captured_at=2026-09-24T04:44:29+0800 (server UTC 2026-09-23T20:44:29+0000), device 4:
+AICore=0%, AIVector=0%, HBM=90% of 65536 MiB, HBM temperature=42 C, CtrlCPU=6%, HBM bandwidth=0%.
+Paired local probe load after captured_at=2026-09-24T04:46:25+0800 (server UTC 2026-09-23T20:46:25+0000), device 4:
+AICore=0%, AIVector=0%, HBM=90% of 65536 MiB, HBM temperature=43 C, CtrlCPU=18%, HBM bandwidth=0%.
+All four paired local probe groups are LOAD_CONTAMINATED. Preserve raw medians and deltas only; do not infer a performance improvement.
+
+Server3 observation window audit:
+OBSERVATION_1=2026-09-24T04:51:11+0800 (server UTC 2026-09-23T20:51:11+0000); devices 0-7 AICore=33,33,33,33,0,0,0,7%; AIVector=25,25,25,25,0,0,0,0%; HBM=91,91,91,91,90,91,91,99%; device 4 HBM temperature=36 C.
+OBSERVATION_1_PROCESSES=VLLM services on ports 9001/9002 plus VLLM::EngineCore and VLLM::Worker_TP processes remained present.
+OBSERVATION_2=2026-09-24T04:52:27+0800 (server UTC 2026-09-23T20:52:27+0000); device 4 AICore=0%, AIVector=0%, HBM=90%, HBM temperature=37 C, CtrlCPU=1%.
+OBSERVATION_2_PROCESSES=The same VLLM services, VLLM::EngineCore, and VLLM::Worker_TP processes remained present.
+OBSERVATION_3=2026-09-24T04:53:39+0800 (server UTC 2026-09-23T20:53:39+0000); device 4 AICore=0%, AIVector=0%, HBM=90%, HBM temperature=35 C, CtrlCPU=7%.
+OBSERVATION_3_PROCESSES=The same VLLM services, VLLM::EngineCore, and VLLM::Worker_TP processes remained present.
+WINDOW_DECISION=NO_CLEAR_WINDOW; no rerun of the four paired probes; retain NEEDS_ONE_MORE_LOCAL.

@@ -1,0 +1,54 @@
+ROUTE=R31B
+REVISION=V016
+DIRECT_PARENT=R31B-V011
+PARENT_SOURCE_SHA=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
+PARENT_SCORE=45.16
+SOURCE_SHA=9f5c353e65a13a740fe97dc7e6415df032d27560831a3ad142c77592b8208eb5
+HOST=cann-server3 (remote hostname hwnput3)
+DEVICE=4
+RUNNER_BUILD=/home/data4t2/lelinfeng/phase4-review-repro/R31B-V016/probe-build
+RUNNER_BUILD_STATUS=PASS; probe_v016 probe_v011 probe_fp32_v016 probe_fp32_v011
+CORRECTNESS_MODE=one kernel launch per case; repeats=0; median_us=NA; no timing before correctness
+RUNTIME_ENV=/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/script/set_env.sh; system libstdc++ first in LD_LIBRARY_PATH
+LOAD_CAPTURED_AT=2026-09-24T04:14:09+0800 (server UTC 2026-09-23T20:14:09+0000)
+LOAD_DEVICE=4
+LOAD_USAGE=AICore=0%; HBM=90%; HBM=65536 MiB capacity; CtrlCPU=5%; HBM bandwidth=0%
+LOAD_MEMORY=HBM temperature=41 C; HBM clock=1600 MHz
+
+COMMAND=/home/data4t2/lelinfeng/phase4-review-repro/R31B-V016/probe-build/probe_v016 1 2 8192 4 0 0
+RESULT=dtype=fp16 rows=2 width=8192 device=4 correctness=PASS failures=0 max_abs=0.0009765625 max_rel=0.0012618296 median_us=NA samples=0
+COMMAND=/home/data4t2/lelinfeng/phase4-review-repro/R31B-V016/probe-build/probe_v016 1 2 16384 4 0 0
+RESULT=dtype=fp16 rows=2 width=16384 device=4 correctness=PASS failures=0 max_abs=0.001953125 max_rel=0.002244669 median_us=NA samples=0
+COMMAND=/home/data4t2/lelinfeng/phase4-review-repro/R31B-V016/probe-build/probe_v016 1 2 32768 4 0 0
+RESULT=dtype=fp16 rows=2 width=32768 device=4 correctness=PASS failures=0 max_abs=0.001953125 max_rel=0.010989011 median_us=NA samples=0
+COMMAND=/home/data4t2/lelinfeng/phase4-review-repro/R31B-V016/probe-build/probe_v016 1 2 12288 4 0 0
+RESULT=dtype=fp16 rows=2 width=12288 device=4 correctness=PASS failures=0 max_abs=0.0009765625 max_rel=0.0015923567 median_us=NA samples=0
+COMMAND=/home/data4t2/lelinfeng/phase4-review-repro/R31B-V016/probe-build/probe_v016 2 2 8192 4 0 0
+RESULT=dtype=bf16 rows=2 width=8192 device=4 correctness=PASS failures=0 max_abs=0.0078125 max_rel=0.0075757578 median_us=NA samples=0
+COMMAND=/home/data4t2/lelinfeng/phase4-review-repro/R31B-V016/probe-build/probe_v016 2 2 16384 4 0 0
+RESULT=dtype=bf16 rows=2 width=16384 device=4 correctness=PASS failures=0 max_abs=0.0078125 max_rel=0.015706806 median_us=NA samples=0
+COMMAND=/home/data4t2/lelinfeng/phase4-review-repro/R31B-V016/probe-build/probe_v016 2 2 32768 4 0 0
+RESULT=dtype=bf16 rows=2 width=32768 device=4 correctness=PASS failures=0 max_abs=0.0078125 max_rel=0.01754386 median_us=NA samples=0
+COMMAND=/home/data4t2/lelinfeng/phase4-review-repro/R31B-V016/probe-build/probe_v016 2 2 12288 4 0 0
+RESULT=dtype=bf16 rows=2 width=12288 device=4 correctness=PASS failures=0 max_abs=0.0078125 max_rel=0.0073529412 median_us=NA samples=0
+COMMAND=/home/data4t2/lelinfeng/phase4-review-repro/R31B-V016/probe-build/probe_fp32_v016 2 8192 4
+RESULT=dtype=fp32 rows=2 width=8192 device=4 correctness=PASS failures=0 max_abs=3.5762787e-07 max_rel=6.0680854e-06
+COMMAND=/home/data4t2/lelinfeng/phase4-review-repro/R31B-V016/probe-build/probe_fp32_v016 2 16384 4
+RESULT=dtype=fp32 rows=2 width=16384 device=4 correctness=FAIL failures=24171 max_abs=0.089531422 max_rel=117.22115
+CORRECTNESS_GATE=Main Review; non-change FP32 D=16384 parent/candidate comparison recorded before paired probes
+AUXILIARY_NOTE=The runner initially needed route-local runtime library and host include setup; formal candidate build evidence is independent and PASS.
+
+TARGETED_PARENT_CONTROL_CAPTURED_AT=2026-09-24T04:25:24+0800 (server UTC 2026-09-23T20:25:24+0000)
+TARGETED_LOAD_DEVICE=4
+TARGETED_LOAD_USAGE=AICore=0%; AIVector=10%; HBM=90% of 65536 MiB; CtrlCPU=4%; HBM bandwidth=0%
+TARGETED_LOAD_MEMORY=HBM temperature=36 C; HBM clock=1600 MHz
+TARGETED_MODE=same FP32 runner ABI; one launch; no timing
+TARGETED_SOURCE_SHA_BEFORE=9f5c353e65a13a740fe97dc7e6415df032d27560831a3ad142c77592b8208eb5
+COMMAND=/home/data4t2/lelinfeng/phase4-review-repro/R31B-V016/probe-build/probe_fp32_v011 2 16384 4
+RESULT=dtype=fp32 rows=2 width=16384 device=4 correctness=FAIL failures=27605 max_abs=0.0964607 max_rel=63.790886
+COMMAND=/home/data4t2/lelinfeng/phase4-review-repro/R31B-V016/probe-build/probe_fp32_v016 2 16384 4
+RESULT=dtype=fp32 rows=2 width=16384 device=4 correctness=FAIL failures=25707 max_abs=0.092531443 max_rel=117.22115
+TARGETED_SOURCE_SHA_AFTER=9f5c353e65a13a740fe97dc7e6415df032d27560831a3ad142c77592b8208eb5
+DIAGNOSIS=V011 parent fails the same D=16384 case under the same harness and load; classify as inherited/harness issue, not an isolated V016 regression
+TIMING=NOT_RUN
+STOP=Main Review
