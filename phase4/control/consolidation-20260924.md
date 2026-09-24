@@ -98,3 +98,18 @@ All six based on canonical HEAD `ae46d7c`.
 Shared blocker: persistent root/zhangkaijie VLLM + HBM saturation; agents cannot create clean window alone.
 | UB-LIVENESS-X | V002 | partial improve still FAIL | raw invalid | LOCAL_REJECTED; assign V003 pass1 acc fix |
 | UB-LIVENESS-X | V003 | PASS bad=0 full battery | alias probes inconclusive | ONLINE_CANDIDATE frozen to pool; Judge Owner only |
+
+## Server3 8-NPU window survey (2026-09-24)
+
+| dev | free HBM MB | used/65536 | AICore | resident | role |
+|---:|---:|---|---:|---|---|
+| 0 | 5580 | 59956 | 31% | VLLMWorker_TP | busy compute |
+| 1 | 5530 | 60006 | 32% | VLLMWorker_TP | busy compute |
+| 2 | 5587 | 59949 | 32% | VLLMWorker_TP | busy compute |
+| 3 | 5585 | 59951 | 32% | VLLMWorker_TP | busy compute |
+| 4 | **6349** | 59187 | **0%** | VLLMEngineCor 55664MB | **PRIMARY run window** |
+| 5 | 5658 | 59878 | **0%** | VLLMWorker_TP | SECONDARY run window |
+| 6 | 5661 | 59875 | **0%** | VLLMWorker_TP | SECONDARY run window |
+| 7 | 9 | 65527 | 17% | python 61828MB | AVOID |
+
+Policy update: compile/link is CPU (no HBM need) and may parallelize on server3. NPU correctness + paired probes pin to **ASCEND_DEVICE_ID=4** primary; 5/6 allowed as secondary if no concurrent next6 probe. Residual VLLM HBM documented — do not wait for full VLLM stop. Device 7 forbidden.
