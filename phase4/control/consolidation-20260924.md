@@ -124,3 +124,4 @@ Policy update: compile/link is CPU (no HBM need) and may parallelize on server3.
 | SCHED-ROWGROUP-X | L004 controlled | PASS | LOAD_CONTAMINATED sofm0.305 DIR0.5 | NEEDS_ONE_MORE_LOCAL; d4 free |
 | ASYNC-TRIPLE-X | L006 controlled | PASS path triple | LOAD_CONTAMINATED CV29% DIR3/6 | NEEDS_ONE_MORE_LOCAL; d4 free |
 | REDUCE-INVSCALE-X | L005 controlled | PASS both D6144 | LOAD_CONTAMINATED jitter78% | NEEDS_ONE_MORE_LOCAL; d4 free |
+| ALIGN-TAIL-X | R2 baseline | N/A candidate | parent UNSTABLE d4/d5/d6 CV0.27-0.32 | MEASUREMENT_BLOCKED + NEEDS_ONE_MORE_LOCAL |
