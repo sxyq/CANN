@@ -128,3 +128,5 @@ Policy update: compile/link is CPU (no HBM need) and may parallelize on server3.
 | BATCH-RESIDENT-X | R2 baseline | N/A candidate | parent UNSTABLE d4/5/6 | MEASUREMENT_BLOCKED + NEEDS_ONE_MORE_LOCAL; pair3 OUTLIER |
 | ASYNC-TRIPLE-X | R2 baseline | N/A candidate | parent UNSTABLE d4/5/6 | MEASUREMENT_BLOCKED + NEEDS_ONE_MORE_LOCAL |
 | REDUCE-INVSCALE-X | R2 baseline | SHA P!=C verified | parent UNSTABLE d4/5/6 candidate0 | MEASUREMENT_BLOCKED + NEEDS_ONE_MORE_LOCAL |
+| SCHED-ROWGROUP-X | R2 pairs d6 | PASS | baseline STABLE d6; DIR 4/4 -18.45%; parent sofm0.558 | MEASUREMENT_BLOCKED + NEEDS_ONE_MORE_LOCAL; not REJECT |
+| ROUND2_SUMMARY | five routes | - | all parent/jitter gates block ONLINE judgment | MEASUREMENT_BLOCKED x5; no ONLINE from R2; UB unchanged WAIT JUDGE |
