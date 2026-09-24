@@ -115,3 +115,7 @@ Shared blocker: persistent root/zhangkaijie VLLM + HBM saturation; agents cannot
 Policy update: compile/link is CPU (no HBM need) and may parallelize on server3. NPU correctness + paired probes pin to **ASCEND_DEVICE_ID=4** primary; 5/6 allowed as secondary if no concurrent next6 probe. Residual VLLM HBM documented — do not wait for full VLLM stop. Device 7 forbidden.
 | ALIGN-TAIL-X | V001 dev4 | PASS pairs | DIR 2/4 noise 393pp concurrent | NEEDS_ONE_MORE_LOCAL; serialize dev4 |
 | BATCH-RESIDENT-X | V001 set2 | PASS batch | DIR 3/4 median -23.9% concurrent ALIGN | NEEDS_ONE_MORE_LOCAL; serialize dev4 |
+| ASYNC-TRIPLE-X | V001 set2 | PASS | DIR 3/6 noise CV41% concurrent reduce | NEEDS_ONE_MORE_LOCAL; exclusive later |
+| SCHED-ROWGROUP-X | V001 set3 | PASS | DEV4 residual | NEEDS_ONE_MORE_LOCAL; exclusive later |
+| REDUCE-INVSCALE-X | V002 recheck | PASS | repair-cost PARK; concurrent srx on pair1 historically | R019 DEFERRED; d4 free |
+| BATCH-RESIDENT-X | set2 | PASS | DIR 3/4 median -23.9% concurrent | **EXCLUSIVE_DEV4 GRANTED for set3** |
