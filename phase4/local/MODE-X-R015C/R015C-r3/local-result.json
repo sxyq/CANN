@@ -1,0 +1,346 @@
+{
+  "route": "MODE-X-R015C",
+  "revision": "R015C-r3",
+  "parent_revision": "R015C-r2",
+  "parent_source_sha256": "9471d7c2faf12c8d5d31e3cc3865fe2a703362b2d8cdb635beda2e64ebe259be",
+  "source_sha256": "e1786bec2673519f41887fdffa0e11751f515a81037d854c88ae7edc0e4af903",
+  "source_path": "phase4/workspaces/MODE-X-R015C/op_kernel/row_copy_kernel.asc",
+  "compile": "PASS",
+  "build_log": {
+    "path": "/home/data4t2/lelinfeng/MODE-X-R015C_runs/dispatch_20260924/build_r015c_r3_retry_20260924.log",
+    "sha256": "e7f3821b5a4b09d2fb2c84304a86546c91eff906667e091521f1e50879be4fe9",
+    "result": "compile_link_host_pass"
+  },
+  "correctness_log": {
+    "path": "/home/data4t2/lelinfeng/MODE-X-R015C_runs/dispatch_20260924/correctness_r015c_r3_20260924.log",
+    "sha256": "61b4a78fb0d23176ba8d08347341f852102b9e026aa10cb29aac7f416fd39e3e",
+    "result": "r3_all_pass"
+  },
+  "paired_probe_log": {
+    "path": "/home/data4t2/lelinfeng/MODE-X-R015C_runs/dispatch_20260924/paired_local_r015c_r3_20260924.log",
+    "sha256": "9022aa637050ef12fe6b4db554313f4639b33cd46ed4607a988494966de01295",
+    "device": 4,
+    "input_formula": "(i*17+23)%1009/31.0"
+  },
+  "reference": {
+    "role": "ROUTE_LOCAL_CORRECTNESS_ONLY",
+    "path": "phase4/local/MODE-X-R015C/R015C-r3/support/reference",
+    "kernel_path": "phase4/local/MODE-X-R015C/R015C-r3/support/reference/op_kernel/row_copy_kernel.asc",
+    "source_sha256": "1ef3ff81e14d6b78618ec7f23b1ed1c29cb4365558b9cdef58ae733eedb2fc83",
+    "same_abi": true,
+    "same_inputs": true,
+    "copy_shape": "single-row DataCopyPad segments, each at most 256 32-byte blocks",
+    "build_log": {
+      "path": "/home/data4t2/lelinfeng/MODE-X-R015C_runs/dispatch_20260924/reference_build_r015c_r3_20260924.log",
+      "sha256": "75a5bdb27194b298fb3d197f16939868d5dabcdbc5417ccdcb5abcde1b477795"
+    },
+    "host": "PASS",
+    "paired_device_log": {
+      "path": "/home/data4t2/lelinfeng/MODE-X-R015C_runs/dispatch_20260924/paired_reference_r015c_r3_20260924.log",
+      "sha256": "18d8c78510b5a4add24579916ca4a8ba4ebdae3d6684629eb43591a57de94dbd"
+    },
+    "initial_device_attempt": "NOT_COMPARABLE: runtime environment was not loaded and libmsprofiler.so was unavailable; no kernel ran.",
+    "valid_device_result": "PASS_ALL_THREE"
+  },
+  "probes": [
+    {
+      "name": "R=2,D=256,device=4",
+      "same_input": true,
+      "r2_parent": "FAIL index=0",
+      "r3_candidate": "PASS exact=1",
+      "performance": "NOT_RUN"
+    },
+    {
+      "name": "R=5,D=4096,device=4",
+      "same_input": true,
+      "r2_parent": "FAIL index=0",
+      "r3_candidate": "PASS exact=1",
+      "performance": "NOT_RUN"
+    },
+    {
+      "name": "R=3,D=8192,device=4",
+      "same_input": true,
+      "r2_parent": "FAIL index=0",
+      "r3_candidate": "PASS exact=1",
+      "performance": "NOT_RUN"
+    }
+  ],
+  "host_pair": {
+    "r2_parent": "PASS",
+    "r3_candidate": "PASS"
+  },
+  "reference_probes": [
+    {
+      "name": "R=2,D=256,device=4",
+      "same_input": true,
+      "reference": "PASS exact=1",
+      "r3_candidate": "PASS exact=1",
+      "performance": "NOT_RUN"
+    },
+    {
+      "name": "R=5,D=4096,device=4",
+      "same_input": true,
+      "reference": "PASS exact=1",
+      "r3_candidate": "PASS exact=1",
+      "performance": "NOT_RUN"
+    },
+    {
+      "name": "R=3,D=8192,device=4",
+      "same_input": true,
+      "reference": "PASS exact=1",
+      "r3_candidate": "PASS exact=1",
+      "performance": "NOT_RUN"
+    }
+  ],
+  "reference_load": {
+    "quality": "LOAD_CONTAMINATED",
+    "server": "cann-server3",
+    "device": 4,
+    "before": {
+      "aicore_percent": 0,
+      "hbm_mb": "59187/65536",
+      "process": "VLLMEngineCor:55664MB"
+    },
+    "after": {
+      "aicore_percent": 0,
+      "hbm_mb": "59189/65536",
+      "process": "VLLMEngineCor:55664MB"
+    },
+    "cluster_note": "All eight devices retained active VLLM/python work and high HBM occupancy."
+  },
+  "load_quality": "LOAD_CONTAMINATED",
+  "load": {
+    "server": "cann-server3",
+    "device": 4,
+    "before": {
+      "aicore_percent": 0,
+      "hbm_mb": "59187/65536",
+      "process": "VLLMEngineCor:55664MB"
+    },
+    "after": {
+      "aicore_percent": 0,
+      "hbm_mb": "59189/65536",
+      "process": "VLLMEngineCor:55664MB"
+    },
+    "cluster_note": "Devices 0-3 and 7 had active VLLM/python work and high HBM occupancy; device 4 also retained VLLMEngineCor."
+  },
+  "decision": "NEEDS_ONE_MORE_LOCAL",
+  "timing": {
+    "status": "RECORDED_NOT_VALID_FOR_PERFORMANCE",
+    "scope": "ARCHITECTURE_INFORMATION_ONLY",
+    "load_quality": "LOAD_CONTAMINATED",
+    "valid_for_performance": false,
+    "validity_note": "All recorded reference and r3 executable bytes are identical; retained samples are not a reference-versus-r3 performance result.",
+    "server": "cann-server3",
+    "device": 4,
+    "warmup": 3,
+    "measured_repeats": 5,
+    "order": "alternating reference/r3 per measured repeat",
+    "clock": "date +%s%N around one device-probe process; wall elapsed includes process and runtime initialization",
+    "command_template": "timeout 90s env ASCEND_DEVICE_ID=4 ASCEND_SLOG_PRINT_TO_STDOUT=0 ASCEND_GLOBAL_LOG_LEVEL=3 <binary> --device-probe <R> <D> 4",
+    "log": {
+      "path": "/home/data4t2/lelinfeng/MODE-X-R015C_runs/dispatch_20260924/paired_timing_reference_r015c_r3_20260924.log",
+      "sha256": "da08f270a6213eaabb39b133d6591395472e3cb7def9f015195eb00912b38622"
+    },
+    "repeat_2": {
+      "log": {
+        "path": "/home/data4t2/lelinfeng/MODE-X-R015C_runs/dispatch_20260924/paired_timing_reference_r015c_r3_repeat2_20260924.log",
+        "sha256": "c7a049c1eb31374d464420d9071cda52aeb1d5617ead8343c657f3a2fc7fb233"
+      },
+      "cases": [
+        {
+          "name": "R=2,D=256",
+          "reference_raw_ns": [4564240084, 3973627945, 4177859821, 3566108895, 3980448263],
+          "r3_raw_ns": [3774465296, 3980564578, 3566057229, 4582500856, 3976502101],
+          "reference_median_ns": 3980448263,
+          "r3_median_ns": 3976502101,
+          "correctness": "both exact=1",
+          "comparison": "INVALID_IDENTICAL_BINARIES"
+        },
+        {
+          "name": "R=5,D=4096",
+          "reference_raw_ns": [4594297303, 3570638142, 3982861125, 3791021238, 4174827156],
+          "r3_raw_ns": [3786387551, 4573023197, 4181123441, 3984288382, 4990136201],
+          "reference_median_ns": 3982861125,
+          "r3_median_ns": 4181123441,
+          "correctness": "both exact=1",
+          "comparison": "INVALID_IDENTICAL_BINARIES"
+        },
+        {
+          "name": "R=3,D=8192",
+          "reference_raw_ns": [3991120703, 4794867911, 3982358998, 3561068320, 4555242379],
+          "r3_raw_ns": [3782900005, 4574126543, 3975083070, 3994812637, 3768278350],
+          "reference_median_ns": 3991120703,
+          "r3_median_ns": 3975083070,
+          "correctness": "both exact=1",
+          "comparison": "INVALID_IDENTICAL_BINARIES"
+        }
+      ],
+      "load": {
+        "before": {
+          "device_aicore_percent": 0,
+          "device_hbm_mb": "59187/65536",
+          "process": "VLLMEngineCor:55664MB"
+        },
+        "after": {
+          "device_aicore_percent": 0,
+          "device_hbm_mb": "59190/65536",
+          "process": "VLLMEngineCor:55664MB"
+        },
+        "cluster_note": "Devices 0-3 and 7 had active VLLM/python work; device 4 retained VLLMEngineCor and high HBM occupancy."
+      },
+      "performance_claim": "NONE"
+    },
+    "binary_sha256": {
+      "reference": "c65b33880d254b9aa8fbed6bf76986ef6f9dc686f601d463f81d8992193d79a6",
+      "r3": "c65b33880d254b9aa8fbed6bf76986ef6f9dc686f601d463f81d8992193d79a6",
+      "verified_identical": true
+    },
+    "binary_audit": {
+      "finding": "CONFIRMED_IDENTICAL_ARTIFACTS",
+      "candidate_source_sha256": "e1786bec2673519f41887fdffa0e11751f515a81037d854c88ae7edc0e4af903",
+      "reference_source_sha256": "1ef3ff81e14d6b78618ec7f23b1ed1c29cb4365558b9cdef58ae733eedb2fc83",
+      "candidate_object_sha256": "071d8e2cfe2e890e5ee304916bac1313b2cb9d7d610f415918bb6707a4dfbeb5",
+      "reference_object_sha256": "071d8e2cfe2e890e5ee304916bac1313b2cb9d7d610f415918bb6707a4dfbeb5",
+      "candidate_executable": "/home/data4t2/lelinfeng/MODE-X-R015C_runs/dispatch_20260924/build/row_copy_probe",
+      "reference_executable": "/home/data4t2/lelinfeng/MODE-X-R015C_runs/dispatch_20260924/support/reference/build/row_copy_reference",
+      "candidate_build_log": "/home/data4t2/lelinfeng/MODE-X-R015C_runs/dispatch_20260924/build_r015c_r3_retry_20260924.log",
+      "reference_build_log": "/home/data4t2/lelinfeng/MODE-X-R015C_runs/dispatch_20260924/reference_build_r015c_r3_20260924.log",
+      "dependency_sources": "The two build dependency files point to different candidate/reference kernel source paths, while the resulting objects and executables are byte-identical.",
+      "recording_error": false
+    },
+    "cases": [
+      {
+        "name": "R=2,D=256",
+        "reference_raw_ns": [4584596062, 3993672068, 3779319733, 3595194375, 3988484543],
+        "r3_raw_ns": [3604022898, 4203834441, 4586789370, 4790211210, 4011731173],
+        "reference_median_ns": 3988484543,
+        "r3_median_ns": 4203834441,
+        "reference_median_ms": 3988.484543,
+        "r3_median_ms": 4203.834441,
+      "comparison": "INVALID_IDENTICAL_BINARIES"
+      },
+      {
+        "name": "R=5,D=4096",
+        "reference_raw_ns": [3987895289, 4597297557, 3988809198, 4419866515, 3811256158],
+        "r3_raw_ns": [3801175811, 4586964086, 3981640985, 3777925568, 4004087630],
+        "reference_median_ns": 3988809198,
+        "r3_median_ns": 3981640985,
+        "reference_median_ms": 3988.809198,
+        "r3_median_ms": 3981.640985,
+      "comparison": "INVALID_IDENTICAL_BINARIES"
+      },
+      {
+        "name": "R=3,D=8192",
+        "reference_raw_ns": [4806351221, 4793432835, 3995275439, 4568491572, 4797323332],
+        "r3_raw_ns": [3579962802, 4588553023, 3995399849, 3588005063, 3996051968],
+        "reference_median_ns": 4793432835,
+        "r3_median_ns": 3995399849,
+        "reference_median_ms": 4793.432835,
+        "r3_median_ms": 3995.399849,
+      "comparison": "INVALID_IDENTICAL_BINARIES"
+      }
+    ],
+    "load": {
+      "before": {
+        "device_aicore_percent": 0,
+        "device_hbm_mb": "59187/65536",
+        "process": "VLLMEngineCor:55664MB"
+      },
+      "after": {
+        "device_aicore_percent": 0,
+        "device_hbm_mb": "59190/65536",
+        "process": "VLLMEngineCor:55664MB"
+      },
+      "cluster_note": "All eight devices retained active VLLM/python work and high HBM occupancy."
+    },
+    "performance_claim": "NONE"
+  },
+  "online_submission": "NOT_RUN",
+  "performance_claim": "NONE",
+  "comparison": "R2 parent correctness failed in all three paired cases; retain r3 correctness evidence only and record no performance comparison.",
+  "reference_comparison": "Correctness-only paired reference passed all three shapes; prior timing is retained as raw architecture data only because the verified reference and r3 executables are byte-identical.",
+  "performance_result_valid": false,
+  "next_local_requirement": "Wait for an uncontested Main-1 device lease at priority 5 before any device run or timing; no Online action.",
+  "paired_runtime_harness": {
+    "status": "HOST_ONLY_EVENT_TIMING_READY",
+    "script": {
+      "path": "phase4/local/MODE-X-R015C/R015C-r3/support/paired_runtime.sh",
+      "sha256": "1b4f60c19510a37b9786060b9525fe6bcaebc3588882534df662b9745329c3c8"
+    },
+    "audit_log": {
+      "path": "phase4/local/MODE-X-R015C/R015C-r3/support/paired_device_event_host_audit_20260924.log",
+      "sha256": "7927aaa0195445bc440632b5d82163655ce0ced9a3e48d6ea0a232e77d25f21d",
+      "result": "PASS",
+      "mode": "HOST_ONLY_PLAN",
+      "cases": ["R=2,D=256", "R=5,D=4096", "R=3,D=8192"],
+      "pairs_per_case": 5,
+      "order": "Adjacent parent/candidate; AB then BA alternating",
+      "npu_execution": "NOT_RUN",
+      "timing": "NOT_RUN"
+    },
+    "build_validation": {
+      "server": "cann-server3",
+      "path": "/home/data4t2/lelinfeng/MODE-X-R015C_runs/dispatch_20260924/paired_device_event_r015c_20260924/build_and_identity_event_timing_20260924.log",
+      "sha256": "07ed97ef46c05e8b204e294457f7610726e9df80aed3348db1e5e866d4826d2b",
+      "command": "bash /home/data4t2/lelinfeng/MODE-X-R015C_runs/dispatch_20260924/paired_device_event_r015c_20260924/support/device_event/build_pair.sh",
+      "r2_exit": 0,
+      "r3_exit": 0,
+      "build_mode": "Incremental in distinct Route-owned parent/candidate build directories; no cleanup",
+      "shared_event_host_source_sha256": "5d0abe48ebe1a21b8c8af84341f5667992fd1bc23eac09b553e2180cbbbb74c3",
+      "event_cmake_source_sha256": "bf3bbde2eca10b9de9339dad83ab01672a00cfa889921463c86bff0c322bb0d9"
+    },
+    "superseded_process_wall_build_validation": {
+      "path": "/home/data4t2/lelinfeng/MODE-X-R015C_runs/dispatch_20260924/paired_device_event_r015c_20260924/build_and_identity.log",
+      "sha256": "99054e36884b20d63de1db2df7a586d088b233b2b8ebf938b1f7582e41d93fe3",
+      "status": "SUPERSEDED_EVENT_HOST_SOURCE_CHANGED; previous executable SHAs do not identify current event host source"
+    },
+    "superseded_process_wall_audit_log": {
+      "path": "phase4/local/MODE-X-R015C/R015C-r3/support/paired_runtime_audit_20260924.log",
+      "sha256": "804f5b522c60e15ffe573a5105da4b9b245ed5da9fd434cbdeadfb6bd7714721",
+      "status": "HOST_ONLY_PLAN_FOR_PROCESS_WALL_HARNESS; not used for event timing"
+    },
+    "parent": {
+      "revision": "R015C-r2",
+      "source_sha256": "9471d7c2faf12c8d5d31e3cc3865fe2a703362b2d8cdb635beda2e64ebe259be",
+      "source_path": "/home/data4t2/lelinfeng/MODE-X-R015C_runs/dispatch_20260924/identity_audit_r015c_r2_vs_r3_20260924/r2_parent/op_kernel/row_copy_kernel.asc",
+      "object_sha256": "d6e4483899ab37f80ecafebad29eebca652c6c34ba45c785be66ac7c6a3b981e",
+      "executable_path": "/home/data4t2/lelinfeng/MODE-X-R015C_runs/dispatch_20260924/paired_device_event_r015c_20260924/parent/build/row_copy_event_probe",
+      "executable_sha256": "dad7a4c6b83fa84774f074d366c4f20301b932c5eeb572042bc6ec7ffc9b83e7",
+      "executable_kind": "shared-host ACL device-event timing probe built against declared R015C-r2 kernel"
+    },
+    "candidate": {
+      "revision": "R015C-r3",
+      "source_sha256": "e1786bec2673519f41887fdffa0e11751f515a81037d854c88ae7edc0e4af903",
+      "source_path": "/home/data4t2/lelinfeng/MODE-X-R015C_runs/dispatch_20260924/identity_audit_r015c_r2_vs_r3_20260924/r3_candidate/op_kernel/row_copy_kernel.asc",
+      "object_sha256": "392c575073960181af49b8fa1036aadb4c61506e5d4146d58b57d5119aeeb390",
+      "executable_path": "/home/data4t2/lelinfeng/MODE-X-R015C_runs/dispatch_20260924/paired_device_event_r015c_20260924/candidate/build/row_copy_event_probe",
+      "executable_sha256": "faea8be543277b77af2bc07d6b08ca43134fceaed17ab807fe8cfd5ecdcd0aee",
+      "executable_kind": "shared-host ACL device-event timing probe built against declared R015C-r3 kernel"
+    },
+    "identity": {
+      "parent_candidate_executables_distinct": true,
+      "kernel_sources_match_declared_sha256": true,
+      "cmake_source_roots_and_compile_dependencies_match_each_source": true,
+      "shared_event_host_source_sha256": "5d0abe48ebe1a21b8c8af84341f5667992fd1bc23eac09b553e2180cbbbb74c3",
+      "event_host_objects_distinct": true,
+      "event_host_objects_match_current_source": true,
+      "shared_tiling_source_sha256": "5e4ad750f5c63da357324c0a829674aff81b7c0b655e8ff08072b1c289c66c41"
+    },
+    "runtime": {
+      "pre_run_fields": ["revision", "source_sha256", "absolute_executable_path", "executable_sha256", "full_command"],
+      "command_template": "timeout 90s env ASCEND_DEVICE_ID=<device> ASCEND_SLOG_PRINT_TO_STDOUT=0 ASCEND_GLOBAL_LOG_LEVEL=3 <absolute executable> --device-event-bench <R> <D> <device> 32 7 512",
+      "measurement": "ACL device events bracket 512 identical kernel launches per sample; 32 warmup launches; seven event samples; input/tiling H2D, ACL init, allocation, output D2H, correctness comparison, teardown excluded from event interval",
+      "reported_metrics": ["raw per-sample event total ns", "median event ns per launch", "event jitter range ns per launch", "paired median delta", "direction consistency"],
+      "process_wall_time": "NOT_USED_AS_KERNEL_LATENCY",
+      "load_snapshots": ["npu-smi full device listing", "device usage including AICore/HBM", "device process list", "host python/vllm/row_copy processes"],
+      "lease_required": "--run-after-main1-lease LEASE_ID DEVICE_ID",
+      "known_parent_correctness": "R015C-r2 failed the three recorded cases; paired timing is diagnostic only and cannot support a performance claim",
+      "load_quality": "LOAD_CONTAMINATED_UNLESS_MAIN_RECLASSIFIES"
+    },
+    "decision": "WAIT_FOR_MAIN1_LEASE_PRIORITY_5",
+    "device_timing_claim": "NONE",
+    "device_runs": 0,
+    "timing_runs": 0
+  }
+}
