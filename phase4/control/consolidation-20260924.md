@@ -131,3 +131,4 @@ Policy update: compile/link is CPU (no HBM need) and may parallelize on server3.
 | SCHED-ROWGROUP-X | R2 pairs d6 | PASS | baseline STABLE d6; DIR 4/4 -18.45%; parent sofm0.558 | MEASUREMENT_BLOCKED + NEEDS_ONE_MORE_LOCAL; not REJECT |
 | ROUND2_SUMMARY | five routes | - | all parent/jitter gates block ONLINE judgment | MEASUREMENT_BLOCKED x5; no ONLINE from R2; UB unchanged WAIT JUDGE |
 | SCHED-ROWGROUP-X | window qual | - | d6+d4 FAIL CV/maxmin 2/2 | WINDOW_UNQUALIFIED; NEEDS_ONE_MORE_LOCAL+MEASUREMENT_BLOCKED; STRONG_POSITIVE retained |
+| ALIGN-TAIL-X | window qual | - | d6+d4 FAIL 2/2 | WINDOW_UNQUALIFIED; NEEDS_ONE_MORE_LOCAL+MEASUREMENT_BLOCKED |
