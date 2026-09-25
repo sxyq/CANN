@@ -118,6 +118,7 @@
 - Main-1 当前候选的有效本地性能结果：无。污染的 R31B/R31A/MIX 旧数值不纳入方向统计；WIDE 的旧 host shim 不属于 NPU kernel timing。
 - `local-timing-protocol.md` 当前 harness 状态为 `PARTIAL_SHAPE_CONDITIONAL`，资格按 Route、shape、dtype、binary 分别计算。Main-1 当前候选均没有满足本轮要求的完整 same-binary + paired 记录。
 - 2026-09-26 server3 快照：device 0–6 各有常驻 VLLM 进程、HBM 约 90%；device 7 有 Python 进程且 AICore 活动。当前无适用于 Main-1 的干净性能窗口，也无 Main-1 active lease；性能状态 `MEASUREMENT_BLOCKED`。此限制不阻止只读研究和 evidence work。
+- 最新现场快照（server3 UTC `2026-09-25T21:15:15Z`）：device 0–3 AICore 均为 36%，HBM 59969–60026 MB 且有 VLLM worker；device 4–6 AICore 为 0%，HBM 59186–59876 MB 且分别有 VLLM 进程。device 7 AICore 为 0%、HBM 3431 MB、无进程，但现行规程要求避开。租用表没有活动 lease；五条 Main-1 路线均记 `MEASUREMENT_BLOCKED`。
 - Main-1 `ONLINE_CANDIDATES`：无。
 - SCHED-ROWGROUP-X V001 属 Main-2。已核实 Judge 正式结果 15/15、Official 22.27、LOCAL/SIDECAR/REMOTE SHA 一致；本地 33x100 配对改善方向与 Official 上升方向一致。局部 latency 百分比与 Official score points 不可直接比较，单条样本不足以改本地 evaluator。结果已追加到 shared local-online calibration 表。
 
