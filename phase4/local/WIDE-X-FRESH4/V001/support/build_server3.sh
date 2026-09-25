@@ -29,6 +29,12 @@ else
 fi
 export ASCEND_HOME_PATH="${CANN_ROOT}"
 export ASCEND_CANN_PACKAGE_PATH="${CANN_ROOT}"
+GCC_VERSION="$(g++ -dumpversion)"
+GCC_TARGET="$(gcc -dumpmachine)"
+GCC_MULTIARCH="$(gcc -print-multiarch)"
+export CPLUS_INCLUDE_PATH="/usr/include/c++/${GCC_VERSION}:/usr/include/${GCC_MULTIARCH}/c++/${GCC_VERSION}:/usr/include/c++/${GCC_VERSION}/backward${CPLUS_INCLUDE_PATH:+:${CPLUS_INCLUDE_PATH}}"
+export C_INCLUDE_PATH="/usr/include/${GCC_MULTIARCH}${C_INCLUDE_PATH:+:${C_INCLUDE_PATH}}"
+export LIBRARY_PATH="/usr/lib/gcc/${GCC_TARGET}/${GCC_VERSION}:/usr/lib/${GCC_MULTIARCH}:/lib/${GCC_MULTIARCH}${LIBRARY_PATH:+:${LIBRARY_PATH}}"
 cmake -S "${ROOT}" -B "${BUILD_DIR}" \
     -DCMAKE_BUILD_TYPE=Release \
     -DASCEND_HOME_PATH="${CANN_ROOT}" \

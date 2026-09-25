@@ -11,3 +11,11 @@
 - Runner execution, NPU correctness through this runner, and performance timing were not run. No current Main device lease was present.
 - V001 Candidate and Parent source files were not changed.
 - Fresh Blind review note: while locating the problem definition, an archived problem-analysis document was opened and included material beyond the core problem statement. No other Route kernel source or historical champion source was read. Main should decide whether this affects the Route's Fresh Blind classification.
+
+## Server3 paired-runner build retry (2026-09-25)
+
+- Connected through `cann-server3` to `hwnput3`; CANN 8.5.0.alpha002 and its Ascend CMake package were present. The toolkit did not contain `set_env.sh`.
+- The first paired-runner build configured successfully but both ASC translation units failed to find `<cstdint>`. The system has GCC 11 headers; `bisheng` selected a GCC 12 installation by default. The complete output is retained in `../logs/server3-build-attempt-01.log`.
+- `build_server3.sh` now derives the host GCC version and multiarch paths and exports C++ headers, C headers, and library paths. A compiler syntax probe including `<cstdint>` passed with these paths.
+- The rebuild passed the `<cstdint>` stage but failed while resolving ASC kernel metadata for the renamed Parent and Candidate entry points (`wide_x_fresh4_kernel_parent` and `wide_x_fresh4_kernel_candidate`); `__origin__...` symbols remained undefined. No paired-runner executable or shared kernel libraries were linked. Full output is retained in `../logs/server3-build-attempt-02.log`.
+- No paired-runner binary was executed and no NPU runtime, correctness run, or timing sample was started. The Parent and Candidate source files remain unchanged at their declared SHA256 values.
