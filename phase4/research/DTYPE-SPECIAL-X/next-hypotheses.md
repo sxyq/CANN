@@ -65,3 +65,55 @@ Scope: V001 remains the pending FP32 Candidate. The items below are read-only re
 - MINIMAL_OFAT_DIFF: Replace only the adjacent output multiply and add; keep `Muls(value, invRms)`, reduction, copies, and row scheduling unchanged.
 - EXPECTED_LOCAL_PROBES: API/codegen evidence; CPU numerical model; compile/link; exact-shape correctness before any lease-backed performance work.
 - READINESS: NEEDS_MORE_EVIDENCE.
+
+## Track-B Addendum (2026-09-26)
+
+The following three studies are additional, read-only directions for V001 follow-up review. They do not authorize Candidate edits or a new revision.
+
+## DTYPE-FP32-05: Keep RMS Reciprocal in the Scalar Path
+
+- MECHANISM: After reading the row square sum, compute inverse RMS in the scalar path and avoid writing a one-element square-root result to UB and reading it back; keep the row reduction and output `Muls` unchanged.
+- BOTTLENECK: The current path performs a scalar-to-vector handoff for one-element `Sqrt`, then a vector-to-scalar handoff to read that result before returning to vector output work.
+- EXPECTED_SHAPES: All three prefixes `[12]`, `[3,4]`, and `[1,2,6]` at widths 64, 65, 127, 128, 129, 1024, 4096, and 8192.
+- WHY_IT_MAY_HELP: A supported scalar square-root operation could remove one one-element vector operation and one V/S round trip per row or row batch.
+- WHY_IT_MAY_FAIL: The scalar square-root may lower to a slower sequence, may not be supported in this AICore context, or may differ numerically from the current vector `Sqrt` path.
+- ASCEND_FEASIBILITY: The installed route notes confirm one-element vector `Sqrt` and scalar reciprocal use, but do not establish a supported scalar square-root intrinsic. Confirm the CANN 8.5 device API and generated code before implementation.
+- UB/CORE/DMA_IMPACT: No additional UB buffer, core mapping, or GM transfer is intended; one scalar result remains live until the output `Muls`.
+- SYNC_IMPACT: Intended to remove the intermediate S-to-V, V-to-S, and return S-to-V crossings around the one-element `Sqrt`; preserve ordering from reduction completion through output scaling.
+- PRECISION_RISK: Scalar square-root rounding may differ; compare maximum and relative error with the task tolerance for every selected width.
+- DUPLICATE_CHECK: This changes only the RMS scalar path. It does not change the same-type copies, output store, irregular-row dispatch, or output affine operation in DTYPE-FP32-01 through DTYPE-FP32-04.
+- MINIMAL_OFAT_DIFF: Replace only the one-element vector square-root/readback sequence in the FP32 path with a verified scalar inverse-RMS calculation.
+- EXPECTED_LOCAL_PROBES: Verify the scalar API and generated code; run a CPU numerical comparison; then compile/link and task-domain correctness if Main authorizes a revision. Any performance probe still needs a fresh exclusive Main lease.
+- READINESS: NEEDS_MORE_EVIDENCE.
+
+## DTYPE-FP32-06: Batch Aligned Small-Row Reductions with Pattern AR
+
+- MECHANISM: In the existing aligned small-row FP32 batch path, replace the per-row Level 2 `ReduceSum` loop with one row-axis Pattern `ReduceSum` over the already contiguous batch.
+- BOTTLENECK: The contiguous batch path forms multiple rows together but still issues one `ReduceSum` call for each row before the grouped scalar handoff.
+- EXPECTED_SHAPES: Widths 64, 128, and 1024 across prefixes `[12]`, `[3,4]`, and `[1,2,6]`; the current 8-block split gives four two-row groups and four single-row groups.
+- WHY_IT_MAY_HELP: A single Pattern AR call may reduce vector instruction setup for each two-row group while retaining the existing grouped scalar phase.
+- WHY_IT_MAY_FAIL: Pattern setup and temporary storage may cost more than two Level 2 calls for these short rows; most blocks have only one row and cannot combine work.
+- ASCEND_FEASIBILITY: The local API guide documents Pattern AR reduction for aligned columns and A2/A3 use with inner padding enabled. Confirm the installed CANN 8.5 `ReduceSum` overload and required temporary-buffer size; these FP32 widths meet 32-byte row alignment.
+- UB/CORE/DMA_IMPACT: Needs a contiguous square-value view and Pattern temporary storage; no GM traffic or core mapping change is intended. Confirm the additional live UB footprint against the 192 KiB budget.
+- SYNC_IMPACT: Keep the existing completion point before reading per-row results; Pattern AR must not mix values between rows.
+- PRECISION_RISK: Reduction order may differ from the per-row Level 2 calls; validate each output against the task tolerance.
+- DUPLICATE_CHECK: DTYPE-FP32-03 adds a dispatch path for irregular widths. This study retains the existing aligned path and changes only the reduction call granularity/API.
+- MINIMAL_OFAT_DIFF: Change only the reductions for an already selected two-row aligned batch; retain batching, scalar math, output, and synchronization boundaries.
+- EXPECTED_LOCAL_PROBES: Confirm API and temporary-size constraints; compile/link; exact-shape correctness on the three widths and prefixes; then per-shape same-binary and paired probes only under an exclusive Main lease.
+- READINESS: NEEDS_MORE_EVIDENCE.
+
+## DTYPE-FP32-07: Cap Blocks for the Twelve-Row Small/Medium Shapes
+
+- MECHANISM: Cap the launched block count at four for FP32 widths 64, 128, and 1024 while leaving `availableCoreNum=8` as the caller-provided upper bound.
+- BOTTLENECK: With 12 rows and 8 blocks, four blocks own one row each and cannot enter the existing multi-row small FP32 path; four blocks own two rows.
+- EXPECTED_SHAPES: Widths 64, 128, and 1024 across prefixes `[12]`, `[3,4]`, and `[1,2,6]`.
+- WHY_IT_MAY_HELP: Four blocks would each own three rows, making the current contiguous batch path available to every block and potentially reducing block-level scalar-phase setup.
+- WHY_IT_MAY_FAIL: Halving active blocks may reduce parallel throughput; each core receives more work, and the current split may already balance these short rows better.
+- ASCEND_FEASIBILITY: The entry point treats `availableCoreNum` as a requested maximum and launches `min(rowCount, availableCoreNum)` blocks. Confirm that a shape-limited cap stays at or below the caller-provided core limit and does not alter tensor metadata or numerical behavior.
+- UB/CORE/DMA_IMPACT: No extra buffer or data movement; active blocks fall from eight to four and rows per active block rise from two/one to three.
+- SYNC_IMPACT: No new cross-core synchronization; existing per-block row ordering and local V/S dependencies remain.
+- PRECISION_RISK: None expected from assignment alone; verify outputs to catch row-offset or block-coverage mistakes.
+- DUPLICATE_CHECK: This changes only block allocation for already aligned small/medium shapes. It does not add an irregular-width batch path or change the per-row reduction primitive.
+- MINIMAL_OFAT_DIFF: Add one FP32 shape predicate for the block-count cap; leave all kernel math and local batch limits unchanged.
+- EXPECTED_LOCAL_PROBES: Static block-coverage model for 12 rows; compile/link; exact-shape correctness; then compare against 8 blocks with same-binary and paired runs under an exclusive Main lease.
+- READINESS: NEEDS_MORE_EVIDENCE.
