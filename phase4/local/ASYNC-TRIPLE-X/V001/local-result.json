@@ -1,0 +1,58 @@
+{
+  "route": "ASYNC-TRIPLE-X",
+  "revision": "V001",
+  "direct_parent": "R013-derived route seed",
+  "parent_source_sha": "ba1167079cf54277506e4b4fa192a91a036a6b8d992650e8532fb182c555bda0",
+  "parent_score": "N/A",
+  "single_hypothesis": "only MTE3 overlap",
+  "context_class": "HISTORICAL_DERIVED",
+  "files_changed": [
+    "phase4/workspaces/ASYNC-TRIPLE-X/V001/support/correctness_runner.cpp",
+    "phase4/workspaces/ASYNC-TRIPLE-X/V001/support/parent_device_main.asc",
+    "phase4/workspaces/ASYNC-TRIPLE-X/V001/support/parent_device_wrapper.cpp",
+    "phase4/local/ASYNC-TRIPLE-X/V001/submission.asc",
+    "phase4/local/ASYNC-TRIPLE-X/V001/submission.sha256",
+    "phase4/local/ASYNC-TRIPLE-X/V001/source-meta.json",
+    "phase4/local/ASYNC-TRIPLE-X/V001/diff.patch",
+    "phase4/local/ASYNC-TRIPLE-X/V001/local-result.json"
+  ],
+  "source_sha": "61223a486cca4c54e099f760e9f48a4cd2fbedb2645967b936fe80d2785e1e1a",
+  "compile": "PASS: server3 CANN 8.5.0.alpha002 bisheng device wrapper",
+  "link": "PASS: separate device .alink and parent control .alink",
+  "correctness": {
+    "status": "UNRESOLVED_SHARED_507035",
+    "candidate": {
+      "verdict": "NOT_ASSESSED",
+      "dtype": "FP32",
+      "rows": 1,
+      "width": 1024,
+      "blocks": 1,
+      "warmup": 0,
+      "repeats": 0,
+      "kernel": "rms_norm_bias_fp32_kernel",
+      "artifact_sha": "4977d915d26a6fcfff35db274c051064b2652e53718d649dcd46d8098ec3d2d7",
+      "exit_code": 3,
+      "error": "aclrtSynchronizeStream ACL error 507035; AIV vector core exception; D-cache/UB response non-zero"
+    },
+    "parent_control": {
+      "source_sha": "ba1167079cf54277506e4b4fa192a91a036a6b8d992650e8532fb182c555bda0",
+      "artifact_sha": "9c21d40b0aa1d3f88a1136a4ad97ba0918422a5e45dc2dc06f64c112aeda18ff",
+      "exit_code": 3,
+      "error": "aclrtSynchronizeStream ACL error 507035; AIV vector core exception; D-cache/UB response non-zero"
+    },
+    "coverage": "Only the requested one-case smoke was run; wider dtype/shape coverage was not run after the shared failure."
+  },
+  "local_probes": "NOT_RUN",
+  "measurement": "NOT_RUN",
+  "local_delta": "N/A: measurements not run; correctness unresolved because the direct parent returned the same 507035",
+  "load_quality": "LOAD_CONTAMINATED: VLLM/python processes occupied all 8 Ascend910B3 devices; HBM approximately 59-65 GiB; no timing was run",
+  "architecture_novelty": "Single declared MTE3 store overlap; at width 1024 the delayed previous-tile store branch is not reached",
+  "risks": [
+    "Candidate and direct parent both fail the same native ACL smoke with 507035",
+    "The shared failure does not isolate runner ABI from inherited kernel/runtime/device state",
+    "No performance conclusion is valid"
+  ],
+  "decision": "NEEDS_ONE_MORE_LOCAL",
+  "next_candidate_hypothesis": "None; do not create V002. Complete one compiler-managed ASC probe using this Route's main.asc/run_kernel wrapper, or isolate the shared 507035 with a known-good minimal device kernel or a clean device/runtime window.",
+  "cleanup": "No candidate kernel, main.asc, device_main.asc, CMakeLists.txt, wrapper, shared scheduler, or other Route source was modified. Candidate and parent artifacts were copied into local evidence; remote route-scoped build files were retained for audit."
+}

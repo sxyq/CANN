@@ -1,0 +1,394 @@
+COMMAND: ssh -o BatchMode=yes cann-server3 ... compile/link support/correctness_runner.cpp + V001 main_host.o against CANN 8.5 and attempt07 submission .alink
+ARTIFACT_SHA256
+1bf9fb477acb5f18e5f5f2353b7caec09e2391b872488e79857b303375dfb37d  /tmp/codex-async-triple-x-v001-build07/build-server3/submission_wrapper.alink
+RENAME_HOST_MAIN
+COMPILE_RUNNER
+/tmp/codex-async-triple-x-v001-correctness/support/correctness_runner.cpp:152:7: warning: ‘float {anonymous}::Quantize(float, {anonymous}::DType)’ defined but not used [-Wunused-function]
+  152 | float Quantize(float value, DType kind)
+      |       ^~~~~~~~
+RUNNER_COMPILE_EXIT=0
+LINK_RUNNER
+/usr/bin/ld: /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/lib64/libascendc_runtime.a(ascendc_runtime.cpp.o): undefined reference to symbol 'rtRegisterAllKernel'
+/usr/bin/ld: /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/lib64/libruntime.so: error adding symbols: DSO missing from command line
+collect2: error: ld returned 1 exit status
+RUNNER_LINK_EXIT=1
+BUILD_REMOTE_EXIT=1
+---REMOTE BUILD LOG END---
+RETRY 2: link with libruntime and libprofapi, then run one FP32 case if link succeeds
+COMMAND: g++ correctness_runner.o main_host.o -lascendc_runtime -lascendcl -lruntime -lprofapi -lregister -ltiling_api -lplatform -lunified_dlog -lgraph_base
+/usr/bin/ld: /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/lib64/libascendc_runtime.a(ascendc_runtime.cpp.o): undefined reference to symbol 'strcpy_s'
+/usr/bin/ld: /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/lib64/libc_sec.so: error adding symbols: DSO missing from command line
+LINK_EXIT=1
+collect2: error: ld returned 1 exit status
+REMOTE_EXIT=1
+RETRY 3: add libc_sec after runtime/profapi
+COMMAND: g++ correctness_runner.o main_host.o -lascendc_runtime -lascendcl -lruntime -lprofapi -lc_sec -lregister -ltiling_api -lplatform -lunified_dlog -lgraph_base
+/usr/bin/ld: warning: libascend_hal.so, needed by /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/lib64/libruntime.so, not found (try using -rpath or -rpath-link)
+/usr/bin/ld: /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/lib64/libascendc_runtime.a(ascendc_runtime.cpp.o): undefined reference to symbol 'mmGetTid'
+/usr/bin/ld: /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/lib64/libmmpa.so: error adding symbols: DSO missing from command line
+collect2: error: ld returned 1 exit status
+LINK_EXIT=1
+REMOTE_EXIT=1
+RETRY 4: add mmpa and driver HAL, retain explicit runtime dependencies
+COMMAND: g++ correctness_runner.o main_host.o CANN_GROUP
+/usr/bin/ld: /tmp/codex-async-triple-x-v001-correctness/main_host.o: in function `rms_norm_bias_fp32_kernel(unsigned int, void*, void*, unsigned char*, unsigned char*, unsigned char*, unsigned char*, unsigned char*, unsigned char*)':
+main.asc:(.text+0x40c): undefined reference to `AscPluginGenerator::LaunchAndProfiling(char const*, unsigned int, void*, void**, unsigned int, unsigned int)'
+/usr/bin/ld: main.asc:(.text+0x440): undefined reference to `AscPluginGenerator::GetHandleUnregisterInst()'
+/usr/bin/ld: /tmp/codex-async-triple-x-v001-correctness/main_host.o: in function `rms_norm_bias_fp16_kernel(unsigned int, void*, void*, unsigned char*, unsigned char*, unsigned char*, unsigned char*, unsigned char*, unsigned char*)':
+main.asc:(.text+0x4b4): undefined reference to `AscPluginGenerator::LaunchAndProfiling(char const*, unsigned int, void*, void**, unsigned int, unsigned int)'
+/usr/bin/ld: main.asc:(.text+0x4e8): undefined reference to `AscPluginGenerator::GetHandleUnregisterInst()'
+/usr/bin/ld: /tmp/codex-async-triple-x-v001-correctness/main_host.o: in function `rms_norm_bias_bf16_kernel(unsigned int, void*, void*, unsigned char*, unsigned char*, unsigned char*, unsigned char*, unsigned char*, unsigned char*)':
+main.asc:(.text+0x55c): undefined reference to `AscPluginGenerator::LaunchAndProfiling(char const*, unsigned int, void*, void**, unsigned int, unsigned int)'
+/usr/bin/ld: main.asc:(.text+0x590): undefined reference to `AscPluginGenerator::GetHandleUnregisterInst()'
+/usr/bin/ld: /tmp/codex-async-triple-x-v001-correctness/main_host.o: in function `_GLOBAL__sub_I_main.asc':
+main.asc:(.text.startup+0x10): undefined reference to `AscPluginGenerator::BindKernelRegisterFunc(void (*)(void*))'
+collect2: error: ld returned 1 exit status
+LINK_EXIT=1
+REMOTE_EXIT=1
+ASC CMake correctness smoke attempt 01
+COMMAND: ssh cann-server3: source CANN 8.5 env; cmake -S .../support -B .../support/build -DCMAKE_PREFIX_PATH=.../tikcpp/ascendc_kernel_cmake -DCMAKE_ASC_COMPILER=.../bisheng -DCMAKE_CXX_COMPILER=.../bisheng; cmake --build .../support/build --target async_triple_correctness -j2; run async_triple_correctness
+-- CMAKE_ASC_COMPILER: /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/bin/bisheng
+-- SOC_VERSION: Ascend910B3
+-- CMAKE_BUILD_TYPE: Release
+-- CMAKE_INSTALL_PREFIX: /tmp/codex-async-triple-x-v001-build07/support/out
+-- ASCEND_CANN_PACKAGE_PATH: /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux
+-- CMAKE_ASC_LLD_LINKER: CMAKE_ASC_LLD_LINKER-NOTFOUND
+CMake Warning at /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/tikcpp/ascendc_kernel_cmake/ASC_CMake/CMakeDetermineASCCompiler.cmake:57 (message):
+  CMAKE_INSTALL_PREFIX is not set.  Set to default value
+  /tmp/codex-async-triple-x-v001-build07/support/out.
+Call Stack (most recent call first):
+  CMakeLists.txt:22 (project)
+
+
+-- The CXX compiler identification is Clang 15.0.5
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/bin/bisheng - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /tmp/codex-async-triple-x-v001-build07/support/build
+CONFIGURE_EXIT=0
+[ 50%] Building ASC object CMakeFiles/async_triple_correctness.dir/correctness_runner.asc.o
+In file included from /tmp/codex-async-triple-x-v001-build07/support/correctness_runner.asc:4:
+/tmp/codex-async-triple-x-v001-build07/support/correctness_runner.cpp:94:5: error: no matching function for call to 'run_kernel'
+    run_kernel(xDevice, dataGroup, residualDevice, dataGroup, gammaDevice, vectorGroup,
+    ^~~~~~~~~~
+/tmp/codex-async-triple-x-v001-build07/support/../kernel.asc:396:6: note: candidate function not viable: no known conversion from 'float *' to 'uint8_t *' (aka 'unsigned char *') for 1st argument
+void run_kernel(GM_ADDR x, TensorGroupInfo info_x, GM_ADDR residual, TensorGroupInfo info_residual,
+     ^
+1 error generated.
+gmake[3]: *** [CMakeFiles/async_triple_correctness.dir/build.make:76: CMakeFiles/async_triple_correctness.dir/correctness_runner.asc.o] Error 1
+gmake[2]: *** [CMakeFiles/Makefile2:83: CMakeFiles/async_triple_correctness.dir/all] Error 2
+gmake[1]: *** [CMakeFiles/Makefile2:90: CMakeFiles/async_triple_correctness.dir/rule] Error 2
+gmake: *** [Makefile:124: async_triple_correctness] Error 2
+BUILD_EXIT=2
+SERVER3_EXIT=2
+ASC CMake correctness smoke attempt 02
+COMMAND: scp support runner files; cmake -S support -B support/build -DCMAKE_PREFIX_PATH=CANN/tikcpp/ascendc_kernel_cmake -DCMAKE_CXX_COMPILER=CANN/ccec_compiler/bin/bisheng -DCMAKE_ASC_COMPILER=CANN/ccec_compiler/bin/bisheng; cmake --build --target async_triple_correctness; run binary
+-- Configuring done
+-- Generating done
+CMake Warning:
+  Manually-specified variables were not used by the project:
+
+    CMAKE_ASC_LLD_LINKER
+
+-- Build files have been written to: /tmp/codex-async-triple-x-v001-build07/support/build
+
+CONFIGURE_EXIT=0
+Consolidate compiler generated dependencies of target async_triple_correctness
+[ 50%] Building ASC object CMakeFiles/async_triple_correctness.dir/correctness_runner.asc.o
+In file included from /tmp/codex-async-triple-x-v001-build07/support/correctness_runner.asc:4:
+/tmp/codex-async-triple-x-v001-build07/support/correctness_runner.cpp:94:5: error: no matching function for call to 'run_kernel'
+    run_kernel(xDevice, dataGroup, residualDevice, dataGroup, gammaDevice, vectorGroup,
+    ^~~~~~~~~~
+/tmp/codex-async-triple-x-v001-build07/support/../kernel.asc:396:6: note: candidate function not viable: no known conversion from 'float *' to 'uint8_t *' (aka 'unsigned char *') for 1st argument
+void run_kernel(GM_ADDR x, TensorGroupInfo info_x, GM_ADDR residual, TensorGroupInfo info_residual,
+     ^
+1 error generated.
+gmake[3]: *** [CMakeFiles/async_triple_correctness.dir/build.make:76: CMakeFiles/async_triple_correctness.dir/correctness_runner.asc.o] Error 1
+gmake[2]: *** [CMakeFiles/Makefile2:83: CMakeFiles/async_triple_correctness.dir/all] Error 2
+gmake[1]: *** [CMakeFiles/Makefile2:90: CMakeFiles/async_triple_correctness.dir/rule] Error 2
+gmake: *** [Makefile:124: async_triple_correctness] Error 2
+BUILD_EXIT=2
+SERVER3_EXIT=2
+ASC CMake correctness smoke attempt 03
+COMMAND: scp support files; cmake --build /tmp/codex-async-triple-x-v001-build07/support/build --target async_triple_correctness -j2; run binary
+e0990b0a2759d3ac6c3219a9de569251944c2cf156c1b08309e66a1b6b366a78  /tmp/codex-async-triple-x-v001-build07/support/correctness_runner.cpp
+08253e84873a4791e559985f295c497eb1ec7d647da3568c04fa8846fb3863a3  /tmp/codex-async-triple-x-v001-build07/support/CMakeLists.txt
+53:    CheckAcl(aclrtSetDevice(0), "aclrtSetDevice(0)");
+70:    uint8_t* xDevice = nullptr;
+71:    uint8_t* residualDevice = nullptr;
+72:    uint8_t* gammaDevice = nullptr;
+73:    uint8_t* biasDevice = nullptr;
+74:    uint8_t* outputDevice = nullptr;
+75:    CheckAcl(aclrtMalloc(reinterpret_cast<void**>(&xDevice), bytes, ACL_MEM_MALLOC_HUGE_FIRST), "aclrtMalloc(x)");
+76:    CheckAcl(aclrtMalloc(reinterpret_cast<void**>(&residualDevice), bytes, ACL_MEM_MALLOC_HUGE_FIRST), "aclrtMalloc(residual)");
+77:    CheckAcl(aclrtMalloc(reinterpret_cast<void**>(&gammaDevice), bytes, ACL_MEM_MALLOC_HUGE_FIRST), "aclrtMalloc(gamma)");
+78:    CheckAcl(aclrtMalloc(reinterpret_cast<void**>(&biasDevice), bytes, ACL_MEM_MALLOC_HUGE_FIRST), "aclrtMalloc(bias)");
+79:    CheckAcl(aclrtMalloc(reinterpret_cast<void**>(&outputDevice), bytes, ACL_MEM_MALLOC_HUGE_FIRST), "aclrtMalloc(output)");
+80:    CheckAcl(aclrtMemcpy(xDevice, bytes, xHost.data(), bytes, ACL_MEMCPY_HOST_TO_DEVICE), "copy x H2D");
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /tmp/codex-async-triple-x-v001-build07/support/build
+CONFIGURE_EXIT=0
+Consolidate compiler generated dependencies of target async_triple_correctness
+[ 50%] Building ASC object CMakeFiles/async_triple_correctness.dir/correctness_runner.asc.o
+/tmp/asc_plugin_binary_register_code-e345ae.c:3:10: fatal error: 'vector' file not found
+#include <vector>
+         ^~~~~~~~
+1 error generated.
+cceld: ccec ReturnCode: 1
+cceld: ExecutionFailed: 0
+cceld: ErrMsg: 
+/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/bin/llvm-objcopy: error: '/tmp/cce_all_link-6a6969.o': No such file or directory
+cceld: ccec ReturnCode: 1
+cceld: ObjcopyExecutionFailed: 0
+cceld: ObjcopyErrMsg: 
+ld.lld: error: cannot open /tmp/cce_all_link-6a6969.o: No such file or directory
+cceld: ccec ReturnCode: 1
+cceld: RelocatedLinkedExecutionFailed: 0
+cceld: RelocatedLinkedObjcopyErrMsg: 
+/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/bin/llvm-objcopy: error: '/tmp/cce_relocated_linked_static_object-cc5d2d.occeld: ccec ReturnCode: 1
+cceld: LocalFixedExecutionFailed: 0
+cceld: LocalFixedErrMsg: 
+': The file was not recognized as a valid object file
+ld.lld: error: target emulation unknown: -m or at least one .o file required
+cceld: Linker ReturnCode: 1
+cceld: ExecutionFailed: 0
+cceld: ErrMsg: 
+bisheng: error: linker command failed with exit code 1 (use -v to see invocation)
+gmake[3]: *** [CMakeFiles/async_triple_correctness.dir/build.make:76: CMakeFiles/async_triple_correctness.dir/correctness_runner.asc.o] Error 1
+gmake[2]: *** [CMakeFiles/Makefile2:83: CMakeFiles/async_triple_correctness.dir/all] Error 2
+gmake[1]: *** [CMakeFiles/Makefile2:90: CMakeFiles/async_triple_correctness.dir/rule] Error 2
+gmake: *** [Makefile:124: async_triple_correctness] Error 2
+BUILD_EXIT=2
+SERVER3_EXIT=2
+ASC CMake correctness smoke attempt 04: add all four HCC include paths to CXX flags for generated ASC registration code
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /tmp/codex-async-triple-x-v001-build07/support/build
+CONFIGURE_EXIT=0
+Consolidate compiler generated dependencies of target async_triple_correctness
+[ 50%] Building ASC object CMakeFiles/async_triple_correctness.dir/correctness_runner.asc.o
+/tmp/asc_plugin_binary_register_code-52c6ed.c:3:10: fatal error: 'vector' file not found
+#include <vector>
+         ^~~~~~~~
+1 error generated.
+cceld: ccec ReturnCode: 1
+cceld: ExecutionFailed: 0
+cceld: ErrMsg: 
+/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/bin/llvm-objcopy: error: '/tmp/cce_all_link-6ed96d.o': No such file or directory
+cceld: ccec ReturnCode: 1
+cceld: ObjcopyExecutionFailed: 0
+cceld: ObjcopyErrMsg: 
+ld.lld: error: cannot open /tmp/cce_all_link-6ed96d.o: No such file or directory
+cceld: ccec ReturnCode: 1
+cceld: RelocatedLinkedExecutionFailed: 0
+cceld: RelocatedLinkedObjcopyErrMsg: 
+/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/bin/llvm-objcopy: error: '/tmp/cce_relocated_linked_static_object-446557.o': The file was not recognized as a valid object file
+cceld: ccec ReturnCode: 1
+cceld: LocalFixedExecutionFailed: 0
+cceld: LocalFixedErrMsg: 
+ld.lld: error: target emulation unknown: -m or at least one .o file required
+cceld: Linker ReturnCode: 1
+cceld: ExecutionFailed: 0
+cceld: ErrMsg: 
+bisheng: error: linker command failed with exit code 1 (use -v to see invocation)
+gmake[3]: *** [CMakeFiles/async_triple_correctness.dir/build.make:76: CMakeFiles/async_triple_correctness.dir/correctness_runner.asc.o] Error 1
+gmake[2]: *** [CMakeFiles/Makefile2:83: CMakeFiles/async_triple_correctness.dir/all] Error 2
+gmake[1]: *** [CMakeFiles/Makefile2:90: CMakeFiles/async_triple_correctness.dir/rule] Error 2
+gmake: *** [Makefile:124: async_triple_correctness] Error 2
+BUILD_EXIT=2
+SERVER3_EXIT=2
+ASC CMake correctness smoke attempt 05: global CXX standard/system include dirs for generated registration compile
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /tmp/codex-async-triple-x-v001-build07/support/build
+CONFIGURE_EXIT=0
+77-
+78-# Object files for target async_triple_correctness
+Consolidate compiler generated dependencies of target async_triple_correctness
+[ 50%] Building ASC object CMakeFiles/async_triple_correctness.dir/correctness_runner.asc.o
+/tmp/asc_plugin_binary_register_code-0d6050.c:3:10: fatal error: 'vector' file not found
+#include <vector>
+         ^~~~~~~~
+1 error generated.
+cceld: ccec ReturnCode: 1
+cceld: ExecutionFailed: 0
+cceld: ErrMsg: 
+/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/bin/llvm-objcopy: error: '/tmp/cce_all_link-d3f929.o': No such file or directory
+cceld: ccec ReturnCode: 1
+cceld: ObjcopyExecutionFailed: 0
+cceld: ObjcopyErrMsg: 
+ld.lld: error: cannot open /tmp/cce_all_link-d3f929.o: No such file or directory
+cceld: ccec ReturnCode: 1
+cceld: RelocatedLinkedExecutionFailed: 0
+cceld: RelocatedLinkedObjcopyErrMsg: 
+cceld: ccec ReturnCode: 1
+cceld: LocalFixedExecutionFailed: 0
+cceld: LocalFixedErrMsg: 
+/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/bin/llvm-objcopy: error: '/tmp/cce_relocated_linked_static_object-000fdf.o': The file was not recognized as a valid object file
+ld.lld: error: target emulation unknown: -m or at least one .o file required
+cceld: Linker ReturnCode: 1
+cceld: ExecutionFailed: 0
+cceld: ErrMsg: 
+bisheng: error: linker command failed with exit code 1 (use -v to see invocation)
+gmake[3]: *** [CMakeFiles/async_triple_correctness.dir/build.make:76: CMakeFiles/async_triple_correctness.dir/correctness_runner.asc.o] Error 1
+gmake[2]: *** [CMakeFiles/Makefile2:83: CMakeFiles/async_triple_correctness.dir/all] Error 2
+gmake[1]: *** [CMakeFiles/Makefile2:90: CMakeFiles/async_triple_correctness.dir/rule] Error 2
+gmake: *** [Makefile:124: async_triple_correctness] Error 2
+BUILD_EXIT=2
+SERVER3_EXIT=2
+ASC CMake correctness smoke attempt 06: forward HCC includes to generated host registration compiler
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /tmp/codex-async-triple-x-v001-build07/support/build
+CONFIGURE_EXIT=0
+76:	/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/bin/bisheng --npu-arch=dav-2201 --npu-soc=Ascend910B3 $(ASC_DEFINES) $(ASC_INCLUDES) -Xaicore-start -O3 -std=c++17 -Xaicore-end -Xhost-start -fPIC -O2 -Xhost-end $(ASC_FLAGS) -MD -MT CMakeFiles/async_triple_correctness.dir/correctness_runner.asc.o -MF CMakeFiles/async_triple_correctness.dir/correctness_runner.asc.o.d -o CMakeFiles/async_triple_correctness.dir/correctness_runner.asc.o -c -x asc /tmp/codex-async-triple-x-v001-build07/support/correctness_runner.asc
+77-
+78-# Object files for target async_triple_correctness
+Consolidate compiler generated dependencies of target async_triple_correctness
+[ 50%] Building ASC object CMakeFiles/async_triple_correctness.dir/correctness_runner.asc.o
+/tmp/asc_plugin_binary_register_code-b21d26.c:3:10: fatal error: 'vector' file not found
+#include <vector>
+         ^~~~~~~~
+cceld: ccec ReturnCode: 1
+cceld: ExecutionFailed: 0
+cceld: ErrMsg: 
+cceld: ccec ReturnCode: 1
+cceld: ObjcopyExecutionFailed: 0
+cceld: ObjcopyErrMsg: 
+1 error generated.
+/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/bin/llvm-objcopy: error: '/tmp/cce_all_link-54b281.o': No such file or directory
+ld.lld: error: cannot open /tmp/cce_all_link-54b281.o: No such file or directory
+cceld: ccec ReturnCode: 1
+cceld: RelocatedLinkedExecutionFailed: 0
+cceld: RelocatedLinkedObjcopyErrMsg: 
+cceld: ccec ReturnCode: 1
+cceld: LocalFixedExecutionFailed: 0
+cceld: LocalFixedErrMsg: 
+/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/bin/llvm-objcopy: error: '/tmp/cce_relocated_linked_static_object-09ff3c.o': The file was not recognized as a valid object file
+ld.lld: error: target emulation unknown: -m or at least one .o file required
+cceld: Linker ReturnCode: 1
+cceld: ExecutionFailed: 0
+cceld: ErrMsg: 
+bisheng: error: linker command failed with exit code 1 (use -v to see invocation)
+gmake[3]: *** [CMakeFiles/async_triple_correctness.dir/build.make:76: CMakeFiles/async_triple_correctness.dir/correctness_runner.asc.o] Error 1
+gmake[2]: *** [CMakeFiles/Makefile2:83: CMakeFiles/async_triple_correctness.dir/all] Error 2
+gmake[1]: *** [CMakeFiles/Makefile2:90: CMakeFiles/async_triple_correctness.dir/rule] Error 2
+gmake: *** [Makefile:124: async_triple_correctness] Error 2
+BUILD_EXIT=2
+SERVER3_EXIT=2
+CXX wrapper correctness smoke attempt 07
+COMMAND: scp support files; cmake -S support -B support/build-cxx -DCMAKE_CXX_COMPILER=CANN8.5/bisheng; cmake --build --target async_triple_correctness; run binary
+-- The CXX compiler identification is Clang 15.0.5
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/bin/bisheng - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /tmp/codex-async-triple-x-v001-build07/support/build-cxx
+CONFIGURE_EXIT=0
+[ 50%] Building CXX object CMakeFiles/async_triple_correctness.dir/correctness_runner_host.cpp.o
+[100%] Linking CXX executable async_triple_correctness
+ld.lld: error: CMakeFiles/async_triple_correctness.dir/correctness_runner_host.cpp.o is incompatible with elf64-littleaarch64
+cceld: Linker ReturnCode: 1
+cceld: ExecutionFailed: 0
+cceld: ErrMsg: 
+bisheng: error: linker command failed with exit code 1 (use -v to see invocation)
+gmake[3]: *** [CMakeFiles/async_triple_correctness.dir/build.make:97: async_triple_correctness] Error 1
+gmake[2]: *** [CMakeFiles/Makefile2:83: CMakeFiles/async_triple_correctness.dir/all] Error 2
+gmake[1]: *** [CMakeFiles/Makefile2:90: CMakeFiles/async_triple_correctness.dir/rule] Error 2
+gmake: *** [Makefile:124: async_triple_correctness] Error 2
+BUILD_EXIT=2
+SERVER3_EXIT=2
+Native ACL device-artifact correctness smoke attempt 08
+SOURCE_SHA256
+cbf78cad0a78684a0f400da5025a575608799c4381f1e3c628aa052b3b28f0c8  /tmp/codex-async-triple-x-v001-build07/support/correctness_runner.cpp
+DEVICE_ARTIFACT_SHA256
+4977d915d26a6fcfff35db274c051064b2652e53718d649dcd46d8098ec3d2d7  /tmp/codex-async-triple-x-v001-build07/build-server3/device_wrapper.alink
+/tmp/codex-async-triple-x-v001-build07/build-server3/device_wrapper.alink: ELF 64-bit LSB executable, *unknown arch 0x1029* version 1 (SYSV), statically linked, not stripped
+COMPILE_COMMAND
+COMPILE_EXIT=0
+RUN_COMMAND
+SMOKE dtype=FP32 rows=1 width=1024 blocks=1 warmup=0 repeats=0 kernel=rms_norm_bias_fp32_kernel artifact=/tmp/codex-async-triple-x-v001-build07/build-server3/device_wrapper.alink
+CALL aclrtLaunchKernel blockDim=1 argsSize=48
+aclrtSynchronizeStream failed: aclError=507035 detail=EZ9999: Inner Error!
+EZ9999[PID: 330023] 2026-09-24-01:13:21.602.308 (EZ9999):  The error from device(chipId:0, dieId:0), serial number is 91, there is an exception of aivec error, core id is 4, error code = 0, dump info: pc start: 0x12c041200130, current: 0x12c041200194, vec error info: 0x3313b68a91, mte error info: 0x5303000069, ifu error info: 0x2ffffe0037440, ccu error info: 0x3198bcb800000000, cube error info: 0, biu error info: 0, aic error mask: 0x6500020bd00028c, para base: 0xffffe0037448.[FUNC:ProcessStarsCoreErrorInfo][FILE:device_error_core_proc.cc][LINE:332]
+        TraceBack (most recent call last):
+       The extend info: errcode:(0, 0x8000, 0) errorStr: When the D-cache reads and writes data to the UB, the response value returned by the bus is a non-zero value. fixp_error0 info: 0x3000069, fixp_error1 info: 0x53, fsmId:1, tslot:5, thread:0, ctxid:0, blk:0, sublk:0, subErrType:4.[FUNC:ProcessStarsCoreErrorInfo][FILE:device_error_core_proc.cc][LINE:352]
+       Kernel task happen error, retCode=0x31, [vector core exception].[FUNC:PreCheckTaskErr][FILE:davinci_kernel_task.cc][LINE:1502]
+       AIV Kernel happen error, retCode=0x31.[FUNC:GetError][FILE:stream.cc][LINE:1303]
+       [AIC_INFO] after execute:args print end[FUNC:GetError][FILE:stream.cc][LINE:1303]
+       [DFX_INFO]Aicore kernel execute failed, device_id=0, stream_id=581, report_stream_id=581, task_id=0, flip_num=0, fault kernel_name=rms_norm_bias_fp32_kernel, fault kernel info ext=none, program id=0, hash=11407810289523168255.[FUNC:GetError][FILE:stream.cc][LINE:1303]
+       rtStreamSynchronize execute failed, reason=[vector core exception][FUNC:FuncErrorReason][FILE:error_message_manage.cc][LINE:53]
+       synchronize stream failed, runtime result = 507035[FUNC:ReportCallError][FILE:log_inner.cpp][LINE:162]
+
+RUN_EXIT=3
+SERVER3_EXIT=3
+POST-SMOKE NPU LOAD SNAPSHOT (no more kernel execution)
+2026-09-24T01:17:22Z
++------------------------------------------------------------------------------------------------+
+| npu-smi 25.0.rc1.1               Version: 25.0.rc1.1                                           |
++---------------------------+---------------+----------------------------------------------------+
+| NPU   Name                | Health        | Power(W)    Temp(C)           Hugepages-Usage(page)|
+| Chip                      | Bus-Id        | AICore(%)   Memory-Usage(MB)  HBM-Usage(MB)        |
++===========================+===============+====================================================+
+| 0     910B3               | OK            | 151.6       41                0    / 0             |
+| 0                         | 0000:C1:00.0  | 31          0    / 0          59956/ 65536         |
++===========================+===============+====================================================+
+| 1     910B3               | OK            | 142.9       41                0    / 0             |
+| 0                         | 0000:C2:00.0  | 32          0    / 0          60006/ 65536         |
++===========================+===============+====================================================+
+| 2     910B3               | OK            | 138.8       43                0    / 0             |
+| 0                         | 0000:81:00.0  | 31          0    / 0          59949/ 65536         |
++===========================+===============+====================================================+
+| 3     910B3               | OK            | 145.6       42                0    / 0             |
+| 0                         | 0000:82:00.0  | 31          0    / 0          59951/ 65536         |
++===========================+===============+====================================================+
+| 4     910B3               | OK            | 90.8        39                0    / 0             |
+| 0                         | 0000:01:00.0  | 0           0    / 0          59187/ 65536         |
++===========================+===============+====================================================+
+| 5     910B3               | OK            | 91.3        36                0    / 0             |
+| 0                         | 0000:02:00.0  | 0           0    / 0          59877/ 65536         |
++===========================+===============+====================================================+
+| 6     910B3               | OK            | 94.7        39                0    / 0             |
+| 0                         | 0000:41:00.0  | 0           0    / 0          59876/ 65536         |
++===========================+===============+====================================================+
+| 7     910B3               | OK            | 123.9       42                0    / 0             |
+| 0                         | 0000:42:00.0  | 13          0    / 0          65532/ 65536         |
++===========================+===============+====================================================+
++---------------------------+---------------+----------------------------------------------------+
+| NPU     Chip              | Process id    | Process name             | Process memory(MB)      |
++===========================+===============+====================================================+
+| 0       0                 | 89395         | VLLMWorker_TP            | 56434                   |
++===========================+===============+====================================================+
+| 1       0                 | 91055         | VLLMWorker_TP            | 56434                   |
++===========================+===============+====================================================+
+| 2       0                 | 92813         | VLLMWorker_TP            | 56435                   |
++===========================+===============+====================================================+
+| 3       0                 | 94498         | VLLMWorker_TP            | 56435                   |
++===========================+===============+====================================================+
+| 4       0                 | 2999855       | VLLMEngineCor            | 55664                   |
++===========================+===============+====================================================+
+| 5       0                 | 89602         | VLLMWorker_TP            | 56354                   |
++===========================+===============+====================================================+
+| 6       0                 | 91228         | VLLMWorker_TP            | 56355                   |
++===========================+===============+====================================================+
+| 7       0                 | 3458196       | python                   | 61942                   |
++===========================+===============+====================================================+
+SNAPSHOT_EXIT=0
+
+=== Exact native ACL smoke commands and result ===
+Runner source SHA-256: cbf78cad0a78684a0f400da5025a575608799c4381f1e3c628aa052b3b28f0c8
+Candidate device artifact SHA-256: 4977d915d26a6fcfff35db274c051064b2652e53718d649dcd46d8098ec3d2d7
+Environment: CANN 8.5.0.alpha002; Ascend910B3; dav-2201; server3=hwnput3
+Compile command: g++ -std=c++17 -O2 -Wall -Wextra -I/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/include /tmp/codex-async-triple-x-v001-build07/support/correctness_runner.cpp -L/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/lib64 -Wl,-rpath,/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/lib64 -Wl,--no-as-needed -lascendcl -o /tmp/codex-async-triple-x-v001-build07/support/native/correctness_runner
+Compile exit: 0
+Run command: /tmp/codex-async-triple-x-v001-build07/support/native/correctness_runner /tmp/codex-async-triple-x-v001-build07/build-server3/device_wrapper.alink
+Run exit: 3
+Result: aclrtSynchronizeStream returned ACL error 507035 (AIV vector core exception; D-cache/UB response non-zero). No timing was run.

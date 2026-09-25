@@ -1,0 +1,27 @@
+--- parent_kernel.asc
++++ submission.asc
+@@ -266,10 +266,23 @@
+                 const uint32_t nextCount = static_cast<uint32_t>(
+                     ((width_ - nextOffset) < kTileLength) ? (width_ - nextOffset) : kTileLength);
+                 CopyInOutputData(row, nextOffset, nextCount);
++            }
++            if (tile > 0) {
++                const uint64_t previousOffset = (tile - 1) * kTileLength;
++                const uint32_t previousCount = static_cast<uint32_t>(
++                    ((width_ - previousOffset) < kTileLength)
++                        ? (width_ - previousOffset)
++                        : kTileLength);
++                CopyOut(row, previousOffset, previousCount);
+             }
+             ComputeOutputTile(count, inverseRms);
+-            CopyOut(row, tileOffset, count);
+         }
++        if (tileCount > 0) {
++            const uint64_t lastOffset = (tileCount - 1) * kTileLength;
++            const uint32_t lastCount = static_cast<uint32_t>(
++                ((width_ - lastOffset) < kTileLength) ? (width_ - lastOffset) : kTileLength);
++            CopyOut(row, lastOffset, lastCount);
++        }
+     }
+ 
+ private:
