@@ -198,3 +198,223 @@ Classification: **DEFER_TO_REDUCE（MAIN-2 仲裁 2026-09-25：reduction topolog
 3. **H3 前置小实验**（属 TRACK-B 证据补齐，可与等待并行，不改内核）：确认 EnQue/DeQue 在 CANN 8.5.0 / dav-2201 工具链的配对行为（文档+最小编译级验证），并向 Main 确认与 ASYNC-TRIPLE-X 的 MTE2/MTE3 边界。完成前 H3 不升级。
 4. **重复性事项交 Main**：H2 ↔ BATCH-RESIDENT-X（参数驻留主题）、H4 ↔ R31A/R002（消输入重读主题）、H5 ↔ REDUCE-INVSCALE-X（归约主题）三组边界需 Main 裁定路线归属，Route Agent 不自行推进被标记 DUPLICATE 的条目。
 5. 本路线不安排当日设备计时（窗口预算 2/2 已用尽）；所有 EXPECTED_LOCAL_PROBES 待新会话按统一协议（device events、warmup≥10、in-process、交错 P/C、robust 统计）执行。
+
+---
+
+## LIFETIME MAP VERIFICATION (2026-09-25)
+
+对象：V003 `phase4/local/UB-LIVENESS-X/V003/submission.asc`（SHA256 `2eb9b5d087267a54fb84f8734847ecb68cf94b967102693c0d150fd57d6da7cd`，本轮开头与结尾各核验一次，与 worktree `phase4/workspaces/UB-LIVENESS-X/submission.asc` 一致）。逐行重算全部预留、峰值与模型缺口；三列配置均为 alias=1（`UB_LIVENESS_ALIAS=1` 默认）。`bufTile = max(tile_,512)`（:244），`slot = Align32(bufTile·e)`（:245），`tileFBytes = Align32(bufTile·4)`（:246）。
+
+### 表 A — InitBuffer 预留逐行清单（:253–:261）
+
+| # | Buffer | InitBuffer 行 | 尺寸表达式 | fp32 d4096 t2048（计划 full） | fp16 d4096 t2048（计划 full） | fp32 d32768 t2048（计划 chunk） | 活性判定 |
+|---|---|---|---|---:|---:|---:|---|
+| 1 | bufParam_ | :254 | `Align32(pBytes)`；pBytes :253 = full 时 `2·Align32(4d)`，chunk 时 `2·tileFBytes` | 32768 | 32768 | 16384 | 部分活跃：`Run()` :181 强制 `fullParam_=false` → 运行期只按 chunk 触碰 16384（d4096 两列）；d32768 计划即 chunk，全部触碰 |
+| 2 | bufTmp_ | :255 | `kReduceWorkBytes = 8*1024`（:44） | 8192 | 8192 | 8192 | **死**：`reduceWork_` 仅 :267 赋值、零读取；`ReduceSum` 仅 import :28、零调用；pass1 归约为标量 acc :446–449 |
+| 3 | bufSum_ | :256 | 固定 64 | 64 | 64 | 64 | **死**：`reduceDst_` 仅 :266 赋值、零读取（:415 仅为注释） |
+| 4 | bufX_ | :257 | `nX·slot`，nX = depth2?2:1（:249） | 16384 | 8192 | 16384 | 活跃（INGEST；alias=1 时 emit 借用 :281–284）；任一瞬时只 1 个 slot 有值（fp32 8192 / fp16 4096） |
+| 5 | bufRes_ | :258 | `nR·slot`（:250） | 16384 | 8192 | 16384 | 活跃（pass1/pass2 fuse 读；narrow pass2 以 res0_ 作参数 staging :324） |
+| 6 | bufOut_ | :259 | `nX·slot`（与 bufX_ 同尺寸） | 16384 | 8192 | 16384 | alias=1 **死**（句柄 :281–284 重绑到 x-slot，:493 `alias_ ? xs : out0_` 取 xs；Get :272–273 后零触碰）；alias=0 才活跃 |
+| 7 | bufScratch_ | :261 | `Align32(2·max(tileF,2048))` = `2·tileFBytes`（:260） | 16384 | 16384 | 16384 | 活跃（formF_ :275 + mulF_ :277；fp32 pass2 emit :490 两段都读写） |
+| — | bufAnchor_, bufPool_ | 仅声明 :502，无 InitBuffer | — | 0 | 0 | 0 | 无预留（可随 H1 清理声明，零字节影响） |
+| — | **合计** | | | **106560** | **81984** | **90176** | |
+
+计划配置来源：三列均为 `EstBytes` 计划循环 :210–239 首档命中（fp32 d4096 `EstBytes(true,true,alias)=90112 ≤ 188416` → t=2048/full/d2；fp16 d4096 = 73728 → 同；fp32 d32768 full 档 319488 落选 → chunk 档 73728 → t=2048/chunk/d2）。
+
+### 表 B — 峰值 / 死预留 / 模型缺口（修正后）
+
+| 配置（alias=1） | 实际预留 | 真实同时活跃峰值 | 可证死预留 | 相对 184K(188416) 余量 | EstBytes 模型值 | 模型缺口 |
+|---|---:|---:|---:|---:|---:|---:|
+| fp32 d4096 t2048 计划 full | 106560 ✓ | **49152**（原图 49216 → 修正） | **41024** ✓ | 81856 ✓ | 90112 ✓ | **+16448** ✓ = bufOut_ 16384 + bufSum_ 64 |
+| fp16 d4096 t2048 计划 full | **81984**（原图 90112 → 修正） | **36864**（原图 41216 → 修正） | 32832 ✓ | **106432**（原图 98304 → 修正） | **73728**（原图「同构」→ 给出确值） | **+8256** = bufOut_ 8192 + bufSum_ 64 |
+| fp32 d32768 t2048 计划 chunk | 90176 ✓ | **49152**（原图 ~49216 → 修正） | 24640 ✓ | 98240 ✓ | 73728 ✓ | +16448 = bufOut_ 16384 + bufSum_ 64 |
+
+**41024 死预留分解（逐项引证，d4096 fp32）**：bufTmp_ 8192（:255，死因见表 A#2）+ bufSum_ 64（:256，表 A#3）+ bufOut_ 16384（:259，表 A#6）+ bufParam_ 运行期闲置 16384 = **41024**。参数闲置成因：计划期 `fullParam_=true` → `gElems_ = Align32(4d)/4 = 4096`（:247）→ gammaF_=[0,16384)、biasF_=[16384,32768)（:264–265）；运行期 :181 强制 chunk → `LoadParamChunk` :486 每 tile 只写 gamma [0,8192) 与 bias [16384,24576)（n≤2048 float），故 [8192,16384) 与 [24576,32768) 共 16384 B 运行期零触碰。**计划 full / 运行 chunk 的配置错配就是这 16384 B 的唯一成因**（d32768 列计划即 chunk，无此洞 → 死预留仅 24640）。
+
+**峰值 49152 构成（d4096 fp32，pass2 fuse 时刻最宽）**：xs 8192 + rs 8192 + formF_ 8192 + mulF_ 8192 + gamma 块 8192 + bias 块 8192 = 49152（≈预算 26.1%；xs/rs 各只计 1 个瞬时活跃 slot）。fp16 列 slot 减半（4096×2）→ 36864。
+
+**模型缺口机理**：`EstBytes` alias 分支 :194–197 = `Align32(param+reduce) + Align32(pool)`，其中 param/reduce/tileF/4·slot 各对应 bufParam_/bufTmp_/bufScratch_/bufX_+bufRes_（**模型 4 slot vs 实际 6 slot**——:257/:258/:259 三个 `nX·slot` 全部分配），模型漏 bufSum_ 64 与 alias 下的 bufOut_ → 缺口恒等于 `16384(或8192) + 64`。三列全部对上，缺口构成一致。
+
+**逐项裁定**（对既有 UB_LIFETIME_MAP 的核验结论）：
+- 41024 死预留分解 ✓ 确认（数值与成因全对）。
+- 90112 / 106560 / +16448 / 81856 / 98240（fp32 两列）✓ 确认。
+- 「alias1 与 alias0 预留差 = 0（bufOut_ 无条件分配 :259）」✓ 确认——这是 V003 本地对照无方向差的结构性解释。
+- 「fp32 t=4096 模型 139264 vs 实际 172096」✓ 复算确认（d4096 计划 full 与 d32768 计划 chunk 两形状同值）。
+- 「模型放行更大 tile 时实际可能越过 192KB(196608)」✓ 用具体配置坐实：d=8192 fp32 若直接加 4096 档而不修模型 → `EstBytes(4096, full, d2t)=172032 ≤ 188416` 放行，实际 = 65536(param)+8192(tmp)+64(sum)+4×32768(x/res/out/scratch)=**204864 > 196608** → 越过硬件 UB。**模型对齐必须先于加档**（H1 (c) 先于 (d) 的硬证据）。
+- **修正 E1**：峰值 49216 → **49152**（原值把 bufSum_ 64 同时计入「死」与「活跃」；reduceDst_ 零读取）。26–27% 占比结论不变（26.1%）。
+- **修正 E2**：fp16 d4096 行三处——预留 90112 → **81984**（90112 系 fp32 EstBytes 误植；逐项 32768+8192+64+8192+8192+8192+16384）；峰值 41216 → **36864**；余量 98304 → **106432**；模型值给出确数 73728、缺口 8256。死预留 32832 ✓ 原值正确。
+- **修正 E3**：H1 EXPECTED_SHAPES「106560 → 约 65520（-41040）」→ **65536（-41024）**（106560-41024 精确值；65520/41040 系算错 16 B）。且注意：该 65536 是「t 保持 2048 时」的回收后预留；H1 实际放行后 d4096 fp32 会选 t=4096 → 预留 131072（见 H1 计划表）。
+- 备注（非错误）：表 A#1 的「洞」按运行期描述正确；按计划期几何 gamma/bias 分区本身无洞（[0,16384)∪[16384,32768) 铺满），闲置来自 chunk 触碰范围 < 分区尺寸——既有文字「计划/运行配置错配产生洞」已准确表达此义。
+
+---
+
+## H1 MINIMAL OFAT DIFF PLAN (2026-09-25) — PLAN ONLY, DO NOT APPLY UNTIL JUDGE RETURNS
+
+相对 V003（SHA `2eb9b5d…`）。单一概念：**预算按实际分配清单与实际活跃集计费 → 解封更大 tile**。四组编辑共同实现这一概念（与本文件 H1 条目的 (a)(b)(c)(d) 一致）；不得夹带同步、参数驻留、u 驻留、标量→向量改写。`kUbBudgetBytes = 184*1024`（:45）不变，数学路径不变。
+
+### 编辑 1 — 删除两个死 InitBuffer（无条件）
+
+- 删 `:255 pipe_.InitBuffer(bufTmp_, kReduceWorkBytes);`
+- 删 `:256 pipe_.InitBuffer(bufSum_, 64);`
+- 配套删 `:266 reduceDst_ = bufSum_.Get<float>();` 与 `:267 reduceWork_ = bufTmp_.Get<float>();`（Get 未分配 TBuf 不可用，必须同删）；`:503` TBuf 声明去掉 `bufTmp_, bufSum_`；`:506` 成员去掉 `reduceDst_, reduceWork_`；`:415` 注释同步改写。`:28` 的 `using AscendC::ReduceSum` 可留（纯 import，零字节影响）。
+- 字节效果：全 dtype −8256（8192+64）。
+
+### 编辑 2 — bufOut_ 按 alias 模式条件分配
+
+```text
+:259  pipe_.InitBuffer(bufOut_, nX * slotBytes_);        →  if (!alias_) { InitBuffer(bufOut_, nX*slotBytes_); }
+:272–273  out0_ = bufOut_.Get<T>(); out1_ = …            →  移入同一 if (!alias_) 分支
+:281–284  if (alias_) { out0_ = x0_; out1_ = x1_; }      →  保持不变
+:493   outStage = alias_ ? xs : (flip ? out1_ : out0_)   →  不变
+```
+
+- alias=1（默认构建）：省 nX·slot（d4096 fp32 = 16384；fp16 = 8192）。
+- alias=0（对照构建）：bufOut_ 仍分配，路径不变——条件分支必须在两种构建下都编译并跑通（battery 见第 3 节）。
+- 这是 V003 :281–284 重绑从未兑现的字节承诺首次进入预留。
+
+### 编辑 3 — 参数预留对齐运行期（消 16384 洞）+ EstBytes 改为实际清单镜像
+
+运行期事实链：`Run()` :181 无条件 `fullParam_=false` → `LoadParamChunk` :486 每 tile chunk 写入、`EmitAt` 分支 :397–398 取基址；`LoadFullParams` :287 零调用。故计划期 full 配置是纯浪费：
+
+- `:247` → `gElems_ = tileFBytes_ / 4;`（去 full 三目）
+- `:253` → `int32_t pBytes = 2 * tileFBytes_;`（去 full 三目；chunk 分支原样）
+- 计划循环 :210–239：删两个 `full=true` 分支尝试（:215–226），保留原 chunk 顺序的两个分支（:227 d2=true → :233 d2=false），去掉 `fullParam_` 维度；`:206 fullParam_ = false` 与 `:181` 保留（运行期保证，注释不动）；`:308/:397/:398` 分支与 `LoadFullParams`/`EmitAt` 死代码**不动**（后者是 H2/BATCH 的原材料）。
+- `EstBytes`（:186–200）重写为与 :244–:261 实际分配逐项相等：
+
+```text
+EstBytes(tile, elemBytes, d2, alias):            // 去 dim、paramFull 两形参
+    bufTile = tile < 512 ? 512 : tile            // 镜像 :244（原式用裸 tile，t<512 低估）
+    slot   = Align32(bufTile * elemBytes)        // 镜像 :245
+    tileF  = Align32(bufTile * 4)                // 镜像 :246
+    n      = d2 ? 2 : 1                          // 镜像 :249–250
+    b = 2*tileF              // bufParam_（chunk，镜像 :253）
+      + 2*n*slot             // bufX_ + bufRes_（:257–258）
+      + 2*tileF              // bufScratch_（:260，tileF≥2048 恒等）
+      + (alias ? 0 : n*slot) // bufOut_ 仅 !alias（:259）
+    return Align32(b)        // bufTmp_/bufSum_ 已除；各 32B 对齐项，Align32 为恒等
+```
+
+- 镜像性质：模型 == 实际分配清单 → 模型 ≤ 188416 ⟺ 实际 ≤ 188416 < 196608（192KB），**新 tile 档下 192KB 由构造保证**（原模型在 t=4096 d8192 fp32 full 档会放行 172032 而实际 204864，见核验节——该反例是 (c) 先于 (d) 的硬性顺序依据）。
+
+### 编辑 4 — tileChoices 加档
+
+`:205` → `const int32_t tileChoices[] = {8192, 4096, 2048, 1024, 512, 256, 128, 64};`（大值在前；循环对每档先试 d2=true 再 d2=false，保持原顺序语义）。`c > dim_` 时 `tt = dim_`（:211）——d=4096 在 8192 档即得 tt=4096。
+
+### 新档预留核算（post-H1，alias=1，模型==实际）
+
+预算：内部 188416（184K）/ 硬件参照 196608（192KB）。分解 = param(2·tileF) + x(n·slot) + res(n·slot) + scratch(2·tileF)。
+
+| 形状 | 循环命中 | n(d2) | param | x | res | scratch | 合计 | ≤188416 | ≤196608 | 每行 tile 往返/pass（前→后） |
+|---|---|---|---:|---:|---:|---:|---:|---|---|---|
+| **fp32 d=4096** | c=8192→tt=4096，d2=true 命中 | 2 | 32768 | 32768 | 32768 | 32768 | **131072** | ✓ (slack 57344) | ✓ (slack 65536) | 2 → **1** |
+| **fp16 d=4096** | c=8192→tt=4096，d2=true 命中 | 2 | 32768 | 16384 | 16384 | 32768 | **98304** | ✓ (90112) | ✓ (98304) | 2 → **1** |
+| **fp32 d=8192** | c=8192 d2t=262144✗ / d2f=196608✗ → c=4096 d2t 命中 | 2 | 32768 | 32768 | 32768 | 32768 | **131072** | ✓ | ✓ | 4 → **2** |
+| **fp16 d=8192** | c=8192 d2t=196608✗ → d2f 命中 | 1 | 65536 | 16384 | 16384 | 65536 | **163840** | ✓ (24576) | ✓ (32768) | 4 → **1** |
+
+要点：
+- 四个必证配置全部 **≤ 188416 < 196608**；最紧的 fp16 d8192（163840）距内部预算仍余 24576。
+- fp32 d≥8192 永不落 t=8192：d2=true 262144、d2=false 196608 都越过 188416（后者恰等于 192KB 硬件值，内部 8KB 余量把它拦在预算内——这是 :45 留余量的直接用途）→ 落 t=4096。
+- fp16/bf16（e=2）d≥8192 落 t=8192 / d2=false（单 slot，串行发射下无深度损失）。
+- 补充行（探针/用例形状）：fp32 d=16384 → t=4096 d2t 131072（8→4）；fp32 d=32768 → t=4096 d2t 131072（16→8）；fp16 d=32768 → t=8192 d2f 163840（16→4）；d≤2048 全部 t 不变（空白对照）。
+- alias=0 对照：加 n·slot——fp32 d4096 t4096 d2t = 147456 ✓；fp16 d8192 t8192 d2f = 180224 ✓（两对照在新档下仍过预算，可编可跑）。
+- 参数：t=dim 形状上 2·tileF ≡ 2·dimF，与原计划 full 同字节；t<dim 形状参数预留随 chunk 缩小（如 d4096 t2048：32768→16384）。
+
+### 明确不做（OFAT 边界）
+
+不动 :93/:116/:129 等任何 PipeBarrier 与同步原语；不动 FuseU/SumSq/emit 数学；不启用 LoadFullParams（参数驻留归 BATCH）；不启用 ReduceSum（归约归 REDUCE）；不动 u 跨 pass（H4）；不改行并行分块与 core 映射；不改 `kUbBudgetBytes`。
+
+---
+
+## H1 CORRECTNESS BATTERY (2026-09-25) — SPEC FOR V004, RUNS ONLY AFTER JUDGE RETURN + MAIN AUTHORISATION
+
+前提：本轮无设备运行。以下为 H1 实现后必须一次通过的用例集与不变量（沿用 V003 的 8 形状 + alias0 对照骨架，V003 全部 9 项均 bad=0 可直接对照）。golden 与容差按 `ops-precision-standard`。
+
+### A. 回归组（V003 原 8 形状 + alias0 对照；改后配置与改前相同者即空白对照）
+
+| # | 形状 | H1 前 (t, d2, 计划 full) | H1 后 (t, d2) | 该形状在 H1 下变与不变 / 覆盖什么 |
+|---|---|---|---|---|
+| A1 | FP32 1×64 | 64, d2t, full | 64, d2t | tile 不变（空白对照）；**param 布局变**：pBytes 512→4096、gElems 64→512（bufTile=512 下限效应）→ 验证 chunk 分区 |
+| A2 | FP32 4×256 | 256, d2t, full | 256, d2t | tile 不变；param pBytes 2048→4096、gElems 256→512 → chunk 分区 + 多行 |
+| A3 | FP16 8×1000 | 1000, d2t, full | 1000, d2t | **tile/d2/param 布局全不变**（t=dim 时 2·dimF≡2·tileF）→ tile 决策空白对照；预留仍降 12288（8192+64+out4032，死字节回收本身）；非 2 次幂 tile |
+| A4 | BF16 3×777 | 777, d2t, full | 777, d2t | tile/d2/param 布局全不变（空白对照）；预留仍降 11392；narrow 量化路径（:354–363） |
+| A5 | FP16 5×64 | 64, d2t, full | 64, d2t | tile 不变；param 512→4096、gElems 64→512；narrow + 小 tile |
+| A6 | FP32 2×4096 | 2048, d2t, full | **4096, d2t** | **tile 2048→4096**：fp32 新最大 tile、单 tile/行、param 洞路径消失 |
+| A7 | BF16 4×128 | 128, d2t, full | 128, d2t | tile 不变；param 1024→4096、gElems 128→512 |
+| A8 | FP16 3×32768 | 2048, **d2t**, chunk | **8192, d2=false** | **tile 与深度双变**：史上首次执行 d2=false（x1_≡x0_ :269）+ t=8192 narrow emit |
+| A9 | alias0 对照 FP32 4×256 | 256, d2t（bufOut_ 恒分配） | 256, d2t（bufOut_ **条件**分配） | 验证编辑 2 的 !alias_ 分支在旧 tile 下原样可用 |
+
+### B. 新路径组（H1 加档 / 条件分配 / 新布局专门覆盖）
+
+| # | 形状 | H1 后配置 | 覆盖的新增路径 |
+|---|---|---|---|
+| B1 | FP32 2×8192 | t=4096, d2t | c=8192 档两深度均落选（d2t 262144 / d2f 196608）→ c=4096 命中；fp32 双 tile/pass（t<dim 多 tile 重写参数基址） |
+| B2 | FP16 2×8192 | t=8192, **d2=false** | fp16 达到 t=8192 的唯一通路；单 slot 全行单 tile |
+| B3 | BF16 2×8192 | t=8192, d2=false | n=8192 的 narrow 逐元素量化环（:354–363）与 emit 标量环 |
+| B4 | FP32 1×4097 | t=4097（=dim）, d2t | 新表下 dim≤8192 时首档 `tt=dim`（:211）→ 单 tile/行 n=4097：非 2 次幂 tile，slot/tileF=Align32(16388)=**16416** 上取整（原表此形状为 t=2048 三 tile） |
+| B4b | FP32 1×10001 | t=4096, d2t | t=4096 的**真尾块**：dim>8192 且 fp32 8192 档落选 → 3 tiles、末 tile n=1809（byteLen 7236 非 32B 对齐）→ DataCopyPad pad 在新 tile 尾部重验 |
+| B5 | FP16 1×9000 | t=8192, d2=false | t=8192 尾块 n=808（byteLen 1616，非 32B 对齐）→ pad 路径在新 tile 下重验 |
+| B6 | FP32 1×8193 | t=4096, d2t | 多 tile + 末 tile n=1 组合（3 tiles） |
+| B7 | alias0 编译 FP32 2×4096 | t=4096, d2t, **alias=0** | 新档下 bufOut_ 真实分配路径（预留 147456 ≤ 188416）：out0_/out1_ 独立写出 |
+| B8 | FP32 2×16384 / 2×32768 / FP16 2×16384 | 4096/d2t、4096/d2t、8192/d2f | 计时探针主/对照形状的正确性前置（协议要求 correctness first） |
+
+### C. 不变量（每形状逐条成立）
+
+1. **输出正确**：bad=0（golden 对比，按 ops-precision-standard 容差），FP32/FP16/BF16 三 dtype 全覆盖。
+2. **模型==实际（静态即可核验，无需设备）**：对每个命中配置，`EstBytes(选定 t, d2, alias)` == `Σ InitBuffer 实际尺寸`（编辑 1–3 后镜像相等）；且 Σ ≤ 188416 与 Σ ≤ 196608 同时成立。t<512 形状（A1/A2/A5/A7）专门核对 bufTile=512 下限两侧相等。
+3. **参数分区**：`gElems_ = tileFBytes/4`；gamma 区 [0,tileF)、bias 区 [tileF,2·tileF)；LoadParamChunk 每 tile 写 n ≤ tile ≤ tileF/4 floats 不越 2·tileF；emit :490 读 biasF_ 基址（fullParam_ 恒 false 分支）。t=dim 形状（A1–A7、B4）验证单 tile 铺满，t<dim 多 tile 形状（A8、B1、B4b、B5、B6、B8）验证同基址反复重写与读取一致。
+4. **d2=false 数据流**：x1_≡x0_（:269）后，flip 交替的覆写只发生在 fuse 消费完当前 tile 之后（CopyIn :466 → fuse :471 → 下一 tile 再 CopyIn）；A8/B2/B3 验证。
+5. **alias emit 安全**：outStage=xs（:493）只在 fuse 读完 xs 后被 FromFloatSeq 覆写（:494）；单 tile/行（A6/B2）时整行缓冲一次覆写——顺序未改，但形状未测过，必须实跑。
+6. **与 V003 输出一致**：未变配置形状（A1–A5、A7）上 V004 输出与 V003 完全一致（数学路径零改动；任何差异=实现泄漏信号）。
+7. **无越界**：dav-2201 编译/链接 PASS，运行无 `ub address out of bounds`（B 组最紧配置 fp16 t=8192 d2f 163840、alias0 B7 147456）。
+8. **别名双分支**：UB_LIVENESS_ALIAS=1 与 =0 两个构建各自编译并全量跑 A+B（=0 至少 A9+B7）；alias1 预留须严格小于 alias0（差 = n·slot，首次兑现的字节差）。
+
+### D. 通过判据
+
+A+B 全部 bad=0、C1–C8 全部成立 → 才进入本地计时（同协议：device events、warmup≥10、in-process、交错 P/C）；任何一条失败按 correctness 修复处理，不得顺手改同步或数学（执行契约 §E 边界）。
+
+---
+
+## DUPLICATE SEARCH — DEAD-RESERVATION / LIVE-SET-BUDGET DONORS (2026-09-25)
+
+检索范围与命中：`phase4/control/idea-pool-29-routes.md`（29 行全表）、`phase4/control/architecture-evidence-map.md`（全部主题行）、`cann/phase4/archive/**`（retired-routes、historical-branches）与 `cann-next6/UB-LIVENESS-X/phase4/archive/**` 全文（关键词 dead reserv / live set / reclaim / unused InitBuffer / EstBytes）、`phase4/research/{REDUCE,ASYNC,ALIGN,BATCH}/next-hypotheses.md`、本路线 workspace 自档。
+
+**检索结论：无任何先前路线/假设实现过「预算模型镜像实际 InitBuffer 清单 + 死预留回收 + 按活跃集选 tile」这一组合机制。四条近邻记录如下；idea-pool 与 evidence-map 为显式阴性结果。**
+
+### 记录 D1 — R030（最近的历史近邻，档案实读）
+
+- **SOURCE_ROUTE**: FULL-R030-WIDE-PARAM-REUSE（phase3 实验，档案 `phase4/archive/historical-branches-20260924/exp__full-r030-wide-param-reuse-v001/…/结果.md`）
+- **MECHANISM**: 缩减专用角色静态工作区——R030 分支 tile 6912→4096 元素、retained-y 改 half，D=16384 FP16 静态估算 236 KiB→160 KiB，目标是清除既有 `ub address out of bounds`（507035）
+- **OLD_CONTEXT**: 多模宽参数谱系（R029 宽缓存分支共存），事后缩配以通过容量上限
+- **CURRENT_CONTEXT**: UB-LIVENESS-X fresh 两遍内核：EstBytes↔实际分配清单镜像、删死预留（tmp/sum/out/参数洞）、再放行 4096/8192 档
+- **WHY_ORTHOGONAL**: R030 砍的是**活跃**专用角色的尺寸（缩脚）；H1 删的是**从未被触碰**的预留并修正估算器。R030 不含任何估算器对齐或死字节判定
+- **WHY_NOT_DUPLICATE**: 机制不同（活跃角色减配 vs 死预留回收 + 模型对齐 + tile 解封的因果链）；R030 无 tile 选择预算模型；异谱系且早已归档，无活跃占位
+
+### 记录 D2 — R005（同主题不同机制）
+
+- **SOURCE_ROUTE**: FULL-R005-LARGE-TILE（idea-pool R005 行，owners MID-X / WIDE-X 均 PARKED；档案 `independent__full-r005-large-tile-i001`）
+- **MECHANISM**: 直接放大 tile 字节（large-tile 独立实现），表内 `still_unexplored` 仅剩「tile autotune per D bucket」
+- **OLD_CONTEXT**: 独立大 tile 谱系
+- **CURRENT_CONTEXT**: H1 只在模型与实际逐项相等之后加 4096/8192 档；tile 选择由对齐后的预算判定决定
+- **WHY_ORTHOGONAL**: R005 不释放峰值活跃集、不修正估算器；本内核原估算器在 d8192 fp32 t=4096 计划 full 档会放行 172032 而实际 204864（>196608）——直接移植 R005 会越界，这正是 H1 的 (c) 必须先于 (d)
+- **WHY_NOT_DUPLICATE**: 主题相邻（更大 tile）但性能杠杆的来源不同（死预留+模型对齐解锁 vs 直接加档）；无活跃 owner，不构成占位
+
+### 记录 D3 — 本路线自档（直系续篇，非重复）
+
+- **SOURCE_ROUTE**: UB-LIVENESS-X V001 `external-idea-record.md` + `WHY_NOT_DUPLICATE.md`（worktree 自档）
+- **MECHANISM**: phase-role UB 池复用 INGEST→EMIT（V001 起实现 alias，:281–284 重绑）
+- **OLD_CONTEXT**: V001 以「峰值活跃集收缩」立论，但 V001–V003 的 bufOut_ 始终无条件分配 → alias 实际节省 0 B，从未进入 tile 决策
+- **CURRENT_CONTEXT**: H1 让该字节承诺首次兑现（条件分配 + 模型镜像 + tile 档）
+- **WHY_ORTHOGONAL**: V001 改的是字节的角色归属；H1 改的是**计费口径**（预留/估算按实际活跃）
+- **WHY_NOT_DUPLICATE**: 同路线直接父系机制的收尾步骤（V003 架构的下一步），非外来重复
+
+### 记录 D4 — 活跃路线邻近主张（显式排除）
+
+- **BATCH-RESIDENT-X**（`research/BATCH-RESIDENT-X/next-hypotheses.md`）：自建 `kUbBudgetBytes=96KB` 行批量选择器、参数条带驻留**花** UB 换驻留——方向相反（增加活跃区）；参数驻留主题已由 MAIN-2 仲裁归 BATCH（本文件 H2 → DUPLICATE·DEFER_TO_BATCH）。H1 的参数改动仅把预留缩到运行期实际触碰范围，**运行期读写行为逐字节不变**，不触碰驻留语义 → 与 BATCH 正交。
+- **ALIGN-TAIL-X**（:54）：为其自身 padded 布局「重算 192KiB 预算」——是自身 buffer 数量变化后的重算，无死预留判定、无估算器镜像 → 阴性。
+- **ASYNC-TRIPLE-X**（:554）：静态盘点自身 InitBuffer 常量（90208 B / 69728 B）——现状盘点，非计费机制 → 阴性。
+- **REDUCE-INVSCALE-X**（:312）：tile 由自身 UB 预算常量选取——无死预留概念 → 阴性。
+- **idea-pool-29-routes.md**：29 行无 dead-reservation / live-set-budget 条目（R013 双缓冲反而**增加**峰值占用，见本路线 WHY_NOT_DUPLICATE 表）→ **显式阴性**。
+- **architecture-evidence-map.md**：最近主题为「UB layout = MIXED（pad 已证、layout sweep thin）」与「queue depth = MIXED」，无死预留/活跃集计费主题 → **显式阴性**。
+- **phase4 archives 全文 grep**（cann 主仓 + UB worktree 两套 archive）：`EstBytes` / dead-reserv / live-set 字样零命中（EstBytes 仅存在于本路线内核系）→ **显式阴性**。
+
+仲裁依据复核：`phase4/control/consolidation-20260924.md` :175–176 已记录 UB 只保留 buffer lifetime / aliasing / peak UB footprint / live-set budgeting，且 UB H1 TRUE_LIVE_SET_BUDGET 为已批准 backlog、Judge 返回前不得开工——本节结论与该仲裁一致，无需提交新的归属争议。
