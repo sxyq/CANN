@@ -1,0 +1,38 @@
+ROUTE=EXT-ASCEND-X
+REVISION=V001
+STATUS=CORRECTNESS_FAIL_FIX_4_STOPPED_MAIN_REVIEW
+RECORDED_AT=2026-09-24T06:08:00+08:00
+HOST_BUILD=hwnput3
+BUILD_DIR=/home/data4t2/lelinfeng/phase4-review-repro/EXT-ASCEND-X-V001/build3
+BUILD_LOG=/home/data4t2/lelinfeng/phase4-review-repro/EXT-ASCEND-X-V001/logs/server3_outlife_build_v001_t.log
+BUILD_RESULT=CONFIGURE_PASS,EXT_DEVICE_PASS,EXT_SUBMISSION_PASS,FULL_LINK_PASS
+BUILD_SOURCE_SHA256=bd2b18cedf25ee4cb51a63690a1e2e4f48a9fa18766674f7401aa24b56072b8a
+RUNNER_SOURCE=phase4/local/EXT-ASCEND-X/V001/local_full.asc
+RUNNER_SOURCE_SHA256=56163104edd986446b4124f6fda021b98038e13e76add0fbb44504e89572b1c2
+REASON=FIX_2 scalar alignment, FIX_3 scalar/reduction synchronization, and FIX_4 VECOUT lifetime were each declared before edit, built, and rerun; FIX_4 did not restore correctness.
+CORRECTNESS_COMMAND=EXT_DIAG_MATRIX=1 EXT_DTYPE=0 ./build3/ext_correctness
+CORRECTNESS_OUTPUT=phase4/local/EXT-ASCEND-X/V001/logs/outlife_correctness_v001.log
+CORRECTNESS_RESULT=FAIL; FIX_4 final run had 27/27 FP32 failures, aclrtSynchronizeStream=0 and aclGetRecentErrMsg=<null> in recorded cases; MATCHED_RATIO=0.00390625..0.0234375; MAX_ABS_ERROR=0.000390887..8.6827e+11; MAX_ALLOWED=0.0021183..0.00237422.
+DIAGNOSTIC_MATRIX=FP32,D=256/4096/8192,rows=1/2/3,availableCoreNum=1/2/3,27 cases including row and UB tails
+TILING_OBSERVED=rows1 uses rowFactor1; rows2/cores1 uses rowFactor2; rows3/cores1 uses rowFactor3; rows3/cores2 uses rowFactor2; rows3/cores3 uses rowFactor1.
+SYNC_DIAGNOSTIC_BUILD_LOG=phase4/local/EXT-ASCEND-X/V001/logs/server3_correctness_sync_build_v001_q.log
+SUBMISSION_SOURCE_SHA256=235ea3b6ce3bccf12a254c8f95187a288737d2d848757decedf9baae68c650f6
+RUNNER_SOURCE_SHA256=56163104edd986446b4124f6fda021b98038e13e76add0fbb44504e89572b1c2
+DECLARATION_SOURCE_META=phase4/local/EXT-ASCEND-X/V001/source-meta.json
+DECLARATION_STATUS=FAIL_FIX_4_STOPPED_MAIN_REVIEW
+TIMING=NOT_STARTED
+PROBES=NOT_STARTED
+LOAD_QUALITY=LOAD_CONTAMINATED
+DEVICE_STATE=8 NPUs have existing VLLM/python processes; HBM approximately 90-99 percent occupied in the recorded sample.
+FINAL_SUBMISSION_SHA256=bd2b18cedf25ee4cb51a63690a1e2e4f48a9fa18766674f7401aa24b56072b8a
+FINAL_RUNNER_SHA256=56163104edd986446b4124f6fda021b98038e13e76add0fbb44504e89572b1c2
+FINAL_DECLARATION_SHA256=5ae0f4561023ada40b5a56f77c6925bffd780445d60504200e4d6f8ea18af92d
+COMPILE_LINK=server3:hwnput3:Ascend910B3:EXT_DEVICE_PASS,EXT_SUBMISSION_PASS,EXT_CORRECTNESS_FULL_LINK_PASS
+FIX_2=APPLIED_AND_FAILED;submission_sha256=3d1e6bfc8fb8d3c31ddc1210d28189377dd892903bae452cc647051ef1a4b42e;build_log=phase4/local/EXT-ASCEND-X/V001/logs/server3_scalar_align_build_v001_r.log;run_log=phase4/local/EXT-ASCEND-X/V001/logs/scalar_align_correctness_v001.log
+FIX_3=APPLIED_AND_FAILED;submission_sha256=cec5b465122dcd387c661db2ab1b31fef717bd0ef544726649341f2c4c84b378;build_log=phase4/local/EXT-ASCEND-X/V001/logs/server3_reduce_sync_build_v001_s.log;run_log=phase4/local/EXT-ASCEND-X/V001/logs/reduce_sync_correctness_v001.log
+FIX_4=APPLIED_AND_FAILED;submission_sha256=bd2b18cedf25ee4cb51a63690a1e2e4f48a9fa18766674f7401aa24b56072b8a;build_log=phase4/local/EXT-ASCEND-X/V001/logs/server3_outlife_build_v001_t.log;run_log=phase4/local/EXT-ASCEND-X/V001/logs/outlife_correctness_v001.log
+SINGLE_CHANGE_AUDIT=PASS_SCOPE_PRESERVED;dynamic blockFactor/rowFactor/ubFactor hypothesis retained;no other route/shared scheduler changes;no timing/performance/online changes
+RISKS=Correctness remains unresolved; earlier correctness_sync_diag_v001.log retains 507035 UB-alignment evidence; final FIX_4 output mismatch persisted with sync status 0; LOAD_CONTAMINATED limits any performance interpretation
+DECISION=STOP_FOR_MAIN_REVIEW;Main chooses LOCAL_REJECTED or PARK
+V002=NOT_CREATED
+ONLINE_SUBMISSION=NOT_DONE

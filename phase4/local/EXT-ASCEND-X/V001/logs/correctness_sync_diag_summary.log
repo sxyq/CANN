@@ -1,0 +1,32 @@
+ROUTE=EXT-ASCEND-X
+REVISION=V001
+STATUS=FAIL_SYNC_DIAGNOSTIC_STOPPED
+HOST=hwnput3
+SOC=Ascend910B3
+DEVICE=0
+LOAD_QUALITY=LOAD_CONTAMINATED
+LOAD_SAMPLE=Eight NPUs have VLLM/python processes; HBM roughly 90-99 percent used; AICore varied by device and moment.
+SUBMISSION_SOURCE_SHA256=235ea3b6ce3bccf12a254c8f95187a288737d2d848757decedf9baae68c650f6
+RUNNER_SOURCE_SHA256=56163104edd986446b4124f6fda021b98038e13e76add0fbb44504e89572b1c2
+DECLARATION_SHA256_BEFORE_THIS_SUMMARY_UPDATE=ca14f8b34fc2cff30784bd396484330904863888470d7525ce723fbfd8cf8d06
+BUILD_COMMAND=cmake --build build3 --target ext_correctness -j2
+BUILD_RESULT=PASS, [100%] Built target ext_correctness, EXT_CORRECTNESS_BUILD_EXIT=0
+BUILD_LOG=phase4/local/EXT-ASCEND-X/V001/logs/server3_correctness_sync_build_v001_q.log
+RUN_COMMAND=EXT_DIAG_MATRIX=1 EXT_DTYPE=0 ./build3/ext_correctness
+RUN_LOG=phase4/local/EXT-ASCEND-X/V001/logs/correctness_sync_diag_v001.log
+RUN_RESULT=FAIL, CORRECTNESS_SYNC_DIAG_EXIT=1
+MATRIX=FP32; D=256/4096/8192; rows=1/2/3; availableCoreNum=1/2/3; 27 combinations; no timing.
+RUNTIME_ERROR=aclrtSynchronizeStream returned 507035 in rowFactor>1 cases; aclGetRecentErrMsg reports AIV vector exception and "The UB address accessed by the VEC instruction is not aligned."
+D256_ROWS1_CORE1=sync=0, matched_ratio=0.0273438, max_abs_error=2.16395, max_allowed=0.0021183, blockFactor=1,rowFactor=1,ubFactor=256
+D256_ROWS1_CORE2=sync=0, matched_ratio=0.0273438, max_abs_error=2.03376, max_allowed=0.0021183, blockFactor=1,rowFactor=1,ubFactor=256
+D256_ROWS1_CORE3=sync=0, matched_ratio=0.0273438, max_abs_error=2.16133, max_allowed=0.0021183, blockFactor=1,rowFactor=1,ubFactor=256
+D256_ROWS3_CORE1=sync=507035, matched_ratio=0.0169271, max_abs_error=2.41558, max_allowed=0.00237422, blockFactor=1,rowFactor=3,ubFactor=256
+D256_ROWS3_CORE2=sync=507035, matched_ratio=0.0098877, max_abs_error=2.40929, max_allowed=0.00236953, blockFactor=2,rowFactor=2,ubFactor=256
+D256_ROWS3_CORE3=sync=0, matched_ratio=0.0247396, max_abs_error=2.39214, max_allowed=0.00237422, blockFactor=3,rowFactor=1,ubFactor=256
+D4096_ROWS1_CORE1=sync=0, matched_ratio=0.0229492, max_abs_error=2.31979, max_allowed=0.00230357, blockFactor=1,rowFactor=1,ubFactor=4096
+D4096_ROWS1_CORE2=sync=0, matched_ratio=0.0229492, max_abs_error=2.33181, max_allowed=0.00230357, blockFactor=1,rowFactor=1,ubFactor=4096
+D4096_ROWS1_CORE3=sync=0, matched_ratio=0.0229492, max_abs_error=2.33181, max_allowed=0.00230357, blockFactor=1,rowFactor=1,ubFactor=4096
+D4096_ROWS3_CORE1=sync=507035, matched_ratio=0.00992839, max_abs_error=2.41078, max_allowed=0.00236953, blockFactor=1,rowFactor=3,ubFactor=3744
+D4096_ROWS3_CORE2=sync=507035, matched_ratio=0.00992839, max_abs_error=2.41078, max_allowed=0.00236953, blockFactor=2,rowFactor=2,ubFactor=4096
+D4096_ROWS3_CORE3=sync=0, matched_ratio=0.023112, max_abs_error=2.39799, max_allowed=0.00236953, blockFactor=3,rowFactor=1,ubFactor=4096
+CONCLUSION=PIPE_ALL did not restore correctness. Row/core grouping associates with 507035 on rowFactor>1; independent numerical mismatches remain even when sync status is 0. Stop for Main Review; no correctness claim and no timing/probes.
