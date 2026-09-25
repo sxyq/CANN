@@ -10,11 +10,21 @@
 
 证据索引：当前实现为 `phase4/local/R31A/V021/submission.asc::ProcessWideFp32CachedRows` 及其中的 `Load`/`Store`；历史声明和结果为 `phase4/local/R31A/V019/source-meta.json`、`phase4/local/R31A/V019/local-result.json`、`phase4/local/R31A/V020/local-result.json`、`phase4/local/R31A/V021/diff.patch`。API 依据为 server3 CANN 8.5.0.alpha002 的 `kernel_operator_vec_unary_intf.h`、`kernel_operator_vec_binary_intf.h`，以及本机 Ascend C 技能参考 `api-datacopy.md`。
 
+## Target API 与代码生成核验
+
+server3 的 CANN 8.5.0.alpha002、`dav-2201` 编译路径使用 `dav_c220` API 实现。实际头文件确认：
+
+- `Rsqrt` Level 2 接口接受 `count`；`dav_c220` 对 FP32 路径调用 `vrsqrt`。当前 `Sqrt` 对应 `vsqrt`。替换后仍需 `GetValue(0)` 取回归一化标量，也仍保留 V/S 同步；可确认被省去的是标量倒数步骤，不能把 V/S 往返计作已省。
+- `FusedMulAdd` Level 2 支持 FP32，目标实现调用 `vmadd`，语义为 `dst = src0 * dst + src1`。`FusedMulAdd(valueLocal, gammaLocal, biasLocal, valid)` 与当前 affine 运算的操作数位置一致。
+- `DataCopy` 的 GM↔UB 路径调用 `copy_gm_to_ubuf` / `copy_ubuf_to_gm`；FP32 `DataCopyPad` 路径调用 `copy_gm_to_ubuf_align_b32` / `copy_ubuf_to_gm_align_b32`。这两种 API 走不同的目标 intrinsic 路径。所列 tile 长度和元素偏移均为 8 个 FP32 的倍数；实际 GM 基址是否 32-byte 对齐仍未由现有记录证明。
+
+实现依据：`/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/asc/include/basic_api/kernel_operator_vec_unary_intf.h`、`/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/asc/include/basic_api/kernel_operator_vec_binary_intf.h`；目标实现位于 `/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ascendc/include/basic_api/impl/dav_c220/kernel_operator_vec_unary_impl.h`、`/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ascendc/include/basic_api/impl/dav_c220/kernel_operator_vec_binary_impl.h`、`/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ascendc/include/basic_api/impl/dav_c220/kernel_operator_data_copy_impl.h`。本轮只核验已安装声明与目标实现映射，没有为候选变更生成新对象或反汇编；实际编译产物的指令序列仍需目标编译确认。当前证据仅细化既有三项，没有显示新的独立瓶颈，因此不追加第四项。
+
 ## 1. FP32 RMS 标量倒平方根
 
 **MECHANISM**：在 FP32 wide CachedRows 路径中，以单元素 `AscendC::Rsqrt` 替换 `Sqrt` 后再做标量 `1.0f / sqrtValue` 的序列。保持平方和归约、epsilon、输出 `Muls`、其他 dtype 路径不动。
 
-**BOTTLENECK**：每行最后一个归约完成后，归一化标量必须串行生成才能开始第二遍输出。当前路径包含单元素 Sqrt、V/S 取值和标量倒数运算。
+**BOTTLENECK**：每行最后一个归约完成后，归一化标量必须串行生成才能开始第二遍输出。当前路径包含单元素 Sqrt、V/S 取值和标量倒数运算；目标 `Rsqrt` 可替代平方根加标量倒数，但仍需取回单元素结果和 V/S 同步。
 
 **EXPECTED_SHAPES**：FP32 rows=2、blocks=1，D=32768 与 D=24576；两种宽度覆盖相同 dispatch 分支，目标形状多一个 7680-element 输出 tile。
 
@@ -42,11 +52,11 @@
 
 **CROSS_ROUTE_OVERLAP**：R31A 内与 V019 tile 宽度、V020 输入预取、V021 输出等待位置不同。跨路线重叠未核实；通用 FP32 归一化或倒平方根研究可能同域，需由 Main 比对路线声明。
 
-**FALSIFICATION_TEST**：先查看 DAV_2201 生成结果是否实际使用 `Rsqrt`，并确认标量取值和同步依赖链有减少；若仍展开为等价 Sqrt 加倒数，或新增搬运/同步抵消变化，则静态机制不成立。获准后，对 D=32768、24576 做精确输出正确性；超出既有容差即否决。性能效果只在 Main 授权且 exact-shape same-binary 通过后判定。
+**FALSIFICATION_TEST**：获准生成目标对象后，确认路径落到 `vrsqrt`，且不再包含原标量倒数；V/S 取值与同步预期保留，不作为收益。若对象没有减少该算术步骤，或 D=32768、24576 任一精确输出超出既有容差，则否决。性能效果只在 Main 授权且 exact-shape same-binary 通过后判定。
 
 **EXPECTED_INFORMATION_GAIN**：中。一次目标编译可确认目标架构的指令映射；正确性可界定近似误差，能分别回答“是否缩短标量链”和“误差是否可接受”。
 
-**LIKELY_GLOBAL_UPSIDE**：低至中。收益限于走该 FP32 wide CachedRows 分支且标量归一化链占明显比例的调用；不影响其他 dtype 或窄形状。
+**LIKELY_GLOBAL_UPSIDE**：低。收益仅来自该 FP32 wide CachedRows 分支的一次标量倒数；V/S 往返和窄形状、其他 dtype 均不变。
 
 ## 2. FP32 affine FusedMulAdd
 
@@ -80,7 +90,7 @@
 
 **CROSS_ROUTE_OVERLAP**：R31A 内与 V019/V020/V021 的单一变更均不同。跨路线重叠未核实；通用 FP32 epilogue fusion 可能同域，需由 Main 比对路线声明。
 
-**FALSIFICATION_TEST**：查看 DAV_2201 生成结果是否形成目标 FMA，并减少一条向量运算；若仍是 Mul+Add 两条指令、需要额外搬运，或同步数未下降，则预期机制被削弱。获准后先对 D=32768、24576 做完整输出正确性；超出容差即否决。收益需等授权和该形状 same-binary 通过后再测。
+**FALSIFICATION_TEST**：获准生成目标对象后，确认调用落到 FP32 `vmadd`，且 affine 段少一条向量运算；若目标实现展开为 Mul+Add、需要额外搬运，或 D=32768、24576 任一完整输出超出既有容差，则否决。源码映射已确认，实际对象和同步指令变化仍待验证；收益需等授权和该形状 same-binary 通过后再测。
 
 **EXPECTED_INFORMATION_GAIN**：中高。目标编译直接回答融合是否落成单条操作，双形状正确性可一次限定舍入风险，便于在测时前淘汰无效实现。
 
@@ -118,7 +128,7 @@
 
 **CROSS_ROUTE_OVERLAP**：R31A 内与 V019 tile 宽度、V020 输入预取、V021 输出等待位置不同。跨路线重叠未核实；对齐 DMA 快路径可能与其他搬运路线同域，需由 Main 比对路线声明。
 
-**FALSIFICATION_TEST**：逐项证明 GM 地址、UB 地址和有效字节数都满足 DataCopy 对齐条件；任一不满足即停止该方案。随后比较 DAV_2201 生成搬运指令，若和 DataCopyPad 完全相同或没有减少搬运设置，则不进入设备验证。若指令确有变化，获准后用 D=32768、24576 覆盖每行尾 tile 做正确性；任一越界或数据不符即否决。
+**FALSIFICATION_TEST**：先确认运行时 GM 基址与 UB 地址都满足 DataCopy 的 32-byte 要求；任一无法证明即停止。CANN 目标实现已表明 DataCopy 与 DataCopyPad 走不同 intrinsic；获准生成对象后再比对最终指令和设置量，若没有可见简化则不进入设备验证。若对象显示变化，再对 D=32768、24576 覆盖每行尾 tile 做正确性；任一越界或数据不符即否决。
 
 **EXPECTED_INFORMATION_GAIN**：中。静态地址枚举与生成指令对照成本低，可快速判断这条路径是否存在可见的搬运差异；即使无差异，也能低成本关闭该方向。
 
