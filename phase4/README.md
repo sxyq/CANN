@@ -1,5 +1,14 @@
 # Phase4
 
+## Execution contract
+
+Before any Route execution, read:
+
+- `phase4/control/execution-contract.md`
+- `phase4/control/local-timing-protocol.md`
+
+These files are the shared execution and measurement authorities; new Route prompts need not repeat their full policy.
+
 这是新的 Clean-Room 探索区域。
 
 禁止读取：
