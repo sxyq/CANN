@@ -1,81 +1,72 @@
-# R31B V016 paired local probe preparation
+# R31B V016 paired runner 准备
 
-State: host-side preparation only. Do not invoke the harness until Main explicitly grants R31B the uncontested device lease and server3 device 4 has a clear comparable load window. The executable launcher is `paired-probe-harness.sh`; it refuses to contact server3 unless `MAIN_DEVICE_LEASE=R31B` and `R31B_LOAD_WINDOW=CLEAR` are set.
+## 当前状态
 
-## Fixed identities and runner
+- 路线与版本：R31B / V016，直接父版本 R31B-V011。
+- V016 状态仍为 `NEEDS_ONE_MORE_LOCAL`；当前只保留 V016，不创建 V017。
+- paired runner 已在 `cann-server3`（远端主机名 `hwnput3`）完成强制重编译和链接。
+- 当前没有 MAIN-1 的 device-4 独占租用；按本轮设备状态，d0-d6 有忙碌任务且 HBM 约 90%，d7 不用于性能测量。
+- 本轮没有启动 runner、NPU correctness 或任何时序采样。
 
-- Route/revision: R31B/V016; direct parent: R31B-V011.
-- Parent source SHA256: `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`.
-- Candidate source SHA256: `9f5c353e65a13a740fe97dc7e6415df032d27560831a3ad142c77592b8208eb5`.
-- Host/device: `cann-server3`/device 4; rows 2; warmup 1; timed repeats 3.
-- Existing server-side runner build: `/home/data4t2/lelinfeng/phase4-review-repro/R31B-V016/probe-build`, with `probe_v011` and `probe_v016`. Both use the same `runtime_probe.cpp` and CMake configuration; the parent binary selects the V011 source via `R31B_PROBE_PARENT=1`.
-- Actual executable SHA captured on server3 at `2026-09-24T13:08:35+0800`: `probe_v011=78917340dab5c0723c2d18faf493dca32f0e3412f78971c3ef7daa4db1427891`; `probe_v016=81a2ebfac7d3ec0cf1cf65105c7b81cc995d16ca8d57ed072eca3bdba40218b2`.
-- Runtime environment: source `/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/script/set_env.sh`; set `/usr/lib/aarch64-linux-gnu` before toolkit runtime libraries in `LD_LIBRARY_PATH` as in the accepted route-local runner setup.
+## 源码与可执行文件
 
-## Cases and interleaving
+| 对象 | SHA-256 |
+|---|---|
+| V011 parent source | `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3` |
+| V016 Candidate source | `9f5c353e65a13a740fe97dc7e6415df032d27560831a3ad142c77592b8208eb5` |
+| paired wrapper source | `b827960aa2d60e6efd953b30f3ecfcfab17af5111f4d03e5309c4c94c68d1a55` |
+| paired runner C++ | `d8a574735bda3e07cbfbc1de3c890a72fb7b437983eae38ea22d0bf8b0bd03bc` |
+| paired runner ABI header | `096c0229f5d9e6fa37460808387517280cb0f2e4296e07b8c37f75cd73c89617` |
+| paired CMake input | `29eb6e937ca94fbf2877ae22d2ee9a864066f8e5844ea0ccdc356c1ea40a3f3a` |
+| remote paired runner ELF | `6e9337a2c1bf4e9c74db56f55d90fd5eb233fdb7f6f4d189265b0a8f80cdd7fc` |
 
-Keep the four established dtype/width cases unchanged. Within each case, use exactly two parent/candidate pairs in `P/C/P/C` order. Each executable invocation has the same shape/device/warmup/repeats arguments and internally reports the median of three timed repeats.
+远端 ELF 路径：`/home/data4t2/lelinfeng/phase4-review-repro/R31B-V016/paired-runner-src/build/paired_runner_v016`。构建记录位于 `support/paired/paired-build-v016-success.txt`；旧失败输出 `support/paired/build-v016-attempt1.log` 保留。
 
-| Case | dtype arg | dtype | rows | width | device | warmup | repeats |
-|---|---:|---|---:|---:|---:|---:|---:|
-| `fp16-tail-d12288` | 1 | FP16 | 2 | 12288 | 4 | 1 | 3 |
-| `fp16-wide-d32768` | 1 | FP16 | 2 | 32768 | 4 | 1 | 3 |
-| `bf16-tail-d12288` | 2 | BF16 | 2 | 12288 | 4 | 1 | 3 |
-| `bf16-wide-d32768` | 2 | BF16 | 2 | 32768 | 4 | 1 | 3 |
+此前分开的 V011/V016 probe ELF 身份仍记录在 `local-probe-evidence.txt`；其旧样本为 `LOAD_CONTAMINATED`，不能作为性能结论。正式 kernel 构建与 correctness 证据仍分别保留在 `compile-evidence.txt` 与 `correctness-evidence.txt`。
 
-For each case, set `DTYPE` and `WIDTH` from the table. The exact four-invocation order is:
+## Runner 模式
+
+`support/paired/paired_runner.cpp` 的 kernel 类型与调用点均显式使用 `r31b_v011::run_kernel_v011` 和 `r31b_v016::run_kernel_v016`。旧失败日志中的未限定名称属于先前编译输入；当前源码完成重新编译和链接。
+
+Runner 固定 device 4、rows=2，并在一个 ACL process/stream 中执行四个形状。每个形状由 V011 单独进行两组各 31 个 device-event 样本的同一可执行文件资格测试；每个形状均须 PASS。之后才允许执行 21 组相邻 P/C 配对。设备事件时间为主要样本，steady-clock 时间仅作诊断。D2H 与 golden compare 位于该形状的样本之后。
+
+host/device allocation 与 H2D copy 均在 warmup 前完成；每个 kernel 有 10 次完整 stream-sync warmup。原始记录逐对保留 parent、Candidate 的 device/wall 时间与差值；汇总含 median、mean、sample stdev、CV、min/max、max/min、MAD、p10/p90、spread、core CV。日志使用带本地时间戳的独立文件名，不覆盖已有记录。
+
+| 形状 | dtype | width | 同一可执行文件通过要求 |
+|---|---|---:|---|
+| fp16-tail-d12288 | FP16 | 12288 | 待执行 |
+| fp16-wide-d32768 | FP16 | 32768 | 待执行 |
+| bf16-tail-d12288 | BF16 | 12288 | 待执行 |
+| bf16-wide-d32768 | BF16 | 32768 | 待执行 |
+
+## 未来启动顺序
+
+独立 CMake 输入与构建目录：
 
 ```sh
-"$V011" "$DTYPE" 2 "$WIDTH" 4 1 3  # P1
-"$V016" "$DTYPE" 2 "$WIDTH" 4 1 3  # C1
-"$V011" "$DTYPE" 2 "$WIDTH" 4 1 3  # P2
-"$V016" "$DTYPE" 2 "$WIDTH" 4 1 3  # C2
+cmake -S /home/data4t2/lelinfeng/phase4-review-repro/R31B-V016/paired-runner-src \
+  -B /home/data4t2/lelinfeng/phase4-review-repro/R31B-V016/paired-runner-src/build \
+  -DR31B_V011_SOURCE_DIR=/home/data4t2/lelinfeng/phase4-workspaces/R31B \
+  -DR31B_V016_SOURCE_DIR=/home/data4t2/lelinfeng/phase4-review-repro/R31B-V016/probe-src
+cmake --build /home/data4t2/lelinfeng/phase4-review-repro/R31B-V016/paired-runner-src/build \
+  --target paired_runner_v016 --parallel 1
 ```
 
-Record each raw output line separately; do not average cases together. The launcher records the source and executable SHA before the first case and refuses mismatched artifacts.
+本次成功构建使用 `-- -B` 强制重新编译并链接，详细输出路径见 `support/paired/paired-build-v016-success.txt`。构建不会启动可执行文件或调用设备。
 
-## Device-window decision
-
-
-The launcher takes read-only device and process snapshots before and after every P/C/P/C case:
-
-```sh
-capture_load() {
-  TZ=Asia/Shanghai date '+%Y-%m-%dT%H:%M:%S%z'
-  npu-smi info -t usages -i 4
-  ps -eo pid=,comm=,args= | grep -E '[Vv][Ll][Ll][Mm]|EngineCore|Worker_TP' | grep -v grep | sort -n
-}
-```
-
-Record VLLM service/worker residency and correlate it with AICore, AIVector, HBM and HBM-bandwidth readings; process residency by itself does not prove active device work. Do not time if Main has not assigned the unique-device slot to R31B, if device usage is sustained or changing materially, if HBM remains heavily occupied, or if VLLM-driven device activity is visible. If the window is unclear, keep the run unstarted or label collected samples `LOAD_CONTAMINATED` and stop.
-
-## Host-side command sequence (not yet run)
-
-After explicit Main scheduling and a clear load window, invoke the local launcher from the R31B worktree. This command is intentionally not runnable under the current no-lease state:
+只有 Main 授予 MAIN-1 device-4 独占租用并确认可比较的负载窗口后，才可启动同一可执行文件资格测试：
 
 ```sh
 MAIN_DEVICE_LEASE=R31B R31B_LOAD_WINDOW=CLEAR \
-  ./phase4/local/R31B/V016/paired-probe-harness.sh
+  ./phase4/local/R31B/V016/paired-probe-harness.sh --same-binary
 ```
 
-The launcher uses `DTYPE=1` for FP16 or `DTYPE=2` for BF16; `WIDTH=12288` for the tail case and `WIDTH=32768` for the wide case. It performs no remote call until both explicit markers pass.
+只有四种形状的记录均为 PASS，且 parent、Candidate 与 runner SHA-256 完全匹配，才可由同一租用窗口启动 P/C 配对：
 
-## Results template
+```sh
+MAIN_DEVICE_LEASE=R31B R31B_LOAD_WINDOW=CLEAR \
+R31B_QUALIFICATION_LOG=/absolute/path/to/paired-probe-samebinary-<timestamp>.txt \
+  ./phase4/local/R31B/V016/paired-probe-harness.sh --paired
+```
 
-The launcher writes append-only evidence at `phase4/local/R31B/V016/paired-probe-rerun-<local-start>.txt`; it refuses to overwrite an existing path. Each record contains route/revision/parent, source and executable SHAs, lease markers, device/shape/runtime parameters, snapshots, exact P/C/P/C commands, and raw outputs.
-
-For each case, let `P1`/`P2` be the parent medians and `C1`/`C2` be the candidate medians. The launcher parses `median_us=` from each runner line and records:
-
-- `PARENT_JITTER_US=abs(P2-P1)` and `CANDIDATE_JITTER_US=abs(C2-C1)`; percentage jitter uses the corresponding two-run mean.
-- `PAIR_1_DELTA_US=C1-P1` and `PAIR_2_DELTA_US=C2-P2`; positive means the candidate is slower.
-- `MEDIAN_DELTA_US=(PAIR_1_DELTA_US+PAIR_2_DELTA_US)/2` (the median for two paired deltas).
-- `WORST_DELTA_US=max(PAIR_1_DELTA_US,PAIR_2_DELTA_US)` and `WORST_ABS_DELTA_US=max(abs(PAIR_1_DELTA_US),abs(PAIR_2_DELTA_US))`.
-
-| Case | P1/C1 medians (us) | P2/C2 medians (us) | parent jitter (us) | candidate jitter (us) | median delta (us) | worst delta (us) | load label |
-|---|---|---|---:|---:|---:|---:|---|
-| FP16 D=12288 | pending | pending | pending | pending | pending | pending | pending |
-| FP16 D=32768 | pending | pending | pending | pending | pending | pending | pending |
-| BF16 D=12288 | pending | pending | pending | pending | pending | pending | pending |
-| BF16 D=32768 | pending | pending | pending | pending | pending | pending | pending |
-
-Decision remains `NEEDS_ONE_MORE_LOCAL` until Main reviews valid, comparable local evidence. No source edits, new revision, or Online submission are in scope.
+launcher 会先读取 canonical device lease 表，再连接 `cann-server3`；环境变量本身不构成租用授权。当前条件未满足，以上命令均未运行。
