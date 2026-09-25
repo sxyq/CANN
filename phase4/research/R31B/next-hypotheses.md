@@ -7,7 +7,7 @@
 - MECHANISM：将宽路径中保留的 BF16 `y=x+residual` 从 FP32 缓存改为 BF16 缓存，减少每行驻留字节数。
 - BOTTLENECK：V016 在 BF16 宽行中为完整 y 保留 FP32；高 D 会压低可容纳的行批量，并促使 `ChooseWideFullYRows` 缩小 tile。
 - EXPECTED_SHAPES：BF16 D=12288、16384、32768；重点观察 D=32768，源码预算推导预期该宽度的 tile 数减少最多。
-- WHY_IT_MAY_HELP：较小 y 缓存可降低 UB 压力，可能容纳更大的 tile 或更多行，减少多轮 pass 与同步。按 V016 当前 176 KiB 预算公式估算，BF16 D=12288/16384/32768 的 tile 宽度约从 7680/6656/2560 增至 8192/8192/6656；这只是源码算式推导，尚未由编译结果验证。
+- WHY_IT_MAY_HELP：较小 y 缓存可降低 UB 压力，可能减少宽行 tile 数。按 V016 当前 176 KiB 预算公式估算，BF16 D=12288/16384/32768 的 tile 宽度约从 7680/6656/2560 增至 8192/8192/6656，对应 tile 数从 2/3/13 降至 2/2/5；这是源码算式推导，尚未由编译结果验证。
 - WHY_IT_MAY_FAIL：缓存转换会改变输出舍入；在上述三种形状中，预算公式仍只容纳每个 block 一行，故 rows=2、blockCount=2 的 paired runner 不会获得多行批处理收益。D=12288 的 tile 增幅也很小，转换成本可能抵消节省。
 - ASCEND_FEASIBILITY：V016 的 `ToFloat`/`FromFloat` 已使用 `AscendC::Cast` 处理 BF16↔FP32；V016 在目标 CANN 8.5 的编译/链接及 BF16 定向正确性记录已覆盖该转换。仍需为压缩后的整行缓存确认 `LocalTensor` 类型、容量、尾 tile 与 row stride。
 - UB/CORE/DMA_IMPACT：y 缓存预计减半；core 映射不变；DMA 流量不变。
@@ -121,7 +121,7 @@
 
 ### 本轮去重与 API 依据
 
-- 不提出通用删除 `PipeBarrier<PIPE_V>` 的方案。CANN 8.5 官方 `PipeBarrier(ISASI)` 文档说明它阻塞同一流水，并要求有数据依赖的同流水指令之间插入同步；V016 pass 1 存在 Add→Mul→ReduceSum 等实际依赖。文档也提到 direct-invoke 工程默认启用自动同步，但本路线现有构建记录没有保留自动同步选项或最终指令清单，暂不能据此认定具体手工 barrier 可删。
+- 不提出通用删除 `PipeBarrier<PIPE_V>` 的方案。CANN 8.5 官方 `PipeBarrier(ISASI)` 文档说明它阻塞同一流水，并要求有数据依赖的同流水指令之间插入同步；V016 pass 1 存在 Add→Mul→ReduceSum 等实际依赖。V016 正式构建的本地 CMake 配置含 `--cce-auto-sync`，但现有产物未提供可读的 AICore 指令清单，因此不能据此认定具体手工 barrier 可删。
 - 再调宽行 tile、输出 MTE3/V 重叠、跨 core 部分归约和向量 inverse-RMS 分别与 V016 当前 tile 方案或本文件 H2/H3/H4 已记录的活跃路线研究重合；重新命名不会增加独立方向。
 - 改写 `y * invRms * gamma + bias` 的向量合并/重排，已在既有 DTYPE-SPECIAL-X 与 MIX-A 研究覆盖，且会改变舍入次序；本轮不另列。
 - 路线编译记录确认目标为 Ascend910B3 / DAV_2201，工具链为 CANN 8.5.0.alpha002。CANN 8.5 官方 `PipeBarrier` 页面：<https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/850alpha002/API/ascendcopapi/atlasascendc_api_07_0271.html>；DAV_2201 架构资料：<https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/920beta2/programug/Ascendcopdevg/docs/zh/guide/programming_guide/advanced_programming/hardware_implementation/architecture_spec/npu_arch_2201.md>。9.2 页面记载该架构 UB 总容量为 192KB，并说明默认预留 256B 与 8KB；使用 `--cce-disable-asc-reserved-ubuf` 时不再预留 8KB。这个页面比目标工具链新，仅作为 UB 资源背景；具体构建选项和可用容量仍以本路线证据为准。资料结论不构成任何 timing 许可。
@@ -133,3 +133,12 @@
 - H1 与 V016 共用 UB 预算目标，但不重复其 tile 初值变化；H2/H3/H4 分别与已记录的输出双缓冲、跨 core 归约、inverse-RMS 方向重合，均不计入本批。输出 affine 算术与参数跨行复用也已由旧记录覆盖。
 - H5 与 DTYPE-SPECIAL-X 的共享摘要存在 dtype/conversion 主题邻近；摘要没有给出相同的 BF16 参数重复扩宽机制，故当前记为“未见精确重复，待 Main 复核”，不访问该路线源码。三项均为 NEEDS_MORE_EVIDENCE，尚无一项可直接进入实现。
 - 后续证伪次序：H1 先复算 UB 预算并确认目标编译的 tile/行配置；H5 先看向量指令清单是否保留重复转换；H6 先看标量指令是否仍重复商余数解码。只有机制通过各自证伪点、Main 明确处理 V016 后，才讨论后续实现；任何测时另需新 Main-1 租用和精确形状资格。
+
+## 2026-09-26 Track-B evidence closure
+
+- 身份未变：V016 SHA-256=`9f5c353e65a13a740fe97dc7e6415df032d27560831a3ad142c77592b8208eb5`；直接 Parent V011 SHA-256=`a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`。本轮只读，没有启动 NPU 或 timing。
+- H1：V016 `ChooseWideFullYRows` 预算公式估算 y 缓存、4 个低精度 I/O tile、FP32 work tile 和 reduction partial；`outputBuf_` 是另一项 TBuf，公式没有单列。按该函数返回值，BF16 y 每元素字节数从 4 改为 2 后，D=12288：2→2 tiles，D=16384：3→2，D=32768：13→5；三种形状均仍是每 block 一行。这些是预算函数的源码推导，不是总 UB 占用测量或分配成功证明。最大潜在变化在 D=32768；当前材料不能验证精度变化，也不能证明实际设备耗时改善。分类仍为 `NEEDS_MORE_EVIDENCE`。
+- H5：V011/V016 源码均存在连续两组相同的 BF16 gamma/bias `ToFloat` 调用。现有正式构建 CMake 指定 `-O3` 和 `--cce-auto-sync`，但远端构建目录仅留 `.o`/`.alink` 等产物，没有 `.s`、`.asm`、`.ll`、`.bc` 或 `.ir`；因此无法从现存产物判断优化后是否仍执行两组转换。分类仍为 `NEEDS_MORE_EVIDENCE`。
+- H6：V011/V016 源码均分别计算当前 `u / tileCount` 和下一项 `(u + 1) / tileCount` 及其余数；`tileCount` 来自运行时 rowWidth 与选定 tileWidth。源代码足以确认有重复解码表达式，但不能判断 CCE 优化是否将其合并或转换为递增状态。现有编译产物没有可读 AICore 指令清单，分类仍为 `NEEDS_MORE_EVIDENCE`。
+- 最低后续成本与顺序：先做一次不启动设备的精确源码指令输出，复用 V011/V016 当前编译选项，同时筛查 H5 的转换指令数与 H6 的索引解码；`bisheng --help` 已确认支持 `-S` 和 `-save-temps`，但需先确认输出确实包含 AICore specialization，只有 host 汇编不构成证据。本轮未执行该编译。H1 的预算计算无需再构建；如 Main 后续授权新方向，再分别验证 BF16 精度，性能结论仍需独立租用和形状资格。
+- 去重依据仅限 R31B 历史与 canonical scheduler 摘要：H1 与 V016 共用 UB 目标但机制不同；H5 与 DTYPE-SPECIAL-X 的摘要主题相邻，是否重复仍待 Main 判断；H6 在已读摘要中未发现同机制方向。未读取其他 Route Candidate 或源码。
