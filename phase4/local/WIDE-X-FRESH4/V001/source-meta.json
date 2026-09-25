@@ -7,7 +7,7 @@
   "SINGLE_HYPOTHESIS": "Widen only the existing wide-path tile from 2048 to 4096 and grow tmp_ to TILE * sizeof(float) for the wide-path instantiation while preserving the fallback's existing 8192-byte allocation. Keep data residency, pipeline depth and scheduling, reduction, math, and dtype policy unchanged. Expected mechanism: reduce per-row wide-path tile iterations by half.",
   "CONTEXT_CLASS": "FRESH_BLIND",
   "WHY_NOT_DUPLICATE": "This changes only wide-path tile granularity. It preserves the existing two-pass global-memory data flow and single-tile scheduling, so it is distinct from row-residency and double-buffering hypotheses.",
-  "revision_status": "BUILT_LINKED_AWAITING_CORRECTNESS_AND_MAIN_REVIEW",
+  "revision_status": "CORRECTNESS_PASS_AWAITING_MAIN_REVIEW",
   "candidate_source_sha256": "f7628795e6699288669dbff8963181e376e10741ba4d46c768af51cf09bf6895",
   "source_path": "phase4/workspaces/WIDE-X-FRESH4/wide_x_fresh4.asc",
   "diff_path": "diff.patch",
@@ -25,16 +25,44 @@
     "kernel_library_sha256": "b5abb78cdb2e99383d5266dd3d5b76c0a1c3b022613b53cc1b2a17c5d7868a6c",
     "correctness_executable": "/tmp/WIDE-X-FRESH4-V001-build-20260925/npu_correctness_V001",
     "correctness_executable_sha256": "0c160793a957b1288155e37d3cb153f8da84c6352685641e646a440cce3ae2ba",
+    "correctness_executable_run": true,
     "runtime_dependencies": "RESOLVED_BY_LDD"
   },
   "correctness": {
-    "status": "NOT_RUN_DEVICE_BUSY",
-    "reason": "Main reported the current device snapshot as busy/loaded; the NPU correctness executable was not run.",
-    "planned_cases": "FP32, FP16, BF16 x widths 2048, 16384, 32768"
+    "status": "PASS_9_OF_9_NPU",
+    "device": 4,
+    "run_time": "2026-09-25T07:32:55+0000",
+    "exit_code": 0,
+    "preflight_to_run_seconds": 122,
+    "log": "logs/npu-correctness.log",
+    "preflight_log": "logs/npu-correctness-preflight.log",
+    "cases": [
+      {"dtype": "FP32", "width": 2048, "max_abs_error": 1.1920929e-07},
+      {"dtype": "FP32", "width": 16384, "max_abs_error": 3.5762787e-07},
+      {"dtype": "FP32", "width": 32768, "max_abs_error": 1.1920929e-07},
+      {"dtype": "FP16", "width": 2048, "max_abs_error": 0},
+      {"dtype": "FP16", "width": 16384, "max_abs_error": 0.0009765625},
+      {"dtype": "FP16", "width": 32768, "max_abs_error": 0.00024414062},
+      {"dtype": "BF16", "width": 2048, "max_abs_error": 0},
+      {"dtype": "BF16", "width": 16384, "max_abs_error": 0},
+      {"dtype": "BF16", "width": 32768, "max_abs_error": 0}
+    ]
   },
   "timing": {
     "status": "NOT_RUN_NO_EXCLUSIVE_DEVICE_LEASE",
     "reason": "No explicit Main exclusive device lease was granted."
+  },
+  "device_preflight": {
+    "status": "PASS",
+    "device": 4,
+    "captured_at": "2026-09-25T07:30:53+0000",
+    "seconds_before_run": 122,
+    "aicore_percent": 0,
+    "hbm_used_mb": 59186,
+    "hbm_capacity_mb": 65536,
+    "hbm_free_mb": 6350,
+    "non_vllm_npu_process": "NONE_NEW; existing device-7 python PID 3458196 matches prior route evidence",
+    "log": "logs/npu-correctness-preflight.log"
   },
   "child_decision": "NEEDS_ONE_MORE_LOCAL",
   "online_submission": false

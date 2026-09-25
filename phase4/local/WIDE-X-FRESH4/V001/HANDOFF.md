@@ -1,6 +1,6 @@
 # WIDE-X-FRESH4 V001 Handoff
 
-Status: `NEEDS_ONE_MORE_LOCAL`; stopped for Main review.
+Status: targeted correctness complete; returned to Main review. No timing result.
 
 ## Revision declaration
 
@@ -21,7 +21,8 @@ Status: `NEEDS_ONE_MORE_LOCAL`; stopped for Main review.
 - Source diff: two lines in `phase4/workspaces/WIDE-X-FRESH4/wide_x_fresh4.asc` (`kWideTile` and the tile-dependent `tmp_` allocation). Fallback allocation remains 8192 bytes.
 - Server3 compile: PASS; see `logs/build.log`.
 - Kernel shared-library link: PASS. Library SHA256: `b5abb78cdb2e99383d5266dd3d5b76c0a1c3b022613b53cc1b2a17c5d7868a6c`.
-- Correctness executable compile/link: PASS and runtime dependencies resolve; see `logs/link.log`. It was not executed because Main reported the device snapshot as busy/loaded. Planned cases are FP32/FP16/BF16 at widths 2048/16384/32768.
+- The preflight captured at 2026-09-25T07:30:53+0000 reported device 4 AICore 0%, HBM 59186/65536 MB (6350 MB free), and no new non-VLLM NPU process. The executable started at 2026-09-25T07:32:55+0000, 122 seconds later; see `logs/npu-correctness-preflight.log`.
+- Correctness executable compile/link: PASS and runtime dependencies resolve; see `logs/link.log`. It ran on device 4 and exited 0 after passing all 9 FP32/FP16/BF16 x 2048/16384/32768 cases; see `logs/npu-correctness.log` for exact errors.
 - No latency timing was run; no exclusive device lease was granted.
 - No Online submission was made.
 
@@ -31,5 +32,6 @@ Status: `NEEDS_ONE_MORE_LOCAL`; stopped for Main review.
 - `diff.patch`, `source-meta.json`, and `local-result.json` retain declaration, source identity, and results.
 - Build output directory on server3: `/tmp/WIDE-X-FRESH4-V001-build-20260925/cmake-build`.
 - `logs/link-env-attempt.log` and `logs/link-include-attempt.log` retain two unsuccessful environment/setup attempts; the successful link is recorded in `logs/link.log`.
+- `logs/npu-correctness-preflight.log` and `logs/npu-correctness.log` retain the device snapshot and full targeted NPU result.
 
-Next action belongs to Main: review this revision and decide when targeted NPU correctness can run under an acceptable device state.
+Next action belongs to Main: review V001 with targeted NPU correctness complete. No timing or performance result is included.

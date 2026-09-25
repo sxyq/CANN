@@ -23,17 +23,44 @@
     "correctness_executable": "/tmp/WIDE-X-FRESH4-V001-build-20260925/npu_correctness_V001",
     "correctness_executable_sha256": "0c160793a957b1288155e37d3cb153f8da84c6352685641e646a440cce3ae2ba",
     "runtime_dependencies": "RESOLVED_BY_LDD",
-    "executed": false
+    "executed": true
   },
   "correctness": {
-    "status": "NOT_RUN_DEVICE_BUSY",
-    "planned_cases": "FP32, FP16, BF16 x widths 2048, 16384, 32768",
-    "reason": "Main reported the current device snapshot as busy/loaded."
+    "status": "PASS_9_OF_9_NPU",
+    "device": 4,
+    "run_time": "2026-09-25T07:32:55+0000",
+    "exit_code": 0,
+    "preflight_to_run_seconds": 122,
+    "log": "logs/npu-correctness.log",
+    "preflight_log": "logs/npu-correctness-preflight.log",
+    "cases": [
+      {"dtype": "FP32", "width": 2048, "max_abs_error": 1.1920929e-07},
+      {"dtype": "FP32", "width": 16384, "max_abs_error": 3.5762787e-07},
+      {"dtype": "FP32", "width": 32768, "max_abs_error": 1.1920929e-07},
+      {"dtype": "FP16", "width": 2048, "max_abs_error": 0},
+      {"dtype": "FP16", "width": 16384, "max_abs_error": 0.0009765625},
+      {"dtype": "FP16", "width": 32768, "max_abs_error": 0.00024414062},
+      {"dtype": "BF16", "width": 2048, "max_abs_error": 0},
+      {"dtype": "BF16", "width": 16384, "max_abs_error": 0},
+      {"dtype": "BF16", "width": 32768, "max_abs_error": 0}
+    ]
   },
   "latency_timing": {
     "status": "NOT_RUN_NO_EXCLUSIVE_DEVICE_LEASE"
   },
-  "load_quality": "BUSY_LOADED_AS_REPORTED_BY_MAIN",
+  "device_preflight": {
+    "status": "PASS",
+    "device": 4,
+    "captured_at": "2026-09-25T07:30:53+0000",
+    "seconds_before_run": 122,
+    "aicore_percent": 0,
+    "hbm_used_mb": 59186,
+    "hbm_capacity_mb": 65536,
+    "hbm_free_mb": 6350,
+    "non_vllm_npu_process": "NONE_NEW; existing device-7 python PID 3458196 matches prior route evidence",
+    "log": "logs/npu-correctness-preflight.log"
+  },
+  "load_quality": "CORRECTNESS_PREFLIGHT_PASSED_FOR_DEVICE_4",
   "child_decision": "NEEDS_ONE_MORE_LOCAL",
   "official_score": null,
   "online_submission": false,
