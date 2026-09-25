@@ -7,7 +7,7 @@
 - Direct Parent: `MIX-A-V003`
 - Parent Official Score: `44.69`
 - Branch: `exec/sixlane-20260923-mix-a`
-- Source commit before this handoff: `e2c4de7bdb1edbe4b907a883209aee3b6a9f5655`
+- Source commit before this handoff: `92b165ad41281789cd7057916a57af216baf290f`
 - Candidate source SHA-256: `a63ad29a997ae2fe8a1238c1a47a9d5ddfb14d16f725fca975ce5c55523f28eb`
 
 ## Source Lineage
@@ -64,13 +64,22 @@ The direct source diff keeps V003 dispatch and math. The only executable-code de
 
 The four retained pairs remain `LOAD_CONTAMINATED`; preserve those labels. Their direction varies, so they do not establish a gain or regression. No V007 timing was run by this replacement worker.
 
-The existing runner inputs are device 6, rows `1`, width `256`, dtype `0` (FP32), epsilon `1e-5`; both variants use the same `runner_main.inc` and deterministic host inputs. That runner uses wall-clock timing, 3 warmups, 11 samples, separate variant processes, and writes only a per-process median. It does not meet the current unified timing procedure.
+The existing legacy runner inputs are device 6, rows `1`, width `256`, dtype `0` (FP32), epsilon `1e-5`; both variants use the same `runner_main.inc` and deterministic host inputs. That runner uses wall-clock timing, 3 warmups, 11 samples, separate variant processes, and writes only a per-process median. It does not meet the current unified timing procedure.
 
-After Main review and a fresh exclusive device lease, pass the current lease TSV and its exact device, Main owner, and lease ID to `same-binary` for V003 shape qualification, then use `paired` for interleaved V003/V007 pairs. The runner rejects missing, released, conflicting, or mismatched lease records before ACL initialization. Do not combine new samples with the retained `LOAD_CONTAMINATED` values.
+Main review is recorded in `MAIN-REVIEW.md` with decision `NEEDS_ONE_MORE_LOCAL`. The pending performance shape is V003 Parent, rows `1`, width `256`, dtype `0` (FP32); targeted correctness already covers rows `1`, D `256` in FP32, FP16, and BF16. After a current exclusive lease is authorized, use `same-binary` for this exact Parent shape before any `paired` V003/V007 samples. Do not combine new samples with the retained `LOAD_CONTAMINATED` values.
 
 ## Stop Point
 
-- SSH build access is confirmed through `cann-server3`; no active MAIN-1 exclusive device lease is present. Devices d0-d6 are busy, and d7 is excluded from performance measurement.
-- No runner execution, NPU correctness run, or timing was performed. Do not time until Main confirms an exclusive lease.
+- Main's V007 decision is `NEEDS_ONE_MORE_LOCAL`; the next evidence is same-binary qualification on V003 for rows `1`, width `256`, FP32, followed by paired samples only if allowed.
+- No current Main exclusive-lease authorization was provided in this handoff update. No runner execution, NPU correctness run, or timing was performed; do not start timing without that authorization.
 - No `V008` created. No CANNJudge submission made.
-- Stop here for Main review.
+- Stop here for Main's next local-measurement authorization.
+
+## Current Identity And Host Validation (2026-09-26)
+
+- Main review confirms Parent V003 SHA-256 `1a1857a945ce1f04e3877437882b21a3d5071dddcd697103d7b539a0feb5c706` and Candidate V007 SHA-256 `a63ad29a997ae2fe8a1238c1a47a9d5ddfb14d16f725fca975ce5c55523f28eb`. Local V003/V007 copies and the server3 build inputs match those identities; V007 sidecar agrees with its source.
+- Unified runner SHA-256 `3eec1aa67a225761fda536d71c6f4f0bd2fcc01fbf2cb71cae0a26d3724173ee`; `runner_validation.h` SHA-256 `f3b490d747a433725aac55a2dbce6c5d4d15f287d298af848a72e272162d2f37`.
+- The latest retained CANN 8.5.0.alpha002 compile/link log ends with `[100%] Built target mix_a_v007_unified_probe`. The matching server3 artifact is an AArch64 PIE, 674192 bytes, SHA-256 `dce996af2ec709219819de3e9ba908f0d41744f2b9820965a1385e080b949110`; it was identified but not run.
+- This turn reran `c++ -std=c++17 -Wall -Wextra -Werror phase4/local/MIX-A/V007/support/runner_validation_test.cpp -o <temporary-binary> && <temporary-binary>`; exit code `0`, all assertions passed. The temporary binary was removed; the test made no ACL or device calls.
+- No file under `support/results/` was changed. All four retained Parent/Candidate pairs remain `LOAD_CONTAMINATED`.
+- Track B added three design-only ideas to `phase4/research/MIX-A/next-hypotheses.md`. No Candidate source was changed and no V008 was created.

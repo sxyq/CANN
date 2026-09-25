@@ -1,6 +1,6 @@
 # MIX-A Next-Hypothesis Research
 
-Status: design-only; V007 remains pending Main review. No Candidate source or new revision was created.
+Status: design-only; Main review returned `NEEDS_ONE_MORE_LOCAL`. V007 remains unchanged. No Candidate source or new revision was created.
 
 Route identity: V007 source SHA-256 `a63ad29a997ae2fe8a1238c1a47a9d5ddfb14d16f725fca975ce5c55523f28eb`; direct parent V003 source SHA-256 `1a1857a945ce1f04e3877437882b21a3d5071dddcd697103d7b539a0feb5c706`; parent Official Score `44.69`.
 
@@ -71,7 +71,7 @@ Route identity: V007 source SHA-256 `a63ad29a997ae2fe8a1238c1a47a9d5ddfb14d16f72
 
 ## Stop
 
-These are research candidates only. Main must review V007 and authorize any next revision before implementation. No V008 is created here.
+These are research candidates only. Main returned `NEEDS_ONE_MORE_LOCAL` for V007; any next revision still requires Main authorization. No V008 is created here.
 
 ## Track B Review (2026-09-25)
 
@@ -102,4 +102,60 @@ Four distinct ideas remain active: H01 (MTE2 wait placement), H03 (terminal MTE3
 
 ## Stop Point
 
-V007 remains pending Main review. Research is design-only; no Candidate source was changed and no V008 was created.
+V007 remains unchanged under Main's `NEEDS_ONE_MORE_LOCAL` decision. Research is design-only; no Candidate source was changed and no V008 was created.
+
+## Track B Research Cycle (2026-09-26)
+
+This cycle adds three mechanisms distinct from H01/H03/H04/H05 and from V007's removed V-to-MTE2 release wait. All are design-only and require a new Main decision before implementation.
+
+### MIX-A-H06: Store the FP32 result tensor directly
+
+- MECHANISM: In the FP32 branch of `ProcessNarrowMidFast`, pass the already-computed `u` tensor directly to `Store` instead of calling `FromFloat(xLocal, u, valid)` and storing `xLocal`. The float specialization of `FromFloat` is an `Adds(..., 0.0f, ...)` vector copy.
+- BOTTLENECK: One full-width vector copy and its following vector barrier remain between the final affine add and the output DMA.
+- EXPECTED_SHAPES: `rows=1`, `width=256`, FP32 (`dtype=0`), with the existing single-row Fast-path conditions unchanged.
+- WHY_IT_MAY_HELP: Removes a vector pass over all 256 output elements while preserving the same result tensor and output transfer.
+- WHY_IT_MAY_FAIL: The direct source tensor must stay live until MTE3 has consumed it. The current end-of-row MTE3-to-V wait must remain; signed-zero behavior from adding `+0.0f` may differ.
+- ASCEND_FEASIBILITY: `Store` already accepts `LocalTensor<T>` and the FP32 branch has `T=float`; `u` is a `LocalTensor<float>` with `valid` computed for the row. Keep `SyncVToMTE3` before the store.
+- UB/CORE/DMA_IMPACT: No added UB, core, or DMA; one fewer vector copy, unchanged GM bytes.
+- SYNC_IMPACT: Remove only the barrier attached to the removed copy; retain the preceding affine dependency barriers, V-to-MTE3 handoff, and MTE3-to-V reuse wait.
+- PRECISION_RISK: Low; compare every output and explicitly include signed zero and non-finite edge cases in host reference checks if those inputs are supported.
+- DUPLICATE_CHECK: H05 changes the affine multiply/add instruction pair. H06 changes only the subsequent FP32 staging copy; neither changes V007's synchronization hypothesis.
+- MINIMAL_OFAT_DIFF: Change the FP32 output source from `xLocal` to `u` and remove the now-unused `FromFloat` call; leave FP16/BF16 branches unchanged.
+- EXPECTED_LOCAL_PROBES: After Main authorization, run FP32 `1x256` correctness against V003 first. Then qualify that exact Parent shape using same-binary blocks before any paired run; keep all raw samples.
+- CLASSIFICATION: `READY_FOR_MAIN_REVIEW`.
+
+### MIX-A-H07: Overlap BF16 parameter widening with row-input DMA
+
+- MECHANISM: In the BF16 `ProcessNarrowMidFast` path, retain the parameter-copy wait. At the start of the single-row loop, issue x/residual copies, widen gamma/bias to FP32 while MTE2 transfers the row inputs, then keep the existing input-copy wait before any input consumer.
+- BOTTLENECK: Two parameter `ToFloat` operations and their vector barrier currently complete before the x/residual DMA is issued.
+- EXPECTED_SHAPES: `rows=1`, `width=256`, BF16 (`dtype=2`), with the existing Fast-path conditions unchanged.
+- WHY_IT_MAY_HELP: Overlaps independent Vector conversion work with MTE2 input transfers without adding a copy or changing arithmetic.
+- WHY_IT_MAY_FAIL: The transfers may be too short to hide; CANN scheduling may serialize the pipes, or event placement may fail to order both buffers as required.
+- ASCEND_FEASIBILITY: Reuses existing `Load`, `ToFloat`, and `SyncMTE2ToV` helpers. Preserve the first wait before reading gamma/bias and the second wait before reading x/residual; only issue order changes.
+- UB/CORE/DMA_IMPACT: No additional buffers, core count, or bytes transferred.
+- SYNC_IMPACT: Same two MTE2-to-V waits; the second wait moves after parameter widening so it also covers the row inputs.
+- PRECISION_RISK: Low if both existing waits remain at those dependencies; verify all BF16 outputs against the direct-parent reference.
+- DUPLICATE_CHECK: H01 removes a wait by issuing parameter and input copies before one combined wait. H07 keeps the parameter wait and overlaps the later input DMA specifically with BF16 parameter conversion; it does not combine waits.
+- MINIMAL_OFAT_DIFF: Move the BF16 gamma/bias `ToFloat` block into the existing row loop after the two input `Load` calls and before their wait; leave both wait points, buffers, and arithmetic unchanged.
+- EXPECTED_LOCAL_PROBES: After Main authorization, test V003/V007 reference correctness at BF16 `1x256`. If correct, establish a BF16 Parent same-binary floor before paired device-event samples.
+- CLASSIFICATION: `NEEDS_MORE_EVIDENCE`.
+
+### MIX-A-H08: Double-buffer row inputs in the multi-row narrow-mid path
+
+- MECHANISM: For FP32 cores with `localRows>=2`, add a second x/residual input-buffer pair to `ProcessNarrowMidOverlap`; after row N's reduction releases its input slot, prefetch row N+1 into the other slot while row N completes scalar normalization and affine output, then swap slots.
+- BOTTLENECK: The current loop waits for the input-release event at the next iteration before issuing the next row's two MTE2 copies, leaving input DMA outside most of the preceding row's scalar/output tail.
+- EXPECTED_SHAPES: FP32, `width=256`, with row count and tiling confirmed to give at least two local rows per core. This is a separate multi-row shape, not the pending V007 `rows=1` qualification shape.
+- WHY_IT_MAY_HELP: Hides next-row input latency behind work that no longer reads the current x/residual buffers.
+- WHY_IT_MAY_FAIL: Extra UB may reduce occupancy; event-ID reuse, output staging, and row-buffer lifetime may create a race. The launch may not have enough rows per core to amortize the extra state.
+- ASCEND_FEASIBILITY: The current path already has `V_MTE2` input-release and `MTE2_V` input-ready events. A two-slot schedule is plausible but needs a per-slot event/lifetime table and an UB budget for the exact tiling before coding.
+- UB/CORE/DMA_IMPACT: Adds up to `2 * width * sizeof(float)` UB for a second input pair; core count and bytes transferred stay unchanged.
+- SYNC_IMPACT: Requires independent readiness/release tracking per slot; do not reuse one event ID while its prior transfer or consumer remains outstanding.
+- PRECISION_RISK: Low arithmetic risk; high synchronization and buffer-alias risk until targeted correctness passes.
+- DUPLICATE_CHECK: The Candidate has adjacent-row overlap in its wide FP32 batch path, but `ProcessNarrowMidOverlap` still serializes next-row input issue. H08 targets the narrow-mid multi-row schedule, not V007's single-row path.
+- MINIMAL_OFAT_DIFF: Add one paired input slot and alternate slots only in `ProcessNarrowMidOverlap`; leave Fast dispatch, arithmetic, and single-row behavior unchanged.
+- EXPECTED_LOCAL_PROBES: After Main authorization, verify the selected tiling gives `localRows>=2`, then compare V003 and the new path on FP32 width 256 for output correctness. Qualify the exact Parent shape before any paired measurement.
+- CLASSIFICATION: `NEEDS_MORE_EVIDENCE`.
+
+## Current Stop Point
+
+Main's V007 decision is `NEEDS_ONE_MORE_LOCAL`. The pending qualification shape is Parent V003, `rows=1`, `D=256`, FP32; existing targeted correctness also covers FP16 and BF16 at `rows=1`, `D=256`. Do not run timing until Main authorizes a current exclusive lease.
