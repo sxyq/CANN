@@ -25,4 +25,6 @@ For `same`, SIDE is `parent` or `candidate`; for `paired`, SIDE is `-`. Timing r
 
 ## Build
 
-Run `bash build_server3.sh` on cann-server3. The script verifies both source SHA256 values, uses `set_env.sh` when installed or the toolkit's CMake package path otherwise, builds and links the two symbol-renamed kernel libraries plus the shared runner, checks runtime dependencies, and prints artifact SHA256 values. It does not execute the runner.
+Run `bash build_server3.sh` on cann-server3. The script verifies both source SHA256 values, uses `set_env.sh` when installed or the toolkit's CMake package path otherwise, and supplies the server's GCC C++ headers and CANN driver-library paths.
+
+CMake uses CANN's `ascendc_library()` registration path for both `.asc` targets. The Parent and Candidate keep the same `wide_x_fresh4_kernel` declaration and launch token so ASCPLUGIN generates its kernel metadata and origin stub. Only the host `run_kernel` wrapper is renamed per library. The ACL host runner links the two built library files directly, avoiding unrelated ASC device-runtime interface dependencies at the executable link step. The build checks source identities, all three artifact dependency lists, and prints artifact SHA256 values. It does not execute the runner.

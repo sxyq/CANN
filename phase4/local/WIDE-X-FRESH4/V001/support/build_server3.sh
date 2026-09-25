@@ -29,6 +29,9 @@ else
 fi
 export ASCEND_HOME_PATH="${CANN_ROOT}"
 export ASCEND_CANN_PACKAGE_PATH="${CANN_ROOT}"
+ASCEND_DRIVER_LIB_DIR="/usr/local/Ascend/driver/lib64/driver"
+ASCEND_DRIVER_COMMON_LIB_DIR="/usr/local/Ascend/driver/lib64/common"
+export LD_LIBRARY_PATH="${CANN_ROOT}/aarch64-linux/lib64:${CANN_ROOT}/lib64:${ASCEND_DRIVER_LIB_DIR}:${ASCEND_DRIVER_COMMON_LIB_DIR}${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"
 GCC_VERSION="$(g++ -dumpversion)"
 GCC_TARGET="$(gcc -dumpmachine)"
 GCC_MULTIARCH="$(gcc -print-multiarch)"
@@ -49,10 +52,10 @@ for artifact in \
     test -f "${artifact}"
     printf '\nARTIFACT=%s\n' "${artifact}"
     sha256sum "${artifact}"
-    ldd "${artifact}"
+    dependencies="$(ldd "${artifact}")"
+    printf '%s\n' "${dependencies}"
+    if grep -q 'not found' <<<"${dependencies}"; then
+        echo "unresolved runtime dependency for ${artifact}" >&2
+        exit 1
+    fi
 done
-
-if ldd "${BUILD_DIR}/wide_x_fresh4_unified_runner" | grep -q 'not found'; then
-    echo "unresolved runner runtime dependency" >&2
-    exit 1
-fi
