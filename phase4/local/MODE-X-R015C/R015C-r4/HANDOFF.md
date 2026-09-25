@@ -6,7 +6,7 @@
 - Source SHA-256: `9367db4ebb4edf6b7bf6cde97f4846f987e6ab230c2aeee44d942d5e881a1c74`.
 - Direct parent: R015C-r3, source SHA-256 `e1786bec2673519f41887fdffa0e11751f515a81037d854c88ae7edc0e4af903`.
 - Compile and link: PASS on `cann-server3` (`hwnput3`), CANN `8.5.0.alpha002`, target `dav-2201`.
-- Correctness: PASS on device 4 for `(2,256)`, `(5,4096)`, and `(3,8192)`; each output matched the input exactly.
+- Earlier correctness run: PASS on device 4 for `(2,256)`, `(5,4096)`, and `(3,8192)`; each output matched the input exactly. The identity-bound device-7 rerun below is the current correctness evidence.
 - Performance timing: NOT RUN. No r2/r3 comparison was run.
 
 ## Executable identity
@@ -40,11 +40,11 @@ Review the recorded source SHA, approved one-row-per-block diff, executable iden
 - Candidate source / tiling SHA-256: `9367db4ebb4edf6b7bf6cde97f4846f987e6ab230c2aeee44d942d5e881a1c74` / `0939ba8498426fcd77645d826fcc45a8eb65c78996ad0ce1da1a00d1ac01a250`.
 - Build and link: PASS. Host identity and argument tests: PASS for `(2,256)`, `(5,4096)`, `(3,8192)`, minimum counts, invalid shape, and invalid device-mode counts.
 - The runner reports source paths and SHA values for both revisions. The build script verifies staged source copies against the expected values. The identity and plan commands do not call ACL. The invalid `--run` argument case exited before ACL setup; no valid device sequence, correctness rerun, or timing run was made.
-- Device sequence, for a future authorized window only: parent warmup >=10; two in-process Parent blocks with >=21 device-event samples per block; report full-sample MAD/median and block drift; enter >=4 alternating PC/CP pairs only when both limits are <=0.10. Each pair block has >=21 device-event samples. Keep stdout raw samples with the Route evidence when the sequence is eventually run.
+- Device sequence, for a future authorized window only: use 45 or more warmups under the current protocol; two in-process Parent blocks with >=21 device-event samples per block; report full-sample MAD/median and block drift; enter >=4 alternating PC/CP pairs only when both limits are <=0.10. Each pair block has >=21 device-event samples. A fresh exclusive MAIN-1 lease is required. Keep stdout raw samples with the Route evidence when the sequence is eventually run.
 - Build logs, including failed attempts, are retained in `support/paired-runner/`; the successful log is `build-and-host-tests-attempt-8.log`.
 - Research review: `phase4/research/MODE-X-R015C/next-hypotheses.md` retains four distinct research-only items. No candidate source changed.
 
-## Current handoff state
+## Handoff state at 2026-09-25
 
 Main decision remains `NEEDS_ONE_MORE_LOCAL`. Keep R015C-r4 unchanged. The runner and documentation work is complete; no device access, correctness rerun, timing, r2 comparison, or new revision was performed. Return these Route-owned records to Main review.
 
@@ -65,3 +65,10 @@ Main decision remains `NEEDS_ONE_MORE_LOCAL`. Keep R015C-r4 unchanged. The runne
 - Immediately after, device 7 remained healthy, AICore was 0%, and HBM use was `14537/65536 MB`; the same PID remained listed at 11012 MB. A post-run process query at `2026-09-25T20:01:16Z` confirmed the same unrelated command.
 - The full log's two derived `DEVICE7_PROCESS` summary lines have shifted columns because the `npu-smi` row starts with an empty field. Do not use those two summaries: the raw pre/post device tables in the same log correctly show PID `1300597`, process `python`, and memory `11016` / `11012 MB`. The standalone process query and corrected interpretation are retained in `support/server3/correctness-device7-process-audit-20260926.log`.
 - No timing, same-binary qualification, or performance sampling was performed.
+- Main confirmed this identity-bound result: kernel source SHA-256 `9367db4ebb4edf6b7bf6cde97f4846f987e6ab230c2aeee44d942d5e881a1c74`, tiling SHA-256 `0939ba8498426fcd77645d826fcc45a8eb65c78996ad0ce1da1a00d1ac01a250`, and executable SHA-256 `21934a8cf15508b365e252810c8f858b4fb105c5cc5000f460d61c511a37e188` all match the run record. The three requested shapes passed exact comparison with exit status 0. Same-binary qualification and paired timing remain outstanding; Main retains `NEEDS_ONE_MORE_LOCAL`.
+
+## Current handoff state (2026-09-26)
+
+- Main-confirmed exact-source correctness is PASS for the three recorded shapes and the executable identity above.
+- R015C-r4 remains unchanged. Same-binary qualification, paired timing, and performance load classification remain outstanding; no fresh R015C lease is present in the shared record.
+- Track-B adds H08-H10 as research-only items. No Candidate or runner implementation changed.

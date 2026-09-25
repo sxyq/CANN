@@ -119,3 +119,64 @@ R015C-r4 remains unchanged. The following ideas are separate research candidates
 - MINIMAL_OFAT_DIFF: Replace the post-input and post-output barrier template arguments only; retain all data movement and loop logic.
 - EXPECTED_LOCAL_PROBES: Exact checks for all three current shapes plus `(3,2056)`. Do not time before fresh same-binary qualification for the exact shape and an explicit current lease.
 - READINESS: NEEDS_MORE_EVIDENCE.
+
+## Research batch 2026-09-26 (continued)
+
+R015C-r4 remains unchanged. These three ideas are distinct from H01-H07 and remain research-only; none is authorized for implementation.
+
+## R015C-H08: Two-row block with batched row copies
+
+- MECHANISM: Assign two adjacent rows to each block and use one `DataCopyPad` Ext descriptor per direction with `blockCount=rowsThisBlock`, `blockLen=D*sizeof(float)`, and zero strides.
+- BOTTLENECK: Per-row block scheduling and copy descriptor setup for workloads with many short rows.
+- EXPECTED_SHAPES: High-row-count short and medium widths, starting with `(64,256)`, `(64,1024)`, and `(64,4096)`; include odd-row `(5,256)` and max-width `(3,8192)` boundary cases.
+- WHY_IT_MAY_HELP: It halves the block count for even row counts and groups contiguous row transfers into one descriptor while preserving all bytes copied.
+- WHY_IT_MAY_FAIL: Fewer blocks may reduce available core parallelism; descriptor savings can be smaller than the scheduling cost, especially when R is small.
+- ASCEND_FEASIBILITY: The local API guide documents multi-block `DataCopyPad` Ext descriptors. Accepted FP32 widths make each row byte length a multiple of 32; two maximum-width rows occupy exactly the existing 64 KiB staging allocation. Confirm DAV_2201 GM and UB stride-zero behavior and odd-tail descriptors before implementation.
+- UB/CORE/DMA_IMPACT: Keep the 64 KiB allocation and total bytes; stage at most two rows per block. Halve block tasks for even R; use one descriptor per direction for each block.
+- SYNC_IMPACT: Retain copy-in, full barrier, copy-out, full barrier ordering; no cross-block synchronization.
+- PRECISION_RISK: Incorrect `blockCount`, row extent, or final odd-row handling can omit or repeat values; there is no arithmetic, so exact-copy comparison is suitable.
+- DUPLICATE_CHECK: H05 batches column segments within one row. H08 batches adjacent rows within one block and changes the row-to-block mapping; it does not alter segment size or copy primitive.
+- MINIMAL_OFAT_DIFF: Set rows-per-block to two and replace the per-row copy descriptor with a block-count descriptor; retain DataCopyPad, the current 64 KiB allocation, and both barriers.
+- FALSIFICATION_TEST: Build for DAV_2201 and exact-compare the three current shapes plus `(5,256)`, `(64,256)`, and `(64,4096)`. If later authorized, qualify each measured shape first and compare against r3 with the same runner and a fresh exclusive lease; a stable result within the same-binary floor or a regression falsifies the expected benefit.
+- EXPECTED_INFORMATION_GAIN: High; isolates row grouping and block-count effects from H05's within-row descriptor batching.
+- LIKELY_GLOBAL_UPSIDE: Low to medium and shape-dependent; most plausible for large R with short D, uncertain for the route's existing low-R probes.
+- EXPECTED_LOCAL_PROBES: Use host-only runner plans for `(64,256)`, `(64,1024)`, and `(64,4096)` first. After a future authorized implementation, add exact-copy coverage for odd and even row counts; any timing requires exact-shape same-binary qualification and a fresh lease.
+- READINESS: NEEDS_MORE_EVIDENCE.
+
+## R015C-H09: Stage a complete row before copy-out
+
+- MECHANISM: Keep one row per block and the existing segment descriptors, but copy all segments of a row into distinct offsets in the existing staging buffer, issue one full barrier, copy all segments out, then issue one full barrier.
+- BOTTLENECK: Repeated synchronization between input and output copies for rows spanning multiple segments.
+- EXPECTED_SHAPES: Wide rows `(5,4096)` and `(3,8192)`; include `(3,2056)` to exercise an aligned partial final segment and `(2,256)` as a one-segment control.
+- WHY_IT_MAY_HELP: A four-segment row would use two barriers instead of eight while retaining the same number and size of DMA descriptors.
+- WHY_IT_MAY_FAIL: The kernel has no Vector work to overlap with DMA; multiple outstanding same-direction copies may add queue pressure, and the barriers may already be inexpensive after compiler lowering.
+- ASCEND_FEASIBILITY: The 64 KiB staging buffer holds the largest complete row (32 KiB). Accepted D values and the 2048-element segment cap keep segment offsets 32-byte aligned. `DataCopyPad` is asynchronous; one completion barrier after the input phase and one after the output phase must be verified on DAV_2201.
+- UB/CORE/DMA_IMPACT: Keep one block per row, 64 KiB allocation, segment size, and total DMA bytes. At most 32 KiB of one row is live in the staging buffer; descriptor count is unchanged.
+- SYNC_IMPACT: Change synchronization from per-segment input/output alternation to one full barrier after all input segments and one after all output segments; do not overlap buffers or rows.
+- PRECISION_RISK: A wrong local segment offset or a missing phase barrier can expose stale data; test every segment count and tail length with exact comparison.
+- DUPLICATE_CHECK: H05 batches multiple segments in a descriptor; H07 narrows barrier scope but retains the per-segment schedule. H09 retains each descriptor and `PIPE_ALL`, changing only staging layout and barrier placement by phase.
+- MINIMAL_OFAT_DIFF: Split the existing segment loop into a copy-in loop and copy-out loop, address `local[col]`, and move the two existing full barriers to the phase boundaries.
+- FALSIFICATION_TEST: Compile, then exact-compare `(2,256)`, `(5,4096)`, `(3,8192)`, and `(3,2056)`. If later authorized, qualify exact shapes before paired device-event runs; unchanged medians within the qualified noise floor or stable regressions falsify the benefit.
+- EXPECTED_INFORMATION_GAIN: High; separates synchronization frequency and full-row staging effects from descriptor-count changes.
+- LIKELY_GLOBAL_UPSIDE: Low to medium, concentrated on low-row-count wide shapes with multiple segments; short rows should be neutral.
+- EXPECTED_LOCAL_PROBES: Use host-only plans for the three recorded shapes and `(3,2056)`. After a future authorized implementation, exact-compare all segment-count and tail paths; qualify each timed shape and obtain a fresh lease before paired runs.
+- READINESS: NEEDS_MORE_EVIDENCE.
+
+## R015C-H10: Pass row width as a kernel scalar
+
+- MECHANISM: Remove the device-resident tiling pointer from the R4 kernel entry and pass `cols` as a scalar kernel argument; launch exactly `rows` blocks so the kernel can derive its row from `blockIdx` without reading `shape->rows` from GM.
+- BOTTLENECK: Per-block GM reads of the shared tiling structure and its dependent row/column control values in a copy kernel with little other work.
+- EXPECTED_SHAPES: Many short rows such as `(64,256)` and `(128,256)`, with `(64,1024)` as a medium-width comparison.
+- WHY_IT_MAY_HELP: It removes the tiling-structure GM load and bounds check from each block without changing row-level DMA traffic.
+- WHY_IT_MAY_FAIL: The compiler/runtime may already cache or cheaply handle the tiling reads; kernel scalar argument passing may not be supported by the exact direct-launch ABI or may add equivalent launch overhead.
+- ASCEND_FEASIBILITY: A scalar `uint32_t` entry argument is plausible for the current direct-launch style, but DAV_2201 compiler and wrapper support must be confirmed before any code change. Parent and Candidate launch wrappers must continue to receive the same logical shape.
+- UB/CORE/DMA_IMPACT: No change to block count, 64 KiB staging, copy descriptors, or DMA bytes; the Candidate kernel avoids per-block tiling GM reads. The paired runner still needs the Parent tiling buffer, so any host allocation saving applies only to a standalone Candidate invocation.
+- SYNC_IMPACT: No change to copy order, barriers, or stream behavior.
+- PRECISION_RISK: No arithmetic is added; a bad scalar value or grid mismatch can shift row offsets or leave output rows unwritten.
+- DUPLICATE_CHECK: H01 changes task mapping; H08 groups rows; H10 retains one row per block and changes only how the row width reaches the kernel.
+- MINIMAL_OFAT_DIFF: Change the Candidate entry signature to take `cols`, derive row start directly from block index, and update only its launch wrapper; leave r3 and all DMA logic unchanged.
+- FALSIFICATION_TEST: First confirm the scalar entry ABI with the route's exact DAV_2201 toolchain and build. Then exact-compare the current three shapes plus `(64,256)` and `(64,1024)`. If later authorized, qualify and measure the exact shapes; no improvement beyond the qualified noise floor falsifies the expected benefit.
+- EXPECTED_INFORMATION_GAIN: Medium; tests whether repeated shape metadata loads matter independently of DMA and row scheduling.
+- LIKELY_GLOBAL_UPSIDE: Low, with possible gains limited to many short rows; likely negligible for wide DMA-dominated shapes.
+- EXPECTED_LOCAL_PROBES: Establish host wrapper and scalar-entry ABI feasibility first; then use host-only plans for `(64,256)` and `(64,1024)`. After a future authorized implementation, exact-compare current and high-row-count shapes; timing requires exact-shape qualification and a fresh lease.
+- READINESS: NEEDS_MORE_EVIDENCE.
