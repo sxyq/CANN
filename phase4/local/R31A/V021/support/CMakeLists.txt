@@ -62,13 +62,51 @@ foreach(probe probe_v016 probe_v021)
         $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=${CCE_AICORE_ARCH}>)
 endforeach()
 
-add_executable(r31a_paired_probe paired_probe.asc)
+add_library(r31a_paired_v016 SHARED paired_probe_v016.asc)
+target_include_directories(r31a_paired_v016 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${R31A_INCLUDE_DIRS})
+target_compile_options(r31a_paired_v016 PRIVATE
+    $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=${CCE_AICORE_ARCH}>)
+target_link_libraries(r31a_paired_v016 PRIVATE
+    tiling_api register platform unified_dlog dl m graph_base)
+target_link_options(r31a_paired_v016 PRIVATE
+    "-Wl,-Bsymbolic"
+    "-L${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/lib64"
+    "-L/usr/lib/gcc/aarch64-linux-gnu/11"
+    "-L/usr/lib/aarch64-linux-gnu"
+    "-L${HCC_TOOLCHAIN}/aarch64-target-linux-gnu/lib64")
+
+add_library(r31a_paired_v021 SHARED paired_probe_v021.asc)
+target_include_directories(r31a_paired_v021 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${R31A_INCLUDE_DIRS})
+target_compile_options(r31a_paired_v021 PRIVATE
+    $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=${CCE_AICORE_ARCH}>)
+target_link_libraries(r31a_paired_v021 PRIVATE
+    tiling_api register platform unified_dlog dl m graph_base)
+target_link_options(r31a_paired_v021 PRIVATE
+    "-Wl,-Bsymbolic"
+    "-L${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/lib64"
+    "-L/usr/lib/gcc/aarch64-linux-gnu/11"
+    "-L/usr/lib/aarch64-linux-gnu"
+    "-L${HCC_TOOLCHAIN}/aarch64-target-linux-gnu/lib64")
+
+set(R31A_SERVER3_GCC11_CXX_INCLUDE_DIRS
+    "/usr/include/c++/11"
+    "/usr/include/aarch64-linux-gnu/c++/11"
+    "/usr/include/c++/11/backward")
+list(JOIN R31A_SERVER3_GCC11_CXX_INCLUDE_DIRS ":" R31A_SERVER3_GCC11_CXX_INCLUDE_PATH)
+set(R31A_ASC_REGISTRATION_ENV
+    "${CMAKE_COMMAND} -E env CPATH=${R31A_SERVER3_GCC11_CXX_INCLUDE_PATH} CPLUS_INCLUDE_PATH=${R31A_SERVER3_GCC11_CXX_INCLUDE_PATH}")
+set_property(TARGET r31a_paired_v016 r31a_paired_v021
+    PROPERTY RULE_LAUNCH_COMPILE "${R31A_ASC_REGISTRATION_ENV}")
+
+add_executable(r31a_paired_probe paired_probe.cpp)
+add_dependencies(r31a_paired_probe r31a_paired_v016 r31a_paired_v021)
 target_include_directories(r31a_paired_probe PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${R31A_INCLUDE_DIRS})
 target_link_libraries(r31a_paired_probe PRIVATE
-    tiling_api register platform unified_dlog dl m graph_base)
+    ascendcl tiling_api register platform unified_dlog dl m graph_base stdc++)
 target_link_options(r31a_paired_probe PRIVATE
+    "-L${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/lib64"
     "-L/usr/lib/gcc/aarch64-linux-gnu/11"
     "-L/usr/lib/aarch64-linux-gnu"
     "-L${HCC_TOOLCHAIN}/aarch64-target-linux-gnu/lib64")
 target_compile_options(r31a_paired_probe PRIVATE
-    $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=${CCE_AICORE_ARCH}>)
+    $<$<COMPILE_LANGUAGE:CXX>:-std=c++17>)

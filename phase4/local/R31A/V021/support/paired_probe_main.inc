@@ -7,6 +7,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <string>
+#include <thread>
 #include <vector>
 
 namespace {
@@ -18,6 +19,7 @@ constexpr float kEpsilon = 1.0e-5f;
 constexpr double kTolerance = 1.0e-4;
 
 struct TimedSample {
+    int32_t block;
     int32_t pair;
     const char* order;
     const char* version;
@@ -153,8 +155,9 @@ bool CheckCorrectness(const char* version, const std::vector<float>& output,
 
 template <typename Invoke>
 bool MeasureOne(Invoke invoke, const char* version, int32_t pair,
-                const char* order, aclrtStream stream, aclrtEvent start,
-                aclrtEvent stop, std::vector<TimedSample>& samples)
+                int32_t block, const char* order, aclrtStream stream,
+                aclrtEvent start, aclrtEvent stop,
+                std::vector<TimedSample>& samples)
 {
     if (!CheckAcl(aclrtRecordEvent(start, stream), "aclrtRecordEvent(start)")) return false;
     const auto wallStart = std::chrono::steady_clock::now();
@@ -165,13 +168,14 @@ bool MeasureOne(Invoke invoke, const char* version, int32_t pair,
     float deviceMs = 0.0f;
     if (!CheckAcl(aclrtEventElapsedTime(&deviceMs, start, stop), "aclrtEventElapsedTime")) return false;
     samples.push_back({
-        pair, order, version, static_cast<double>(deviceMs) * 1000.0,
+        block, pair, order, version, static_cast<double>(deviceMs) * 1000.0,
         std::chrono::duration<double, std::micro>(wallStop - wallStart).count()
     });
     return true;
 }
 
 bool WriteOutputs(const char* prefix, uint64_t width,
+                  const char* mode, const std::vector<const char*>& versions,
                   const std::vector<TimedSample>& samples)
 {
     const std::string samplePath = std::string(prefix) + "-samples.tsv";
@@ -188,29 +192,35 @@ bool WriteOutputs(const char* prefix, uint64_t width,
         return false;
     }
 
-    fprintf(raw, "width\trows\tblocks\tpair\torder\tversion\tdevice_us\twall_us\n");
+    fprintf(raw, "mode\tblock\twidth\trows\tblocks\tsample\torder\tversion\tdevice_us\twall_us\n");
     for (const TimedSample& sample : samples) {
-        fprintf(raw, "%llu\t%llu\t%lld\t%d\t%s\t%s\t%.6f\t%.6f\n",
+        fprintf(raw, "%s\t%d\t%llu\t%llu\t%lld\t%d\t%s\t%s\t%.6f\t%.6f\n",
+                mode, sample.block,
                 static_cast<unsigned long long>(width),
                 static_cast<unsigned long long>(kRows), static_cast<long long>(kBlocks),
                 sample.pair, sample.order, sample.version, sample.deviceUs, sample.wallUs);
     }
 
-    fprintf(summary, "version\tmetric\tn\tmedian\tmean\tstdev\tCV\tmin\tmax\tmax_min\tMAD\tp10\tp90\tabsolute_spread\n");
-    for (const char* version : {"V016", "V021"}) {
-        for (const char* metric : {"device_us", "wall_us"}) {
-            std::vector<double> values;
-            for (const TimedSample& sample : samples) {
-                if (std::strcmp(sample.version, version) == 0) {
-                    values.push_back(std::strcmp(metric, "device_us") == 0
-                        ? sample.deviceUs : sample.wallUs);
+    fprintf(summary, "mode\tblock\tversion\tmetric\trole\tn\tmedian\tmean\tstdev\tCV\tmin\tmax\tmax_min\tMAD\tp10\tp90\tabsolute_spread\n");
+    for (const char* version : versions) {
+        for (int32_t block = 1; block <= (std::strcmp(mode, "PAIR") == 0 ? 1 : 2); ++block) {
+            for (const char* metric : {"device_us", "wall_us"}) {
+                std::vector<double> values;
+                for (const TimedSample& sample : samples) {
+                    if (sample.block == block && std::strcmp(sample.version, version) == 0) {
+                        values.push_back(std::strcmp(metric, "device_us") == 0
+                            ? sample.deviceUs : sample.wallUs);
+                    }
                 }
+                if (values.empty()) continue;
+                const Stats stats = Summarize(values);
+                const char* role = std::strcmp(metric, "device_us") == 0
+                    ? "PRIMARY" : "DIAGNOSTIC";
+                fprintf(summary, "%s\t%d\t%s\t%s\t%s\t%zu\t%.6f\t%.6f\t%.6f\t%.6f\t%.6f\t%.6f\t%.6f\t%.6f\t%.6f\t%.6f\t%.6f\n",
+                        mode, block, version, metric, role, values.size(), stats.median, stats.mean,
+                        stats.stdev, stats.cv, stats.min, stats.max, stats.maxMin, stats.mad,
+                        stats.p10, stats.p90, stats.spread);
             }
-            const Stats stats = Summarize(values);
-            fprintf(summary, "%s\t%s\t%zu\t%.6f\t%.6f\t%.6f\t%.6f\t%.6f\t%.6f\t%.6f\t%.6f\t%.6f\t%.6f\t%.6f\n",
-                    version, metric, values.size(), stats.median, stats.mean, stats.stdev,
-                    stats.cv, stats.min, stats.max, stats.maxMin, stats.mad,
-                    stats.p10, stats.p90, stats.spread);
         }
     }
 
@@ -223,18 +233,40 @@ bool WriteOutputs(const char* prefix, uint64_t width,
 
 int main(int argc, char** argv)
 {
-    if (argc != 4) {
-        fprintf(stderr, "usage: %s DEVICE WIDTH OUTPUT_PREFIX\n", argv[0]);
+    if (argc < 2 || (std::strcmp(argv[1], "pair") != 0 &&
+                     std::strcmp(argv[1], "same") != 0)) {
+        fprintf(stderr,
+                "usage: %s pair DEVICE WIDTH OUTPUT_PREFIX\n"
+                "       %s same DEVICE V016|V021 WIDTH OUTPUT_PREFIX GAP_SECONDS\n",
+                argv[0], argv[0]);
         return 2;
     }
+    const bool sameBinary = std::strcmp(argv[1], "same") == 0;
+    if ((!sameBinary && argc != 5) || (sameBinary && argc != 7)) {
+        fprintf(stderr,
+                "usage: %s pair DEVICE WIDTH OUTPUT_PREFIX\n"
+                "       %s same DEVICE V016|V021 WIDTH OUTPUT_PREFIX GAP_SECONDS\n",
+                argv[0], argv[0]);
+        return 2;
+    }
+    const char* deviceArg = argv[2];
+    const char* versionArg = sameBinary ? argv[3] : nullptr;
+    const char* widthArg = sameBinary ? argv[4] : argv[3];
+    const char* prefix = sameBinary ? argv[5] : argv[4];
     char* deviceEnd = nullptr;
     char* widthEnd = nullptr;
-    const long deviceValue = std::strtol(argv[1], &deviceEnd, 10);
-    const long widthValue = std::strtol(argv[2], &widthEnd, 10);
-    if (deviceEnd == argv[1] || *deviceEnd != '\0' || deviceValue < 0 || deviceValue > INT_MAX ||
-        widthEnd == argv[2] || *widthEnd != '\0' ||
-        (widthValue != 32768 && widthValue != 24576) || argv[3][0] == '\0') {
-        fprintf(stderr, "invalid arguments; WIDTH must be 32768 or 24576\n");
+    const long deviceValue = std::strtol(deviceArg, &deviceEnd, 10);
+    const long widthValue = std::strtol(widthArg, &widthEnd, 10);
+    char* gapEnd = nullptr;
+    const long gapSeconds = sameBinary ? std::strtol(argv[6], &gapEnd, 10) : 0;
+    if (deviceEnd == deviceArg || *deviceEnd != '\0' || deviceValue < 0 || deviceValue > INT_MAX ||
+        widthEnd == widthArg || *widthEnd != '\0' ||
+        (widthValue != 32768 && widthValue != 24576) || prefix[0] == '\0' ||
+        (sameBinary && std::strcmp(versionArg, "V016") != 0 &&
+         std::strcmp(versionArg, "V021") != 0) ||
+        (sameBinary && (gapEnd == argv[6] || *gapEnd != '\0' ||
+                        gapSeconds < 0 || gapSeconds > INT_MAX))) {
+        fprintf(stderr, "invalid arguments; WIDTH must be 32768 or 24576 and GAP_SECONDS must be nonnegative\n");
         return 2;
     }
     const int32_t device = static_cast<int32_t>(deviceValue);
@@ -282,26 +314,31 @@ int main(int argc, char** argv)
     const TensorGroupInfo infoBias = {biasInfo, 1};
     const TensorGroupInfo infoOutput = {outputInfo, 1};
     auto invokeV016 = [&]() {
-        r31a_v016::r31a_run_kernel_v016(
-            reinterpret_cast<GM_ADDR>(xDevice), infoX,
-            reinterpret_cast<GM_ADDR>(residualDevice), infoResidual,
-            reinterpret_cast<GM_ADDR>(gammaDevice), infoGamma,
-            reinterpret_cast<GM_ADDR>(biasDevice), infoBias,
-            reinterpret_cast<GM_ADDR>(outputDevice), infoOutput,
+        r31a_run_kernel_v016(
+            xDevice, infoX,
+            residualDevice, infoResidual,
+            gammaDevice, infoGamma,
+            biasDevice, infoBias,
+            outputDevice, infoOutput,
             kBlocks, stream, kEpsilon);
     };
     auto invokeV021 = [&]() {
-        r31a_v021::r31a_run_kernel_v021(
-            reinterpret_cast<GM_ADDR>(xDevice), infoX,
-            reinterpret_cast<GM_ADDR>(residualDevice), infoResidual,
-            reinterpret_cast<GM_ADDR>(gammaDevice), infoGamma,
-            reinterpret_cast<GM_ADDR>(biasDevice), infoBias,
-            reinterpret_cast<GM_ADDR>(outputDevice), infoOutput,
+        r31a_run_kernel_v021(
+            xDevice, infoX,
+            residualDevice, infoResidual,
+            gammaDevice, infoGamma,
+            biasDevice, infoBias,
+            outputDevice, infoOutput,
             kBlocks, stream, kEpsilon);
+    };
+    const auto invokeVersion = [&](const char* version) {
+        if (std::strcmp(version, "V016") == 0) invokeV016();
+        else invokeV021();
     };
 
     std::vector<TimedSample> samples;
-    samples.reserve(static_cast<size_t>(2 * kSamples));
+    samples.reserve(static_cast<size_t>((sameBinary ? 1 : 2) * kSamples *
+                                        (sameBinary ? 2 : 1)));
 
     do {
         if (!CheckAcl(aclInit(nullptr), "aclInit")) { result = 2; break; }
@@ -333,10 +370,12 @@ int main(int argc, char** argv)
         }
 
         for (int32_t i = 0; i < kWarmups; ++i) {
-            const bool parentFirst = (i % 2) == 0;
-            if (!(parentFirst
+            const bool warmupOk = sameBinary
+                ? InvokeAndSync([&]() { invokeVersion(versionArg); }, stream)
+                : ((i % 2) == 0
                     ? InvokeAndSync(invokeV016, stream) && InvokeAndSync(invokeV021, stream)
-                    : InvokeAndSync(invokeV021, stream) && InvokeAndSync(invokeV016, stream))) {
+                    : InvokeAndSync(invokeV021, stream) && InvokeAndSync(invokeV016, stream));
+            if (!warmupOk) {
                 result = 4;
                 break;
             }
@@ -348,32 +387,64 @@ int main(int argc, char** argv)
             result = 4;
             break;
         }
-        for (int32_t pair = 0; pair < kSamples; ++pair) {
-            const bool parentFirst = (pair % 2) == 0;
-            const char* order = parentFirst ? "P-C" : "C-P";
-            const bool ok = parentFirst
-                ? MeasureOne(invokeV016, "V016", pair + 1, order, stream, start, stop, samples) &&
-                  MeasureOne(invokeV021, "V021", pair + 1, order, stream, start, stop, samples)
-                : MeasureOne(invokeV021, "V021", pair + 1, order, stream, start, stop, samples) &&
-                  MeasureOne(invokeV016, "V016", pair + 1, order, stream, start, stop, samples);
-            if (!ok) { result = 4; break; }
+        if (sameBinary) {
+            for (int32_t block = 1; block <= 2 && result == 0; ++block) {
+                if (block > 1 && gapSeconds > 0) {
+                    std::this_thread::sleep_for(std::chrono::seconds(gapSeconds));
+                }
+                for (int32_t sample = 0; sample < kSamples; ++sample) {
+                    if (!MeasureOne([&]() { invokeVersion(versionArg); }, versionArg,
+                                    sample + 1, block, "SAME", stream, start, stop, samples)) {
+                        result = 4;
+                        break;
+                    }
+                }
+            }
+        } else {
+            for (int32_t pair = 0; pair < kSamples; ++pair) {
+                const bool parentFirst = (pair % 2) == 0;
+                const char* order = parentFirst ? "P-C" : "C-P";
+                const bool ok = parentFirst
+                    ? MeasureOne(invokeV016, "V016", pair + 1, 1, order, stream, start, stop, samples) &&
+                      MeasureOne(invokeV021, "V021", pair + 1, 1, order, stream, start, stop, samples)
+                    : MeasureOne(invokeV021, "V021", pair + 1, 1, order, stream, start, stop, samples) &&
+                      MeasureOne(invokeV016, "V016", pair + 1, 1, order, stream, start, stop, samples);
+                if (!ok) { result = 4; break; }
+            }
         }
-        if (result == 0 && !WriteOutputs(argv[3], width, samples)) result = 5;
+        if (result == 0) {
+            const std::vector<const char*> versions = sameBinary
+                ? std::vector<const char*>{versionArg}
+                : std::vector<const char*>{"V016", "V021"};
+            if (!WriteOutputs(prefix, width, sameBinary ? "SAME_BINARY" : "PAIR",
+                              versions, samples)) result = 5;
+        }
     } while (false);
 
-    if (start != nullptr) aclrtDestroyEvent(start);
-    if (stop != nullptr) aclrtDestroyEvent(stop);
-    if (outputDevice != nullptr) aclrtFree(outputDevice);
-    if (biasDevice != nullptr) aclrtFree(biasDevice);
-    if (gammaDevice != nullptr) aclrtFree(gammaDevice);
-    if (residualDevice != nullptr) aclrtFree(residualDevice);
-    if (xDevice != nullptr) aclrtFree(xDevice);
-    if (stream != nullptr) aclrtDestroyStream(stream);
-    if (deviceSelected) aclrtResetDevice(device);
-    if (aclInitialized) aclFinalize();
+    bool streamDrained = stream == nullptr;
+    if (stream != nullptr) {
+        streamDrained = CheckAcl(aclrtSynchronizeStream(stream), "cleanup aclrtSynchronizeStream");
+        if (!streamDrained && result == 0) result = 6;
+    }
+    if (streamDrained) {
+        if (start != nullptr && !CheckAcl(aclrtDestroyEvent(start), "aclrtDestroyEvent(start)") && result == 0) result = 6;
+        if (stop != nullptr && !CheckAcl(aclrtDestroyEvent(stop), "aclrtDestroyEvent(stop)") && result == 0) result = 6;
+        if (outputDevice != nullptr && !CheckAcl(aclrtFree(outputDevice), "aclrtFree(output)") && result == 0) result = 6;
+        if (biasDevice != nullptr && !CheckAcl(aclrtFree(biasDevice), "aclrtFree(bias)") && result == 0) result = 6;
+        if (gammaDevice != nullptr && !CheckAcl(aclrtFree(gammaDevice), "aclrtFree(gamma)") && result == 0) result = 6;
+        if (residualDevice != nullptr && !CheckAcl(aclrtFree(residualDevice), "aclrtFree(residual)") && result == 0) result = 6;
+        if (xDevice != nullptr && !CheckAcl(aclrtFree(xDevice), "aclrtFree(x)") && result == 0) result = 6;
+        if (stream != nullptr && !CheckAcl(aclrtDestroyStream(stream), "aclrtDestroyStream(stream)") && result == 0) result = 6;
+        if (deviceSelected && !CheckAcl(aclrtResetDevice(device), "aclrtResetDevice") && result == 0) result = 6;
+        if (aclInitialized && !CheckAcl(aclFinalize(), "aclFinalize") && result == 0) result = 6;
+    } else {
+        fprintf(stderr, "cleanup skipped event and device-buffer destruction because stream drain failed\n");
+    }
     if (result == 0) {
-        printf("paired run complete: width=%llu samples_per_version=%d warmups_per_version=%d output_prefix=%s\n",
-               static_cast<unsigned long long>(width), kSamples, kWarmups, argv[3]);
+        printf("%s run complete: width=%llu samples_per_version=%d blocks=%d warmups_per_version=%d device_event=PRIMARY wall_clock=DIAGNOSTIC output_prefix=%s\n",
+               sameBinary ? "same-binary" : "paired",
+               static_cast<unsigned long long>(width), kSamples,
+               sameBinary ? 2 : 1, kWarmups, prefix);
     }
     return result;
 }

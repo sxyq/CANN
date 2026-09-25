@@ -26,51 +26,76 @@ Candidate 源仅把 `SyncMTE3ToV()` 从 FP32 CachedRows 输出的 tile 循环体
 
 V021 的编译、链接记录均为 PASS。设备 4 上记录的正确性结果：D=32768 与控制 D=24576 均 PASS，最大绝对误差分别为 `4.83928943e-07`、`3.48268474e-07`。已有两组延迟记录标为 `LOAD_CONTAMINATED`，方向相反，不构成性能结论。
 
-## 可执行文件身份
+## 配对 runner 源码身份
 
-现有 `local-result.json` 留存的 server3 构建记录：
+server3 构建目录中的编译输入与本地文件逐项 SHA-256 一致。Parent 与 Candidate 原始 ASC 源保持不变：
 
-| 文件 | 记录的二进制 SHA-256 | 编译输入源 SHA-256 |
+| 输入 | 编译路径 | SHA-256 |
 |---|---|---|
-| `probe_v016` | `5513076e24b067864ea625ff9a0cfe9e8d1adb89262de3cebd9a3ab198df3f78` | `dd13093823c885e785a650abff4863827e652eb8607ad0621a96eb31b6764fa0` |
-| `probe_v021` | `62092bb490d61e2604e6561e2971856aace504d7875427dceb06039ace163bf0` | `4f5bfc319b72d1f0bcfd453bc92e80ac64216719898757292daf1aa1b73b6063` |
+| Parent V016 | `support/parent_v016_submission.asc` | `dd13093823c885e785a650abff4863827e652eb8607ad0621a96eb31b6764fa0` |
+| Candidate V021 | `../submission.asc` | `4f5bfc319b72d1f0bcfd453bc92e80ac64216719898757292daf1aa1b73b6063` |
+| C++ runner | `support/paired_probe.cpp` | `c0fc544f61f736f44465ee1440bb7c89240c2fa6ffd7573be53c9ee126edf90a` |
+| Runner body | `support/paired_probe_main.inc` | `0a9f4e262da816abd9ee3d5f377877627addda492f2d07e9b7f37e707d3626c6` |
+| Parent ASC wrapper | `support/paired_probe_v016.asc` | `dd45d48c000b77f9fd47f8c9e050a39ad320da13319553f0722aad78e05baecc` |
+| Candidate ASC wrapper | `support/paired_probe_v021.asc` | `4ccb96b2a9f5abf6b5f116a1bf2ff3fdff982ae42dbdac9f2f5c39a2e4541df1` |
+| Shared host declarations | `support/probe_prelude.inc` | `b4f96bc019bd5c0e3e11846649c1f0466a1dbb629ca4d177908b8791ea6aa5b8` |
+| Build rules | `support/CMakeLists.txt` | `e4d450f8c4b6884ea749d3396d7401fcd6d6ced2e1f6a32a0a36921908c225cd` |
 
-依赖记录显示 Parent probe 包含 `support/parent_v016_submission.asc`，Candidate probe 包含 `../submission.asc`。本轮只核对了 Route 内保留的构建与依赖记录；二进制本体位于本 Route 工作区之外，未读取或重新计算其摘要。若更换 runner，以上二进制身份随即失效，须按新 runner 重建并记录。
+The prior combined `support/paired_probe.asc` has been replaced by separate Parent and Candidate ASC shared-library translation units. Each wrapper renames and compiles its respective original `run_kernel`; the C++ executable uses ordinary `void*` host arguments and C ABI `dlopen`/`dlsym` bridges. This keeps `GM_ADDR` use inside each ASC module and isolates duplicate registration symbols. The generated ASC registration compile receives server3 GCC 11 standard-library paths through `CPATH` and `CPLUS_INCLUDE_PATH` in the CMake compile rule.
 
-## Harness 输入与状态
+## Parent/Candidate executable mapping
 
-既定形状输入为 FP32、rows=2、blocks=1：目标宽度 D=32768，控制宽度 D=24576；两者均覆盖末尾非满 7680-element tile。设备编号由 Main 的有效独占租约指定，不能沿用旧准备记录中的 device 4 假设。
+Build source: `/home/data4t2/lelinfeng/phase4-worktrees/R31A/V021-direct/phase4/local/R31A/V021/support`
 
-当前 `support/probe_main.inc` 与旧二进制不符合统一计时 protocol：warmup=2；每次启动聚合 10 次 launch，只输出一个平均 `device_us`；P/C 各自运行进程；没有逐样本 `wall_us`、样本文件或 jitter 统计。旧准备命令仅有每种形状两对，也低于新要求。因此这些二进制和延迟记录不得用于下一次统一 paired run。
+Build directory: `/home/data4t2/lelinfeng/phase4-worktrees/R31A/V021-direct/probe-build`
+Toolchain target: CANN `8.5.0.alpha002`, `dav-2201`, `Ascend910B3`.
 
-## 新 paired runner
+| Role | Original ASC input SHA-256 | Dedicated wrapper and exported bridge | Module ELF SHA-256 |
+|---|---|---|---|
+| Parent V016 | `dd13093823c885e785a650abff4863827e652eb8607ad0621a96eb31b6764fa0` | `paired_probe_v016.asc`; `r31a_run_kernel_v016` → `r31a_host_entry_v016` | `libr31a_paired_v016.so` / `11d7a2cb60912ce23b05a768c9076abcf2c513ad8b0844cc062d158082a4d5ea` |
+| Candidate V021 | `4f5bfc319b72d1f0bcfd453bc92e80ac64216719898757292daf1aa1b73b6063` | `paired_probe_v021.asc`; `r31a_run_kernel_v021` → `r31a_host_entry_v021` | `libr31a_paired_v021.so` / `9bacd8cd72b8db5c6b8a1574ce199c674b18bc2bcf858cfb91ade29f71d24674` |
 
-`support/paired_probe.asc` 在一个 ASC 翻译单元中分别包含 V016 与 V021；两个版本放在独立命名空间，并使用不同 kernel/host entry 名。`support/paired_probe_main.inc` 生成一个进程：同一 ACL stream、同一组一次分配并 H2D 的输入，先分别完成 V016/V021 correctness 与计时外 D2H，再各做 10 次 launch+stream sync warmup，之后执行 21 个相邻 P/C 配对，先后顺序逐对交替。每个单次 launch 记录 device event 时间和 host wall 时间。
+The shared C++ runner ELF is `r31a_paired_probe`, SHA-256 `c9a262a438182a096d36b78a0d34c5a31a77bc84934b1605db77f015959575d6`. Its host wrappers load the matching module and call the listed C ABI bridge. These are server3 build outputs; module loading and entry dispatch have not been exercised.
 
-每次调用只接受 D=32768 或 D=24576，固定 FP32、rows=2、blocks=1；成功后生成 `<prefix>-samples.tsv` 和 `<prefix>-jitter.tsv`，后者分别汇总两个版本的 device/wall 样本。文件使用独占新建模式，已有路径会报错，不覆盖旧结果。
+## Build attempts
 
-构建目标为 `r31a_paired_probe`；原 `probe_v016` 与 `probe_v021` CMake 目标保留。本机 C++ stub 语法编译通过，CMake/Ascend C/ACL 开发组件未安装，因此目标二进制尚未构建。没有有效租约，runner 未启动。
+`support/build-cann-server3-paired-r31a-paired_probe-20260925-final-link.log` records successful links for both ASC shared libraries and the final C++ executable; all three targets reached `Built target`. `support/build-cann-server3-paired-r31a-paired_probe-20260925-gmaddr-boundary.log` also ends with all three targets built. These are build-only results; no ELF was invoked.
 
-Main 安排有效租约、在具备该 Route 源码和 CANN 工具链的构建位置生成目标后，从构建目录执行下面两条命令；`DEVICE` 必须取本轮租约设备号，`RUN_ID` 每轮唯一：
+All six configure logs are retained and report CMake configure/generate completion: `configure-server3-paired.log`, `configure-cann-server3-paired-r31a-20260925.log`, `configure-cann-server3-paired-r31a-20260925-cxx-driver.log`, `configure-cann-server3-paired-r31a-20260925-gcc11-env.log`, `configure-cann-server3-paired-r31a-20260925-gcc11-stdlib.log`, and `configure-cann-server3-paired-r31a-20260925-symbol-import.log`.
+
+Every build attempt remains under `support/`:
+
+| Log | Outcome |
+|---|---|
+| `build-server3-paired.log` | Failed ASC host/device boundary: direct cast from `float*` to `__gm__ uint8_t*` is rejected. |
+| `build-cann-server3-paired-r31a-paired_probe-20260925.log` | Failed while the combined ASC translation unit could not resolve Parent `__origin__r31a_kernel_v016` specializations. |
+| `build-cann-server3-paired-r31a-paired_probe-20260925-cxx-driver.log` | Failed generated registration compilation because `<vector>` was not found; cceld/objcopy messages followed. |
+| `build-cann-server3-paired-r31a-paired_probe-20260925-gcc11-env.log` | Failed after GCC 11 architecture headers entered the ASC compile context; `arm_neon.h` types were unavailable. |
+| `build-cann-server3-paired-r31a-paired_probe-20260925-gcc11-stdlib.log` | Failed to resolve Parent `__origin__r31a_kernel_v016` specializations. |
+| `build-cann-server3-paired-r31a-paired_probe-20260925-symbol-import.log` | ASC compile failed in CANN headers/language mode; compiler emitted follow-on diagnostics. |
+| `build-cann-server3-paired-r31a-paired_probe-20260925-symbol-import-env.log` | Generated registration compile still lacked `<vector>`; later linker/objcopy messages were secondary. |
+| `build-cann-server3-paired-r31a-paired_probe-20260925-symbol-import-stdlib.log` | Failed on duplicate device stub symbols when both kernels were combined in one ASC image. |
+| `build-cann-server3-paired-r31a-paired_probe-20260925-split.log` | Failed with missing registration `<vector>` and unresolved Parent kernel specializations. |
+| `build-cann-server3-paired-r31a-paired_probe-20260925-unique-entry.log` | Partial attempt; log has no final runner target status and is not counted as a successful build. |
+| `build-cann-server3-paired-r31a-paired_probe-20260925-void-bridge-dso.log` | Both ASC libraries built; final C++ link returned cceld code 1 without a diagnostic. |
+| `build-cann-server3-paired-r31a-paired_probe-20260925-libpath.log` | Both ASC libraries built; final C++ link returned cceld code 1 without a diagnostic. |
+| `build-cann-server3-paired-r31a-paired_probe-20260925-aclend.log` | Both ASC libraries built; final C++ link returned cceld code 1 without a diagnostic. |
+| `build-cann-server3-paired-r31a-paired_probe-20260925-final-link.log` | PASS: Parent module, Candidate module, and `r31a_paired_probe` linked. |
+| `build-cann-server3-paired-r31a-paired_probe-20260925-gmaddr-boundary.log` | PASS: all three targets reported built; runner target was already current after final-link. |
+
+## Runner interface and local protocol
+
+The built runner accepts either `pair DEVICE WIDTH OUTPUT_PREFIX` or `same DEVICE V016|V021 WIDTH OUTPUT_PREFIX GAP_SECONDS`. Shapes remain FP32, rows=2, blocks=1; width is 32768 or 24576. The source implements correctness before measurements, 10 warmups, and 21 event-timed samples per block or adjacent pair, writing raw samples and summary tables. This describes the compiled harness only; runtime loading, ACL registration, correctness, and timing have not been tested for these ELFs.
+
+The next allowed measurement sequence is owned by Main: obtain an active exclusive MAIN-1 lease; use the Direct Parent V016 executable and each exact shape to qualify same-binary noise; proceed only for a shape marked PASS by the shared timing protocol. Avoid d7. The provided invocations are:
 
 ```sh
-RUN_ID=$(date +%Y%m%dT%H%M%S)
-printf 'Lease device ID: '
-read -r DEVICE
-./r31a_paired_probe "$DEVICE" 32768 "r31a-v021-${RUN_ID}-D32768"
-./r31a_paired_probe "$DEVICE" 24576 "r31a-v021-${RUN_ID}-D24576"
+./r31a_paired_probe same DEVICE V016 32768 PREFIX 60
+./r31a_paired_probe same DEVICE V016 24576 PREFIX 60
+./r31a_paired_probe pair DEVICE 32768 PREFIX
+./r31a_paired_probe pair DEVICE 24576 PREFIX
 ```
 
-取得 Main 独占租约并确认可比负载后，统一 harness 必须满足：
+## Current handoff boundary
 
-- P/C 使用同一版 runner，按相邻交错顺序执行，至少 4 对。
-- 每进程先做至少 10 次 launch+完整 stream sync warmup；每个计时样本读取前完成 event wait 或 stream sync。
-- 进程内至少 21 个计时样本；device event 记录每个样本的 `device_us`，同时记录 `wall_us`，保存原始样本及 median、mean、stdev、CV、min、max、max/min、MAD、p10、p90 和绝对跨度。
-- 输入、分配和 H2D 位于计时区间外；D2H 与正确性比较在计时区间之后。
-- 执行前后保存完整设备负载快照；没有有效租约或负载窗口不可比时停止，不启动 probe。
-
-新 runner 尚未完成 Ascend C 目标构建，二进制身份尚未验证。本文件只交接现状与下一次获 Main 授权后的输入要求，不替代 Main 的租约安排。
-
-## 本轮边界
-
-未改 Candidate source、build wiring 或旧 harness；未改共享控制文件；未读取或修改其他 Route 的文件内容，也未读取其他 Main 的工作文件；未运行设备测量、CANNJudge 或清理操作。后续任何新实验仍以 R31A-V016 为 Direct Parent。
+Build and link: PASS. Route decision: still awaiting Main review; no V022 or other revision was created. This turn did not execute the runner, ACL, NPU correctness, or timing. No MAIN-1 exclusive lease is active; d0-d6 are occupied and the unified protocol excludes d7. Existing V021 correctness records and load-contaminated historical latency records above remain unchanged. All build/configure logs, including failures, are retained. No shared control file or other Route was changed.
