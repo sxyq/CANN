@@ -43,7 +43,6 @@ Review the recorded source SHA, approved one-row-per-block diff, executable iden
 - Device sequence, for a future authorized window only: parent warmup >=10; two in-process Parent blocks with >=21 device-event samples per block; report full-sample MAD/median and block drift; enter >=4 alternating PC/CP pairs only when both limits are <=0.10. Each pair block has >=21 device-event samples. Keep stdout raw samples with the Route evidence when the sequence is eventually run.
 - Build logs, including failed attempts, are retained in `support/paired-runner/`; the successful log is `build-and-host-tests-attempt-8.log`.
 - Research review: `phase4/research/MODE-X-R015C/next-hypotheses.md` retains four distinct research-only items. No candidate source changed.
-- Existing standalone r4 executable SHA values differ between this handoff/local result (`21934a8cf15508b365e252810c8f858b4fb105c5cc5000f460d61c511a37e188`) and `MAIN-REVIEW.md` (`21934a8cf15508b365e252810c8f858b4fb105c5cc5000f460d61c5119aeeb390`). Those prior records are retained unchanged; the runner executable and module identities above are new and separate.
 
 ## Current handoff state
 
