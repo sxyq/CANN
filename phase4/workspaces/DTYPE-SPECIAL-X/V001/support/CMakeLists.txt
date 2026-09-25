@@ -37,6 +37,18 @@ target_link_directories(dtype_special_x_v001 PRIVATE
 target_link_libraries(dtype_special_x_v001 PRIVATE
     ascendcl tiling_api register platform unified_dlog dl m graph_base)
 
+add_executable(dtype_special_x_v001_parent support/compile_adapter_parent.asc)
+set_source_files_properties(support/compile_adapter_parent.asc PROPERTIES LANGUAGE ASC)
+target_compile_options(dtype_special_x_v001_parent PRIVATE
+    $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=dav-2201>)
+target_link_directories(dtype_special_x_v001_parent PRIVATE
+    "${ASCEND_CANN_PACKAGE_PATH}/lib64"
+    "${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/lib64"
+    /usr/lib/gcc/aarch64-linux-gnu/11
+    /usr/lib/aarch64-linux-gnu)
+target_link_libraries(dtype_special_x_v001_parent PRIVATE
+    ascendcl tiling_api register platform unified_dlog dl m graph_base)
+
 add_executable(dtype_special_x_v001_npu_correctness npu_correctness.cpp)
 target_include_directories(dtype_special_x_v001_npu_correctness PRIVATE
     "${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include"
@@ -60,4 +72,29 @@ target_link_directories(dtype_special_x_v001_npu_correctness PRIVATE
     /usr/lib/gcc/aarch64-linux-gnu/11
     /usr/lib/aarch64-linux-gnu)
 target_link_libraries(dtype_special_x_v001_npu_correctness PRIVATE
+    ascendcl tiling_api register platform unified_dlog dl m graph_base)
+
+add_executable(dtype_special_x_v001_unified_runner support/unified_runner.asc)
+set_source_files_properties(support/unified_runner.asc PROPERTIES LANGUAGE ASC)
+target_include_directories(dtype_special_x_v001_unified_runner PRIVATE
+    "${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include"
+    "${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include"
+    "${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl"
+    "${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/include/basic_api"
+    "${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/include"
+    "${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux"
+    "${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc"
+    "${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/include/interface"
+    /usr/include/c++/11
+    /usr/include/aarch64-linux-gnu/c++/11
+    /usr/include/c++/11/backward
+    /usr/include/aarch64-linux-gnu)
+target_compile_options(dtype_special_x_v001_unified_runner PRIVATE
+    $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=dav-2201>)
+target_link_directories(dtype_special_x_v001_unified_runner PRIVATE
+    "${ASCEND_CANN_PACKAGE_PATH}/lib64"
+    "${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/lib64"
+    /usr/lib/gcc/aarch64-linux-gnu/11
+    /usr/lib/aarch64-linux-gnu)
+target_link_libraries(dtype_special_x_v001_unified_runner PRIVATE
     ascendcl tiling_api register platform unified_dlog dl m graph_base)

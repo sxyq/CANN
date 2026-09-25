@@ -8,7 +8,7 @@
 - Branch: `exec/sixlane-20260924-dtype-special-x`
 - Candidate dtype: FP32
 - Direct Parent: `R31B-V011`, score `45.16`
-- Candidate source: `phase4/local/DTYPE-SPECIAL-X/V001/submission.asc`
+- Candidate source: `phase4/workspaces/DTYPE-SPECIAL-X/V001/submission.asc`
 - Candidate source SHA-256: `e2717055199f541d98d85ceef2e011e52e2749d932ca954dc887868de7db880f`
 
 ## Retained evidence
@@ -20,16 +20,17 @@
 
 ## Executable identity
 
-Read-only inspection of the existing V001 directory on `cann-server3` found:
+On 2026-09-25, the V001 Parent, Candidate, and unified runner targets were configured, compiled, and linked on `cann-server3` using CANN `8.5.0.alpha002`, SoC `Ascend910B3`, and NPU arch `dav-2201`. The build script uploaded and verified all six source inputs before configuration: Parent source, Candidate source, both compile adapters, unified runner source, and `CMakeLists.txt`.
 
 | Path | SHA-256 | Size | Purpose |
 |---|---|---:|---|
-| `/home/data4t2/lelinfeng/phase4-workspaces/DTYPE-SPECIAL-X/V001/build/dtype_special_x_v001` | `14cdc6cf6f986fd49f92662b4ff180266d0265cafdc0145706e37153b984a90b` | 466832 bytes | ASC compile/link smoke target. Its `compile_adapter.asc` entry point returns immediately and does not launch the kernel. |
-| `/home/data4t2/lelinfeng/phase4-workspaces/DTYPE-SPECIAL-X/V001/build/dtype_special_x_v001_npu_correctness` | `3688342faf10c080f869517a9e5a7721349dccd775e8545c60753e761aee1655` | 475112 bytes | Candidate NPU correctness runner. It runs the 39 correctness cases, copies outputs to host, and has no performance timing loop. |
+| `/home/data4t2/lelinfeng/phase4-workspaces/DTYPE-SPECIAL-X/V001/build/dtype_special_x_v001_parent` | `11e3c07c4e35181153b20f5acd90cad700261af9d309d52724cb0713a1646434` | 466832 bytes | Parent build from the declared Parent source. |
+| `/home/data4t2/lelinfeng/phase4-workspaces/DTYPE-SPECIAL-X/V001/build/dtype_special_x_v001` | `14cdc6cf6f986fd49f92662b4ff180266d0265cafdc0145706e37153b984a90b` | 466832 bytes | Candidate build. |
+| `/home/data4t2/lelinfeng/phase4-workspaces/DTYPE-SPECIAL-X/V001/build/dtype_special_x_v001_unified_runner` | `545bf0fdaf4b5d6d064551ce28cf465419fe04a809645acbceaf75f1af4e6bcb` | 605808 bytes | Unified runner supporting correctness, same-binary noise-floor, and paired modes. |
 
-Both identities were read from the remote files without executing them. Neither executable is suitable as the unified paired performance runner. No Parent executable identity is recorded here.
+The Parent and Candidate source SHAs are respectively `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3` and `e2717055199f541d98d85ceef2e011e52e2749d932ca954dc887868de7db880f`. The paired runner source SHA is `cc16e8149314232d4e4e7ea3bf361479c96e66ee79ad54dabc8b977141ef99a1`. Source and executable identities are retained in `logs/unified-unified-build-20260925T131059Z-30843-build-identity.txt`, with source inputs in `logs/unified-unified-build-20260925T131059Z-30843-source.sha256`.
 
-The named Direct Parent source artifact, `phase4/online/R31B/V011/submission.asc`, is present in this checkout and has SHA-256 `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`, matching the declared parent source SHA. The local Candidate source SHA-256 is `e2717055199f541d98d85ceef2e011e52e2749d932ca954dc887868de7db880f`. These source identities do not prove a Parent executable. The route evidence has no Parent binary path, binary SHA-256, or build record connecting an executable to the declared Parent source.
+The runner was built but not executed. The build log contains CCEC host parsing warnings for `GM_ADDR` attributes; all three targets linked successfully. Earlier failed unified-runner link evidence remains retained alongside the successful build logs.
 
 ## Paired input decision
 
@@ -45,19 +46,18 @@ Use the 24 correctness shapes inside the task's legal width range for both same-
 
 The selected widths include the legal 64/128 alignment points, adjacent misaligned widths, and medium/wide cases; all three ranks retain the task's host metadata and flattening paths while keeping the device row count fixed. The patterns are deterministic, so both binaries receive byte-identical tensors and attributes. The five widths below the task minimum (`1, 7, 8, 9, 63`) remain in the 39-case correctness suite but are excluded from task-domain performance results; including them would give out-of-domain cases weight in the performance comparison.
 
-The existing V001 NPU runner is correctness-only: it copies inputs before each launch, synchronizes, copies output back, and compares the golden result after each call. It has no warmup/sample timing loop or event measurement. The compile smoke entry point returns immediately. Neither is compliant with the local timing protocol, and no Route-local timing runner is present. The recorded Candidate NPU correctness executable identity is not a timing-runner identity.
+The existing 39/39 NPU correctness result remains the correctness evidence for the unchanged Candidate source. Correctness was not rerun during this build-identity closure. The unified runner has distinct correctness, noise-floor, and paired modes; its measurement modes require a current preflight timestamp, explicit lease identity, and a same-shape Parent noise-floor record before paired mode.
 
 ## Conditions for another local run
 
-- The Route's tracked lease-ledger snapshot was last updated on 2026-09-24 and has no `DTYPE-SPECIAL-X` grant. It cannot establish a current lease for this resumption. Main must grant an exclusive device lease before timing.
-- Main must provide or approve one unified runner for the same-binary and P/C workloads. Do not use the correctness executable, the compile smoke executable, or another Route's runner.
-- Before P/C timing, record executable identities for the Candidate and for a Parent binary proved to come from the Direct Parent source SHA above. No Parent executable identity is currently available in Route evidence.
+- No current `MAIN-1` device lease is active. Main must issue a fresh exclusive lease and the required preflight must pass before any timing.
+- The unified runner and both Parent/Candidate executable identities are now present in Route evidence. Use this Route's runner only; do not substitute another Route's runner.
 - Use the unified protocol: one long-lived process, allocations and H2D before warmup, at least 10 warmup launches with synchronization, at least 21 timed samples, and at least 4 adjacent interleaved Parent/Candidate pairs.
 - Record device-event duration as the primary metric and host wall duration as a diagnostic. Keep D2H and correctness comparison outside the timed loop. Record device load and lease identity with the results.
 - Use the same runner revision and input buffers for both executables. Do not substitute either executable listed above for that paired runner.
 
 ## Main review point
 
-Main to review the selected task-domain workload, provide or approve the unified paired runner and Parent executable identity, then grant an exclusive device lease. Until those are available, V001 remains `NEEDS_ONE_MORE_LOCAL`; no performance claim is made.
+Main to review the exact 24-shape workload, source/executable identities, and build records. No timing or new correctness run was performed in this continuation. V001 remains `NEEDS_ONE_MORE_LOCAL`; no performance claim is made.
 
 No V002, dtype change, hypothesis change, Candidate source change, or online submission is included in this handoff.
