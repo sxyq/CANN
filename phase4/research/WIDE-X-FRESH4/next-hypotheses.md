@@ -28,12 +28,12 @@ Hardware/API basis: local correctness records identify server device 4 as 910B3;
 - EXPECTED_SHAPES: Wide path D=16384 and 32768, especially rows-per-block near one.
 - WHY_IT_MAY_HELP: A local final reduction may shorten the serial dependency chain across tile iterations.
 - WHY_IT_MAY_FAIL: The extra local reduction can cost more than a few scalar additions; the compiler may serialize the same work.
-- ASCEND_FEASIBILITY: The existing 32-byte scalar buffer can hold up to eight FP32 partials in capacity, but destination alignment and supported LocalTensor slice behavior require source/API verification.
-- UB/CORE/DMA_IMPACT: Up to eight FP32 values of extra live state; no global traffic or core-count change.
+- ASCEND_FEASIBILITY: FP32 ReduceSum destinations require 8-byte alignment. Eight partials in every-other-float slots need 64 bytes including padding; the current 32-byte scalar allocation is insufficient for that layout. Verify supported LocalTensor offset/slice access and the final local reduction in a compile probe.
+- UB/CORE/DMA_IMPACT: A 64-byte partial area (32 bytes above the current scalar allocation), with no global traffic or core-count change.
 - SYNC_IMPACT: No cross-core synchronization; one local reduction is added after the first scan.
 - PRECISION_RISK: Medium because the summation order changes; verify FP32 and BF16 at maximum width against the Route tolerances.
 - DUPLICATE_CHECK: Distinct from V001's tile size change; built only from this Route's current reduction loop and documented ReduceSum constraints.
-- MINIMAL_OFAT_DIFF: Change only placement and storage of per-tile scalar partials; preserve tile width and output pass.
+- MINIMAL_OFAT_DIFF: Change only placement/storage of per-tile scalar partials and the required local buffer capacity; preserve tile width and output pass.
 - EXPECTED_LOCAL_PROBES: CANN compile/link; 9-case correctness matrix with repeated maximum-width inputs; exact-shape same-binary noise-floor qualification before any Main-authorized P/C.
 
 ## H3: Split a very wide row across vector cores
