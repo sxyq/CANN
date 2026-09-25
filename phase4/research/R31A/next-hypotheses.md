@@ -6,6 +6,8 @@
 
 路线内重复筛选依据：V019 把 FP32 CachedRows tile 从 7680 改为 8192，在 D=32768 correctness 失败；V020 对同一路径 RMS 首轮输入尝试双槽 MTE2/V 预取，在目标形状同步失败；V021 只移动逐 tile 输出后的 MTE3/V 等待，Correctness 记录 PASS。以下三个机制均与这三项不同。其他 Route 的 Candidate 尚未比对，重复判断需 Main 复核。
 
+跨路线筛选范围：以下重复判断只覆盖 R31A 自有 V016/V019/V020/V021 记录。依本轮范围，未读取其他 Route Candidate；三项的跨路线重叠均标为“未核实”，其中指出的可能同域只供 Main 后续比对，不表示已发现重复。
+
 证据索引：当前实现为 `phase4/local/R31A/V021/submission.asc::ProcessWideFp32CachedRows` 及其中的 `Load`/`Store`；历史声明和结果为 `phase4/local/R31A/V019/source-meta.json`、`phase4/local/R31A/V019/local-result.json`、`phase4/local/R31A/V020/local-result.json`、`phase4/local/R31A/V021/diff.patch`。API 依据为 server3 CANN 8.5.0.alpha002 的 `kernel_operator_vec_unary_intf.h`、`kernel_operator_vec_binary_intf.h`，以及本机 Ascend C 技能参考 `api-datacopy.md`。
 
 ## 1. FP32 RMS 标量倒平方根
@@ -38,6 +40,14 @@
 
 **READINESS**：`NEEDS_MORE_EVIDENCE`。接口声明已确认；目标编译、精度和收益均未确认。
 
+**CROSS_ROUTE_OVERLAP**：R31A 内与 V019 tile 宽度、V020 输入预取、V021 输出等待位置不同。跨路线重叠未核实；通用 FP32 归一化或倒平方根研究可能同域，需由 Main 比对路线声明。
+
+**FALSIFICATION_TEST**：先查看 DAV_2201 生成结果是否实际使用 `Rsqrt`，并确认标量取值和同步依赖链有减少；若仍展开为等价 Sqrt 加倒数，或新增搬运/同步抵消变化，则静态机制不成立。获准后，对 D=32768、24576 做精确输出正确性；超出既有容差即否决。性能效果只在 Main 授权且 exact-shape same-binary 通过后判定。
+
+**EXPECTED_INFORMATION_GAIN**：中。一次目标编译可确认目标架构的指令映射；正确性可界定近似误差，能分别回答“是否缩短标量链”和“误差是否可接受”。
+
+**LIKELY_GLOBAL_UPSIDE**：低至中。收益限于走该 FP32 wide CachedRows 分支且标量归一化链占明显比例的调用；不影响其他 dtype 或窄形状。
+
 ## 2. FP32 affine FusedMulAdd
 
 **MECHANISM**：仅在 FP32 wide CachedRows 输出 tile 中，将 `Mul(valueLocal, valueLocal, gammaLocal)` 后接 `Add(valueLocal, valueLocal, biasLocal)` 替换为 `FusedMulAdd(valueLocal, gammaLocal, biasLocal, valid)`。公开接口定义 `dst = src0 * dst + src1`，对应当前 `normalized * gamma + bias`。
@@ -68,6 +78,14 @@
 
 **READINESS**：`NEEDS_MORE_EVIDENCE`。接口语义已核对；硬件实例化、精度影响和性能信号未知。
 
+**CROSS_ROUTE_OVERLAP**：R31A 内与 V019/V020/V021 的单一变更均不同。跨路线重叠未核实；通用 FP32 epilogue fusion 可能同域，需由 Main 比对路线声明。
+
+**FALSIFICATION_TEST**：查看 DAV_2201 生成结果是否形成目标 FMA，并减少一条向量运算；若仍是 Mul+Add 两条指令、需要额外搬运，或同步数未下降，则预期机制被削弱。获准后先对 D=32768、24576 做完整输出正确性；超出容差即否决。收益需等授权和该形状 same-binary 通过后再测。
+
+**EXPECTED_INFORMATION_GAIN**：中高。目标编译直接回答融合是否落成单条操作，双形状正确性可一次限定舍入风险，便于在测时前淘汰无效实现。
+
+**LIKELY_GLOBAL_UPSIDE**：中等但局部。若该输出阶段受向量算术限制，多个 tile 可累计节省；若受 GM/UB 搬运限制，则整体改善可能很小。
+
 ## 3. 对齐 FP32 tile 的 DataCopy 快路径
 
 **MECHANISM**：只在 FP32 wide CachedRows 分支，为已经满足 32-byte 地址和长度对齐的 x、residual、gamma、bias 读入及 output 写回评估 `DataCopy`，替代共享 `Load`/`Store` 使用的 `DataCopyPad`。不得改动其他 dtype 或非对齐路径。
@@ -97,3 +115,11 @@
 **EXPECTED_LOCAL_PROBES**：Main 授权后先用静态算术列举每个 tile 的 GM/UB offset 与 byte length，再编译并比较 DAV_2201 生成的搬运指令；若产物指令相同则不进入设备测试。若不同，先跑两形状 targeted correctness，再在独占 lease 下做 Parent same-binary 形状资格和交错 P/C。
 
 **READINESS**：`NEEDS_MORE_EVIDENCE`，优先级低。对齐成立的依据明确，但 API 文档预期收益很小，须先由生成代码证明确有差异。
+
+**CROSS_ROUTE_OVERLAP**：R31A 内与 V019 tile 宽度、V020 输入预取、V021 输出等待位置不同。跨路线重叠未核实；对齐 DMA 快路径可能与其他搬运路线同域，需由 Main 比对路线声明。
+
+**FALSIFICATION_TEST**：逐项证明 GM 地址、UB 地址和有效字节数都满足 DataCopy 对齐条件；任一不满足即停止该方案。随后比较 DAV_2201 生成搬运指令，若和 DataCopyPad 完全相同或没有减少搬运设置，则不进入设备验证。若指令确有变化，获准后用 D=32768、24576 覆盖每行尾 tile 做正确性；任一越界或数据不符即否决。
+
+**EXPECTED_INFORMATION_GAIN**：中。静态地址枚举与生成指令对照成本低，可快速判断这条路径是否存在可见的搬运差异；即使无差异，也能低成本关闭该方向。
+
+**LIKELY_GLOBAL_UPSIDE**：低。只覆盖严格对齐的 FP32 CachedRows 搬运，且文档提示两 API 的差异可能很小；若生成指令相同则为零。
