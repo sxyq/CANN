@@ -35,6 +35,6 @@ Status: V001 targeted correctness is retained as PASS_9_OF_9_NPU; the separate p
 - Paired-runner build output directory on server3: `/tmp/WIDE-X-FRESH4-V001-d0dd0e972ac48b07/WIDE-X-FRESH4/V001/support/build`.
 - `logs/link-env-attempt.log` and `logs/link-include-attempt.log` retain two unsuccessful environment/setup attempts; the successful link is recorded in `logs/link.log`.
 - `logs/npu-correctness-preflight.log` and `logs/npu-correctness.log` retain the device snapshot and full targeted NPU result.
-- `logs/server3-build-attempt-01.log` through `logs/server3-build-attempt-05.log` retain the failed builds and successful compile/link. The runner was not executed; no NPU operation or timing was run for it.
+- `logs/server3-build-attempt-01.log` through `logs/server3-build-attempt-06.log` retain the failed builds and successful compile/link. Attempt 06 confirms driver-library resolution from the installed server3 path. The runner was not executed; no NPU operation or timing was run for it.
 
 Next action belongs to Main: review V001 with targeted NPU correctness complete. No timing or performance result is included.
