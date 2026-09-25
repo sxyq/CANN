@@ -203,3 +203,24 @@ phase4/control/server3-device-leases.tsv
 
 When another Main changes a Route not owned by this Main, accept the newest state and continue. When another Main changes ownership of a Route owned by this Main, record `OWNERSHIP_CONFLICT` and pause only the affected Route. Updates to other Route status or device fields must not be overwritten. Do not stop unrelated Routes because another Route changed.
 
+## R. Long-Horizon Parallel Exploration
+
+Route Agents run continuous two-track work instead of one-probe-then-idle cycles.
+
+```text
+TRACK-A: CURRENT EXPERIMENT — keep the current Candidate unchanged
+TRACK-B: NEXT-HYPOTHESIS RESEARCH — read-only, long-horizon
+```
+
+TRACK-A rules: no Candidate kernel edits, no new donors, no next performance Revision unless Main has issued `REJECT` / `PROMOTE` / `NEXT_HYPOTHESIS`. A measurement-blocked or judge-waiting Candidate does not put the Agent into idle.
+
+TRACK-B rules: historical evidence, own-route code and logs, Ascend C API, public web research, bottleneck analysis, feasibility analysis, design drafts, pseudo-code, experiment matrices, duplicate detection. No kernel modification and no formal next Revision.
+
+Each exploration cycle targets 3–5 genuinely different hypotheses. Every hypothesis records: MECHANISM, BOTTLENECK, EXPECTED_SHAPES, WHY_IT_MAY_HELP, WHY_IT_MAY_FAIL, ASCEND_FEASIBILITY, UB/CORE/DMA_IMPACT, SYNC_IMPACT, PRECISION_RISK, DUPLICATE_CHECK, MINIMAL_OFAT_DIFF, EXPECTED_LOCAL_PROBES. Classification is by readiness (`READY_FOR_MAIN_REVIEW` / `NEEDS_MORE_EVIDENCE` / `DUPLICATE` / `INFEASIBLE`), never by score.
+
+Six Route Agents research in parallel; Main reviews only at batch handoffs. Per-Route research output is appended to `phase4/research/<ROUTE>/next-hypotheses.md`. An Agent returns to Main only after: (A) ≥3 screened hypotheses, (B) a complete local handoff for the current Candidate, (C) a correctness/build blocker needing Main decision, (D) substantive duplication with another active Route, or (E) architecture search budget reached with a PARK recommendation.
+
+New Revisions require the full Research Track plus Main Review plus one explicit architecture hypothesis. No rapid micro-revision loops (V001→V002→V003 one small edit at a time) exist to keep an Agent busy. Research Track never blocks Track-A: when a device window opens or the timing protocol passes the exact shape, the Agent immediately runs same-binary → P/C → Main Review and keeps the research backlog.
+
+Research does not change scoring authority: local percentages are never Official Score; only the unified Judge Owner submits to CANNJudge.
+
