@@ -6,6 +6,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <limits>
 #include <string>
 #include <thread>
 #include <vector>
@@ -113,8 +114,20 @@ Stats Summarize(const std::vector<double>& values)
 template <typename Invoke>
 bool InvokeAndSync(Invoke invoke, aclrtStream stream)
 {
-    invoke();
+    if (!invoke()) {
+        fprintf(stderr, "kernel dispatch failed; stream synchronization skipped\n");
+        return false;
+    }
     return CheckAcl(aclrtSynchronizeStream(stream), "aclrtSynchronizeStream");
+}
+
+bool SetUnwrittenOutputSentinel(float* outputDevice, size_t dataBytes,
+                                std::vector<float>& output)
+{
+    std::fill(output.begin(), output.end(), std::numeric_limits<float>::quiet_NaN());
+    return CheckAcl(aclrtMemcpy(outputDevice, dataBytes, output.data(), dataBytes,
+                                ACL_MEMCPY_HOST_TO_DEVICE),
+                    "aclrtMemcpy(correctness sentinel H2D)");
 }
 
 bool CheckCorrectness(const char* version, const std::vector<float>& output,
@@ -138,7 +151,8 @@ bool CheckCorrectness(const char* version, const std::vector<float>& output,
             const double expected = value * invRms * gamma[static_cast<size_t>(col)] +
                 bias[static_cast<size_t>(col)];
             if (!std::isfinite(output[index])) {
-                fprintf(stderr, "%s correctness failed: non-finite output at %zu\n", version, index);
+                fprintf(stderr, "%s correctness failed: non-finite output at %zu (sentinel may be unwritten)\n",
+                        version, index);
                 return false;
             }
             maxAbs = std::max(maxAbs, std::fabs(expected - output[index]));
@@ -161,7 +175,10 @@ bool MeasureOne(Invoke invoke, const char* version, int32_t pair,
 {
     if (!CheckAcl(aclrtRecordEvent(start, stream), "aclrtRecordEvent(start)")) return false;
     const auto wallStart = std::chrono::steady_clock::now();
-    invoke();
+    if (!invoke()) {
+        fprintf(stderr, "%s dispatch failed; sample discarded\n", version);
+        return false;
+    }
     if (!CheckAcl(aclrtRecordEvent(stop, stream), "aclrtRecordEvent(stop)")) return false;
     if (!CheckAcl(aclrtSynchronizeEvent(stop), "aclrtSynchronizeEvent(stop)")) return false;
     const auto wallStop = std::chrono::steady_clock::now();
@@ -314,7 +331,7 @@ int main(int argc, char** argv)
     const TensorGroupInfo infoBias = {biasInfo, 1};
     const TensorGroupInfo infoOutput = {outputInfo, 1};
     auto invokeV016 = [&]() {
-        r31a_run_kernel_v016(
+        return r31a_run_kernel_v016(
             xDevice, infoX,
             residualDevice, infoResidual,
             gammaDevice, infoGamma,
@@ -323,7 +340,7 @@ int main(int argc, char** argv)
             kBlocks, stream, kEpsilon);
     };
     auto invokeV021 = [&]() {
-        r31a_run_kernel_v021(
+        return r31a_run_kernel_v021(
             xDevice, infoX,
             residualDevice, infoResidual,
             gammaDevice, infoGamma,
@@ -332,8 +349,19 @@ int main(int argc, char** argv)
             kBlocks, stream, kEpsilon);
     };
     const auto invokeVersion = [&](const char* version) {
-        if (std::strcmp(version, "V016") == 0) invokeV016();
-        else invokeV021();
+        if (std::strcmp(version, "V016") == 0) return invokeV016();
+        if (std::strcmp(version, "V021") == 0) return invokeV021();
+        return false;
+    };
+    const auto runCorrectness = [&](const char* version) {
+        if (!SetUnwrittenOutputSentinel(outputDevice, dataBytes, output) ||
+            !InvokeAndSync([&]() { return invokeVersion(version); }, stream)) {
+            return false;
+        }
+        const std::string d2hOperation = std::string("aclrtMemcpy(") + version + " D2H)";
+        return CheckAcl(aclrtMemcpy(output.data(), dataBytes, outputDevice, dataBytes,
+                                    ACL_MEMCPY_DEVICE_TO_HOST), d2hOperation.c_str()) &&
+            CheckCorrectness(version, output, x, residual, gamma, bias, width);
     };
 
     std::vector<TimedSample> samples;
@@ -356,22 +384,17 @@ int main(int argc, char** argv)
         if (!CheckAcl(aclrtMemcpy(gammaDevice, parameterBytes, gamma.data(), parameterBytes, ACL_MEMCPY_HOST_TO_DEVICE), "aclrtMemcpy(gamma H2D)")) { result = 2; break; }
         if (!CheckAcl(aclrtMemcpy(biasDevice, parameterBytes, bias.data(), parameterBytes, ACL_MEMCPY_HOST_TO_DEVICE), "aclrtMemcpy(bias H2D)")) { result = 2; break; }
 
-        if (!InvokeAndSync(invokeV016, stream) ||
-            !CheckAcl(aclrtMemcpy(output.data(), dataBytes, outputDevice, dataBytes, ACL_MEMCPY_DEVICE_TO_HOST), "aclrtMemcpy(V016 D2H)") ||
-            !CheckCorrectness("V016", output, x, residual, gamma, bias, width)) {
-            result = 3;
-            break;
-        }
-        if (!InvokeAndSync(invokeV021, stream) ||
-            !CheckAcl(aclrtMemcpy(output.data(), dataBytes, outputDevice, dataBytes, ACL_MEMCPY_DEVICE_TO_HOST), "aclrtMemcpy(V021 D2H)") ||
-            !CheckCorrectness("V021", output, x, residual, gamma, bias, width)) {
+        const bool correctnessOk = sameBinary
+            ? runCorrectness(versionArg)
+            : runCorrectness("V016") && runCorrectness("V021");
+        if (!correctnessOk) {
             result = 3;
             break;
         }
 
         for (int32_t i = 0; i < kWarmups; ++i) {
             const bool warmupOk = sameBinary
-                ? InvokeAndSync([&]() { invokeVersion(versionArg); }, stream)
+                ? InvokeAndSync([&]() { return invokeVersion(versionArg); }, stream)
                 : ((i % 2) == 0
                     ? InvokeAndSync(invokeV016, stream) && InvokeAndSync(invokeV021, stream)
                     : InvokeAndSync(invokeV021, stream) && InvokeAndSync(invokeV016, stream));
@@ -393,7 +416,7 @@ int main(int argc, char** argv)
                     std::this_thread::sleep_for(std::chrono::seconds(gapSeconds));
                 }
                 for (int32_t sample = 0; sample < kSamples; ++sample) {
-                    if (!MeasureOne([&]() { invokeVersion(versionArg); }, versionArg,
+                    if (!MeasureOne([&]() { return invokeVersion(versionArg); }, versionArg,
                                     sample + 1, block, "SAME", stream, start, stop, samples)) {
                         result = 4;
                         break;
