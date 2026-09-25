@@ -7,7 +7,7 @@
 - Direct Parent: `MIX-A-V003`
 - Parent Official Score: `44.69`
 - Branch: `exec/sixlane-20260923-mix-a`
-- Source commit before this handoff: `9206c5be6467974b7f49db26cdc67645294349fb`
+- Source commit before this handoff: `4eb04e62e79f0110061e00c08346304f2cf94ce4`
 - Candidate source SHA-256: `a63ad29a997ae2fe8a1238c1a47a9d5ddfb14d16f725fca975ce5c55523f28eb`
 
 ## Source Lineage
@@ -29,15 +29,17 @@ The direct source diff keeps V003 dispatch and math. The only executable-code de
 
 ## Unified Runner Build Review (2026-09-25)
 
-- Local support identities: `support/CMakeLists.txt` SHA-256 `79eb81d32a9795d3395dab2d1854c0948d056394277ce5bd3e8680a89305a15e`; `support/runner_unified.asc` SHA-256 `9bd483c1162ff750b4784549b26fd28eb371d4b5e4a9775dfb509fb8a69d4a26`.
+- Support identities before this runner-only update: `support/CMakeLists.txt` SHA-256 `79eb81d32a9795d3395dab2d1854c0948d056394277ce5bd3e8680a89305a15e`; `support/runner_unified.asc` SHA-256 `9bd483c1162ff750b4784549b26fd28eb371d4b5e4a9775dfb509fb8a69d4a26`.
 - Build inputs: V003 SHA-256 `1a1857a945ce1f04e3877437882b21a3d5071dddcd697103d7b539a0feb5c706`; V007 SHA-256 `a63ad29a997ae2fe8a1238c1a47a9d5ddfb14d16f725fca975ce5c55523f28eb`. The server3 source copies and unified runner matched these values for the successful builds.
 - The existing server3 build tree is configured for CANN `8.5.0.alpha002`, Ascend910B3, `dav-2201`. Two earlier target builds reached generated registration compilation and failed at `<vector>`; their complete output remains in `support/build-unified.log`.
 - The first successful build exported HCC paths through `CPATH` and `CPLUS_INCLUDE_PATH`. The same include setup is now encoded in `CMAKE_ASC_COMPILE_OBJECT` using `cmake -E env`, so the follow-up configure/build needed only `ASCEND_HOME_PATH=/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002`. Compile and link both passed for `mix_a_v007_unified_probe` without an external include-path environment.
-- The compile emitted existing `cce_global` ignored-attribute warnings for the `GM_ADDR` casts at runner lines 426-430; no compile or link error remained.
-- Final executable: `/home/data4t2/lelinfeng/phase4-workspaces/MIX-A/runner-v007/build/mix_a_v007_unified_probe`, ELF 64-bit AArch64 PIE, 650088 bytes, SHA-256 `bf82acf68ce38d28294e517f5b8fa2aace4cdf33252968e1f0c4b2676e4b0c29`. It was identified with `file`, `readelf`, and `sha256sum`; it was not executed.
-- Static runner review: paired mode uses one process, 10 warmups per variant, single-launch device events, alternating V003/V007 order, and performs D2H/reference comparison after the measured loop. Each pair contains one event sample per variant. Raw `.samples.tsv` records pair number and order; `.summary.tsv` reports per-variant aggregates, so per-pair deltas must be derived from raw rows and reported separately.
-- Runner input risk, not changed under the build-only scope: `ParseShape` rejects negative device IDs, while both modes later narrow the parsed 64-bit value to `int` (`runner_unified.asc` lines 555-557, 596-597, 642-643). Reject values above `INT_MAX` before any future runner execution; an out-of-range conversion is implementation-defined and could select an unintended device.
-- Same-binary readiness gap: `noise-floor` emits one in-process sample set per invocation and cannot report two block medians or their drift inside one process. Multiple invocations reinitialize ACL and are not a substitute for the timing protocol's in-process blocks. Extend this mode before using it for shape qualification.
+- The compile emitted existing `cce_global` ignored-attribute warnings for the `GM_ADDR` casts at runner lines 463-467; no compile or link error remained.
+- Previous executable: `/home/data4t2/lelinfeng/phase4-workspaces/MIX-A/runner-v007/build/mix_a_v007_unified_probe`, ELF 64-bit AArch64 PIE, 650088 bytes, SHA-256 `bf82acf68ce38d28294e517f5b8fa2aace4cdf33252968e1f0c4b2676e4b0c29`. It was identified but not executed.
+- The runner follow-up adds a V003-only `same-binary` mode: one ACL initialization/allocation set, at least 10 warmups, then two event-sampled blocks with at least 21 samples each. `.samples.tsv` labels both blocks; `.summary.tsv` contains each block and pooled full-set statistics, including MAD/median; `.qualification.tsv` records each block ratio, pooled ratio, block drift, parent correctness count, and protocol status. A parent correctness failure overrides the qualification status with `PARENT_CORRECTNESS_FAIL`.
+- Qualification is `PASS` only when both block MAD/median values, pooled full-set MAD/median, and block drift are all at most 0.10. A value above 0.25 yields `MEASUREMENT_PROTOCOL_BLOCKED_FOR_SHAPE`; intermediate values yield `NEEDS_VALIDATION`.
+- Both `same-binary` and `paired` require device, Main owner, lease ID, and a path to the current `server3-device-leases.tsv`. Before creating the ACL probe, the runner requires exactly one active `MIX-A` lease and exact device/owner/lease-ID matches, and rejects another active owner on the requested device. Device parsing rejects non-decimal, negative, non-representable, and out-of-range IDs; measurement modes also refuse d7 per protocol.
+- CPU-only validation tests pass for valid device/lease records and mismatched device, Main owner, lease ID, released/duplicate leases, competing device ownership, malformed headers, and device bounds. The test compiles and runs without ACL headers or device access.
+- `support/run_probes.sh` still invokes the older V003/V007 wall-clock binaries and samples `npu-smi`; do not use it for the unified procedure. No unified runner correctness invocation or NPU timing was made.
 - `support/run_probes.sh` still invokes the older V003/V007 wall-clock binaries and samples `npu-smi`; do not use it for the unified procedure. No runner correctness invocation or NPU timing was made.
 
 ## Build Reproduction
@@ -45,7 +47,9 @@ The direct source diff keeps V003 dispatch and math. The only executable-code de
 - Existing build directory: `/home/data4t2/lelinfeng/phase4-workspaces/MIX-A/runner-v007/build`; it was reused without cleaning.
 - The CMake compile rule supplies the four HCC include directories to both the driver and its child compile processes through `CPATH` and `CPLUS_INCLUDE_PATH`. This resolves `<vector>` in the generated registration unit.
 - The successful target was built against the exact V003/V007 sources above. `support/build-unified.log` retains both earlier failures and subsequent successful configure, compile, and link output.
-- No correctness or timing mode was run. Do not time without a current exclusive device lease.
+- Final runner SHA-256 `3eec1aa67a225761fda536d71c6f4f0bd2fcc01fbf2cb71cae0a26d3724173ee`; `runner_validation.h` SHA-256 `7ff5e0af8b2a0fb8247f9a41f93e28f548ef93f323df5e18765f927b984a4406`. The rebuilt AArch64 PIE is 669600 bytes with SHA-256 `c263fbde2347d554f50569a8154425b0694f4f092f0a84dd09265451843a2256`.
+- `runner_validation_test.cpp` passed locally with `c++ -std=c++17 -Wall -Wextra -Werror`; it does not initialize ACL. The unified target compiled and linked on server3; its executable was not run.
+- No ACL runner mode, NPU correctness run, or timing was run. Do not time without a current exclusive device lease.
 
 ## Timing And Next Inputs
 
@@ -53,7 +57,7 @@ The four retained pairs remain `LOAD_CONTAMINATED`; preserve those labels. Their
 
 The existing runner inputs are device 6, rows `1`, width `256`, dtype `0` (FP32), epsilon `1e-5`; both variants use the same `runner_main.inc` and deterministic host inputs. That runner uses wall-clock timing, 3 warmups, 11 samples, separate variant processes, and writes only a per-process median. It does not meet the current unified timing procedure.
 
-After Main review and a fresh exclusive device lease, retain the same shape and data inputs, use the leased device, and run the unified method: device events as the primary duration, at least 10 warmups and 21 samples, with interleaved V003/V007 pairs. Establish the per-shape same-binary noise floor first. Do not combine new samples with the retained `LOAD_CONTAMINATED` values.
+After Main review and a fresh exclusive device lease, pass the current lease TSV and its exact device, Main owner, and lease ID to `same-binary` for V003 shape qualification, then use `paired` for interleaved V003/V007 pairs. The runner rejects missing, released, conflicting, or mismatched lease records before ACL initialization. Do not combine new samples with the retained `LOAD_CONTAMINATED` values.
 
 ## Stop Point
 
