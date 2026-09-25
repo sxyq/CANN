@@ -43,6 +43,23 @@ V021 的编译、链接记录均为 PASS。设备 4 上记录的正确性结果�
 
 当前 `support/probe_main.inc` 与旧二进制不符合统一计时 protocol：warmup=2；每次启动聚合 10 次 launch，只输出一个平均 `device_us`；P/C 各自运行进程；没有逐样本 `wall_us`、样本文件或 jitter 统计。旧准备命令仅有每种形状两对，也低于新要求。因此这些二进制和延迟记录不得用于下一次统一 paired run。
 
+## 新 paired runner
+
+`support/paired_probe.asc` 在一个 ASC 翻译单元中分别包含 V016 与 V021；两个版本放在独立命名空间，并使用不同 kernel/host entry 名。`support/paired_probe_main.inc` 生成一个进程：同一 ACL stream、同一组一次分配并 H2D 的输入，先分别完成 V016/V021 correctness 与计时外 D2H，再各做 10 次 launch+stream sync warmup，之后执行 21 个相邻 P/C 配对，先后顺序逐对交替。每个单次 launch 记录 device event 时间和 host wall 时间。
+
+每次调用只接受 D=32768 或 D=24576，固定 FP32、rows=2、blocks=1；成功后生成 `<prefix>-samples.tsv` 和 `<prefix>-jitter.tsv`，后者分别汇总两个版本的 device/wall 样本。文件使用独占新建模式，已有路径会报错，不覆盖旧结果。
+
+构建目标为 `r31a_paired_probe`；原 `probe_v016` 与 `probe_v021` CMake 目标保留。本机 C++ stub 语法编译通过，CMake/Ascend C/ACL 开发组件未安装，因此目标二进制尚未构建。没有有效租约，runner 未启动。
+
+Main 安排有效租约、在具备该 Route 源码和 CANN 工具链的构建位置生成目标后，从构建目录执行下面两条命令；`DEVICE` 必须取本轮租约设备号，`RUN_ID` 每轮唯一：
+
+```sh
+RUN_ID=$(date +%Y%m%dT%H%M%S)
+DEVICE=<LEASE_DEVICE_ID>
+./r31a_paired_probe "$DEVICE" 32768 "r31a-v021-${RUN_ID}-D32768"
+./r31a_paired_probe "$DEVICE" 24576 "r31a-v021-${RUN_ID}-D24576"
+```
+
 取得 Main 独占租约并确认可比负载后，统一 harness 必须满足：
 
 - P/C 使用同一版 runner，按相邻交错顺序执行，至少 4 对。
@@ -51,7 +68,7 @@ V021 的编译、链接记录均为 PASS。设备 4 上记录的正确性结果�
 - 输入、分配和 H2D 位于计时区间外；D2H 与正确性比较在计时区间之后。
 - 执行前后保存完整设备负载快照；没有有效租约或负载窗口不可比时停止，不启动 probe。
 
-新 runner 尚未在 Route 内构建，统一 protocol 的二进制身份和样本输入尚未验证。本文件只交接现状与下一次获 Main 授权后的输入要求，不替代 Main 的租约安排。
+新 runner 尚未完成 Ascend C 目标构建，二进制身份尚未验证。本文件只交接现状与下一次获 Main 授权后的输入要求，不替代 Main 的租约安排。
 
 ## 本轮边界
 

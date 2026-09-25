@@ -61,3 +61,14 @@ foreach(probe probe_v016 probe_v021)
     target_compile_options(${probe} PRIVATE
         $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=${CCE_AICORE_ARCH}>)
 endforeach()
+
+add_executable(r31a_paired_probe paired_probe.asc)
+target_include_directories(r31a_paired_probe PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${R31A_INCLUDE_DIRS})
+target_link_libraries(r31a_paired_probe PRIVATE
+    tiling_api register platform unified_dlog dl m graph_base)
+target_link_options(r31a_paired_probe PRIVATE
+    "-L/usr/lib/gcc/aarch64-linux-gnu/11"
+    "-L/usr/lib/aarch64-linux-gnu"
+    "-L${HCC_TOOLCHAIN}/aarch64-target-linux-gnu/lib64")
+target_compile_options(r31a_paired_probe PRIVATE
+    $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=${CCE_AICORE_ARCH}>)
