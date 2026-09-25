@@ -78,3 +78,45 @@
 - Ascend C `Cast` 文档列出 Atlas A2/A3 支持 float↔bfloat16_t；V016 自身的转换 helper 和 CANN 8.5 编译/正确性记录进一步证明当前目标路径可用。H1 的主要未知已收敛为改用 BF16 整行缓存后的 UB 预算、地址/尾部覆盖和输出舍入误差，不再是 Cast API 是否存在。
 - `ChooseWideFullYRows` 当前以 FP32 字节数估算 BF16 的 y 缓存。若 Main 后续审阅 H1，需按实际缓存类型重新估算每行容量，并确认只有 rowCount 大于 blockCount 的形状才可能增加每 block 的批行数；V016 paired runner 固定 rows=2，不能体现该批行收益。
 - 本轮只研究 R31B 文件、历史记录和 API 资料；未新增假定已完成跨路线去重的候选。现有独立候选仍只有 H1，研究批次尚未达到 3–5 项。
+
+## 2026-09-26 Track-B second screen
+
+### H5：BF16 参数扩宽去重
+
+- MECHANISM：BF16 pass 2 连续两次执行相同的 gamma/bias `ToFloat`。保留第二组转换及其后的 `PipeBarrier<PIPE_V>`，移除第一组重复转换；V011 行号为 3303–3312，V016 为 3306–3315。
+- BOTTLENECK：参数 tile 被加载后，同一组 gamma/bias 被重复扩宽到相同的 FP32 暂存区；两组调用之间没有读取或修改这些暂存值的代码。
+- EXPECTED_SHAPES：BF16 宽行 D=8192–32768；更长行包含更多参数 tile，且 paired 形状每个 block 只处理一行时，重复工作占比更高。
+- WHY_IT_MAY_HELP：每个参数 tile 少两次向量类型转换和一个同步点；数值公式、输出顺序和 DMA 流量不变。
+- WHY_IT_MAY_FAIL：编译器可能已经合并重复写入；即使保留了两组转换，它们相对整行搬运和输出计算也可能很小。
+- ASCEND_FEASIBILITY：两组 `ToFloat` 的输入、输出暂存区和 valid 长度相同。保留末组转换后的同步可继续约束其消费者。目标为 CANN 8.5.0.alpha002，V016 的 BF16 转换已有目标编译与定向正确性记录。
+- UB/CORE/DMA-IMPACT：UB 分配、core 映射和 DMA 字节数不变；少两条向量转换。
+- SYNC-IMPACT：保留转换完成到后续计算之间的 `PIPE_V` 同步，参数及输出事件配对不变；重复块移除后需确认之前的向量指令仍由保留的同步覆盖。
+- PRECISION_RISK：低；保留的转换使用相同输入、舍入路径和有效长度。
+- DUPLICATE_CHECK：与 H1 的 y 缓存压缩、已筛选的 affine FMA 输出算术不同；作用对象是 gamma/bias 参数预处理。此前 R31B 研究记录未列出此处的重复扩宽。
+- MINIMAL_OFAT_DIFF：只移除 `ProcessWideLowPrecision` pass 2 中第一组完全相同的 BF16 gamma/bias 转换及其同步；不改其他向量操作。
+- EXPECTED_LOCAL_PROBES：先查看现有编译产物能否确认重复转换已由编译器合并；若没有可读指令清单，待 Main 授权后再随独立版本验证 BF16 D=8192、32768 的定向正确性。只有设备 lease 与该形状资格均获准后才可测时。
+- CLASSIFICATION：NEEDS_MORE_EVIDENCE。
+
+### H6：pass 1 行列索引递增化
+
+- MECHANISM：将 pass 1 扁平单位索引的 `u / tileCount` 与余数解码改成显式 row/tile 递增状态；当前单位可复用上一轮已算出的下一单位位置。V011 行号为 3125–3154，V016 为 3128–3157。
+- BOTTLENECK：每轮先解码当前 `(row,tile)`，随后再解码 `(row,tile)` 的下一项；下一轮又会重新计算同一项。`tileCount` 由运行时 rowWidth 和 tileWidth 得出，编译器是否消除这些重复商余数运算尚未确认。
+- EXPECTED_SHAPES：FP16/BF16 D=16384–32768 且 `tileCount >= 2`；若每个 block 有多行，重复索引工作更多。当前 paired rows=2、blockCount=2 对应每 block 一行，预计收益受限。
+- WHY_IT_MAY_HELP：降低启动下一组 MTE2 load 前的标量索引运算，并缩短地址生成依赖；数据搬运、算术和 tile 次序不变。
+- WHY_IT_MAY_FAIL：编译器可能已用循环强度折减或公共子式合并消除此工作；每行 tile 数不多时，向量计算和 MTE 延迟可能完全掩盖标量开销。
+- ASCEND_FEASIBILITY：只涉及整数循环状态，不需新增 Ascend C API。必须保持 `u` 奇偶缓冲选择、row 尾部、tile 尾长及现有 event ID 的 wait/set 顺序。
+- UB/CORE/DMA-IMPACT：UB、core 映射和 DMA 字节数不变。
+- SYNC-IMPACT：不改同步事件；需证明行切换处的 A/B 缓冲奇偶次序与原扁平序列一致。
+- PRECISION_RISK：无算术变化；地址或尾部错误会导致错误读写。
+- DUPLICATE_CHECK：V016 只改变低精度宽行 tile 初始值；现有 R31B 历史记录了缓存、参数复用和 MTE/V 流水方向，未记录把当前/下一项索引解码改成递增状态。与 H5 的 BF16 参数转换去重也互不依赖。
+- MINIMAL_OFAT_DIFF：只改 pass 1 `(row,tile)` 的当前/下一项索引生成，保留扁平单位奇偶值和全部 event 操作。
+- EXPECTED_LOCAL_PROBES：先读目标编译器生成的标量指令，确认商余数计算仍存在；待 Main 授权后做 D=8192、12288、16384、32768 的定向正确性，覆盖整 tile、尾 tile 和 row 切换。后续测时需先满足 lease 与对应形状资格。
+- CLASSIFICATION：NEEDS_MORE_EVIDENCE。
+
+### 本轮去重与 API 依据
+
+- 不提出通用删除 `PipeBarrier<PIPE_V>` 的方案。CANN 8.5 官方 `PipeBarrier(ISASI)` 文档说明它阻塞同一流水，并要求有数据依赖的同流水指令之间插入同步；V016 pass 1 存在 Add→Mul→ReduceSum 等实际依赖。文档也提到 direct-invoke 工程默认启用自动同步，但本路线现有构建记录没有保留自动同步选项或最终指令清单，暂不能据此认定具体手工 barrier 可删。
+- 再调宽行 tile、输出 MTE3/V 重叠、跨 core 部分归约和向量 inverse-RMS 分别与 V016 当前 tile 方案或本文件 H2/H3/H4 已记录的活跃路线研究重合；重新命名不会增加独立方向。
+- 改写 `y * invRms * gamma + bias` 的向量合并/重排，已在既有 DTYPE-SPECIAL-X 与 MIX-A 研究覆盖，且会改变舍入次序；本轮不另列。
+- 路线编译记录确认目标为 Ascend910B3 / DAV_2201，工具链为 CANN 8.5.0.alpha002。CANN 8.5 官方 `PipeBarrier` 页面：<https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/850alpha002/API/ascendcopapi/atlasascendc_api_07_0271.html>；DAV_2201 架构资料：<https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/920beta2/programug/Ascendcopdevg/docs/zh/guide/programming_guide/advanced_programming/hardware_implementation/architecture_spec/npu_arch_2201.md>。9.2 页面记载该架构 UB 总容量为 192KB，并说明默认预留 256B 与 8KB；使用 `--cce-disable-asc-reserved-ubuf` 时不再预留 8KB。这个页面比目标工具链新，仅作为 UB 资源背景；具体构建选项和可用容量仍以本路线证据为准。资料结论不构成任何 timing 许可。
+- 结果：在 H1 之外找到 H5、H6 两个源码机制上独立的方向；两者均需先核实编译器产物，暂不列 READY_FOR_MAIN_REVIEW。本轮未改变 Candidate，V016 仍待 Main 的测量决定。
