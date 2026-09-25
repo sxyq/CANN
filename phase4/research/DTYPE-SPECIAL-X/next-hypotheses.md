@@ -52,16 +52,16 @@ Scope: V001 remains the pending FP32 Candidate. The items below are read-only re
 
 ## DTYPE-FP32-04: Fused Output Affine
 
-- MECHANISM: Evaluate a supported FP32 vector fused multiply-add for `value * (invRms * gamma) + bias`, with gain preparation kept within the row output path.
+- MECHANISM: Keep the existing `Muls(value, invRms)` stage and replace only the following `Mul(value, gamma)` plus `Add(value, bias)` with one supported FP32 vector fused multiply-add.
 - BOTTLENECK: The pointwise output path currently issues separate scale, gamma multiply, and bias add operations.
 - EXPECTED_SHAPES: Widths 64, 128, and 1024 across all three prefixes.
-- WHY_IT_MAY_HELP: A valid fused instruction could reduce pointwise instruction count after the row reciprocal has been computed.
-- WHY_IT_MAY_FAIL: Gain preparation may erase the instruction saving; the compiler may already fuse an equivalent sequence.
-- ASCEND_FEASIBILITY: Needs confirmation of the exact installed CANN 8.5 FP32 vector API and generated instruction sequence before implementation.
+- WHY_IT_MAY_HELP: One fused instruction could replace the separate pointwise multiply and add after the row reciprocal has been applied.
+- WHY_IT_MAY_FAIL: The vector API may not lower to a fused instruction, or instruction issue may not limit these shapes.
+- ASCEND_FEASIBILITY: Confirm the exact installed CANN 8.5 FP32 vector API and generated instruction sequence before implementation.
 - UB/CORE/DMA_IMPACT: No planned buffer or transfer changes; same core mapping.
 - SYNC_IMPACT: No planned synchronization changes.
-- PRECISION_RISK: Material. FMA and gain reassociation change FP32 rounding; compare against the task tolerance on all three prefixes and selected widths.
+- PRECISION_RISK: Fused rounding differs from the existing separate multiply and add; compare against the task tolerance on all three prefixes and selected widths.
 - DUPLICATE_CHECK: V001 preserves the pointwise affine sequence and changes only same-type conversion copies.
-- MINIMAL_OFAT_DIFF: One pointwise affine formulation, with no reduction, copy-helper, or row-scheduling edits.
+- MINIMAL_OFAT_DIFF: Replace only the adjacent output multiply and add; keep `Muls(value, invRms)`, reduction, copies, and row scheduling unchanged.
 - EXPECTED_LOCAL_PROBES: API/codegen evidence; CPU numerical model; compile/link; exact-shape correctness before any lease-backed performance work.
 - READINESS: NEEDS_MORE_EVIDENCE.
