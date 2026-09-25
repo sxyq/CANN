@@ -2,12 +2,13 @@
 
 ## Execution contract
 
-Before any Route execution, read:
+BEFORE ANY ROUTE EXECUTION, READ:
 
-- `phase4/control/execution-contract.md`
-- `phase4/control/local-timing-protocol.md`
+1. `phase4/control/project-experiment-playbook.md`
+2. `phase4/control/execution-contract.md`
+3. `phase4/control/local-timing-protocol.md`
 
-These files are the shared execution and measurement authorities; new Route prompts need not repeat their full policy.
+These are the shared execution and measurement authorities; new Route prompts need not repeat their full policy.
 
 这是新的 Clean-Room 探索区域。
 

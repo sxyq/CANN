@@ -1,6 +1,10 @@
 # Phase4 Execution Contract
 
-This document is the persistent authority for route execution, ownership, provenance, source retention, Git workflow, local screening, and online submission. Before any Route Agent acts, read this document and `phase4/control/local-timing-protocol.md`.
+This document is the persistent authority for route execution, ownership, provenance, source retention, Git workflow, local screening, and online submission. Before any Route Agent acts, read in order:
+
+1. `phase4/control/project-experiment-playbook.md`
+2. `phase4/control/execution-contract.md`
+3. `phase4/control/local-timing-protocol.md`
 
 ## A. Repository and Worktree
 
@@ -223,4 +227,3 @@ Six Route Agents research in parallel; Main reviews only at batch handoffs. Per-
 New Revisions require the full Research Track plus Main Review plus one explicit architecture hypothesis. No rapid micro-revision loops (V001→V002→V003 one small edit at a time) exist to keep an Agent busy. Research Track never blocks Track-A: when a device window opens or the timing protocol passes the exact shape, the Agent immediately runs same-binary → P/C → Main Review and keeps the research backlog.
 
 Research does not change scoring authority: local percentages are never Official Score; only the unified Judge Owner submits to CANNJudge.
-
