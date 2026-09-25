@@ -1,0 +1,54 @@
+{
+  "route": "MODE-X-R015C",
+  "revision": "R015C-r4",
+  "parent_revision": "R015C-r3",
+  "parent_source_sha256": "e1786bec2673519f41887fdffa0e11751f515a81037d854c88ae7edc0e4af903",
+  "source_sha256": "9367db4ebb4edf6b7bf6cde97f4846f987e6ab230c2aeee44d942d5e881a1c74",
+  "single_hypothesis": "One row per block; preserve segment size, DataCopyPad path/order, and 64 KiB VECCALC scratch allocation.",
+  "compile": "PASS",
+  "link": "PASS",
+  "build_attempts": [
+    {
+      "attempt": 1,
+      "status": "FAIL",
+      "reason": "CANN registration compilation could not locate the standard <vector> header without CPLUS_INCLUDE_PATH."
+    },
+    {
+      "attempt": 2,
+      "status": "PASS",
+      "environment": "CPLUS_INCLUDE_PATH exported using the existing MODE-X-R015C route build setup."
+    }
+  ],
+  "build_host": "cann-server3 (hwnput3)",
+  "cann_version": "8.5.0.alpha002",
+  "executable": {
+    "path": "/home/data4t2/lelinfeng/MODE-X-R015C_runs/R015C-r4/build/row_copy_reference",
+    "sha256": "21934a8cf15508b365e252810c8f858b4fb105c5cc5000f460d61c511a37e188",
+    "size_bytes": 384752,
+    "format": "ELF 64-bit PIE, ARM aarch64"
+  },
+  "build_logs": [
+    "support/server3/configure.log",
+    "support/server3/build-attempt-1.log",
+    "support/server3/build-attempt-2.log"
+  ],
+  "correctness": {
+    "status": "PASS",
+    "device": 4,
+    "preflight": "Health OK; HBM 90%; AICore 0%; device 4 showed no active lease in the latest shared lease record. Process enumeration via npu-smi is unsupported on this device.",
+    "cases": [
+      {"rows": 2, "cols": 256, "status": "PASS", "exact": true},
+      {"rows": 5, "cols": 4096, "status": "PASS", "exact": true},
+      {"rows": 3, "cols": 8192, "status": "PASS", "exact": true}
+    ],
+    "log": "support/server3/correctness.log"
+  },
+  "performance": "NOT_RUN_BY_INSTRUCTION",
+  "environment": {
+    "remote_host": "cann-server3 alias resolved to hwnput3; user lelinfeng",
+    "cann_toolkit": "8.5.0.alpha002",
+    "npu": "Ascend 910B3, device 4",
+    "compile_target": "dav-2201"
+  },
+  "status": "BUILD_LINK_CORRECTNESS_PASS_PENDING_MAIN_REVIEW"
+}

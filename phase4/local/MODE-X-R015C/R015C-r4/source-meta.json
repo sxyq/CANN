@@ -1,0 +1,35 @@
+{
+  "ROUTE": "MODE-X-R015C",
+  "REVISION": "R015C-r4",
+  "DIRECT_PARENT": "R015C-r3",
+  "PARENT_SOURCE_SHA": "e1786bec2673519f41887fdffa0e11751f515a81037d854c88ae7edc0e4af903",
+  "CURRENT_SOURCE_SHA": "9367db4ebb4edf6b7bf6cde97f4846f987e6ab230c2aeee44d942d5e881a1c74",
+  "PARENT_SCORE": null,
+  "SINGLE_HYPOTHESIS": "Assign exactly one row to each block (kRowsPerBlock=1) to increase block parallelism. Keep the per-segment size, single-row DataCopyPad path and ordering, and VECCALC scratch allocation at 2 * kMaxCols * sizeof(float) unchanged. Do not add 2D transfer or double buffering.",
+  "CONTEXT_CLASS": "HISTORICAL_DERIVED",
+  "WHY_NOT_DUPLICATE": "This is the Main-approved row-to-block mapping hypothesis only. It preserves r3 DMA segmentation, copy path, synchronization, and the 64 KiB scratch allocation; it does not apply the separately proposed cross-row transfer or double-buffer pipeline.",
+  "SOURCE_PATH": "phase4/local/MODE-X-R015C/R015C-r4/submission.asc",
+  "BUILD_STATUS": "PASS",
+  "BUILD_HOST": "cann-server3 (hwnput3)",
+  "BUILD_CANN_VERSION": "8.5.0.alpha002",
+  "BUILD_EXECUTABLE_PATH": "/home/data4t2/lelinfeng/MODE-X-R015C_runs/R015C-r4/build/row_copy_reference",
+  "BUILD_EXECUTABLE_SHA256": "21934a8cf15508b365e252810c8f858b4fb105c5cc5000f460d61c511a37e188",
+  "BUILD_EXECUTABLE_SIZE_BYTES": 384752,
+  "BUILD_ATTEMPT_1_STATUS": "FAILED_MISSING_VECTOR_HEADER",
+  "BUILD_ATTEMPT_2_STATUS": "PASS",
+  "BUILD_LOG_PATHS": [
+    "support/server3/configure.log",
+    "support/server3/build-attempt-1.log",
+    "support/server3/build-attempt-2.log"
+  ],
+  "CORRECTNESS_STATUS": "PASS",
+  "CORRECTNESS_DEVICE": 4,
+  "CORRECTNESS_CASES": [
+    {"rows": 2, "cols": 256, "status": "PASS", "exact": true},
+    {"rows": 5, "cols": 4096, "status": "PASS", "exact": true},
+    {"rows": 3, "cols": 8192, "status": "PASS", "exact": true}
+  ],
+  "CORRECTNESS_LOG_PATH": "support/server3/correctness.log",
+  "MAIN_REVIEW_STATUS": "PENDING",
+  "PERFORMANCE_STATUS": "NOT_RUN"
+}
