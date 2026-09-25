@@ -1,6 +1,6 @@
-# Local Timing Protocol (MAIN-2)
+# Unified Local Timing Protocol (MAIN-1 and MAIN-2)
 
-Scope: measurement infrastructure only. Do not change Candidate kernel sources, SHA, architecture, or revisions.
+Scope: applies to MAIN-1 and MAIN-2 measurement infrastructure. Do not change Candidate kernel sources, SHA, architecture, or revisions while qualifying or running measurements.
 
 Today (2026-09-24): all five timing routes are WINDOW UNQUALIFIED 2/2. No window-qual, paired timing, or performance retry for the remainder of the day.
 
@@ -61,7 +61,7 @@ Additional structural issues:
 
 ## Unified measurement protocol
 
-Applies to all MAIN-2 routes from the next device window onward. Measurement only — no Candidate edits.
+Applies to all MAIN-1 and MAIN-2 Routes from the next device window onward. Measurement only — no Candidate edits.
 
 ### Warmup
 
@@ -99,8 +99,8 @@ Applies to all MAIN-2 routes from the next device window onward. Measurement onl
 
 ### Device selection
 
-- Single device per lease window via `phase4/control/server3-device-leases.tsv` (MAIN-2 rows only).
-- One MAIN-2 route at a time on a device. No concurrent next6 probes.
+- Single device per lease window via the shared `phase4/control/server3-device-leases.tsv`; record the owning Main and Route for every lease.
+- One performance Route at a time per device across MAIN-1 and MAIN-2. Never run concurrent timing on the same device from different Routes or Mains.
 - Avoid d7. Prefer AICore 0% **and** document HBM/procs; AICore 0% alone is not sufficient.
 
 ### Sample order
