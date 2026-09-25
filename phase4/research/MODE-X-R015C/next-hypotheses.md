@@ -67,3 +67,55 @@ Route review 2026-09-25: retain the four distinct ideas below as research only. 
 - MINIMAL_OFAT_DIFF: Keep one row per block and the 2048-element segment size; introduce two slots and pipeline adjacent segment copies.
 - EXPECTED_LOCAL_PROBES: Exact checks on `(3,8192)` and `(5,4096)`, including last-slot reuse; no performance run before fresh shape-specific same-binary qualification and an explicit current lease.
 - READINESS: NEEDS_MORE_EVIDENCE.
+
+## Research batch 2026-09-26
+
+R015C-r4 remains unchanged. The following ideas are separate research candidates; none is authorized for implementation.
+
+## R015C-H05: Batch adjacent segments in one copy descriptor
+
+- MECHANISM: Keep one block per row and the 2048-FP32 segment limit, but describe adjacent full segments with one `DataCopyExtParams` using `blockCount`; use a separate final descriptor only for a partial segment.
+- BOTTLENECK: Per-segment copy-call setup and repeated full barriers on wide rows.
+- EXPECTED_SHAPES: `(5,4096)` and `(3,8192)` first; include `(3,2056)` to exercise a partial final segment and `(2,256)` as a short-row control.
+- WHY_IT_MAY_HELP: A wide row can use one batched copy-in and one batched copy-out for its full segments, reducing API-call and barrier count while retaining the observed per-block byte limit.
+- WHY_IT_MAY_FAIL: The device may not handle the proposed block layout or stride units as expected; DMA work and bytes remain unchanged, and short rows may see no benefit.
+- ASCEND_FEASIBILITY: The local DataCopy guide documents multi-block `DataCopyExtParams` and contiguous blocks with zero stride. Confirm DAV_2201 behavior for both GM-to-UB and UB-to-GM, the 8192-byte block length, and a separate tail descriptor before any implementation.
+- UB/CORE/DMA_IMPACT: Retain one row per block and 64 KiB staging; keep total bytes and the maximum 8192-byte transfer block unchanged. Reduce full-segment descriptors from four to one for `D=8192`.
+- SYNC_IMPACT: Keep serial copy-in, `PIPE_ALL`, copy-out, `PIPE_ALL` ordering; place each barrier after its complete batched descriptor.
+- PRECISION_RISK: Incorrect block count, stride, or tail offset could omit or repeat data; comparison remains bit-exact FP32.
+- DUPLICATE_CHECK: H01 creates one task per segment; H02 changes the copy primitive; H03 changes staging capacity; H04 overlaps segments with two slots. This idea batches adjacent segments in a descriptor while retaining one row per block and the current copy primitive.
+- MINIMAL_OFAT_DIFF: Replace only the per-segment descriptor loop with one descriptor for full segments plus the existing-style tail descriptor; preserve mapping, staging, primitive, and barrier order.
+- EXPECTED_LOCAL_PROBES: Exact checks for `(2,256)`, `(5,4096)`, `(3,8192)`, and `(3,2056)`. Require fresh same-binary qualification for each measured shape and an explicit current lease before timing.
+- READINESS: NEEDS_MORE_EVIDENCE.
+
+## R015C-H06: Specialize the fixed segment-count paths
+
+- MECHANISM: Retain one block per row and separate `DataCopyPad` calls, but use fixed control-flow paths for the supported one-, two-, and four-segment row lengths instead of the dynamic column loop.
+- BOTTLENECK: Loop tests, minimum selection, and offset updates repeated around each short DMA operation.
+- EXPECTED_SHAPES: `(2,256)`, `(5,4096)`, and `(3,8192)`; include a non-full final segment such as `(3,2056)`.
+- WHY_IT_MAY_HELP: Fixed paths can remove loop-control work for the current common widths without changing transfer count, segment size, or byte traffic.
+- WHY_IT_MAY_FAIL: The compiler may already unroll or simplify the loop, making the extra branches and code size a net loss; DMA latency may dominate.
+- ASCEND_FEASIBILITY: The shape arrives through the existing tiling structure, so a device-side switch can select fixed paths without changing the host ABI. Check generated code before considering any device run.
+- UB/CORE/DMA_IMPACT: Keep the same block count, 64 KiB staging, per-segment DMA descriptors, and total bytes; only device control flow changes.
+- SYNC_IMPACT: Preserve both `PIPE_ALL` barriers after every individual copy.
+- PRECISION_RISK: A fixed path can skip a segment or mishandle the tail if its shape branch is incomplete; exact comparison is required for each path.
+- DUPLICATE_CHECK: H01 changes task mapping, H02 changes the copy primitive, H03 changes buffer size, H04 changes the schedule, and H05 batches descriptors. This idea retains the same mapping, per-segment calls, buffer, and schedule while specializing only loop control.
+- MINIMAL_OFAT_DIFF: Replace the dynamic segment loop with fixed-count paths selected by `shape->cols`; leave all copy arguments and barriers unchanged.
+- EXPECTED_LOCAL_PROBES: Exact checks for all three current shapes plus `(3,2056)`. Any timing requires fresh exact-shape same-binary qualification and an explicit current lease.
+- READINESS: NEEDS_MORE_EVIDENCE.
+
+## R015C-H07: Narrow serial copy barriers
+
+- MECHANISM: Keep one staging buffer and the current serial sequence, replacing the two `PIPE_ALL` barriers with pipeline-specific MTE2 and MTE3 barriers after the corresponding copies.
+- BOTTLENECK: A full-pipeline stall after each input and output transfer may wait for unrelated engines.
+- EXPECTED_SHAPES: `(2,256)`, `(5,4096)`, and `(3,8192)`; include `(3,2056)` for the tail path.
+- WHY_IT_MAY_HELP: A narrower wait may preserve the required DMA completion while reducing stalls across unrelated pipelines.
+- WHY_IT_MAY_FAIL: The MTE2-to-MTE3 local-buffer dependency may require stronger ordering on DAV_2201; the current full barrier may already compile to an equally narrow operation.
+- ASCEND_FEASIBILITY: Local guidance documents `PipeBarrier<PIPE_MTE2>` and `PipeBarrier<PIPE_MTE3>`. Confirm cross-engine visibility and target compiler support, then run exact correctness before any measurement.
+- UB/CORE/DMA_IMPACT: No change to the 64 KiB buffer, block mapping, descriptors, bytes, or core count.
+- SYNC_IMPACT: Retain copy-in then copy-out ordering and wait for output completion before reusing the same local buffer; do not overlap transfers.
+- PRECISION_RISK: An insufficient fence can expose incomplete local data to MTE3 or permit buffer reuse before writeback completes.
+- DUPLICATE_CHECK: H04 introduces two-slot overlap and new buffer lifetimes. This idea retains one slot and serial ownership, changing only barrier scope.
+- MINIMAL_OFAT_DIFF: Replace the post-input and post-output barrier template arguments only; retain all data movement and loop logic.
+- EXPECTED_LOCAL_PROBES: Exact checks for all three current shapes plus `(3,2056)`. Do not time before fresh same-binary qualification for the exact shape and an explicit current lease.
+- READINESS: NEEDS_MORE_EVIDENCE.

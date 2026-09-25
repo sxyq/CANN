@@ -47,3 +47,11 @@ Review the recorded source SHA, approved one-row-per-block diff, executable iden
 ## Current handoff state
 
 Main decision remains `NEEDS_ONE_MORE_LOCAL`. Keep R015C-r4 unchanged. The runner and documentation work is complete; no device access, correctness rerun, timing, r2 comparison, or new revision was performed. Return these Route-owned records to Main review.
+
+## Correctness provenance follow-up (2026-09-26)
+
+- `support/server3/correctness.log` records exact PASS results for `(2,256)`, `(5,4096)`, and `(3,8192)`, but does not retain the commands or the executable identity observed during that run.
+- `support/server3/build-attempt-2.log` identifies the compiled host source as `/home/data4t2/lelinfeng/MODE-X-R015C_runs/R015C-r4/source/op_host/row_copy_host.asc`. That source includes the adjacent R4 kernel; the staged kernel and tiling identities, the retained R4 sources, and the current server executable identity agree. This supports the R4 source lineage, but cannot independently prove which executable was launched for the historical correctness run.
+- `support/server3/run-exact-correctness.sh` now verifies the expected host, kernel, tiling, and executable identities and prints the exact commands for all three shapes. `--plan-only DEVICE_ID` does not initialize ACL; `--run DEVICE_ID` runs the three targeted exact comparisons without rebuilding. A fresh device preflight remains necessary before using run mode.
+- Plan attempt 1 matched all four identities but stopped while sourcing `set_env.sh` under `nounset`; the output is retained in `support/server3/exact-harness-plan-attempt-1.log`. Plan attempt 2 passed remotely, emitted the three exact device-probe commands, and ended with `NPU_ACCESS=NOT_RUN`; output is retained in `support/server3/exact-harness-plan-attempt-2.log`.
+- This follow-up used plan-only/host-side validation only. No ACL or NPU operation, correctness rerun, or timing was performed.
