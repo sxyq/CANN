@@ -55,3 +55,13 @@ Main decision remains `NEEDS_ONE_MORE_LOCAL`. Keep R015C-r4 unchanged. The runne
 - `support/server3/run-exact-correctness.sh` now verifies the expected host, kernel, tiling, and executable identities and prints the exact commands for all three shapes. `--plan-only DEVICE_ID` does not initialize ACL; `--run DEVICE_ID` runs the three targeted exact comparisons without rebuilding. A fresh device preflight remains necessary before using run mode.
 - Plan attempt 1 matched all four identities but stopped while sourcing `set_env.sh` under `nounset`; the output is retained in `support/server3/exact-harness-plan-attempt-1.log`. Plan attempt 2 passed remotely, emitted the three exact device-probe commands, and ended with `NPU_ACCESS=NOT_RUN`; output is retained in `support/server3/exact-harness-plan-attempt-2.log`.
 - This follow-up used plan-only/host-side validation only. No ACL or NPU operation, correctness rerun, or timing was performed.
+
+## Exact-source correctness rerun on device 7 (2026-09-26)
+
+- The retained R4 submission, kernel, tiling, host wrapper, and server executable matched their recorded identities before invocation. Exact values and full command/output are retained in `support/server3/correctness-device7-exact-20260926.log`.
+- Invocation: `ssh cann-server3 bash -s -- --run 7`, with `run-exact-correctness.sh` on stdin. The script rechecked all four identities, then ran only the three fixed `--device-probe` exact comparisons; it has no build, warmup, event, sampling, or timing branch.
+- Immediately before the run, device 7 was healthy, AICore was 0%, and HBM use was `14394/65536 MB` (51142 MB free). Its listed process was PID `1300597`, `python`, 11016 MB. The command was separately inspected before the run and was `build_minicpmo_cremad_reference.py`, not a correctness/probe task.
+- All three cases passed exact comparison: `(2,256)`, `(5,4096)`, `(3,8192)`; run exit status was 0.
+- Immediately after, device 7 remained healthy, AICore was 0%, and HBM use was `14537/65536 MB`; the same PID remained listed at 11012 MB. A post-run process query at `2026-09-25T20:01:16Z` confirmed the same unrelated command.
+- The full log's two derived `DEVICE7_PROCESS` summary lines have shifted columns because the `npu-smi` row starts with an empty field. Do not use those two summaries: the raw pre/post device tables in the same log correctly show PID `1300597`, process `python`, and memory `11016` / `11012 MB`. The standalone process query and corrected interpretation are retained in `support/server3/correctness-device7-process-audit-20260926.log`.
+- No timing, same-binary qualification, or performance sampling was performed.
