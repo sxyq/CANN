@@ -55,7 +55,8 @@ Main 安排有效租约、在具备该 Route 源码和 CANN 工具链的构建�
 
 ```sh
 RUN_ID=$(date +%Y%m%dT%H%M%S)
-DEVICE=<LEASE_DEVICE_ID>
+printf 'Lease device ID: '
+read -r DEVICE
 ./r31a_paired_probe "$DEVICE" 32768 "r31a-v021-${RUN_ID}-D32768"
 ./r31a_paired_probe "$DEVICE" 24576 "r31a-v021-${RUN_ID}-D24576"
 ```
