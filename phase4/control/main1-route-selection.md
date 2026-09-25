@@ -174,7 +174,7 @@
 
 ## Git 与共享状态
 
-- Canonical branch：`exp/independent-breadth`。当前本地与 origin HEAD 均为 `d63c5a5be2bf46ac1dcb0b57d35b29ad22e2e6e1`；六条 Main-1 Route branch 均无 ahead/behind，worktree 干净。
+- Canonical branch：`exp/independent-breadth`。本轮推送前后均 fetch 并核对 local HEAD 与 origin 一致；R31B、R31A、MIX-A、MODE-X-R015C、DTYPE-SPECIAL-X 五条继续路线的分支在 handoff 后均无 ahead/behind，worktree 干净。
 - shared `scheduler.tsv` 只调整 WIDE-X-FRESH4 自己的状态行；其 owner、worktree、branch 不变。Main-2 行和 Candidate source 均未改。
 - `local-online-calibration.tsv` 追加 SCHED-ROWGROUP-X 已正式提交的一行；该结果只增加校准样本，不改变 Main-2 Route 状态或 evaluator 版本。
 - canonical 工作树中其他既有修改与未跟踪文件均保持原样，没有纳入本次 stage。
