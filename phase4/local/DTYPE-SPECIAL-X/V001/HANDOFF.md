@@ -45,7 +45,7 @@ Use the 24 correctness shapes inside the task's legal width range for both same-
 
 The selected widths include the legal 64/128 alignment points, adjacent misaligned widths, and medium/wide cases; all three ranks retain the task's host metadata and flattening paths while keeping the device row count fixed. The patterns are deterministic, so both binaries receive byte-identical tensors and attributes. The five widths below the task minimum (`1, 7, 8, 9, 63`) remain in the 39-case correctness suite but are excluded from task-domain performance results; including them would give out-of-domain cases weight in the performance comparison.
 
-The existing V001 NPU runner is correctness-only: it copies inputs before each launch, synchronizes, copies output back, and checks the golden result after each call. It has no warmup/sample timing loop or event measurement. The compile smoke entry point returns immediately. Neither is compliant with the local timing protocol, and no Route-local timing runner is present. The recorded Candidate NPU correctness executable identity is not a timing-runner identity.
+The existing V001 NPU runner is correctness-only: it copies inputs before each launch, synchronizes, copies output back, and compares the golden result after each call. It has no warmup/sample timing loop or event measurement. The compile smoke entry point returns immediately. Neither is compliant with the local timing protocol, and no Route-local timing runner is present. The recorded Candidate NPU correctness executable identity is not a timing-runner identity.
 
 ## Conditions for another local run
 
@@ -58,6 +58,6 @@ The existing V001 NPU runner is correctness-only: it copies inputs before each l
 
 ## Main review point
 
-Main to confirm the performance workload set, provide or approve the unified paired runner and Parent executable identity, then grant an exclusive device lease. Until those are available, V001 remains `NEEDS_ONE_MORE_LOCAL`; no performance claim is made.
+Main to review the selected task-domain workload, provide or approve the unified paired runner and Parent executable identity, then grant an exclusive device lease. Until those are available, V001 remains `NEEDS_ONE_MORE_LOCAL`; no performance claim is made.
 
 No V002, dtype change, hypothesis change, Candidate source change, or online submission is included in this handoff.
