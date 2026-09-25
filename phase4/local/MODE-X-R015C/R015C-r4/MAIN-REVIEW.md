@@ -27,9 +27,10 @@ Date: 2026-09-25
 
 ## Measurement readiness
 
-- Candidate executable SHA-256: `21934a8cf15508b365e252810c8f858b4fb105c5cc5000f460d61c5119aeeb390`.
-- The recorded r3 executable is `faea8be543277b77af2bc07d6b08ca43134fceaed17ab807fe8cfd5ecdcd0aee`; a unified Parent/Candidate measurement runner has not yet been built and linked.
-- No timing was run. The next local step is to prepare one runner whose Parent and Candidate paths are tied to their exact sources and executable identities. Device timing still requires a current MAIN-1 exclusive lease, then per-shape same-binary qualification before any pair.
+- Candidate standalone executable SHA-256: `21934a8cf15508b365e252810c8f858b4fb105c5cc5000f460d61c511a37e188`, matching `source-meta.json` and `local-result.json`.
+- The unified Parent/Candidate runner built and linked on server3 from the declared sources. Runner SHA-256: `0b576bea88cc5c6664728f3e5a1f749e1560f189fab9b6b714fd2cbd578c5837`; Parent module SHA-256: `8f57bc1b028f815e4f1cea53f5b5d22781bddb6077b7cc3a47acf70123ab4486`; Candidate module SHA-256: `9339fd686d9498fc55d899aa0ef6dac6c49a7092b93b0b36e7a38eaed6f66b33`.
+- Host identity and argument tests passed for the three declared shapes and invalid count/device-mode arguments. They did not initialize ACL or access an NPU.
+- The runner has not been invoked for same-binary qualification, correctness, or timing. A future measurement requires a current MAIN-1 exclusive lease and exact-shape same-binary qualification before any Parent/Candidate pair.
 
 ## Documentation drift
 
