@@ -32,6 +32,16 @@ The Parent and Candidate source SHAs are respectively `a8c19a1972207acc67e3fb0cd
 
 The runner was built but not executed. The build log contains CCEC host parsing warnings for `GM_ADDR` attributes; all three targets linked successfully. Earlier failed unified-runner link evidence remains retained alongside the successful build logs.
 
+## Paired Qualification Binding
+
+Paired mode now requires the PASS qualification record to match the requested route, revision, mode, implementation, shape, device, owner, lease ID, runner SHA, Parent source SHA, and Candidate source SHA. Its `preflight_utc` must be no later than the current paired preflight and at most 300 seconds older. This validation runs before `Runtime` construction and `aclInit`.
+
+The change was compiled and linked on `cann-server3` (CANN `8.5.0.alpha002`, SoC `Ascend910B3`, NPU arch `dav-2201`). Runner source SHA-256: `a4eb7b545097b6d05206a5c853d3b0081b978e43f73209c390a0795ad0db6fcb`; executable SHA-256: `b14b57e32d3b9029bf01f1dca339599063b6be05bda750e189de01c7c2a81306`. Build/link log: `logs/unified-unified-build-20260925T135025Z-15249-build-link.log`; executable/source identities: `logs/unified-unified-build-20260925T135025Z-15249-build-identity.txt`.
+
+The CPU-only validation executable has no ACL runtime dependency. Its 10 cases passed: matching identity and exact 300-second age accepted; different device, owner, lease, runner SHA, either source SHA, age over 300 seconds, and a future qualification time rejected. Full output: `logs/unified-unified-build-20260925T135025Z-15249-qualification-validation.log`; dynamic dependencies: `logs/unified-unified-build-20260925T135025Z-15249-qualification-validation-ldd.txt`. The first validation-target link attempt lacked the system C++ standard library; its evidence remains retained, and the subsequent build links `stdc++` explicitly and passes.
+
+No unified runner, NPU correctness, noise-floor, or paired timing run was performed. Candidate source SHA remains `e2717055199f541d98d85ceef2e011e52e2749d932ca954dc887868de7db880f`; the existing 39/39 correctness result remains unchanged.
+
 ## Paired input decision
 
 Use the 24 correctness shapes inside the task's legal width range for both same-binary noise-floor runs and P/C paired measurements. The shared task ABI allows FP32 rank-2/3/4 inputs with `D=64..32768`; the existing NPU correctness suite has eight such widths, each tested with all three rank prefixes:

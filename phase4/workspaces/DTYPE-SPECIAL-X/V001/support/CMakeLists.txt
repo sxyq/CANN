@@ -98,3 +98,7 @@ target_link_directories(dtype_special_x_v001_unified_runner PRIVATE
     /usr/lib/aarch64-linux-gnu)
 target_link_libraries(dtype_special_x_v001_unified_runner PRIVATE
     ascendcl tiling_api register platform unified_dlog dl m graph_base)
+
+add_executable(dtype_special_x_v001_qualification_validation_test
+    support/qualification_validation_test.cpp)
+target_link_libraries(dtype_special_x_v001_qualification_validation_test PRIVATE stdc++)
