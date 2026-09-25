@@ -174,17 +174,60 @@ Fast-cluster (within ±15–20% of median) DEVICE times: small ~20.6µs CV≈0.0
 | 10 | 20.38 | 0.056 | 24.64 | 151.7 | **chosen** (best p90) |
 | 20 | 19.60 | 0.015 | 141.38 | 168.6 | not better p90 |
 
-### Decision
+### Decision (corrected 2026-09-24)
 
-- **SAME_BINARY_VALIDATION=PASS** (in-process, device-event, warmup≥10, robust core).
-- **HARNESS_VALIDATED=YES** for future P/C under this protocol only.
-- **CANDIDATE TIMING remains NOT_RUN** in this session (no P/C executed).
-- Raw CV≤0.15 / max/min≤1.30 alone is **not** a sufficient gate for short kernels; use MAD/median + core_CV + interleaved pair delta. Legacy wall-clock numbers tagged **LEGACY_TIMING_METHOD** (see `results-window-qual/LEGACY-TIMING-METHOD.md`); SCHED −18.45% 4/4 stays **STRONG_POSITIVE_LOCAL_SIGNAL**, never merged with new method medians.
+- **HARNESS_VALIDATED=PARTIAL_SHAPE_CONDITIONAL** (not YES).
+- Shape status on d4 / SCHED Parent / warmup10 / DEVICE_EVENT:
+  - **SMALL 17×256: PASS** (MAD/median ≈ 0.052)
+  - **MEDIUM 4×1024: NEEDS_VALIDATION** (MAD/median ≈ 0.148)
+  - **WIDE 1×6144: NEEDS_VALIDATION / FAIL** (MAD/median ≈ 0.490 + block drift)
+- Full-distribution outliers count toward MAD/median. Low core/trimmed CV **must not** override a high full MAD/median.
+- Shape acceptance: **PASS** iff full-sample MAD/median ≤ 0.10 **and** |B1_med−B2_med|/median ≤ 0.10.  
+  Else if MAD/median > 0.10: **NEEDS_VALIDATION**.  
+  Else if MAD/median > 0.25 or block drift > 0.25: **MEASUREMENT_PROTOCOL_BLOCKED_FOR_SHAPE** (not a Route failure; improve harness/host, never the kernel Candidate).
+- Per-route rule: same-binary must be re-run with that Route’s **Direct Parent** and **exact probe shape** before any P/C for that Route. Small-shape PASS does not unlock medium/wide or other Routes.
+- Legacy wall-clock tagged **LEGACY_TIMING_METHOD** (`results-window-qual/LEGACY-TIMING-METHOD.md`); SCHED −18.45% 4/4 stays **STRONG_POSITIVE_LOCAL_SIGNAL**, never merged with new method medians. Not an Official Score.
+
+## Outlier policy (fixed BEFORE any new P/C)
+
+Pre-registered; may not be changed after seeing Candidate results.
+
+1. **Primary statistics** (only these enter decisions):
+   - per-block **median** of DEVICE_EVENT_US
+   - **MAD / median** on the full block sample set
+   - **p10 / p90** on the full block sample set
+   - **paired block delta** (interleaved P vs C block medians), reported per pair-block
+2. **Raw samples are permanent.** Every `*-raw.tsv` retained. No sample deletion, no winsorize, no “drop the slow ones” for the primary table.
+3. **Core / trimmed stats** (e.g. samples within ±20% of median) are **secondary diagnostic only**, labeled as such, never used alone to claim PASS or ONLINE_CANDIDATE.
+4. **No post-hoc outlier rules** keyed to Candidate identity or direction.
+5. Window / shape qualification uses the same primary stats on Parent-only same-binary data before Candidate runs.
+
+## Repeat-batch calibration (short kernels)
+
+For ~10–20 µs kernels, a single event interval may be noisy. Measurement-layer calibration allowed (not a Candidate change):
+
+- Optional: one device-event interval spanning N consecutive launches of the **same** binary; report `total_device_us / N`.
+- Must be validated on **same-binary** first. If repeat-batch lowers MAD/median and block drift vs per-launch events, record `REPEAT_BATCH_N` in this protocol and use it for that shape’s P/C.
+- **Calibration 2026-09-25 (SCHED Parent, d4):** batch N=10 on 7×65 → MAD/med improved to 0.060 but **block drift 0.254 (FAIL)**; on 33×100 → MAD/med 0.148 / drift 0.111 (worse than N=1). **REPEAT_BATCH not adopted.** Default remains N=1.
+
+## Shape-specific status (SCHED Direct Parent, d4, 2026-09-25)
+
+| shape | MAD/med | drift | verdict |
+|---|---:|---:|---|
+| 7×65 (N=1) | 0.131–0.184 | ≤0.04 | NEEDS_VALIDATION → **MEASUREMENT_PROTOCOL_BLOCKED_FOR_SHAPE** |
+| 33×100 | 0.049 | 0.062 | **PASS** |
+| 17×257 | 0.040–0.125 | 0.103–0.138 | NEEDS_VALIDATION (no Candidate yet) |
+| 17×256 | 0.023 | 0.014 | **PASS** |
+
+SCHED P/C run only on PASS shapes (33×100, 17×256), interleaved PC/CP×2, 31 samples/process, device events.
+- 17×256: favor 3/4, median delta −0.76% **within** same-binary floor → not a win.
+- 33×100: favor 3/4, median delta −31.81% but one reverse pair and high C within-block MAD on p1/p2 → not two clean independent blocks.
+- **SCHED decision: NEEDS_ONE_MORE_LOCAL** (no ONLINE_CANDIDATE, no LOCAL_REJECTED). V001 SHA unchanged.
 
 ## Priority after harness validation
 
-1. ~~SAME-BINARY harness validation (noise floor)~~ DONE 2026-09-24 PASS
-2. SCHED-ROWGROUP-X (STRONG_POSITIVE_LOCAL_SIGNAL retained, not promoted)
+1. Shape-specific SAME-BINARY per Route (Direct Parent + exact probe shape) under this protocol
+2. SCHED-ROWGROUP-X (STRONG_POSITIVE_LOCAL_SIGNAL retained, not promoted) — first
 3. ALIGN-TAIL-X
 4. BATCH-RESIDENT-X
 5. ASYNC-TRIPLE-X
@@ -196,7 +239,8 @@ Do not implement NEXT_CANDIDATE_HYPOTHESIS revisions (no V002+ for timing routes
 
 ## Ownership
 
-- Protocol file and control-only commits: MAIN-2.
+- Protocol file and control-only commits: MAIN-2 (unified doc also governs MAIN-1 measurement).
 - MAIN-1 `cann-sixlane/*` ownership unchanged.
-- UB-LIVENESS-X V003: READY_FOR_FORMAL_SUBMISSION; unified Judge Owner submits; MAIN-2 does not self-submit.
-- Judge Owner: not named beyond “unified Judge Owner” in control; exact path `cann-next6/UB-LIVENESS-X/phase4/local/UB-LIVENESS-X/V003/submission.asc`, SHA `2eb9b5d087267a54fb84f8734847ecb68cf94b967102693c0d150fd57d6da7cd`.
+- UB-LIVENESS-X V003: ONLINE_CANDIDATE, JUDGE_READY=YES, READY_FOR_FORMAL_SUBMISSION; **JUDGE_OWNER_REQUIRED** (no named owner in control); MAIN-2 does not self-submit.
+- Exact source path `cann-next6/UB-LIVENESS-X/phase4/local/UB-LIVENESS-X/V003/submission.asc`, SHA `2eb9b5d087267a54fb84f8734847ecb68cf94b967102693c0d150fd57d6da7cd`.
+- Stage: **LOCAL_MEASUREMENT_REVALIDATION** (not DONE).

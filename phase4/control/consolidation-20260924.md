@@ -157,3 +157,12 @@ No Candidate source, no new revision, no timing retry, no CANNJudge submit.
 - Noise floor recorded for small/medium/wide in local-timing-protocol.md. Legacy wall-clock tagged LEGACY_TIMING_METHOD; SCHED −18.45% remains STRONG_POSITIVE_LOCAL_SIGNAL.
 - SAME_BINARY_VALIDATION=PASS; HARNESS_VALIDATED=YES; CANDIDATE TIMING still NOT_RUN this session.
 - UB V003 reconfirmed READY_FOR_FORMAL_SUBMISSION; package unchanged; MAIN-2 no self-submit.
+
+## Corrected harness status + SCHED shape revalidation (2026-09-25)
+
+- HARNESS_VALIDATED corrected to PARTIAL_SHAPE_CONDITIONAL (small PASS / medium NEEDS / wide NEEDS-FAIL). Outlier policy fixed in local-timing-protocol.md before any new P/C.
+- SCHED exact-shape same-binary (Direct Parent, d4, warmup10, 2×31 device events): 33×100 PASS, 17×256 PASS; 7×65 and 17×257 NEEDS_VALIDATION (7×65 → MEASUREMENT_PROTOCOL_BLOCKED_FOR_SHAPE). Repeat-batch N=10 not adopted (drift/MAD worse).
+- SCHED interleaved P/C only on PASS shapes: 17×256 median delta −0.76% within floor; 33×100 −31.81% with reverse pair + high C MAD → decision NEEDS_ONE_MORE_LOCAL (not ONLINE, not REJECT). V001 SHA 0fae0a42 unchanged; no new revision.
+- ALIGN/BATCH/ASYNC/REDUCE: still NEEDS_ONE_MORE_LOCAL + MEASUREMENT_BLOCKED; each needs its own exact-shape same-binary PASS before P/C. Not run this turn.
+- UB V003: ONLINE_CANDIDATE, JUDGE_READY=YES, READY_FOR_FORMAL_SUBMISSION, JUDGE_OWNER_REQUIRED; no self-submit.
+- NEW_OFFICIAL_SCORE: none.
