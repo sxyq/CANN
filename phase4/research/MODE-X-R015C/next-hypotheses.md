@@ -124,6 +124,20 @@ R015C-r4 remains unchanged. The following ideas are separate research candidates
 
 R015C-r4 remains unchanged. These three ideas are distinct from H01-H07 and remain research-only; none is authorized for implementation.
 
+### Screening summary
+
+This batch was screened against the Route's r3/r4 sources and the local Ascend C DataCopy, buffer, and synchronization guidance only. The device-load report is a measurement constraint and does not change the hypothesis ranking or authorize implementation.
+
+| ID | Distinct mechanism | Main uncertainty | First falsification target | Readiness |
+|---|---|---|---|---|
+| H08 | Group two adjacent rows into one block and batch rows in the DataCopyPad descriptor | Reduced block parallelism may outweigh fewer block and descriptor setups; confirm two-row UB layout and odd tail | Exact-copy even and odd row counts; a future qualified result within noise or slower rejects the expected benefit | NEEDS_MORE_EVIDENCE |
+| H09 | Stage all segments of one row, then copy the row out in a second phase | Multiple in-flight copies and phase barriers may cost more than the current serial loop | Exact-copy the one-, two-, four-segment and partial-tail paths; any stale or omitted segment rejects feasibility | NEEDS_MORE_EVIDENCE |
+| H10 | Pass row width as a scalar instead of reading the tiling structure in each block | DAV_2201 direct-launch scalar ABI and wrapper parity are unverified; saved metadata traffic may be negligible | Build the exact scalar entry/wrapper first; ABI failure or qualified results within noise rejects the idea | NEEDS_MORE_EVIDENCE |
+
+Duplicate screening: H08 groups rows, distinct from H05's within-row descriptor batching and H01's per-segment task split. H09 changes serial staging and barrier placement without H04's two-slot overlap or H07's narrower barrier scope. H10 changes shape metadata delivery only, leaving block mapping and DMA schedule fixed. These ideas remain separate OFAT candidates if Main later authorizes one.
+
+No implementation or device probe was run. Timing remains disallowed under the reported load and the d7 exclusion.
+
 ## R015C-H08: Two-row block with batched row copies
 
 - MECHANISM: Assign two adjacent rows to each block and use one `DataCopyPad` Ext descriptor per direction with `blockCount=rowsThisBlock`, `blockLen=D*sizeof(float)`, and zero strides.

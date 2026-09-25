@@ -70,5 +70,7 @@ Main decision remains `NEEDS_ONE_MORE_LOCAL`. Keep R015C-r4 unchanged. The runne
 ## Current handoff state (2026-09-26)
 
 - Main-confirmed exact-source correctness is PASS for the three recorded shapes and the executable identity above.
-- R015C-r4 remains unchanged. Same-binary qualification, paired timing, and performance load classification remain outstanding; no fresh R015C lease is present in the shared record.
-- Track-B adds H08-H10 as research-only items. No Candidate or runner implementation changed.
+- Main decision remains `NEEDS_ONE_MORE_LOCAL`; the exact-source correctness result and all four source/executable identities remain unchanged.
+- R015C-r2 remains `DIAGNOSTIC_ONLY_CORRECTNESS_FAIL`; it was not compared with r3 or r4. An R015C-r2 evidence directory is absent from this Route worktree, so this status is retained from the current Main handoff.
+- Current device report supplied for this handoff: d0-d6 have resident VLLM processes and approximately 90%-92% HBM use. d7 is idle but excluded by the timing protocol. The shared lease table has no R015C lease. Performance status is `MEASUREMENT_BLOCKED`; same-binary qualification, paired timing, and performance load classification remain outstanding.
+- Track-B screening retains three distinct research-only ideas, H08-H10, with shape probes and falsification conditions in `phase4/research/MODE-X-R015C/next-hypotheses.md`. No Candidate, runner, NPU, or timing work was performed in this continuation.
