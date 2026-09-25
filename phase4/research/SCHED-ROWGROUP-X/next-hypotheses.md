@@ -1,5 +1,7 @@
 # SCHED-ROWGROUP-X — Next-Hypotheses (TRACK-B, long-horizon)
 
+> **MAIN-2 APPROVALS 2026-09-25** — APPROVED NEXT backlog: H1 CORE-FILL ROW-GROUP SCHEDULING (quantified: 17×256 currently ≈2 blocks vs ~17 potential); H2 EVEN-SPLIT TASK EXTENTS second in queue; H3 dynamic task-pull stays NEEDS_MORE_EVIDENCE. H1 implementation is FORBIDDEN while V001 is undecided. Scope arbitration: row-group ownership / rows-task / core-fill / shape scheduling fixed to this route (ALIGN-H2 geometry part deferred here).
+
 CURRENT_CANDIDATE: V001 (SHA 0fae0a42e3942356fe3477cd518b17180b6104d57350cee705cba37a5895e65c) — R016 shape-aware rows/task scheduling parent (official 17.14) + R012 32-byte-safe row-group ownership; direct parent R016-V001-COMPILEFIX-A (parent SHA 62de32df…, score 17.14). Local status NEEDS_ONE_MORE_LOCAL: 17×256 median delta −0.76% (inside same-binary noise floor), 33×100 −31.81% but one reverse pair and high Candidate within-block MAD, legacy 4/4 −18.45% tagged LOAD_NOT_QUALIFIED. No kernel edits, no new revision, no device runs this turn (Track-A unchanged, Track-B research only).
 
 CURRENT_BLOCKER: Measurement, not architecture. Both PASS measurement shapes (17×256, 33×100) already ran; 17×256 sits inside the noise floor and 33×100 lacks two clean independent pair-blocks. V001 SHA stays unchanged until Main issues a timing instruction under the unified reference protocol (device events, warmup≥10, interleaved pairs). No Main decision is required to continue Track-B research.

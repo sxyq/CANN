@@ -166,3 +166,34 @@ No Candidate source, no new revision, no timing retry, no CANNJudge submit.
 - ALIGN/BATCH/ASYNC/REDUCE: still NEEDS_ONE_MORE_LOCAL + MEASUREMENT_BLOCKED; each needs its own exact-shape same-binary PASS before P/C. Not run this turn.
 - UB V003: ONLINE_CANDIDATE, JUDGE_READY=YES, READY_FOR_FORMAL_SUBMISSION, JUDGE_OWNER_REQUIRED; no self-submit.
 - NEW_OFFICIAL_SCORE: none.
+
+## Long-horizon exploration + route arbitration (2026-09-25)
+
+- RESEARCH_PUSH_SYNCED=YES: LOCAL_HEAD=REMOTE_HEAD=d450a2c, AHEAD=0, BEHIND=0 (pushed 21a34c9 contract §R + d450a2c six research handoffs).
+- Contract: execution-contract.md gained one-time section R Long-Horizon Parallel Exploration (two-track model, 3–5 hypotheses/cycle, handoff stop conditions, no micro-revision loops).
+- Six TRACK-B handoffs landed at phase4/research/<ROUTE>/next-hypotheses.md (5 hypotheses each, 1553 lines total).
+- ROUTE ARBITRATION: parameter staging/gamma-bias residency/row-batch param reuse → BATCH-RESIDENT-X (UB-H2 DUPLICATE·DEFER_TO_BATCH); MTE2 ingress queue/prefetch/copy-compute-store pipeline → ASYNC-TRIPLE-X (UB-H3 DEFER_TO_ASYNC); reduction topology/partial reduction/reduction temps → REDUCE-INVSCALE-X (UB-H5 DEFER_TO_REDUCE); row-group ownership/rows-task/core-fill/shape scheduling → SCHED-ROWGROUP-X (ALIGN-H2 DEFER_TO_SCHED). UB keeps only buffer lifetime/aliasing/peak UB footprint/live-set budgeting; ALIGN keeps only DataCopy/DataCopyPad/aligned bulk/tail/copy-direction asymmetry.
+- APPROVED NEXT backlogs (not immediate revisions): SCHED H1 core-fill (H2 second, H3 needs evidence) — forbidden while V001 undecided; ALIGN H1 threshold bulk+tail — forbidden while V001 undecided; BATCH H1 two-stage row-group compute — must shrink to one conceptual mechanism at declaration; ASYNC H1 inter-pass prologue prefetch — only after current Candidate disposed, no queue-depth/buffer adds; REDUCE H2 first-output-tile MTE2 overlap (H1 rsqrt stays in feasibility research, H3 donor evidence); UB H1 TRUE_LIVE_SET_BUDGET — no V004 before Judge return.
+- PROBE SHAPE CHANGES (measurement design only): ASYNC retires 8×1024 as primary (width=1024 → tileCount=1 → Candidate≡SEED); new primary width>1024, tileCount≥2 preferably ≥3 (4096/6144/8192). REDUCE single-tile 1×6144 no longer primary reduction evidence; add MULTI_TILE_D probe (D>6144) verified multi-tile for both binaries.
+- UB judge handoff: JUDGE_OWNER=MAIN-1 designated; MAIN-2 handoff-only, no self-submit. SUBMISSION_ID/REMOTE_SHA/OFFICIAL_SCORE/DECISION all PENDING.
+- Track-A next window priority: SCHED 33×100 re-run (exact Parent+Candidate, unified device events, same-binary PASS first, interleaved P/C, two independent blocks). ALIGN awaits 2×100 same-binary. BATCH harness migration to unified device-event protocol pending (legacy wall-clock data non-decision-grade).
+- NEW_OFFICIAL_SCORE: none. local deltas (-31.81%, -18.45%, -0.76%) are LOCAL SIGNAL ONLY.
+
+## SCHED 33×100 Track-A re-qualification (2026-09-25, lease LH-SCHED-33x100)
+
+- Lease LH-SCHED-33x100 on d4: LEASED 2026-09-25T09:40:00Z, RELEASED 2026-09-25T09:55:27Z; only that one lease line appended.
+- Identity verified before run: V001 submission SHA 0fae0a42 unchanged, Direct Parent SHA 62de32df unchanged; parent/v001 probe md5 956821cc/41a9aae7 match; runner_ref.* md5 match worktree. No source edits.
+- Host: load ~23, VLLM resident since Sep 22 (d0–d3 busy), d4 AICore 0%, HBM 59186/65536 (~90%).
+- Same-binary (Direct Parent vs itself, 33×100 FP32, warmup 10, 2×31 device events, batch N=1), 2 attempts allowed, 2 used:
+  - attempt1: ALL MAD/med 0.096, drift |B1−B2|/med 0.200 → NEEDS_VALIDATION (B1 slow tail 78–137 µs).
+  - attempt2: ALL MAD/med 0.032, drift 0.104 → NEEDS_VALIDATION (misses drift threshold by 0.004; sparse B1 outliers p90 160 µs).
+  - Both below 0.25 on MAD/med and drift → not MEASUREMENT_PROTOCOL_BLOCKED_FOR_SHAPE.
+- Interleaved P/C NOT run (same-binary PASS is a precondition). No Candidate timing this window.
+- Decision: **NEEDS_ONE_MORE_LOCAL** (not ONLINE_CANDIDATE, not LOCAL_REJECTED). Prior 33×100 floor (MAD/med 0.049, drift 0.062) did not reproduce under current host load.
+- Evidence: `cann-next6/SCHED-ROWGROUP-X/phase4/local/SCHED-ROWGROUP-X/V001/support/results-pc-33x100-lh/` (raw `sb33-attempt{1,2}-raw.tsv`, stats, npu-smi snapshots, summary.json, SUMMARY.md).
+- NEW_OFFICIAL_SCORE: none. Local stats only.
+
+## BATCH harness migration to unified device-event protocol (2026-09-25)
+
+BATCH-RESIDENT-X's local timing harness was migrated from the legacy wall-clock probe (`timing_probe.asc`, warmup 5, median-only output) to the unified reference runner ported from the SCHED implementation: new `phase4/workspaces/BATCH-RESIDENT-X/support/` (`runner_ref.inc` + `runner_ref_batch.asc` + CMake target `brx_ref_probe` + `run_ref_smoke.sh`) gives one aclInit/malloc/H2D/stream per process, warmup once (10), ≥21 in-process samples with DEVICE_EVENT_US primary and HOST_WALL_US secondary, per-sample `*-raw.tsv` dump with jitter stats, and the 10/11-arg CLI (optional batch_n, default 1); the golden check after the timed loop reuses BATCH's own `npu_correctness.cpp` model. Built on server3 and functionally smoked on d5 (exit 0, 21 device-event samples, `bad=0`) with no timing lease claimed and no performance numbers recorded or judged — evidence under `cann-next6/BATCH-RESIDENT-X/phase4/local/BATCH-RESIDENT-X/harness/`, migration notes in `HARNESS-MIGRATION-20260925.md`, prior wall-clock summaries tagged LEGACY_TIMING_METHOD with data retained. Candidate `submission_v001.asc` SHA ad961c5837971bf989c9989b822cc2719a6a285c60969d35e1530463b7c8721d verified unchanged; no kernel edit, no new Revision, no P/C timing this turn.
+

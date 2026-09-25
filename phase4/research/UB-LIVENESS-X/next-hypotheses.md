@@ -1,5 +1,7 @@
 # UB-LIVENESS-X — Next Hypotheses (TRACK-B research)
 
+> **MAIN-2 APPROVALS 2026-09-25** — APPROVED NEXT backlog: H1 TRUE_LIVE_SET_BUDGET (dead-reservation reclaim + live-set model fix + unlock larger effective tile); V004 implementation FORBIDDEN until Judge returns and Main issues NEXT_HYPOTHESIS. Scope: this route keeps only buffer lifetime / aliasing / peak UB footprint / live-set budgeting — H2→BATCH, H3→ASYNC, H5→REDUCE (all marked in-file). JUDGE_OWNER=MAIN-1.
+
 ROUTE: UB-LIVENESS-X · WORKTREE: cann-next6/UB-LIVENESS-X · OWNER: UB-LIVENESS-X Route Agent (MAIN-2)
 APPEND-ONLY file. Sources: V003 `phase4/local/UB-LIVENESS-X/V003/submission.asc` (SHA 2eb9b5d087267a54fb84f8734847ecb68cf94b967102693c0d150fd57d6da7cd, byte-identical to worktree `phase4/workspaces/UB-LIVENESS-X/submission.asc`, verified by SHA256).
 
@@ -101,7 +103,7 @@ Classification: **READY_FOR_MAIN_REVIEW**（作为 V004 首选候选；仍须等
 
 ## HYPOTHESIS-2 — PARAM_RESIDENCE_VIA_COLD_X_STAGING（冷 x-slot staging 实现参数驻留）
 
-Classification: **DUPLICATE（主题级，标记给 Main 裁定）**——与活跃路线 BATCH-RESIDENT-X（"Parameter residency + multi-row batch DMA"）主题重叠；本条按必答主题保留完整分析，是否立项由 Main 决定，Route Agent 不自行推进。
+Classification: **DUPLICATE · DEFER_TO_BATCH（MAIN-2 仲裁 2026-09-25：parameter staging / gamma-bias residency / row-batch parameter reuse 固定归 BATCH-RESIDENT-X；UB 不继续实现该方向，本条保留为分析记录）**——与活跃路线 BATCH-RESIDENT-X（"Parameter residency + multi-row batch DMA"）主题重叠。
 
 - **MECHANISM**：在首行首 tile 之前调用现有但从未执行的 `LoadFullParams`（:287）：此时 x1_ 尚未被任何 CopyIn 触碰（冷），借其做 T-typed staging 把全量 gamma/bias DMA+Cast 进 bufParam_（计划期 full 配置已能按 184K 通过，如 fp32 dim≤17408），随后整个 kernel 生命周期零参数 DMA；同时删除 `Run()` :181 的强制 `fullParam_=false`。pass2 emit 改读 `gammaF_[off]` 分段（:397 已有该分支）。窄于预算的 D 用分段驻留（一次驻留覆盖多行），超预算 D 退回现状。
 - **BOTTLENECK**：瓶颈模型第 3 条——gamma/bias 每 (行×tile) 重读。dim=4096、1000 行、1 核（示意）：现状每核 1000×2 tile×2×8KB = 32MB 参数重读；驻留后 32KB 一次。
@@ -124,7 +126,7 @@ Classification: **DUPLICATE（主题级，标记给 Main 裁定）**——与活
 
 ## HYPOTHESIS-3 — MTE2_INGEST_QUEUE（用腾出的 UB 建 MTE2 摄入队列，兑换搬运/计算重叠）
 
-Classification: **NEEDS_MORE_EVIDENCE**（需先在本工具链验证 EnQue/DeQue 配对可用，源码 :92 注释记录过 FetchEventID(MTE2_V) 错配问题；且与 ASYNC-TRIPLE-X 存在边界需 Main 划清。当前不实现。）
+Classification: **DEFER_TO_ASYNC（MAIN-2 仲裁 2026-09-25：MTE2 ingress queue / prefetch scheduling / copy-compute-store pipeline 固定归 ASYNC-TRIPLE-X；UB 不实现本条，EnQue/DeQue 工具链证据可作为 donor 移交 ASYNC）**（源码 :92 注释记录过 FetchEventID(MTE2_V) 错配问题，移交时须一并注明。）
 
 - **MECHANISM**：把 pass 内的裸 `DataCopyPad + PipeBarrier<PIPE_MTE2>` 摄入路径改为 TQue 双缓冲：x/res 各一个 depth-2 队列（`InitBuffer` num=2），tile k 的 V 计算与 tile k+1 的 MTE2 搬运用 EnQue/DeQue 配对重叠；配套把手写 `SyncMte2ToV` HardEvent 换成 DeQue 等待。深度所需的额外 slot 字节来自 H1 回收（或现有 slack：d=32768 预留 88KB，本就有 96KB 余量——即使不依赖 H1，2-slot 摄入已是现状 depth2_ 槽位，**缺的从来不是字节而是重叠调度**）。范围限定：只做 MTE2 摄入侧；MTE3 写出与 triple 不在本假设内。
 - **BOTTLENECK**：瓶颈模型第 2 条——当前 MTE2 与 V 完全串行：CopyIn 两连发后 `PipeBarrier<PIPE_MTE2>` 阻塞，V 算完才发下一次 CopyIn；宽 D 每行 32 个串行往返，DMA 空转与 V 空等互相可见。
@@ -169,7 +171,7 @@ Classification: **NEEDS_MORE_EVIDENCE + 重复预警**——性能机制与 idea
 
 ## OPTIONAL-HYPOTHESIS-5 — UB_RESIDENT_VECTOR_REDUCTION（用死 8KB 归约区承接向量归约，替代标量 acc）
 
-Classification: **NEEDS_MORE_EVIDENCE**（疑似最大时间项，但计算拓扑改动超出"UB liveness"单一主题的边界，且归约主题有历史路线——须 Main 决定归属。当前不实现。）
+Classification: **DEFER_TO_REDUCE（MAIN-2 仲裁 2026-09-25：reduction topology / partial reduction / reduction temp organization 固定归 REDUCE-INVSCALE-X；UB 只保留 buffer lifetime、aliasing、peak UB footprint、live-set budgeting。本条的"死 8KB 转归约工作区"生命周期事实保留在 UB 证据中，归约实现归 REDUCE）**（疑似最大时间项，但计算拓扑改动超出"UB liveness"单一主题的边界。当前不实现。）
 
 - **MECHANISM**：pass1 的 SumSq 标量循环（:446-449，逐元素 GetValue×dim）改为向量管线：u² 入 bufScratch/mulF_，用已死的 bufTmp_(8KB) 作 ReduceSum 工作区、bufSum_(64B) 作归约目标（这正是这两个 buffer 的设计用途，:266-267 注释仍在）；inv 侧继续标量 Newton。生命周期上：bufTmp_/bufSum_ 从"死预留"变为"pass1 活跃"，与 H1 的"删除"互斥——二者是同一死字节的两种用法。
 - **BOTTLENECK**：瓶颈模型第 1 条——pass1 每 tile O(tile) 标量平方累加，dim 级全标量；FuseU 与 emit 的标量段仍在（不在本假设内），但 SumSq 是最长的纯标量读-乘-加环。

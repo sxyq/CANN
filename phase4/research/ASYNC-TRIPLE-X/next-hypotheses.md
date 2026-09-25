@@ -1,5 +1,7 @@
 # ASYNC-TRIPLE-X — Next-Hypothesis Research (TRACK-B)
 
+> **MAIN-2 APPROVALS 2026-09-25** — Probe shape change APPROVED (measurement design only, not a Revision): old primary probe `8×1024` (width=1024, tileCount=1, Candidate≡SEED instruction stream) is retired as primary performance probe; new probe MUST use width>1024 with tileCount≥2, preferably tileCount≥3 — candidates from 4096 / 6144 / 8192 (e.g. 8×4096 tileCount=4, or rows×8192 tileCount=8). APPROVED NEXT backlog: H1 inter-pass prologue prefetch — implementable only after Main disposes the current triple-overlap Candidate; no queue-depth or extra-buffer changes alongside it.
+
 Route: ASYNC-TRIPLE-X · Worktree `cann-next6/ASYNC-TRIPLE-X` · Branch `exp/next6-async-triple-x` · OWNER=MAIN-2
 Mode: Long-Horizon Parallel Exploration (execution-contract section R). TRACK-A candidate untouched this turn.
 
@@ -523,3 +525,87 @@ device runs, no shared-control changes this turn.
 - `cann-next6/ASYNC-TRIPLE-X/phase4/local/ASYNC-TRIPLE-X/V001/` — submission.asc, source-meta.json, diff.patch, local-result.json, MAIN-REVIEW*.md, PARKED.md
 - `cann-next6/ASYNC-TRIPLE-X/phase4/workspaces/ASYNC-TRIPLE-X/PRECODE.md`, ROUTE-BRIEF.md
 - Archive event/queue survey: R013 donor kernel, MODE-X/EPI-X/WIDE-X `SetFlag/WaitFlag` usage, TQue depth census (predominantly depth-1; V001/R013 at depth-2).
+
+---
+
+## PROBE-SHAPE DESIGN (approved change, 2026-09-25)
+
+Measurement-design only. Source 2defc6c2 unchanged, no device runs, no new Revision, no shared-control edits. Derives the new primary/secondary performance probes under Main's approval (retire 8×1024 as primary performance probe). All line references: `cann-next6/ASYNC-TRIPLE-X/phase4/local/ASYNC-TRIPLE-X/V001/submission.asc` (V001), `.../support/ASYNC-TRIPLE-X-SEED.asc` (SEED), `cann-next6/ASYNC-TRIPLE-X/phase4/workspaces/ASYNC-TRIPLE-X/probe_main.inc` (probe host).
+
+### Derived tileCount table
+
+`kTileLength = 1024` fixed (V001:12); `tileCount = (width + kTileLength - 1) / kTileLength` (V001:246). A **full triple iteration** is a pass-2 loop iteration where BOTH guards hold — `tile + 1 < tileCount` (V001:270, MTE2 prefetch N+1) and `tile >= 1` (V001:278, MTE3 store N-1) alongside `ComputeOutputTile(N)` (V001:284) — i.e. tiles 1..tileCount-2 → **(tileCount − 2)** such iterations.
+
+| width | tileCount | full triple iterations | verdict |
+|---:|---:|---:|---|
+| 1024 | 1 | 0 | INERT — both guards false, V001 stream ≡ SEED |
+| 2048 | 2 | 0 | overlap pairs only (tile0: MTE2+V; tile1: MTE3+V); no iteration holds all three stages |
+| 4096 | 4 | 2 (tiles 1–2) | legal, mechanism engaged |
+| 6144 | 6 | 4 (tiles 1–4) | legal, mechanism engaged |
+| 8192 | 8 | 6 (tiles 1–6) | legal, mechanism engaged, steady state dominates |
+
+Refinement of the approval: tileCount≥2 engages pairwise overlap, but the literal triple (all three stages inside one iteration) requires **tileCount≥3** — at tileCount=2 the two overlap-capable iterations each miss one stage.
+
+### Legality of candidate widths (rows × width × dtype)
+
+No width- or rows-dependent constraint blocks 4096 / 6144 / 8192:
+
+- **Host core policy**: `blockNum = min(outer, availableCoreNum)` (V001:435-436), must be ≥1 (V001:439); probe host additionally requires `1 ≤ blocks ≤ rows` (probe_main.inc:50) and passes `blocks` as availableCoreNum (probe_main.inc:115). Width never enters this path; any rows≥1 with blocks=rows is legal.
+- **UB budget**: every `InitBuffer` size is a kTileLength constant (V001:82-94) — UB does not scale with width or rows at all. fp32: queues 40,960 B (x 8K + residual 8K + param 16K + output 8K, all depth-2) + fp32 work buffers 16,384 B (4×1024 floats) + reduceTmp 32,768 B + misc 96 B = **90,208 B ≈ 88.1 KB of ~192 KB**. fp16: queues halve to 20,480 B, work buffers stay fp32 → **69,728 B ≈ 68.1 KB**. Both fit at all three widths with large headroom.
+- **dtype**: kernel accepts dtype ∈ {0,1,2} = fp32/fp16/bf16 (V001:417; entries V001:333-349); gamma/bias must be 1-D of the same width and dtype (V001:420). Per-tile arithmetic is width-independent — ReduceSum count ≤ kTileLength = 1024 per tile (V001:183-184); a wider row only adds tiles, it never grows a single reduce or any UB buffer. fp16 at width=8192 already has correctness evidence on record (2×8192 wide PASS, max_abs 3.28e-07, local-result.json).
+- **Probe-harness caveat (measurement side, not kernel)**: probe_main.inc hardcodes dtype 0 / fp32 (L62, L99-103) with an fp32 golden tolerance (L139-171). Kernel-side fp16 is legal; an fp16 timing run needs a harness extension only.
+- **GM footprint** (fp32, 5 buffers): 8×4096 → 0.66 MB, 8×6144 → 0.98 MB, 8×8192 → 1.31 MB — trivial. All three widths are exact multiples of 1024, so every tile is full and the DataCopyPad padding path (V001:123-131) never engages.
+
+### Chosen shapes
+
+```text
+PRIMARY     rows=8  width=8192  blocks=8  fp32   tileCount=8   (6 full triple iterations)
+SECONDARY   rows=8  width=4096  blocks=8  fp32   tileCount=4   (2 full triple iterations)
+TERTIARY (allowed, deprioritized)  rows=8 width=6144 blocks=8 fp32  tileCount=6
+```
+
+**Rows reasoning (core occupancy):** with blocks==rows the host launches blockNum=8 cores and the kernel row-stride loop `row += blockNum` (V001:99-103) gives each core exactly **one row** (blocks==rows → 1 row/core finding). The per-row prologue fill, inter-pass FinishRms drain, and last-tile flush are then fully exposed with no cross-row cover — which (a) isolates the triple-overlap schedule itself in V001-vs-SEED pairs, and (b) keeps H1 attribution clean by construction (H4 inter-row cover excluded). rows=8 preserves the retired probe's 8-core occupancy (HBM traffic across 8 concurrent rows) rather than the 2-core wide variant.
+
+- **PRIMARY 8×8192**: tileCount=8 → steady state dominates (6 of 8 iterations run all three stages); matches RECOMMENDED_NEXT #1 "prefer width=8192". Correctness precedent exists at 2×8192 (max_abs 3.28e-07); 8×8192 itself is not yet on record — run the probe correctness precheck (repeats=0) first when a device window opens.
+- **SECONDARY 8×4096**: first bucket where the full triple repeats (2 iterations) at half the row bytes — a different kernel-length/CV regime, and it doubles as the mid point of the H5 tileCount curve (1/2/4/8).
+- **6144** stays tertiary: legal, but adds little between the 4096/8192 bracket; additionally the SCHED-parent 1×6144 wide floor was NEEDS_VALIDATION (local-timing-protocol.md L155). Every shape still needs its own same-binary floor before P/C regardless.
+
+### Triple-overlap engagement at the PRIMARY shape (source trace)
+
+At rows=8 width=8192 → tileCount=8 (V001:246). Pass-2 loop (V001:266-285):
+
+- **iteration tile=1**: V001:270 `if (tile + 1 < tileCount)` → `2 < 8` TRUE → V001:274 `CopyInOutputData(row, nextOffset, nextCount)` = MTE2 prefetch tile 2; V001:278 `if (tile >= 1)` TRUE → V001:282 `CopyOut(row, prevOffset, prevCount)` = MTE3 store tile 0, issued BEFORE compute; V001:284 `ComputeOutputTile(count, inverseRms)` = Vector tile 1. → **MTE2(2) / V(1) / MTE3(0) in one iteration — mechanism engaged** (comment V001:276-277 states exactly this).
+- **tiles 2–6** repeat the same three-issue pattern (steady state; 6 total full triple iterations).
+- **tile=7**: V001:270 → `8 < 8` FALSE (no N+1 left), V001:278 TRUE → store tile 6, compute tile 7; then the post-loop flush V001:286-291 stores tile 7.
+- **Contrast at width=1024 (tileCount=1)**: V001:270 → `1 < 1` FALSE, V001:278 → `0 >= 1` FALSE → loop body is only V001:284, and epilogue V001:290 issues the same same-tile copy SEED issues at its L276 — V001 executes the SEED instruction stream and the MTE3-stage hypothesis never runs. The retired probe therefore cannot show the mechanism.
+- **SEED structural contrast** (diff.patch:16-37): SEED pass-2 is prefetch-guard (SEED:269) → `ComputeOutputTile` (SEED:275) → same-tile `CopyOut` AFTER compute (SEED:276); V001 adds the `tile>=1` prev-store before compute and moves the last store to the post-loop flush. That diff is the entire SINGLE_HYPOTHESIS.
+
+### OLD-PROBE DATASET TAG
+
+```text
+OLD-PROBE-8x1024-NON-QUALIFYING  (applied 2026-09-25)
+Scope:   all 8x1024 standard-shape ASYNC-TRIPLE-X P/C datasets —
+         support/results/, results-set2/, results-controlled-dev4/ standard-shape
+         pairs, and the "seed CV 35.6%, median delta -21.5 us inside a 75.9 us
+         margin" record.
+Reason:  at kTileLength=1024, width=1024 -> tileCount=1 -> V001 instruction
+         stream == SEED (both pass-2 guards false); the triple-overlap mechanism
+         is structurally inert at that shape.
+Status:  retained as noise-floor / harness-history reference ONLY;
+         NON-QUALIFYING for any triple-overlap performance claim or H1/H2/H3
+         attribution.
+Note:    the wide 2x8192 datasets ARE structurally qualifying (tileCount=8,
+         mechanism engaged) but remain LOAD_CONTAMINATED per CURRENT_BLOCKER —
+         not usable until re-run under a qualified window.
+```
+
+### WHAT_WOULD_FALSIFY (H1, on the new probes)
+
+H1 = move the pass-2 tile-0 `CopyInOutputData` before `FinishRms` (class READY_FOR_MAIN_REVIEW). Judge only on a shape whose same-binary floor passes the protocol first. On PRIMARY 8×8192 and SECONDARY 8×4096, device-event, warmup≥10, ≥4 interleaved pairs vs V001:
+
+1. **Measurement validity first**: if the 8×8192 same-binary floor fails the protocol thresholds, the run says nothing about H1 — requalify the shape; do not judge a mechanism from an unqualified shape.
+2. **|paired median delta| ≤ same-binary MAD/median on BOTH primary and secondary** → the serialized drain + tile-0 fill is not on the critical path (or is already overlapped by the compiler) → H1 = LOCAL_REJECTED / NEEDS_MORE_EVIDENCE.
+3. **Consistently negative delta beyond the floor on both shapes** → issuing the prefetch earlier hurts (queue pressure or delayed pass-2 entry) → WHY_IT_MAY_HELP falsified.
+4. **Magnitude must be roughly width-independent**: H1 saves one fixed drain + fill per row (FinishRms is 8-element vector work, V001:236-241; tile-0 load is always 1024 elements), so the ABSOLUTE delta at 4096 ≈ at 8192, with relative delta ~2× larger at 4096. An absolute delta that scales with width instead → misattribution to a steady-state effect, not the prologue → H1 attribution falsified.
+5. **Gain appears only when rows > blocks** (multi-row per core) and ~0 at blocks==rows → the gain is cross-row cover (H4 territory), not the prologue → attribution falsified.
+6. **Any output difference vs V001 under byte compare** → PRECISION_RISK=None claim falsified → correctness stop before any timing credit.

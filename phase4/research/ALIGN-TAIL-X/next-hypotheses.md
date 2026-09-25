@@ -1,5 +1,7 @@
 # ALIGN-TAIL-X — Next Hypotheses (TRACK-B research, append-only)
 
+> **MAIN-2 APPROVALS 2026-09-25** — APPROVED NEXT backlog: H1 threshold-controlled bulk+tail split (bulk via direct DataCopy; small remainder via minimal tail / DataCopyPad chosen by threshold). H1 implementation FORBIDDEN while current Candidate is undecided. Scope: ALIGN keeps DataCopy / DataCopyPad / aligned bulk / tail / copy-direction asymmetry only; H2 row-group geometry DEFER_TO_SCHED. H3 copy-direction asymmetry remains in research.
+
 ## CURRENT_CANDIDATE
 
 - REVISION: V001 (SHA `f573d16d39fb54a2a75f75f90943168b96dd97d83fb6bd094f11fd73c61df840`)
@@ -55,7 +57,7 @@ Per-tile copy-path cost model for the ALIGN parent architecture (R009 copy-centr
 - DUPLICATE_CHECK: BATCH-RESIDENT-X owns R015 contiguous multi-row batch DMA *after parameter residency* — overlap risk on the "multi-row single DMA" element; scoping difference: this hypothesis is the padded-stride layout (rLengthAlign) that makes multi-row pad *legal for non-aligned D* on the ALIGN parent path without param-residency changes. SCHED-ROWGROUP-X owns R012 32B row-group **core ownership** — different layer (who owns rows vs how rows are laid out/copied). Must be reviewed against both before promotion; if Main judges it inside BATCH's scope, mark DUPLICATE and drop.
 - MINIMAL_OFAT_DIFF: change UB addressing stride + replace per-row pad calls with one blockCount pad per row-group; no compute/schedule/host change.
 - EXPECTED_LOCAL_PROBES: 2×100 FP32 (group=2, 7 ops/row → ~4 calls/row-group), then a mid non-aligned shape (e.g. 4×1025 FP32) for descriptor scaling; correctness golden on NaN/Inf rows and row-group boundaries.
-- CLASSIFICATION: NEEDS_MORE_EVIDENCE (cross-route scope vs BATCH-RESIDENT-X and SCHED-ROWGROUP-X must be confirmed by Main; UB budget recompute required).
+- CLASSIFICATION: DEFER_TO_SCHED — row-group ownership / rows-per-task / core-fill / shape scheduling 固定归 SCHED-ROWGROUP-X（MAIN-2 仲裁 2026-09-25）；ALIGN 只保留 DataCopy / DataCopyPad / aligned bulk / tail / copy-direction asymmetry。本条涉及行组几何的部分不属 ALIGN；纯 UB padded-stride 布局部分如需保留须重新表述为不涉 row-group ownership 的版本并再审。UB budget recompute 仍然需要。
 
 ## HYPOTHESIS-3
 
@@ -178,3 +180,11 @@ Per-tile copy-path cost model for the ALIGN parent architecture (R009 copy-centr
 3. Main decision needed: HYPOTHESIS-2 scope vs BATCH-RESIDENT-X (multi-row DMA) and SCHED-ROWGROUP-X (row-group ownership) before it can be promoted past NEEDS_MORE_EVIDENCE.
 4. OPTIONAL-4/5: gather narrow-dtype probes and the D≡1..7 (mod 4096) ReduceSum-count golden before any revision; H5 doubles as a latent correctness hardening worth a standalone correctness run even without timing.
 5. Data still missing: measured DataCopyPad vs DataCopy cost on dav-2201 (no local msprof evidence exists; official docs claim negligible difference in aligned cases only). One msprof comparison of parent vs V001 on the exact shape would resolve H1's core uncertainty — collect it opportunistically with the qualification run if load permits.
+
+## TRACK-A PREP 2026-09-25
+
+- Binaries READY: unified reference harness ported verbatim from SCHED `runner_ref.inc` (md5 `93e6441937e9cd8394b734e124d18469`; DEVICE_EVENT primary + wall secondary, one aclInit/malloc/H2D/stream per process, warmup≥10, ≥21 samples/block, batch N=1, argc 10/11) and built on cann-server3 (cmake -j1): `atx_ref_parent_probe` SHA256 `a8bd66a6b6da5bdf1acf350edd8e6f55c8044a8db48d9421a650637285d3187c`, `atx_ref_v001_probe` SHA256 `bfb2988a482337a21e1ef2d2f5da3c81aaf7695956d1604f7e8c0b2e59a04955`. Local copy: `cann-next6/ALIGN-TAIL-X/phase4/workspaces/ALIGN-TAIL-X/support/build/`; server: `~/phase4-workspaces/ALIGN-TAIL-X/support/build/`.
+- Identity verified local + server: Direct Parent PURE-R009-V001-ALIGNED-DATACOPY `c8d0f010…`, Candidate V001 `f573d16d…` (full values in runbook §1). No source edits; no new Revision; kernel SHA unchanged.
+- Start-proof only: one untimed launch on d6 (rc=0, `bad=0`, 2×100 FP32) to confirm the binary starts with the documented `LD_LIBRARY_PATH`. No timing runs and no lease lines appended this turn (SCHED held the d4 window).
+- Runbook: `cann/phase4/local/ALIGN-TAIL-X/runbook-2x100-qualification.md` — (a) same-binary 2×100 FP32 parent-vs-parent, PASS iff MAD/med≤0.10 AND block drift≤0.10 (max 2 attempts); (b) on PASS, interleaved P/C `P C C P ×2`, 31 samples/process, warmup 10; `ONLINE_CANDIDATE` only if both blocks favor Candidate beyond the same-binary floor. Output dir `support/results-qual-2x100/d<DEV>/`; lease line format in runbook §7.
+- Remains: device window — Main opens it (lease id `SV-ALIGN-2x100`), then run (a); PASS → (b) in the same window.

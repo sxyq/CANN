@@ -17,10 +17,18 @@ evidence=/Users/sunyiyang/Desktop/Project/cann-next6/UB-LIVENESS-X/phase4/local/
 exact_source=submission.asc (SHA above)
 
 ## Ownership
-MAIN-2 does NOT self-submit.
-Unified Judge Owner must run:
+JUDGE_OWNER=MAIN-1 (designated 2026-09-25 by MAIN-2 task directive).
+MAIN-2 does NOT self-submit; MAIN-2 role ends at this handoff.
+Judge Owner must run:
   npm run cannjudge:submit -- --yes --source <exact submission.asc path>
 Require LOCAL_SHA == SIDECAR_SHA == REMOTE_SHA.
+
+## Handoff state (2026-09-25)
+SUBMISSION_ID: PENDING (not yet submitted)
+REMOTE_SHA: PENDING
+OFFICIAL_SCORE: NONE
+DECISION: PENDING
+Awaiting Judge Owner submission; MAIN-2 records results here when returned.
 
 ## After result
 Record submission_id, remote SHA, correctness, official score, direct parent, decision.

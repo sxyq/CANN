@@ -1,5 +1,7 @@
 # REDUCE-INVSCALE-X — Next-Hypothesis Research (TRACK-B)
 
+> **MAIN-2 APPROVALS 2026-09-25** — Probe shape change APPROVED (measurement design only, not a Revision): single-tile FP32 rows=1 D=6144 must not serve as primary reduction-architecture evidence; add at least one MULTI_TILE_D probe (D>6144) confirmed to traverse multiple reduction tiles in both Parent and Candidate. APPROVED NEXT backlog: H2 first-output-tile MTE2 overlap with rms tail (chosen over H1 reciprocal-sqrt, whose Rsqrt API feasibility remains in research); H3 wider ReduceSum partial stays as donor evidence.
+
 Route agent: REDUCE-INVSCALE-X (MAIN-2). Worktree `cann-next6/REDUCE-INVSCALE-X`.
 Mode: Long-Horizon Parallel Exploration (execution-contract §R). This file is append-target for
 per-route research; no kernel edits, no `.asc`/`.cpp` changes, no device runs this turn.
@@ -294,3 +296,172 @@ G001 negative evidence on large-D and R004 historical BLOCKED status (see OPTION
 - Blockers requiring Main: (a) open a device window for same-binary parent qualification at the probe shape;
   (b) confirm dav-2201 UB headroom to decide HYP-3 / OPT-4 viability.
 
+
+---
+
+## PROBE-SHAPE DESIGN (approved change, 2026-09-25)
+
+Approved scope (MAIN-2, 2026-09-25): single-tile FP32 rows=1 D=6144 no longer serves as
+primary reduction-architecture evidence; add one MULTI_TILE_D probe (D > 6144) confirmed by
+source trace to traverse >=2 reduction tiles in BOTH Direct Parent and Candidate.
+Measurement design only — no kernel edits, no device runs this turn.
+
+### Tile-size derivation (source-grounded)
+
+- `kReduceTileElems = 6144` — Candidate `V002/submission.asc` line 100; Direct Parent
+  `V001/submission.asc` line 79. Design comment: selected from the UB budget (V002 lines 43,
+  86-99: seven 6144-element buffers + 64-float partial collector + 16 scalar slots ≈ 168.3 KiB FP32).
+- Candidate reduction loop: V002 lines 374-376 `for (col = 0; col < rowWidth; col += kReduceTileElems)`;
+  per-tile call `ReduceTileToPartial` lines 380-383; last-tile cap `TileLength` lines 153-159;
+  collector/flush lines 385-408; output loop lines 493-495.
+- Direct Parent reduction loop: V001 lines 353-355 (same step), per-tile call lines 359-362,
+  `TileLength` lines 134-137, `++partialCount` line 364, final collapse lines 398-401,
+  output loop lines 472-474, `CollapsePartials` lines 302-324 with `count==1` Adds copy at
+  310-314 else ReduceSum at 316-321.
+- `diff V001 V002` = header comments + exactly one added `SyncVectorToMte2()` (V002 line 615).
+  The loops are byte-identical; tile size is identical; tile count = ceil(D/6144) and does not
+  depend on dtype (buffers and loops count elements; input buffers use `sizeof(T)`, fp32 work
+  buffers are fixed 6144*4).
+
+### Multi-tile traversal proof at D=8192 (both binaries, by loop trace)
+
+- D=8192: iteration 1 col=0 valid=6144; iteration 2 col=6144 valid=2048 (TileLength);
+  col=12288 exits. Exactly 2 tiles, hence 2 partials, `partialCount=2`.
+  - Candidate V002: loop lines 374-376; `partialCount` line 385; final collapse lines 418-422
+    takes the `count != 1` branch of `CollapsePartials` (lines 336-341 ReduceSum) — NOT the
+    1-element Adds copy (lines 330-334). Output loop lines 493-495 runs 2 iterations, which is
+    exactly the region V002's repair (line 615) covers.
+  - Direct Parent V001: loop lines 353-355; `++partialCount` line 364; collapse lines 398-401
+    with count=2 → ReduceSum branch lines 316-321. Output loop lines 472-474 runs 2 iterations.
+- Single-tile control D=6144: exactly 1 iteration → `partialCount=1` → Adds copy branch →
+  loop backedge, multi-partial collector, and ReduceSum collapse are never exercised.
+
+### Chosen probe shapes
+
+- **PRIMARY MULTI_TILE: FP32 rows=1 D=8192** (plus rows=3 D=8192 as the per-row repeat variant;
+  already both in the device correctness matrix).
+- **CONTROL (demoted): FP32 rows=1 D=6144** — single-tile only; retained as the existing
+  reference point, never as primary architecture evidence.
+- Expected signal: multi-tile topology items (serialized per-tile loop, collector+collapse,
+  second partial, V002's extra sync) change behavior only at D > 6144; at D=6144 they are
+  constant/zero, so a 6144-only P/C cannot show them.
+
+### Legality table (dtype-aware)
+
+| D (FP32) | tiles = ceil(D/6144) | host `run_kernel` (V002 L776-780, L838-844) | rowBytes (32B fit, L838-839) | UB (fixed, L86-99) | collector path | device correctness record | verdict |
+|---:|---:|---|---|---|---|---|---|
+| 6144 | 1 | D>0, dtype in {0,1,2}, gamma/bias==D | 24576 B, aligned | same 168.3 KiB | count=1 → Adds copy | PASS (V002 16-shape matrix) | control |
+| **8192** | **2** | pass (rows*8192 fits L818 check) | 32768 B, aligned | same | count=2, no flush | **PASS** rows=1 and rows=3, FP32+FP16+BF16 (V002 matrix) | **PRIMARY** |
+| 12288 | 2 | pass | 49152 B, aligned | same | count=2, no flush | not in 16-shape matrix | legal by trace; fallback only |
+| 16384 | 3 | pass | 65536 B, aligned | same | count=3, no flush | PASS rows=1 FP32 | secondary |
+| 32768 | 6 | pass | 131072 B, aligned | same | count=6, no flush | PASS rows=1 FP32; already `run_probes.sh` default (WIDTH=32768, "6 tiles") | deep multi-tile reference |
+
+Supporting legality facts:
+
+- Collector flush needs `partialCount == 64` (V002 L387-393) → D > 393216; no flush anywhere
+  in the legal band, so both binaries take the common single-collapse path for every table row.
+- Host probe harness: `runner_main.inc` line 107 accepts `width` in 64..32768 → 8192/12288/16384
+  all accepted; dtype 0/1/2 (FP32/FP16/BF16). `run_windowqual_q.sh` line 14 defaults
+  `WIDTH=6144` — must be overridden to 8192 for the multi-tile qualification run.
+- Alignment policy: FP32 aligned iff D%8==0; FP16/BF16 aligned iff D%16==0 (rowBytes%32).
+  8192 aligned for all three dtypes. For rows=1 `requestedBlocks = min(availableCoreNum, 1) = 1`
+  regardless (V002 L846-848), so alignment only affects rows=3 core distribution.
+- UB is D-independent (buffers sized by `kReduceTileElems`, not D) → no UB risk for any table row.
+- fp16/bf16: same tile count for same D; D=8192 FP16/BF16 already PASS in the V002 matrix.
+
+### Falsify criteria for H2 (first-output-tile MTE2 overlap with rms tail)
+
+Pre-registered before any candidate edit or device window:
+
+1. **Correctness first:** the hoisted-load variant must PASS the full 16-shape matrix,
+   especially D>6144 where V002's repair applies. Any D>6144 failure = ordering defect →
+   implementation rejected; H2 then counts as tested-and-failed on correctness, no timing claim.
+2. **Same-binary noise floor first** for the Direct Parent at the exact probe shape under the
+   unified device-event protocol (warmup≥10, ≥21 samples, in-process, MAD/median ≤0.10 and
+   block drift ≤0.10 per local-timing-protocol). Without PASS the shape is
+   MEASUREMENT_PROTOCOL_BLOCKED_FOR_SHAPE — H2 stays untested (not falsified).
+3. **Signal at multi-tile:** interleaved P/C (≥4 pairs) at FP32 rows=1 D=8192 and rows=3 D=8192.
+   H2 falsified (no overlap win) if paired block deltas sit inside the shape's same-binary noise
+   floor across pairs, or direction flips between pairs.
+4. **Shape dependence sanity:** a win that appears only at D=6144 (single tile, one load, tiny
+   overlap window) but not at D≥8192 contradicts H2's stated mechanism → treat as noise or a
+   different effect, not as H2 confirmation.
+
+### H2 minimal OFAT diff plan (PLAN ONLY — no edits this turn; V002 SOURCE_SHA256 unchanged)
+
+Current order: `RunRow` (V002 L633-653) calls `ComputeRowRms` (L642, tail = collapse +
+Muls L437 / Adds L444 / Sqrt L451 / VectorScalarRead L457 / scalar `1.0f/rms` L466 /
+ScalarToVector L460) to completion, and only then calls `WriteNormalizedRow` (L649), whose
+first action is the col=0 x/residual MTE2 load (L499-509). Those loads do not depend on
+`invRms`; only the first `Muls` (L541-545) does.
+
+- **Recommended single insertion point:** in `ComputeRowRms`, after the final collapse block
+  closes at line 435 and before `Muls(rowSum, ...)` at line 437, issue the first output tile's
+  two loads: `LoadNative(inputX_, xGm_, rowOffset, TileLength(rowWidth))` and the same for
+  `inputR_`/`residualGm_` (content moved from `WriteNormalizedRow` lines 499-508). The tail
+  chain (L437-466) then executes while MTE2 fills `inputX_`/`inputR_`.
+  Earliest equally-safe alternative: right after the reduction loop closes at line 409
+  (before line 418); collapse work reads only `partials_`/`scalars_`/`reduceWork_`.
+- **Ordering safety (why this is legal):** the reduction pass's last vector reads of
+  `inputX_`/`inputR_` are released to MTE2 by `SyncVectorToMte2()` at line 314 (end of
+  `ReduceTileToPartial`); the tail reads only `partials_`/`scalars_`/`reduceWork_` (L358-466),
+  disjoint from `inputX_`/`inputR_`; the existing `SyncMte2ToVector` that precedes the output
+  `Add` stays at line 509, so the `Add` still waits for the (now earlier-issued) loads.
+  V002's gamma/bias release sync (line 615) and everything after it stay untouched.
+- **Companion one-line structural change:** `WriteNormalizedRow` must skip reloading col=0
+  (a `firstTileLoaded` parameter or equivalent) — otherwise the load is duplicated and the
+  overlap is lost. No arithmetic, tile size, collector, reciprocal, gamma/bias, or
+  row-scheduling change (single variable: load issue point).
+- **Prerequisites order:** device window opens → Direct Parent same-binary noise floor PASS at
+  exact shape → 16-shape correctness of the hoisted variant → interleaved P/C.
+
+## RSQRT FEASIBILITY
+
+**Verdict: YES — `AscendC::Rsqrt` exists and is usable on this exact toolchain
+(CANN 8.5.0.alpha002, dav-2201 / Ascend910B3), for `float` and `half`, implemented as the
+`vrsqrt` vector intrinsic.**
+
+Sources and provenance:
+
+1. **server3 CANN 8.5 headers (toolchain truth, read-only file inspection, no device run):**
+   - `/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/asc/include/basic_api/kernel_operator_vec_unary_intf.h`
+     lines 236-277: `Rsqrt` Level 0 (mask/repeat) and Level 2 (`dst, src, count`) declared;
+     the config-carrying overload is guarded `#if (3101)||(5102)` so arch 2201 compiles the
+     plain `template <typename T> void Rsqrt(const LocalTensor<T>& dst, const LocalTensor<T>& src, const int32_t& count)`.
+   - `.../asc/impl/basic_api/dav_c220/kernel_operator_vec_unary_impl.h` lines 75-82:
+     `RsqrtIntrinsicsImpl` → `vrsqrt(...)`, `static_assert(SupportType<T, half, float>)`;
+     lines 283-311: `RsqrtImpl` Level 0/2 (count-mode sets mask then `vrsqrt`).
+   - `.../asc/impl/basic_api/kernel_operator_vec_unary_intf_impl.h` lines 25-26:
+     `__NPU_ARCH__ == 2201 → #include "dav_c220/kernel_operator_vec_unary_impl.h"`.
+   - `/usr/local/Ascend/ascend-toolkit/latest/version.cfg`: all components
+     `8.5.T8.0.B060:8.5.0.alpha002` — matches the recorded toolchain for V002 compile/link.
+2. **Local skill docs (this machine):**
+   `.agents/skills/ascendc-docs-search/references/api-index.md` line 44 lists `Rsqrt` under
+   矢量计算 API; `.agents/skills/ascendc-regbase-best-practice/references/api/regbase_api_whitelist.md`
+   line 60 lists `Rsqrt` under Vector compute.
+3. **Local asc-devkit 9.2.0 (this machine)** — API/product matrix and caveats:
+   `.cannbot/dependencies/ops-direct-invoke/asc-devkit/docs/zh/api/SIMD-API/basic_api/memory_vector_compute/basic_arithmetic/Rsqrt.md`:
+   Atlas A2 (910b) **支持** for the non-config prototype; data types half/float; dst supports
+   VECCALC; precision caveat: float Rsqrt comparison error does not meet the 1e-4 (双万分之)
+   threshold — high-precision paths should use Div+Sqrt. Header/impl counterparts match the
+   server3 8.5 layout (`include/basic_api/kernel_operator_vec_unary_intf.h` L279-326,
+   `impl/basic_api/dav_c220/...` → `vrsqrt`).
+4. **Public web (WebFetch):** hiascend CANN 8.5 doc tree reachable
+   (`https://www.hiascend.com/document/detail/zh/canncommercial/850/index/index.html`, Ascend C
+   API reference linked at `.../850/API/ascendcopapi/atlasascendc_api_07_0003.html`) but the
+   per-API page sits behind the site's JS index and the individual Rsqrt page text was not
+   retrieved; gitcode raw returned an SPA shell; search engines unusable from here.
+   Public-web confirmation: **UNCONFIRMED** — it does not change the verdict, because source 1
+   is the exact compiler headers this route builds against.
+
+Implications for H1 (unchanged classification NEEDS_MORE_EVIDENCE until measured):
+
+- API availability is no longer the uncertainty: `AscendC::Rsqrt(rowSum, rowSum, 1)` compiles
+  on this toolchain (same `kernel_operator.h` V002 already includes, line 3).
+- Precision is the remaining risk: local harness tolerance is FP32 `atol=rtol=1e-4`
+  (`runner_main.inc` line 186); ops-precision-standard FLOAT32 allows rtol 9.77e-4 /
+  atol 1.53e-5 at 0.99 matched ratio; the devkit doc explicitly warns float Rsqrt error can
+  exceed 1e-4. So H1 must run the 16-shape correctness matrix before any timing; a 1e-4
+  failure there falls back to the always-available `Duplicate(1.0)+Div` variant per HYP-1.
+- Usage note: input to Rsqrt must be `rowSum = mean + eps > 0`; the devkit doc warns
+  non-positive inputs give undefined results — epsilon already guarantees positivity.

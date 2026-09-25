@@ -1,5 +1,7 @@
 # BATCH-RESIDENT-X — TRACK-B Next-Hypothesis Research (append-only)
 
+> **MAIN-2 APPROVALS 2026-09-25** — Scope arbitration: parameter staging / gamma-bias residency / row-batch parameter reuse fixed to this route (UB-H2 marked DUPLICATE·DEFER_TO_BATCH). APPROVED NEXT backlog: H1 two-stage row-group compute + vectorized row-local reduction state + fused epilogue — MUST be shrunk to ONE conceptual mechanism at Revision declaration; if implementation would change reduction topology + epilogue + batch ownership together, Main splits it; no three-donor single implementation. Track-A: migrate legacy wall-clock harness to unified device-event protocol before any further measurement; legacy wall-clock data (incl. +185%) never promotion evidence.
+
 ROUTE: BATCH-RESIDENT-X
 TRACK-A: candidate SHA `ad961c5837971bf989c9989b822cc2719a6a285c60969d35e1530463b7c8721d` unchanged; no kernel edits, no new revision, no device run this turn.
 TRACK-B: architecture-level residency / batching research. No `.asc`/`.cpp` edits, no formal next revision.
