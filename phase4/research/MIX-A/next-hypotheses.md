@@ -1,6 +1,6 @@
 # MIX-A Next-Hypothesis Research
 
-Status: design-only; Main review returned `NEEDS_ONE_MORE_LOCAL`. V007 remains unchanged. No Candidate source or new revision was created.
+Status: design-only; Main review returned `NEEDS_ONE_MORE_LOCAL`. V007 remains unchanged. Current Track-B screen has five active hypotheses; no Candidate source or new revision was created.
 
 Route identity: V007 source SHA-256 `a63ad29a997ae2fe8a1238c1a47a9d5ddfb14d16f725fca975ce5c55523f28eb`; direct parent V003 source SHA-256 `1a1857a945ce1f04e3877437882b21a3d5071dddcd697103d7b539a0feb5c706`; parent Official Score `44.69`.
 
@@ -68,6 +68,7 @@ Route identity: V007 source SHA-256 `a63ad29a997ae2fe8a1238c1a47a9d5ddfb14d16f72
 - MINIMAL_OFAT_DIFF: Change only the inverse RMS calculation after `ReduceSum`; retain reduction inputs, normalization order, dtype casts, and dispatch.
 - EXPECTED_LOCAL_PROBES: Confirm API compatibility first; then correctness on `1x256` FP32 and wider single-row widths, followed by shape qualification and at least four interleaved pairs.
 - CLASSIFICATION: `NEEDS_MORE_EVIDENCE`.
+- CURRENT_SCREEN: Deferred from the active set until the exact CANN 8.5.0 DAV_2201 `Rsqrt` API and reduced-scalar broadcast path are established.
 
 ## Stop
 
@@ -75,7 +76,7 @@ These are research candidates only. Main returned `NEEDS_ONE_MORE_LOCAL` for V00
 
 ## Track B Review (2026-09-25)
 
-Four distinct ideas remain active: H01 (MTE2 wait placement), H03 (terminal MTE3 completion wait), H04 (inverse-RMS vector path), and H05 (FP32 affine-tail fusion). Their full field records are above, except the new H05 record below. H02 is excluded because the local API guidance gives no expected copy-instruction speed difference.
+As of the 2026-09-25 review, four ideas were retained: H01 (MTE2 wait placement), H03 (terminal MTE3 completion wait), H04 (inverse-RMS vector path), and H05 (FP32 affine-tail fusion). The 2026-09-26 screen below supersedes that active set. H02 remains excluded because the local API guidance gives no expected copy-instruction speed difference.
 
 ### Review dispositions
 
@@ -139,6 +140,7 @@ This cycle adds three mechanisms distinct from H01/H03/H04/H05 and from V007's r
 - MINIMAL_OFAT_DIFF: Move the BF16 gamma/bias `ToFloat` block into the existing row loop after the two input `Load` calls and before their wait; leave both wait points, buffers, and arithmetic unchanged.
 - EXPECTED_LOCAL_PROBES: After Main authorization, test V003/V007 reference correctness at BF16 `1x256`. If correct, establish a BF16 Parent same-binary floor before paired device-event samples.
 - CLASSIFICATION: `NEEDS_MORE_EVIDENCE`.
+- CURRENT_SCREEN: Deferred from the active set due to partial prologue overlap with H01. Keep its narrower conversion-versus-input-DMA question distinct for later review; it is not an exact duplicate.
 
 ### MIX-A-H08: Double-buffer row inputs in the multi-row narrow-mid path
 
@@ -159,3 +161,23 @@ This cycle adds three mechanisms distinct from H01/H03/H04/H05 and from V007's r
 ## Current Stop Point
 
 Main's V007 decision is `NEEDS_ONE_MORE_LOCAL`. The pending qualification shape is Parent V003, `rows=1`, `D=256`, FP32; existing targeted correctness also covers FP16 and BF16 at `rows=1`, `D=256`. Do not run timing until Main authorizes a current exclusive lease.
+
+## Current Track-B Screen (2026-09-26)
+
+Exactly five hypotheses are active in this screen: H01, H03, H05, H06, and H08. Existing full field records above define each mechanism, bottleneck, shape, expected benefit/failure, Ascend C feasibility, UB/core/DMA/synchronization impact, precision risk, duplicate review, OFAT diff, and local probes. H02 stays `INFEASIBLE`; H04 stays deferred pending API evidence; H07 stays deferred with a partial-overlap note against H01. Deferred entries are retained and are not counted in the active five.
+
+### Active Hypothesis Falsification And Value
+
+- H01: FALSIFICATION_TEST: After Main authorizes a revision, verify FP32/FP16/BF16 `1x256` output against V003 and use a compiler schedule or device trace to confirm the single MTE2-to-V wait makes all four copies visible. Any stale output falsifies the schedule. If the qualified device-event paired delta stays within the exact-shape floor, the performance premise is falsified. EXPECTED_INFORMATION_GAIN: High; it distinguishes event overhead from transfer latency in the common single-row path. LIKELY_GLOBAL_UPSIDE: Medium, conditional on the narrow-mid path's share of scored inputs.
+- H03: FALSIFICATION_TEST: After Main authorizes a revision, run repeated single-row output checks with immediate synchronized D2H and inspect store-completion ordering. Any missing or stale output falsifies removal of the terminal wait. If correctness holds but qualified event measurements remain within the same-binary floor, the saved wait is not useful for scoring. EXPECTED_INFORMATION_GAIN: High; it resolves whether kernel exit supplies the required MTE3 visibility on this target. LIKELY_GLOBAL_UPSIDE: Low to medium because the change is limited to the one-row path.
+- H05: FALSIFICATION_TEST: First establish the exact fused API and signature for CANN 8.5.0 DAV_2201. If unavailable, stop. If available, compare all FP32 outputs, including cancellation and rounding-boundary inputs, against current tolerances; any mismatch falsifies numerical feasibility. A qualified device-event result within the same-binary floor falsifies useful speedup. EXPECTED_INFORMATION_GAIN: Medium; it tests both target API support and whether the dependent affine pair is material. LIKELY_GLOBAL_UPSIDE: Low to medium, limited to single-row FP32 narrow-mid inputs.
+- H06: FALSIFICATION_TEST: Compare generated instructions to confirm the FP32 add-zero staging copy disappears, then test ordinary values, signed zero, and supported non-finite inputs against V003. Any required-output mismatch or no instruction reduction falsifies the proposed simplification; a qualified result within the noise floor falsifies its performance value. EXPECTED_INFORMATION_GAIN: High; it directly tests whether an explicit FP32 copy remains on the hot path. LIKELY_GLOBAL_UPSIDE: Low to medium, conditional on frequency of single-row FP32 cases.
+- H08: FALSIFICATION_TEST: Confirm the chosen tiling gives `localRows>=2`, then run repeated multi-row and tail-row correctness cases while auditing each slot's ready/release event lifetime. Any slot reuse before release falsifies the schedule. If the trace shows no MTE2/Vector overlap, occupancy falls materially, or qualified timing stays within its shape floor, stop pursuing the design. EXPECTED_INFORMATION_GAIN: High; it establishes whether narrow-mid multi-row shapes have hidden input-DMA opportunity after accounting for UB cost. LIKELY_GLOBAL_UPSIDE: Medium if these multi-row widths occur often in scored cases.
+
+### Overlap Map And Track-A Hold
+
+- H01 and H07 touch the same prologue. H01 combines two input-readiness waits; H07 retains both and overlaps BF16 parameter widening with the later input transfer. Keep only H01 active now; reconsider H07 after H01 has a Main disposition.
+- H05 and H06 touch the FP32 epilogue but alter different operations (affine arithmetic versus output staging). They remain separate single-hypothesis options and must not be combined in one revision.
+- H03 changes the terminal MTE3-to-V dependency; V007 removes a pre-load V-to-MTE2 dependency. Their event directions and consumers differ.
+- H08 uses `ProcessNarrowMidOverlap`; the existing wide-path row overlap is a neighboring pattern, not the same buffer schedule.
+- TRACK-A: the unified runner is built and linked and its host lease tests are recorded PASS, but the runner has not been executed. Parent V003 same-binary qualification for `rows=1, D=256, FP32` is absent. The current timing protocol requires 45 warmups; the runner CLI default is 10, so any later authorized qualification must pass 45 explicitly. The shared lease table currently has no active lease. Do not run runner, NPU, or timing without a fresh Main-1 lease and passing exact-shape qualification.
