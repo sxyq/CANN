@@ -11,7 +11,7 @@
 | 项目 | 值 |
 |---|---|
 | Route / revision | R31A / V021 |
-| 分支 / HEAD | `exec/sixlane-20260923-r31a` / `d38328aed787dfce6ad687821223d87db04f7e43` |
+| 分支 / V021 既有证据提交 | `exec/sixlane-20260923-r31a` / `d38328aed787dfce6ad687821223d87db04f7e43` |
 | Direct Parent | R31A-V016 |
 | Parent source SHA-256 | `dd13093823c885e785a650abff4863827e652eb8607ad0621a96eb31b6764fa0` |
 | Parent Official Score | 45.00，15/15 PASS |
