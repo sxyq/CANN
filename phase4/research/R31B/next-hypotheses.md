@@ -9,7 +9,7 @@
 - EXPECTED_SHAPES：BF16 D=12288、32768；重点观察更大 rowCount 和 D=32768。
 - WHY_IT_MAY_HELP：较小 y 缓存可降低 UB 压力，可能容纳更大的 tile 或更多行，减少多轮 pass 与同步。
 - WHY_IT_MAY_FAIL：缓存转换会改变输出舍入；UB 余量也可能不足以增加当前每核行批量。V016 paired runner 使用 rows=2，若 blockCount=2，每个 block 只有一行，此形状无法体现多行批量收益。
-- ASCEND_FEASIBILITY：当前模板已分别处理 half 与 BF16；需确认 BF16 `LocalTensor` 缓存写入/读取和转换路径，并用目标 toolkit 编译验证。
+- ASCEND_FEASIBILITY：V016 的 `ToFloat`/`FromFloat` 已使用 `AscendC::Cast` 处理 BF16↔FP32；V016 在目标 CANN 8.5 的编译/链接及 BF16 定向正确性记录已覆盖该转换。仍需为压缩后的整行缓存确认 `LocalTensor` 类型、容量、尾 tile 与 row stride。
 - UB/CORE/DMA_IMPACT：y 缓存预计减半；core 映射不变；DMA 流量不变。
 - SYNC_IMPACT：现有事件顺序可保留；批量或 tile 改变后需复核缓冲区复用等待。
 - PRECISION_RISK：高；尤其关注近零 RMS、极端输入和 BF16 舍入边界。
@@ -72,3 +72,9 @@
 - H2 与 ASYNC-TRIPLE-X、WIDE-X-FRESH4 H4 重复；H3 与 WIDE-X-FRESH4 H3 重复；H4 与 REDUCE-INVSCALE-X、MIX-A H04 重复。均保留原记录并改列 DUPLICATE，不计入独立候选数。
 - 未补入新候选：输出 affine FMA 已在 DTYPE-SPECIAL-X 与 MIX-A 研究；参数 tile 跨 batch 行复用已由 V016 pass 2 实现；整行重读输入的路线形态存在于 R31B V001，之后 V002 full-y 方案记录为胜出。重新包装这些机制不能构成新的独立方向。
 - 本轮审阅了四项，独立且仍可研究的方案只有 H1；3–5 项独立候选批次尚未形成。等待 Main 对 V016 的下一决定期间，不创建新版本，也不改 Candidate。
+
+## 2026-09-26 Track-B continuation
+
+- Ascend C `Cast` 文档列出 Atlas A2/A3 支持 float↔bfloat16_t；V016 自身的转换 helper 和 CANN 8.5 编译/正确性记录进一步证明当前目标路径可用。H1 的主要未知已收敛为改用 BF16 整行缓存后的 UB 预算、地址/尾部覆盖和输出舍入误差，不再是 Cast API 是否存在。
+- `ChooseWideFullYRows` 当前以 FP32 字节数估算 BF16 的 y 缓存。若 Main 后续审阅 H1，需按实际缓存类型重新估算每行容量，并确认只有 rowCount 大于 blockCount 的形状才可能增加每 block 的批行数；V016 paired runner 固定 rows=2，不能体现该批行收益。
+- 本轮只研究 R31B 文件、历史记录和 API 资料；未新增假定已完成跨路线去重的候选。现有独立候选仍只有 H1，研究批次尚未达到 3–5 项。
