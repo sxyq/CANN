@@ -8,12 +8,12 @@
 - BOTTLENECK：V016 在 BF16 宽行中为完整 y 保留 FP32；高 D 会压低可容纳的行批量，并促使 `ChooseWideFullYRows` 缩小 tile。
 - EXPECTED_SHAPES：BF16 D=12288、32768；重点观察更大 rowCount 和 D=32768。
 - WHY_IT_MAY_HELP：较小 y 缓存可降低 UB 压力，可能容纳更大的 tile 或更多行，减少多轮 pass 与同步。
-- WHY_IT_MAY_FAIL：加法结果提前舍入会改变后续 RMS 与输出；UB 余量也可能不足以改变当前批量选择。
+- WHY_IT_MAY_FAIL：缓存转换会改变输出舍入；UB 余量也可能不足以增加当前每核行批量。V016 paired runner 使用 rows=2，若 blockCount=2，每个 block 只有一行，此形状无法体现多行批量收益。
 - ASCEND_FEASIBILITY：当前模板已分别处理 half 与 BF16；需确认 BF16 `LocalTensor` 缓存写入/读取和转换路径，并用目标 toolkit 编译验证。
 - UB/CORE/DMA_IMPACT：y 缓存预计减半；core 映射不变；DMA 流量不变。
 - SYNC_IMPACT：现有事件顺序可保留；批量或 tile 改变后需复核缓冲区复用等待。
 - PRECISION_RISK：高；尤其关注近零 RMS、极端输入和 BF16 舍入边界。
-- DUPLICATE_CHECK：V016 只把低精度宽行 tile 初始值改为 8192，未改变 BF16 y 的 FP32 驻留；与 H2-H4 机制不同。
+- DUPLICATE_CHECK：V016 只把低精度宽行 tile 初始值改为 8192，未改变 BF16 y 的 FP32 驻留。该方案改的是 y 的存储精度，与 WIDE-X-FRESH4 的原始输入队列容量、UB-LIVENESS-X 的别名/生命周期方向不同。
 - MINIMAL_OFAT_DIFF：仅改 BF16 完整 y 缓存类型及对应转换，不同时改 tile 常量或输出流水。
 - EXPECTED_LOCAL_PROBES：先对 BF16 D=12288、32768 做定向正确性；其后每个形状单独完成同一可执行文件资格测试，通过后才做成对测量。
 - CLASSIFICATION：NEEDS_MORE_EVIDENCE。
@@ -29,10 +29,10 @@
 - UB/CORE/DMA_IMPACT：每个 active core 需增加约一个输出 tile 的 UB；core 数和总 DMA 字节数不变。
 - SYNC_IMPACT：增加 V→MTE3 与 MTE3→V 的双槽状态，必须证明每个槽在重用前已写完。
 - PRECISION_RISK：低；算术顺序保持不变。
-- DUPLICATE_CHECK：V011/V016 的当前 pass 2 均有逐 tile 写回等待；V016 的变化集中在低精度 tile 初始值，与此不同。
+- DUPLICATE_CHECK：V011/V016 的当前 pass 2 均有逐 tile 写回等待；但 ASYNC-TRIPLE-X 的 MTE2/V/MTE3 重叠已覆盖同一输出写回机制，WIDE-X-FRESH4 H4 也研究 output-only TQue double buffer。
 - MINIMAL_OFAT_DIFF：只改宽路径输出缓冲数量、store 调度和对应 UB 预算。
 - EXPECTED_LOCAL_PROBES：FP16/BF16 D=32768 定向正确性；之后按形状资格结果决定是否做成对测量。
-- CLASSIFICATION：NEEDS_MORE_EVIDENCE。
+- CLASSIFICATION：DUPLICATE。
 
 ## H3：超宽单行跨 core 部分归约
 
@@ -45,10 +45,10 @@
 - UB/CORE/DMA-IMPACT：每个 core 的 UB 需求可下降；活跃 core 增加；新增 partial-sum workspace 流量。
 - SYNC_IMPACT：跨 kernel stream 顺序承担阶段同步，新增一次或多次 launch 边界。
 - PRECISION_RISK：中；分片归约顺序改变 FP32 累加次序，需按现有 dtype 容差验证。
-- DUPLICATE_CHECK：V011/V016 都按行划分 core；与 tile seed、y 缓存和单核输出流水不同。
+- DUPLICATE_CHECK：V011/V016 都按行划分 core；但 WIDE-X-FRESH4 H3 同样提出把超宽行分片到多个 vector core、先写部分和再做输出阶段，属于同一跨核归约架构。
 - MINIMAL_OFAT_DIFF：仅为超宽低 rowCount 形状引入分片平方和与合并路径，保留现有路径作为其余形状的回退。
 - EXPECTED_LOCAL_PROBES：先做 rowCount=1、2 的定向正确性与 workspace 边界覆盖；性能对比须计入整段多 kernel 延迟。
-- CLASSIFICATION：NEEDS_MORE_EVIDENCE。
+- CLASSIFICATION：DUPLICATE。
 
 ## H4：降低行归约的 V/S 往返
 
@@ -61,7 +61,14 @@
 - UB/CORE/DMA-IMPACT：预计 UB、core 数和 DMA 字节数不变。
 - SYNC_IMPACT：目标是减少 V/S 事件；MTE2/MTE3 时序保持不变。
 - PRECISION_RISK：中高；关注 invRms 舍入误差在宽行归一化后的累计影响。
-- DUPLICATE_CHECK：V011/V016 都使用当前标量取值顺序；与 H3 的跨 core 分片归约不重复。
+- DUPLICATE_CHECK：该 invRms 向量路径与 REDUCE-INVSCALE-X 的 R019 归一化方向、MIX-A H04 的向量 inverse-RMS 方向重合；不因目标宽度不同视为独立机制。
 - MINIMAL_OFAT_DIFF：仅替换 invRms 的计算与广播路径，不改分片算法或 tile 配置。
 - EXPECTED_LOCAL_PROBES：先对 FP16/BF16 D=12288、32768 定向正确性；取得编译证据后再评估形状资格测试。
-- CLASSIFICATION：NEEDS_MORE_EVIDENCE。
+- CLASSIFICATION：DUPLICATE。
+
+## 2026-09-25 Track-B screening
+
+- H1 是四项中唯一未发现同机制活跃路线的方案，暂列 NEEDS_MORE_EVIDENCE。只有在目标宽行形状能让每个 block 处理多行、且压缩后确实增加 `wideFullYRows_` 时，UB 节省才可能转为可见收益；V016 rows=2 的 paired 形状本身不满足这一前提。
+- H2 与 ASYNC-TRIPLE-X、WIDE-X-FRESH4 H4 重复；H3 与 WIDE-X-FRESH4 H3 重复；H4 与 REDUCE-INVSCALE-X、MIX-A H04 重复。均保留原记录并改列 DUPLICATE，不计入独立候选数。
+- 未补入新候选：输出 affine FMA 已在 DTYPE-SPECIAL-X 与 MIX-A 研究；参数 tile 跨 batch 行复用已由 V016 pass 2 实现；整行重读输入的路线形态存在于 R31B V001，之后 V002 full-y 方案记录为胜出。重新包装这些机制不能构成新的独立方向。
+- 本轮审阅了四项，独立且仍可研究的方案只有 H1；3–5 项独立候选批次尚未形成。等待 Main 对 V016 的下一决定期间，不创建新版本，也不改 Candidate。
