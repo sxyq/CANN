@@ -2,6 +2,8 @@
 
 Research only, recorded 2026-09-25. R015C-r4 source and implementation remain unchanged. No timing was run for this research.
 
+Route review 2026-09-25: retain the four distinct ideas below as research only. No implementation or new revision is authorized by this review.
+
 ## R015C-H01: Row-segment task mapping
 
 - MECHANISM: Assign one existing 2048-element maximum segment to each block, mapping `blockIdx` to `(row, segment)`.
