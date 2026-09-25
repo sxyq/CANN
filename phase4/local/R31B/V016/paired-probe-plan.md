@@ -5,7 +5,8 @@
 - 路线与版本：R31B / V016，直接父版本 R31B-V011。
 - V016 状态仍为 `NEEDS_ONE_MORE_LOCAL`；当前只保留 V016，不创建 V017。
 - paired runner 已在 `cann-server3`（远端主机名 `hwnput3`）完成强制重编译和链接。
-- 当前没有 MAIN-1 的 device-4 独占租用；按本轮设备状态，d0-d6 有忙碌任务且 HBM 约 90%，d7 不用于性能测量。
+- Main review 保持 V016 为 `NEEDS_ONE_MORE_LOCAL`；V011/V016 exact-source runner 编译和链接通过，runner 未执行。
+- 当前 server3 没有可用设备：d0-d3 有活动负载，d4-d6 由 Main-2 租用；时序流程排除 d7。等待获准窗口，不创建 V017。
 - 本轮没有启动 runner、NPU correctness 或任何时序采样。
 
 ## 源码与可执行文件

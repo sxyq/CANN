@@ -34,6 +34,8 @@
 
 ## 当前限制
 
-canonical device lease 表没有 MAIN-1 的 device-4 活动租用。本轮提供的实时状态为 d0-d6 有 VLLM 或 AICore 忙碌任务、HBM 约 90%；d7 虽空闲且 HBM 约 5%，统一时序流程仍要求避开 d7 做性能测量。
+Main review 决定：R31B V016 保持 `NEEDS_ONE_MORE_LOCAL`。V011/V016 exact-source runner 的编译和链接均已通过；没有执行 runner，也没有采集测量数据。不要创建 V017。
 
-后续须先取得 MAIN-1 的 device-4 独占租用并确认负载窗口，再逐形状运行同一可执行文件资格测试。四个形状全部 PASS 且 SHA-256 相符之前，不得开始 P/C 配对。当前状态下不运行任何 correctness 或性能采样。
+当前 server3 没有可用设备：d0-d3 有活动负载，d4-d6 由 Main-2 租用，时序流程排除 d7。保留现有构建、失败和历史探测记录；本 Route 继续停留在 V016，等待获准的设备窗口。
+
+后续只有在 Main 授权的设备窗口开放后，才继续逐形状运行同一可执行文件资格测试。四个形状全部 PASS 且 SHA-256 相符之前，不得开始 P/C 配对。当前状态下不运行 runner、correctness 或性能采样。
