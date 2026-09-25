@@ -117,3 +117,16 @@ The following three studies are additional, read-only directions for V001 follow
 - MINIMAL_OFAT_DIFF: Add one FP32 shape predicate for the block-count cap; leave all kernel math and local batch limits unchanged.
 - EXPECTED_LOCAL_PROBES: Static block-coverage model for 12 rows; compile/link; exact-shape correctness; then compare against 8 blocks with same-binary and paired runs under an exclusive Main lease.
 - READINESS: NEEDS_MORE_EVIDENCE.
+
+## Track-B Cross-Route Screen (2026-09-26)
+
+This pass selects four existing studies for the next Main review. Their mechanisms and OFAT boundaries are unchanged. Cross-route labels use only the permitted Main-1 scheduler summaries; no other Route source was inspected. `ADJACENT_DIFFERENT_MECHANISM` means related traffic or arithmetic, with no direct mechanism match established. `UNRESOLVED` means the permitted summary does not expose enough detail to classify overlap.
+
+| ID | Cross-route overlap label | Expected information gain | Likely global upside | Screen |
+|---|---|---|---|---|
+| DTYPE-FP32-01 | `ADJACENT_DIFFERENT_MECHANISM`: MODE-X-R015C mentions row grouping and copy-path work, while this study removes an FP32 helper copy at its call site. No direct match established. R31A fence placement and MIX-A synchronization removal are distinct. R31B is `UNRESOLVED` from its permitted summary. | HIGH: determine whether a helper copy can be eliminated after V001 changed only the copy primitive. | MEDIUM-HIGH if the same avoidable copy occurs in several FP32 task paths; less if callers still need both tensors live. | NEEDS_MORE_EVIDENCE |
+| DTYPE-FP32-02 | `NO_DIRECT_MATCH_IN_VISIBLE_SUMMARIES`: this changes only full-tile GM output-store form. MODE-X-R015C's summary says its segment/copy form stays unchanged; R31A and MIX-A concern other mechanisms. R31B is `UNRESOLVED`. | MEDIUM: determine whether the aligned output overload lowers differently and retains correct tail separation. | MEDIUM on aligned widths; none for tails or if both APIs lower identically. | NEEDS_MORE_EVIDENCE |
+| DTYPE-FP32-04 | `NO_DIRECT_MATCH_IN_VISIBLE_SUMMARIES`: this fuses only the output affine multiply-add. R31A fence placement, MIX-A synchronization removal, and MODE-X-R015C row/copy handling do not describe the same operation. R31B is `UNRESOLVED`. | HIGH: establish whether CANN emits a fused instruction and quantify the rounding difference against task tolerance. | MEDIUM-HIGH if vector issue is material across several widths; low if fusion is unavailable or arithmetic is hidden by reduction. | NEEDS_MORE_EVIDENCE |
+| DTYPE-FP32-06 | `ADJACENT_DIFFERENT_MECHANISM`: parked REDUCE-X covers reduction/V-S handoff redesign; this study changes only the reduction call granularity inside the existing aligned two-row FP32 batch. MODE-X-R015C's row/copy path differs. R31B is `UNRESOLVED`. | MEDIUM-HIGH: resolve Pattern AR API/buffer feasibility and whether one call beats two short row reductions. | LOW-MEDIUM because only two-row groups benefit and the 12-row/8-block split leaves four single-row blocks. | NEEDS_MORE_EVIDENCE |
+
+No candidate, kernel, runner, or revision was changed by this screen.
