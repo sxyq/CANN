@@ -7,7 +7,7 @@
 - Direct Parent: `MIX-A-V003`
 - Parent Official Score: `44.69`
 - Branch: `exec/sixlane-20260923-mix-a`
-- Source commit before this handoff: `4eb04e62e79f0110061e00c08346304f2cf94ce4`
+- Source commit before this handoff: `e2c4de7bdb1edbe4b907a883209aee3b6a9f5655`
 - Candidate source SHA-256: `a63ad29a997ae2fe8a1238c1a47a9d5ddfb14d16f725fca975ce5c55523f28eb`
 
 ## Source Lineage
@@ -50,6 +50,15 @@ The direct source diff keeps V003 dispatch and math. The only executable-code de
 - Final runner SHA-256 `3eec1aa67a225761fda536d71c6f4f0bd2fcc01fbf2cb71cae0a26d3724173ee`; `runner_validation.h` SHA-256 `7ff5e0af8b2a0fb8247f9a41f93e28f548ef93f323df5e18765f927b984a4406`. The rebuilt AArch64 PIE is 669600 bytes with SHA-256 `c263fbde2347d554f50569a8154425b0694f4f092f0a84dd09265451843a2256`.
 - `runner_validation_test.cpp` passed locally with `c++ -std=c++17 -Wall -Wextra -Werror`; it does not initialize ACL. The unified target compiled and linked on server3; its executable was not run.
 - No ACL runner mode, NPU correctness run, or timing was run. Do not time without a current exclusive device lease.
+
+## Lease History Follow-up (2026-09-25)
+
+- `runner_validation.h` now folds the append-only lease table to the latest row for each unique `lease_id` before counting active leases or checking device ownership. A later `RELEASED` record therefore retires the earlier `LEASED` record.
+- Host-only tests cover a released prior lease followed by a valid MIX-A lease on the same device, and rejection when another active lease conflicts on that device. Executed `c++ -std=c++17 -Wall -Wextra -Werror phase4/local/MIX-A/V007/support/runner_validation_test.cpp -o <temporary-binary> && <temporary-binary>`; exit code `0`, all assertions passed. The temporary binary was removed; no ACL headers or device runtime were used.
+- The first rebuild attempt lacked `ASCEND_HOME_PATH` and failed during ASC compilation; that output is retained in `support/build-unified.log`. Rebuilding with `ASCEND_HOME_PATH=/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002` passed compilation and linking.
+- V003 and V007 build-source SHA-256 values remain `1a1857a945ce1f04e3877437882b21a3d5071dddcd697103d7b539a0feb5c706` and `a63ad29a997ae2fe8a1238c1a47a9d5ddfb14d16f725fca975ce5c55523f28eb`. The unified runner SHA-256 remains `3eec1aa67a225761fda536d71c6f4f0bd2fcc01fbf2cb71cae0a26d3724173ee`; updated `runner_validation.h` SHA-256 is `f3b490d747a433725aac55a2dbce6c5d4d15f287d298af848a72e272162d2f37`.
+- Rebuilt executable: `/home/data4t2/lelinfeng/phase4-workspaces/MIX-A/runner-v007/build/mix_a_v007_unified_probe`, AArch64 PIE, 674192 bytes, SHA-256 `dce996af2ec709219819de3e9ba908f0d41744f2b9820965a1385e080b949110`. It was identified but not executed.
+- Track B review retains four distinct design candidates in `phase4/research/MIX-A/next-hypotheses.md`; the aligned `DataCopy` proposal was marked infeasible based on local CANN API guidance. No Candidate source was changed.
 
 ## Timing And Next Inputs
 

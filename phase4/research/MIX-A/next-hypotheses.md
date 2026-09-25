@@ -34,7 +34,8 @@ Route identity: V007 source SHA-256 `a63ad29a997ae2fe8a1238c1a47a9d5ddfb14d16f72
 - DUPLICATE_CHECK: The V001-V007 implementations use `DataCopyPad`; no Route revision switches the narrow-mid copies to aligned `DataCopy`.
 - MINIMAL_OFAT_DIFF: Add an alignment-conditioned copy helper used only by `ProcessNarrowMidFast`; do not change shared `Load`/`Store` behavior for other paths.
 - EXPECTED_LOCAL_PROBES: Verify exact outputs for all three dtypes on `1x256`; qualify each same-binary shape before four or more interleaved pairs. Keep unaligned widths on the existing copy path as a control.
-- CLASSIFICATION: `READY_FOR_MAIN_REVIEW`.
+- CLASSIFICATION: `INFEASIBLE`.
+- REVIEW_NOTE: The local CANN API guidance says aligned `DataCopy` and `DataCopyPad` use the same transfer instruction and that aligned-path performance differences are negligible. This route has no evidence for a distinct speed mechanism, so H02 is excluded from the active set.
 
 ## MIX-A-H03: Remove the terminal MTE3-to-V wait for one-row output
 
@@ -59,7 +60,7 @@ Route identity: V007 source SHA-256 `a63ad29a997ae2fe8a1238c1a47a9d5ddfb14d16f72
 - EXPECTED_SHAPES: Begin with one-row FP32 widths 129-4096, especially `1x256`; expand to FP16/BF16 only after FP32 passes.
 - WHY_IT_MAY_HELP: Avoids the V-to-S and S-to-V handoff and keeps the inverse RMS computation in the vector pipeline.
 - WHY_IT_MAY_FAIL: The available `Rsqrt` entry in the local API index does not establish its exact CANN 8.5.0 signature or DAV_2201 availability. Approximation error may change official outputs, and the scalar tail may not dominate runtime.
-- ASCEND_FEASIBILITY: `Rsqrt` appears in the local API category index, but the version-specific API page was unavailable in this review. Confirm signature, supported data types, vector length, and DAV_2201 support before implementation.
+- ASCEND_FEASIBILITY: `Rsqrt` appears in a local API category index, but no CANN 8.5.0 DAV_2201 signature was found in the available local references or the inspected server3 AscendC interface headers. A vector result must also broadcast the reduced scalar to all elements without retaining the current scalar handoff; establish both details before implementation.
 - UB/CORE/DMA_IMPACT: No added UB, core count, or DMA; reduction output stays in its existing buffer.
 - SYNC_IMPACT: Intended to remove one V-to-S and one S-to-V handoff.
 - PRECISION_RISK: Medium to high; compare all output elements with the existing formula and dtype tolerances before performance work.
@@ -71,3 +72,34 @@ Route identity: V007 source SHA-256 `a63ad29a997ae2fe8a1238c1a47a9d5ddfb14d16f72
 ## Stop
 
 These are research candidates only. Main must review V007 and authorize any next revision before implementation. No V008 is created here.
+
+## Track B Review (2026-09-25)
+
+Four distinct ideas remain active: H01 (MTE2 wait placement), H03 (terminal MTE3 completion wait), H04 (inverse-RMS vector path), and H05 (FP32 affine-tail fusion). Their full field records are above, except the new H05 record below. H02 is excluded because the local API guidance gives no expected copy-instruction speed difference.
+
+### Review dispositions
+
+- H01: Retain as `READY_FOR_MAIN_REVIEW`. It changes only MTE2 wait placement; prove that the final wait covers all four queued copies before any implementation.
+- H03: Retain as `NEEDS_MORE_EVIDENCE`. Output visibility after kernel exit must be established before considering removal of the final wait.
+- H04: Retain as `NEEDS_MORE_EVIDENCE`. Confirm the CANN 8.5.0 API and a vector broadcast path that removes both scalar-pipeline waits.
+- H05: Add as `NEEDS_MORE_EVIDENCE`; the local references did not establish `FusedMulAdd` availability for this target.
+
+### MIX-A-H05: Fuse the FP32 affine tail
+
+- MECHANISM: In the FP32 branch of `ProcessNarrowMidFast`, replace the consecutive `Mul(u, u, gammaLocal)` and `Add(u, u, biasLocal)` with one fused multiply-add after the existing inverse-RMS `Muls`.
+- BOTTLENECK: The affine tail has two dependent vector operations after normalization.
+- EXPECTED_SHAPES: FP32, `rows=1`, `129 < width <= 4096`; begin with `1x256`.
+- WHY_IT_MAY_HELP: A supported fused instruction could remove one vector instruction and shorten the dependent tail.
+- WHY_IT_MAY_FAIL: CANN 8.5.0 DAV_2201 support was not confirmed in the local references or inspected server3 interface headers. Fusion changes FP32 rounding, and the short tail may be below the shape noise floor.
+- ASCEND_FEASIBILITY: Treat `FusedMulAdd` availability and signature as unverified. Confirm the exact target API and compile support before implementation; do not substitute an API from a different architecture family.
+- UB/CORE/DMA_IMPACT: No added UB, core, or DMA; same tensors and element count.
+- SYNC_IMPACT: No intended synchronization change.
+- PRECISION_RISK: Medium; fused rounding differs from separate multiply then add. Compare every output against the existing tolerance before any timing.
+- DUPLICATE_CHECK: The current V007 `ProcessNarrowMidFast` FP32 affine tail uses separate `Mul` and `Add`; this idea does not overlap H01/H03 event changes or H04 inverse-RMS handling.
+- MINIMAL_OFAT_DIFF: Change only the FP32 affine-tail pair in `ProcessNarrowMidFast`; leave FP16/BF16, dispatch, reduction, and output transfer unchanged.
+- EXPECTED_LOCAL_PROBES: After API confirmation and Main authorization, run FP32 `1x256` correctness first. If it passes, qualify that exact parent shape with same-binary event samples before any interleaved pair; retain all raw rows.
+- CLASSIFICATION: `NEEDS_MORE_EVIDENCE`.
+
+## Stop Point
+
+V007 remains pending Main review. Research is design-only; no Candidate source was changed and no V008 was created.

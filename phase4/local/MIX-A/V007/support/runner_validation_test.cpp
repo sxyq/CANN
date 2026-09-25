@@ -53,12 +53,18 @@ int main()
     assert(!mix_a_runner::ParseServerDevice("", &device));
 
     const std::string active = LeaseRow("4", "MAIN-1", "MIX-A", "MIX-A-TEST-01", "LEASED");
+    const std::string releasedPriorLease =
+        LeaseRow("4", "MAIN-2", "OTHER-ROUTE", "OTHER-D4-01", "LEASED") +
+        LeaseRow("4", "MAIN-2", "OTHER-ROUTE", "OTHER-D4-01", "RELEASED");
     assert(Validate(active));
+    assert(Validate(releasedPriorLease + active));
     assert(!Validate(active, 5));
     assert(!Validate(active, 4, "MAIN-2"));
     assert(!Validate(active, 4, "MAIN-1", "STALE-LEASE"));
     assert(!Validate(LeaseRow("4", "MAIN-1", "MIX-A", "MIX-A-TEST-01", "RELEASED")));
     assert(!Validate(active + LeaseRow("4", "MAIN-2", "OTHER-ROUTE", "OTHER-01", "LEASED")));
+    assert(!Validate(releasedPriorLease + active +
+                     LeaseRow("4", "MAIN-2", "OTHER-ROUTE", "OTHER-D4-02", "LEASED")));
     assert(!Validate(active + LeaseRow("5", "MAIN-1", "MIX-A", "MIX-A-TEST-02", "LEASED")));
     assert(!Validate(LeaseRow("7", "MAIN-1", "MIX-A", "MIX-A-TEST-01", "LEASED"), 7));
 

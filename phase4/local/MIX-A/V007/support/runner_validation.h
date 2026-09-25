@@ -6,6 +6,7 @@
 #include <climits>
 #include <cstdlib>
 #include <istream>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -96,8 +97,7 @@ inline bool ValidateLeaseTable(std::istream& input, int requestedDevice,
         return fail("lease table header is missing required columns");
     }
 
-    size_t activeMixALeases = 0;
-    LeaseIdentity activeMixA;
+    std::map<std::string, LeaseIdentity> latestByLease;
     while (std::getline(input, line)) {
         if (!line.empty() && line.back() == '\r') line.pop_back();
         if (line.empty()) continue;
@@ -106,22 +106,29 @@ inline bool ValidateLeaseTable(std::istream& input, int requestedDevice,
             std::max(deviceColumn, ownerColumn), std::max(routeColumn,
                 std::max(leaseColumn, statusColumn)));
         if (fields.size() <= lastColumn) return fail("lease table row is incomplete");
-        if (fields[statusColumn] != "LEASED") continue;
-
-        int activeDevice = -1;
-        if (!ParseServerDevice(fields[deviceColumn], &activeDevice)) {
-            return fail("active lease has an invalid device ID");
-        }
-        const std::string& owner = fields[ownerColumn];
-        const std::string& route = fields[routeColumn];
         const std::string& leaseId = fields[leaseColumn];
-        if (activeDevice == requestedDevice &&
-            (route != "MIX-A" || owner != requestedOwner || leaseId != requestedLeaseId)) {
+        if (leaseId.empty()) return fail("lease table row has an empty lease ID");
+        int device = -1;
+        if (!ParseServerDevice(fields[deviceColumn], &device)) {
+            return fail("lease record has an invalid device ID");
+        }
+        latestByLease[leaseId] = {
+            device, fields[ownerColumn], fields[routeColumn], leaseId, fields[statusColumn]};
+    }
+
+    size_t activeMixALeases = 0;
+    LeaseIdentity activeMixA;
+    for (const auto& entry : latestByLease) {
+        const LeaseIdentity& lease = entry.second;
+        if (lease.status != "LEASED") continue;
+        if (lease.device == requestedDevice &&
+            (lease.route != "MIX-A" || lease.owner != requestedOwner ||
+             lease.leaseId != requestedLeaseId)) {
             return fail("requested device is leased to a different owner or route");
         }
-        if (route == "MIX-A") {
+        if (lease.route == "MIX-A") {
             ++activeMixALeases;
-            activeMixA = {activeDevice, owner, route, leaseId, fields[statusColumn]};
+            activeMixA = lease;
         }
     }
     if (activeMixALeases != 1) return fail("lease table must contain exactly one active MIX-A lease");
