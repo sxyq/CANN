@@ -1,0 +1,13 @@
+ASYNC-TRIPLE-X 8x8192 FP32 (tileCount=8) quiet-window exclusive same-binary re-qualification (Direct Parent SEED vs itself)
+device=4 method=DEVICE_EVENT warmup=10 samples=31x2 batch_n=1 gap=2s
+lease=QR-ASYNC-8x8192 window=2026-09-25T14:58:13Z..14:59:50Z
+host load 23-25; concurrent route probes at start: NONE; d4 AICore 0%
+attempt qb1 8x8192: MAD/med=0.2720  drift=0.0400  -> FAIL (MAD/med > 0.10)
+  B1 med=101.82us  B2 med=105.98us  ALL med=103.90us MAD=28.26us  bad=0
+  drift now CLEAN (0.04 vs prior 0.4427); MAD/med improved 0.4565 -> 0.2720 but still > 0.25
+attempt qb1 8x4096 (documented fallback): MAD/med=0.4163  drift=0.7476 -> FAIL
+  B1 med=116.96us  B2 med=205.92us  ALL med=118.99us MAD=49.54us  bad=0
+MAD/med > 0.25 (8x8192 and 8x4096) and drift > 0.25 (8x4096) -> MEASUREMENT_PROTOCOL_BLOCKED_FOR_SHAPE
+  (harness/host issue; never a Candidate issue)
+No interleaved P/C run. Kernel SHA unchanged. No source edit.
+Decision: MEASUREMENT_PROTOCOL_BLOCKED_FOR_SHAPE (both shapes)

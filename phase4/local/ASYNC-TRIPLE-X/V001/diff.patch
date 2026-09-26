@@ -1,0 +1,40 @@
+--- /Users/sunyiyang/Desktop/Project/cann-next6/ASYNC-TRIPLE-X/phase4/workspaces/ASYNC-TRIPLE-X/ASYNC-TRIPLE-X-SEED.asc	2026-09-24 05:00:57
++++ /Users/sunyiyang/Desktop/Project/cann-next6/ASYNC-TRIPLE-X/phase4/workspaces/ASYNC-TRIPLE-X/ASYNC-TRIPLE-X-V001-submission.asc	2026-09-24 05:00:57
+@@ -1,7 +1,8 @@
+-// ASYNC-TRIPLE-X SEED (route seed / R013-derived baseline)
+-// Donor: R013 DOUBLE-BUFFER PIPELINE kernel (MTE2 prefetch N+1 + Vector compute N).
+-// MTE3 store remains same-iteration after compute — NOT scheduled as stage N-1.
+-// SINGLE_HYPOTHESIS for V001 is recorded in PRECODE.md; this file is the Direct Parent.
++// ASYNC-TRIPLE-X V001 — true triple overlap
++// Direct Parent: ASYNC-TRIPLE-X-SEED.asc (R013-derived two-stage pipeline).
++// SINGLE_HYPOTHESIS: ONLY add MTE3 stage — issue store of tile N-1 before Vector
++// compute of tile N while MTE2 prefetch of N+1 stays issue-ahead.
++// Reduction, parameter policy, dtype strategy, and core mapping unchanged.
+ #include "kernel_operator.h"
+ 
+ #include <stdint.h>
+@@ -271,10 +272,23 @@
+                 const uint32_t nextCount = static_cast<uint32_t>(
+                     ((width_ - nextOffset) < kTileLength) ? (width_ - nextOffset) : kTileLength);
+                 CopyInOutputData(row, nextOffset, nextCount);
++            }
++            // True triple overlap: while Vector computes tile N, MTE2 prefetches N+1
++            // (issued above) and MTE3 stores N-1 (issued here before Compute).
++            if (tile >= 1) {
++                const uint64_t prevOffset = (tile - 1) * kTileLength;
++                const uint32_t prevCount = static_cast<uint32_t>(
++                    ((width_ - prevOffset) < kTileLength) ? (width_ - prevOffset) : kTileLength);
++                CopyOut(row, prevOffset, prevCount);
+             }
+             ComputeOutputTile(count, inverseRms);
+-            CopyOut(row, tileOffset, count);
+         }
++        {
++            const uint64_t lastOffset = (tileCount - 1) * kTileLength;
++            const uint32_t lastCount = static_cast<uint32_t>(
++                ((width_ - lastOffset) < kTileLength) ? (width_ - lastOffset) : kTileLength);
++            CopyOut(row, lastOffset, lastCount);
++        }
+     }
+ 
+ private:
