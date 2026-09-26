@@ -1,0 +1,316 @@
+{
+  "ROUTE": "ALIGN-TAIL-X",
+  "REVISION": "V001",
+  "DIRECT_PARENT": "PURE-R009-V001-ALIGNED-DATACOPY",
+  "PARENT_SOURCE_SHA": "c8d0f010f8fc68b90d69c6d2bcbf76ec7bb927bd9dc4f0fcac32425e5288c63c",
+  "PARENT_SCORE": 17.64,
+  "PARENT_SCORE_NOTE": "historical online official_score 17.64, correctness 15/15 (phase3 upstream record)",
+  "SINGLE_HYPOTHESIS": "From correct R009 aligned-copy baseline, ONLY add explicit tail specialization: aligned bulk uses direct DataCopy; non-aligned remainder uses a minimal DataCopyPad tail path. Main compute, reduction, scheduling, and parameter policy unchanged. No R012 row-group in V001.",
+  "CONTEXT_CLASS": "HISTORICAL_DERIVED",
+  "SINGLE_CHANGE_AUDIT": "PASS",
+  "candidate_source_path": "phase4/workspaces/ALIGN-TAIL-X/V001/kernel.asc",
+  "submission_sha256": "f573d16d39fb54a2a75f75f90943168b96dd97d83fb6bd094f11fd73c61df840",
+  "source_commit": null,
+  "source_recovery": "WORKTREE_FROM_PARENT_SNAPSHOT_PLUS_TAIL_EDIT",
+  "diff_status": "PARENT_RESOLVED",
+  "WHY_NOT_DUPLICATE": "R009 parent only branches on whole-transfer size (non-aligned size always full DataCopyPad). R010 donor is a separate tail-centric independent implementation with different tiling/scheduling. No other next6 route in this worktree owns aligned-bulk+minimal-tail on the R009 baseline.",
+  "WHY_THIS_COMBINATION_IS_NEW": "Keeps proven R009 two-pass FP32 compute, 4096 tile, and host scheduling; adds only bulk DataCopy + remainder pad as the single conceptual change measurable against the aligned-copy parent; excludes R012 row-group so local deltas attribute to tail specialization alone.",
+  "source_components": [
+    {
+      "path": "submission.asc",
+      "sha256": "f573d16d39fb54a2a75f75f90943168b96dd97d83fb6bd094f11fd73c61df840"
+    },
+    {
+      "path": "support/build_server3.sh",
+      "sha256": "0fc71a252fcfbe384583f3bf82bcf1c818eb5d1b863cdb7395603e8891fc15ee"
+    },
+    {
+      "path": "support/workspace-CMakeLists.txt",
+      "sha256": "7b6891581be0f75c1cb17a63f082051473ef7759f5374c3faf717139fee85499"
+    },
+    {
+      "path": "support/judge_types.hpp",
+      "sha256": "35358ee92641f6c73c994c4cc087904e64a5cc38b7087b83ccf528678b427d0c"
+    },
+    {
+      "path": "support/runner_main.inc",
+      "sha256": "8b4bcd24a085ff34ef468f55351d46c815ed4c49c830563e2ffedf49ffab15cd"
+    },
+    {
+      "path": "support/probe-CMakeLists.txt",
+      "sha256": "1f9f3014d7705842d03eadfad3f338cbd520f4d13302907fce411e2aaefed7e4"
+    },
+    {
+      "path": "support/atx_correctness.sh",
+      "sha256": "b68002d14041b7bd66cec1c299a903d7ba8ebdba31f65436c858d9bc29438251"
+    },
+    {
+      "path": "support/atx_paired_probes.sh",
+      "sha256": "73168ae0b53ea0f73e60f38f077acef0c27fb5ffc96212676b19360713a834d2"
+    }
+  ],
+  "decision": "NEEDS_ONE_MORE_LOCAL",
+  "decision_history": [
+    {
+      "handoff": 1,
+      "decision": "NEEDS_ONE_MORE_LOCAL",
+      "reason": "LOAD_CONTAMINATED window1 probes"
+    },
+    {
+      "handoff": 2,
+      "decision": "NEEDS_ONE_MORE_LOCAL",
+      "reason": "polled for clean window; none found; source frozen; no re-probe"
+    },
+    {
+      "handoff": "3_r2",
+      "decision": "NEEDS_ONE_MORE_LOCAL + PROBES_PARKED",
+      "reason": "Main r2: stop polling; wait for Main-scheduled clean window"
+    },
+    {
+      "handoff": "4_dev4",
+      "decision": "NEEDS_ONE_MORE_LOCAL",
+      "reason": "Main unpark free-HBM device4 window: probes re-run; direction 2/4, noise 393pp \u2192 not inferable"
+    },
+    {
+      "handoff": "5_r4_idle",
+      "decision": "NEEDS_ONE_MORE_LOCAL + IDLE",
+      "reason": "Main r4: concurrent next6 on d4; serial device4; wait for exclusive slot"
+    },
+    {
+      "handoff": "6_L002",
+      "decision": "NEEDS_ONE_MORE_LOCAL",
+      "reason": "L002 controlled d4 complete; d4 released"
+    },
+    {
+      "handoff": "7_L002_idle",
+      "decision": "NEEDS_ONE_MORE_LOCAL + IDLE",
+      "reason": "Main L002 review ack; SCHED holds d4; ALIGN idle"
+    },
+    {
+      "handoff": "8_R2",
+      "decision": "NEEDS_ONE_MORE_LOCAL",
+      "reason": "R2 parent baseline gate fail all devices; no candidate"
+    },
+    {
+      "handoff": "9_R2_idle",
+      "decision": "NEEDS_ONE_MORE_LOCAL + MEASUREMENT_BLOCKED + IDLE",
+      "reason": "Main-2 R2 review ack; stay IDLE"
+    },
+    {
+      "handoff": "10_Q_ALIGN",
+      "decision": "NEEDS_ONE_MORE_LOCAL + MEASUREMENT_BLOCKED",
+      "reason": "Q-ALIGN 2/2 UNQUALIFIED; stop timing today"
+    },
+    {
+      "handoff": "11_Q_idle",
+      "decision": "NEEDS_ONE_MORE_LOCAL + MEASUREMENT_BLOCKED + IDLE",
+      "reason": "Main-2 Q-ALIGN review ack; stop timing today"
+    }
+  ],
+  "LOAD_QUALITY": "LOAD_CONTAMINATED",
+  "LOCAL_CONFIDENCE": "NONE_FOR_Q-ALIGN",
+  "window2_poll": {
+    "attempt": "window2_after_MAIN_NEEDS_ONE_MORE_LOCAL",
+    "poll_log": "support/load-poll-window2.log",
+    "poll_count_approx": 162,
+    "not_clean_count": 50,
+    "first_poll_ts": "2026-09-23T20:29:01+00:00",
+    "last_poll_ts": "2026-09-23T21:49:50+00:00",
+    "clean_window_found": false,
+    "persistent_observation": "VLLMWorker_TP on devices 0-3,5-6; VLLMEngineCor on 4; python on 7; HBM ~59-65 GiB / 65536 on all devices; AICore often 0 on idle devices but pressure processes never cleared. Main criterion (no VLLM/python pressure, HBM not saturated) never met.",
+    "action": "Did NOT re-run paired probes; would remain LOAD_CONTAMINATED. Window1 evidence preserved."
+  },
+  "source_frozen": true,
+  "probes_status": "STOP_TIMING_TODAY_MEASUREMENT_BLOCKED",
+  "parked_note": "PROBES PARKED per Main r2. Stop polling. No V002 / no source change / no CANNJudge.",
+  "DIRECTIONAL_CONSISTENCY": "3/4",
+  "MEDIAN_DELTA": 19.22,
+  "PROBE_DELTAS": [
+    7.684,
+    93.766,
+    -12.102,
+    7.23
+  ],
+  "window_dev4": {
+    "device_id": 4,
+    "deltas": [
+      107.705,
+      345.628,
+      -32.809,
+      -47.146
+    ],
+    "directional": "2/4",
+    "median_delta": 18.938,
+    "noise_margin": 392.774,
+    "load_quality": "RESIDUAL_VLLM_ACCEPTED_DEVICE4"
+  },
+  "device4_policy": {
+    "serial": true,
+    "preflight": "npu-smi info -t proc-mem must show NO other next6 probe process (atx_|timing_probe|batch_|sched_|async_|ub_|reduce_) on target device",
+    "align_status": "IDLE (SCHED holds d4; L002 released; acked)"
+  },
+  "WORST_DELTA": 93.766,
+  "lease_L002": {
+    "device_id": 4,
+    "load_quality": "MODERATE",
+    "directional": "3/4",
+    "median_delta": 19.22,
+    "parent_times": [
+      80.686,
+      87.886,
+      131.374,
+      89.216
+    ],
+    "candidate_times": [
+      86.886,
+      170.293,
+      115.475,
+      95.666
+    ],
+    "parent_jitter": {
+      "cv": 0.205,
+      "std_us": 19.9439,
+      "spread_us": 50.688,
+      "mean_us": 97.2905,
+      "median_us": 88.551,
+      "min_us": 80.686,
+      "max_us": 131.374
+    },
+    "decision": "NEEDS_ONE_MORE_LOCAL"
+  },
+  "R2": {
+    "lease": "R2-ALIGN",
+    "candidate_run": false,
+    "reason": "Parent baseline gate UNSTABLE on d4 then d5 then d6; candidate not started per Main step3",
+    "baselines": {
+      "d4": {
+        "gate": "UNSTABLE",
+        "cv": 0.321,
+        "range_over_median": 0.8148,
+        "times_us": [
+          176.005,
+          125.541,
+          153.423,
+          146.952,
+          70.106,
+          181.124,
+          83.496,
+          83.866
+        ],
+        "median_us": 136.2465
+      },
+      "d5": {
+        "gate": "UNSTABLE",
+        "cv": 0.2799,
+        "range_over_median": 0.7664,
+        "times_us": [
+          111.128,
+          160.541,
+          150.61,
+          68.395,
+          159.091,
+          104.516,
+          76.915,
+          129.328
+        ],
+        "median_us": 120.228
+      },
+      "d6": {
+        "gate": "UNSTABLE",
+        "cv": 0.2659,
+        "range_over_median": 0.8494,
+        "times_us": [
+          145.339,
+          122.147,
+          70.434,
+          85.835,
+          99.216,
+          118.487,
+          172.63,
+          145.868
+        ],
+        "median_us": 120.317
+      }
+    },
+    "gate_rule": "UNSTABLE if CV>0.25 or range/median>0.5",
+    "preflight_d4": "PASS (AICORE=0 FREE_HBM=6349 residual VLLMEngineCor only)",
+    "devices_released": [
+      4,
+      5,
+      6
+    ],
+    "prior_contaminated_rounds": [
+      "window1 LOAD_CONTAMINATED",
+      "window-dev4 DIR 2/4 noise 393pp"
+    ],
+    "load_quality": "LOAD_CONTAMINATED",
+    "decision": "NEEDS_ONE_MORE_LOCAL",
+    "measurement_note": "MEASUREMENT notes: parent-only baselines drifted on all secondary devices (d4 cv=0.321 rom=0.815; d5 cv=0.280 rom=0.766; d6 cv=0.266 rom=0.849). Candidate not run. Architecture not failed. If Main counts window1 + this R2 gate as two fully contaminated rounds, classify MEASUREMENT_BLOCKED per Main rule."
+  },
+  "measurement_status": "MEASUREMENT_BLOCKED",
+  "architecture_status": "NOT_FAILED",
+  "Q_ALIGN": {
+    "attempts": 2,
+    "devices": [
+      6,
+      4
+    ],
+    "qualified": false,
+    "candidate_run": false,
+    "blocks": {
+      "d4-precheck-A.json": {
+        "cv": 0.2179,
+        "max_min_ratio": 1.8587,
+        "qualified_block": false,
+        "times_us": [
+          116.416,
+          73.724,
+          92.825,
+          71.344,
+          74.704,
+          62.633
+        ]
+      },
+      "d4-precheck-B.json": {
+        "cv": 0.4635,
+        "max_min_ratio": 3.5554,
+        "qualified_block": false,
+        "times_us": [
+          71.453,
+          76.983,
+          254.042,
+          241.302,
+          143.076,
+          139.267
+        ]
+      },
+      "d6-precheck-A.json": {
+        "cv": 0.6665,
+        "max_min_ratio": 5.0945,
+        "qualified_block": false,
+        "times_us": [
+          354.193,
+          130.068,
+          86.435,
+          127.878,
+          69.524,
+          98.366
+        ]
+      },
+      "d6-precheck-B.json": {
+        "cv": 0.1708,
+        "max_min_ratio": 1.5007,
+        "qualified_block": false,
+        "times_us": [
+          89.795,
+          134.518,
+          98.805,
+          128.337,
+          89.635,
+          96.826
+        ]
+      }
+    },
+    "decision": "NEEDS_ONE_MORE_LOCAL + MEASUREMENT_BLOCKED"
+  }
+}

@@ -1,0 +1,19 @@
+BOUND_ACTION=B
+STATUS=NEEDS_ONE_MORE_LOCAL
+DATE=2026-09-24
+
+The compiler-managed probe path was selected as the bounded next action but was not completed in this turn. No candidate source, main.asc, device_main.asc, candidate CMakeLists.txt, or wrapper was edited.
+
+Required future probe shape: one ASC translation unit that includes this Route's V001 main.asc, allocates fixed FP32 rows=1 width=1024 buffers without std::vector, calls the existing run_kernel wrapper, copies output, compares CPU reference, and exits. It must be built after sourcing CANN 8.5.0.alpha002 set_env.sh with the ASC CMake package.
+
+The attempted native ACL launcher is retained only as unresolved diagnostic evidence. Its exact compile command and output are in correctness-smoke.log. V001 device artifact SHA-256=4977d915d26a6fcfff35db274c051064b2652e53718d649dcd46d8098ec3d2d7. The exact direct-parent control was separately compiled and linked from parent source SHA-256=ba1167079cf54277506e4b4fa192a91a036a6b8d992650e8532fb182c555bda0, artifact SHA-256=9c21d40b0aa1d3f88a1136a4ad97ba0918422a5e45dc2dc06f64c112aeda18ff.
+
+Both native ACL launches used the same FP32 rows=1 width=1024 blocks=1 input setup and returned aclrtSynchronizeStream ACL error 507035 with an AIV vector exception and D-cache/UB response error. This shared result does not isolate the runner ABI from inherited kernel/runtime/device state and is not a V001 correctness verdict.
+
+STOP: no timing, no source fix, no V002, no scheduler change, no Main push.
+
+COMPILER-MANAGED ATTEMPT 01 (2026-09-24): ASC CMake configured successfully with CANN 8.5.0.alpha002, but candidate and parent compilation both exited 2 because the transferred remote source directory was flattened and the relative includes ../../main.asc and ../../parent_main.asc were unavailable. No runner executable was produced and no NPU launch occurred. Full configure/build output and exact compiler commands are retained in logs/compiler-managed-attempt-01/.
+
+COMPILER-MANAGED ATTEMPT 02 (2026-09-24): The source tree was staged with the correct V001-relative layout; ASC CMake configuration passed for CANN 8.5.0.alpha002 / Ascend910B3 / dav-2201, and both targets reached the route wrapper call. Candidate and parent compilation then exited 2 because ASC rejects reinterpret_cast from host uint8_t* to address-space-qualified GM_ADDR. No executable or NPU launch was produced. Full configure/build output and exact compiler commands are retained in logs/compiler-managed-attempt-02/.
+
+COMPILER-MANAGED ATTEMPT 03 (2026-09-24): Replaced all five probe arguments with the verified C-style `(GM_ADDR)device_ptr` form. ASC configure exited 0; candidate and exact-parent ASC source compilation completed, then both executable links exited 2 with `ld.lld: error: unable to find library -lstdc++`. Candidate and parent runners were not invoked (script run sentinels 125); no NPU synchronization or CPU comparison occurred. Full configure, compiler/link commands, outputs, summary, remote command result, and explicit run-not-executed records are retained in logs/compiler-managed-attempt-03/. Candidate kernel SHA remains 61223a486cca4c54e099f760e9f48a4cd2fbedb2645967b936fe80d2785e1e1a; exact parent SHA remains ba1167079cf54277506e4b4fa192a91a036a6b8d992650e8532fb182c555bda0. Decision remains NEEDS_ONE_MORE_LOCAL.

@@ -1,0 +1,1798 @@
+{
+  "route": "ASYNC-TRIPLE-X",
+  "revision": "V001",
+  "direct_parent": "ASYNC-TRIPLE-X-SEED",
+  "parent_source_sha": "f20da79c7086483c7cf0bddad630bdea92a219992a5f061c9fd3a6b8edbc3572",
+  "parent_score": "n/a",
+  "single_hypothesis": "With reduction, parameter policy, dtype strategy, and core mapping unchanged from the R013-derived SEED, restructure the output-phase loop so MTE3 store of tile N-1 is issued before Vector compute of tile N while MTE2 prefetch of tile N+1 remains issue-ahead — forming true triple overlap MTE2(N+1) / V(N) / MTE3(N-1).",
+  "context_class": "HISTORICAL_DERIVED",
+  "candidate_source_sha": "2defc6c270e898c00aa151dbef00f68c72ccf77f33e54db18c75b8bf4f4b4f9c",
+  "compile": {
+    "status": "PASS",
+    "host": "cann-server3",
+    "toolchain": "Ascend 910B3 / CANN 8.5.0.alpha002 / bisheng 15.0.5",
+    "log_seed": "phase4/workspaces/ASYNC-TRIPLE-X/compile-seed-server3.log",
+    "log_v001": "phase4/workspaces/ASYNC-TRIPLE-X/compile-v001-server3.log",
+    "targets": [
+      "async_triple_x_seed_submission",
+      "async_triple_x_seed_device",
+      "async_triple_x_v001_submission",
+      "async_triple_x_v001_device"
+    ]
+  },
+  "link": {
+    "status": "PASS",
+    "artifacts": [
+      "seed-submission.alink",
+      "seed-device.alink",
+      "v001-submission.alink",
+      "v001-device.alink"
+    ]
+  },
+  "probe_build": {
+    "status": "PASS",
+    "executables": [
+      "async_triple_x_seed_probe",
+      "async_triple_x_v001_probe"
+    ],
+    "log": "phase4/workspaces/ASYNC-TRIPLE-X/compile-probe-server3.log"
+  },
+  "correctness": {
+    "status": "PASS",
+    "max_abs_all_pairs": 3.79046958e-07,
+    "standard": [
+      {
+        "pair": 1,
+        "rows": 8,
+        "width": 1024,
+        "device": 5,
+        "max_abs": 3.79046958e-07,
+        "status": "PASS"
+      },
+      {
+        "pair": 2,
+        "rows": 8,
+        "width": 1024,
+        "device": 5,
+        "max_abs": 3.79046958e-07,
+        "status": "PASS"
+      },
+      {
+        "pair": 3,
+        "rows": 8,
+        "width": 1024,
+        "device": 5,
+        "max_abs": 3.79046958e-07,
+        "status": "PASS"
+      },
+      {
+        "pair": 4,
+        "rows": 8,
+        "width": 1024,
+        "device": 5,
+        "max_abs": 3.79046958e-07,
+        "status": "PASS"
+      }
+    ],
+    "wide": [
+      {
+        "pair": 1,
+        "rows": 2,
+        "width": 8192,
+        "device": 5,
+        "max_abs": 3.27627161e-07,
+        "status": "PASS"
+      },
+      {
+        "pair": 2,
+        "rows": 2,
+        "width": 8192,
+        "device": 5,
+        "max_abs": 3.27627161e-07,
+        "status": "PASS"
+      }
+    ],
+    "note": "SEED and V001 both PASS vs host reference on every pair (identical max_abs)."
+  },
+  "local_probes": {
+    "device_id": 5,
+    "standard_shape": "rows=8 width=1024 blocks=8",
+    "wide_shape": "rows=2 width=8192 blocks=2",
+    "window_utc": "2026-09-23T21:05:06Z .. 2026-09-23T21:05:49Z (standard); wide at 21:06:45Z and 21:06:57Z",
+    "pairs": [
+      {
+        "pair": 1,
+        "timestamp_utc": "2026-09-23T21:05:07Z",
+        "seed_us": 208.132722,
+        "v001_us": 174.021818,
+        "delta_us": -34.111,
+        "delta_pct": -16.39,
+        "max_abs": 3.79046958e-07,
+        "status": "LOAD_CONTAMINATED"
+      },
+      {
+        "pair": 2,
+        "timestamp_utc": "2026-09-23T21:05:18Z",
+        "seed_us": 148.561814,
+        "v001_us": 202.232729,
+        "delta_us": 53.671,
+        "delta_pct": 36.13,
+        "max_abs": 3.79046958e-07,
+        "status": "LOAD_CONTAMINATED"
+      },
+      {
+        "pair": 3,
+        "timestamp_utc": "2026-09-23T21:05:28Z",
+        "seed_us": 283.478173,
+        "v001_us": 176.421816,
+        "delta_us": -107.056,
+        "delta_pct": -37.77,
+        "max_abs": 3.79046958e-07,
+        "status": "LOAD_CONTAMINATED"
+      },
+      {
+        "pair": 4,
+        "timestamp_utc": "2026-09-23T21:05:38Z",
+        "seed_us": 131.656365,
+        "v001_us": 122.821819,
+        "delta_us": -8.835,
+        "delta_pct": -6.71,
+        "max_abs": 3.79046958e-07,
+        "status": "LOAD_CONTAMINATED"
+      }
+    ],
+    "wide_pairs": [
+      {
+        "pair": 1,
+        "timestamp_utc": "2026-09-23T21:06:45Z",
+        "seed_us": 198.881821,
+        "v001_us": 180.063638,
+        "delta_us": -18.818,
+        "delta_pct": -9.46,
+        "max_abs": 3.27627161e-07,
+        "status": "LOAD_CONTAMINATED"
+      },
+      {
+        "pair": 2,
+        "timestamp_utc": "2026-09-23T21:06:57Z",
+        "seed_us": 180.727276,
+        "v001_us": 156.707276,
+        "delta_us": -24.02,
+        "delta_pct": -13.29,
+        "max_abs": 3.27627161e-07,
+        "status": "LOAD_CONTAMINATED"
+      }
+    ],
+    "probe_deltas": {
+      "standard_delta_us": [
+        -34.111,
+        53.671,
+        -107.056,
+        -8.835
+      ],
+      "standard_delta_pct": [
+        -16.39,
+        36.13,
+        -37.77,
+        -6.71
+      ],
+      "wide_delta_us": [
+        -18.818,
+        -24.02
+      ],
+      "wide_delta_pct": [
+        -9.46,
+        -13.29
+      ]
+    },
+    "median_delta_us": -21.473,
+    "median_delta_pct": -11.55,
+    "worst_delta_us": 53.671,
+    "worst_delta_pct": 36.13,
+    "delta_stdev_us": 66.491,
+    "seed_us": [
+      208.133,
+      148.562,
+      283.478,
+      131.656
+    ],
+    "v001_us": [
+      174.022,
+      202.233,
+      176.422,
+      122.822
+    ],
+    "seed_cv_pct": 35.6,
+    "v001_cv_pct": 19.7,
+    "directional_consistency": "5/6 pairs favor V001 (lower device_us); 1/6 regress; standard-only 3/4 favor V001; wide-only 2/2 favor V001",
+    "noise_margin_us": 75.911,
+    "noise_margin_note": "|median_delta|=21.473 us < noise_margin=75.911 us (delta_stdev=66.491, half seed-range=75.911); seed CV=35.6% — signal not separable from noise",
+    "raw_file": "support/results/paired-raw.txt"
+  },
+  "load_quality": {
+    "classification": "LOAD_CONTAMINATED",
+    "observation": "Probe snapshots 2026-09-23T21:05Z-21:06Z: device 5 AICore reads 0% at snapshot instants but VLLMWorker_TP PID 89602 (56354 MB) is resident on device 5; devices 0-3 show AICore ~31-33% with VLLMWorker_TP; device 4 has VLLMEngineCor; HBM ~59.9k-65.5k/65536 pages on all devices; host runs vllm serve for Qwen3.8-27B-w8a8 (TP4 and TP2).",
+    "timing_interpretation": "Standard-pair seed times span 131.7-283.5 us (CV 35.6%); delta_stdev 66.5 us exceeds |median_delta| 21.5 us; one standard pair shows +36% regression while three show improvement. Do not claim a stable performance gain from this window."
+  },
+  "handoff_fields": {
+    "CORRECTNESS": "PASS",
+    "LOAD_QUALITY": "LOAD_CONTAMINATED",
+    "PROBE_DELTAS": {
+      "standard_us": [
+        -34.111,
+        53.671,
+        -107.056,
+        -8.835
+      ],
+      "standard_pct": [
+        -16.39,
+        36.13,
+        -37.77,
+        -6.71
+      ],
+      "wide_us": [
+        -18.818,
+        -24.02
+      ],
+      "wide_pct": [
+        -9.46,
+        -13.29
+      ]
+    },
+    "DIRECTIONAL_CONSISTENCY": "5/6 favor V001; standard 3/4, wide 2/2; one standard-pair regression (+36.13%)",
+    "MEDIAN_DELTA_us": -21.473,
+    "MEDIAN_DELTA_pct": -11.55,
+    "WORST_DELTA_us": 53.671,
+    "WORST_DELTA_pct": 36.13,
+    "NOISE_MARGIN_us": 75.911,
+    "LOCAL_CONFIDENCE": "LOW"
+  },
+  "decision": "NEEDS_ONE_MORE_LOCAL",
+  "next_candidate_hypothesis": "No new hypothesis. Repeat the same SEED-vs-V001 paired probes (same source, same shapes, device 5) only after Main confirms a clearer load window; do not alter the MTE3-only change before Main review.",
+  "cleanup": "None; no files or remote objects deleted. Probes stopped per Main; source frozen at 2defc6c270e898c00aa151dbef00f68c72ccf77f33e54db18c75b8bf4f4b4f9c.",
+  "artifacts": {
+    "submission": "phase4/local/ASYNC-TRIPLE-X/V001/submission.asc",
+    "diff": "phase4/local/ASYNC-TRIPLE-X/V001/diff.patch",
+    "source_meta": "phase4/local/ASYNC-TRIPLE-X/V001/source-meta.json",
+    "results": "phase4/local/ASYNC-TRIPLE-X/V001/support/results/",
+    "precode": "phase4/workspaces/ASYNC-TRIPLE-X/PRECODE.md",
+    "compile_logs": [
+      "phase4/workspaces/ASYNC-TRIPLE-X/configure-v001-server3.log",
+      "phase4/workspaces/ASYNC-TRIPLE-X/compile-v001-server3.log",
+      "phase4/workspaces/ASYNC-TRIPLE-X/compile-seed-server3.log",
+      "phase4/workspaces/ASYNC-TRIPLE-X/compile-probe-server3.log"
+    ]
+  },
+  "main_review": {
+    "received_utc": "2026-09-23T21:59:59Z",
+    "single_change_audit": "PASS",
+    "correctness": "PASS",
+    "load": "contaminated noise>signal",
+    "decision": "NEEDS_ONE_MORE_LOCAL + PROBES PARKED",
+    "frozen_source_sha256": "2defc6c270e898c00aa151dbef00f68c72ccf77f33e54db18c75b8bf4f4b4f9c",
+    "actions": [
+      "Stop probe polls",
+      "No V002",
+      "No online",
+      "No CANNJudge",
+      "Wait for Main-scheduled clean window"
+    ]
+  },
+  "probes": "IDLE",
+  "probes_set2": {
+    "device": 4,
+    "window_utc": "2026-09-24T04:05:06Z .. 2026-09-24T04:06:22Z",
+    "warmup": 3,
+    "repeats": 11,
+    "correctness_recheck": "=== correctness recheck dev=4 ===\nCORRECTNESS PASS rows=8 width=1024 blocks=8 device=4 max_abs=3.79046958e-07\nCORRECTNESS PASS rows=8 width=1024 blocks=8 device=4 max_abs=3.79046958e-07\nCORRECTNESS PASS rows=2 width=8192 blocks=2 device=4 max_abs=3.27627161e-07\nCORRECTNESS PASS rows=2 width=8192 blocks=2 device=4 max_abs=3.27627161e-07",
+    "pairs": [
+      {
+        "pair": 1,
+        "ts": "2026-09-24T04:05:24Z",
+        "seed_us": 111.776363,
+        "v001_us": 117.823633,
+        "delta_us": 6.047,
+        "delta_pct": 5.41,
+        "max_abs": 3.79046958e-07
+      },
+      {
+        "pair": 2,
+        "ts": "2026-09-24T04:05:33Z",
+        "seed_us": 183.774536,
+        "v001_us": 112.707268,
+        "delta_us": -71.067,
+        "delta_pct": -38.67,
+        "max_abs": 3.79046958e-07
+      },
+      {
+        "pair": 3,
+        "ts": "2026-09-24T04:05:43Z",
+        "seed_us": 73.452727,
+        "v001_us": 157.600002,
+        "delta_us": 84.147,
+        "delta_pct": 114.56,
+        "max_abs": 3.79046958e-07
+      },
+      {
+        "pair": 4,
+        "ts": "2026-09-24T04:05:52Z",
+        "seed_us": 196.623629,
+        "v001_us": 193.976359,
+        "delta_us": -2.647,
+        "delta_pct": -1.35,
+        "max_abs": 3.79046958e-07
+      }
+    ],
+    "wide_pairs": [
+      {
+        "pair": 1,
+        "ts": "2026-09-24T04:06:01Z",
+        "seed_us": 219.525446,
+        "v001_us": 207.107262,
+        "delta_us": -12.418,
+        "delta_pct": -5.66,
+        "max_abs": 3.27627161e-07
+      },
+      {
+        "pair": 2,
+        "ts": "2026-09-24T04:06:12Z",
+        "seed_us": 172.830907,
+        "v001_us": 215.825449,
+        "delta_us": 42.995,
+        "delta_pct": 24.88,
+        "max_abs": 3.27627161e-07
+      }
+    ],
+    "probe_deltas": {
+      "standard_us": [
+        6.047,
+        -71.067,
+        84.147,
+        -2.647
+      ],
+      "standard_pct": [
+        5.41,
+        -38.67,
+        114.56,
+        -1.35
+      ],
+      "wide_us": [
+        -12.418,
+        42.995
+      ],
+      "wide_pct": [
+        -5.66,
+        24.88
+      ]
+    },
+    "median_delta_us": 1.7,
+    "median_delta_pct": 2.03,
+    "worst_delta_us": 84.147,
+    "worst_delta_pct": 114.56,
+    "worst_is": "regression (positive = V001 slower)",
+    "delta_stdev_us": 63.527,
+    "seed_us": [
+      111.776363,
+      183.774536,
+      73.452727,
+      196.623629
+    ],
+    "v001_us": [
+      117.823633,
+      112.707268,
+      157.600002,
+      193.976359
+    ],
+    "seed_cv_pct": 41.5,
+    "v001_cv_pct": 26.1,
+    "directional_consistency": "3/6 favor V001; standard 2/4, wide 1/2; regress 3/6",
+    "noise_margin_us": 63.527,
+    "noise_margin_note": "|median_delta|=1.700 vs noise=63.527 (delta_stdev=63.527, half seed-range=61.585); seed CV=41.5%",
+    "load_quality": {
+      "classification": "DEV4_FREE_WINDOW_VLLM_RESIDENT",
+      "devices_survey": [
+        {
+          "dev": 0,
+          "aic": 32,
+          "hbm_used": 59956,
+          "free_pages": 5580
+        },
+        {
+          "dev": 1,
+          "aic": 32,
+          "hbm_used": 60006,
+          "free_pages": 5530
+        },
+        {
+          "dev": 2,
+          "aic": 33,
+          "hbm_used": 59949,
+          "free_pages": 5587
+        },
+        {
+          "dev": 3,
+          "aic": 32,
+          "hbm_used": 59951,
+          "free_pages": 5585
+        },
+        {
+          "dev": 4,
+          "aic": 0,
+          "hbm_used": 59242,
+          "free_pages": 6294
+        },
+        {
+          "dev": 5,
+          "aic": 0,
+          "hbm_used": 59877,
+          "free_pages": 5659
+        },
+        {
+          "dev": 6,
+          "aic": 0,
+          "hbm_used": 59875,
+          "free_pages": 5661
+        },
+        {
+          "dev": 7,
+          "aic": 0,
+          "hbm_used": 65267,
+          "free_pages": 269
+        }
+      ],
+      "dev4_processes": [
+        {
+          "pid": "1362671",
+          "name": "reduce_invscale",
+          "mem_mb": 104
+        },
+        {
+          "pid": "2999855",
+          "name": "VLLMEngineCor",
+          "mem_mb": 55664
+        }
+      ],
+      "concurrent_hits_in_snapshots": [
+        {
+          "load-window": [
+            "reduce_invscale",
+            "VLLMEngineCor"
+          ]
+        },
+        {
+          "pair-1": [
+            "VLLMEngineCor"
+          ]
+        },
+        {
+          "pair-2": [
+            "VLLMEngineCor"
+          ]
+        },
+        {
+          "pair-3": [
+            "VLLMEngineCor"
+          ]
+        },
+        {
+          "pair-4": [
+            "VLLMEngineCor"
+          ]
+        },
+        {
+          "wide-pair-1": [
+            "VLLMEngineCor"
+          ]
+        },
+        {
+          "wide-pair-2": [
+            "VLLMEngineCor"
+          ]
+        }
+      ],
+      "note": "dev4 free HBM 6294/65536 pages, AICore 0%; VLLMEngineCor residual 55664MB (expected). Non-VLLM process on d4 during window: ['reduce_invscale']. Per Main: residual VLLM HBM recorded as DEV4_FREE_WINDOW_VLLM_RESIDENT.",
+      "raw_file": "support/results-set2/",
+      "concurrent_non_vllm_on_d4": [
+        [
+          "4",
+          "1362671",
+          "reduce_invscale",
+          "104"
+        ]
+      ],
+      "serial_slot_note": "Set-2 window ended 2026-09-24T04:06:22Z before Main serial-d4 message 04:06:31Z. Post-set preflight: no async_triple procs. reduce_invscale present on d4 in load-window snapshot (possible concurrent next6 probe)."
+    },
+    "set1_reference": {
+      "median_us": -21.473,
+      "median_pct": -11.55,
+      "seed_cv_pct": 35.6,
+      "status": "LOAD_CONTAMINATED (preserved under support/results/)"
+    }
+  },
+  "handoff_fields_set2": {
+    "CORRECTNESS": "PASS (recheck on device=4: standard 8x1024 and wide 2x8192; max_abs identical to set1)",
+    "LOAD_QUALITY": "DEV4_FREE_WINDOW_VLLM_RESIDENT; d4 AICore 0%, free 6294/65536 pages; VLLMEngineCor residual; snapshot also shows ['reduce_invscale'] on d4",
+    "PROBE_DELTAS": {
+      "set2_standard_us": [
+        6.047,
+        -71.067,
+        84.147,
+        -2.647
+      ],
+      "set2_standard_pct": [
+        5.41,
+        -38.67,
+        114.56,
+        -1.35
+      ],
+      "set2_wide_us": [
+        -12.418,
+        42.995
+      ],
+      "set2_wide_pct": [
+        -5.66,
+        24.88
+      ],
+      "set1_preserved_under": "support/results/"
+    },
+    "DIRECTIONAL_CONSISTENCY": "3/6 favor V001; standard 2/4, wide 1/2; regress 3/6",
+    "MEDIAN_DELTA": "1.7 us (2.03%)",
+    "WORST_DELTA": "84.147 us (114.56%)",
+    "NOISE_MARGIN": "63.527 us (delta_stdev=63.527, half seed-range=61.585; seed CV=41.5%)",
+    "LOCAL_CONFIDENCE": "LOW"
+  },
+  "main_coordination": {
+    "received_utc": "2026-09-24T04:06:31Z",
+    "stage_replied": "done",
+    "device": 4,
+    "note": "Set-2 on d4 finished before serial-slot message; no further sets started; no other next6 probe was active in our run window."
+  },
+  "load_quality_set2": {
+    "classification": "DEV4_FREE_WINDOW_VLLM_RESIDENT",
+    "devices_survey": [],
+    "dev4_processes": [
+      {
+        "pid": "1362671",
+        "name": "reduce_invscale",
+        "mem_mb": 104
+      },
+      {
+        "pid": "2999855",
+        "name": "VLLMEngineCor",
+        "mem_mb": 55664
+      }
+    ],
+    "concurrent_hits_in_snapshots": [
+      {
+        "load-window": [
+          "reduce_invscale",
+          "VLLMEngineCor"
+        ]
+      },
+      {
+        "pair-1": [
+          "VLLMEngineCor"
+        ]
+      },
+      {
+        "pair-2": [
+          "VLLMEngineCor"
+        ]
+      },
+      {
+        "pair-3": [
+          "VLLMEngineCor"
+        ]
+      },
+      {
+        "pair-4": [
+          "VLLMEngineCor"
+        ]
+      },
+      {
+        "wide-pair-1": [
+          "VLLMEngineCor"
+        ]
+      },
+      {
+        "wide-pair-2": [
+          "VLLMEngineCor"
+        ]
+      }
+    ],
+    "note": "Main free-HBM window: dev4 AICore 0%, free HBM pages 65536-hbm; VLLMEngineCor residual expected; residual VLLM HBM recorded as requested. Timing still high-variance (seed CV 41.5%).",
+    "raw_file": "support/results-set2/"
+  },
+  "main_review_set2": {
+    "received_utc": "2026-09-24T04:09:19Z",
+    "dir": "3/6",
+    "median_pct": 2.03,
+    "seed_cv_pct": 41.5,
+    "concurrent": "reduce_invscale on d4",
+    "decision": "NEEDS_ONE_MORE_LOCAL",
+    "sha_frozen": "2defc6c270e898c00aa151dbef00f68c72ccf77f33e54db18c75b8bf4f4b4f9c",
+    "actions": [
+      "No V002",
+      "No CANNJudge",
+      "IDLE_AWAIT_EXCLUSIVE_DEV4",
+      "Do not probe"
+    ]
+  },
+  "worker_status": "IDLE",
+  "lease_L006_controlled_dev4": {
+    "lease": "L006",
+    "owner": "MAIN-2",
+    "sha256": "2defc6c270e898c00aa151dbef00f68c72ccf77f33e54db18c75b8bf4f4b4f9c",
+    "device": 4,
+    "window_utc": "2026-09-24T04:32:16Z .. 2026-09-24T04:33:27Z",
+    "schedule": "PC,PC,CP,CP (P=SEED parent, C=V001 candidate)",
+    "warmup": 3,
+    "repeats": 11,
+    "path_confirmation": {
+      "V001_order_output_loop": [
+        "L274 CopyInOutputData(next)  # MTE2 prefetch N+1",
+        "L282 CopyOut(prev)           # MTE3 store N-1 (if tile>=1)",
+        "L284 ComputeOutputTile(N)    # Vector compute N",
+        "L290 CopyOut(last)           # tail flush after loop"
+      ],
+      "SEED_order_output_loop": [
+        "L273 CopyInOutputData(next)  # MTE2 prefetch N+1 only",
+        "L275 ComputeOutputTile(N)",
+        "L276 CopyOut(tile N)         # MTE3 same-iteration after compute — NOT stage N-1"
+      ],
+      "is_true_triple": true,
+      "not_mere_double_buffer": true,
+      "note": "V001 issues MTE3 store of N-1 BEFORE Vector compute of N while MTE2 prefetch of N+1 is already issue-ahead — not MTE2-only overlap."
+    },
+    "preflight": {
+      "timestamp_utc": "2026-09-24T04:31:31Z",
+      "device": 4,
+      "free_hbm_pages": 6350,
+      "aicore": 0,
+      "visible_processes_d4": [
+        [
+          "2999855",
+          "VLLMEngineCor"
+        ]
+      ],
+      "other_next6_probe": false,
+      "result": "PREFLIGHT_OK",
+      "file": "preflight.npu-smi.txt"
+    },
+    "correctness": "=== correctness dev=4 ===\nCORRECTNESS PASS rows=8 width=1024 blocks=8 device=4 max_abs=3.79046958e-07\nCORRECTNESS PASS rows=8 width=1024 blocks=8 device=4 max_abs=3.79046958e-07",
+    "PARENT_TIMES": [
+      104.77091,
+      157.918182,
+      130.850911,
+      77.939998
+    ],
+    "CANDIDATE_TIMES": [
+      250.223637,
+      152.905453,
+      114.392725,
+      112.961823
+    ],
+    "PARENT_JITTER": {
+      "stdev_us": 34.343,
+      "cv_pct": 29.1,
+      "range_us": 79.978,
+      "mean_us": 117.87,
+      "median_us": 117.811
+    },
+    "CANDIDATE_JITTER": {
+      "stdev_us": 64.448,
+      "cv_pct": 40.9,
+      "mean_us": 157.621
+    },
+    "pairs": [
+      {
+        "pair": 1,
+        "order": "seed,v001",
+        "ts": "2026-09-24T04:32:27Z",
+        "parent_us": 104.77091,
+        "candidate_us": 250.223637,
+        "delta_us": 145.453,
+        "delta_pct": 138.83,
+        "max_abs": 3.79046958e-07,
+        "status": "OK"
+      },
+      {
+        "pair": 2,
+        "order": "seed,v001",
+        "ts": "2026-09-24T04:32:37Z",
+        "parent_us": 157.918182,
+        "candidate_us": 152.905453,
+        "delta_us": -5.013,
+        "delta_pct": -3.17,
+        "max_abs": 3.79046958e-07,
+        "status": "OK"
+      },
+      {
+        "pair": 3,
+        "order": "v001,seed",
+        "ts": "2026-09-24T04:32:47Z",
+        "parent_us": 130.850911,
+        "candidate_us": 114.392725,
+        "delta_us": -16.458,
+        "delta_pct": -12.58,
+        "max_abs": 3.79046958e-07,
+        "status": "OK"
+      },
+      {
+        "pair": 4,
+        "order": "v001,seed",
+        "ts": "2026-09-24T04:32:57Z",
+        "parent_us": 77.939998,
+        "candidate_us": 112.961823,
+        "delta_us": 35.022,
+        "delta_pct": 44.93,
+        "max_abs": 3.79046958e-07,
+        "status": "OK"
+      }
+    ],
+    "wide_pairs": [
+      {
+        "pair": 1,
+        "order": "v001,seed",
+        "ts": "2026-09-24T04:33:06Z",
+        "parent_us": 194.598176,
+        "candidate_us": 161.98,
+        "delta_us": -32.618,
+        "delta_pct": -16.76,
+        "max_abs": 3.27627161e-07
+      },
+      {
+        "pair": 2,
+        "order": "seed,v001",
+        "ts": "2026-09-24T04:33:16Z",
+        "parent_us": 166.819995,
+        "candidate_us": 275.892735,
+        "delta_us": 109.073,
+        "delta_pct": 65.38,
+        "max_abs": 3.27627161e-07
+      }
+    ],
+    "PROBE_DELTAS": {
+      "standard_us": [
+        145.453,
+        -5.013,
+        -16.458,
+        35.022
+      ],
+      "standard_pct": [
+        138.83,
+        -3.17,
+        -12.58,
+        44.93
+      ],
+      "wide_us": [
+        -32.618,
+        109.073
+      ],
+      "wide_pct": [
+        -16.76,
+        65.38
+      ]
+    },
+    "MEDIAN_DELTA": 15.005,
+    "MEDIAN_DELTA_pct": 20.88,
+    "WORST_DELTA": 145.453,
+    "WORST_DELTA_pct": 138.83,
+    "DIRECTIONAL_CONSISTENCY": "3/6",
+    "LOAD_QUALITY": "LOAD_CONTAMINATED",
+    "LOAD_QUALITY_BASIS": "from parent jitter only: PARENT stdev=34.343us cv=29.1% range=79.978us",
+    "NOISE_MARGIN": 73.843,
+    "LOCAL_CONFIDENCE": "LOW",
+    "decision": "NEEDS_ONE_MORE_LOCAL",
+    "postlease": "POSTLEASE 2026-09-24T04:34:19Z\nlease=L006 released by ASYNC-TRIPLE-X after controlled remeasure\nno async_triple procs (released)\n| 4     910B3               | OK            | 92.7        43                0    / 0             |\n| 4       0                 | 2999855       | VLLMEngineCor            | 55664                   |\n| 4       0                 | 2999855       | VLLMEngineCor            | 55664                   |\nd4_procs [('2999855', 'VLLMEngineCor')]\ntimestamp 2026-09-24T04:34:23.239289Z"
+  },
+  "handoff_fields_L006": {
+    "CORRECTNESS": "PASS (d4 recheck 8x1024 seed+v001; max_abs=3.79e-07)",
+    "PATH_CONFIRMATION": "TRUE_TRIPLE: MTE2 prefetch N+1 + MTE3 store N-1 before Vector compute N; SEED is two-stage only (MTE3 after compute same-iter)",
+    "LOAD_QUALITY": "LOAD_CONTAMINATED",
+    "PROBE_DELTAS": {
+      "standard_us": [
+        145.453,
+        -5.013,
+        -16.458,
+        35.022
+      ],
+      "standard_pct": [
+        138.83,
+        -3.17,
+        -12.58,
+        44.93
+      ],
+      "wide_us": [
+        -32.618,
+        109.073
+      ],
+      "wide_pct": [
+        -16.76,
+        65.38
+      ]
+    },
+    "DIRECTIONAL_CONSISTENCY": "3/6",
+    "MEDIAN_DELTA": "15.005 us (20.88%)",
+    "WORST_DELTA": "145.453 us (138.83%)",
+    "PARENT_JITTER": {
+      "stdev_us": 34.343,
+      "cv_pct": 29.1,
+      "range_us": 79.978,
+      "mean_us": 117.87,
+      "median_us": 117.811
+    },
+    "CANDIDATE_JITTER": {
+      "stdev_us": 64.448,
+      "cv_pct": 40.9,
+      "mean_us": 157.621
+    },
+    "NOISE_MARGIN": "73.843 us",
+    "LOCAL_CONFIDENCE": "LOW",
+    "DECISION": "NEEDS_ONE_MORE_LOCAL"
+  },
+  "main2_L006_review": {
+    "received_utc": "2026-09-24T04:35:14Z",
+    "path": "true triple CONFIRMED",
+    "correctness": "PASS",
+    "load": "LOAD_CONTAMINATED parent CV 29.1%",
+    "dir": "3/6",
+    "decision": "NEEDS_ONE_MORE_LOCAL",
+    "sha_frozen": "2defc6c270e898c00aa151dbef00f68c72ccf77f33e54db18c75b8bf4f4b4f9c",
+    "d4_released": true,
+    "owner": "MAIN-2 cann-next6",
+    "actions": [
+      "Stay idle",
+      "No V002",
+      "No CANNJudge",
+      "Do not touch cann-sixlane/ASYNC-TRIPLE-X"
+    ]
+  },
+  "workspace_scope": "/Users/sunyiyang/Desktop/Project/cann-next6/ASYNC-TRIPLE-X only",
+  "round2_R2_ASYNC": {
+    "lease": "R2-ASYNC",
+    "owner": "MAIN-2",
+    "round": 2,
+    "sha256": "2defc6c270e898c00aa151dbef00f68c72ccf77f33e54db18c75b8bf4f4b4f9c",
+    "gate": "parent CV>0.25 OR range/median>0.5 => UNSTABLE",
+    "sequence": [
+      {
+        "step": 1,
+        "action": "preflight",
+        "devices": [
+          "d4 OK",
+          "d5 OK",
+          "d6 OK"
+        ]
+      },
+      {
+        "step": 2,
+        "action": "parent_baseline_x8",
+        "results": {
+          "d4": {
+            "times": [
+              159.369089,
+              171.02727,
+              150.921822,
+              198.390917,
+              263.023637,
+              150.145455,
+              83.105456,
+              95.903635
+            ],
+            "n": 8,
+            "mean_us": 158.986,
+            "stdev_us": 56.571,
+            "cv": 0.3558,
+            "range_us": 179.918,
+            "median_us": 155.145,
+            "range_over_median": 1.1597,
+            "verdict": "UNSTABLE",
+            "gate": "CV>0.25 OR range/median>0.5 => UNSTABLE",
+            "stable": false,
+            "correctness": "CORRECTNESS PASS rows=8 width=1024 blocks=8 device=4 max_abs=3.79046958e-07",
+            "sha_ok": true
+          },
+          "d5": {
+            "times": [
+              234.141827,
+              129.447276,
+              189.669089,
+              121.32364,
+              144.609094,
+              189.625458,
+              176.407272,
+              169.60182
+            ],
+            "n": 8,
+            "mean_us": 169.353,
+            "stdev_us": 36.999,
+            "cv": 0.2185,
+            "range_us": 112.818,
+            "median_us": 173.005,
+            "range_over_median": 0.6521,
+            "verdict": "UNSTABLE",
+            "gate": "CV>0.25 OR range/median>0.5 => UNSTABLE",
+            "stable": false,
+            "correctness": "CORRECTNESS PASS rows=8 width=1024 blocks=8 device=5 max_abs=3.79046958e-07",
+            "sha_ok": true
+          },
+          "d6": {
+            "times": [
+              138.656367,
+              113.194541,
+              134.739995,
+              152.183641,
+              129.292727,
+              157.252724,
+              283.641815,
+              143.05455
+            ],
+            "n": 8,
+            "mean_us": 156.502,
+            "stdev_us": 53.147,
+            "cv": 0.3396,
+            "range_us": 170.447,
+            "median_us": 140.855,
+            "range_over_median": 1.2101,
+            "verdict": "UNSTABLE",
+            "gate": "CV>0.25 OR range/median>0.5 => UNSTABLE",
+            "stable": false,
+            "correctness": "CORRECTNESS PASS rows=8 width=1024 blocks=8 device=6 max_abs=3.79046958e-07",
+            "sha_ok": true
+          }
+        }
+      },
+      {
+        "step": 3,
+        "action": "ALL_THREE_UNSTABLE",
+        "outcome": "handoff NEEDS_ONE_MORE_LOCAL + MEASUREMENT_BLOCKED; candidate NOT run"
+      },
+      {
+        "step": 4,
+        "action": "interleaved",
+        "skipped": true
+      },
+      {
+        "step": 5,
+        "action": "write support/results-round2 + release + handoff"
+      }
+    ],
+    "devices": {
+      "d4": {
+        "times": [
+          159.369089,
+          171.02727,
+          150.921822,
+          198.390917,
+          263.023637,
+          150.145455,
+          83.105456,
+          95.903635
+        ],
+        "n": 8,
+        "mean_us": 158.986,
+        "stdev_us": 56.571,
+        "cv": 0.3558,
+        "range_us": 179.918,
+        "median_us": 155.145,
+        "range_over_median": 1.1597,
+        "verdict": "UNSTABLE",
+        "gate": "CV>0.25 OR range/median>0.5 => UNSTABLE",
+        "stable": false,
+        "correctness": "CORRECTNESS PASS rows=8 width=1024 blocks=8 device=4 max_abs=3.79046958e-07",
+        "sha_ok": true
+      },
+      "d5": {
+        "times": [
+          234.141827,
+          129.447276,
+          189.669089,
+          121.32364,
+          144.609094,
+          189.625458,
+          176.407272,
+          169.60182
+        ],
+        "n": 8,
+        "mean_us": 169.353,
+        "stdev_us": 36.999,
+        "cv": 0.2185,
+        "range_us": 112.818,
+        "median_us": 173.005,
+        "range_over_median": 0.6521,
+        "verdict": "UNSTABLE",
+        "gate": "CV>0.25 OR range/median>0.5 => UNSTABLE",
+        "stable": false,
+        "correctness": "CORRECTNESS PASS rows=8 width=1024 blocks=8 device=5 max_abs=3.79046958e-07",
+        "sha_ok": true
+      },
+      "d6": {
+        "times": [
+          138.656367,
+          113.194541,
+          134.739995,
+          152.183641,
+          129.292727,
+          157.252724,
+          283.641815,
+          143.05455
+        ],
+        "n": 8,
+        "mean_us": 156.502,
+        "stdev_us": 53.147,
+        "cv": 0.3396,
+        "range_us": 170.447,
+        "median_us": 140.855,
+        "range_over_median": 1.2101,
+        "verdict": "UNSTABLE",
+        "gate": "CV>0.25 OR range/median>0.5 => UNSTABLE",
+        "stable": false,
+        "correctness": "CORRECTNESS PASS rows=8 width=1024 blocks=8 device=6 max_abs=3.79046958e-07",
+        "sha_ok": true
+      }
+    },
+    "candidate_run": false,
+    "status": "MEASUREMENT_BLOCKED",
+    "handoff": {
+      "CORRECTNESS": "PASS on d4/d5/d6 parent SEED only (repeats=0); candidate V001 NOT run (all devices UNSTABLE)",
+      "PATH_CONFIRMATION": "already CONFIRMED true triple (not re-verified this round per Main)",
+      "PARENT_BASELINE": {
+        "d4": {
+          "times": [
+            159.369089,
+            171.02727,
+            150.921822,
+            198.390917,
+            263.023637,
+            150.145455,
+            83.105456,
+            95.903635
+          ],
+          "n": 8,
+          "mean_us": 158.986,
+          "stdev_us": 56.571,
+          "cv": 0.3558,
+          "range_us": 179.918,
+          "median_us": 155.145,
+          "range_over_median": 1.1597,
+          "verdict": "UNSTABLE",
+          "gate": "CV>0.25 OR range/median>0.5 => UNSTABLE",
+          "stable": false,
+          "correctness": "CORRECTNESS PASS rows=8 width=1024 blocks=8 device=4 max_abs=3.79046958e-07",
+          "sha_ok": true
+        },
+        "d5": {
+          "times": [
+            234.141827,
+            129.447276,
+            189.669089,
+            121.32364,
+            144.609094,
+            189.625458,
+            176.407272,
+            169.60182
+          ],
+          "n": 8,
+          "mean_us": 169.353,
+          "stdev_us": 36.999,
+          "cv": 0.2185,
+          "range_us": 112.818,
+          "median_us": 173.005,
+          "range_over_median": 0.6521,
+          "verdict": "UNSTABLE",
+          "gate": "CV>0.25 OR range/median>0.5 => UNSTABLE",
+          "stable": false,
+          "correctness": "CORRECTNESS PASS rows=8 width=1024 blocks=8 device=5 max_abs=3.79046958e-07",
+          "sha_ok": true
+        },
+        "d6": {
+          "times": [
+            138.656367,
+            113.194541,
+            134.739995,
+            152.183641,
+            129.292727,
+            157.252724,
+            283.641815,
+            143.05455
+          ],
+          "n": 8,
+          "mean_us": 156.502,
+          "stdev_us": 53.147,
+          "cv": 0.3396,
+          "range_us": 170.447,
+          "median_us": 140.855,
+          "range_over_median": 1.2101,
+          "verdict": "UNSTABLE",
+          "gate": "CV>0.25 OR range/median>0.5 => UNSTABLE",
+          "stable": false,
+          "correctness": "CORRECTNESS PASS rows=8 width=1024 blocks=8 device=6 max_abs=3.79046958e-07",
+          "sha_ok": true
+        }
+      },
+      "PARENT_TIMES": {
+        "d4": [
+          159.369089,
+          171.02727,
+          150.921822,
+          198.390917,
+          263.023637,
+          150.145455,
+          83.105456,
+          95.903635
+        ],
+        "d5": [
+          234.141827,
+          129.447276,
+          189.669089,
+          121.32364,
+          144.609094,
+          189.625458,
+          176.407272,
+          169.60182
+        ],
+        "d6": [
+          138.656367,
+          113.194541,
+          134.739995,
+          152.183641,
+          129.292727,
+          157.252724,
+          283.641815,
+          143.05455
+        ]
+      },
+      "PARENT_JITTER": {
+        "d4": {
+          "stdev_us": 56.571,
+          "cv": 0.3558,
+          "range_us": 179.918,
+          "range_over_median": 1.1597,
+          "verdict": "UNSTABLE"
+        },
+        "d5": {
+          "stdev_us": 36.999,
+          "cv": 0.2185,
+          "range_us": 112.818,
+          "range_over_median": 0.6521,
+          "verdict": "UNSTABLE"
+        },
+        "d6": {
+          "stdev_us": 53.147,
+          "cv": 0.3396,
+          "range_us": 170.447,
+          "range_over_median": 1.2101,
+          "verdict": "UNSTABLE"
+        }
+      },
+      "CANDIDATE_TIMES": "NOT_RUN",
+      "CANDIDATE_JITTER": "NOT_RUN",
+      "PROBE_DELTAS": "NOT_RUN",
+      "MEDIAN_DELTA": "N/A",
+      "WORST_DELTA": "N/A",
+      "DIRECTIONAL_CONSISTENCY": "N/A",
+      "LOAD_QUALITY": "UNSTABLE_PARENT_ONLY (all three devices failed parent gate; no paired interleaved)",
+      "LOAD_FROM_PARENT_JITTER": "d4 CV=0.356 range/med=1.16; d5 CV=0.219 range/med=0.65; d6 CV=0.340 range/med=1.21 — all UNSTABLE",
+      "NOISE_MARGIN": "N/A (measurement blocked before candidate)",
+      "LOCAL_CONFIDENCE": "NONE",
+      "MEASUREMENT_BLOCKED": true,
+      "DECISION": "NEEDS_ONE_MORE_LOCAL",
+      "decision_detail": "NEEDS_ONE_MORE_LOCAL + MEASUREMENT_BLOCKED"
+    },
+    "attempts": "preflight_ok d4\nunstable d4\npreflight_ok d5\nunstable d5\npreflight_ok d6\nunstable d6",
+    "window_end": "2026-09-24T05:23:50Z",
+    "postlease": "POSTLEASE 2026-09-24T05:24:31Z lease=R2-ASYNC released\nno async_triple procs\ntimestamp 2026-09-24T05:24:32.767819Z\nd4_procs [('2999855', 'VLLMEngineCor')]\nd5_procs [('89602', 'VLLMWorker_TP')]\nd6_procs [('91228', 'VLLMWorker_TP')]",
+    "preserved_sets": [
+      "support/results/",
+      "support/results-set2/",
+      "support/results-controlled-dev4/",
+      "support/results-round2/"
+    ]
+  },
+  "handoff_fields_round2": {
+    "CORRECTNESS": "PASS on d4/d5/d6 parent SEED only (repeats=0); candidate V001 NOT run (all devices UNSTABLE)",
+    "PATH_CONFIRMATION": "already CONFIRMED true triple (not re-verified this round per Main)",
+    "PARENT_BASELINE": {
+      "d4": {
+        "times": [
+          159.369089,
+          171.02727,
+          150.921822,
+          198.390917,
+          263.023637,
+          150.145455,
+          83.105456,
+          95.903635
+        ],
+        "n": 8,
+        "mean_us": 158.986,
+        "stdev_us": 56.571,
+        "cv": 0.3558,
+        "range_us": 179.918,
+        "median_us": 155.145,
+        "range_over_median": 1.1597,
+        "verdict": "UNSTABLE",
+        "gate": "CV>0.25 OR range/median>0.5 => UNSTABLE",
+        "stable": false,
+        "correctness": "CORRECTNESS PASS rows=8 width=1024 blocks=8 device=4 max_abs=3.79046958e-07",
+        "sha_ok": true
+      },
+      "d5": {
+        "times": [
+          234.141827,
+          129.447276,
+          189.669089,
+          121.32364,
+          144.609094,
+          189.625458,
+          176.407272,
+          169.60182
+        ],
+        "n": 8,
+        "mean_us": 169.353,
+        "stdev_us": 36.999,
+        "cv": 0.2185,
+        "range_us": 112.818,
+        "median_us": 173.005,
+        "range_over_median": 0.6521,
+        "verdict": "UNSTABLE",
+        "gate": "CV>0.25 OR range/median>0.5 => UNSTABLE",
+        "stable": false,
+        "correctness": "CORRECTNESS PASS rows=8 width=1024 blocks=8 device=5 max_abs=3.79046958e-07",
+        "sha_ok": true
+      },
+      "d6": {
+        "times": [
+          138.656367,
+          113.194541,
+          134.739995,
+          152.183641,
+          129.292727,
+          157.252724,
+          283.641815,
+          143.05455
+        ],
+        "n": 8,
+        "mean_us": 156.502,
+        "stdev_us": 53.147,
+        "cv": 0.3396,
+        "range_us": 170.447,
+        "median_us": 140.855,
+        "range_over_median": 1.2101,
+        "verdict": "UNSTABLE",
+        "gate": "CV>0.25 OR range/median>0.5 => UNSTABLE",
+        "stable": false,
+        "correctness": "CORRECTNESS PASS rows=8 width=1024 blocks=8 device=6 max_abs=3.79046958e-07",
+        "sha_ok": true
+      }
+    },
+    "PARENT_TIMES": {
+      "d4": [
+        159.369089,
+        171.02727,
+        150.921822,
+        198.390917,
+        263.023637,
+        150.145455,
+        83.105456,
+        95.903635
+      ],
+      "d5": [
+        234.141827,
+        129.447276,
+        189.669089,
+        121.32364,
+        144.609094,
+        189.625458,
+        176.407272,
+        169.60182
+      ],
+      "d6": [
+        138.656367,
+        113.194541,
+        134.739995,
+        152.183641,
+        129.292727,
+        157.252724,
+        283.641815,
+        143.05455
+      ]
+    },
+    "PARENT_JITTER": {
+      "d4": {
+        "stdev_us": 56.571,
+        "cv": 0.3558,
+        "range_us": 179.918,
+        "range_over_median": 1.1597,
+        "verdict": "UNSTABLE"
+      },
+      "d5": {
+        "stdev_us": 36.999,
+        "cv": 0.2185,
+        "range_us": 112.818,
+        "range_over_median": 0.6521,
+        "verdict": "UNSTABLE"
+      },
+      "d6": {
+        "stdev_us": 53.147,
+        "cv": 0.3396,
+        "range_us": 170.447,
+        "range_over_median": 1.2101,
+        "verdict": "UNSTABLE"
+      }
+    },
+    "CANDIDATE_TIMES": "NOT_RUN",
+    "CANDIDATE_JITTER": "NOT_RUN",
+    "PROBE_DELTAS": "NOT_RUN",
+    "MEDIAN_DELTA": "N/A",
+    "WORST_DELTA": "N/A",
+    "DIRECTIONAL_CONSISTENCY": "N/A",
+    "LOAD_QUALITY": "UNSTABLE_PARENT_ONLY (all three devices failed parent gate; no paired interleaved)",
+    "LOAD_FROM_PARENT_JITTER": "d4 CV=0.356 range/med=1.16; d5 CV=0.219 range/med=0.65; d6 CV=0.340 range/med=1.21 — all UNSTABLE",
+    "NOISE_MARGIN": "N/A (measurement blocked before candidate)",
+    "LOCAL_CONFIDENCE": "NONE",
+    "MEASUREMENT_BLOCKED": true,
+    "DECISION": "NEEDS_ONE_MORE_LOCAL",
+    "decision_detail": "NEEDS_ONE_MORE_LOCAL + MEASUREMENT_BLOCKED"
+  },
+  "MEASUREMENT_BLOCKED": true,
+  "main2_round2_review": {
+    "received_utc": "2026-09-24T05:26:43Z",
+    "parent_baseline": "UNSTABLE d4/5/6",
+    "candidate": "skipped",
+    "decision": "NEEDS_ONE_MORE_LOCAL + MEASUREMENT_BLOCKED",
+    "sha_frozen": "2defc6c270e898c00aa151dbef00f68c72ccf77f33e54db18c75b8bf4f4b4f9c",
+    "actions": [
+      "Stay IDLE"
+    ]
+  },
+  "window_qual_Q_ASYNC": {
+    "lease": "Q-ASYNC",
+    "priority": 4,
+    "gate": "PRECHECK-A×6, gap 5s, PRECHECK-B×6; QUALIFIED iff BOTH cv<=0.15 AND max/min<=1.30 (A and B)",
+    "devices_tried": [
+      "d6",
+      "d4"
+    ],
+    "both_unqualified": true,
+    "candidate_skipped": true,
+    "status": "MEASUREMENT_BLOCKED",
+    "summary": {
+      "d6": {
+        "precheckA": {
+          "times": [
+            85.330909,
+            94.638185,
+            108.127269,
+            146.912726,
+            183.858178,
+            169.498184
+          ],
+          "mean_us": 131.394,
+          "stdev_us": 41.132,
+          "cv": 0.313,
+          "max_us": 183.858178,
+          "min_us": 85.330909,
+          "max_over_min": 2.1546,
+          "gate_cv_le_0.15": false,
+          "gate_maxmin_le_1.30": false,
+          "QUALIFIED": false
+        },
+        "precheckB": {
+          "times": [
+            105.410912,
+            84.932728,
+            72.085456,
+            97.38545,
+            108.632727,
+            82.638182
+          ],
+          "mean_us": 91.848,
+          "stdev_us": 14.28,
+          "cv": 0.1555,
+          "max_us": 108.632727,
+          "min_us": 72.085456,
+          "max_over_min": 1.507,
+          "gate_cv_le_0.15": false,
+          "gate_maxmin_le_1.30": false,
+          "QUALIFIED": false
+        },
+        "DEVICE_QUALIFIED": false
+      },
+      "d4": {
+        "precheckA": {
+          "times": [
+            93.272729,
+            100.510912,
+            76.14909,
+            204.859994,
+            214.658174,
+            84.354547
+          ],
+          "mean_us": 128.968,
+          "stdev_us": 63.193,
+          "cv": 0.49,
+          "max_us": 214.658174,
+          "min_us": 76.14909,
+          "max_over_min": 2.8189,
+          "gate_cv_le_0.15": false,
+          "gate_maxmin_le_1.30": false,
+          "QUALIFIED": false
+        },
+        "precheckB": {
+          "times": [
+            80.330908,
+            195.354548,
+            123.001814,
+            203.450918,
+            121.996359,
+            130.752726
+          ],
+          "mean_us": 142.481,
+          "stdev_us": 47.565,
+          "cv": 0.3338,
+          "max_us": 203.450918,
+          "min_us": 80.330908,
+          "max_over_min": 2.5327,
+          "gate_cv_le_0.15": false,
+          "gate_maxmin_le_1.30": false,
+          "QUALIFIED": false
+        },
+        "DEVICE_QUALIFIED": false
+      }
+    },
+    "handoff": {
+      "LEASE": "Q-ASYNC",
+      "SHA": "2defc6c270e898c00aa151dbef00f68c72ccf77f33e54db18c75b8bf4f4b4f9c",
+      "PATH": "already CONFIRMED; not re-verified",
+      "GATE": "PRECHECK-A×6, gap 5s, PRECHECK-B×6; QUALIFIED iff BOTH cv<=0.15 AND max/min<=1.30 (A and B)",
+      "ATTEMPTS": [
+        "d6 then d4 (max 2) both UNQUALIFIED"
+      ],
+      "PRECHECK_A": {
+        "d6": {
+          "times": [
+            85.330909,
+            94.638185,
+            108.127269,
+            146.912726,
+            183.858178,
+            169.498184
+          ],
+          "mean_us": 131.394,
+          "stdev_us": 41.132,
+          "cv": 0.313,
+          "max_us": 183.858178,
+          "min_us": 85.330909,
+          "max_over_min": 2.1546,
+          "gate_cv_le_0.15": false,
+          "gate_maxmin_le_1.30": false,
+          "QUALIFIED": false
+        },
+        "d4": {
+          "times": [
+            93.272729,
+            100.510912,
+            76.14909,
+            204.859994,
+            214.658174,
+            84.354547
+          ],
+          "mean_us": 128.968,
+          "stdev_us": 63.193,
+          "cv": 0.49,
+          "max_us": 214.658174,
+          "min_us": 76.14909,
+          "max_over_min": 2.8189,
+          "gate_cv_le_0.15": false,
+          "gate_maxmin_le_1.30": false,
+          "QUALIFIED": false
+        }
+      },
+      "PRECHECK_B": {
+        "d6": {
+          "times": [
+            105.410912,
+            84.932728,
+            72.085456,
+            97.38545,
+            108.632727,
+            82.638182
+          ],
+          "mean_us": 91.848,
+          "stdev_us": 14.28,
+          "cv": 0.1555,
+          "max_us": 108.632727,
+          "min_us": 72.085456,
+          "max_over_min": 1.507,
+          "gate_cv_le_0.15": false,
+          "gate_maxmin_le_1.30": false,
+          "QUALIFIED": false
+        },
+        "d4": {
+          "times": [
+            80.330908,
+            195.354548,
+            123.001814,
+            203.450918,
+            121.996359,
+            130.752726
+          ],
+          "mean_us": 142.481,
+          "stdev_us": 47.565,
+          "cv": 0.3338,
+          "max_us": 203.450918,
+          "min_us": 80.330908,
+          "max_over_min": 2.5327,
+          "gate_cv_le_0.15": false,
+          "gate_maxmin_le_1.30": false,
+          "QUALIFIED": false
+        }
+      },
+      "DEVICE_QUALIFIED": {
+        "d6": false,
+        "d4": false
+      },
+      "INTERLEAVED": "NOT_RUN (no qualified device)",
+      "CANDIDATE_TIMES": "NOT_RUN",
+      "CANDIDATE_JITTER": "NOT_RUN",
+      "PROBE_DELTAS": "NOT_RUN",
+      "MEDIAN_DELTA": "N/A",
+      "WORST_DELTA": "N/A",
+      "DIRECTIONAL_CONSISTENCY": "N/A",
+      "LOAD_QUALITY": "UNQUALIFIED_PARENT_ONLY (A and B both failed CV and max/min on d6 and d4)",
+      "LOAD_FROM_PARENT_JITTER": "d6A cv=0.313 max/min=2.1546; d6B cv=0.1555 max/min=1.507; d4A cv=0.49 max/min=2.8189; d4B cv=0.3338 max/min=2.5327",
+      "PARENT_TIMES": {
+        "d6A": [
+          85.330909,
+          94.638185,
+          108.127269,
+          146.912726,
+          183.858178,
+          169.498184
+        ],
+        "d6B": [
+          105.410912,
+          84.932728,
+          72.085456,
+          97.38545,
+          108.632727,
+          82.638182
+        ],
+        "d4A": [
+          93.272729,
+          100.510912,
+          76.14909,
+          204.859994,
+          214.658174,
+          84.354547
+        ],
+        "d4B": [
+          80.330908,
+          195.354548,
+          123.001814,
+          203.450918,
+          121.996359,
+          130.752726
+        ]
+      },
+      "PARENT_JITTER": {
+        "d6A": {
+          "cv": 0.313,
+          "max_over_min": 2.1546,
+          "stdev_us": 41.132
+        },
+        "d6B": {
+          "cv": 0.1555,
+          "max_over_min": 1.507,
+          "stdev_us": 14.28
+        },
+        "d4A": {
+          "cv": 0.49,
+          "max_over_min": 2.8189,
+          "stdev_us": 63.193
+        },
+        "d4B": {
+          "cv": 0.3338,
+          "max_over_min": 2.5327,
+          "stdev_us": 47.565
+        }
+      },
+      "NOISE_MARGIN": "N/A (window not qualified; candidate skipped)",
+      "LOCAL_CONFIDENCE": "NONE",
+      "MEASUREMENT_BLOCKED": true,
+      "STOP_TIMING_TODAY": true,
+      "DECISION": "NEEDS_ONE_MORE_LOCAL",
+      "decision_detail": "NEEDS_ONE_MORE_LOCAL + MEASUREMENT_BLOCKED",
+      "CORRECTNESS": "PASS parent SEED on d6 and d4 (repeats=0); candidate NOT run",
+      "POSTLEASE": "POSTLEASE 2026-09-24T07:37:35.845428Z\nlease=Q-ASYNC released\nprocs=none"
+    },
+    "preserved_sets": [
+      "support/results/",
+      "support/results-set2/",
+      "support/results-controlled-dev4/",
+      "support/results-round2/",
+      "support/results-window-qual/"
+    ]
+  },
+  "handoff_fields_window_qual": {
+    "LEASE": "Q-ASYNC",
+    "SHA": "2defc6c270e898c00aa151dbef00f68c72ccf77f33e54db18c75b8bf4f4b4f9c",
+    "PATH": "already CONFIRMED; not re-verified",
+    "GATE": "PRECHECK-A×6, gap 5s, PRECHECK-B×6; QUALIFIED iff BOTH cv<=0.15 AND max/min<=1.30 (A and B)",
+    "ATTEMPTS": [
+      "d6 then d4 (max 2) both UNQUALIFIED"
+    ],
+    "PRECHECK_A": {
+      "d6": {
+        "times": [
+          85.330909,
+          94.638185,
+          108.127269,
+          146.912726,
+          183.858178,
+          169.498184
+        ],
+        "mean_us": 131.394,
+        "stdev_us": 41.132,
+        "cv": 0.313,
+        "max_us": 183.858178,
+        "min_us": 85.330909,
+        "max_over_min": 2.1546,
+        "gate_cv_le_0.15": false,
+        "gate_maxmin_le_1.30": false,
+        "QUALIFIED": false
+      },
+      "d4": {
+        "times": [
+          93.272729,
+          100.510912,
+          76.14909,
+          204.859994,
+          214.658174,
+          84.354547
+        ],
+        "mean_us": 128.968,
+        "stdev_us": 63.193,
+        "cv": 0.49,
+        "max_us": 214.658174,
+        "min_us": 76.14909,
+        "max_over_min": 2.8189,
+        "gate_cv_le_0.15": false,
+        "gate_maxmin_le_1.30": false,
+        "QUALIFIED": false
+      }
+    },
+    "PRECHECK_B": {
+      "d6": {
+        "times": [
+          105.410912,
+          84.932728,
+          72.085456,
+          97.38545,
+          108.632727,
+          82.638182
+        ],
+        "mean_us": 91.848,
+        "stdev_us": 14.28,
+        "cv": 0.1555,
+        "max_us": 108.632727,
+        "min_us": 72.085456,
+        "max_over_min": 1.507,
+        "gate_cv_le_0.15": false,
+        "gate_maxmin_le_1.30": false,
+        "QUALIFIED": false
+      },
+      "d4": {
+        "times": [
+          80.330908,
+          195.354548,
+          123.001814,
+          203.450918,
+          121.996359,
+          130.752726
+        ],
+        "mean_us": 142.481,
+        "stdev_us": 47.565,
+        "cv": 0.3338,
+        "max_us": 203.450918,
+        "min_us": 80.330908,
+        "max_over_min": 2.5327,
+        "gate_cv_le_0.15": false,
+        "gate_maxmin_le_1.30": false,
+        "QUALIFIED": false
+      }
+    },
+    "DEVICE_QUALIFIED": {
+      "d6": false,
+      "d4": false
+    },
+    "INTERLEAVED": "NOT_RUN (no qualified device)",
+    "CANDIDATE_TIMES": "NOT_RUN",
+    "CANDIDATE_JITTER": "NOT_RUN",
+    "PROBE_DELTAS": "NOT_RUN",
+    "MEDIAN_DELTA": "N/A",
+    "WORST_DELTA": "N/A",
+    "DIRECTIONAL_CONSISTENCY": "N/A",
+    "LOAD_QUALITY": "UNQUALIFIED_PARENT_ONLY (A and B both failed CV and max/min on d6 and d4)",
+    "LOAD_FROM_PARENT_JITTER": "d6A cv=0.313 max/min=2.1546; d6B cv=0.1555 max/min=1.507; d4A cv=0.49 max/min=2.8189; d4B cv=0.3338 max/min=2.5327",
+    "PARENT_TIMES": {
+      "d6A": [
+        85.330909,
+        94.638185,
+        108.127269,
+        146.912726,
+        183.858178,
+        169.498184
+      ],
+      "d6B": [
+        105.410912,
+        84.932728,
+        72.085456,
+        97.38545,
+        108.632727,
+        82.638182
+      ],
+      "d4A": [
+        93.272729,
+        100.510912,
+        76.14909,
+        204.859994,
+        214.658174,
+        84.354547
+      ],
+      "d4B": [
+        80.330908,
+        195.354548,
+        123.001814,
+        203.450918,
+        121.996359,
+        130.752726
+      ]
+    },
+    "PARENT_JITTER": {
+      "d6A": {
+        "cv": 0.313,
+        "max_over_min": 2.1546,
+        "stdev_us": 41.132
+      },
+      "d6B": {
+        "cv": 0.1555,
+        "max_over_min": 1.507,
+        "stdev_us": 14.28
+      },
+      "d4A": {
+        "cv": 0.49,
+        "max_over_min": 2.8189,
+        "stdev_us": 63.193
+      },
+      "d4B": {
+        "cv": 0.3338,
+        "max_over_min": 2.5327,
+        "stdev_us": 47.565
+      }
+    },
+    "NOISE_MARGIN": "N/A (window not qualified; candidate skipped)",
+    "LOCAL_CONFIDENCE": "NONE",
+    "MEASUREMENT_BLOCKED": true,
+    "STOP_TIMING_TODAY": true,
+    "DECISION": "NEEDS_ONE_MORE_LOCAL",
+    "decision_detail": "NEEDS_ONE_MORE_LOCAL + MEASUREMENT_BLOCKED",
+    "CORRECTNESS": "PASS parent SEED on d6 and d4 (repeats=0); candidate NOT run",
+    "POSTLEASE": "POSTLEASE 2026-09-24T07:37:35.845428Z\nlease=Q-ASYNC released\nprocs=none"
+  },
+  "stop_timing_today": true,
+  "main2_q_async_review": {
+    "received_utc": "2026-09-24T07:38:58Z",
+    "window": "UNQUALIFIED 2/2",
+    "candidate": "not run",
+    "path": "remains CONFIRMED",
+    "decision": "NEEDS_ONE_MORE_LOCAL + MEASUREMENT_BLOCKED",
+    "stop_timing_today": true,
+    "sha_frozen": "2defc6c270e898c00aa151dbef00f68c72ccf77f33e54db18c75b8bf4f4b4f9c",
+    "actions": [
+      "IDLE"
+    ]
+  }
+}

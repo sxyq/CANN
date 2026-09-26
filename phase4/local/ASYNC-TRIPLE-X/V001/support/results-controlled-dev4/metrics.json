@@ -1,0 +1,167 @@
+{
+  "lease": "L006",
+  "owner": "MAIN-2",
+  "sha256": "2defc6c270e898c00aa151dbef00f68c72ccf77f33e54db18c75b8bf4f4b4f9c",
+  "device": 4,
+  "window_utc": "2026-09-24T04:32:16Z .. 2026-09-24T04:33:27Z",
+  "schedule": "PC,PC,CP,CP (P=SEED parent, C=V001 candidate)",
+  "warmup": 3,
+  "repeats": 11,
+  "path_confirmation": {
+    "V001_order_output_loop": [
+      "L274 CopyInOutputData(next)  # MTE2 prefetch N+1",
+      "L282 CopyOut(prev)           # MTE3 store N-1 (if tile>=1)",
+      "L284 ComputeOutputTile(N)    # Vector compute N",
+      "L290 CopyOut(last)           # tail flush after loop"
+    ],
+    "SEED_order_output_loop": [
+      "L273 CopyInOutputData(next)  # MTE2 prefetch N+1 only",
+      "L275 ComputeOutputTile(N)",
+      "L276 CopyOut(tile N)         # MTE3 same-iteration after compute — NOT stage N-1"
+    ],
+    "is_true_triple": true,
+    "not_mere_double_buffer": true,
+    "note": "V001 issues MTE3 store of N-1 BEFORE Vector compute of N while MTE2 prefetch of N+1 is already issue-ahead — not MTE2-only overlap."
+  },
+  "preflight": {
+    "timestamp_utc": "2026-09-24T04:31:31Z",
+    "device": 4,
+    "free_hbm_pages": 6350,
+    "aicore": 0,
+    "visible_processes_d4": [
+      [
+        "2999855",
+        "VLLMEngineCor"
+      ]
+    ],
+    "other_next6_probe": false,
+    "result": "PREFLIGHT_OK",
+    "file": "preflight.npu-smi.txt"
+  },
+  "correctness": "=== correctness dev=4 ===\nCORRECTNESS PASS rows=8 width=1024 blocks=8 device=4 max_abs=3.79046958e-07\nCORRECTNESS PASS rows=8 width=1024 blocks=8 device=4 max_abs=3.79046958e-07",
+  "PARENT_TIMES": [
+    104.77091,
+    157.918182,
+    130.850911,
+    77.939998
+  ],
+  "CANDIDATE_TIMES": [
+    250.223637,
+    152.905453,
+    114.392725,
+    112.961823
+  ],
+  "PARENT_JITTER": {
+    "stdev_us": 34.343,
+    "cv_pct": 29.1,
+    "range_us": 79.978,
+    "mean_us": 117.87,
+    "median_us": 117.811
+  },
+  "CANDIDATE_JITTER": {
+    "stdev_us": 64.448,
+    "cv_pct": 40.9,
+    "mean_us": 157.621
+  },
+  "pairs": [
+    {
+      "pair": 1,
+      "order": "seed,v001",
+      "ts": "2026-09-24T04:32:27Z",
+      "parent_us": 104.77091,
+      "candidate_us": 250.223637,
+      "delta_us": 145.453,
+      "delta_pct": 138.83,
+      "max_abs": 3.79046958e-07,
+      "status": "OK"
+    },
+    {
+      "pair": 2,
+      "order": "seed,v001",
+      "ts": "2026-09-24T04:32:37Z",
+      "parent_us": 157.918182,
+      "candidate_us": 152.905453,
+      "delta_us": -5.013,
+      "delta_pct": -3.17,
+      "max_abs": 3.79046958e-07,
+      "status": "OK"
+    },
+    {
+      "pair": 3,
+      "order": "v001,seed",
+      "ts": "2026-09-24T04:32:47Z",
+      "parent_us": 130.850911,
+      "candidate_us": 114.392725,
+      "delta_us": -16.458,
+      "delta_pct": -12.58,
+      "max_abs": 3.79046958e-07,
+      "status": "OK"
+    },
+    {
+      "pair": 4,
+      "order": "v001,seed",
+      "ts": "2026-09-24T04:32:57Z",
+      "parent_us": 77.939998,
+      "candidate_us": 112.961823,
+      "delta_us": 35.022,
+      "delta_pct": 44.93,
+      "max_abs": 3.79046958e-07,
+      "status": "OK"
+    }
+  ],
+  "wide_pairs": [
+    {
+      "pair": 1,
+      "order": "v001,seed",
+      "ts": "2026-09-24T04:33:06Z",
+      "parent_us": 194.598176,
+      "candidate_us": 161.98,
+      "delta_us": -32.618,
+      "delta_pct": -16.76,
+      "max_abs": 3.27627161e-07
+    },
+    {
+      "pair": 2,
+      "order": "seed,v001",
+      "ts": "2026-09-24T04:33:16Z",
+      "parent_us": 166.819995,
+      "candidate_us": 275.892735,
+      "delta_us": 109.073,
+      "delta_pct": 65.38,
+      "max_abs": 3.27627161e-07
+    }
+  ],
+  "PROBE_DELTAS": {
+    "standard_us": [
+      145.453,
+      -5.013,
+      -16.458,
+      35.022
+    ],
+    "standard_pct": [
+      138.83,
+      -3.17,
+      -12.58,
+      44.93
+    ],
+    "wide_us": [
+      -32.618,
+      109.073
+    ],
+    "wide_pct": [
+      -16.76,
+      65.38
+    ]
+  },
+  "MEDIAN_DELTA": 15.005,
+  "MEDIAN_DELTA_pct": 20.88,
+  "WORST_DELTA": 145.453,
+  "WORST_DELTA_pct": 138.83,
+  "DIRECTIONAL_CONSISTENCY": "3/6",
+  "LOAD_QUALITY": "LOAD_CONTAMINATED",
+  "LOAD_QUALITY_BASIS": "from parent jitter only: PARENT stdev=34.343us cv=29.1% range=79.978us",
+  "NOISE_MARGIN": 73.843,
+  "LOCAL_CONFIDENCE": "LOW",
+  "decision": "NEEDS_ONE_MORE_LOCAL",
+  "postlease": "POSTLEASE 2026-09-24T04:34:19Z\nlease=L006 released by ASYNC-TRIPLE-X after controlled remeasure\nno async_triple procs (released)\n| 4     910B3               | OK            | 92.7        43                0    / 0             |\n| 4       0                 | 2999855       | VLLMEngineCor            | 55664                   |\n| 4       0                 | 2999855       | VLLMEngineCor            | 55664                   |\nd4_procs [('2999855', 'VLLMEngineCor')]\ntimestamp 2026-09-24T04:34:23.239289Z"
+}

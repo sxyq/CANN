@@ -1,0 +1,35 @@
+{
+  "ROUTE": "UB-LIVENESS-X",
+  "REVISION": "V002",
+  "DIRECT_PARENT": "UB-LIVENESS-X-V001",
+  "PARENT_SOURCE_SHA": "1a6ae30a5eff8f839d08a741c412378acabc936466fb5a07d95502ec69c18c8d",
+  "PARENT_SCORE": null,
+  "PARENT_UNRESOLVED": false,
+  "SINGLE_HYPOTHESIS": "Correctness-only repair of numeric path (pass1 accumulator and full u*inv*gamma+bias emit) so NPU bad=0; phase-role UB liveness/alias architecture unchanged; no performance variable.",
+  "CONTEXT_CLASS": "GUIDED_FRESH / EXTERNAL_DERIVED",
+  "PARENT_SEED": "ae46d7c",
+  "SOURCE_SHA": "888bd60c1efbde1c5f90b1fa13daaaee59a057673315caa8437d16c2b23e3929",
+  "LINE_COUNT": 526,
+  "BYTE_COUNT": 19477,
+  "COMPILE": "PASS (server3 CANN 8.5.0.alpha002 / Ascend910B3 / dav-2201; device, submission, full link)",
+  "LINK": "PASS",
+  "CORRECTNESS": "FAIL (bad>0 on all sampled shapes). Improved vs V001 on several FP16/BF16 cases (e.g. D=32768 FP16 bad~1511 vs V001 ~98k; D=1000 FP16 bad~1219 vs V001 ~7k) but still not bad=0. FP32 still fails.",
+  "SINGLE_CHANGE_AUDIT": "PASS",
+  "ARCHITECTURE_CHANGES": "None to liveness/alias hypothesis. Correctness-only: unified FuseU, separate TBufs, PipeBarrier+FetchEventID, param stage via x1_ not res0_, Newton inv fallback, LoadFullParams after pass1.",
+  "ISOLATION_FINDINGS": [
+    "Identity emit out=u matches golden for FP32 D=64 (actual=u0=-1.97189).",
+    "u*hardcoded_inv (1.0310949) matches u0*inv golden for FP32 D=64 c=0 (-2.0332).",
+    "LoadFullParams staging through res0_ caused pass2 u=x+bias (-1.103); fixed by staging via x1_.",
+    "Fixed EVENT_ID7 MTE2_V caused nondeterministic acc; FetchEventID+PipeBarrier made many runs deterministic.",
+    "Pass1 SumSq(acc) still does not match golden acc (60.197) — remaining root cause for wrong computed inv; full gamma*bias path also not yet bad=0."
+  ],
+  "RISKS": [
+    "Not an online candidate; correctness FAIL.",
+    "Probe latencies raw only; not admissible as performance evidence.",
+    "FP32 path still fully mismatched; FP16/BF16 partially improved but not PASS."
+  ],
+  "DECISION": "LOCAL_REJECTED",
+  "NEXT_CANDIDATE_HYPOTHESIS": "V003 correctness-only: keep alias architecture and FuseU identity-proven path; fix pass1 SumSq accumulator to equal pass2 FuseU u (verify acc==60.197 on D=64 FP32) before re-enabling full emit; no performance variable.",
+  "EXTERNAL_IDEA_RECORD": "phase4/workspaces/UB-LIVENESS-X/external-idea-record.md",
+  "WHY_NOT_DUPLICATE": "phase4/workspaces/UB-LIVENESS-X/WHY_NOT_DUPLICATE.md"
+}

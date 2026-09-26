@@ -1,6 +1,8 @@
 # ALIGN-TAIL-X — 2×100 FP32 Qualification Runbook (MAIN-2, unified timing protocol)
 
-Status: **PREPARED 2026-09-25 — no timing run yet**. Binaries built on cann-server3; device window is Main's to open. This runbook is preparation only; no lease line was appended this turn.
+Status: **EXECUTED 2026-09-25T14:21:27Z–14:24:34Z on d4 — result MEASUREMENT_PROTOCOL_BLOCKED_FOR_SHAPE (2/2 attempts FAIL), no P/C run**. Lease `SV-ALIGN-2x100` opened and released by the ALIGN route agent (Main's window state was idle: no active lease, d4 AICore 0 %, zero timing processes). Raw evidence: `cann-next6/ALIGN-TAIL-X/phase4/local/ALIGN-TAIL-X/V001/support/results-qual-2x100/d4/` (`summary` has the numbers). Kernel SHA unchanged; no source edit. Details and the required next decision are in `phase4/research/ALIGN-TAIL-X/next-hypotheses.md` §STATUS UPDATE 2026-09-25.
+
+Superseded preparation note: binaries were built on cann-server3 in the prior turn; §1–§3 below remain the identity/environment reference used for this run.
 
 Protocol basis: `phase4/control/local-timing-protocol.md` (same-binary noise floor → interleaved P/C; device events primary; warmup ≥10; ≥21 samples/block; batch N=1) and `phase4/control/execution-contract.md` §R (Track-A) / §F (local-first flow).
 

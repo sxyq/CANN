@@ -1,0 +1,11 @@
+ALIGN-TAIL-X 2x100 FP32 same-binary qualification (Direct Parent vs itself)
+device=4 method=DEVICE_EVENT warmup=10 samples=31x2 batch_n=1 gap=2s
+attempt sb1: MAD/med=0.2201  drift=0.3724  -> FAIL (both > 0.10)
+attempt sb2: MAD/med=0.1166  drift=0.4257  -> FAIL (both > 0.10)
+bad=0 on both attempts (correctness OK)
+Direction: B1 median > B2 median in both attempts (10.18>7.00, 9.24>6.32) - systematic block-2 faster ~30-40%.
+Sparse device-event outliers: max 174-183us vs median 6.9-8.5us; p90 123us.
+2/2 attempts FAIL with drift > 0.25 -> MEASUREMENT_PROTOCOL_BLOCKED_FOR_SHAPE (harness/host; never a Candidate issue).
+No interleaved P/C run (runbook forbids (b) after FAIL).
+Candidate SHA unchanged: f573d16d39fb54a2a75f75f90943168b96dd97d83fb6bd094f11fd73c61df840
+Handoff: MEASUREMENT_BLOCKED

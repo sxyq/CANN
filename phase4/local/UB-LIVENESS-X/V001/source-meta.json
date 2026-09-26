@@ -1,0 +1,74 @@
+{
+  "ROUTE": "UB-LIVENESS-X",
+  "REVISION": "V001",
+  "DIRECT_PARENT": null,
+  "PARENT_SOURCE_SHA": null,
+  "PARENT_SCORE": null,
+  "PARENT_UNRESOLVED": true,
+  "SINGLE_HYPOTHESIS": "Redesigning buffer lifetime/aliasing so the same UB region serves different roles in different phases frees UB for larger effective tile, more parameter residency, or true pipeline buffers.",
+  "CONTEXT_CLASS": "GUIDED_FRESH / EXTERNAL_DERIVED",
+  "PARENT_SEED": "ae46d7c",
+  "FILES_CHANGED": [
+    "phase4/workspaces/UB-LIVENESS-X/submission.asc",
+    "phase4/workspaces/UB-LIVENESS-X/local_types.h",
+    "phase4/workspaces/UB-LIVENESS-X/submission_shim.asc",
+    "phase4/workspaces/UB-LIVENESS-X/main.asc",
+    "phase4/workspaces/UB-LIVENESS-X/CMakeLists.txt",
+    "phase4/workspaces/UB-LIVENESS-X/compile.sh",
+    "phase4/workspaces/UB-LIVENESS-X/PRECODE-RECORD.md",
+    "phase4/workspaces/UB-LIVENESS-X/WHY_NOT_DUPLICATE.md",
+    "phase4/workspaces/UB-LIVENESS-X/external-idea-record.md",
+    "phase4/workspaces/UB-LIVENESS-X/architecture-metadata.md",
+    "phase4/local/UB-LIVENESS-X/V001/*"
+  ],
+  "SOURCE_SHA": "1a6ae30a5eff8f839d08a741c412378acabc936466fb5a07d95502ec69c18c8d",
+  "LINE_COUNT": 549,
+  "BYTE_COUNT": 20475,
+  "COMPILE": "PASS (server3 CANN 8.5.0.alpha002 / Ascend910B3 / dav-2201; device, submission, full link)",
+  "LINK": "PASS (full link ub_liveness_x_full_link)",
+  "CORRECTNESS": "FAIL: all sampled shapes have bad>0 (FP32/FP16/BF16, D=64..32768). Identity u=x+res emit verified correct in isolation; full inv*gamma+bias path still mismatches golden.",
+  "LOCAL_PROBES": [
+    {
+      "pair": 1,
+      "shape": "FP16 rows=8 D=4096",
+      "alias1_us": 382.464,
+      "alias0_us": 386.204,
+      "status": "INVALID_WITHOUT_CORRECTNESS"
+    },
+    {
+      "pair": 2,
+      "shape": "FP16 rows=8 D=4096",
+      "alias1_us": 381.434,
+      "alias0_us": 361.894,
+      "status": "INVALID_WITHOUT_CORRECTNESS"
+    },
+    {
+      "pair": 3,
+      "shape": "FP16 rows=8 D=4096",
+      "alias1_us": 338.914,
+      "alias0_us": 311.373,
+      "status": "INVALID_WITHOUT_CORRECTNESS"
+    },
+    {
+      "pair": 4,
+      "shape": "FP16 rows=8 D=4096",
+      "alias1_us": 362.704,
+      "alias0_us": 334.804,
+      "status": "INVALID_WITHOUT_CORRECTNESS"
+    }
+  ],
+  "LOCAL_DELTA": "Not inferable. Correctness FAIL on candidate and control. Probe latencies recorded raw only.",
+  "LOAD_QUALITY": "Device 6 used; npu-smi snapshots in support/results/probe-pair-*.npu-smi.txt; VLLM processes present on other devices historically.",
+  "ARCHITECTURE_NOVELTY": "Phase-role pool: pass1 INGEST/FUSE/REDUCE then pass2 reuses same slot bytes as EMIT staging (alias=1) vs permanent out slots (control alias=0). Single conceptual change = buffer liveness/alias only.",
+  "SINGLE_CHANGE_AUDIT": "PASS",
+  "RISKS": [
+    "Correctness FAIL \u2014 not an online candidate.",
+    "Full emit path (inv * gamma + bias) and/or pass1 acc scalar path still diverges from golden; identity u emit was correct when isolated.",
+    "Probe deltas must not be claimed as performance evidence while correctness fails."
+  ],
+  "DECISION": "LOCAL_REJECTED",
+  "NEXT_CANDIDATE_HYPOTHESIS": "Next independent local attempt: keep phase-alias pool layout but fix numeric path to match golden (verify pass1 acc against pass2 identity u in the same launch; do not add new performance variables). Wait for Main review before V002.",
+  "CLEANUP": "None; no files or remote objects deleted beyond build products under support/build.",
+  "EXTERNAL_IDEA_RECORD": "phase4/workspaces/UB-LIVENESS-X/external-idea-record.md",
+  "WHY_NOT_DUPLICATE": "phase4/workspaces/UB-LIVENESS-X/WHY_NOT_DUPLICATE.md"
+}

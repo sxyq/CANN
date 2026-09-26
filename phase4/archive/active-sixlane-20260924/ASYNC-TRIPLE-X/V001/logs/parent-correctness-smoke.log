@@ -1,0 +1,49 @@
+DIRECT PARENT CONTROL: device compile, .alink, native ACL smoke
+EXPECTED_PARENT_SOURCE_SHA256=ba1167079cf54277506e4b4fa192a91a036a6b8d992650e8532fb182c555bda0
+PARENT_SOURCE_SHA256
+sha256sum: /tmp/codex-async-triple-x-v001-build07/support/parent_kernel.asc: No such file or directory
+sha256sum: /tmp/codex-async-triple-x-v001-build07/support/parent_kernel.asc: No such file or directory
+PARENT_SHA_MISMATCH expected=ba1167079cf54277506e4b4fa192a91a036a6b8d992650e8532fb182c555bda0 actual=
+PARENT_CONTROL_REMOTE_EXIT=20
+DIRECT PARENT CONTROL attempt 02: add exact route-owned parent_kernel.asc
+PARENT_SOURCE_SHA256
+ba1167079cf54277506e4b4fa192a91a036a6b8d992650e8532fb182c555bda0  /tmp/codex-async-triple-x-v001-build07/support/parent_kernel.asc
+PARENT_SHA_MISMATCH expected=ba1167079cf54277506e4b4fa192a91a036a6b8d992650e8532fb182c555bda0 actual=ba1167079cf54277506e4b4fa192a91a036a6b8d992650e8532fb182c555bda0 /tmp/codex-async-triple-x-v001-build07/support/parent_kernel.asc
+PARENT_CONTROL_REMOTE_EXIT=20
+DIRECT PARENT CONTROL attempt 03: verified source SHA; device compile, separate .alink, same native ACL smoke
+PARENT_SOURCE_SHA256
+ba1167079cf54277506e4b4fa192a91a036a6b8d992650e8532fb182c555bda0  /tmp/codex-async-triple-x-v001-build07/support/parent_kernel.asc
+DEVICE_COMPILE_COMMAND
+PARENT_DEVICE_COMPILE_EXIT=0
+PARENT_LINK_COMMAND
+PARENT_LINK_EXIT=0
+PARENT_ARTIFACT_SHA256
+9c21d40b0aa1d3f88a1136a4ad97ba0918422a5e45dc2dc06f64c112aeda18ff  /tmp/codex-async-triple-x-v001-build07/support/parent-control/parent_device_wrapper.alink
+/tmp/codex-async-triple-x-v001-build07/support/parent-control/parent_device_wrapper.alink: ELF 64-bit LSB executable, *unknown arch 0x1029* version 1 (SYSV), statically linked, not stripped
+PARENT_SMOKE_COMMAND
+SMOKE dtype=FP32 rows=1 width=1024 blocks=1 warmup=0 repeats=0 kernel=rms_norm_bias_fp32_kernel artifact=/tmp/codex-async-triple-x-v001-build07/support/parent-control/parent_device_wrapper.alink
+CALL aclrtLaunchKernel blockDim=1 argsSize=48
+aclrtSynchronizeStream failed: aclError=507035 detail=EZ9999: Inner Error!
+EZ9999[PID: 383536] 2026-09-24-01:21:40.665.300 (EZ9999):  The error from device(chipId:0, dieId:0), serial number is 92, there is an exception of aivec error, core id is 20, error code = 0, dump info: pc start: 0x12c041200130, current: 0x12c041200194, vec error info: 0x1000000fe, mte error info: 0x5303000069, ifu error info: 0x2ffffe61517c0, ccu error info: 0xe6b320f000000000, cube error info: 0, biu error info: 0, aic error mask: 0x6500020bd00028c, para base: 0xffffe6151798.[FUNC:ProcessStarsCoreErrorInfo][FILE:device_error_core_proc.cc][LINE:332]
+        TraceBack (most recent call last):
+       The extend info: errcode:(0, 0x8000, 0) errorStr: When the D-cache reads and writes data to the UB, the response value returned by the bus is a non-zero value. fixp_error0 info: 0x3000069, fixp_error1 info: 0x53, fsmId:0, tslot:3, thread:0, ctxid:0, blk:0, sublk:0, subErrType:4.[FUNC:ProcessStarsCoreErrorInfo][FILE:device_error_core_proc.cc][LINE:352]
+       Kernel task happen error, retCode=0x31, [vector core exception].[FUNC:PreCheckTaskErr][FILE:davinci_kernel_task.cc][LINE:1502]
+       AIV Kernel happen error, retCode=0x31.[FUNC:GetError][FILE:stream.cc][LINE:1303]
+       [AIC_INFO] after execute:args print end[FUNC:GetError][FILE:stream.cc][LINE:1303]
+       [DFX_INFO]Aicore kernel execute failed, device_id=0, stream_id=584, report_stream_id=584, task_id=0, flip_num=0, fault kernel_name=rms_norm_bias_fp32_kernel, fault kernel info ext=none, program id=0, hash=2001605976614691994.[FUNC:GetError][FILE:stream.cc][LINE:1303]
+       rtStreamSynchronize execute failed, reason=[vector core exception][FUNC:FuncErrorReason][FILE:error_message_manage.cc][LINE:53]
+       synchronize stream failed, runtime result = 507035[FUNC:ReportCallError][FILE:log_inner.cpp][LINE:162]
+
+PARENT_SMOKE_EXIT=3
+PARENT_CONTROL_REMOTE_EXIT=3
+=== Exact direct-parent control commands and result ===
+Parent source SHA-256: ba1167079cf54277506e4b4fa192a91a036a6b8d992650e8532fb182c555bda0
+Parent device artifact SHA-256: 9c21d40b0aa1d3f88a1136a4ad97ba0918422a5e45dc2dc06f64c112aeda18ff
+Runner source SHA-256: cbf78cad0a78684a0f400da5025a575608799c4381f1e3c628aa052b3b28f0c8
+Device compile command: /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/bin/bisheng --cce-aicore-lang --cce-aicore-arch=dav-c220-vec --cce-aicore-only --cce-auto-sync --npu-arch=dav-2201 --npu-soc=Ascend910B3 -std=c++17 -isystem/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include -isystem/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0 -isystem/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0/aarch64-target-linux-gnu -isystem/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0/backward -I/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ascendc/include -I/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ascendc/include/basic_api/impl -I/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/asc/include -I/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/asc/include/basic_api -I/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/asc/include/interface -I/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/include -I/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/asc -I/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/include -I/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/compiler/tikcpp/tikcfw -c /tmp/codex-async-triple-x-v001-build07/support/parent_device_wrapper.cpp -o /tmp/codex-async-triple-x-v001-build07/support/parent-control/parent_device_wrapper.cpp.o
+Device compile exit: 0
+Device link command: /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/bin/ld.lld -m aicorelinux -Ttext=0 -static /tmp/codex-async-triple-x-v001-build07/support/parent-control/parent_device_wrapper.cpp.o -o /tmp/codex-async-triple-x-v001-build07/support/parent-control/parent_device_wrapper.alink
+Device link exit: 0
+Run command: /tmp/codex-async-triple-x-v001-build07/support/native/correctness_runner /tmp/codex-async-triple-x-v001-build07/support/parent-control/parent_device_wrapper.alink
+Run exit: 3
+Result: same aclrtSynchronizeStream ACL error 507035 with AIV vector core exception and D-cache/UB response non-zero. The parent and V001 runs share the native runner and input generation; this control result does not isolate the runner ABI from an inherited kernel/runtime issue.

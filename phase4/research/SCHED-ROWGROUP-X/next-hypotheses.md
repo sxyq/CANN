@@ -2,9 +2,9 @@
 
 > **MAIN-2 APPROVALS 2026-09-25** — APPROVED NEXT backlog: H1 CORE-FILL ROW-GROUP SCHEDULING (quantified: 17×256 currently ≈2 blocks vs ~17 potential); H2 EVEN-SPLIT TASK EXTENTS second in queue; H3 dynamic task-pull stays NEEDS_MORE_EVIDENCE. H1 implementation is FORBIDDEN while V001 is undecided. Scope arbitration: row-group ownership / rows-task / core-fill / shape scheduling fixed to this route (ALIGN-H2 geometry part deferred here).
 
-CURRENT_CANDIDATE: V001 (SHA 0fae0a42e3942356fe3477cd518b17180b6104d57350cee705cba37a5895e65c) — R016 shape-aware rows/task scheduling parent (official 17.14) + R012 32-byte-safe row-group ownership; direct parent R016-V001-COMPILEFIX-A (parent SHA 62de32df…, score 17.14). Local status NEEDS_ONE_MORE_LOCAL: 17×256 median delta −0.76% (inside same-binary noise floor), 33×100 −31.81% but one reverse pair and high Candidate within-block MAD, legacy 4/4 −18.45% tagged LOAD_NOT_QUALIFIED. No kernel edits, no new revision, no device runs this turn (Track-A unchanged, Track-B research only).
+CURRENT_CANDIDATE: V001 (SHA 0fae0a42e3942356fe3477cd518b17180b6104d57350cee705cba37a5895e65c) — R016 shape-aware rows/task scheduling parent (official 17.14) + R012 32-byte-safe row-group ownership; direct parent R016-V001-COMPILEFIX-A (parent SHA 62de32df…, score 17.14). Local status **ONLINE_CANDIDATE** as of 2026-09-25 LH3 lease (see CYCLE section below): same-binary exact-shape PASS on 33×100 and 17×256, interleaved P/C 4/4 favor V001 at median −51.38% on 33×100 (order-robust), 17×256 aligned control ≈ −0.2% (in noise), bad=0 all runs, SHA unchanged. Local % ≠ Official Score; Main disposes. No kernel edits, no new revision.
 
-CURRENT_BLOCKER: Measurement, not architecture. Both PASS measurement shapes (17×256, 33×100) already ran; 17×256 sits inside the noise floor and 33×100 lacks two clean independent pair-blocks. V001 SHA stays unchanged until Main issues a timing instruction under the unified reference protocol (device events, warmup≥10, interleaved pairs). No Main decision is required to continue Track-B research.
+CURRENT_BLOCKER: None for Track-B research. Track-A measurement resolved this cycle (was: drift 0.1999/0.1036 and reverse pair). Waiting on Main disposition of V001 before ANY implementation (H1 and H9 remain FORBIDDEN until then). No Main decision is required to continue Track-B research.
 
 BOTTLENECK_MODEL: V001's host scheduler maps D to fixed task granularity (D≤256: 16 rows/task; ≤1024: 8; ≤4096: 4; ≤16384: 2; else 1), then taskCount = ceil(rowCount/rowsPerTask), blockDim = min(availableCoreNum, taskCount), plus an 8-core cap for D>16384 (submission.asc:433-506). Two consequences on the probe shapes: (a) core underfill — 17×256 gives taskCount=2 (2 blocks of 16+1 rows), 33×100 gives taskCount=3 (16+16+1), so 15+ of ~40 cores idle; (b) intra-launch imbalance — the partial tail task is 1 row against a 16-row head task, so wall time ≈ the longest serial row loop. The V001 experiment itself isolates core count as the dominant lever: parent forces single-core for non-32B rows (D=100 → 1 core), V001 lifts that rule and reaches 3 cores → −31.81% on 33×100; on 17×256 (rowBytes 1024, already 32B-aligned) both binaries already launch 2 blocks → −0.76% ≈ zero effect. Read together: moving 1→3 cores bought ~32%; going 2–3 → 17–33 cores via core-fill scheduling is the next untested magnitude, while further row-group tweaks on already-multicore shapes are expected near-zero. Secondary lever: the D>16384 8-core cap underfills wide multi-row shapes; scheduleMode cyclic/contiguous alternation by band has no recorded evidence.
 
@@ -102,3 +102,190 @@ THEME-COVERAGE (required exploration themes → where handled): shape-aware core
 
 RECOMMENDED_NEXT: (1) No action on Track-A — V001 SHA stays unchanged; wait for Main's timing instruction on 17×256/33×100 under the reference protocol (interleaved pairs, device events, warmup≥10). (2) First new revision after Main disposes V001 → HYPOTHESIS-1 (core-fill rowsPerTask): single host-side OFAT, probes already exist on both PASS shapes, expected effect (2–3 → 9–17 cores) far above the 0.023 same-binary noise floor. (3) If H1 shows launch-overhead regression → HYPOTHESIS-2 (even-split extents, same block count). (4) H3/H4/H5 stay in backlog pending (dynamic-queue API verification / a qualified large-rowCount shape / a qualified wide multi-row shape respectively). (5) Duplicate watch: before Main assigns any core-count scheduling idea to the queued replacement lane CORE-SCHED-X (next-round-plan.md:93), route it here first — this file owns that mechanism family; likewise H1 must be re-read against EXT-ASCEND-X if that slot ever starts.
 
+
+---
+
+## CYCLE 2026-09-25 (LH3-SCHED-33x100) — Track-A disposition + H1/H2 re-verification + new screening
+
+> This section supersedes the CURRENT_CANDIDATE / CURRENT_BLOCKER status lines above (kept for provenance).
+
+TRACK-A-OUTCOME: **ONLINE_CANDIDATE** (local status; local % ≠ Official Score; Main disposes).
+Lease LH3-SCHED-33x100, device d4, unified DEVICE_EVENT protocol, one clean attempt each stage,
+no source edits, V001 SHA unchanged `0fae0a42…`.
+- Same-binary exact-shape PASS: 33×100 (ALL MAD/med 0.0536, drift 0.0990) and 17×256
+  (0.0262, 0.0247); both ≤0.10 on first attempt — prior blockers (drift 0.1999/0.1036,
+  reverse pair, high C MAD) resolved.
+- Interleaved P/C PC/CP/PC/CP same window: 33×100 deltas −51.68/−51.07/−52.04/−50.99 % →
+  **median −51.38%, 4/4 favor V001, no reverse pair, order-robust**; 17×256 aligned control
+  −25.80(outlier-tailed P)/−4.16/+2.03/−0.20 → median −2.18%, ex-p1 ≈ −0.2% (in noise floor).
+- bad=0 on all 18 runs; load AICore 0% + VLLMEngineCor HBM-resident on d4 (documented).
+- Evidence: `cann-next6/SCHED-ROWGROUP-X/phase4/local/SCHED-ROWGROUP-X/V001/support/results-lh3-{sb33,pc}/`,
+  handoff `…/V001/HANDOFF-ONLINE-CANDIDATE.md`.
+
+BOTTLENECK-MODEL UPDATE: V001's core-count lever is now measured twice under the reference
+protocol: 1→3 cores on 33×100 bought **−51.4%** (this cycle; earlier −31.81% run had a reverse
+pair and inflated C MAD — direction consistent, current number is the clean one). Sublinear:
+3× cores → 1.95× speedup (~65% parallel efficiency at k=3). 17×256 (2 blocks both binaries,
+16+1 rows) stayed in noise (−0.76% prior, ≈−0.2% ex-p1 this cycle) — control confirms the win
+comes from lifting the single-core fallback on non-32B rows, not from host noise. H1's premise
+(core count is the dominant lever; bands never derived from availableCoreNum) is strengthened;
+its gain assumption should now be calibrated against ~65% scaling efficiency at k=3 rather than
+assumed linear (see H9).
+
+H1/H2 RE-VERIFICATION vs submission.asc (sha 0fae0a42…, 531 lines — re-read this cycle):
+- Band block: lines 436–451 (D≤256: rowsPerTask=16, scheduleMode=0 cyclic; ≤1024: 8/1;
+  ≤4096: 4/0; ≤16384: 2/1; else 1/1) — H1's 436-452 ref OK (±1).
+- rowGroup = 32/gcd(rowBytes,32): lines 454–463 (`rowGroup` at 463); rounding to group
+  boundaries: 465–469; taskCount: 471–477; available/requestedBlocks: 479–486; wide 8-core cap:
+  490–493 — H2's 471-477 and H5's 490-493 refs OK.
+- Kernel task loop: lines 91–144 (cyclic stride 94–108; contiguous base/extra 114–124;
+  firstRow/endRow 96–101, 130–135) — H2's 95-99/129-133 refs OK. Kernel computes
+  firstRow = task×rowsPerTask in-kernel → H2's note (host-derived extents need a small kernel
+  edit OR in-kernel even division) remains correct.
+- availableCoreNum source: runner_ref.inc:212 `aclrtGetDeviceInfo(ACL_DEV_ATTR_VECTOR_CORE_NUM)`
+  → real device vector-core count, no hidden hard cap. H1's core-count target is feasible up to
+  full AIV count; wide cap (490–493) is the only launch-width restriction and only at D>16384.
+- **CORRECTION to H1 EXPECTED_SHAPES**: 33×100 FP32 rowBytes=400 → gcd(400,32)=16 →
+  **rowGroup=2 (not 4)**. H1's "~9 blocks" (16/4·…) is wrong; with rowGroup=2 the H1 formula
+  gives rowsPerTask=2 → taskCount≈16 on 33×100. Direction of the expectation (≫3 blocks) is
+  unchanged, magnitude is better.
+- Probe-shape mapping under current V001 (verified): 33×100 → rowsPerTask=16, mode0 cyclic,
+  taskCount=3=blockDim ⇒ 16/16/1 rows across 3 cores; 17×256 → taskCount=2=blockDim ⇒ 16+1
+  rows, 2 cores. Confirms core-underfill quantification (2–3 blocks vs ~16–17 possible).
+
+PUBLIC RESEARCH RE-VERIFIED (architecture only, no code copied):
+- EXT-VLLM-ASCEND-BLOCKFACTOR: live re-read of
+  `github.com/vllm-project/vllm-ascend csrc/moe/add_rms_norm_bias/op_host/add_rms_norm_bias_tiling.cpp`
+  `CalculateBlockParameters` — confirmed: blockFactor = ceil(numRow/numCore) (via tileNum loop),
+  useCoreNum = ceil(numRow/blockFactor), latsBlockFactor = remainder → last core,
+  `context->SetBlockDim(use_core_num)` (full core fill is the official default). New details
+  recorded: alignment units BLOCK_ALIGN_NUM=16 (B16) / FLOAT_BLOCK_ALIGN_NUM=8 (FP32 ⇒ 32 B,
+  matches our rowGroup=32/gcd derivation); MERGE_N threshold SMALL_REDUCE_NUM=2000 columns;
+  UB_FACTOR_B32=10240 / B16=12288 elements; numCore from `GetCoreNumAiv()`.
+- EXT-TRITON-ROWGRID: live re-read of `triton-lang/triton python/tutorials/05-layer-norm.py` —
+  confirmed `_layer_norm_fwd_fused[(M,)]`, `row = tl.program_id(0)`, one program per row,
+  BLOCK_SIZE = min(65536//elem_size, next_pow2(N)), num_warps = min(max(BLOCK_SIZE//256,1),8).
+- EXT-VLLM-CUDA-PERROW (`dim3 grid(num_tokens)`): record from prior cycle unchanged; not
+  re-fetched this cycle (low churn, architecture claim already source-backed).
+
+### H6: SCHEDULEMODE UNIFORMITY ABLATION (cyclic/contiguous by-band alternation removal)
+- MECHANISM: force scheduleMode to one value for all five bands (either always 0 = cyclic stride
+  `task=coreIdx; task+=coreNum`, or always 1 = contiguous base/extra split); rowsPerTask,
+  rowGroup rounding, taskCount, requestedBlocks, cap all unchanged. Pure OFAT on lines 438/444/
+  447/450 mode assignments.
+- BOTTLENECK: per-core row-continuity / stripe locality — currently D≤256 and D≤4096 bands use
+  cyclic, the other bands contiguous, with zero recorded evidence for either choice.
+- EXPECTED_SHAPES: **provable zero effect on all currently qualified shapes**: blockDim =
+  min(available, taskCount), so whenever taskCount ≤ cores (both PASS shapes: 3 and 2 tasks),
+  each block receives exactly one task under both loops → identical ownership. Effect exists only
+  when taskCount > cores (large rowCount): cyclic interleaves consecutive tasks across cores,
+  contiguous gives each core a packed row range.
+- WHY_HELP: on large-R shapes contiguous gives each core a contiguous GM row range (better burst
+  locality for DataCopyPad); cyclic guarantees equal task counts with heterogeneous tails.
+- WHY_FAIL: on today's probe shapes the two mappings are mathematically identical, so a nonzero
+  local delta would falsify the harness, not the hypothesis; no qualified large-R shape exists.
+- ASCEND_FEASIBILITY: trivial (constant assignment to an existing uint32); kernel paths already
+  both implemented.
+- UB/DMA/SYNC/PRECISION: UB unchanged / total bytes unchanged (distribution only) / none / none
+  (rows independent).
+- DUPLICATE_CHECK: no prior hypothesis owns mode (THEME-COVERAGE only flagged it as an evidence
+  gap); distinct from H1 (granularity), H2 (extents), H4 (band removal), H5 (cap).
+- MINIMAL_OFAT_DIFF: scheduleMode constant across band block 436–451; nothing else.
+- FALSIFICATION: on a qualified large-R shape, interleaved same-window cyclic vs contiguous P/P
+  comparison beyond the same-binary floor → mode matters (then pick winner); on PASS shapes
+  delta must be ≡0 (else harness fault). 
+- CLASSIFICATION: NEEDS_MORE_EVIDENCE (provably inert on today's PASS shapes; needs a qualified
+  taskCount>cores shape — same blocker family as H3/H5).
+
+### H7: PER-TASK OWNERSHIP WITHOUT ROW-GROUP FLOOR (relax the R012 rounding invariant)
+- MECHANISM: drop the ceil-to-rowGroup rounding (lines 465–469) and let rowsPerTask take any
+  band value down to 1 even when rowGroup>1; each task then starts at a byte offset that may not
+  be 32B-aligned, relying on the per-row DataCopyPad path the parent already uses for unaligned
+  rows. Ownership safety shifts from "complete 32B groups per core" to "disjoint rows per core +
+  pad path".
+- BOTTLENECK: the granularity floor rowGroup itself. Worst case: FP16/BF16 odd-width rows
+  (rowBytes=2w with gcd(2w,32)=2 → rowGroup=16) force ≥16-row tasks regardless of band → core
+  underfill that H1/H4 cannot remove (both keep the invariant). On FP32 probes rowGroup≤2 so
+  H7 ≈ H1 there (no local separation possible).
+- EXPECTED_SHAPES: FP16/BF16 odd-D multi-row (e.g. 17×257 FP16: rowBytes=514 → rowGroup=16 →
+  V001 taskCount=2; H7 allows 17 tasks). Neutral on FP32 33×100/17×256 (floor 2/1).
+- WHY_HELP: removes the last structural cause of the parent's single-core behavior on unaligned
+  shapes; the parent rule's rationale was never documented beyond "ownership safety"; rows are
+  disjoint outputs so cross-core pad writes cannot alias if each task owns whole rows.
+- WHY_FAIL: the parent rule may exist for a real GM-burst/coalescing cost of unaligned per-core
+  access, in which case more cores × slower copies could lose; pad-tail correctness across the
+  15-case suite (FP16/BF16 unaligned) must be re-proven; this is the only screened hypothesis
+  that questions a V001 donor invariant — higher risk class.
+- ASCEND_FEASIBILITY: host-only (remove rounding); kernel untouched — ProcessRow is already
+  row-granular and takes row index.
+- UB/DMA/SYNC/PRECISION: UB unchanged / same total GM bytes, more concurrent streams (pad path
+  per row unchanged) / none / none (per-row arithmetic identical).
+- DUPLICATE_CHECK: explicitly questioning R012 (V001's donor) — flagged as risk, not duplicate;
+  H1/H2/H4 all preserve the group floor; parent is stricter (single-core fallback), so this is
+  not a parent restatement; not ALIGN (copy path unchanged), not C001 (no D split, no sync).
+- MINIMAL_OFAT_DIFF: lines 465–469 → use band rowsPerTask directly (no group ceil); everything
+  else byte-identical.
+- FALSIFICATION: (1) correctness suite must stay PASS-identical vs V001 on all 15 cases — any
+  new mismatch kills it; (2) on a qualified FP16 odd-D shape, expect taskCount 2→~rowCount and a
+  delta beyond floor; (3) if unaligned-shape times regress at equal core count vs V001 group
+  ownership → unaligned per-core GM access cost is real, abandon.
+- CLASSIFICATION: NEEDS_MORE_EVIDENCE (correctness-rationale audit + FP16 shape qualification
+  required first; queue strictly after H1 — H1 subsumes the FP32 win where rowGroup≤2).
+
+### H9: CORE-SCALING CALIBRATION SWEEP (measurement experiment, pre-falsifies H1's ceiling)
+- MECHANISM: experimental host variant ONLY (never a scoring candidate): rowsPerTask = rowGroup
+  (H4 floor, so taskCount ≈ rowCount/rowGroup) plus requestedBlocks override k ∈ {1,2,3,4,6,8,
+  16,min(available,taskCount)}; run k values interleaved across processes in one window on 33×100
+  (17×256 secondary), same-binary DEVICE_EVENT protocol → speedup-vs-core-count curve.
+- BOTTLENECK: unknown core-scaling shape of this kernel. V001 gives one measured point (k=3 →
+  1.95× vs parent k=1, ~65% efficiency); H1's expected win (k≈9–16) assumes more.
+- EXPECTED_SHAPES: 33×100 primary (taskCount≈16 with floor 2 ⇒ k≤16 meaningful), 17×256
+  secondary (k≤17).
+- WHY_HELP: turns H1's expected gain into a measured projection before any V002 exists; curve
+  plateau tells us whether to cap H1's oversubscription target with data; also isolates launch
+  overhead (per-block fixed cost) directly — H1/H2's main stated failure risk.
+- WHY_FAIL: still a source change (host) → FORBIDDEN until Main disposes V001, same gate as H1;
+  costs one lease window (~minutes, cheap under the reference protocol); results are
+  shape-specific (33×100 FP32 class).
+- ASCEND_FEASIBILITY: runner/CLI unchanged; experimental build only; no kernel edit.
+- UB/DMA/SYNC/PRECISION: launch width only — UB/DMA totals/SYNC/precision all unchanged.
+- DUPLICATE_CHECK: not a revision of the scoring line — recorded as an experiment so Main does
+  not count it as a competing Candidate; composes H4 floor × width sweep; H1 stays the single
+  scoring change afterwards. No other route owns a core-scaling experiment.
+- MINIMAL_OFAT_DIFF (experiment build): rowsPerTask = rowGroup (465–469 bypass) + requestedBlocks
+  = min(k, taskCount) with k from CLI/env.
+- FALSIFICATION: curve plateau at k≤4–6 → H1's ~16-core expectation corrected DOWN before
+  implementation (and H2 priority rises); near-linear to 16 → H1 proceeds as written; sharply
+  falling median with k (launch overhead) → H1's oversubscription cap set below the knee.
+- CLASSIFICATION: READY_FOR_MAIN_REVIEW (recommended as a measurement-layer step BEFORE the H1
+  revision if Main wants evidence; still gated on V001 disposition).
+
+SCREENED-OUT THIS CYCLE (short form, no full field sets):
+| candidate | verdict | reason |
+|---|---|---|
+| constant rowsPerTask for all bands (D-agnostic granularity) | DUPLICATE_OF H4 | on PASS shapes rowGroup floor makes constant≡H4 (rowGroup 2 / 1) |
+| kernel-side row-strided static map (F001 revival, mode0) | DUPLICATE_OF H4 | identical ownership on PASS shapes; F001 donor record already covers WA history |
+| always launch full core count + empty-block early return | SCREENED_FAIL | adds launch overhead; blocks beyond taskCount have no work (taskCount≤cores already saturates) |
+| merge tail task into penultimate (merge-tail balance) | DUPLICATE_OF H2 inverted | H2 even-split strictly dominates merge-tail on max-task length |
+| band D-boundary crossover sweep (re-derive 256/1024/4096/16384) | DUPLICATE_OF H5 stage 2 | same constants family; keep in H5 |
+| device task-pull queue | EXISTING H3 | unchanged, still NEEDS_MORE_EVIDENCE |
+
+RECOMMENDED-NEXT (cycle 2026-09-25): (1) Track-A handed off as ONLINE_CANDIDATE — Main
+disposes V001 (promote or judge-own); local % ≠ Official Score. (2) H1 remains FORBIDDEN until
+that disposition. (3) If Main wants the H1 bet calibrated first → H9 sweep (one lease window).
+(4) Then H1 (corrected expectation: 33×100 ≈16 tasks, not 9; rowGroup=2), H2 fallback.
+(5) H6/H7/H3/H4/H5 stay NEEDS_MORE_EVIDENCE with their stated qualification blockers.
+(6) Lane guard unchanged: CORE-SCHED-X and EXT-ASCEND-X must read this file first.
+
+## POST-ONLINE_CANDIDATE NOTE (2026-09-25, short — no new hypothesis)
+
+- V001 status stays **local ONLINE_CANDIDATE** (SHA `0fae0a42e3942356fe3477cd518b17180b6104d57350cee705cba37a5895e65c` unchanged); local % ≠ Official Score; Main disposes.
+- **H1 (core-fill rowsPerTask) and H9 (core-scaling sweep) remain blocked — do not implement.**
+  Both require source edits (H1: host band block; H9: experimental host build). They stay
+  FORBIDDEN until Main either sends V001 to Judge or issues NEXT_HYPOTHESIS. H9 in particular
+  must not be slipped in as a "measurement-only" run: it is a source build and carries the
+  same hold.
+- Same rule for anything else promoted from this file later (H2/H3/H6/H7/H4/H5): Track-B
+  research may continue read-only; no `.asc`/host edits, no new Revision, no device runs from
+  this route until Main's explicit instruction.
+- This cycle: no hypothesis added, no source edit, no device lease; file append only.

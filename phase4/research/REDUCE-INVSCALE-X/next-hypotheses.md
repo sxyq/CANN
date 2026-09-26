@@ -465,3 +465,352 @@ Implications for H1 (unchanged classification NEEDS_MORE_EVIDENCE until measured
   failure there falls back to the always-available `Duplicate(1.0)+Div` variant per HYP-1.
 - Usage note: input to Rsqrt must be `rowSum = mean + eps > 0`; the devkit doc warns
   non-positive inputs give undefined results — epsilon already guarantees positivity.
+
+---
+
+# CYCLE 2026-09-25 (long-horizon) — TRACK-A disposition + TRACK-B refinements
+
+## TRACK-A RESULT (measured this cycle; hypothesis context, not a hypothesis itself)
+
+Same-binary noise floor attempted once on the unified reference harness (identical
+`runner_ref.inc`, sha256 `89f8380a5ce6d6538374da67bd8151bf1b529131796a0d747d865a41b6f56fa9`),
+device 6 (d4 taken by ALIGN-TAIL-X, d5 by BATCH-RESIDENT-X), lease LH-REDUCE-8192,
+2026-09-25T14:31–14:36Z, AICore 0%, resident VLLMWorker_TP documented:
+
+- Shape FP32 rows=1 D=8192, Direct Parent V001 binary, warmup 10, 2 blocks x 31
+  in-process samples, device events primary. Raw: `V002/support/results-ref-8192/samebin-w10-s31-raw.tsv`.
+- B1 median 14.220 µs / MAD 7.520 (MAD/med 0.529); B2 median 7.000 / MAD 0.400 (0.057);
+  ALL median 8.330 / MAD 1.790 → **MAD/median = 0.2149 > 0.10 FAIL**;
+  **block drift = 0.8667 > 0.10 FAIL** (>0.25 → MEASUREMENT_PROTOCOL_BLOCKED_FOR_SHAPE
+  per local-timing-protocol; not a Route failure, not a Candidate signal).
+- One clean attempt used → **no interleaved P/C this cycle** (zero candidate timing samples).
+- Multi-tile reduction path runtime-confirmed on BOTH binaries at D=8192
+  (ceil(8192/6144)=2 tiles): Direct Parent V001 `bad=2048 max_abs=5.4174` — exactly the
+  known V001 multi-tile defect signature (bad = D−6144); Candidate V002 `bad=0
+  max_abs=1.67e-06` on a correctness-confirmation run (its timing numbers unused).
+- SHAs unchanged: V002 `bef271b6...ad26`, V001 `f017935d...8023`. No kernel edits,
+  no V003, no CANNJudge. Evidence: `phase4/local/REDUCE-INVSCALE-X/V002/support/TRACK-A-8192-REPORT.md`
+  + `results-ref-8192/`. Lease released.
+
+Consequence for TRACK-B: every hypothesis below remains unmeasurable until a shape
+passes the same-binary criterion under the unified protocol. The FP32 1x8192 shape on
+d6 is now MEASUREMENT_PROTOCOL_BLOCKED_FOR_SHAPE for this Route's Direct Parent;
+a future window needs a Main-side harness/host improvement decision before any P/C.
+
+## H1 REFINEMENT — 16-shape precision battery for the Rsqrt tail (DESIGN ONLY; no implementation)
+
+Motivation: `AscendC::Rsqrt` (→ `vrsqrt`) availability on this exact toolchain is settled
+(see RSQRT FEASIBILITY above); the devkit doc explicitly warns float Rsqrt comparison
+error can exceed 1e-4 — the SAME tolerance as the local harness (FP32 atol=rtol=1e-4,
+`runner_main.inc` L186). The battery below is the required evidence before any timing.
+
+Battery = 16 device cases. Shape axis reuses the project's accepted correctness matrix;
+magnitude axis is new (rsqrt input is `rowSum = mean(u^2) + eps`, u = x + r, always fp32
+regime regardless of input dtype). Generators are harness-side input functions — the
+kernel under test is untouched.
+
+| # | rows | D | dtype | input regime (harness generator) | rowSum regime exercised | why included |
+|---:|---:|---:|---|---|---|---|
+| 1 | 1 | 64 | FP32 | standard (existing generator) | O(0.1–1) | shortest single-tile; tail dominates |
+| 2 | 1 | 6144 | FP32 | standard | O(0.1–1) | single-tile control, aligns with old probe |
+| 3 | 1 | 8192 | FP32 | standard | O(0.1–1) | primary multi-tile shape |
+| 4 | 3 | 8192 | FP32 | standard | O(0.1–1) | multi-row: tail runs 3x, rsqrt called per row |
+| 5 | 1 | 32768 | FP32 | standard | O(0.1–1) | deep multi-tile (6 partials) |
+| 6 | 1 | 8192 | FP16 | standard | O(0.1–1), fp32 tail | input quantization into fp32 rowSum |
+| 7 | 1 | 8192 | BF16 | standard | O(0.1–1), fp32 tail | bf16 quantization ladder |
+| 8 | 1 | 65 | FP32 | standard | O(0.1–1) | unaligned D, single tile |
+| 9 | 1 | 6144 | FP32 | near-zero variance: r := −x + δ, δ=1e-3 | rowSum ≈ eps + δ² → ~1e-5, invRms ≈ 3.2e2 | worst absolute-error regime; rsqrt of near-eps input |
+| 10 | 1 | 8192 | FP32 | near-zero variance (as #9) | ~1e-5 | same, multi-tile |
+| 11 | 3 | 8192 | FP32 | near-zero variance (as #9) | ~1e-5 per row | per-row repetition of near-eps rsqrt |
+| 12 | 1 | 32768 | FP32 | near-zero variance (as #9) | ~1e-5 | deep multi-tile + near-eps |
+| 13 | 1 | 8192 | FP32 | large variance: inputs scaled x10 | rowSum ~ 1e2–1e3, invRms ~ 0.03 | exponent-ladder high side of vrsqrt |
+| 14 | 1 | 4096 | FP32 | power-of-two adversarial: construct u so mean(u²) lands on 2^-2, 2^0, 2^2 (±1 ULP dither) | exact binade boundaries | vrsqrt ULP error is exponent-dependent; binade edges are where fused vs split results diverge |
+| 15 | 1 | 8192 | FP32 | standard, but gamma/bias all-zero (isolates invRms error in output) | O(0.1–1) | output = u*invRms exactly; no gamma/bias error to mask rsqrt error |
+| 16 | 1 | 100 | FP16 | near-zero variance (as #9) | ~1e-5 | near-eps tail under fp16 input quantization |
+
+Tolerances (both recorded, stricter governs the PASS):
+1. Local harness: FP32 atol=rtol=1e-4; FP16 1e-3; BF16 2e-2 (`runner_main.inc` L186).
+2. ops-precision-standard FLOAT32: rtol 9.77e-4 / atol 1.53e-5 at matched ratio 0.99 —
+   reported, but a case must also clear (1) to count as PASS, because the local
+   acceptance runs at (1).
+
+Decision rules (pre-registered, before any rsqrt build):
+- **16/16 PASS** → H1 upgraded to READY_FOR_TIMING (still needs a qualified window).
+- **Failures confined to near-eps cases (#9–12, #16)** → rsqrt branch of H1 closed on
+  precision; open fallback **H1b** = vector `Duplicate(1.0)+Div` replacing only the scalar
+  division (chain still shortened by removing the scalar step; V→S/S→V hop retained).
+  H1b gets its own battery run (same 16 cases) before timing.
+- **Any failure in standard-regime cases (#1–8, #13–15)** → H1 as specified is
+  TESTED_AND_REFUTED on precision (no fallback claim); do not time.
+- Golden stays the existing double-precision reference; battery changes only inputs,
+  never tolerance or kernel.
+- One device window for the battery; no timing inside it (battery is correctness-only).
+
+## H2 REFINEMENT — overlap model (quantitative OFAT, still READY_FOR_MAIN_REVIEW)
+
+Measured anchors from this cycle (Direct Parent, FP32 1x8192, device events):
+fast-cluster device median ≈ 7.0 µs (B2), B1 contaminated (14.2 µs bimodal). Use
+7.0 µs as the optimistic kernel-cost anchor for effect-size budgeting only — the shape
+is measurement-blocked, so no P/C claim is possible yet.
+
+Critical-path structure (V002 line refs as in the OFAT plan above):
+```
+reduce pass (2 tiles)  ->  [collapse]  ->  TAIL: Muls -> Adds -> Sqrt -> V2S ->
+                           scalar 1/x -> S2V     ||     OUTPUT TILE-0 MTE2 load (hoisted)
+                                              ->  first Muls(invRms)  [waits for both]
+```
+- The hoist converts `tail + load` (serial) into `max(tail, load)` (parallel).
+  Saved cycles per row = `min(tail_duration, tile0_load_duration)`.
+- tile0 load = 6144 elems x 2 tensors x 4 B = 48 KiB MTE2; even at a pessimistic
+  50 GB/s effective single-core share that is ~1 µs; at an optimistic 200+ GB/s
+  effective, ~0.2 µs. Tail = 6 dependent steps incl. one V→S and one S→V sync and a
+  scalar divide — plausibly 0.5–2 µs on-device, but NOT measured.
+- Therefore per-row saving is bounded by roughly min(≈0.2–1 µs, ≈0.5–2 µs) → order
+  0.2–1 µs per row; kernel anchor 7.0 µs → upper-bound relative effect ~3–14% rows=1,
+  and linear in rows (3 tails + 3 first loads at rows=3 → up to ~3x absolute saving,
+  smaller relative dilution because output pass also scales).
+- Predicted relative-gain ordering (added falsification axis):
+  `rows=3 D=8192  >  rows=1 D=8192  >  rows=1 D=6144` (single tile has one load but
+  the same tail; overlap window unchanged in absolute µs, larger relative share only
+  when kernel is shorter — so treat a D=6144-only win with suspicion per existing rule).
+  A win that does NOT scale with rows (rows=3 ≈ rows=1) contradicts the mechanism
+  (per-row tail) and must be read as a different effect or noise.
+- Buffer-aliasing constraint restated (unchanged): only the two LoadNative issues move;
+  the output `Add` stays behind the existing `SyncMte2ToVector` at L509; `rowSum` work
+  buffers (`partials_`, `scalars_`, `reduceWork_`, `value_`, `fp32A/B`) are disjoint from
+  `inputX_/inputR_`, whose release at end-of-reduce (`SyncVectorToMte2`, L314) already
+  happened before the insertion point. The one-line `firstTileLoaded` companion change
+  in `WriteNormalizedRow` is mandatory (otherwise duplicate load erases the overlap).
+- Measurement prerequisite (updated with this cycle's data): the FP32 1x8192 shape is
+  MEASUREMENT_PROTOCOL_BLOCKED_FOR_SHAPE on d6 for the Direct Parent. H2's first
+  implementation window therefore also needs an unblocked shape — either an improved
+  harness/host state (Main decision) or re-qualification on d4/d5 in a future lease.
+  Correctness prerequisite unchanged: full 16-shape matrix of the hoisted variant first.
+
+## H3 REFINEMENT — UB arithmetic settled from toolchain headers (FP32 near-zero signal)
+
+UB truth for this exact toolchain (server3 CANN 8.5.0.alpha002,
+`asc/impl/basic_api/utils/kernel_utils_constants.h`, `__NPU_ARCH__ == 2201`):
+`TOTAL_UB_SIZE = 192 KiB = 196608 B`; `TOTAL_VEC_LOCAL_SIZE = 184 KiB = 188416 B`
+(top 8 KiB is TMP/reserved); exposed via `AscendC::GetUBSizeInBytes()`.
+
+V002 FP32 budget (kReduceTileElems = 6144): 7 buffers x 6144 x 4 B = 172032 B
++ 64-float partials 256 B + scalar slots ≈ 64 B → ≈ 172352 B (168.3 KiB), matching the
+source design comment (V002 L86-99). Headroom: **16064 B** to the 184 KiB usable line
+(24256 B to the 192 KiB line).
+
+Cost model for widening (FP32): per extra element = 3 x 4 B (inputX/R, output) +
+4 x 4 B (fp32A, fp32B, value, reduceWork) = 28 B. Usable headroom buys **+573 elements**
+→ legal widened tile = 6144+512 = **6656** (14336 B) within 184 KiB; 6912 only if the
+full 192 KiB proves allocatable (the 8 KiB TMP region is not).
+
+Signal band (tile-count change, the actual mechanism):
+- D=8192 (PRIMARY probe): ceil(8192/6144)=2, ceil(8192/6656)=2 → **no change**.
+  No UB-feasible FP32 width reaches a 1-tile D=8192 (would need 8192x28 = 229 KiB).
+- D=16384: 3 vs 3 → no change. D=24576: 4 vs 4 → no change. D=32768: 6 vs 5 → change.
+- Band where count changes: **D ∈ (30720, 32768]** only (6→5 for 6656).
+  I.e. H3 has exactly zero effect at the primary probe and at every matrix shape except
+  D=32768; even there the saving is 1 fewer `ReduceSum` tile + 1 fewer load/sync round
+  out of 6 (~17% of the reduce loop, a small share of total kernel time).
+- FP16/BF16 budget: 3 x 2 B + 4 x 4 B = 22 B/elem → 6144 budget 135488 B; headroom to
+  184 KiB = 52928 B → +2406 elems → tile 8448; count changes only for D > 16896 and
+  D ≤ 32768: e.g. D=32768 → 4 (from 6). Still invisible at FP32 probe dtype.
+
+**Updated classification: SCREENED_LOW_VALUE (was NEEDS_MORE_EVIDENCE).** UB feasibility
+is now answered (FP32 widening legal but tiny); the mechanism's only signal band is
+D ∈ (30720, 32768], absent at the primary probe shape. Not worth a device window unless
+Main later fixes the official scoring shape to deep-D FP32. Optional: OPT-4's FP32
+single-stage variant is now also numerically dead: whole-row squares add D x 4 B;
+even the smallest multi-tile D=8192 needs 168.3 + 32 = 200.3 KiB > 192 KiB total.
+FP16 single-stage window exists only for D ∈ [8192, ~13232] — off-probe, off-dtype.
+
+## SCREENED HYPOTHESIS LEDGER (5, all fields, refreshed this cycle)
+
+### H1 — Rsqrt tail chain
+- MECHANISM: replace `Sqrt` + V2S + scalar `1.0f/x` + S2V with vector `Rsqrt(rowSum)`; invRms stays vector-side.
+- BOTTLENECK: item 2 (serial per-row normalization tail on critical path).
+- EXPECTED_SHAPES: largest relative at short rows / rows>1; small at wide multi-tile D.
+- WHY_HELP: removes 1 dependent inverse op and both cross-pipe hops per row.
+- WHY_FAIL: vrsqrt float error may exceed local 1e-4 (devkit warning) especially near-eps; effect may sit under noise floor.
+- FEASIBILITY: Rsqrt API confirmed on CANN 8.5.0.alpha002 dav-2201 (vrsqrt intrinsic); compile-proven path.
+- UB: none (1-element rowSum slot unchanged). DMA: none. SYNC: low (S2V still orders first Muls — or is removed entirely, which is the win).
+- PRECISION: THE gating risk → 16-shape battery designed above (cases #1–16); dual tolerance recorded.
+- DUPLICATE_CHECK: R020 still_unexplored = this idea; distinct from R019 (in V002) and R017 (covered). No other route touches the tail.
+- MINIMAL_OFAT_DIFF: swap only the tail sequence in ComputeRowRms.
+- FALSIFICATION: battery <16/16 PASS → precision-refuted or falls to H1b; timing win required at rows>1 shapes with same-binary criterion met first.
+- CLASSIFICATION: **NEEDS_MORE_EVIDENCE** (battery designed, not run — needs device window; accuracy not yet shown).
+
+### H2 — First-output-tile MTE2 load hoisted against rms tail
+- MECHANISM: issue tile-0 `LoadNative` x/r inside ComputeRowRms after collapse (L435, before L437), skip col-0 reload in WriteNormalizedRow.
+- BOTTLENECK: item 2/serialization at the reduce→output handoff.
+- EXPECTED_SHAPES: per-row effect; ordering rows3D8192 > rows1D8192 > rows1D6144 (new).
+- WHY_HELP: hides tile-0 load latency behind the 6-step tail each row; 0.2–1 µs/row bound from this cycle's 7.0 µs anchor.
+- WHY_FAIL: saving bounded by min(tail, load) — may be < noise floor; sync regression risk (route has V002 sync-defect history).
+- FEASIBILITY: no new API; single-stream issue reorder; detailed insertion point already specified.
+- UB: none (same buffers). DMA: one earlier MTE2 issue per row. SYNC: HIGH risk — preserved by keeping SyncMte2ToVector ahead of output Add; mandatory firstTileLoaded companion edit.
+- PRECISION: none (pure reorder).
+- DUPLICATE_CHECK: distinct from ASYNC-TRIPLE-X (MTE3/triple-pipeline), R013 (buffer depth), R006/R019.
+- MINIMAL_OFAT_DIFF: load issue point only.
+- FALSIFICATION: pre-registered in PROBE-SHAPE DESIGN above; + new rows-scaling rule (gain must scale with rows; rows-invariant gain ≠ H2).
+- CLASSIFICATION: **READY_FOR_MAIN_REVIEW** (preferred next after V002 disposition) — but implementation window still requires an unblocked qualifying shape (FP32 1x8192 now blocked on d6).
+
+### H3 — Wider ReduceSum partial (decouple reduce width from 6144)
+- MECHANISM: raise kReduceTileElems 6144→6656 (FP32) / →8448 (FP16), fewer wider ReduceSum calls.
+- BOTTLENECK: item 1/3 (per-tile serialization, collapse re-read).
+- EXPECTED_SHAPES: FP32 count-change band D ∈ (30720, 32768] ONLY; zero at primary probe 1x8192; FP16 deep-D only.
+- WHY_HELP: 6→5 reduce tiles at D=32768 (~17% of reduce loop), better vector-reduction utilization per call (H001 V008 donor).
+- WHY_FAIL: signal band misses every probe shape; collapse was already cheap (≤6 partials vs capacity 64); FP32 UB headroom only +573 elems.
+- FEASIBILITY: CONFIRMED-WITH-LIMITS (UB arithmetic above: 196608/188416 B totals; 28 B/elem FP32).
+- UB: the constraint (168.3/184 KiB used; +512 elems max within usable). DMA: same element volume. SYNC: unchanged structure, fewer tiles.
+- PRECISION: low (FP32, reordering of summation only).
+- DUPLICATE_CHECK: H001 donor (retired); not R005/MID/WIDE (different branch); not R017/R019.
+- MINIMAL_OFAT_DIFF: kReduceTileElems constant only (split if buffer count must also drop — second variable).
+- FALSIFICATION: at D=32768 P/C within same-binary noise or gain < expected one-tile saving → closed; already zero-signal at primary probe.
+- CLASSIFICATION: **SCREENED_LOW_VALUE** (upgraded evidence this cycle; no device window warranted).
+
+### OPT-4 — Single-stage whole-row reduce (kept for completeness)
+- All fields as above in OPTIONAL-HYPOTHESIS-4; this cycle added the exact arithmetic:
+  FP32 infeasible even at D=8192 (200.3 KiB > 192 KiB); FP16 window D∈[8192, ~13232] only.
+- CLASSIFICATION: **INFEASIBLE (FP32)**, off-probe curiosity for FP16 — not promoted.
+
+### OPT-5 — FP32 accumulation theme + external fused-rsqrt provenance
+- CLASSIFICATION: **DUPLICATE/BLOCKED** (low-precision accumulator) with the fused-rsqrt
+  external idea fully absorbed into H1 (provenance PUBLIC_KNOWN_CONCEPT recorded above).
+- This cycle adds no new evidence; remains screened.
+
+## FILES WRITTEN THIS CYCLE
+- `phase4/local/REDUCE-INVSCALE-X/V002/support/TRACK-A-8192-REPORT.md` (Track-A handoff)
+- `phase4/local/REDUCE-INVSCALE-X/V002/support/results-ref-8192/*` (62 raw samples, stats, npu-smi snapshots)
+- this file (append)
+- control: `server3-device-leases.tsv` LH-REDUCE-8192 LEASED→RELEASED (d6)
+- remote (measurement layer only): `runner_ref.inc`, `runner_refdirect.asc`, `runner_refcand.asc`,
+  CMakeLists.txt (+2 ref targets; `.bak-ref` copy), `build/reduce_invscale_ref{direct,cand}_probe`,
+  `results-ref-8192/*`
+- V002 `submission.asc` SHA verified unchanged: `bef271b62a2c7f2d0b0ef23f5f3610129460f5a431d7d9b3dd7ac3ea9a80ad26`
+
+## UPDATED RECOMMENDED_NEXT (supersedes the handoff summary above)
+1. V002 stays the correctness-accepted candidate; SHA unchanged; no V003.
+2. Track-A for this cycle is closed (one clean attempt, UNQUALIFIED). Next device
+   window: Main decides harness/host improvement first — the 1x8192 shape cannot be
+   re-run as-is on d6 expecting a different outcome.
+3. H2 remains the lead hypothesis (READY_FOR_MAIN_REVIEW); implementation blocked only
+   by (a) shape qualification and (b) Main's go on V002 disposition.
+4. H1 battery is designed (16 cases, decision rules pre-registered) — runnable in a
+   correctness-only window the moment one opens; no timing inside it.
+5. H3 → SCREENED_LOW_VALUE; OPT-4 → INFEASIBLE FP32 confirmed with arithmetic; OPT-5 screened.
+
+---
+
+## H1 RSQRT BATTERY — EXECUTABLE CHECKLIST (finalized 2026-09-25; design only — no build, no device, no timing)
+
+Turns the drafted battery (table + tolerances + decision rules above) into run-order steps.
+Harness facts re-verified this turn: `V002/support/runner_main.inc` argc==6
+`device_id rows width dtype result_prefix` (L98-106), width 64..32768 (L107), dtype 0/1/2,
+deterministic generators x=`InputValue(i,37,11)`, r=`InputValue(i,17,3)` (L147-148, L30-33),
+gamma `0.75+(i*13%100)/200` (L151-152), double-precision golden with harness tolerances
+L186-188 (FP32 atol=rtol=1e-4; FP16 1e-3; BF16 2e-2), pass test `error > atol + rtol*|expected|`
+(L213), output `bad`/`max_abs`, exit 3 iff bad>0. eps = 1e-5f (`support/main.asc:29`).
+
+### P — preconditions (all required before any run)
+
+- [ ] P1. Main issues NEXT_HYPOTHESIS for the H1 source edit — the battery judges an
+  **rsqrt-variant build**; without that authorization only the control half (P4) can run.
+- [ ] P2. Control binary = current V002 (`bef271b6…ad26` unchanged). Kernel sources untouched
+  by the battery itself; the only edit anywhere is the host-side harness regime argument (S1).
+- [ ] P3. One device lease, correctness-only window: no P/C, no timing interpretation — the
+  harness still emits its fixed 11-sample median, and that column is ignored.
+- [ ] P4 (optional, can precede P1): run the 16-case matrix on the V002 control first —
+  validates the new generators against the double golden and catches harness bugs before any
+  H1 verdict is at stake.
+
+### S1 — harness regime argument (one host-side conceptual addition)
+
+Extend `runner_main.inc` to accept an optional 7th arg `regime` (default 0 = standard);
+existing 6-arg invocations keep working. Generators:
+
+| regime | meaning | generator |
+|---|---|---|
+| R0 | standard | unchanged: x=`InputValue(i,37,11)`, r=`InputValue(i,17,3)`, gamma/bias unchanged |
+| R1 | near-zero variance | r := −x + 1e-3 ⇒ u ≡ 1e-3; rowSum = 1e-6 + eps(1e-5) = 1.1e-5; invRms ≈ 301.5 |
+| R2 | ×10 variance | x, r each ×10 ⇒ rowSum ~1e2–1e3 |
+| R3 | binade dither | x := c, r := 0 with c ∈ {0.5, 1.0, 2.0} each at ±1 ULP (nextafter) ⇒ mean(u²) on exact powers-of-two boundaries |
+| R4 | zero gamma/bias | standard x,r; hostG = hostB = 0 (isolates invRms error in the output) |
+
+### S2 — the 16-case matrix (IDs stable with the drafted table)
+
+| id | rows | D | dtype | regime |
+|---:|---:|---:|---|---|
+| 1 | 1 | 64 | FP32 | R0 |
+| 2 | 1 | 6144 | FP32 | R0 |
+| 3 | 1 | 8192 | FP32 | R0 |
+| 4 | 3 | 8192 | FP32 | R0 |
+| 5 | 1 | 32768 | FP32 | R0 |
+| 6 | 1 | 8192 | FP16 | R0 |
+| 7 | 1 | 8192 | BF16 | R0 |
+| 8 | 1 | 65 | FP32 | R0 |
+| 9 | 1 | 6144 | FP32 | R1 |
+| 10 | 1 | 8192 | FP32 | R1 |
+| 11 | 3 | 8192 | FP32 | R1 |
+| 12 | 1 | 32768 | FP32 | R1 |
+| 13 | 1 | 8192 | FP32 | R2 |
+| 14 | 1 | 4096 | FP32 | R3 (all three c values, ±ULP → 6 sub-runs or fold into one input pattern) |
+| 15 | 1 | 8192 | FP32 | R4 |
+| 16 | 1 | 100 | FP16 | R1 |
+
+All shapes legal under L107 (64≤D≤32768; 100 and 65 included).
+
+### S3 — run commands (correctness only)
+
+```
+<binary> <dev> <rows> <D> <dtype> <prefix> <regime>
+```
+
+for `<binary>` ∈ {V002-control, H1-rsqrt} × 16 cases = 32 runs (+5 sub-runs for id14's ULP
+ladder if split). Record per run: case id, regime, binary, `bad`, `max_abs`, exit code.
+
+### S4 — verdict table (append after the run; no timing column)
+
+`| id | regime | control bad/max_abs | H1 bad/max_abs | harness tol | ops-std (info only) | PASS/FAIL |`
+— harness tolerance governs PASS (it is what the acceptance runner uses); ops-precision-standard
+FLOAT32 (rtol 9.77e-4 / atol 1.53e-5 @0.99) is recorded for context only.
+
+### S5 — decision tree (pre-registered; unchanged rules, now with run-order guards)
+
+1. **Control fails any case** → generator/harness bug first; no H1 verdict is issued until
+   the control is 16/16.
+2. **H1-rsqrt 16/16 PASS** → H1 upgraded READY_FOR_TIMING (still requires a qualified shape
+   and a P/C window — separate prerequisite).
+3. **Failures confined to R1 cases {9,10,11,12,16}** → rsqrt branch precision-refuted on
+   near-eps inputs → open fallback **H1b** (`Duplicate(1.0)+Div` replacing only the scalar
+   division) → H1b runs the same 16 cases before any timing.
+4. **Any failure in {1–8,13,14,15}** → H1 as specified is TESTED_AND_REFUTED on precision;
+   no timing, no H1b claim.
+
+Why R1 discriminates (arithmetic, recorded in advance): with gamma≈1 the output magnitude is
+≈301.5; harness allowance = 1e-4 + 1e-4·301.5 ≈ **0.031 absolute ≈ 1e-4 relative**, while the
+devkit doc explicitly warns float `Rsqrt` (vrsqrt) comparison error can exceed 1e-4 — R1 sits
+exactly on the pass/fail edge by construction. Cases 9–12 additionally scale that regime
+across 1/3 rows and single/multi-tile; case 16 repeats it under FP16 input quantization.
+
+Full H1 field set unchanged from the SCREENED LEDGER above; this checklist fills in the
+execution form of FALSIFICATION ("battery <16/16 → …"). CLASSIFICATION stays
+**NEEDS_MORE_EVIDENCE** until the battery runs.
+
+## H2 EXPECTED-GAIN MARK (multi-tile 1×8192 path; research marking only)
+
+- **EXPECTED_GAIN_BOUND = 0.2–1 µs per row** (saving = min(tile-0 load, rms tail); load =
+  6144×2×4 B = 48 KiB MTE2 ≈ 0.2–1 µs at 50–200 GB/s effective, tail ≈ 0.5–2 µs unmeasured).
+- vs fast-cluster anchor **7.0 µs** (Direct Parent FP32 1×8192, B2, this cycle): upper-bound
+  relative ≈ **3–14% at rows=1**; rows=3 → up to ~3× absolute (3 tails + 3 first loads) with
+  relative dilution from the scaling output pass. Predicted ordering unchanged:
+  rows3D8192 > rows1D8192 > rows1D6144.
+- **Mechanism is engaged at the primary probe:** at 1×8192 the reduce pass runs 2 serialized
+  tiles (trace in PROBE-SHAPE DESIGN) and the tail runs once per row — the reduce→output
+  handoff where H2 inserts overlap exists exactly there (this is not a single-tile-only bet).
+- **Observability:** FP32 1×8192 Direct Parent is MEASUREMENT_PROTOCOL_BLOCKED_FOR_SHAPE
+  (floor MAD/med 0.2149, drift 0.8667) → the bound is budgetable, not yet measurable. At a
+  ≤0.10 floor (≈0.7 µs resolution at 7 µs) rows=1 gain is marginal-detectable; rows=3 is
+  clearly detectable; a quieter floor (≤0.05) makes rows=1 comfortable.
+- CLASSIFICATION unchanged: **READY_FOR_MAIN_REVIEW** — this mark only sizes the bet
+  (order 1 µs, ≤14% upper bound, linear in rows) so Main can sequence it against H1's and
+  other routes' expected effects.

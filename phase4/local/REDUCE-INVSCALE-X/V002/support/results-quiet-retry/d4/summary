@@ -1,0 +1,22 @@
+REDUCE-INVSCALE-X 1x8192 FP32 quiet-window exclusive same-binary re-qualification (Direct Parent vs itself)
+device=4 method=DEVICE_EVENT warmup=10 samples=31x2 batch_n=1 gap=2s
+lease=QR-REDUCE-8192 window=2026-09-25T15:00:13Z..15:01:14Z
+host load: 15:00:29 up 230 days,  2:36, 34 users,  load average: 22.32, 23.96, 23.91 -> 15:00:58 up 230 days,  2:37, 34 users,  load average: 22.41, 23.85, 23.87
+concurrent route probes at start: NONE
+
+multi-tile path confirmation (correctness-only smoke, untimed):
+  parent  (refdirect) bad=2048 max_abs=5.4174  (expected: parent multi-tile path is wrong)
+  candidate (refcand) bad=0    max_abs=1.669e-06
+  -> multi-tile path CONFIRMED on both sides, matches prior cycle.
+
+attempt qb1 same-binary (Direct Parent only):
+  B1_DEVICE med=12.78us MAD=4.70us  p10=7.44 p90=33.20 max=153.18
+  B2_DEVICE med=6.60us  MAD=0.18us  p10=6.36 p90=129.94 max=213.96
+  ALL_DEVICE med=7.70us MAD=1.21us  -> MAD/med = 0.1571
+  drift |B1-B2|/ALL = 0.8026
+  bad=2048 (parent, expected)
+  -> MAD/med 0.1571 <= 0.25 but drift 0.8026 > 0.25 -> MEASUREMENT_PROTOCOL_BLOCKED_FOR_SHAPE
+     (B1 systematically slower than B2; same direction as prior attempt drift 0.8667)
+
+No interleaved P/C run. Kernel SHA unchanged (submission bef271b6..., parent 94ab0ef9...). No source edit.
+Decision: MEASUREMENT_PROTOCOL_BLOCKED_FOR_SHAPE

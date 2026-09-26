@@ -1,0 +1,152 @@
+--- /Users/sunyiyang/Desktop/Project/cann-next6/ALIGN-TAIL-X/phase4/workspaces/ALIGN-TAIL-X/parent/PURE-R009-V001-ALIGNED-DATACOPY_kernel.txt	2026-09-24 04:04:22
++++ /Users/sunyiyang/Desktop/Project/cann-next6/ALIGN-TAIL-X/phase4/workspaces/ALIGN-TAIL-X/V001/kernel.asc	2026-09-24 04:06:28
+@@ -3,34 +3,31 @@
+ #include "kernel_operator.h"
+ 
+ /*
+- * AddRmsNormBias - PURE-R009-V001-ALIGNED-DATACOPY
++ * AddRmsNormBias - ALIGN-TAIL-X V001
+  *
+- * Parent:
+- *   B0-PURE-V001
++ * DIRECT_PARENT:
++ *   PURE-R009-V001-ALIGNED-DATACOPY (correct aligned-copy baseline)
++ *   PARENT_SOURCE_SHA256 =
++ *     c8d0f010f8fc68b90d69c6d2bcbf76ec7bb927bd9dc4f0fcac32425e5288c63c
++ *   PARENT_SCORE = 17.64 (15/15 online, historical)
+  *
+- * PURE breadth route:
+- *   R009 / aligned DataCopy fast path.
++ * SINGLE_HYPOTHESIS (V001 / R009 + R010):
++ *   From the correct R009 aligned-copy baseline, ONLY add explicit tail
++ *   specialization: when a transfer starts at a 32-byte-aligned GM address
++ *   but its byte count is not 32-byte aligned, send the aligned bulk prefix
++ *   through direct DataCopy and send only the non-aligned remainder through
++ *   a minimal DataCopyPad tail path. Fully aligned transfers keep direct
++ *   DataCopy; unaligned-start or pure-tail transfers keep the parent pad
++ *   path.
+  *
+- * Single dominant optimization idea:
+- *   - for a transfer whose byte count is naturally 32-byte aligned, use
+- *     AscendC::DataCopy directly;
+- *   - for a non-32-byte-aligned transfer, keep the B0 DataCopyPad path.
+- *
+- * Everything else remains the B0 neutral implementation:
++ * Unchanged from parent (must stay unchanged in V001):
+  *   - fixed 4096-element tile;
+  *   - per-row two-pass algorithm;
+  *   - FP32 compute/reduction;
+- *   - conservative B0 scheduling;
+- *   - no retained-y;
+- *   - no parameter cache;
+- *   - no multi-row batch;
+- *   - no wide special path;
+- *   - no pipeline/double-buffer;
+- *   - no row-group scheduling;
+- *   - no manual tail split.
++ *   - host scheduling (aligned rows multicore; non-aligned rows one core);
++ *   - no retained-y, parameter cache, multi-row batch, wide path,
++ *     double-buffer, or R012 row-group ownership.
+  *
+- * This makes aligned copy selection the only route-specific performance idea.
+- *
+  * This file is included by main.asc. Do not add main().
+  */
+ 
+@@ -99,19 +96,47 @@
+                                 uint64_t offset, int32_t valid)
+     {
+         /*
+-         * PURE-R009:
+-         * aligned transfers take the direct DataCopy path;
+-         * non-aligned transfers remain on the neutral B0 DataCopyPad path.
++         * ALIGN-TAIL-X V001 tail specialization:
++         * - fully 32B-aligned transfers: direct DataCopy (parent path);
++         * - aligned start + non-aligned size: aligned bulk via DataCopy,
++         *   remainder via minimal DataCopyPad tail;
++         * - otherwise: parent full DataCopyPad path.
+          */
++        const uint32_t elemBytes = static_cast<uint32_t>(sizeof(T));
+         const uint32_t byteCount =
+-            static_cast<uint32_t>(
+-                valid * static_cast<int32_t>(sizeof(T)));
++            static_cast<uint32_t>(valid) * elemBytes;
++        const bool sizeAligned = (byteCount & 31U) == 0U;
++        const bool startAligned = ((offset * elemBytes) & 31ULL) == 0ULL;
+ 
+-        if ((byteCount & 31U) == 0U) {
++        if (sizeAligned) {
+             AscendC::DataCopy(dst, src[offset], valid);
+             return;
+         }
+ 
++        if (startAligned) {
++            const uint32_t bulkBytes = byteCount & ~31U;
++            const int32_t bulkElems =
++                static_cast<int32_t>(bulkBytes / elemBytes);
++            if (bulkElems > 0) {
++                AscendC::DataCopy(dst, src[offset], bulkElems);
++                const int32_t tailElems = valid - bulkElems;
++                const uint32_t tailBytes =
++                    static_cast<uint32_t>(tailElems) * elemBytes;
++                AscendC::DataCopyExtParams copyParams{
++                    1,
++                    tailBytes,
++                    0,
++                    0,
++                    0
++                };
++                AscendC::DataCopyPadExtParams<T> padParams{false, 0, 0, 0};
++                AscendC::DataCopyPad<T>(
++                    dst[bulkElems], src[offset + bulkElems],
++                    copyParams, padParams);
++                return;
++            }
++        }
++
+         AscendC::DataCopyExtParams copyParams{
+             1,
+             byteCount,
+@@ -126,15 +151,39 @@
+     __aicore__ inline void Store(AscendC::GlobalTensor<T>& dst, uint64_t offset,
+                                  AscendC::LocalTensor<T> src, int32_t valid)
+     {
++        const uint32_t elemBytes = static_cast<uint32_t>(sizeof(T));
+         const uint32_t byteCount =
+-            static_cast<uint32_t>(
+-                valid * static_cast<int32_t>(sizeof(T)));
++            static_cast<uint32_t>(valid) * elemBytes;
++        const bool sizeAligned = (byteCount & 31U) == 0U;
++        const bool startAligned = ((offset * elemBytes) & 31ULL) == 0ULL;
+ 
+-        if ((byteCount & 31U) == 0U) {
++        if (sizeAligned) {
+             AscendC::DataCopy(dst[offset], src, valid);
+             return;
+         }
+ 
++        if (startAligned) {
++            const uint32_t bulkBytes = byteCount & ~31U;
++            const int32_t bulkElems =
++                static_cast<int32_t>(bulkBytes / elemBytes);
++            if (bulkElems > 0) {
++                AscendC::DataCopy(dst[offset], src, bulkElems);
++                const int32_t tailElems = valid - bulkElems;
++                const uint32_t tailBytes =
++                    static_cast<uint32_t>(tailElems) * elemBytes;
++                AscendC::DataCopyExtParams copyParams{
++                    1,
++                    tailBytes,
++                    0,
++                    0,
++                    0
++                };
++                AscendC::DataCopyPad<T>(
++                    dst[offset + bulkElems], src[bulkElems], copyParams);
++                return;
++            }
++        }
++
+         AscendC::DataCopyExtParams copyParams{
+             1,
+             byteCount,

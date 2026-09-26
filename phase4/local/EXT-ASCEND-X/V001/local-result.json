@@ -1,0 +1,83 @@
+{
+  "ROUTE": "EXT-ASCEND-X",
+  "REVISION": "V001",
+  "PARENT": {
+    "DIRECT_PARENT": null,
+    "PARENT_SOURCE_SHA": null,
+    "PARENT_SCORE": null,
+    "PARENT_STATUS": "NO_APPLICABLE_PARENT"
+  },
+  "SINGLE_HYPOTHESIS": "Select blockFactor, rowFactor, and ubFactor dynamically from available cores, row count, dtype, and D so consecutive row ownership and UB row batches replace fixed mode thresholds while reusing gamma/bias within each row group.",
+  "CONTEXT_CLASS": "GUIDED_FRESH / EXTERNAL_DERIVED",
+  "SOURCE": {
+    "submission": "submission.asc",
+    "submission_sha256": "bd2b18cedf25ee4cb51a63690a1e2e4f48a9fa18766674f7401aa24b56072b8a",
+    "runner": "local_full.asc",
+    "runner_sha256": "56163104edd986446b4124f6fda021b98038e13e76add0fbb44504e89572b1c2",
+    "submission_manifest": "submission.sha256",
+    "full_source_patch": "diff.patch"
+  },
+  "FIX_1": {
+    "name": "V001_CORRECTNESS_FIX",
+    "status": "APPLIED_AND_FAILED",
+    "scope": "Temporary PIPE_ALL synchronization around scalar broadcast/compute and VECOUT-to-MTE3 copy-out.",
+    "submission_sha256": "235ea3b6ce3bccf12a254c8f95187a288737d2d848757decedf9baae68c650f6",
+    "build_log": "logs/server3_correctness_sync_build_v001_q.log",
+    "correctness_log": "logs/correctness_sync_diag_v001.log"
+  },
+  "FIX_2": {
+    "name": "V001_CORRECTNESS_FIX_2",
+    "status": "APPLIED_AND_FAILED",
+    "scope": "Correctness-only scalar row-slot alignment: scalarStride changed from 16B to 32B; tiling and arithmetic remained unchanged.",
+    "submission_sha256": "3d1e6bfc8fb8d3c31ddc1210d28189377dd892903bae452cc647051ef1a4b42e",
+    "build_log": "logs/server3_scalar_align_build_v001_r.log",
+    "correctness_log": "logs/scalar_align_correctness_v001.log"
+  },
+  "FIX_3": {
+    "name": "V001_CORRECTNESS_FIX_3",
+    "status": "APPLIED_AND_FAILED",
+    "scope": "Correctness-only PIPE_ALL dependencies for residual Add, square Mul, ReduceSum, scalar accumulation Add, and next tile.",
+    "submission_sha256": "cec5b465122dcd387c661db2ab1b31fef717bd0ef544726649341f2c4c84b378",
+    "build_log": "logs/server3_reduce_sync_build_v001_s.log",
+    "correctness_log": "logs/reduce_sync_correctness_v001.log"
+  },
+  "FIX_4": {
+    "name": "V001_CORRECTNESS_FIX_4",
+    "status": "APPLIED_AND_FAILED",
+    "scope": "Correctness-only VECOUT/DataCopyPad lifetime handling: output LocalTensor release follows the copy-out barrier.",
+    "submission_sha256": "bd2b18cedf25ee4cb51a63690a1e2e4f48a9fa18766674f7401aa24b56072b8a",
+    "build_log": "logs/server3_outlife_build_v001_t.log",
+    "correctness_log": "logs/outlife_correctness_v001.log",
+    "result": "27/27 FAIL; aclrtSynchronizeStream=0 and aclGetRecentErrMsg=<null> in the final recorded cases; MATCHED_RATIO=0.00390625..0.0234375; MAX_ABS_ERROR=0.000390887..8.6827e+11; MAX_ALLOWED=0.0021183..0.00237422."
+  },
+  "BUILD_LINK": {
+    "host": "hwnput3",
+    "soc": "Ascend910B3",
+    "build_dir": "/home/data4t2/lelinfeng/phase4-review-repro/EXT-ASCEND-X-V001/build3",
+    "commands": [
+      "cmake --build build3 --target ext_device -j2",
+      "cmake --build build3 --target ext_submission -j2",
+      "cmake --build build3 --target ext_correctness -j2"
+    ],
+    "result": "EXT_DEVICE_EXIT=0; EXT_SUBMISSION_EXIT=0; EXT_CORRECTNESS_FULL_LINK_EXIT=0",
+    "final_log": "logs/server3_outlife_build_v001_t.log"
+  },
+  "CORRECTNESS": {
+    "command": "EXT_DIAG_MATRIX=1 EXT_DTYPE=0 ./build3/ext_correctness",
+    "log": "logs/outlife_correctness_v001.log",
+    "dtype": "FP32",
+    "D": [256, 4096, 8192],
+    "rows": [1, 2, 3],
+    "availableCoreNum": [1, 2, 3],
+    "case_count": 27,
+    "fail_count": 27,
+    "load": "LOAD_CONTAMINATED",
+    "timing": "NOT_STARTED",
+    "paired_probes": "NOT_STARTED"
+  },
+  "DECISION": "LOCAL_REJECTED",
+  "PARK_RECOMMENDATION": "PARK_EXPLORE_SLOT",
+  "NO_NEW_REVISION": true,
+  "ONLINE_SUBMISSION": "NOT_DONE",
+  "SHARED_SCHEDULER_CHANGED": false
+}

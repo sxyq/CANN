@@ -1,0 +1,58 @@
+{
+  "route": "UB-LIVENESS-X",
+  "revision": "V002",
+  "direct_parent": "UB-LIVENESS-X-V001",
+  "parent_source_sha": "1a6ae30a5eff8f839d08a741c412378acabc936466fb5a07d95502ec69c18c8d",
+  "parent_score": null,
+  "single_hypothesis": "Correctness-only repair of numeric path (pass1 accumulator and full u*inv*gamma+bias emit) so NPU bad=0; phase-role UB liveness/alias architecture unchanged; no performance variable.",
+  "context_class": "GUIDED_FRESH / EXTERNAL_DERIVED",
+  "source_sha256": "888bd60c1efbde1c5f90b1fa13daaaee59a057673315caa8437d16c2b23e3929",
+  "compile": {
+    "device": "PASS",
+    "submission": "PASS",
+    "toolchain": "cann-server3 / Ascend910B3 / dav-2201 / CANN 8.5.0.alpha002"
+  },
+  "link": {"full_link": "PASS"},
+  "correctness": {
+    "status": "FAIL",
+    "shapes": [
+      {"rows": 1, "width": 64, "dtype": "FP32", "bad": 64},
+      {"rows": 4, "width": 256, "dtype": "FP32", "bad": 1023},
+      {"rows": 8, "width": 1000, "dtype": "FP16", "bad": 1219},
+      {"rows": 3, "width": 777, "dtype": "BF16", "bad": 1513},
+      {"rows": 5, "width": 64, "dtype": "FP16", "bad": 279},
+      {"rows": 2, "width": 4096, "dtype": "FP32", "bad": 8033},
+      {"rows": 4, "width": 128, "dtype": "BF16", "bad": 482},
+      {"rows": 3, "width": 32768, "dtype": "FP16", "bad": 1511}
+    ],
+    "delta_vs_v001": "Partial improvement on FP16/BF16 (D=32768 ~1511 vs ~98k); FP32 still fails; not bad=0.",
+    "isolation": "Identity out=u PASS for FP32 D=64; u*hardcoded_inv PASS for c=0; computed acc/inv and full gamma+bias path FAIL."
+  },
+  "local_probes": {
+    "shape": "FP16 rows=8 width=4096",
+    "device_id": 6,
+    "pairs_recorded": 2,
+    "status": "INVALID_WITHOUT_CORRECTNESS",
+    "note": "Raw latencies only; do not claim gain/regression."
+  },
+  "load_quality": "Device 6; snapshots in support/results/v002-load*.npu-smi.txt and probe timestamps.",
+  "architecture_novelty": "None beyond V001 alias design; V002 is correctness-only.",
+  "risks": [
+    "LOCAL_REJECTED on correctness FAIL.",
+    "Pass1 SumSq acc still wrong vs golden — root cause open for V003.",
+    "No ONLINE_CANDIDATE."
+  ],
+  "decision": "LOCAL_REJECTED",
+  "next_candidate_hypothesis": "V003 correctness-only: force pass1 acc == sum of pass2 FuseU u^2 on same inputs (D=64 FP32 golden acc=60.197); then re-enable full emit; no performance variable.",
+  "cleanup": "None; no source or user data deleted.",
+  "metrics": {
+    "CORRECTNESS": "FAIL",
+    "LOAD_QUALITY": "N/A_WITHOUT_CORRECTNESS",
+    "PROBE_DELTAS": "RECORDED_RAW_ONLY",
+    "DIRECTIONAL_CONSISTENCY": "N/A",
+    "MEDIAN_DELTA": "NOT_INFERABLE",
+    "WORST_DELTA": "NOT_INFERABLE",
+    "NOISE_MARGIN": "NOT_APPLICABLE",
+    "LOCAL_CONFIDENCE": "LOW"
+  }
+}

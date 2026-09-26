@@ -1,0 +1,14 @@
+ALIGN-TAIL-X 2x100 FP32 quiet-window exclusive same-binary re-qualification (Direct Parent vs itself)
+device=4 method=DEVICE_EVENT warmup=10 samples=31x2 batch_n=1 gap=2s
+lease=QR-ALIGN-2x100 window=2026-09-25T14:57:19Z..14:58Z
+host load start:  14:57:32 up 230 days,  2:33, 34 users,  load average: 27.20, 25.50, 24.29
+host load end:    14:57:40 up 230 days,  2:33, 34 users,  load average: 26.36, 25.37, 24.27
+concurrent route probes at start: NONE
+attempt qb1: MAD/med=0.2861  drift=0.3806  -> FAIL (both > 0.10)
+  B1_DEVICE med=9.44us  B2_DEVICE med=6.30us  ALL_DEVICE med=8.25us MAD=2.36us
+  direction: B1 slower than B2 again (same systematic direction as prior sb1/sb2)
+bad=0 (correctness OK)
+MAD/med 0.2861 > 0.25 AND drift 0.3806 > 0.25 -> MEASUREMENT_PROTOCOL_BLOCKED_FOR_SHAPE
+  (harness/host issue under residual VLLM load; never a Candidate issue)
+No interleaved P/C run. Kernel SHA unchanged (candidate f573d16d..., parent c8d0f010...). No source edit.
+Decision: MEASUREMENT_PROTOCOL_BLOCKED_FOR_SHAPE

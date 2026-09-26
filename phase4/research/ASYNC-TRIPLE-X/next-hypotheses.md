@@ -609,3 +609,208 @@ H1 = move the pass-2 tile-0 `CopyInOutputData` before `FinishRms` (class READY_F
 4. **Magnitude must be roughly width-independent**: H1 saves one fixed drain + fill per row (FinishRms is 8-element vector work, V001:236-241; tile-0 load is always 1024 elements), so the ABSOLUTE delta at 4096 ≈ at 8192, with relative delta ~2× larger at 4096. An absolute delta that scales with width instead → misattribution to a steady-state effect, not the prologue → H1 attribution falsified.
 5. **Gain appears only when rows > blocks** (multi-row per core) and ~0 at blocks==rows → the gain is cross-row cover (H4 territory), not the prologue → attribution falsified.
 6. **Any output difference vs V001 under byte compare** → PRECISION_RISK=None claim falsified → correctness stop before any timing credit.
+
+---
+
+## TRACK-B UPDATE — 2026-09-25 (this turn)
+
+Track-A same-binary floors came back UNQUALIFIED on both sanctioned shapes (8×8192
+MAD/med 0.4565 / drift 0.4427; sanctioned fallback 8×4096 MAD/med 0.3449 / drift 0.0893;
+both classified MEASUREMENT_PROTOCOL_BLOCKED_FOR_SHAPE; no P/C run; Candidate SHA
+2defc6c2 unchanged). No timing data exists to reclassify any hypothesis, so:
+
+```text
+H1 INTER-PASS PROLOGUE PREFETCH       READY_FOR_MAIN_REVIEW   (unchanged)
+H2 OUTPUT-RING FLAG DECOUPLING        NEEDS_MORE_EVIDENCE     (unchanged)
+H3 PASS-2 MTE2/MTE3 ARBITRATION       NEEDS_MORE_EVIDENCE     (unchanged)
+H4 INTER-ROW CONTINUITY               parked (unchanged)
+H5 SHAPE-ADAPTIVE SCHEDULE            parked + DUPLICATE-risk (unchanged)
+BUFFER/DEPTH AXIS                     excluded again this turn (R31B V006/V009 flat)
+SCOPE                                 MTE2 pipeline/queue scheduling is this route's;
+                                      depth axis is proven flat and stays excluded.
+```
+
+### FILL / STEADY / DRAIN MODEL — tileCount=8 (PRIMARY 8×8192)
+
+Per row, with blocks==rows so each core owns exactly one row. Line refs:
+`cann-next6/ASYNC-TRIPLE-X/phase4/local/ASYNC-TRIPLE-X/V001/submission.asc`.
+
+```text
+segment                              stage(s)                 count/row  covered?
+P1 prologue fill tile0    L250       MTE2 only (2-copy 8KB)   1          none — cold
+P1 steady tile0..6        L256-262   MTE2(N+1)/V(N)          7          two-stage overlap
+P1 tail compute tile7     L262       V only                  1          load already in ring
+FinishRms                 L264,L230  V tail+Div+scalar       1          NONE — full pipe drain
+                                      GetValue(0) L241        (once/row)
+P2 prologue fill tile0    L265       MTE2 only (4-copy 16KB) 1          none — issued AFTER
+                                                                       drain  [H1 target]
+P2 iter tile0             L270,284   MTE2(1)/V(0)            1          pair only (no store)
+P2 iters tile1..6         L270,278,  MTE2(N+1)/V(N)/         6          FULL TRIPLE
+                           L284       MTE3(N-1)                          (steady state)
+P2 iter tile7             L278,284   MTE3(6)/V(7)            1          pair only (no N+1)
+P2 flush store tile7      L286-291   MTE3 only               1          none — exposed tail
+```
+
+Implications:
+
+1. **6 of 8 pass-2 iterations are full triple** — at tileCount=8 the steady state does
+   dominate; the 2 unpaired iterations + 1 flush + 1 prologue + the FinishRms drain are
+   the *only* uncovered segments. That set is the entire remaining serial budget.
+2. **Byte accounting (fp32, per row):** P1 loads 64 KB, P2 loads 128 KB (4-copy × 8),
+   stores 32 KB → 224 KB/row; × 8 rows = 1.75 MB per launch. At HBM peak this is
+   sub-microsecond, while the measured fast cluster on both floors was ~55–70 µs —
+   **the kernel is latency/issue-chain bound at probe shapes, not bandwidth bound.**
+   This is the structural reason queue-depth increases were historically flat
+   (R31B V006/V009): depth hides single-transfer latency, it does not shorten the
+   serial issue/sync chain, which is where the remaining time actually is.
+3. **Budget view:** every eliminated serial segment is worth its latency chain —
+   order-of-magnitude single-digit µs against a ~55–70 µs kernel, i.e. a few-percent
+   effect, visible only when the same-binary floor passes MAD/med ≤ 0.10. This is why
+   H1's expected absolute delta is low-µs and why shape qualification must precede all timing.
+4. tileCount curve (H5) remains: 8×1024 tileCount=1 inert; 4096 → 2 full-triple
+   iterations; 8192 → 6; exposed-segment *count* is constant per row, so relative
+   benefit of prologue/drain fixes shrinks as steady state grows — registered as
+   H1 falsifier #4 (width-independent absolute delta).
+
+### H1 OFAT DEEPENING — exact edit, hazard audit, registered magnitude
+
+```text
+OFAT DIFF (one conceptual change, SINGLE_CHANGE_AUDIT eligible)
+  Move L265  CopyInOutputData(row, 0, ...)   to immediately BEFORE
+  L264       const float inverseRms = FinishRms();
+  Nothing else changes: same statements, same arguments, same order among
+  everything else. Compare vs frozen V001 2defc6c2 (and vs SEED f20da79c).
+
+DATA DEPENDENCY
+  Pass-2 tile-0 reads x + residual + gamma + bias GM ranges — independent of
+  inverseRms; only ComputeOutputTile consumes inverseRms (scalar argument).
+  FinishRms (L230-242) reads only sumSquaresBuf_/scalar — no queue dependency
+  on the moved call.
+
+QUEUE HAZARD AUDIT (TQue depth 2, kDoubleBuffer L13, EnQue/DeQue only)
+  - At the new issue point the pass-1 loop has exited: every AccumulateTile has
+    called FreeTensor on x/residual (L188-189), so both ring slots are returned.
+  - Slot reuse is sequenced by queue events (FreeTensor→AllocTensor waits
+    for the V0 completion of pass-1's last read), so an earlier DataCopyPad cannot
+    overwrite a buffer pass-1 Vector still reads — no read/write hazard introduced.
+  - paramQueue is first used in pass-2 (pass-1 never touches it) → free.
+  - If AllocTensor blocks, it blocks only on pass-1 V0 completion, which FinishRms
+    needs anyway → the reorder cannot lengthen the drain; bounded-downside case.
+  - Scalar issue: EnQue for four async copies returns without waiting for data;
+    FinishRms starts immediately after the moved call.
+
+OFAT CONTROLS (fixed)
+  Shape 8x8192 (or 8x4096), fp32, blocks==rows, runner_ref.inc protocol, warmup≥10,
+  2×31 device-event samples — identical for P and C. No other variable moves.
+
+REGISTERED EXPECTED MAGNITUDE (before any run)
+  Saving ≈ overlap of [FinishRms tail: Div L240 + GetValue scalar round-trip L241]
+  with [pass-2 tile-0 4-copy load latency], issued L265→pre-L264.
+  Upper bound ≈ the serialized pair ≈ single-digit µs per row (once per core per
+  launch at blocks==rows). Absolute delta must be ≈width-independent across
+  4096/8192 (falsifier #4). Below the floor MAD/med ⇒ unmeasurable, not refuted.
+
+MEASUREMENT PREREQUISITE (unmet as of this turn)
+  Qualified same-binary floor (MAD/med ≤0.10, drift ≤0.10) on the exact probe shape.
+  Both sanctioned shapes currently UNQUALIFIED → H1 stays READY_FOR_MAIN_REVIEW,
+  execution waits for a window with no active sibling-route lease.
+```
+
+### SCREENED-HYPOTHESIS SET (this cycle — 5, full fields)
+
+Full mechanism blocks are HYPOTHESIS-1..5 above; this table is the screened set with
+every required field in one view.
+
+| ID | Mechanism | Bottleneck | Expected shapes | Feasibility | UB/Core/DMA | Sync / precision | Duplicate-check | Minimal OFAT | Local probes | Class |
+|---|---|---|---|---|---|---|---|---|---|---|
+| H1 | Issue pass-2 tile-0 MTE2 prefetch (L265) before FinishRms (L264) | inter-pass drain + first-tile fill | all tileCount≥1; largest relative on small/mid; still positive at 8 | High — scalar reorder, existing TQue | UB none / core same / DMA same bytes, earlier start | DeQue(x[0]) holds compute; no RAW hazard (audit above); byte-identical output | vs R013 (no reorder), V001 (no prologue move), R001/R002/R019 (reduction untouched); not a depth change | move one call above L264 | vs V001 & SEED, width≥2048, device-event, warmup≥10, ≥4 pairs, rows==blocks | READY_FOR_MAIN_REVIEW |
+| H2 | Explicit V_MTE3 + per-slot store-done events on output ring (same 2 slots) | store-latency visibility into scalar path | multi-tile only; grows with tileCount; inert at 1 | Medium-high — SetFlag/WaitFlag<V_MTE3> proven in MODE-X/EPI-X/MIX-A | UB same 2 slots / core same / DMA same bytes | highest sync change; event direction error → race; correctness precheck first | NOT a depth change; vs R31B depth-flat (different axis); vs MIX-A V_MTE3 vs V_MTE2 | output queue only → explicit events | same-binary correctness first, then multi-tile P/C | NEEDS_MORE_EVIDENCE |
+| H3 | Swap issue order: CopyOut(N-1) before CopyInOutputData(N+1) in pass-2 loop | MTE2/MTE3 HBM arbitration by issue order | multi-tile; grows with tileCount; ~0 at tileCount=1 | Trivial — two-call swap | UB none / core same / DMA same bytes, order only | both prerequisites met at N-1; no load/store address dependence; no precision change | vs H2 (order ≠ primitive), R013/V001 (neither reorders), R015/R016 untouched | move L278-283 block above L270-275 | vs V001, width≥2048, same-binary floor first, delta vs floor MAD/med | NEEDS_MORE_EVIDENCE |
+| H4 | Pipeline row R pass-2 against row R+1 pass-1 prologue | per-row drain/fill/tail with no cross-row cover | only outer>blockNum — NO gain on either probe shape | Medium — outer-loop restructure; shared depth-2 ring is the obstacle | risk of needing a 3rd slot → BANNED path; else scalar slots only | cross-row buffer aliasing risk; no precision change | vs SCHED-ROWGROUP (row→core assignment) and BATCH (multi-row DMA) — Main must confirm boundaries | not minimal; own revision if ever | needs rows≥16 blocks=8; correctness first | parked (buffer-add risk + route overlap) |
+| H5 | tileCount-bucket schedule selection (serial small / triple large) | large-D vs small-D break-even | bucket boundary to be measured (1/2/4/8) | High for dispatch, but adds host mechanism | UB none / core none / DMA none | none within a path; each path correct alone | DUPLICATE risk vs R005/MID-X/WIDE-X (they own D-bucket autotune) | not minimal; deliver as measurement first | bracket V001 vs SEED across tileCount 1,2,4,8,16 | parked + DUPLICATE-risk |
+
+SCREENED COUNT: 5 (≥3 met). 1 READY_FOR_MAIN_REVIEW, 2 NEEDS_MORE_EVIDENCE, 2 parked.
+No INFEASIBLE. Buffer/depth proposal absent by rule (evidence: R31B V006=43.91,
+V009=43.81, both flat on T14).
+
+### RECOMMENDED_NEXT (delta for this turn)
+
+```text
+1. WINDOW SCHEDULING (new, from Track-A evidence): requalify the 8x8192 same-binary
+   floor only when NO sibling route holds an active lease (this turn's floors ran
+   while REDUCE d6 + BATCH d5 measured concurrently; host load ~23; both shapes
+   produced bimodal device_us — fast cluster ~55-70 µs vs host-driven ~190-230 µs
+   clusters; sibling outcomes the same window: REDUCE UNQUALIFIED, ALIGN FAIL,
+   BATCH floor PASS but pairs inside noise). Floor raw data + scripts are in
+   workspaces/ASYNC-TRIPLE-X/{run_ref_floor.sh,run_ref_pairs.sh} — pair runner is
+   conditional on floor PASS.
+2. H1 remains first in execution queue after a qualified floor (class unchanged).
+   Its OFAT diff and hazard audit are now fully specified above — ready for Main
+   to size as a one-statement revision when measurement unblocks.
+3. H2 still resolves without a device window (AscendC queue-semantics readback of
+   FreeTensor/AllocTensor event behavior); H3 stays sequenced after H1.
+4. H4/H5 remain parked. No new mechanism proposed this turn: 5 screened hypotheses
+   already meet the ≥3 requirement and all carry full fields above.
+```
+
+### Sources inspected (read-only, this turn)
+
+- `phase4/control/local-timing-protocol.md` (same-binary PASS rule, outlier policy, shape status)
+- `phase4/control/server3-device-leases.tsv` (concurrent sibling leases 14:21–14:39Z)
+- `cann-next6/ASYNC-TRIPLE-X/phase4/local/ASYNC-TRIPLE-X/V001/submission.asc` (L133-291 source trace)
+- `cann-next6/.../V001/support/results-ref-8x8192/floor/`, `results-ref-8x4096/floor/` (new raw floors)
+- `cann-next6/SCHED-ROWGROUP-X/.../support/runner_ref.inc` (unified harness, SHA 89f8380a, copied verbatim)
+
+---
+
+## H1/H2/H3 RE-RANKING 2026-09-25 — under the latency/issue-chain bound model (research only; no timing, no edits)
+
+The FILL/STEADY/DRAIN model above established the structural fact: **1.75 MB per launch
+(fp32 8×8192) against a measured fast cluster of 55–70 µs** ⇒ byte time at any plausible HBM
+share is ~1–2 µs ⇒ the kernel is bounded by the serial issue/sync chain, and every *uncovered*
+serial segment is worth its latency chain. This section converts that model into per-hypothesis
+µs gain bounds and a quiet-window verdict.
+
+Latency estimates used below (assumptions, not measurements on dav-2201 — flagged as such):
+MTE2 issue→completion for the pass-2 tile-0 4-copy (16 KB) ≈ 1–3 µs; MTE3 store of one 4 KB
+tile ≈ 0.2–1 µs; FinishRms tail (vector Div + GetValue scalar round trip) ≈ 0.5–2 µs;
+per-iteration scalar issue/branch overhead < 0.5 µs. Because blocks==rows on the probe shapes
+(1 row/core), a per-row saving is a per-launch saving (cores run in parallel).
+
+### Re-ranked table
+
+| rank | hypothesis | serial target | expected µs bound per launch | vs 55–70 µs | quiet-window verdict |
+|---|---|---|---|---|---|
+| 1 | **H1** inter-pass prologue prefetch | FinishRms drain + P2 tile-0 fill (2 of the ~6 uncovered segments) | saving = min(tail, load) ≈ **0.5–2 µs**, ceiling ≈3 µs | ≈1–4% (ceiling ~5%) | **WORTH a quiet window later.** Condition: same-binary floor must come in ≤0.03 MAD/med on the exact probe shape (the protocol's ≤0.10 alone = 5.5–7 µs resolution, which cannot see this effect) with ≥4–8 interleaved pairs. First in queue for any such window. |
+| 2 | **H3** pass-2 MTE2/MTE3 issue order | HBM arbitration order across the 6 full-triple iterations | **0–3 µs if issue order steers arbitration at all; plausibly 0**; downside −0..−3 µs if delaying the load starves V(N) | 0–4%, sign uncertain | **Worth piggybacking, not a dedicated window.** Binary is a two-call swap (near-zero build cost) — co-schedule with H1's window; judge only at floor ≤0.03 with ≥8 pairs. Needs no re-classification (stays NEEDS_MORE_EVIDENCE). |
+| 3 | **H2** output-ring event decoupling | store-completion visibility into the scalar path | ceiling **0–2 µs even if exposure exists** (4 KB store ≈0.2–1 µs is often shorter than one V(N) slot time, so a completion wait would usually cost nothing; plus exposed flush store ≈0.2–1 µs); **0 if TQue is already async** — the main unknown | 0–3% | **NOT worth a window yet.** Resolve the FreeTensor/AllocTensor coupling question by AscendC queue-semantics readback first (device-free). Promote to quiet-window status ONLY if the readback shows coupling — and note its ceiling is below H1's despite being the largest sync change. |
+
+H4 (inter-row continuity) and H5 (shape-adaptive schedule) remain parked; the buffer/depth
+axis remains excluded (R31B V006/V009 flat). Classifications are unchanged by this
+re-ranking — what changes is the execution order and the measurement preconditions.
+
+### Bound arithmetic and implications (recorded before any data)
+
+1. **Uncovered serial budget per row** (from the FILL/DRAIN table): P1 prologue fill + FinishRms
+   drain + P2 prologue fill + 2 unpaired iterations + flush store ≈ 6 segments × 0.5–3 µs
+   ≈ 3–15 µs of the 55–70 µs total — consistent with steady state (6 of 8 pass-2 iterations
+   fully tripled) dominating and leaving only this tail. H1 attacks 1.5 of these segments
+   (drain overlapped + fill started early) → 0.5–2 µs is the honest expected value.
+2. **The protocol's floor threshold is itself a resolution limit.** MAD/med ≤0.10 on a
+   55–70 µs kernel = 5.5–7 µs — larger than every hypothesis's ceiling. Passing the minimum
+   floor is necessary but not sufficient: without a *quiet* window (observed floors of
+   0.023–0.054 exist on SCHED shapes) any of H1–H3 landing inside noise means "unmeasurable",
+   not refuted. State this in any future P/C handoff so a null result is not misread.
+3. **H3's expected effect scales with tileCount, H1's does not** (H1 saves one fixed
+   drain+fill per row → absolute delta width-independent, already falsifier #4). If a future
+   measurement shows H1's delta growing with width, it is misattributed steady-state effect.
+4. **H2 ceiling math is a downgrade, not an upgrade:** even under the worst-case assumption
+   that slot recycling waits on MTE3, the per-iteration cost only materializes when
+   store > V(N) slot time; at 4 KB stores against 4×4 KB vector ops that inequality usually
+   fails to hold → exposure mostly zero + one exposed flush. The queue-semantics readback
+   remains the cheap decider; the quiet-window budget is better spent on H1 first, H3 as
+   co-run, H2 only on positive readback.
+5. **Ordering under the model:** H1 (direct chain removal, 0.5–2 µs, READY) → H3 (co-run,
+   ±3 µs, unproven direction) → H2 (conditional, 0–2 µs, premise unverified). This supersedes
+   the sequence in RECOMMENDED_NEXT §2–4 only in that H3 is now explicitly a co-schedule for
+   H1's window and H2's window-worthiness is explicitly withheld pending readback.

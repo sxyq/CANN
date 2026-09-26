@@ -1,0 +1,162 @@
+{
+  "route": "REDUCE-INVSCALE-X",
+  "revision": "V001",
+  "direct_parent": "FULL-R006-V001-REDUCTION-ARCH",
+  "parent_source_sha": "94ab0ef96a1a907fa187797b6c72361b2bdacfe6faf7a95d6471bd537a913266",
+  "parent_score": "LOCAL_PARENT",
+  "parent_formal": "Correctness Fail 1/15, official_score null (recorded; not usable as a score)",
+  "single_hypothesis": "From the R006 reduction-architecture parent, replace ONLY the post-reduction normalization (B0-style Duplicate + Div) with the R019-style scalar reciprocal (1.0f/rms) plus one vector Muls; tile, pipeline, row scheduling and parameter residency unchanged. Tests whether reduction-side and post-reduction normalization optimizations are orthogonal.",
+  "context_class": "HISTORICAL_DERIVED",
+  "single_change_audit": "PASS",
+  "source_sha256": "f017935d840bea5a81268d9fe137f1567df0982f4f71718f65f4672ad8da8023",
+  "source_path": "phase4/workspaces/REDUCE-INVSCALE-X/submission.asc",
+
+  "compile": {
+    "device": "PASS",
+    "submission": "PASS",
+    "toolchain": "cann-server3 / Ascend910B3 / dav-2201 / CANN 8.5.0.alpha002",
+    "log": "phase4/local/REDUCE-INVSCALE-X/V001/support/compile.log"
+  },
+  "link": {
+    "full_link": "PASS",
+    "probe_build": "PASS",
+    "method": "ASC CMake (find_package(ASC)); reduce_invscale_full_link + reduce_invscale_{parent,v001}_probe"
+  },
+
+  "correctness": {
+    "status": "FAIL",
+    "scope": "Full legal domain D in 64..32768 is NOT covered.",
+    "device_id": 6,
+    "timestamp_utc": "2026-09-23T20:23:32Z",
+    "golden": "double-precision reference; u = float32(x)+float32(r); mean = sum * (1/D) matching the device reciprocal multiply; tolerances FP32 atol/rtol 1e-4, FP16 1e-3, BF16 2e-2; gross_bad counts relative error > 5%",
+    "pass_d_le_6144": {
+      "shapes": [
+        {"rows": 1, "D": 64, "dtype": "FP32", "parent_bad": 0, "v001_bad": 0, "max_abs": "2.4e-07"},
+        {"rows": 1, "D": 65, "dtype": "FP32", "parent_bad": 0, "v001_bad": 0, "max_abs": "1.7e-07"},
+        {"rows": 1, "D": 256, "dtype": "FP32", "parent_bad": 0, "v001_bad": 0},
+        {"rows": 1, "D": 1024, "dtype": "FP32", "parent_bad": 0, "v001_bad": 0},
+        {"rows": 1, "D": 4096, "dtype": "FP32", "parent_bad": 0, "v001_bad": 0},
+        {"rows": 1, "D": 6144, "dtype": "FP32", "parent_bad": 0, "v001_bad": 0, "max_abs": "5.4e-07"},
+        {"rows": 3, "D": 256, "dtype": "FP32", "parent_bad": 0, "v001_bad": 0},
+        {"rows": 1, "D": 100, "dtype": "FP16", "parent_bad": 0, "v001_bad": 0},
+        {"rows": 1, "D": 256, "dtype": "FP16", "parent_bad": 0, "v001_bad": 0},
+        {"rows": 1, "D": 256, "dtype": "BF16", "parent_bad": 0, "v001_bad": 0}
+      ],
+      "note": "Parent and V001 both pass exactly for single-tile rows (D <= kReduceTileElems = 6144), including unaligned D and all three dtypes."
+    },
+    "fail_d_gt_6144": {
+      "shapes": [
+        {"rows": 1, "D": 8192, "dtype": "FP32", "parent_bad": 2048, "v001_bad": 2048, "parent_max_abs": 5.4174, "v001_max_abs": 5.4174},
+        {"rows": 1, "D": 16384, "dtype": "FP32", "parent_bad": 10240, "v001_bad": 10239, "parent_max_abs": 5.75199, "v001_max_abs": 5.75199},
+        {"rows": 1, "D": 32768, "dtype": "FP32", "parent_bad": 26622, "v001_bad": 26623, "parent_max_abs": 5.90022, "v001_max_abs": 5.82734},
+        {"rows": 3, "D": 8192, "dtype": "FP32", "parent_bad": 6144, "v001_bad": 6144, "parent_max_abs": 5.69372, "v001_max_abs": 5.69372},
+        {"rows": 1, "D": 8192, "dtype": "FP16", "parent_bad": 2809, "v001_bad": 3318, "parent_max_abs": 5.418, "v001_max_abs": 4.90506},
+        {"rows": 1, "D": 8192, "dtype": "BF16", "parent_bad": 2969, "v001_bad": 2982, "parent_max_abs": 5.41909, "v001_max_abs": 5.29956}
+      ],
+      "note": "Parent and V001 fail on exactly the same shapes with identical or near-identical max_abs, so the defect is in the shared, unchanged R006 reduction path and is inherited, not introduced by V001."
+    },
+    "root_cause": {
+      "statement": "Rows longer than one reduction tile (D > kReduceTileElems = 6144) write each tile's single-float ReduceSum result to partialBase[partialCount], i.e. float indices 1,2,3... -> byte offsets 4,8,12..., which are not 32-byte aligned. Single-tile rows finish through the count==1 Adds path and are correct.",
+      "confidence": "HIGH",
+      "evidence": "Exact correctness threshold sits at D = 6144 (pass) vs D = 8192 (fail); parent and V001 fail identically; mechanism read from ReduceTileToPartial/CollapsePartials in parent.asc. Not yet repaired or re-tested.",
+      "matches_historical": "Consistent with the recorded FULL-R006-V001 formal result (1/15, only the smallest case passing) and its recorded suspected issue about partial destinations not being 32-byte aligned."
+    }
+  },
+
+  "load_quality": {
+    "classification": "PARTIAL_CONTAMINATION_SUSPECTED",
+    "probe_device": 6,
+    "aicore_on_probe_device_percent": [0, 0, 0, 0],
+    "hbm_on_probe_device": "59875/65536 pages (VLLMWorker_TP PID 91228, 56355 MB resident) at all four pairs",
+    "other_devices": "NPU 0-3 AICore 32-34% running VLLMWorker_TP; NPU 4 hosting another route's probe binaries (async_triple_x_) plus VLLMEngineCor; NPU 5 VLLMWorker_TP",
+    "snapshots": "phase4/local/REDUCE-INVSCALE-X/V001/support/results/probe-pair-0{1,2,3,4}.npu-smi.txt",
+    "assessment": "AICore on the probe device sampled 0% throughout, but HBM is ~91% occupied by a resident VLLM worker, sibling NPUs are busy, and another cann-next6 route was probing concurrently on NPU 4. Instantaneous AICore samples do not capture HBM/host contention. Within-variant spread of 38-47% despite 0% AICore confirms the window is not clean.",
+    "timestamp_utc_pairs": ["2026-09-23T20:28:12Z", "2026-09-23T20:28:27Z", "2026-09-23T20:28:40Z", "2026-09-23T20:28:56Z"]
+  },
+
+  "local_probes": {
+    "shape": "FP32 rows=1 width=6144 (largest correctness-passing row; exercises the Duplicate+Div vs Muls normalization at full tile width)",
+    "device_id": 6,
+    "warmups": 3,
+    "repeats_per_variant": 11,
+    "correctness_during_probes": "bad=0, gross_bad=0, max_abs=5.44672e-07 for both variants in all four pairs",
+    "pairs": [
+      {"pair": 1, "timestamp_utc": "2026-09-23T20:28:12Z", "order": ["parent", "v001"], "parent_us": 160.352, "v001_us": 86.75, "delta_us": -73.602, "delta_pct": -45.9},
+      {"pair": 2, "timestamp_utc": "2026-09-23T20:28:27Z", "order": ["v001", "parent"], "parent_us": 145.681, "v001_us": 145.711, "delta_us": 0.03, "delta_pct": 0.02},
+      {"pair": 3, "timestamp_utc": "2026-09-23T20:28:40Z", "order": ["parent", "v001"], "parent_us": 143.561, "v001_us": 123.821, "delta_us": -19.74, "delta_pct": -13.75},
+      {"pair": 4, "timestamp_utc": "2026-09-23T20:28:56Z", "order": ["v001", "parent"], "parent_us": 201.221, "v001_us": 127.982, "delta_us": -73.239, "delta_pct": -36.4}
+    ]
+  },
+
+  "probe_deltas": [
+    {"pair": 1, "delta_us": -73.602, "delta_pct": -45.9},
+    {"pair": 2, "delta_us": 0.03, "delta_pct": 0.02},
+    {"pair": 3, "delta_us": -19.74, "delta_pct": -13.75},
+    {"pair": 4, "delta_us": -73.239, "delta_pct": -36.4}
+  ],
+
+  "directional_consistency": {
+    "faster_pairs": 3,
+    "tie_pairs": 1,
+    "slower_pairs": 0,
+    "statement": "Consistent in sign: V001 was never slower than the parent in any pair (3 pairs faster by >1%, 1 pair an exact tie at +0.02%). Magnitude varies from 0% to -45.9%, which is too wide to treat as a stable effect size."
+  },
+
+  "median_delta": {
+    "parent_median_us": 153.0165,
+    "v001_median_us": 125.9015,
+    "delta_us": -27.115,
+    "delta_pct": -17.72
+  },
+  "worst_delta": {
+    "definition": "least favorable pair for V001",
+    "pair": 2,
+    "delta_us": 0.03,
+    "delta_pct": 0.02,
+    "note": "effectively a tie; V001 was never measurably slower"
+  },
+  "best_delta": {
+    "pair": 1,
+    "delta_us": -73.602,
+    "delta_pct": -45.9
+  },
+
+  "noise_margin": {
+    "parent_range_us": 57.66,
+    "parent_range_pct_of_median": 37.7,
+    "v001_range_us": 58.961,
+    "v001_range_pct_of_median": 46.8,
+    "abs_median_delta_us": 27.115,
+    "ratio_abs_median_delta_over_max_range": 0.46,
+    "verdict": "NOT_ABOVE_NOISE",
+    "statement": "The within-variant spread (37.7% of the parent median, 46.8% of the V001 median) is about twice the absolute median delta. The directional signal is suggestive; the effect size is not resolved above noise."
+  },
+
+  "local_confidence": {
+    "level": "LOW",
+    "compile": "HIGH (device, submission and full link all PASS)",
+    "correctness": "HIGH-confidence FAIL: full legal domain not covered; cause localized to the inherited R006 reduction path",
+    "performance": "LOW: direction consistent (never slower) but magnitude below the observed noise floor under a partially contaminated load window"
+  },
+
+  "architecture_novelty": "The R006 partials-collector reduction combined with the R019 scalar-reciprocal + vector-Muls normalization is assembled here for the first time in this repository. Tile size, pipeline, row scheduling and parameter residency are byte-identical to the parent; the only code difference is the normalization replacement documented in diff.patch.",
+
+  "risks": [
+    "NPU correctness FAILS for D > 6144, which is inside the required legal range 64..32768; this alone bars an ONLINE_CANDIDATE handoff.",
+    "The correctness defect is inherited from the direct parent and was not introduced by this revision; repairing it is a separate correctness-only revision and must not be mixed with a performance variable.",
+    "Probe magnitudes are not above noise; even on correctness-passing shapes the -17.72% median figure must not be quoted as a measured win.",
+    "Probe shape was limited to D <= 6144 because larger D fails correctness, so the normalization change was never measured on wide rows where Duplicate+Div would cost the most.",
+    "Load window was partially contaminated (resident VLLM worker, sibling routes active)."
+  ],
+
+  "decisions": {
+    "correctness": "FAIL",
+    "handoff": "LOCAL_REJECTED",
+    "rationale": "Correctness fails the full legal domain, so this revision cannot be handed off as ONLINE_CANDIDATE. The failure is inherited from the direct parent's reduction path and is reproduced identically by both variants, so the R019 normalization change itself is not the cause. The local performance direction favors V001 but sits below the noise floor."
+  },
+
+  "next_candidate_hypothesis": "Decision belongs to Main. Suggested next step: a correctness-only revision that repairs the R006 partials-collector destination alignment (branch from this revision, no performance variable), then re-measure the R019 normalization delta on the repaired base across D=6144 and D>6144 in a clean load window.",
+
+  "cleanup": "Remote *.o/*.d build intermediates and the scratch tarball deleted; sources, compile log and all results retained. No local source, Git history, task documents, or other route files were modified or deleted.",
+  "files_touched_note": "Only files under phase4/workspaces/REDUCE-INVSCALE-X/ and phase4/local/REDUCE-INVSCALE-X/V001/ were created or written, plus the pre-existing untracked ROUTE-BRIEF.md left as found."
+}

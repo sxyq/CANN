@@ -1,0 +1,118 @@
+--- phase4/workspaces/REDUCE-INVSCALE-X/parent.asc	2026-09-24 04:15:28
++++ phase4/workspaces/REDUCE-INVSCALE-X/submission.asc	2026-09-24 04:15:54
+@@ -3,10 +3,13 @@
+ #include "kernel_operator.h"
+ 
+ /*
+- * AddRmsNormBias - FULL-R006-V001-REDUCTION-ARCH
++ * AddRmsNormBias - REDUCE-INVSCALE-X V001
++ * (FULL-R006-V001-REDUCTION-ARCH + R019 invscale normalization)
+  *
+  * Branch:
+- *   R006 / reduction-centric architecture.
++ *   R006 / reduction-centric architecture, with the R019 normalization
++ *   mutation applied on top.  Direct parent is FULL-R006-V001-REDUCTION-ARCH
++ *   (sha256 94ab0ef96a1a907fa187797b6c72361b2bdacfe6faf7a95d6471bd537a913266).
+  *
+  * This is a clean branch-level rewrite.  It does NOT inherit the B0 device
+  * implementation, PURE-R012 row-group scheduler, PURE-R009 copy fast path,
+@@ -25,8 +28,14 @@
+  *   5. Very large rows fall back to infrequent collector flushes; scalar is
+  *      touched only after the complete row reduction is finished.
+  *   6. The output pass remains intentionally simple: reload x/residual and
+- *      gamma/bias and apply the already-computed RMS denominator.
++ *      gamma/bias and apply the already-computed reciprocal.
+  *
++ * V001 change (the only change relative to the direct parent):
++ *   R019-style normalization.  Convert the row RMS scalar to one scalar
++ *   reciprocal (1.0f / rms) once per row, then normalize each output tile
++ *   with a single vector-scalar Muls.  This replaces the parent's B0-style
++ *   Duplicate + Div pair.
++ *
+  * Explicitly absent:
+  *   - retained-y row cache;
+  *   - parameter residency;
+@@ -37,7 +46,8 @@
+  *   - 32-byte row-group scheduling;
+  *   - aligned DataCopy fast path;
+  *   - manual tail split;
+- *   - reciprocal/Muls normalization replacement.
++ *   - any change to tile size, reduction, pipeline, row scheduling, or
++ *     parameter residency.
+  *
+  * Host scheduling:
+  *   Kept conservative and correctness-oriented.  Naturally 32B-aligned rows
+@@ -427,7 +437,12 @@
+             VectorScalarRead(rowSum);
+ 
+         ScalarToVector();
+-        return rmsValue;
++
++        /*
++         * R019: one scalar reciprocal per row, taken before the output tile
++         * loop, so every tile is normalized by vector-scalar Muls.
++         */
++        return 1.0f / rmsValue;
+     }
+ 
+     /*
+@@ -438,7 +453,7 @@
+     __aicore__ inline void WriteNormalizedRow(
+         uint64_t rowOffset,
+         uint64_t rowWidth,
+-        float rmsValue)
++        float invRms)
+     {
+         AscendC::LocalTensor<T> xLocal =
+             inputX_.Get<T>();
+@@ -453,8 +468,6 @@
+             fp32B_.Get<float>();
+         AscendC::LocalTensor<float> yFp32 =
+             value_.Get<float>();
+-        AscendC::LocalTensor<float> denom =
+-            reduceWork_.Get<float>();
+ 
+         for (uint64_t col = 0;
+              col < rowWidth;
+@@ -501,19 +514,13 @@
+             AscendC::PipeBarrier<PIPE_V>();
+ 
+             /*
+-             * Keep B0-style division rather than importing R019's reciprocal
+-             * normalization route.
++             * R019 normalization: scalar reciprocal + vector Muls replaces
++             * the parent's Duplicate + Div pair (one pass instead of two).
+              */
+-            AscendC::Duplicate(
+-                denom,
+-                rmsValue,
+-                valid);
+-            AscendC::PipeBarrier<PIPE_V>();
+-
+-            AscendC::Div(
++            AscendC::Muls(
+                 yFp32,
+                 yFp32,
+-                denom,
++                invRms,
+                 valid);
+             AscendC::PipeBarrier<PIPE_V>();
+ 
+@@ -600,7 +607,7 @@
+         const uint64_t rowOffset =
+             row * rowWidth;
+ 
+-        const float rmsValue =
++        const float invRms =
+             ComputeRowRms(
+                 rowOffset,
+                 rowWidth,
+@@ -610,7 +617,7 @@
+         WriteNormalizedRow(
+             rowOffset,
+             rowWidth,
+-            rmsValue);
++            invRms);
+     }
+ 
+ private:

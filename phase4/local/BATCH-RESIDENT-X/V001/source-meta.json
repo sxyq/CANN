@@ -1,0 +1,72 @@
+{
+  "route": "BATCH-RESIDENT-X",
+  "revision": "V001",
+  "record_type": "local",
+  "context_class": "HISTORICAL_DERIVED",
+  "direct_parent": "A001-V017 (R014 parameter-residency verified checkpoint / A001-style param cache)",
+  "parent_source_sha": "c906bc45c0bfa0a1fb35710abac637a7c784b265d2658a66daa1d739da4054c3",
+  "parent_score": 36.41,
+  "parent_result": "15/15 official score 36.41 (A001 V017)",
+  "parent_source_path": "phase4/workspaces/A001/submission_v017.asc",
+  "single_hypothesis": "After parameter residency (R014), contiguous multi-row batch / DMA ownership reduces DMA transactions, per-row setup, and improves row reuse. ONLY add multi-row batch DMA ownership on the FastKernel path; ResidentKernel and host dispatch byte-identical to parent.",
+  "donors": [
+    "R014 PARAMETER RESIDENCY",
+    "R015 ROW-BATCH DMA"
+  ],
+  "why_not_duplicate": "R014 alone is param residency without multi-row batch DMA; R015 alone is multi-row DMA without post-residency combination under the phase4 champion path. This V001 tests the new combination: resident params + contiguous multi-row batch DMA ownership on A001 V017.",
+  "why_this_combination_is_new": "R014 alone and R015 alone were separate; post-residency multi-row batch ownership was not combined under the phase4 champion path.",
+  "source_sha256": "ad961c5837971bf989c9989b822cc2719a6a285c60969d35e1530463b7c8721d",
+  "source_path": "phase4/workspaces/BATCH-RESIDENT-X/submission_v001.asc",
+  "compile": {
+    "device": "PASS",
+    "submission": "PASS",
+    "adapter_object": "PASS",
+    "probe_link": "PASS",
+    "toolchain": "cann-server3 / Ascend910B3 / dav-2201 / CANN 8.5.0.alpha002",
+    "logs": [
+      "support/configure-v001.log",
+      "support/compile-v001.log"
+    ]
+  },
+  "single_change_audit": {
+    "fastkernel": "CHANGED - multi-row batch DMA ownership (ProcessBatch/CopyInBatch/CopyOutBatch, batchRows_ selection)",
+    "residentkernel": "UNCHANGED - byte-identical to parent",
+    "host_run_kernel": "UNCHANGED - byte-identical to parent",
+    "param_residency": "UNCHANGED - LoadFloatParamsOnce still once per core"
+  },
+  "WHY_NOT_DUPLICATE": "R014 alone is param residency without multi-row batch DMA; R015 alone is multi-row DMA without post-residency combination under the phase4 champion path. This V001 tests the new combination: resident params + contiguous multi-row batch DMA ownership on A001 V017.",
+  "WHY_THIS_COMBINATION_IS_NEW": "R014 alone and R015 alone were separate; post-residency multi-row batch ownership was not combined under the phase4 champion path.",
+  "decision": "NEEDS_ONE_MORE_LOCAL",
+  "decision_rationale": "Main-2 Q-BATCH review 2026-09-24T07:33:27Z: WINDOW_UNQUALIFIED 2/2 (d6+d4); candidate not run; pair3 not chased. Decision NEEDS_ONE_MORE_LOCAL + MEASUREMENT_BLOCKED. Stop timing BATCH today; SHA frozen; stay idle; no V002; no CANNJudge.",
+  "probes_status": "IDLE_AFTER_Q_BATCH_REVIEW",
+  "idle": true,
+  "load_quality_set2": "DEV4_FREE_WINDOW_VLLM_RESIDENT",
+  "local_metrics_set2": {
+    "median_delta_pct": -23.925,
+    "worst_delta_pct": 30.215,
+    "best_delta_pct": -46.682,
+    "directional_consistency": "INCONSISTENT",
+    "faster": 3,
+    "slower": 1,
+    "flat": 0,
+    "local_confidence": "LOW"
+  },
+  "second_probe_set": "support/probes-window2/",
+  "device4_serial_rule": "Only one next6 probe at a time on d4; preflight required before any future set3",
+  "load_quality_set3": "DEV4_EXCLUSIVE_VLLM_RESIDENT",
+  "local_metrics_set3": {
+    "median_delta_pct": -20.315,
+    "worst_delta_pct": 185.495,
+    "best_delta_pct": -66.529,
+    "directional_consistency": "INCONSISTENT",
+    "faster": 3,
+    "slower": 1,
+    "flat": 0,
+    "local_confidence": "LOW"
+  },
+  "third_probe_set": "support/probes-window3-excl/",
+  "load_note_class_set3": "MODERATE",
+  "set3_accepted": "controlled exclusive measurement",
+  "round2_baseline_only": true,
+  "measurement_status": "MEASUREMENT_BLOCKED"
+}
