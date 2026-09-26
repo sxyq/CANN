@@ -117,9 +117,18 @@
 - 经 `result.json` 复核的 Main-1 Official anchors：R31B-V011 45.16，R31A-V016 45.00，MIX-A-V003 44.69；三者均 15/15。
 - Main-1 当前候选的有效本地性能结果：无。污染的 R31B/R31A/MIX 旧数值不纳入方向统计；WIDE 的旧 host shim 不属于 NPU kernel timing。
 - `local-timing-protocol.md` 当前 harness 状态为 `PARTIAL_SHAPE_CONDITIONAL`，资格按 Route、shape、dtype、binary 分别计算。Main-1 当前候选均没有满足本轮要求的完整 same-binary + paired 记录。
-- 较早的 2026-09-26 server3 记录显示 device 0–6 有常驻 VLLM、HBM 约 90%，device 7 有 Python 进程且 AICore 活动；该快照已由下方最新现场状态取代。测量窗口不合格时，Main-1 记 `MEASUREMENT_BLOCKED`，只读研究继续。
-- 最新现场快照（server3 UTC `2026-09-25T22:02:40Z`）：device 0–3 AICore 为 35%–36%，HBM 59969–60026 MB 且有 VLLM worker；device 4–6 AICore 为 0%，HBM 59186–59876 MB 且分别有 VLLM 进程。device 7 AICore 为 0%、HBM 3431 MB、无进程，但现行规程要求避开。租用表没有活动 lease；五条 Main-1 路线均记 `MEASUREMENT_BLOCKED`。
+- 历史现场快照（server3 UTC `2026-09-25T22:02:40Z`）：device 0–3 AICore 为 35%–36%，HBM 59969–60026 MB 且有 VLLM worker；device 4–6 AICore 为 0%，HBM 59186–59876 MB 且分别有 VLLM 进程。device 7 AICore 为 0%、HBM 3431 MB、无进程，但现行规程要求避开。
+- 最新现场快照（server3 UTC `2026-09-26T06:53:18Z`）：npu-smi 确认 device 0–7 均为 Ascend 910B3。device 0–3 的 HBM 为 91%，AICore 为 33%–39%；device 4–6 的 HBM 为 90%–91%，AICore 为 0%；device 7 的 HBM 为 5%、AICore 为 0%，但现行计时规则不允许使用 device 7。device 4 的 `proc-mem` 显示 PID 2999855 `VLLMEngineCor` 使用 55664 MB；驱动不支持全局 `npu-smi info proc` 查询。租用表当时没有 `LEASED` 记录。没有可用的授权计时卡，本次未启动 same-binary 或 P/C。
 - Main-1 `ONLINE_CANDIDATES`：无。
+
+## 缺少的本地验证队列
+
+每次 server3 状态查询只代表其记录时间。恢复测量前须按统一 timing protocol 重新查询设备并取得独占 lease；候选只在 Parent exact-shape same-binary 合格后进入 P/C。
+
+- **P0，按串行顺序**：R31A V021 ← V016；R31B V016 ← V011；MIX-A V007 ← V003；MODE-X-R015C r4 ← r3；DTYPE-SPECIAL-X V001 ← R31B-V011。五个当前 Route Candidate 均为 `MEASUREMENT_BLOCKED`；这次实时快照没有合格设备，same-binary 与新 P/C 都未运行。
+- **P1**：WIDE-X-FRESH4 V001。先确认 Fresh Blind 来源并准备可核验的 BUILD-FIX-001 Parent executable control，再做 exact-shape same-binary；该 Route 当前不占五个执行 slot。
+- **P2**：无。已知正式 Online 结果均有 calibration 行；缺少或不可信的 Local 数值已注明，不补造。
+- **P3**：R31B V001–V010、V012–V014；R31A V002–V015、V018；MIX-A V004–V006。逐版记录见 `main1-revision-ledger.tsv`。这些版本当前不影响五条 Route 的直接父子测量，也没有值得占用 server3 的新问题；除非新证据改变 lineage 或 calibration 判断，否则不重跑。
 - SCHED-ROWGROUP-X V001 属 Main-2。已核实 Judge 正式结果 15/15、Official 22.27、LOCAL/SIDECAR/REMOTE SHA 一致；本地 33x100 配对改善方向与 Official 上升方向一致。局部 latency 百分比与 Official score points 不可直接比较，单条样本不足以改本地 evaluator。结果已追加到 shared local-online calibration 表。
 
 ## 当前五个 MAIN-1 Agent 与双轨工作
