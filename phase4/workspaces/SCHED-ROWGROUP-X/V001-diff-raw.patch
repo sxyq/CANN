@@ -1,0 +1,117 @@
+--- /Users/sunyiyang/Desktop/Project/cann-next6/SCHED-ROWGROUP-X/phase4/workspaces/SCHED-ROWGROUP-X/PARENT-R016-COMPILEFIX-kernel.asc	2026-09-24 04:03:41
++++ /Users/sunyiyang/Desktop/Project/cann-next6/SCHED-ROWGROUP-X/phase4/workspaces/SCHED-ROWGROUP-X/SCHED-ROWGROUP-X-V001-submission.asc	2026-09-24 04:05:17
+@@ -3,41 +3,39 @@
+ #include "kernel_operator.h"
+ 
+ /*
+- * AddRmsNormBias - FULL-R016-V001-COMPILEFIX-A-SCHEDULING-ARCH
++ * AddRmsNormBias - SCHED-ROWGROUP-X-V001
+  *
+- * Branch:
+- *   R016 / scheduling-centric architecture.
++ * Direct parent:
++ *   R016-V001-COMPILEFIX-A-SCHEDULING-ARCH
++ *   SHA256 62de32dfc56a2b258704f658115fd01c8b224c6b814c106c049fd8cc9070c216
++ *   Official score 17.14 (15/15)
+  *
+- * This is a compile-compatibility repair of FULL-R016-V001, not V002.
++ * SINGLE_HYPOTHESIS (one conceptual change):
++ *   From the R016 shape-aware rows/task scheduling baseline, add only
++ *   32-byte-safe row-group ownership (R012 donor):
++ *   - rowGroup = 32 / gcd(rowBytes, 32) consecutive rows form one group
++ *     whose byte span is 32B-aligned;
++ *   - each complete group is owned wholly by one core (never split);
++ *   - tasks are rounded up to a multiple of rowGroup so task boundaries
++ *     stay on group boundaries;
++ *   - remove the parent rule that forced a single core whenever a row
++ *     was not naturally 32B-aligned.
+  *
+- * The first FULL-R016 submission failed compilation on all 15 cases.
+- * No compiler diagnostics were provided, so the exact rejection is unknown.
+- *
+- * Repair strategy:
+- *   Keep the R016 scheduling architecture, but collapse the implementation
+- *   onto the exact class / TPipe / TBuf / DataCopyPad constructs already
+- *   proven to compile online by B0-PURE-V001.
+- *
+- * Removed compile-risk abstractions:
+- *   - namespace-scoped scheduling helpers;
+- *   - typed scheduling enum;
+- *   - nested device object hierarchy;
+- *   - extra wrapper class.
+- *
+- * Scheduling bands retained:
+- *   D <= 256:       16 rows/task, cyclic task mapping.
+- *   D <= 1024:       8 rows/task, contiguous balanced mapping.
+- *   D <= 4096:       4 rows/task, cyclic task mapping.
+- *   D <= 16384:      2 rows/task, contiguous balanced mapping.
+- *   D > 16384:       1 row/task, contiguous mapping, <=8 active cores.
++ * Scheduling bands retained unchanged from parent:
++ *   D <= 256:       16 rows/task base, cyclic task mapping.
++ *   D <= 1024:       8 rows/task base, contiguous balanced mapping.
++ *   D <= 4096:       4 rows/task base, cyclic task mapping.
++ *   D <= 16384:      2 rows/task base, contiguous balanced mapping.
++ *   D > 16384:       1 row/task base, contiguous mapping, <=8 active cores.
+  *
+  * Rows inside a task are computed independently; this is not R015 batching.
+- * Non-32B-aligned rows use one core; this is not R012 row-group scheduling.
++ * Device ProcessRow / two-pass math / UB layout are unchanged from parent.
+  *
+- * Explicitly absent:
++ * Explicitly absent (unchanged from parent scope rules):
+  *   parameter residency, retained-y, multi-row SIMD batching, wide cached-row,
+  *   double buffering, hierarchical reduction, aligned DataCopy fast path,
+- *   manual tail split, reciprocal normalization, R031 multimode routing.
++ *   manual tail split, reciprocal normalization, R031 multimode routing,
++ *   batch compute, parameter cache, pipeline, new reduction.
+  */
+ 
+ template <typename T>
+@@ -435,6 +433,7 @@
+     uint64_t rowsPerTask = 1ULL;
+     uint32_t scheduleMode = 1U;
+ 
++    // Parent R016 shape-aware base bands (unchanged).
+     if (rowWidth <= 256ULL) {
+         rowsPerTask = 16ULL;
+         scheduleMode = 0U;
+@@ -452,6 +451,23 @@
+         scheduleMode = 1U;
+     }
+ 
++    // R012 donor: smallest consecutive row count whose byte span is 32B-aligned.
++    // rowGroup == 1 when each row is already naturally 32B-aligned.
++    uint64_t gcdA = rowBytes;
++    uint64_t gcdB = 32ULL;
++    while (gcdB != 0ULL) {
++        const uint64_t remainder = gcdA % gcdB;
++        gcdA = gcdB;
++        gcdB = remainder;
++    }
++    const uint64_t rowGroup = 32ULL / gcdA;
++
++    // Keep task boundaries on row-group boundaries so no group is split
++    // across cores. When rowGroup == 1 this is a no-op vs parent.
++    const uint64_t rounded =
++        (rowsPerTask + rowGroup - 1ULL) / rowGroup;
++    rowsPerTask = rounded * rowGroup;
++
+     uint64_t taskCount = rowCount / rowsPerTask;
+     if ((rowCount % rowsPerTask) != 0ULL) {
+         ++taskCount;
+@@ -468,13 +484,9 @@
+     uint64_t requestedBlocks =
+         available < taskCount ? available : taskCount;
+ 
+-    const bool rowNaturallyAligned =
+-        (rowBytes & 31ULL) == 0ULL;
++    // Parent rule "if row not naturally 32B-aligned then one core" is removed.
++    // Ownership safety now comes from complete 32B row-groups above (R012).
+ 
+-    if (!rowNaturallyAligned) {
+-        requestedBlocks = 1ULL;
+-    }
+-
+     if (rowWidth > 16384ULL &&
+         requestedBlocks > 8ULL) {
+         requestedBlocks = 8ULL;

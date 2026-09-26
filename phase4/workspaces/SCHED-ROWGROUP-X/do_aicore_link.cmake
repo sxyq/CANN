@@ -1,0 +1,28 @@
+if(NOT EXISTS "${DEVICE_DIR}" OR NOT EXISTS "${SUBMISSION_DIR}")
+  message(FATAL_ERROR "object dirs missing: ${DEVICE_DIR} ${SUBMISSION_DIR}")
+endif()
+file(GLOB DEV_OBJS "${DEVICE_DIR}/*.o")
+file(GLOB SUB_OBJS "${SUBMISSION_DIR}/*.o")
+list(LENGTH DEV_OBJS NDEV)
+list(LENGTH SUB_OBJS NSUB)
+if(NDEV LESS 1 OR NSUB LESS 1)
+  message(FATAL_ERROR "missing objects dev=${DEV_OBJS} sub=${SUB_OBJS}")
+endif()
+list(GET DEV_OBJS 0 DEV_OBJ)
+list(GET SUB_OBJS 0 SUB_OBJ)
+message(STATUS "LLD=${LLD}")
+message(STATUS "DEV_OBJ=${DEV_OBJ}")
+message(STATUS "SUB_OBJ=${SUB_OBJ}")
+execute_process(
+  COMMAND "${LLD}" -m aicorelinux -Ttext=0 -static -o "${OUTDIR}/device.alink" "${DEV_OBJ}"
+  RESULT_VARIABLE RC1)
+if(NOT RC1 EQUAL 0)
+  message(FATAL_ERROR "device alink failed rc=${RC1}")
+endif()
+execute_process(
+  COMMAND "${LLD}" -m aicorelinux -Ttext=0 -static -o "${OUTDIR}/submission.alink" "${SUB_OBJ}"
+  RESULT_VARIABLE RC2)
+if(NOT RC2 EQUAL 0)
+  message(FATAL_ERROR "submission alink failed rc=${RC2}")
+endif()
+message(STATUS "FULL_LINK_OK")

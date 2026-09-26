@@ -1,0 +1,54 @@
+{
+  "route": "SCHED-ROWGROUP-X",
+  "revision": "V001",
+  "lease_id": "LH-SCHED-33x100",
+  "date_utc": "2026-09-25",
+  "device": 4,
+  "host": "hwnput3 (ssh cann-server3)",
+  "shape": {"rows": 33, "width": 100, "dtype": "FP32", "dtype_code": 0},
+  "method": "DEVICE_EVENT_PRIMARY + HOST_WALL_SECONDARY",
+  "harness": "runner_ref.inc (md5 93e6441937e9cd8394b734e124d18469), one aclInit/malloc/H2D/stream per process, warmup 10, batch N=1",
+  "identity": {
+    "v001_submission_sha256": "0fae0a42e3942356fe3477cd518b17180b6104d57350cee705cba37a5895e65c",
+    "direct_parent_source_sha256": "62de32dfc56a2b258704f658115fd01c8b224c6b814c106c049fd8cc9070c216",
+    "parent_binary_md5": "956821cc600c9a0a1856be8cb9b42548",
+    "v001_binary_md5": "41a9aae70eab37a19bb9825b25500427",
+    "verified_before_run": true
+  },
+  "host_state": {
+    "load_avg": "23.82 / 22.83 / 21.27 (34 users)",
+    "vllm": "resident (root vllm serve since Sep22, d0-d3 AICore 37-38%)",
+    "d4_aicore": "0%",
+    "d4_hbm": "59186/65536 MB (~90%)"
+  },
+  "same_binary": {
+    "binary": "srx_ref_parent_probe (Direct Parent vs itself)",
+    "config": "2 blocks x 31 samples, warmup 10, gap 2s, one process per attempt",
+    "attempts_allowed": 2,
+    "attempts_used": 2,
+    "attempt1": {
+      "b1": {"median_us": 55.60, "mad_us": 6.10, "mad_med": 0.1097, "p10": 48.20, "p90": 89.92},
+      "b2": {"median_us": 45.66, "mad_us": 0.66, "mad_med": 0.0145, "p10": 44.96, "p90": 158.28},
+      "all": {"median_us": 49.73, "mad_us": 4.77, "mad_med": 0.0959, "p10": 44.96, "p90": 98.57},
+      "drift_absB1B2_over_median": 0.1999,
+      "verdict": "NEEDS_VALIDATION"
+    },
+    "attempt2": {
+      "b1": {"median_us": 49.66, "mad_us": 3.34, "mad_med": 0.0673, "p10": 45.88, "p90": 159.96},
+      "b2": {"median_us": 44.90, "mad_us": 0.28, "mad_med": 0.0062, "p10": 44.44, "p90": 52.16},
+      "all": {"median_us": 45.94, "mad_us": 1.46, "mad_med": 0.0318, "p10": 44.52, "p90": 102.51},
+      "drift_absB1B2_over_median": 0.1036,
+      "verdict": "NEEDS_VALIDATION"
+    },
+    "verdict": "NEEDS_VALIDATION",
+    "fail_reason": "block drift > 0.10 on both attempts (0.1999, 0.1036); MAD/median within limits (0.096, 0.032); drift < 0.25 so not MEASUREMENT_PROTOCOL_BLOCKED_FOR_SHAPE",
+    "noise_floor_reference": "prior 33x100 same-binary floor MAD/med 0.049, drift 0.062 (protocol table)"
+  },
+  "p_c": {
+    "run": false,
+    "reason": "same-binary qualification did not PASS in 2/2 attempts; protocol allows P/C only after same-binary PASS"
+  },
+  "decision": "NEEDS_ONE_MORE_LOCAL",
+  "candidate_edits": "none (V001 and Direct Parent SHAs unchanged before/after run)",
+  "note": "local deltas only; never an Official Score"
+}

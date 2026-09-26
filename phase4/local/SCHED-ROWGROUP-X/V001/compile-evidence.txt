@@ -1,0 +1,48 @@
+SCHED-ROWGROUP-X V001 server3 compile/link evidence
+toolchain: cann-server3 / Ascend910B3 / dav-2201 / CANN 8.5.0.alpha002
+parent_build: device PASS, submission PASS, full_link PASS (device.alink + submission.alink)
+v001_build: device PASS, submission PASS, full_link PASS (device.alink + submission.alink)
+remote workspace: /home/data4t2/lelinfeng/phase4-workspaces/SCHED-ROWGROUP-X/
+local logs: phase4/workspaces/SCHED-ROWGROUP-X/logs/
+probes: phase4/workspaces/SCHED-ROWGROUP-X/results_local/results/probes/
+correctness tsv: phase4/workspaces/SCHED-ROWGROUP-X/results_local/results/corr_*.tsv
+
+Round-2 clean-window probes (Main NEEDS_ONE_MORE_LOCAL):
+session 2026-09-23T21:06:45Z .. 21:07:49Z device=6
+npu-smi before each pair: support/clean-window-set-2/pair-*.npu-smi.txt
+set1 preserved: support/contaminated-set-1/
+set2 deltas %: -19.163, +1.331, +2.269, +20.624
+median +1.800; directional 1/4 favor V001; aligned control +20.624
+handoff: NEEDS_ONE_MORE_LOCAL (set1/set2 direction disagreement)
+V001 SHA unchanged: 0fae0a42e3942356fe3477cd518b17180b6104d57350cee705cba37a5895e65c
+
+Round-3 attempt (Main r2 → park):
+2026-09-23T21:49-21:54Z: no VLLM-free window. VLLM root+zhangkaijie-owned (cannot stop as lelinfeng).
+free HBM ~1-6k/65536 pages; concurrent REDUCE-INVSCALE-X / UB-LIVENESS-X activity.
+set-3 NOT run. Probes PARKED. SHA unchanged 0fae0a42e3942356fe3477cd518b17180b6104d57350cee705cba37a5895e65c.
+handoff: NEEDS_ONE_MORE_LOCAL + PARK probes. See PROBE-PARK.md
+
+Main r3 2026-09-23T21:59:59Z: ACCEPT PROBE PARK.
+NEEDS_ONE_MORE_LOCAL + PROBES PARKED. Stop VLLM polling. No V002. No online. No CANNJudge.
+Waiting for Main ops clean window. SHA unchanged 0fae0a42e3942356fe3477cd518b17180b6104d57350cee705cba37a5895e65c.
+
+LEASE L004 (Main 2026-09-24T04:15:40Z): exclusive d4 for SCHED-ROWGROUP-X.
+Preflight 2026-09-24T04:16:41+00:00: AICORE=0, FREE_HBM=6350, residual VLLMEngineCor, no next6.
+Controlled PC,PC,CP,CP on d4 2026-09-24T04:17:51+00:00 -> 2026-09-24T04:18:38+00:00. SHA unchanged.
+PARENT_TIMES [215.432, 247.371, 99.977, 101.596]
+CANDIDATE_TIMES [153.904, 123.246, 117.456, 112.506]
+PARENT_JITTER max sofm 0.3053 range 220.962us
+LOAD_QUALITY=LOAD_CONTAMINATED MEDIAN_DELTA=-8.91 DIR=0.5 ALIGNED=10.739
+Decision: NEEDS_ONE_MORE_LOCAL. d4 RELEASED. No V002. No CANNJudge.
+
+MAIN-2 ROUND-2 (2026-09-24T05:36:40Z): AUTO LEASE R2-SCHED baseline.
+Gates: d4 cv=0.2764 unstable=True; d5 cv=0.3535 unstable=True; d6 cv=0.1343 unstable=False.
+stable_device=6 LOAD=LOAD_CONTAMINATED DECISION=NEEDS_ONE_MORE_LOCAL
+stage=ROUND2_DONE_DEVICES_RELEASED SHA unchanged. Devices released. No V002. No CANNJudge.
+
+LEASE Q-SCHED-D6 window qualification (2026-09-24T07:02:03Z):
+Threshold CV<=0.15 AND max/min<=1.30 both A and B.
+d6 A cv=0.2486 pass=False; B cv=0.4183 pass=False -> q6=False.
+d4 A cv=0.2922 pass=False; B cv=0.3919 pass=False -> q4=False.
+qdev=None attempts=2/2. DECISION=NEEDS_ONE_MORE_LOCAL LOAD=WINDOW_UNQUALIFIED stage=WINDOW_UNQUALIFIED.
+SHA unchanged. Devices released. No V002. No CANNJudge.
