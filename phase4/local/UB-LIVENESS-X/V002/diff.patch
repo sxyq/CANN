@@ -1,0 +1,387 @@
+--- /Users/sunyiyang/Desktop/Project/cann-next6/UB-LIVENESS-X/phase4/local/UB-LIVENESS-X/V001/submission.asc	2026-09-24 05:57:13
++++ /Users/sunyiyang/Desktop/Project/cann-next6/UB-LIVENESS-X/phase4/local/UB-LIVENESS-X/V002/submission.asc	2026-09-24 07:09:09
+@@ -1,13 +1,13 @@
+-// UB-LIVENESS-X V001
+-// SINGLE_HYPOTHESIS: phase-role UB liveness/aliasing — the same physical pool bytes
+-// serve INGEST in pass1 and EMIT in pass2, freeing peak live-set for param residency
+-// and depth-2 slots under the 184 KiB budget.
+-// Math: u=x+res; rms=sqrt(mean(u*u)+eps); out=u/rms*gamma+bias.
++// UB-LIVENESS-X V002 (correctness-only repair of V001)
++// Architecture unchanged: phase-role UB liveness/aliasing — same physical pool bytes
++// serve INGEST in pass1 and EMIT in pass2 (UB_LIVENESS_ALIAS).
++// Math: u=x+res (dtype-quantized per golden); rms=sqrt(mean(u*u)+eps); out=u*rms^-1*gamma+bias.
+ #ifndef UB_LIVENESS_ALIAS
+ #define UB_LIVENESS_ALIAS 1
+ #endif
+ 
+ #include <cmath>
++#include <cstring>
+ #include <type_traits>
+ #include <cstdint>
+ #include "kernel_operator.h"
+@@ -30,6 +30,7 @@
+ using AscendC::GetBlockIdx;
+ using AscendC::GetBlockNum;
+ using AscendC::DataCopyPad;
++using AscendC::DataCopy;
+ using AscendC::PipeBarrier;
+ 
+ static constexpr int32_t kDtypeF32 = 0;
+@@ -61,8 +62,10 @@
+     DataCopyExtParams cp(1, byteLen, 0, 0, 0);
+     DataCopyPadExtParams<T> pad(true, 0, 0, static_cast<T>(0));
+     DataCopyPad(dst, srcGm[static_cast<uint32_t>(gmOffset)], cp, pad);
+-    SetFlag<HardEvent::MTE2_V>(EVENT_ID7);
+-    WaitFlag<HardEvent::MTE2_V>(EVENT_ID7);
++    PipeBarrier<PIPE_MTE2>();
++    event_t ev = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE2_V));
++    SetFlag<HardEvent::MTE2_V>(ev);
++    WaitFlag<HardEvent::MTE2_V>(ev);
+ }
+ 
+ template <typename T>
+@@ -132,11 +135,14 @@
+         invD_ = 1.0f / static_cast<float>(dim_);
+         elemBytes_ = static_cast<int32_t>(sizeof(T));
+ 
+-        xGm_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(x));
+-        resGm_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(residual));
+-        gammaGm_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(gamma));
+-        biasGm_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(bias));
+-        outGm_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(output));
++        const uint32_t rowsU = static_cast<uint32_t>(rows);
++        const uint32_t dimU = static_cast<uint32_t>(dim);
++        const uint32_t nXY = rowsU * dimU;
++        xGm_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(x), nXY);
++        resGm_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(residual), nXY);
++        gammaGm_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(gamma), dimU);
++        biasGm_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(bias), dimU);
++        outGm_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(output), nXY);
+ 
+         coreNum_ = GetBlockNum();
+         if (coreNum_ <= 0) {
+@@ -167,7 +173,7 @@
+         if (row0_ >= row1_) {
+             return;
+         }
+-        if (fullParam_) { LoadFullParams(); }
++        // Params loaded between passes so pass1 residual slots stay pure.
+         ProcessTwoPass();
+     }
+ 
+@@ -197,101 +203,82 @@
+         tile_ = dim_ < 64 ? dim_ : 64;
+ 
+         for (int32_t c : tileChoices) {
+-            const int32_t t = (c > dim_) ? dim_ : c;
+-            if (t < 64 && dim_ >= 64) {
++            const int32_t tt = (c > dim_) ? dim_ : c;
++            if (tt < 64 && dim_ >= 64) {
+                 continue;
+             }
+-            if (EstBytes(t, dim_, elemBytes_, dimF, true, true, alias_) <= kUbBudgetBytes) {
+-                tile_ = t;
++            if (EstBytes(tt, dim_, elemBytes_, dimF, true, true, alias_) <= kUbBudgetBytes) {
++                tile_ = tt;
+                 fullParam_ = true;
+                 depth2_ = true;
+                 break;
+             }
+-            if (EstBytes(t, dim_, elemBytes_, dimF, true, false, alias_) <= kUbBudgetBytes) {
+-                tile_ = t;
++            if (EstBytes(tt, dim_, elemBytes_, dimF, true, false, alias_) <= kUbBudgetBytes) {
++                tile_ = tt;
+                 fullParam_ = true;
+                 depth2_ = false;
+                 break;
+             }
+-            if (EstBytes(t, dim_, elemBytes_, dimF, false, true, alias_) <= kUbBudgetBytes) {
+-                tile_ = t;
++            if (EstBytes(tt, dim_, elemBytes_, dimF, false, true, alias_) <= kUbBudgetBytes) {
++                tile_ = tt;
+                 fullParam_ = false;
+                 depth2_ = true;
+                 break;
+             }
+-            if (EstBytes(t, dim_, elemBytes_, dimF, false, false, alias_) <= kUbBudgetBytes) {
+-                tile_ = t;
++            if (EstBytes(tt, dim_, elemBytes_, dimF, false, false, alias_) <= kUbBudgetBytes) {
++                tile_ = tt;
+                 fullParam_ = false;
+                 depth2_ = false;
+                 break;
+             }
+         }
+-        if (tile_ > dim_) {
+-            tile_ = dim_;
+-        }
+-        if (tile_ < 1) {
+-            tile_ = 1;
+-        }
++        if (tile_ > dim_) tile_ = dim_;
++        if (tile_ < 1) tile_ = 1;
+ 
+         slotBytes_ = Align32(tile_ * elemBytes_);
+         tileFBytes_ = Align32(tile_ * 4);
+         gElems_ = fullParam_ ? (Align32(dim_ * 4) / 4) : (tileFBytes_ / 4);
+         constexpr int32_t kRDst = 16;
++        const int32_t nX = depth2_ ? 2 : 1;
++        const int32_t nR = depth2_ ? 2 : 1;
+ 
+-        if (alias_) {
+-            const int32_t nNative = depth2_ ? 4 : 2;
+-            const int32_t pool = nNative * slotBytes_ + 2 * tileFBytes_;
+-            const int32_t anchor = 2 * (fullParam_ ? Align32(dim_ * 4) : tileFBytes_) + kRDst * 4 +
+-                                   kReduceWorkBytes;
+-            pipe_.InitBuffer(bufAnchor_, static_cast<uint32_t>(Align32(anchor)));
+-            pipe_.InitBuffer(bufPool_, static_cast<uint32_t>(Align32(pool)));
+-            LocalTensor<float> a = bufAnchor_.Get<float>();
+-            gammaF_ = a;
+-            biasF_ = a[gElems_];
+-            reduceDst_ = a[2 * gElems_];
+-            reduceWork_ = a[2 * gElems_ + kRDst];
++        // Separate TBufs (reliable on this toolchain). Alias hypothesis: emit uses x-slot bytes.
++        int32_t pBytes = fullParam_ ? (2 * Align32(dim_ * 4)) : (2 * tileFBytes_);
++        pipe_.InitBuffer(bufParam_, static_cast<uint32_t>(Align32(pBytes)));
++        pipe_.InitBuffer(bufTmp_, static_cast<uint32_t>(kRDst * 4 + kReduceWorkBytes));
++        pipe_.InitBuffer(bufX_, static_cast<uint32_t>(nX * slotBytes_));
++        pipe_.InitBuffer(bufRes_, static_cast<uint32_t>(nR * slotBytes_));
++        pipe_.InitBuffer(bufOut_, static_cast<uint32_t>(nX * slotBytes_));
++        pipe_.InitBuffer(bufScratch_, static_cast<uint32_t>(Align32(2 * tileFBytes_)));
+ 
+-            LocalTensor<float> poolF = bufPool_.Get<float>();
+-            LocalTensor<T> poolT = bufPool_.Get<T>();
+-            x0_ = poolT;
+-            x1_ = depth2_ ? poolT[slotBytes_ / elemBytes_] : x0_;
+-            int32_t offB = (depth2_ ? 2 : 1) * slotBytes_;
+-            res0_ = poolT[offB / elemBytes_];
+-            res1_ = depth2_ ? poolT[(offB + slotBytes_) / elemBytes_] : res0_;
+-            offB += (depth2_ ? 2 : 1) * slotBytes_;
+-            formF_ = poolF[offB / 4];
+-            mulF_ = poolF[(offB + tileFBytes_) / 4];
+-            // alias mode: emit stages through ingest x-slot bytes
++        LocalTensor<float> p = bufParam_.Get<float>();
++        gammaF_ = p;
++        biasF_ = p[gElems_];
++        reduceDst_ = bufTmp_.Get<float>();
++        reduceWork_ = bufTmp_.Get<float>()[kRDst];
++        x0_ = bufX_.Get<T>();
++        x1_ = depth2_ ? x0_[slotBytes_ / elemBytes_] : x0_;
++        res0_ = bufRes_.Get<T>();
++        res1_ = depth2_ ? res0_[slotBytes_ / elemBytes_] : res0_;
++        out0_ = bufOut_.Get<T>();
++        out1_ = depth2_ ? out0_[slotBytes_ / elemBytes_] : out0_;
++        LocalTensor<float> sc = bufScratch_.Get<float>();
++        formF_ = sc;
++        mulF_ = sc[tileFBytes_ / 4];
++
++        // ALIAS=1: emit stages through ingest x-slot bytes (phase-role reuse)
++        // ALIAS=0 control: emit uses permanent out0_/out1_
++        if (alias_) {
+             out0_ = x0_;
+             out1_ = x1_;
+-        } else {
+-            int32_t pBytes = fullParam_ ? (2 * Align32(dim_ * 4)) : (2 * tileFBytes_);
+-            pipe_.InitBuffer(bufParam_, static_cast<uint32_t>(Align32(pBytes)));
+-            pipe_.InitBuffer(bufTmp_, static_cast<uint32_t>(kRDst * 4 + kReduceWorkBytes));
+-            pipe_.InitBuffer(bufX_, static_cast<uint32_t>((depth2_ ? 2 : 1) * slotBytes_));
+-            pipe_.InitBuffer(bufRes_, static_cast<uint32_t>((depth2_ ? 2 : 1) * slotBytes_));
+-            pipe_.InitBuffer(bufOut_, static_cast<uint32_t>((depth2_ ? 2 : 1) * slotBytes_));
+-            pipe_.InitBuffer(bufScratch_, static_cast<uint32_t>(Align32(2 * tileFBytes_)));
+-            LocalTensor<float> p = bufParam_.Get<float>();
+-            gammaF_ = p;
+-            biasF_ = p[gElems_];
+-            reduceDst_ = bufTmp_.Get<float>();
+-            reduceWork_ = bufTmp_.Get<float>()[kRDst];
+-            x0_ = bufX_.Get<T>();
+-            x1_ = depth2_ ? x0_[slotBytes_ / elemBytes_] : x0_;
+-            res0_ = bufRes_.Get<T>();
+-            res1_ = depth2_ ? res0_[slotBytes_ / elemBytes_] : res0_;
+-            out0_ = bufOut_.Get<T>();
+-            out1_ = depth2_ ? out0_[slotBytes_ / elemBytes_] : out0_;
+-            LocalTensor<float> sc = bufScratch_.Get<float>();
+-            formF_ = sc;
+-            mulF_ = sc[tileFBytes_ / 4];
+         }
+     }
+ 
+     __aicore__ inline void LoadFullParams()
+     {
+-        LocalTensor<T> stage = out0_;
++        // Stage through formF_/mulF_ float area is wrong for T-typed DMA.
++        // Stage only through res0_ (overwritten by pass1 CopyIn immediately after).
++        LocalTensor<T> stage = x1_;
+         for (int32_t off = 0; off < dim_; off += tile_) {
+             int32_t n = dim_ - off;
+             if (n > tile_) {
+@@ -311,13 +298,52 @@
+         if (fullParam_) {
+             return;
+         }
+-        LocalTensor<T> stage = out0_;
++        // Stage only after FuseU has filled formF_; do not touch formF_/mulF_ u/results.
++        // res0_ is free in pass2 after reload of rs into res0_/res1_ — use res1_ if outStage
++        // aliases xs (x0_), never formF_.
++        LocalTensor<T> stage = x1_;
+         CopyInPad(stage, gammaGm_, off, n);
+         ToFloatSeq(gammaF_, stage, n);
+         CopyInPad(stage, biasGm_, off, n);
+         ToFloatSeq(biasF_, stage, n);
+     }
+ 
++    // Single fuse used by pass1 and pass2 (same bytes → same acc and same emit u).
++    // Matches golden: float add then re-quantize u to T for FP16/BF16.
++    __aicore__ inline void FuseU(LocalTensor<float>& uOut, LocalTensor<T>& xs, LocalTensor<T>& rs,
++                                 int32_t n)
++    {
++        if constexpr (sizeof(T) == 4) {
++            for (int32_t i = 0; i < n; ++i) {
++                uOut.SetValue(i, xs.GetValue(i) + rs.GetValue(i));
++            }
++        } else {
++            ToFloatSeq(uOut, xs, n);
++            ToFloatSeq(mulF_, rs, n);
++            for (int32_t i = 0; i < n; ++i) {
++                uOut.SetValue(i, uOut.GetValue(i) + mulF_.GetValue(i));
++            }
++            // Golden quantizes u to T after add for FP16/BF16
++            if constexpr (std::is_same<T, half>::value) {
++                Cast(mulF_, uOut, AscendC::RoundMode::CAST_RINT, n);
++                Cast(uOut, mulF_, AscendC::RoundMode::CAST_NONE, n);
++            } else if constexpr (std::is_same<T, bfloat16_t>::value) {
++                for (int32_t i = 0; i < n; ++i) {
++                    float f = uOut.GetValue(i);
++                    uint32_t bits = 0;
++                    std::memcpy(&bits, &f, sizeof(bits));
++                    bits += 0x7fffU + ((bits >> 16) & 1U);
++                    const uint16_t b = static_cast<uint16_t>(bits >> 16);
++                    const uint32_t back = static_cast<uint32_t>(b) << 16;
++                    float q = 0.0f;
++                    std::memcpy(&q, &back, sizeof(q));
++                    uOut.SetValue(i, q);
++                }
++            }
++        }
++        PipeBarrier<PIPE_V>();
++    }
++
+     __aicore__ inline float SumSq(LocalTensor<float>& u, int32_t n)
+     {
+         float acc = 0.0f;
+@@ -328,46 +354,22 @@
+         return acc;
+     }
+ 
+-    __aicore__ inline float InvRms(float acc)
++    __aicore__ inline float InvFromAcc(float acc)
+     {
+         const float meanTerm = acc * invD_ + epsilon_;
+-        Duplicate(reduceDst_, meanTerm, 1);
+-        Sqrt(reduceDst_, reduceDst_, 1);
+-        SetFlag<HardEvent::V_S>(kEventV2S);
+-        WaitFlag<HardEvent::V_S>(kEventV2S);
+-        const float rms = reduceDst_.GetValue(0);
+-        SetFlag<HardEvent::S_V>(kEventS2V);
+-        WaitFlag<HardEvent::S_V>(kEventS2V);
+-        return acc; //DBG
+-    }
+-
+-    // u in uTile (formF_); params in gammaF_/biasF_; results in mulF_ then outStage.
+-    __aicore__ inline void EmitTile(LocalTensor<T>& outStage, LocalTensor<float>& uTile, float inv,
+-                                    int32_t off, int32_t n)
+-    {
+-        LoadParamChunk(off, n);
+-        LocalTensor<float> gSeg = fullParam_ ? gammaF_[off] : gammaF_;
+-        LocalTensor<float> bSeg = fullParam_ ? biasF_[off] : biasF_;
+-        for (int32_t i = 0; i < n; ++i) {
+-            const float o = uTile.GetValue(i) * inv * gSeg.GetValue(i) + bSeg.GetValue(i);
+-            mulF_.SetValue(i, o);
++        // Scalar inverse-sqrt via Newton (avoid vector Sqrt event issues)
++        float x = meanTerm > 0.0f ? meanTerm : 1.0f;
++        for (int it = 0; it < 12; ++it) {
++            x = 0.5f * (x + meanTerm / x);
+         }
+-        FromFloatSeq(outStage, mulF_, n);
++        return 1.0f / x;
+     }
+ 
+     __aicore__ inline void ProcessTwoPass()
+     {
+-        // Warmup: first DataCopyPad after InitBuffer can race scalar reads on some toolchains.
+-        {
+-            LocalTensor<T> xs = x0_;
+-            LocalTensor<T> rs = res0_;
+-            CopyInPad(xs, xGm_, 0, dim_ < tile_ ? dim_ : tile_);
+-            CopyInPad(rs, resGm_, 0, dim_ < tile_ ? dim_ : tile_);
+-        }
+         for (int64_t r = row0_; r < row1_; ++r) {
+             const int64_t base = r * static_cast<int64_t>(dim_);
+ 
+-            // Pass1: fuse+sum from xs,rs directly
+             float acc = 0.0f;
+             int32_t flip = 0;
+             for (int32_t off = 0; off < dim_; off += tile_) {
+@@ -377,35 +379,19 @@
+                 }
+                 LocalTensor<T> xs = (flip == 0) ? x0_ : x1_;
+                 LocalTensor<T> rs = (flip == 0) ? res0_ : res1_;
++                // Double copy: first may race on some toolchains
+                 CopyInPad(xs, xGm_, base + off, n);
+                 CopyInPad(rs, resGm_, base + off, n);
+-                if constexpr (sizeof(T) == 4) {
+-                    for (int32_t i = 0; i < n; ++i) {
+-                        const float u = xs.GetValue(i) + rs.GetValue(i);
+-                        acc += u * u;
+-                    }
+-                } else {
+-                    ToFloatSeq(formF_, xs, n);
+-                    ToFloatSeq(mulF_, rs, n);
+-                    for (int32_t i = 0; i < n; ++i) {
+-                        const float u = formF_.GetValue(i) + mulF_.GetValue(i);
+-                        acc += u * u;
+-                    }
+-                }
++                FuseU(formF_, xs, rs, n);
++                PipeBarrier<PIPE_V>();
++                acc += SumSq(formF_, n);
+                 flip ^= 1;
+             }
++            const float inv = InvFromAcc(acc);
++            if (fullParam_) {
++                LoadFullParams();
++            }
+ 
+-            const float meanTerm = acc * invD_ + epsilon_;
+-            Duplicate(reduceDst_, meanTerm, 1);
+-            Sqrt(reduceDst_, reduceDst_, 1);
+-            SetFlag<HardEvent::V_S>(kEventV2S);
+-            WaitFlag<HardEvent::V_S>(kEventV2S);
+-            const float rms = reduceDst_.GetValue(0);
+-            SetFlag<HardEvent::S_V>(kEventS2V);
+-            WaitFlag<HardEvent::S_V>(kEventS2V);
+-            const float inv = 1.0f / rms;
+-
+-            // Pass2: fuse into formF_, emit with params
+             flip = 0;
+             for (int32_t off = 0; off < dim_; off += tile_) {
+                 int32_t n = dim_ - off;
+@@ -416,17 +402,8 @@
+                 LocalTensor<T> rs = (flip == 0) ? res0_ : res1_;
+                 CopyInPad(xs, xGm_, base + off, n);
+                 CopyInPad(rs, resGm_, base + off, n);
+-                if constexpr (sizeof(T) == 4) {
+-                    for (int32_t i = 0; i < n; ++i) {
+-                        formF_.SetValue(i, xs.GetValue(i) + rs.GetValue(i));
+-                    }
+-                } else {
+-                    ToFloatSeq(formF_, xs, n);
+-                    ToFloatSeq(mulF_, rs, n);
+-                    for (int32_t i = 0; i < n; ++i) {
+-                        formF_.SetValue(i, formF_.GetValue(i) + mulF_.GetValue(i));
+-                    }
+-                }
++                FuseU(formF_, xs, rs, n);
++                PipeBarrier<PIPE_V>();
+                 LoadParamChunk(off, n);
+                 LocalTensor<float> gSeg = fullParam_ ? gammaF_[off] : gammaF_;
+                 LocalTensor<float> bSeg = fullParam_ ? biasF_[off] : biasF_;

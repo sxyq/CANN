@@ -1,0 +1,154 @@
+{
+  "route": "UB-LIVENESS-X",
+  "revision": "V001",
+  "direct_parent": null,
+  "parent_source_sha": null,
+  "parent_score": null,
+  "single_hypothesis": "Redesigning buffer lifetime/aliasing so the same UB region serves different roles in different phases frees UB for larger effective tile, more parameter residency, or true pipeline buffers.",
+  "context_class": "GUIDED_FRESH / EXTERNAL_DERIVED",
+  "source_sha256": "1a6ae30a5eff8f839d08a741c412378acabc936466fb5a07d95502ec69c18c8d",
+  "compile": {
+    "device": "PASS",
+    "submission": "PASS",
+    "toolchain": "cann-server3 / Ascend910B3 / dav-2201 / CANN 8.5.0.alpha002"
+  },
+  "link": {
+    "full_link": "PASS",
+    "method": "CMake ub_liveness_x_full_link"
+  },
+  "correctness": {
+    "status": "FAIL",
+    "shapes": [
+      {
+        "rows": 1,
+        "width": 64,
+        "dtype": "FP32",
+        "bad": 63
+      },
+      {
+        "rows": 4,
+        "width": 256,
+        "dtype": "FP32",
+        "bad": 1015
+      },
+      {
+        "rows": 8,
+        "width": 1000,
+        "dtype": "FP16",
+        "bad": 7541
+      },
+      {
+        "rows": 3,
+        "width": 777,
+        "dtype": "BF16",
+        "bad": 1628
+      },
+      {
+        "rows": 5,
+        "width": 64,
+        "dtype": "FP16",
+        "bad": 248
+      },
+      {
+        "rows": 2,
+        "width": 4096,
+        "dtype": "FP32",
+        "bad": 8184
+      },
+      {
+        "rows": 4,
+        "width": 128,
+        "dtype": "BF16",
+        "bad": 327
+      },
+      {
+        "rows": 3,
+        "width": 32768,
+        "dtype": "FP16",
+        "bad": 96888
+      }
+    ],
+    "isolation_note": "Pass2 identity emit (out=u=x+res) matched golden for D=256-class inputs during debugging; full inv*gamma+bias path still fails."
+  },
+  "local_probes": {
+    "shape": "FP16 rows=8 width=4096",
+    "device_id": 6,
+    "warmups": 3,
+    "repeats_per_variant": 11,
+    "pairs": [
+      {
+        "pair": 1,
+        "order": [
+          "alias0",
+          "alias1"
+        ],
+        "alias0_us": 386.204,
+        "alias1_us": 382.464,
+        "status": "INVALID_WITHOUT_CORRECTNESS"
+      },
+      {
+        "pair": 2,
+        "order": [
+          "alias1",
+          "alias0"
+        ],
+        "alias1_us": 381.434,
+        "alias0_us": 361.894,
+        "status": "INVALID_WITHOUT_CORRECTNESS"
+      },
+      {
+        "pair": 3,
+        "order": [
+          "alias0",
+          "alias1"
+        ],
+        "alias0_us": 311.373,
+        "alias1_us": 338.914,
+        "status": "INVALID_WITHOUT_CORRECTNESS"
+      },
+      {
+        "pair": 4,
+        "order": [
+          "alias1",
+          "alias0"
+        ],
+        "alias1_us": 362.704,
+        "alias0_us": 334.804,
+        "status": "INVALID_WITHOUT_CORRECTNESS"
+      }
+    ],
+    "local_delta": {
+      "status": "NOT_INFERABLE_CORRECTNESS_FAIL",
+      "interpretation": "Do not claim performance gain or regression while correctness fails."
+    }
+  },
+  "load_quality": {
+    "device": 6,
+    "snapshots": "support/results/probe-pair-*.npu-smi.txt and final-load.npu-smi.txt",
+    "probe_classification": "Correctness FAIL dominates; probe timings not admissible as score evidence."
+  },
+  "architecture_novelty": "Phase-role UB pool (INGEST pass1 / EMIT pass2 on same bytes when UB_LIVENESS_ALIAS=1; permanent out slots when 0).",
+  "risks": [
+    "LOCAL_REJECTED on correctness.",
+    "Numeric path incomplete vs golden; identity-only emit was correct in isolation.",
+    "No ONLINE_CANDIDATE claim."
+  ],
+  "decision": "LOCAL_REJECTED",
+  "next_candidate_hypothesis": "Repair numeric correctness only (no new performance variable): align pass1 accumulator with proven pass2 identity u path, then re-run same battery. Await Main before V002.",
+  "cleanup": "None; no source or user data deleted.",
+  "artifacts": {
+    "compile_log": "phase4/workspaces/UB-LIVENESS-X/compile-final.log or compile.log",
+    "probe_results": "support/results/",
+    "why_not_duplicate": "phase4/workspaces/UB-LIVENESS-X/WHY_NOT_DUPLICATE.md"
+  },
+  "metrics": {
+    "CORRECTNESS": "FAIL",
+    "LOAD_QUALITY": "N/A_WITHOUT_CORRECTNESS",
+    "PROBE_DELTAS": "RECORDED_RAW_ONLY",
+    "DIRECTIONAL_CONSISTENCY": "INCONSISTENT",
+    "MEDIAN_DELTA": "NOT_INFERABLE",
+    "WORST_DELTA": "NOT_INFERABLE",
+    "NOISE_MARGIN": "NOT_APPLICABLE",
+    "LOCAL_CONFIDENCE": "LOW"
+  }
+}
