@@ -173,6 +173,12 @@ This cycle adds three mechanisms distinct from H01/H03/H04/H05 and from V007's r
 
 Main's V007 decision is `NEEDS_ONE_MORE_LOCAL`. The pending qualification shape is Parent V003, `rows=1`, `D=256`, FP32; existing targeted correctness also covers FP16 and BF16 at `rows=1`, `D=256`. Do not run timing until Main authorizes a current exclusive lease.
 
+## Measurement Availability Snapshot (2026-09-26)
+
+- Main's Candidate review classification remains `NEEDS_ONE_MORE_LOCAL`; the canonical scheduler row retains that decision. The latest server3 live status supplied for this Route at `2026-09-26T06:53:18Z` reports measurement availability as `MEASUREMENT_BLOCKED` because no eligible device lease is available. This status does not change V007 or its review classification.
+- Pending exact shape: Direct Parent V003, `rows=1`, `D=256`, FP32. Device: none eligible under the reported status. Exact-shape same-binary qualification: not run; the unified runner remains unexecuted. Existing runner build/link and host-only lease tests remain PASS.
+- Retry requirement: wait for Main authorization and a fresh exclusive Main-1 device lease, then qualify the exact Parent shape under the current timing protocol before any Parent/Candidate timing. No device or timing action was taken for this snapshot.
+
 ## Current Track-B Screen (2026-09-26)
 
 Exactly five hypotheses are active in this screen: H01, H03, H05, H06, and H08. Existing full field records above define each mechanism, bottleneck, shape, expected benefit/failure, Ascend C feasibility, UB/core/DMA/synchronization impact, precision risk, duplicate review, OFAT diff, and local probes. H02 stays `INFEASIBLE`; H04 stays deferred pending API evidence; H07 stays deferred with a partial-overlap note against H01. Deferred entries are retained and are not counted in the active five.
@@ -201,4 +207,4 @@ No new implementation or device run is authorized by this screen. Same-binary qu
 - H05 and H06 touch the FP32 epilogue but alter different operations (affine arithmetic versus output staging). They remain separate single-hypothesis options and must not be combined in one revision.
 - H03 changes the terminal MTE3-to-V dependency; V007 removes a pre-load V-to-MTE2 dependency. Their event directions and consumers differ.
 - H08 uses `ProcessNarrowMidOverlap`; the existing wide-path row overlap is a neighboring pattern, not the same buffer schedule.
-- TRACK-A: the unified runner is built and linked and its host lease tests are recorded PASS, but the runner has not been executed. Parent V003 same-binary qualification for `rows=1, D=256, FP32` is absent. The current timing protocol requires 45 warmups; the runner CLI default is 10, so any later authorized qualification must pass 45 explicitly. The shared lease table currently has no active lease. Do not run runner, NPU, or timing without a fresh Main-1 lease and passing exact-shape qualification.
+- TRACK-A: the unified runner is built and linked and its host lease tests are recorded PASS, but the runner has not been executed. Parent V003 same-binary qualification for `rows=1, D=256, FP32` is absent. The current timing protocol requires 45 warmups; the runner CLI default is 10, so any later authorized qualification must pass 45 explicitly. The latest server3 live status above reports no eligible device lease. Do not run runner, NPU, or timing without a fresh Main-1 lease and passing exact-shape qualification.
