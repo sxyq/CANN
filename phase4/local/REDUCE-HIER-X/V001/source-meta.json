@@ -1,0 +1,52 @@
+{
+  "ROUTE": "REDUCE-HIER-X",
+  "REVISION": "V001",
+  "REVISION_KIND": "PERFORMANCE_SINGLE_HYPOTHESIS",
+  "DIRECT_PARENT": "FROZEN_R31B_V011",
+  "PARENT_SOURCE": "phase4/workspaces/REDUCE-HIER-X/frozen-seed/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "PARENT_SOURCE_SHA": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "PARENT_SCORE": "45.16",
+  "OFFICIAL_ANCHOR": "45.16",
+  "CONTEXT_CLASS": "FROZEN_STRONG_BASELINE_REDUCTION_TOPOLOGY",
+
+  "ASSIGNED_HYPOTHESIS": "HYPOTHESIS-1 Eager running-fold of tile partials (partial-sum lifetime): each tile ReduceSum folds immediately into one FP32 accumulator via 1-element Adds; remove end-of-row collapse ReduceSum; GetValue unchanged. Do not change per-tile ReduceSum width, square Mul, mean/epsilon tail, output pass, scheduling, dtype, DMA.",
+  "SINGLE_CHANGE_AUDIT": "PASS (one conceptual mechanism across the three named sites; see SINGLE_HYPOTHESIS_AS_DELIVERED)",
+
+  "SINGLE_HYPOTHESIS_AS_DELIVERED": "Per-tile FP32 square-sum partials are folded immediately into a single 32B-aligned accumulator slot with a 1-element Add; the end-of-row collapse ReduceSum is removed; the single GetValue reads the accumulator. Sites: Process() first-pass loop + tail, ProcessFp32FullRowOutputPipelined, ProcessWideFp32FullCacheRows. Per-tile ReduceSum width, square Mul, mean/epsilon tail, invRms sequence, output pass, scheduling, dtype dispatch and DMA are unchanged. InitBuffer footprint unchanged (partial-bank shrink deferred to keep one variable).",
+
+  "CORRECTNESS_FIX_WITHIN_HYPOTHESIS": "First build used slot 1 as the fold temp (4B offset). All generic-path shapes raised ACL 507035 (device task abort) at aclrtSynchronizeStream — the 1-element Add source was not 32B-aligned. Slot moved to kSmallFp32ScalarStride (=8 floats = 32B). No new performance mechanism; alignment repair only.",
+
+  "CONTEXT_CLASS_NOTE": "Parent is the frozen R31B-V011 strong baseline. REDUCE-INVSCALE-X V002 is evidence donor only and is not a parent.",
+
+  "SOURCE_PATH": "phase4/workspaces/REDUCE-HIER-X/submission.asc",
+  "SOURCE_SHA": "b9c618b3b53fd2988b667f0c6830fa4a7206aef0fde69f92cdb5545ba6503521",
+  "SOURCE_LINES": 3554,
+  "SOURCE_BYTES": 190233,
+  "route_source_status": "ROUTE_OWNED_LOCAL",
+  "route_source_sha256": "b9c618b3b53fd2988b667f0c6830fa4a7206aef0fde69f92cdb5545ba6503521",
+  "judge_payload_status": "NOT_SUBMITTED",
+  "judge_payload_sha256": null,
+
+  "LOCAL_REMOTE_SHA_MATCH": true,
+  "REMOTE_SOURCE_SHA": "b9c618b3b53fd2988b667f0c6830fa4a7206aef0fde69f92cdb5545ba6503521",
+
+  "FILES": [
+    "phase4/local/REDUCE-HIER-X/V001/submission.asc",
+    "phase4/local/REDUCE-HIER-X/V001/submission.sha256",
+    "phase4/local/REDUCE-HIER-X/V001/source-meta.json",
+    "phase4/local/REDUCE-HIER-X/V001/diff.patch",
+    "phase4/local/REDUCE-HIER-X/V001/local-result.json",
+    "phase4/local/REDUCE-HIER-X/V001/support/correctness-summary.tsv",
+    "phase4/local/REDUCE-HIER-X/V001/support/compile.log",
+    "phase4/local/REDUCE-HIER-X/V001/support/server3-sha-manifest.txt"
+  ],
+
+  "COMPILE": "PASS (server3 cann-server3 / Ascend910B3 / dav-2201 / CANN 8.5.0.alpha002; CMAKE_RC=0, BUILD_RC=0)",
+  "LINK": "PASS (rhx_v001_submission object + rhx_parent_probe + rhx_candidate_probe all Built target)",
+  "EXECUTABLE_NOTE": "compile_adapter-based target rhx_v001_submission linked OK. Probe executables rhx_parent_probe and rhx_candidate_probe link against ACL runtime for NPU correctness.",
+
+  "WHY_NOT_DUPLICATE": "See TRACK-B-HYPOTHESES.md H1. Distinct from REDUCE-INVSCALE-X H3 (wide-chunk ReduceSum span) and H4 (single-stage whole-row reduce): this changes only when tile partials merge. Distinct from ASYNC-TRIPLE-X (MTE3 overlap), ALIGN-TAIL-X (copy path), SCHED-ROWGROUP-X (core ownership), BATCH-RESIDENT-X (multi-row DMA), UB-LIVENESS-X (buffer aliasing), EPILOGUE-FUSE-X (epilogue fusion).",
+
+  "DECISION": "CORRECTNESS_PASS_PENDING_LOCAL_PERFORMANCE",
+  "CLEANUP": "No shared control modified. No cann-sixlane access. No CANNJudge submission. frozen-seed/ untouched."
+}

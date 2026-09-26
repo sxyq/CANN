@@ -1,0 +1,93 @@
+{
+  "route": "REDUCE-HIER-X",
+  "revision": "V001",
+  "revision_kind": "PERFORMANCE_SINGLE_HYPOTHESIS",
+  "direct_parent": "FROZEN_R31B_V011",
+  "parent_source_sha": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "parent_score": "45.16",
+  "official_anchor": "45.16",
+
+  "assigned_hypothesis": "HYPOTHESIS-1 Eager running-fold of tile partials (partial-sum lifetime).",
+  "single_hypothesis_as_delivered": "Per-tile ReduceSum folds immediately into one 32B-aligned FP32 accumulator via 1-element Add; end-of-row collapse ReduceSum removed; GetValue reads accumulator once. Sites: Process() first-pass+tail, ProcessFp32FullRowOutputPipelined, ProcessWideFp32FullCacheRows.",
+  "single_change_audit": "PASS",
+  "context_class": "FROZEN_STRONG_BASELINE_REDUCTION_TOPOLOGY",
+  "source_sha256": "b9c618b3b53fd2988b667f0c6830fa4a7206aef0fde69f92cdb5545ba6503521",
+  "source_path": "phase4/workspaces/REDUCE-HIER-X/submission.asc",
+
+  "compile": {
+    "device": "PASS",
+    "submission": "PASS",
+    "toolchain": "cann-server3 / Ascend910B3 / dav-2201 / CANN 8.5.0.alpha002",
+    "cmake_rc": 0,
+    "build_rc": 0,
+    "log": "phase4/local/REDUCE-HIER-X/V001/support/compile.log"
+  },
+  "link": {
+    "submission_object": "PASS",
+    "parent_probe": "PASS",
+    "candidate_probe": "PASS",
+    "method": "ASC CMake (find_package(ASC)); rhx_v001_submission + rhx_{parent,candidate}_probe"
+  },
+  "identity": {
+    "local_sha": "b9c618b3b53fd2988b667f0c6830fa4a7206aef0fde69f92cdb5545ba6503521",
+    "remote_sha": "b9c618b3b53fd2988b667f0c6830fa4a7206aef0fde69f92cdb5545ba6503521",
+    "match": true
+  },
+
+  "correctness": {
+    "verdict": "PASS",
+    "device_id": 4,
+    "method": "runner_main.inc (INVSCALE reference harness) + double-precision golden; atol/rtol per dtype (fp32 1e-4, fp16 1e-3, bf16 2e-2)",
+    "matrix_rows": 18,
+    "summary_tsv": "phase4/local/REDUCE-HIER-X/V001/support/correctness-summary.tsv",
+    "multi_tile_pass": ["1x8192 fp32 (tileCount=2)", "2x8192 fp32 (tileCount=2)", "3x6144 fp32 (tileCount=2)", "1x8192 fp16", "1x8192 bf16", "1x16384 fp16", "1x32768 bf16"],
+    "single_tile_control_pass": ["1x1024 fp32", "1x4096 fp32", "2x4096 fp32", "1x256 fp16", "1x4096 fp16", "1x256 bf16", "1x4096 bf16", "1x100 fp32", "1x65 fp16"],
+    "parent_shared_failures": [
+      {
+        "shape": "1x16384 fp32",
+        "parent": "exit=3 bad=9470 max_abs=1.1896",
+        "candidate": "exit=3 bad=14324 max_abs=1.15865",
+        "assessment": "PARENT_PREEXISTING: frozen parent itself fails this runner's golden on wide FP32. Not introduced by V001. Wide FP32 path (ProcessWideFp32FullCacheRows) computes a different association than the runner golden; both parent and candidate deviate. Official judge used a different harness and scored parent 15/15."
+      },
+      {
+        "shape": "1x32768 fp32",
+        "parent": "exit=3 bad=26799 max_abs=1.2031",
+        "candidate": "exit=3 bad=26989 max_abs=1.2031",
+        "assessment": "PARENT_PREEXISTING: identical max_abs to parent. Candidate matches parent behavior on this shape."
+      }
+    ],
+    "dtype_coverage": {"fp32": "PASS (where parent passes)", "fp16": "PASS all shapes", "bf16": "PASS all shapes"},
+    "acl_error_first_build": "507035 device task abort on unaligned 1-element fold Add; fixed by 32B-aligned temp slot (kSmallFp32ScalarStride)"
+  },
+
+  "measurement": {
+    "status": "MEASUREMENT_BLOCKED",
+    "block_reason": "No qualified same-binary window under phase4/control/local-timing-protocol.md for this Route's Direct Parent at its probe shapes. Window-qual budget historically exhausted (WINDOW_UNQUALIFIED 2/2); per-shape same-binary noise floor not yet established for REDUCE-HIER-X. Timing optional per Main instruction; P/C not run.",
+    "date": "2026-09-27",
+    "shape": "not yet selected; candidates 1x8192 fp32 (tileCount=2), 3x6144 fp32, 1x16384 fp32",
+    "device": "d4 used for correctness only; no performance lease claimed",
+    "same_binary_result": "NOT_RUN",
+    "retry_required": true
+  },
+
+  "local_verdict": "NOT_COMPLETE",
+  "local_verdict_reason": "Correctness PASS and source identity PASS, but no paired local performance measurement yet (MEASUREMENT_BLOCKED). Per execution-contract, a performance revision without a local performance verdict is NOT_COMPLETE; MEASUREMENT_BLOCKED is the recorded exception with reason above.",
+
+  "files": [
+    "phase4/local/REDUCE-HIER-X/V001/submission.asc",
+    "phase4/local/REDUCE-HIER-X/V001/submission.sha256",
+    "phase4/local/REDUCE-HIER-X/V001/source-meta.json",
+    "phase4/local/REDUCE-HIER-X/V001/diff.patch",
+    "phase4/local/REDUCE-HIER-X/V001/local-result.json",
+    "phase4/local/REDUCE-HIER-X/V001/support/correctness-summary.tsv",
+    "phase4/local/REDUCE-HIER-X/V001/support/compile.log",
+    "phase4/local/REDUCE-HIER-X/V001/support/server3-sha-manifest.txt"
+  ],
+
+  "single_change_audit_detail": {
+    "mechanisms": 1,
+    "list": ["eager running-fold of tile partials into one accumulator; collapse ReduceSum removed"],
+    "sites": ["Process() first-pass loop + tail (~286-350)", "ProcessFp32FullRowOutputPipelined (~1155-1195)", "ProcessWideFp32FullCacheRows (~2111-2155)"],
+    "unchanged": ["per-tile ReduceSum width", "square Mul", "mean/epsilon tail", "invRms sequence", "output pass", "row scheduling", "dtype dispatch", "DMA layout", "InitBuffer footprint", "gamma/bias policy"]
+  }
+}
