@@ -174,9 +174,42 @@ above and in `phase4/README.md`.
 
 ## DELETION (step 14)
 
-See `phase4/control/WORKTREE_DELETION_PLAN.tsv`. Removal used plain
-`git worktree remove <path>` (never `--force`). The MAIN-1 six and the
-canonical worktree are never candidates for removal.
+See `phase4/control/WORKTREE_DELETION_PLAN.tsv`. The pre-delete audit ran 29
+checks (8 worktrees × branch committed + pushed + worktree clean, 13 canonical
+evidence/control/doc blobs present in `HEAD`, 8 recorded HEADs still matching the
+live worktrees) — all PASS.
+
+Removal used plain `git worktree remove <path>` (never `--force`). All eight
+succeeded on the first attempt with no refusal, so no residual file had to be
+classified. `git worktree prune --dry-run` reports nothing.
+
+After removal `git worktree list` returns 7 entries: canonical `cann` plus the
+six MAIN-1 worktrees. `/Users/sunyiyang/Desktop/Project/cann-next6/` still exists
+as an empty container directory (no files, no `.git`); it is left in place.
+
+## DATA LOSS CHECK
+
+For every file in each removed worktree's route branch, the canonical
+counterpart was re-hashed and compared with the branch blob:
+
+- `exp/next6-*` (6 branches): every `phase4/local/<ROUTE>/**`,
+  `phase4/workspaces/<ROUTE>/**` and `ROUTE-BRIEF.md` (→ `phase4/research/<ROUTE>/ROUTE-BRIEF.md`)
+  present and content-identical.
+- `exec/sixlane-20260923-ext-ascend-x`: all 41 files present and blob-identical.
+- `exec/sixlane-20260924-async-triple-x`: all 56 files present and blob-identical
+  under `phase4/archive/active-sixlane-20260924/ASYNC-TRIPLE-X/`.
+
+Result: **PASS — 0 missing, 0 content differences.**
+
+Two representation-only differences, both intentional:
+
+`phase4/workspaces/SCHED-ROWGROUP-X/parent_build/PARENT-R016-submission.asc` and
+`.../v001_build/SCHED-ROWGROUP-X-V001-submission.asc` are symlinks (`mode 120000`,
+targets `../PARENT-R016-submission.asc` / `../SCHED-ROWGROUP-X-V001-submission.asc`)
+in the route branch, and were materialized as regular files holding the same
+bytes when copied into canonical. Both symlink targets are present in canonical
+as well, so either representation resolves to the same 18654-byte source.
+No evidence byte was dropped.
 
 ## BRANCH POLICY (step 15)
 
