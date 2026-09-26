@@ -1,13 +1,11 @@
---- /tmp/frozen_for_diff.asc	2026-09-27 06:00:37
-+++ /Users/sunyiyang/Desktop/Project/cann-main2-r2/SCHED-CHAMPION-X/phase4/workspaces/SCHED-CHAMPION-X/V002/src/submission.asc	2026-09-27 05:56:39
-@@ -168,12 +168,42 @@
+--- /Users/sunyiyang/Desktop/Project/cann-main2-r2/SCHED-CHAMPION-X/phase4/workspaces/SCHED-CHAMPION-X/frozen-seed/R31B-V011-LP-ROW-PIPELINE_kernel.asc	2026-09-27 03:50:14
++++ /Users/sunyiyang/Desktop/Project/cann-main2-r2/SCHED-CHAMPION-X/phase4/workspaces/SCHED-CHAMPION-X/V002/src/submission.asc	2026-09-27 06:05:17
+@@ -168,12 +168,41 @@
              }
              return;
          }
-+        // Whole-group ownership gated on core parallelism: when there are
-+        // enough groups to fill all blocks, split by group units so each core
-+        // owns complete 32B-aligned row groups.  Otherwise fall back to the
-+        // parent row-unit split so large rowGroup does not collapse cores.
++        // Whole-group ownership gated on core parallelism: apply only when
++        // groups keep at least half of useful row-parallelism.
          const uint64_t blockIdx = static_cast<uint64_t>(AscendC::GetBlockIdx());
 -        const uint64_t baseRows = rowCount / blockCount;
 -        const uint64_t extraRows = rowCount % blockCount;
@@ -24,7 +22,8 @@
 +        }
 +        const uint64_t rowGroup = 32 / gcdVal;
 +        const uint64_t totalGroups = (rowCount + rowGroup - 1) / rowGroup;
-+        const bool useGroupSplit = totalGroups >= blockCount;
++        const uint64_t activeRowUnits = (blockCount < rowCount) ? blockCount : rowCount;
++        const bool useGroupSplit = (totalGroups * 2ULL) >= activeRowUnits;
 +        uint64_t beginRow;
 +        uint64_t localRows;
 +        if (useGroupSplit) {
@@ -48,7 +47,7 @@
          if constexpr (AscendC::IsSameType<T, float>::value) {
              if (rowWidth == static_cast<uint64_t>(kCacheElems) && localRows > 1) {
                  ProcessFp32FullRowOutputPipelined(beginRow, localRows, invRowWidth, epsilon);
-@@ -558,8 +588,6 @@
+@@ -558,8 +587,6 @@
              AscendC::Mul(xFp32, valueLocal, valueLocal, valid);
              AscendC::PipeBarrier<PIPE_V>();
              AscendC::ReduceSum(reduceLocal, xFp32, residualFp32, valid);
@@ -57,7 +56,7 @@
  
              // Param MTE2 overlaps this scalar tail (single-row case).
              SyncVToS();
-@@ -609,6 +637,11 @@
+@@ -609,6 +636,11 @@
                  SyncVToMTE3();
                  Store(outputGm_, rowOffset, outputLocal, valid);
              }
