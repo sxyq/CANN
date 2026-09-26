@@ -49,7 +49,7 @@ CONTEXT_CLASS
 WHY_NOT_DUPLICATE
 ```
 
-组合历史机制时另记 `WHY_THIS_COMBINATION_IS_NEW`。版本号顺序本身不能证明父版本。新的独立假设从最新 Best 或已 PROMOTE 版本开始。
+组合历史机制时另记 `WHY_THIS_COMBINATION_IS_NEW`。版本号顺序本身不能证明父版本。新的单变量 Revision 可以从 `CURRENT_VALIDATED_LOCAL_BEST` 开始，但该版本必须已有来源身份、compile、link、correctness、same-binary 与有效 Parent/Candidate 配对结果，且 Main 已给出 `LOCAL_ACCEPTED`。若该路线尚无合格 Local Best，则从该路线已确认的合格起点开始。线上比较使用单独记录的 `OFFICIAL_ANCHOR`。
 
 ## E. OFAT / SINGLE_CHANGE_AUDIT
 
@@ -89,18 +89,23 @@ Parent 在与 Candidate 相同的设备、形状、dtype、runner、进程方式
 
 ## N. Local result classification
 
-本地百分比和 proxy 不是 Official Score。Main 根据正确性、身份、Same-binary、paired comparability、noise floor 与负载情况分类：
+本地百分比和 proxy 不是 Official Score。每个性能 Revision 都必须单独形成 server3 本地结论。未完成本地性能判定的 Revision 为 `NOT_COMPLETE`，唯一可暂记的例外是 `MEASUREMENT_BLOCKED`；此时必须记录 `BLOCK_REASON`、`DATE`、`SHAPE`、`DEVICE`、`SAME_BINARY_RESULT` 和 `RETRY_REQUIRED`。不得以泛化的 `PENDING` 代替结论。
 
-- `LOCAL_REJECTED`：稳定退化或正确性失败。
+结论只能为：
+
+- `LOCAL_REJECTED`：正确性已通过，但配对测量显示稳定性能退化。
 - `NEEDS_ONE_MORE_LOCAL`：方向混合、证据不足或差异落在噪声范围内。
-- `ONLINE_CANDIDATE`：各项前提通过，且配对改善明显超过噪声。
+- `LOCAL_ACCEPTED`：来源身份、compile、link、correctness、same-binary 与有效配对测量均通过，改善稳定且超过该形状噪声范围。只有该结论可以推进 `LOCAL_BEST`。
 - `MEASUREMENT_BLOCKED`：设备、负载、同 binary 稳定性或身份不满足测量条件；不把缺少测量当作零收益。
+- `CORRECTNESS_FAILED`：目标 NPU correctness 失败。
+- `BUILD_FAILED`：server3 compile 或 link 失败。
+- `INVALID_SOURCE_IDENTITY`：源码与被测或构建对象身份无法对应。
 
 负载污染的数据保留为污染证据，不用于强性能结论。
 
 ## O. 进入 ONLINE_CANDIDATE 的条件
 
-必须同时具备 Correctness PASS、`SINGLE_CHANGE_AUDIT=PASS`、来源与 executable 身份可核验、Same-binary PASS、可信 Parent/Candidate 配对改善超过 noise floor，且 `LOAD_QUALITY` 非污染。Main 完成差异、父版本、重复机制、可比性和 provenance 审阅后，才可标为 `ONLINE_CANDIDATE`。
+必须同时具备 Correctness PASS、`SINGLE_CHANGE_AUDIT=PASS`、来源与 executable 身份可核验、Same-binary PASS、可信 Parent/Candidate 配对改善超过 noise floor，且 `LOAD_QUALITY` 非污染。Main 完成差异、Local Parent、Official Anchor、重复机制、可比性和来源审阅后，判断 `ONLINE_WORTHY` 或 `KEEP_ACCUMULATING` 并记录理由。入队有两类触发：单一 Revision 出现明显、稳定且超过噪声的突破；或连续 `LOCAL_ACCEPTED` 形成可信 Local Best 链，累计改善相对最近 Official Anchor 已值得线上验证。不得设定脱离数据的固定百分比阈值；判断要考虑噪声、历史 Local/Online 校准、形状覆盖和收益方向一致性。满足条件后才记 `ONLINE_CANDIDATE`。
 
 ## P. Exact Online package
 
@@ -132,11 +137,11 @@ npm run cannjudge:submit -- --yes --source <exact-file>
 
 ## S. Official Promote / Reject
 
-Candidate 只与其 Direct Parent 比。只有 Correctness PASS 且 Official Score 高于 Direct Parent 才能 `PROMOTE`。低于父版本或正确性失败记 `REJECT`；必要证据缺失时记 `INCONCLUSIVE`。新独立假设从最新 Best / Promoted Parent 开始，不在 regression 上叠加无关优化。
+Local Revision 只以其 `DIRECT_PARENT` 作为 Parent/Candidate 测量对象。Local Best 推进规则见下方 Local Best chain。正式 Online Candidate 则与该次提交记录的最近 `OFFICIAL_ANCHOR` 比较；只有 correctness PASS 且 Official Score 高于该 Official Anchor 才能 `PROMOTE` 并更新 `OFFICIAL_BEST`。低于该 Anchor 或 correctness 失败记 `REJECT`；关键身份或正式结果证据缺失时记 `INCONCLUSIVE`。线上成绩不得反向替代该 Revision 的 Local verdict。
 
 ## T. Local ↔ Online calibration
 
-每个正式结果都在 `phase4/control/local-online-calibration.tsv` 追加一行，比较本地与 Official 的方向、幅度、形状、dtype、context、false positive 和 false negative。Official 是最终结果，本地数据只用于筛选。
+每个正式结果都必须相对其 `OFFICIAL_ANCHOR` 写入 `phase4/control/local-online-calibration.tsv`，记录 Local delta、Official delta、方向是否一致、幅度差、形状、dtype、context、测量质量、判定和误报/漏报信息。即使 Local 样本缺失或无效，也要记录 `LOCAL_DATA_INVALID` 与原因，不得只登记 Official Score。Official 是线上最终结果；每次记录同时补充 Local evaluator evidence。
 
 ## U. Local evaluator versioning
 
@@ -155,6 +160,16 @@ Main 可根据实验数、正确性进展、本地信号、信息增量和 Onlin
 Canonical 集成仓库为 `/Users/sunyiyang/Desktop/Project/cann`。实验分支以实际 Git 状态为准。Route 分支只提交该 Route 文件；shared control 只做最小行级改动，且只能更新本 Main 所有路线的行。修改前重新读取最新 HEAD 和文件内容。
 
 `scheduler.tsv`、`online-candidate-pool.tsv`、`local-online-calibration.tsv`、`server3-device-leases.tsv` 属于多 Main 共享状态。其他 Main 更新非本 Main 路线时接受最新值；本 Main 路线 ownership 被改时，只暂停受影响路线并报告 `OWNERSHIP_CONFLICT`；其他路线的状态或设备字段不覆盖。Route push 与 canonical control commit 分开进行。
+
+## Y. 逐版本本地结论、Local Best 与线上锚点
+
+每个性能 Revision 都要单独记录本地结论，不得沿用相邻版本的结论，也不得从后续 Official Score 推算本地结果。合格结论枚举为 `LOCAL_ACCEPTED`、`LOCAL_REJECTED`、`NEEDS_ONE_MORE_LOCAL`、`MEASUREMENT_BLOCKED`、`CORRECTNESS_FAILED`、`BUILD_FAILED`、`INVALID_SOURCE_IDENTITY`。没有结论时为 `NOT_COMPLETE`；`MEASUREMENT_BLOCKED` 必须含阻塞原因、日期、形状、设备、same-binary 结果与重试要求。
+
+每条路线分别维护 `OFFICIAL_BEST`、`LOCAL_BEST` 和 `CURRENT_CANDIDATE`。只有 `LOCAL_ACCEPTED` 可推进 `LOCAL_BEST`。`LOCAL_REJECTED` 后的新性能 Revision 回到此前 `LOCAL_BEST`；`NEEDS_ONE_MORE_LOCAL` 或 `MEASUREMENT_BLOCKED` 时先保持 Candidate，不叠加新性能变化。每次 Local 接受都保留直接父子关系，构成可累积的 Local Best chain。
+
+`OFFICIAL_ANCHOR` 是最近一次已 PROMOTE 的 Official Best。每个 Local Revision 只与自己的 `DIRECT_PARENT` 做本地配对；每个线上结果只与 `OFFICIAL_ANCHOR` 比较。是否送线上由 Main 按单次突破或多次 `LOCAL_ACCEPTED` 的累计收益，结合测量噪声、形状覆盖、收益一致性和既有 Local/Online 校准决定，结果记为 `ONLINE_WORTHY` 或 `KEEP_ACCUMULATING` 并说明依据，不设固定百分比。
+
+每个 Online 结果都要写入 Local/Online 校准表。表中同时保留本地测量方向、幅度、质量与 Official 对比；本地数据缺失或不可信时明确标注，并在 evaluator evidence 中记录覆盖范围。
 
 ## 中文总流程
 
@@ -188,13 +203,17 @@ flowchart TD
     T -- 是 --> V[按统一协议交错测量 Parent / Candidate]
     V --> W[保留 raw samples、负载与配对统计]
     W --> X[Main 本地结果分类与审阅]
-    X --> Y{LOCAL_REJECTED / NEEDS_ONE_MORE_LOCAL / ONLINE_CANDIDATE}
-    Y -- 前两者 --> F
-    Y -- ONLINE_CANDIDATE --> Z[保存 exact Online package 并交统一 Judge Owner]
-    Z --> AA[Judge 提交、核对三方源码 SHA、保存正式结果]
-    AA --> AB{正确性通过且 Official 高于 Direct Parent}
-    AB -- 是 --> AC[PROMOTE 并追加 Local-Online calibration]
-    AB -- 否或资料不足 --> AD[REJECT 或 INCONCLUSIVE 并保留证据]
+    X --> Y{Main 的本地结论}
+    Y -- LOCAL_REJECTED --> F
+    Y -- NEEDS_ONE_MORE_LOCAL 或 MEASUREMENT_BLOCKED --> N2[保持当前 Candidate 并继续只读研究]
+    N2 --> F
+    Y -- LOCAL_ACCEPTED --> OW{是否 ONLINE_WORTHY}
+    OW -- 否 KEEP_ACCUMULATING --> F
+    OW -- 是 --> Z[保存 exact Online package 并交统一 Judge Owner]
+    Z --> AJ[Judge 提交、核对三方源码 SHA、保存正式结果]
+    AJ --> AB{正确性通过且 Official 高于 OFFICIAL_ANCHOR}
+    AB -- 是 --> AC[PROMOTE、更新 OFFICIAL_BEST 并追加 Local-Online calibration]
+    AB -- 否或资料不足 --> AD[REJECT 或 INCONCLUSIVE 并保留证据，追加校准记录]
     AC --> F
     AD --> F
 ```

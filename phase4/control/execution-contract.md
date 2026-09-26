@@ -48,7 +48,7 @@ Build or correctness fixes may remain within the same hypothesis. They are limit
 ## F. Local-First Flow
 
 ```text
-Best / Valid Parent
+Current Validated Local Best (or eligible route seed)
         -> Single Hypothesis
         -> Agent Code
         -> Compile
@@ -62,16 +62,20 @@ Best / Valid Parent
 Child conclusions are limited to:
 
 ```text
+LOCAL_ACCEPTED
 LOCAL_REJECTED
 NEEDS_ONE_MORE_LOCAL
-ONLINE_CANDIDATE
+MEASUREMENT_BLOCKED
+CORRECTNESS_FAILED
+BUILD_FAILED
+INVALID_SOURCE_IDENTITY
 ```
 
-Main may additionally return `NEXT_HYPOTHESIS`, `MEASUREMENT_BLOCKED`, or `PARK`.
+Main records `NOT_COMPLETE` if a performance revision has no local performance verdict. The only permitted exception is `MEASUREMENT_BLOCKED`, with `BLOCK_REASON`, `DATE`, `SHAPE`, `DEVICE`, `SAME_BINARY_RESULT`, and `RETRY_REQUIRED`. `PENDING` alone is not a verdict. Main separately decides whether a locally accepted revision is `ONLINE_WORTHY` or `KEEP_ACCUMULATING` and records the reason.
 
 ## G. Main Review Gate
 
-Main reviews the Direct Parent, parent source SHA, Candidate SHA, diff, single-hypothesis scope, correctness, executable identity, local comparability, load quality, provenance, and duplicate status. Only `SINGLE_CHANGE_AUDIT=PASS` may proceed as `ONLINE_CANDIDATE`.
+Main reviews the Direct Parent, parent source SHA, Candidate SHA, diff, single-hypothesis scope, correctness, executable identity, local comparability, load quality, provenance, and duplicate status. Only `SINGLE_CHANGE_AUDIT=PASS` may proceed to the online-worthiness decision.
 
 ## H. Local Timing Authority
 
@@ -156,9 +160,9 @@ Clipboard, paste, and stdin submission are prohibited. In a multi-Main environme
 
 ## M. Promote and Reject
 
-A Candidate is compared only with its Direct Parent. `PROMOTE` requires correctness PASS and an Official Score greater than the Direct Parent. Otherwise the result is `REJECT` or `INCONCLUSIVE` according to the available evidence.
+A Local Revision is measured against its `DIRECT_PARENT`. A new independent performance Revision may use `CURRENT_VALIDATED_LOCAL_BEST` as its parent only after that version has source-identity PASS, compile/link PASS, correctness PASS, same-binary PASS, valid paired local measurements, and Main verdict `LOCAL_ACCEPTED`. `LOCAL_REJECTED` returns the next independent Revision to the preceding Local Best. `NEEDS_ONE_MORE_LOCAL` or `MEASUREMENT_BLOCKED` keeps the Candidate unchanged until a Main disposition.
 
-After a rejected performance revision, a new independent hypothesis returns to the latest Best or Promoted Parent. Do not layer an unrelated optimization on a regression.
+For Online, compare the submitted exact Candidate with its recorded `OFFICIAL_ANCHOR`, which is the latest Official Best accepted by `PROMOTE`. `PROMOTE` requires correctness PASS and Official Score greater than that anchor. A failed Official comparison does not erase a valid Local Best; it only leaves `OFFICIAL_BEST` unchanged.
 
 ## N. Route Ownership
 
@@ -227,3 +231,13 @@ Six Route Agents research in parallel; Main reviews only at batch handoffs. Per-
 New Revisions require the full Research Track plus Main Review plus one explicit architecture hypothesis. No rapid micro-revision loops (V001→V002→V003 one small edit at a time) exist to keep an Agent busy. Research Track never blocks Track-A: when a device window opens or the timing protocol passes the exact shape, the Agent immediately runs same-binary → P/C → Main Review and keeps the research backlog.
 
 Research does not change scoring authority: local percentages are never Official Score; only the unified Judge Owner submits to CANNJudge.
+
+## S. Per-Revision Local Verdict and Best Chain
+
+Every performance Revision receives exactly one local-verdict state: `LOCAL_ACCEPTED`, `LOCAL_REJECTED`, `NEEDS_ONE_MORE_LOCAL`, `MEASUREMENT_BLOCKED`, `CORRECTNESS_FAILED`, `BUILD_FAILED`, or `INVALID_SOURCE_IDENTITY`. Until a state is evidenced, record `NOT_COMPLETE`; do not use an unqualified `PENDING`. A blocked measurement must include its reason, date, shape, device, same-binary result, and retry requirement.
+
+Maintain three route references independently: `OFFICIAL_BEST`, `LOCAL_BEST`, and `CURRENT_CANDIDATE`. Only `LOCAL_ACCEPTED` advances `LOCAL_BEST`. An accepted chain may accumulate one-variable changes, with every hop retaining its own direct parent and local verdict. A rejected revision cannot parent the next independent performance change.
+
+After a local acceptance, Main records `ONLINE_WORTHY` or `KEEP_ACCUMULATING`. `ONLINE_WORTHY` may follow a single stable breakthrough beyond the shape noise floor, or accumulated accepted revisions whose total gain against the latest `OFFICIAL_ANCHOR` merits Official validation. Consider measurement noise, historical Local/Online calibration, shape coverage, and direction consistency. Do not set a fixed percentage threshold.
+
+Every Official result is compared with its `OFFICIAL_ANCHOR` and appended to `phase4/control/local-online-calibration.tsv`. Record Local delta, Official delta, direction agreement, magnitude difference, shape, dtype, context, load quality, and decision. If local data is absent or invalid, record `LOCAL_DATA_INVALID` and why. Update Local evaluator evidence for every result; do not keep an Official score without its Local/Online comparison record.
