@@ -1,0 +1,77 @@
+# R31B V015 local-probe evidence
+
+Captured 2026-09-23, Asia/Shanghai, shortly before 16:10 +08:00. Remote host: cann-server3 (121.48.170.1:13203), Ascend 910B3, eight devices.
+
+## Candidate assessment
+
+Parent: V011. Official result: 45.16, 15/15 pass.
+
+V015 adds an FP32 dispatch branch for `128 < rowWidth <= 4096 && localRows == 1`, calling `ProcessNarrowMidOverlap`. V011 already routes the same predicate to that same function in its general mid-width branch. Earlier FP32 batch branches require `localRows > 1`, and `widePath_` returns before either dispatch section. The added branch therefore does not change the selected operation for its predicate. The stated speedup hypothesis has no distinct implementation change; V015 is locally rejected without latency or runtime-correctness measurements.
+
+## Commands
+
+Performance and runtime-correctness probe commands: none; no kernel workload was launched.
+
+Commands used to assess device availability:
+
+```sh
+ssh -o BatchMode=yes -o ConnectTimeout=8 cann-server3 'npu-smi info'
+ssh -o BatchMode=yes -o ConnectTimeout=8 cann-server3 'ps -eo pid,ppid,%cpu,%mem,etime,args | grep -E "[n]pu|[a]scend|[a]cl|[m]sprof|[r]31b"'
+```
+
+## Raw device snapshot
+
+```text
++------------------------------------------------------------------------------------------------+
+| npu-smi 25.0.rc1.1               Version: 25.0.rc1.1                                           |
++---------------------------+---------------+----------------------------------------------------+
+| NPU   Name                | Health        | Power(W)    Temp(C)           Hugepages-Usage(page)|
+| Chip                      | Bus-Id        | AICore(%)   Memory-Usage(MB)  HBM-Usage(MB)        |
++===========================+===============+====================================================+
+| 0     910B3               | OK            | 148.0       45                0    / 0             |
+| 0                         | 0000:C1:00.0  | 30          0    / 0          59957/ 65536         |
++---------------------------+---------------+----------------------------------------------------+
+| 1     910B3               | OK            | 142.5       45                0    / 0             |
+| 0                         | 0000:C2:00.0  | 32          0    / 0          60006/ 65536         |
++---------------------------+---------------+----------------------------------------------------+
+| 2     910B3               | OK            | 144.7       46                0    / 0             |
+| 0                         | 0000:81:00.0  | 32          0    / 0          59949/ 65536         |
++---------------------------+---------------+----------------------------------------------------+
+| 3     910B3               | OK            | 148.9       46                0    / 0             |
+| 0                         | 0000:82:00.0  | 32          0    / 0          59951/ 65536         |
++---------------------------+---------------+----------------------------------------------------+
+| 4     910B3               | OK            | 109.7       46                0    / 0             |
+| 0                         | 0000:01:00.0  | 3           0    / 0          62992/ 65536         |
++---------------------------+---------------+----------------------------------------------------+
+| 5     910B3               | OK            | 94.4        42                0    / 0             |
+| 0                         | 0000:02:00.0  | 0           0    / 0          59876/ 65536         |
++---------------------------+---------------+----------------------------------------------------+
+| 6     910B3               | OK            | 122.1       46                0    / 0             |
+| 0                         | 0000:41:00.0  | 5           0    / 0          63041/ 65536         |
++---------------------------+---------------+----------------------------------------------------+
+| 7     910B3               | OK            | 117.2       46                0    / 0             |
+| 0                         | 0000:42:00.0  | 0           0    / 0          65439/ 65536         |
++---------------------------+---------------+----------------------------------------------------+
++---------------------------+---------------+----------------------------------------------------+
+| NPU     Chip              | Process id    | Process name             | Process memory(MB)      |
++===========================+===============+====================================================+
+| 0       0                 | 89395         | VLLMWorker_TP            | 56434                   |
+| 1       0                 | 91055         | VLLMWorker_TP            | 56434                   |
+| 2       0                 | 92813         | VLLMWorker_TP            | 56435                   |
+| 3       0                 | 94498         | VLLMWorker_TP            | 56435                   |
+| 4       0                 | 2001438       | python                   | 3862                    |
+| 4       0                 | 2999855       | VLLMEngineCor            | 55664                   |
+| 5       0                 | 89602         | VLLMWorker_TP            | 56354                   |
+| 6       0                 | 243194        | python                   | 3218                    |
+| 6       0                 | 91228         | VLLMWorker_TP            | 56355                   |
+| 7       0                 | 3458196       | python                   | 62064                   |
++---------------------------+---------------+----------------------------------------------------+
+```
+
+Load quality: unsuitable for comparative latency. All eight devices have active allocations; HBM usage ranges from 59,876 to 65,439 MB of 65,536 MB. Devices 0-3 report 30-32% AICore usage, while devices 4-7 have active processes and only 0-5% reported AICore usage. No controlled device was available.
+
+## Build evidence
+
+V011's existing `compile-v011-server3.log` reports `Built target r31b_submission_v011`. V015 has no compile result: the existing `configure-v015-local.log` contains `zsh:1: command not found: cmake`; the current local shell also has no `cmake`, `cmake3`, or `bisheng` executable on PATH. No compile was attempted during this assessment.
+
+Only this evidence file was added. Existing V015 source, adapter, CMake edits, and build material were left untouched. No Judge submission was made.
