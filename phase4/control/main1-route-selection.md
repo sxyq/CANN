@@ -120,7 +120,7 @@
 - 历史现场快照（server3 UTC `2026-09-25T22:02:40Z`）：device 0–3 AICore 为 35%–36%，HBM 59969–60026 MB 且有 VLLM worker；device 4–6 AICore 为 0%，HBM 59186–59876 MB 且分别有 VLLM 进程。device 7 AICore 为 0%、HBM 3431 MB、无进程，但现行规程要求避开。
 - 现场快照（server3 UTC `2026-09-26T06:53:18Z`）：npu-smi 确认 device 0–7 均为 Ascend 910B3。device 0–3 的 HBM 为 91%，AICore 为 33%–39%；device 4–6 的 HBM 为 90%–91%，AICore 为 0%；device 7 的 HBM 为 5%、AICore 为 0%，但现行计时规则不允许使用 device 7。device 4 的 `proc-mem` 显示 PID 2999855 `VLLMEngineCor` 使用 55664 MB；驱动不支持全局 `npu-smi info proc` 查询。租用表当时没有 `LEASED` 记录。没有可用的授权计时卡，本次未启动 same-binary 或 P/C。
 - 最新现场复核（server3 UTC `2026-09-26T07:34:13Z`）：device 0–3 的 HBM 仍为 91%，AICore 为 36%–37%；device 4 为 HBM 90%、AICore 0%，device 5–6 为 HBM 91%、AICore 0%；device 7 为 HBM 5%、AICore 0%，仍按现行规则避开。device 4 仍显示 PID 2999855 `VLLMEngineCor` 使用 55664 MB；租用表没有活动 `LEASED` 记录。设备状态未改善，本次也未运行 same-binary 或 P/C。
-- 最新现场复核（server3 UTC `2026-09-26T08:41:16Z`）：device 0–3 的 HBM 为 91%、AICore 为 36%；device 4 为 HBM 90%、AICore 0%，device 5–6 为 HBM 91%、AICore 0%；device 7 为 HBM 5%、AICore 0%，仍按现行规则避开。device 4 的 `proc-mem` 仍显示 PID 2999855 `VLLMEngineCor` 使用 55664 MB。按 lease ID 的最新记录状态汇总后没有活动租约；没有合格 device window，本次未启动 same-binary 或 P/C。
+- 最新现场复核（server3 UTC `2026-09-26T09:00:06Z`）：device 0–3 的 HBM 为 59969–60026 MB、AICore 为 36%–37%，各有 `VLLMWorker_TP` 进程；device 4 的 HBM 为 59186 MB、AICore 为 0%，PID 2999855 `VLLMEngineCor` 使用 55664 MB；device 5–6 的 HBM 为 59874–59876 MB、AICore 为 47%–48%，各有 `VLLMWorker_TP` 进程。device 7 的 HBM 为 3431 MB、AICore 为 0%、无运行进程，但现行规程要求避开。按每个 lease ID 的最新记录汇总，没有活动租约；没有合格设备，本次未启动 same-binary 或 P/C。
 - Main-1 `ONLINE_CANDIDATES`：无。
 
 ## 缺少的本地验证队列
