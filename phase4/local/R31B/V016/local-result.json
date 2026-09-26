@@ -74,7 +74,7 @@
       "submission.alink": "ff0784ac91b18191e838d167cdf5ebc0a371faa9f8e9fec966e53c2625b6d4eb"
     },
     "CORRECTNESS": "INCOMPLETE",
-    "CORRECTNESS_DETAIL": "The changed FP16/BF16 domains pass, and both FP32 binaries pass rows=2,D=8192. Both V011 and V016 fail rows=2,D=16384 on d7 under the same runner; latest Parent result: 23803 mismatches, max_abs=0.09248662, RC=1; Candidate: 27680 mismatches, max_abs=0.0964607, RC=1. Earlier exact runs are retained and also show both fail. Source comparison shows the FP32 tile/path is shared; failure counts vary across runs. Root cause between the shared FP32 implementation/runtime and reference runner is unresolved. This does not establish a V016-only regression; D=16384 FP32 is excluded from timing.",
+    "CORRECTNESS_DETAIL": "The changed FP16/BF16 domains pass, and both FP32 binaries pass rows=2,D=8192. Both V011 and V016 fail rows=2,D=16384 on d7 under the same runner; latest Parent result: 23803 mismatches, max_abs=0.09248662, RC=1; Candidate: 27680 mismatches, max_abs=0.0964607, RC=1. Earlier exact runs are retained and also show both fail. The FP32 ProcessWideFp32FullCacheRows function is byte-for-byte identical in Parent and Candidate; V016 changes the low-precision tile choice only. This is not a Candidate regression. Treat D=16384 FP32 as a shared baseline/reference limitation and exclude that shape from timing. The exact cause within the shared FP32 implementation/runtime versus the runner/reference remains unresolved because no independent oracle was run.",
     "CORRECTNESS_RECHECK_20260927": {
       "DEVICE": 7,
       "PREFLIGHT": "Health OK; HBM=3432/65536 MB; AICore=0%; no running process listed.",
@@ -85,7 +85,14 @@
       "D16384_PARENT": "FAIL; failures=23803; max_abs=0.09248662; RC=1",
       "D16384_CANDIDATE": "FAIL; failures=27680; max_abs=0.0964607; RC=1",
       "ROOT_CAUSE": "UNRESOLVED_SHARED_FP32_PATH_OR_REFERENCE_RUNNER",
+      "FAILURE_CLASSIFICATION": "BASELINE_OR_REFERENCE_RUNNER_LIMITATION; NOT_CANDIDATE_REGRESSION",
+      "ROOT_CAUSE_DETAIL": "Parent and Candidate use a byte-identical ProcessWideFp32FullCacheRows function and both fail under the same runner. Exact attribution between the shared kernel/runtime and the reference runner is unresolved; no independent oracle was run.",
       "D16384_TIMING_ELIGIBLE": false,
+      "TIMING_ELIGIBLE_SHAPES_PENDING_QUALIFICATION": [
+        "FP32 rows=2,D=8192",
+        "FP16 rows=2,D=8192,12288,16384,32768",
+        "BF16 rows=2,D=8192,12288,16384,32768"
+      ],
       "TIMING_SAMPLES": 0
     },
     "EXECUTABLE_IDENTITY": "PASS",
@@ -97,7 +104,7 @@
     },
     "SAME_BINARY": "NOT_RUN",
     "TIMING": "MEASUREMENT_BLOCKED",
-    "TIMING_BLOCKER": "No qualified MAIN-1 performance window on d4-d6; d7 is excluded from timing. FP32 D=16384 is separately excluded because both Parent and Candidate fail correctness and the shared-path/reference cause remains unresolved.",
+    "TIMING_BLOCKER": "No R31B shape-specific same-binary qualification or paired timing exists yet. FP32 D=16384 is excluded only for its shared Parent/Candidate failure; the other correctness-passing shapes remain eligible for independent qualification and timing under a valid lease. d7 remains excluded from timing.",
     "LOCAL_VERDICT": "NOT_COMPLETE",
     "READY_FOR_SAME_BINARY": true,
     "NOT_READY_SHAPES": ["FP32 rows=2,D=16384; shared parent/candidate failure, root cause unresolved"],
