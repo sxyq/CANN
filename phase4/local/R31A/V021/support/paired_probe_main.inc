@@ -345,26 +345,31 @@ bool WriteOutputs(const char* prefix, uint64_t width,
 int main(int argc, char** argv)
 {
     if (argc < 2 || (std::strcmp(argv[1], "pair") != 0 &&
-                     std::strcmp(argv[1], "same") != 0)) {
+                     std::strcmp(argv[1], "same") != 0 &&
+                     std::strcmp(argv[1], "correctness") != 0)) {
         fprintf(stderr,
                 "usage: %s pair DEVICE WIDTH OUTPUT_PREFIX [WARMUPS]\n"
-                "       %s same DEVICE V016|V021 WIDTH OUTPUT_PREFIX GAP_SECONDS [WARMUPS]\n",
-                argv[0], argv[0]);
+                "       %s same DEVICE V016|V021 WIDTH OUTPUT_PREFIX GAP_SECONDS [WARMUPS]\n"
+                "       %s correctness DEVICE WIDTH\n",
+                argv[0], argv[0], argv[0]);
         return 2;
     }
     const bool sameBinary = std::strcmp(argv[1], "same") == 0;
-    if ((!sameBinary && argc != 5 && argc != 6) ||
-        (sameBinary && argc != 7 && argc != 8)) {
+    const bool correctnessOnly = std::strcmp(argv[1], "correctness") == 0;
+    if ((!sameBinary && !correctnessOnly && argc != 5 && argc != 6) ||
+        (sameBinary && argc != 7 && argc != 8) ||
+        (correctnessOnly && argc != 4)) {
         fprintf(stderr,
                 "usage: %s pair DEVICE WIDTH OUTPUT_PREFIX [WARMUPS]\n"
-                "       %s same DEVICE V016|V021 WIDTH OUTPUT_PREFIX GAP_SECONDS [WARMUPS]\n",
-                argv[0], argv[0]);
+                "       %s same DEVICE V016|V021 WIDTH OUTPUT_PREFIX GAP_SECONDS [WARMUPS]\n"
+                "       %s correctness DEVICE WIDTH\n",
+                argv[0], argv[0], argv[0]);
         return 2;
     }
     const char* deviceArg = argv[2];
     const char* versionArg = sameBinary ? argv[3] : nullptr;
     const char* widthArg = sameBinary ? argv[4] : argv[3];
-    const char* prefix = sameBinary ? argv[5] : argv[4];
+    const char* prefix = correctnessOnly ? nullptr : (sameBinary ? argv[5] : argv[4]);
     const char* warmupArg = sameBinary ? (argc == 8 ? argv[7] : nullptr)
                                        : (argc == 6 ? argv[5] : nullptr);
     char* deviceEnd = nullptr;
@@ -378,7 +383,8 @@ int main(int argc, char** argv)
         ? kDefaultWarmups : std::strtol(warmupArg, &warmupEnd, 10);
     if (deviceEnd == deviceArg || *deviceEnd != '\0' || deviceValue < 0 || deviceValue > INT_MAX ||
         widthEnd == widthArg || *widthEnd != '\0' ||
-        (widthValue != 32768 && widthValue != 24576) || prefix[0] == '\0' ||
+        (widthValue != 32768 && widthValue != 24576) ||
+        (!correctnessOnly && prefix[0] == '\0') ||
         (sameBinary && std::strcmp(versionArg, "V016") != 0 &&
          std::strcmp(versionArg, "V021") != 0) ||
         (sameBinary && (gapEnd == argv[6] || *gapEnd != '\0' ||
@@ -471,9 +477,11 @@ int main(int argc, char** argv)
     };
 
     std::vector<TimedSample> samples;
-    samples.reserve(static_cast<size_t>(sameBinary
-        ? kSamples * 2
-        : 2 * kPairBlocks * kPairsPerBlock));
+    if (!correctnessOnly) {
+        samples.reserve(static_cast<size_t>(sameBinary
+            ? kSamples * 2
+            : 2 * kPairBlocks * kPairsPerBlock));
+    }
 
     do {
         if (!CheckAcl(aclInit(nullptr), "aclInit")) { result = 2; break; }
@@ -491,53 +499,57 @@ int main(int argc, char** argv)
         if (!CheckAcl(aclrtMemcpy(gammaDevice, parameterBytes, gamma.data(), parameterBytes, ACL_MEMCPY_HOST_TO_DEVICE), "aclrtMemcpy(gamma H2D)")) { result = 2; break; }
         if (!CheckAcl(aclrtMemcpy(biasDevice, parameterBytes, bias.data(), parameterBytes, ACL_MEMCPY_HOST_TO_DEVICE), "aclrtMemcpy(bias H2D)")) { result = 2; break; }
 
-        for (int32_t i = 0; i < warmups; ++i) {
-            const bool warmupOk = sameBinary
-                ? InvokeAndSync([&]() { return invokeVersion(versionArg); }, stream)
-                : ((i % 2) == 0
-                    ? InvokeAndSync(invokeV016, stream) && InvokeAndSync(invokeV021, stream)
-                    : InvokeAndSync(invokeV021, stream) && InvokeAndSync(invokeV016, stream));
-            if (!warmupOk) {
-                result = 4;
-                break;
+        if (!correctnessOnly) {
+            for (int32_t i = 0; i < warmups; ++i) {
+                const bool warmupOk = sameBinary
+                    ? InvokeAndSync([&]() { return invokeVersion(versionArg); }, stream)
+                    : ((i % 2) == 0
+                        ? InvokeAndSync(invokeV016, stream) && InvokeAndSync(invokeV021, stream)
+                        : InvokeAndSync(invokeV021, stream) && InvokeAndSync(invokeV016, stream));
+                if (!warmupOk) {
+                    result = 4;
+                    break;
+                }
             }
         }
         if (result != 0) break;
 
-        if (!CheckAcl(aclrtCreateEvent(&start), "aclrtCreateEvent(start)") ||
-            !CheckAcl(aclrtCreateEvent(&stop), "aclrtCreateEvent(stop)")) {
-            result = 4;
-            break;
-        }
-        if (sameBinary) {
-            for (int32_t block = 1; block <= 2 && result == 0; ++block) {
-                if (block > 1 && gapSeconds > 0) {
-                    std::this_thread::sleep_for(std::chrono::seconds(gapSeconds));
+        if (!correctnessOnly) {
+            if (!CheckAcl(aclrtCreateEvent(&start), "aclrtCreateEvent(start)") ||
+                !CheckAcl(aclrtCreateEvent(&stop), "aclrtCreateEvent(stop)")) {
+                result = 4;
+                break;
+            }
+            if (sameBinary) {
+                for (int32_t block = 1; block <= 2 && result == 0; ++block) {
+                    if (block > 1 && gapSeconds > 0) {
+                        std::this_thread::sleep_for(std::chrono::seconds(gapSeconds));
+                    }
+                    for (int32_t sample = 0; sample < kSamples; ++sample) {
+                        if (!MeasureOne([&]() { return invokeVersion(versionArg); }, versionArg,
+                                        sample + 1, block, "SAME", stream, start, stop, samples)) {
+                            result = 4;
+                            break;
+                        }
+                    }
                 }
-                for (int32_t sample = 0; sample < kSamples; ++sample) {
-                    if (!MeasureOne([&]() { return invokeVersion(versionArg); }, versionArg,
-                                    sample + 1, block, "SAME", stream, start, stop, samples)) {
-                        result = 4;
-                        break;
+            } else {
+                int32_t orderIndex = 0;
+                for (int32_t block = 1; block <= kPairBlocks && result == 0; ++block) {
+                    for (int32_t pair = 1; pair <= kPairsPerBlock; ++pair) {
+                        const bool parentFirst = (orderIndex++ % 2) == 0;
+                        const char* order = parentFirst ? "P-C" : "C-P";
+                        const bool ok = parentFirst
+                            ? MeasureOne(invokeV016, "V016", pair, block, order, stream, start, stop, samples) &&
+                              MeasureOne(invokeV021, "V021", pair, block, order, stream, start, stop, samples)
+                            : MeasureOne(invokeV021, "V021", pair, block, order, stream, start, stop, samples) &&
+                              MeasureOne(invokeV016, "V016", pair, block, order, stream, start, stop, samples);
+                        if (!ok) { result = 4; break; }
                     }
                 }
             }
-        } else {
-            int32_t orderIndex = 0;
-            for (int32_t block = 1; block <= kPairBlocks && result == 0; ++block) {
-                for (int32_t pair = 1; pair <= kPairsPerBlock; ++pair) {
-                    const bool parentFirst = (orderIndex++ % 2) == 0;
-                    const char* order = parentFirst ? "P-C" : "C-P";
-                    const bool ok = parentFirst
-                        ? MeasureOne(invokeV016, "V016", pair, block, order, stream, start, stop, samples) &&
-                          MeasureOne(invokeV021, "V021", pair, block, order, stream, start, stop, samples)
-                        : MeasureOne(invokeV021, "V021", pair, block, order, stream, start, stop, samples) &&
-                          MeasureOne(invokeV016, "V016", pair, block, order, stream, start, stop, samples);
-                    if (!ok) { result = 4; break; }
-                }
-            }
         }
-        if (result == 0 || !samples.empty()) {
+        if (!correctnessOnly && (result == 0 || !samples.empty())) {
             const std::vector<const char*> versions = sameBinary
                 ? std::vector<const char*>{versionArg}
                 : std::vector<const char*>{"V016", "V021"};
@@ -573,10 +585,15 @@ int main(int argc, char** argv)
         fprintf(stderr, "cleanup skipped event and device-buffer destruction because stream drain failed\n");
     }
     if (result == 0) {
-        printf("%s run complete: width=%llu samples_per_version_per_block=%d blocks=%d warmups_per_version=%d device_event=PRIMARY wall_clock=DIAGNOSTIC output_prefix=%s\n",
-               sameBinary ? "same-binary" : "paired",
-               static_cast<unsigned long long>(width), sameBinary ? kSamples : kPairsPerBlock,
-               sameBinary ? 2 : kPairBlocks, warmups, prefix);
+        if (correctnessOnly) {
+            printf("correctness-only run complete: width=%llu versions=V016,V021 timing_samples=0\n",
+                   static_cast<unsigned long long>(width));
+        } else {
+            printf("%s run complete: width=%llu samples_per_version_per_block=%d blocks=%d warmups_per_version=%d device_event=PRIMARY wall_clock=DIAGNOSTIC output_prefix=%s\n",
+                   sameBinary ? "same-binary" : "paired",
+                   static_cast<unsigned long long>(width), sameBinary ? kSamples : kPairsPerBlock,
+                   sameBinary ? 2 : kPairBlocks, warmups, prefix);
+        }
     }
     return result;
 }
