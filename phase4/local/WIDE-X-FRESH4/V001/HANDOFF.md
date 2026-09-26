@@ -1,6 +1,22 @@
 # WIDE-X-FRESH4 V001 Handoff
 
-Status: V001 targeted correctness is retained as PASS_9_OF_9_NPU; the separate paired runner now compiles and links. Returned to Main review. No timing result.
+Status (2026-09-26): original V001 retained; current local state is MEASUREMENT_BLOCKED. Historical targeted correctness remains PASS_9_OF_9_NPU. No new NPU operation or timing has run. The old paired runner lacks correctness-only mode and output comparison; fresh build and runner qualification are still required.
+
+## Existing evidence coverage
+
+The replacement continues the original worktree and branch. `local-result.json:evidence_consolidation` records each revision, actual file paths, source identity, Git history, build/link status, executable identity, correctness, raw timing, Main review, and MISSING fields.
+
+| Revision | Actual coverage | Remaining evidence |
+|---|---|---|
+| CURRENT | 10 route-local files; canonical untracked workspace source matches retained CURRENT; 6 original build-audit logs also present on this branch | Parent source MISSING; NPU executable MISSING; native build fails on device `sqrtf`, adapters also report byte-length narrowing. This source is not a performance Parent. |
+| BUILD-FIX-001 | 32 route-local files; all 8 canonical archive files have identical content already retained here; source/sidecar/Git match; historical NPU 9/9 retained | Historical NPU executable SHA MISSING; separate raw compile/link RC MISSING; same-binary and NPU P/C MISSING. Metadata reports build/link exit code 0. |
+| V001 | 24 route-local files; exact source and two-line direct-parent diff verified; Main review and historical NPU 9/9 retained; previous paired runner/modules identified | Separate compile/link RC MISSING; paired-runner correctness-only support and golden comparison MISSING; same-binary/raw NPU P/C MISSING. |
+
+Canonical coverage includes 30 actual files: 6 untracked workspace originals, 10 CURRENT local files, 8 same-route archive files, and 6 build-review logs. Every file has an identical existing route copy or equivalent route-local content; no asset copy was necessary. Canonical has no same-route Online package in the scoped files or Git history. No canonical original was changed.
+
+The archived-analysis exposure path, exposed material, and influence on V001 remain MISSING. A separate earlier out-of-route search incident is recorded in BUILD-FIX-001/parent-control/source-meta.json. Declared `FRESH_BLIND` is retained but remains unconfirmed; only Main can give a disposition. The same-route archive recovered here does not establish the identity of that analysis document.
+
+Main's 2026-09-26T12:04:36Z device snapshot is recorded as supplied evidence, not permission to run. No correctness-only slot or performance window has been assigned. Device 7 remains excluded from timing.
 
 ## Revision declaration
 
@@ -12,7 +28,7 @@ Status: V001 targeted correctness is retained as PASS_9_OF_9_NPU; the separate p
 | PARENT_SOURCE_SHA | `5d0ee01165e46a281cbb7d1605feba3605ad59883845400a063e97704f27f2be` |
 | PARENT_SCORE | N/A |
 | SINGLE_HYPOTHESIS | Widen the wide-path tile from 2048 to 4096 and grow only `tmp_` for that instantiation; expected to halve per-row wide-path tile iterations. |
-| CONTEXT_CLASS | FRESH_BLIND |
+| CONTEXT_CLASS | FRESH_BLIND (declared; unconfirmed) |
 | WHY_NOT_DUPLICATE | Changes tile granularity only; two-pass data flow and single-tile scheduling remain unchanged. |
 
 ## Result
