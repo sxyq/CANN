@@ -5,7 +5,7 @@ Updated: 2026-09-26
 
 ## Decision
 
-`NEEDS_ONE_MORE_LOCAL`. Keep R015C-r4 unchanged. There is no performance conclusion, promotion, rejection, or Online submission. Do not create another performance revision while r4 is pending.
+No local performance verdict has been formed. Keep R015C-r4 unchanged. There is no performance conclusion, promotion, rejection, or Online submission. Do not create another performance revision while r4 is unresolved. `BUILD=PASS`; `EXECUTABLE_IDENTITY=PASS`; the recorded 3/3 correctness run covers only the row-copy microkernel, so complete AddRmsNormBias correctness is `INCOMPLETE`. The route is not ready for same-binary or timing.
 
 ## Lineage and change scope
 
