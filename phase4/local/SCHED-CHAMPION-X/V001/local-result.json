@@ -9,28 +9,40 @@
   "context_class": "FROZEN_STRONG_BASELINE_TRANSPLANT",
   "source_path": "phase4/workspaces/SCHED-CHAMPION-X/V001/src/submission.asc",
   "local_sha256": "ed232872fa1837678a0a05fc16de9f06a725d61ff9d85663193fdc49e8f33678",
-  "changed_surface": "Process() group-unit partition + ProcessNarrowMidOverlap sync fix (MTE3 drain before V_MTE2 release)",
-  "correctness_fix_note": "BF16 17x257 exposed pre-existing xBuf_ aliasing race in ProcessNarrowMidOverlap: SetFlag<V_MTE2>(inputRelease) fired before MTE3 Store drained xBuf_. Fix is synchronization-only (execution-contract I).",
-  "compile_device_rc": 0,
-  "compile_submission_rc": 0,
-  "link_device_rc": 0,
-  "link_submission_rc": 0,
+  "compile_rc": "0/0",
+  "link_rc": "0/0",
   "correctness_status": "PASS",
   "correctness_total": 24,
   "correctness_failures": 0,
-  "correctness_summary": "ALL_PASS 24/24 across FP32/FP16/BF16 x {33x100 rowGroup=2, 17x256 rowGroup=1 control, 33x100 rowGroup=4, 17x257 rowGroup=16, 7x65 rowGroup=8 edge, 8x256 rowGroup=1 control multirow, 3x65 rowGroup=8 rowsLT}",
-  "correctness_parent_comparison": "Frozen parent also 24/24 ALL_PASS on same matrix; BF16 17x257 was V001-only regression before sync fix, now resolved",
-  "build_fix_allowed": true,
-  "performance_mechanism_added": false,
   "single_change_audit": "PASS",
-  "local_verdict": "NOT_COMPLETE",
-  "local_verdict_reason": "Correctness PASS. No qualified timing window this turn (per Main instruction). Awaiting device lease for same-binary + P/C paired measurement.",
-  "measurement_status": "MEASUREMENT_BLOCKED",
-  "block_reason": "No qualified device window for timing this turn (Main instruction: timing optional)",
-  "block_date": "2026-09-27",
-  "block_shape": "33x100 FP32 (rowGroup=2 primary), 17x256 FP32 (rowGroup=1 control)",
-  "block_device": "d4",
-  "same_binary_result": "NOT_RUN",
+  "measurement_status": "COMPLETE",
+  "measurement_protocol": "local-timing-protocol.md unified: warmup=45, device-event primary, same-binary 2 blocks x 21 samples, 4 interleaved P/C pairs",
+  "measurement_lease": "R2-SCHED-V001-TIMING, device 4, 2026-09-27",
+  "same_binary_results": {
+    "33x100_fp32": {"parent": "PASS (mad/med=0.035, drift=0.028)", "cand": "PASS (mad/med=0.093, drift=0.088)"},
+    "17x256_fp32": {"parent": "FAIL (mad/med=0.377, drift=3.878)", "cand": "FAIL (mad/med=0.301)"},
+    "17x257_fp16": {"parent": "FAIL (mad/med=0.347, drift=0.329)", "cand": "PASS (mad/med=0.033)"},
+    "7x65_fp32": {"parent": "FAIL (mad/med=0.207)", "cand": "PASS (mad/med=0.074)"}
+  },
+  "paired_results_qualified_shape": {
+    "33x100_fp32": {
+      "rowGroup": 2,
+      "pair_deltas_pct": [-91.9, -12.0, -8.8, 0.0],
+      "clean_median_delta_pct": -8.8,
+      "clean_favor_c": 2,
+      "clean_neutral": 1,
+      "outlier_pairs": [1],
+      "note": "pair1 P_MAD=84.96 outlier; clean pairs 2-4"
+    }
+  },
+  "paired_results_blocked_shapes": {
+    "17x256_fp32": {"median_delta_pct": 15.0, "favor": "P 3/4", "note": "control shape, parent sb FAIL (drift 3.878)"},
+    "17x257_fp16": {"median_delta_pct": 145.9, "favor": "P 4/4", "note": "clear regression: rowGroup=16 on 17 rows -> 2 cores vs parent 17 cores, parallelism collapse"},
+    "7x65_fp32": {"median_delta_pct": -26.9, "favor": "mixed 2/2", "note": "parent has severe outliers (MAD=14.48, 5.66); clean pairs favor P +6.8%, +17.5%"}
+  },
+  "local_verdict": "NEEDS_ONE_MORE_LOCAL",
+  "local_verdict_reason": "Only 33x100 FP32 has valid same-binary (both PASS). Clean paired delta -8.8% favors V001 but one pair is neutral (+0.0%) and candidate MAD/med (0.093) is near threshold. 17x257 FP16 shows consistent 4/4 regression (+145.9%) from parallelism collapse (rowGroup=16 -> totalGroups=2 -> 2 cores vs parent 17 cores) but parent same-binary fails so magnitude is unreliable. 17x256 FP32 (control) and 7x65 FP32 have parent same-binary failures. Mixed and incomplete.",
+  "local_best": "NONE",
   "retry_required": true,
-  "retry_note": "Retry timing when device lease available. Same-binary qualification on Direct Parent first, then interleaved P/C."
+  "retry_note": "Need cleaner window for 17x256/17x257/7x65 same-binary (parent is noisy). For 17x257 FP16 regression, consider whether H1 group-aligned ownership should cap active cores at min(blockCount, totalGroups) to avoid parallelism collapse when rowGroup is large relative to rowCount."
 }
