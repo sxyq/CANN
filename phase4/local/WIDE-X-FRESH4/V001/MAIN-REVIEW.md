@@ -24,7 +24,7 @@ Date: 2026-09-25
 - Server3 Candidate build and link passed. The paired Parent/Candidate runner also compiled and linked after preserving the registered kernel name and separating the ACL host link from the registered kernel-library link.
 - Parent and Candidate source digests, runner digest `a74faf2fcf05819db15b5d0f96401f4aa1d9e09b6a54d88be870918a953eb3c4`, and linked library identities are recorded in `support/runner-validation.md`.
 - Targeted NPU correctness passed 9/9 cases across FP32, FP16, and BF16 at widths 2048, 16384, and 32768. The exact results and executable identity are in `source-meta.json` and `local-result.json`.
-- The paired runner has not been executed. No same-binary qualification or latency measurement was performed.
+- The paired runner's correctness-only mode was executed on server3 d7: Parent and Candidate each passed 9/9 exact-source cases, for 18/18 RC=0 with zero mismatches and zero nonfinite outputs. Same-binary qualification and latency measurement were not performed.
 
 ## Provenance note
 
@@ -32,4 +32,4 @@ The retained runner record says an archived problem-analysis document containing
 
 ## Next action
 
-Keep V001 and its source digest unchanged. When an allowed device lease and suitable load window are available, use the exact-source runner for same-binary Parent qualification before any Parent/Candidate comparison. Keep all results local until provenance has a defensible disposition.
+Keep V001 and its source digest unchanged. When an allowed performance lease and suitable load window are available, use the exact-source runner for same-binary Parent qualification before any Parent/Candidate comparison. Keep all results local until provenance has a defensible disposition.
