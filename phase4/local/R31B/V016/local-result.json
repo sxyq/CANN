@@ -6,7 +6,7 @@
   "parent_source_sha": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
   "source_sha": "9f5c353e65a13a740fe97dc7e6415df032d27560831a3ad142c77592b8208eb5",
   "submission": "phase4/local/R31B/V016/submission.asc",
-  "decision": "NEEDS_ONE_MORE_LOCAL",
+  "decision": "NOT_COMPLETE",
   "compile": "PASS",
   "link": "PASS",
   "correctness": {
@@ -59,5 +59,50 @@
     "server3:/home/data4t2/lelinfeng/phase4-review-repro/R31B-V016/build-candidate-v016-r2/build-clean.log",
     "server3:/home/data4t2/lelinfeng/phase4-review-repro/R31B-V016/probe-build/build-runner-final.log"
   ],
-  "next_candidate_hypothesis": "NONE; retain V016 hypothesis and await a clean local load window"
+  "next_candidate_hypothesis": "NONE; retain V016 hypothesis and await a clean local load window",
+  "NON_TIMING_STATUS_20260927": {
+    "SOURCE_SHA256": "9f5c353e65a13a740fe97dc7e6415df032d27560831a3ad142c77592b8208eb5",
+    "SERVER3_SOURCE_SHA256": "9f5c353e65a13a740fe97dc7e6415df032d27560831a3ad142c77592b8208eb5",
+    "DIRECT_PARENT": "R31B-V011",
+    "PARENT_SOURCE_SHA256": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+    "BUILD": "PASS",
+    "COMPILE_RC": 0,
+    "LINK_RC": 0,
+    "BUILD_COMMAND": "cmake --build /home/data4t2/lelinfeng/phase4-review-repro/R31B-V016/build-candidate-v016-r2 --target device submission full_link --parallel 1 --verbose",
+    "BUILD_ARTIFACT_SHA256": {
+      "device.alink": "1d3b02d854ca15ebbab11328c77ec1319015c7e98d2dbe00ef77d59d8f005995",
+      "submission.alink": "ff0784ac91b18191e838d167cdf5ebc0a371faa9f8e9fec966e53c2625b6d4eb"
+    },
+    "CORRECTNESS": "INCOMPLETE",
+    "CORRECTNESS_DETAIL": "The changed FP16/BF16 domains pass, and both FP32 binaries pass rows=2,D=8192. Both V011 and V016 fail rows=2,D=16384 on d7 under the same runner; latest Parent result: 23803 mismatches, max_abs=0.09248662, RC=1; Candidate: 27680 mismatches, max_abs=0.0964607, RC=1. Earlier exact runs are retained and also show both fail. Source comparison shows the FP32 tile/path is shared; failure counts vary across runs. Root cause between the shared FP32 implementation/runtime and reference runner is unresolved. This does not establish a V016-only regression; D=16384 FP32 is excluded from timing.",
+    "CORRECTNESS_RECHECK_20260927": {
+      "DEVICE": 7,
+      "PREFLIGHT": "Health OK; HBM=3432/65536 MB; AICore=0%; no running process listed.",
+      "PARENT_RUNNER_SHA256": "494020cb96e85a62914f4be3acf61aa0094449f6a2bfc721d5460e5cb3091da9",
+      "CANDIDATE_RUNNER_SHA256": "c56ee9e79014b405321b2c42cdf2064992692ffed9f1118cbba6325468d36b08",
+      "D8192_PARENT": "PASS; failures=0; max_abs=3.5762787e-07; RC=0",
+      "D8192_CANDIDATE": "PASS; failures=0; max_abs=3.5762787e-07; RC=0",
+      "D16384_PARENT": "FAIL; failures=23803; max_abs=0.09248662; RC=1",
+      "D16384_CANDIDATE": "FAIL; failures=27680; max_abs=0.0964607; RC=1",
+      "ROOT_CAUSE": "UNRESOLVED_SHARED_FP32_PATH_OR_REFERENCE_RUNNER",
+      "D16384_TIMING_ELIGIBLE": false,
+      "TIMING_SAMPLES": 0
+    },
+    "EXECUTABLE_IDENTITY": "PASS",
+    "EXECUTABLE_SHA256": {
+      "parent_fp32_runner": "494020cb96e85a62914f4be3acf61aa0094449f6a2bfc721d5460e5cb3091da9",
+      "candidate_fp32_runner": "c56ee9e79014b405321b2c42cdf2064992692ffed9f1118cbba6325468d36b08",
+      "parent_other_dtype_runner": "78917340dab5c0723c2d18faf493dca32f0e3412f78971c3ef7daa4db1427891",
+      "candidate_other_dtype_runner": "81a2ebfac7d3ec0cf1cf65105c7b81cc995d16ca8d57ed072eca3bdba40218b2"
+    },
+    "SAME_BINARY": "NOT_RUN",
+    "TIMING": "MEASUREMENT_BLOCKED",
+    "TIMING_BLOCKER": "No qualified MAIN-1 performance window on d4-d6; d7 is excluded from timing. FP32 D=16384 is separately excluded because both Parent and Candidate fail correctness and the shared-path/reference cause remains unresolved.",
+    "LOCAL_VERDICT": "NOT_COMPLETE",
+    "READY_FOR_SAME_BINARY": true,
+    "NOT_READY_SHAPES": ["FP32 rows=2,D=16384; shared parent/candidate failure, root cause unresolved"],
+    "DEVICE_WINDOW": "UNAVAILABLE",
+    "LOCAL_BEST_UPDATED": false,
+    "ONLINE_WORTHY": "NO"
+  }
 }

@@ -49,6 +49,25 @@ RESULT=dtype=fp32 rows=2 width=16384 device=4 correctness=FAIL failures=27605 ma
 COMMAND=/home/data4t2/lelinfeng/phase4-review-repro/R31B-V016/probe-build/probe_fp32_v016 2 16384 4
 RESULT=dtype=fp32 rows=2 width=16384 device=4 correctness=FAIL failures=25707 max_abs=0.092531443 max_rel=117.22115
 TARGETED_SOURCE_SHA_AFTER=9f5c353e65a13a740fe97dc7e6415df032d27560831a3ad142c77592b8208eb5
-DIAGNOSIS=V011 parent fails the same D=16384 case under the same harness and load; classify as inherited/harness issue, not an isolated V016 regression
+DIAGNOSIS=Both V011 and V016 fail D=16384 under the same correctness runner; this does not establish an isolated V016 regression. Root cause remains unresolved between the shared FP32 path/runtime and the reference runner.
 TIMING=NOT_RUN
 STOP=Main Review
+
+TARGETED_DEVICE7_RECHECK_DATE=2026-09-26 UTC
+TARGETED_DEVICE=7
+TARGETED_PREFLIGHT=health OK; HBM=3432/65536 MB; AICore=0%; no running NPU process listed
+TARGETED_MODE=exact FP32 correctness only; one launch per invocation; no timing samples
+PARENT_RUNNER_SHA256=494020cb96e85a62914f4be3acf61aa0094449f6a2bfc721d5460e5cb3091da9
+CANDIDATE_RUNNER_SHA256=c56ee9e79014b405321b2c42cdf2064992692ffed9f1118cbba6325468d36b08
+COMMAND=/home/data4t2/lelinfeng/phase4-review-repro/R31B-V016/probe-build/probe_fp32_v011 2 8192 7
+RESULT=dtype=fp32 rows=2 width=8192 device=7 correctness=PASS failures=0 max_abs=3.5762787e-07 max_rel=6.0680854e-06; RC=0
+COMMAND=/home/data4t2/lelinfeng/phase4-review-repro/R31B-V016/probe-build/probe_fp32_v016 2 8192 7
+RESULT=dtype=fp32 rows=2 width=8192 device=7 correctness=PASS failures=0 max_abs=3.5762787e-07 max_rel=6.0680854e-06; RC=0
+COMMAND=/home/data4t2/lelinfeng/phase4-review-repro/R31B-V016/probe-build/probe_fp32_v011 2 16384 7
+RESULT=dtype=fp32 rows=2 width=16384 device=7 correctness=FAIL failures=23803 max_abs=0.09248662 max_rel=117.22115; RC=1
+COMMAND=/home/data4t2/lelinfeng/phase4-review-repro/R31B-V016/probe-build/probe_fp32_v016 2 16384 7
+RESULT=dtype=fp32 rows=2 width=16384 device=7 correctness=FAIL failures=27680 max_abs=0.0964607 max_rel=117.22115; RC=1
+FP32_SOURCE_COMPARISON=V011 and V016 select the same FP32 4096-element tile and same ProcessWideFp32FullCacheRows implementation; V016 changes the low-precision tile choice.
+ROOT_CAUSE=UNRESOLVED; parent and candidate both fail; failure counts differ across recorded runs. No independent AddRmsNormBias oracle was run. D=16384 FP32 is NOT_READY_FOR_TIMING.
+INITIAL_DIRECT_LAUNCH=RC=127, libgraph.so unavailable because CANN set_env.sh was not sourced; runner did not start and no NPU work occurred. The four results above use the recorded CANN environment setup.
+TIMING=NOT_RUN

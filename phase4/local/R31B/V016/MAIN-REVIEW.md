@@ -2,9 +2,9 @@
 
 Date: 2026-09-25
 
-## Decision
+## Disposition
 
-`NEEDS_ONE_MORE_LOCAL`. Keep V016 unchanged. Do not create V017, promote, reject, or submit online from this evidence.
+No local performance verdict has been formed. Keep V016 unchanged. Do not create V017, promote, reject, or submit online from this evidence. The changed FP16/BF16 correctness domain passes; same-binary remains unrun and `TIMING=MEASUREMENT_BLOCKED` because the allowed performance devices are loaded. FP32 D=16384 remains excluded from timing because Parent and Candidate both fail and the cause is unresolved.
 
 ## Source review
 
@@ -23,7 +23,7 @@ Date: 2026-09-25
 - Candidate SHA matches `source-meta.json`, `local-result.json`, and `correctness-evidence.txt`.
 - Existing compile and link records report PASS.
 - Targeted FP16/BF16 correctness passed at widths 8192, 12288, 16384, and 32768.
-- The FP32 D=16384 control failed for both V011 and V016 under the same harness. This is outside the changed dtype path and is recorded as inherited or harness-related; it is not evidence to accept or reject V016.
+- The FP32 D=16384 control failed for both V011 and V016 under the same runner. The FP32 source path is shared, but the failure counts vary across recorded runs; the cause between that shared path/runtime and the reference runner remains unresolved. D=16384 is excluded from timing and the failures do not establish a V016-only regression.
 - Four earlier paired observations are `LOAD_CONTAMINATED`; no performance conclusion follows from them.
 - The unified paired runner now compiles and links. Parent, Candidate, wrapper, runner sources, CMake input, and runner executable identities are recorded in `route-handoff.md` and `support/paired/paired-build-v016-success.txt`. The runner has not been executed.
 
