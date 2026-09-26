@@ -116,7 +116,7 @@
     "The removed synchronization is safe only under the unchanged localRows == 1 dispatch; do not widen this path.",
     "V003 has MULTI_CHANGE provenance; this local result tests one isolated mechanism against V003 only."
   ],
-  "decision": "NEEDS_ONE_MORE_LOCAL",
+  "decision": "NOT_COMPLETE",
   "next_candidate_hypothesis": "No new hypothesis before Main review. If Main requests another local run, repeat the same V003-versus-V007 D=256 FP32 paired probe during a sufficiently clear load window, with the same source and runner.",
   "cleanup": "None; no files or remote objects deleted.",
   "artifacts": {
@@ -124,5 +124,31 @@
     "probe_script": "support/run_probes.sh",
     "probe_results": "support/results/",
     "compile_logs": ["../../../workspaces/MIX-A/configure-v007-server3.log", "../../../workspaces/MIX-A/compile-v007-device-server3.log", "../../../workspaces/MIX-A/compile-v007-submission-server3.log", "../../../workspaces/MIX-A/compile-v007-link-server3.log"]
+  },
+  "NON_TIMING_STATUS_20260927": {
+    "SOURCE_SHA256": "a63ad29a997ae2fe8a1238c1a47a9d5ddfb14d16f725fca975ce5c55523f28eb",
+    "SERVER3_SOURCE_SHA256": "a63ad29a997ae2fe8a1238c1a47a9d5ddfb14d16f725fca975ce5c55523f28eb",
+    "DIRECT_PARENT": "MIX-A-V003",
+    "PARENT_SOURCE_SHA256": "1a1857a945ce1f04e3877437882b21a3d5071dddcd697103d7b539a0feb5c706",
+    "BUILD": "PASS",
+    "COMPILE_RC": 0,
+    "LINK_RC": 0,
+    "BUILD_COMMAND": "cmake --build /home/data4t2/lelinfeng/phase4-workspaces/MIX-A/runner-v007/build --target mix_a_v003_probe mix_a_v007_probe mix_a_v007_unified_probe --parallel 1",
+    "CORRECTNESS": "PASS",
+    "CORRECTNESS_DETAIL": "rows=1,D=256, FP32/FP16/BF16 PASS for the exact V007 source; old LOAD_CONTAMINATED timing is excluded.",
+    "EXECUTABLE_IDENTITY": "PASS",
+    "EXECUTABLE_SHA256": {
+      "parent_v003": "728614abd8d0e6d10c8d7494e9e2704f49fd484d534e8586708f8e2ccd61a755",
+      "candidate_v007": "2443eb9b124e2a82c3750395a4feb3e273e3a3f808b50feda718074e742edb46",
+      "unified_runner": "dce996af2ec709219819de3e9ba908f0d41744f2b9820965a1385e080b949110"
+    },
+    "SAME_BINARY": "NOT_RUN",
+    "TIMING": "MEASUREMENT_BLOCKED",
+    "TIMING_BLOCKER": "No qualified MAIN-1 performance window; current VLLM load occupies the allowed d4-d6 devices and d7 is excluded from timing.",
+    "LOCAL_VERDICT": "NOT_COMPLETE",
+    "READY_FOR_SAME_BINARY": true,
+    "DEVICE_WINDOW": "UNAVAILABLE",
+    "LOCAL_BEST_UPDATED": false,
+    "ONLINE_WORTHY": "NO"
   }
 }

@@ -4,7 +4,7 @@ Date: 2026-09-25
 
 ## Decision
 
-`NEEDS_ONE_MORE_LOCAL`. Keep V007 unchanged. The retained measurements do not support a performance conclusion, promotion, rejection, or Online submission.
+No local performance verdict has been formed. Keep V007 unchanged. The retained contaminated measurements do not support a performance conclusion, promotion, rejection, or Online submission. `BUILD=PASS`; `CORRECTNESS=PASS`; `EXECUTABLE_IDENTITY=PASS`; `READY_FOR_SAME_BINARY=true`. `TIMING=MEASUREMENT_BLOCKED` is the timing-stage state only; the allowed d4-d6 devices currently have heavy VLLM HBM use, and d7 is excluded from performance timing.
 
 ## Lineage and source review
 
