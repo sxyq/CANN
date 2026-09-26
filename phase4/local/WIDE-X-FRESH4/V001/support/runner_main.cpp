@@ -10,6 +10,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <limits>
 #include <string>
 #include <vector>
 
@@ -40,7 +41,7 @@ constexpr int32_t kBf16 = 2;
 constexpr int64_t kRows = 2;
 constexpr int64_t kAvailableCores = 40;
 constexpr float kEpsilon = 1.0e-5f;
-constexpr int kMinimumWarmups = 10;
+constexpr int kMinimumWarmups = 45;
 constexpr int kMinimumSamples = 21;
 constexpr int kMinimumSameBlocks = 2;
 constexpr int kMinimumPairedBlocks = 4;
@@ -122,6 +123,74 @@ void Store(std::vector<uint8_t>& data, size_t index, int32_t dtype, float value)
     std::memcpy(data.data() + index * sizeof(packed), &packed, sizeof(packed));
 }
 
+float Load(const std::vector<uint8_t>& data, size_t index, int32_t dtype)
+{
+    if (dtype == kFp32) {
+        float value = 0.0f;
+        std::memcpy(&value, data.data() + index * sizeof(value), sizeof(value));
+        return value;
+    }
+    uint16_t packed = 0;
+    std::memcpy(&packed, data.data() + index * sizeof(packed), sizeof(packed));
+    if (dtype == kBf16) {
+        const uint32_t bits = static_cast<uint32_t>(packed) << 16;
+        float value = 0.0f;
+        std::memcpy(&value, &bits, sizeof(value));
+        return value;
+    }
+    const int exponent = (packed >> 10) & 0x1f;
+    const int mantissa = packed & 0x03ff;
+    float value = exponent == 0 ? std::ldexp(static_cast<float>(mantissa), -24) :
+                  exponent == 31 ? (mantissa == 0 ? std::numeric_limits<float>::infinity() :
+                                    std::numeric_limits<float>::quiet_NaN()) :
+                  std::ldexp(static_cast<float>(1024 + mantissa), exponent - 25);
+    return (packed & 0x8000U) != 0 ? -value : value;
+}
+
+bool CompareOutput(FILE* output, const Kernel& kernel, int device, int32_t dtype,
+                   int64_t width, const std::vector<uint8_t>& x,
+                   const std::vector<uint8_t>& residual, const std::vector<uint8_t>& gamma,
+                   const std::vector<uint8_t>& bias, const std::vector<uint8_t>& actual)
+{
+    // Preserve the route's existing diagnostic tolerance and rounded CPU reference.
+    const float tolerance = dtype == kFp32 ? 3.0e-5f : (dtype == kFp16 ? 2.5e-3f : 1.5e-2f);
+    std::vector<uint8_t> expected(ElementSize(dtype));
+    float maxError = 0.0f;
+    size_t mismatches = 0, nonfinite = 0;
+    for (int64_t row = 0; row < kRows; ++row) {
+        double squareSum = 0.0;
+        for (int64_t j = 0; j < width; ++j) {
+            const size_t index = static_cast<size_t>(row * width + j);
+            const float value = Load(x, index, dtype) + Load(residual, index, dtype);
+            squareSum += static_cast<double>(value) * value;
+        }
+        const float invRms = 1.0f / std::sqrt(static_cast<float>(squareSum / width) + kEpsilon);
+        for (int64_t j = 0; j < width; ++j) {
+            const size_t index = static_cast<size_t>(row * width + j);
+            const float value = (Load(x, index, dtype) + Load(residual, index, dtype)) * invRms *
+                                Load(gamma, static_cast<size_t>(j), dtype) + Load(bias, static_cast<size_t>(j), dtype);
+            Store(expected, 0, dtype, value);
+            const float got = Load(actual, index, dtype), want = Load(expected, 0, dtype);
+            if (!std::isfinite(got) || !std::isfinite(want)) {
+                ++nonfinite;
+                ++mismatches;
+                continue;
+            }
+            const float error = std::abs(got - want);
+            maxError = std::max(maxError, error);
+            if (error > tolerance) ++mismatches;
+        }
+    }
+    const bool written = std::fprintf(output, "%s\t%s\t%d\t%lld\t%lld\t%s\t%.9g\t%.9g\t%zu\t%zu\t%s\n",
+        kernel.name, kernel.sourceSha256, device, static_cast<long long>(kRows),
+        static_cast<long long>(width), DTypeName(dtype), maxError, tolerance,
+        mismatches, nonfinite, mismatches == 0 ? "PASS" : "FAIL") >= 0;
+    std::printf("CORRECTNESS_ONLY side=%s rows=%lld width=%lld dtype=%s max_abs_error=%.9g mismatches=%zu nonfinite=%zu\n",
+        kernel.name, static_cast<long long>(kRows), static_cast<long long>(width),
+        DTypeName(dtype), maxError, mismatches, nonfinite);
+    return written && mismatches == 0;
+}
+
 bool ParseInteger(const char* text, long long minimum, long long maximum, long long& value)
 {
     errno = 0;
@@ -180,8 +249,9 @@ bool Warmup(const Kernel& kernel, int count, void* deviceX, void* deviceResidual
 void PrintUsage(const char* program)
 {
     std::printf("Usage: %s DEVICE WIDTH DTYPE MODE SIDE WARMUPS SAMPLES BLOCKS OUTPUT.tsv\n", program);
-    std::printf("DTYPE: fp32 | fp16 | bf16; MODE: same | paired; SIDE: parent | candidate | -\n");
-    std::printf("same requires >=10 warmups, >=21 samples, >=2 blocks; paired requires >=4 blocks.\n");
+    std::printf("DTYPE: fp32 | fp16 | bf16; MODE: correctness-only | same | paired; SIDE: parent | candidate | -\n");
+    std::printf("correctness-only requires SIDE parent/candidate and WARMUPS=0 SAMPLES=0 BLOCKS=1; no events or timing.\n");
+    std::printf("same requires >=45 warmups, >=21 samples, >=2 blocks; paired requires >=4 blocks.\n");
 }
 
 }  // namespace
@@ -197,11 +267,12 @@ int main(int argc, char** argv)
         return 2;
     }
 
+    const bool correctnessOnly = std::strcmp(argv[4], "correctness-only") == 0;
     long long deviceArg = 0, widthArg = 0, warmupsArg = 0, samplesArg = 0, blocksArg = 0;
     if (!ParseInteger(argv[1], 0, 7, deviceArg) ||
         !ParseInteger(argv[2], 1, 32768, widthArg) ||
-        !ParseInteger(argv[6], kMinimumWarmups, 100000, warmupsArg) ||
-        !ParseInteger(argv[7], kMinimumSamples, 100000, samplesArg) ||
+        !ParseInteger(argv[6], correctnessOnly ? 0 : kMinimumWarmups, 100000, warmupsArg) ||
+        !ParseInteger(argv[7], correctnessOnly ? 0 : kMinimumSamples, 100000, samplesArg) ||
         !ParseInteger(argv[8], 1, 100000, blocksArg)) {
         std::fprintf(stderr, "invalid numeric argument or below protocol minimum\n");
         return 2;
@@ -214,9 +285,10 @@ int main(int argc, char** argv)
     const bool same = std::strcmp(argv[4], "same") == 0;
     const Kernel* sameKernel = std::strcmp(argv[5], "parent") == 0 ? &kParent :
                                std::strcmp(argv[5], "candidate") == 0 ? &kCandidate : nullptr;
-    if ((dtype < 0) || (!paired && !same) ||
+    if ((dtype < 0) || (!paired && !same && !correctnessOnly) ||
         (widthArg != 2048 && widthArg != 16384 && widthArg != 32768) ||
-        (paired && std::strcmp(argv[5], "-") != 0) || (same && sameKernel == nullptr) ||
+        (paired && std::strcmp(argv[5], "-") != 0) || ((same || correctnessOnly) && sameKernel == nullptr) ||
+        (correctnessOnly && (warmupsArg != 0 || samplesArg != 0 || blocksArg != 1)) ||
         (same && blocksArg < kMinimumSameBlocks) || (paired && blocksArg < kMinimumPairedBlocks)) {
         std::fprintf(stderr, "unsupported dtype, mode, side, width, or block count\n");
         return 2;
@@ -294,8 +366,8 @@ int main(int argc, char** argv)
     };
 
     if (passed) passed = CheckAcl(aclrtCreateStream(&stream), "aclrtCreateStream");
-    if (passed) passed = CheckAcl(aclrtCreateEvent(&startEvent), "aclrtCreateEvent(start)");
-    if (passed) passed = CheckAcl(aclrtCreateEvent(&stopEvent), "aclrtCreateEvent(stop)");
+    if (passed && !correctnessOnly) passed = CheckAcl(aclrtCreateEvent(&startEvent), "aclrtCreateEvent(start)");
+    if (passed && !correctnessOnly) passed = CheckAcl(aclrtCreateEvent(&stopEvent), "aclrtCreateEvent(stop)");
     if (passed) passed = CheckAcl(aclrtMalloc(&deviceX, inputBytes, ACL_MEM_MALLOC_HUGE_FIRST), "aclrtMalloc(x)");
     if (passed) passed = CheckAcl(aclrtMalloc(&deviceResidual, inputBytes, ACL_MEM_MALLOC_HUGE_FIRST), "aclrtMalloc(residual)");
     if (passed) passed = CheckAcl(aclrtMalloc(&deviceGamma, vectorBytes, ACL_MEM_MALLOC_HUGE_FIRST), "aclrtMalloc(gamma)");
@@ -321,24 +393,44 @@ int main(int argc, char** argv)
                      kInputGeneratorId, DTypeName(dtype), static_cast<long long>(kRows),
                      static_cast<long long>(width));
         std::fprintf(output, "# DEVICE=%d MODE=%s WARMUPS=%d SAMPLES_PER_BLOCK=%d BLOCKS=%d\n",
-                     device, paired ? "paired" : "same", warmups, samples, blocks);
-        std::fprintf(output, "block\tsample\torder\tside\tsource_sha256\tdevice\twidth\tdtype_id\tdevice_event_us\twall_us\n");
+                     device, argv[4], warmups, samples, blocks);
+        std::fprintf(output, "# AVAILABLE_CORES=%lld EPSILON=%.9g\n", static_cast<long long>(kAvailableCores), kEpsilon);
+        if (correctnessOnly) {
+            std::fprintf(output, "# VALIDATION=ROUTE_DIAGNOSTIC_ABS_TOLERANCE; rtol=0; no Official result\n");
+            std::fprintf(output, "side\tsource_sha256\tdevice\trows\twidth\tdtype\tmax_abs_error\tatol\tmismatches\tnonfinite\tstatus\n");
+        } else {
+            std::fprintf(output, "block\tsample\torder\tside\tsource_sha256\tdevice\twidth\tdtype_id\tdevice_event_us\twall_us\n");
+        }
         passed = std::fflush(output) == 0;
     }
 
-    for (int block = 0; passed && block < blocks; ++block) {
+    if (passed && correctnessOnly) {
+        std::vector<uint8_t> actual(inputBytes);
+        passed = CheckAcl(aclrtMemset(deviceOutput, inputBytes, 0xff, inputBytes), "initialize output to NaN");
+        if (passed) {
+            sameKernel->call(deviceX, inputGroup, deviceResidual, inputGroup,
+                             deviceGamma, vectorGroup, deviceBias, vectorGroup,
+                             deviceOutput, inputGroup, kAvailableCores, stream, kEpsilon);
+            passed = CheckAcl(aclrtSynchronizeStream(stream), "aclrtSynchronizeStream(correctness)") &&
+                     CheckAcl(aclrtMemcpy(actual.data(), inputBytes, deviceOutput, inputBytes,
+                                         ACL_MEMCPY_DEVICE_TO_HOST), "copy correctness output");
+        }
+        if (passed) passed = CompareOutput(output, *sameKernel, device, dtype, width, x, residual, gamma, bias, actual);
+    }
+
+    if (passed && !correctnessOnly) {
         if (paired) {
-            const Kernel& firstWarm = (block % 2 == 0) ? kParent : kCandidate;
-            const Kernel& secondWarm = (block % 2 == 0) ? kCandidate : kParent;
-            passed = Warmup(firstWarm, warmups, deviceX, deviceResidual, deviceGamma,
+            passed = Warmup(kParent, warmups, deviceX, deviceResidual, deviceGamma,
                             deviceBias, deviceOutput, inputGroup, vectorGroup, stream) &&
-                     Warmup(secondWarm, warmups, deviceX, deviceResidual, deviceGamma,
+                     Warmup(kCandidate, warmups, deviceX, deviceResidual, deviceGamma,
                             deviceBias, deviceOutput, inputGroup, vectorGroup, stream);
         } else {
             passed = Warmup(*sameKernel, warmups, deviceX, deviceResidual, deviceGamma,
                             deviceBias, deviceOutput, inputGroup, vectorGroup, stream);
         }
+    }
 
+    for (int block = 0; passed && !correctnessOnly && block < blocks; ++block) {
         for (int sample = 0; passed && sample < samples; ++sample) {
             if (paired) {
                 const bool candidateFirst = ((block + sample) % 2) != 0;
