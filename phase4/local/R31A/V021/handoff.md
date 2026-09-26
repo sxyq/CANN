@@ -1,10 +1,12 @@
 # R31A V021 Main Handoff
 
+## 当前授权窗口（2026-09-26）
+
+`M1-R31A-V021-CORRECT-20260926` 已由 Main 写入 canonical lease；仅允许 device 7 correctness-only。禁止 same-binary、device-event sample、性能 timing、Online、V022 和 Candidate 源码修改。构建与证据整理先行；exact Parent/Candidate 重编完成后，须重新读取 d7 进程状态与 lease，只有仍无进程且无外部新 lease 才能运行 V016/V021 correctness-only。
+
 ## 状态
 
-`NEEDS_ONE_MORE_LOCAL`
-
-停在 Main Review。当前没有 Main 授权给 R31A 的独占设备租约；本轮未查询 NPU、启动 probe 或执行测量。不得创建 V022，也不得提交 CANNJudge。
+`NEEDS_ONE_MORE_LOCAL`；V021 与 V016 源码保持不变。历史失败、污染测量和此前 d7 记录全部保留；本窗口的新结果只补充当前 exact source/module/runner 身份和 correctness-only 证据，不改变性能结论。
 
 ## 版本与来源
 
