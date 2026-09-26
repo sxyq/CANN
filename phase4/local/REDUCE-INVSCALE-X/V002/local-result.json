@@ -1,0 +1,184 @@
+{
+  "route": "REDUCE-INVSCALE-X",
+  "revision": "V002",
+  "revision_kind": "CORRECTNESS_REPAIR_ONLY",
+  "direct_parent": "REDUCE-INVSCALE-X-V001",
+  "parent_source_sha": "f017935d840bea5a81268d9fe137f1567df0982f4f71718f65f4672ad8da8023",
+  "parent_score": "LOCAL_PARENT",
+  "grandparent": "FULL-R006-V001-REDUCTION-ARCH",
+  "grandparent_source_sha": "94ab0ef96a1a907fa187797b6c72361b2bdacfe6faf7a95d6471bd537a913266",
+  "assigned_hypothesis": "Repair partial collector destination alignment (32-byte-aligned float destinations for multi-tile rows); do not touch R019 invscale, tile, pipeline, scheduling or parameter policy.",
+  "assigned_hypothesis_outcome": "TESTED_AND_REFUTED",
+  "single_hypothesis_as_delivered": "Restore the missing vector-to-MTE2 ordering between the gamma/bias read and the next tile's x/residual reload, with one SyncVectorToMte2() after the gamma/bias consumption in WriteNormalizedRow. Single change relative to V001.",
+  "single_change_audit": "PASS",
+  "context_class": "HISTORICAL_DERIVED",
+  "source_sha256": "bef271b62a2c7f2d0b0ef23f5f3610129460f5a431d7d9b3dd7ac3ea9a80ad26",
+  "source_path": "phase4/workspaces/REDUCE-INVSCALE-X/submission.asc",
+
+  "compile": {
+    "device": "PASS",
+    "submission": "PASS",
+    "toolchain": "cann-server3 / Ascend910B3 / dav-2201 / CANN 8.5.0.alpha002",
+    "log": "phase4/local/REDUCE-INVSCALE-X/V002/support/compile.log"
+  },
+  "link": {
+    "full_link": "PASS",
+    "probe_build": "PASS",
+    "method": "ASC CMake (find_package(ASC)); reduce_invscale_full_link + reduce_invscale_{parent,candidate,v001ref}_probe"
+  },
+
+  "root_cause": {
+    "statement": "WriteNormalizedRow released inputX_/inputR_ to MTE2 only with SyncVectorToMte2() before the gamma/bias load. There was no matching release after the gamma/bias vector reads, so the next loop iteration's x/residual DataCopy could overwrite inputX_/inputR_ while this tile's vector Mul/Add were still reading gamma/bias. Only the last tile of a row has no following reload.",
+    "why_single_tile_rows_passed": "D <= kReduceTileElems = 6144 runs the output loop exactly once, so no next reload exists and the hazard never fires.",
+    "observed_signature": "bad region = exactly the first D - kReduceTileElems elements of every row (D=8192 -> bad [0,2048); D=16384 -> bad [0,10240); D=32768 -> bad [0,26624)); last kReduceTileElems elements always correct; reduction itself correct (inferred invRms matched the golden value); bad values non-deterministic across runs.",
+    "confidence": "HIGH",
+    "evidence": "Three-build A/B on the identical 16-shape matrix (see below); bad-region index mapping computed from stored output binaries; zero-fill of the output buffer before launch showed the bad region was written with wrong data, not left unwritten."
+  },
+
+  "three_build_ablation": [
+    {
+      "build": "alignment only (assigned fix)",
+      "content": "V001 + 32-byte collector slots (stride 8 floats) + strided CollapsePartials walk",
+      "result": "FAIL on D > 6144, signature identical to parent (D=8192 max_abs 5.4174, bad 2048/8192)",
+      "artifact": "support/intermediate_alignment_plus_sync.asc contains the alignment half combined with the sync; the alignment-only run itself is recorded in this document"
+    },
+    {
+      "build": "alignment + sync",
+      "content": "above plus SyncVectorToMte2() after gamma/bias use",
+      "result": "PASS all 16 shapes"
+    },
+    {
+      "build": "sync only (delivered V002)",
+      "content": "V001 + SyncVectorToMte2() after gamma/bias use; packed collector byte-identical to V001",
+      "result": "PASS all 16 shapes",
+      "artifact": "support/diagnostic_sync_only.asc and the delivered submission.asc"
+    }
+  ],
+
+  "correctness": {
+    "status": "PASS",
+    "scope": "Full matrix: 16 shapes covering the entire legal domain D in 64..32768, FP32/FP16/BF16, rows 1 and 3, 32-byte-aligned and unaligned D.",
+    "device_id": 6,
+    "candidate_bad_total": 0,
+    "candidate_gross_bad_total": 0,
+    "candidate_exit_codes": "0 for all 16 shapes",
+    "shapes": [
+      {"rows": 1, "D": 64, "dtype": "FP32", "bad": 0, "max_abs": 2.52713e-07},
+      {"rows": 1, "D": 65, "dtype": "FP32", "bad": 0, "max_abs": 1.64664e-07, "note": "unaligned D"},
+      {"rows": 1, "D": 100, "dtype": "FP16", "bad": 0, "max_abs": 0.000481355, "note": "unaligned D"},
+      {"rows": 1, "D": 256, "dtype": "FP32", "bad": 0, "max_abs": 2.82401e-07},
+      {"rows": 1, "D": 256, "dtype": "FP16", "bad": 0, "max_abs": 0.000967004},
+      {"rows": 1, "D": 256, "dtype": "BF16", "bad": 0, "max_abs": 0.00725772},
+      {"rows": 1, "D": 1024, "dtype": "FP32", "bad": 0, "max_abs": 2.88083e-07},
+      {"rows": 1, "D": 4096, "dtype": "FP32", "bad": 0, "max_abs": 4.14367e-07},
+      {"rows": 1, "D": 6144, "dtype": "FP32", "bad": 0, "max_abs": 5.44672e-07, "note": "exactly one tile; parent also passes here"},
+      {"rows": 1, "D": 8192, "dtype": "FP32", "bad": 0, "max_abs": 5.0175e-07, "note": "parent FAILS: bad 2048, max_abs 5.4174"},
+      {"rows": 1, "D": 8192, "dtype": "FP16", "bad": 0, "max_abs": 0.000976255, "note": "parent FAILS: bad 2046"},
+      {"rows": 1, "D": 8192, "dtype": "BF16", "bad": 0, "max_abs": 0.00781103, "note": "parent FAILS: bad 2006"},
+      {"rows": 1, "D": 16384, "dtype": "FP32", "bad": 0, "max_abs": 3.33887e-07, "note": "parent FAILS: bad 10240, max_abs 5.75199"},
+      {"rows": 1, "D": 32768, "dtype": "FP32", "bad": 0, "max_abs": 3.89497e-07, "note": "parent FAILS: bad 26366, max_abs 5.90022"},
+      {"rows": 3, "D": 256, "dtype": "FP32", "bad": 0, "max_abs": 2.82401e-07},
+      {"rows": 3, "D": 8192, "dtype": "FP32", "bad": 0, "max_abs": 6.93004e-07, "note": "parent FAILS: bad 6144, max_abs 5.69372"}
+    ],
+    "golden": "double-precision reference; u = float32(x)+float32(r); mean = sum * (1/D) matching the device reciprocal multiply; tolerances FP32 atol/rtol 1e-4, FP16 1e-3, BF16 2e-2; gross_bad counts relative error > 5%",
+    "conclusion": "Correctness fully PASS across D <= 32768. The D > 6144 defect carried by the Direct Parent V001 and the grandparent FULL-R006-V001 is repaired."
+  },
+
+  "load_quality": {
+    "classification": "PARTIAL_CONTAMINATION_SUSPECTED",
+    "probe_device": 6,
+    "aicore_all_eight_devices_percent": [0, 0, 0, 0, 0, 0, 0, 0],
+    "aicore_note": "Every device sampled 0% AICore at all four pair snapshots (better than the V001 probe window, where devices 0-3 sat at 32-34%).",
+    "hbm_on_probe_device": "59878/65536 pages (91%) held by VLLMWorker_TP PID 91228",
+    "hbm_other_devices": "NPU 0-5 and 7 also held by VLLMWorker_TP / VLLMEngineCor / python; NPU 7 at 65533/65536 (99.9%)",
+    "assessment": "AICore is idle everywhere, yet the same kernel measured 122-344 us within one variant (spread of 70-96% of its own median). That spread under 0% AICore points at HBM / host contention from the resident VLLM workers rather than compute contention. The window is not usable for resolving a small delta.",
+    "snapshots": "phase4/local/REDUCE-INVSCALE-X/V002/support/results/probe-pair-0{1,2,3,4}.npu-smi.txt",
+    "timestamp_utc_pairs": ["2026-09-23T21:51:45Z", "2026-09-23T21:52:00Z", "2026-09-23T21:52:16Z", "2026-09-23T21:52:31Z"]
+  },
+
+  "local_probes": {
+    "shape": "FP32 rows=1 width=32768 (6 tiles) -- the regime the V002 repair operates in",
+    "pairing": "V002 (candidate) vs its Direct Parent V001 (v001ref)",
+    "device_id": 6,
+    "warmups": 3,
+    "repeats_per_variant": 11,
+    "caveat": "Direct Parent V001 still fails NPU correctness on this shape (bad 26494-27645 of 32768), so only the timing delta is comparable. This is a cost-of-repair measurement, not a promotion comparison.",
+    "pairs": [
+      {"pair": 1, "timestamp_utc": "2026-09-23T21:51:45Z", "order": ["v001ref", "candidate"], "parent_us": 344.254, "candidate_us": 268.662, "delta_us": -75.592, "delta_pct": -21.96, "parent_bad": 27645, "candidate_bad": 0},
+      {"pair": 2, "timestamp_utc": "2026-09-23T21:52:00Z", "order": ["candidate", "v001ref"], "parent_us": 122.042, "candidate_us": 172.412, "delta_us": 50.37, "delta_pct": 41.27, "parent_bad": 26622, "candidate_bad": 0},
+      {"pair": 3, "timestamp_utc": "2026-09-23T21:52:16Z", "order": ["v001ref", "candidate"], "parent_us": 326.793, "candidate_us": 355.314, "delta_us": 28.521, "delta_pct": 8.73, "parent_bad": 26495, "candidate_bad": 0},
+      {"pair": 4, "timestamp_utc": "2026-09-23T21:52:31Z", "order": ["candidate", "v001ref"], "parent_us": 137.301, "candidate_us": 251.572, "delta_us": 114.271, "delta_pct": 83.23, "parent_bad": 26494, "candidate_bad": 0}
+    ]
+  },
+
+  "probe_deltas": [
+    {"pair": 1, "delta_us": -75.592, "delta_pct": -21.96},
+    {"pair": 2, "delta_us": 50.37, "delta_pct": 41.27},
+    {"pair": 3, "delta_us": 28.521, "delta_pct": 8.73},
+    {"pair": 4, "delta_us": 114.271, "delta_pct": 83.23}
+  ],
+
+  "directional_consistency": {
+    "slower_pairs": 3,
+    "faster_pairs": 1,
+    "tie_pairs": 0,
+    "statement": "INCONSISTENT. V002 measured slower in 3 of 4 pairs and faster in 1, with the two signs 22 percentage points apart in one direction and 83 in the other. No stable direction can be claimed."
+  },
+
+  "median_delta": {
+    "parent_median_us": 232.047,
+    "candidate_median_us": 260.117,
+    "delta_us": 28.07,
+    "delta_pct": 12.1
+  },
+  "worst_delta": {
+    "definition": "least favorable pair for V002",
+    "pair": 4,
+    "delta_us": 114.271,
+    "delta_pct": 83.23
+  },
+  "best_delta": {
+    "pair": 1,
+    "delta_us": -75.592,
+    "delta_pct": -21.96
+  },
+
+  "noise_margin": {
+    "parent_range_us": 222.212,
+    "parent_range_pct_of_median": 95.8,
+    "candidate_range_us": 182.902,
+    "candidate_range_pct_of_median": 70.3,
+    "abs_median_delta_us": 28.07,
+    "ratio_abs_median_delta_over_max_range": 0.126,
+    "verdict": "NOT_ABOVE_NOISE",
+    "statement": "The within-variant spread is roughly eight times the absolute median delta. The 12.1% median figure must not be quoted as a measured regression."
+  },
+
+  "local_confidence": {
+    "level": "LOW overall (correctness HIGH, performance LOW)",
+    "compile": "HIGH (device, submission and full link all PASS)",
+    "correctness": "HIGH: full 16-shape matrix PASS, entire legal domain covered, parent/child ablation isolates the cause",
+    "performance": "LOW: direction inconsistent (3 slower / 1 faster) and effect size far below the observed noise floor"
+  },
+
+  "architecture_novelty": "Correctness repair only. Relative to V001 the delivered source differs by exactly one added SyncVectorToMte2() in WriteNormalizedRow plus its comment. The R019 invscale, R006 partials collector, tile size, pipeline, row scheduling and parameter policy are byte-identical to V001. The collector-stride variant was built, measured, found unnecessary, and removed so this revision does not carry a performance-relevant change to the reduction collapse.",
+
+  "risks": [
+    "Performance of the repair is unmeasured: 4 paired probes are direction-inconsistent and far below noise.",
+    "Probe shape D=32768 has a Direct Parent that fails correctness, so only timing is comparable there.",
+    "Main's literal assignment was the partial-destination-alignment fix; that fix alone does not work and was removed. Deviation is flagged in source-meta.json for Main's review.",
+    "The historical FULL-R006-V001 formal result (1/15) is explained by this same missing ordering, not by partial destination alignment; any other route using that source inherits the same defect.",
+    "Probe window still had ~91% HBM occupancy by a resident VLLM worker on all eight devices despite 0% AICore."
+  ],
+
+  "decisions": {
+    "correctness": "PASS",
+    "handoff": "NEEDS_ONE_MORE_LOCAL",
+    "rationale": "Correctness fully passes across D <= 32768, which was the goal of this revision, and the assigned alignment hypothesis is empirically refuted with a three-build ablation. The open item is performance: four paired probes against the Direct Parent are direction-inconsistent and an order of magnitude below the noise floor, so the cost of the added SyncVectorToMte2 is not established. One more paired run in a clean load window would settle it; alternatively Main may judge correctness PASS alone sufficient."
+  },
+
+  "next_candidate_hypothesis": "Decision belongs to Main. Suggested: repeat the same four V001-versus-V002 FP32 rows=1 D=32768 pairs (or add a D=6144 pair where both variants are correct) only after a sufficiently clear load window; do not alter the source hypothesis before Main review. R019 normalization performance measurement remains deferred per Main's V002 instruction.",
+
+  "cleanup": "Remote *.o/*.d build intermediates, remote diag/ and results_diag/ directories and the scratch tarball deleted; sources, compile log and all results retained. No local source, Git history, task documents, or other route files modified or deleted.",
+  "files_touched_note": "Only files under phase4/workspaces/REDUCE-INVSCALE-X/ and phase4/local/REDUCE-INVSCALE-X/{V001,V002}/ were created or written, plus server3 /home/data4t2/lelinfeng/phase4-workspaces/REDUCE-INVSCALE-X/."
+}

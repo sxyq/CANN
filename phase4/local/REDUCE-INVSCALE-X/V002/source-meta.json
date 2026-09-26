@@ -1,0 +1,78 @@
+{
+  "ROUTE": "REDUCE-INVSCALE-X",
+  "REVISION": "V002",
+  "REVISION_KIND": "CORRECTNESS_REPAIR_ONLY",
+  "DIRECT_PARENT": "REDUCE-INVSCALE-X-V001",
+  "PARENT_SOURCE": "phase4/local/REDUCE-INVSCALE-X/V001/submission.asc",
+  "PARENT_SOURCE_SHA": "f017935d840bea5a81268d9fe137f1567df0982f4f71718f65f4672ad8da8023",
+  "PARENT_SCORE": "LOCAL_PARENT",
+  "PARENT_FORMAL_RESULT": "V001 was handed off LOCAL_REJECTED (correctness FAIL for D > 6144); no formal score, never submitted.",
+  "GRANDPARENT": "FULL-R006-V001-REDUCTION-ARCH",
+  "GRANDPARENT_SOURCE_SHA": "94ab0ef96a1a907fa187797b6c72361b2bdacfe6faf7a95d6471bd537a913266",
+
+  "ASSIGNED_HYPOTHESIS": "Correctness repair of partial collector destination alignment only: give every tile partial a 32-byte-aligned float destination so multi-tile rows reduce correctly. R019 invscale, tile size, pipeline, scheduling and parameter policy unchanged.",
+  "ASSIGNED_HYPOTHESIS_OUTCOME": "TESTED_AND_REFUTED",
+  "ASSIGNED_HYPOTHESIS_EVIDENCE": "An alignment-only build (V001 + 32-byte collector slots + strided CollapsePartials, retained at support/intermediate_alignment_plus_sync.asc for the alignment half) was compiled and run on the full 16-shape matrix. It failed D > 6144 with a signature identical to the parent (max_abs 5.4174 at D=8192, bad 2048/8192). Root-cause tracing showed the bad region is exactly the first D - kReduceTileElems elements of every row, i.e. every tile except the last, and the values were non-deterministic across runs. A sync-only build on the unchanged packed collector (support/diagnostic_sync_only.asc) passed all 16 shapes, proving packed-float ReduceSum destinations were never the defect.",
+
+  "SINGLE_HYPOTHESIS_AS_DELIVERED": "The output pass released inputX_/inputR_ to MTE2 only before the gamma/bias load, so on the next tile iteration MTE2 could overwrite those buffers with the next x/residual DataCopy while this tile's vector reads of gamma/bias were still in flight. Restore the missing vector-to-MTE2 ordering with a second SyncVectorToMte2() after the gamma/bias consumption. This is the single change relative to V001.",
+  "SINGLE_CHANGE_AUDIT": "PASS (one conceptual change relative to V001; the refuted alignment half was removed from the delivered source)",
+
+  "CONTEXT_CLASS": "HISTORICAL_DERIVED",
+  "SOURCE_PATH": "phase4/workspaces/REDUCE-INVSCALE-X/submission.asc",
+  "SOURCE_SHA": "bef271b62a2c7f2d0b0ef23f5f3610129460f5a431d7d9b3dd7ac3ea9a80ad26",
+  "SOURCE_LINES": 904,
+  "SOURCE_BYTES": 27371,
+  "route_source_status": "ROUTE_OWNED_LOCAL",
+  "route_source_sha256": "bef271b62a2c7f2d0b0ef23f5f3610129460f5a431d7d9b3dd7ac3ea9a80ad26",
+  "judge_payload_status": "NOT_SUBMITTED",
+  "judge_payload_sha256": null,
+  "judge_payload_generation": null,
+
+  "DEVIATION_FROM_ASSIGNMENT": "Main assigned V002 as the partial-destination-alignment fix. That fix was implemented first, measured, and did not repair correctness. V002 as delivered therefore carries the repair that does work (the missing SyncVectorToMte2) and drops the alignment half, because keeping it would have added a performance-relevant change to CollapsePartials inside a correctness-only revision. Flagged for Main review; not submitted anywhere.",
+
+  "UNCHANGED_FROM_V001": [
+    "R019 invscale: return 1.0f / rmsValue in ComputeRowRms, single Muls(yFp32, yFp32, invRms, valid) in WriteNormalizedRow",
+    "kReduceTileElems = 6144, kPartialCapacity = 64",
+    "packed partial collector at float indices 0,1,2,... and the single contiguous ReduceSum collapse",
+    "ReduceTileToPartial load / form-u / square / ReduceSum structure",
+    "collector flush logic",
+    "SyncMte2ToVector / SyncVectorToMte3 / SyncMte3ToVector",
+    "round-robin row += coreNum ownership, non-aligned rows forced to one core",
+    "gamma/bias reloaded tile by tile (no parameter residency)",
+    "host launch, dtype dispatch, validation, UB layout"
+  ],
+
+  "FILES": [
+    "phase4/local/REDUCE-INVSCALE-X/V002/submission.asc",
+    "phase4/local/REDUCE-INVSCALE-X/V002/submission.sha256",
+    "phase4/local/REDUCE-INVSCALE-X/V002/source-meta.json",
+    "phase4/local/REDUCE-INVSCALE-X/V002/diff.patch",
+    "phase4/local/REDUCE-INVSCALE-X/V002/local-result.json",
+    "phase4/local/REDUCE-INVSCALE-X/V002/support/direct_parent_V001.asc",
+    "phase4/local/REDUCE-INVSCALE-X/V002/support/parent.asc",
+    "phase4/local/REDUCE-INVSCALE-X/V002/support/intermediate_alignment_plus_sync.asc",
+    "phase4/local/REDUCE-INVSCALE-X/V002/support/diagnostic_sync_only.asc",
+    "phase4/local/REDUCE-INVSCALE-X/V002/support/CMakeLists.txt",
+    "phase4/local/REDUCE-INVSCALE-X/V002/support/compile.sh",
+    "phase4/local/REDUCE-INVSCALE-X/V002/support/local_types.h",
+    "phase4/local/REDUCE-INVSCALE-X/V002/support/main.asc",
+    "phase4/local/REDUCE-INVSCALE-X/V002/support/submission_shim.asc",
+    "phase4/local/REDUCE-INVSCALE-X/V002/support/runner_main.inc",
+    "phase4/local/REDUCE-INVSCALE-X/V002/support/runner_parent.asc",
+    "phase4/local/REDUCE-INVSCALE-X/V002/support/runner_candidate.asc",
+    "phase4/local/REDUCE-INVSCALE-X/V002/support/runner_v001ref.asc",
+    "phase4/local/REDUCE-INVSCALE-X/V002/support/run_correctness.sh",
+    "phase4/local/REDUCE-INVSCALE-X/V002/support/run_probes.sh",
+    "phase4/local/REDUCE-INVSCALE-X/V002/support/PRECODING-RECORD.md",
+    "phase4/local/REDUCE-INVSCALE-X/V002/support/PRECODING-RECORD-V002.md",
+    "phase4/local/REDUCE-INVSCALE-X/V002/support/compile.log",
+    "phase4/local/REDUCE-INVSCALE-X/V002/support/results/"
+  ],
+
+  "COMPILE": "PASS (server3 cann-server3 / Ascend910B3 / dav-2201 / CANN 8.5.0.alpha002; DEVICE_COMPILE=PASS, SUBMISSION_COMPILE=PASS)",
+  "LINK": "PASS (FULL_LINK=PASS; PROBE_BUILD=PASS for parent / candidate / v001ref runners)",
+  "REMOTE_SHA_CHECK": "local submission.asc sha256 == remote /home/data4t2/lelinfeng/phase4-workspaces/REDUCE-INVSCALE-X/submission.asc sha256 == bef271b62a2c7f2d0b0ef23f5f3610129460f5a431d7d9b3dd7ac3ea9a80ad26",
+
+  "DECISION": "NEEDS_ONE_MORE_LOCAL",
+  "CLEANUP": "Remote build object/intermediate files (*.o, *.d) deleted; remote diagnostic dirs diag/ and results_diag removed; sources, compile log and results retained. No local source, Git history, task documents, or other route files modified or deleted."
+}
