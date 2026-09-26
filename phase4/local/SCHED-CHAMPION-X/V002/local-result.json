@@ -3,20 +3,35 @@
   "revision": "V002",
   "direct_parent": "FROZEN_R31B_V011",
   "parent_source_sha": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "parent_score": 45.16,
+  "official_anchor": 45.16,
+  "single_hypothesis": "Group-aligned balanced ownership WITH active-core preservation (half-parallelism gate)",
+  "context_class": "FROZEN_STRONG_BASELINE_TRANSPLANT",
+  "source_path": "phase4/workspaces/SCHED-CHAMPION-X/V002/src/submission.asc",
   "local_sha256": "de1e93c74338802e646258ada08a8cac1031496a9985e585a5a89015b81bc990",
   "compile_rc": "0/0",
   "link_rc": "0/0",
   "correctness_status": "PASS",
   "correctness_total": 24,
   "correctness_failures": 0,
-  "gate_rule": "useGroupSplit = (totalGroups * 2 >= activeRowUnits)",
-  "gate_behavior": {
-    "33x100_fp32": "totalGroups=17, activeRowUnits=min(40,33)=33, 17*2=34>=33 -> USE GROUP SPLIT",
-    "17x257_fp16": "totalGroups=2, activeRowUnits=17, 2*2=4<17 -> USE PARENT ROW SPLIT",
-    "17x256_fp32": "totalGroups=17, activeRowUnits=17, 17*2=34>=17 -> group split == row split (no-op)"
-  },
   "single_change_audit": "PASS",
-  "local_verdict": "NOT_COMPLETE",
-  "measurement_status": "NOT_RUN",
-  "retry_required": true
+  "measurement_status": "COMPLETE",
+  "measurement_lease": "R2-SCHED-V002-TIMING, device 4, 2026-09-27",
+  "same_binary_results": {
+    "33x100_fp32": {"parent": "PASS (0.031/0.007)", "cand": "FAIL (0.622/2.191)"},
+    "17x257_fp16": {"parent": "FAIL (0.226/1.955)", "cand": "PASS (0.078/0.078)"},
+    "17x256_fp32": {"parent": "FAIL (0.245/0.100)", "cand": "FAIL (0.407/3.012)"},
+    "7x65_fp32": {"parent": "FAIL (0.178/0.134)", "cand": "FAIL (0.157/3.867)"}
+  },
+  "paired_results": {
+    "33x100_fp32": {"median_delta_pct": 39.5, "note": "3/4 OUTLIER, only p3 clean (-2.5%). Cannot establish."},
+    "17x257_fp16": {"median_delta_pct": 13.8, "note": "KEY: NO V001 +145% regression. Clean pairs -1.0/+13.8/+14.7%. Gate works."},
+    "17x256_fp32": {"median_delta_pct": -2.5, "note": "Mixed, near noise."},
+    "7x65_fp32": {"median_delta_pct": 14.4, "note": "Slight regression signal, 1/4 outlier."}
+  },
+  "local_verdict": "NEEDS_ONE_MORE_LOCAL",
+  "local_verdict_reason": "No shape has both parent+cand same-binary PASS (device heavily contaminated). 17x257 FP16 shows NO parallelism collapse (~+14% vs V001 +145%) confirming gate works. 33x100 primary shape too contaminated to measure. Need cleaner window.",
+  "local_best": "NONE",
+  "retry_required": true,
+  "retry_note": "Retry on cleaner device window. Key gate validation already achieved: 17x257 FP16 regression eliminated."
 }
