@@ -126,3 +126,14 @@ See `phase4/control/consolidation-20260924.md`.
 - Historical non-merged branch unique trees archived under `phase4/archive/historical-branches-20260924/`.
 - R31B V011 `submission.asc` restored.
 - Ready for second six-lane container `cann-next6/`.
+
+## FOURTH-PASS CONSOLIDATION (2026-09-26)
+
+See `phase4/control/worktree-consolidation-20260926.md` and
+`phase4/control/WORKTREE_DELETION_PLAN.tsv`.
+
+- Six `cann-next6/*` MAIN-2 worktrees and two `cann-sixlane/*` historical
+  worktrees: evidence committed to their own route branch, pushed, merged into
+  canonical, then `git worktree remove` (no `--force`).
+- Canonical `cann` and the six MAIN-1 sixlane worktrees retained.
+- No remote branch deleted, no history rewritten, no new revision, no submission.

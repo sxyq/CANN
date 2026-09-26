@@ -8,7 +8,7 @@ Today (2026-09-24): all five timing routes are WINDOW UNQUALIFIED 2/2. No window
 
 Structural reference (simplest complete runner already in use):
 
-- Path: `cann-next6/SCHED-ROWGROUP-X/phase4/workspaces/SCHED-ROWGROUP-X/support/runner_main.inc`
+- Path: `phase4/workspaces/SCHED-ROWGROUP-X/support/runner_main.inc`
 - Why: single process, fixed warmup/repeat, dumps all samples (`*-samples.tsv`) and jitter (`*-jitter.txt`), Parent and Candidate share the same include pattern via macro-selected submission.
 - Sibling runners that must converge on this protocol (do not invent a third method):
   - ALIGN: `ALIGN-TAIL-X/.../V001/support/runner_main.inc` (wall-clock; missing sample dump)
@@ -65,9 +65,11 @@ Applies to all MAIN-1 and MAIN-2 Routes from the next device window onward. Meas
 
 ### Warmup
 
-- Default: **10** launch+full-stream-sync cycles before any timed sample (was 3–5).
-- Optional longer (20) if first timed sample still > 1.5× sample median in a dry run.
+- Default: **45** launch+full-stream-sync cycles before any timed sample (was 10; was 3–5).
+- Rationale (2026-09-25 measurement-layer research): device/driver settle needs ~40–45 launches (~5–9 ms). warmup=10 left the entire first block of short kernels (~7–110 µs) unsettled and produced the systematic B1>B2 same-binary failure on ALIGN/REDUCE while longer SCHED/BATCH kernels passed. Evidence: `phase4/control/measurement-layer-b1b2-research-20260925.md`. Same-binary PASS-grade already observed at warmup≥30–50 on REDUCE 1×8192 and ALIGN 2×100.
+- Optional longer (50–60) if first block still >1.2× second-block median in a dry run.
 - Correctness D2H / golden compare **never** interleaved with the timed loop.
+- Per-route same-binary re-validation with this warmup is required before any new P/C for that exact shape. Criterion unchanged: MAD/median ≤0.10 AND block drift ≤0.10.
 
 ### Measurement count
 
@@ -123,11 +125,11 @@ Across window-qual reps: same stats on the rep medians (current gate basis).
 
 ## Same-binary validation (noise floor)
 
-Status: **RUN 2026-09-24** on server3 d4, SCHED Parent (`srx_ref_parent_probe`, method DEVICE_EVENT_PRIMARY + HOST_WALL_SECONDARY). Evidence: `cann-next6/SCHED-ROWGROUP-X/phase4/local/SCHED-ROWGROUP-X/V001/support/results-ref-harness/d4/`.
+Status: **RUN 2026-09-24** on server3 d4, SCHED Parent (`srx_ref_parent_probe`, method DEVICE_EVENT_PRIMARY + HOST_WALL_SECONDARY). Evidence: `phase4/local/SCHED-ROWGROUP-X/V001/support/results-ref-harness/d4/`.
 
 ### Unified reference harness (built)
 
-- Source: `cann-next6/SCHED-ROWGROUP-X/phase4/workspaces/SCHED-ROWGROUP-X/support/runner_ref.inc` + `runner_ref_parent.asc`
+- Source: `phase4/workspaces/SCHED-ROWGROUP-X/support/runner_ref.inc` + `runner_ref_parent.asc`
 - Binary: server3 `.../SCHED-ROWGROUP-X/support/build/srx_ref_parent_probe`
 - Lifecycle: aclInit / setDevice / stream / malloc / H2D **once**; warmup once; measurement blocks **in one process**; D2H/cleanup once.
 - Per sample: `DEVICE_EVENT_US` (aclrtRecordEvent start/stop) primary; `HOST_WALL_US` secondary.
@@ -242,5 +244,5 @@ Do not implement NEXT_CANDIDATE_HYPOTHESIS revisions (no V002+ for timing routes
 - Protocol file and control-only commits: MAIN-2 (unified doc also governs MAIN-1 measurement).
 - MAIN-1 `cann-sixlane/*` ownership unchanged.
 - UB-LIVENESS-X V003: ONLINE_CANDIDATE, JUDGE_READY=YES, READY_FOR_FORMAL_SUBMISSION; **JUDGE_OWNER_REQUIRED** (no named owner in control); MAIN-2 does not self-submit.
-- Exact source path `cann-next6/UB-LIVENESS-X/phase4/local/UB-LIVENESS-X/V003/submission.asc`, SHA `2eb9b5d087267a54fb84f8734847ecb68cf94b967102693c0d150fd57d6da7cd`.
+- Exact source path `phase4/local/UB-LIVENESS-X/V003/submission.asc`, SHA `2eb9b5d087267a54fb84f8734847ecb68cf94b967102693c0d150fd57d6da7cd`.
 - Stage: **LOCAL_MEASUREMENT_REVALIDATION** (not DONE).

@@ -113,16 +113,95 @@ PROJECT
 │   ├── R31B-V011 45.16
 │   └── R31A-V016 45.00
 │
-└── EXPLORE ×4
-    ├── MIX-A-V003 44.69
-    ├── WIDE-X-FRESH4
-    ├── MODE-X-R015C
-    └── EXT-ASCEND-X (NOT_STARTED)
+└── EXPLORE
+    ├── MAIN-1
+    │   ├── MIX-A-V003 44.69
+    │   ├── WIDE-X-FRESH4
+    │   ├── MODE-X-R015C
+    │   ├── DTYPE-SPECIAL-X
+    │   └── EXT-ASCEND-X (PARKED)
+    └── MAIN-2 (six routes, worktrees consolidated 2026-09-26)
+        ├── SCHED-ROWGROUP-X  OFFICIAL 15/15 22.27
+        ├── UB-LIVENESS-X     JUDGE_READY, not submitted
+        ├── ALIGN-TAIL-X
+        ├── BATCH-RESIDENT-X
+        ├── REDUCE-INVSCALE-X
+        └── ASYNC-TRIPLE-X
 ```
 
 R31A / R31B 是固定 EXPLOIT，不得写进 4 条 EXPLORE 方向。详见 `phase4/control/next-round-plan.md`。
 
-EPI-X-FRESH is PARKED; retain its source and local result. The six Route Agents, isolated worktrees, branches, and contexts await a session that can create them. Do not treat shared source-seed directories or previous Agent IDs as current ownership.
+EPI-X-FRESH is PARKED; retain its source and local result. Do not treat shared source-seed directories or previous Agent IDs as current ownership.
+
+## MAIN-1 保留的 worktree
+
+以下六个 MAIN-1 worktree 全部保留，本轮未触碰、未清理、未删除：
+
+```text
+/Users/sunyiyang/Desktop/Project/cann-sixlane/R31B
+/Users/sunyiyang/Desktop/Project/cann-sixlane/R31A
+/Users/sunyiyang/Desktop/Project/cann-sixlane/MIX-A
+/Users/sunyiyang/Desktop/Project/cann-sixlane/WIDE-X-FRESH4
+/Users/sunyiyang/Desktop/Project/cann-sixlane/MODE-X-R015C
+/Users/sunyiyang/Desktop/Project/cann-sixlane/DTYPE-SPECIAL-X
+```
+
+加上 canonical workspace `/Users/sunyiyang/Desktop/Project/cann`。
+
+`cann-sixlane/ASYNC-TRIPLE-X` 与 `cann-sixlane/EXT-ASCEND-X` 不属于 MAIN-1 保护集，
+证据回收后已删除（见下节）。
+
+## MAIN-2 六条 route 最终状态
+
+| Route | Final Revision | Local verdict | Online status | Official result | Disposition | Evidence path |
+|---|---|---|---|---|---|---|
+| SCHED-ROWGROUP-X | V001 | `ONLINE_CANDIDATE`；same-binary PASS；P/C 33x100 median −51.38% | SUBMITTED | **15/15, 22.27**（parent 17.14，submission `6ab6c41b694b590c3ce2ef67`） | KEEP（正式结果高于 parent） | `phase4/online/SCHED-ROWGROUP-X/V001/`、`phase4/local/SCHED-ROWGROUP-X/V001/`、`phase4/workspaces/SCHED-ROWGROUP-X/` |
+| UB-LIVENESS-X | V003（V001/V002 `LOCAL_REJECTED`） | `ONLINE_CANDIDATE`；correctness 全量 `bad=0` | `NOT_FORMALLY_SUBMITTED`（`JUDGE_READY`，无 `result.json`） | 无 | JUDGE_PENDING | `phase4/local/UB-LIVENESS-X/V003/`、`phase4/control/judge-handoff-ub-v003.md` |
+| ALIGN-TAIL-X | V001 | `NEEDS_ONE_MORE_LOCAL` + `MEASUREMENT_BLOCKED`；warmup=45 same-binary PASS，4 组 P/C 方向不一致 | NOT_SUBMITTED | 无 | KEEP | `phase4/local/ALIGN-TAIL-X/V001/`、`phase4/workspaces/ALIGN-TAIL-X/` |
+| BATCH-RESIDENT-X | V001 | `NEEDS_ONE_MORE_LOCAL` + `MEASUREMENT_BLOCKED`；window qual 2/2 FAIL，warmup=45 候选侧被污染 | NOT_SUBMITTED | 无 | KEEP | `phase4/local/BATCH-RESIDENT-X/V001/`、`phase4/workspaces/BATCH-RESIDENT-X/` |
+| REDUCE-INVSCALE-X | V002（V001 `LOCAL_REJECTED`） | `NEEDS_ONE_MORE_LOCAL` + `MEASUREMENT_BLOCKED`；warmup=45 same-binary FAIL | NOT_SUBMITTED | 无 | KEEP | `phase4/local/REDUCE-INVSCALE-X/V001/`、`.../V002/`、`phase4/workspaces/REDUCE-INVSCALE-X/` |
+| ASYNC-TRIPLE-X | V001 | `NEEDS_ONE_MORE_LOCAL` + `MEASUREMENT_BLOCKED`；window qual 2/2 FAIL | NOT_SUBMITTED | 无 | KEEP | `phase4/local/ASYNC-TRIPLE-X/V001/`、`phase4/workspaces/ASYNC-TRIPLE-X/` |
+
+SCHED-ROWGROUP-X 的正式结果已在仓库内核实（`phase4/online/SCHED-ROWGROUP-X/V001/result.json`：
+15/15、`officialScore` 22.27、`identityStatus=LOCAL_SHA_EQ_REMOTE_SHA`），
+control 已同步，**本轮未再次提交**。
+
+两条非 MAIN-1 历史路线：
+
+| Route | Revision | 结论 | Disposition | Evidence path |
+|---|---|---|---|---|
+| ASYNC-TRIPLE-X（MAIN-1 copy） | V001 | parent 与 candidate 同为 507035，correctness 未评定，无 timing | HISTORICAL_ONLY | `phase4/archive/active-sixlane-20260924/ASYNC-TRIPLE-X/V001/` |
+| EXT-ASCEND-X | V001 | `FIX_1..FIX_4` 后 FP32 27/27 仍 FAIL | PARK（`PARK_EXPLORE_SLOT`） | `phase4/local/EXT-ASCEND-X/V001/` |
+
+## WORKTREE CONSOLIDATION STATUS
+
+完整记录：`phase4/control/worktree-consolidation-20260926.md`，
+删除前安全核对表：`phase4/control/WORKTREE_DELETION_PLAN.tsv`。
+
+```text
+已回收后删除（8）：
+  cann-next6/ASYNC-TRIPLE-X      branch exp/next6-async-triple-x      @d5ab9a4
+  cann-next6/BATCH-RESIDENT-X    branch exp/next6-batch-resident-x    @e95301e
+  cann-next6/SCHED-ROWGROUP-X    branch exp/next6-sched-rowgroup-x    @b246c45
+  cann-next6/REDUCE-INVSCALE-X   branch exp/next6-reduce-invscale-x   @d855cfc
+  cann-next6/ALIGN-TAIL-X        branch exp/next6-align-tail-x        @ce4abd8
+  cann-next6/UB-LIVENESS-X       branch exp/next6-ub-liveness-x       @ccd968e
+  cann-sixlane/ASYNC-TRIPLE-X    branch exec/sixlane-20260924-async-triple-x @1632518
+  cann-sixlane/EXT-ASCEND-X      branch exec/sixlane-20260923-ext-ascend-x   @a758f65
+
+保留（7）：
+  cann                          canonical, exp/independent-breadth
+  cann-sixlane/R31B R31A MIX-A WIDE-X-FRESH4 MODE-X-R015C DTYPE-SPECIAL-X   MAIN-1 PROTECTED
+```
+
+为什么删：每条非 MAIN-1 路线的 A–H 资产（exact source / SHA / revision metadata /
+build logs / correctness / local timing / online result / research handoff）都已先提交到
+它自己的 route branch 并 push，再逐字节合入 canonical 对应位置并校验通过；
+worktree 删除只删工作目录，不删任何路线证据，也不删任何 branch。
+
+为什么留：canonical 是唯一整合点；六个 MAIN-1 worktree 是受保护的活跃工作树，
+各自仍有未提交的 `local-result.json` 修改，与本轮收口无关。
+
 
 ## 当前阶段（同步完成，等待 Agent-capable session）
 
@@ -135,7 +214,9 @@ EPI-X-FRESH is PARKED; retain its source and local result. The six Route Agents,
 ✅ Local/Online Calibration
 ✅ Champion Review
 ✅ Six-route state and parent rules synchronized
-🔵 Create six isolated Route Agents / worktrees / branches / contexts
+✅ Six isolated Route Agents / worktrees / branches / contexts created and run
+✅ Non-MAIN-1 worktree consolidation (2026-09-26) — see WORKTREE CONSOLIDATION STATUS
+🔵 Next route tree decided by Main Review
 
 No Kernel experiment, server3 run, or CANNJudge submission is part of this synchronization.
 ```

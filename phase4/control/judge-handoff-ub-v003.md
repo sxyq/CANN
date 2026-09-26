@@ -13,7 +13,7 @@
 JUDGE_READY=YES
 NOTICE=READY_FOR_FORMAL_SUBMISSION
 route=UB-LIVENESS-X revision=V003
-evidence=/Users/sunyiyang/Desktop/Project/cann-next6/UB-LIVENESS-X/phase4/local/UB-LIVENESS-X/V003/
+evidence=phase4/local/UB-LIVENESS-X/V003/
 exact_source=submission.asc (SHA above)
 
 ## Ownership
