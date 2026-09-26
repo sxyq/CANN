@@ -125,3 +125,29 @@ Forbidden MAIN-1 axes that MAIN-2 must not create: broad R31A/R31B exploit evolu
 | EPILOGUE-FUSE-X | `cann-main2-r2/EPILOGUE-FUSE-X/phase4/research/EPILOGUE-FUSE-X/TRACK-B-HYPOTHESES.md` | 4 | H1 SCALE-FOLD | `.../MAIN-APPROVAL-V001.md` |
 
 All three H1s are single-variable, orthogonal to MAIN-1 reserved axes, and distinct from old MAIN-2 donors. Implementation of V001 is in progress on the route branches.
+
+## Shared build/correctness findings (2026-09-27)
+
+1. Host-compile of `.asc` on server3 needs `CPLUS_INCLUDE_PATH` / `C_INCLUDE_PATH` to include HCC 7.3.0 C++ headers, else bisheng-generated `asc_plugin_binary_register_code.c` cannot find `<vector>`.
+2. Ascend vector `Add` with 1-element operands must be 32B-aligned; a 4-byte offset slot triggers ACL 507035. Use `kSmallFp32ScalarStride` (8) slot alignment.
+3. Frozen parent already fails some local-runner goldens on wide FP32 D=16384/32768 (max_abs≈0.44–1.2). These are PRE_EXISTING parent/harness mismatches, not V001 regressions. Do not use those shapes as regression gates until golden is reconciled with Official tolerance.
+4. Working NPU probe pattern: single `npu_correctness.asc` ASC executable target linking `ascendcl tiling_api register platform unified_dlog`, not the broken dual-compile host-runner shortcut. Reference: EPILOGUE-FUSE-X `CMakeLists.txt` + `npu_correctness.asc`.
+
+## V001 implementation results (2026-09-27)
+
+| Route | SOURCE_SHA | COMPILE_RC | LINK_RC | CORRECTNESS | LOCAL_VERDICT | Branch commit |
+|---|---|---|---|---|---|---|
+| SCHED-CHAMPION-X | `ed232872fa1837678a0a05fc16de9f06a725d61ff9d85663193fdc49e8f33678` | 0 (probe/device/submission) | 0 | 24/24 PASS (FP32/FP16/BF16 × 8 shapes) | NOT_COMPLETE / MEASUREMENT_BLOCKED | `exp/main2-r2-sched-champion` |
+| REDUCE-HIER-X | `b9c618b3b53fd2988b667f0c6830fa4a7206aef0fde69f92cdb5545ba6503521` | 0 | 0 | PASS (FP32/FP16/BF16 multi-tile + single-tile) | NOT_COMPLETE / MEASUREMENT_BLOCKED | `exp/main2-r2-reduce-hier` |
+| EPILOGUE-FUSE-X | `89868a52b59fcaf1d68220398698ef033827a50b1559df9fc69ffcab105dd597` | 0 | 0 | 53/54 PASS (1 pre-existing parent fail 2x16384 FP32 wide) | NOT_COMPLETE / MEASUREMENT_BLOCKED | `exp/main2-r2-epilogue-fuse` pushed |
+
+### SCHED correctness-only repair note
+
+Group-unit ownership exposed a latent `xBuf_` alias race in `ProcessNarrowMidOverlap` BF16: `SetFlag<V_MTE2>(inputRelease)` fired before MTE3 Store drained `xBuf_`. Fixed with `SyncMTE3ToV()` before the flag. Classified as execution-contract E correctness repair; no new performance mechanism. Frozen parent passes the same 24/24 matrix (the race does not fire when each core owns one row).
+
+### Next
+
+1. Qualified device window → same-binary then interleaved P/C under `local-timing-protocol.md` for each route (priority SCHED → REDUCE → EPILOGUE).
+2. Batch-2 routes (COEFF-LOCALITY-X, VECTOR-MATH-X) may start research once batch-1 is stable (now true).
+3. UB-CHAMPION-X remains gated on UB V003 Official.
+4. No ONLINE_WORTHY until local paired deltas exist.
