@@ -127,9 +127,59 @@
 每次 server3 状态查询只代表其记录时间。恢复测量前须按统一 timing protocol 重新查询设备并取得独占 lease；候选只在 Parent exact-shape same-binary 合格后进入 P/C。
 
 - **P0，按串行顺序**：R31A V021 ← V016；R31B V016 ← V011；MIX-A V007 ← V003；MODE-X-R015C r4 ← r3；DTYPE-SPECIAL-X V001 ← R31B-V011。五个当前 Route Candidate 均为 `MEASUREMENT_BLOCKED`；这次实时快照没有合格设备，same-binary 与新 P/C 都未运行。
+- R31A V021 的 Route-owned paired runner 已按当前 warmup/配对协议更新。源码 SHA-256 `c95dec4cfd552020462e509fa3fbbf2dbe3b10162ff719cf735df15b1f08b2e7`；加载 CANN 环境后 Parent module、Candidate module 和 runner 构建返回码为 0，runner ELF SHA-256 `d11fa9aa541e5c75dc38bd509cd515ca44347162741f6b93b7a0b371aecfde11`。Host bridge tests 4/4 PASS；首次未加载 CANN 环境的失败日志保留。改后 runner 尚未运行，NPU correctness、same-binary 和 P/C 仍缺；Route commit `5adabc4739ea3bf4dac7e9a03637a3b889def461` 已推送并与分支远端一致。
 - **P1**：WIDE-X-FRESH4 V001。先确认 Fresh Blind 来源并准备可核验的 BUILD-FIX-001 Parent executable control，再做 exact-shape same-binary；该 Route 当前不占五个执行 slot。
 - **P2**：无。已知正式 Online 结果均有 calibration 行；缺少或不可信的 Local 数值已注明，不补造。
 - **P3**：R31B V001–V010、V012–V014；R31A V002–V015、V018；MIX-A V004–V006。逐版记录见 `main1-revision-ledger.tsv`。这些版本当前不影响五条 Route 的直接父子测量，也没有值得占用 server3 的新问题；除非新证据改变 lineage 或 calibration 判断，否则不重跑。
+
+## Route Best 状态与逐版本 lineage
+
+`OFFICIAL_BEST` 指经 Official 结果确认的最高路线成绩；若缺少正式 Promote 决定，表中会明确标注。`LOCAL_BEST` 只接受完整有效的 server3 配对测量和 Main `LOCAL_ACCEPTED`；本次八条路线都没有满足条件的 Local Best。逐版原始字段、SHA、父版本、证据位置和缺失项以 `main1-revision-ledger.tsv` 为准。
+
+| Route | OFFICIAL_BEST | LOCAL_BEST | CURRENT_CANDIDATE / LOCAL_VERDICT | ONLINE_QUEUE_STATE |
+|---|---|---|---|---|
+| R31B | V011, 45.16, 15/15, `PROMOTED` | None | V016, `MEASUREMENT_BLOCKED` | None |
+| R31A | V016, 45.00, 15/15, `PROMOTED` | None | V021, `MEASUREMENT_BLOCKED` | None |
+| MIX-A | V003, 44.69, 15/15; promotion remains inconclusive because its recorded parent V002 failed | None | V007, `MEASUREMENT_BLOCKED` | None |
+| WIDE-X-FRESH4 | None | None | V001, `MEASUREMENT_BLOCKED`; Parent executable and Fresh Blind provenance unresolved | None; evidence hold outside current five slots |
+| MODE-X-R015C | None | None | r4, `MEASUREMENT_BLOCKED`; correctness PASS on 3 recorded shapes | None |
+| DTYPE-SPECIAL-X | None | None | V001, `MEASUREMENT_BLOCKED`; correctness PASS 39/39 | None |
+| ASYNC-TRIPLE-X (Main-1 historical copy) | None | None | V001, `COLLISION_FROZEN`; parent and Candidate smoke had unresolved 507035 | None; no Main-1 execution |
+| EXT-ASCEND-X | None | None | V001, `CORRECTNESS_FAILED`; parked after 27/27 failures | None |
+
+```text
+R31B: seed -> V001 43.19 -> V002 43.78 [PROMOTED by score audit] -> V003 43.68 [REJECTED]
+      V003 -> V004 runtime failure -> V005 runtime/correctness failure
+      V003 -> V006 43.91 [PROMOTED] -> V007 42.07 [REJECTED]
+            -> V008 runtime failure; V009 43.81 [REJECTED]; V010 43.91 tie [no promotion]
+      V010 -> V011 45.16 [PROMOTED / OFFICIAL_BEST]
+      V011 -> V012 45.14 [REJECTED]; V013 45.07 [REJECTED]
+           -> V014 [LOCAL EVIDENCE INCOMPLETE]; V015 [MEASUREMENT_BLOCKED]; V016 [CURRENT / MEASUREMENT_BLOCKED]
+
+R31A: V000 -> V001 [BUILD_FAILED] -> V002 43.87 [first valid Official result]
+      V002 -> V003 43.16 [REJECTED]; V004 comment-only [HISTORICAL]
+           -> V005 43.60 [REJECTED]; V006 43.77 [REJECTED]; V007 43.65 [REJECTED]
+           -> V008 42.79 [REJECTED]; V009 42.97 [REJECTED]; V010 44.09 [PROMOTED]
+      V010 -> V011 42.18 [REJECTED]; V012 44.05 [REJECTED] -> V013 44.70 [PROMOTED]
+      V013 -> V014 44.25 [REJECTED]; V015 44.75 [PROMOTED] -> V016 45.00 [PROMOTED / OFFICIAL_BEST]
+      V016 -> V017 44.45 [REJECTED; local proxy misleading]
+           -> V018 [SOURCE ONLY]; V019/V020 [CORRECTNESS_FAILED]; V021 [CURRENT / MEASUREMENT_BLOCKED]
+
+MIX-A: V001 [WRONG ANSWER] -> V002 [WRONG ANSWER] -> V003 44.69 [Official result; promotion inconclusive]
+       V003 -> V004 43.73 [REJECTED]; V005 44.07 [REJECTED]
+             -> V006 [LOCAL EVIDENCE INCOMPLETE]; V007 [CURRENT / MEASUREMENT_BLOCKED]
+
+WIDE-X-FRESH4: BUILD-FIX-001 [valid build/correctness route base, no performance result]
+               -> V001 [correctness PASS; Parent control unresolved; MEASUREMENT_BLOCKED]
+MODE-X-R015C: r1 [missing revision placeholder]; r2 [CORRECTNESS_FAILED]
+              -> r3 [valid correctness base; LOCAL EVIDENCE INCOMPLETE]
+              -> r4 [correctness PASS; CURRENT / MEASUREMENT_BLOCKED]
+DTYPE-SPECIAL-X: R31B-V011 [Parent] -> V001 [39/39 correctness PASS; CURRENT / MEASUREMENT_BLOCKED]
+ASYNC-TRIPLE-X: R013-derived seed -> V001 [runtime 507035 unresolved; collision-frozen]
+EXT-ASCEND-X: V001 [27/27 correctness failures after retained fix attempts; PARKED]
+```
+
+The complete revision ledger lists every retained version, including Main-1 ASYNC collision evidence and parked EXT results. Historical versions with no recoverable local samples remain `MISSING_LOCAL_SCORE` or `LOCAL_SCORE_INVALID`; no result was inferred from compile, correctness, later revisions, or Official scores.
 - SCHED-ROWGROUP-X V001 属 Main-2。已核实 Judge 正式结果 15/15、Official 22.27、LOCAL/SIDECAR/REMOTE SHA 一致；本地 33x100 配对改善方向与 Official 上升方向一致。局部 latency 百分比与 Official score points 不可直接比较，单条样本不足以改本地 evaluator。结果已追加到 shared local-online calibration 表。
 
 ## 当前五个 MAIN-1 Agent 与双轨工作
