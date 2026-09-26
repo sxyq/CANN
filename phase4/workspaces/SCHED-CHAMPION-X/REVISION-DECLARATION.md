@@ -7,20 +7,16 @@ PARENT_SOURCE_SHA=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15
 PARENT_SCORE=45.16
 OFFICIAL_ANCHOR=45.16
 CURRENT_LOCAL_BEST=NONE
-SINGLE_HYPOTHESIS=HYPOTHESIS-1 GROUP-ALIGNED BALANCED OWNERSHIP: replace row-unit base/extra split in Process() with row-group-unit split (rowGroup=32/gcd(rowBytes,32)); whole-group ownership only. Do not change host requestedBlocks, mode selection, DMA segmentation, wide path, dtype path, reduction, UB lifetime, epilogue arithmetic.
+SINGLE_HYPOTHESIS=HYPOTHESIS-1 GROUP-ALIGNED BALANCED OWNERSHIP: replace row-unit base/extra split in Process() with row-group-unit split (rowGroup=32/gcd(rowBytes,32)); whole-group ownership only.
 CONTEXT_CLASS=FROZEN_STRONG_BASELINE_TRANSPLANT
-WHY_NOT_DUPLICATE_MAIN1=NON_OVERLAP_MATRIX in phase4/control/main2-r2-route-registry.md; cann-sixlane not read
-WHY_NOT_DUPLICATE_MAIN2=parent is frozen R31B-V011; no rowGroup ownership present (NON_DUPLICATION_AUDIT=PASS); donor SCHED-ROWGROUP-X is a different parent with different win channel
+WHY_NOT_DUPLICATE_MAIN1=NON_OVERLAP_MATRIX; cann-sixlane not read
+WHY_NOT_DUPLICATE_MAIN2=parent is frozen R31B-V011; no rowGroup ownership present (NON_DUPLICATION_AUDIT=PASS)
 MAIN_APPROVAL=YES
 APPROVAL_DOC=phase4/research/SCHED-CHAMPION-X/MAIN-APPROVAL-V001.md
 SINGLE_CHANGE_AUDIT=PASS
-SOURCE_SHA=5f3d36b7d985b48ab604e20465671373b0163582bd60f5ce7ca7398f88896a2c
-COMPILE_DEVICE_RC=0
-COMPILE_SUBMISSION_RC=0
-LINK_DEVICE_RC=0
-LINK_SUBMISSION_RC=0
-DEVICE_ALINK_SHA=23aa0349ba1d15fb33feed2f8f6a872c7a0536a3a74d3e5c09c25696e535a98d
-SUBMISSION_ALINK_SHA=848fb4cd18ed764de59dd3fad4632b597945fba9c64b9847a9e312b42f12ab76
-CORRECTNESS=BLOCKED_TOOLCHAIN
+CORRECTNESS_FIX=ProcessNarrowMidOverlap sync: moved SetFlag<V_MTE2>(inputRelease) after MTE3 Store drain (xBF16 xBuf_ aliasing race); execution-contract I, no new performance mechanism
+SOURCE_SHA=ed232872fa1837678a0a05fc16de9f06a725d61ff9d85663193fdc49e8f33678
+COMPILE_RC=0/0 LINK_RC=0/0
+CORRECTNESS=PASS 24/24
 LOCAL_VERDICT=NOT_COMPLETE
 MEASUREMENT=MEASUREMENT_BLOCKED
