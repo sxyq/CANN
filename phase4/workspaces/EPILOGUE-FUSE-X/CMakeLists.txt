@@ -46,3 +46,26 @@ target_link_libraries(epilogue_fuse_x_probe PRIVATE
 target_compile_options(epilogue_fuse_x_probe PRIVATE
     $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=dav-2201>
     -std=c++17)
+
+function(efx_add_ref_probe target source)
+    add_executable(${target} ${source})
+    target_include_directories(${target} PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/support
+        ${ASCEND_HOME_PATH}/aarch64-linux/include
+        /usr/include/c++/11
+        /usr/include/aarch64-linux-gnu/c++/11)
+    target_link_directories(${target} PRIVATE
+        ${ASCEND_HOME_PATH}/lib64)
+    target_link_options(${target} PRIVATE
+        -L/usr/lib/gcc/aarch64-linux-gnu/11
+        -L/usr/lib/aarch64-linux-gnu)
+    target_link_libraries(${target} PRIVATE
+        ascendcl tiling_api register platform unified_dlog dl m graph_base)
+    target_compile_options(${target} PRIVATE
+        $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=dav-2201>
+        -std=c++17)
+endfunction()
+
+efx_add_ref_probe(efx_ref_parent support/runner_ref_parent.asc)
+efx_add_ref_probe(efx_ref_v001 support/runner_ref_v001.asc)

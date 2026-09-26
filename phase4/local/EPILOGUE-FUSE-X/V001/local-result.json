@@ -2,8 +2,8 @@
   "ROUTE": "EPILOGUE-FUSE-X",
   "REVISION": "V001",
   "SINGLE_HYPOTHESIS": "HYPOTHESIS-1 SCALE-FOLD",
-  "LOCAL_VERDICT": "NOT_COMPLETE",
-  "VERDICT_REASON": "Correctness PASS (53/54; 1 pre-existing parent failure) and compile/link PASS; paired performance measurement not yet run (no qualified device window under local-timing-protocol.md).",
+  "LOCAL_VERDICT": "NEEDS_ONE_MORE_LOCAL",
+  "VERDICT_REASON": "Correctness PASS (53/54; 1 pre-existing parent failure), compile/link PASS, timing run on d5. 4/6 shapes MEASUREMENT_PROTOCOL_BLOCKED_FOR_SHAPE (short-kernel MAD/med gate). The one fold-active shape with valid same-binary (4x8192 FP32) shows mixed P/C: 1 parent-side outlier pair, 2/3 clean pairs favor Candidate but within the noise band the wide control demonstrates. No direction-consistent improvement beyond same-binary noise floor.",
   "BUILD": {
     "host": "cann-server3",
     "cmake_rc": 0,
@@ -36,10 +36,32 @@
     "sync_events_barriers": "count and placement unchanged"
   },
   "MEASUREMENT": {
-    "status": "NOT_RUN",
-    "reason": "No qualified window under local-timing-protocol.md at build time; timing optional for this turn per Main instruction.",
-    "block_class_if_unavailable": "MEASUREMENT_BLOCKED"
+    "status": "COMPLETE",
+    "device": "server3 d5 (lease R2-EPI-V001-TIMING)",
+    "method": "DEVICE_EVENT_PRIMARY + HOST_WALL_SECONDARY",
+    "warmup": 45,
+    "samebinary": {
+      "shapes_total": 6,
+      "shapes_pass": 2,
+      "shapes_blocked": 4,
+      "pass_shapes": ["4x8192 FP32", "2x16384 FP32 wide control"],
+      "blocked_class": "MEASUREMENT_PROTOCOL_BLOCKED_FOR_SHAPE"
+    },
+    "paired": {
+      "shape_fold_active": "4x8192 FP32",
+      "pairs": 4,
+      "deltas_pct": [-52.01, 1.85, -9.04, -5.50],
+      "clean_pairs_deltas_pct": [1.85, -9.04, -5.50],
+      "pair1_note": "Parent median 13.96 us is ~2x its same-binary median (6.58-6.70); parent-side outlier, retained per protocol",
+      "direction": "2/3 clean pairs favor Candidate; both within same-binary noise band",
+      "wide_control_deltas_pct": [-1.22, -4.22, -2.89, 7.81],
+      "wide_control_note": "Fold does not apply on wide path; mixed signs confirm measurement band ~+/-5% on short kernels"
+    },
+    "summary_path": "support/results-timing-v001/SUMMARY.md",
+    "raw_path": "support/results-timing-v001/"
   },
+  "ONLINE_WORTHY": "NO",
+  "ONLINE_DECISION": "KEEP_ACCUMULATING / NEEDS_ONE_MORE_LOCAL — no clean win beyond noise floor",
   "PARENT_CONTROL_RUN": {
     "purpose": "Prove the wide-FP32 failure is pre-existing and that PASS-case deltas are fold rounding only",
     "log": "support/correctness-parent-control.log"
