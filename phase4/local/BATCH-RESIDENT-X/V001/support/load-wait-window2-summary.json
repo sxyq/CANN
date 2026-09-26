@@ -1,0 +1,25 @@
+{
+  "route": "BATCH-RESIDENT-X",
+  "revision": "V001",
+  "purpose": "Second paired probe set after Main NEEDS_ONE_MORE_LOCAL",
+  "status": "NO_STRICT_CLEAN_WINDOW",
+  "source_sha256_unchanged": "ad961c5837971bf989c9989b822cc2719a6a285c60969d35e1530463b7c8721d",
+  "first_set_retained": "support/probes/ (16 files)",
+  "second_set_run": false,
+  "criteria": "no VLLM/python pressure procs; all AICore==0; max HBM frac<=0.90; no concurrent next6 runtime on chosen device",
+  "waited_utc_window": [
+    "2026-09-23T21:03Z to 2026-09-23T21:36Z (15min, parser-broken)",
+    "2026-09-23T21:43Z to 2026-09-23T21:55Z (12min, peer-compatible parser)"
+  ],
+  "peer ALIGN-TAIL-X": "atx_wait_clean2.sh ended NO_CLEAN_WINDOW after 50 polls (~21:49Z)",
+  "observed_blocking": [
+    "8 VLLM/python pressure procs resident since Sep13/Sep22 (VLLMWorker_TP, VLLMEngineCor, python)",
+    "max HBM frac ~0.987-1.000 (threshold 0.90)",
+    "AICore mostly 0 on d4-d6; occasional python AICore spikes on d7",
+    "concurrent next6: UB-LIVENESS-X probes on device 6; ALIGN-TAIL-X waiting"
+  ],
+  "decision": "NEEDS_ONE_MORE_LOCAL",
+  "decision_rationale": "Main requested clean-window second paired set. Strict clean (no VLLM/python pressure procs, all AICore==0, max HBM frac<=0.90) not observed after extended wait; VLLM infrastructure resident since Sep13/Sep22. First LOAD_CONTAMINATED set retained; candidate SHA unchanged. No ONLINE_CANDIDATE on contaminated/absent window2.",
+  "handoff": "Clean-window probes NOT finished; no second set; no V002; SHA unchanged. Main may re-issue when VLLM pressure clears or accept alternate quiet-window policy.",
+  "recorded_utc": "2026-09-23T21:58:11.555537+00:00"
+}

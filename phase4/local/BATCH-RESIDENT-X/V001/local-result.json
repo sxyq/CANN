@@ -1,0 +1,941 @@
+{
+  "timing_method": "LEGACY_TIMING_METHOD",
+  "route": "BATCH-RESIDENT-X",
+  "revision": "V001",
+  "direct_parent": "A001-V017",
+  "parent_source_sha": "c906bc45c0bfa0a1fb35710abac637a7c784b265d2658a66daa1d739da4054c3",
+  "parent_score": 36.41,
+  "single_hypothesis": "After parameter residency (R014), contiguous multi-row batch / DMA ownership reduces DMA transactions, per-row setup, and improves row reuse. ONLY multi-row batch DMA added on FastKernel; ResidentKernel and host run_kernel byte-identical to parent.",
+  "context_class": "HISTORICAL_DERIVED",
+  "source_sha256": "ad961c5837971bf989c9989b822cc2719a6a285c60969d35e1530463b7c8721d",
+  "compile": {
+    "device": "PASS",
+    "submission": "PASS",
+    "probe_link": "PASS",
+    "toolchain": "cann-server3 / Ascend910B3 / dav-2201 / CANN 8.5.0.alpha002",
+    "logs": [
+      "support/configure-v001.log",
+      "support/compile-v001.log"
+    ]
+  },
+  "correctness": {
+    "status": "PASS_FOR_HYPOTHESIS_PATH",
+    "summary_v001": "SUMMARY total=48 failures=6 HAS_FAIL",
+    "summary_parent": "SUMMARY total=33 failures=6 HAS_FAIL",
+    "case_pass_printed": 42,
+    "acl_fail_sync_507035": 6,
+    "parent_acl_fails": 6,
+    "interpretation": "V001: 42/48 cases PASS. The 6 failures are all resident_mid_colsplit (4x8192) and resident_wide_colsplit (2x16384) hitting ACL 507035 on SyncAll col-split path. Parent A001 V017 fails the SAME 6 shapes with the SAME 507035 (33 total, 6 fail) under this probe harness \u2014 pre-existing, not introduced by V001. All FastKernel multi-row batch shapes (fast_batch_*, fast_multi_*, resident_many_small, resident_rowsplit) PASS on all dtypes. ResidentKernel and host dispatch are byte-identical to parent.",
+    "multi_row_batch_shapes_pass": true,
+    "device_id": 4,
+    "evidence": [
+      "support/correctness-v001.log",
+      "support/correctness-parent.log"
+    ]
+  },
+  "load_quality": {
+    "classification": "DEV4_EXCLUSIVE_VLLM_RESIDENT",
+    "set1_classification": "LOAD_CONTAMINATED",
+    "set2_classification": "DEV4_FREE_WINDOW_VLLM_RESIDENT",
+    "set3_device": 4,
+    "set3_exclusive": true,
+    "set3_note": "Main exclusive d4 grant 2026-09-24T04:09:19Z. Preflight no other next6 (exclusive_ok=True). Residual VLLM accepted. d4_min_hbm_free=6347; d4_aicore_spikes=0.",
+    "pre_snapshot": "support/probes-window3-excl/set3-pre.npu-smi.txt",
+    "pair_snapshots": [
+      "support/probes-window3-excl/pair-01.npu-smi.txt",
+      "support/probes-window3-excl/pair-02.npu-smi.txt",
+      "support/probes-window3-excl/pair-03.npu-smi.txt",
+      "support/probes-window3-excl/pair-04.npu-smi.txt"
+    ],
+    "set3_measurement_class": "CONTROLLED_EXCLUSIVE",
+    "set3_load_note_class": "MODERATE",
+    "set3_parent_jitter": {
+      "rule": "Main: classify from parent jitter as CONTAMINATED or MODERATE",
+      "cross_set2_set3_parent_us": [
+        {
+          "pair": 1,
+          "set2_parent_us": 107.715,
+          "set3_parent_us": 126.163,
+          "delta_pct": 17.127
+        },
+        {
+          "pair": 2,
+          "set2_parent_us": 170.741,
+          "set3_parent_us": 189.85,
+          "delta_pct": 11.192
+        },
+        {
+          "pair": 3,
+          "set2_parent_us": 110.475,
+          "set3_parent_us": 65.847,
+          "delta_pct": -40.396
+        },
+        {
+          "pair": 4,
+          "set2_parent_us": 97.135,
+          "set3_parent_us": 87.865,
+          "delta_pct": -9.543
+        }
+      ],
+      "max_cross_set_parent_swing_pct": 40.396,
+      "set3_parent_us": [
+        126.163,
+        189.85,
+        65.847,
+        87.865
+      ],
+      "set3_parent_cv_if_comparable_shapes": 0.4006827375963878,
+      "note_class": "MODERATE",
+      "rationale": "Parent median swing across set2\u2192set3 on same shapes max=40.396% \u2192 MODERATE. Set3 itself exclusive (0 concurrent next6); residual VLLM accepted; pair3 FP16 outlier and high noise margin keep LOCAL_CONFIDENCE LOW."
+    },
+    "classification_note": "MODERATE"
+  },
+  "local_probes": {
+    "set": 3,
+    "label": "window3-excl",
+    "device": 4,
+    "warmups": 5,
+    "repeats_per_variant": 21,
+    "load_classification": "DEV4_EXCLUSIVE_VLLM_RESIDENT",
+    "exclusive_preflight_ok": true,
+    "preflight_concurrent_lines": [],
+    "pairs": [
+      {
+        "pair": 1,
+        "order": "PV",
+        "shape": "FP32 rows=100 D=256",
+        "parent_us": 126.163,
+        "v001_us": 117.624,
+        "delta_pct": -6.768,
+        "direction": "V001_FASTER",
+        "timestamp": "2026-09-24T04:10:01+00:00",
+        "status": "OK"
+      },
+      {
+        "pair": 2,
+        "order": "VP",
+        "shape": "FP32 rows=80 D=512",
+        "parent_us": 189.85,
+        "v001_us": 125.563,
+        "delta_pct": -33.862,
+        "direction": "V001_FASTER",
+        "timestamp": "2026-09-24T04:10:11+00:00",
+        "status": "OK"
+      },
+      {
+        "pair": 3,
+        "order": "PV",
+        "shape": "FP16 rows=64 D=1024",
+        "parent_us": 65.847,
+        "v001_us": 187.99,
+        "delta_pct": 185.495,
+        "direction": "V001_SLOWER",
+        "timestamp": "2026-09-24T04:10:21+00:00",
+        "status": "OK"
+      },
+      {
+        "pair": 4,
+        "order": "VP",
+        "shape": "FP32 rows=128 D=128",
+        "parent_us": 87.865,
+        "v001_us": 29.409,
+        "delta_pct": -66.529,
+        "direction": "V001_FASTER",
+        "timestamp": "2026-09-24T04:10:31+00:00",
+        "status": "OK"
+      }
+    ],
+    "probe_deltas_pct": [
+      -6.768,
+      -33.862,
+      185.495,
+      -66.529
+    ],
+    "median_delta_pct": -20.315,
+    "worst_delta_pct": 185.495,
+    "best_delta_pct": -66.529,
+    "noise_margin_pct": 126.012,
+    "directional_consistency": "INCONSISTENT",
+    "faster_count": 3,
+    "slower_count": 1,
+    "flat_count": 0,
+    "d4_hbm_free_samples": [
+      {
+        "pair": 1,
+        "aic": 0,
+        "hbm_used": 59188,
+        "hbm_total": 65536,
+        "hbm_free": 6348
+      },
+      {
+        "pair": 2,
+        "aic": 0,
+        "hbm_used": 59189,
+        "hbm_total": 65536,
+        "hbm_free": 6347
+      },
+      {
+        "pair": 3,
+        "aic": 0,
+        "hbm_used": 59189,
+        "hbm_total": 65536,
+        "hbm_free": 6347
+      },
+      {
+        "pair": 4,
+        "aic": 0,
+        "hbm_used": 59189,
+        "hbm_total": 65536,
+        "hbm_free": 6347
+      }
+    ],
+    "d4_min_hbm_free": 6347,
+    "d4_aicore_spikes": [],
+    "local_confidence": "LOW",
+    "interpretation": "Set3 EXCLUSIVE d4 (DEV4_EXCLUSIVE_VLLM_RESIDENT): DIR INCONSISTENT (3f/1s/0flat), median=-20.315%, worst=185.495%. Never promote on mean alone. Main set3 review: controlled exclusive measurement accepted; parent-jitter load note=MODERATE; decision remains NEEDS_ONE_MORE_LOCAL.",
+    "load_note_class": "MODERATE"
+  },
+  "decision": "NEEDS_ONE_MORE_LOCAL",
+  "decision_rationale": "Main-2 Q-BATCH review 2026-09-24T07:33:27Z: WINDOW_UNQUALIFIED 2/2 (d6+d4); candidate not run; pair3 not chased. Decision NEEDS_ONE_MORE_LOCAL + MEASUREMENT_BLOCKED. Stop timing BATCH today; SHA frozen; stay idle; no V002; no CANNJudge.",
+  "next_candidate_hypothesis": "No new hypothesis before Main review. If Main requests another local run, repeat the same four pairs (100x256 FP32, 80x512 FP32, 64x1024 FP16, 128x128 FP32) against A001 V017 during a clear load window.",
+  "architecture_novelty": "Combination of proven R014 param residency (A001 LoadFloatParamsOnce) with R015-style contiguous multi-row batch DMA ownership on the FastKernel path only.",
+  "risks": [
+    "No uncontaminated performance evidence.",
+    "Col-split ResidentKernel 507035 on probe shapes is parent-inherited; do not treat as V001 regression.",
+    "Multi-row batch only engages when a core owns >=2 aligned rows (rows > blockDim); single-row cores take exact parent ProcessSingle path."
+  ],
+  "cleanup": "None; no files or remote objects deleted.",
+  "artifacts": {
+    "submission": "submission.asc",
+    "diff": "diff.patch",
+    "source_meta": "source-meta.json",
+    "compile_logs": [
+      "support/configure-v001.log",
+      "support/compile-v001.log"
+    ],
+    "correctness_logs": [
+      "support/correctness-v001.log",
+      "support/correctness-parent.log"
+    ],
+    "probe_results": "support/probes/",
+    "probe_script": "phase4/workspaces/BATCH-RESIDENT-X/timing_probe.asc",
+    "probe_correctness": "phase4/workspaces/BATCH-RESIDENT-X/npu_correctness.asc",
+    "probe_results_set1_contaminated": "support/probes/",
+    "probe_results_set2_clean": null,
+    "load_wait_summary": "support/load-wait-window2-summary.json",
+    "no_clean_final_smi": "support/no-clean-window-final.npu-smi.txt"
+  },
+  "load_quality_window2_attempt": {
+    "status": "NO_STRICT_CLEAN_WINDOW",
+    "waited_seconds": 722,
+    "attempts": 36,
+    "criteria": "strict peer/Main: no VLLM/python pressure procs; all AICore==0; max HBM frac<=0.90; no concurrent next6 runtime on chosen dev",
+    "last_reasons": [
+      "parse n_devs=0",
+      "parse n_devs=0",
+      "parse n_devs=0",
+      "parse n_devs=0",
+      "parse n_devs=0",
+      "parse n_devs=0",
+      "parse n_devs=0",
+      "parse n_devs=0"
+    ],
+    "note": "VLLM processes resident since Sep13/Sep22 may prevent strict clean indefinitely.",
+    "action": "No second probe set run; first LOAD_CONTAMINATED set retained. Awaiting strict clean (no VLLM pressure, HBM<=90%)."
+  },
+  "probes_status": "IDLE_AFTER_Q_BATCH_REVIEW",
+  "idle": true,
+  "main_review_r2": {
+    "received_utc": "2026-09-23T21:59:59Z",
+    "decision": "NEEDS_ONE_MORE_LOCAL + PROBES PARKED",
+    "actions": [
+      "Stop polling for clean window",
+      "Do not start V002",
+      "Do not change source",
+      "No CANNJudge",
+      "Wait for Main to schedule quiet window or redefine quiet-window policy",
+      "Stay idle unless re-tasked"
+    ],
+    "sha_frozen": "ad961c5837971bf989c9989b822cc2719a6a285c60969d35e1530463b7c8721d"
+  },
+  "main_policy_update": {
+    "received_utc": "2026-09-24T04:03:00Z",
+    "policy": "DEV4_FREE_WINDOW_VLLM_RESIDENT",
+    "primary_device": 4,
+    "note": "Residual VLLM HBM on dev4 accepted; do not wait for VLLM stop; avoid 0-3 and 7",
+    "set2_completed": true
+  },
+  "local_probes_set1_contaminated": {
+    "warmups": 5,
+    "repeats_per_variant": 21,
+    "pairs": [
+      {
+        "pair": 1,
+        "order": "PV",
+        "shape": "FP32 rows=100 D=256",
+        "parent_us": 111.851,
+        "v001_us": 75.841,
+        "delta_pct": -32.195,
+        "direction": "V001_FASTER",
+        "status": "LOAD_CONTAMINATED",
+        "timestamp": "2026-09-23T20:27:30+00:00"
+      },
+      {
+        "pair": 2,
+        "order": "VP",
+        "shape": "FP32 rows=80 D=512",
+        "parent_us": 130.321,
+        "v001_us": 175.041,
+        "delta_pct": 34.315,
+        "direction": "V001_SLOWER",
+        "status": "LOAD_CONTAMINATED",
+        "timestamp": "2026-09-23T20:27:39+00:00"
+      },
+      {
+        "pair": 3,
+        "order": "PV",
+        "shape": "FP16 rows=64 D=1024",
+        "parent_us": 70.271,
+        "v001_us": 69.49,
+        "delta_pct": -1.111,
+        "direction": "V001_FASTER",
+        "status": "LOAD_CONTAMINATED",
+        "timestamp": "2026-09-23T20:27:51+00:00"
+      },
+      {
+        "pair": 4,
+        "order": "VP",
+        "shape": "FP32 rows=128 D=128",
+        "parent_us": 101.801,
+        "v001_us": 116.011,
+        "delta_pct": 13.959,
+        "direction": "V001_SLOWER",
+        "status": "LOAD_CONTAMINATED",
+        "timestamp": "2026-09-23T20:28:01+00:00"
+      }
+    ],
+    "probe_deltas_pct": [
+      -32.195,
+      34.315,
+      -1.111,
+      13.959
+    ],
+    "median_delta_pct": 6.424,
+    "worst_delta_pct": 34.315,
+    "best_delta_pct": -32.195,
+    "noise_margin_pct": 33.255,
+    "directional_consistency": "INCONSISTENT",
+    "faster_count": 2,
+    "slower_count": 2,
+    "flat_count": 0,
+    "interpretation": "Direction is INCONSISTENT under LOAD_CONTAMINATED shared VLLM load: pair1 V001 -32.2%, pair2 V001 +34.3%, pair3 ~flat -1.1%, pair4 V001 +14.0%. Median delta +6.4% (V001 slower). Never promote on mean alone."
+  },
+  "load_quality_set1_contaminated": {
+    "classification": "LOAD_CONTAMINATED",
+    "main_dispatch_observation": "all 8 NPUs have VLLM/python processes; AICore ~31-49% on devices 0-3 and 7; devices 4-6 0% AICore but HBM ~59-65GB/64GB occupied; VLLMEngineCor/VLLMWorker_TP present",
+    "probe_device": 4,
+    "probe_device_note": "0% AICore in npu-smi snapshots but VLLM process active and HBM heavily occupied",
+    "npu_smi_files": [
+      "support/probes/pair-01.npu-smi.txt",
+      "support/probes/pair-02.npu-smi.txt",
+      "support/probes/pair-03.npu-smi.txt",
+      "support/probes/pair-04.npu-smi.txt"
+    ],
+    "note_file": "support/load-quality-note.txt"
+  },
+  "local_confidence": "LOW",
+  "second_local_round": {
+    "reason": "Main policy update 2026-09-24T04:03Z unpark on free-HBM window",
+    "source_sha_unchanged": true,
+    "source_sha256": "ad961c5837971bf989c9989b822cc2719a6a285c60969d35e1530463b7c8721d",
+    "load_class": "DEV4_FREE_WINDOW_VLLM_RESIDENT",
+    "completed_utc": "2026-09-24T04:05:19.478621+00:00"
+  },
+  "set1_vs_set2": {
+    "set1_median_delta_pct": 6.424,
+    "set2_median_delta_pct": -23.925,
+    "set1_directional": "INCONSISTENT",
+    "set2_directional": "INCONSISTENT"
+  },
+  "handoff": "NEEDS_ONE_MORE_LOCAL",
+  "set2_completed_utc": "2026-09-24T04:05:47.522524+00:00",
+  "main_review_set2": {
+    "received_utc": "2026-09-24T04:06:31Z",
+    "decision": "NEEDS_ONE_MORE_LOCAL",
+    "reasons": [
+      "SHA frozen OK",
+      "CORRECTNESS PASS",
+      "DIR 3/4 suggestive median -23.9%",
+      "pair4 +30% reverse",
+      "concurrent ALIGN-TAIL-X on d4 during set2",
+      "not ONLINE (inconsistent + concurrent)",
+      "not REJECT"
+    ],
+    "new_rule": "Device 4 SERIAL \u2014 only one next6 probe at a time; preflight must show no other next6 probe process on d4",
+    "actions": [
+      "Do NOT re-probe now",
+      "Stay idle until Main grants exclusive dev4 slot for BATCH only",
+      "No V002",
+      "No source change",
+      "No CANNJudge"
+    ]
+  },
+  "main_grant_exclusive_d4": {
+    "received_utc": "2026-09-24T04:09:19Z",
+    "device": 4,
+    "load_class_target": "DEV4_EXCLUSIVE_VLLM_RESIDENT",
+    "serial_rule": "only BATCH probes on d4 during this window"
+  },
+  "local_probes_set2": {
+    "set": 2,
+    "label": "window2",
+    "device": 4,
+    "warmups": 5,
+    "repeats_per_variant": 21,
+    "load_classification": "DEV4_FREE_WINDOW_VLLM_RESIDENT",
+    "policy": "Main 2026-09-24T04:03Z: DEV4 free-HBM window; residual VLLM accepted; avoid d0-3/d7",
+    "pairs": [
+      {
+        "pair": 1,
+        "order": "PV",
+        "shape": "FP32 rows=100 D=256",
+        "parent_us": 107.715,
+        "v001_us": 62.607,
+        "delta_pct": -41.877,
+        "direction": "V001_FASTER",
+        "timestamp": "2026-09-24T04:04:29+00:00",
+        "status": "OK"
+      },
+      {
+        "pair": 2,
+        "order": "VP",
+        "shape": "FP32 rows=80 D=512",
+        "parent_us": 170.741,
+        "v001_us": 91.035,
+        "delta_pct": -46.682,
+        "direction": "V001_FASTER",
+        "timestamp": "2026-09-24T04:04:41+00:00",
+        "status": "OK"
+      },
+      {
+        "pair": 3,
+        "order": "PV",
+        "shape": "FP16 rows=64 D=1024",
+        "parent_us": 110.475,
+        "v001_us": 103.875,
+        "delta_pct": -5.974,
+        "direction": "V001_FASTER",
+        "timestamp": "2026-09-24T04:04:51+00:00",
+        "status": "OK"
+      },
+      {
+        "pair": 4,
+        "order": "VP",
+        "shape": "FP32 rows=128 D=128",
+        "parent_us": 97.135,
+        "v001_us": 126.484,
+        "delta_pct": 30.215,
+        "direction": "V001_SLOWER",
+        "timestamp": "2026-09-24T04:05:02+00:00",
+        "status": "OK"
+      }
+    ],
+    "probe_deltas_pct": [
+      -41.877,
+      -46.682,
+      -5.974,
+      30.215
+    ],
+    "median_delta_pct": -23.925,
+    "worst_delta_pct": 30.215,
+    "best_delta_pct": -46.682,
+    "noise_margin_pct": 38.449,
+    "directional_consistency": "INCONSISTENT",
+    "faster_count": 3,
+    "slower_count": 1,
+    "flat_count": 0,
+    "d4_hbm_free_samples": [
+      {
+        "pair": 1,
+        "aic": 0,
+        "hbm_used": 59208,
+        "hbm_total": 65536,
+        "hbm_free": 6328
+      },
+      {
+        "pair": 2,
+        "aic": 0,
+        "hbm_used": 59260,
+        "hbm_total": 65536,
+        "hbm_free": 6276
+      },
+      {
+        "pair": 3,
+        "aic": 0,
+        "hbm_used": 59190,
+        "hbm_total": 65536,
+        "hbm_free": 6346
+      },
+      {
+        "pair": 4,
+        "aic": 0,
+        "hbm_used": 59259,
+        "hbm_total": 65536,
+        "hbm_free": 6277
+      }
+    ],
+    "d4_min_hbm_free_pages_or_mb": 6276,
+    "d4_aicore_spikes": [],
+    "interpretation": "Set2 (DEV4_FREE_WINDOW_VLLM_RESIDENT) directional INCONSISTENT (3 faster / 1 slower / 0 flat), median=-23.925%. Never promote on mean alone.",
+    "local_confidence": "LOW"
+  },
+  "third_local_round": {
+    "reason": "Main exclusive device-4 grant",
+    "source_sha_unchanged": true,
+    "source_sha256": "ad961c5837971bf989c9989b822cc2719a6a285c60969d35e1530463b7c8721d",
+    "load_class": "DEV4_EXCLUSIVE_VLLM_RESIDENT",
+    "completed_utc": "2026-09-24T04:10:49.978168+00:00"
+  },
+  "set_history": {
+    "set1": "LOAD_CONTAMINATED INCONSISTENT median +6.424%",
+    "set2": "DEV4_FREE_WINDOW_VLLM_RESIDENT INCONSISTENT 3f/1s median -23.925%",
+    "set3": "DEV4_EXCLUSIVE_VLLM_RESIDENT INCONSISTENT 3f/1s median -20.315%"
+  },
+  "main_review_set3": {
+    "received_utc": "2026-09-24T04:15:40Z",
+    "set3_accepted_as": "controlled measurement (exclusive, interleaved PV/VP/PV/VP, same d4)",
+    "decision": "NEEDS_ONE_MORE_LOCAL",
+    "reasons": [
+      "DIR 3/4",
+      "pair3 +185% outlier",
+      "noise dominates"
+    ],
+    "load_note_rule": "classify from parent jitter as CONTAMINATED or MODERATE in notes",
+    "actions": [
+      "d4 released \u2014 SCHED holds next lease",
+      "Stay idle",
+      "SHA frozen",
+      "No V002",
+      "No CANNJudge"
+    ]
+  },
+  "main2_round2": {
+    "received_utc": "2026-09-24T05:06:26Z",
+    "lease": "R2-BATCH",
+    "device": 4,
+    "phase": "baseline_complete_candidate_skipped",
+    "completed_utc": "2026-09-24T05:15:18.571260+00:00"
+  },
+  "round2": {
+    "lease": "R2-BATCH",
+    "timestamp_utc": "2026-09-24T05:15:18.570542+00:00",
+    "sha_frozen": "ad961c5837971bf989c9989b822cc2719a6a285c60969d35e1530463b7c8721d",
+    "parent_baseline_only": true,
+    "baseline_shape": "FP32 rows=100 D=256 parent \u00d710 per device",
+    "gates": [
+      {
+        "n": 10,
+        "raw_us": [
+          193.879,
+          122.635,
+          81.904,
+          131.556,
+          186.838,
+          156.606,
+          175.137,
+          151.347,
+          150.546,
+          92.264
+        ],
+        "mean": 144.2712,
+        "stdev": 35.62494799097958,
+        "cv": 0.24693041986882747,
+        "min": 81.904,
+        "max": 193.879,
+        "range": 111.975,
+        "median": 150.94650000000001,
+        "range_over_median": 0.7418191213443173,
+        "unstable": true,
+        "gate": "UNSTABLE",
+        "thresholds": {
+          "cv_unstable": 0.25,
+          "range_over_median_unstable": 0.5
+        },
+        "device": 4
+      },
+      {
+        "device": 5,
+        "n": 10,
+        "raw_us": [
+          90.273,
+          150.955,
+          145.045,
+          107.573,
+          80.572,
+          131.224,
+          83.203,
+          100.103,
+          143.474,
+          253.218
+        ],
+        "mean": 128.564,
+        "stdev": 48.59906102590872,
+        "cv": 0.3780145377081354,
+        "min": 80.572,
+        "max": 253.218,
+        "range": 172.646,
+        "median": 119.39849999999998,
+        "range_over_median": 1.445964564043937,
+        "unstable": true,
+        "gate": "UNSTABLE"
+      },
+      {
+        "device": 6,
+        "n": 10,
+        "raw_us": [
+          152.583,
+          154.823,
+          121.172,
+          111.502,
+          83.912,
+          120.032,
+          150.133,
+          139.402,
+          92.792,
+          142.573
+        ],
+        "mean": 126.8924,
+        "stdev": 23.894406630841452,
+        "cv": 0.18830447395463756,
+        "min": 83.912,
+        "max": 154.823,
+        "range": 70.911,
+        "median": 130.28699999999998,
+        "range_over_median": 0.5442676552534023,
+        "unstable": true,
+        "gate": "UNSTABLE"
+      }
+    ],
+    "devices_tried": [
+      4,
+      5,
+      6
+    ],
+    "stable_devices": [],
+    "candidate_pairs_run": false,
+    "candidate_skipped_reason": "all baselines UNSTABLE per Main rule",
+    "preflight": {
+      "d4": "FREE_HBM~6.3GB AICore=0 PROCS=none 2026-09-24T05:06:52Z",
+      "d5": "preflight OK no other cann probe",
+      "d6": "preflight OK no other cann probe"
+    },
+    "raw_baselines": {
+      "d4": {
+        "n": 10,
+        "raw_us": [
+          193.879,
+          122.635,
+          81.904,
+          131.556,
+          186.838,
+          156.606,
+          175.137,
+          151.347,
+          150.546,
+          92.264
+        ],
+        "mean": 144.2712,
+        "stdev": 35.62494799097958,
+        "cv": 0.24693041986882747,
+        "min": 81.904,
+        "max": 193.879,
+        "range": 111.975,
+        "median": 150.94650000000001,
+        "range_over_median": 0.7418191213443173,
+        "unstable": true,
+        "gate": "UNSTABLE",
+        "thresholds": {
+          "cv_unstable": 0.25,
+          "range_over_median_unstable": 0.5
+        },
+        "device": 4
+      },
+      "d5": {
+        "device": 5,
+        "n": 10,
+        "raw_us": [
+          90.273,
+          150.955,
+          145.045,
+          107.573,
+          80.572,
+          131.224,
+          83.203,
+          100.103,
+          143.474,
+          253.218
+        ],
+        "mean": 128.564,
+        "stdev": 48.59906102590872,
+        "cv": 0.3780145377081354,
+        "min": 80.572,
+        "max": 253.218,
+        "range": 172.646,
+        "median": 119.39849999999998,
+        "range_over_median": 1.445964564043937,
+        "unstable": true,
+        "gate": "UNSTABLE"
+      },
+      "d6": {
+        "device": 6,
+        "n": 10,
+        "raw_us": [
+          152.583,
+          154.823,
+          121.172,
+          111.502,
+          83.912,
+          120.032,
+          150.133,
+          139.402,
+          92.792,
+          142.573
+        ],
+        "mean": 126.8924,
+        "stdev": 23.894406630841452,
+        "cv": 0.18830447395463756,
+        "min": 83.912,
+        "max": 154.823,
+        "range": 70.911,
+        "median": 130.28699999999998,
+        "range_over_median": 0.5442676552534023,
+        "unstable": true,
+        "gate": "UNSTABLE"
+      }
+    },
+    "old_set3_pair3_note": "set3 pair3 FP16 64\u00d71024 +185% V001 slower was NOT re-tested this round (candidate pairs skipped). Pair3 remains marked OUTLIER/LOAD-RELATED in set3 because exclusive d4 still showed extreme single-pair swing vs set2 (-6% \u2192 +185% on same shape); parent baselines this round show multi-device instability (d4 range/med 0.74, d5 1.45) consistent with high measurement jitter, supporting OUTLIER/LOAD-RELATED classification for the extreme pair3 magnitude. Not stripped from set3 records.",
+    "load_quality_from_parent_jitter": {
+      "d4_cv": 0.24693041986882747,
+      "d4_range_over_median": 0.7418191213443173,
+      "d5_cv": 0.3780145377081354,
+      "d5_range_over_median": 1.445964564043937,
+      "classification": "UNSTABLE_BASELINE_ALL_DEVICES",
+      "note": "Parent-only \u00d710 baselines; CV and range/median both exceed Main unstable thresholds on d4 and d5."
+    },
+    "metrics": {
+      "CORRECTNESS": "PASS (prior; no new correctness run)",
+      "LOAD_QUALITY": "UNSTABLE_BASELINE_ALL_DEVICES",
+      "PROBE_DELTAS": [],
+      "DIRECTIONAL_CONSISTENCY": "NOT_MEASURED",
+      "MEDIAN_DELTA": null,
+      "WORST_DELTA": null,
+      "MAX_DELTA": null,
+      "JITTER": {
+        "4": {
+          "cv": 0.24693041986882747,
+          "range_over_median": 0.7418191213443173
+        },
+        "5": {
+          "cv": 0.3780145377081354,
+          "range_over_median": 1.445964564043937
+        },
+        "6": {
+          "cv": 0.18830447395463756,
+          "range_over_median": 0.5442676552534023
+        }
+      },
+      "NOISE_MARGIN": null,
+      "LOCAL_CONFIDENCE": "LOW",
+      "RAW_PAIRS": "N/A \u2014 candidate not run"
+    },
+    "decision": "NEEDS_ONE_MORE_LOCAL",
+    "decision_rationale": "Round2 baseline-only stability gate FAILED on all tried devices d4: cv=0.247 range/med=0.742 UNSTABLE, d5: cv=0.378 range/med=1.446 UNSTABLE, d6: cv=0.188 range/med=0.544 UNSTABLE. Per Main rule: do NOT run candidate pairs. NEEDS_ONE_MORE_LOCAL + MEASUREMENT notes. SHA frozen; no V002; no CANNJudge.",
+    "postlease": "d4/d5/d6 baselines only; no candidate lease held after release of unstable devices",
+    "preserve_sets": "set1+set2+set3 retained; results-round2/ is baseline-only"
+  },
+  "measurement_status": "MEASUREMENT_BLOCKED",
+  "main2_round2_review": {
+    "received_utc": "2026-09-24T05:21:06Z",
+    "decision": "NEEDS_ONE_MORE_LOCAL + MEASUREMENT_BLOCKED",
+    "findings": [
+      "parent baseline UNSTABLE d4/d5/d6",
+      "candidate correctly skipped",
+      "old pair3 +185% marked OUTLIER/LOAD-RELATED (not re-tested)",
+      "SHA frozen ad961c58\u2026"
+    ],
+    "actions": [
+      "Stay IDLE"
+    ]
+  },
+  "main2_window_qual": {
+    "received_utc": "2026-09-24T07:22:08Z",
+    "lease": "Q-BATCH",
+    "gate": "PRECHECK-A x6 gap PRECHECK-B x6; CV<=0.15 AND max/min<=1.30",
+    "devices_order": [
+      6,
+      4
+    ],
+    "max_device_attempts": 2,
+    "completed_utc": "2026-09-24T07:30:06.536811+00:00",
+    "result": "BOTH_UNQUALIFIED"
+  },
+  "window_qualification": {
+    "lease": "Q-BATCH",
+    "timestamp_utc": "2026-09-24T07:30:06.536023+00:00",
+    "sha_frozen": "ad961c5837971bf989c9989b822cc2719a6a285c60969d35e1530463b7c8721d",
+    "question": "does BATCH show stable positive gain in a normal qualified window",
+    "pair3_reproduction": "NOT attempted (already OUTLIER/LOAD-RELATED)",
+    "gate": "PRECHECK-A x6, gap, PRECHECK-B x6; QUALIFIED iff CV<=0.15 AND max/min<=1.30",
+    "max_device_attempts": 2,
+    "gates": [
+      {
+        "device": 6,
+        "n": 12,
+        "precheck_a": {
+          "cv": 0.2667609285631131,
+          "min": 74.724,
+          "max": 151.266,
+          "max_over_min": 2.0243295326802633,
+          "median": 104.9545,
+          "raw": [
+            151.266,
+            98.184,
+            150.566,
+            111.725,
+            74.724,
+            84.874
+          ]
+        },
+        "precheck_b": {
+          "cv": 0.09955107935126119,
+          "min": 74.153,
+          "max": 96.163,
+          "max_over_min": 1.296818739632921,
+          "median": 88.0885,
+          "raw": [
+            95.124,
+            74.153,
+            86.583,
+            96.163,
+            75.873,
+            89.594
+          ]
+        },
+        "combined_raw_us": [
+          151.266,
+          98.184,
+          150.566,
+          111.725,
+          74.724,
+          84.874,
+          95.124,
+          74.153,
+          86.583,
+          96.163,
+          75.873,
+          89.594
+        ],
+        "mean": 99.06908333333334,
+        "stdev": 25.42988331162877,
+        "cv": 0.2566883881025322,
+        "min": 74.153,
+        "max": 151.266,
+        "max_over_min": 2.039917467937912,
+        "median": 92.359,
+        "qualified": false,
+        "status": "UNQUALIFIED",
+        "fail_reasons": [
+          "CV 0.2567>0.15",
+          "max/min 2.0399>1.30"
+        ]
+      },
+      {
+        "device": 4,
+        "n": 12,
+        "precheck_a": {
+          "cv": 0.33535855144194343,
+          "min": 95.353,
+          "max": 230.647,
+          "max_over_min": 2.4188751271590827,
+          "median": 120.374,
+          "raw": [
+            145.405,
+            118.874,
+            230.647,
+            95.353,
+            101.213,
+            121.874
+          ]
+        },
+        "precheck_b": {
+          "cv": 0.24125504202821002,
+          "min": 139.254,
+          "max": 268.828,
+          "max_over_min": 1.930486736467175,
+          "median": 172.73000000000002,
+          "raw": [
+            268.828,
+            168.465,
+            150.364,
+            139.254,
+            228.046,
+            176.995
+          ]
+        },
+        "combined_raw_us": [
+          145.405,
+          118.874,
+          230.647,
+          95.353,
+          101.213,
+          121.874,
+          268.828,
+          168.465,
+          150.364,
+          139.254,
+          228.046,
+          176.995
+        ],
+        "mean": 162.10983333333334,
+        "stdev": 52.66894132667014,
+        "cv": 0.3248966471908663,
+        "min": 95.353,
+        "max": 268.828,
+        "max_over_min": 2.8192925235703123,
+        "median": 147.8845,
+        "qualified": false,
+        "status": "UNQUALIFIED",
+        "fail_reasons": [
+          "CV 0.3249>0.15",
+          "max/min 2.8193>1.30"
+        ]
+      }
+    ],
+    "qualified_device": null,
+    "candidate_pairs_run": false,
+    "both_unqualified": true
+  },
+  "window_qual_metrics": {
+    "pairs_run": false,
+    "note": "no candidate \u2014 window gate failed both device attempts; stop timing today",
+    "PROBE_DELTAS": [],
+    "DIRECTIONAL_CONSISTENCY": "NOT_MEASURED",
+    "MEDIAN_DELTA": null,
+    "WORST_DELTA": null,
+    "MAX_DELTA": null,
+    "NOISE_MARGIN": null,
+    "RAW_PAIRS": "N/A"
+  },
+  "main2_q_batch_review": {
+    "received_utc": "2026-09-24T07:33:27Z",
+    "window": "WINDOW_UNQUALIFIED 2/2 (d6+d4)",
+    "candidate_not_run": true,
+    "pair3_not_chased": true,
+    "decision": "NEEDS_ONE_MORE_LOCAL + MEASUREMENT_BLOCKED",
+    "actions": [
+      "Stop timing BATCH today",
+      "SHA frozen",
+      "IDLE"
+    ]
+  }
+}

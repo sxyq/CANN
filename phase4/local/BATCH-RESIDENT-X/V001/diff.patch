@@ -1,0 +1,258 @@
+--- /Users/sunyiyang/Desktop/Project/cann-next6/BATCH-RESIDENT-X/phase4/workspaces/A001/submission_v017.asc	2026-09-24 03:57:48
++++ /Users/sunyiyang/Desktop/Project/cann-next6/BATCH-RESIDENT-X/phase4/workspaces/BATCH-RESIDENT-X/submission_v001.asc	2026-09-24 04:07:55
+@@ -8,6 +8,7 @@
+ constexpr uint32_t kSingleBuffer = 1;
+ constexpr uint32_t kDoubleBuffer = 2;
+ constexpr uint32_t kUbBudget = 188416;
++constexpr uint32_t kMaxBatchRows = 4;
+ 
+ __aicore__ inline uint32_t A001AlignBytes(uint64_t bytes)
+ {
+@@ -15,8 +16,10 @@
+ }
+ 
+ // ---------------------------------------------------------------------------
+-// FastKernel: small shapes. One x/res read, u kept in UB, params loaded per
+-// row through queues (V008 proven sync pattern), single GetValue, one pass.
++// FastKernel: small shapes. Params loaded once per core (R014 residency),
++// then contiguous multi-row batch DMA ownership (R015): when a core owns
++// multiple 32B-aligned rows, x/res/y move as one multi-row DataCopy per
++// tensor instead of one transaction per row.
+ // ---------------------------------------------------------------------------
+ template <typename T>
+ class FastKernel {
+@@ -40,6 +43,26 @@
+         rowsThisCore_ = base + (static_cast<uint64_t>(block) < extra ? 1 : 0);
+ 
+         const uint32_t d32 = static_cast<uint32_t>(d_);
++        const bool rowAligned = (static_cast<uint64_t>(d32) * sizeof(T)) % 32 == 0;
++
++        // Choose the largest legal multi-row batch that still fits the same
++        // FastKernel UB margin the host gate enforces for one row.
++        batchRows_ = 1;
++        if (rowAligned && rowsThisCore_ >= 2) {
++            uint32_t maxB = kMaxBatchRows;
++            if (rowsThisCore_ < maxB) {
++                maxB = static_cast<uint32_t>(rowsThisCore_);
++            }
++            for (uint32_t B = maxB; B > 1; --B) {
++                const uint64_t ub =
++                    (3ULL * B + 1ULL) * d32 * sizeof(T) + 20ULL * d32 + 512ULL;
++                if (ub <= 160000ULL) {
++                    batchRows_ = B;
++                    break;
++                }
++            }
++        }
++
+         x_.SetGlobalBuffer(reinterpret_cast<__gm__ T *>(x) + firstRow_ * d_,
+             rowsThisCore_ * d_);
+         residual_.SetGlobalBuffer(reinterpret_cast<__gm__ T *>(residual) + firstRow_ * d_,
+@@ -49,9 +72,11 @@
+         gamma_.SetGlobalBuffer(reinterpret_cast<__gm__ T *>(gamma), d_);
+         bias_.SetGlobalBuffer(reinterpret_cast<__gm__ T *>(bias), d_);
+ 
+-        pipe_->InitBuffer(xQueue_, kSingleBuffer, A001AlignBytes(d32 * sizeof(T)));
+-        pipe_->InitBuffer(resQueue_, kSingleBuffer, A001AlignBytes(d32 * sizeof(T)));
+-        pipe_->InitBuffer(outQueue_, kSingleBuffer, A001AlignBytes(d32 * sizeof(T)));
++        const uint32_t batchBytes =
++            A001AlignBytes(static_cast<uint64_t>(batchRows_) * d32 * sizeof(T));
++        pipe_->InitBuffer(xQueue_, kSingleBuffer, batchBytes);
++        pipe_->InitBuffer(resQueue_, kSingleBuffer, batchBytes);
++        pipe_->InitBuffer(outQueue_, kSingleBuffer, batchBytes);
+         pipe_->InitBuffer(paramQueue_, kSingleBuffer, A001AlignBytes(d32 * sizeof(T)));
+         pipe_->InitBuffer(uFull_, A001AlignBytes(d32 * sizeof(float)));
+         pipe_->InitBuffer(workA_, A001AlignBytes(d32 * sizeof(float)));
+@@ -67,54 +92,123 @@
+         const uint32_t d32 = static_cast<uint32_t>(d_);
+         LoadFloatParamsOnce(d32);
+ 
+-        for (uint64_t row = 0; row < rowsThisCore_; ++row) {
+-            const uint64_t gOffset = row * d_;
++        for (uint64_t batchBegin = 0; batchBegin < rowsThisCore_;
++             batchBegin += batchRows_) {
++            uint32_t B = batchRows_;
++            if (rowsThisCore_ - batchBegin < batchRows_) {
++                B = static_cast<uint32_t>(rowsThisCore_ - batchBegin);
++            }
++            if (B > 1) {
++                ProcessBatch(batchBegin, B, d32);
++            } else {
++                ProcessSingle(batchBegin, d32);
++            }
++        }
++    }
+ 
+-            auto xIn = xQueue_.AllocTensor<T>();
+-            CopyIn(xIn, x_, gOffset, d32);
+-            xQueue_.EnQue(xIn);
+-            auto resIn = resQueue_.AllocTensor<T>();
+-            CopyIn(resIn, residual_, gOffset, d32);
+-            resQueue_.EnQue(resIn);
+-            auto xSrc = xQueue_.DeQue<T>();
+-            auto resSrc = resQueue_.DeQue<T>();
++private:
++    // Contiguous multi-row batch DMA ownership: one DataCopy moves B adjacent
++    // rows for each of x, residual, and output.
++    __aicore__ inline void ProcessBatch(uint64_t batchBegin, uint32_t B, uint32_t d32)
++    {
++        const uint64_t gOffset = batchBegin * d_;
++        auto xIn = xQueue_.AllocTensor<T>();
++        CopyInBatch(xIn, x_, gOffset, B, d32);
++        xQueue_.EnQue(xIn);
++        auto resIn = resQueue_.AllocTensor<T>();
++        CopyInBatch(resIn, residual_, gOffset, B, d32);
++        resQueue_.EnQue(resIn);
++        auto xBatch = xQueue_.DeQue<T>();
++        auto resBatch = resQueue_.DeQue<T>();
++        auto outBatch = outQueue_.AllocTensor<T>();
+ 
+-            auto u = uFull_.Get<float>();
+-            auto work = workA_.Get<float>();
+-            ToFloat(u, xSrc, d32);
+-            ToFloat(work, resSrc, d32);
++        auto u = uFull_.Get<float>();
++        auto work = workA_.Get<float>();
++        auto gammaF = gammaF_.Get<float>();
++        auto biasF = biasF_.Get<float>();
++        auto sum = sum_.Get<float>();
++        auto reduceTmp = reduceTmp_.Get<float>();
++        auto rms = rms_.Get<float>();
++
++        for (uint32_t b = 0; b < B; ++b) {
++            const uint32_t localOff = b * d32;
++            AscendC::LocalTensor<T> xRow = xBatch[localOff];
++            AscendC::LocalTensor<T> resRow = resBatch[localOff];
++            ToFloat(u, xRow, d32);
++            ToFloat(work, resRow, d32);
+             AscendC::Add(u, u, work, d32);
+-            xQueue_.FreeTensor(xSrc);
+-            resQueue_.FreeTensor(resSrc);
+ 
+             AscendC::Mul(work, u, u, d32);
+-            auto sum = sum_.Get<float>();
+-            auto reduceTmp = reduceTmp_.Get<float>();
+             AscendC::Duplicate(sum, 0.0f, 8);
+             AscendC::ReduceSum<float, true>(sum, work, reduceTmp, d32);
+             AscendC::Muls(sum, sum, inverseD_, 8);
+             AscendC::Adds(sum, sum, epsilon_, 8);
+-            auto rms = rms_.Get<float>();
+             AscendC::Sqrt(rms, sum, 8);
+             const float inverseRms = 1.0f / rms.GetValue(0);
+ 
+-            auto gammaF = gammaF_.Get<float>();
+-            auto biasF = biasF_.Get<float>();
+-            auto outF = workA_.Get<float>();
++            AscendC::LocalTensor<float> outF = workA_.Get<float>();
+             AscendC::Muls(outF, u, inverseRms, d32);
+             AscendC::Mul(outF, outF, gammaF, d32);
+             AscendC::Add(outF, outF, biasF, d32);
+-
+-            auto outLocal = outQueue_.AllocTensor<T>();
+-            FromFloat(outLocal, outF, d32);
+-            outQueue_.EnQue(outLocal);
+-            auto outReady = outQueue_.DeQue<T>();
+-            CopyOut(output_, gOffset, outReady, d32);
+-            outQueue_.FreeTensor(outReady);
++            FromFloat(outBatch[localOff], outF, d32);
+         }
++
++        outQueue_.EnQue(outBatch);
++        auto outReady = outQueue_.DeQue<T>();
++        CopyOutBatch(output_, gOffset, outReady, B, d32);
++        outQueue_.FreeTensor(outReady);
++        xQueue_.FreeTensor(xBatch);
++        resQueue_.FreeTensor(resBatch);
+     }
+ 
+-private:
++    // Exact parent single-row path (B == 1 or unaligned tail).
++    __aicore__ inline void ProcessSingle(uint64_t row, uint32_t d32)
++    {
++        const uint64_t gOffset = row * d_;
++
++        auto xIn = xQueue_.AllocTensor<T>();
++        CopyIn(xIn, x_, gOffset, d32);
++        xQueue_.EnQue(xIn);
++        auto resIn = resQueue_.AllocTensor<T>();
++        CopyIn(resIn, residual_, gOffset, d32);
++        resQueue_.EnQue(resIn);
++        auto xSrc = xQueue_.DeQue<T>();
++        auto resSrc = resQueue_.DeQue<T>();
++
++        auto u = uFull_.Get<float>();
++        auto work = workA_.Get<float>();
++        ToFloat(u, xSrc, d32);
++        ToFloat(work, resSrc, d32);
++        AscendC::Add(u, u, work, d32);
++        xQueue_.FreeTensor(xSrc);
++        resQueue_.FreeTensor(resSrc);
++
++        AscendC::Mul(work, u, u, d32);
++        auto sum = sum_.Get<float>();
++        auto reduceTmp = reduceTmp_.Get<float>();
++        AscendC::Duplicate(sum, 0.0f, 8);
++        AscendC::ReduceSum<float, true>(sum, work, reduceTmp, d32);
++        AscendC::Muls(sum, sum, inverseD_, 8);
++        AscendC::Adds(sum, sum, epsilon_, 8);
++        auto rms = rms_.Get<float>();
++        AscendC::Sqrt(rms, sum, 8);
++        const float inverseRms = 1.0f / rms.GetValue(0);
++
++        auto gammaF = gammaF_.Get<float>();
++        auto biasF = biasF_.Get<float>();
++        auto outF = workA_.Get<float>();
++        AscendC::Muls(outF, u, inverseRms, d32);
++        AscendC::Mul(outF, outF, gammaF, d32);
++        AscendC::Add(outF, outF, biasF, d32);
++
++        auto outLocal = outQueue_.AllocTensor<T>();
++        FromFloat(outLocal, outF, d32);
++        outQueue_.EnQue(outLocal);
++        auto outReady = outQueue_.DeQue<T>();
++        CopyOut(output_, gOffset, outReady, d32);
++        outQueue_.FreeTensor(outReady);
++    }
++
+     __aicore__ inline void CopyIn(AscendC::LocalTensor<T> dst,
+         const AscendC::GlobalTensor<T> &src, uint64_t offset, uint32_t count)
+     {
+@@ -127,6 +221,15 @@
+                 {1, static_cast<uint32_t>(count * sizeof(T)), 0, 0, 0},
+                 {false, 0, 0, 0});
+         }
++    }
++
++    __aicore__ inline void CopyInBatch(AscendC::LocalTensor<T> dst,
++        const AscendC::GlobalTensor<T> &src, uint64_t offset, uint32_t B,
++        uint32_t count)
++    {
++        AscendC::DataCopy(dst, src[offset],
++            {static_cast<uint16_t>(B),
++             static_cast<uint16_t>((count * sizeof(T)) / 32), 0, 0});
+     }
+ 
+     __aicore__ inline void CopyOut(AscendC::GlobalTensor<T> &dst, uint64_t offset,
+@@ -140,6 +243,14 @@
+             AscendC::DataCopyPad(dst[offset], src,
+                 {1, static_cast<uint32_t>(count * sizeof(T)), 0, 0, 0});
+         }
++    }
++
++    __aicore__ inline void CopyOutBatch(AscendC::GlobalTensor<T> &dst,
++        uint64_t offset, AscendC::LocalTensor<T> src, uint32_t B, uint32_t count)
++    {
++        AscendC::DataCopy(dst[offset], src,
++            {static_cast<uint16_t>(B),
++             static_cast<uint16_t>((count * sizeof(T)) / 32), 0, 0});
+     }
+ 
+     __aicore__ inline void ToFloat(AscendC::LocalTensor<float> dst,
+@@ -188,6 +299,7 @@
+     uint64_t d_ = 0;
+     uint64_t firstRow_ = 0;
+     uint64_t rowsThisCore_ = 0;
++    uint32_t batchRows_ = 1;
+     float epsilon_ = 0.0f;
+     float inverseD_ = 1.0f;
+     AscendC::GlobalTensor<T> x_, residual_, gamma_, bias_, output_;
