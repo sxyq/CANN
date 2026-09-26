@@ -66,7 +66,7 @@ target_link_libraries(rhx_full_link PRIVATE
     tiling_api register platform unified_dlog dl m graph_base)
 
 # ---- NPU probe runners: parent vs V001 ----
-foreach(variant IN ITEMS parent candidate)
+foreach(variant IN ITEMS parent candidate ref_parent ref_candidate)
     add_executable(rhx_${variant}_probe runner_${variant}.asc)
     target_include_directories(rhx_${variant}_probe PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR})
