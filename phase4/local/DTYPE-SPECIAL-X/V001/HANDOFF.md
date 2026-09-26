@@ -4,12 +4,23 @@
 
 - Route: `DTYPE-SPECIAL-X`
 - Revision: `V001` (existing pending Candidate)
-- Local disposition: `NEEDS_ONE_MORE_LOCAL`
+- Previous Main disposition: `NEEDS_ONE_MORE_LOCAL`
 - Branch: `exec/sixlane-20260924-dtype-special-x`
 - Candidate dtype: FP32
 - Direct Parent: `R31B-V011`, score `45.16`
 - Candidate source: `phase4/workspaces/DTYPE-SPECIAL-X/V001/submission.asc`
 - Candidate source SHA-256: `e2717055199f541d98d85ceef2e011e52e2749d932ca954dc887868de7db880f`
+
+## Latest Measurement Block
+
+- Current status: `MEASUREMENT_BLOCKED`, based on the Main-provided server3 live-status observation at `2026-09-26T06:53:18Z`.
+- `BLOCK_REASON`: no eligible device lease is available.
+- `DATE`: `2026-09-26T06:53:18Z`.
+- `SHAPE`: approved 24-shape FP32 domain; exact-shape same-binary qualification remains not run.
+- `DEVICE`: none assigned under an eligible lease.
+- `SAME_BINARY_RESULT`: not run for this Candidate's 24 task-domain shapes.
+- `RETRY_REQUIRED`: wait for a fresh eligible Main lease, then preflight and run exact-shape same-binary qualification before any paired measurement.
+- This is a later live status note; the retained `local-result.json` and `source-meta.json` preserve their earlier recorded disposition and build/correctness evidence.
 
 ## Retained evidence
 
@@ -62,12 +73,16 @@ The existing 39/39 NPU correctness result remains the correctness evidence for t
 
 - No current `MAIN-1` device lease is active. Main must issue a fresh exclusive lease and the required preflight must pass before any timing.
 - The unified runner and both Parent/Candidate executable identities are now present in Route evidence. Use this Route's runner only; do not substitute another Route's runner.
-- Use the unified protocol: one long-lived process, allocations and H2D before warmup, at least 10 warmup launches with synchronization, at least 21 timed samples, and at least 4 adjacent interleaved Parent/Candidate pairs.
+- Use the current unified protocol: one long-lived process, allocations and H2D before warmup, default 45 warmup launches with synchronization, at least 21 timed samples, and at least 4 adjacent interleaved Parent/Candidate pairs. Re-qualify each exact shape with Parent same-binary data first; require full-sample MAD/median <= 0.10 and block drift <= 0.10.
 - Record device-event duration as the primary metric and host wall duration as a diagnostic. Keep D2H and correctness comparison outside the timed loop. Record device load and lease identity with the results.
 - Use the same runner revision and input buffers for both executables. Do not substitute either executable listed above for that paired runner.
 
 ## Main review point
 
-Main to review the exact 24-shape workload, source/executable identities, and build records. No timing or new correctness run was performed in this continuation. V001 remains `NEEDS_ONE_MORE_LOCAL`; no performance claim is made.
+Main to review the exact 24-shape workload, source/executable identities, and build records. The previous reviewed disposition was `NEEDS_ONE_MORE_LOCAL`; the later live status above is `MEASUREMENT_BLOCKED`. No timing or new correctness run was performed in this continuation; no performance claim is made.
 
 No V002, dtype change, hypothesis change, Candidate source change, or online submission is included in this handoff.
+
+## Track-B Research
+
+The current five distinct follow-up directions are DTYPE-FP32-06 Pattern AR reduction, DTYPE-FP32-07 four-block cap, DTYPE-FP32-03 irregular-width batching, DTYPE-FP32-04 output affine fusion, and DTYPE-FP32-02 aligned output transfer. DTYPE-FP32-01 remains `DUPLICATE`; DTYPE-FP32-05 remains `INFEASIBLE`. Mechanism, bottleneck, shapes, help/fail conditions, API feasibility, UB/core/DMA/sync impact, precision risk, overlap screen, minimal OFAT, and falsification steps are recorded in `phase4/research/DTYPE-SPECIAL-X/next-hypotheses.md`. Pattern AR additionally requires packed-result indexing; do not substitute it while retaining the current stride-8 scalar-result offsets. Its packed odd result slots also need an exact CANN 8.5 `Duplicate`/`Sqrt` address check before any implementation proposal.
