@@ -1,0 +1,47 @@
+{
+  "ROUTE": "EPILOGUE-FUSE-X",
+  "REVISION": "V001",
+  "SINGLE_HYPOTHESIS": "HYPOTHESIS-1 SCALE-FOLD",
+  "LOCAL_VERDICT": "NOT_COMPLETE",
+  "VERDICT_REASON": "Correctness PASS (53/54; 1 pre-existing parent failure) and compile/link PASS; paired performance measurement not yet run (no qualified device window under local-timing-protocol.md).",
+  "BUILD": {
+    "host": "cann-server3",
+    "cmake_rc": 0,
+    "compile_rc": 0,
+    "link_rc": 0,
+    "link_executable_sha": "95371303ce4012f87f5570014931cbf0ff04a54366fd4cf822367f82d44b2159",
+    "probe_executable_sha": "8e05d30d4830a03e4c07234448af3e918c1a242ce0aa10b0e2e83e61c19cb292"
+  },
+  "CORRECTNESS": {
+    "device": "server3 d4",
+    "total_cases": 54,
+    "passed": 53,
+    "failed": 1,
+    "failed_case": "dtype=0 rows=2 D=16384 resident_wide_colsplit",
+    "failed_case_class": "PRE_EXISTING_PARENT_FAILURE",
+    "parent_control_failed_same_case": true,
+    "parent_control_max_abs": 0.44175,
+    "v001_max_abs_same_case": 0.44175,
+    "v001_fp32_pass_max_abs_range": "1.19e-07 .. 9.54e-07",
+    "fp16_case_lines_identical_to_parent": true,
+    "bf16_case_lines_identical_to_parent": true
+  },
+  "SINGLE_CHANGE_AUDIT": {
+    "status": "PASS",
+    "mechanism_count": 1,
+    "mechanism": "normalize folded into gamma scale (ApplyScaleFold)",
+    "half_domain_arms": "unchanged",
+    "broadcast_batch_arms": "unchanged",
+    "wide_paths": "untouched",
+    "sync_events_barriers": "count and placement unchanged"
+  },
+  "MEASUREMENT": {
+    "status": "NOT_RUN",
+    "reason": "No qualified window under local-timing-protocol.md at build time; timing optional for this turn per Main instruction.",
+    "block_class_if_unavailable": "MEASUREMENT_BLOCKED"
+  },
+  "PARENT_CONTROL_RUN": {
+    "purpose": "Prove the wide-FP32 failure is pre-existing and that PASS-case deltas are fold rounding only",
+    "log": "support/correctness-parent-control.log"
+  }
+}

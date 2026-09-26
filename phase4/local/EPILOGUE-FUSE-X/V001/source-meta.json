@@ -1,0 +1,38 @@
+{
+  "ROUTE": "EPILOGUE-FUSE-X",
+  "REVISION": "V001",
+  "DIRECT_PARENT": "FROZEN_R31B_V011",
+  "PARENT_SOURCE_SHA": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "PARENT_SCORE": "OFFICIAL_ANCHOR 45.16 (15/15)",
+  "PARENT_SEED_PATH": "phase4/workspaces/EPILOGUE-FUSE-X/frozen-seed/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "SINGLE_HYPOTHESIS": "HYPOTHESIS-1 SCALE-FOLD: replace (Muls value invRms) then (Mul value gamma) with (Muls scale gamma invRms) then (Mul value scale); Add bias unchanged. One arithmetic identity (y*a)*b -> y*(a*b). Uniform across T; FP32 intermediates where the seed already uses FP32; no dtype split; no sync change; no reduction/scheduling/mode/DMA change.",
+  "CONTEXT_CLASS": "FROZEN_STRONG_BASELINE_EPILOGUE_DATAFLOW",
+  "SOURCE_SHA": "89868a52b59fcaf1d68220398698ef033827a50b1559df9fc69ffcab105dd597",
+  "SOURCE_PATH": "phase4/workspaces/EPILOGUE-FUSE-X/EPILOGUE-FUSE-X-V001-SCALE-FOLD_kernel.asc",
+  "LINE_COUNT": 3571,
+  "BYTE_COUNT": 189972,
+  "BUILD_HOST": "cann-server3:/home/data4t2/lelinfeng/phase4-workspaces/EPILOGUE-FUSE-X",
+  "COMPILE": "PASS (link adapter: epilogue_fuse_x_link; RC=0)",
+  "LINK": "PASS (epilogue_fuse_x_link SHA256 95371303ce4012f87f5570014931cbf0ff04a54366fd4cf822367f82d44b2159)",
+  "CORRECTNESS_EXECUTABLE_SHA": "8e05d30d4830a03e4c07234448af3e918c1a242ce0aa10b0e2e83e61c19cb292",
+  "CORRECTNESS": "53/54 PASS; 1 FAIL resident_wide_colsplit FP32 D=16384 is PRE_EXISTING_PARENT_FAILURE (identical max_abs 0.44175 on frozen parent control run). V001 PASS cases differ from parent only at FP32 1-ulp level (max_abs 1.2e-7..9.5e-7); FP16 and BF16 case lines bit-identical to parent.",
+  "CORRECTNESS_DEVICE": "server3 d4 (ASCEND_DEVICE_ID=4)",
+  "SINGLE_CHANGE_AUDIT": "PASS",
+  "ARCHITECTURE": "ApplyScaleFold helper: Muls(scaleTile, gammaSlice, invRms) -> Mul(valueTile, scaleTile) -> Add(valueTile, biasSlice). scaleTile = reduceFp32Buf_ (free in second pass; never aliases gamma). Applied at every non-wide second-pass site where the seed's pattern is Muls(value,invRms)+Mul(value,gammaFp32)+Add(value,biasFp32). Half-domain arms (FromFloat before gamma Mul) unchanged. ApplyFp*GammaBiasBatch broadcast arms unchanged. Wide paths untouched.",
+  "ISOLATION": [
+    "One arithmetic identity (y*a)*b -> y*(a*b) expressed once in ApplyScaleFold",
+    "Half path keeps original Muls -> FromFloat -> half Mul/Add (no domain change, no H2)",
+    "Wide path functions not edited (forbidden axis)",
+    "No event / PipeBarrier count or placement change",
+    "No reduction, row scheduling, mode, or DMA change"
+  ],
+  "RISKS": [
+    "FP32 reassociation is 1-ulp level; measured max_abs 1.2e-7..9.5e-7 vs tol 1e-5*(1+|exp|)",
+    "Wide FP32 D=16384 harness case fails on parent and V001 alike; out of scope for this route",
+    "Performance window not yet qualified; LOCAL_VERDICT pending paired timing"
+  ],
+  "DECISION": "CORRECTNESS_PASS_PENDING_TIMING",
+  "NEXT": "Await qualified device window for same-binary + paired P/C under local-timing-protocol.md; then Main local verdict.",
+  "WHY_NOT_DUPLICATE": "phase4/research/EPILOGUE-FUSE-X/TRACK-B-HYPOTHESES.md",
+  "MAIN_APPROVAL_DOC": "phase4/research/EPILOGUE-FUSE-X/MAIN-APPROVAL-V001.md"
+}

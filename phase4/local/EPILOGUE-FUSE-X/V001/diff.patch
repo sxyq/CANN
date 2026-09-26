@@ -1,0 +1,257 @@
+--- frozen-seed/R31B-V011-LP-ROW-PIPELINE_kernel.asc	2026-09-27 03:50:14
++++ EPILOGUE-FUSE-X-V001-SCALE-FOLD_kernel.asc	2026-09-27 04:20:16
+@@ -424,19 +424,18 @@
+                         AscendC::PipeBarrier<PIPE_V>();
+                     }
+                 }
+-                AscendC::Muls(valueTile, valueTile, invRms, valid);
+-                AscendC::PipeBarrier<PIPE_V>();
+                 if constexpr (AscendC::IsSameType<T, float>::value) {
++                    AscendC::LocalTensor<float> scaleTile = reduceFp32Buf_.Get<float>();
+                     if (cacheParams) {
+-                        AscendC::Mul(valueTile, valueTile, gammaLocal[col], valid);
+-                        AscendC::PipeBarrier<PIPE_V>();
+-                        AscendC::Add(valueTile, valueTile, biasLocal[col], valid);
++                        ApplyScaleFold(valueTile, scaleTile, gammaLocal[col], biasLocal[col],
++                                       invRms, valid);
+                     } else {
+-                        AscendC::Mul(valueTile, valueTile, gammaLocal, valid);
+-                        AscendC::PipeBarrier<PIPE_V>();
+-                        AscendC::Add(valueTile, valueTile, biasLocal, valid);
++                        ApplyScaleFold(valueTile, scaleTile, gammaLocal, biasLocal,
++                                       invRms, valid);
+                     }
+                 } else if constexpr (std::is_same<T, half>::value) {
++                    AscendC::Muls(valueTile, valueTile, invRms, valid);
++                    AscendC::PipeBarrier<PIPE_V>();
+                     FromFloat(outputLocal, valueTile, valid);
+                     AscendC::PipeBarrier<PIPE_V>();
+                     if (cacheParams) {
+@@ -451,13 +450,13 @@
+                 } else if (cacheParamFp32) {
+                     AscendC::LocalTensor<float> gammaFp32 = gammaFp32Buf_.Get<float>();
+                     AscendC::LocalTensor<float> biasFp32 = biasFp32Buf_.Get<float>();
+-                    AscendC::Mul(valueTile, valueTile, gammaFp32[col], valid);
+-                    AscendC::PipeBarrier<PIPE_V>();
+-                    AscendC::Add(valueTile, valueTile, biasFp32[col], valid);
++                    AscendC::LocalTensor<float> scaleTile = reduceFp32Buf_.Get<float>();
++                    ApplyScaleFold(valueTile, scaleTile, gammaFp32[col], biasFp32[col],
++                                   invRms, valid);
+                 } else {
+-                    AscendC::Mul(valueTile, valueTile, xFp32, valid);
+-                    AscendC::PipeBarrier<PIPE_V>();
+-                    AscendC::Add(valueTile, valueTile, residualFp32, valid);
++                    AscendC::LocalTensor<float> scaleTile = reduceFp32Buf_.Get<float>();
++                    ApplyScaleFold(valueTile, scaleTile, xFp32, residualFp32,
++                                   invRms, valid);
+                 }
+                 AscendC::PipeBarrier<PIPE_V>();
+                 if constexpr (AscendC::IsSameType<T, float>::value) {
+@@ -576,17 +575,15 @@
+             if (!residentParams) {
+                 AscendC::WaitFlag<AscendC::HardEvent::MTE2_V>(paramReady);
+             }
+-            AscendC::Muls(valueLocal, valueLocal, invRms, valid);
+-            AscendC::PipeBarrier<PIPE_V>();
+             if constexpr (AscendC::IsSameType<T, float>::value) {
+-                AscendC::Mul(valueLocal, valueLocal, gammaLocal, valid);
+-                AscendC::PipeBarrier<PIPE_V>();
+-                AscendC::Add(valueLocal, valueLocal, biasLocal, valid);
+-                AscendC::PipeBarrier<PIPE_V>();
++                AscendC::LocalTensor<float> scaleTile = reduceFp32Buf_.Get<float>();
++                ApplyScaleFold(valueLocal, scaleTile, gammaLocal, biasLocal, invRms, valid);
+                 SyncVToMTE3();
+                 Store(outputGm_, rowOffset, valueLocal, valid);
+             } else if constexpr (std::is_same<T, half>::value) {
+                 AscendC::LocalTensor<T> outputLocal = outputBuf_.Get<T>();
++                AscendC::Muls(valueLocal, valueLocal, invRms, valid);
++                AscendC::PipeBarrier<PIPE_V>();
+                 FromFloat(outputLocal, valueLocal, valid);
+                 AscendC::PipeBarrier<PIPE_V>();
+                 AscendC::Mul(outputLocal, outputLocal, gammaLocal, valid);
+@@ -599,10 +596,8 @@
+                 ToFloat(xFp32, gammaLocal, valid);
+                 ToFloat(residualFp32, biasLocal, valid);
+                 AscendC::PipeBarrier<PIPE_V>();
+-                AscendC::Mul(valueLocal, valueLocal, xFp32, valid);
+-                AscendC::PipeBarrier<PIPE_V>();
+-                AscendC::Add(valueLocal, valueLocal, residualFp32, valid);
+-                AscendC::PipeBarrier<PIPE_V>();
++                AscendC::LocalTensor<float> scaleTile = reduceFp32Buf_.Get<float>();
++                ApplyScaleFold(valueLocal, scaleTile, xFp32, residualFp32, invRms, valid);
+                 AscendC::LocalTensor<T> outputLocal = xBuf_.Get<T>();
+                 FromFloat(outputLocal, valueLocal, valid);
+                 AscendC::PipeBarrier<PIPE_V>();
+@@ -718,12 +713,9 @@
+                 }
+                 AscendC::LocalTensor<float> valueRow = valueLocal[batchRow * width];
+                 AscendC::LocalTensor<T> outputRow = useFirst ? gammaStage : biasStage;
+-                AscendC::Muls(valueRow, valueRow, invRmsValues[batchRow], width);
+-                AscendC::PipeBarrier<PIPE_V>();
+-                AscendC::Mul(valueRow, valueRow, gammaFp32, width);
+-                AscendC::PipeBarrier<PIPE_V>();
+-                AscendC::Add(valueRow, valueRow, biasFp32, width);
+-                AscendC::PipeBarrier<PIPE_V>();
++                AscendC::LocalTensor<float> scaleTile = reduceFp32Buf_.Get<float>();
++                ApplyScaleFold(valueRow, scaleTile, gammaFp32, biasFp32,
++                               invRmsValues[batchRow], width);
+                 FromFloat(outputRow, valueRow, width);
+                 AscendC::PipeBarrier<PIPE_V>();
+                 AscendC::SetFlag<AscendC::HardEvent::V_MTE3>(outputReady);
+@@ -969,12 +961,9 @@
+                 }
+                 AscendC::LocalTensor<float> valueTile = valueLocal[col];
+                 AscendC::LocalTensor<T> outputTile = useFirst ? gammaStage : biasStage;
+-                AscendC::Muls(valueTile, valueTile, invRms, kTileElems);
+-                AscendC::PipeBarrier<PIPE_V>();
+-                AscendC::Mul(valueTile, valueTile, gammaFp32[col], kTileElems);
+-                AscendC::PipeBarrier<PIPE_V>();
+-                AscendC::Add(valueTile, valueTile, biasFp32[col], kTileElems);
+-                AscendC::PipeBarrier<PIPE_V>();
++                AscendC::LocalTensor<float> scaleTile = reduceFp32Buf_.Get<float>();
++                ApplyScaleFold(valueTile, scaleTile, gammaFp32[col], biasFp32[col],
++                               invRms, kTileElems);
+                 FromFloat(outputTile, valueTile, kTileElems);
+                 AscendC::PipeBarrier<PIPE_V>();
+                 AscendC::SetFlag<AscendC::HardEvent::V_MTE3>(outputReady);
+@@ -1207,12 +1196,9 @@
+                     useFirst ? outputReadyFirst : outputReadySecond;
+                 const AscendC::TEventID outputRelease =
+                     useFirst ? outputReleaseFirst : outputReleaseSecond;
+-                AscendC::Muls(valueTile, valueTile, invRms, kTileElems);
+-                AscendC::PipeBarrier<PIPE_V>();
+-                AscendC::Mul(valueTile, valueTile, gammaLocal[col], kTileElems);
+-                AscendC::PipeBarrier<PIPE_V>();
+-                AscendC::Add(valueTile, valueTile, biasLocal[col], kTileElems);
+-                AscendC::PipeBarrier<PIPE_V>();
++                AscendC::LocalTensor<float> scaleTile = reduceFp32Buf_.Get<float>();
++                ApplyScaleFold(valueTile, scaleTile, gammaLocal[col], biasLocal[col],
++                               invRms, kTileElems);
+                 AscendC::SetFlag<AscendC::HardEvent::V_MTE3>(outputReady);
+                 AscendC::WaitFlag<AscendC::HardEvent::V_MTE3>(outputReady);
+                 Store(outputGm_, rowOffset + col, valueTile, kTileElems);
+@@ -1440,13 +1426,9 @@
+ 
+             for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
+                 AscendC::LocalTensor<float> valueRow = valueLocal[batchRow * rowWidth];
+-                AscendC::Muls(valueRow, valueRow, invRmsValues[batchRow],
+-                              static_cast<int32_t>(rowWidth));
+-                AscendC::PipeBarrier<PIPE_V>();
+-                AscendC::Mul(valueRow, valueRow, gammaLocal, static_cast<int32_t>(rowWidth));
+-                AscendC::PipeBarrier<PIPE_V>();
+-                AscendC::Add(valueRow, valueRow, biasLocal, static_cast<int32_t>(rowWidth));
+-                AscendC::PipeBarrier<PIPE_V>();
++                AscendC::LocalTensor<float> scaleTile = reduceFp32Buf_.Get<float>();
++                ApplyScaleFold(valueRow, scaleTile, gammaLocal, biasLocal,
++                               invRmsValues[batchRow], static_cast<int32_t>(rowWidth));
+             }
+             SyncVToMTE3();
+             Store(outputGm_, batchBegin * rowWidth, valueLocal,
+@@ -1542,12 +1524,9 @@
+                     useFirst ? outputReadyFirst : outputReadySecond;
+                 const AscendC::TEventID outputRelease =
+                     useFirst ? outputReleaseFirst : outputReleaseSecond;
+-                AscendC::Muls(valueRow, valueRow, invRmsValues[batchRow], width);
+-                AscendC::PipeBarrier<PIPE_V>();
+-                AscendC::Mul(valueRow, valueRow, gammaLocal, width);
+-                AscendC::PipeBarrier<PIPE_V>();
+-                AscendC::Add(valueRow, valueRow, biasLocal, width);
+-                AscendC::PipeBarrier<PIPE_V>();
++                AscendC::LocalTensor<float> scaleTile = reduceFp32Buf_.Get<float>();
++                ApplyScaleFold(valueRow, scaleTile, gammaLocal, biasLocal,
++                               invRmsValues[batchRow], width);
+                 AscendC::SetFlag<AscendC::HardEvent::V_MTE3>(outputReady);
+                 AscendC::WaitFlag<AscendC::HardEvent::V_MTE3>(outputReady);
+                 Store(outputGm_, (batchBegin + static_cast<uint64_t>(batchRow)) * width,
+@@ -1635,24 +1614,23 @@
+             }
+             SyncSToV();
+ 
+-            for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
+-                AscendC::LocalTensor<float> valueRow =
+-                    valueLocal[static_cast<uint64_t>(batchRow) * rowWidth];
+-                AscendC::Muls(valueRow, valueRow, invRmsValues[batchRow],
+-                              static_cast<int32_t>(rowWidth));
+-                AscendC::PipeBarrier<PIPE_V>();
+-            }
+-            if (rowWidth <= static_cast<uint64_t>(kFp32RepeatMaxWidth)) {
++            if (rowWidth <= static_cast<uint64_t>(kFp32RepeatMaxWidth)) {
++                for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
++                    AscendC::LocalTensor<float> valueRow =
++                        valueLocal[static_cast<uint64_t>(batchRow) * rowWidth];
++                    AscendC::Muls(valueRow, valueRow, invRmsValues[batchRow],
++                                  static_cast<int32_t>(rowWidth));
++                    AscendC::PipeBarrier<PIPE_V>();
++                }
+                 ApplyFp32GammaBiasBatch(valueLocal, gammaLocal, biasLocal,
+                                         static_cast<int32_t>(rowWidth), batchRows);
+             } else {
+                 for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
+                     AscendC::LocalTensor<float> valueRow =
+                         valueLocal[static_cast<uint64_t>(batchRow) * rowWidth];
+-                    AscendC::Mul(valueRow, valueRow, gammaLocal, static_cast<int32_t>(rowWidth));
+-                    AscendC::PipeBarrier<PIPE_V>();
+-                    AscendC::Add(valueRow, valueRow, biasLocal, static_cast<int32_t>(rowWidth));
+-                    AscendC::PipeBarrier<PIPE_V>();
++                    AscendC::LocalTensor<float> scaleTile = reduceFp32Buf_.Get<float>();
++                    ApplyScaleFold(valueRow, scaleTile, gammaLocal, biasLocal,
++                                   invRmsValues[batchRow], static_cast<int32_t>(rowWidth));
+                 }
+             }
+             SyncVToMTE3();
+@@ -1776,22 +1754,21 @@
+                 // gammaBuf_ was only a staging buffer for the cached FP32
+                 // parameters, so it is now safe to reuse as the packed output.
+                 AscendC::LocalTensor<T> outputLocal = gammaBuf_.Get<T>();
+-                for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
+-                    const uint64_t valueOffset = static_cast<uint64_t>(batchRow) * rowWidth;
+-                    AscendC::LocalTensor<float> valueRow = valueLocal[valueOffset];
+-                    AscendC::Muls(valueRow, valueRow, invRmsValues[batchRow], width);
+-                    AscendC::PipeBarrier<PIPE_V>();
+-                }
+-                if (width <= kFp32RepeatMaxWidth) {
++                if (width <= kFp32RepeatMaxWidth) {
++                    for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
++                        const uint64_t valueOffset = static_cast<uint64_t>(batchRow) * rowWidth;
++                        AscendC::LocalTensor<float> valueRow = valueLocal[valueOffset];
++                        AscendC::Muls(valueRow, valueRow, invRmsValues[batchRow], width);
++                        AscendC::PipeBarrier<PIPE_V>();
++                    }
+                     ApplyFp32GammaBiasBatch(valueLocal, gammaFp32, biasFp32, width, batchRows);
+                 } else {
+                     for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
+                         const uint64_t valueOffset = static_cast<uint64_t>(batchRow) * rowWidth;
+                         AscendC::LocalTensor<float> valueRow = valueLocal[valueOffset];
+-                        AscendC::Mul(valueRow, valueRow, gammaFp32, width);
+-                        AscendC::PipeBarrier<PIPE_V>();
+-                        AscendC::Add(valueRow, valueRow, biasFp32, width);
+-                        AscendC::PipeBarrier<PIPE_V>();
++                        AscendC::LocalTensor<float> scaleTile = reduceFp32Buf_.Get<float>();
++                        ApplyScaleFold(valueRow, scaleTile, gammaFp32, biasFp32,
++                                       invRmsValues[batchRow], width);
+                     }
+                 }
+                 FromFloat(outputLocal, valueLocal, totalElems);
+@@ -3406,6 +3383,22 @@
+         }
+     }
+ 
++    // value = value * (gamma * invRms) + bias, i.e. (y*a)*b folded to y*(a*b).
++    // scaleTile must not alias gammaSlice when gammaSlice is reused later.
++    __aicore__ inline void ApplyScaleFold(const AscendC::LocalTensor<float>& valueTile,
++                                          const AscendC::LocalTensor<float>& scaleTile,
++                                          const AscendC::LocalTensor<float>& gammaSlice,
++                                          const AscendC::LocalTensor<float>& biasSlice,
++                                          float invRms, int32_t valid)
++    {
++        AscendC::Muls(scaleTile, gammaSlice, invRms, valid);
++        AscendC::PipeBarrier<PIPE_V>();
++        AscendC::Mul(valueTile, valueTile, scaleTile, valid);
++        AscendC::PipeBarrier<PIPE_V>();
++        AscendC::Add(valueTile, valueTile, biasSlice, valid);
++        AscendC::PipeBarrier<PIPE_V>();
++    }
++
+     __aicore__ inline void SyncMTE2ToV()
+     {
+         AscendC::SetFlag<AscendC::HardEvent::MTE2_V>(0);
