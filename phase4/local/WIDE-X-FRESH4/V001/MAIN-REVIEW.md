@@ -4,7 +4,7 @@ Date: 2026-09-25
 
 ## Decision
 
-`NEEDS_ONE_MORE_LOCAL`. Keep V001 unchanged. No performance conclusion, promotion, rejection, or Online submission is supported by the current evidence.
+No local performance verdict has been formed. Keep V001 unchanged. No performance conclusion, promotion, rejection, or Online submission is supported by the current evidence. Build, executable identity, and exact-source correctness are present. Same-binary and timing have not run; source lineage is recorded, but the claimed `FRESH_BLIND` context remains unconfirmed, so the route is not ready to enter timing or claim Online eligibility.
 
 ## Lineage and source review
 
