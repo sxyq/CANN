@@ -12,6 +12,14 @@ Date: 2026-09-27
 
 ## Disposition
 
-No local performance verdict has been formed. `BUILD=PASS`; `CORRECTNESS=PASS`; `EXECUTABLE_IDENTITY=PASS`; `READY_FOR_SAME_BINARY=true`. `TIMING=MEASUREMENT_BLOCKED` is the timing-stage state only: allowed devices d4-d6 currently have heavy VLLM HBM use, and d7 is excluded from performance timing. No Local Best change and no Online submission.
+`BUILD=PASS`; `CORRECTNESS=PASS`; `EXECUTABLE_IDENTITY=PASS`. Shape `[12,64]` failed same-binary block-drift qualification and was not timed. Shape `[12,8192]` passed the empirical Parent noise-floor criteria, then completed four interleaved Parent/Candidate device-event blocks on d6. The median pair delta was `-0.929099%` (`-0.07 us`) against a `0.21 us` median Parent MAD; pair directions were mixed. `LOCAL_VERDICT=NEEDS_ONE_MORE_LOCAL`. No Local Best change and no Online submission.
 
-Next action: with a fresh exclusive performance lease, run Parent same-binary qualification for each selected exact shape before paired samples.
+The measurement ran with AICore at 0%, HBM at 91%, and existing VLLMWorker_TP PID 91228. The Parent same-binary p90 values were `140.72 us` and `8.38 us`; these tails remain in raw evidence. This result supports a local shape verdict only and does not establish a clean-load performance gain.
+
+Next action: keep V001 unchanged; on a fresh eligible lease, repeat the exact-shape qualification and paired measurement before deciding whether another local sample changes the verdict.
+
+## Second Local Set
+
+On 2026-09-26 23:09-23:14 UTC, the same exact source, Parent, Candidate, and unified runner were reverified on d6. Shape `[12,8192]` passed a new Parent same-binary qualification (45 warmups, 31 samples x 2 blocks; MAD/median `0.033505/0.027432`, drift `0.032953`). The following four interleaved pairs were `-0.496282%`, `-1.017813%`, `0.000000%`, and `-0.761427%`; their median was `-0.628855%` (`-0.05 us`) against `0.24 us` Parent median MAD. The full distribution still contains long tails (Parent p90 `20.02/217.86 us`, raw CV `2.051/1.721`), retained in the raw files. The device had AICore 0%, HBM 91%, and VLLMWorker_TP PID 91228. Lease `M1-DTYPE-V001-D6-S07R-20260926T230927Z` was released after the postflight snapshot.
+
+Verdict remains `NEEDS_ONE_MORE_LOCAL`: the second set is within the measured noise floor and does not establish an improvement. `LOCAL_BEST` is unchanged; the only timing-shape blocker is `[12,64]`, which remains unqualified.

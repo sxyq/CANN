@@ -13,14 +13,13 @@
 
 ## Latest Measurement Block
 
-- Current status: `MEASUREMENT_BLOCKED`, based on the Main-provided server3 live-status observation at `2026-09-26T06:53:18Z`.
-- `BLOCK_REASON`: no eligible device lease is available.
-- `DATE`: `2026-09-26T06:53:18Z`.
-- `SHAPE`: approved 24-shape FP32 domain; exact-shape same-binary qualification remains not run.
-- `DEVICE`: none assigned under an eligible lease.
-- `SAME_BINARY_RESULT`: not run for this Candidate's 24 task-domain shapes.
-- `RETRY_REQUIRED`: wait for a fresh eligible Main lease, then preflight and run exact-shape same-binary qualification before any paired measurement.
-- This is a later live status note; the retained `local-result.json` and `source-meta.json` preserve their earlier recorded disposition and build/correctness evidence.
+- Current status: `NEEDS_ONE_MORE_LOCAL` for shape `[12,8192]`; Candidate source remains unchanged.
+- Shape `[12,64]`: Parent same-binary failed block-drift qualification (`0.269231`); Candidate timing was not run for that shape.
+- Shape `[12,8192]`: Parent same-binary passed (`MAD/median=0.029557/0.022727`, block drift `0.024938`), followed by four interleaved device-event pairs in `PC, CP, PC, CP` order.
+- Pair deltas: `-3.535351%`, `+7.512950%`, `-0.800000%`, `-1.058197%`; median `-0.929099%` and median paired change `-0.07 us`, smaller than Parent median MAD `0.21 us`.
+- Device and lease: d6, `M1-DTYPE-V001-D6-S07-20260926`; AICore 0%, HBM 91%, existing VLLMWorker_TP PID 91228.
+- Load note: Parent p90 values were `140.719995 us` and `8.38 us`; no raw samples were discarded. The pair set is usable for this shape's local screening but does not support a stable improvement claim.
+- Raw samples and summaries are listed in `local-result.json` under `LOCAL_MEASUREMENT_20260926`.
 
 ## Retained evidence
 
@@ -41,7 +40,7 @@ On 2026-09-25, the V001 Parent, Candidate, and unified runner targets were confi
 
 The Parent and Candidate source SHAs are respectively `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3` and `e2717055199f541d98d85ceef2e011e52e2749d932ca954dc887868de7db880f`. The paired runner source SHA is `cc16e8149314232d4e4e7ea3bf361479c96e66ee79ad54dabc8b977141ef99a1`. Source and executable identities are retained in `logs/unified-unified-build-20260925T131059Z-30843-build-identity.txt`, with source inputs in `logs/unified-unified-build-20260925T131059Z-30843-source.sha256`.
 
-The runner was built but not executed. The build log contains CCEC host parsing warnings for `GM_ADDR` attributes; all three targets linked successfully. Earlier failed unified-runner link evidence remains retained alongside the successful build logs.
+The runner was subsequently executed for the shape-7 Parent noise floor and four interleaved pairs. The build log contains CCEC host parsing warnings for `GM_ADDR` attributes; all three targets linked successfully. Earlier failed unified-runner link evidence remains retained alongside the successful build logs.
 
 ## Paired Qualification Binding
 
@@ -51,7 +50,7 @@ The change was compiled and linked on `cann-server3` (CANN `8.5.0.alpha002`, SoC
 
 The CPU-only validation executable has no ACL runtime dependency. Its 10 cases passed: matching identity and exact 300-second age accepted; different device, owner, lease, runner SHA, either source SHA, age over 300 seconds, and a future qualification time rejected. Full output: `logs/unified-unified-build-20260925T135025Z-15249-qualification-validation.log`; dynamic dependencies: `logs/unified-unified-build-20260925T135025Z-15249-qualification-validation-ldd.txt`. The first validation-target link attempt lacked the system C++ standard library; its evidence remains retained, and the subsequent build links `stdc++` explicitly and passes.
 
-No unified runner, NPU correctness, noise-floor, or paired timing run was performed. Candidate source SHA remains `e2717055199f541d98d85ceef2e011e52e2749d932ca954dc887868de7db880f`; the existing 39/39 correctness result remains unchanged.
+The existing 39/39 exact-source correctness result remains unchanged. No correctness, source build, or link was repeated for the measurement; the unified runner executed only the already-built measurement path.
 
 ## Paired input decision
 
@@ -79,10 +78,16 @@ The existing 39/39 NPU correctness result remains the correctness evidence for t
 
 ## Main review point
 
-Main to review the exact 24-shape workload, source/executable identities, and build records. The previous reviewed disposition was `NEEDS_ONE_MORE_LOCAL`; the later live status above is `MEASUREMENT_BLOCKED`. No timing or new correctness run was performed in this continuation; no performance claim is made.
+Main disposition: `NEEDS_ONE_MORE_LOCAL` on shape `[12,8192]`; `[12,64]` remains unqualified. Build, correctness, and executable identities remain PASS. No Local Best update or Online submission is authorized by this result.
 
 No V002, dtype change, hypothesis change, Candidate source change, or online submission is included in this handoff.
 
 ## Track-B Research
 
 The current five distinct follow-up directions are DTYPE-FP32-06 Pattern AR reduction, DTYPE-FP32-07 four-block cap, DTYPE-FP32-03 irregular-width batching, DTYPE-FP32-04 output affine fusion, and DTYPE-FP32-02 aligned output transfer. DTYPE-FP32-01 remains `DUPLICATE`; DTYPE-FP32-05 remains `INFEASIBLE`. Mechanism, bottleneck, shapes, help/fail conditions, API feasibility, UB/core/DMA/sync impact, precision risk, overlap screen, minimal OFAT, and falsification steps are recorded in `phase4/research/DTYPE-SPECIAL-X/next-hypotheses.md`. Pattern AR additionally requires packed-result indexing; do not substitute it while retaining the current stride-8 scalar-result offsets. Its packed odd result slots also need an exact CANN 8.5 `Duplicate`/`Sqrt` address check before any implementation proposal.
+
+## Measurement Retry, 2026-09-26 UTC
+
+The existing V001 Candidate was remeasured on d6 under lease `M1-DTYPE-V001-D6-S07R-20260926T230927Z`. Exact source and Parent/Candidate/runner executable identities matched the retained records. Shape `[12,8192]` passed Parent same-binary qualification with 45 warmups, 31 samples per block, MAD/median `0.033505/0.027432`, and block drift `0.032953`. Four interleaved device-event pairs yielded `-0.496282%`, `-1.017813%`, `0.000000%`, and `-0.761427%`; the median change was `-0.628855%` (`-0.05 us`) versus `0.24 us` Parent median MAD. The differences remain within the noise floor. Parent raw CV was `2.051/1.721` and p90 was `20.02/217.86 us`; retain all long-tail samples.
+
+The device stayed at AICore 0%, HBM 91%, with VLLMWorker_TP PID 91228. The postflight snapshot is `logs/measurement-postflight-20260926T231423Z.txt`; raw/jitter/pair evidence is `logs/unified-dtype-noise-floor-20260926T231048Z-34739.*` and `logs/unified-dtype-paired-20260926T231213Z-35265.*`. The lease was released at `2026-09-26T23:14:40Z`. Verdict remains `NEEDS_ONE_MORE_LOCAL`; no Local Best or Online state changed.
