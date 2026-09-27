@@ -1,7 +1,7 @@
 # HANDOFF — quiet-window same-binary re-qualification, three failed shapes (MAIN-2)
 
 Run window: 2026-09-25T14:57:19Z – 15:01:14Z, host `cann-server3`, device **d4 only**
-(preferred device; d5/d6 untouched, d7 never used). Strictly serialized: one lease at a
+(the device selected for this historical run; d5/d6 were untouched and d7 was not selected). Strictly serialized: one lease at a
 time, released before the next was taken. Every lease line is in
 `phase4/control/server3-device-leases.tsv` (`QR-ALIGN-2x100`, `QR-ASYNC-8x8192`,
 `QR-REDUCE-8192`, plus `QR-ALL-FINAL`).
@@ -38,7 +38,7 @@ first-block-slower-than-second-block asymmetry with zero concurrent probes.
 
 ## Host / device state during the runs
 
-- d4 AICore 0% throughout; d5/d6 also idle at AICore 0%; d7 unused.
+- d4 AICore 0% throughout; d5/d6 also idle at AICore 0%; d7 was unused in this historical run. These values are observations, not a current admission requirement.
 - Residual VLLM resident on d4 (`VLLMEngineCor`, ~55.6 GB HBM) — expected, not waited on.
 - Host load (1-min): 27.2 / 26.4 (ALIGN), 25.1 / 22.8 (ASYNC), 22.3 / 22.4 (REDUCE).
   Driven by persistent VLLM workers plus another user's `Lingma` process (~91% CPU).

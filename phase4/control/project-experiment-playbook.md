@@ -67,6 +67,12 @@ WHY_NOT_DUPLICATE
 
 按项目现有 CANN、SoC、编译命令和 wrapper/object/alink 链路执行。记录源码 SHA、环境、命令、完整编译日志、链接结果及 executable SHA。编译或链接失败只说明当前实现/环境未通过该阶段，不单独证明性能架构无效。
 
+编译、链接、源码身份核验、executable 身份采集和 host build test 都是非计时工作，不需要等待性能窗口。任一张可用 NPU 卡报告至少 100 MB 空闲 HBM，即可继续 exact-source 编译类测试；不因 VLLM 占用、AICore 利用率或高 HBM 占用而停止。该阈值只允许继续尝试编译类工作，不代表 NPU correctness 或性能测量已具备条件，也不保证后续运行成功。
+
+### 强制的 8 卡并行编译规则
+
+server3 最多同时使用 8 张卡跑 8 个不同版本的编译或编译测试，每张卡只承载一个版本。按卡独立判断：该卡 `FREE_HBM >= 100 MB` 就继续；只有该卡 `FREE_HBM < 100 MB` 才暂停该卡上的编译测试或换卡。AICore 有占用、VLLM 驻留、其他进程存在，以及仍有至少 100 MB 空闲 HBM 时的高 HBM 使用率，都不能停止编译。不要等待 AICore 归零，不要等待 VLLM 退出，也不要停止其他进程。旧的“等 AICore 空闲、等干净窗口、排除 d7”口径已废止，只能作为历史负载记录，不能继续作为当前运行前提。
+
 ## I. Build Fix / Correctness Fix
 
 Build Fix 或 Correctness Fix 只能处理编译、ABI、API 使用、对齐、同步、正确性或构建兼容问题；可留在原假设及 Revision 内。禁止借 FIX 引入新性能机制。性能假设不变时，按项目记录方式保留每次修复的差异和来源。
@@ -75,13 +81,15 @@ Build Fix 或 Correctness Fix 只能处理编译、ABI、API 使用、对齐、�
 
 编译与链接通过后，使用 exact source 和对应 executable 完成目标 NPU 正确性。记录用例、返回码、误差、日志以及源码/executable 身份。正确性未 PASS 的 Candidate 不得测性能或提交线上。
 
+正确性不要求干净的性能窗口；只要能在不干扰其他进程的前提下安全运行，就继续执行。若运行因资源或环境问题无法完成，记录为 `INCOMPLETE` 和具体原因，不把它记作 Candidate 回归，也不把它替换成计时阶段的 `MEASUREMENT_BLOCKED`。不得停止或杀掉 VLLM 或其他进程。
+
 ## K. Same-binary qualification
 
 Parent 在与 Candidate 相同的设备、形状、dtype、runner、进程方式及计时边界下先做自身稳定性验证。必须满足 `local-timing-protocol.md` 对该形状的资格条件；一个形状或路线的 PASS 不外推到其他形状、dtype、设备或 executable。失败时记 `MEASUREMENT_BLOCKED`，不测 Parent/Candidate。
 
 ## L. Performance device lease
 
-所有性能测量使用 `phase4/control/server3-device-leases.tsv`。同一 device 同一时段只运行一条性能路线，不跨 Main 重叠。开测前实时读取设备、HBM、AICore 和进程；结束后记录并释放 lease。若没有合格设备，不强测，其他可并行的构建、正确性和 Track-B 工作继续。
+所有性能测量使用 `phase4/control/server3-device-leases.tsv`。同一 device 同一时段只运行一条性能路线，不跨 Main 重叠。开测前实时读取设备、HBM、AICore 和进程；结束后记录并释放 lease。性能设备准入条件是实时 HBM 使用率低于 100% 且不存在共享租用冲突；AICore 利用率和已有进程只作为负载记录，不单独停止测量；d7 与其他设备使用同一条件。若没有满足 HBM 条件的设备，不强测；继续源码核验、编译/链接、executable 身份采集、可安全执行的正确性工作和 Track-B。设备与负载资格只限制 same-binary、噪声底及 Parent/Candidate 计时。
 
 ## M. Parent/Candidate paired timing
 

@@ -45,6 +45,16 @@ One revision may contain one conceptual performance change. Multiple edits are v
 
 Build or correctness fixes may remain within the same hypothesis. They are limited to compile, ABI, API usage, alignment, synchronization, correctness, and build compatibility. A fix must not introduce a new performance mechanism.
 
+Compile/link, source identity verification, executable identity collection, host build tests, and NPU correctness are separate from performance-window qualification. For compile-side tests that use an NPU, at least 100 MB free HBM on any available card is sufficient to proceed; do not wait for a clean timing window or stop unrelated VLLM/other processes. NPU correctness should run whenever it can execute safely. Record resource/runtime failures as `INCOMPLETE` with their cause; do not classify the whole Revision as `MEASUREMENT_BLOCKED` for them.
+
+For same-binary qualification, noise-floor measurement, and Parent/Candidate timing, a device is eligible when its live HBM utilization is below 100% and it has no conflicting shared lease. Record AICore utilization and resident processes, but neither is a standalone stop condition. Device 7 has no special timing exclusion.
+
+### Mandatory server3 compile resource rule
+
+For compile, link, source identity, executable identity, host build, and safe NPU correctness work, use up to **8 cards in parallel**, with at most one version assigned to each card. Make the decision per card: continue while that card reports `FREE_HBM >= 100 MB`; pause or move that card's compile test only when `FREE_HBM < 100 MB`. AICore activity, resident VLLM, other processes, and high HBM occupancy while at least 100 MB remains free do not stop compile-side work. Do not wait for AICore to reach zero and do not stop unrelated processes.
+
+Legacy wording that required zero AICore, a VLLM-free device, or a special exclusion of d7 was over-conservative and is retired. Those older entries remain load observations only; they must not be used to defer current compile, correctness, or timing work.
+
 ## F. Local-First Flow
 
 ```text
@@ -58,6 +68,8 @@ Current Validated Local Best (or eligible route seed)
         -> Child Handoff
         -> Main Review
 ```
+
+Keep non-timing state separate: `BUILD`, `CORRECTNESS`, and `EXECUTABLE_IDENTITY` each retain their own `PASS` / `FAIL` / `INCOMPLETE` or `MISSING` status. Only the timing stage may be `MEASUREMENT_BLOCKED` because device load or shape qualification is unavailable.
 
 Child conclusions are limited to:
 

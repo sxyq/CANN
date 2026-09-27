@@ -2,6 +2,14 @@
 
 日期：2026-09-26。范围为本 Main 的八条指定路线。本文记录证据与本轮五个执行 slot 的建议，不删除路线对象、不改其他 Main 的归属；未进入五个 slot 的路线仍保留源码、分支、证据和 owner。路线树的永久调整由规划层决定。
 
+## 资源准入补充（2026-09-27）
+
+编译、链接、源码/executable 身份核验和 host build tests 不等待性能窗口。server3 最多 8 张卡并行跑 8 个不同版本的编译或编译测试，每张卡只承载一个版本；按卡判断，只要 `FREE_HBM >= 100 MB` 就继续，只有 `FREE_HBM < 100 MB` 才暂停该卡。VLLM、AICore 活跃、其他进程和仍有至少 100 MB 空闲 HBM 时的高 HBM 占用都不能停止编译。该阈值不代表 NPU correctness 或 timing 已合格。Correctness 在可安全运行时继续，遇到资源/运行时限制则单独记录 `INCOMPLETE`；不得停止其他进程。
+
+性能测量的设备准入补充：实时 HBM 使用率低于 100% 且没有跨 Main 共享租用冲突即可使用。AICore 和驻留进程只记录为负载信息，不作为单独停止条件；d7 与其他设备完全相同。旧的“等待 AICore 空闲、等待 VLLM 停止、排除 d7”口径已废止，不能再阻止编译或性能资格化。
+
+server3 于 `2026-09-26T19:55:07Z` 的只读快照显示 d0–d6 均有超过 100 MB 空闲 HBM；VLLM 仍驻留，d0–d3 AICore 约 35%–36%，d4–d6 为 0%。这允许继续编译类工作，但不替代逐形状 same-binary 和噪声底资格。按本轮设备准入补充，d7 只要实时 HBM 低于 100% 且无共享租用冲突，也可以用于性能计时。
+
 ## 结论
 
 建议当前五个 MAIN-1 slot 由以下路线组成：
@@ -117,10 +125,10 @@
 - 经 `result.json` 复核的 Main-1 Official anchors：R31B-V011 45.16，R31A-V016 45.00，MIX-A-V003 44.69；三者均 15/15。
 - Main-1 当前候选的有效本地性能结果：无。污染的 R31B/R31A/MIX 旧数值不纳入方向统计；WIDE 的旧 host shim 不属于 NPU kernel timing。
 - `local-timing-protocol.md` 当前 harness 状态为 `PARTIAL_SHAPE_CONDITIONAL`，资格按 Route、shape、dtype、binary 分别计算。Main-1 当前候选均没有满足本轮要求的完整 same-binary + paired 记录。
-- 历史现场快照（server3 UTC `2026-09-25T22:02:40Z`）：device 0–3 AICore 为 35%–36%，HBM 59969–60026 MB 且有 VLLM worker；device 4–6 AICore 为 0%，HBM 59186–59876 MB 且分别有 VLLM 进程。device 7 AICore 为 0%、HBM 3431 MB、无进程，但现行规程要求避开。
-- 现场快照（server3 UTC `2026-09-26T06:53:18Z`）：npu-smi 确认 device 0–7 均为 Ascend 910B3。device 0–3 的 HBM 为 91%，AICore 为 33%–39%；device 4–6 的 HBM 为 90%–91%，AICore 为 0%；device 7 的 HBM 为 5%、AICore 为 0%，但现行计时规则不允许使用 device 7。device 4 的 `proc-mem` 显示 PID 2999855 `VLLMEngineCor` 使用 55664 MB；驱动不支持全局 `npu-smi info proc` 查询。租用表当时没有 `LEASED` 记录。没有可用的授权计时卡，本次未启动 same-binary 或 P/C。
-- 最新现场复核（server3 UTC `2026-09-26T07:34:13Z`）：device 0–3 的 HBM 仍为 91%，AICore 为 36%–37%；device 4 为 HBM 90%、AICore 0%，device 5–6 为 HBM 91%、AICore 0%；device 7 为 HBM 5%、AICore 0%，仍按现行规则避开。device 4 仍显示 PID 2999855 `VLLMEngineCor` 使用 55664 MB；租用表没有活动 `LEASED` 记录。设备状态未改善，本次也未运行 same-binary 或 P/C。
-- 最新现场复核（server3 UTC `2026-09-26T10:20:36Z`）：device 0–3 的 HBM 为 59969–60026 MB、AICore 为 34%–35%，各有 `VLLMWorker_TP` 进程；device 4 的 HBM 为 59185 MB、AICore 为 0%，PID 2999855 `VLLMEngineCor` 使用 55664 MB；device 5–6 的 HBM 为 59875–59876 MB、AICore 为 0%，各有 `VLLMWorker_TP` 进程。device 7 的 HBM 为 3431 MB、AICore 为 0%、没有运行进程，但仍不得用于计时。该快照为 R31A correctness-only 运行后状态：V016/V021 在 D=32768 与 D=24576 均通过，未产生 timing samples。lease 表没有活动租约；本次没有 same-binary 或 P/C。
+- 历史现场快照（server3 UTC `2026-09-25T22:02:40Z`）：device 0–3 AICore 为 35%–36%，HBM 59969–60026 MB 且有 VLLM worker；device 4–6 AICore 为 0%，HBM 59186–59876 MB 且分别有 VLLM 进程。device 7 AICore 为 0%、HBM 3431 MB、无进程；这些是当时的负载事实，现行规则不以 AICore 或设备编号排除它。
+- 现场快照（server3 UTC `2026-09-26T06:53:18Z`）：npu-smi 确认 device 0–7 均为 Ascend 910B3。device 0–3 的 HBM 为 91%，AICore 为 33%–39%；device 4–6 的 HBM 为 90%–91%，AICore 为 0%；device 7 的 HBM 为 5%、AICore 为 0%。device 4 的 `proc-mem` 显示 PID 2999855 `VLLMEngineCor` 使用 55664 MB；驱动不支持全局 `npu-smi info proc` 查询。租用表当时没有 `LEASED` 记录。本次未启动 same-binary 或 P/C，原因是当时未取得租用，不是 AICore 或 d7 规则。
+- 最新现场复核（server3 UTC `2026-09-26T07:34:13Z`）：device 0–3 的 HBM 仍为 91%，AICore 为 36%–37%；device 4 为 HBM 90%、AICore 0%，device 5–6 为 HBM 90%–91%、AICore 0%；device 7 为 HBM 5%、AICore 0%。device 4 仍显示 PID 2999855 `VLLMEngineCor` 使用 55664 MB；租用表没有活动 `LEASED` 记录。本次未运行 same-binary 或 P/C，原因是未取得租用。
+- 最新现场复核（server3 UTC `2026-09-26T10:20:36Z`）：device 0–3 的 HBM 为 59969–60026 MB、AICore 为 34%–35%，各有 `VLLMWorker_TP` 进程；device 4 的 HBM 为 59185 MB、AICore 为 0%，PID 2999855 `VLLMEngineCor` 使用 55664 MB；device 5–6 的 HBM 为 59875–59876 MB、AICore 为 0%，各有 `VLLMWorker_TP` 进程；device 7 的 HBM 为 3431 MB、AICore 为 0%、没有运行进程。该快照为 R31A correctness-only 运行后状态：V016/V021 在 D=32768 与 D=24576 均通过，未产生 timing samples。lease 表没有活动租约；本次没有 same-binary 或 P/C，原因是未取得租约。
 - Main-1 `ONLINE_CANDIDATES`：无。
 
 ## 缺少的本地验证队列

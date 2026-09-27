@@ -63,6 +63,16 @@ Additional structural issues:
 
 Applies to all MAIN-1 and MAIN-2 Routes from the next device window onward. Measurement only — no Candidate edits.
 
+### Non-timing work is independent
+
+The device-window and load requirements in this file apply only to same-binary qualification, empirical shape-specific noise floors, and Parent/Candidate performance timing. Source SHA verification, compile, link, executable identity collection, host build tests, and safe NPU correctness do not wait for a clean performance window. For compile-side tests that use an NPU, at least 100 MB free HBM on any available card is sufficient to proceed; this does not qualify correctness or timing and does not guarantee a run will succeed. Do not stop VLLM or other processes. Record a resource/runtime-limited correctness run as `INCOMPLETE`.
+
+For performance work, the device admission condition is live HBM utilization below 100% plus no conflicting shared lease. AICore utilization and resident processes must be recorded, but they do not independently prevent same-binary, noise-floor, or paired timing. Device 7 is eligible under the same rule as every other device.
+
+### Mandatory compile parallelism
+
+Compile, link, source verification, executable identity collection, host build, and safe NPU correctness are non-timing operations. Use up to 8 cards in parallel for different versions, one version per card. Continue a card-local compile test while `FREE_HBM >= 100 MB`; only `FREE_HBM < 100 MB` pauses that card's compile test. AICore utilization, VLLM residency, other processes, and HBM use below full capacity are recorded observations, not compile stop conditions. The former conservative practice of waiting for zero AICore, stopping VLLM, or excluding d7 is retired.
+
 ### Warmup
 
 - Default: **45** launch+full-stream-sync cycles before any timed sample (was 10; was 3–5).
@@ -103,7 +113,7 @@ Applies to all MAIN-1 and MAIN-2 Routes from the next device window onward. Meas
 
 - Single device per lease window via the shared `phase4/control/server3-device-leases.tsv`; record the owning Main and Route for every lease.
 - One performance Route at a time per device across MAIN-1 and MAIN-2. Never run concurrent timing on the same device from different Routes or Mains.
-- Avoid d7. Prefer AICore 0% **and** document HBM/procs; AICore 0% alone is not sufficient.
+- Use any device whose live HBM utilization is below 100% and whose shared lease is exclusive for the Route. Record HBM, AICore, and processes before and after the run; AICore is observational and is not a timing stop condition.
 
 ### Sample order
 
