@@ -2,8 +2,8 @@
   "ROUTE": "EPILOGUE-FUSE-X",
   "REVISION": "V002",
   "SINGLE_HYPOTHESIS": "V002-1 VMLA FUSED AFFINE",
-  "LOCAL_VERDICT": "NOT_COMPLETE",
-  "VERDICT_REASON": "Correctness PASS (53/54; 1 pre-existing parent failure) and compile/link PASS. Device timing not yet run (Main: after REDUCE V002).",
+  "LOCAL_VERDICT": "LOCAL_REJECTED",
+  "VERDICT_REASON": "VMLA path shape (64x8192 FP32, localRows>1 on 24/40 cores) shows consistent +3.4% median regression across 6 interleaved P/C pairs (all 6 same direction). In-place accumulator + per-row bias reload + SyncVToMTE2 costs more than fused vmla saves. Controls (non-VMLA shapes) show no systematic change. Same-binary strict gate failed on all shapes (short-kernel drift); P/C run as diagnostic.",
   "BUILD": {
     "host": "cann-server3",
     "cmake_rc": 0,
@@ -30,7 +30,27 @@
     "sync_note": "SyncVToMTE2 before per-row bias reload is a correctness requirement of the in-place accumulator (closes V-pipe/MTE2 race), not a performance sync change"
   },
   "MEASUREMENT": {
-    "status": "NOT_RUN",
-    "reason": "Main instruction: device timing will be scheduled after REDUCE V002"
-  }
+    "status": "COMPLETE",
+    "device": "server3 d5 (lease R2-EPI-V002-TIMING)",
+    "method": "DEVICE_EVENT_PRIMARY",
+    "warmup": 45,
+    "samebinary": {
+      "shapes_total": 6,
+      "shapes_pass": 0,
+      "gate": "MAD/med<=0.10 AND drift<=0.10",
+      "note": "All shapes fail strict drift gate (short-kernel outliers). MAD/med acceptable (0.05-0.08) on 8192-width shapes."
+    },
+    "paired": {
+      "vmla_shape": "64x8192 FP32 (localRows>1 on 24/40 cores)",
+      "pairs": 6,
+      "deltas_pct": [2.15, 5.10, 2.86, 3.68, 3.24, 6.99],
+      "median_delta_pct": 3.4,
+      "direction": "6/6 Candidate slower — stable regression",
+      "controls_note": "Non-VMLA shapes (2x8192, 4x8192, 8x8192, 2x4096, 2x256) show mixed/noisy results consistent with no systematic change"
+    },
+    "summary_path": "support/results-timing-v002/SUMMARY.md",
+    "raw_path": "support/results-timing-v002/"
+  },
+  "ONLINE_WORTHY": "NO",
+  "ONLINE_DECISION": "LOCAL_REJECTED — stable regression on VMLA path; roll back to parent",
 }
