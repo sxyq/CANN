@@ -446,3 +446,37 @@ Mechanism: merge win grows with tileCount (8→1 large win); tileCount=2 delayed
 LOCAL_VERDICT=NEEDS_ONE_MORE_LOCAL. ONLINE_WORTHY=NO.
 
 V002 proposal: apply merge only when tileCount>=4 (single-variable gate).
+
+## Official weak-case strategy (overnight analysis)
+
+| case | gap | dominant region | MAIN-2 open? |
+|---|---|---|---|
+| 14 | 4.4x | wide store | STORE-H2B-GATED (in progress) |
+| 7 | 3.7x | per-row handoff | SEQ-FUSE-2 (next) |
+| 6 | 2.6x | per-row handoff | SEQ-FUSE-2 |
+| 4 | 2.5x | per-row handoff | SEQ-FUSE-2 |
+| 8 | 2.3x | per-row handoff | SEQ-FUSE-2 |
+| 1 | 3.2x | launch/Init fixed cost | near floor under constraints |
+| 3 | 2.1x | launch/Init fixed cost | near floor |
+
+Top next after STORE: **SEQ-FUSE-2** (inline reciprocal denominator) — covers 4 weak cases; orthogonal to STORE (case 14).
+Fallback if Div is fast-approx: EPI-FUSE-1 is DUPLICATE of already-tried SCALE-FOLD — need a different fallback.
+
+## STORE-EPILOGUE-X V002 — LOCAL_ACCEPTED (2026-09-27 overnight)
+
+SOURCE_SHA `59fb8eada4da0b2b83cccffa4fb89fb97b7503ba3dcb08d5e0fe348e3caeb839`
+COMPILE/LINK RC=0. CORRECTNESS PASS (24/26 both; 2 parent-shared golden).
+Gate: `mergeRowRuns = tileCount>=4 && (rowWidth%8==0)` in ProcessWideFp32FullCacheRows only.
+
+| shape | gate | median Δ | C/P | sb |
+|---|---|---|---|---|
+| **1x32768 FP32** | ON | **−5.62%** | **6/0** | PASS |
+| 2x8192 / 2x6144 / 8x8192 / 2x256 / 1x16384 FP16 | OFF (identical code) | noise band | — | mixed |
+
+**Key**: all non-32768 shapes execute byte-identical parent code — their deltas are noise floor, structurally cannot be candidate regressions.
+V001 medium regression source removed.
+
+**LOCAL_BEST = V002** (first MAIN-2 LOCAL_ACCEPTED on frozen strong baseline).
+ONLINE_WORTHY = **FUTURE_CANDIDATE** (package frozen). **NO Judge this cycle** — online budget reserved and unused (V002 VECTOR-MATH is MEASUREMENT_BLOCKED).
+
+Targets Official case 14 (largest gap, 4.4x) via large-shape store traffic.
