@@ -300,3 +300,36 @@ LOCAL_REJECTED. Staging UB stole tile budget.
 **FOUR large-D variants have now failed (REDUCE ×3, COEFF ×1). Large-D bottleneck is NOT reduction V/S and NOT param MTE2.** Remaining suspects inside MAIN-2 scope: input x/residual DMA (ASYNC lane, parked), output store (EPILOGUE, small), compute apply itself, or mode selection (MAIN-1).
 
 Next: COEFF H2 stripe residency with tileElems pinned at 4096; VECTOR-MATH-X (rsqrt sequence).
+
+## COEFF-LOCALITY-X V002 NO_UB_BUDGET (2026-09-27)
+
+tileElems=4096 leaves only ~16 KiB UB; gamma+bias tile needs 32 KiB. No stripe fits.
+Also host clamps blockCount to rowCount → measured shapes have localRows=1 → no cross-batch reload to skip.
+
+H1 REJECTED, H2 STOPPED, H3 ceiling small. **PARK COEFF-LOCALITY-X** unless H3 is explicitly requested.
+
+## VECTOR-MATH-X V001 + INTEGRATION-X start (2026-09-27)
+
+VECTOR-MATH V001 (vector denominator): batched 32x256 **-7.3% 3/3**, 8x256 ~-8%. KEEP_ACCUMULATING. Rsqrt rejected (fast-approx). LOCAL_BEST=V001 for batched.
+
+INTEGRATION-X approved: merge SCHED V002 (de1e93c7) + VECTOR-MATH V001 (dbe776f9) on frozen parent. Two validated mechanisms, no third. Target multi-shape wins → ONLINE_WORTHY → Main submits.
+
+## OFFICIAL SUBMISSION 1 — INTEGRATION-X V001 (2026-09-27)
+
+| Field | Value |
+|---|---|
+| Submission ID | `6ab891a7694b590c3cd47555` |
+| LOCAL_SHA == REMOTE_SHA | `52f3a329703e5ea17dda12ea275911b9354ce25d6e50fd60ed981fe075a0da12` |
+| Correctness | 15/15 |
+| Official Score | **41.93** |
+| Official Anchor | 45.16 (R31B-V011) |
+| Delta | **-3.23** |
+| Decision | **REJECT** |
+
+Per-case vs R31B-V011: cases 4/6/7 regressed sharply (16.55→31.32, 28.46→49.04, 52.34→76.45 µs).
+Local 33x100 -4.4% did not transfer; mid-size Official cases paid for the group-split / vector-denominator changes.
+
+**Champion unchanged: R31B-V011 45.16.** Calibration FALSE_POSITIVE recorded.
+Evidence: `phase4/online/INTEGRATION-X/V001/`.
+
+Online queue this cycle: 1/2 used.
