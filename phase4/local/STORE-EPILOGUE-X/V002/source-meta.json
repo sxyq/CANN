@@ -1,0 +1,33 @@
+{
+  "route": "STORE-EPILOGUE-X",
+  "revision": "V002",
+  "hypothesis_id": "STORE-H2B-GATED",
+  "single_hypothesis": "Single-row resident writeback merge with tileCount>=4 gate (intra-row)",
+  "parent_source_sha": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "source_sha": "59fb8eada4da0b2b83cccffa4fb89fb97b7503ba3dcb08d5e0fe348e3caeb839",
+  "v001_source_sha": "06564134e4930eb3e2ca30297b9bda548135d1aa8a1f43238b75dafc8a8c09f9",
+  "server3_source_sha_match": true,
+  "change_site": "ProcessWideFp32FullCacheRows output pass only — mergeRowRuns = tileCount>=4 && (rowWidth%8==0); tileCount<4 keeps the parent per-tile writeback block verbatim",
+  "generic_path": "reverted to parent byte-identical (its tileCount is capped at 2, so the gate would never open there)",
+  "diff_vs_parent_hunks": ":2173-2279 single function (ProcessWideFp32FullCacheRows output pass)",
+  "boundaries_respected": {
+    "no_cross_row_merge": true,
+    "store_helper_untouched": true,
+    "ring_event_discipline_preserved": true,
+    "fallback_is_parent_code": true,
+    "no_dtype_split": true,
+    "no_reduction_change": true,
+    "no_scheduling_change": true
+  },
+  "build_host": "cann-server3 (/home/data4t2/lelinfeng/phase4-workspaces/STORE-EPILOGUE-X)",
+  "compile_rc": 0,
+  "link_rc": 0,
+  "link_executable_sha": "bfcb09ee966a4e31eeee5398089bfbd1862ff05bec74e2f5bb993c39aa0572a8",
+  "probe_executable_sha": {
+    "se_parent_probe": "ca3598647f0b9efe27a6737281bb47beec3d2d7ddac7bafb9d6eb3e27f723700",
+    "se_candidate_probe": "76e0400100d9ac05d72275a333666efddf36b0c603d24b971b4e178ea1e01834",
+    "se_ref_parent_probe": "937f88dbba0b06652bf339585745c3874db6839838efda7ae1416167da3e1273",
+    "se_ref_candidate_probe": "3ff09dc64a0a22104b060f8aae0fc07255df2110944767ec48995171f6ef397c"
+  },
+  "probe_identity_note": "se_parent_probe and se_ref_parent_probe SHAs identical to V001's parent probes — parent binary unchanged across revisions"
+}
