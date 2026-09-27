@@ -1,0 +1,31 @@
+{
+  "ROUTE": "VECTOR-MATH-X",
+  "REVISION": "V002",
+  "SINGLE_HYPOTHESIS": "VM-H3a partial: Duplicate broadcast + vector Mul",
+  "LOCAL_VERDICT": "NOT_COMPLETE",
+  "VERDICT_REASON": "Correctness 53/54 (1 pre-existing wide FP32). Timing lease pending (INTEGRATION using devices).",
+  "BUILD": {
+    "host": "cann-server3",
+    "compile_rc": 0,
+    "link_rc": 0,
+    "link_executable_sha": "b5bc0ad263067efc1c56075aa20c26eab25f9139f821a0187d9a8002afb5a660",
+    "probe_executable_sha": "49ca333ed8c671a941c174d3cc6424a8853efd10518f89b9bd724a998cd50eec"
+  },
+  "CORRECTNESS": {
+    "device": "server3 d4",
+    "total_cases": 54,
+    "passed": 53,
+    "failed": 1,
+    "failed_case_class": "PRE_EXISTING_PARENT_FAILURE"
+  },
+  "SINGLE_CHANGE_AUDIT": {
+    "status": "PASS",
+    "mechanism": "Muls -> Duplicate + Mul (broadcast normalize)",
+    "div_note": "V-side Div tested and reverted (ACL_FAIL sync=507035)",
+    "bcastBuf_note": "Must use reduceFp32Buf_ (not xFp32Buf_ which holds BF16 gamma)"
+  },
+  "MEASUREMENT": {
+    "status": "NOT_RUN",
+    "reason": "Timing lease pending (INTEGRATION using devices first)"
+  }
+}

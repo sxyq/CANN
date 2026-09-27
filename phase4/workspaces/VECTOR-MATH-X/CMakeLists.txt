@@ -34,3 +34,16 @@ target_link_directories(vector_math_x_probe PRIVATE ${ASCEND_HOME_PATH}/lib64)
 target_link_options(vector_math_x_probe PRIVATE -L/usr/lib/gcc/aarch64-linux-gnu/11 -L/usr/lib/aarch64-linux-gnu)
 target_link_libraries(vector_math_x_probe PRIVATE ascendcl tiling_api register platform unified_dlog dl m graph_base)
 target_compile_options(vector_math_x_probe PRIVATE $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=dav-2201> -std=c++17)
+
+function(vmx_add_ref_probe target source)
+    add_executable(${target} ${source})
+    target_include_directories(${target} PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/support
+        ${ASCEND_HOME_PATH}/aarch64-linux/include /usr/include/c++/11 /usr/include/aarch64-linux-gnu/c++/11)
+    target_link_directories(${target} PRIVATE ${ASCEND_HOME_PATH}/lib64)
+    target_link_options(${target} PRIVATE -L/usr/lib/gcc/aarch64-linux-gnu/11 -L/usr/lib/aarch64-linux-gnu)
+    target_link_libraries(${target} PRIVATE ascendcl tiling_api register platform unified_dlog dl m graph_base)
+    target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=dav-2201> -std=c++17)
+endfunction()
+vmx_add_ref_probe(vmx_ref_parent support/runner_ref_parent.asc)
+vmx_add_ref_probe(vmx_ref_v001 support/runner_ref_v001.asc)
