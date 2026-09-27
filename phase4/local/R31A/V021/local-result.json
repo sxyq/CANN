@@ -258,11 +258,11 @@
       "overall_direction_consistency": "PENDING"
     }
   },
-  "FOLLOW_UP_PROBES": "NOT_RUN: P/C/P/C harness identity and commands are prepared and validated. Main reports load contamination across all 8 devices and no Main-1 lease; stop at Main Review. This turn performed no device query, load snapshot, executable launch, or timing.",
-  "STATUS": "HOST_PREPARATION_COMPLETE_MAIN_REVIEW",
+  "FOLLOW_UP_PROBES": "PARENT_SAME_BINARY_RUN: d7, exact device-event runner, warmup=45, 21 samples x 2 blocks. D32768 and D24576 both failed shape qualification; no P/C timing was started.",
+  "STATUS": "PARENT_SAME_BINARY_COMPLETED_NO_SHAPE_QUALIFIED",
   "ARCHITECTURE_NOVELTY": "NONE: existing MTE3/V synchronization primitive with a changed wait placement only.",
-  "RISKS": "Correctness passed target and control on device 4, but both latency pairs are load-contaminated and have opposing deltas. The deferred MTE3 completion relies on each value tile remaining untouched until the row-level wait.",
-  "DECISION": "NOT_COMPLETE",
+  "RISKS": "Parent same-binary instability prevents a valid Parent/Candidate comparison at both exact shapes. The deferred MTE3 completion relies on each value tile remaining untouched until the row-level wait.",
+  "DECISION": "MEASUREMENT_BLOCKED",
   "NEXT_CANDIDATE_HYPOTHESIS": "None declared; await Main Review. Any later revision must return to R31A-V016.",
   "CLEANUP": "NONE: no files or server3 build directories deleted or cleaned.",
   "NON_TIMING_STATUS_20260927": {
@@ -286,13 +286,32 @@
       "candidate_module": "9bacd8cd72b8db5c6b8a1574ce199c674b18bc2bcf858cfb91ade29f71d24674",
       "runner": "7dbde489de951be883fe38d6cbc991800c0451a97931af8ac036c339f0e61f9a"
     },
-    "SAME_BINARY": "NOT_RUN",
+    "SAME_BINARY": "FAIL_SHAPE_QUALIFICATION",
     "TIMING": "MEASUREMENT_BLOCKED",
-    "TIMING_BLOCKER": "No qualified MAIN-1 performance window; d4-d6 retain heavy VLLM HBM use and d7 is excluded from timing.",
-    "LOCAL_VERDICT": "NOT_COMPLETE",
-    "READY_FOR_SAME_BINARY": true,
-    "DEVICE_WINDOW": "UNAVAILABLE",
+    "TIMING_BLOCKER": "Parent same-binary shape qualification failed on d7: D32768 block drift=0.635447; D24576 block drift=0.446239 and block2 MAD/median=0.325921. HBM admission passed; AICore and resident processes were observational only.",
+    "LOCAL_VERDICT": "MEASUREMENT_BLOCKED",
+    "READY_FOR_SAME_BINARY": false,
+    "DEVICE_WINDOW": "USED_D7_HBM_3431_TO_3432_OF_65536_MB_NO_PROCESS_NO_CONFLICT",
     "LOCAL_BEST_UPDATED": false,
     "ONLINE_WORTHY": "NO"
+  },
+  "TIMING_RUN_20260927": {
+    "LEASE_ID": "M1-R31A-V021-D7-20260927T054149Z",
+    "DEVICE": 7,
+    "PRE_HBM_MB": 3431,
+    "POST_HBM_MB": 3432,
+    "PRE_AICORE_PERCENT": 96.2,
+    "POST_AICORE_PERCENT": 95.6,
+    "PRE_PROCESS": "none",
+    "POST_PROCESS": "none",
+    "runner_mode": "device-event-primary_wall-clock-diagnostic",
+    "warmups": 45,
+    "samples_per_block": 21,
+    "parent_v016": {
+      "D32768": {"block1_median_us": 18.94, "block1_mad_over_median": 0.012672, "block2_median_us": 36.58, "block2_mad_over_median": 0.024057, "block_drift": 0.635447, "protocol_result": "NOT_QUALIFIED"},
+      "D24576": {"block1_median_us": 18.279999, "block1_mad_over_median": 0.065646, "block2_median_us": 28.78, "block2_mad_over_median": 0.325921, "block_drift": 0.446239, "protocol_result": "NOT_QUALIFIED"}
+    },
+    "candidate_timing": "NOT_RUN_BECAUSE_PARENT_SHAPE_QUALIFICATION_FAILED",
+    "evidence_dir": "support/results/d7-20260927T054149Z/"
   }
 }

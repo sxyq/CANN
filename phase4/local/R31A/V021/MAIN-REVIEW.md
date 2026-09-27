@@ -12,6 +12,10 @@ Date: 2026-09-27
 
 ## Disposition
 
-No local performance verdict has been formed. `BUILD=PASS`; `CORRECTNESS=PASS`; `EXECUTABLE_IDENTITY=PASS`; `READY_FOR_SAME_BINARY=true`. `TIMING=MEASUREMENT_BLOCKED` is the timing-stage state only: d4-d6 currently have heavy VLLM HBM use, and d7 is excluded from performance timing. Earlier contaminated P/C values are not used. No Local Best change and no Online submission.
+`BUILD=PASS`; `CORRECTNESS=PASS`; `EXECUTABLE_IDENTITY=PASS`. A fresh MAIN-1 lease used d7 because live HBM was 3431/65536 MB before the run and 3432/65536 MB after the run; d7 had no running process. AICore was recorded as 96.2% before and 95.6% after, and did not affect device admission.
 
-Next action: with a fresh exclusive performance lease, run Parent same-binary qualification on the selected exact shape before any paired samples.
+Parent same-binary qualification used the existing device-event runner, 45 warmups, and 21 samples in each of two blocks. D=32768 returned block medians 18.940000/36.580000 us, MAD/median 0.012672/0.024057, and block drift 0.635447: `NOT_QUALIFIED`. D=24576 returned block medians 18.279999/28.780000 us, MAD/median 0.065646/0.325921, and block drift 0.446239: `NOT_QUALIFIED`.
+
+No Parent/Candidate timing was run because neither exact shape passed its Parent noise-floor qualification. `SAME_BINARY=FAIL`; `TIMING=MEASUREMENT_BLOCKED` due to shape-specific Parent instability, not HBM, AICore, VLLM, or a lease conflict. Earlier contaminated P/C values remain excluded. `LOCAL_BEST` and Online state are unchanged. Evidence is under `support/results/d7-20260927T054149Z/`.
+
+Next action: retain V021 as the current Candidate and continue the remaining non-timing dispositions; do not create V022 or submit Online.

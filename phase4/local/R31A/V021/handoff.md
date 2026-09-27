@@ -1,12 +1,16 @@
 # R31A V021 Main Handoff
 
-## 当前授权窗口（2026-09-26）
+## 当前授权窗口（2026-09-27）
 
-`M1-R31A-V021-CORRECT-20260926` 已由 Main 写入 canonical lease；仅允许 device 7 correctness-only。禁止 same-binary、device-event sample、性能 timing、Online、V022 和 Candidate 源码修改。构建与证据整理先行；exact Parent/Candidate 重编完成后，须重新读取 d7 进程状态与 lease，只有仍无进程且无外部新 lease 才能运行 V016/V021 correctness-only。
+`M1-R31A-V021-D7-20260927T054149Z` 已由 Main 写入并释放 canonical lease。d7 在运行前后 HBM 为 3431/3432 MB of 65536 MB，满足性能设备准入；无进程、无冲突 lease。AICore 96.2%/95.6% 只作负载记录。已完成 Parent same-binary，未进入 Parent/Candidate timing；Candidate 源码未修改，未创建 V022，未提交 Online。
+
+## 本轮最终状态
+
+`BUILD=PASS`; `CORRECTNESS=PASS`; `EXECUTABLE_IDENTITY=PASS`; `SAME_BINARY=FAIL_SHAPE_QUALIFICATION`; `TIMING=MEASUREMENT_BLOCKED`; `LOCAL_VERDICT=MEASUREMENT_BLOCKED`。D=32768 的 Parent 两块漂移为 0.635447；D=24576 的 Parent 两块漂移为 0.446239，且第二块 MAD/median 为 0.325921。两种精确 shape 均未达到资格，因此没有 P/C 样本，也没有 Local Best 或 Online 状态变化。完整证据位于 `support/results/d7-20260927T054149Z/`。
 
 ## 状态
 
-`NEEDS_ONE_MORE_LOCAL`；V021 与 V016 源码保持不变。历史失败、污染测量和此前 d7 记录全部保留；本窗口的新结果只补充当前 exact source/module/runner 身份和 correctness-only 证据，不改变性能结论。
+`MEASUREMENT_BLOCKED`；V021 与 V016 源码保持不变。历史失败、污染测量和此前 d7 记录全部保留；本窗口补充了当前 exact source/module/runner 身份、Parent same-binary raw samples 和 shape qualification 结果。
 
 ## 版本与来源
 
@@ -116,11 +120,11 @@ Every build attempt remains under `support/`:
 - 单次 device event 为主指标，launch+wait 的 wall time 为诊断项；设备分配只发生在进程初始化，H2D 在 warmup 前完成，计时循环内没有分配或数据拷贝。
 - 计时样本先落盘，随后才执行 correctness D2H 与 golden compare。每个被测版本的 correctness 调用前都向 `outputDevice` 写入 NaN sentinel，再验证完整输出；same 模式只调度所选版本的 correctness、warmup 与采样。
 
-仍由 Main 的运行编排负责：paired runner 本身不查询或写入设备租约，也不采集运行前后的 npu-smi、HBM、AICore、进程与时间戳；这些信息须随实际运行记录保存。runner 也没有 Parent-only、PRECHECK-A/B、多进程重复的 window-qualification 模式。`pair` 命令本身不读取 same-binary 结果来决定是否继续，因此每个精确形状必须先对 Direct Parent V016 单独运行 same-binary，确认 MAD/median 与块间漂移均不超过 0.10，再由 Main 确认该形状可测、有独占 MAIN-1 租约，并按需完成 Parent-only window qualification。d7 继续避用。
+仍由 Main 的运行编排负责：paired runner 本身不查询或写入设备租约，也不采集运行前后的 npu-smi、HBM、AICore、进程与时间戳；这些信息须随实际运行记录保存。runner 也没有 Parent-only、PRECHECK-A/B、多进程重复的 window-qualification 模式。`pair` 命令本身不读取 same-binary 结果来决定是否继续，因此每个精确形状必须先对 Direct Parent V016 单独运行 same-binary，确认 MAD/median 与块间漂移均不超过 0.10，再由 Main 确认该形状可测、有独占 MAIN-1 租约，并按需完成 Parent-only window qualification。d7 已按 HBM < 100% 且无冲突 lease 的现行规则使用；AICore 和驻留进程没有作为停止条件。
 
 当前 runner 正文 SHA-256 为 `c95dec4cfd552020462e509fa3fbbf2dbe3b10162ff719cf735df15b1f08b2e7`；Parent source SHA-256 为 `dd13093823c885e785a650abff4863827e652eb8607ad0621a96eb31b6764fa0`；Candidate source SHA-256 为 `4f5bfc319b72d1f0bcfd453bc92e80ac64216719898757292daf1aa1b73b6063`。所有三项服务器源码 SHA 与本地值一致。使用上述四个新日志构建，runner ELF SHA-256 为 `d11fa9aa541e5c75dc38bd509cd515ca44347162741f6b93b7a0b371aecfde11`，Parent module SHA-256 为 `11d7a2cb60912ce23b05a768c9076abcf2c513ad8b0844cc062d158082a4d5ea`，Candidate module SHA-256 为 `9bacd8cd72b8db5c6b8a1574ce199c674b18bc2bcf858cfb91ade29f71d24674`。
 
-新 GCC 11 host bridge suite 覆盖动态库缺失、符号缺失及 V016/V021 dispatch；它编译 `paired_probe.cpp` 的 bridge-only 分支，不编译 timing main include。runner C++ build 已编译当前正文并链接新 ELF。未执行 runner ELF、ACL 注册、NPU correctness、same-binary 或 timing。
+新 GCC 11 host bridge suite 覆盖动态库缺失、符号缺失及 V016/V021 dispatch；它编译 `paired_probe.cpp` 的 bridge-only 分支，不编译 timing main include。runner C++ build 已编译当前正文并链接新 ELF。已执行 exact runner ELF 的 d7 Parent same-binary；D=32768 和 D=24576 均未通过 shape qualification，未执行 P/C timing。完整 raw samples、jitter、资格文件和 npu-smi 前后快照已保存。
 
 The prepared invocations are:
 
@@ -135,4 +139,4 @@ Track-B remains three distinct R31A-only hypotheses in `phase4/research/R31A/nex
 
 ## Current handoff boundary
 
-Current protocol-alignment runner build and link: PASS (return code 0); host bridge tests: 4/4 PASS (return code 0). The first build without CANN environment setup failed with return code 2 and remains retained. No V022 or other revision was created. V021 source remains unchanged at `4f5bfc319b72d1f0bcfd453bc92e80ac64216719898757292daf1aa1b73b6063`. No runner execution, ACL/NPU correctness, device query, same-binary, or timing was performed; no eligible MAIN-1 lease is recorded. Earlier V021 correctness records and load-contaminated latency records remain unchanged. All old build logs, including failed attempts, remain retained. No shared control file or other Route was changed.
+Current protocol-alignment runner build and link: PASS (return code 0); host bridge tests: 4/4 PASS (return code 0). The first build without CANN environment setup failed with return code 2 and remains retained. No V022 or other revision was created. V021 source remains unchanged at `4f5bfc319b72d1f0bcfd453bc92e80ac64216719898757292daf1aa1b73b6063`. Exact d7 Parent same-binary runs completed for D=32768 and D=24576; both shape qualifications failed and no P/C timing was started. Earlier V021 correctness records and load-contaminated latency records remain unchanged. All old build logs, including failed attempts, remain retained.
