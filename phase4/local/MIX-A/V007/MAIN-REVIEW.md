@@ -4,7 +4,7 @@ Date: 2026-09-25
 
 ## Decision
 
-No local performance verdict has been formed. Keep V007 unchanged. The retained contaminated measurements do not support a performance conclusion, promotion, rejection, or Online submission. `BUILD=PASS`; `CORRECTNESS=PASS`; `EXECUTABLE_IDENTITY=PASS`; `READY_FOR_SAME_BINARY=true`. `TIMING=MEASUREMENT_BLOCKED` is the timing-stage state only; the allowed d4-d6 devices currently have heavy VLLM HBM use, and d7 is excluded from performance timing.
+No local performance verdict has been formed. Keep V007 unchanged. The retained contaminated measurements do not support a performance conclusion, promotion, rejection, or Online submission. `BUILD=PASS`; `CORRECTNESS=PASS`; `EXECUTABLE_IDENTITY=PASS`; `READY_FOR_SAME_BINARY=true`. `TIMING=MEASUREMENT_BLOCKED` is the timing-stage state only. Any server3 device with live HBM usage below 100% and no conflicting shared lease is eligible; AICore and resident processes are recorded but do not independently stop timing.
 
 ## Lineage and source review
 
@@ -23,7 +23,7 @@ No local performance verdict has been formed. Keep V007 unchanged. The retained 
 
 - The retained V007 route build and link passed on CANN `8.5.0.alpha002`, Ascend910B3, `dav-2201`.
 - The unified Parent/Candidate runner compiled and linked on server3 against the declared V003 and V007 sources. Runner executable SHA-256: `dce996af2ec709219819de3e9ba908f0d41744f2b9820965a1385e080b949110`.
-- The runner validates the latest status for each lease ID, rejects an active conflicting device lease, and disallows d7 for timing. Host-only lease tests passed, including release followed by a later valid lease on the same device.
+- The runner validates the latest status for each lease ID and rejects an active conflicting device lease. Host-only lease tests cover d0-d7, including release followed by a later valid lease on the same device.
 - Existing targeted V007 correctness passed for the `rows=1`, `D=256` FP32, FP16, and BF16 cases; both variants produced identical reference outputs.
 - The unified runner has not been executed. No current-protocol same-binary qualification or new paired sample exists.
 
@@ -36,3 +36,15 @@ No local performance verdict has been formed. Keep V007 unchanged. The retained 
 ## Next action
 
 Keep V007 and its source identity unchanged. Wait for a permitted device window and suitable load, then run same-binary qualification followed by paired measurement if allowed. Do not create V008 before Main returns a decision.
+
+## Current Protocol Run: 2026-09-27
+
+- Exact source and existing Parent/Candidate/unified-runner identities were reused. No build, link, correctness, or Candidate source work was repeated.
+- Device 7 lease: `M1-MIX-A-V007-D7-R2-20260927T065041Z`; shape `rows=1,width=256,dtype=FP32`; warmup `45`; `21` interleaved device-event pairs.
+- Parent same-binary qualification: `PASS`; block MAD/median `0.040252` and `0.029987`; full-set `0.037700`; block drift `0.035783`; Parent correctness bad `0`.
+- P/C correctness: Parent bad `0`, Candidate bad `0`, pair output difference `0`.
+- Candidate device-event MAD/median was `0.294315`. Pair deltas had `11` faster and `10` slower pairs; median paired delta was `-0.939%` (`-0.04 us`). The direction and Candidate dispersion do not establish improvement beyond the shape noise floor.
+- Device record: HBM `3431-3432/65536 MB` (`5%`) before/after; AICore is recorded only, including a postflight reading of `100%`; no process ran on d7. HBM admission passed, and AICore did not stop the run.
+- Raw evidence: `support/results/m1-mix-a-v007-d7-r2-paired-20260927T065041Z.samples.tsv`, `support/results/m1-mix-a-v007-d7-r2-paired-20260927T065041Z.summary.tsv`, and `support/results/m1-mix-a-v007-d7-r2-20260927T065041Z-load.txt`.
+
+Current disposition: `BUILD=PASS`; `CORRECTNESS=PASS`; `SAME_BINARY=PASS`; `TIMING=READY`; `LOCAL_VERDICT=NEEDS_ONE_MORE_LOCAL`; `LOCAL_BEST=UNCHANGED`; `ONLINE_WORTHY=NO`. V007 remains the current Candidate. No V008 and no Online submission.

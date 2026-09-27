@@ -37,7 +37,7 @@ The direct source diff keeps V003 dispatch and math. The only executable-code de
 - Previous executable: `/home/data4t2/lelinfeng/phase4-workspaces/MIX-A/runner-v007/build/mix_a_v007_unified_probe`, ELF 64-bit AArch64 PIE, 650088 bytes, SHA-256 `bf82acf68ce38d28294e517f5b8fa2aace4cdf33252968e1f0c4b2676e4b0c29`. It was identified but not executed.
 - The runner follow-up adds a V003-only `same-binary` mode: one ACL initialization/allocation set, at least 10 warmups, then two event-sampled blocks with at least 21 samples each. `.samples.tsv` labels both blocks; `.summary.tsv` contains each block and pooled full-set statistics, including MAD/median; `.qualification.tsv` records each block ratio, pooled ratio, block drift, parent correctness count, and protocol status. A parent correctness failure overrides the qualification status with `PARENT_CORRECTNESS_FAIL`.
 - Qualification is `PASS` only when both block MAD/median values, pooled full-set MAD/median, and block drift are all at most 0.10. A value above 0.25 yields `MEASUREMENT_PROTOCOL_BLOCKED_FOR_SHAPE`; intermediate values yield `NEEDS_VALIDATION`.
-- Both `same-binary` and `paired` require device, Main owner, lease ID, and a path to the current `server3-device-leases.tsv`. Before creating the ACL probe, the runner requires exactly one active `MIX-A` lease and exact device/owner/lease-ID matches, and rejects another active owner on the requested device. Device parsing rejects non-decimal, negative, non-representable, and out-of-range IDs; measurement modes also refuse d7 per protocol.
+- Both `same-binary` and `paired` require device, Main owner, lease ID, and a path to the current `server3-device-leases.tsv`. Before creating the ACL probe, the runner requires exactly one active `MIX-A` lease and exact device/owner/lease-ID matches, and rejects another active owner on the requested device. Device parsing rejects non-decimal, negative, non-representable, and out-of-range IDs; d0-d7 are accepted when the live HBM and shared-lease conditions are satisfied.
 - CPU-only validation tests pass for valid device/lease records and mismatched device, Main owner, lease ID, released/duplicate leases, competing device ownership, malformed headers, and device bounds. The test compiles and runs without ACL headers or device access.
 - `support/run_probes.sh` still invokes the older V003/V007 wall-clock binaries and samples `npu-smi`; do not use it for the unified procedure. No unified runner correctness invocation or NPU timing was made.
 - `support/run_probes.sh` still invokes the older V003/V007 wall-clock binaries and samples `npu-smi`; do not use it for the unified procedure. No runner correctness invocation or NPU timing was made.
@@ -83,3 +83,13 @@ Main review is recorded in `MAIN-REVIEW.md` with decision `NEEDS_ONE_MORE_LOCAL`
 - This turn reran `c++ -std=c++17 -Wall -Wextra -Werror phase4/local/MIX-A/V007/support/runner_validation_test.cpp -o <temporary-binary> && <temporary-binary>`; exit code `0`, all assertions passed. The temporary binary was removed; the test made no ACL or device calls.
 - No file under `support/results/` was changed. All four retained Parent/Candidate pairs remain `LOAD_CONTAMINATED`.
 - Track B added three design-only ideas to `phase4/research/MIX-A/next-hypotheses.md`. No Candidate source was changed and no V008 was created.
+
+## Current Protocol Evidence: 2026-09-27
+
+- Lease: `M1-MIX-A-V007-D7-R2-20260927T065041Z`, device `7`, shape `rows=1,width=256,dtype=FP32`.
+- Parent same-binary: `PASS` with 45 warmups and 31 samples in each block; block MAD/median `0.040252` and `0.029987`; full-set `0.037700`; block drift `0.035783`.
+- Interleaved P/C: 21 device-event pairs, Parent and Candidate correctness `bad=0`; Candidate MAD/median `0.294315`; median paired delta `-0.939%` (`-0.04 us`); 11 faster and 10 slower pairs.
+- Load: d7 HBM stayed at `5%` (`3431-3432/65536 MB`); AICore and processes were recorded only. The postflight AICore reading reached `100%`, and the run remained admitted because live HBM was below `100%`; no process ran on d7.
+- Evidence: `support/results/m1-mix-a-v007-d7-r2-paired-20260927T065041Z.samples.tsv`, `support/results/m1-mix-a-v007-d7-r2-paired-20260927T065041Z.summary.tsv`, and `support/results/m1-mix-a-v007-d7-r2-20260927T065041Z-load.txt`.
+- Disposition: `BUILD=PASS`; `CORRECTNESS=PASS`; `EXECUTABLE_IDENTITY=PASS`; `SAME_BINARY=PASS`; `TIMING=READY`; `LOCAL_VERDICT=NEEDS_ONE_MORE_LOCAL`; `LOCAL_BEST=UNCHANGED`; `ONLINE_WORTHY=NO`.
+- Keep V007 unchanged. Do not create V008 or submit Online.

@@ -43,7 +43,7 @@ int main()
     assert(mix_a_runner::ParseServerDevice("0", &device) && device == 0);
     assert(mix_a_runner::ParseServerDevice("6", &device) && device == 6);
     assert(mix_a_runner::ParseServerDevice("7", &device) && device == 7);
-    assert(!mix_a_runner::IsTimingDeviceAllowed(7));
+    assert(mix_a_runner::IsTimingDeviceAllowed(7));
     assert(!mix_a_runner::ParseServerDevice("-1", &device));
     assert(!mix_a_runner::ParseServerDevice("8", &device));
     assert(!mix_a_runner::ParseServerDevice("2147483647", &device));
@@ -66,7 +66,7 @@ int main()
     assert(!Validate(releasedPriorLease + active +
                      LeaseRow("4", "MAIN-2", "OTHER-ROUTE", "OTHER-D4-02", "LEASED")));
     assert(!Validate(active + LeaseRow("5", "MAIN-1", "MIX-A", "MIX-A-TEST-02", "LEASED")));
-    assert(!Validate(LeaseRow("7", "MAIN-1", "MIX-A", "MIX-A-TEST-01", "LEASED"), 7));
+    assert(Validate(LeaseRow("7", "MAIN-1", "MIX-A", "MIX-A-TEST-01", "LEASED"), 7));
 
     std::istringstream badHeader("device\towner\tstatus\n");
     mix_a_runner::LeaseIdentity identity;

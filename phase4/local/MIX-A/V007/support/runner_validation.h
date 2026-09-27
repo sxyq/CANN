@@ -13,7 +13,7 @@
 namespace mix_a_runner {
 
 constexpr int kServerDeviceCount = 8;
-constexpr int kTimingDeviceCount = 7;
+constexpr int kTimingDeviceCount = kServerDeviceCount;
 
 struct LeaseIdentity {
     int device = -1;

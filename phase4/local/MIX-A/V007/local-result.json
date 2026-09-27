@@ -37,7 +37,19 @@
       {"pair": 3, "timestamp_utc": "2026-09-23T17:28:03+00:00", "order": ["V003", "V007"], "V003_us": 103.101, "V007_us": 117.011, "status": "LOAD_CONTAMINATED"},
       {"pair": 4, "timestamp_utc": "2026-09-23T17:28:17+00:00", "order": ["V007", "V003"], "V003_us": 128.231, "V007_us": 115.141, "status": "LOAD_CONTAMINATED"}
     ],
-    "local_delta": {"status": "NOT_INFERABLE_LOAD_CONTAMINATED", "v003_mean_us": 125.261, "v007_mean_us": 128.526, "raw_delta_percent": 2.61, "interpretation": "Pairwise direction is inconsistent under substantial shared load; do not claim performance gain or regression."}
+    "local_delta": {"status": "NOT_INFERABLE_LOAD_CONTAMINATED", "v003_mean_us": 125.261, "v007_mean_us": 128.526, "raw_delta_percent": 2.61, "interpretation": "Pairwise direction is inconsistent under substantial shared load; do not claim performance gain or regression."},
+    "current_protocol_20260927": {
+      "device": 7,
+      "lease_id": "M1-MIX-A-V007-D7-R2-20260927T065041Z",
+      "shape": "rows=1,width=256,dtype=FP32",
+      "warmups": 45,
+      "parent_same_binary": {"status": "PASS", "block1_mad_over_median": 0.04025164217, "block2_mad_over_median": 0.0299868862, "full_set_mad_over_median": 0.03769967125, "block_drift_ratio": 0.0357827832, "correctness_bad": 0},
+      "paired": {"pairs": 21, "parent_candidate_device_event": "VALID", "parent_correctness_bad": 0, "candidate_correctness_bad": 0, "candidate_mad_over_median": 0.294314369, "pair_delta_median_percent": -0.938963368, "pair_delta_median_us": -0.04, "faster_pairs": 11, "slower_pairs": 10, "neutral_pairs": 0},
+      "raw_samples": "support/results/m1-mix-a-v007-d7-r2-paired-20260927T065041Z.samples.tsv",
+      "summary": "support/results/m1-mix-a-v007-d7-r2-paired-20260927T065041Z.summary.tsv",
+      "load_snapshot": "support/results/m1-mix-a-v007-d7-r2-20260927T065041Z-load.txt",
+      "interpretation": "Parent qualification passed and P/C ran under admitted HBM. Candidate distribution remained noisy and pair directions were mixed; no stable improvement beyond the shape noise floor was established."
+    }
   },
   "load_quality": {
     "main_dispatch_date": "2026-09-24 Asia/Shanghai; exact time not provided",
@@ -116,8 +128,8 @@
     "The removed synchronization is safe only under the unchanged localRows == 1 dispatch; do not widen this path.",
     "V003 has MULTI_CHANGE provenance; this local result tests one isolated mechanism against V003 only."
   ],
-  "decision": "NOT_COMPLETE",
-  "next_candidate_hypothesis": "No new hypothesis before Main review. If Main requests another local run, repeat the same V003-versus-V007 D=256 FP32 paired probe during a sufficiently clear load window, with the same source and runner.",
+  "decision": "NEEDS_ONE_MORE_LOCAL",
+  "next_candidate_hypothesis": "Keep V007 unchanged. A further same-source local set may be run only under Main direction; do not create V008 or submit Online.",
   "cleanup": "None; no files or remote objects deleted.",
   "artifacts": {
     "probe_source": "support/runner_main.inc",
@@ -142,10 +154,10 @@
       "candidate_v007": "2443eb9b124e2a82c3750395a4feb3e273e3a3f808b50feda718074e742edb46",
       "unified_runner": "dce996af2ec709219819de3e9ba908f0d41744f2b9820965a1385e080b949110"
     },
-    "SAME_BINARY": "NOT_RUN",
-    "TIMING": "MEASUREMENT_BLOCKED",
-    "TIMING_BLOCKER": "No qualified MAIN-1 performance window; current VLLM load occupies the allowed d4-d6 devices and d7 is excluded from timing.",
-    "LOCAL_VERDICT": "NOT_COMPLETE",
+    "SAME_BINARY": "PASS",
+    "TIMING": "READY",
+    "TIMING_BLOCKER": "None for HBM admission. Current P/C evidence is insufficient for acceptance because Candidate device-event dispersion is high and pair directions are mixed.",
+    "LOCAL_VERDICT": "NEEDS_ONE_MORE_LOCAL",
     "READY_FOR_SAME_BINARY": true,
     "DEVICE_WINDOW": "UNAVAILABLE",
     "LOCAL_BEST_UPDATED": false,
