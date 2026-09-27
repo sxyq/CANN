@@ -1,0 +1,13 @@
+{
+  "route": "COEFF-LOCALITY-X",
+  "revision": "V002",
+  "hypothesis": "H2 cross-batch gamma/bias stripe residency, tileElems pinned at 4096",
+  "parent_source_sha": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "source_sha": null,
+  "verdict": "NO_UB_BUDGET",
+  "stripe_fits": false,
+  "reason": "At tileElems=4096 with parent 1-tile io layout, leftover UB is 16320 B at D=32768 and 16256 B at D=16384; one K=1 gamma+bias tile pair needs 32768 B. Second blocker: host clamps blockCount to rowCount so localRows=1 on every measured shape — the batch loop runs once and there is no cross-batch reload to skip.",
+  "correctness": "NOT_RUN",
+  "timing": "NOT_RUN",
+  "evidence": "phase4/local/COEFF-LOCALITY-X/V002/NO_UB_BUDGET.md"
+}
