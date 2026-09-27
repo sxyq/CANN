@@ -258,11 +258,11 @@
       "overall_direction_consistency": "PENDING"
     }
   },
-  "FOLLOW_UP_PROBES": "PARENT_SAME_BINARY_RUN: d7, exact device-event runner, warmup=45, 21 samples x 2 blocks. D32768 and D24576 both failed shape qualification; no P/C timing was started.",
-  "STATUS": "PARENT_SAME_BINARY_COMPLETED_NO_SHAPE_QUALIFIED",
+  "FOLLOW_UP_PROBES": "D24576 on d7: Parent same-binary PASS, then 4 interleaved Parent/Candidate device-event blocks completed. Pair deltas have mixed direction; LOCAL_VERDICT=NEEDS_ONE_MORE_LOCAL. D32768 remains unqualified.",
+  "STATUS": "D24576_PAIRED_TIMING_VALID_NEEDS_ONE_MORE_LOCAL; D32768_NOT_QUALIFIED",
   "ARCHITECTURE_NOVELTY": "NONE: existing MTE3/V synchronization primitive with a changed wait placement only.",
-  "RISKS": "Parent same-binary instability prevents a valid Parent/Candidate comparison at both exact shapes. The deferred MTE3 completion relies on each value tile remaining untouched until the row-level wait.",
-  "DECISION": "MEASUREMENT_BLOCKED",
+  "RISKS": "D24576 paired deltas vary in direction and scale, so no performance claim is established. D32768 remains unqualified. The deferred MTE3 completion relies on each value tile remaining untouched until the row-level wait.",
+  "DECISION": "NEEDS_ONE_MORE_LOCAL",
   "NEXT_CANDIDATE_HYPOTHESIS": "None declared; await Main Review. Any later revision must return to R31A-V016.",
   "CLEANUP": "NONE: no files or server3 build directories deleted or cleaned.",
   "NON_TIMING_STATUS_20260927": {
@@ -286,12 +286,12 @@
       "candidate_module": "9bacd8cd72b8db5c6b8a1574ce199c674b18bc2bcf858cfb91ade29f71d24674",
       "runner": "7dbde489de951be883fe38d6cbc991800c0451a97931af8ac036c339f0e61f9a"
     },
-    "SAME_BINARY": "FAIL_SHAPE_QUALIFICATION",
-    "TIMING": "MEASUREMENT_BLOCKED",
-    "TIMING_BLOCKER": "Parent same-binary shape qualification failed on d7: D32768 block drift=0.635447; D24576 block drift=0.446239 and block2 MAD/median=0.325921. HBM admission passed; AICore and resident processes were observational only.",
-    "LOCAL_VERDICT": "MEASUREMENT_BLOCKED",
+    "SAME_BINARY": "D24576_PASS_ON_D7_R8; D32768_REMAINS_UNQUALIFIED",
+    "TIMING": "D24576_FOUR_VALID_INTERLEAVED_DEVICE_EVENT_BLOCKS; D32768_NOT_RUN",
+    "TIMING_BLOCKER": "D24576 paired deltas are +0.265955%, +6.740531%, -10.333604%, and 0.000000%; direction and dispersion are inconsistent. HBM admission passed; AICore and resident processes were observational only.",
+    "LOCAL_VERDICT": "NEEDS_ONE_MORE_LOCAL",
     "READY_FOR_SAME_BINARY": false,
-    "DEVICE_WINDOW": "USED_D7_HBM_3431_TO_3432_OF_65536_MB_NO_PROCESS_NO_CONFLICT",
+    "DEVICE_WINDOW": "USED_D7_HBM_3418_TO_3485_OF_65536_MB_NO_CONFLICT",
     "LOCAL_BEST_UPDATED": false,
     "ONLINE_WORTHY": "NO"
   },
@@ -313,5 +313,91 @@
     },
     "candidate_timing": "NOT_RUN_BECAUSE_PARENT_SHAPE_QUALIFICATION_FAILED",
     "evidence_dir": "support/results/d7-20260927T054149Z/"
+  },
+  "TIMING_RUN_20260927_D7_R8": {
+    "LEASE_ID": "M1-R31A-V021-D7-R8-20260927T105819Z",
+    "DEVICE": 7,
+    "PRE_HBM_MB": 3418,
+    "POST_HBM_MB": 3485,
+    "PRE_HBM_RATE_PERCENT": 5,
+    "POST_HBM_RATE_PERCENT": 5,
+    "PRE_AICORE_PERCENT": 0,
+    "POST_AICORE_PERCENT": 0,
+    "PRE_PROCESS": "none",
+    "POST_PROCESS": "VLLMEngineCor pid=1343052, 121 MB; recorded only",
+    "runner_mode": "device-event-primary_wall-clock-diagnostic",
+    "warmups": 45,
+    "same_binary_samples_per_block": 21,
+    "paired_samples_per_variant_per_block": 11,
+    "parent_v016_d24576": {
+      "block_medians_us": [15.64, 15.60],
+      "block_mad_over_median": [0.021739, 0.064103],
+      "block_median_drift": 0.002561,
+      "protocol_result": "PASS"
+    },
+    "paired_d24576": {
+      "blocks": 4,
+      "parent_median_us": [22.56, 21.66, 24.58, 21.44],
+      "candidate_median_us": [22.62, 23.12, 22.04, 21.44],
+      "delta_percent": [0.265955, 6.740531, -10.333604, 0.0],
+      "median_delta_percent": 0.132978,
+      "correctness": "V016_PASS; V021_PASS"
+    },
+    "identity_before_after": "PASS; candidate source, parent source, runner, and both modules unchanged",
+    "evidence_dir": "/Users/sunyiyang/Desktop/Project/cann/phase4/local/R31A/V021/support/results/",
+    "evidence_files": [
+      "M1-R31A-V021-D7-R8-20260927T105819Z-d24576-parent-samples.tsv",
+      "M1-R31A-V021-D7-R8-20260927T105819Z-d24576-parent-jitter.tsv",
+      "M1-R31A-V021-D7-R8-20260927T105819Z-d24576-paired-samples.tsv",
+      "M1-R31A-V021-D7-R8-20260927T105819Z-d24576-paired-jitter.tsv",
+      "M1-R31A-V021-D7-R8-20260927T105819Z-d24576-paired-pair-blocks.tsv",
+      "M1-R31A-V021-D7-R8-20260927T105819Z-d24576-paired.postflight.npu-smi.txt",
+      "M1-R31A-V021-D7-R8-20260927T105819Z-d24576-paired.postflight.identity.sha256"
+    ],
+    "local_verdict": "NEEDS_ONE_MORE_LOCAL",
+    "local_best_updated": false,
+    "online_worthy": "NO",
+    "interpretation": "HBM was below 100% before and after; no conflicting shared lease. D24576 passed same-binary qualification and completed paired timing. Mixed block deltas do not establish a gain or regression. Lease released at 2026-09-27T11:03:42Z."
+  },
+  "TIMING_RUN_20260927_D6_R9": {
+    "LEASE_ID": "M1-R31A-V021-D6-R9-20260927T115106Z",
+    "DEVICE": 6,
+    "LEASE_START_UTC": "2026-09-27T11:51:06Z",
+    "LEASE_END_UTC": "2026-09-27T11:58:14Z",
+    "PRE_HBM_RATE_PERCENT": 91,
+    "POST_HBM_RATE_PERCENT": 91,
+    "PRE_AICORE_PERCENT": 95.5,
+    "POST_AICORE_PERCENT": 99.5,
+    "AICORE_IS_ADMISSION_CONDITION": false,
+    "RUNNER_MODE": "device-event-primary_wall-clock-diagnostic",
+    "WARMUPS": 45,
+    "SAME_BINARY_SAMPLES_PER_BLOCK": 21,
+    "PARENT_V016_D24576": {
+      "block_medians_us": [14.24, 14.24],
+      "block_mad_over_median": [0.009831, 0.021067],
+      "block_median_drift": 0.0,
+      "protocol_result": "PASS"
+    },
+    "PAIRED_D24576": {
+      "blocks": 4,
+      "samples_per_version_per_block": 11,
+      "parent_median_us": [15.22, 15.50, 15.14, 14.88],
+      "candidate_median_us": [15.62, 15.40, 14.86, 15.22],
+      "delta_percent": [2.628116, -0.645160, -1.849401, 2.284951],
+      "median_delta_percent": 0.819896,
+      "status": "VALID_DEVICE_EVENT_INTERLEAVED"
+    },
+    "RUNNER_CORRECTNESS_ASSERTION": {
+      "V016": "PASS; max_abs=3.48268474e-07",
+      "V021": "PASS; max_abs=3.48268474e-07",
+      "note": "The paired runner performed its built-in per-shape correctness assertions during this timing invocation; no full correctness suite or build was rerun."
+    },
+    "IDENTITY_BEFORE_AFTER": "PASS; source, Parent module, Candidate module and runner match existing identities",
+    "EVIDENCE_DIR": "/Users/sunyiyang/Desktop/Project/cann/phase4/local/R31A/V021/support/results/",
+    "EVIDENCE_PREFIX": "M1-R31A-V021-D6-R9-20260927T115106Z-d24576-",
+    "LOCAL_VERDICT": "NEEDS_ONE_MORE_LOCAL",
+    "LOCAL_BEST_UPDATED": false,
+    "ONLINE_WORTHY": "NO",
+    "INTERPRETATION": "Noise floor and paired device-event timing are valid. Pair directions differ and median delta remains within measured Parent noise; no performance gain or regression is established. HBM remained below 100%; AICore was recorded only. Lease released at 2026-09-27T11:58:14Z."
   }
 }
