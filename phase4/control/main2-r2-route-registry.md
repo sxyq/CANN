@@ -480,3 +480,9 @@ V001 medium regression source removed.
 ONLINE_WORTHY = **FUTURE_CANDIDATE** (package frozen). **NO Judge this cycle** — online budget reserved and unused (V002 VECTOR-MATH is MEASUREMENT_BLOCKED).
 
 Targets Official case 14 (largest gap, 4.4x) via large-shape store traffic.
+
+## SEQ-FUSE-2 spec ready + probe authorized (overnight end)
+
+SEQ-FUSE-2: denominator tail stays in V pipe (Muls+Adds→Sqrt→Div), removes 2 V/S round-trips + scalar divide per row. Covers Official weak cases 7/6/4/8.
+DIV_FEASIBILITY_PROBE authorized (precision + 507035 avoidance). V003 implementation gated on probe PASS.
+DIRECT_PARENT for V003 draft: FROZEN_R31B_V011 (VECTOR V002 is MEASUREMENT_BLOCKED).
