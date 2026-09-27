@@ -8,7 +8,7 @@
   "npu_correctness": "PASS_39_OF_39",
   "npu_device": 4,
   "npu_max_abs_error": 2.6226044e-06,
-  "performance_probe": "DEVICE_EVENT_PAIRED_SHAPE_7_8_PAIRS_ACROSS_2_SESSIONS",
+  "performance_probe": "DEVICE_EVENT_PAIRED_SHAPE_7_12_PAIRS_ACROSS_3_SESSIONS",
   "load_quality": "VLLM_ACTIVE_HIGH_HBM_WITH_LONG_TAILS; SHAPE_7_ROBUST_FLOOR_PASS",
   "prior_correctness_device_observation": {
     "device_count": 8,
@@ -27,7 +27,7 @@
     "lease_id": "M1-DTYPE-V001-D6-S07-20260926"
   },
   "decision": "NEEDS_ONE_MORE_LOCAL",
-  "latest_measurement": "LOCAL_MEASUREMENT_RETRY_20260926T231048Z",
+  "latest_measurement": "LOCAL_MEASUREMENT_RETRY_20260927T000848Z",
   "official_score": null,
   "performance_claim": false,
   "online_submission": false,
@@ -81,9 +81,9 @@
       "candidate": "14cdc6cf6f986fd49f92662b4ff180266d0265cafdc0145706e37153b984a90b",
       "unified_runner": "b14b57e32d3b9029bf01f1dca339599063b6be05bda750e189de01c7c2a81306"
     },
-    "SAME_BINARY": "SHAPE_7_PASS_IN_2_SESSIONS; SHAPE_0_FAIL_BLOCK_DRIFT",
-    "TIMING": "SHAPE_7_VALID_DEVICE_EVENT_PAIRED_8_PAIRS_ACROSS_2_SESSIONS",
-    "TIMING_BLOCKER": "No performance claim: both paired sets remain within the Parent noise floor; the first set has mixed directions and the retry has only small changes; shape 0 remains unqualified.",
+    "SAME_BINARY": "SHAPE_7_PASS_IN_3_SESSIONS; SHAPE_0_FAIL_BLOCK_DRIFT",
+    "TIMING": "SHAPE_7_VALID_DEVICE_EVENT_PAIRED_12_PAIRS_ACROSS_3_SESSIONS",
+    "TIMING_BLOCKER": "No performance claim: aggregate shift remains within noise; the latest pair set has mixed directions, long tails persist, and shape 0 remains unqualified.",
     "LOCAL_VERDICT": "NEEDS_ONE_MORE_LOCAL",
     "READY_FOR_SAME_BINARY": true,
     "DEVICE_WINDOW": "SHAPE_7_QUALIFIED_WITH_ACTIVE_VLLM_BACKGROUND",
@@ -167,6 +167,67 @@
       "jitter": "logs/unified-dtype-paired-20260926T231213Z-35265.jitter.txt",
       "pairs_file": "logs/unified-dtype-paired-20260926T231213Z-35265.pairs.tsv",
       "raw_line_counts": {"parent_noise_floor": 63, "paired_samples": 249, "pair_summary": 5}
+    },
+    "load": {
+      "quality": "VLLM_ACTIVE_HIGH_HBM_WITH_LONG_TAILS",
+      "aicore_usage_percent": 0,
+      "hbm_usage_rate_percent": 91,
+      "process": "VLLMWorker_TP",
+      "process_id": 91228,
+      "postflight_runner_present": false
+    },
+    "local_verdict": "NEEDS_ONE_MORE_LOCAL",
+    "local_best_updated": false,
+    "online_worthy": "NO"
+  },
+  "LOCAL_MEASUREMENT_RETRY_20260927T000848Z": {
+    "lease_id": "M1-DTYPE-V001-D6-S07T-20260927T000739Z",
+    "device": 6,
+    "preflight_utc": "2026-09-27T00:08:50Z",
+    "paired_preflight_utc": "2026-09-27T00:10:37Z",
+    "postflight_utc": "2026-09-27T00:11:30Z",
+    "source_sha256": "e2717055199f541d98d85ceef2e011e52e2749d932ca954dc887868de7db880f",
+    "parent_source_sha256": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+    "parent_executable_sha256": "11e3c07c4e35181153b20f5acd90cad700261af9d309d52724cb0713a1646434",
+    "candidate_executable_sha256": "14cdc6cf6f986fd49f92662b4ff180266d0265cafdc0145706e37153b984a90b",
+    "runner_executable_sha256": "b14b57e32d3b9029bf01f1dca339599063b6be05bda750e189de01c7c2a81306",
+    "method": "DEVICE_EVENT_PRIMARY; persistent runner; 45 warmups; 31 samples per block; no build or correctness rerun",
+    "same_binary": {
+      "shape": "[12,8192]",
+      "qualification": "PASS",
+      "block_medians_us": [8.02, 8.48],
+      "mad_over_median": [0.077307, 0.094340],
+      "mad_us": [0.62, 0.80],
+      "block_median_drift": 0.055758,
+      "raw_cv": [1.119271, 1.915429],
+      "p90_us": [166.339993, 150.839999],
+      "noise_floor": "VALID_FOR_SHAPE_7; long tails retained",
+      "raw": "logs/unified-dtype-noise-floor-20260927T000848Z-12939.raw.tsv",
+      "jitter": "logs/unified-dtype-noise-floor-20260927T000848Z-12939.jitter.txt"
+    },
+    "paired_timing": {
+      "status": "VALID_DEVICE_EVENT_INTERLEAVED",
+      "pairs": 4,
+      "order": ["PC", "CP", "PC", "CP"],
+      "pair_delta_percent_candidate_vs_parent": [-2.173907, 5.497381, 0.0, 4.761904],
+      "pair_delta_us_candidate_minus_parent": [-0.18, 0.42, 0.0, 0.36],
+      "median_pair_delta_percent": 2.380952,
+      "median_pair_delta_us": 0.18,
+      "median_parent_mad_us": 0.71,
+      "interpretation": "Current block median is slower but within the Parent MAD; directions are mixed.",
+      "raw": "logs/unified-dtype-paired-20260927T001035Z-20734.raw.tsv",
+      "jitter": "logs/unified-dtype-paired-20260927T001035Z-20734.jitter.txt",
+      "pairs_file": "logs/unified-dtype-paired-20260927T001035Z-20734.pairs.tsv",
+      "raw_line_count": 249
+    },
+    "aggregate_shape7_across_three_sessions": {
+      "valid_pairs": 12,
+      "median_pair_delta_percent": -0.628854,
+      "median_pair_delta_us": -0.05,
+      "faster": 7,
+      "neutral": 2,
+      "slower": 3,
+      "interpretation": "Aggregate shift remains below each qualified session's noise floor; no performance claim."
     },
     "load": {
       "quality": "VLLM_ACTIVE_HIGH_HBM_WITH_LONG_TAILS",
