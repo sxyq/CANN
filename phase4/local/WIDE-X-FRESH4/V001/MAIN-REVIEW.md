@@ -4,7 +4,7 @@ Date: 2026-09-25
 
 ## Decision
 
-No local performance verdict has been formed. Keep V001 unchanged. No performance conclusion, promotion, rejection, or Online submission is supported by the current evidence. Build, executable identity, and exact-source correctness are present. Same-binary and timing have not run; source lineage is recorded, but the claimed `FRESH_BLIND` context remains unconfirmed, so the route is not ready to enter timing or claim Online eligibility.
+No local performance verdict has been formed. Keep V001 unchanged. Build, executable identity, and exact-source correctness are present. The Direct Parent and source-bound Parent/Candidate executable relation are explicit and verified; the only remaining provenance issue is that the declared `FRESH_BLIND` context is still unconfirmed because the archived analysis path, exposed material, and influence record are missing. Same-binary and timing have not run. No Online submission is supported.
 
 ## Lineage and source review
 
@@ -29,6 +29,14 @@ No local performance verdict has been formed. Keep V001 unchanged. No performanc
 ## Provenance note
 
 The retained runner record says an archived problem-analysis document containing information beyond the task semantics was opened. The Route owner could not identify its path or disclose the extra information, and could not establish whether it influenced the V001 hypothesis. Therefore `FRESH_BLIND` cannot be confirmed from the available record. Preserve the Candidate and its correctness evidence; do not make an Online eligibility claim from this review. Any later Main decision must account for this unresolved provenance.
+
+## Provenance disposition
+
+- Direct Parent: `BUILD-FIX-001`, source SHA-256 `5d0ee01165e46a281cbb7d1605feba3605ad59883845400a063e97704f27f2be`.
+- Parent executable is source-bound to that Parent: module SHA-256 `9f03f15232d984577e559a64e90ec4e550fbef9392d6edb7eedd47ddc530071e`.
+- Candidate source SHA-256 `f7628795e6699288669dbff8963181e376e10741ba4d46c768af51cf09bf6895`; Candidate module SHA-256 `c30be731387e0672359f47e748d65f67b7ce0e3f294dbc4f0fe986934b0890ab`; paired runner SHA-256 `6328cd48d92036aeb4266248ede569f08484580e0507e185520911ed1a7e6a8b`.
+- Source path and Git evidence: V001 `phase4/local/WIDE-X-FRESH4/V001/submission.asc`, route commit `856ba8d35db2ba402213483b069592b662779ba5`; source, sidecar, Git and workspace bytes agree.
+- Disposition: `SOURCE_PROVENANCE_PASS`; `FRESH_BLIND_CONTEXT_UNCONFIRMED`. Do not repeat the existing 18/18 correctness run.
 
 ## Next action
 

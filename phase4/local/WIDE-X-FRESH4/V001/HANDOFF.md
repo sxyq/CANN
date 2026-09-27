@@ -1,6 +1,6 @@
 # WIDE-X-FRESH4 V001 Handoff
 
-Status (2026-09-26): original V001 retained; current local state is MEASUREMENT_BLOCKED. Historical targeted correctness remains PASS_9_OF_9_NPU, and the exact-source rebuilt Parent/Candidate runner passed 18/18 correctness-only cases on d7. Same-binary and timing remain unrun.
+Status (2026-09-27): original V001 retained; source provenance and source-bound Parent executable relation are resolved. Historical targeted correctness remains PASS_9_OF_9_NPU, and the exact-source rebuilt Parent/Candidate runner passed 18/18 correctness-only cases on d7. Same-binary and timing remain unrun. `FRESH_BLIND` context is still unconfirmed.
 
 ## Existing evidence coverage
 
@@ -16,7 +16,7 @@ Canonical coverage includes 30 actual files: 6 untracked workspace originals, 10
 
 The archived-analysis exposure path, exposed material, and influence on V001 remain MISSING. A separate earlier out-of-route search incident is recorded in BUILD-FIX-001/parent-control/source-meta.json. Declared `FRESH_BLIND` is retained but remains unconfirmed; only Main can give a disposition. The same-route archive recovered here does not establish the identity of that analysis document.
 
-Main's 2026-09-26T12:04:36Z device snapshot is recorded as supplied evidence, not permission to run. Correctness-only qualification later completed on d7; no performance window has been assigned. Device 7 remains excluded from timing.
+Main's 2026-09-26T12:04:36Z device snapshot is recorded as supplied evidence. Correctness-only qualification later completed on d7; no performance lease has been assigned. Any device with live HBM usage below 100% and no conflicting lease is eligible for later timing; AICore and resident processes are recorded only.
 
 ## Revision declaration
 
@@ -42,6 +42,14 @@ Main's 2026-09-26T12:04:36Z device snapshot is recorded as supplied evidence, no
 - Correctness executable compile/link: PASS and runtime dependencies resolve; see `logs/link.log`. It ran on device 4 and exited 0 after passing all 9 FP32/FP16/BF16 x 2048/16384/32768 cases; see `logs/npu-correctness.log` for exact errors.
 - No latency timing was run; the temporary correctness-only lease was released after the 18/18 runner pass, and no performance lease was granted.
 - No Online submission was made.
+
+## Provenance disposition (2026-09-27)
+
+- Direct Parent: `BUILD-FIX-001`, source SHA-256 `5d0ee01165e46a281cbb7d1605feba3605ad59883845400a063e97704f27f2be`.
+- Parent module is source-bound to that Parent: SHA-256 `9f03f15232d984577e559a64e90ec4e550fbef9392d6edb7eedd47ddc530071e`.
+- Candidate source SHA-256 `f7628795e6699288669dbff8963181e376e10741ba4d46c768af51cf09bf6895`; Candidate module SHA-256 `c30be731387e0672359f47e748d65f67b7ce0e3f294dbc4f0fe986934b0890ab`; paired runner SHA-256 `6328cd48d92036aeb4266248ede569f08484580e0507e185520911ed1a7e6a8b`.
+- V001 source path: `phase4/local/WIDE-X-FRESH4/V001/submission.asc`; route commit `856ba8d35db2ba402213483b069592b662779ba5`; source, sidecar, Git and workspace bytes agree.
+- Disposition: `SOURCE_PROVENANCE_PASS`; `FRESH_BLIND_CONTEXT_UNCONFIRMED`. Do not repeat the existing 18/18 correctness run. Same-binary and timing remain pending.
 
 ## Evidence
 
