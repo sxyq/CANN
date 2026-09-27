@@ -333,3 +333,14 @@ Local 33x100 -4.4% did not transfer; mid-size Official cases paid for the group-
 Evidence: `phase4/online/INTEGRATION-X/V001/`.
 
 Online queue this cycle: 1/2 used.
+
+## MAIN DECISION 2026-09-27 (post Official)
+
+INTEGRATION-X V001 = REJECT (41.93 vs 45.16). Do not create V002 from it.
+Do not reintroduce SCHED row-group splitting into Champion path.
+Parent lineage returns to FROZEN R31B-V011 (45.16).
+
+P0: VECTOR-MATH V002 ONLY (broadcast Mul). No SCHED/DMA/store/mode/dtype/sync combination.
+P1: timing must cover small+medium+large; primary question is no medium-shape regression.
+P2: Online budget remaining = 1; do not consume without Main ONLINE_WORTHY.
+P3: research-only OUTPUT-STORE / EPILOGUE-STORE path (no implementation).

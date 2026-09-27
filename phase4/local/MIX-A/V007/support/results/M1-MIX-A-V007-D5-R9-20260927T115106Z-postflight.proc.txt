@@ -1,0 +1,34 @@
+   8992 2937312  0.1  0.0 40-23:00:30 watch -n 2 npu-smi info
+  82397   82370 26.0  0.4  5-05:30:13 /usr/local/python3.12.13/bin/python3 /usr/local/python3.12.13/bin/vllm serve /models/Qwen3.8-27B-w8a8 --host 0.0.0.0 --port 9001 --tensor-parallel-size 4 --quantization ascend --served-model-name qwen3.8 --max-model-len 256000 --max-num-seqs 8 --max-num-batched-tokens 8192 --gpu-memory-utilization 0.90 --enable-prefix-caching --trust-remote-code --reasoning-parser qwen3 --enable-auto-tool-choice --tool-call-parser qwen3_coder
+  83352   83328  0.3  0.4  5-05:30:03 /usr/local/python3.12.13/bin/python3 /usr/local/python3.12.13/bin/vllm serve /models/Qwen3.8-27B-w8a8 --host 0.0.0.0 --port 9002 --tensor-parallel-size 2 --quantization ascend --served-model-name qwen3.8 --max-model-len 256000 --max-num-seqs 8 --max-num-batched-tokens 8192 --gpu-memory-utilization 0.90 --enable-prefix-caching --trust-remote-code --reasoning-parser qwen3 --enable-auto-tool-choice --tool-call-parser qwen3_coder
+  87336   82397 74.8  0.1  5-05:29:23 VLLM::EngineCore
+  87670   83352  2.0  0.1  5-05:29:19 VLLM::EngineCore
+  89395   87336  166  0.4  5-05:29:00 VLLM::Worker_TP0
+  89602   87670 12.7  0.4  5-05:28:57 VLLM::Worker_TP0
+  91055   87336 85.9  0.4  5-05:28:41 VLLM::Worker_TP1
+  91228   87670 10.5  0.4  5-05:28:39 VLLM::Worker_TP1
+  92813   87336 89.0  0.4  5-05:28:22 VLLM::Worker_TP2
+  94498   87336 86.9  0.4  5-05:28:03 VLLM::Worker_TP3
+ 363525 1678571  3.5  0.0  5-04:47:46 /home/data4t1/hxw/anaconda3/bin/python3.10 /home/data4t1/hxw/anaconda3/bin/nputop
+ 855861       1  0.0  0.0 137-05:14:00 avahi-daemon: running [hwnput3.local]
+1175415 2937312  0.0  0.0 40-20:13:10 tail -F /home/data4t2/hxwDir/hxw_moved/verl-npu-opd/logs/opd-sampled-6npu-2048-b24-graph-micro8.log
+1841088 3208085  0.0  0.0       02:54 tee -a /home/data4t1/hxw/.hxw/manager_npu.log
+1841089 1841087  0.1  0.0       02:54 python -u /home/data4t1/hxw/.hxw/inference.py --target-npus 4 --npu-ids 4 5 6 7 --model /home/data4t2/models/Qwen3-4B
+1841825 1841089 16.4  0.1       02:48 /home/data4t1/hxw/anaconda3/envs/opd/bin/python /home/data4t1/hxw/.hxw/inference.py --worker --npu-id 7 --heartbeat /home/data4t1/hxw/.hxw/heartbeat_npu_7.txt --model /home/data4t2/models/Qwen3-4B --npu-memory-utilization 0.9 --max-model-len 4096 --max-tokens 1024 --batch-size 8 --prompt-repeats 200 --trust-remote-code
+1844047 1841825  169  0.2       02:31 VLLM::EngineCore
+1861827 1861822  0.0  0.0       00:07 bash -c source /usr/local/Ascend/ascend-toolkit/set_env.sh && cd '/home/data4t2/lelinfeng/phase4-worktrees/R31A/V021-direct/probe-build' && { date -u +%Y-%m-%dT%H:%M:%SZ; npu-smi info; echo '--- usages ---'; npu-smi info -t usages -i 6 2>&1 || true; echo '--- proc ---'; ps -eo pid,stat,etime,cmd | grep -E 'VLLM|r31a|probe' | grep -v grep || true; echo '--- identity ---'; sha256sum /home/data4t2/lelinfeng/phase4-worktrees/R31A/V021-direct/phase4/local/R31A/V021/submission.asc /home/data4t2/lelinfeng/phase4-worktrees/R31A/V021-direct/phase4/local/R31A/V021/support/parent_v016_submission.asc /home/data4t2/lelinfeng/phase4-worktrees/R31A/V021-direct/phase4/local/R31A/V021/support/paired_probe_main.inc ./r31a_paired_probe ./libr31a_paired_v016.so ./libr31a_paired_v021.so; } > 'M1-R31A-V021-D6-R9-20260927T115106Z-d24576-paired.preflight.bundle.txt' && ./r31a_paired_probe pair 6 24576 '/home/data4t2/lelinfeng/phase4-worktrees/R31A/V021-direct/probe-build/M1-R31A-V021-D6-R9-20260927T115106Z-d24576-paired' 45 > 'M1-R31A-V021-D6-R9-20260927T115106Z-d24576-paired.stdout.txt' 2>&1; RC=$?; echo runner_rc=$RC > 'M1-R31A-V021-D6-R9-20260927T115106Z-d24576-paired.rc.txt'; { date -u +%Y-%m-%dT%H:%M:%SZ; npu-smi info; echo '--- usages ---'; npu-smi info -t usages -i 6 2>&1 || true; echo '--- proc ---'; ps -eo pid,stat,etime,cmd | grep -E 'VLLM|r31a|probe' | grep -v grep || true; echo '--- identity ---'; sha256sum /home/data4t2/lelinfeng/phase4-worktrees/R31A/V021-direct/phase4/local/R31A/V021/submission.asc /home/data4t2/lelinfeng/phase4-worktrees/R31A/V021-direct/phase4/local/R31A/V021/support/parent_v016_submission.asc /home/data4t2/lelinfeng/phase4-worktrees/R31A/V021-direct/phase4/local/R31A/V021/support/paired_probe_main.inc ./r31a_paired_probe ./libr31a_paired_v016.so ./libr31a_paired_v021.so; } > 'M1-R31A-V021-D6-R9-20260927T115106Z-d24576-paired.postflight.bundle.txt'; exit $RC
+1863062 2033118  2.0  0.0       00:01 npu-smi info
+1863101    8992  0.0  0.0       00:01 watch -n 2 npu-smi info
+1863102 1863101  0.0  0.0       00:01 sh -c npu-smi info
+1863107 1863102  3.0  0.0       00:01 npu-smi info
+1863163 2483105  0.0  0.0       00:00 watch -n 1 npu-smi info
+1863164 1863163  0.0  0.0       00:00 sh -c npu-smi info
+1863165 1863164  0.0  0.0       00:00 npu-smi info
+1863189 1861827  0.0  0.0       00:00 npu-smi info -t usages -i 6
+1863236  363525  0.0  0.0       00:00 npu-smi info
+2033118 3834144  3.2  0.0 68-04:08:07 /home/data4t1/hxw/anaconda3/bin/python3.10 /home/data4t1/hxw/anaconda3/bin/nputop
+2431193 1414382  4.1  0.0  3-04:52:45 /home/data4t1/wangjielei/anaconda3/bin/python3.10 /home/data4t1/wangjielei/anaconda3/bin/nputop
+2483105 2915079  0.2  0.0 171-09:36:40 watch -n 1 npu-smi info
+2916664 2914109  3.0  0.0 96-23:51:25 /home/data4t1/hxw/anaconda3/bin/python3.10 /home/data4t1/hxw/anaconda3/bin/nputop
+2991304 2429127  0.0  0.1  5-09:18:40 /home/data4t2/hxwDir/hxw_moved/conda_envs/opd/bin/python -m tools.visual_opd.llm_eval_browser.server --data-root /home/data4t2/hxwDir/hxw_moved/verl-npu-opd/dataset/llm_eval --host 0.0.0.0 --port 8767
+2999855 2992910 14.1  0.3 13-20:54:56 VLLM::EngineCore
