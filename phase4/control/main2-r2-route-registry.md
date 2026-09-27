@@ -344,3 +344,85 @@ P0: VECTOR-MATH V002 ONLY (broadcast Mul). No SCHED/DMA/store/mode/dtype/sync co
 P1: timing must cover small+medium+large; primary question is no medium-shape regression.
 P2: Online budget remaining = 1; do not consume without Main ONLINE_WORTHY.
 P3: research-only OUTPUT-STORE / EPILOGUE-STORE path (no implementation).
+
+## VECTOR-MATH-X V002 timing (2026-09-27, d4)
+
+| class | shape | clean Δ% | direction |
+|---|---|---|---|
+| SMALL | 8x256 | -1.2 ~ -6.4 | slight favor C |
+| **MEDIUM** | **4x2048** | **-6.5,-22.4,-14.0,-2.4,-14.7 (5/5)** | **favor C, median -14.0%** |
+| **MEDIUM** | **8x1024** | **-9.2,-8.8,-23.1 (3/3)** | **favor C, median -9.2%** |
+| LARGE | 1x32768 | mixed | no signal |
+
+**BLOCKER CHECK PASS: no medium regression.** V002 does not repeat INTEGRATION-X's medium-case failure. Medium shapes are exactly where V002 wins.
+
+same-binary script bug (blocks=1, B2 missing) — must re-qualify with blocks=2 before ONLINE_WORTHY.
+LOCAL_VERDICT=NEEDS_ONE_MORE_LOCAL pending same-binary re-qual.
+
+## P3 Track-B research (2026-09-27) — OUTPUT-STORE path
+
+Evidence: Store helper uses unconditional DataCopyPad; FP32/FP16/BF16 store granularity and drain policy inconsistent; BF16 store source aliases xBuf_.
+
+| Hypothesis | Mechanism | Targets |
+|---|---|---|
+| **STORE-H1** | bulk DataCopy for aligned blocks, Pad only tail | medium/large, all dtypes |
+| STORE-H2 | merge contiguous runs into one descriptor | large + batched |
+| STORE-H3 | defer FP16/BF16 MTE3 drain to row end | medium/large lowp |
+| STORE-H4 | BF16 independent convert staging | medium/large BF16 |
+
+Recommended first: STORE-H1 (single Store helper change, clean falsification).
+H3 overlaps ASYNC-TRIPLE-X. Implementation gated on VECTOR-MATH V002 disposition + Main approval.
+
+## C2C OVERNIGHT START (2026-09-27)
+
+Identity verified: sxyq/CANN / exp/independent-breadth / VECTOR branch exp/main2-r2-vector-math@4b0be70d.
+V002 SOURCE_SHA confirmed 06095762d6ff919f7aa260168150c23e0eeecf464a87c1b26e513cb267587427.
+CORRECTNESS 53/54 — failing case classified **PARENT_AND_CANDIDATE_SHARED_LIMITATION** (not Candidate regression).
+local-result.json JSON repaired (trailing comma).
+Online budget: 1 remaining (INTEGRATION-X V001 used 1).
+
+Parallel:
+- general-3: V002 qualification attempts (max 3, d6/d5/d4)
+- general-2: STORE-H1 collision audit
+- general-1: next Track-B + Official case analysis
+
+## Overnight Track-B (general-1) 2026-09-27
+
+| ID | Mechanism | Est | Note |
+|---|---|---|---|
+| SEQ-FUSE-2 | inline reciprocal denominator (V Div) | 2-5% batched | needs Div precision check (prior Div hit ACL 507035) |
+| EPI-FUSE-1 | gamma-scaled fusion y*(γ*invRms)+β | 3-8% multi-tile | **DUPLICATE of EPILOGUE V001 SCALE-FOLD (already in-noise)** — do not re-run |
+| EPI-PIPE-3 | epilogue/prologue row overlap | 5-15% | risks ASYNC-TRIPLE-X collision (sync/pipeline) |
+
+Official case analysis: case 14 (4.4x) and case 7 (3.7x) highest ROI.
+
+## STORE-H1 collision audit (2026-09-27) — CONCEPT_COLLISION_WITH_MAIN1
+
+STORE-H1 (aligned bulk DataCopy + tail Pad) is a **generic alignment/copy-geometry route**, not pure output-store organization:
+- Overlaps old ALIGN-TAIL-X retained scope verbatim
+- MAIN-1 MODE-X / MIX-A / DTYPE-SPECIAL-X / R31A all list aligned DataCopy
+- main1-route-selection.md requires cross-route dedup of aligned DataCopy
+
+**REJECT STORE-H1.** Successor: **STORE-H2(b)** wide-row resident writeback merge (single-row contiguous run → one writeback).
+STORE-H2(a) multi-row descriptor merge dropped (R015 multi-row DMA collision).
+
+Implementation of STORE-EPILOGUE-X gated on VECTOR-MATH V002 formal disposition.
+
+## VECTOR-MATH-X V002 FINAL DISPOSITION — MEASUREMENT_BLOCKED (2026-09-27 overnight)
+
+3 serious qualification attempts across d6/d5/d4 + calibration (s=81, blocks=3, batch_n=4).
+
+| attempt | device | 4x2048 | 8x1024 | 8x256 | 1x32768 |
+|---|---|---|---|---|---|
+| 1 | d6 | FAIL 0.395 | FAIL 0.139 | FAIL 0.129 | PASS 0.031 |
+| 2 | d5 | FAIL 0.210 | FAIL 0.210 | FAIL 0.190 | PASS 0.019 |
+| 3 | d4 | FAIL 0.227 | FAIL 0.152 | FAIL 0.158 | PASS 0.052 |
+
+5–6µs medium kernels cannot meet MAD/med≤0.10 on any permitted device. 12µs kernel (1x32768) qualifies everywhere but P/C is in-noise (−1.5%).
+Prior paired signal (4x2048 −14% 5/5, 8x1024 −9.2% 3/3) is NOT admissible without same-binary PASS.
+batch_n=4 repeat-batch REJECTED (worsens MAD/med 0.32–0.62).
+
+LOCAL_VERDICT=MEASUREMENT_BLOCKED. ONLINE_WORTHY=NO. No Judge submission.
+V002 package frozen; NOT a LOCAL_BEST. Champion remains R31B-V011 45.16.
+
+Measurement-layer note: short-kernel MAD/med gate may need length-stratified thresholds (future Main policy, not changed here).
