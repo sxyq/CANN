@@ -12,11 +12,28 @@
   "link_executable_sha": "bfcb09ee966a4e31eeee5398089bfbd1862ff05bec74e2f5bb993c39aa0572a8",
   "correctness_status": "PASS_VS_PARENT",
   "correctness_total_shapes": 26,
-  "correctness_rows": 52,
-  "correctness_note": "24/26 shapes PASS both sides with identical max_abs. Both sides fail identically on 1x16384 FP32 and 1x32768 FP32 (exit=3) — the known pre-existing runner double-precision golden mismatch. No new failure introduced by the gate.",
-  "single_change_audit": "PASS — one variable (tileCount>=4 predicate on the existing merge). Generic path reverted to parent byte-identical. Gate-off branch at the wide site is the parent per-tile block verbatim.",
-  "measurement_status": "PENDING",
-  "measurement_protocol": "warmup=45, samples=41, same-binary blocks=2, 6 interleaved P/C pairs, ALL_DEVICE median_us primary, device 6",
-  "local_verdict": "PENDING",
-  "online_worthy": "PENDING"
+  "correctness_note": "24/26 shapes PASS both sides with identical max_abs. 1x16384/1x32768 FP32 fail identically on both sides (pre-existing runner golden mismatch). No new failure.",
+  "single_change_audit": "PASS — one variable (tileCount>=4 predicate). Generic path byte-identical to parent; gate-off branch is the parent per-tile block verbatim.",
+  "measurement_status": "COMPLETE",
+  "measurement_lease": "R2-STORE-EPILOGUE-V002-TIMING, device 6, 2026-09-27",
+  "measurement_protocol": "warmup=45, samples=41, same-binary blocks=2, 6 interleaved P/C pairs, ALL_DEVICE median_us primary",
+  "gate_reachability": "Candidate differs from parent only in ProcessWideFp32FullCacheRows output pass with tileCount>=4 (wide FP32, rowWidth>8192). 2x8192/8x8192/2x6144/2x256/1x16384-FP16 execute byte-identical code to parent — their deltas measure the noise floor and cannot be candidate regressions.",
+  "paired_delta_pct": {
+    "1x32768_fp32": {"band": "large, gate ON", "median": -5.62, "clean_n": 6, "favor_c": 6, "favor_p": 0, "sb_gate": "PASS", "per_pair": [-4.83, -14.33, -5.45, -5.79, -8.77, -2.02], "reading": "clear win kept (V001: -7.61%)"},
+    "2x8192_fp32": {"band": "identical code", "median": -4.20, "clean_n": 6, "favor_c": 4, "favor_p": 2, "sb_gate": "PASS", "per_pair": [2.03, -3.28, -9.01, -5.13, 2.61, -7.07], "reading": "noise (no mechanism on this path)"},
+    "2x6144_fp32": {"band": "identical code", "median": -2.49, "clean_n": 6, "favor_c": 5, "favor_p": 1, "sb_gate": "FAIL", "per_pair": [-15.84, -2.48, 11.68, -9.67, -0.7, -2.5], "reading": "noisy window; no regression possible (V001's +5.16% gone)"},
+    "8x8192_fp32": {"band": "identical code", "median": 1.19, "clean_n": 5, "favor_c": 2, "favor_p": 3, "sb_gate": "FAIL", "per_pair": [-5.31, 2.24, -2.61, 1.19, 1.52], "outliers": [-73.44], "reading": "noisy window; no regression possible (V001's +1.93% gone)"},
+    "2x256_fp32": {"band": "identical code control", "median": 4.47, "clean_n": 6, "favor_c": 2, "favor_p": 4, "sb_gate": "FAIL", "reading": "window noise (outliers +31%)"},
+    "1x16384_fp16": {"band": "identical code control", "median": 0.84, "clean_n": 6, "favor_c": 2, "favor_p": 4, "sb_gate": "PASS", "reading": "≈0 as expected"}
+  },
+  "acceptance_check": {
+    "1x32768_keeps_clear_win": "MET (-5.62%, 6/6, sb PASS)",
+    "2x6144_8x8192_no_longer_regress": "MET (identical code to parent on these paths; V001 medium regression removed by construction)",
+    "no_new_small_or_large_regression": "MET (identical-code controls; spread is window noise)"
+  },
+  "local_verdict": "LOCAL_ACCEPTED",
+  "local_verdict_reason": "Gate keeps the wide-FP32 writeback-merge win (1x32768 -5.62% 6/6 sb PASS) and removes V001's medium-band regression source (generic path reverted to parent byte-identical; gate never opens below tileCount=4). Measured shapes outside the gate execute the same code on both sides, so no regression is possible there. Three of six shapes had same-binary FAIL this round (busier window than V001) but the qualifying shape's window was clean.",
+  "online_worthy": "NOT_ASSESSED_THIS_CYCLE",
+  "online_worthy_reason": "Main instruction: no Official submission this cycle. Mechanism class is stack-safe (no regression on any clean shape, identical-code shapes prove neutrality).",
+  "note": "V002 timing window noisier than V001 (3/6 sb FAIL vs 0/6) — if a tighter window is wanted for the record, 1x32768 and 2x8192 are the two sb-PASS shapes beyond the FP16 control."
 }

@@ -36,9 +36,9 @@ SINGLE_CHANGE_AUDIT=PENDING (one variable: the tileCount gate on the
 MAIN_APPROVAL=YES (MAIN-APPROVAL-V002.md)
 CORRECTNESS_FIX=NONE REQUIRED (gate-off branches are parent code;
   gate-on writeback is bit-identical values to V001's merge)
-SOURCE_SHA=PENDING
-COMPILE_RC=PENDING
-LINK_RC=PENDING
-CORRECTNESS=PENDING
-LOCAL_VERDICT=PENDING
-MEASUREMENT=PENDING
+SOURCE_SHA=59fb8eada4da0b2b83cccffa4fb89fb97b7503ba3dcb08d5e0fe348e3caeb839
+COMPILE_RC=0/0
+LINK_RC=0/0 (se_full_link bfcb09ee...)
+CORRECTNESS=PASS_VS_PARENT 26 shapes (2 pre-existing wide-FP32 golden fails both sides)
+LOCAL_ACCEPTED
+MEASUREMENT=COMPLETE (d6)
