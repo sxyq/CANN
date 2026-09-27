@@ -71,6 +71,27 @@
     "meaning": "The r4 source copies x+residual unchanged; it does not perform RMS normalization, gamma scaling, or bias addition.",
     "log": "support/server3/target-addrmsnormbias-20260927-attempt2.log"
   },
+  "target_correctness_rerun_device1_20260927": {
+    "operator": "AddRmsNormBias",
+    "command": "ssh cann-server3 bash -s -- 1; timeout 60s env ASCEND_DEVICE_ID=1 /home/data4t2/lelinfeng/MODE-X-R015C_runs/R015C-r4/build/row_copy_reference --addrmsnormbias-probe R D 1",
+    "device": 1,
+    "source_sha256": "9367db4ebb4edf6b7bf6cde97f4846f987e6ab230c2aeee44d942d5e881a1c74",
+    "host_probe_source_sha256": "9d168a507369935365fce2c5ff1f4a88a485b8611168d1accd647534777cecd6",
+    "tiling_sha256": "0939ba8498426fcd77645d826fcc45a8eb65c78996ad0ce1da1a00d1ac01a250",
+    "executable_sha256": "9796b1b73b684ac94102fef9086201c7927c0e66a8989266c4d019105bfc1d8e",
+    "pre_hbm_usage_percent": 91,
+    "post_hbm_usage_percent": 91,
+    "aicore_observation": "36% pre, 36% post; observation only",
+    "cases": [
+      {"rows": 2, "cols": 256, "status": "FAIL", "rc": 3, "max_abs": 1.2469, "first_index": 0, "expected": -1.50971, "actual": -0.608},
+      {"rows": 5, "cols": 4096, "status": "FAIL", "rc": 3, "max_abs": 1.33044, "first_index": 0, "expected": -1.53414, "actual": -0.608},
+      {"rows": 3, "cols": 8192, "status": "FAIL", "rc": 3, "max_abs": 1.33516, "first_index": 0, "expected": -1.53564, "actual": -0.608}
+    ],
+    "aggregate_rc": 3,
+    "log": "support/server3/target-addrmsnormbias-20260927-device1.log",
+    "performance": "NOT_RUN",
+    "source_unchanged": true
+  },
   "NON_TIMING_STATUS_20260927": {
     "SOURCE_SHA256": "9367db4ebb4edf6b7bf6cde97f4846f987e6ab230c2aeee44d942d5e881a1c74",
     "SERVER3_SOURCE_SHA256": "9367db4ebb4edf6b7bf6cde97f4846f987e6ab230c2aeee44d942d5e881a1c74",
