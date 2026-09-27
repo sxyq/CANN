@@ -1,0 +1,36 @@
+{
+  "ROUTE": "EPILOGUE-FUSE-X",
+  "REVISION": "V002",
+  "SINGLE_HYPOTHESIS": "V002-1 VMLA FUSED AFFINE",
+  "LOCAL_VERDICT": "NOT_COMPLETE",
+  "VERDICT_REASON": "Correctness PASS (53/54; 1 pre-existing parent failure) and compile/link PASS. Device timing not yet run (Main: after REDUCE V002).",
+  "BUILD": {
+    "host": "cann-server3",
+    "cmake_rc": 0,
+    "compile_rc": 0,
+    "link_rc": 0,
+    "link_executable_sha": "4558932c55291c27fe37a4760196eba5a0150033e589958b9ca83f918cf16955",
+    "probe_executable_sha": "22363e3b27f26fb8366eacd6487d2aca20e33c4972245bcefa9f3215c142ef41"
+  },
+  "CORRECTNESS": {
+    "device": "server3 d4",
+    "total_cases": 54,
+    "passed": 53,
+    "failed": 1,
+    "failed_case": "dtype=0 rows=2 D=16384 resident_wide_colsplit",
+    "failed_case_class": "PRE_EXISTING_PARENT_FAILURE",
+    "v002_max_abs_same_case": 0.44175
+  },
+  "SINGLE_CHANGE_AUDIT": {
+    "status": "PASS",
+    "mechanism_count": 1,
+    "mechanism": "MulAddDst (vmla) replaces Mul+Add at FP32 full-row epilogue",
+    "sites_changed": ["ProcessFp32FullRowOutputPipelined second pass"],
+    "sites_unchanged": "All other Mul+Add epilogue sites (follow-up)",
+    "sync_note": "SyncVToMTE2 before per-row bias reload is a correctness requirement of the in-place accumulator (closes V-pipe/MTE2 race), not a performance sync change"
+  },
+  "MEASUREMENT": {
+    "status": "NOT_RUN",
+    "reason": "Main instruction: device timing will be scheduled after REDUCE V002"
+  }
+}

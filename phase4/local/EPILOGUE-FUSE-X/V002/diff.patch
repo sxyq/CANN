@@ -1,0 +1,48 @@
+--- frozen-seed/R31B-V011-LP-ROW-PIPELINE_kernel.asc	2026-09-27 03:50:14
++++ EPILOGUE-FUSE-X-V002-VMLA_kernel.asc	2026-09-27 07:52:15
+@@ -1128,7 +1128,6 @@
+         AscendC::LocalTensor<float> biasLocal = biasBuf_.Get<float>();
+         for (int32_t col = 0; col < kCacheElems; col += kTileElems) {
+             Load(gammaLocal[col], gammaGm_, col, kTileElems);
+-            Load(biasLocal[col], biasGm_, col, kTileElems);
+         }
+ 
+         const AscendC::TEventID outputReadyFirst =
+@@ -1143,8 +1142,6 @@
+         bool secondOutputNeedsRelease = false;
+ 
+         for (uint64_t row = beginRow; row < beginRow + localRows; ++row) {
+-            // valueFp32Buf_ holds both output tiles.  Do not overwrite either
+-            // tile until the preceding row's asynchronous MTE3 copy is done.
+             if (firstOutputNeedsRelease) {
+                 AscendC::WaitFlag<AscendC::HardEvent::MTE3_V>(outputReleaseFirst);
+                 firstOutputNeedsRelease = false;
+@@ -1152,7 +1149,12 @@
+             if (secondOutputNeedsRelease) {
+                 AscendC::WaitFlag<AscendC::HardEvent::MTE3_V>(outputReleaseSecond);
+                 secondOutputNeedsRelease = false;
++            }
++            SyncVToMTE2();
++            for (int32_t col = 0; col < kCacheElems; col += kTileElems) {
++                Load(biasLocal[col], biasGm_, col, kTileElems);
+             }
++            SyncMTE2ToV();
+ 
+             const uint64_t rowOffset = row * static_cast<uint64_t>(kCacheElems);
+             const bool hasPrefetchedFirstTile = row != beginRow;
+@@ -1209,13 +1211,11 @@
+                     useFirst ? outputReleaseFirst : outputReleaseSecond;
+                 AscendC::Muls(valueTile, valueTile, invRms, kTileElems);
+                 AscendC::PipeBarrier<PIPE_V>();
+-                AscendC::Mul(valueTile, valueTile, gammaLocal[col], kTileElems);
+-                AscendC::PipeBarrier<PIPE_V>();
+-                AscendC::Add(valueTile, valueTile, biasLocal[col], kTileElems);
++                AscendC::MulAddDst(biasLocal[col], valueTile, gammaLocal[col], kTileElems);
+                 AscendC::PipeBarrier<PIPE_V>();
+                 AscendC::SetFlag<AscendC::HardEvent::V_MTE3>(outputReady);
+                 AscendC::WaitFlag<AscendC::HardEvent::V_MTE3>(outputReady);
+-                Store(outputGm_, rowOffset + col, valueTile, kTileElems);
++                Store(outputGm_, rowOffset + col, biasLocal[col], kTileElems);
+                 AscendC::SetFlag<AscendC::HardEvent::MTE3_V>(outputRelease);
+                 if (useFirst) {
+                     firstOutputNeedsRelease = true;
