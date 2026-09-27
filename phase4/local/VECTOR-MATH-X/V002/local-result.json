@@ -2,8 +2,8 @@
   "ROUTE": "VECTOR-MATH-X",
   "REVISION": "V002",
   "SINGLE_HYPOTHESIS": "VM-H3a partial: Duplicate broadcast + vector Mul",
-  "LOCAL_VERDICT": "NOT_COMPLETE",
-  "VERDICT_REASON": "Correctness 53/54 (1 pre-existing wide FP32). Timing lease pending (INTEGRATION using devices).",
+  "LOCAL_VERDICT": "NEEDS_ONE_MORE_LOCAL",
+  "VERDICT_REASON": "Correctness 53/54. Timing: medium shapes (2x4096/4x2048/8x1024) show favor C at -6% to -14% (4x2048 5/5 clean pairs, 8x1024 3/3). NO medium-shape regression. Same-binary gate failed (B2 missing, blocks=1). Strong medium signal warrants one more round.",
   "BUILD": {
     "host": "cann-server3",
     "compile_rc": 0,
@@ -25,7 +25,16 @@
     "bcastBuf_note": "Must use reduceFp32Buf_ (not xFp32Buf_ which holds BF16 gamma)"
   },
   "MEASUREMENT": {
-    "status": "NOT_RUN",
-    "reason": "Timing lease pending (INTEGRATION using devices first)"
-  }
+    "status": "COMPLETE",
+    "device": "server3 d4 (lease R2-VM-V002-TIMING)",
+    "method": "DEVICE_EVENT_PRIMARY, warmup=45, 41 samples x 6 pairs",
+    "samebinary": "FAIL all shapes (B2 missing, blocks=1 bug)",
+    "medium_shape_direction": "favor C: 2x4096 -6.2%, 4x2048 -14.0% (5/5), 8x1024 -9.2% (3/3)",
+    "small_shape_direction": "slight favor C (8x256 -4.2%), others noisy",
+    "large_shape_direction": "mixed to slight favor C",
+    "blocker_check": "NO medium-shape regression. V002 does NOT repeat INTEGRATION-X medium regressions.",
+    "ONLINE_WORTHY": "KEEP_ACCUMULATING",
+    "summary_path": "support/results-timing-v002/SUMMARY.md",
+    "raw_path": "support/results-timing-v002/"
+  },
 }
