@@ -23,3 +23,13 @@ Next action: keep V001 unchanged; on a fresh eligible lease, repeat the exact-sh
 On 2026-09-26 23:09-23:14 UTC, the same exact source, Parent, Candidate, and unified runner were reverified on d6. Shape `[12,8192]` passed a new Parent same-binary qualification (45 warmups, 31 samples x 2 blocks; MAD/median `0.033505/0.027432`, drift `0.032953`). The following four interleaved pairs were `-0.496282%`, `-1.017813%`, `0.000000%`, and `-0.761427%`; their median was `-0.628855%` (`-0.05 us`) against `0.24 us` Parent median MAD. The full distribution still contains long tails (Parent p90 `20.02/217.86 us`, raw CV `2.051/1.721`), retained in the raw files. The device had AICore 0%, HBM 91%, and VLLMWorker_TP PID 91228. Lease `M1-DTYPE-V001-D6-S07R-20260926T230927Z` was released after the postflight snapshot.
 
 Verdict remains `NEEDS_ONE_MORE_LOCAL`: the second set is within the measured noise floor and does not establish an improvement. `LOCAL_BEST` is unchanged; the only timing-shape blocker is `[12,64]`, which remains unqualified.
+
+## Third local attempt: d7, 2026-09-27
+
+- Reused the exact existing Parent, Candidate, and unified runner identities. No build, link, or correctness rerun occurred.
+- Lease: `M1-DTYPE-V001-D7-R3-20260927T064606Z`; shape `[12,8192]`; 45 warmups and 31 samples in each of two Parent blocks.
+- Parent same-binary: `NEEDS_VALIDATION`; block MAD/median `0.056831` and `0.076546`; block drift `0.107549`; Parent correctness bad `0`. P/C timing was not run because the shape did not qualify.
+- d7 HBM was `5%` before and after (`3431-3432/65536 MB`); AICore and processes were recorded only, with no process on d7. HBM admission passed.
+- Raw evidence: `logs/unified-dtype-noise-floor-20260927T064728Z-61624.raw.tsv`, `logs/unified-dtype-noise-floor-20260927T064728Z-61624.jitter.txt`, and the runner result `logs/unified-dtype-noise-floor-20260927T064728Z-61624.log`.
+
+This attempt leaves `BUILD=PASS`; `CORRECTNESS=PASS`; `EXECUTABLE_IDENTITY=PASS`; `SAME_BINARY=NEEDS_VALIDATION` for this attempt; `TIMING=MEASUREMENT_BLOCKED` for this shape; `LOCAL_VERDICT=NEEDS_ONE_MORE_LOCAL`. Earlier valid shape-7 P/C evidence remains retained and still does not establish a performance gain. `LOCAL_BEST` and Online state are unchanged.

@@ -91,3 +91,11 @@ The current five distinct follow-up directions are DTYPE-FP32-06 Pattern AR redu
 The existing V001 Candidate was remeasured on d6 under lease `M1-DTYPE-V001-D6-S07R-20260926T230927Z`. Exact source and Parent/Candidate/runner executable identities matched the retained records. Shape `[12,8192]` passed Parent same-binary qualification with 45 warmups, 31 samples per block, MAD/median `0.033505/0.027432`, and block drift `0.032953`. Four interleaved device-event pairs yielded `-0.496282%`, `-1.017813%`, `0.000000%`, and `-0.761427%`; the median change was `-0.628855%` (`-0.05 us`) versus `0.24 us` Parent median MAD. The differences remain within the noise floor. Parent raw CV was `2.051/1.721` and p90 was `20.02/217.86 us`; retain all long-tail samples.
 
 The device stayed at AICore 0%, HBM 91%, with VLLMWorker_TP PID 91228. The postflight snapshot is `logs/measurement-postflight-20260926T231423Z.txt`; raw/jitter/pair evidence is `logs/unified-dtype-noise-floor-20260926T231048Z-34739.*` and `logs/unified-dtype-paired-20260926T231213Z-35265.*`. The lease was released at `2026-09-26T23:14:40Z`. Verdict remains `NEEDS_ONE_MORE_LOCAL`; no Local Best or Online state changed.
+
+## Third local attempt: d7, 2026-09-27
+
+- Lease: `M1-DTYPE-V001-D7-R3-20260927T064606Z`; exact shape `[12,8192]`; 45 warmups and 31 samples per Parent block.
+- Parent same-binary qualification was `NEEDS_VALIDATION`: block MAD/median `0.056831` and `0.076546`, block drift `0.107549`, correctness bad `0`. P/C timing was correctly skipped for this attempt.
+- d7 HBM was `5%` before and after (`3431-3432/65536 MB`); AICore and processes were recorded only, with no process on d7. HBM admission passed.
+- Evidence: `logs/unified-dtype-noise-floor-20260927T064728Z-61624.raw.tsv`, `.jitter.txt`, `.log`, and the matching preflight record.
+- Disposition remains `BUILD=PASS`; `CORRECTNESS=PASS`; `EXECUTABLE_IDENTITY=PASS`; `LOCAL_VERDICT=NEEDS_ONE_MORE_LOCAL`; no Local Best update and no Online submission. Earlier valid shape-7 P/C evidence remains retained.
