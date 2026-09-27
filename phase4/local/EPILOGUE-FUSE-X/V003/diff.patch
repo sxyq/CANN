@@ -1,0 +1,137 @@
+--- frozen-seed/R31B-V011-LP-ROW-PIPELINE_kernel.asc	2026-09-27 03:50:14
++++ EPILOGUE-FUSE-X-V003-VMLA_kernel.asc	2026-09-27 08:56:55
+@@ -432,9 +432,9 @@
+                         AscendC::PipeBarrier<PIPE_V>();
+                         AscendC::Add(valueTile, valueTile, biasLocal[col], valid);
+                     } else {
+-                        AscendC::Mul(valueTile, valueTile, gammaLocal, valid);
++                        AscendC::MulAddDst(biasLocal, valueTile, gammaLocal, valid);
+                         AscendC::PipeBarrier<PIPE_V>();
+-                        AscendC::Add(valueTile, valueTile, biasLocal, valid);
++                        AscendC::Adds(valueTile, biasLocal, 0.0f, valid);
+                     }
+                 } else if constexpr (std::is_same<T, half>::value) {
+                     FromFloat(outputLocal, valueTile, valid);
+@@ -444,9 +444,9 @@
+                         AscendC::PipeBarrier<PIPE_V>();
+                         AscendC::Add(outputLocal, outputLocal, biasLocal[col], valid);
+                     } else {
+-                        AscendC::Mul(outputLocal, outputLocal, gammaLocal, valid);
++                        AscendC::MulAddDst(biasLocal, outputLocal, gammaLocal, valid);
+                         AscendC::PipeBarrier<PIPE_V>();
+-                        AscendC::Add(outputLocal, outputLocal, biasLocal, valid);
++                        AscendC::Adds(outputLocal, biasLocal, static_cast<T>(0.0f), valid);
+                     }
+                 } else if (cacheParamFp32) {
+                     AscendC::LocalTensor<float> gammaFp32 = gammaFp32Buf_.Get<float>();
+@@ -455,9 +455,9 @@
+                     AscendC::PipeBarrier<PIPE_V>();
+                     AscendC::Add(valueTile, valueTile, biasFp32[col], valid);
+                 } else {
+-                    AscendC::Mul(valueTile, valueTile, xFp32, valid);
++                    AscendC::MulAddDst(residualFp32, valueTile, xFp32, valid);
+                     AscendC::PipeBarrier<PIPE_V>();
+-                    AscendC::Add(valueTile, valueTile, residualFp32, valid);
++                    AscendC::Adds(valueTile, residualFp32, 0.0f, valid);
+                 }
+                 AscendC::PipeBarrier<PIPE_V>();
+                 if constexpr (AscendC::IsSameType<T, float>::value) {
+@@ -466,10 +466,7 @@
+                     }
+                     SyncVToMTE3();
+                     Store(outputGm_, rowOffset + col, valueTile, valid);
+-                    // V006: when y is cached per-slice, defer the MTE3 drain
+-                    // to the end of the row.  A streamed single value tile
+-                    // must drain every iteration before it is overwritten.
+-                    if (!cacheRow || col + kTileElems >= rowWidth) {
++                    if (!cacheRow || !cacheParams || col + kTileElems >= rowWidth) {
+                         SyncMTE3ToV();
+                     }
+                 } else if constexpr (std::is_same<T, half>::value) {
+@@ -579,35 +576,65 @@
+             AscendC::Muls(valueLocal, valueLocal, invRms, valid);
+             AscendC::PipeBarrier<PIPE_V>();
+             if constexpr (AscendC::IsSameType<T, float>::value) {
+-                AscendC::Mul(valueLocal, valueLocal, gammaLocal, valid);
+-                AscendC::PipeBarrier<PIPE_V>();
+-                AscendC::Add(valueLocal, valueLocal, biasLocal, valid);
+-                AscendC::PipeBarrier<PIPE_V>();
+-                SyncVToMTE3();
+-                Store(outputGm_, rowOffset, valueLocal, valid);
++                if (residentParams) {
++                    AscendC::Mul(valueLocal, valueLocal, gammaLocal, valid);
++                    AscendC::PipeBarrier<PIPE_V>();
++                    AscendC::Add(valueLocal, valueLocal, biasLocal, valid);
++                    AscendC::PipeBarrier<PIPE_V>();
++                    SyncVToMTE3();
++                    Store(outputGm_, rowOffset, valueLocal, valid);
++                } else {
++                    AscendC::MulAddDst(biasLocal, valueLocal, gammaLocal, valid);
++                    AscendC::PipeBarrier<PIPE_V>();
++                    AscendC::Adds(valueLocal, biasLocal, 0.0f, valid);
++                    AscendC::PipeBarrier<PIPE_V>();
++                    SyncVToMTE3();
++                    Store(outputGm_, rowOffset, valueLocal, valid);
++                }
+             } else if constexpr (std::is_same<T, half>::value) {
+                 AscendC::LocalTensor<T> outputLocal = outputBuf_.Get<T>();
+                 FromFloat(outputLocal, valueLocal, valid);
+                 AscendC::PipeBarrier<PIPE_V>();
+-                AscendC::Mul(outputLocal, outputLocal, gammaLocal, valid);
+-                AscendC::PipeBarrier<PIPE_V>();
+-                AscendC::Add(outputLocal, outputLocal, biasLocal, valid);
+-                AscendC::PipeBarrier<PIPE_V>();
+-                SyncVToMTE3();
+-                Store(outputGm_, rowOffset, outputLocal, valid);
++                if (residentParams) {
++                    AscendC::Mul(outputLocal, outputLocal, gammaLocal, valid);
++                    AscendC::PipeBarrier<PIPE_V>();
++                    AscendC::Add(outputLocal, outputLocal, biasLocal, valid);
++                    AscendC::PipeBarrier<PIPE_V>();
++                    SyncVToMTE3();
++                    Store(outputGm_, rowOffset, outputLocal, valid);
++                } else {
++                    AscendC::MulAddDst(biasLocal, outputLocal, gammaLocal, valid);
++                    AscendC::PipeBarrier<PIPE_V>();
++                    AscendC::Adds(outputLocal, biasLocal, static_cast<T>(0.0f), valid);
++                    AscendC::PipeBarrier<PIPE_V>();
++                    SyncVToMTE3();
++                    Store(outputGm_, rowOffset, outputLocal, valid);
++                }
+             } else {
+                 ToFloat(xFp32, gammaLocal, valid);
+                 ToFloat(residualFp32, biasLocal, valid);
+                 AscendC::PipeBarrier<PIPE_V>();
+-                AscendC::Mul(valueLocal, valueLocal, xFp32, valid);
+-                AscendC::PipeBarrier<PIPE_V>();
+-                AscendC::Add(valueLocal, valueLocal, residualFp32, valid);
+-                AscendC::PipeBarrier<PIPE_V>();
+-                AscendC::LocalTensor<T> outputLocal = xBuf_.Get<T>();
+-                FromFloat(outputLocal, valueLocal, valid);
+-                AscendC::PipeBarrier<PIPE_V>();
+-                SyncVToMTE3();
+-                Store(outputGm_, rowOffset, outputLocal, valid);
++                if (residentParams) {
++                    AscendC::Mul(valueLocal, valueLocal, xFp32, valid);
++                    AscendC::PipeBarrier<PIPE_V>();
++                    AscendC::Add(valueLocal, valueLocal, residualFp32, valid);
++                    AscendC::PipeBarrier<PIPE_V>();
++                    AscendC::LocalTensor<T> outputLocal = xBuf_.Get<T>();
++                    FromFloat(outputLocal, valueLocal, valid);
++                    AscendC::PipeBarrier<PIPE_V>();
++                    SyncVToMTE3();
++                    Store(outputGm_, rowOffset, outputLocal, valid);
++                } else {
++                    AscendC::MulAddDst(residualFp32, valueLocal, xFp32, valid);
++                    AscendC::PipeBarrier<PIPE_V>();
++                    AscendC::Adds(valueLocal, residualFp32, 0.0f, valid);
++                    AscendC::PipeBarrier<PIPE_V>();
++                    AscendC::LocalTensor<T> outputLocal = xBuf_.Get<T>();
++                    FromFloat(outputLocal, valueLocal, valid);
++                    AscendC::PipeBarrier<PIPE_V>();
++                    SyncVToMTE3();
++                    Store(outputGm_, rowOffset, outputLocal, valid);
++                }
+             }
+         }
+         if (needInputRelease) {

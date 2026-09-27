@@ -79,3 +79,17 @@ target_link_directories(epilogue_fuse_x_v002_link PRIVATE
 target_compile_options(epilogue_fuse_x_v002_link PRIVATE
     $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=dav-2201>)
 target_link_libraries(epilogue_fuse_x_v002_link PRIVATE stdc++ m dl)
+
+efx_add_ref_probe(efx_ref_v002 support/runner_ref_v002.asc)
+
+add_executable(epilogue_fuse_x_v003_link compile_adapter_v003.asc)
+target_include_directories(epilogue_fuse_x_v003_link PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_directories(epilogue_fuse_x_v003_link PRIVATE
+    /usr/lib/gcc/aarch64-linux-gnu/11
+    /usr/lib/aarch64-linux-gnu)
+target_compile_options(epilogue_fuse_x_v003_link PRIVATE
+    $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=dav-2201>)
+target_link_libraries(epilogue_fuse_x_v003_link PRIVATE stdc++ m dl)
+
+efx_add_ref_probe(efx_ref_v003 support/runner_ref_v003.asc)

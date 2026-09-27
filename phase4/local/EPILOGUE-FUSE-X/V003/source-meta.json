@@ -1,0 +1,33 @@
+{
+  "ROUTE": "EPILOGUE-FUSE-X",
+  "REVISION": "V003",
+  "DIRECT_PARENT": "FROZEN_R31B_V011",
+  "PARENT_SOURCE_SHA": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "PARENT_SCORE": "OFFICIAL_ANCHOR 45.16 (15/15)",
+  "SINGLE_HYPOTHESIS": "V003-1 VMLA-INPLACE-UNCACHED: MulAddDst replaces Mul+Add in cacheParams==false (per-tile-loaded bias) second-pass arms. Copy-back to valueTile before store (same store source as parent). Arithmetic identity unchanged. Uniform across T. No dtype split. No reload, no extra sync.",
+  "CONTEXT_CLASS": "FROZEN_STRONG_BASELINE_EPILOGUE_DATAFLOW",
+  "SOURCE_SHA": "1f94721a367114418e47e59ce78a14d37c8962ef0a3a8a14b184fe88702937cb",
+  "SOURCE_PATH": "phase4/workspaces/EPILOGUE-FUSE-X/EPILOGUE-FUSE-X-V003-VMLA_kernel.asc",
+  "BUILD_HOST": "cann-server3:/home/data4t2/lelinfeng/phase4-workspaces/EPILOGUE-FUSE-X",
+  "COMPILE": "PASS (link adapter: epilogue_fuse_x_v003_link; RC=0)",
+  "LINK": "PASS (SHA256 1b51f5bd7e4659a2b50cc856114295a5845f0e15c53a648c1ef01bc2ba77eec0)",
+  "CORRECTNESS_EXECUTABLE_SHA": "89ba5b6b2e71470be5fe84c3f4ad17e91d57c073189f676e64fdb3b1cbe53d12",
+  "CORRECTNESS": "53/54 PASS; 1 FAIL resident_wide_colsplit FP32 D=16384 is PRE_EXISTING_PARENT_FAILURE (identical max_abs 0.44175 on frozen parent). All uncached-arm shapes (2/4/8x8192 FP32, 1x8192, FP16/BF16 equivalents) PASS.",
+  "CORRECTNESS_DEVICE": "server3 d4",
+  "SINGLE_CHANGE_AUDIT": "PASS",
+  "ARCHITECTURE": "MulAddDst (vmla: bias += y_norm*gamma) replaces Mul+Add in cacheParams==false arms. Result copied back to valueTile via Adds(bias,0) before Store — same store source as parent. 1 fewer valueTile writeback (3→2). Total V ops unchanged (3: Muls + vmla + copy).",
+  "ISOLATION": [
+    "One mechanism: vmla replaces Mul+Add in uncached arms only",
+    "Cached-params arms (cacheParams==true) byte-identical to parent",
+    "Wide paths, broadcast helpers, full-row paths untouched",
+    "Store source unchanged (valueTile/outputLocal via copy-back)",
+    "No parameter reload, no extra sync, no dtype split"
+  ],
+  "RISKS": [
+    "Copy-back Adds is a full-tile pass — total V op count unchanged (3/tile). Win is only 1 fewer valueTile writeback.",
+    "Timing shows no measurable improvement (noise band). The writeback reduction is insufficient alone.",
+    "Wide FP32 D=16384 pre-existing failure unchanged."
+  ],
+  "DECISION": "NEEDS_ONE_MORE_LOCAL",
+  "NEXT": "Timing shows no signal beyond noise. Consider combining with V003-3 (normalize off valueTile) for a 2-writeback valueTile chain, or pivot to a different direction."
+}
