@@ -426,3 +426,23 @@ LOCAL_VERDICT=MEASUREMENT_BLOCKED. ONLINE_WORTHY=NO. No Judge submission.
 V002 package frozen; NOT a LOCAL_BEST. Champion remains R31B-V011 45.16.
 
 Measurement-layer note: short-kernel MAD/med gate may need length-stratified thresholds (future Main policy, not changed here).
+
+## STORE-EPILOGUE-X V001 (2026-09-27 overnight)
+
+SOURCE_SHA `06564134e4930eb3e2ca30297b9bda548135d1aa8a1f43238b75dafc8a8c09f9`
+COMPILE/LINK RC=0. CORRECTNESS PASS (24/26 both sides; 2 parent-shared golden failures).
+same-binary PASS on d6.
+
+| shape | band | median Δ | C/P |
+|---|---|---|---|
+| **1x32768 FP32** | large | **−7.61%** | **6/0** |
+| 2x8192 FP32 | large | +2.57% | 2/3 |
+| 2x6144 FP32 | medium | +5.16% | 1/5 |
+| 8x8192 FP32 | medium | +1.93% | 2/4 |
+| 2x256 FP32 | small (control) | −6.06% | 4/2 (noise ±10%) |
+| 1x16384 FP16 | control | +0.42% | ≈0 |
+
+Mechanism: merge win grows with tileCount (8→1 large win); tileCount=2 delayed writeback loses store/compute overlap (medium cost).
+LOCAL_VERDICT=NEEDS_ONE_MORE_LOCAL. ONLINE_WORTHY=NO.
+
+V002 proposal: apply merge only when tileCount>=4 (single-variable gate).
