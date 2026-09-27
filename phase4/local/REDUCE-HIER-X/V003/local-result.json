@@ -1,0 +1,92 @@
+{
+  "route": "REDUCE-HIER-X",
+  "revision": "V003",
+  "revision_kind": "PERFORMANCE_SINGLE_HYPOTHESIS",
+  "direct_parent": "FROZEN_R31B_V011",
+  "parent_source_sha": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "parent_score": "45.16",
+  "official_anchor": "45.16",
+  "v002_disposition": "LOCAL_REJECTED (H2 pairwise tree +6.6% on 1x32768); rolled back to frozen parent",
+
+  "assigned_hypothesis": "H3 — Short-span ReduceSum + single barrier: pairwise-add fold to kReduceSpan=128 with zero intermediate PipeBarrier, then one PipeBarrier + ReduceSum(128).",
+  "single_hypothesis_as_delivered": "FoldToReduceSpan: barrier-free pairwise Add halving (32B-aligned, stops at 128 or odd count). Per-tile ReduceSum runs on folded span after ONE PipeBarrier. Sites: Process() first-pass, ProcessFp32FullRowOutputPipelined, ProcessWideFp32FullCacheRows.",
+  "single_change_audit": "PASS",
+  "context_class": "FROZEN_STRONG_BASELINE_REDUCTION_TOPOLOGY",
+  "source_sha256": "79f910e4450a2b570a780293ce96dee317c005c8a2de67a65d446223c9a882a7",
+
+  "compile": {
+    "device": "PASS",
+    "submission": "PASS",
+    "toolchain": "cann-server3 / Ascend910B3 / dav-2201 / CANN 8.5.0.alpha002"
+  },
+  "link": {
+    "parent_probe": "PASS",
+    "candidate_probe": "PASS",
+    "submission_object": "PASS"
+  },
+  "identity": {
+    "local_sha": "79f910e4450a2b570a780293ce96dee317c005c8a2de67a65d446223c9a882a7",
+    "remote_sha": "79f910e4450a2b570a780293ce96dee317c005c8a2de67a65d446223c9a882a7",
+    "match": true
+  },
+  "executable_sha_candidate_probe": "2879c4ec6617aa8414508846ac08c9371ac66df57e4dcf403facdb0bf5338dd2",
+
+  "correctness": {
+    "verdict": "PASS",
+    "device_id": 4,
+    "method": "runner_main.inc + double-precision golden; atol/rtol per dtype",
+    "summary_tsv": "phase4/local/REDUCE-HIER-X/V003/support/correctness-summary.tsv",
+    "multi_tile_pass": ["1x8192 fp32", "2x8192 fp32", "3x6144 fp32", "1x8192 fp16", "1x8192 bf16", "1x16384 fp16", "1x32768 bf16"],
+    "single_tile_control_pass": ["1x1024 fp32", "1x4096 fp32", "2x4096 fp32", "1x256 fp16", "1x4096 fp16", "1x256 bf16", "1x4096 bf16", "1x100 fp32", "1x65 fp16"],
+    "dtype_coverage": {"fp32": "PASS (where parent passes)", "fp16": "PASS all shapes", "bf16": "PASS all shapes"},
+    "max_abs_vs_parent": "Identical or better on all passing shapes (e.g. 1x8192 fp32: cand 3.20e-07 vs parent 5.02e-07).",
+    "parent_shared_failures": [
+      {
+        "shape": "1x16384 fp32",
+        "parent": "exit=3 bad=8767 max_abs=1.2596",
+        "candidate": "exit=3 bad=13310 max_abs=1.09993",
+        "assessment": "PARENT_PREEXISTING (same as V001/V002): frozen parent fails this runner's golden on wide FP32. Candidate max_abs slightly better than parent."
+      },
+      {
+        "shape": "1x32768 fp32",
+        "parent": "exit=3 bad=31211 max_abs=1.2509",
+        "candidate": "exit=3 bad=28646 max_abs=1.2031",
+        "assessment": "PARENT_PREEXISTING: candidate max_abs better than parent; both fail this runner's golden."
+      }
+    ],
+    "note": "Barrier-free in-order V-pipe Add chain (FoldToReduceSpan) is correctness-safe: no alignment faults, no wrong sums on any passing shape."
+  },
+
+  "measurement": {
+    "status": "MEASUREMENT_BLOCKED",
+    "block_reason": "No device lease for V003 timing yet. Shapes planned: 1x32768 (cleanest), 1x16384, 8x8192, 1x4096 control.",
+    "date": "2026-09-27",
+    "same_binary_result": "NOT_RUN",
+    "retry_required": true
+  },
+
+  "local_verdict": "NOT_COMPLETE",
+  "local_verdict_reason": "Correctness PASS and source identity PASS. No paired local performance measurement yet (MEASUREMENT_BLOCKED — no device lease).",
+
+  "files": [
+    "phase4/local/REDUCE-HIER-X/V003/submission.asc",
+    "phase4/local/REDUCE-HIER-X/V003/submission.sha256",
+    "phase4/local/REDUCE-HIER-X/V003/source-meta.json",
+    "phase4/local/REDUCE-HIER-X/V003/diff.patch",
+    "phase4/local/REDUCE-HIER-X/V003/local-result.json",
+    "phase4/local/REDUCE-HIER-X/V003/support/correctness-summary.tsv",
+    "phase4/local/REDUCE-HIER-X/V003/support/server3-sha-manifest.txt"
+  ],
+
+  "single_change_audit_detail": {
+    "mechanisms": 1,
+    "list": ["short-span ReduceSum via barrier-free pairwise pre-fold (FoldToReduceSpan)"],
+    "sites": ["Process() first-pass", "ProcessFp32FullRowOutputPipelined", "ProcessWideFp32FullCacheRows"],
+    "unchanged": ["per-tile ReduceSum call count", "square Mul", "mean/epsilon tail", "invRms sequence", "output pass", "row scheduling", "dtype dispatch", "DMA layout", "gamma/bias policy", "InitBuffer footprint"]
+  },
+
+  "barrier_tree_analysis_for_main": {
+    "question": "Can barrier count inside one Add tree be reduced (e.g. 4-way unrolled with single barrier after a group) to beat H3?",
+    "answer": "H3 already achieves the theoretical minimum: 0 intermediate barriers for the Add chain (in-order V-pipe handles RAW — correctness confirmed), 1 barrier before ReduceSum. A 4-way unrolled tree (3 Adds per level vs 2-way's 1 Add per level) has fewer levels (log4 vs log2) but MORE total Adds (3*log4(N) = 1.5*log2(N)). With 0 intermediate barriers, level count is irrelevant to barrier cost — only total Add count matters, and 2-way pairwise is optimal (minimum Adds for a binary reduction). 4-way would only win if per-level barriers were required (reducing barrier count from log2(N/S) to log4(N/S)), but H3's barrier-free chain already removes that term. Conclusion: no clearly better single-variable form found; H3 is the right shape. If short-span still loses, the remaining lever is ReduceSum's internal cost on short spans (not barrier count)."
+  }
+}
