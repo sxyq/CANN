@@ -269,3 +269,34 @@ LOCAL_BEST chain: only SCHED V002. No ONLINE_WORTHY. Official still 45.16.
 REDUCE-HIER-X: KEEP as small-win accumulator (V001 -3.8% / V003 ~neutral). No more reduction-topology revisions until a new bottleneck evidence appears.
 
 PIVOT: start COEFF-LOCALITY-X (gamma/bias load locality) — allowed batch-2 route, orthogonal to MAIN-1, targets parameter DMA traffic which may be the real bottleneck.
+
+## SCHED-CHAMPION-X PARK (2026-09-27)
+
+V003 tail-group folding: LOCAL_REJECTED (33x100 +0.9%). LOCAL_BEST remains V002 (de1e93c7, 33x100 -4.4%).
+
+Structural ceiling confirmed: `rowGroup>1` iff `width%8!=0`; batched compute requires `width%8==0`. Ownership lane cannot unlock batched compute. Param-residency channel exhausted.
+
+**PARK ownership lane.** Retain V002 as LOCAL_BEST. No further ownership revisions.
+
+## COEFF-LOCALITY-X Track-B + V001 approval (2026-09-27)
+
+Load-map audit: 8 gamma/bias sites. Only `ProcessWideFp32FullCacheRows` (D>8192 FP32)
+reloads params per tile per batch with no prefetch. Sibling `ProcessWideLowPrecision`
+already has the V011 2-deep param MTE2 pipeline.
+
+Approved H1: transplant that prefetch into FP32 wide output pass.
+Est. -8% to -25% on D>8192 FP32 — first hypothesis sized to the Official case-14 gap.
+
+## COEFF-LOCALITY-X V001 refuted + large-D bottleneck conclusion (2026-09-27)
+
+| shape | Δ | note |
+|---|---|---|
+| 1x32768 FP32 PRIMARY | **+19.2%** favP 5/0 | regression; tileElems 4096→2560, tileCount 8→13 |
+| 1x16384 FP32 (tileElems unchanged) | +1.8% noise | param prefetch alone ≈ 0 |
+| 8x32768 FP32 | +12.2% favP | regression direction |
+
+LOCAL_REJECTED. Staging UB stole tile budget.
+
+**FOUR large-D variants have now failed (REDUCE ×3, COEFF ×1). Large-D bottleneck is NOT reduction V/S and NOT param MTE2.** Remaining suspects inside MAIN-2 scope: input x/residual DMA (ASYNC lane, parked), output store (EPILOGUE, small), compute apply itself, or mode selection (MAIN-1).
+
+Next: COEFF H2 stripe residency with tileElems pinned at 4096; VECTOR-MATH-X (rsqrt sequence).
