@@ -151,3 +151,121 @@ Group-unit ownership exposed a latent `xBuf_` alias race in `ProcessNarrowMidOve
 2. Batch-2 routes (COEFF-LOCALITY-X, VECTOR-MATH-X) may start research once batch-1 is stable (now true).
 3. UB-CHAMPION-X remains gated on UB V003 Official.
 4. No ONLINE_WORTHY until local paired deltas exist.
+
+## Official score structure (R31B-V011, 45.16)
+
+`s_i = 100 / (1 + log_1.5(time_i / best_time_i)); total = mean(s_i)`. Target >50 needs mean ratio time/best < 1.5.
+
+| idx | time_us | best_us | ratio | score | gap driver |
+|---:|---:|---:|---:|---:|---|
+| 14 | 16486.8 | 3750.1 | 4.40 | 21.50 | largest absolute gap |
+| 7 | 52.3 | 14.0 | 3.74 | 23.51 | |
+| 1 | 5.4 | 1.7 | 3.20 | 25.85 | |
+| 6 | 28.5 | 10.9 | 2.62 | 29.62 | |
+| 4 | 16.6 | 6.7 | 2.48 | 30.82 | |
+| 8 | 69.2 | 30.2 | 2.29 | 32.80 | |
+| 3 | 5.2 | 2.5 | 2.09 | 35.50 | |
+| 5 | 9.9 | 5.2 | 1.91 | 38.53 | |
+| 10 | 74.8 | 47.1 | 1.59 | 46.64 | |
+| 2 | 3.3 | 2.2 | 1.55 | 48.19 | |
+| 13 | 563.7 | 393.5 | 1.43 | 53.01 | |
+| 12 | 97.7 | 76.4 | 1.28 | 62.29 | |
+| 11 | 160.3 | 131.4 | 1.22 | 67.11 | |
+| 15 | 9637.5 | 8321.9 | 1.16 | 73.42 | |
+| 9 | 71.9 | 68.2 | 1.05 | 88.61 | already near best |
+
+Mean 45.16. To exceed 50 the sum of per-case scores must rise by >72.6. Concentrate wins on idx 14, 7, 1, 6, 4, 8, 3.
+
+## SCHED-CHAMPION-X V001 timing (2026-09-27, d4, warmup=45, device-event)
+
+| shape | same-binary | clean P/C delta | note |
+|---|---|---|---|
+| 33x100 FP32 (rowGroup=2) | PASS both | **-8.8%** favor V001 (2/3 clean) | only qualified shape |
+| 17x256 FP32 (rowGroup=1) | FAIL both | +15% noise | BLOCKED |
+| 17x257 FP16 (rowGroup=16) | parent FAIL / cand PASS | **+145.9% favor P 4/4** | parallelism collapse 17→2 cores |
+| 7x65 FP32 (rowGroup=8) | parent FAIL / cand PASS | mixed | BLOCKED |
+
+Verdict: NEEDS_ONE_MORE_LOCAL. Mechanism wins when groups fill cores; collapses when rowGroup >> rowCount.
+
+V002 approved: gated group-aligned ownership (apply only when totalGroups >= blockCount).
+
+## REDUCE-HIER-X V001 timing (2026-09-27, d5)
+
+| shape | same-binary | clean P/C delta | note |
+|---|---|---|---|
+| 8x8192 FP32 | PASS both | -3.8% (n=2 clean) | only qualified shape |
+| 1x8192/4096/2048/2x256 | FAIL | — | BLOCKED (bimodal short-kernel samples under VLLM) |
+
+Verdict: NEEDS_ONE_MORE_LOCAL. H1 fold signal is small; pursue higher-win reduction topology (manual vector tree / hierarchical) as V002.
+
+## SCHED-CHAMPION-X V002
+
+SOURCE_SHA `de1e93c74338802e646258ada08a8cac1031496a9985e585a5a89015b81bc990`
+Gate: `totalGroups * 2 >= min(blockCount, rowCount)` — group split keeps win on 33x100, avoids 17x257 collapse.
+Correctness 24/24. Timing in progress (d4).
+
+## Cycle status 2026-09-27 late
+
+| Route | Verdict | Signal | Next |
+|---|---|---|---|
+| SCHED V001 | NEEDS_ONE_MORE_LOCAL | 33x100 -8.8% (1 shape) | superseded by V002 |
+| SCHED V002 | NEEDS_ONE_MORE_LOCAL | gate OK (17x257 collapse fixed); 33x100 unmeasured (noise) | remeasure 33x100 |
+| REDUCE V001 | NEEDS_ONE_MORE_LOCAL | 8x8192 -3.8% | superseded by V002 H2 |
+| REDUCE V002 | IMPLEMENTING | H2 manual vector tree, est -18~-35% large-D | build+correctness |
+| EPILOGUE V001 | NEEDS_ONE_MORE_LOCAL | 4x8192 -5.5/-9% within ±5% band | KEEP_ACCUMULATING; H2 research |
+
+No ONLINE_WORTHY yet. Measurement host noise (VLLM residual) is the main blocker for local verdicts.
+
+## SCHED-CHAMPION-X V002 remeasure → LOCAL_ACCEPTED (2026-09-27)
+
+33x100 FP32: 5/6 clean pairs, **5/5 favor V002**, median **-4.4%** (range -1.5%..-11.2%), order-robust.
+17x257 FP16: +5.2% (3/4 clean) — gate holds; no V001 collapse.
+
+Decision: **LOCAL_ACCEPTED**, LOCAL_BEST=V002 (SOURCE_SHA `de1e93c7...`).
+ONLINE_WORTHY=NO — KEEP_ACCUMULATING. Small stable win; stacking more mechanisms before any Judge submission (calibration warns small local proxies can be misleading).
+
+## REDUCE-HIER-X V002 H2 refuted (2026-09-27)
+
+| shape | same-binary | clean Δ | verdict |
+|---|---|---|---|
+| 1x32768 FP32 (tileCount=8) | PASS both | **+6.6% favor P 5/0** | regression |
+| 8x8192 FP32 | PASS both | +0.9% | neutral |
+| 1x16384/8192/4096 | FAIL | — | BLOCKED |
+
+LOCAL_REJECTED. Root cause: `VectorReduceTo8` pairwise `Add` tree pays `PipeBarrier<PIPE_V>` per level; barrier chain costs more than the saved `ReduceSum` V/S.
+Rollback to frozen parent. Next: reduce barrier count (4-way tree) or shorten `ReduceSum` span instead of replacing it.
+
+## EPILOGUE-FUSE-X V002 VMLA refuted (2026-09-27)
+
+64x8192 FP32 (actual VMLA path): 6/6 favor parent, median **+3.4%** regression.
+In-place accumulator + per-row bias reload + SyncVToMTE2 costs more than vmla fusion saves.
+LOCAL_REJECTED. Rollback to frozen parent.
+
+Note: ProcessFp32FullRowOutputPipelined only runs when localRows>1 (rowCount > coreCount=40).
+
+## Cumulative local verdicts (end of this cycle)
+
+| Route | Rev | Verdict | Best signal |
+|---|---|---|---|
+| SCHED-CHAMPION-X | V002 | **LOCAL_ACCEPTED** | 33x100 -4.4% 5/5 |
+| REDUCE-HIER-X | V001 | NEEDS_ONE_MORE | 8x8192 -3.8% |
+| REDUCE-HIER-X | V002 | LOCAL_REJECTED | 1x32768 +6.6% |
+| REDUCE-HIER-X | V003 | timing | H3 short-span |
+| EPILOGUE-FUSE-X | V001 | NEEDS_ONE_MORE | within ±5% |
+| EPILOGUE-FUSE-X | V002 | LOCAL_REJECTED | 64x8192 +3.4% |
+
+LOCAL_BEST chain: only SCHED V002. No ONLINE_WORTHY. Official still 45.16.
+
+## REDUCE-HIER-X V003 + bottleneck pivot (2026-09-27)
+
+| shape | Δ | verdict |
+|---|---|---|
+| 1x32768 FP32 primary | -0.5% mixed | neutral |
+| 8x8192 FP32 | -3.3% | small, near noise |
+| 1x16384 FP32 | -1.5% 4/0 (parent same-binary FAIL) | direction only |
+
+**Three reduction-topology variants (V001 fold, V002 tree, V003 short-span) all failed to win on large-D. Reduction V/S is NOT the primary bottleneck on frozen R31B-V011. DMA + output pass are more likely.**
+
+REDUCE-HIER-X: KEEP as small-win accumulator (V001 -3.8% / V003 ~neutral). No more reduction-topology revisions until a new bottleneck evidence appears.
+
+PIVOT: start COEFF-LOCALITY-X (gamma/bias load locality) — allowed batch-2 route, orthogonal to MAIN-1, targets parameter DMA traffic which may be the real bottleneck.
