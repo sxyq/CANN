@@ -5,7 +5,7 @@ Updated: 2026-09-26
 
 ## Decision
 
-No local performance verdict has been formed. Keep R015C-r4 unchanged. There is no performance conclusion, promotion, rejection, or Online submission. Do not create another performance revision while r4 is unresolved. `BUILD=PASS`; `EXECUTABLE_IDENTITY=PASS`; the recorded 3/3 correctness run covers only the row-copy microkernel, so complete AddRmsNormBias correctness is `INCOMPLETE`. The route is not ready for same-binary or timing.
+`BUILD=PASS`; `EXECUTABLE_IDENTITY=PASS`; target AddRmsNormBias correctness is `FAIL`. The existing 3/3 row-copy result remains recorded as microkernel evidence and is not target correctness. The new target semantic probe failed all three fixed shapes on d7, so r4 is not ready for same-binary or timing. No performance conclusion, promotion, rejection, or Online submission is made; do not create another performance revision.
 
 ## Lineage and change scope
 
@@ -48,3 +48,9 @@ Main confirmed exact-source NPU correctness PASS for `(rows=2,D=256)`, `(rows=5,
 - Exact command, identities, raw pre/post tables, and case output are retained in `support/server3/correctness-device7-exact-20260926.log`; process interpretation is retained in `support/server3/correctness-device7-process-audit-20260926.log`.
 
 The identity gap for correctness is closed. Same-binary qualification and paired timing remain absent, so the Main decision remains `NEEDS_ONE_MORE_LOCAL`; load quality for performance has not been assessed, and no timing is authorized without a fresh lease.
+
+## Target AddRmsNormBias correctness disposition (2026-09-27)
+
+The exact r4 source entry is `row_copy_kernel(input, output, tiling)`. A new correctness-only host mode bound to the r4 source constructed `x + residual`, computed the AddRmsNormBias reference with RMS, gamma and bias, and compared the device output. It ran on d7 with HBM 3432/65536 MB before and 3434/65536 MB after; d7 had no running process. The support host source SHA-256 is `9d168a507369935365fce2c5ff1f4a88a485b8611168d1accd647534777cecd6`; the rebuilt correctness executable SHA-256 is `9796b1b73b684ac94102fef9086201c7927c0e66a8989266c4d019105bfc1d8e`.
+
+Results: `(2,256)` max_abs `1.2469`, `(5,4096)` max_abs `1.33044`, `(3,8192)` max_abs `1.33516`; all failed at index 0. The actual value was `-0.608` while the target references were approximately `-1.50971`, `-1.53414`, and `-1.53564`. This is a target correctness failure in the exact r4 source, not a performance-window state. `LOCAL_VERDICT=CORRECTNESS_FAILED`; same-binary, timing, Local Best and Online are not applicable.

@@ -2,12 +2,23 @@
 
 ## Current state
 
+- Current disposition: `BUILD=PASS`; `CORRECTNESS=FAILED` for target AddRmsNormBias; `TIMING=NOT_READY`; `LOCAL_VERDICT=CORRECTNESS_FAILED`.
+- The existing row-copy 3/3 result remains microkernel evidence only. A new target-semantic probe bound to the exact r4 source failed `(2,256)`, `(5,4096)`, and `(3,8192)` on d7. Full output is retained in `support/server3/target-addrmsnormbias-20260927-attempt2.log`.
+
 - Approved hypothesis retained: one row per block; segment size, DataCopyPad path and order, and 64 KiB VECCALC scratch remain unchanged.
 - Source SHA-256: `9367db4ebb4edf6b7bf6cde97f4846f987e6ab230c2aeee44d942d5e881a1c74`.
 - Direct parent: R015C-r3, source SHA-256 `e1786bec2673519f41887fdffa0e11751f515a81037d854c88ae7edc0e4af903`.
 - Compile and link: PASS on `cann-server3` (`hwnput3`), CANN `8.5.0.alpha002`, target `dav-2201`.
 - Earlier correctness run: PASS on device 4 for `(2,256)`, `(5,4096)`, and `(3,8192)`; each output matched the input exactly. The identity-bound device-7 rerun below is the current correctness evidence.
 - Performance timing: NOT RUN. No r2/r3 comparison was run.
+
+## Target AddRmsNormBias correctness disposition (2026-09-27)
+
+- Probe host source SHA-256: `9d168a507369935365fce2c5ff1f4a88a485b8611168d1accd647534777cecd6`.
+- Rebuilt target-correctness executable SHA-256: `9796b1b73b684ac94102fef9086201c7927c0e66a8989266c4d019105bfc1d8e`.
+- Device 7 HBM was 3432/65536 MB before and 3434/65536 MB after; no process was listed. AICore was recorded only.
+- `(2,256)`: max_abs `1.2469`, expected `-1.50971`, actual `-0.608`; `(5,4096)`: max_abs `1.33044`, expected `-1.53414`, actual `-0.608`; `(3,8192)`: max_abs `1.33516`, expected `-1.53564`, actual `-0.608`.
+- The exact r4 entry is `row_copy_kernel(input, output, tiling)`, so the target probe demonstrates that this source copies `x+residual` and does not perform RMS normalization, gamma scaling, or bias addition. Do not run same-binary or timing for r4.
 
 ## Executable identity
 
@@ -67,10 +78,10 @@ Main decision remains `NEEDS_ONE_MORE_LOCAL`. Keep R015C-r4 unchanged. The runne
 - No timing, same-binary qualification, or performance sampling was performed.
 - Main confirmed this identity-bound result: kernel source SHA-256 `9367db4ebb4edf6b7bf6cde97f4846f987e6ab230c2aeee44d942d5e881a1c74`, tiling SHA-256 `0939ba8498426fcd77645d826fcc45a8eb65c78996ad0ce1da1a00d1ac01a250`, and executable SHA-256 `21934a8cf15508b365e252810c8f858b4fb105c5cc5000f460d61c511a37e188` all match the run record. The three requested shapes passed exact comparison with exit status 0. Same-binary qualification and paired timing remain outstanding; Main retains `NEEDS_ONE_MORE_LOCAL`.
 
-## Current handoff state (2026-09-26)
+## Current handoff state (2026-09-27)
 
-- Main-confirmed exact-source correctness is PASS for the three recorded shapes and the executable identity above.
-- Main decision remains `NEEDS_ONE_MORE_LOCAL`; the exact-source correctness result and all four source/executable identities remain unchanged.
+- Main-confirmed exact-source row-copy correctness remains PASS for the three recorded shapes and the old executable identity above. That result is not target AddRmsNormBias correctness.
+- The new exact-source target semantic probe failed all three shapes. Main decision is `CORRECTNESS_FAILED`; the support probe executable identity and full output are retained above.
 - R015C-r2 remains `DIAGNOSTIC_ONLY_CORRECTNESS_FAIL`; it was not compared with r3 or r4. An R015C-r2 evidence directory is absent from this Route worktree, so this status is retained from the current Main handoff.
-- Current device report supplied for this handoff: d0-d6 have resident VLLM processes and approximately 90%-92% HBM use. d7 is idle but excluded by the timing protocol. The shared lease table has no R015C lease. Performance status is `MEASUREMENT_BLOCKED`; same-binary qualification, paired timing, and performance load classification remain outstanding.
+- Current device report supplied for this handoff: d0-d6 have resident VLLM processes and approximately 90%-92% HBM use; d7 had 3432/65536 MB HBM before the target probe and 3434/65536 MB after, with no process. Performance status is `NOT_READY` because target correctness failed; same-binary and paired timing are not permitted.
 - Track-B screening retains three distinct research-only ideas, H08-H10, with shape probes and falsification conditions in `phase4/research/MODE-X-R015C/next-hypotheses.md`. No Candidate, runner, NPU, or timing work was performed in this continuation.
