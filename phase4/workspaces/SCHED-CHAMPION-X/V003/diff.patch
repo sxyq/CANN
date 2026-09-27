@@ -1,0 +1,28 @@
+--- /Users/sunyiyang/Desktop/Project/cann-main2-r2/SCHED-CHAMPION-X/phase4/workspaces/SCHED-CHAMPION-X/V002/src/submission.asc	2026-09-27 06:05:17
++++ /Users/sunyiyang/Desktop/Project/cann-main2-r2/SCHED-CHAMPION-X/phase4/workspaces/SCHED-CHAMPION-X/V003/src/submission.asc	2026-09-27 08:34:37
+@@ -186,13 +186,22 @@
+         uint64_t beginRow;
+         uint64_t localRows;
+         if (useGroupSplit) {
+-            const uint64_t baseGroups = totalGroups / blockCount;
+-            const uint64_t extraGroups = totalGroups % blockCount;
++            // Tail-group folding: distribute full groups only; the partial
++            // final group is folded into the preceding group's owner so no
++            // core is left with a tiny fragment.
++            const uint64_t remainder = rowCount % rowGroup;
++            const bool canFold = (remainder != 0) && (totalGroups >= 2);
++            const uint64_t distGroups = canFold ? (totalGroups - 1) : totalGroups;
++            const uint64_t baseGroups = distGroups / blockCount;
++            const uint64_t extraGroups = distGroups % blockCount;
+             const uint64_t beginGroup = blockIdx * baseGroups +
+                                         (blockIdx < extraGroups ? blockIdx : extraGroups);
+             const uint64_t localGroups = baseGroups + (blockIdx < extraGroups ? 1 : 0);
+             beginRow = beginGroup * rowGroup;
+-            const uint64_t groupSpan = localGroups * rowGroup;
++            uint64_t groupSpan = localGroups * rowGroup;
++            if (canFold && (beginGroup + localGroups) == distGroups) {
++                groupSpan += remainder;
++            }
+             const uint64_t remainingRows =
+                 beginRow < rowCount ? (rowCount - beginRow) : 0;
+             localRows = groupSpan < remainingRows ? groupSpan : remainingRows;
