@@ -2,8 +2,8 @@
   "ROUTE": "VECTOR-MATH-X",
   "REVISION": "V001",
   "SINGLE_HYPOTHESIS": "VM-H2 VECTOR-DENOMINATOR",
-  "LOCAL_VERDICT": "NOT_COMPLETE",
-  "VERDICT_REASON": "Correctness 53/54 (1 pre-existing wide FP32). Timing pending.",
+  "LOCAL_VERDICT": "NEEDS_ONE_MORE_LOCAL",
+  "VERDICT_REASON": "Correctness 53/54 (1 pre-existing wide FP32). Timing: batched shapes (8x256, 32x256) show 3/3 clean pairs favor Candidate at -7% to -12% (marginally above noise). Mid and full-row shapes no signal. Positive trend warrants one more round.",
   "BUILD": {
     "host": "cann-server3",
     "compile_rc": 0,
@@ -25,7 +25,13 @@
     "wide_paths": "untouched"
   },
   "MEASUREMENT": {
-    "status": "NOT_RUN",
-    "reason": "Timing pending"
-  }
+    "status": "COMPLETE",
+    "device": "server3 d5",
+    "shapes": ["8x256 FP32", "32x256 FP32", "2x4096 FP32", "8x8192 FP32"],
+    "pairs_per_shape": 6,
+    "batched_clean_pairs_delta_pct": {"32x256": [-11.8, -7.33, -6.93], "8x256": [-20.4, -8.0, -0.3]},
+    "nonbatched_note": "2x4096 and 8x8192 show no signal (denominator tail is per-row)",
+    "interpretation": "Batched shapes show consistent -7% to -12% trend; vector denominator amortizes across rows",
+    "summary_path": "support/results-timing-v001/SUMMARY.md"
+  },
 }
