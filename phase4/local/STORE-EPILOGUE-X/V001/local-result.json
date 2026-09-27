@@ -1,0 +1,22 @@
+{
+  "route": "STORE-EPILOGUE-X",
+  "revision": "V001",
+  "hypothesis_id": "STORE-H2B",
+  "single_hypothesis": "Single-row resident writeback merge (intra-row)",
+  "direct_parent": "FROZEN_R31B_V011",
+  "parent_source_sha": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "source_sha": "06564134e4930eb3e2ca30297b9bda548135d1aa8a1f43238b75dafc8a8c09f9",
+  "official_anchor": 45.16,
+  "compile_rc": "0/0",
+  "link_rc": "0/0",
+  "link_executable_sha": "4d57c23c2f6c6aa4609741a0e354040e2f1330b13157ea5a40a8ce1c210e9ac3",
+  "correctness_status": "PASS_VS_PARENT",
+  "correctness_total_shapes": 26,
+  "correctness_rows": 52,
+  "correctness_note": "24/26 shapes PASS both sides with identical max_abs. Both sides fail identically on 1x16384 FP32 and 1x32768 FP32 (exit=3) — the known pre-existing runner double-precision golden mismatch that the frozen parent also exhibits (Official scores 15/15 on the parent). No new failure introduced by the merge. FP16/BF16 matrix (1x256..1x16384 / 1x256..1x32768) all PASS identical.",
+  "single_change_audit": "PASS — one variable (writeback run length per row). Store helper untouched; intra-row only; ring/event discipline preserved verbatim at both sites; non-32B-aligned row runs fall back to parent per-tile stores.",
+  "measurement_status": "PENDING",
+  "measurement_protocol": "warmup=45, samples=41, same-binary blocks=2, 6 interleaved P/C pairs, ALL_DEVICE median_us primary, device 6",
+  "local_verdict": "PENDING",
+  "online_worthy": "PENDING"
+}
