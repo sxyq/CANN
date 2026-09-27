@@ -1,0 +1,88 @@
+{
+  "route": "COEFF-LOCALITY-X",
+  "revision": "V001",
+  "revision_kind": "PERFORMANCE_SINGLE_HYPOTHESIS",
+  "direct_parent": "FROZEN_R31B_V011",
+  "parent_source_sha": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "parent_score": "45.16",
+  "official_anchor": "45.16",
+
+  "assigned_hypothesis": "H1 — Param double-buffer prefetch in FP32 wide output pass (V011 sibling pattern).",
+  "single_hypothesis_as_delivered": "ProcessWideFp32FullCacheRows pass 2: 2-deep param MTE2 (prd0/prd1, prel0/prel1) with 2-slot gamma/bias staging (gBase/gBase[tileWidth], bBase/bBase[tileWidth]). While tile t applies, tile t+1 gamma/bias load. SyncMTE2ToV before each apply and MTE3 store-drain rule retained. Arithmetic unchanged.",
+  "single_change_audit": "PASS (one mechanism: param staging depth 1->2 + 2-deep prefetch; UB-budget tileElems adaptation is the automatic consequence of the deeper staging)",
+  "context_class": "FROZEN_STRONG_BASELINE_COEFF_LOCALITY",
+  "source_sha256": "6e47a9a0ad50db5eef81f73911f846edd29f38d3d2222aaea868b10f4a8e59b4",
+
+  "compile": {
+    "device": "PASS",
+    "submission": "PASS",
+    "toolchain": "cann-server3 / Ascend910B3 / dav-2201 / CANN 8.5.0.alpha002",
+    "cmake_rc": 0,
+    "obj_rc": 0,
+    "log": "phase4/local/COEFF-LOCALITY-X/V001/support/compile.log"
+  },
+  "link": {
+    "full_link": "PASS",
+    "parent_probe": "PASS",
+    "candidate_probe": "PASS",
+    "link_rc": 0,
+    "method": "ASC CMake (find_package(ASC)); clx_full_link + clx_{parent,candidate}_probe"
+  },
+  "identity": {
+    "local_sha": "6e47a9a0ad50db5eef81f73911f846edd29f38d3d2222aaea868b10f4a8e59b4",
+    "remote_sha": "6e47a9a0ad50db5eef81f73911f846edd29f38d3d2222aaea868b10f4a8e59b4",
+    "match": true
+  },
+  "executable_sha_full_link": "4190be840907c3caf24abffc6df1f670543e07b3f171a43ed955c7af6ad05371",
+  "executable_sha_candidate_probe": "8fc0ca70fdeece95bb1c91444a579ec723698a395fdd23703e3d52bf0bd84cde",
+
+  "correctness": {
+    "verdict": "PASS",
+    "device_id": 4,
+    "method": "runner_main.inc + double-precision golden; atol/rtol per dtype (fp32 1e-4, fp16 1e-3, bf16 2e-2)",
+    "summary_tsv": "phase4/local/COEFF-LOCALITY-X/V001/support/correctness-summary.tsv",
+    "shapes_total": 18,
+    "candidate_passed": 18,
+    "candidate_failed": 0,
+    "multi_tile_pass": ["1x8192 fp32", "2x8192 fp32", "3x6144 fp32", "1x16384 fp32", "1x32768 fp32", "1x8192 fp16", "1x8192 bf16", "1x16384 fp16", "1x32768 bf16"],
+    "single_tile_control_pass": ["1x1024 fp32", "1x4096 fp32", "2x4096 fp32", "1x256 fp16", "1x4096 fp16", "1x256 bf16", "1x4096 bf16", "1x100 fp32", "1x65 fp16"],
+    "dtype_coverage": {"fp32": "PASS all shapes", "fp16": "PASS all shapes", "bf16": "PASS all shapes"},
+    "max_abs_vs_parent": "Identical to parent on all shapes both pass (e.g. 1x8192 fp32: 5.0175e-07). Candidate additionally PASSES 1x16384 fp32 (max_abs 5.51e-07) and 1x32768 fp32 (max_abs 3.89e-07) where the frozen parent FAILS this runner golden (parent max_abs ~1.19-1.20, bad>0).",
+    "parent_shared_failures_note": "Frozen parent fails 1x16384/1x32768 FP32 under this runner's double-precision golden (same signature seen in REDUCE-HIER-X V001-V003: max_abs ~1.2). Parent scores 15/15 Official (45.16), so the parent is correct under the Official harness; this runner's wide-FP32 golden is stricter or differently constructed. The candidate passing those shapes is a numerics side effect of the UB-budget tileElems adaptation (see STAGING_RESIDENCE_NOTE), not a claimed correctness fix."
+  },
+
+  "staging_residence_note": {
+    "change": "xBuf_/residualBuf_ widened 1 tile -> 2 tiles each in wide FP32 Init; ChooseWideFullYRows ioTiles 2 -> 4 for budget accounting.",
+    "automatic_consequence": "For D=32768 FP32 the budget now selects tileElems=2560 (tileCount=13) instead of 4096 (tileCount=8). For D=16384 FP32 tileElems=4096 is retained (rows=2). wideFullYRows_ unchanged at the values that fit.",
+    "audit_note": "This is the inherent UB cost of deeper param staging (the hypothesis's staging-residency variable), not a separate mechanism. It does alter FP32 reduction grouping at D=32768 (13 tiles vs 8). Flagged for Main: if strict load-timing-only is required at constant tileElems, the 2-deep staging would need UB freed elsewhere; that is a follow-up, not V001."
+  },
+
+  "measurement": {
+    "status": "MEASUREMENT_BLOCKED",
+    "block_reason": "No device lease for COEFF-LOCALITY-X timing yet. Planned: 1x32768 FP32 (primary), 1x16384 FP32, 8x32768 FP32; control 1x4096 FP32.",
+    "date": "2026-09-27",
+    "same_binary_result": "NOT_RUN",
+    "retry_required": true
+  },
+
+  "local_verdict": "NOT_COMPLETE",
+  "local_verdict_reason": "Correctness PASS (18/18) and source identity PASS. No paired local performance measurement yet (MEASUREMENT_BLOCKED — no device lease).",
+
+  "files": [
+    "phase4/local/COEFF-LOCALITY-X/V001/submission.asc",
+    "phase4/local/COEFF-LOCALITY-X/V001/submission.sha256",
+    "phase4/local/COEFF-LOCALITY-X/V001/source-meta.json",
+    "phase4/local/COEFF-LOCALITY-X/V001/diff.patch",
+    "phase4/local/COEFF-LOCALITY-X/V001/local-result.json",
+    "phase4/local/COEFF-LOCALITY-X/V001/support/correctness-summary.tsv",
+    "phase4/local/COEFF-LOCALITY-X/V001/support/compile.log",
+    "phase4/local/COEFF-LOCALITY-X/V001/support/server3-sha-manifest.txt"
+  ],
+
+  "single_change_audit_detail": {
+    "mechanisms": 1,
+    "list": ["2-deep gamma/bias param MTE2 prefetch in FP32 wide output pass (V011 pattern)"],
+    "sites": ["Init wide FP32 branch (staging residency: xBuf_/residualBuf_ 2 tiles, ioTiles=4)", "ProcessWideFp32FullCacheRows pass 2 (prd0/prd1 + prel0/prel1 prefetch)"],
+    "unchanged": ["arithmetic (Muls/Mul/Add/ReduceSum)", "row batching / wideFullYRows_ selection logic", "dtype dispatch", "x/residual DMA", "SyncMTE2ToV before apply", "MTE3 store-drain rule", "pass-1 structure", "host / CMake / runner"]
+  }
+}
