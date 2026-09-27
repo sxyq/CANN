@@ -11,12 +11,27 @@
   "link_executable_sha": "63ac10082a04451716ac7977951730624675410c9d1ac67e28848dbc25943e30",
   "correctness_status": "PASS_VS_PARENT",
   "correctness_total_shapes": 23,
-  "correctness_rows": 46,
-  "correctness_note": "21/23 shapes PASS both parent and candidate with identical max_abs. Both fail identically on 1x16384 FP32 and 1x32768 FP32 (exit=3, max_abs~1.2) — the known pre-existing runner double-precision golden mismatch that the frozen parent also exhibits (Official still scores 15/15 on these). No new failure introduced by the stack.",
-  "single_change_audit": "PASS — exactly two declared mechanisms, 3-way merge rc=0, no third mechanism",
-  "measurement_status": "RUNNING",
-  "measurement_protocol": "warmup=45, samples=41, same-binary blocks=2, 6 interleaved P/C pairs (odd P->C, even C->P), device 4",
-  "measurement_lease": "R2-INTEGRATION-V001-TIMING, device 4",
-  "local_verdict": "PENDING",
-  "online_worthy": "PENDING"
+  "correctness_note": "21/23 shapes PASS both sides with identical max_abs. 1x16384/1x32768 FP32 fail identically on parent and candidate (pre-existing runner double-precision golden mismatch; Official scores these 15/15 on the parent). No new failure introduced.",
+  "single_change_audit": "PASS — exactly two declared mechanisms, 3-way merge rc=0, merged file verified identical to VECTOR source at all 11 denominator sites and to SCHED source at the ownership gate and BF16 sync fix",
+  "measurement_status": "COMPLETE",
+  "measurement_lease": "R2-INTEGRATION-V001-TIMING, device 4, 2026-09-27",
+  "measurement_protocol": "warmup=45, samples=41, same-binary blocks=2, 6 interleaved P/C pairs, ALL_DEVICE median_us primary",
+  "paired_delta_pct": {
+    "33x100_fp32": {"median": -3.35, "clean_n": 6, "favor_c": 4, "favor_p": 2, "sb_gate": "PASS", "per_pair": [-15.88, 8.74, 0.51, -2.74, -3.96, -11.06], "reading": "win, matches SCHED-alone expectation"},
+    "32x256_fp32": {"median": 2.30, "clean_n": 4, "favor_c": 2, "favor_p": 2, "sb_gate": "PASS", "per_pair": [-8.55, 10.09, 12.50, -5.49], "outliers": [76.70, -60.66], "reading": "no signal; VECTOR-alone win NOT reproduced"},
+    "8x256_fp32": {"median": 2.29, "clean_n": 4, "favor_c": 2, "favor_p": 2, "sb_gate": "FAIL", "per_pair": [19.93, 5.71, -1.12, -4.79], "outliers": [-60.16, -58.59], "reading": "BLOCKED by same-binary (parent med 15.55 MAD 11.63)"},
+    "17x257_fp16": {"median": 0.30, "clean_n": 5, "favor_c": 2, "favor_p": 3, "sb_gate": "FAIL", "per_pair": [-9.52, 9.19, 46.04, -17.19, 0.30], "outliers": [161.97], "reading": "~0, no parallelism collapse (V001 was +145%)"},
+    "8x8192_fp32": {"median": -0.80, "clean_n": 6, "favor_c": 3, "favor_p": 3, "sb_gate": "PASS", "per_pair": [1.82, 10.12, -4.57, -3.41, -15.40, 8.33], "reading": "neutral, wide path unchanged"}
+  },
+  "expectation_check": {
+    "33x100_sched_alone": "MET (-3.35%)",
+    "batched_vector_alone": "NOT MET (32x256 no-signal; 8x256 blocked)",
+    "17x257_control_zero": "MET (+0.30%, no collapse)",
+    "wide_unchanged": "MET (-0.80%)"
+  },
+  "local_verdict": "NEEDS_ONE_MORE_LOCAL",
+  "local_verdict_reason": "Only the 33x100 class wins (4/6 clean pairs, sb PASS). The VECTOR-MATH batched win does not reproduce in the stack: 32x256 is a 2/2 split at +2.3% under a PASS same-binary window, 8x256 is blocked. Two shapes blocked by same-binary FAIL. No regression on any clean shape. Merge fidelity verified — the miss is in the mechanism's transfer, not the integration.",
+  "online_worthy": "NO",
+  "online_worthy_reason": "Stated criterion is wins on multiple shape classes without regression. Only one class (33x100) wins. Stack is nonetheless submission-safe (no clean-shape regression) and functionally SCHED-V002-equivalent if Main wants a calibration point.",
+  "recommendation": "Do not claim stack superiority. Either (a) submit as-is for the SCHED-only calibration point, accepting it is not better than SCHED V002 alone, or (b) one more local round on 32x256/8x256 in a clean window to decide whether the VECTOR mechanism has any real batched edge on this parent."
 }
