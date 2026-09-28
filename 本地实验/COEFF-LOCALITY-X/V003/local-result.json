@@ -1,0 +1,108 @@
+{
+  "route": "COEFF-LOCALITY-X",
+  "revision": "V003",
+  "revision_kind": "PERFORMANCE_SINGLE_HYPOTHESIS",
+  "direct_parent": "FROZEN_R31B_V011",
+  "parent_source_sha": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "parent_score": "45.16",
+  "official_anchor": "45.16",
+  "assigned_hypothesis": "NH-2 — wide FP32 pass 2 split-phase parameter MTE2 emission (gamma after last Mul, bias after last Add), two-slot rotation on existing xBuf_/residualBuf_, zero new staging, tileElems pinned at 4096",
+  "single_hypothesis_as_delivered": "ProcessWideFp32FullCacheRows pass 2: tile-0 gamma/bias issued before the loop; for each later tile the next gamma Load is issued right after the last Mul (V_MTE2 SetFlag/WaitFlag ordering) and the next bias Load right after the last Add, into the same xBuf_/residualBuf_ slots. Existing SyncMTE2ToV before each apply retained and waits for the prefetched params. MTE3 store-drain rule retained. Arithmetic, Init, ChooseWideFullYRows, tileElems all unchanged. MTE2 transaction count unchanged (2 per tile).",
+  "single_change_audit": "PASS (one mechanism: param MTE2 emission timing in pass 2 only)",
+  "context_class": "FROZEN_STRONG_BASELINE_COEFF_LOCALITY",
+  "approval": "MAIN-2 APPROVAL 2026-09-28: NH-2 approved; ruled NOT an H1 rerun",
+  "source_sha256": "4be7c2287e8e71f540a848dc9de71c8f303f2299176baebaee062290c5ec8e82",
+  "compile": {
+    "device": "PASS",
+    "submission": "PASS",
+    "toolchain": "cann-server3 / Ascend910B3 / dav-2201 / CANN 8.5.0.alpha002",
+    "cmake_rc": 0,
+    "obj_rc": 0,
+    "link_rc": 0,
+    "probe_rc": 0,
+    "log": "本地实验/COEFF-LOCALITY-X/V003/support/compile.log"
+  },
+  "link": {
+    "full_link": "PASS",
+    "parent_probe": "PASS",
+    "candidate_probe": "PASS",
+    "ref_parent_probe": "PASS",
+    "ref_candidate_probe": "PASS",
+    "method": "ASC CMake (find_package(ASC)); clx_full_link + clx_{parent,candidate,ref_parent,ref_candidate}_probe"
+  },
+  "identity": {
+    "local_sha": "4be7c2287e8e71f540a848dc9de71c8f303f2299176baebaee062290c5ec8e82",
+    "remote_sha": "4be7c2287e8e71f540a848dc9de71c8f303f2299176baebaee062290c5ec8e82",
+    "match": true
+  },
+  "executable_sha_full_link": "44aa8ef1386d6e2ca4cac71b2c16d0fb51c0031616ef8acee7688a417504ccea",
+  "executable_sha_candidate_probe": "c9a57b58aa58c77a8d62a88b5dab6e4ec0ee1dbff82d7cdfad8b9a4486daf7d0",
+  "executable_sha_ref_candidate_probe": "7e2c7a9c387386c9a9542dbb63277bd96adebb2c6d152572abe6fe436771f6c9",
+  "correctness": {
+    "verdict": "PASS",
+    "device_id": 4,
+    "method": "runner_main.inc + double-precision golden; atol/rtol per dtype",
+    "summary_tsv": "本地实验/COEFF-LOCALITY-X/V003/support/correctness-summary.tsv",
+    "shapes_total": 18,
+    "candidate_passed": 18,
+    "candidate_failed": 0,
+    "dtype_coverage": {"fp32": "PASS all shapes", "fp16": "PASS all shapes", "bf16": "PASS all shapes"},
+    "max_abs_vs_parent": "Identical to parent on every shape both pass (e.g. 1x8192 fp32: 5.0175e-07). Candidate additionally PASSES 1x16384 fp32 (max_abs 5.51e-07) and 1x32768 fp32 (max_abs 3.89e-07) where the frozen parent FAILS this runner's golden (parent max_abs ~1.19-1.27, exit=3) — same known parent shared-golden failures as REDUCE-HIER-X V001-V003 and COEFF V001. Not a claimed correctness fix; numerics unchanged.",
+    "parent_shared_failures_note": "Frozen parent fails 1x16384/1x32768 FP32 under this runner's double-precision golden (exit=3). Parent scores 15/15 Official (45.16), so parent is correct under the Official harness; this runner's wide-FP32 golden is stricter or differently constructed."
+  },
+  "measurement": {
+    "status": "COMPLETE",
+    "lease_id": "R2-COEFF-V003-TIMING",
+    "device": "d4 (AICore 0% pre/post, HBM ~59241/65536 = 90%)",
+    "date": "2026-09-29",
+    "method": "runner_ref.inc DEVICE_EVENT_PRIMARY, warmup=45, samples=41, same-binary blocks=2 + 6 interleaved P/C pairs, GAP=2s",
+    "results_dir": "本地实验/COEFF-LOCALITY-X/V003/support/results-timing-v003-20260929",
+    "same_binary": {
+      "1x32768_fp32": "PASS both (P MAD/med 0.020 drift 0.000; C MAD/med 0.024 drift 0.012)",
+      "1x16384_fp32": "P PASS (MAD/med 0.083 drift 0.055); C FAIL (drift 1.192 — C block2 contaminated)",
+      "8x32768_fp32": "PASS both (P MAD/med 0.030 drift 0.026; C MAD/med 0.041 drift -0.006)",
+      "1x4096_fp32": "P FAIL (MAD/med 0.137); C PASS",
+      "1x8192_fp32": "P FAIL (MAD/med 0.149 drift 0.159); C PASS"
+    },
+    "qualified_shapes": ["1x32768_fp32", "8x32768_fp32"],
+    "blocked_shapes": ["1x16384_fp32 (C same-binary FAIL)", "1x4096_fp32 (P same-binary FAIL)", "1x8192_fp32 (P same-binary FAIL)"],
+    "paired_clean_deltas": {
+      "1x32768_fp32": "median +2.37% (n=6 clean, favP=4 favC=2) — slight parent-favoring",
+      "1x16384_fp32": "median +2.78% (n=5 clean, favP=5 favC=0) — consistent parent-favoring; directional only (C same-binary FAIL)",
+      "8x32768_fp32": "median +2.06% (n=5 clean, favP=3 favC=1) — slight parent-favoring",
+      "1x4096_fp32_control": "median +1.47% (n=4 clean, favP=3 favC=1) — EXPECTED ~0; tileCount=1 so split-phase never fires. This is the measurement bias floor of this run.",
+      "1x8192_fp32": "median +5.17% (n=3 clean, favP=3 favC=0) — noisy (P same-binary FAIL, 3 contaminated pairs removed)"
+    },
+    "outliers_removed": "1x16384 pair5 (P_med 14.04 contaminated), 8x32768 pair3 (C_med 36.68 contaminated), 1x4096 pairs 1/4, 1x8192 pairs 3/4/6 — raw retained",
+    "falsification_check": "DECLARATION falsification: if 1x32768 clean |Δ| <= noise with tileElems constant at 4096, param MTE2 timing is not the large-D bottleneck. |Δ|=+2.37% vs control bias +1.47% and same-binary MAD/med 0.020-0.024. Excess over bias ~0.9%, at the noise boundary. **FALSIFIED: param MTE2 timing is NOT the large-D bottleneck.**"
+  },
+  "local_verdict": "LOCAL_REJECTED",
+  "local_verdict_reason": "All three large-D probes favor parent in clean pairs (1x32768 +2.37% favP=4/2, 1x16384 +2.78% favP=5/0, 8x32768 +2.06% favP=3/1). The control shape 1x4096 (tileCount=1, split-phase never fires) shows +1.47%, setting the measurement-bias floor; the large-D excess over that floor is only ~0.6-1.3%. The hypothesis predicted a win (hidden param MTE2 latency); the delivered revision is at best neutral and slightly slower — most likely the extra V_MTE2 SetFlag/WaitFlag pairs (2 per tile on tileCount=8 = 14 extra flag ops) cost at least as much as the latency they hide. Scientific outcome is the important part: with tileElems constant at 4096 the param-MTE2-timing mechanism produces no win, formally falsifying it as the large-D bottleneck. Next revision must return to FROZEN_R31B_V011 (route LOCAL_BEST is NONE).",
+  "files": [
+    "本地实验/COEFF-LOCALITY-X/V003/DECLARATION.md",
+    "本地实验/COEFF-LOCALITY-X/V003/submission.asc",
+    "本地实验/COEFF-LOCALITY-X/V003/submission.sha256",
+    "本地实验/COEFF-LOCALITY-X/V003/source-meta.json",
+    "本地实验/COEFF-LOCALITY-X/V003/diff.patch",
+    "本地实验/COEFF-LOCALITY-X/V003/local-result.json",
+    "本地实验/COEFF-LOCALITY-X/V003/support/compile.log",
+    "本地实验/COEFF-LOCALITY-X/V003/support/correctness-summary.tsv",
+    "本地实验/COEFF-LOCALITY-X/V003/support/server3-sha-manifest.txt",
+    "本地实验/COEFF-LOCALITY-X/V003/support/results-timing-v003-20260929/"
+  ],
+  "single_change_audit_detail": {
+    "mechanisms": 1,
+    "list": ["split-phase param MTE2 emission timing in ProcessWideFp32FullCacheRows pass 2"],
+    "sites": ["ProcessWideFp32FullCacheRows pass-2 tile loop only (pre-loop tile-0 load + early issue after last Mul / last Add)"],
+    "unchanged": [
+      "arithmetic (Muls/Mul/Add/ReduceSum)",
+      "Init / ChooseWideFullYRows / tileElems / ioTiles (zero new staging)",
+      "MTE2 transaction count (2 Loads per tile)",
+      "MTE3 store-drain rule and 2-deep MTE3 store queue",
+      "existing SyncMTE2ToV before each apply",
+      "x/residual DMA, pass-1 structure",
+      "host / CMake / runner",
+      "all other process functions"
+    ]
+  }
+}

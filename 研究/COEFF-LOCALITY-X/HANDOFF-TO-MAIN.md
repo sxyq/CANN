@@ -1,83 +1,69 @@
-# HANDOFF-TO-MAIN — COEFF-LOCALITY-X
+# HANDOFF-TO-MAIN — COEFF-LOCALITY-X V003 完成
 
 ROUTE=COEFF-LOCALITY-X
 WORKTREE=/Users/sunyiyang/Desktop/Project/cann-m2-coeff
 BRANCH=m2/coeff-locality
-FROM=Route Agent（LANE M2-3 = COEFF-LOCALITY-X）
+FROM=Route Agent（LANE M2-3）
 TO=Main-2
 DATE=2026-09-29
-PHASE=第一阶段（只读研究）— 已完成，等待 Main-2 批准
+PHASE=V003 执行完成 — 本地结论已下，STOP
 
 ---
 
-## 1. 本轮做了什么
+## 1. 需求与状态
 
-1. 按序完成启动必读（AGENTS.md、cann-mainline Skill、实验总则/执行约定/本地性能测试规范/服务器实验规范/Git工作流程、路线成绩表与全版本记录中 COEFF 行、研究/COEFF-LOCALITY-X 全部、本地实验 V001/V002、线上结果 V001、main2-r2-route-registry 的 COEFF/large-D 段落、MAIN-2 初始化报告 3.3/4.3）。
-2. 判定 V001/V002 闭环。
-3. 只读复查 FROZEN R31B-V011 的 UB budget 与 gamma/bias load-map。
-4. 写 Track-B 下一轮假设（含 H3 专项判断）→ `研究/COEFF-LOCALITY-X/TRACK-B-HYPOTHESES-NEXT.md`。
-5. 本 handoff。
+Main-2 批准 NH-2（wide FP32 pass 2 split-phase 参数 MTE2 发射）作为 V003 单一假设。
+要求：compile → correctness → same-binary → 交错 P/C，主靶 large-D（1x32768 / 1x16384 / 8x32768）。
 
-未做（按第一阶段硬约束）：不改 Kernel、不建 V003、不跑正式 performance、不提交 Online、不动共享总账。
+**状态：V003 流程全部完成，本地结论 LOCAL_REJECTED。**
 
 ---
 
-## 2. 闭环判断
+## 2. 本轮实际完成
 
-| 版本 | verdict | 闭环？ | 备注 |
-|---|---|---|---|
-| V001 | LOCAL_REJECTED（1x32768 +19.2% favP 5/0）；Official 44.16 | 是 | 证据齐全；本地/线上 CONTRADICT 已入校准表（`LOCAL_REJECTED_BUT_OFFICIAL_DECENT`） |
-| V002 | NO_UB_BUDGET | 是 | 按审批 stop rule 停止，无 SOURCE_SHA，无遗留 |
+1. Revision 声明（`本地实验/COEFF-LOCALITY-X/V003/DECLARATION.md`）。
+2. Kernel 修改：`ProcessWideFp32FullCacheRows` pass 2 split-phase 发射。
+   - tile 0 参数在循环前发射；
+   - 之后每 tile：最后一个 Mul 消费 gamma slot 后发下一 tile gamma Load，最后一个 Add 消费 bias slot 后发下一 tile bias Load；
+   - 两 slot 轮转 = 现有 `xBuf_`/`residualBuf_`，**零新 staging**，tileElems 钉 4096，MTE2 次数不变（每 tile 2 次）；
+   - V_MTE2 SetFlag/WaitFlag 保证 V 读完再覆盖（与 lowp prefetch 同 idiom）；既有 SyncMTE2ToV 与 MTE3 store-drain 规则保留。
+3. server3 编译链接：BUILD PASS（CMAKE/OBJ/LINK/PROBE RC=0）。
+4. NPU 正确性：**candidate 18/18 PASS**（parent 在 1x16384/1x32768 FP32 上的 shared-golden 失败与 V001 相同，已记录）。
+5. same-binary + 6 组交错 P/C（d4，warmup=45，samples=41）。
+6. 本地结论：**LOCAL_REJECTED**。
 
-残留科学缺口：V001 的 prefetch 机制从未在常量 tileElems 下被干净证伪（staging 使 tileElems 4096→2560 混杂）。这正是 NH-2 要补的证据，不是重跑 H1。
+## 3. 修改或操作对象
 
----
-
-## 3. UB / load-map 复查结论（要点）
-
-8 个 gamma/bias 访问点逐点复查（详见 TRACK-B-HYPOTHESES-NEXT.md 第 1 节）：
-
-| 位点 | 还有无合法 cache/reuse 空间（不抢 tile 预算） |
+| 对象 | 路径 |
 |---|---|
-| Site 1 / 4 / 5 / 6（每核一次整行缓存类） | 无（已最优）；site 1 仅描述符合并微优化 |
-| Site 2 generic `cacheParams=false`（localRows==1 多 tile） | **有**：`gammaBuf_`/`biasBuf_` 已按 8192 分配，整行预加载 UB 增量 0、tileElems 不变、MTE2 变少 |
-| Site 3 NarrowMid | 仅发射顺序微调，无 cache 空间 |
-| Site 7 wide FP32 pass 2 | **cache/驻留维度无空间**（见下） |
-| Site 8 wide lowp（已有 2-deep prefetch） | 无（in-kernel 最优） |
+| V003 源码 | `本地实验/COEFF-LOCALITY-X/V003/submission.asc`（SHA 4be7c228…） |
+| 声明 / diff / 元数据 / 结论 | `本地实验/COEFF-LOCALITY-X/V003/{DECLARATION,diff.patch,source-meta.json,local-result.json,SUMMARY.md}` |
+| 构建/正确性/测时证据 | `本地实验/COEFF-LOCALITY-X/V003/support/`（含 results-timing-v003-20260929/ 全部 raw） |
+| server3 工作区 | `/home/data4t2/lelinfeng/phase4-workspaces/COEFF-LOCALITY-X/`（submission.asc 已同步） |
 
-Site 7 预算算术（tileElems=4096 钉死）：D=32768 leftover 16320 B、D=16384 leftover 16256 B，均 < K=1 stripe 32768 B，甚至 < 单 gamma tile 16384 B（差 64/128 B，正好是 reduce partial 占用）。host 启动 `blockCount = min(cores, rowCount)` → 测量形状 localRows=1 → 无跨 batch 命中窗口。**H2 的失败是预算与 host 约束的联合结果，不是实现问题。**
+## 4. 验证结果
 
----
+| 阶段 | 结果 |
+|---|---|
+| 源码身份 | LOCAL_SHA == REMOTE_SHA == 4be7c228… |
+| 编译/链接 | PASS（exe SHA 44aa8ef1…） |
+| 正确性 | candidate 18/18 PASS |
+| same-binary | 1x32768、8x32768 双侧 PASS；1x16384 C drift FAIL；1x4096/1x8192 P FAIL |
+| 配对 delta（干净样本中位） | 1x32768 **+2.37%** favP=4/2；1x16384 +2.78% favP=5/0；8x32768 +2.06% favP=3/1 |
+| 控制组 1x4096（tileCount=1，机制不触发） | +1.47% favP=3/1 → **本场测量偏置底** |
 
-## 4. 下一轮 3–5 假设（均过 UB budget 与 tile-shrink 审查）
+**判定：LOCAL_REJECTED。** 三个 large-D 形状干净配对全部偏 parent；超出控制组偏置仅 ~0.6–1.3%。
 
-| 编号 | 一句话 | UB 增量 | tileElems | MTE2 | 成熟度 |
-|---|---|---|---|---|---|
-| NH-1（=H3 精化） | generic 单行多 tile 整行参数预加载 | 0 | 0 | 减少 | READY_FOR_MAIN_REVIEW |
-| NH-2（推荐首选） | wide FP32 pass 2 split-phase 发射，现有两 slot 轮转，常量 tileElems | 0 | 0 | 次数不变 | READY_FOR_MAIN_REVIEW |
-| NH-3 | NarrowMid 参数 MTE2 与输入并行发射 | 0 | 0 | 次数不变 | NEEDS_MORE_EVIDENCE |
-| NH-4 | 预加载块描述符合并 | 0 | 0 | 减少 | DUPLICATE（并入 NH-1 实现） |
-
-明确排除：H1 重跑（任何新增 staging slot）、H2 无预算 stripe、multi-row/rows-per-block、wide 分发切换、同步消除作为性能变量、store/epilogue/row-scheduling/reduction 拓扑。
-
----
-
-## 5. H3 判断
-
-**技术上成立，天花板确实小；不建议作主攻，建议作收口探针或 NH-2 之后的顺手项。**
-
-- 能过审：site 2 是唯一还免费的 cache 空间（缓冲区已在，tileElems 不受预算函数支配）。
-- 天花板小：只覆盖 D∈(4096, 8192] 且 localRows=1 的 generic 路径；Official case 14（约 4.4× 差距）走 wide FP32，H3 够不着主差距。
-- 价值：便宜、零预算风险、可留本地小胜；若 NH-2 把 site 7 证伪，H3 是本轴仅存的正收益机制；不做则 generic 维度闭环不完整。
-
-替代主攻：**NH-2 优先**（补常量 tileElems 证据，直接打 large-D），NH-1 次之。
+**证伪结论（DECLARATION 判据）**：tileElems 恒 4096 下 1x32768 |Δ|≈噪声 →
+**param MTE2 时序不是 large-D 瓶颈。** V001 的混杂就此澄清：+19.2% 主要是 tile-shrink 副作用，时序机制本身至多中性。
+可能的成本来源：每 tile 2 个 V_MTE2 SetFlag/WaitFlag（tileCount=8 → 14 次额外 flag 操作）抵消了预取收益。
 
 ---
 
-## 6. 请求 Main-2 决定
+## 5. 剩余工作与风险
 
-1. 是否批准 **NH-2** 作为 V003 的单一假设（推荐）；或改批 **NH-1 / H3 精化**。
-2. 若判定 NH-2 仍属 H1 范畴（尽管无 staging 增量），则按排除表处理，COEFF 轴在 large-D 维度收口，只留 NH-1 可选。
-3. 批准前不建 V003、不改 Kernel、不跑正式 performance、不提交 Online。
+- **下一步假设**：按 Main-2 排序，NH-1（=H3 精化，generic 单行多 tile 整行预加载）是本轴仅存的正收益候选。需 Main-2 明确批准后才建 V004，父版回 FROZEN_R31B_V011（本路线 LOCAL_BEST=NONE）。
+- **共享总账**：本轮未改 `技术路线/`、`调度/`（含 lease 表）——按约束不碰。lease `R2-COEFF-V003-TIMING`（d4，2026-09-29）已在 local-result.json 记录，请 Main 同步到 `调度/服务器设备使用.tsv`。
+- **风险**：无未解决正确性/构建问题。残余不确定性只在测量噪声（1x16384 C drift、1x8192 P drift），已按协议标注为 blocked/方向性，未用于强结论。
 
-详细依据：`研究/COEFF-LOCALITY-X/TRACK-B-HYPOTHESES-NEXT.md`。
+**本轮结论已下，STOP，等待 Main-2 对 NH-1/V004 的决定。**
