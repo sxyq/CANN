@@ -220,3 +220,60 @@ All six cann-sixlane worktrees removed after consolidation audit (worktree-clean
 R31B, R31A, MIX-A, WIDE-X-FRESH4, MODE-X-R015C, DTYPE-SPECIAL-X.
 Local route branches and remote route branches KEPT as evidence.
 Evidence lives in canonical phase4/local/<ROUTE>/ and phase4/online/<ROUTE>/.
+
+## MAIN-2 worktree dirty consolidation + parked cleanup (2026-09-28)
+
+### STEP 1 — Route branch commits + canonical copy
+
+| Route | Branch | Commit SHA | Message | Dirty files committed |
+|---|---|---|---|---|
+| EPILOGUE-FUSE-X | exp/main2-r2-epilogue-fuse | 989fbe1c | EPILOGUE-FUSE-X: add MAIN-APPROVAL-V002/V003 research docs | 2 untracked research docs |
+| INTEGRATION-X | exp/main2-r2-integration | 92c31671 | INTEGRATION-X V001: add submission.asc evidence | 1 untracked submission.asc |
+| SCHED-CHAMPION-X | exp/main2-r2-sched-champion | 241cb049 | SCHED-CHAMPION-X: update REVISION-DECLARATION.md | 1 dirty REVISION-DECLARATION.md |
+| VECTOR-MATH-X | exp/main2-r2-vector-math | 852836dc | VECTOR-MATH-X: DIV-FEASIBILITY-PROBE, SEQ-FUSE-2 probe, V002 workspace assets | 14 dirty/untracked |
+
+All 4 route branches pushed to origin. SCHED-CHAMPION-X remote branch created.
+
+Unique assets copied to canonical (phase4/local/, phase4/research/, phase4/workspaces/):
+- EPILOGUE-FUSE-X: 12 research docs → phase4/research/EPILOGUE-FUSE-X/
+- INTEGRATION-X: 225 local + 1 research + 20 workspace files
+- SCHED-CHAMPION-X: 46 workspace + 151 local + 6 research files
+- VECTOR-MATH-X: 8 research + 21 workspace + 746 local files
+- COEFF-LOCALITY-X: 224 local + 4 research + 19 workspace files
+- REDUCE-HIER-X: 563 local + 6 research + 23 workspace files
+- STORE-EPILOGUE-X: 734 local + 3 research + 39 workspace files
+
+Canonical commit: ea50f543 (2854 files, 252214 insertions)
+Pushed to origin/exp/independent-breadth. LOCAL_HEAD == REMOTE_HEAD.
+
+### STEP 2 — Parked worktree cleanup (worktree-cleanup-audit-main2.tsv)
+
+All 5 parked worktrees removed (dirty=0, assets in canonical). Local + remote branches KEPT.
+
+| Worktree | Branch | HEAD | REMOTE_HEAD | DIRTY | Decision |
+|---|---|---|---|---|---|
+| COEFF-LOCALITY-X | exp/main2-r2-coeff-locality | 0c6b64dc | 0c6b64dc | 0 | REMOVE_WORKTREE_KEEP_LOCAL_AND_REMOTE_BRANCH |
+| EPILOGUE-FUSE-X | exp/main2-r2-epilogue-fuse | 989fbe1c | 989fbe1c | 0 | REMOVE_WORKTREE_KEEP_LOCAL_AND_REMOTE_BRANCH |
+| INTEGRATION-X | exp/main2-r2-integration | 92c31671 | 92c31671 | 0 | REMOVE_WORKTREE_KEEP_LOCAL_AND_REMOTE_BRANCH |
+| REDUCE-HIER-X | exp/main2-r2-reduce-hier | 68603895 | 68603895 | 0 | REMOVE_WORKTREE_KEEP_LOCAL_AND_REMOTE_BRANCH |
+| SCHED-CHAMPION-X | exp/main2-r2-sched-champion | 241cb049 | 241cb049 | 0 | REMOVE_WORKTREE_KEEP_LOCAL_AND_REMOTE_BRANCH |
+
+### KEEP (ACTIVE)
+
+- STORE-EPILOGUE-X (exp/main2-r2-store-epilogue, LOCAL_BEST V002) — worktree retained
+- VECTOR-MATH-X (exp/main2-r2-vector-math, pending SEQ-FUSE-2 probe) — worktree retained
+
+### Remaining worktrees
+
+| Path | Branch | HEAD |
+|---|---|---|
+| /Users/sunyiyang/Desktop/Project/cann | exp/independent-breadth | ea50f543 |
+| cann-main2-r2/STORE-EPILOGUE-X | exp/main2-r2-store-epilogue | 5ef5558b |
+| cann-main2-r2/VECTOR-MATH-X | exp/main2-r2-vector-math | 852836dc |
+
+### Remaining branches (local + remote kept)
+
+exp/main2-r2-coeff-locality, exp/main2-r2-epilogue-fuse, exp/main2-r2-integration,
+exp/main2-r2-reduce-hier, exp/main2-r2-sched-champion, exp/main2-r2-store-epilogue,
+exp/main2-r2-vector-math — all KEPT.
+
