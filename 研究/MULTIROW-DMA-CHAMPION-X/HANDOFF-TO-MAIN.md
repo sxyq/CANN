@@ -1,4 +1,32 @@
-# HANDOFF-TO-MAIN — MULTIROW-DMA-CHAMPION-X V001 完成
+# HANDOFF-TO-MAIN — MULTIROW-DMA-CHAMPION-X
+
+> **V002 结果（2026-09-28）**：C1 ALIGNED-DATACOPY-FORM 完整走完。API 探针 PASS（blockLen=32B 单位）。Correctness PASS（20/22 bit-identical）。P/C：主形状 48×16384 FP16 八对 6/8 为正、median **−1.95%**；BF16 3/4 为正、−3.2%；同代码对照散布 −7.1%..+4.2% → 幅度在噪声带内。
+> **LOCAL_VERDICT = NEEDS_ONE_MORE_LOCAL**（方向温和为正，未清噪声；非 REJECTED，Candidate 保留）。证据：`本地实验/MULTIROW-DMA-CHAMPION-X/V002/`。
+>
+> 按 Main 指示「C1 也无收益则把 C2 三选项写成事实包交 Planning」——见下方 C2 事实包。本 agent 不自行选择。
+
+---
+
+## C2 事实包（stride 合并 + 保 2-deep；交 Planning 裁定，本 agent 不选）
+
+| 选项 | 内容 | UB 后果 | 机制后果 | 风险 |
+|---|---|---|---|---|
+| (a) 授权 ioTiles 4→6 | x/res 暂存 2→3 tile（2+1 混合：stride 双行 + 单行预取），`ChooseWideFullYRows` 的 io 计入项 4→6 与实际对齐 | FP16 16384 B=2 实际 ≈172544B ≤ 188416B 放得下 | FP16 主场可保流水 + 部分命令合并（削减约 10–25%） | BF16 12288 B=2 校验式 180352>180224 → B 压到 1，BF16 主场失效；部分形状 `wideFullYRows_` 可能下降（y 驻留行为变化，触 V003 血统） |
+| (b) 仅 FP16 启用 3-slot | BF16/FP32 路径不动，FP16 路径单独加暂存与调度 | 同 (a) 但仅 FP16 | 保住 BF16 现状 | 形态分裂（dtype 间实现分叉）；信息增量只覆盖 FP16 |
+| (c) 放弃 C2 | 维持现状，stride 合并方向记为结构受限 | 0 | 0 | 无新增风险；multi-row/stride 一类在本冠军上的可用性到此为止 |
+
+数字依据：完整形态（2-deep×B=4 tile 暂存）在 FP16 16384 B=2 超 128B、12288 B=3 与 BF16 12288 B=2 超约 8KB，均放不下；3-slot 折中见上表。V001 已证明 1-deep 缩 B 版净退 ~8%。
+
+## 请 Main-2 处理
+
+1. 登记 V002 `NEEDS_ONE_MORE_LOCAL`（CURRENT_CANDIDATE=V002 保留；若同意再开一个配对窗口则续测主形状；若判无收益则按 (c) 处置并给下一方向）。
+2. lease：`M2-MULTIROW-V002-D4-PERF-20260928`（d4），请补共享行。
+3. C2 三选项转 Planning。
+4. UB-GAP-CLUE 已在 `UB-GAP-CLUE.md`，等 Planning 处置。
+
+---
+
+# （历史）V001 完成 handoff
 
 > **V001 Review 后补记（2026-09-28）**：LOCAL_REJECTED 与 lease 分工已确认。新增两份交付等 Main-2 确认：
 > 1. `研究/MULTIROW-DMA-CHAMPION-X/UB-GAP-CLUE.md` — FP32 wide 非确定性独立证据（交 Planning，本路线不修、不建 UB V004）。
