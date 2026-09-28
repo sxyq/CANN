@@ -1,0 +1,145 @@
+{
+  "route": "REDUCE-HIER-X",
+  "revision": "V001",
+  "revision_kind": "PERFORMANCE_SINGLE_HYPOTHESIS",
+  "direct_parent": "FROZEN_R31B_V011",
+  "parent_source_sha": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "parent_score": "45.16",
+  "official_anchor": "45.16",
+  "assigned_hypothesis": "HYPOTHESIS-1 Eager running-fold of tile partials (partial-sum lifetime).",
+  "single_hypothesis_as_delivered": "Per-tile ReduceSum folds immediately into one 32B-aligned FP32 accumulator via 1-element Add; end-of-row collapse ReduceSum removed; GetValue reads accumulator once. Sites: Process() first-pass+tail, ProcessFp32FullRowOutputPipelined, ProcessWideFp32FullCacheRows.",
+  "single_change_audit": "PASS",
+  "context_class": "FROZEN_STRONG_BASELINE_REDUCTION_TOPOLOGY",
+  "source_sha256": "b9c618b3b53fd2988b667f0c6830fa4a7206aef0fde69f92cdb5545ba6503521",
+  "source_path": "phase4/workspaces/REDUCE-HIER-X/submission.asc",
+  "compile": {
+    "device": "PASS",
+    "submission": "PASS",
+    "toolchain": "cann-server3 / Ascend910B3 / dav-2201 / CANN 8.5.0.alpha002",
+    "cmake_rc": 0,
+    "build_rc": 0,
+    "log": "phase4/local/REDUCE-HIER-X/V001/support/compile.log"
+  },
+  "link": {
+    "submission_object": "PASS",
+    "parent_probe": "PASS",
+    "candidate_probe": "PASS",
+    "method": "ASC CMake (find_package(ASC)); rhx_v001_submission + rhx_{parent,candidate}_probe"
+  },
+  "identity": {
+    "local_sha": "b9c618b3b53fd2988b667f0c6830fa4a7206aef0fde69f92cdb5545ba6503521",
+    "remote_sha": "b9c618b3b53fd2988b667f0c6830fa4a7206aef0fde69f92cdb5545ba6503521",
+    "match": true
+  },
+  "correctness": {
+    "verdict": "PASS",
+    "device_id": 4,
+    "method": "runner_main.inc (INVSCALE reference harness) + double-precision golden; atol/rtol per dtype (fp32 1e-4, fp16 1e-3, bf16 2e-2)",
+    "matrix_rows": 18,
+    "summary_tsv": "phase4/local/REDUCE-HIER-X/V001/support/correctness-summary.tsv",
+    "multi_tile_pass": [
+      "1x8192 fp32 (tileCount=2)",
+      "2x8192 fp32 (tileCount=2)",
+      "3x6144 fp32 (tileCount=2)",
+      "1x8192 fp16",
+      "1x8192 bf16",
+      "1x16384 fp16",
+      "1x32768 bf16"
+    ],
+    "single_tile_control_pass": [
+      "1x1024 fp32",
+      "1x4096 fp32",
+      "2x4096 fp32",
+      "1x256 fp16",
+      "1x4096 fp16",
+      "1x256 bf16",
+      "1x4096 bf16",
+      "1x100 fp32",
+      "1x65 fp16"
+    ],
+    "parent_shared_failures": [
+      {
+        "shape": "1x16384 fp32",
+        "parent": "exit=3 bad=9470 max_abs=1.1896",
+        "candidate": "exit=3 bad=14324 max_abs=1.15865",
+        "assessment": "PARENT_PREEXISTING: frozen parent itself fails this runner's golden on wide FP32. Not introduced by V001. Wide FP32 path (ProcessWideFp32FullCacheRows) computes a different association than the runner golden; both parent and candidate deviate. Official judge used a different harness and scored parent 15/15."
+      },
+      {
+        "shape": "1x32768 fp32",
+        "parent": "exit=3 bad=26799 max_abs=1.2031",
+        "candidate": "exit=3 bad=26989 max_abs=1.2031",
+        "assessment": "PARENT_PREEXISTING: identical max_abs to parent. Candidate matches parent behavior on this shape."
+      }
+    ],
+    "dtype_coverage": {
+      "fp32": "PASS (where parent passes)",
+      "fp16": "PASS all shapes",
+      "bf16": "PASS all shapes"
+    },
+    "acl_error_first_build": "507035 device task abort on unaligned 1-element fold Add; fixed by 32B-aligned temp slot (kSmallFp32ScalarStride)"
+  },
+  "measurement": {
+    "status": "COMPLETE_NOISY",
+    "lease_id": "R2-REDUCE-V001-TIMING",
+    "device": "d5 (AICore 0%, residual VLLM HBM ~91%)",
+    "date": "2026-09-27",
+    "method": "runner_ref.inc DEVICE_EVENT_PRIMARY, warmup=45, samples=21, same-binary blocks=2 + 4 interleaved P/C pairs",
+    "results_dir": "phase4/local/REDUCE-HIER-X/V001/support/results-timing-20260927",
+    "summary": "phase4/local/REDUCE-HIER-X/V001/support/results-timing-20260927/SUMMARY.md",
+    "same_binary": {
+      "8x8192_fp32": "PASS both (P MAD/med 0.048 drift 0.075; C MAD/med 0.056 drift 0.061)",
+      "1x8192_fp32": "FAIL parent (drift 0.861, B1 14.12 vs B2 5.62); cand PASS",
+      "1x4096_fp32": "FAIL both (P MAD/med 0.125; C MAD/med 0.157)",
+      "1x2048_fp32": "FAIL both",
+      "2x256_fp32": "FAIL both"
+    },
+    "qualified_shapes": [
+      "8x8192_fp32"
+    ],
+    "blocked_shapes": [
+      "1x8192_fp32",
+      "1x4096_fp32",
+      "1x2048_fp32",
+      "2x256_fp32"
+    ],
+    "parent_metric_8x8192": "median 6.18-7.04 us (paired B1 medians)",
+    "candidate_metric_8x8192": "median 6.46-81.06 us (paired B1 medians; 2 clean 6.46-6.76, 2 contention outliers)",
+    "paired_delta_8x8192_clean": "median -3.8% (n=2 clean pairs, favC=1 favP=0, 1 neutral)",
+    "paired_delta_note": "2/4 pairs have candidate contention spikes (C_MAD 13-74); direction not stable"
+  },
+  "local_verdict": "NEEDS_ONE_MORE_LOCAL",
+  "local_verdict_reason": "Timing complete but noisy: only 8x8192 FP32 passed same-binary on both binaries. Clean paired delta there is small (median -3.8% favor C on n=2) and two pairs show extreme candidate spikes from d5 VLLM contention. Four shapes are MEASUREMENT_PROTOCOL_BLOCKED_FOR_SHAPE (same-binary FAIL). Not LOCAL_ACCEPTED (no stable win beyond noise) and not LOCAL_REJECTED (no stable regression either).",
+  "files": [
+    "phase4/local/REDUCE-HIER-X/V001/submission.asc",
+    "phase4/local/REDUCE-HIER-X/V001/submission.sha256",
+    "phase4/local/REDUCE-HIER-X/V001/source-meta.json",
+    "phase4/local/REDUCE-HIER-X/V001/diff.patch",
+    "phase4/local/REDUCE-HIER-X/V001/local-result.json",
+    "phase4/local/REDUCE-HIER-X/V001/support/correctness-summary.tsv",
+    "phase4/local/REDUCE-HIER-X/V001/support/compile.log",
+    "phase4/local/REDUCE-HIER-X/V001/support/server3-sha-manifest.txt"
+  ],
+  "single_change_audit_detail": {
+    "mechanisms": 1,
+    "list": [
+      "eager running-fold of tile partials into one accumulator; collapse ReduceSum removed"
+    ],
+    "sites": [
+      "Process() first-pass loop + tail (~286-350)",
+      "ProcessFp32FullRowOutputPipelined (~1155-1195)",
+      "ProcessWideFp32FullCacheRows (~2111-2155)"
+    ],
+    "unchanged": [
+      "per-tile ReduceSum width",
+      "square Mul",
+      "mean/epsilon tail",
+      "invRms sequence",
+      "output pass",
+      "row scheduling",
+      "dtype dispatch",
+      "DMA layout",
+      "InitBuffer footprint",
+      "gamma/bias policy"
+    ]
+  }
+}

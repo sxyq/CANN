@@ -1,0 +1,382 @@
+170a171,172
+>         // Whole-group ownership gated on core parallelism: apply only when
+>         // groups keep at least half of useful row-parallelism.
+172,176c174,205
+<         const uint64_t baseRows = rowCount / blockCount;
+<         const uint64_t extraRows = rowCount % blockCount;
+<         const uint64_t beginRow = blockIdx * baseRows +
+<                                   (blockIdx < extraRows ? blockIdx : extraRows);
+<         const uint64_t localRows = baseRows + (blockIdx < extraRows ? 1 : 0);
+---
+>         const uint64_t rowBytes = rowWidth * static_cast<uint64_t>(sizeof(T));
+>         uint64_t gcdVal = rowBytes;
+>         uint64_t gcdTmp = 32;
+>         while (gcdTmp != 0) {
+>             const uint64_t gcdNext = gcdVal % gcdTmp;
+>             gcdVal = gcdTmp;
+>             gcdTmp = gcdNext;
+>         }
+>         const uint64_t rowGroup = 32 / gcdVal;
+>         const uint64_t totalGroups = (rowCount + rowGroup - 1) / rowGroup;
+>         const uint64_t activeRowUnits = (blockCount < rowCount) ? blockCount : rowCount;
+>         const bool useGroupSplit = (totalGroups * 2ULL) >= activeRowUnits;
+>         uint64_t beginRow;
+>         uint64_t localRows;
+>         if (useGroupSplit) {
+>             const uint64_t baseGroups = totalGroups / blockCount;
+>             const uint64_t extraGroups = totalGroups % blockCount;
+>             const uint64_t beginGroup = blockIdx * baseGroups +
+>                                         (blockIdx < extraGroups ? blockIdx : extraGroups);
+>             const uint64_t localGroups = baseGroups + (blockIdx < extraGroups ? 1 : 0);
+>             beginRow = beginGroup * rowGroup;
+>             const uint64_t groupSpan = localGroups * rowGroup;
+>             const uint64_t remainingRows =
+>                 beginRow < rowCount ? (rowCount - beginRow) : 0;
+>             localRows = groupSpan < remainingRows ? groupSpan : remainingRows;
+>         } else {
+>             const uint64_t baseRows = rowCount / blockCount;
+>             const uint64_t extraRows = rowCount % blockCount;
+>             beginRow = blockIdx * baseRows +
+>                        (blockIdx < extraRows ? blockIdx : extraRows);
+>             localRows = baseRows + (blockIdx < extraRows ? 1 : 0);
+>         }
+358,362c387,389
+<             SyncVToS();
+<             const float squareSum = scalarLocal.GetValue(0);
+<             const float meanSquare = squareSum * invRowWidth + epsilon;
+<             SyncSToV();
+<             AscendC::Duplicate(xFp32, meanSquare, 1);
+---
+>             AscendC::PipeBarrier<PIPE_V>();
+>             AscendC::Muls(xFp32, scalarLocal, invRowWidth, 1);
+>             AscendC::Adds(xFp32, xFp32, epsilon, 1);
+561,562d587
+<             AscendC::SetFlag<AscendC::HardEvent::V_MTE2>(inputRelease);
+<             needInputRelease = true;
+565,569c590,592
+<             SyncVToS();
+<             const float squareSum = reduceLocal.GetValue(0);
+<             const float meanSquare = squareSum * invRowWidth + epsilon;
+<             SyncSToV();
+<             AscendC::Duplicate(xFp32, meanSquare, 1);
+---
+>             AscendC::PipeBarrier<PIPE_V>();
+>             AscendC::Muls(xFp32, reduceLocal, invRowWidth, 1);
+>             AscendC::Adds(xFp32, xFp32, epsilon, 1);
+611a635,639
+>             // BF16 output reuses xBuf_ as the MTE3 source. Wait for the store
+>             // to drain before releasing xBuf_ to MTE2.
+>             SyncMTE3ToV();
+>             AscendC::SetFlag<AscendC::HardEvent::V_MTE2>(inputRelease);
+>             needInputRelease = true;
+685d712
+<             SyncVToS();
+687,691c714,715
+<                 meanSquares[batchRow] =
+<                     reduceLocal.GetValue(batchRow * kSmallFp32ScalarStride) * invRowWidth + epsilon;
+<             }
+<             SyncSToV();
+<             for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
+---
+> 
+> 
+692a717,718
+> 
+> 
+694c720,727
+<                 AscendC::Duplicate(scalarSlot, meanSquares[batchRow], 1);
+---
+> 
+> 
+>                 AscendC::Muls(scalarSlot, scalarSlot, invRowWidth, 1);
+> 
+> 
+>                 AscendC::Adds(scalarSlot, scalarSlot, epsilon, 1);
+> 
+> 
+695a729,730
+> 
+> 
+696a732,733
+> 
+> 
+697a735,736
+> 
+> 
+698a738,739
+> 
+> 
+699a741,742
+> 
+> 
+700a744,745
+> 
+> 
+701a747,748
+> 
+> 
+702a750,751
+> 
+> 
+807d855
+<             SyncVToS();
+809,813c857,858
+<                 meanSquares[batchRow] =
+<                     reduceLocal.GetValue(batchRow * kSmallFp32ScalarStride) * invRowWidth + epsilon;
+<             }
+<             SyncSToV();
+<             for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
+---
+> 
+> 
+814a860,861
+> 
+> 
+816c863,870
+<                 AscendC::Duplicate(scalarSlot, meanSquares[batchRow], 1);
+---
+> 
+> 
+>                 AscendC::Muls(scalarSlot, scalarSlot, invRowWidth, 1);
+> 
+> 
+>                 AscendC::Adds(scalarSlot, scalarSlot, epsilon, 1);
+> 
+> 
+817a872,873
+> 
+> 
+818a875,876
+> 
+> 
+819a878,879
+> 
+> 
+820a881,882
+> 
+> 
+821a884,885
+> 
+> 
+822a887,888
+> 
+> 
+823a890,891
+> 
+> 
+824a893,894
+> 
+> 
+945,949c1015,1017
+<             SyncVToS();
+<             const float squareSum = residualFp32.GetValue(0);
+<             const float meanSquare = squareSum * invRowWidth + epsilon;
+<             SyncSToV();
+<             AscendC::Duplicate(xFp32, meanSquare, 1);
+---
+>             AscendC::PipeBarrier<PIPE_V>();
+>             AscendC::Muls(xFp32, residualFp32, invRowWidth, 1);
+>             AscendC::Adds(xFp32, xFp32, epsilon, 1);
+1063,1067c1131,1133
+<             SyncVToS();
+<             const float squareSum = residualFp32.GetValue(0);
+<             const float meanSquare = squareSum * invRowWidth + epsilon;
+<             SyncSToV();
+<             AscendC::Duplicate(xFp32, meanSquare, 1);
+---
+>             AscendC::PipeBarrier<PIPE_V>();
+>             AscendC::Muls(xFp32, residualFp32, invRowWidth, 1);
+>             AscendC::Adds(xFp32, xFp32, epsilon, 1);
+1192,1196c1258,1260
+<             SyncVToS();
+<             const float squareSum = residualFp32.GetValue(0);
+<             const float meanSquare = squareSum * invRowWidth + epsilon;
+<             SyncSToV();
+<             AscendC::Duplicate(xFp32, meanSquare, 1);
+---
+>             AscendC::PipeBarrier<PIPE_V>();
+>             AscendC::Muls(xFp32, residualFp32, invRowWidth, 1);
+>             AscendC::Adds(xFp32, xFp32, epsilon, 1);
+1421d1484
+<             SyncVToS();
+1423,1427c1486
+<                 meanSquares[batchRow] =
+<                     reduceLocal.GetValue(batchRow * kSmallFp32ScalarStride) * invRowWidth + epsilon;
+<             }
+<             SyncSToV();
+<             for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
+---
+> 
+1428a1488
+> 
+1430c1490,1494
+<                 AscendC::Duplicate(scalarSlot, meanSquares[batchRow], 1);
+---
+> 
+>                 AscendC::Muls(scalarSlot, scalarSlot, invRowWidth, 1);
+> 
+>                 AscendC::Adds(scalarSlot, scalarSlot, epsilon, 1);
+> 
+1431a1496
+> 
+1432a1498
+> 
+1433a1500
+> 
+1434a1502
+> 
+1435a1504
+> 
+1436a1506
+> 
+1437a1508
+> 
+1438a1510
+> 
+1518d1589
+<             SyncVToS();
+1520,1524c1591,1592
+<                 meanSquares[batchRow] =
+<                     reduceLocal.GetValue(batchRow * kSmallFp32ScalarStride) * invRowWidth + epsilon;
+<             }
+<             SyncSToV();
+<             for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
+---
+> 
+> 
+1525a1594,1595
+> 
+> 
+1527c1597,1604
+<                 AscendC::Duplicate(scalarSlot, meanSquares[batchRow], 1);
+---
+> 
+> 
+>                 AscendC::Muls(scalarSlot, scalarSlot, invRowWidth, 1);
+> 
+> 
+>                 AscendC::Adds(scalarSlot, scalarSlot, epsilon, 1);
+> 
+> 
+1528a1606,1607
+> 
+> 
+1529a1609,1610
+> 
+> 
+1530a1612,1613
+> 
+> 
+1531a1615,1616
+> 
+> 
+1532a1618,1619
+> 
+> 
+1533a1621,1622
+> 
+> 
+1534a1624,1625
+> 
+> 
+1535a1627,1628
+> 
+> 
+1618d1710
+<             SyncVToS();
+1620,1624c1712,1713
+<                 meanSquares[batchRow] =
+<                     reduceLocal.GetValue(batchRow * kSmallFp32ScalarStride) * invRowWidth + epsilon;
+<             }
+<             SyncSToV();
+<             for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
+---
+> 
+> 
+1625a1715,1716
+> 
+> 
+1627c1718,1725
+<                 AscendC::Duplicate(scalarSlot, meanSquares[batchRow], 1);
+---
+> 
+> 
+>                 AscendC::Muls(scalarSlot, scalarSlot, invRowWidth, 1);
+> 
+> 
+>                 AscendC::Adds(scalarSlot, scalarSlot, epsilon, 1);
+> 
+> 
+1628a1727,1728
+> 
+> 
+1629a1730,1731
+> 
+> 
+1630a1733,1734
+> 
+> 
+1631a1736,1737
+> 
+> 
+1632a1739,1740
+> 
+> 
+1633a1742,1743
+> 
+> 
+1634a1745,1746
+> 
+> 
+1635a1748,1749
+> 
+> 
+1730d1843
+<             SyncVToS();
+1732,1736c1845,1846
+<                 meanSquares[batchRow] =
+<                     reduceLocal.GetValue(batchRow * kSmallFp32ScalarStride) * invRowWidth + epsilon;
+<             }
+<             SyncSToV();
+<             for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
+---
+> 
+> 
+1737a1848,1849
+> 
+> 
+1739c1851,1858
+<                 AscendC::Duplicate(scalarSlot, meanSquares[batchRow], 1);
+---
+> 
+> 
+>                 AscendC::Muls(scalarSlot, scalarSlot, invRowWidth, 1);
+> 
+> 
+>                 AscendC::Adds(scalarSlot, scalarSlot, epsilon, 1);
+> 
+> 
+1740a1860,1861
+> 
+> 
+1741a1863,1864
+> 
+> 
+1742a1866,1867
+> 
+> 
+1743a1869,1870
+> 
+> 
+1744a1872,1873
+> 
+> 
+1745a1875,1876
+> 
+> 
+1746a1878,1879
+> 
+> 
+1747a1881,1882
+> 
+> 

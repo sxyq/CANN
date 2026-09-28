@@ -1,0 +1,48 @@
+{
+  "ROUTE": "COEFF-LOCALITY-X",
+  "REVISION": "V001",
+  "REVISION_KIND": "PERFORMANCE_SINGLE_HYPOTHESIS",
+  "DIRECT_PARENT": "FROZEN_R31B_V011",
+  "PARENT_SOURCE": "phase4/workspaces/COEFF-LOCALITY-X/frozen-seed/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "PARENT_SOURCE_SHA": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "PARENT_SCORE": "45.16",
+  "OFFICIAL_ANCHOR": "45.16",
+  "CONTEXT_CLASS": "FROZEN_STRONG_BASELINE_COEFF_LOCALITY",
+
+  "ASSIGNED_HYPOTHESIS": "H1 — Param double-buffer prefetch in FP32 wide output pass (V011 sibling pattern). In ProcessWideFp32FullCacheRows pass 2, replace serialized Load(gamma/bias)->SyncMTE2ToV->apply with a 2-deep param MTE2 pipeline: while tile t is applied, tile t+1 gamma/bias load into the alternate staging slot. Load timing + staging residency only.",
+  "SINGLE_CHANGE_AUDIT": "PASS (one conceptual mechanism: 2-deep gamma/bias param MTE2 prefetch)",
+
+  "SINGLE_HYPOTHESES_AS_DELIVERED": "ProcessWideFp32FullCacheRows pass 2 uses prd0/prd1 (MTE2_V) + prel0/prel1 (V_MTE2) events and a 2-slot gamma/bias staging pair (gBase/gBase[tileWidth], bBase/bBase[tileWidth]) — the exact ProcessWideLowPrecision V011 pattern. While tile t applies, tile t+1 params load. SyncMTE2ToV before each apply retained; MTE3 store-drain rule retained. Arithmetic, row batching, dtype dispatch, and x/residual DMA unchanged.",
+
+  "STAGING_RESIDENCE_NOTE": "xBuf_/residualBuf_ widened from 1 tile to 2 tiles each in the wide FP32 Init branch (matching the lowp sibling's 2-tile staging). ChooseWideFullYRows ioTiles argument raised 2 -> 4 so the UB budget accounts for the 4 param staging tiles. Consequence: for D=32768 FP32 the budget now picks tileElems=2560 (tileCount=13) instead of 4096 (tileCount=8). This is the automatic budget response to deeper staging, not a separate hypothesis; wideFullYRows_ unchanged at 1 for D=32768 and unchanged for D<=16384 at the rows that fit.",
+
+  "SOURCE_PATH": "phase4/workspaces/COEFF-LOCALITY-X/submission.asc",
+  "SOURCE_SHA": "6e47a9a0ad50db5eef81f73911f846edd29f38d3d2222aaea868b10f4a8e59b4",
+  "route_source_sha256": "6e47a9a0ad50db5eef81f73911f846edd29f38d3d2222aaea868b10f4a8e59b4",
+  "judge_payload_status": "NOT_SUBMITTED",
+
+  "LOCAL_REMOTE_SHA_MATCH": true,
+  "REMOTE_SOURCE_SHA": "6e47a9a0ad50db5eef81f73911f846edd29f38d3d2222aaea868b10f4a8e59b4",
+
+  "FILES": [
+    "phase4/local/COEFF-LOCALITY-X/V001/submission.asc",
+    "phase4/local/COEFF-LOCALITY-X/V001/submission.sha256",
+    "phase4/local/COEFF-LOCALITY-X/V001/source-meta.json",
+    "phase4/local/COEFF-LOCALITY-X/V001/diff.patch",
+    "phase4/local/COEFF-LOCALITY-X/V001/local-result.json",
+    "phase4/local/COEFF-LOCALITY-X/V001/support/correctness-summary.tsv",
+    "phase4/local/COEFF-LOCALITY-X/V001/support/compile.log",
+    "phase4/local/COEFF-LOCALITY-X/V001/support/server3-sha-manifest.txt"
+  ],
+
+  "COMPILE": "PASS (server3 / Ascend910B3 / dav-2201 / CANN 8.5.0.alpha002; CMAKE_RC=0, OBJ_RC=0)",
+  "LINK": "PASS (LINK_RC=0; clx_full_link + clx_parent_probe + clx_candidate_probe all Built target)",
+  "EXECUTABLE_SHA_FULL_LINK": "4190be840907c3caf24abffc6df1f670543e07b3f171a43ed955c7af6ad05371",
+  "EXECUTABLE_SHA_CANDIDATE_PROBE": "8fc0ca70fdeece95bb1c91444a579ec723698a395fdd23703e3d52bf0bd84cde",
+  "EXECUTABLE_SHA_PARENT_PROBE": "6169d2c3b6566f15e15df19d343479817e411084bedab01e577280fc155518cf",
+
+  "WHY_NOT_DUPLICATE": "See TRACK-B-HYPOTHESES.md H1. Distinct from all active MAIN-2 lanes; donor is the in-kernel ProcessWideLowPrecision V011 prefetch, not another route. REDUCE-HIER-X is reduction (parked); ALIGN-TAIL-X copy geometry; ASYNC-TRIPLE-X MTE3; SCHED-ROWGROUP-X core ownership; BATCH-RESIDENT-X multi-row input DMA; UB-LIVENESS-X aliasing; EPILOGUE-FUSE-X epilogue fusion.",
+
+  "DECISION": "CORRECTNESS_PASS_PENDING_LOCAL_PERFORMANCE",
+  "CLEANUP": "No shared control modified. No cann-sixlane access. No CANNJudge submission. frozen-seed/ untouched."
+}

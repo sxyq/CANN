@@ -1,0 +1,151 @@
+{
+  "route": "REDUCE-HIER-X",
+  "revision": "V002",
+  "revision_kind": "PERFORMANCE_SINGLE_HYPOTHESIS",
+  "direct_parent": "FROZEN_R31B_V011",
+  "parent_source_sha": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "parent_score": "45.16",
+  "official_anchor": "45.16",
+  "assigned_hypothesis": "H2 — Full manual vector reduction tree (R011, 0-1 GetValue): replace each tile's ReduceSum with a pairwise FP32 Add tree in UB; keep V001 eager fold into row accumulator.",
+  "single_hypothesis_as_delivered": "VectorReduceTo8: pairwise Add halving tree (32B-aligned operands only) reduces each tile's squares to 8 packed partials; 8-lane row accumulator folded per tile; one 8-to-1 ReduceSum per row; GetValue pair unchanged. Sites: Process() first-pass+tail, ProcessFp32FullRowOutputPipelined, ProcessWideFp32FullCacheRows.",
+  "single_change_audit": "PASS",
+  "context_class": "FROZEN_STRONG_BASELINE_REDUCTION_TOPOLOGY",
+  "source_sha256": "e4a80f182758e68090d5d9df48b0cb56858b8595981c5c1fc91d1c29f9f46623",
+  "source_path": "phase4/workspaces/REDUCE-HIER-X/submission.asc",
+  "compile": {
+    "device": "PASS",
+    "submission": "PASS",
+    "toolchain": "cann-server3 / Ascend910B3 / dav-2201 / CANN 8.5.0.alpha002",
+    "log": "phase4/local/REDUCE-HIER-X/V002/support/compile-v002.log"
+  },
+  "link": {
+    "parent_probe": "PASS",
+    "candidate_probe": "PASS",
+    "submission_object": "PASS",
+    "method": "ASC CMake (find_package(ASC)); rhx_{parent,candidate}_probe + rhx_v001_submission"
+  },
+  "identity": {
+    "local_sha": "e4a80f182758e68090d5d9df48b0cb56858b8595981c5c1fc91d1c29f9f46623",
+    "remote_sha": "e4a80f182758e68090d5d9df48b0cb56858b8595981c5c1fc91d1c29f9f46623",
+    "match": true
+  },
+  "executable_sha_candidate_probe": "b852410289e76ce77a2e765f860da235b2ace4dd7a36ffa634d69aacd2c95118",
+  "correctness": {
+    "verdict": "PASS",
+    "device_id": 4,
+    "method": "runner_main.inc + double-precision golden; atol/rtol per dtype",
+    "summary_tsv": "phase4/local/REDUCE-HIER-X/V002/support/correctness-summary.tsv",
+    "multi_tile_pass": [
+      "1x8192 fp32",
+      "2x8192 fp32",
+      "3x6144 fp32",
+      "1x8192 fp16",
+      "1x8192 bf16",
+      "1x16384 fp16",
+      "1x32768 bf16"
+    ],
+    "single_tile_control_pass": [
+      "1x1024 fp32",
+      "1x4096 fp32",
+      "2x4096 fp32",
+      "1x256 fp16",
+      "1x4096 fp16",
+      "1x256 bf16",
+      "1x4096 bf16",
+      "1x100 fp32",
+      "1x65 fp16"
+    ],
+    "dtype_coverage": {
+      "fp32": "PASS (where parent passes)",
+      "fp16": "PASS all shapes",
+      "bf16": "PASS all shapes"
+    },
+    "max_abs_vs_parent": "Identical or better on all passing shapes (e.g. 1x8192 fp32: cand 3.20e-07 vs parent 5.02e-07). Documented in correctness-summary.tsv.",
+    "parent_shared_failures": [
+      {
+        "shape": "1x16384 fp32",
+        "parent": "exit=3 bad=13306 max_abs=1.20258",
+        "candidate": "exit=3 bad=12278 max_abs=1.1896",
+        "assessment": "PARENT_PREEXISTING (same as V001): frozen parent itself fails this runner's golden on wide FP32. Candidate matches parent behavior."
+      },
+      {
+        "shape": "1x32768 fp32",
+        "parent": "exit=3 bad=27373 max_abs=1.2031",
+        "candidate": "exit=3 bad=28170 max_abs=1.2031",
+        "assessment": "PARENT_PREEXISTING: identical max_abs to parent."
+      }
+    ]
+  },
+  "vs_handoff_accounting": {
+    "parent_v001_per_row": "tileCount + 2 (tileCount ReduceSum V/S + 2 GetValue)",
+    "v002_per_row": "3 (1 x 8-to-1 ReduceSum + 2 GetValue)",
+    "per_tile_reduce_sum_eliminated": true,
+    "note": "8-to-1 cannot use 32B-aligned Add on packed data (1-element Add at 4B offset faults). valid<=8 fallback uses 1 ReduceSum per tile (correctness guard, not a second mechanism)."
+  },
+  "measurement": {
+    "status": "COMPLETE",
+    "lease_id": "R2-REDUCE-V002-TIMING",
+    "device": "d4 (AICore 0%, residual VLLM HBM ~90%)",
+    "date": "2026-09-27",
+    "method": "runner_ref.inc DEVICE_EVENT_PRIMARY, warmup=45, samples=41, same-binary blocks=2 + 6 interleaved P/C pairs",
+    "results_dir": "phase4/local/REDUCE-HIER-X/V002/support/results-timing-v002-20260927",
+    "summary": "phase4/local/REDUCE-HIER-X/V002/support/results-timing-v002-20260927/SUMMARY.md",
+    "same_binary": {
+      "1x32768_fp32": "PASS both (P MAD/med 0.021 drift 0.018; C MAD/med 0.081 drift 0.071)",
+      "8x8192_fp32": "PASS both (P MAD/med 0.073 drift 0.042; C MAD/med 0.062 drift 0.037)",
+      "1x16384_fp32": "FAIL parent (drift 0.118); cand PASS",
+      "1x8192_fp32": "FAIL both (P drift 0.115; C drift 0.432)",
+      "1x4096_fp32": "FAIL both (P drift 1.461; C MAD/med 0.303)"
+    },
+    "qualified_shapes": [
+      "1x32768_fp32",
+      "8x8192_fp32"
+    ],
+    "blocked_shapes": [
+      "1x16384_fp32",
+      "1x8192_fp32",
+      "1x4096_fp32"
+    ],
+    "parent_metric_1x32768": "paired B1 medians 11.80-12.16 us",
+    "candidate_metric_1x32768": "paired B1 medians 12.68-15.60 us (clean 12.68-12.96)",
+    "paired_delta_1x32768_clean": "median +6.6% (n=5 clean pairs, favP=5 favC=0) — CANDIDATE SLOWER",
+    "paired_delta_8x8192_clean": "median +0.9% (n=6 clean pairs, favP=3 favC=2) — neutral/slight regression",
+    "verdict_note": "Primary target shape (tileCount=8) shows clean consistent regression. H2 win estimate refuted."
+  },
+  "local_verdict": "LOCAL_REJECTED",
+  "local_verdict_reason": "Timing complete on lease R2-REDUCE-V002-TIMING (d4). Primary target 1x32768 FP32 (tileCount=8, both same-binary PASS) shows clean regression: median delta +6.6% (candidate slower), 5/5 clean pairs favor parent, MADs well under threshold. 8x8192 FP32 (qualified) is neutral-to-slightly-regressed (+0.9%). H2 hypothesis — eliminating per-tile ReduceSum V/S yields large win — is REFUTED. Mechanism: VectorReduceTo8 issues 12 pairwise Add levels per 4096-elem tile, each with PipeBarrier<PIPE_V>; that barrier chain costs more than the ReduceSum V/S handoff it removes. Per Main rules and execution-contract: roll back to frozen parent; do not stack another performance change on V002.",
+  "files": [
+    "phase4/local/REDUCE-HIER-X/V002/submission.asc",
+    "phase4/local/REDUCE-HIER-X/V002/submission.sha256",
+    "phase4/local/REDUCE-HIER-X/V002/source-meta.json",
+    "phase4/local/REDUCE-HIER-X/V002/diff.patch",
+    "phase4/local/REDUCE-HIER-X/V002/local-result.json",
+    "phase4/local/REDUCE-HIER-X/V002/support/correctness-summary.tsv",
+    "phase4/local/REDUCE-HIER-X/V002/support/compile-v002.log",
+    "phase4/local/REDUCE-HIER-X/V002/support/server3-sha-manifest.txt"
+  ],
+  "single_change_audit_detail": {
+    "mechanisms": 1,
+    "list": [
+      "per-tile ReduceSum -> manual pairwise vector tree (VectorReduceTo8) with 8-lane row accumulator; one 8-to-1 ReduceSum per row"
+    ],
+    "sites": [
+      "Process() first-pass + tail",
+      "ProcessFp32FullRowOutputPipelined",
+      "ProcessWideFp32FullCacheRows"
+    ],
+    "unchanged": [
+      "square Mul",
+      "mean/epsilon tail",
+      "invRms sequence",
+      "output pass",
+      "row scheduling",
+      "dtype dispatch",
+      "DMA layout",
+      "gamma/bias policy",
+      "InitBuffer footprint"
+    ]
+  },
+  "online_worthy": "NO",
+  "online_worthy_reason": "No shape shows a clean win. Primary shape shows clean regression. Do not submit V002."
+}

@@ -1,0 +1,51 @@
+{
+  "ROUTE": "REDUCE-HIER-X",
+  "REVISION": "V002",
+  "REVISION_KIND": "PERFORMANCE_SINGLE_HYPOTHESIS",
+  "DIRECT_PARENT": "FROZEN_R31B_V011",
+  "PARENT_SOURCE": "phase4/workspaces/REDUCE-HIER-X/frozen-seed/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "PARENT_SOURCE_SHA": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "PARENT_SCORE": "45.16",
+  "OFFICIAL_ANCHOR": "45.16",
+  "CONTEXT_CLASS": "FROZEN_STRONG_BASELINE_REDUCTION_TOPOLOGY",
+
+  "ASSIGNED_HYPOTHESIS": "H2 — Full manual vector reduction tree (R011, 0-1 GetValue). Replace each tile's AscendC::ReduceSum with an explicit pairwise FP32 Add tree inside UB. Keep V001's eager running-fold into the row accumulator. Per-row V/S handoff drops from tileCount+2 to 2.",
+  "SINGLE_CHANGE_AUDIT": "PASS (one conceptual mechanism: per-tile ReduceSum -> manual vector tree; see SINGLE_HYPOTHESIS_AS_DELIVERED)",
+
+  "SINGLE_HYPOTHESIS_AS_DELIVERED": "Per-tile ReduceSum on the square tile is replaced by VectorReduceTo8: a pairwise Add halving tree that reduces `valid` squares to 8 packed partials using only 32B-aligned Add operands. Those 8 partials are folded into an 8-lane row accumulator (aligned 8-element Add). The end-of-row 8-to-1 is one ReduceSum over the 8 lanes (once per row, not per tile). GetValue pair unchanged. Sites: Process() first-pass+tail, ProcessFp32FullRowOutputPipelined, ProcessWideFp32FullCacheRows. Per-tile ReduceSum width, square Mul, mean/epsilon tail, invRms sequence, output pass, scheduling, dtype dispatch and DMA unchanged.",
+
+  "DEVIATION_FROM_TARGET_VS_COUNT": "The H2 target was per-row V/S = 2 (just the GetValue pair). Achieved: per-row V/S = 3 (one 8-to-1 ReduceSum + the GetValue pair). The final 8-to-1 cannot be done with 32B-aligned Add on packed data (1-element Add at 4B offset faults — V001 ACL 507035 finding). Per-tile ReduceSum V/S is fully eliminated: tileCount calls -> 0. Net V/S per row: tileCount+2 -> 3. For tileCount=8 (D=32768) that is 10 -> 3.",
+
+  "SINGLE_HYPOTHESIS_NOTE": "The valid<=8 fallback uses one ReduceSum per tile (unchanged from parent). This is a correctness guard for tiny tiles, not a second performance mechanism. All probe shapes with D>=1024 take the VectorReduceTo8 path.",
+
+  "SOURCE_PATH": "phase4/workspaces/REDUCE-HIER-X/submission.asc",
+  "SOURCE_SHA": "e4a80f182758e68090d5d9df48b0cb56858b8595981c5c1fc91d1c29f9f46623",
+  "SOURCE_LINES": 3588,
+  "route_source_status": "ROUTE_OWNED_LOCAL",
+  "route_source_sha256": "e4a80f182758e68090d5d9df48b0cb56858b8595981c5c1fc91d1c29f9f46623",
+  "judge_payload_status": "NOT_SUBMITTED",
+
+  "LOCAL_REMOTE_SHA_MATCH": true,
+  "REMOTE_SOURCE_SHA": "e4a80f182758e68090d5d9df48b0cb56858b8595981c5c1fc91d1c29f9f46623",
+
+  "FILES": [
+    "phase4/local/REDUCE-HIER-X/V002/submission.asc",
+    "phase4/local/REDUCE-HIER-X/V002/submission.sha256",
+    "phase4/local/REDUCE-HIER-X/V002/source-meta.json",
+    "phase4/local/REDUCE-HIER-X/V002/diff.patch",
+    "phase4/local/REDUCE-HIER-X/V002/local-result.json",
+    "phase4/local/REDUCE-HIER-X/V002/support/correctness-summary.tsv",
+    "phase4/local/REDUCE-HIER-X/V002/support/compile-v002.log",
+    "phase4/local/REDUCE-HIER-X/V002/support/server3-sha-manifest.txt"
+  ],
+
+  "COMPILE": "PASS (server3 / Ascend910B3 / dav-2201 / CANN 8.5.0.alpha002; CMAKE_RC=0, BUILD_RC=0)",
+  "LINK": "PASS (rhx_parent_probe, rhx_candidate_probe, rhx_v001_submission all Built target)",
+  "EXECUTABLE_SHA_CANDIDATE_PROBE": "b852410289e76ce77a2e765f860da235b2ace4dd7a36ffa634d69aacd2c95118",
+  "EXECUTABLE_SHA_PARENT_PROBE": "120595275e3d24bba2ca2d113034be3904a37a060dd1966e5d50c699bca11d81",
+
+  "WHY_NOT_DUPLICATE": "See TRACK-B-HYPOTHESES-V002.md H2. Distinct from V001/H1 (merge timing) and from REDUCE-INVSCALE-X H3 (wide-chunk ReduceSum span) / H4 (single-stage whole-row). This replaces the per-tile ReduceSum primitive with a manual vector tree.",
+
+  "DECISION": "CORRECTNESS_PASS_PENDING_LOCAL_PERFORMANCE",
+  "CLEANUP": "No shared control modified. No cann-sixlane access. No CANNJudge submission. frozen-seed/ untouched."
+}

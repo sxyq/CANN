@@ -1,0 +1,382 @@
+--- /Users/sunyiyang/Desktop/Project/cann-main2-r2/VECTOR-MATH-X/phase4/workspaces/VECTOR-MATH-X/frozen-seed/R31B-V011-LP-ROW-PIPELINE_kernel.asc	2026-09-27 10:28:53
++++ /Users/sunyiyang/Desktop/Project/cann-main2-r2/VECTOR-MATH-X/phase4/workspaces/VECTOR-MATH-X/VECTOR-MATH-X-V001_kernel.asc	2026-09-27 10:56:13
+@@ -355,11 +355,9 @@
+             AscendC::LocalTensor<float> reduceFp32 = reduceFp32Buf_.Get<float>();
+             AscendC::LocalTensor<float> xFp32 = xFp32Buf_.Get<float>();
+             AscendC::ReduceSum(scalarLocal, reduceFp32, xFp32, tileCount);
+-            SyncVToS();
+-            const float squareSum = scalarLocal.GetValue(0);
+-            const float meanSquare = squareSum * invRowWidth + epsilon;
+-            SyncSToV();
+-            AscendC::Duplicate(xFp32, meanSquare, 1);
++            AscendC::PipeBarrier<PIPE_V>();
++            AscendC::Muls(xFp32, scalarLocal, invRowWidth, 1);
++            AscendC::Adds(xFp32, xFp32, epsilon, 1);
+             AscendC::Sqrt(xFp32, xFp32, 1);
+             AscendC::PipeBarrier<PIPE_V>();
+             SyncVToS();
+@@ -562,11 +560,9 @@
+             needInputRelease = true;
+ 
+             // Param MTE2 overlaps this scalar tail (single-row case).
+-            SyncVToS();
+-            const float squareSum = reduceLocal.GetValue(0);
+-            const float meanSquare = squareSum * invRowWidth + epsilon;
+-            SyncSToV();
+-            AscendC::Duplicate(xFp32, meanSquare, 1);
++            AscendC::PipeBarrier<PIPE_V>();
++            AscendC::Muls(xFp32, reduceLocal, invRowWidth, 1);
++            AscendC::Adds(xFp32, xFp32, epsilon, 1);
+             AscendC::Sqrt(xFp32, xFp32, 1);
+             AscendC::PipeBarrier<PIPE_V>();
+             SyncVToS();
+@@ -682,24 +678,45 @@
+                 SyncVToMTE2();
+             }
+ 
+-            SyncVToS();
+             for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
+-                meanSquares[batchRow] =
+-                    reduceLocal.GetValue(batchRow * kSmallFp32ScalarStride) * invRowWidth + epsilon;
+-            }
+-            SyncSToV();
+-            for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
++
++
+                 AscendC::LocalTensor<float> scalarSlot =
++
++
+                     reduceLocal[batchRow * kSmallFp32ScalarStride];
+-                AscendC::Duplicate(scalarSlot, meanSquares[batchRow], 1);
++
++
++                AscendC::Muls(scalarSlot, scalarSlot, invRowWidth, 1);
++
++
++                AscendC::Adds(scalarSlot, scalarSlot, epsilon, 1);
++
++
+                 AscendC::Sqrt(scalarSlot, scalarSlot, 1);
++
++
+             }
++
++
+             AscendC::PipeBarrier<PIPE_V>();
++
++
+             SyncVToS();
++
++
+             for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
++
++
+                 invRmsValues[batchRow] =
++
++
+                     1.0f / reduceLocal.GetValue(batchRow * kSmallFp32ScalarStride);
++
++
+             }
++
++
+             SyncSToV();
+ 
+             for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
+@@ -804,24 +821,45 @@
+                 SyncVToMTE2();
+             }
+ 
+-            SyncVToS();
+             for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
+-                meanSquares[batchRow] =
+-                    reduceLocal.GetValue(batchRow * kSmallFp32ScalarStride) * invRowWidth + epsilon;
+-            }
+-            SyncSToV();
+-            for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
++
++
+                 AscendC::LocalTensor<float> scalarSlot =
++
++
+                     reduceLocal[batchRow * kSmallFp32ScalarStride];
+-                AscendC::Duplicate(scalarSlot, meanSquares[batchRow], 1);
++
++
++                AscendC::Muls(scalarSlot, scalarSlot, invRowWidth, 1);
++
++
++                AscendC::Adds(scalarSlot, scalarSlot, epsilon, 1);
++
++
+                 AscendC::Sqrt(scalarSlot, scalarSlot, 1);
++
++
+             }
++
++
+             AscendC::PipeBarrier<PIPE_V>();
++
++
+             SyncVToS();
++
++
+             for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
++
++
+                 invRmsValues[batchRow] =
++
++
+                     1.0f / reduceLocal.GetValue(batchRow * kSmallFp32ScalarStride);
++
++
+             }
++
++
+             SyncSToV();
+ 
+             for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
+@@ -942,11 +980,9 @@
+ 
+             AscendC::ReduceSum(residualFp32, reduceLocal, xFp32,
+                                kCacheElems / kTileElems);
+-            SyncVToS();
+-            const float squareSum = residualFp32.GetValue(0);
+-            const float meanSquare = squareSum * invRowWidth + epsilon;
+-            SyncSToV();
+-            AscendC::Duplicate(xFp32, meanSquare, 1);
++            AscendC::PipeBarrier<PIPE_V>();
++            AscendC::Muls(xFp32, residualFp32, invRowWidth, 1);
++            AscendC::Adds(xFp32, xFp32, epsilon, 1);
+             AscendC::Sqrt(xFp32, xFp32, 1);
+             AscendC::PipeBarrier<PIPE_V>();
+             SyncVToS();
+@@ -1060,11 +1096,9 @@
+ 
+             AscendC::ReduceSum(residualFp32, reduceLocal, xFp32,
+                                kCacheElems / kTileElems);
+-            SyncVToS();
+-            const float squareSum = residualFp32.GetValue(0);
+-            const float meanSquare = squareSum * invRowWidth + epsilon;
+-            SyncSToV();
+-            AscendC::Duplicate(xFp32, meanSquare, 1);
++            AscendC::PipeBarrier<PIPE_V>();
++            AscendC::Muls(xFp32, residualFp32, invRowWidth, 1);
++            AscendC::Adds(xFp32, xFp32, epsilon, 1);
+             AscendC::Sqrt(xFp32, xFp32, 1);
+             AscendC::PipeBarrier<PIPE_V>();
+             SyncVToS();
+@@ -1189,11 +1223,9 @@
+ 
+             AscendC::ReduceSum(residualFp32, reduceLocal, xFp32,
+                                kCacheElems / kTileElems);
+-            SyncVToS();
+-            const float squareSum = residualFp32.GetValue(0);
+-            const float meanSquare = squareSum * invRowWidth + epsilon;
+-            SyncSToV();
+-            AscendC::Duplicate(xFp32, meanSquare, 1);
++            AscendC::PipeBarrier<PIPE_V>();
++            AscendC::Muls(xFp32, residualFp32, invRowWidth, 1);
++            AscendC::Adds(xFp32, xFp32, epsilon, 1);
+             AscendC::Sqrt(xFp32, xFp32, 1);
+             AscendC::PipeBarrier<PIPE_V>();
+             SyncVToS();
+@@ -1418,24 +1450,32 @@
+ 
+             // The scalar formula is unchanged.  Only the independent rows'
+             // V/S transfers and one-element square roots are grouped.
+-            SyncVToS();
+             for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
+-                meanSquares[batchRow] =
+-                    reduceLocal.GetValue(batchRow * kSmallFp32ScalarStride) * invRowWidth + epsilon;
+-            }
+-            SyncSToV();
+-            for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
++
+                 AscendC::LocalTensor<float> scalarSlot =
++
+                     reduceLocal[batchRow * kSmallFp32ScalarStride];
+-                AscendC::Duplicate(scalarSlot, meanSquares[batchRow], 1);
++
++                AscendC::Muls(scalarSlot, scalarSlot, invRowWidth, 1);
++
++                AscendC::Adds(scalarSlot, scalarSlot, epsilon, 1);
++
+                 AscendC::Sqrt(scalarSlot, scalarSlot, 1);
++
+             }
++
+             AscendC::PipeBarrier<PIPE_V>();
++
+             SyncVToS();
++
+             for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
++
+                 invRmsValues[batchRow] =
++
+                     1.0f / reduceLocal.GetValue(batchRow * kSmallFp32ScalarStride);
++
+             }
++
+             SyncSToV();
+ 
+             for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
+@@ -1515,24 +1555,45 @@
+                 SyncVToMTE2();
+             }
+ 
+-            SyncVToS();
+             for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
+-                meanSquares[batchRow] =
+-                    reduceLocal.GetValue(batchRow * kSmallFp32ScalarStride) * invRowWidth + epsilon;
+-            }
+-            SyncSToV();
+-            for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
++
++
+                 AscendC::LocalTensor<float> scalarSlot =
++
++
+                     reduceLocal[batchRow * kSmallFp32ScalarStride];
+-                AscendC::Duplicate(scalarSlot, meanSquares[batchRow], 1);
++
++
++                AscendC::Muls(scalarSlot, scalarSlot, invRowWidth, 1);
++
++
++                AscendC::Adds(scalarSlot, scalarSlot, epsilon, 1);
++
++
+                 AscendC::Sqrt(scalarSlot, scalarSlot, 1);
++
++
+             }
++
++
+             AscendC::PipeBarrier<PIPE_V>();
++
++
+             SyncVToS();
++
++
+             for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
++
++
+                 invRmsValues[batchRow] =
++
++
+                     1.0f / reduceLocal.GetValue(batchRow * kSmallFp32ScalarStride);
++
++
+             }
++
++
+             SyncSToV();
+ 
+             for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
+@@ -1615,24 +1676,45 @@
+             }
+             SyncVToMTE2();
+ 
+-            SyncVToS();
+             for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
+-                meanSquares[batchRow] =
+-                    reduceLocal.GetValue(batchRow * kSmallFp32ScalarStride) * invRowWidth + epsilon;
+-            }
+-            SyncSToV();
+-            for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
++
++
+                 AscendC::LocalTensor<float> scalarSlot =
++
++
+                     reduceLocal[batchRow * kSmallFp32ScalarStride];
+-                AscendC::Duplicate(scalarSlot, meanSquares[batchRow], 1);
++
++
++                AscendC::Muls(scalarSlot, scalarSlot, invRowWidth, 1);
++
++
++                AscendC::Adds(scalarSlot, scalarSlot, epsilon, 1);
++
++
+                 AscendC::Sqrt(scalarSlot, scalarSlot, 1);
++
++
+             }
++
++
+             AscendC::PipeBarrier<PIPE_V>();
++
++
+             SyncVToS();
++
++
+             for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
++
++
+                 invRmsValues[batchRow] =
++
++
+                     1.0f / reduceLocal.GetValue(batchRow * kSmallFp32ScalarStride);
++
++
+             }
++
++
+             SyncSToV();
+ 
+             for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
+@@ -1727,24 +1809,45 @@
+             }
+             SyncVToMTE2();
+ 
+-            SyncVToS();
+             for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
+-                meanSquares[batchRow] =
+-                    reduceLocal.GetValue(batchRow * kSmallFp32ScalarStride) * invRowWidth + epsilon;
+-            }
+-            SyncSToV();
+-            for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
++
++
+                 AscendC::LocalTensor<float> scalarSlot =
++
++
+                     reduceLocal[batchRow * kSmallFp32ScalarStride];
+-                AscendC::Duplicate(scalarSlot, meanSquares[batchRow], 1);
++
++
++                AscendC::Muls(scalarSlot, scalarSlot, invRowWidth, 1);
++
++
++                AscendC::Adds(scalarSlot, scalarSlot, epsilon, 1);
++
++
+                 AscendC::Sqrt(scalarSlot, scalarSlot, 1);
++
++
+             }
++
++
+             AscendC::PipeBarrier<PIPE_V>();
++
++
+             SyncVToS();
++
++
+             for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
++
++
+                 invRmsValues[batchRow] =
++
++
+                     1.0f / reduceLocal.GetValue(batchRow * kSmallFp32ScalarStride);
++
++
+             }
++
++
+             SyncSToV();
+ 
+             if constexpr (std::is_same<T, half>::value) {

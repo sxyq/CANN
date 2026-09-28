@@ -1,0 +1,32 @@
+{
+  "ROUTE": "VECTOR-MATH-X",
+  "REVISION": "V002",
+  "DIRECT_PARENT": "V001",
+  "PARENT_SOURCE_SHA": "dbe776f9165a86ede9d136604e806d9f5dc0f641ee8e05a26bca1ebe8dd33424",
+  "PARENT_SCORE": "NEEDS_ONE_MORE_LOCAL (batched 32x256 -7.3%)",
+  "SINGLE_HYPOTHESIS": "VM-H3a partial: Duplicate broadcast buffer + vector Mul replaces scalar Muls for the normalize step. V-side Div (1.0f/ -> Div) tested and reverted (sync errors). Scalar divide retained.",
+  "CONTEXT_CLASS": "FROZEN_STRONG_BASELINE_VECTOR_MATH",
+  "SOURCE_SHA": "06095762d6ff919f7aa260168150c23e0eeecf464a87c1b26e513cb267587427",
+  "SOURCE_PATH": "phase4/workspaces/VECTOR-MATH-X/VECTOR-MATH-X-V002_kernel.asc",
+  "BUILD_HOST": "cann-server3:/home/data4t2/lelinfeng/phase4-workspaces/VECTOR-MATH-X",
+  "COMPILE": "PASS",
+  "LINK": "PASS (vector_math_x_link SHA256 b5bc0ad263067efc1c56075aa20c26eab25f9139f821a0187d9a8002afb5a660)",
+  "CORRECTNESS_EXECUTABLE_SHA": "49ca333ed8c671a941c174d3cc6424a8853efd10518f89b9bd724a998cd50eec",
+  "CORRECTNESS": "53/54 PASS; 1 FAIL resident_wide_colsplit FP32 D=16384 is PRE_EXISTING_PARENT_FAILURE.",
+  "CORRECTNESS_DEVICE": "server3 d4",
+  "SINGLE_CHANGE_AUDIT": "PASS",
+  "ARCHITECTURE": "Duplicate(bcastBuf, invRms, valid) + Mul(valueTile, valueTile, bcastBuf, valid) replaces Muls(valueTile, valueTile, invRms, valid). bcastBuf = reduceFp32Buf_ (dead after denominator chain). V-side Div tested and reverted (ACL_FAIL sync=507035).",
+  "ISOLATION": [
+    "One mechanism: scalar-broadcast Muls -> Duplicate + vector Mul",
+    "V-side Div not included (sync errors on dav-c220)",
+    "Wide paths untouched",
+    "No reduction, scheduling, DMA, dtype change"
+  ],
+  "RISKS": [
+    "V-side Div (1.0f/ -> Div) not working — sync errors. Scalar divide remains.",
+    "bcastBuf must not alias xFp32Buf_ (holds gamma in BF16 uncached) or reduceFp32Buf_ in batched paths (holds V-chain results). reduceFp32Buf_ works for non-batched; batched may have residual conflicts.",
+    "Duplicate + Mul is 2 V passes vs Muls 1 V pass. Win depends on scalar-unit relief."
+  ],
+  "DECISION": "CORRECTNESS_PASS_PENDING_TIMING",
+  "NEXT": "Timing lease pending (INTEGRATION using devices first)."
+}

@@ -1,0 +1,121 @@
+467,472c467,471
+<                     SyncVToMTE3();
+<                     Store(outputGm_, rowOffset + col, valueTile, valid);
+<                     // V006: when y is cached per-slice, defer the MTE3 drain
+<                     // to the end of the row.  A streamed single value tile
+<                     // must drain every iteration before it is overwritten.
+<                     if (!cacheRow || col + kTileElems >= rowWidth) {
+---
+>                     if (!cacheRow) {
+>                         // Streamed single value tile: the staging slot is
+>                         // reused next iteration, so it must drain per tile.
+>                         SyncVToMTE3();
+>                         Store(outputGm_, rowOffset + col, valueTile, valid);
+474a474,476
+>                     // STORE-H2B: with cacheRow the finished y tiles form one
+>                     // contiguous UB run at valueFp32[0, rowWidth); the row is
+>                     // written back in one call after the tile loop.
+492a495,505
+>             if constexpr (AscendC::IsSameType<T, float>::value) {
+>                 if (cacheRow) {
+>                     // STORE-H2B: one writeback for the whole finished row run
+>                     // (valueFp32[0, rowWidth) is contiguous in UB and GM).
+>                     // Same V->MTE3->V ordering as the per-tile path.
+>                     SyncVToMTE3();
+>                     Store(outputGm_, rowOffset, valueFp32Buf_.Get<float>(),
+>                           static_cast<int32_t>(rowWidth));
+>                     SyncMTE3ToV();
+>                 }
+>             }
+2173a2187,2191
+>             // STORE-H2B predicate: merge row runs only when every row's UB run
+>             // start is 32B-aligned (rowWidth*sizeof(float) % 32 == 0 implies
+>             // batchRow*rowWidth floats are aligned for all rows).
+>             const bool mergeRowRuns =
+>                 (rowWidth % static_cast<uint64_t>(8)) == 0;
+2208,2217c2226,2250
+<                 for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
+<                     const bool useFirst = (batchRow & 1) == 0;
+<                     const AscendC::TEventID storeReady =
+<                         useFirst ? storeReady0 : storeReady1;
+<                     const AscendC::TEventID storeRelease =
+<                         useFirst ? storeRelease0 : storeRelease1;
+<                     if (useFirst ? storeOutstanding0 : storeOutstanding1) {
+<                         AscendC::WaitFlag<AscendC::HardEvent::MTE3_V>(storeRelease);
+<                         if (useFirst) {
+<                             storeOutstanding0 = false;
+---
+>                 if (!mergeRowRuns) {
+>                     // UB run start not 32B-aligned for some row: keep the
+>                     // parent's per-tile writeback for this batch.
+>                     for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
+>                         const bool useFirst = (batchRow & 1) == 0;
+>                         const AscendC::TEventID storeReady =
+>                             useFirst ? storeReady0 : storeReady1;
+>                         const AscendC::TEventID storeRelease =
+>                             useFirst ? storeRelease0 : storeRelease1;
+>                         if (useFirst ? storeOutstanding0 : storeOutstanding1) {
+>                             AscendC::WaitFlag<AscendC::HardEvent::MTE3_V>(storeRelease);
+>                             if (useFirst) {
+>                                 storeOutstanding0 = false;
+>                             } else {
+>                                 storeOutstanding1 = false;
+>                             }
+>                         }
+>                         AscendC::SetFlag<AscendC::HardEvent::V_MTE3>(storeReady);
+>                         AscendC::WaitFlag<AscendC::HardEvent::V_MTE3>(storeReady);
+>                         Store(outputGm_,
+>                               (batchBegin + static_cast<uint64_t>(batchRow)) * rowWidth + col,
+>                               valueLocal[batchRow * rowWidth + col], valid);
+>                         AscendC::SetFlag<AscendC::HardEvent::MTE3_V>(storeRelease);
+>                         if (useFirst) {
+>                             storeOutstanding0 = true;
+2219c2252
+<                             storeOutstanding1 = false;
+---
+>                             storeOutstanding1 = true;
+2222,2229c2255,2271
+<                     AscendC::SetFlag<AscendC::HardEvent::V_MTE3>(storeReady);
+<                     AscendC::WaitFlag<AscendC::HardEvent::V_MTE3>(storeReady);
+<                     Store(outputGm_,
+<                           (batchBegin + static_cast<uint64_t>(batchRow)) * rowWidth + col,
+<                           valueLocal[batchRow * rowWidth + col], valid);
+<                     AscendC::SetFlag<AscendC::HardEvent::MTE3_V>(storeRelease);
+<                     if (useFirst) {
+<                         storeOutstanding0 = true;
+---
+>                 }
+>             }
+>             if (mergeRowRuns) {
+>             // STORE-H2B: each row's finished tiles form one contiguous UB run
+>             // (valueLocal[batchRow*rowWidth, +rowWidth)); one writeback per row
+>             // replaces the per-tile stores.  The 2-deep ring discipline below is
+>             // unchanged — one ring entry per row instead of per tile.
+>             for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
+>                 const bool useFirst = (batchRow & 1) == 0;
+>                 const AscendC::TEventID storeReady =
+>                     useFirst ? storeReady0 : storeReady1;
+>                 const AscendC::TEventID storeRelease =
+>                     useFirst ? storeRelease0 : storeRelease1;
+>                 if (useFirst ? storeOutstanding0 : storeOutstanding1) {
+>                     AscendC::WaitFlag<AscendC::HardEvent::MTE3_V>(storeRelease);
+>                     if (useFirst) {
+>                         storeOutstanding0 = false;
+2231c2273
+<                         storeOutstanding1 = true;
+---
+>                         storeOutstanding1 = false;
+2233a2276,2288
+>                 AscendC::SetFlag<AscendC::HardEvent::V_MTE3>(storeReady);
+>                 AscendC::WaitFlag<AscendC::HardEvent::V_MTE3>(storeReady);
+>                 Store(outputGm_,
+>                       (batchBegin + static_cast<uint64_t>(batchRow)) * rowWidth,
+>                       valueLocal[batchRow * rowWidth],
+>                       static_cast<int32_t>(rowWidth));
+>                 AscendC::SetFlag<AscendC::HardEvent::MTE3_V>(storeRelease);
+>                 if (useFirst) {
+>                     storeOutstanding0 = true;
+>                 } else {
+>                     storeOutstanding1 = true;
+>                 }
+>             }

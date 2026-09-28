@@ -1,0 +1,46 @@
+{
+  "route": "SCHED-CHAMPION-X",
+  "revision": "V002",
+  "direct_parent": "FROZEN_R31B_V011",
+  "parent_source_sha": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "parent_score": 45.16,
+  "official_anchor": 45.16,
+  "single_hypothesis": "Group-aligned balanced ownership WITH active-core preservation (half-parallelism gate)",
+  "local_sha256": "de1e93c74338802e646258ada08a8cac1031496a9985e585a5a89015b81bc990",
+  "compile_rc": "0/0",
+  "link_rc": "0/0",
+  "correctness_status": "PASS",
+  "correctness_total": 24,
+  "correctness_failures": 0,
+  "single_change_audit": "PASS",
+  "measurement_status": "COMPLETE",
+  "measurement_lease": "R2-SCHED-V002-TIMING, device 4, 2026-09-27",
+  "measurement_rounds": ["initial (4 pairs, noisy)", "remeasure (6 pairs, samples=41)"],
+  "remeasure_results": {
+    "33x100_fp32": {
+      "same_binary": "parent PASS (0.039/0.046), cand FAIL (0.202/0.258)",
+      "clean_pairs": 5,
+      "total_pairs": 6,
+      "clean_favor_c": 5,
+      "clean_favor_p": 0,
+      "clean_median_delta_pct": -4.4,
+      "clean_range_pct": [-11.2, -1.5],
+      "order_robust": true,
+      "note": "5/5 clean pairs favor V002. Order-robust (3x P->C, 3x C->P)."
+    },
+    "17x257_fp16": {
+      "same_binary": "parent FAIL (0.218/0.181), cand PASS (0.098/0.029)",
+      "clean_pairs": 3,
+      "total_pairs": 4,
+      "clean_median_delta_pct": 5.2,
+      "note": "NO V001 +145% regression. Gate preserves parent parallelism."
+    }
+  },
+  "local_verdict": "NEEDS_ONE_MORE_LOCAL",
+  "local_verdict_reason": "33x100 clean pairs 5/5 favor V002 (order-robust, median -4.4%, range -1.5% to -11.2%) but magnitude is below 10% acceptance threshold. cand same-binary FAIL (drift 0.258) though P/C pairs are clean. 17x257 FP16 shows NO regression (+5.2% vs V001 +145%). Direction is consistent but needs either more data or a slightly larger win to reach LOCAL_ACCEPTED.",
+  "local_best": "NONE",
+  "online_worthy": "NO",
+  "online_worthy_reason": "clean delta -4.4% is below 10% threshold despite consistent direction",
+  "retry_required": true,
+  "retry_note": "Consider: (1) more pairs to tighten CI on -4.4% estimate, (2) whether V002 sync fix adds overhead that dilutes the win, (3) accept -4.4% as stable if Main relaxes threshold."
+}

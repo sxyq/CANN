@@ -1,0 +1,23 @@
+{
+  "route": "SCHED-CHAMPION-X",
+  "revision": "V003",
+  "direct_parent": "V002 (LOCAL_BEST)",
+  "parent_source_sha": "de1e93c74338802e646258ada08a8cac1031496a9985e585a5a89015b81bc990",
+  "local_sha256": "d2db679827e4be1fc4c9bd780ee19e74db080a17171a6cc3271a1126a4e65890",
+  "compile_rc": "0/0",
+  "link_rc": "0/0",
+  "correctness_status": "PASS",
+  "correctness_total": 24,
+  "correctness_failures": 0,
+  "single_change_audit": "PASS",
+  "measurement_status": "COMPLETE",
+  "paired_results": {
+    "33x100_fp32": {"median_delta_pct": 0.9, "note": "No improvement over V002 -4.4%. Tail folding makes straggler worse."},
+    "17x257_fp16": {"median_delta_pct": -5.2, "note": "Noise level."}
+  },
+  "local_verdict": "LOCAL_REJECTED",
+  "local_verdict_reason": "Tail-group folding shows no improvement on 33x100 (+0.9% vs V002 -4.4%). Confirms structural ceiling. Recommend PARK ownership lane.",
+  "local_best": "V002 (de1e93c7...)",
+  "park_recommendation": true,
+  "park_rationale": "Structural constraint: rowGroup>1 iff width%8!=0, batched compute requires width%8==0. Ownership win channel is param residency only (-4.4% ceiling). Tail folding, cyclic, gate tuning all marginal. Batched compute headroom lives in mode/DMA lanes (forbidden here)."
+}

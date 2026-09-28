@@ -1,0 +1,253 @@
+--- /Users/sunyiyang/Desktop/Project/cann-main2-r2/VECTOR-MATH-X/phase4/workspaces/VECTOR-MATH-X/VECTOR-MATH-X-V001_kernel.asc	2026-09-27 10:56:13
++++ /Users/sunyiyang/Desktop/Project/cann-main2-r2/VECTOR-MATH-X/phase4/workspaces/VECTOR-MATH-X/VECTOR-MATH-X-V002_kernel.asc	2026-09-27 11:42:27
+@@ -422,7 +422,10 @@
+                         AscendC::PipeBarrier<PIPE_V>();
+                     }
+                 }
+-                AscendC::Muls(valueTile, valueTile, invRms, valid);
++                AscendC::LocalTensor<float> bcastBuf = reduceFp32Buf_.Get<float>();
++                AscendC::Duplicate(bcastBuf, invRms, valid);
++                AscendC::PipeBarrier<PIPE_V>();
++                AscendC::Mul(valueTile, valueTile, bcastBuf, valid);
+                 AscendC::PipeBarrier<PIPE_V>();
+                 if constexpr (AscendC::IsSameType<T, float>::value) {
+                     if (cacheParams) {
+@@ -572,8 +575,11 @@
+             if (!residentParams) {
+                 AscendC::WaitFlag<AscendC::HardEvent::MTE2_V>(paramReady);
+             }
+-            AscendC::Muls(valueLocal, valueLocal, invRms, valid);
++            AscendC::LocalTensor<float> bcastBuf = reduceFp32Buf_.Get<float>();
++            AscendC::Duplicate(bcastBuf, invRms, valid);
+             AscendC::PipeBarrier<PIPE_V>();
++            AscendC::Mul(valueLocal, valueLocal, bcastBuf, valid);
++            AscendC::PipeBarrier<PIPE_V>();
+             if constexpr (AscendC::IsSameType<T, float>::value) {
+                 AscendC::Mul(valueLocal, valueLocal, gammaLocal, valid);
+                 AscendC::PipeBarrier<PIPE_V>();
+@@ -697,8 +703,10 @@
+ 
+ 
+             }
+-
+-
++            for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
++                AscendC::LocalTensor<float> scalarSlot =
++                    reduceFp32Buf_.Get<float>()[batchRow * kSmallFp32ScalarStride];
++            }
+             AscendC::PipeBarrier<PIPE_V>();
+ 
+ 
+@@ -735,7 +743,10 @@
+                 }
+                 AscendC::LocalTensor<float> valueRow = valueLocal[batchRow * width];
+                 AscendC::LocalTensor<T> outputRow = useFirst ? gammaStage : biasStage;
+-                AscendC::Muls(valueRow, valueRow, invRmsValues[batchRow], width);
++                AscendC::LocalTensor<float> bcastBuf = reduceFp32Buf_.Get<float>();
++                    AscendC::Duplicate(bcastBuf, invRmsValues[batchRow], width);
++                    AscendC::PipeBarrier<PIPE_V>();
++                    AscendC::Mul(valueRow, valueRow, bcastBuf, width);
+                 AscendC::PipeBarrier<PIPE_V>();
+                 AscendC::Mul(valueRow, valueRow, gammaFp32, width);
+                 AscendC::PipeBarrier<PIPE_V>();
+@@ -840,8 +851,10 @@
+ 
+ 
+             }
+-
+-
++            for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
++                AscendC::LocalTensor<float> scalarSlot =
++                    reduceFp32Buf_.Get<float>()[batchRow * kSmallFp32ScalarStride];
++            }
+             AscendC::PipeBarrier<PIPE_V>();
+ 
+ 
+@@ -878,7 +891,10 @@
+                 }
+                 AscendC::LocalTensor<float> valueRow = valueLocal[batchRow * width];
+                 AscendC::LocalTensor<T> outputRow = outputBuf_.Get<T>()[batchRow * width];
+-                AscendC::Muls(valueRow, valueRow, invRmsValues[batchRow], width);
++                AscendC::LocalTensor<float> bcastBuf = reduceFp32Buf_.Get<float>();
++                    AscendC::Duplicate(bcastBuf, invRmsValues[batchRow], width);
++                    AscendC::PipeBarrier<PIPE_V>();
++                    AscendC::Mul(valueRow, valueRow, bcastBuf, width);
+                 AscendC::PipeBarrier<PIPE_V>();
+                 FromFloat(outputRow, valueRow, width);
+                 AscendC::PipeBarrier<PIPE_V>();
+@@ -1005,8 +1021,11 @@
+                 }
+                 AscendC::LocalTensor<float> valueTile = valueLocal[col];
+                 AscendC::LocalTensor<T> outputTile = useFirst ? gammaStage : biasStage;
+-                AscendC::Muls(valueTile, valueTile, invRms, kTileElems);
++                AscendC::LocalTensor<float> bcastBuf = reduceFp32Buf_.Get<float>();
++                AscendC::Duplicate(bcastBuf, invRms, kTileElems);
+                 AscendC::PipeBarrier<PIPE_V>();
++                AscendC::Mul(valueTile, valueTile, bcastBuf, kTileElems);
++                AscendC::PipeBarrier<PIPE_V>();
+                 AscendC::Mul(valueTile, valueTile, gammaFp32[col], kTileElems);
+                 AscendC::PipeBarrier<PIPE_V>();
+                 AscendC::Add(valueTile, valueTile, biasFp32[col], kTileElems);
+@@ -1121,7 +1140,10 @@
+                 }
+                 AscendC::LocalTensor<float> valueTile = valueLocal[col];
+                 AscendC::LocalTensor<T> outputTile = outputBuf_.Get<T>()[col];
+-                AscendC::Muls(valueTile, valueTile, invRms, kTileElems);
++                AscendC::LocalTensor<float> bcastBuf = reduceFp32Buf_.Get<float>();
++                AscendC::Duplicate(bcastBuf, invRms, kTileElems);
++                AscendC::PipeBarrier<PIPE_V>();
++                AscendC::Mul(valueTile, valueTile, bcastBuf, kTileElems);
+                 AscendC::PipeBarrier<PIPE_V>();
+                 FromFloat(outputTile, valueTile, kTileElems);
+                 AscendC::PipeBarrier<PIPE_V>();
+@@ -1239,7 +1261,10 @@
+                     useFirst ? outputReadyFirst : outputReadySecond;
+                 const AscendC::TEventID outputRelease =
+                     useFirst ? outputReleaseFirst : outputReleaseSecond;
+-                AscendC::Muls(valueTile, valueTile, invRms, kTileElems);
++                AscendC::LocalTensor<float> bcastBuf = reduceFp32Buf_.Get<float>();
++                AscendC::Duplicate(bcastBuf, invRms, kTileElems);
++                AscendC::PipeBarrier<PIPE_V>();
++                AscendC::Mul(valueTile, valueTile, bcastBuf, kTileElems);
+                 AscendC::PipeBarrier<PIPE_V>();
+                 AscendC::Mul(valueTile, valueTile, gammaLocal[col], kTileElems);
+                 AscendC::PipeBarrier<PIPE_V>();
+@@ -1463,7 +1488,10 @@
+                 AscendC::Sqrt(scalarSlot, scalarSlot, 1);
+ 
+             }
+-
++            for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
++                AscendC::LocalTensor<float> scalarSlot =
++                    reduceFp32Buf_.Get<float>()[batchRow * kSmallFp32ScalarStride];
++            }
+             AscendC::PipeBarrier<PIPE_V>();
+ 
+             SyncVToS();
+@@ -1480,8 +1508,10 @@
+ 
+             for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
+                 AscendC::LocalTensor<float> valueRow = valueLocal[batchRow * rowWidth];
+-                AscendC::Muls(valueRow, valueRow, invRmsValues[batchRow],
+-                              static_cast<int32_t>(rowWidth));
++                AscendC::LocalTensor<float> bcastBuf = reduceFp32Buf_.Get<float>();
++                    AscendC::Duplicate(bcastBuf, invRmsValues[batchRow], static_cast<int32_t>(rowWidth));
++                    AscendC::PipeBarrier<PIPE_V>();
++                    AscendC::Mul(valueRow, valueRow, bcastBuf, static_cast<int32_t>(rowWidth));
+                 AscendC::PipeBarrier<PIPE_V>();
+                 AscendC::Mul(valueRow, valueRow, gammaLocal, static_cast<int32_t>(rowWidth));
+                 AscendC::PipeBarrier<PIPE_V>();
+@@ -1574,8 +1604,10 @@
+ 
+ 
+             }
+-
+-
++            for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
++                AscendC::LocalTensor<float> scalarSlot =
++                    reduceFp32Buf_.Get<float>()[batchRow * kSmallFp32ScalarStride];
++            }
+             AscendC::PipeBarrier<PIPE_V>();
+ 
+ 
+@@ -1603,7 +1635,10 @@
+                     useFirst ? outputReadyFirst : outputReadySecond;
+                 const AscendC::TEventID outputRelease =
+                     useFirst ? outputReleaseFirst : outputReleaseSecond;
+-                AscendC::Muls(valueRow, valueRow, invRmsValues[batchRow], width);
++                AscendC::LocalTensor<float> bcastBuf = reduceFp32Buf_.Get<float>();
++                    AscendC::Duplicate(bcastBuf, invRmsValues[batchRow], width);
++                    AscendC::PipeBarrier<PIPE_V>();
++                    AscendC::Mul(valueRow, valueRow, bcastBuf, width);
+                 AscendC::PipeBarrier<PIPE_V>();
+                 AscendC::Mul(valueRow, valueRow, gammaLocal, width);
+                 AscendC::PipeBarrier<PIPE_V>();
+@@ -1695,8 +1730,10 @@
+ 
+ 
+             }
+-
+-
++            for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
++                AscendC::LocalTensor<float> scalarSlot =
++                    reduceFp32Buf_.Get<float>()[batchRow * kSmallFp32ScalarStride];
++            }
+             AscendC::PipeBarrier<PIPE_V>();
+ 
+ 
+@@ -1720,8 +1757,10 @@
+             for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
+                 AscendC::LocalTensor<float> valueRow =
+                     valueLocal[static_cast<uint64_t>(batchRow) * rowWidth];
+-                AscendC::Muls(valueRow, valueRow, invRmsValues[batchRow],
+-                              static_cast<int32_t>(rowWidth));
++                AscendC::LocalTensor<float> bcastBuf = reduceFp32Buf_.Get<float>();
++                    AscendC::Duplicate(bcastBuf, invRmsValues[batchRow], static_cast<int32_t>(rowWidth));
++                    AscendC::PipeBarrier<PIPE_V>();
++                    AscendC::Mul(valueRow, valueRow, bcastBuf, static_cast<int32_t>(rowWidth));
+                 AscendC::PipeBarrier<PIPE_V>();
+             }
+             if (rowWidth <= static_cast<uint64_t>(kFp32RepeatMaxWidth)) {
+@@ -1828,8 +1867,10 @@
+ 
+ 
+             }
+-
+-
++            for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
++                AscendC::LocalTensor<float> scalarSlot =
++                    reduceFp32Buf_.Get<float>()[batchRow * kSmallFp32ScalarStride];
++            }
+             AscendC::PipeBarrier<PIPE_V>();
+ 
+ 
+@@ -1855,8 +1896,11 @@
+                 for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
+                     const uint64_t valueOffset = static_cast<uint64_t>(batchRow) * rowWidth;
+                     AscendC::LocalTensor<float> valueRow = valueLocal[valueOffset];
+-                    AscendC::Muls(valueRow, valueRow, invRmsValues[batchRow], width);
++                    AscendC::LocalTensor<float> bcastBuf = reduceFp32Buf_.Get<float>();
++                    AscendC::Duplicate(bcastBuf, invRmsValues[batchRow], width);
+                     AscendC::PipeBarrier<PIPE_V>();
++                    AscendC::Mul(valueRow, valueRow, bcastBuf, width);
++                    AscendC::PipeBarrier<PIPE_V>();
+                 }
+                 FromFloat(outputLocal, valueLocal, totalElems);
+                 AscendC::PipeBarrier<PIPE_V>();
+@@ -1882,8 +1926,11 @@
+                 for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
+                     const uint64_t valueOffset = static_cast<uint64_t>(batchRow) * rowWidth;
+                     AscendC::LocalTensor<float> valueRow = valueLocal[valueOffset];
+-                    AscendC::Muls(valueRow, valueRow, invRmsValues[batchRow], width);
++                    AscendC::LocalTensor<float> bcastBuf = reduceFp32Buf_.Get<float>();
++                    AscendC::Duplicate(bcastBuf, invRmsValues[batchRow], width);
+                     AscendC::PipeBarrier<PIPE_V>();
++                    AscendC::Mul(valueRow, valueRow, bcastBuf, width);
++                    AscendC::PipeBarrier<PIPE_V>();
+                 }
+                 if (width <= kFp32RepeatMaxWidth) {
+                     ApplyFp32GammaBiasBatch(valueLocal, gammaFp32, biasFp32, width, batchRows);
+@@ -2886,7 +2933,10 @@
+                 SyncMTE2ToV();
+                 ToFloat(valueLocal, outputLocal[col], valid);
+                 AscendC::PipeBarrier<PIPE_V>();
+-                AscendC::Muls(valueLocal, valueLocal, invRms, valid);
++                AscendC::LocalTensor<float> bcastBuf = reduceFp32Buf_.Get<float>();
++            AscendC::Duplicate(bcastBuf, invRms, valid);
++            AscendC::PipeBarrier<PIPE_V>();
++            AscendC::Mul(valueLocal, valueLocal, bcastBuf, valid);
+                 AscendC::PipeBarrier<PIPE_V>();
+                 FromFloat(outputLocal[col], valueLocal, valid);
+                 AscendC::PipeBarrier<PIPE_V>();
+@@ -2979,7 +3029,10 @@
+                 ToFloat(xFp32, gammaLocal, valid);
+                 ToFloat(residualFp32, biasLocal, valid);
+                 AscendC::PipeBarrier<PIPE_V>();
+-                AscendC::Muls(valueLocal, valueLocal, invRms, valid);
++                AscendC::LocalTensor<float> bcastBuf = reduceFp32Buf_.Get<float>();
++            AscendC::Duplicate(bcastBuf, invRms, valid);
++            AscendC::PipeBarrier<PIPE_V>();
++            AscendC::Mul(valueLocal, valueLocal, bcastBuf, valid);
+                 AscendC::PipeBarrier<PIPE_V>();
+                 AscendC::Mul(valueLocal, valueLocal, xFp32, valid);
+                 AscendC::PipeBarrier<PIPE_V>();

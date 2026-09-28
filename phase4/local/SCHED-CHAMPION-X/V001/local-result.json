@@ -1,0 +1,48 @@
+{
+  "route": "SCHED-CHAMPION-X",
+  "revision": "V001",
+  "direct_parent": "FROZEN_R31B_V011",
+  "parent_source_sha": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "parent_score": 45.16,
+  "official_anchor": 45.16,
+  "single_hypothesis": "HYPOTHESIS-1 GROUP-ALIGNED BALANCED OWNERSHIP",
+  "context_class": "FROZEN_STRONG_BASELINE_TRANSPLANT",
+  "source_path": "phase4/workspaces/SCHED-CHAMPION-X/V001/src/submission.asc",
+  "local_sha256": "ed232872fa1837678a0a05fc16de9f06a725d61ff9d85663193fdc49e8f33678",
+  "compile_rc": "0/0",
+  "link_rc": "0/0",
+  "correctness_status": "PASS",
+  "correctness_total": 24,
+  "correctness_failures": 0,
+  "single_change_audit": "PASS",
+  "measurement_status": "COMPLETE",
+  "measurement_protocol": "local-timing-protocol.md unified: warmup=45, device-event primary, same-binary 2 blocks x 21 samples, 4 interleaved P/C pairs",
+  "measurement_lease": "R2-SCHED-V001-TIMING, device 4, 2026-09-27",
+  "same_binary_results": {
+    "33x100_fp32": {"parent": "PASS (mad/med=0.035, drift=0.028)", "cand": "PASS (mad/med=0.093, drift=0.088)"},
+    "17x256_fp32": {"parent": "FAIL (mad/med=0.377, drift=3.878)", "cand": "FAIL (mad/med=0.301)"},
+    "17x257_fp16": {"parent": "FAIL (mad/med=0.347, drift=0.329)", "cand": "PASS (mad/med=0.033)"},
+    "7x65_fp32": {"parent": "FAIL (mad/med=0.207)", "cand": "PASS (mad/med=0.074)"}
+  },
+  "paired_results_qualified_shape": {
+    "33x100_fp32": {
+      "rowGroup": 2,
+      "pair_deltas_pct": [-91.9, -12.0, -8.8, 0.0],
+      "clean_median_delta_pct": -8.8,
+      "clean_favor_c": 2,
+      "clean_neutral": 1,
+      "outlier_pairs": [1],
+      "note": "pair1 P_MAD=84.96 outlier; clean pairs 2-4"
+    }
+  },
+  "paired_results_blocked_shapes": {
+    "17x256_fp32": {"median_delta_pct": 15.0, "favor": "P 3/4", "note": "control shape, parent sb FAIL (drift 3.878)"},
+    "17x257_fp16": {"median_delta_pct": 145.9, "favor": "P 4/4", "note": "clear regression: rowGroup=16 on 17 rows -> 2 cores vs parent 17 cores, parallelism collapse"},
+    "7x65_fp32": {"median_delta_pct": -26.9, "favor": "mixed 2/2", "note": "parent has severe outliers (MAD=14.48, 5.66); clean pairs favor P +6.8%, +17.5%"}
+  },
+  "local_verdict": "NEEDS_ONE_MORE_LOCAL",
+  "local_verdict_reason": "Only 33x100 FP32 has valid same-binary (both PASS). Clean paired delta -8.8% favors V001 but one pair is neutral (+0.0%) and candidate MAD/med (0.093) is near threshold. 17x257 FP16 shows consistent 4/4 regression (+145.9%) from parallelism collapse (rowGroup=16 -> totalGroups=2 -> 2 cores vs parent 17 cores) but parent same-binary fails so magnitude is unreliable. 17x256 FP32 (control) and 7x65 FP32 have parent same-binary failures. Mixed and incomplete.",
+  "local_best": "NONE",
+  "retry_required": true,
+  "retry_note": "Need cleaner window for 17x256/17x257/7x65 same-binary (parent is noisy). For 17x257 FP16 regression, consider whether H1 group-aligned ownership should cap active cores at min(blockCount, totalGroups) to avoid parallelism collapse when rowGroup is large relative to rowCount."
+}
