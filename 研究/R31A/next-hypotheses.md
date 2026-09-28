@@ -24,7 +24,7 @@ Scope of this file: 3–5 non-duplicate single-mechanism hypotheses from R31A's 
 Additional adjacency noted (not in the hard no-overlap list, but declared):
 - **VECTOR-MATH-X** (MAIN-2, parent `FROZEN_R31B_V011`) owns the RMS denominator pipeline broadly (`invD / mean / epsilon / sqrt / rsqrt / reciprocal / scalar-to-vector`). H1 below is a *minimal primitive substitution* confined to R31A's CachedRows finalize — not a denominator pipeline redesign — and stays on the R31A V016 parent.
 - **BATCH-RESIDENT-X** owns parameter staging / gamma-bias residency / row-batch parameter reuse. H2 below is about *where the row-scale is applied*, not about caching gamma/bias across rows.
-- **UB-LIVENESS-X** owns buffer lifetime / aliasing / peak-UB budgeting on its own baseline. H4 below is a same-footprint role-reassignment inside one function, not a live-set or aliasing redesign.
+- **UB-LIVENESS-X** owns buffer lifetime / aliasing / peak-UB budgeting on its own parent code. H4 below is a same-footprint role-reassignment inside one function, not a live-set or aliasing redesign.
 
 ---
 
@@ -58,7 +58,7 @@ Consequence: V021's `SyncMTE3ToV` placement change lives in `ProcessWideFp32Cach
   SyncVToS(); invRms = 1.0f / xLocal.GetValue(0); SyncSToV();
   ```
   Replace `Duplicate + Sqrt + scalar 1.0f/x` with `Duplicate + Rsqrt` (or `Rsqrt` directly on the one-element tensor), then one `GetValue` for `invRms`. Removes one scalar division and shortens the V/S tail.
-- **BOTTLENECK:** Per-row scalar tail: 2 V→S + 2 S→V round-trips and a scalar divide on every row. At D=32768 the vector work dominates, but the tail still gates the pass-1 → pass-2 transition.
+- **BOTTLENECK:** Per-row scalar tail: 2 V→S + 2 S→V round-trips and a scalar divide on every row. At D=32768 the vector work dominates, but the tail still holds up the pass-1 → pass-2 transition.
 - **EXPECTED_SHAPES:** rows=2 D=32768 (CachedRows, the exercising shape). Any CachedRows shape.
 - **WHY_IT_MAY_HELP:** One fewer scalar op per row and one less V/S boundary; `Rsqrt` is a single hardware vector op.
 - **WHY_IT_MAY_FAIL:** `Rsqrt` numerics differ slightly from `Sqrt` then divide; correctness must re-pass the 1e-4 FP32 tolerance. The tail may already be hidden under MTE2, so the measured effect could be ~0 (as V021's MTE3-wait deferral was).
@@ -146,7 +146,7 @@ Consequence: V021's `SyncMTE3ToV` placement change lives in `ProcessWideFp32Cach
   - R31A **V020** targeted the *same pass-1 MTE2/V overlap goal* but via a **different mechanism**: it added a second staging pair (`kWideFp32CachedStageElems = tile/2` dual slots) plus four event IDs, and it correctness-failed (507035). This hypothesis adds **no** buffer pair — it only reassigns the existing x/res roles and uses the value-tail as the reduce workspace, so the same-footprint liveness change is a distinct mechanism from V020's dual-slot prefetch. V020 is retained as a failed revision and is not mixed in.
   - R31A **V021** moved the `SyncMTE3ToV` (pass-2 output wait). This is pass-1 input-staging liveness.
   - ASYNC-TRIPLE-X owns full MTE2/V/MTE3 triple overlap; this is one boundary (residual release) in one function.
-  - UB-LIVENESS-X owns buffer lifetime/aliasing as a *design axis* on its own baseline; this is a minimal same-footprint role flip in R31A's CachedRows, not a live-set/aliasing redesign.
+  - UB-LIVENESS-X owns buffer lifetime/aliasing as a *design axis* on its own parent code; this is a minimal same-footprint role flip in R31A's CachedRows, not a live-set/aliasing redesign.
   - R31B / DTYPE-SPECIAL-X / MIX-A: no such pass-1 role reassignment.
 - **MINIMAL_OFAT_DIFF:** In `ProcessWideFp32CachedRows` pass 1 only: change which buffer receives the square and which receives the `ReduceSum` workspace, and split the `SyncVToMTE2` into a residual release after `Add` plus an x release after `ReduceSum`. Tile size, arithmetic, and pass 2 unchanged.
 - **EXPECTED_LOCAL_PROBES:** rows=2 D=32768 blocks=1, same-binary + interleaved P/C vs V016. Secondary D=24576 no-regress control.
