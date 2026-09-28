@@ -1,0 +1,47 @@
+--- 本地实验/R31A/V025/submission.asc	2026-09-29 06:52:19
++++ 本地实验/R31A/V026/submission.asc	2026-09-29 07:24:44
+@@ -2075,18 +2075,42 @@
+             AscendC::Muls(valueLocal, valueLocal, invRms, rowWidth);
+             AscendC::PipeBarrier<PIPE_V>();
+ 
++            // H5 pass-2 parameter staging liveness: release the gamma staging
++            // slot after the Mul and the bias staging slot after the Add, and
++            // prefetch the next tile's gamma/bias into the freed slots so the
++            // MTE2 loads overlap the current tile's Add and Store. Same UB
++            // footprint; the affine expression order (y*s)*g + b is unchanged.
++            bool paramsPrefetched = false;
+             for (uint64_t col = 0; col < rowWidth; col += kWideFp32CachedTileElems) {
+                 const int32_t valid = WideFp32CachedTileLength(rowWidth - col);
+                 AscendC::LocalTensor<float> gammaLocal = xBuf_.Get<float>();
+                 AscendC::LocalTensor<float> biasLocal = residualBuf_.Get<float>();
+-                Load(gammaLocal, gammaGm_, col, valid);
+-                Load(biasLocal, biasGm_, col, valid);
++                if (!paramsPrefetched) {
++                    Load(gammaLocal, gammaGm_, col, valid);
++                    Load(biasLocal, biasGm_, col, valid);
++                }
+                 SyncMTE2ToV();
+                 AscendC::Mul(valueLocal[col], valueLocal[col], gammaLocal, valid);
+                 AscendC::PipeBarrier<PIPE_V>();
++                const uint64_t nextCol = col + static_cast<uint64_t>(valid);
++                const bool hasNext = nextCol < rowWidth;
++                const int32_t nextValid =
++                    hasNext ? WideFp32CachedTileLength(rowWidth - nextCol) : 0;
++                // Free the gamma slot (xBuf_) and prefetch the next tile's
++                // gamma; the MTE2 load overlaps the Add and Store below.
++                SyncVToMTE2();
++                if (hasNext) {
++                    Load(gammaLocal, gammaGm_, nextCol, nextValid);
++                }
+                 AscendC::Add(valueLocal[col], valueLocal[col], biasLocal, valid);
+                 AscendC::PipeBarrier<PIPE_V>();
++                // Free the bias slot (residualBuf_) and prefetch the next
++                // tile's bias.
+                 SyncVToMTE2();
++                if (hasNext) {
++                    Load(biasLocal, biasGm_, nextCol, nextValid);
++                }
++                paramsPrefetched = hasNext;
+                 SyncVToMTE3();
+                 Store(outputGm_, rowOffset + col, valueLocal[col], valid);
+                 SyncMTE3ToV();

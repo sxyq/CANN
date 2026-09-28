@@ -1,0 +1,55 @@
+{
+  "ROUTE": "R31A",
+  "REVISION": "V026",
+  "DIRECT_PARENT": "R31A-V025",
+  "PARENT_SOURCE_SHA": "1475116735f390b426fc694d45fcdcbc676ed0758ef326d54d8c43d35e16b4fe",
+  "PARENT_SCORE": "LOCAL chain -6.8% vs V016 (D32768)",
+  "SINGLE_HYPOTHESIS": "In ProcessWideFp32CachedRows pass 2, release the gamma staging slot after the Mul and the bias staging slot after the Add, and prefetch the next tile's gamma/bias into the freed slots so the MTE2 loads overlap the current tile's Add and Store. Same UB footprint. The affine expression order (y * invRms) * gamma + bias is unchanged. This is the pass-2 analog of H4/V025's pass-1 residual staging liveness.",
+  "CONTEXT_CLASS": "HISTORICAL_EXPLOIT",
+  "WHY_NOT_DUPLICATE": "V025/H4 was pass-1 residual staging release (different pass, different buffer). V020 was a pass-1 dual-slot prefetch that ADDED a second staging pair plus four event IDs and correctness-failed 507035; V026 adds no pair and is pass-2. V021 moved the pass-2 SyncMTE3ToV (store-drain wait); V026 does not touch the store drain, only the parameter staging lifetime. R31B H1 (store drain deferral) and STORE-EPILOGUE-X H1 (blocked writeback) are untouched. EPILOGUE-ARITH (Mul/Add fusion) untouched: Mul and Add remain separate with their barriers. SHAPE-TILING (tile constants) untouched. Full analysis in 研究/R31A/next-hypotheses-v2.md H5 section.",
+  "FILES_CHANGED": [
+    "本地实验/R31A/V026/submission.asc: ProcessWideFp32CachedRows pass 2 tile loop only (staging liveness + next-tile parameter prefetch)",
+    "本地实验/R31A/V026/source-meta.json: declaration",
+    "本地实验/R31A/V026/diff.patch",
+    "本地实验/R31A/V026/submission.sha256"
+  ],
+  "SOURCE_SHA": "7f2029e478d7675e02c2e017b0db3eaf33ae5dc0fa478479b340f441ab46bb18",
+  "SOURCE_SHA256": "7f2029e478d7675e02c2e017b0db3eaf33ae5dc0fa478479b340f441ab46bb18",
+  "SOURCE_PATH": "本地实验/R31A/V026/submission.asc",
+  "source_commit": "pending",
+  "submission_id": "NONE_NOT_SUBMITTED",
+  "local_sha256": "7f2029e478d7675e02c2e017b0db3eaf33ae5dc0fa478479b340f441ab46bb18",
+  "remote_sha256": "NOT_APPLICABLE_LOCAL_ONLY",
+  "official_score": "NONE",
+  "decision": "PENDING_BUILD_CORRECTNESS_MEASUREMENT",
+  "DECLARATION": {
+    "ROUTE": "R31A",
+    "REVISION": "V026",
+    "DIRECT_PARENT": "V025",
+    "PARENT_SOURCE_SHA": "1475116735f390b426fc694d45fcdcbc676ed0758ef326d54d8c43d35e16b4fe",
+    "PARENT_SCORE": "LOCAL chain -6.8% vs V016 (D32768)",
+    "SINGLE_HYPOTHESIS": "H5 pass-2 参数 staging 提前释放 + 预取下一 tile gamma/bias（同 UB 占用）",
+    "CONTEXT_CLASS": "HISTORICAL_EXPLOIT",
+    "WHY_NOT_DUPLICATE": "见 next-hypotheses-v2.md H5；H4 是 pass-1 residual，本假设是 pass-2 参数"
+  },
+  "MAIN1_SELECTION_DATE": "2026-09-29",
+  "CONSTRAINTS": {
+    "parent_module_rebuild": "REQUIRED: the paired harness parent module must be rebuilt from V025 (14751167...) so the OFAT comparison is V025 vs V026. Both module SHAs go in the record.",
+    "no_Rsqrt_Reciprocal": "honored",
+    "same_UB_footprint": "honored; no new buffer pair (D=32768 free UB is about 4 KB, a second gamma/bias pair needs 61440 B)",
+    "correctness_priority": "same risk class as H4/V025 (staging-liveness sync split); H4 passed 4 correctness runs, use that as the proven pattern."
+  },
+  "MECHANISM_DETAIL": {
+    "per_tile": "Load(gamma,bias) unless prefetched → SyncMTE2ToV → Mul(value,gamma) → PipeBarrier → SyncVToMTE2 + prefetch next gamma into xBuf_ → Add(value,bias) → PipeBarrier → SyncVToMTE2 + prefetch next bias into residualBuf_ → SyncVToMTE3 → Store → SyncMTE3ToV",
+    "overlap": "next tile's gamma MTE2 overlaps the current tile's Add and Store; next tile's bias MTE2 overlaps the current tile's Store",
+    "prefetch_handoff": "paramsPrefetched flag carries across iterations so a tile that received prefetched gamma/bias skips its own loads; the top SyncMTE2ToV still waits for the prefetched loads",
+    "blanket_sync_note": "each SyncVToMTE2 releases both staging slots, but only the intended slot is written by the prefetch; the other slot keeps its live data (gamma read by Mul, bias read by Add) exactly as the H4/V025 pass-1 pattern does."
+  },
+  "PRECISION_RISK": "None. Same Mul and Add on the same values in the same order; only the staging lifetime and load timing change.",
+  "EVALUATION_PLAN": {
+    "primary": "rows=2 D=32768 blocks=1 (the only probe shape exercising CachedRows)",
+    "same_code_control": "rows=2 D=24576 blocks=1 (batch path on the V025 parent, edit not exercised; noise band)",
+    "noise_band": "measure each round",
+    "contaminated_blocks": "mark parent/candidate MAD > 0.25 (and especially > 0.5); exclude from direction reading, retain raw"
+  }
+}
