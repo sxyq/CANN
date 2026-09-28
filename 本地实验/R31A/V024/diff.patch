@@ -1,0 +1,24 @@
+--- 线上结果/R31A/V016/submission.asc	2026-09-29 04:23:22
++++ 本地实验/R31A/V024/submission.asc	2026-09-29 06:30:06
+@@ -2034,6 +2034,12 @@
+             const float invRms = 1.0f / xLocal.GetValue(0);
+             SyncSToV();
+             SyncVToMTE2();
++
++            // Hoist the invRms row-scale out of the per-tile affine loop: one
++            // full-row Muls replaces one full-tile Muls and one PipeBarrier per
++            // tile. The affine expression order stays (y*s)*g + b.
++            AscendC::Muls(valueLocal, valueLocal, invRms, rowWidth);
++            AscendC::PipeBarrier<PIPE_V>();
+ 
+             for (uint64_t col = 0; col < rowWidth; col += kWideFp32CachedTileElems) {
+                 const int32_t valid = WideFp32CachedTileLength(rowWidth - col);
+@@ -2042,8 +2048,6 @@
+                 Load(gammaLocal, gammaGm_, col, valid);
+                 Load(biasLocal, biasGm_, col, valid);
+                 SyncMTE2ToV();
+-                AscendC::Muls(valueLocal[col], valueLocal[col], invRms, valid);
+-                AscendC::PipeBarrier<PIPE_V>();
+                 AscendC::Mul(valueLocal[col], valueLocal[col], gammaLocal, valid);
+                 AscendC::PipeBarrier<PIPE_V>();
+                 AscendC::Add(valueLocal[col], valueLocal[col], biasLocal, valid);
