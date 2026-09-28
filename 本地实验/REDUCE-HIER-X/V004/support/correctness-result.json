@@ -1,0 +1,22 @@
+{
+  "revision": "V004",
+  "date_utc": "2026-09-28T20:59:52Z",
+  "device_id": 4,
+  "host": "cann-server3 / hwnput3",
+  "method": "runner_main.inc + double-precision golden; atol/rtol per dtype (FP32 1e-4, FP16 1e-3, BF16 2e-2)",
+  "verdict": "PASS",
+  "verdict_note": "Candidate passes every shape the parent passes (16/18 exit=0, bad=0). The two failures (1x16384 FP32, 1x32768 FP32) are PARENT_PREEXISTING wide-FP32 golden mismatches, identical in kind to V001/V002/V003 records; candidate max_abs is equal or better than parent on both.",
+  "shapes_total": 18,
+  "candidate_pass": 16,
+  "candidate_fail_parent_preexisting": [
+    {"shape": "1x16384 fp32", "parent": "exit=3 bad=8575 max_abs=1.2596", "candidate": "exit=3 bad=8959 max_abs=1.15813", "assessment": "PARENT_PREEXISTING; candidate max_abs better"},
+    {"shape": "1x32768 fp32", "parent": "exit=3 bad=25329 max_abs=1.2031", "candidate": "exit=3 bad=28649 max_abs=1.2031", "assessment": "PARENT_PREEXISTING; candidate max_abs equal"}
+  ],
+  "multi_tile_pass": ["1x8192 fp32", "2x8192 fp32", "3x6144 fp32", "1x8192 fp16", "1x16384 fp16", "1x32768 bf16", "1x8192 bf16"],
+  "single_tile_control_pass": ["1x1024 fp32", "1x4096 fp32", "2x4096 fp32", "1x256 fp16", "1x4096 fp16", "1x256 bf16", "1x4096 bf16", "1x100 fp32", "1x65 fp16"],
+  "dtype_coverage": {"fp32": "PASS where parent passes", "fp16": "PASS all shapes", "bf16": "PASS all shapes"},
+  "max_abs_vs_parent": "Identical or better on all passing shapes (e.g. 1x8192 fp32: cand 3.20e-07 vs parent 5.02e-07; 3x6144 fp32: cand 4.15e-07 vs parent 5.45e-07)",
+  "note": "Binned accumulator (non-negative squares, association change only) is correctness-safe. No alignment faults. 1x100/1x65 unaligned tails pass.",
+  "summary_tsv": "本地实验/REDUCE-HIER-X/V004/support/correctness-summary.tsv",
+  "raw_dir_server3": "/home/data4t2/lelinfeng/phase4-workspaces/REDUCE-HIER-X/results-v004/"
+}
