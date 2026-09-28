@@ -213,3 +213,10 @@ LOCAL_HEAD == REMOTE_HEAD after each push.
 No PARENT_UNRESOLVED: both routes have verified parent SHAs.
 
 Remaining dirty in source worktrees after this pass: MIX-A 0, WIDE-X-FRESH4 0.
+
+## MAIN-1 worktree removal (2026-09-28)
+
+All six cann-sixlane worktrees removed after consolidation audit (worktree-cleanup-audit.tsv):
+R31B, R31A, MIX-A, WIDE-X-FRESH4, MODE-X-R015C, DTYPE-SPECIAL-X.
+Local route branches and remote route branches KEPT as evidence.
+Evidence lives in canonical phase4/local/<ROUTE>/ and phase4/online/<ROUTE>/.
