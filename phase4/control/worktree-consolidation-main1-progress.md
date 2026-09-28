@@ -69,9 +69,74 @@ Ledger row for V001 already present; no append needed.
 - SHA256 spot-check on 5 key files: all match worktree bytes.
 - DTYPE `submission.sha256` references `submission.asc` hash `e2717055199f541d98d85ceef2e011e52e2749d932ca954dc887868de7db880f` — matches.
 
-## Notes and residual items
+## R31B
+
+Source worktree: `/Users/sunyiyang/Desktop/Project/cann-sixlane/R31B`
+Route branch: `exec/sixlane-20260923-r31b` (no upstream)
+Worktree dirty at start: 0
+Worktree HEAD: `16249f38`
+
+### Packages recovered
+
+| Package | Files copied | Commit |
+|---|---|---|
+| `phase4/local/R31B/V016/` (missing + updated) | 20 added + 6 updated | `0c318ba4` |
+
+V016 five-piece: submission.asc, submission.sha256, source-meta.json, diff.patch, local-result.json — all present. submission.asc SHA256 `9f5c353e65a13a740fe97dc7e6415df032d27560831a3ad142c77592b8208eb5` preserved.
+
+Parent verification: PROVEN — `phase4/online/R31B/V011/submission.asc` SHA256 matches `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`.
+
+source-meta.json fields filled: OFFICIAL_ANCHOR, SOURCE_SHA256, SOURCE_COMMIT, SOURCE_PATH, REMOTE_BRANCH, BUILD_STATUS, CORRECTNESS_STATUS, PARENT_VERIFICATION.
+
+Content updates (canonical was older/incomplete): source-meta.json (missing SOURCE_SHA), LOAD_QUALITY (missing correctness/probe/window snapshots), compile-evidence.txt (missing final artifact SHAs and correctness results), support/runtime_probe.cpp, runtime_probe_fp32.cpp, CMakeLists.probe.txt (worktree has repeats=0 correctness-only mode and wider validation).
+
+NOT updated: `phase4/workspaces/R31B/CMakeLists.txt` — canonical version is newer (includes V015 target absent from worktree).
+
+`phase4/online/R31B/` — fully identical, nothing to copy.
+
+Ledger rows for V001–V016 already present; consolidation note appended to V016 row.
+
+## R31A
+
+Source worktree: `/Users/sunyiyang/Desktop/Project/cann-sixlane/R31A`
+Route branch: `exec/sixlane-20260923-r31a` (no upstream)
+Worktree dirty at start: 1 modified (`V021/local-result.json`)
+Worktree HEAD at start: `f0dc0cbc`
+
+### Route-branch commit first
+
+`c2604bf7` — committed dirty `V021/local-result.json` (D5 R15 paired timing block and verdict update) on the route branch (no upstream, no push).
+
+### Packages recovered
+
+| Package | Files copied | Commit |
+|---|---|---|
+| `phase4/local/R31A/V020/` + workspaces V020 sources | 12 | `9fac2bc8` |
+| `phase4/local/R31A/V021/` + workspaces V021 sources + CMakeLists | 164 | `33f58a95` |
+
+V020 five-piece: submission.asc, source-meta.json, local-result.json present. MISSING in source (not fabricated): submission.sha256, diff.patch. submission.asc SHA256 `3249033942141c24df66f7e97ffa96ffe193f8eec55e992f57fac2948fd70243` preserved.
+
+V021 five-piece: submission.asc, submission.sha256, source-meta.json, diff.patch, local-result.json — all present. submission.asc SHA256 `4f5bfc319b72d1f0bcfd453bc92e80ac64216719898757292daf1aa1b73b6063` preserved.
+
+Parent verification: PROVEN for both — `support/parent_v016_submission.asc` SHA256 matches `dd13093823c885e785a650abff4863827e652eb8607ad0621a96eb31b6764fa0` (also matches `workspaces/R31A/R31A-V016-submission.asc`).
+
+source-meta.json fields filled for both: OFFICIAL_ANCHOR, SOURCE_SHA, SOURCE_SHA256, SOURCE_COMMIT, SOURCE_PATH, REMOTE_BRANCH, BUILD_STATUS, CORRECTNESS_STATUS, PARENT_VERIFICATION.
+
+Workspaces: added R31A-V020-device.cpp, R31A-V021-device.cpp, compile_adapter_v020.{asc,cpp}, compile_adapter_v021.{asc,cpp}; updated CMakeLists.txt to V021 target (canonical was older, pointing to V017).
+
+Canonical already held extensive `V021/support/results/` measurement files (D1/D3/D5/D6/D7 runs from 2026-09-27) not in the worktree — left untouched; `git add` on the V021 directory also brought those previously-untracked files under tracking without modifying their bytes.
+
+`phase4/online/R31A/` — fully identical, nothing to copy.
+
+V019 source-meta.json: semantically identical between worktree and canonical (JSON formatting only); canonical left unchanged.
+
+Ledger rows for V001–V021 already present; consolidation notes appended to V020 and V021 rows.
+
+## Notes and residual items (R31B/R31A pass)
 
 - Commit `ac0eb066` accidentally included 19 already-staged `phase4/local/MIX-A/V007/` files from a parallel consolidation agent. Not amended (already pushed; amend rules not met). MIX-A content is valid evidence and is in-scope for a different consolidation pass.
-- Parallel agents (R31A, R31B) commit and push on the same canonical branch. Staging must be verified with `git diff --cached` before every commit.
-- Canonical working tree still carries dirty/untracked files from other routes (ALIGN-TAIL-X, BATCH-RESIDENT-X, SCHED-ROWGROUP-X, MIX-A, R31A, WIDE-X, etc.) — untouched by this pass.
-- Remaining dirty in source worktrees after this pass: MODE-X-R015C 0, DTYPE-SPECIAL-X 0.
+- Parallel agents commit and push on the same canonical branch. Staging must be verified with `git diff --cached` before every commit.
+- Canonical working tree still carries dirty/untracked files from other routes — untouched by this pass.
+- Remaining dirty in source worktrees after this pass: R31B 0, R31A 0.
+- R31B V020 is missing submission.sha256 and diff.patch in the source worktree (never produced); not fabricated.
+- R31A V021 local-result.json reflects D5 R15 timing block; canonical also holds later D1/D3/D6/D7 measurement results under support/results/ that postdate the worktree local-result — those are preserved but not yet reflected in local-result.json.
