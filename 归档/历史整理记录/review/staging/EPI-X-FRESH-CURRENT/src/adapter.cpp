@@ -1,0 +1,12 @@
+#include <cstdint>
+#ifndef TENSOR_GROUP_INFO_DEFINED
+#define TENSOR_GROUP_INFO_DEFINED
+struct TensorInfo { const int64_t* shape; int64_t numDims; int32_t dtype; };
+struct TensorGroupInfo { const TensorInfo* tensors; int64_t numTensors; };
+#endif
+#ifndef ACLRT_STREAM_DEFINED
+#define ACLRT_STREAM_DEFINED
+using aclrtStream = void*;
+#endif
+#include "submission.asc"
+int main(){return 0;}
