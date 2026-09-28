@@ -8,8 +8,8 @@
   "single_hypothesis": "W1 FullCache inter-pass prologue: hoist pass-2 tile-0 gamma/bias MTE2 to right after the last invRms Sqrt (when xBuf_/residualBuf_ are free), overlapping the remaining scalar tail; pass-2 tile-0 skips the redundant Load.",
   "context_class": "CHAMPION_PIPELINE_SCHEDULE",
   "approval_doc": "MAIN-2 inbox 2026-09-28 W1 APPROVED",
-  "local_sha256": "a4efe215eabc2b2af4c84756b266c057270a16731f2c85ed60ad8f509943ffdc",
-  "changed_surface": "ProcessWideFp32FullCacheRows only: (1) added paramTile0Loaded flag; (2) after last invRms Sqrt+PipeBarrier issue SyncVToMTE2 + gamma/bias tile-0 Load; (3) pass-2 tile loop skips Load for tile 0 when already issued. SyncMTE2ToV retained.",
+  "local_sha256": "1a0b6e5841ef75c162e52ea01ac43b07889152bacec3bbbf8173fdcd087908fc",
+  "changed_surface": "ProcessWideFp32FullCacheRows only: (1) invRms Duplicate/Sqrt moved to residualBuf_ (same ops/values) so xBuf_ is free after ReduceSum workspace; (2) after last row Sqrt issue early gamma Load into xBuf_ overlapping Duplicate/Sqrt/scalar tail; (3) after last row GetValue issue early bias Load into residualBuf_; (4) pass-2 tile-0 skips Load when already issued. Bugfix note: first draft loaded into xBuf_ before GetValue read it — fixed.",
   "unchanged": [
     "all other process paths (LP, NarrowMid, small, batched, generic)",
     "queue depths and UB buffer sizes",

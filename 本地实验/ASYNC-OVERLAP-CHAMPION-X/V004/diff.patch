@@ -1,5 +1,5 @@
 --- 线上结果/R31B/V011/submission.asc	2026-09-29 04:22:43
-+++ 本地实验/ASYNC-OVERLAP-CHAMPION-X/V004/submission.asc	2026-09-29 07:33:17
++++ 本地实验/ASYNC-OVERLAP-CHAMPION-X/V004/submission.asc	2026-09-29 07:38:45
 @@ -2107,6 +2107,7 @@
              float invRmsValues[kWideFullYMaxRows] = {};
              AscendC::LocalTensor<float> valueLocal = valueFp32Buf_.Get<float>();
@@ -8,27 +8,41 @@
  
              // Keep the complete y row for each member of this two-row batch.
              // x/residual are reused as the square and reduction work tiles.
-@@ -2150,6 +2151,19 @@
-                 AscendC::Duplicate(xLocal, meanSquare, 1);
-                 AscendC::Sqrt(xLocal, xLocal, 1);
+@@ -2147,12 +2148,29 @@
+                 const float squareSum = residualLocal.GetValue(0);
+                 const float meanSquare = squareSum * invRowWidth + epsilon;
+                 SyncSToV();
+-                AscendC::Duplicate(xLocal, meanSquare, 1);
+-                AscendC::Sqrt(xLocal, xLocal, 1);
++                // V004 W1: do Duplicate/Sqrt in residualBuf_ (same ops/values) so
++                // xBuf_ is free after the ReduceSum workspace use. Issue pass-2
++                // tile-0 gamma load into xBuf_ here; it overlaps Duplicate/Sqrt
++                // and the scalar tail below.
++                AscendC::Duplicate(residualLocal, meanSquare, 1);
++                AscendC::Sqrt(residualLocal, residualLocal, 1);
                  AscendC::PipeBarrier<PIPE_V>();
-+                // V004 W1: on the last batchRow xBuf_/residualBuf_ are free after
-+                // this Sqrt. Issue pass-2 tile-0 param load now so it overlaps
-+                // the remaining scalar tail below.
+-                SyncVToS();
+-                invRmsValues[batchRow] = 1.0f / xLocal.GetValue(0);
 +                if (batchRow + 1 == batchRows) {
 +                    SyncVToMTE2();
 +                    AscendC::LocalTensor<float> gammaEarly = xBuf_.Get<float>();
-+                    AscendC::LocalTensor<float> biasEarly = residualBuf_.Get<float>();
 +                    Load(gammaEarly, gammaGm_, 0, tileWidth < static_cast<int32_t>(rowWidth)
-+                        ? tileWidth : static_cast<int32_t>(rowWidth));
-+                    Load(biasEarly, biasGm_, 0, tileWidth < static_cast<int32_t>(rowWidth)
 +                        ? tileWidth : static_cast<int32_t>(rowWidth));
 +                    paramTile0Loaded = true;
 +                }
-                 SyncVToS();
-                 invRmsValues[batchRow] = 1.0f / xLocal.GetValue(0);
++                SyncVToS();
++                invRmsValues[batchRow] = 1.0f / residualLocal.GetValue(0);
                  SyncSToV();
-@@ -2188,8 +2202,12 @@
++                if (batchRow + 1 == batchRows && paramTile0Loaded) {
++                    SyncVToMTE2();
++                    AscendC::LocalTensor<float> biasEarly = residualBuf_.Get<float>();
++                    Load(biasEarly, biasGm_, 0, tileWidth < static_cast<int32_t>(rowWidth)
++                        ? tileWidth : static_cast<int32_t>(rowWidth));
++                }
+             }
+             SyncVToMTE2();
+ 
+@@ -2188,8 +2206,12 @@
                      AscendC::WaitFlag<AscendC::HardEvent::MTE3_V>(storeRelease1);
                      storeOutstanding1 = false;
                  }
