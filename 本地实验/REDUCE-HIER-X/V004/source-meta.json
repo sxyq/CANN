@@ -1,0 +1,29 @@
+{
+  "ROUTE": "REDUCE-HIER-X",
+  "REVISION": "V004",
+  "REVISION_KIND": "PERFORMANCE_SINGLE_HYPOTHESIS",
+  "DIRECT_PARENT": "FROZEN_R31B_V011",
+  "PARENT_SOURCE_SHA": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "PARENT_SCORE": "45.16",
+  "OFFICIAL_ANCHOR": "45.16",
+  "CONTEXT_CLASS": "FROZEN_STRONG_BASELINE_REDUCTION_TOPOLOGY",
+  "MAIN_APPROVAL": "MAIN-2 2026-09-29: N1 approved as V004 SINGLE_HYPOTHESIS; path A (no parent profiling); DIRECT_PARENT=FROZEN_R31B_V011 agreed; E2/E3 read-only authorized",
+  "ASSIGNED_HYPOTHESIS": "N1 Binned streaming single-stage square-sum: replace the two-stage (per-tile ReduceSum -> partial bank -> collapse ReduceSum) with one-stage binned accumulation. Each tile's square vector is chunk-Added into a 128-bin FP32 accumulator (bin j receives squares j, 128+j, ...); zero intermediate PipeBarrier; one ReduceSum(acc, work, 128) per row produces squareSum. Per-row ReduceSum calls drop from tileCount+1 to 1.",
+  "SINGLE_HYPOTHESIS_AS_DELIVERED": "S1 Process() generic first-pass (only when tileCount >= 2; tileCount==1 keeps parent structure as negative control), S2 ProcessWideFp32FullCacheRows, S3 ProcessFp32FullRowOutputPipelined. Binned Adds into a W=128 accumulator (32B-aligned chunks) + one final ReduceSum(128). Square Mul, mean/epsilon tail, invRms sequence, GetValue count (2/row), output pass, row scheduling, dtype dispatch, DMA layout, tileElems, and all existing PipeBarrier/SyncVToS/SyncSToV positions unchanged. Wide FP32 reduceFp32Buf_ sized to kWideAccOffset+kBinWidth (256 floats) so the cross-tile accumulator fits after the per-row slots; ChooseWideFullYRows inputs and decisions unchanged.",
+  "SINGLE_CHANGE_AUDIT": "PASS (one conceptual mechanism: how squares become row squareSum; the wide reduceFp32Buf_ resize is the same reduction-workspace variable)",
+  "SOURCE_PATH": "本地实验/REDUCE-HIER-X/V004/submission.asc",
+  "SOURCE_SHA": "1926a2f91491981f06424502dde96356661b5d5c5dc30ae190a0e5935265218d",
+  "SOURCE_LINES": 3603,
+  "SOURCE_BYTES": 192984,
+  "FILES": [
+    "本地实验/REDUCE-HIER-X/V004/REVISION-DECLARATION.md",
+    "本地实验/REDUCE-HIER-X/V004/submission.asc",
+    "本地实验/REDUCE-HIER-X/V004/submission.sha256",
+    "本地实验/REDUCE-HIER-X/V004/source-meta.json",
+    "本地实验/REDUCE-HIER-X/V004/diff.patch"
+  ],
+  "WHY_NOT_DUPLICATE": "Not V001 fold (V001 keeps per-tile ReduceSum and folds 1-element partials; V004 removes per-tile ReduceSum and bins raw square vectors). Not V002 tree (V002 is a per-tile manual Add tree with per-level PipeBarrier, refuted +6.6%; V004 has no tree, no barrier chain, cross-tile binning). Not V003 short-span (V003 keeps per-tile ReduceSum and shortens its span; V004 removes the per-tile call entirely). Not REDUCE-INVSCALE-X OPT-4 whole-row (FP32 needs D*4B, judged infeasible; V004 uses a 128-bin accumulator, 512B).",
+  "EXPECTED_PROBES": "1x32768 FP32 (tileCount=8), 1x16384 FP32 (4), 8x8192 FP32 (2); negative control 1x4096 FP32 (tileCount=1, untouched S5 path)",
+  "DECISION": "PENDING_COMPILE",
+  "CLEANUP": "Started from frozen parent source (线上结果/R31B/V011/submission.asc). No shared control modified. No other route touched. No CANNJudge submission."
+}

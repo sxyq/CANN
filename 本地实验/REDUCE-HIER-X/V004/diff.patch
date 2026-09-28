@@ -1,0 +1,185 @@
+--- /Users/sunyiyang/Desktop/Project/cann-m2-reduce/线上结果/R31B/V011/submission.asc	2026-09-29 04:22:34
++++ submission.asc	2026-09-29 04:54:59
+@@ -71,13 +71,13 @@
+                 wideFullYRows_ = ChooseWideFullYRows(rowWidth, sizeof(float),
+                                                      2, sizeof(float), 0, tileElems);
+                 wideFullYTileElems_ = tileElems;
+-                const int32_t reduceStride = kWideFullYReduceStride;
+                 pipe_.InitBuffer(xBuf_, tileElems * sizeof(float));
+                 pipe_.InitBuffer(residualBuf_, tileElems * sizeof(float));
+                 pipe_.InitBuffer(valueFp32Buf_,
+                                  yElemsPerRow * wideFullYRows_ * sizeof(float));
++                // N1: per-row slots plus one binned accumulator (kBinWidth).
+                 pipe_.InitBuffer(reduceFp32Buf_,
+-                                 wideFullYRows_ * reduceStride * sizeof(float));
++                                 (kWideAccOffset + kBinWidth) * sizeof(float));
+             } else if constexpr (std::is_same<T, half>::value) {
+                 wideFullYRows_ = ChooseWideFullYRows(rowWidth, sizeof(half),
+                                                      4, sizeof(half), 3, tileElems);
+@@ -293,6 +293,14 @@
+                 (rowWidth + static_cast<uint64_t>(kTileElems) - 1) /
+                 static_cast<uint64_t>(kTileElems));
+             int32_t tileIndex = 0;
++            // N1: binned single-stage square-sum fires only where the parent
++            // two-stage structure exists (tileCount >= 2).  tileCount == 1
++            // keeps the parent's per-tile ReduceSum + collapse untouched.
++            const bool useBinned = tileCount >= 2;
++            if (useBinned) {
++                AscendC::LocalTensor<float> reduceFp32 = reduceFp32Buf_.Get<float>();
++                AscendC::Duplicate(reduceFp32, 0.0f, kBinWidth);
++            }
+ 
+             // First pass: y = x + residual and sum(y^2).  For widths that fit
+             // in UB, keep y at its row offset for the output pass.
+@@ -328,11 +336,22 @@
+                 AscendC::PipeBarrier<PIPE_V>();
+                 AscendC::Mul(xFp32, valueTile, valueTile, valid);
+                 AscendC::PipeBarrier<PIPE_V>();
+-                // ReduceSum performs its internal V/S handoff.  Store one tile
+-                // sum and defer the only scalar read until after the row-level
+-                // reduction below.
+-                AscendC::ReduceSum(reduceFp32[tileIndex], xFp32, residualFp32, valid);
+-                ++tileIndex;
++                if (useBinned) {
++                    // N1: add this tile's squares into the W-bin accumulator.
++                    // In-order V-pipe RAW is safe (V003 evidence); no extra
++                    // barrier per chunk.  Bin j receives squares j, W+j, ...
++                    for (int32_t off = 0; off < valid; off += kBinWidth) {
++                        const int32_t len =
++                            (valid - off < kBinWidth) ? (valid - off) : kBinWidth;
++                        AscendC::Add(reduceFp32, reduceFp32, xFp32[off], len);
++                    }
++                } else {
++                    // ReduceSum performs its internal V/S handoff.  Store one
++                    // tile sum and defer the only scalar read until after the
++                    // row-level reduction below.
++                    AscendC::ReduceSum(reduceFp32[tileIndex], xFp32, residualFp32, valid);
++                    ++tileIndex;
++                }
+                 SyncVToMTE2();
+             }
+ 
+@@ -354,7 +373,14 @@
+             AscendC::LocalTensor<float> scalarLocal = residualFp32Buf_.Get<float>();
+             AscendC::LocalTensor<float> reduceFp32 = reduceFp32Buf_.Get<float>();
+             AscendC::LocalTensor<float> xFp32 = xFp32Buf_.Get<float>();
+-            AscendC::ReduceSum(scalarLocal, reduceFp32, xFp32, tileCount);
++            if (useBinned) {
++                // N1: one ReduceSum over the W bins replaces the per-tile
++                // ReduceSum calls and the end-of-row collapse.
++                AscendC::PipeBarrier<PIPE_V>();
++                AscendC::ReduceSum(scalarLocal, reduceFp32, xFp32, kBinWidth);
++            } else {
++                AscendC::ReduceSum(scalarLocal, reduceFp32, xFp32, tileCount);
++            }
+             SyncVToS();
+             const float squareSum = scalarLocal.GetValue(0);
+             const float meanSquare = squareSum * invRowWidth + epsilon;
+@@ -1160,6 +1186,8 @@
+             AscendC::LocalTensor<float> reduceLocal = reduceFp32Buf_.Get<float>();
+             AscendC::LocalTensor<float> xFp32 = xFp32Buf_.Get<float>();
+             AscendC::LocalTensor<float> residualFp32 = residualFp32Buf_.Get<float>();
++            // N1: zero the W-bin accumulator once per row.
++            AscendC::Duplicate(reduceLocal, 0.0f, kBinWidth);
+ 
+             for (int32_t col = 0; col < kCacheElems; col += kTileElems) {
+                 AscendC::LocalTensor<float> xLocal = xBuf_.Get<float>();
+@@ -1174,8 +1202,10 @@
+                 AscendC::PipeBarrier<PIPE_V>();
+                 AscendC::Mul(xFp32, valueTile, valueTile, kTileElems);
+                 AscendC::PipeBarrier<PIPE_V>();
+-                AscendC::ReduceSum(reduceLocal[col / kTileElems], xFp32, residualFp32,
+-                                   kTileElems);
++                // N1: binned streaming accumulate of this tile's squares.
++                for (int32_t off = 0; off < kTileElems; off += kBinWidth) {
++                    AscendC::Add(reduceLocal, reduceLocal, xFp32[off], kBinWidth);
++                }
+                 SyncVToMTE2();
+             }
+ 
+@@ -1187,8 +1217,10 @@
+                 Load(nextResidualLocal, residualGm_, nextOffset, kTileElems);
+             }
+ 
+-            AscendC::ReduceSum(residualFp32, reduceLocal, xFp32,
+-                               kCacheElems / kTileElems);
++            // N1: one ReduceSum over the W bins replaces the per-tile
++            // ReduceSum calls and the end-of-row collapse.
++            AscendC::PipeBarrier<PIPE_V>();
++            AscendC::ReduceSum(residualFp32, reduceLocal, xFp32, kBinWidth);
+             SyncVToS();
+             const float squareSum = residualFp32.GetValue(0);
+             const float meanSquare = squareSum * invRowWidth + epsilon;
+@@ -1240,6 +1272,9 @@
+ private:
+     static constexpr int32_t kMidRowMinWidth = 128;
+     static constexpr int32_t kTileElems = 4096;
++    // N1: binned streaming accumulator width for the single-stage square-sum.
++    // Multiple of 8 so every chunk source stays 32B-aligned.
++    static constexpr int32_t kBinWidth = 128;
+     static constexpr int32_t kParamFp32CacheElems = 4096;
+     static constexpr int32_t kSmallFp32BatchRows = 4;
+     static constexpr int32_t kSmallFp32BatchMaxWidth = 4096;
+@@ -1282,6 +1317,10 @@
+     static constexpr int32_t kWideFullYMaxRows = 8;
+     static constexpr int32_t kWideFullYTileElems = 4096;
+     static constexpr int32_t kWideFullYReduceStride = 16;
++    // N1: binned accumulator lives after the per-row partial slots on the
++    // wide FP32 path (slots occupy [0, kWideFullYMaxRows * stride)).
++    static constexpr int32_t kWideAccOffset =
++        kWideFullYMaxRows * kWideFullYReduceStride;
+     // 910B3 has 192 KB UB with an 8 KB system reservation.  FP32 avoids the
+     // redundant output staging buffer above, leaving enough room for three
+     // 8192-element caches as well as the five 4096-element work buffers.
+@@ -2113,6 +2152,10 @@
+             for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
+                 const uint64_t rowOffset =
+                     (batchBegin + static_cast<uint64_t>(batchRow)) * rowWidth;
++                // N1: zero this row's W-bin accumulator (after the per-row
++                // partial slots) once, then stream every tile's squares in.
++                AscendC::LocalTensor<float> accLocal = reduceLocal[kWideAccOffset];
++                AscendC::Duplicate(accLocal, 0.0f, kBinWidth);
+                 for (int32_t tile = 0; tile < tileCount; ++tile) {
+                     const uint64_t col = static_cast<uint64_t>(tile) * tileWidth;
+                     const int32_t valid = static_cast<int32_t>(
+@@ -2129,24 +2172,30 @@
+                     AscendC::PipeBarrier<PIPE_V>();
+                     AscendC::Mul(xLocal, valueTile, valueTile, valid);
+                     AscendC::PipeBarrier<PIPE_V>();
+-                    AscendC::ReduceSum(
+-                        reduceLocal[batchRow * kWideFullYReduceStride + tile],
+-                        xLocal, residualLocal, valid);
++                    // N1: binned streaming accumulate (in-order V-pipe RAW).
++                    for (int32_t off = 0; off < valid; off += kBinWidth) {
++                        const int32_t len =
++                            (valid - off < kBinWidth) ? (valid - off) : kBinWidth;
++                        AscendC::Add(accLocal, accLocal, xLocal[off], len);
++                    }
+                     SyncVToMTE2();
+                 }
++                // N1: one ReduceSum over the W bins produces this row's full
++                // squareSum; the end-of-row collapse is gone.
++                AscendC::PipeBarrier<PIPE_V>();
++                AscendC::ReduceSum(
++                    reduceLocal[batchRow * kWideFullYReduceStride],
++                    accLocal, xBuf_.Get<float>(), kBinWidth);
+             }
+ 
+             for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
+-                AscendC::LocalTensor<float> xLocal = xBuf_.Get<float>();
+-                AscendC::LocalTensor<float> residualLocal = residualBuf_.Get<float>();
+-                AscendC::ReduceSum(
+-                    residualLocal,
+-                    reduceLocal[batchRow * kWideFullYReduceStride],
+-                    xLocal, tileCount);
++                // N1: squareSum already sits in this row's partial slot.
+                 SyncVToS();
+-                const float squareSum = residualLocal.GetValue(0);
++                const float squareSum =
++                    reduceLocal.GetValue(batchRow * kWideFullYReduceStride);
+                 const float meanSquare = squareSum * invRowWidth + epsilon;
+                 SyncSToV();
++                AscendC::LocalTensor<float> xLocal = xBuf_.Get<float>();
+                 AscendC::Duplicate(xLocal, meanSquare, 1);
+                 AscendC::Sqrt(xLocal, xLocal, 1);
+                 AscendC::PipeBarrier<PIPE_V>();
