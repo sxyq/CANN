@@ -1,0 +1,107 @@
+2180a2181,2185
+>             // STORE-H3 (V003): split each row's merged run into K=2 chunks at a
+>             // tile-multiple boundary (mergeChunkSplit tiles in chunk 0) so each
+>             // chunk's store can be issued as soon as that chunk's arithmetic
+>             // finishes and overlap the next chunk's compute.
+>             const int32_t mergeChunkSplit = tileCount / 2;
+2190,2196c2195,2206
+<                 if (storeOutstanding0) {
+<                     AscendC::WaitFlag<AscendC::HardEvent::MTE3_V>(storeRelease0);
+<                     storeOutstanding0 = false;
+<                 }
+<                 if (storeOutstanding1) {
+<                     AscendC::WaitFlag<AscendC::HardEvent::MTE3_V>(storeRelease1);
+<                     storeOutstanding1 = false;
+---
+>                 // Per-tile path only: merged stores read valueLocal (never this
+>                 // staging pair) and the merged path keeps V002's no-in-loop-wait
+>                 // shape so an issued chunk store can overlap later tiles.
+>                 if (!mergeRowRuns) {
+>                     if (storeOutstanding0) {
+>                         AscendC::WaitFlag<AscendC::HardEvent::MTE3_V>(storeRelease0);
+>                         storeOutstanding0 = false;
+>                     }
+>                     if (storeOutstanding1) {
+>                         AscendC::WaitFlag<AscendC::HardEvent::MTE3_V>(storeRelease1);
+>                         storeOutstanding1 = false;
+>                     }
+2246,2263c2256,2300
+<             }
+<             if (mergeRowRuns) {
+<             // STORE-H2B-GATED: each row's finished tiles form one contiguous UB
+<             // run (valueLocal[batchRow*rowWidth, +rowWidth)); one writeback per
+<             // row replaces the per-tile stores.  The 2-deep ring discipline
+<             // below is unchanged — one ring entry per row instead of per tile.
+<             for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
+<                 const bool useFirst = (batchRow & 1) == 0;
+<                 const AscendC::TEventID storeReady =
+<                     useFirst ? storeReady0 : storeReady1;
+<                 const AscendC::TEventID storeRelease =
+<                     useFirst ? storeRelease0 : storeRelease1;
+<                 if (useFirst ? storeOutstanding0 : storeOutstanding1) {
+<                     AscendC::WaitFlag<AscendC::HardEvent::MTE3_V>(storeRelease);
+<                     if (useFirst) {
+<                         storeOutstanding0 = false;
+<                     } else {
+<                         storeOutstanding1 = false;
+---
+>                 if (mergeRowRuns &&
+>                     (tile + 1 == mergeChunkSplit || tile + 1 == tileCount)) {
+>                     // STORE-H3 (V003): the finished chunk's tiles form one
+>                     // contiguous UB run (valueLocal[batchRow*rowWidth +
+>                     // chunkStart, +chunkLen)); issue its merged writeback now
+>                     // so MTE3 overlaps the next chunk's compute.  The 2-deep
+>                     // ring discipline is unchanged — one ring entry per chunk
+>                     // store.  chunkStart is a tile multiple (16 KB-aligned), so
+>                     // every row's chunk run keeps the 32B start alignment the
+>                     // gate already requires.
+>                     const bool isLastChunk = (tile + 1 == tileCount);
+>                     const uint64_t chunkStart =
+>                         isLastChunk
+>                             ? static_cast<uint64_t>(mergeChunkSplit) * tileWidth
+>                             : 0;
+>                     const int32_t chunkLen =
+>                         isLastChunk
+>                             ? static_cast<int32_t>(rowWidth - chunkStart)
+>                             : static_cast<int32_t>(
+>                                   static_cast<uint64_t>(mergeChunkSplit) * tileWidth);
+>                     for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
+>                         const bool useFirst = (batchRow & 1) == 0;
+>                         const AscendC::TEventID storeReady =
+>                             useFirst ? storeReady0 : storeReady1;
+>                         const AscendC::TEventID storeRelease =
+>                             useFirst ? storeRelease0 : storeRelease1;
+>                         if (useFirst ? storeOutstanding0 : storeOutstanding1) {
+>                             AscendC::WaitFlag<AscendC::HardEvent::MTE3_V>(storeRelease);
+>                             if (useFirst) {
+>                                 storeOutstanding0 = false;
+>                             } else {
+>                                 storeOutstanding1 = false;
+>                             }
+>                         }
+>                         AscendC::SetFlag<AscendC::HardEvent::V_MTE3>(storeReady);
+>                         AscendC::WaitFlag<AscendC::HardEvent::V_MTE3>(storeReady);
+>                         Store(outputGm_,
+>                               (batchBegin + static_cast<uint64_t>(batchRow)) * rowWidth + chunkStart,
+>                               valueLocal[batchRow * rowWidth + chunkStart], chunkLen);
+>                         AscendC::SetFlag<AscendC::HardEvent::MTE3_V>(storeRelease);
+>                         if (useFirst) {
+>                             storeOutstanding0 = true;
+>                         } else {
+>                             storeOutstanding1 = true;
+>                         }
+2265,2276d2301
+<                 }
+<                 AscendC::SetFlag<AscendC::HardEvent::V_MTE3>(storeReady);
+<                 AscendC::WaitFlag<AscendC::HardEvent::V_MTE3>(storeReady);
+<                 Store(outputGm_,
+<                       (batchBegin + static_cast<uint64_t>(batchRow)) * rowWidth,
+<                       valueLocal[batchRow * rowWidth],
+<                       static_cast<int32_t>(rowWidth));
+<                 AscendC::SetFlag<AscendC::HardEvent::MTE3_V>(storeRelease);
+<                 if (useFirst) {
+<                     storeOutstanding0 = true;
+<                 } else {
+<                     storeOutstanding1 = true;
+2279d2303
+<             }
