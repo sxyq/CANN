@@ -34,6 +34,152 @@
   "note": "max_abs matches the parent exactly on both shapes, confirming bit-identical arithmetic. The finalize buffer reassignment and earlier staging release execute correctly with no sync fault across 4 runs.",
   "result": "PASS"
  },
- "STATUS": "BUILD_PASS_CORRECTNESS_PASS_PENDING_MEASUREMENT",
- "DECISION": "PENDING_MEASUREMENT"
+ "STATUS": "BUILD_PASS_CORRECTNESS_PASS_NEEDS_ONE_MORE_LOCAL",
+ "DECISION": "NEEDS_ONE_MORE_LOCAL",
+ "MEASUREMENT": {
+  "date": "2026-09-29",
+  "protocol": "unified device-event: warmup=45, same-binary 21x2, paired 4 blocks x 11 samples interleaved. Parent module rebuilt from V026 (DIRECT_PARENT) so the OFAT comparison is V026 vs V027. Runner SHA 7dbde489... (unchanged); parent module SHA 27d61b36... (V026 content); candidate module SHA 0d9fd0a0... (V027 content).",
+  "SAME_BINARY": [
+   {
+    "device": 6,
+    "shape": "D=32768",
+    "gap_s": 5,
+    "result": "PASS",
+    "block_medians_us": [
+     16.92,
+     16.62
+    ],
+    "mad_over_median": [
+     0.007092,
+     0.021661
+    ],
+    "block_drift": 0.017889
+   },
+   {
+    "device": 4,
+    "shape": "D=32768",
+    "gap_s": 5,
+    "result": "PASS",
+    "block_medians_us": [
+     16.84,
+     16.8
+    ],
+    "mad_over_median": [
+     0.02019,
+     0.033333
+    ],
+    "block_drift": 0.002378
+   },
+   {
+    "device": 6,
+    "shape": "D=24576",
+    "gap_s": 5,
+    "result": "PASS",
+    "block_medians_us": [
+     14.5,
+     14.34
+    ],
+    "mad_over_median": [
+     0.013793,
+     0.025105
+    ],
+    "block_drift": 0.011096
+   }
+  ],
+  "PAIRED_V026_VS_V027_D32768": {
+   "shape": "rows=2 D=32768 blocks=1 (CachedRows; the only probe shape exercising the edit)",
+   "attempt_d6": {
+    "delta_percent": [
+     -2.209303,
+     -0.706708,
+     0.363633,
+     -2.021402
+    ],
+    "parent_mad_over_median": [
+     0.018605,
+     0.011779,
+     0.003636,
+     0.011891
+    ],
+    "candidate_mad_over_median": [
+     0.007134,
+     0.022539,
+     0.032609,
+     0.014563
+    ],
+    "direction": "3_NEGATIVE_1_POSITIVE",
+    "median_delta_percent": -1.364216,
+    "note": "all four blocks clean (MAD <= 0.033)"
+   },
+   "attempt_d4": {
+    "delta_percent": [
+     4.645764,
+     -0.113246,
+     -0.70176
+    ],
+    "parent_mad_over_median": [
+     0.011614,
+     0.016988,
+     0.014035
+    ],
+    "candidate_mad_over_median": [
+     0.062153,
+     0.024943,
+     0.023557
+    ],
+    "direction": "2_NEGATIVE_1_POSITIVE",
+    "median_delta_percent": -0.113246,
+    "note": "block 1 candidate MAD 0.062 elevated (below the 0.25 threshold but direction opposes the rest); block 3 contaminated (candidate MAD 0.41, median inflated to 28.4us) and EXCLUDED",
+    "contaminated_block": {
+     "block": 3,
+     "delta_percent": 64.08776,
+     "candidate_mad": 0.413089,
+     "note": "EXCLUDED from direction reading, raw retained"
+    }
+   },
+   "combined_clean": {
+    "values_percent": [
+     -2.209303,
+     -0.706708,
+     0.363633,
+     -2.021402,
+     -0.113246,
+     -0.70176
+    ],
+    "median_percent": -0.704204,
+    "direction": "5_NEGATIVE_1_POSITIVE",
+    "range_percent": [
+     -2.209303,
+     0.363633
+    ],
+    "read": "Median -0.70%, inside the noise band (plus or minus 1%). Direction 5/6 negative but not unanimous, and the two devices disagree on magnitude (d6 median -1.36%, d4 median -0.41%)."
+   }
+  },
+  "PAIRED_V026_VS_V027_D24576_SAME_CODE": {
+   "shape": "rows=2 D=24576 blocks=1 (both take the batch path; the edit is NOT exercised; noise band)",
+   "device": 6,
+   "same_binary": "PASS (drift 0.011)",
+   "delta_percent": [
+    1.201599,
+    -0.659629,
+    0.280114,
+    0.139083
+   ],
+   "direction": "2_POSITIVE_2_NEGATIVE",
+   "median_delta_percent": 0.209613,
+   "interpretation": "Same-code shape. Median +0.21%, range -0.66% to +1.20%. Noise band this round about plus or minus 1%."
+  },
+  "NOISE_BAND": "about plus or minus 1% (this round's same-code D=24576 control: median +0.21%, range -0.66% to +1.20%).",
+  "SIGNAL_VS_NOISE": "The D=32768 combined clean median (-0.70%) is INSIDE the noise band (plus or minus 1%). The two devices disagree on magnitude (d6 -1.36% vs d4 -0.41%), and direction is 5/6 rather than unanimous. No stable improvement exceeding the noise range is established.",
+  "MECHANISM_READ": "H6's pass-1/pass-2 boundary overlap (freeing the staging before the finalize so the first parameter load overlaps the finalize's V/S round trips) is at most a small effect. The finalize's V/S tail is one overlap per row, unlike H4/H5 which overlap per tile (4 boundaries). The observed signal (-0.70% median) is consistent with a marginal effect at or below the noise floor. This bounds the boundary-overlap lever as small compared with the per-tile staging-liveness levers (H4 -4.12%, H5 -1.69%).",
+  "LOCAL_VERDICT": "NEEDS_ONE_MORE_LOCAL",
+  "VERDICT_REASON": "Correctness PASS (4 runs, no sync fault). The paired measurement against DIRECT_PARENT V026 on the exercising shape (D=32768) is within the measured noise band (median -0.70% vs plus or minus 1%), with 5/6 direction and cross-device magnitude disagreement. No stable improvement and no stable regression is established. Per the verdict rules this is NEEDS_ONE_MORE_LOCAL (within noise).",
+  "LOCAL_BEST": "V026",
+  "LOCAL_BEST_UPDATED": false,
+  "LOCAL_BEST_CHAIN": "V016 (OFFICIAL_BEST 45.00) -> V024 (-3.66%) -> V025 (-4.12%) -> V026 (-1.69%). V027 did not advance Local Best.",
+  "OFFICIAL_BEST": "V016 / 45.00 (V024/V025/V026 Online pending Judge Owner)",
+  "ONLINE_WORTHY": "NO",
+  "NEXT_ACTION": "V027 is NEEDS_ONE_MORE_LOCAL and is not a legal parent. V026 remains LOCAL_BEST. The v2 research hypotheses are now exhausted: H5 accepted (V026), H6 within-noise (V027), H7 moot (H5 accepted), H8 INFEASIBLE (UB). Per MAIN-1's branch, the next step is either a new Track-B v3 research round or a LANE_NEEDS_PLANNING_REVIEW flag. Given the strong Local Best chain (three consecutive ACCEPTED) and a weak-but-negative H6 signal, a Track-B v3 round is reasonable; if Main prefers to consolidate now, flag LANE_NEEDS_PLANNING_REVIEW.",
+  "EVIDENCE_DIR": "本地实验/R31A/V027/support/results/"
+ }
 }
