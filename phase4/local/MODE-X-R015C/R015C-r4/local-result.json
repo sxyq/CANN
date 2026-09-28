@@ -1,0 +1,124 @@
+{
+  "route": "MODE-X-R015C",
+  "revision": "R015C-r4",
+  "parent_revision": "R015C-r3",
+  "parent_source_sha256": "e1786bec2673519f41887fdffa0e11751f515a81037d854c88ae7edc0e4af903",
+  "source_sha256": "9367db4ebb4edf6b7bf6cde97f4846f987e6ab230c2aeee44d942d5e881a1c74",
+  "single_hypothesis": "One row per block; preserve segment size, DataCopyPad path/order, and 64 KiB VECCALC scratch allocation.",
+  "compile": "PASS",
+  "link": "PASS",
+  "build_attempts": [
+    {
+      "attempt": 1,
+      "status": "FAIL",
+      "reason": "CANN registration compilation could not locate the standard <vector> header without CPLUS_INCLUDE_PATH."
+    },
+    {
+      "attempt": 2,
+      "status": "PASS",
+      "environment": "CPLUS_INCLUDE_PATH exported using the existing MODE-X-R015C route build setup."
+    }
+  ],
+  "build_host": "cann-server3 (hwnput3)",
+  "cann_version": "8.5.0.alpha002",
+  "executable": {
+    "path": "/home/data4t2/lelinfeng/MODE-X-R015C_runs/R015C-r4/build/row_copy_reference",
+    "sha256": "21934a8cf15508b365e252810c8f858b4fb105c5cc5000f460d61c511a37e188",
+    "size_bytes": 384752,
+    "format": "ELF 64-bit PIE, ARM aarch64"
+  },
+  "build_logs": [
+    "support/server3/configure.log",
+    "support/server3/build-attempt-1.log",
+    "support/server3/build-attempt-2.log"
+  ],
+  "correctness": {
+    "status": "PASS",
+    "device": 4,
+    "preflight": "Health OK; HBM 90%; AICore 0%; device 4 showed no active lease in the latest shared lease record. Process enumeration via npu-smi is unsupported on this device.",
+    "cases": [
+      {"rows": 2, "cols": 256, "status": "PASS", "exact": true},
+      {"rows": 5, "cols": 4096, "status": "PASS", "exact": true},
+      {"rows": 3, "cols": 8192, "status": "PASS", "exact": true}
+    ],
+    "log": "support/server3/correctness.log"
+  },
+  "performance": "NOT_RUN_BY_INSTRUCTION",
+  "environment": {
+    "remote_host": "cann-server3 alias resolved to hwnput3; user lelinfeng",
+    "cann_toolkit": "8.5.0.alpha002",
+    "npu": "Ascend 910B3, device 4",
+    "compile_target": "dav-2201"
+  },
+  "status": "BUILD_PASS_TARGET_CORRECTNESS_FAILED_NOT_READY_FOR_TIMING",
+  "target_correctness": {
+    "operator": "AddRmsNormBias",
+    "status": "FAIL",
+    "source_sha256": "9367db4ebb4edf6b7bf6cde97f4846f987e6ab230c2aeee44d942d5e881a1c74",
+    "host_probe_source_sha256": "9d168a507369935365fce2c5ff1f4a88a485b8611168d1accd647534777cecd6",
+    "executable_sha256": "9796b1b73b684ac94102fef9086201c7927c0e66a8989266c4d019105bfc1d8e",
+    "device": 7,
+    "pre_hbm_mb": 3432,
+    "post_hbm_mb": 3434,
+    "pre_aicore_percent": 98.3,
+    "post_aicore_percent": 98.0,
+    "process": "none on device 7",
+    "cases": [
+      {"rows": 2, "cols": 256, "status": "FAIL", "max_abs": 1.2469, "first_index": 0, "expected": -1.50971, "actual": -0.608},
+      {"rows": 5, "cols": 4096, "status": "FAIL", "max_abs": 1.33044, "first_index": 0, "expected": -1.53414, "actual": -0.608},
+      {"rows": 3, "cols": 8192, "status": "FAIL", "max_abs": 1.33516, "first_index": 0, "expected": -1.53564, "actual": -0.608}
+    ],
+    "meaning": "The r4 source copies x+residual unchanged; it does not perform RMS normalization, gamma scaling, or bias addition.",
+    "log": "support/server3/target-addrmsnormbias-20260927-attempt2.log"
+  },
+  "target_correctness_rerun_device1_20260927": {
+    "operator": "AddRmsNormBias",
+    "command": "ssh cann-server3 bash -s -- 1; timeout 60s env ASCEND_DEVICE_ID=1 /home/data4t2/lelinfeng/MODE-X-R015C_runs/R015C-r4/build/row_copy_reference --addrmsnormbias-probe R D 1",
+    "device": 1,
+    "source_sha256": "9367db4ebb4edf6b7bf6cde97f4846f987e6ab230c2aeee44d942d5e881a1c74",
+    "host_probe_source_sha256": "9d168a507369935365fce2c5ff1f4a88a485b8611168d1accd647534777cecd6",
+    "tiling_sha256": "0939ba8498426fcd77645d826fcc45a8eb65c78996ad0ce1da1a00d1ac01a250",
+    "executable_sha256": "9796b1b73b684ac94102fef9086201c7927c0e66a8989266c4d019105bfc1d8e",
+    "pre_hbm_usage_percent": 91,
+    "post_hbm_usage_percent": 91,
+    "aicore_observation": "36% pre, 36% post; observation only",
+    "cases": [
+      {"rows": 2, "cols": 256, "status": "FAIL", "rc": 3, "max_abs": 1.2469, "first_index": 0, "expected": -1.50971, "actual": -0.608},
+      {"rows": 5, "cols": 4096, "status": "FAIL", "rc": 3, "max_abs": 1.33044, "first_index": 0, "expected": -1.53414, "actual": -0.608},
+      {"rows": 3, "cols": 8192, "status": "FAIL", "rc": 3, "max_abs": 1.33516, "first_index": 0, "expected": -1.53564, "actual": -0.608}
+    ],
+    "aggregate_rc": 3,
+    "log": "support/server3/target-addrmsnormbias-20260927-device1.log",
+    "performance": "NOT_RUN",
+    "source_unchanged": true
+  },
+  "NON_TIMING_STATUS_20260927": {
+    "SOURCE_SHA256": "9367db4ebb4edf6b7bf6cde97f4846f987e6ab230c2aeee44d942d5e881a1c74",
+    "SERVER3_SOURCE_SHA256": "9367db4ebb4edf6b7bf6cde97f4846f987e6ab230c2aeee44d942d5e881a1c74",
+    "DIRECT_PARENT": "R015C-r3",
+    "PARENT_SOURCE_SHA256": "e1786bec2673519f41887fdffa0e11751f515a81037d854c88ae7edc0e4af903",
+    "BUILD": "PASS",
+    "COMPILE_RC": 0,
+    "LINK_RC": 0,
+    "BUILD_COMMAND": "cmake --build /home/data4t2/lelinfeng/MODE-X-R015C_runs/R015C-r4/build --target row_copy_reference --parallel 1 (GCC 11 CPLUS_INCLUDE_PATH/C_INCLUDE_PATH set)",
+    "CORRECTNESS": "FAIL",
+    "CORRECTNESS_DETAIL": "The new identity-bound AddRmsNormBias semantic probe failed all 3 shapes. The existing row-copy 3/3 PASS remains recorded separately and is not used as target correctness.",
+    "EXECUTABLE_IDENTITY": "PASS",
+    "EXECUTABLE_SHA256": {
+      "parent_module": "8f57bc1b028f815e4f1cea53f5b5d22781bddb6077b7cc3a47acf70123ab4486",
+      "candidate_module": "9339fd686d9498fc55d899aa0ef6dac6c49a7092b93b0b36e7a38eaed6f66b33",
+      "paired_runner": "0b576bea88cc5c6664728f3e5a1f749e1560f189fab9b6b714fd2cbd578c5837",
+      "correctness_executable": "21934a8cf15508b365e252810c8f858b4fb105c5cc5000f460d61c511a37e188",
+      "target_semantic_executable": "9796b1b73b684ac94102fef9086201c7927c0e66a8989266c4d019105bfc1d8e"
+    },
+    "SAME_BINARY": "NOT_RUN",
+    "TIMING": "NOT_READY",
+    "TIMING_BLOCKER": "Target AddRmsNormBias correctness failed on all 3 tested shapes; same-binary and performance timing are not permitted.",
+    "LOCAL_VERDICT": "CORRECTNESS_FAILED",
+    "READY_FOR_SAME_BINARY": false,
+    "NOT_READY_REASON": "The exact r4 source is a row-copy microkernel and failed the target AddRmsNormBias semantic probe.",
+    "DEVICE_WINDOW": "CORRECTNESS_RUN_D7_HBM_3432_TO_3434_OF_65536_MB_NO_PROCESS",
+    "LOCAL_BEST_UPDATED": false,
+    "ONLINE_WORTHY": "NO"
+  }
+}

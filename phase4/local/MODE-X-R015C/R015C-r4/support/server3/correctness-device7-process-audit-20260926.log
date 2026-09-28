@@ -1,0 +1,16 @@
+R015C-r4 DEVICE-7 PROCESS AUDIT
+Run log: correctness-device7-exact-20260926.log
+
+The pre/post npu-smi raw tables in the run log are authoritative. Their device-7 row is:
+
+PRE:  PID 1300597 | python | 11016 MB
+POST: PID 1300597 | python | 11012 MB
+
+The wrapper's derived DEVICE7_PROCESS and POST_DEVICE7_PROCESS lines shifted the npu-smi columns by one because the source row begins with an empty field. Those derived lines are malformed and must not be used as process identity.
+
+Before the correctness run, a direct process query identified PID 1300597 as:
+python -u build_minicpmo_cremad_reference.py --model-path /home/data4t2/models/MiniCPM-o-4_5 --train-csv dataset/data/CREMAD/train.csv --test-csv dataset/data/CREMAD/test.csv --audio-root /home/data4t1/zhangkaijie/data/CREMA-D/AudioWAV --visual-root /home/data4t1/zhangkaijie/data/CREMA-D --output-dir experiment_results/minicpmo45_cremad_reference --device npu:0 --calibration-size 256 --num-levels 10 --mu 15 --audio-batch-size 16 --visual-batch-size 4 --query-test
+
+Post-run direct query at 2026-09-25T20:01:16Z reported the same PID and command, with elapsed time 01:40:00. It was not an R015C correctness/probe process.
+
+Correctness invocation used exact R4 source SHA-256 9367db4ebb4edf6b7bf6cde97f4846f987e6ab230c2aeee44d942d5e881a1c74, tiling SHA-256 0939ba8498426fcd77645d826fcc45a8eb65c78996ad0ce1da1a00d1ac01a250, and executable SHA-256 21934a8cf15508b365e252810c8f858b4fb105c5cc5000f460d61c511a37e188. The raw run log records exact PASS for all three requested shapes and exit status 0. No timing or same-binary work ran.

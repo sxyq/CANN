@@ -1,0 +1,10 @@
+COMMAND: ssh cann-server3 'bash -s -- --plan-only 4' < run-exact-correctness.sh
+EXIT_STATUS: 0
+IDENTITY host path=/home/data4t2/lelinfeng/MODE-X-R015C_runs/R015C-r4/source/op_host/row_copy_host.asc sha256=fbd3147221a36756d9fd65656635a4d5c92e8ad8be77405ed75c8de97e8726de
+IDENTITY kernel path=/home/data4t2/lelinfeng/MODE-X-R015C_runs/R015C-r4/source/op_kernel/row_copy_kernel.asc sha256=9367db4ebb4edf6b7bf6cde97f4846f987e6ab230c2aeee44d942d5e881a1c74
+IDENTITY tiling path=/home/data4t2/lelinfeng/MODE-X-R015C_runs/R015C-r4/source/op_kernel/row_copy_tiling.h sha256=0939ba8498426fcd77645d826fcc45a8eb65c78996ad0ce1da1a00d1ac01a250
+IDENTITY executable path=/home/data4t2/lelinfeng/MODE-X-R015C_runs/R015C-r4/build/row_copy_reference sha256=21934a8cf15508b365e252810c8f858b4fb105c5cc5000f460d61c511a37e188
+COMMAND: timeout 60s env ASCEND_DEVICE_ID=4 ASCEND_SLOG_PRINT_TO_STDOUT=1 /home/data4t2/lelinfeng/MODE-X-R015C_runs/R015C-r4/build/row_copy_reference --device-probe 2 256 4
+COMMAND: timeout 60s env ASCEND_DEVICE_ID=4 ASCEND_SLOG_PRINT_TO_STDOUT=1 /home/data4t2/lelinfeng/MODE-X-R015C_runs/R015C-r4/build/row_copy_reference --device-probe 5 4096 4
+COMMAND: timeout 60s env ASCEND_DEVICE_ID=4 ASCEND_SLOG_PRINT_TO_STDOUT=1 /home/data4t2/lelinfeng/MODE-X-R015C_runs/R015C-r4/build/row_copy_reference --device-probe 3 8192 4
+NPU_ACCESS=NOT_RUN
