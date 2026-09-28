@@ -1,0 +1,28 @@
+--- /Users/sunyiyang/Desktop/Project/cann-m1-tiling/线上结果/R31B/V011/submission.asc	2026-09-29 04:23:23
++++ submission.asc	2026-09-29 05:31:35
+@@ -68,6 +68,14 @@
+             int32_t tileElems = kWideFullYTileElems;
+             if constexpr (AscendC::IsSameType<T, float>::value) {
+                 wideFp32FullYPath_ = true;
++                // Widest FP32 row (D=32768): spend the UB budget on fewer tile
++                // rounds.  The 6112 seed is the largest step that still fits the
++                // 176 KiB full-y budget at N=1 (6144 would overflow and fall to
++                // 5632); tile count drops from 8 to 6.  Narrower wide rows keep
++                // the 4096 seed so their resident-row choice is unchanged.
++                tileElems = (rowWidth >= static_cast<uint64_t>(kWideFp32MaxDWidth))
++                    ? kWideFp32MaxDTileElems
++                    : kWideFullYTileElems;
+                 wideFullYRows_ = ChooseWideFullYRows(rowWidth, sizeof(float),
+                                                      2, sizeof(float), 0, tileElems);
+                 wideFullYTileElems_ = tileElems;
+@@ -1281,6 +1289,10 @@
+     static constexpr int32_t kWideFullYBudgetBytes = 176 * 1024;
+     static constexpr int32_t kWideFullYMaxRows = 8;
+     static constexpr int32_t kWideFullYTileElems = 4096;
++    // Widest-FP32 tile tier: 6112 is the largest seed that fits the 176 KiB
++    // full-y budget at N=1 for D=32768 (6144 overflows by 64 bytes).
++    static constexpr int32_t kWideFp32MaxDTileElems = 6112;
++    static constexpr int32_t kWideFp32MaxDWidth = 32768;
+     static constexpr int32_t kWideFullYReduceStride = 16;
+     // 910B3 has 192 KB UB with an 8 KB system reservation.  FP32 avoids the
+     // redundant output staging buffer above, leaving enough room for three
