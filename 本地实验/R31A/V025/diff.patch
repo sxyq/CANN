@@ -1,0 +1,64 @@
+--- 本地实验/R31A/V024/submission.asc	2026-09-29 06:30:06
++++ 本地实验/R31A/V025/submission.asc	2026-09-29 06:52:19
+@@ -2002,21 +2002,55 @@
+             const uint64_t rowOffset = row * rowWidth;
+             AscendC::LocalTensor<float> valueLocal = valueFp32Buf_.Get<float>();
+             int32_t tileIndex = 0;
++            // H4 pass-1 staging liveness: when the unwritten tail of the value
++            // cache is large enough to serve as the ReduceSum workspace, free the
++            // residual staging slot right after the Add and prefetch the next
++            // tile's residual into it so that MTE2 load overlaps the square and
++            // reduce. The square goes into the x slot and the reduce workspace is
++            // the value tail. Tiles whose tail is too small fall back to the
++            // original pattern (square into the residual slot, x slot as
++            // workspace, one blanket SyncVToMTE2). Same UB footprint as before.
++            bool resPrefetched = false;
+             for (uint64_t col = 0; col < rowWidth; col += kWideFp32CachedTileElems) {
+                 const int32_t valid = WideFp32CachedTileLength(rowWidth - col);
+                 AscendC::LocalTensor<float> xLocal = xBuf_.Get<float>();
+                 AscendC::LocalTensor<float> residualLocal = residualBuf_.Get<float>();
+                 AscendC::LocalTensor<float> reduceLocal = reduceFp32Buf_.Get<float>();
+                 Load(xLocal, xGm_, rowOffset + col, valid);
+-                Load(residualLocal, residualGm_, rowOffset + col, valid);
++                if (!resPrefetched) {
++                    Load(residualLocal, residualGm_, rowOffset + col, valid);
++                }
+                 SyncMTE2ToV();
+                 AscendC::Add(valueLocal[col], xLocal, residualLocal, valid);
+                 AscendC::PipeBarrier<PIPE_V>();
+-                AscendC::Mul(residualLocal, valueLocal[col], valueLocal[col], valid);
+-                AscendC::PipeBarrier<PIPE_V>();
+-                AscendC::ReduceSum(reduceLocal[tileIndex], residualLocal, xLocal, valid);
+-                ++tileIndex;
+-                SyncVToMTE2();
++                const bool tailWorkspace =
++                    rowWidth - (col + static_cast<uint64_t>(valid)) >=
++                    static_cast<uint64_t>(valid);
++                if (tailWorkspace) {
++                    AscendC::Mul(xLocal, valueLocal[col], valueLocal[col], valid);
++                    AscendC::PipeBarrier<PIPE_V>();
++                    SyncVToMTE2();
++                    if (col + static_cast<uint64_t>(valid) < rowWidth) {
++                        const int32_t nextValid = WideFp32CachedTileLength(
++                            rowWidth - (col + static_cast<uint64_t>(valid)));
++                        Load(residualLocal, residualGm_,
++                             rowOffset + col + static_cast<uint64_t>(valid), nextValid);
++                        resPrefetched = true;
++                    } else {
++                        resPrefetched = false;
++                    }
++                    AscendC::ReduceSum(reduceLocal[tileIndex], xLocal,
++                                       valueLocal[col + valid], valid);
++                    ++tileIndex;
++                    SyncVToMTE2();
++                } else {
++                    AscendC::Mul(residualLocal, valueLocal[col], valueLocal[col], valid);
++                    AscendC::PipeBarrier<PIPE_V>();
++                    AscendC::ReduceSum(reduceLocal[tileIndex], residualLocal, xLocal, valid);
++                    ++tileIndex;
++                    SyncVToMTE2();
++                    resPrefetched = false;
++                }
+             }
+ 
+             AscendC::LocalTensor<float> xLocal = xBuf_.Get<float>();

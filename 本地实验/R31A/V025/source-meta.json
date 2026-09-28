@@ -1,0 +1,54 @@
+{
+  "ROUTE": "R31A",
+  "REVISION": "V025",
+  "DIRECT_PARENT": "R31A-V024",
+  "PARENT_SOURCE_SHA": "49315432d02b238b81eb7190df6463aa2dc235d077f28b91284aab69f17fbfde",
+  "PARENT_SCORE": "LOCAL -3.66% (D32768) / Official 45.00 (V016 anchor)",
+  "SINGLE_HYPOTHESIS": "In ProcessWideFp32CachedRows pass 1, free the residual staging slot right after the Add and prefetch the next tile's residual into it so the MTE2 load overlaps the square and reduce. The square goes into the x slot and the ReduceSum workspace is the unwritten tail of the value cache. Tiles whose tail is too small fall back to the original pattern. Same UB footprint. This is a staging-liveness change only: no new buffer pair, no arithmetic change, no dispatch change.",
+  "CONTEXT_CLASS": "HISTORICAL_EXPLOIT",
+  "WHY_NOT_DUPLICATE": "R31A V020 tried a related pass-1 overlap goal but via a DIFFERENT mechanism: it added a second staging pair (dual-slot kWideFp32CachedStageElems = tile/2) plus four event IDs, and correctness-FAILED (507035). V025 adds NO buffer pair and NO event IDs — it only reassigns the existing x/residual roles and uses the value tail as the reduce workspace, so the same-footprint liveness change is a distinct mechanism. V020 is retained as a failed revision and is not mixed in. V024 hoisted the pass-2 Muls (different pass). V021 moved the pass-2 MTE3 wait (sync placement, different pass). V022 changed the dispatch predicate. Cross-route: UB-LIVENESS-X owns buffer lifetime/aliasing as a design axis on its own parent code; this is a minimal same-footprint role flip in R31A's CachedRows. ASYNC-TRIPLE-X owns full MTE2/V/MTE3 triple overlap; this is one boundary (residual release) in one function. EPILOGUE-ARITH / STORE-EPILOGUE-X / SHAPE-TILING untouched. Full analysis in 研究/R31A/next-hypotheses.md H4 section.",
+  "FILES_CHANGED": [
+    "本地实验/R31A/V025/submission.asc: ProcessWideFp32CachedRows pass 1 only (staging liveness + conditional value-tail workspace)",
+    "本地实验/R31A/V025/source-meta.json: declaration",
+    "本地实验/R31A/V025/diff.patch",
+    "本地实验/R31A/V025/submission.sha256"
+  ],
+  "SOURCE_SHA": "1475116735f390b426fc694d45fcdcbc676ed0758ef326d54d8c43d35e16b4fe",
+  "SOURCE_SHA256": "1475116735f390b426fc694d45fcdcbc676ed0758ef326d54d8c43d35e16b4fe",
+  "SOURCE_PATH": "本地实验/R31A/V025/submission.asc",
+  "source_commit": "pending",
+  "submission_id": "NONE_NOT_SUBMITTED",
+  "local_sha256": "1475116735f390b426fc694d45fcdcbc676ed0758ef326d54d8c43d35e16b4fe",
+  "remote_sha256": "NOT_APPLICABLE_LOCAL_ONLY",
+  "official_score": "NONE",
+  "decision": "PENDING_BUILD_CORRECTNESS_MEASUREMENT",
+  "DECLARATION": {
+    "ROUTE": "R31A",
+    "REVISION": "V025",
+    "DIRECT_PARENT": "V024",
+    "PARENT_SOURCE_SHA": "49315432d02b238b81eb7190df6463aa2dc235d077f28b91284aab69f17fbfde",
+    "PARENT_SCORE": "LOCAL -3.66% (D32768) / Official 45.00 (V016 anchor)",
+    "SINGLE_HYPOTHESIS": "H4 pass-1 staging liveness：Add 后提前释放 residual 槽，用 value 尾部做 reduce workspace（同 UB 占用）",
+    "CONTEXT_CLASS": "HISTORICAL_EXPLOIT",
+    "WHY_NOT_DUPLICATE": "对照 next-hypotheses.md H4；与 V020 双槽机制区分（V020 正确性失败，不要重试双槽结构）"
+  },
+  "MAIN1_SELECTION_DATE": "2026-09-29",
+  "CONSTRAINTS": {
+    "no_Rsqrt_Reciprocal": "honored; invRms stays Sqrt + scalar reciprocal (V024's RMS finalize, untouched)",
+    "no_dual_slot": "honored; no second staging pair, no event IDs, no V020 retry",
+    "same_UB_footprint": "honored; no new buffers, only role reassignment of xBuf_/residualBuf_ plus the value tail as workspace",
+    "correctness_priority": "MAIN-1 flagged high correctness risk (V020's related mechanism gave 507035). Correctness must pass before any timing. If correctness fails repeatedly, solidify and flag LANE_NEEDS_PLANNING_REVIEW."
+  },
+  "MECHANISM_DETAIL": {
+    "tailWorkspace_tiles": "square into xBuf_, reduce workspace = valueLocal[col+valid] (unwritten tail, needs tail >= valid), residual staging freed after Add so the next tile's residual MTE2 prefetch overlaps the square and reduce. At D=32768 tiles at col=0,7680,15360 qualify (tail 25088/17408/9728 >= 7680).",
+    "fallback_tiles": "tiles whose tail < valid (at D=32768 col=23040 tail=2048, col=30720 tail=0) use the original pattern: square into residualBuf_, xBuf_ as workspace, one blanket SyncVToMTE2, no prefetch.",
+    "prefetch_handoff": "resPrefetched flag carries across iterations: a qualifying tile prefetches the next residual; the next tile consumes it in Add before any reuse. Transitions between qualifying and fallback tiles are safe because the prefetched residual is consumed by Add before residualBuf_ is overwritten."
+  },
+  "PRECISION_RISK": "None in the arithmetic: the same Add, Mul (square), and ReduceSum are performed on the same values. The only change is which buffer holds the square and where the reduce scratch lives. Correctness must still be verified end-to-end because the sync ordering changed.",
+  "EVALUATION_PLAN": {
+    "primary": "rows=2 D=32768 blocks=1 (the only probe shape exercising the CachedRows edit)",
+    "same_code_control": "rows=2 D=24576 blocks=1 (batch path on V024 parent, edit not exercised; noise band)",
+    "noise_band": "measure each round",
+    "contaminated_blocks": "mark parent MAD > 0.25, exclude from direction reading, retain raw"
+  }
+}
