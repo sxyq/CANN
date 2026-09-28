@@ -66,3 +66,71 @@ REASON            正确性 PASS_VS_PARENT（7 形状 OUTHASH 全等）。
 | C 交 Planning | W2 记混杂信号，PARK 或替换 |
 
 原始样本：`本地实验/ASYNC-OVERLAP-CHAMPION-X/V002/results/`。
+
+---
+
+# 选项 A 补测附录（2026-09-28，终局）
+
+条件：更多行 × 中等 D、localRows≥2/核、≥6 组交错、干净窗口优先。
+实际：512 rows / 40 cores = 12–13 行/核；kernel 11–14 µs（仍未到 20 µs，
+NarrowMid 被 per-row 固定成本主导）。
+
+## Same-binary
+
+| shape | P | C | 资格 |
+|---|---|---|---|
+| 512×2048 fp32 | PASS (0.062/0.039, drift 0.969) | PASS (0.020/0.017, drift 0.984) | **合格** |
+| 512×1024 fp32 | PASS (0.015/0.035, drift 1.006) | PASS (0.042/0.011, drift 0.987) | **合格** |
+| 256×1024 fp16 | FAIL | FAIL | 不合格 |
+
+## P/C ×6 交错
+
+### 512×2048 fp32（kernel ~13 µs）
+
+| pair | Δmed% | Δp10% | 方向 |
+|---|---|---|---|
+| 1 | **−1.93** | **−3.35** | V002 |
+| 2 | **+2.58** | **+3.31** | parent |
+| 3 | **−2.11** | **−0.93** | V002 |
+| 4 | （P 脏） | +3.85 | — |
+| 5 | （P 脏） | +4.96 | — |
+| 6 | +0.60 | +2.66 | 中性 |
+
+干净对：**2 偏 V002 / 1 偏 parent / 1 中性** —— 仍混杂。
+
+### 512×1024 fp32（kernel ~11 µs）
+
+| pair | Δmed% | Δp10% | 方向 |
+|---|---|---|---|
+| 1 | **+9.26** | **+8.48** | parent |
+| 2 | **+6.46** | **+5.96** | parent |
+| 3 | **−2.23** | **−2.63** | V002 |
+| 4 | −0.18 | −0.77 | 中性 |
+| 5 | **+5.77** | **+5.52** | parent |
+| 6 | +0.57 | +0.98 | 中性 |
+
+干净对：**1 偏 V002 / 3 偏 parent / 2 中性** —— **偏 parent**。
+
+## 终局判定
+
+```text
+LOCAL_VERDICT     NEEDS_ONE_MORE_LOCAL（终局，不再烧 W2 测量预算）
+REASON            选项 A 补测（localRows≥2/核、6 组交错、双方 SB 合格）方向仍混杂：
+                  512×2048 微偏 V002，512×1024 偏 parent。p10 同样混杂。
+                  NarrowMid 的 per-row 固定成本由 GetValue / V-S 往返主导
+                  （每行两次 SyncVToS/GetValue/SyncSToV），提前发下一行 Load
+                  砍不动这些往返 → 机制天花板已探明。
+                  不推进 LOCAL_BEST；不开 V003。
+```
+
+## 下一假设建议（交 Main）
+
+**倾向 W4 — GetValue handoff 收敛**（`TRACK-B-HYPOTHESES-V002.md`）：
+
+- 事实：NarrowMid invRms 尾每行做两轮 `SyncVToS → GetValue → SyncSToV`
+  （L565–574），这是 W2 无法触及的串行段，也是 kernel ~10 µs 里最大的固定成本。
+- W4 假设：在保持算术顺序不变的前提下合并/减少这些标量往返次数。
+- 风险：精度（不得改变求和/归一化顺序），须先做 OUTHASH 逐位对照。
+- 备选：W1（FullCache inter-pass，对准 case 14 若为 FP32 wide）。
+
+原始样本：`本地实验/ASYNC-OVERLAP-CHAMPION-X/V002/results2/`。

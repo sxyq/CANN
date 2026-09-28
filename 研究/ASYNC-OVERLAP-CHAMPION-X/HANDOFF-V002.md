@@ -47,14 +47,34 @@ W2 NarrowMid 行间发射重排已实现并完成本地测量。正确性干净�
 两形状均为混杂方向，p10 也混杂。无稳定改善、无稳定回退。
 NarrowMid kernel 只有 ~8–10 µs，invRms 标量尾短，提前 Load 的覆盖窗口可能不足。
 
+## 选项 A 补测（2026-09-28，终局）
+
+条件：localRows≥2/核（512 rows / 40 cores = 12–13 行/核）、≥6 组交错、双方 SB 合格。
+
+| shape | 干净对方向 | 判定 |
+|---|---|---|
+| 512×2048 fp32 | 2 偏 V002 / 1 偏 parent / 1 中性 | 混杂 |
+| 512×1024 fp32 | 1 偏 V002 / 3 偏 parent / 2 中性 | **偏 parent** |
+
+**终局 `NEEDS_ONE_MORE_LOCAL`**，不再烧 W2 测量预算。
+机制天花板：NarrowMid per-row 固定成本由 GetValue / V-S 往返主导，
+提前发下一行 Load 砍不动这些往返。
+
+## 下一假设建议
+
+**倾向 W4 — GetValue handoff 收敛**（见 `TRACK-B-HYPOTHESES-V002.md`）：
+
+- 每行两轮 `SyncVToS → GetValue → SyncSToV`（L565–574）是最大串行段。
+- 在保持算术顺序不变的前提下合并/减少标量往返。
+- 风险：精度，须先做 OUTHASH 逐位对照。
+- 备选：W1（FullCache inter-pass，对准 case 14 若为 FP32 wide）。
+
 ## 剩余工作与风险
 
-- W2 不是稳定胜，也不是稳定负；不推进 LOCAL_BEST。
-- 若继续 W2，需要 localRows≥2/核 且 invRms 尾更长的形状，或更安静窗口。
-- 备选假设已在 `TRACK-B-HYPOTHESES-V002.md`（W1/W3/W4/W5）。
+- W2 信号混杂且 512×1024 偏 parent，不推进 LOCAL_BEST。
 - 未改共享总账、未 Online、未开 V003、未 revert。
 
 ## 请求 Main-2
 
-- 确认 `NEEDS_ONE_MORE_LOCAL` 归类。
-- 定夺：A 同假设再测 / B 换 W1/W3/W4/W5 / C 交 Planning 处置 W2。
+- 确认 W2 终局 `NEEDS_ONE_MORE_LOCAL`。
+- 是否批准下一假设 W4（或 W1）进入 V003 研究/声明。
