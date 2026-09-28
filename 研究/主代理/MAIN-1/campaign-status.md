@@ -88,3 +88,4 @@
 | 2026-09-29 | **R31A V025 LOCAL_ACCEPTED** incremental -4.12%; chain V016→V024→V025 ~-6.8%; trigger B met; ONLINE WORTHY V025 |
 | 2026-09-29 | Methodology: OFAT parent module must be DIRECT_PARENT (not default V016) |
 | 2026-09-29 | EPILOGUE-ARITH V001: 24/31 favor C p=0.0017 but noise band 3-5%; Main rules Option A (tighter window d6+gap=5s) |
+| 2026-09-29 | R31A Track-B v2: 4 hypotheses (H5-H8); Main selected H5 for V026 (pass-2 param staging) |
