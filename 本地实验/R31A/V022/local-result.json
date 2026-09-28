@@ -41,6 +41,221 @@
   "rows=3_blocks=1_D24576": "both batch (control; code path unchanged)",
   "rows=4_blocks=2_D24576": "V016: batch -> V022: CachedRows"
  },
- "STATUS": "BUILD_PASS_CORRECTNESS_PASS_PENDING_MEASUREMENT",
- "DECISION": "PENDING_MEASUREMENT"
+ "STATUS": "BUILD_PASS_CORRECTNESS_PASS_LOCAL_REJECTED",
+ "DECISION": "LOCAL_REJECTED",
+ "MEASUREMENT": {
+  "date": "2026-09-29",
+  "protocol": "unified device-event: warmup=45, same-binary 21x2 samples, paired 4 blocks x 11 samples interleaved P/C; runner SHA 7dbde489... (identical to V021 era); parent module SHA 11d7a2cb... (byte-identical V016); candidate module SHA 1270710a... (V022 content)",
+  "lease_note": "RUN_BY_ROUTE_AGENT_M1_R31A; admission verified (live HBM < 100%, no conflicting lease). Lease rows for 调度/服务器设备使用.tsv pending MAIN-1 sync.",
+  "SAME_BINARY_ATTEMPTS": [
+   {
+    "device": 4,
+    "shape": "D=24576",
+    "gap_s": 60,
+    "result": "NOT_QUALIFIED",
+    "block_medians_us": [
+     14.14,
+     36.68
+    ],
+    "mad_over_median": [
+     0.01273,
+     0.590513
+    ],
+    "block_drift": 0.887052,
+    "note": "block2 multimodal with extreme outliers up to 155us; host interference"
+   },
+   {
+    "device": 5,
+    "shape": "D=24576",
+    "gap_s": 60,
+    "result": "NOT_QUALIFIED",
+    "block_medians_us": [
+     14.38,
+     27.34
+    ],
+    "mad_over_median": [
+     0.01669,
+     0.026335
+    ],
+    "block_drift": 0.621285,
+    "note": "block2 multimodal (14.5/17.7/27.7/120/263us); VLLMWorker_TP resident on d5"
+   },
+   {
+    "device": 7,
+    "shape": "D=24576",
+    "gap_s": 60,
+    "result": "NOT_QUALIFIED",
+    "block_medians_us": [
+     19.44,
+     39.56
+    ],
+    "mad_over_median": [
+     0.184156,
+     0.134985
+    ],
+    "block_drift": 0.682034
+   },
+   {
+    "device": 3,
+    "shape": "D=24576",
+    "gap_s": 5,
+    "result": "NOT_QUALIFIED",
+    "block_medians_us": [
+     21.64,
+     34.32
+    ],
+    "mad_over_median": [
+     0.287431,
+     0.388695
+    ],
+    "block_drift": 0.453181
+   },
+   {
+    "device": 6,
+    "shape": "D=24576",
+    "gap_s": 5,
+    "result": "PASS",
+    "block_medians_us": [
+     14.48,
+     14.74
+    ],
+    "mad_over_median": [
+     0.015193,
+     0.014925
+    ],
+    "block_drift": 0.017796,
+    "note": "short gap (5s) plus d6 host state gave a clean window"
+   },
+   {
+    "device": 4,
+    "shape": "D=32768",
+    "gap_s": 60,
+    "result": "PASS",
+    "block_medians_us": [
+     19.04,
+     19.46
+    ],
+    "mad_over_median": [
+     0.017857,
+     0.021583
+    ],
+    "block_drift": 0.021818
+   },
+   {
+    "device": 6,
+    "shape": "D=32768",
+    "gap_s": 5,
+    "result": "PASS",
+    "block_medians_us": [
+     18.86,
+     18.96
+    ],
+    "mad_over_median": [
+     0.008484,
+     0.012658
+    ],
+    "block_drift": 0.005288
+   }
+  ],
+  "PAIRED_D24576_HYPOTHESIS_PROBE": {
+   "device": 6,
+   "shape": "rows=2 D=24576 blocks=1",
+   "path_shift": "V016: wideFp32BatchPath (localRows=2>=2, D<32768) -> V022: wideFp32CachedRowPath (localRows=2<3)",
+   "same_binary": "PASS (see above)",
+   "parent_median_us": [
+    15.12,
+    15.1,
+    14.5,
+    14.72
+   ],
+   "candidate_median_us": [
+    15.72,
+    15.96,
+    15.18,
+    14.98
+   ],
+   "delta_percent": [
+    3.96826,
+    5.695364,
+    4.689659,
+    1.766305
+   ],
+   "delta_us": [
+    0.600001,
+    0.86,
+    0.680001,
+    0.26
+   ],
+   "direction": "4_POSITIVE_0_NEGATIVE",
+   "median_delta_percent": 4.32896,
+   "parent_mad_over_median": [
+    0.01455,
+    0.013245,
+    0.013793,
+    0.040761
+   ],
+   "candidate_mad_over_median": [
+    0.006361,
+    0.032581,
+    0.01054,
+    0.012016
+   ],
+   "interpretation": "Candidate (CachedRows) is SLOWER than parent (batch) on every block. All 4 blocks positive, medians clean, MAD low. STABLE REGRESSION of about +4.3%."
+  },
+  "PAIRED_D32768_SAME_CODE_CONTROL": {
+   "device": 6,
+   "shape": "rows=2 D=32768 blocks=1",
+   "path_shift": "NONE: both V016 and V022 take wideFp32CachedRowPath at D=32768 (batch entry requires D<32768)",
+   "same_binary": "PASS (see above)",
+   "parent_median_us": [
+    19.18,
+    19.14,
+    18.66,
+    18.76
+   ],
+   "candidate_median_us": [
+    19.16,
+    19.12,
+    18.88,
+    18.62
+   ],
+   "delta_percent": [
+    -0.104271,
+    -0.104489,
+    1.178997,
+    -0.746269
+   ],
+   "delta_us": [
+    -0.019999,
+    -0.019999,
+    0.220001,
+    -0.14
+   ],
+   "direction": "3_NEGATIVE_1_POSITIVE",
+   "median_delta_percent": -0.10438,
+   "parent_mad_over_median": [
+    0.005214,
+    0.013584,
+    0.005359,
+    0.012793
+   ],
+   "candidate_mad_over_median": [
+    0.014614,
+    0.011506,
+    0.007415,
+    0.003222
+   ],
+   "interpretation": "Same-code shape. Mixed signs, median -0.10%, spread about -0.75% to +1.18%. This is the NOISE BAND for this host/protocol: roughly plus or minus 1%."
+  },
+  "BLANK_CONTROL_METHOD": "Per MAIN-1's instruction (ref SHAPE-TILING lane finding), the same-code shape D=32768 serves as the noise band. The D=24576 signal (+4.33%, 4/4 same sign) is far outside that band (plus or minus 1%), so it is a real path effect, not measurement noise.",
+  "LOCAL_VERDICT": "LOCAL_REJECTED",
+  "VERDICT_REASON": "Correctness PASS on both versions and both shapes. Paired measurement on the path-shifting shape (rows=2 D=24576) shows a stable regression: 4/4 blocks positive, median +4.33%, well outside the same-code noise band (D=32768 median -0.10%, spread about 1%). The hypothesis that full-y CachedRows beats the batch path at 2 rows-per-core for D=24576 is REFUTED. The batch path's double-buffered MTE2/V/MTE3 pipelining (event-flag slots) outweighs CachedRows' single-input-read advantage at this shape and width.",
+  "MECHANISM_READ": "At D=24576 with localRows=2: batch path uses 6112-element tiles with two input and two output staging slots and event-flag overlap (submission.asc ProcessWideFp32Batched), while CachedRows uses 7680-element tiles in a two-pass serial structure (pass1 all tiles then pass2 all tiles). Although CachedRows reads x/residual once instead of twice, its lack of cross-tile and cross-pass overlap costs more than the saved read. V016's dispatch heuristic (CachedRows for D=32768 multi-row) is confirmed correct at D=32768 but does not generalize down to D=24576.",
+  "LOCAL_BEST": "NONE",
+  "LOCAL_BEST_UPDATED": false,
+  "OFFICIAL_BEST": "V016 / 45.00 (unchanged)",
+  "ONLINE_WORTHY": "NO",
+  "NEXT_ACTION": "V022 is LOCAL_REJECTED. Per the Local Best chain rule, the next independent performance revision returns to the prior anchor: parent must be V016 (dd130938...), since LOCAL_BEST is NONE and V021 is NEEDS_ONE_MORE_LOCAL (not a legal parent either). Do not build V023 on V022.",
+  "EVIDENCE_DIR": "本地实验/R31A/V022/support/results/"
+ }
 }
