@@ -1,0 +1,25 @@
+--- 线上结果/R31A/V016/submission.asc	2026-09-29 04:23:22
++++ 本地实验/R31A/V023/submission.asc	2026-09-29 06:04:51
+@@ -2023,15 +2023,15 @@
+             AscendC::LocalTensor<float> residualLocal = residualBuf_.Get<float>();
+             AscendC::LocalTensor<float> reduceLocal = reduceFp32Buf_.Get<float>();
+             AscendC::ReduceSum(residualLocal, reduceLocal, xLocal, tileCount);
+-            SyncVToS();
+-            const float squareSum = residualLocal.GetValue(0);
+-            const float meanSquare = squareSum * invRowWidth + epsilon;
+-            SyncSToV();
+-            AscendC::Duplicate(xLocal, meanSquare, 1);
+-            AscendC::Sqrt(xLocal, xLocal, 1);
++            // One-element mean/rsqrt kept in the vector pipe; one GetValue.
++            AscendC::Muls(residualLocal, residualLocal, invRowWidth, 1);
++            AscendC::PipeBarrier<PIPE_V>();
++            AscendC::Adds(residualLocal, residualLocal, epsilon, 1);
++            AscendC::PipeBarrier<PIPE_V>();
++            AscendC::Rsqrt(residualLocal, residualLocal, 1);
+             AscendC::PipeBarrier<PIPE_V>();
+             SyncVToS();
+-            const float invRms = 1.0f / xLocal.GetValue(0);
++            const float invRms = residualLocal.GetValue(0);
+             SyncSToV();
+             SyncVToMTE2();
+ 

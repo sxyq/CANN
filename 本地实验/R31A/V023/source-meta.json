@@ -1,0 +1,53 @@
+{
+  "ROUTE": "R31A",
+  "REVISION": "V023",
+  "DIRECT_PARENT": "R31A-V016",
+  "PARENT_SOURCE_SHA": "dd13093823c885e785a650abff4863827e652eb8607ad0621a96eb31b6764fa0",
+  "PARENT_SCORE": 45.0,
+  "OFFICIAL_ANCHOR": "R31A-V016 / 45.00",
+  "SINGLE_HYPOTHESIS": "In ProcessWideFp32CachedRows, replace the RMS finalize [Duplicate + Sqrt + scalar reciprocal] with a vector-pipe Rsqrt: compute meanSquare as one-element Muls+Adds on the ReduceSum result, apply Rsqrt, and pull invRms with a single GetValue (no scalar divide). Per row this removes one scalar division and one V/S round trip. The affine application, store placement, dispatch conditions, tile constants, and all non-CachedRows paths are unchanged.",
+  "CONTEXT_CLASS": "HISTORICAL_EXPLOIT",
+  "WHY_NOT_DUPLICATE": "R31A V021 moved the MTE3-to-V wait in the CachedRows output pass (sync placement, not denominator primitive). V022 changed the batch-entry dispatch predicate. V020 was a pass-1 dual-slot MTE2/V prefetch. None touches the RMS denominator computation. V006 folded mean-eps-sqrt on the narrow-row path. The one-element vector Muls+Adds pattern is R31A's own (ProcessNarrowSingleTile, submission.asc:1174-1176, comment 'One-element mean/sqrt kept in the vector pipe; one GetValue'); V023 brings that established pattern to CachedRows and swaps the Sqrt+scalar-reciprocal tail for Rsqrt. Cross-route: EPILOGUE-ARITH owns the epilogue arithmetic chain (Mul+Add fusion in the output affine) and is untouched; STORE-EPILOGUE-X owns store merging and is untouched; SHAPE-TILING owns tile policy and is untouched. R31B / DTYPE-SPECIAL-X / MIX-A have no Rsqrt denominator change in the R31A CachedRows path. VECTOR-MATH-X (MAIN-2, parent FROZEN_R31B_V011) owns the denominator pipeline broadly; this is a minimal primitive swap confined to one R31A function on the R31A V016 parent, not a denominator pipeline redesign. Full analysis in 研究/R31A/next-hypotheses.md H1 section.",
+  "FILES_CHANGED": [
+    "本地实验/R31A/V023/submission.asc: ProcessWideFp32CachedRows RMS finalize only (12 lines replaced)",
+    "本地实验/R31A/V023/source-meta.json: declaration",
+    "本地实验/R31A/V023/diff.patch",
+    "本地实验/R31A/V023/submission.sha256"
+  ],
+  "SOURCE_SHA": "2d313bb7a7ed577db1b0b7bdb604d2f9b76c4c9f9939066b768ca7f9da5c324f",
+  "SOURCE_SHA256": "2d313bb7a7ed577db1b0b7bdb604d2f9b76c4c9f9939066b768ca7f9da5c324f",
+  "SOURCE_PATH": "本地实验/R31A/V023/submission.asc",
+  "source_commit": "pending",
+  "submission_id": "NONE_NOT_SUBMITTED",
+  "local_sha256": "2d313bb7a7ed577db1b0b7bdb604d2f9b76c4c9f9939066b768ca7f9da5c324f",
+  "remote_sha256": "NOT_APPLICABLE_LOCAL_ONLY",
+  "official_score": "NONE",
+  "decision": "PENDING_BUILD_CORRECTNESS_MEASUREMENT",
+  "DECLARATION": {
+    "ROUTE": "R31A",
+    "REVISION": "V023",
+    "DIRECT_PARENT": "V016",
+    "PARENT_SOURCE_SHA": "dd13093823c885e785a650abff4863827e652eb8607ad0621a96eb31b6764fa0",
+    "PARENT_SCORE": "Official 45.00",
+    "SINGLE_HYPOTHESIS": "EA-H1：ProcessWideFp32CachedRows 的 RMS 收尾用 Rsqrt 替代 Duplicate+Sqrt+标量倒数",
+    "CONTEXT_CLASS": "HISTORICAL_EXPLOIT",
+    "WHY_NOT_DUPLICATE": "对照 next-hypotheses.md H1；V021=store 等待点、V022=路径阈值、V020=pass-1 预取；均不碰分母原语"
+  },
+  "MAIN1_SELECTION_DATE": "2026-09-29",
+  "MECHANISM_DELTA_PER_ROW": {
+    "scalar_divides_removed": 1,
+    "scalar_math_ops_removed": 3,
+    "v_s_round_trips_removed": 1,
+    "v_ops_before": "Duplicate + Sqrt = 2 one-element ops",
+    "v_ops_after": "Muls + Adds + Rsqrt = 3 one-element ops",
+    "net": "saves 1 scalar divide, 3 scalar math ops, and 1 V/S round trip; adds 1 one-element V op",
+    "expected_magnitude_vs_noise": "1 scalar divide + 1 V/S round trip per row at rows=2 D=32768. Predicted saving is small (order 0.1-2% of a ~19us kernel). If it falls inside the measured noise band (about plus or minus 1%), a null result is the expected outcome and not an anomaly."
+  },
+  "PRECISION_RISK": "Rsqrt numerics differ from Sqrt then scalar reciprocal by up to 1 ulp. FP32 budget is 1e-4 abs and rel. Must re-verify correctness at D=32768 and D=24576 before any timing.",
+  "EVALUATION_PLAN": {
+    "primary": "rows=2 D=32768 blocks=1 (CachedRows champion path; the only shape where this change is reachable under the probe)",
+    "no_regress_control": "rows=2 D=24576 blocks=1 (also CachedRows after V022's lesson? NO: V016 dispatch sends D=24576 to batch, so V023's CachedRows edit is NOT exercised at D=24576 on the V016 parent. D=24576 is a no-regress control only for the unchanged batch path.)",
+    "path_note": "V023 parents from V016, whose dispatch sends rows=2 D=24576 to wideFp32BatchPath. So the V023 edit is only reachable at D=32768 (and any other CachedRows shape). D=24576 measurements test the untouched batch path and serve as a same-code control.",
+    "noise_band": "measure each round with a same-code shape; do not reuse a prior round's band"
+  }
+}
