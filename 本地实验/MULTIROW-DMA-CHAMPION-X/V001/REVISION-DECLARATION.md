@@ -69,4 +69,26 @@ stride 多行事务需要连续接收暂存（dstStride=0）：nBursts=chunk 行
 
 ## 风险注记（NPU 实测前保留）
 
-R015 用 `DataCopyPad` nBursts 多 burst 整行曾 Official RUNTIME_ERROR。本实现避开其触发面（非 Pad、仅 32B 对齐满 tile、srcStride 显式、尾部回退单 burst），但 stride 多行事务的驱动行为在本平台未实测过——correctness 失败或 runtime error 时按 evidence 上报，不静默改机制。
+R015 用 `DataCopyPad` nBursts 多 burst 整行曾 Official RUNTIME_ERROR。本实现避开其触发面（仅 32B 对齐满 tile、srcStride 显式、尾部回退单 burst），但 stride 多行事务的驱动行为在本平台未实测过——correctness 失败或 runtime error 时按 evidence 上报，不静默改机制。
+
+---
+
+## V001 执行记录（修改后补记）
+
+### Build Fix（允许范围内，API 形态适配）
+
+首次编译失败：`no matching function for call to 'DataCopy'`（本工具链 `DataCopy` 只收 `DataCopyParams`，无 `DataCopyExtParams` 重载）。`LoadStridedRows` 改为冠军已有的 `DataCopyPad + DataCopyExtParams + DataCopyPadExtParams` 形态。API 用法修复，无新性能机制。修复后 SOURCE_SHA = `5dea0eaf1752fd2ef671ec8d69bc8f27d490413c2043ea64bebe0ddf943dee5f`（修复前 `04c90d0f…`）。编译/链接 PASS。
+
+### NPU 实测结果摘要（详单见 local-result.json）
+
+- Correctness：V001 触及的 LP 路径与 parent 逐位一致（多轮复跑 max_abs/bad 完全相同）；BF16 48×12288 干净 0/0；小/中形状回归矩阵干净。
+- Same-binary（device-event，warmup=45，2×31）：三形状全 PASS（MAD/median≤0.052，block drift≤0.022）。
+- 交错 P/C（4 对/形状）：
+  - 48×16384 FP16（主场，batchRows=2）：**4/4 一致退步** +3.2%…+13.4%（median +8.4%）
+  - 48×12288 BF16：可采信 3 对混合（-2.1%/+4.6%/+1.5%），噪声内；第 4 对 candidate 端 LOAD_CONTAMINATED（median 122µs 双峰）留证不用
+  - 8×16384 FP16（阴性对照，localRows=1）：±4.7% 内混合 → 同代码噪声底约 5pp
+- **LOCAL_VERDICT = LOCAL_REJECTED**：事务削减（B=2 时 MTE2 命令减半）没有抵过失去 V011 2-deep 预取的损失——与假设风险条「事务削减 < 流水损失」一致。机制结论，不是构建问题。
+
+### 附带发现（只记 evidence，不修）
+
+Frozen parent 的 FP32 wide 路径在确定性输入下输出逐次不同（bad=96269/92999/94249，max_abs 1.23–1.30 波动），即已记录的 wide FP32 golden 偏差至少部分是 kernel 侧未初始化/别名行为，而非单纯 harness 差异。V001 未触及该路径。交 Main-2/Planning。
