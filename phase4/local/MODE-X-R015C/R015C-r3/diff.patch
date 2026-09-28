@@ -1,0 +1,38 @@
+--- a/op_kernel/row_copy_kernel.asc
++++ b/op_kernel/row_copy_kernel.asc
+@@ -24,7 +24,7 @@
+     inputGm.SetGlobalBuffer(reinterpret_cast<__gm__ float *>(input) + rowStart * rowElements);
+     outputGm.SetGlobalBuffer(reinterpret_cast<__gm__ float *>(output) + rowStart * rowElements);
+ 
+-    // dav_c220 reports incorrect data past 256 32-byte blocks in one 2-D row.
++    // Keep each segment within the observed dav_c220 2-D row boundary.
+     constexpr uint32_t kMaxBlocksPerSegment = 256;
+     constexpr uint32_t kMaxElementsPerSegment =
+         kMaxBlocksPerSegment * 32 / sizeof(float);
+@@ -33,15 +33,20 @@
+             const uint32_t chunkElements =
+                 (rowElements - col > kMaxElementsPerSegment) ?
+                     kMaxElementsPerSegment : (rowElements - col);
+-            AscendC::DataCopyParams copyParams{
++            // DataCopyPad Ext uses byte-length blockLen; the element cap above
++            // keeps each byte-length burst at or below 256 32-byte blocks.
++            AscendC::DataCopyExtParams copyParams{
+                 1,
+-                static_cast<uint16_t>(chunkElements * sizeof(float) / 32),
++                static_cast<uint32_t>(chunkElements * sizeof(float)),
+                 0,
++                0,
+                 0};
+-            AscendC::DataCopy(local, inputGm[row * rowElements + col], copyParams);
+-            AscendC::PipeBarrier<PIPE_MTE2>();
+-            AscendC::DataCopy(outputGm[row * rowElements + col], local, copyParams);
+-            AscendC::PipeBarrier<PIPE_MTE3>();
++            AscendC::DataCopyPadExtParams<float> padParams{false, 0, 0, 0.0f};
++            AscendC::LocalTensor<float> localChunk = local[0];
++            AscendC::DataCopyPad(localChunk, inputGm[row * rowElements + col], copyParams, padParams);
++            AscendC::PipeBarrier<PIPE_ALL>();
++            AscendC::DataCopyPad(outputGm[row * rowElements + col], localChunk, copyParams);
++            AscendC::PipeBarrier<PIPE_ALL>();
+             col += chunkElements;
+         }
+     }
