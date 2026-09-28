@@ -50,6 +50,211 @@
   "R31A's ProcessNarrowSingleTile already uses the vector-pipe mean/sqrt + one GetValue pattern (submission.asc:1174-1176); V023 extends it to CachedRows. The pattern itself is precision-safe when Sqrt+scalar reciprocal is used."
  ],
  "EXPECTED_PATH_NOTE": "V023 parents from V016, whose dispatch sends rows=2 D=24576 to wideFp32BatchPath. So the V023 CachedRows edit is only exercised at D=32768. D=24576 measurements test the untouched batch path and serve as the same-code control / noise band.",
- "STATUS": "BUILD_PASS_CORRECTNESS_PASS_AFTER_FIX_PENDING_MEASUREMENT",
- "DECISION": "PENDING_MEASUREMENT"
+ "STATUS": "BUILD_PASS_CORRECTNESS_PASS_AFTER_FIX_NEEDS_ONE_MORE_LOCAL",
+ "DECISION": "NEEDS_ONE_MORE_LOCAL",
+ "MEASUREMENT": {
+  "date": "2026-09-29",
+  "protocol": "unified device-event: warmup=45, same-binary 21x2, paired 4 blocks x 11 samples interleaved; runner SHA 7dbde489... (unchanged); parent module SHA 11d7a2cb... (byte-identical V016); candidate module SHA da483ebe... (V023 fixed)",
+  "lease_note": "RUN_BY_ROUTE_AGENT_M1_R31A; admission verified. Lease rows for 调度/服务器设备使用.tsv pending MAIN-1 sync.",
+  "SAME_BINARY": [
+   {
+    "device": 4,
+    "shape": "D=32768",
+    "gap_s": 5,
+    "result": "PASS",
+    "block_medians_us": [
+     18.68,
+     19.3
+    ],
+    "mad_over_median": [
+     0.012848,
+     0.023834
+    ],
+    "block_drift": 0.032649
+   },
+   {
+    "device": 6,
+    "shape": "D=32768",
+    "gap_s": 5,
+    "result": "PASS",
+    "block_medians_us": [
+     18.6,
+     19.04
+    ],
+    "mad_over_median": [
+     0.009677,
+     0.015756
+    ],
+    "block_drift": 0.023379
+   },
+   {
+    "device": 4,
+    "shape": "D=24576",
+    "gap_s": 5,
+    "result": "NOT_QUALIFIED",
+    "block_medians_us": [
+     47.7,
+     14.6
+    ],
+    "mad_over_median": [
+     0.55304,
+     0.047945
+    ],
+    "block_drift": 1.0626,
+    "note": "block1 contaminated; its paired data is NOT protocol-valid as a control"
+   },
+   {
+    "device": 6,
+    "shape": "D=24576",
+    "gap_s": 5,
+    "result": "PASS",
+    "block_medians_us": [
+     14.94,
+     14.62
+    ],
+    "mad_over_median": [
+     0.052209,
+     0.039672
+    ],
+    "block_drift": 0.021651
+   }
+  ],
+  "PAIRED_D32768_HYPOTHESIS_PROBE": {
+   "shape": "rows=2 D=32768 blocks=1 (CachedRows champion path; the only probe shape where the V023 edit is exercised)",
+   "attempt_d4": {
+    "parent_median_us": [
+     19.36,
+     32.74,
+     19.3,
+     28.58
+    ],
+    "candidate_median_us": [
+     19.22,
+     19.5,
+     19.18,
+     18.94
+    ],
+    "delta_percent": [
+     -0.723141,
+     -40.439829,
+     -0.621766,
+     -33.729883
+    ],
+    "parent_mad_over_median": [
+     0.020661,
+     0.417227,
+     0.040415,
+     0.357593
+    ],
+    "candidate_mad_over_median": [
+     0.010406,
+     0.013333,
+     0.04171,
+     0.051742
+    ],
+    "note": "blocks 2 and 4 have parent MAD 0.42/0.36 and inflated parent medians (32.74/28.58 us vs normal ~19 us); mid-run interference struck the parent. Those two blocks are not usable for direction. Clean blocks 1 and 3 read -0.72% and -0.62%."
+   },
+   "attempt_d6": {
+    "parent_median_us": [
+     19.18,
+     19.2,
+     19.04,
+     19.2
+    ],
+    "candidate_median_us": [
+     19.2,
+     19.26,
+     19.06,
+     19.0
+    ],
+    "delta_percent": [
+     0.104281,
+     0.312498,
+     0.105048,
+     -1.041675
+    ],
+    "parent_mad_over_median": [
+     0.010428,
+     0.01875,
+     0.009454,
+     0.0125
+    ],
+    "candidate_mad_over_median": [
+     0.005208,
+     0.017653,
+     0.006296,
+     0.006316
+    ],
+    "direction": "3_POSITIVE_1_NEGATIVE",
+    "median_delta_percent": 0.104664,
+    "note": "all four blocks clean (MAD <= 0.019). Median +0.10%, range -1.04% to +0.31%."
+   },
+   "combined_clean_blocks": {
+    "values_percent": [
+     -0.723141,
+     -0.621766,
+     0.104281,
+     0.312498,
+     0.105048,
+     -1.041675
+    ],
+    "median_percent": -0.258713,
+    "direction": "3_NEGATIVE_3_POSITIVE",
+    "range_percent": [
+     -1.041675,
+     0.312498
+    ],
+    "read": "Mixed direction, median -0.26%, within the noise band. No stable improvement and no stable regression."
+   }
+  },
+  "PAIRED_D24576_SAME_CODE_CONTROL": {
+   "shape": "rows=2 D=24576 blocks=1 (V016 dispatch sends this to batch; the V023 CachedRows edit is NOT exercised, so this is same-code)",
+   "device": 6,
+   "same_binary": "PASS (drift 0.0217)",
+   "parent_median_us": [
+    15.1,
+    14.88,
+    14.48,
+    14.62
+   ],
+   "candidate_median_us": [
+    15.36,
+    15.1,
+    14.54,
+    14.66
+   ],
+   "delta_percent": [
+    1.721849,
+    1.4785,
+    0.414361,
+    0.2736
+   ],
+   "direction": "4_POSITIVE_0_NEGATIVE",
+   "median_delta_percent": 0.94643,
+   "parent_mad_over_median": [
+    0.003974,
+    0.013441,
+    0.013812,
+    0.015048
+   ],
+   "candidate_mad_over_median": [
+    0.02474,
+    0.007947,
+    0.008253,
+    0.012278
+   ],
+   "interpretation": "Same-code shape. Median +0.95%, 4/4 positive. This is the candidate-slot measurement bias on this host: the candidate reads about +1% slower even on identical code. Confirms the noise band is roughly plus or minus 1.5% and that a small true effect can be masked."
+  },
+  "BIAS_ADJUSTED_READ": "Same-code bias +0.95% versus hypothesis-shape +0.10% suggests the V/S round-trip saving may be worth about -0.85% once the candidate-slot bias is removed. That number is inside the noise band and was not reproduced as a stable signal (d4 clean blocks read -0.67%, d6 reads +0.10%, mixed across attempts). Reported as a hypothesis for a future round, not as an established gain.",
+  "NOISE_BAND": "plus or minus 1.5% (from this round's same-code control +0.95% and prior round's controls). The D=32768 combined clean median (-0.26%) is inside it.",
+  "LOCAL_VERDICT": "NEEDS_ONE_MORE_LOCAL",
+  "VERDICT_REASON": "Correctness PASS after the precision fix. Paired measurement on the only exercising shape (D=32768) is mixed (3 negative, 3 positive across two attempts' clean blocks), median -0.26%, inside the measured noise band. The predicted saving (1 V/S round trip per row) is at or below the noise band, so a null result is the expected outcome per MAIN-1's mechanism-magnitude check. No stable improvement and no stable regression is established.",
+  "MECHANISM_READ": "The V/S round-trip saving alone (without the scalar-divide saving, which Rsqrt could not deliver at the required precision) is too small to resolve at rows=2 D=32768 on this host. The candidate-slot measurement bias (about +1% on same-code shapes) is comparable to or larger than the expected effect, which is why a clean read is hard. The Rsqrt precision finding stands independently and is the main output of this revision.",
+  "LOCAL_BEST": "NONE",
+  "LOCAL_BEST_UPDATED": false,
+  "OFFICIAL_BEST": "V016 / 45.00 (unchanged)",
+  "ONLINE_WORTHY": "NO",
+  "NEXT_ACTION": "V023 is NEEDS_ONE_MORE_LOCAL. V023 is not LOCAL_ACCEPTED and is not a legal parent. Next performance revision parents from V016. Per MAIN-1's instruction, V023 produced new information (Rsqrt precision) so H2 may proceed; if the next round is both no-gain and no-new-information, flag LANE_NEEDS_PLANNING_REVIEW.",
+  "EVIDENCE_DIR": "本地实验/R31A/V023/support/results/"
+ }
 }
