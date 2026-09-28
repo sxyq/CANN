@@ -85,3 +85,5 @@
 | 2026-09-29 | **R31A V024 LOCAL_ACCEPTED -3.66% 8/8 dual-device**; LOCAL_BEST V016→V024; ONLINE_RECOMMENDATION WORTHY (trigger A); package ready for Judge Owner |
 | 2026-09-29 | **R31B V016 LOCAL_ACCEPTED fp16-wide-d32768 -6.5~-7.0%**; LOCAL_BEST=V016; ONLINE_RECOMMENDATION WORTHY (trigger A); H1 selected for V017 |
 | 2026-09-29 | Two Online candidates ready: R31A V024 + R31B V016 |
+| 2026-09-29 | **R31A V025 LOCAL_ACCEPTED** incremental -4.12%; chain V016→V024→V025 ~-6.8%; trigger B met; ONLINE WORTHY V025 |
+| 2026-09-29 | Methodology: OFAT parent module must be DIRECT_PARENT (not default V016) |
