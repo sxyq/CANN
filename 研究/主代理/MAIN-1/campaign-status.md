@@ -72,3 +72,4 @@
 - Official Judge scores this exact source 15/15, so official cases don't expose it
 - Impact: any local P/C on wide-FP32 path is noise-dominated; correctness vs golden is not adjudicable
 - Evidence: `cann-m1-tiling/研究/SHAPE-TILING-CHAMPION-X/handoff-2026-09-28.md`, `local-result.json`
+| 2026-09-29 | STORE-EPILOGUE: V002 closed LOCAL_BEST; Track-B 5 hypotheses; Main selected H1 for V003 |
