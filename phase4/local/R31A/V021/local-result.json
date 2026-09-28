@@ -1,435 +1,679 @@
 {
-  "ROUTE": "R31A",
-  "REVISION": "V021",
-  "DIRECT_PARENT": "R31A-V016",
-  "PARENT_SOURCE_SHA": "dd13093823c885e785a650abff4863827e652eb8607ad0621a96eb31b6764fa0",
-  "PARENT_SCORE": 45.00,
-  "SINGLE_HYPOTHESIS": "In the R31A-V016 FP32 wide CachedRows output pass, keep kWideFp32CachedTileElems at 7680 and defer the per-tile MTE3-to-V completion wait until after all output tiles of each row; each value tile is written once and not reused, so MTE3 stores can overlap subsequent MTE2/vector tiles while the RMS first pass, dispatch, arithmetic, and all non-FP32 paths remain unchanged.",
-  "CONTEXT_CLASS": "HISTORICAL_EXPLOIT",
-  "FILES_CHANGED": [
-    "phase4/local/R31A/V021/source-meta.json: declaration",
-    "phase4/local/R31A/V021/submission.asc: one FP32 CachedRows output-fence placement change",
-    "phase4/workspaces/R31A/CMakeLists.txt: V021 build target wiring",
-    "phase4/workspaces/R31A/compile_adapter_v021.asc",
-    "phase4/workspaces/R31A/compile_adapter_v021.cpp",
-    "phase4/workspaces/R31A/R31A-V021-device.cpp",
-    "phase4/local/R31A/V021/support/*: auxiliary V016/V021 correctness and probe harness",
-    "phase4/local/R31A/V021/local-result.json: handoff record"
-  ],
-  "SOURCE_SHA": "4f5bfc319b72d1f0bcfd453bc92e80ac64216719898757292daf1aa1b73b6063",
-  "COMPILE": "PASS: server3 direct route CMake; /home/data4t2/lelinfeng/phase4-worktrees/R31A/V021-direct/compile-v021-server3.log",
-  "LINK": "PASS: server3 direct ld.lld; /home/data4t2/lelinfeng/phase4-worktrees/R31A/V021-direct/build/R31A-V021-device.alink and R31A-V021-submission.alink; /home/data4t2/lelinfeng/phase4-worktrees/R31A/V021-direct/link-v021-server3.log",
-  "CORRECTNESS": {
-    "candidate_target": "PASS: device=4, rows=2, D=32768, blocks=1, max_abs=4.83928943e-07",
-    "candidate_control": "PASS: device=4, rows=2, D=24576, blocks=1, max_abs=3.48268474e-07",
-    "tail_coverage": "Both widths exercise the final non-full 7680-element tile; no device=5 correctness run was required."
+ "ROUTE": "R31A",
+ "REVISION": "V021",
+ "DIRECT_PARENT": "R31A-V016",
+ "PARENT_SOURCE_SHA": "dd13093823c885e785a650abff4863827e652eb8607ad0621a96eb31b6764fa0",
+ "PARENT_SCORE": 45.0,
+ "SINGLE_HYPOTHESIS": "In the R31A-V016 FP32 wide CachedRows output pass, keep kWideFp32CachedTileElems at 7680 and defer the per-tile MTE3-to-V completion wait until after all output tiles of each row; each value tile is written once and not reused, so MTE3 stores can overlap subsequent MTE2/vector tiles while the RMS first pass, dispatch, arithmetic, and all non-FP32 paths remain unchanged.",
+ "CONTEXT_CLASS": "HISTORICAL_EXPLOIT",
+ "FILES_CHANGED": [
+  "phase4/local/R31A/V021/source-meta.json: declaration",
+  "phase4/local/R31A/V021/submission.asc: one FP32 CachedRows output-fence placement change",
+  "phase4/workspaces/R31A/CMakeLists.txt: V021 build target wiring",
+  "phase4/workspaces/R31A/compile_adapter_v021.asc",
+  "phase4/workspaces/R31A/compile_adapter_v021.cpp",
+  "phase4/workspaces/R31A/R31A-V021-device.cpp",
+  "phase4/local/R31A/V021/support/*: auxiliary V016/V021 correctness and probe harness",
+  "phase4/local/R31A/V021/local-result.json: handoff record"
+ ],
+ "SOURCE_SHA": "4f5bfc319b72d1f0bcfd453bc92e80ac64216719898757292daf1aa1b73b6063",
+ "COMPILE": "PASS: server3 direct route CMake; /home/data4t2/lelinfeng/phase4-worktrees/R31A/V021-direct/compile-v021-server3.log",
+ "LINK": "PASS: server3 direct ld.lld; /home/data4t2/lelinfeng/phase4-worktrees/R31A/V021-direct/build/R31A-V021-device.alink and R31A-V021-submission.alink; /home/data4t2/lelinfeng/phase4-worktrees/R31A/V021-direct/link-v021-server3.log",
+ "CORRECTNESS": {
+  "candidate_target": "PASS: device=4, rows=2, D=32768, blocks=1, max_abs=4.83928943e-07",
+  "candidate_control": "PASS: device=4, rows=2, D=24576, blocks=1, max_abs=3.48268474e-07",
+  "tail_coverage": "Both widths exercise the final non-full 7680-element tile; no device=5 correctness run was required."
+ },
+ "LOCAL_PROBES": [
+  {
+   "pair": "target D=32768",
+   "command_shape": "device=4 rows=2 blocks=1 warmup=2 repeats=10",
+   "parent_v016_device_us": 40.746,
+   "candidate_v021_device_us": 31.02,
+   "raw_delta_us": -9.726,
+   "classification": "LOAD_CONTAMINATED"
   },
-  "LOCAL_PROBES": [
-    {
-      "pair": "target D=32768",
-      "command_shape": "device=4 rows=2 blocks=1 warmup=2 repeats=10",
-      "parent_v016_device_us": 40.746,
-      "candidate_v021_device_us": 31.020,
-      "raw_delta_us": -9.726,
-      "classification": "LOAD_CONTAMINATED"
-    },
-    {
-      "pair": "control D=24576",
-      "command_shape": "device=4 rows=2 blocks=1 warmup=2 repeats=10",
-      "parent_v016_device_us": 28.706,
-      "candidate_v021_device_us": 31.908,
-      "raw_delta_us": 3.202,
-      "classification": "LOAD_CONTAMINATED"
-    }
-  ],
-  "LOCAL_DELTA": "D24576 D5 R15 deltas -0.667562%, -1.562500%, +1.532032%, +1.492542%; mixed signs, median +0.412490%, within the shape noise floor. No gain or regression is established.",
-  "LOAD_QUALITY": {
-    "recorded_at_local": "2026-09-24T00:56:20+0800",
-    "report_source": "Main dispatch observation",
-    "observation": "All 8 NPUs have existing VLLM/python processes; AICore ~31-49% on devices 0-3 and 7, 0% on 4-6, HBM heavily occupied on all devices.",
-    "probe_classification": "LOAD_CONTAMINATED",
-    "interpretation": "Do not interpret small latency deltas as improvement under this load.",
-    "latest_snapshot": {
-      "recorded_at_server_utc": "2026-09-23T23:34:28+0000",
-      "recorded_at_local": "2026-09-24T07:34:28+0800",
-      "observation": "All 8 NPUs had resident processes: device0 VLLMWorker_TP pid89395, device1 VLLMWorker_TP pid91055, device2 VLLMWorker_TP pid92813, device3 VLLMWorker_TP pid94498, device4 VLLMEngineCor pid2999855, device5 VLLMWorker_TP pid89602, device6 VLLMWorker_TP pid91228, device7 python pid3458196; AICore 32%,32%,32%,32%,69%,0%,0%,0% on devices 0-7; HBM 59957,60007,59949,59951,59187,59877,59876,65530 MB / 65536 MB.",
-      "probe_window_decision": "NO_COMPARABLE_WINDOW",
-      "probe_classification": "LOAD_CONTAMINATED"
-    }
-  },
-  "FOLLOW_UP_LOAD_OBSERVATIONS": [
-    {
-      "recorded_at_local": "2026-09-24T05:01:19+0800",
-      "recorded_at_server_utc": "2026-09-23T21:01:19+0000",
-      "observation": "All 8 NPUs still had resident VLLM/python processes; AICore was 18%, 9%, 9%, 9%, 0%, 0%, 0%, 0% on devices 0-7; HBM was 59957, 60007, 59948, 59951, 59190, 59876, 59927, 64527 MB out of 65536 MB.",
-      "probe_classification": "LOAD_CONTAMINATED"
-    },
-    {
-      "recorded_at_local": "2026-09-24T05:02:27+0800",
-      "recorded_at_server_utc": "2026-09-23T21:02:27+0000",
-      "observation": "After a 30-second wait, all 8 NPUs still had resident VLLM/python processes; AICore was 33%, 33%, 30%, 33%, 0%, 0%, 0%, 0% on devices 0-7; HBM was 59957, 60006, 59949, 59951, 59187, 59876, 59876, 65041 MB out of 65536 MB.",
-      "probe_classification": "LOAD_CONTAMINATED"
-    },
-    {
-      "recorded_at_server_utc": "2026-09-23T22:27:24+0000",
-      "observation": "All 8 NPUs had resident VLLM/python processes; AICore 33%,34%,34%,33%,0%,0%,0%,0%; HBM 59957,60006,59949,59951,59187,59877,59875,65534 MB / 65536 MB.",
-      "probe_classification": "LOAD_CONTAMINATED"
-    },
-    {
-      "recorded_at_server_utc": "2026-09-23T22:30:11+0000",
-      "observation": "Same 8 resident processes; AICore 32%,32%,32%,32%,0%,0%,0%,13%; HBM 59956,60007,59949,59951,59190,59878,59875,65531 MB / 65536 MB.",
-      "probe_classification": "LOAD_CONTAMINATED"
-    },
-    {
-      "recorded_at_server_utc": "2026-09-23T22:32:06+0000",
-      "observation": "Same 8 resident processes; AICore 33%,34%,33%,33%,0%,0%,0%,0%; HBM 59957,60006,59949,59951,59188,59877,59876,65534 MB / 65536 MB.",
-      "probe_classification": "LOAD_CONTAMINATED"
-    },
-    {
-      "recorded_at_server_utc": "2026-09-23T22:34:42+0000",
-      "observation": "Same 8 resident processes; AICore 33%,34%,34%,34%,0%,0%,0%,0%; HBM 59957,60006,59949,59951,59188,59877,59875,65534 MB / 65536 MB.",
-      "probe_classification": "LOAD_CONTAMINATED"
-    },
-    {
-      "recorded_at_server_utc": "2026-09-23T22:36:27+0000",
-      "observation": "Same 8 resident processes; AICore 33%,34%,33%,33%,0%,0%,0%,0%; HBM 59957,60006,59949,59951,59187,59877,59876,65251 MB / 65536 MB.",
-      "probe_classification": "LOAD_CONTAMINATED"
-    },
-    {
-      "recorded_at_server_utc": "2026-09-23T22:37:34+0000",
-      "observation": "Same 8 resident processes; AICore 31%,31%,31%,31%,0%,0%,0%,0%; HBM 59957,60006,59949,59951,59188,59877,59875,65529 MB / 65536 MB.",
-      "probe_classification": "LOAD_CONTAMINATED"
-    },
-    {
-      "recorded_at_server_utc": "2026-09-23T22:38:43+0000",
-      "observation": "Same 8 resident processes; AICore 31%,32%,32%,31%,0%,0%,0%,0%; HBM 59957,60007,59949,59951,59188,59877,59875,65533 MB / 65536 MB.",
-      "probe_classification": "LOAD_CONTAMINATED"
-    },
-    {
-      "recorded_at_server_utc": "2026-09-23T22:40:14+0000",
-      "observation": "Same 8 resident processes; AICore 32%,32%,32%,32%,0%,0%,0%,0%; HBM 59957,60006,59949,59951,59188,59877,59875,65529 MB / 65536 MB.",
-      "probe_classification": "LOAD_CONTAMINATED"
-    },
-    {
-      "recorded_at_server_utc": "2026-09-23T22:41:33+0000",
-      "observation": "Same 8 resident processes; AICore 33%,33%,33%,33%,0%,0%,0%,0%; HBM 59957,60006,59949,59951,59187,59877,59875,65529 MB / 65536 MB.",
-      "probe_classification": "LOAD_CONTAMINATED"
-    },
-    {
-      "recorded_at_local": "2026-09-24T06:43:33+0800",
-      "recorded_at_server_utc": "2026-09-23T22:43:33+0000",
-      "observation": "Same 8 resident VLLM/python processes; AICore 32%,19%,19%,19%,0%,0%,0%,0%; HBM 59957,60006,59949,59951,59187,59877,59875,64658 MB / 65536 MB.",
-      "probe_classification": "LOAD_CONTAMINATED"
-    },
-    {
-      "recorded_at_local": "2026-09-24T06:46:56+0800",
-      "recorded_at_server_utc": "2026-09-23T22:46:56+0000",
-      "observation": "Same 8 resident processes: device0 VLLMWorker_TP pid89395, device1 VLLMWorker_TP pid91055, device2 VLLMWorker_TP pid92813, device3 VLLMWorker_TP pid94498, device4 VLLMEngineCor pid2999855, device5 VLLMWorker_TP pid89602, device6 VLLMWorker_TP pid91228, device7 python pid3458196; AICore 30%,31%,31%,30%,0%,0%,0%,8%; HBM 59957,60006,59949,59951,59187,59877,59897,65533 MB / 65536 MB.",
-      "probe_classification": "LOAD_CONTAMINATED"
-    }
-  ],
-  "HOST_SIDE_PREPARATION": {
-    "prepared_at_local": "2026-09-24T11:55:15+0800",
-    "state": "READY_WAITING_FOR_MAIN_DEVICE_SLOT",
-    "scope": "Host-side only. No NPU load query, probe executable, or timing command was run during this preparation.",
-    "device_slot_note": "ASYNC V001 owns the current device slot. Start only after Main explicitly schedules R31A, then capture pre-run and post-run server3 npu-smi snapshots. Run only if the snapshots establish a comparable load window; otherwise record LOAD_CONTAMINATED and stop.",
-    "source_identity": {
-      "V016_parent_source": {
-        "path": "phase4/workspaces/R31A/R31A-V016-submission.asc",
-        "sha256": "dd13093823c885e785a650abff4863827e652eb8607ad0621a96eb31b6764fa0"
-      },
-      "V016_probe_included_source": {
-        "path": "phase4/local/R31A/V021/support/parent_v016_submission.asc",
-        "sha256": "dd13093823c885e785a650abff4863827e652eb8607ad0621a96eb31b6764fa0"
-      },
-      "V021_candidate_source": {
-        "path": "phase4/local/R31A/V021/submission.asc",
-        "sha256": "4f5bfc319b72d1f0bcfd453bc92e80ac64216719898757292daf1aa1b73b6063"
-      },
-      "dependency_evidence": "On server3, probe_v016.asc.o.d includes support/parent_v016_submission.asc; probe_v021.asc.o.d includes ../submission.asc. Both object targets and executables are present in probe-build; compile-probe-v021-server3.log records each target built and linked."
-    },
-    "server3_artifacts": {
-      "directory": "/home/data4t2/lelinfeng/phase4-worktrees/R31A/V021-direct/probe-build",
-      "probe_v016": {
-        "binary_sha256": "5513076e24b067864ea625ff9a0cfe9e8d1adb89262de3cebd9a3ab198df3f78",
-        "object_sha256": "97af0df474c8f56d7828d66e33f5ede191151c06fbdfd8ba1ebf544b2b0f524c",
-        "probe_source_sha256": "a8450a002e6a61940d548b6afb915942c736b1c29e7ae6f680a11b1d92d32271",
-        "build_log": "/home/data4t2/lelinfeng/phase4-worktrees/R31A/V021-direct/compile-probe-v021-server3.log"
-      },
-      "probe_v021": {
-        "binary_sha256": "62092bb490d61e2604e6561e2971856aace504d7875427dceb06039ace163bf0",
-        "object_sha256": "a5411c11649722fb58c08592c4b44d56c9b3ff433791aca761cd72d5867e1536",
-        "probe_source_sha256": "f92db18020839ead189e3df99cd7e92aab72f29cb3a20635e76cfef765493c15",
-        "build_log": "/home/data4t2/lelinfeng/phase4-worktrees/R31A/V021-direct/compile-probe-v021-server3.log"
-      }
-    },
-    "setup_commands": [
-      "source /usr/local/Ascend/ascend-toolkit/set_env.sh",
-      "cd /home/data4t2/lelinfeng/phase4-worktrees/R31A/V021-direct/probe-build"
-    ],
-    "paired_probe_order": [
-      {"pair": 1, "case": "target D=32768", "command": "./probe_v016 4 2 32768 1 2 10"},
-      {"pair": 1, "case": "target D=32768", "command": "./probe_v021 4 2 32768 1 2 10"},
-      {"pair": 2, "case": "control D=24576", "command": "./probe_v021 4 2 24576 1 2 10"},
-      {"pair": 2, "case": "control D=24576", "command": "./probe_v016 4 2 24576 1 2 10"},
-      {"pair": 3, "case": "target D=32768", "command": "./probe_v021 4 2 32768 1 2 10"},
-      {"pair": 3, "case": "target D=32768", "command": "./probe_v016 4 2 32768 1 2 10"},
-      {"pair": 4, "case": "control D=24576", "command": "./probe_v016 4 2 24576 1 2 10"},
-      {"pair": 4, "case": "control D=24576", "command": "./probe_v021 4 2 24576 1 2 10"}
-    ],
-    "measurement_parameters": "device=4 rows=2 blocks=1 warmup=2 repeats=10; two parent/candidate pairs each for target and control, alternating execution order.",
-    "execution_authorization": "Wait for explicit Main scheduling and a clear comparable load snapshot; do not run while ASYNC V001 owns the device slot."
-  },
-  "MAIN1_PCPC_HARNESS": {
-    "prepared_at_local": "2026-09-24T12:27:07+0800",
-    "state": "PREPARED_FOR_MAIN_REVIEW_NO_LEASE",
-    "ownership_basis": {
-      "canonical_scheduler": "/Users/sunyiyang/Desktop/Project/cann/phase4/control/scheduler.tsv",
-      "route_owner": "01a0ceef-aa76-7e62-b14f-f728a27e2514",
-      "worktree": "/Users/sunyiyang/Desktop/Project/cann-sixlane/R31A",
-      "branch": "exec/sixlane-20260923-r31a",
-      "observed_route_state": "ACTIVE_EXPLOIT; MAIN_REVIEW_NEEDS_ONE_MORE_LOCAL"
-    },
-    "candidate_source_sha256": "4f5bfc319b72d1f0bcfd453bc92e80ac64216719898757292daf1aa1b73b6063",
-    "parent_source_sha256": "dd13093823c885e785a650abff4863827e652eb8607ad0621a96eb31b6764fa0",
-    "validated_artifacts": {
-      "probe_v016": {
-        "path": "/home/data4t2/lelinfeng/phase4-worktrees/R31A/V021-direct/probe-build/probe_v016",
-        "binary_sha256": "5513076e24b067864ea625ff9a0cfe9e8d1adb89262de3cebd9a3ab198df3f78",
-        "included_parent_source_sha256": "dd13093823c885e785a650abff4863827e652eb8607ad0621a96eb31b6764fa0"
-      },
-      "probe_v021": {
-        "path": "/home/data4t2/lelinfeng/phase4-worktrees/R31A/V021-direct/probe-build/probe_v021",
-        "binary_sha256": "62092bb490d61e2604e6561e2971856aace504d7875427dceb06039ace163bf0",
-        "included_candidate_source_sha256": "4f5bfc319b72d1f0bcfd453bc92e80ac64216719898757292daf1aa1b73b6063"
-      },
-      "validation": "Server3 binary and object SHA256 values match the existing host preparation record. Dependency files show probe_v016 includes parent_v016_submission.asc and probe_v021 includes ../submission.asc. No executable was launched."
-    },
-    "setup_commands_for_later_authorized_run": [
-      "source /usr/local/Ascend/ascend-toolkit/set_env.sh",
-      "cd /home/data4t2/lelinfeng/phase4-worktrees/R31A/V021-direct/probe-build"
-    ],
-    "parameters": {
-      "device": 4,
-      "rows": 2,
-      "blocks": 1,
-      "warmup": 2,
-      "repeats_per_invocation": 10,
-      "order": "parent/candidate/parent/candidate",
-      "parent_binary": "probe_v016",
-      "candidate_binary": "probe_v021"
-    },
-    "commands_by_shape": {
-      "target_D32768": [
-        "./probe_v016 4 2 32768 1 2 10",
-        "./probe_v021 4 2 32768 1 2 10",
-        "./probe_v016 4 2 32768 1 2 10",
-        "./probe_v021 4 2 32768 1 2 10"
-      ],
-      "control_D24576": [
-        "./probe_v016 4 2 24576 1 2 10",
-        "./probe_v021 4 2 24576 1 2 10",
-        "./probe_v016 4 2 24576 1 2 10",
-        "./probe_v021 4 2 24576 1 2 10"
-      ]
-    },
-    "load_snapshots": {
-      "status": "NO_COMPARABLE_WINDOW_MAIN_REPORTED_CONTAMINATED",
-      "main_reported_observation": "Server3 remains load-contaminated across all 8 devices and no Main-1 lease is active.",
-      "main_observation_timestamp": null,
-      "capture_points": ["before_target", "between_target_and_control", "after_control"],
-      "required_fields": "Timestamp and full npu-smi device table for all 8 NPUs: device id, HBM usage/capacity, AICore utilization, and process id/name/memory. Capture only after Main grants the uncontested R31A slot; compare snapshots for stability.",
-      "device_access_this_preparation": "NONE"
-    },
-    "statistics_to_record": {
-      "per_shape_inputs": ["P1 device_us", "C1 device_us", "P2 device_us", "C2 device_us"],
-      "parent_jitter_spread_us": "abs(P2-P1)",
-      "candidate_jitter_spread_us": "abs(C2-C1)",
-      "paired_delta_us": ["C1-P1", "C2-P2"],
-      "median_delta_us": "median of the two paired deltas (their arithmetic mean for n=2); negative favors V021, positive favors V016.",
-      "within_shape_direction_consistency": "Consistent only when both paired deltas have the same nonzero sign; otherwise MIXED or INDETERMINATE.",
-      "target_control_direction_consistency": "Record whether target and control median deltas have matching or opposing signs; report INDETERMINATE if either is zero or missing.",
-      "sampling_note": "Each device_us is an average over 10 measured invocations; the two-point spread describes between-invocation-run variation and is not a high-sample variance estimate."
-    },
-    "execution_boundary": "No Main-1 lease is active and Main reports all 8 devices remain load-contaminated. Stop at Main Review without querying device load or launching probes. ASYNC Main-1 is frozen and must not be run. Do not create V022, modify candidate source/CMake/runner, or submit Online.",
-    "results": {
-      "target_D32768": null,
-      "control_D24576": null,
-      "overall_direction_consistency": "PENDING"
-    }
-  },
-  "FOLLOW_UP_PROBES": "D24576 on d7: Parent same-binary PASS, then 4 interleaved Parent/Candidate device-event blocks completed. Pair deltas have mixed direction; LOCAL_VERDICT=NEEDS_ONE_MORE_LOCAL. D32768 remains unqualified.",
-  "STATUS": "D24576 R15 SAME_BINARY_PASS; PAIRED_TIMING_VALID; LOCAL_VERDICT=NEEDS_ONE_MORE_LOCAL; D32768_NOT_QUALIFIED",
-  "ARCHITECTURE_NOVELTY": "NONE: existing MTE3/V synchronization primitive with a changed wait placement only.",
-  "RISKS": "D24576 paired deltas vary in direction and scale, so no performance claim is established. D32768 remains unqualified. The deferred MTE3 completion relies on each value tile remaining untouched until the row-level wait.",
-  "DECISION": "NEEDS_ONE_MORE_LOCAL",
-  "NEXT_CANDIDATE_HYPOTHESIS": "None declared; await Main Review. Any later revision must return to R31A-V016.",
-  "CLEANUP": "NONE: no files or server3 build directories deleted or cleaned.",
-  "NON_TIMING_STATUS_20260927": {
-    "SOURCE_SHA256": "4f5bfc319b72d1f0bcfd453bc92e80ac64216719898757292daf1aa1b73b6063",
-    "SERVER3_SOURCE_SHA256": "4f5bfc319b72d1f0bcfd453bc92e80ac64216719898757292daf1aa1b73b6063",
-    "DIRECT_PARENT": "R31A-V016",
-    "PARENT_SOURCE_SHA256": "dd13093823c885e785a650abff4863827e652eb8607ad0621a96eb31b6764fa0",
-    "BUILD": "PASS",
-    "COMPILE_RC": 0,
-    "LINK_RC": 0,
-    "BUILD_COMMAND": "cmake --build /home/data4t2/lelinfeng/phase4-worktrees/R31A/V021-direct/build --target r31a_submission r31a_device --parallel 1",
-    "BUILD_ARTIFACT_SHA256": {
-      "device.alink": "96fd4babb50710c5489071aa4861bc89bd07dc8fa32d309de781cd05fb7c7a4f",
-      "submission.alink": "78cd7c977222adf1ebec22e408a885426f097ac37e0a8f8829877a023f268f7f"
-    },
-    "CORRECTNESS": "PASS",
-    "CORRECTNESS_EVIDENCE": "Exact V016/V021 paired runner on d7: D=32768 and D=24576 both PASS; runner SHA256 7dbde489de951be883fe38d6cbc991800c0451a97931af8ac036c339f0e61f9a; timing_samples=0.",
-    "EXECUTABLE_IDENTITY": "PASS",
-    "EXECUTABLE_SHA256": {
-      "parent_module": "11d7a2cb60912ce23b05a768c9076abcf2c513ad8b0844cc062d158082a4d5ea",
-      "candidate_module": "9bacd8cd72b8db5c6b8a1574ce199c674b18bc2bcf858cfb91ade29f71d24674",
-      "runner": "7dbde489de951be883fe38d6cbc991800c0451a97931af8ac036c339f0e61f9a"
-    },
-    "SAME_BINARY": "D24576_PASS_ON_D7_R8; D32768_REMAINS_UNQUALIFIED",
-    "TIMING": "D24576_FOUR_VALID_INTERLEAVED_DEVICE_EVENT_BLOCKS; D32768_NOT_RUN",
-    "TIMING_BLOCKER": "D24576 paired deltas are +0.265955%, +6.740531%, -10.333604%, and 0.000000%; direction and dispersion are inconsistent. HBM admission passed; AICore and resident processes were observational only.",
-    "LOCAL_VERDICT": "NEEDS_ONE_MORE_LOCAL",
-    "READY_FOR_SAME_BINARY": false,
-    "DEVICE_WINDOW": "USED_D7_HBM_3418_TO_3485_OF_65536_MB_NO_CONFLICT",
-    "LOCAL_BEST_UPDATED": false,
-    "ONLINE_WORTHY": "NO"
-  },
-  "TIMING_RUN_20260927": {
-    "LEASE_ID": "M1-R31A-V021-D7-20260927T054149Z",
-    "DEVICE": 7,
-    "PRE_HBM_MB": 3431,
-    "POST_HBM_MB": 3432,
-    "PRE_AICORE_PERCENT": 96.2,
-    "POST_AICORE_PERCENT": 95.6,
-    "PRE_PROCESS": "none",
-    "POST_PROCESS": "none",
-    "runner_mode": "device-event-primary_wall-clock-diagnostic",
-    "warmups": 45,
-    "samples_per_block": 21,
-    "parent_v016": {
-      "D32768": {"block1_median_us": 18.94, "block1_mad_over_median": 0.012672, "block2_median_us": 36.58, "block2_mad_over_median": 0.024057, "block_drift": 0.635447, "protocol_result": "NOT_QUALIFIED"},
-      "D24576": {"block1_median_us": 18.279999, "block1_mad_over_median": 0.065646, "block2_median_us": 28.78, "block2_mad_over_median": 0.325921, "block_drift": 0.446239, "protocol_result": "NOT_QUALIFIED"}
-    },
-    "candidate_timing": "NOT_RUN_BECAUSE_PARENT_SHAPE_QUALIFICATION_FAILED",
-    "evidence_dir": "support/results/d7-20260927T054149Z/"
-  },
-  "TIMING_RUN_20260927_D7_R8": {
-    "LEASE_ID": "M1-R31A-V021-D7-R8-20260927T105819Z",
-    "DEVICE": 7,
-    "PRE_HBM_MB": 3418,
-    "POST_HBM_MB": 3485,
-    "PRE_HBM_RATE_PERCENT": 5,
-    "POST_HBM_RATE_PERCENT": 5,
-    "PRE_AICORE_PERCENT": 0,
-    "POST_AICORE_PERCENT": 0,
-    "PRE_PROCESS": "none",
-    "POST_PROCESS": "VLLMEngineCor pid=1343052, 121 MB; recorded only",
-    "runner_mode": "device-event-primary_wall-clock-diagnostic",
-    "warmups": 45,
-    "same_binary_samples_per_block": 21,
-    "paired_samples_per_variant_per_block": 11,
-    "parent_v016_d24576": {
-      "block_medians_us": [15.64, 15.60],
-      "block_mad_over_median": [0.021739, 0.064103],
-      "block_median_drift": 0.002561,
-      "protocol_result": "PASS"
-    },
-    "paired_d24576": {
-      "blocks": 4,
-      "parent_median_us": [22.56, 21.66, 24.58, 21.44],
-      "candidate_median_us": [22.62, 23.12, 22.04, 21.44],
-      "delta_percent": [0.265955, 6.740531, -10.333604, 0.0],
-      "median_delta_percent": 0.132978,
-      "correctness": "V016_PASS; V021_PASS"
-    },
-    "identity_before_after": "PASS; candidate source, parent source, runner, and both modules unchanged",
-    "evidence_dir": "/Users/sunyiyang/Desktop/Project/cann/phase4/local/R31A/V021/support/results/",
-    "evidence_files": [
-      "M1-R31A-V021-D7-R8-20260927T105819Z-d24576-parent-samples.tsv",
-      "M1-R31A-V021-D7-R8-20260927T105819Z-d24576-parent-jitter.tsv",
-      "M1-R31A-V021-D7-R8-20260927T105819Z-d24576-paired-samples.tsv",
-      "M1-R31A-V021-D7-R8-20260927T105819Z-d24576-paired-jitter.tsv",
-      "M1-R31A-V021-D7-R8-20260927T105819Z-d24576-paired-pair-blocks.tsv",
-      "M1-R31A-V021-D7-R8-20260927T105819Z-d24576-paired.postflight.npu-smi.txt",
-      "M1-R31A-V021-D7-R8-20260927T105819Z-d24576-paired.postflight.identity.sha256"
-    ],
-    "local_verdict": "NEEDS_ONE_MORE_LOCAL",
-    "local_best_updated": false,
-    "online_worthy": "NO",
-    "interpretation": "HBM was below 100% before and after; no conflicting shared lease. D24576 passed same-binary qualification and completed paired timing. Mixed block deltas do not establish a gain or regression. Lease released at 2026-09-27T11:03:42Z."
-  },
-  "TIMING_RUN_20260927_D6_R9": {
-    "LEASE_ID": "M1-R31A-V021-D6-R9-20260927T115106Z",
-    "DEVICE": 6,
-    "LEASE_START_UTC": "2026-09-27T11:51:06Z",
-    "LEASE_END_UTC": "2026-09-27T11:58:14Z",
-    "PRE_HBM_RATE_PERCENT": 91,
-    "POST_HBM_RATE_PERCENT": 91,
-    "PRE_AICORE_PERCENT": 95.5,
-    "POST_AICORE_PERCENT": 99.5,
-    "AICORE_IS_ADMISSION_CONDITION": false,
-    "RUNNER_MODE": "device-event-primary_wall-clock-diagnostic",
-    "WARMUPS": 45,
-    "SAME_BINARY_SAMPLES_PER_BLOCK": 21,
-    "PARENT_V016_D24576": {
-      "block_medians_us": [14.24, 14.24],
-      "block_mad_over_median": [0.009831, 0.021067],
-      "block_median_drift": 0.0,
-      "protocol_result": "PASS"
-    },
-    "PAIRED_D24576": {
-      "blocks": 4,
-      "samples_per_version_per_block": 11,
-      "parent_median_us": [15.22, 15.50, 15.14, 14.88],
-      "candidate_median_us": [15.62, 15.40, 14.86, 15.22],
-      "delta_percent": [2.628116, -0.645160, -1.849401, 2.284951],
-      "median_delta_percent": 0.819896,
-      "status": "VALID_DEVICE_EVENT_INTERLEAVED"
-    },
-    "RUNNER_CORRECTNESS_ASSERTION": {
-      "V016": "PASS; max_abs=3.48268474e-07",
-      "V021": "PASS; max_abs=3.48268474e-07",
-      "note": "The paired runner performed its built-in per-shape correctness assertions during this timing invocation; no full correctness suite or build was rerun."
-    },
-    "IDENTITY_BEFORE_AFTER": "PASS; source, Parent module, Candidate module and runner match existing identities",
-    "EVIDENCE_DIR": "/Users/sunyiyang/Desktop/Project/cann/phase4/local/R31A/V021/support/results/",
-    "EVIDENCE_PREFIX": "M1-R31A-V021-D6-R9-20260927T115106Z-d24576-",
-    "LOCAL_VERDICT": "NEEDS_ONE_MORE_LOCAL",
-    "LOCAL_BEST_UPDATED": false,
-    "ONLINE_WORTHY": "NO",
-    "INTERPRETATION": "Noise floor and paired device-event timing are valid. Pair directions differ and median delta remains within measured Parent noise; no performance gain or regression is established. HBM remained below 100%; AICore was recorded only. Lease released at 2026-09-27T11:58:14Z."
-  },
-  "TIMING_RUN_20260927_D5_R15": {
-    "LEASE_ID": "M1-R31A-V021-D5-R15-20260927T151338Z",
-    "DEVICE": 5,
-    "LEASE_START_UTC": "2026-09-27T15:13:38Z",
-    "LEASE_END_UTC": "2026-09-27T15:19:26Z",
-    "PRE_HBM_RATE_PERCENT": 91,
-    "POST_HBM_RATE_PERCENT": 91,
-    "AICORE_IS_ADMISSION_CONDITION": false,
-    "RUNNER_MODE": "device-event-primary_wall-clock-diagnostic",
-    "WARMUPS": 45,
-    "SAME_BINARY_SAMPLES_PER_BLOCK": 21,
-    "PARENT_V016_D24576": {
-      "block_medians_us": [15.04, 15.10],
-      "block_mad_over_median": [0.047872, 0.033113],
-      "block_median_drift": 0.003981,
-      "protocol_result": "PASS"
-    },
-    "PAIRED_D24576": {
-      "blocks": 4,
-      "samples_per_version_per_block": 11,
-      "delta_percent_candidate_vs_parent": [-0.667562, -1.562500, 1.532032, 1.492542],
-      "median_delta_percent": 0.412490,
-      "status": "VALID_DEVICE_EVENT_INTERLEAVED"
-    },
-    "CORRECTNESS_ASSERTION": "V016 and V021 PASS; max_abs=3.48268474e-07",
-    "IDENTITY_BEFORE_AFTER": "PASS; Candidate, Direct Parent, runner and prebuilt executable identities matched",
-    "EVIDENCE_PREFIX": "phase4/local/R31A/V021/support/results/M1-R31A-V021-D5-R15-20260927T151338Z-",
-    "LOCAL_VERDICT": "NEEDS_ONE_MORE_LOCAL",
-    "LOCAL_BEST_UPDATED": false,
-    "ONLINE_WORTHY": "NO",
-    "INTERPRETATION": "Paired direction is split 2/2 and median delta is within the shape noise floor. No performance conclusion beyond NEEDS_ONE_MORE_LOCAL."
+  {
+   "pair": "control D=24576",
+   "command_shape": "device=4 rows=2 blocks=1 warmup=2 repeats=10",
+   "parent_v016_device_us": 28.706,
+   "candidate_v021_device_us": 31.908,
+   "raw_delta_us": 3.202,
+   "classification": "LOAD_CONTAMINATED"
   }
+ ],
+ "LOCAL_DELTA": "D24576 D5 R15 deltas -0.667562%, -1.562500%, +1.532032%, +1.492542%; mixed signs, median +0.412490%, within the shape noise floor. No gain or regression is established.",
+ "LOAD_QUALITY": {
+  "recorded_at_local": "2026-09-24T00:56:20+0800",
+  "report_source": "Main dispatch observation",
+  "observation": "All 8 NPUs have existing VLLM/python processes; AICore ~31-49% on devices 0-3 and 7, 0% on 4-6, HBM heavily occupied on all devices.",
+  "probe_classification": "LOAD_CONTAMINATED",
+  "interpretation": "Do not interpret small latency deltas as improvement under this load.",
+  "latest_snapshot": {
+   "recorded_at_server_utc": "2026-09-23T23:34:28+0000",
+   "recorded_at_local": "2026-09-24T07:34:28+0800",
+   "observation": "All 8 NPUs had resident processes: device0 VLLMWorker_TP pid89395, device1 VLLMWorker_TP pid91055, device2 VLLMWorker_TP pid92813, device3 VLLMWorker_TP pid94498, device4 VLLMEngineCor pid2999855, device5 VLLMWorker_TP pid89602, device6 VLLMWorker_TP pid91228, device7 python pid3458196; AICore 32%,32%,32%,32%,69%,0%,0%,0% on devices 0-7; HBM 59957,60007,59949,59951,59187,59877,59876,65530 MB / 65536 MB.",
+   "probe_window_decision": "NO_COMPARABLE_WINDOW",
+   "probe_classification": "LOAD_CONTAMINATED"
+  }
+ },
+ "FOLLOW_UP_LOAD_OBSERVATIONS": [
+  {
+   "recorded_at_local": "2026-09-24T05:01:19+0800",
+   "recorded_at_server_utc": "2026-09-23T21:01:19+0000",
+   "observation": "All 8 NPUs still had resident VLLM/python processes; AICore was 18%, 9%, 9%, 9%, 0%, 0%, 0%, 0% on devices 0-7; HBM was 59957, 60007, 59948, 59951, 59190, 59876, 59927, 64527 MB out of 65536 MB.",
+   "probe_classification": "LOAD_CONTAMINATED"
+  },
+  {
+   "recorded_at_local": "2026-09-24T05:02:27+0800",
+   "recorded_at_server_utc": "2026-09-23T21:02:27+0000",
+   "observation": "After a 30-second wait, all 8 NPUs still had resident VLLM/python processes; AICore was 33%, 33%, 30%, 33%, 0%, 0%, 0%, 0% on devices 0-7; HBM was 59957, 60006, 59949, 59951, 59187, 59876, 59876, 65041 MB out of 65536 MB.",
+   "probe_classification": "LOAD_CONTAMINATED"
+  },
+  {
+   "recorded_at_server_utc": "2026-09-23T22:27:24+0000",
+   "observation": "All 8 NPUs had resident VLLM/python processes; AICore 33%,34%,34%,33%,0%,0%,0%,0%; HBM 59957,60006,59949,59951,59187,59877,59875,65534 MB / 65536 MB.",
+   "probe_classification": "LOAD_CONTAMINATED"
+  },
+  {
+   "recorded_at_server_utc": "2026-09-23T22:30:11+0000",
+   "observation": "Same 8 resident processes; AICore 32%,32%,32%,32%,0%,0%,0%,13%; HBM 59956,60007,59949,59951,59190,59878,59875,65531 MB / 65536 MB.",
+   "probe_classification": "LOAD_CONTAMINATED"
+  },
+  {
+   "recorded_at_server_utc": "2026-09-23T22:32:06+0000",
+   "observation": "Same 8 resident processes; AICore 33%,34%,33%,33%,0%,0%,0%,0%; HBM 59957,60006,59949,59951,59188,59877,59876,65534 MB / 65536 MB.",
+   "probe_classification": "LOAD_CONTAMINATED"
+  },
+  {
+   "recorded_at_server_utc": "2026-09-23T22:34:42+0000",
+   "observation": "Same 8 resident processes; AICore 33%,34%,34%,34%,0%,0%,0%,0%; HBM 59957,60006,59949,59951,59188,59877,59875,65534 MB / 65536 MB.",
+   "probe_classification": "LOAD_CONTAMINATED"
+  },
+  {
+   "recorded_at_server_utc": "2026-09-23T22:36:27+0000",
+   "observation": "Same 8 resident processes; AICore 33%,34%,33%,33%,0%,0%,0%,0%; HBM 59957,60006,59949,59951,59187,59877,59876,65251 MB / 65536 MB.",
+   "probe_classification": "LOAD_CONTAMINATED"
+  },
+  {
+   "recorded_at_server_utc": "2026-09-23T22:37:34+0000",
+   "observation": "Same 8 resident processes; AICore 31%,31%,31%,31%,0%,0%,0%,0%; HBM 59957,60006,59949,59951,59188,59877,59875,65529 MB / 65536 MB.",
+   "probe_classification": "LOAD_CONTAMINATED"
+  },
+  {
+   "recorded_at_server_utc": "2026-09-23T22:38:43+0000",
+   "observation": "Same 8 resident processes; AICore 31%,32%,32%,31%,0%,0%,0%,0%; HBM 59957,60007,59949,59951,59188,59877,59875,65533 MB / 65536 MB.",
+   "probe_classification": "LOAD_CONTAMINATED"
+  },
+  {
+   "recorded_at_server_utc": "2026-09-23T22:40:14+0000",
+   "observation": "Same 8 resident processes; AICore 32%,32%,32%,32%,0%,0%,0%,0%; HBM 59957,60006,59949,59951,59188,59877,59875,65529 MB / 65536 MB.",
+   "probe_classification": "LOAD_CONTAMINATED"
+  },
+  {
+   "recorded_at_server_utc": "2026-09-23T22:41:33+0000",
+   "observation": "Same 8 resident processes; AICore 33%,33%,33%,33%,0%,0%,0%,0%; HBM 59957,60006,59949,59951,59187,59877,59875,65529 MB / 65536 MB.",
+   "probe_classification": "LOAD_CONTAMINATED"
+  },
+  {
+   "recorded_at_local": "2026-09-24T06:43:33+0800",
+   "recorded_at_server_utc": "2026-09-23T22:43:33+0000",
+   "observation": "Same 8 resident VLLM/python processes; AICore 32%,19%,19%,19%,0%,0%,0%,0%; HBM 59957,60006,59949,59951,59187,59877,59875,64658 MB / 65536 MB.",
+   "probe_classification": "LOAD_CONTAMINATED"
+  },
+  {
+   "recorded_at_local": "2026-09-24T06:46:56+0800",
+   "recorded_at_server_utc": "2026-09-23T22:46:56+0000",
+   "observation": "Same 8 resident processes: device0 VLLMWorker_TP pid89395, device1 VLLMWorker_TP pid91055, device2 VLLMWorker_TP pid92813, device3 VLLMWorker_TP pid94498, device4 VLLMEngineCor pid2999855, device5 VLLMWorker_TP pid89602, device6 VLLMWorker_TP pid91228, device7 python pid3458196; AICore 30%,31%,31%,30%,0%,0%,0%,8%; HBM 59957,60006,59949,59951,59187,59877,59897,65533 MB / 65536 MB.",
+   "probe_classification": "LOAD_CONTAMINATED"
+  }
+ ],
+ "HOST_SIDE_PREPARATION": {
+  "prepared_at_local": "2026-09-24T11:55:15+0800",
+  "state": "READY_WAITING_FOR_MAIN_DEVICE_SLOT",
+  "scope": "Host-side only. No NPU load query, probe executable, or timing command was run during this preparation.",
+  "device_slot_note": "ASYNC V001 owns the current device slot. Start only after Main explicitly schedules R31A, then capture pre-run and post-run server3 npu-smi snapshots. Run only if the snapshots establish a comparable load window; otherwise record LOAD_CONTAMINATED and stop.",
+  "source_identity": {
+   "V016_parent_source": {
+    "path": "phase4/workspaces/R31A/R31A-V016-submission.asc",
+    "sha256": "dd13093823c885e785a650abff4863827e652eb8607ad0621a96eb31b6764fa0"
+   },
+   "V016_probe_included_source": {
+    "path": "phase4/local/R31A/V021/support/parent_v016_submission.asc",
+    "sha256": "dd13093823c885e785a650abff4863827e652eb8607ad0621a96eb31b6764fa0"
+   },
+   "V021_candidate_source": {
+    "path": "phase4/local/R31A/V021/submission.asc",
+    "sha256": "4f5bfc319b72d1f0bcfd453bc92e80ac64216719898757292daf1aa1b73b6063"
+   },
+   "dependency_evidence": "On server3, probe_v016.asc.o.d includes support/parent_v016_submission.asc; probe_v021.asc.o.d includes ../submission.asc. Both object targets and executables are present in probe-build; compile-probe-v021-server3.log records each target built and linked."
+  },
+  "server3_artifacts": {
+   "directory": "/home/data4t2/lelinfeng/phase4-worktrees/R31A/V021-direct/probe-build",
+   "probe_v016": {
+    "binary_sha256": "5513076e24b067864ea625ff9a0cfe9e8d1adb89262de3cebd9a3ab198df3f78",
+    "object_sha256": "97af0df474c8f56d7828d66e33f5ede191151c06fbdfd8ba1ebf544b2b0f524c",
+    "probe_source_sha256": "a8450a002e6a61940d548b6afb915942c736b1c29e7ae6f680a11b1d92d32271",
+    "build_log": "/home/data4t2/lelinfeng/phase4-worktrees/R31A/V021-direct/compile-probe-v021-server3.log"
+   },
+   "probe_v021": {
+    "binary_sha256": "62092bb490d61e2604e6561e2971856aace504d7875427dceb06039ace163bf0",
+    "object_sha256": "a5411c11649722fb58c08592c4b44d56c9b3ff433791aca761cd72d5867e1536",
+    "probe_source_sha256": "f92db18020839ead189e3df99cd7e92aab72f29cb3a20635e76cfef765493c15",
+    "build_log": "/home/data4t2/lelinfeng/phase4-worktrees/R31A/V021-direct/compile-probe-v021-server3.log"
+   }
+  },
+  "setup_commands": [
+   "source /usr/local/Ascend/ascend-toolkit/set_env.sh",
+   "cd /home/data4t2/lelinfeng/phase4-worktrees/R31A/V021-direct/probe-build"
+  ],
+  "paired_probe_order": [
+   {
+    "pair": 1,
+    "case": "target D=32768",
+    "command": "./probe_v016 4 2 32768 1 2 10"
+   },
+   {
+    "pair": 1,
+    "case": "target D=32768",
+    "command": "./probe_v021 4 2 32768 1 2 10"
+   },
+   {
+    "pair": 2,
+    "case": "control D=24576",
+    "command": "./probe_v021 4 2 24576 1 2 10"
+   },
+   {
+    "pair": 2,
+    "case": "control D=24576",
+    "command": "./probe_v016 4 2 24576 1 2 10"
+   },
+   {
+    "pair": 3,
+    "case": "target D=32768",
+    "command": "./probe_v021 4 2 32768 1 2 10"
+   },
+   {
+    "pair": 3,
+    "case": "target D=32768",
+    "command": "./probe_v016 4 2 32768 1 2 10"
+   },
+   {
+    "pair": 4,
+    "case": "control D=24576",
+    "command": "./probe_v016 4 2 24576 1 2 10"
+   },
+   {
+    "pair": 4,
+    "case": "control D=24576",
+    "command": "./probe_v021 4 2 24576 1 2 10"
+   }
+  ],
+  "measurement_parameters": "device=4 rows=2 blocks=1 warmup=2 repeats=10; two parent/candidate pairs each for target and control, alternating execution order.",
+  "execution_authorization": "Wait for explicit Main scheduling and a clear comparable load snapshot; do not run while ASYNC V001 owns the device slot."
+ },
+ "MAIN1_PCPC_HARNESS": {
+  "prepared_at_local": "2026-09-24T12:27:07+0800",
+  "state": "PREPARED_FOR_MAIN_REVIEW_NO_LEASE",
+  "ownership_basis": {
+   "canonical_scheduler": "/Users/sunyiyang/Desktop/Project/cann/phase4/control/scheduler.tsv",
+   "route_owner": "01a0ceef-aa76-7e62-b14f-f728a27e2514",
+   "worktree": "/Users/sunyiyang/Desktop/Project/cann-sixlane/R31A",
+   "branch": "exec/sixlane-20260923-r31a",
+   "observed_route_state": "ACTIVE_EXPLOIT; MAIN_REVIEW_NEEDS_ONE_MORE_LOCAL"
+  },
+  "candidate_source_sha256": "4f5bfc319b72d1f0bcfd453bc92e80ac64216719898757292daf1aa1b73b6063",
+  "parent_source_sha256": "dd13093823c885e785a650abff4863827e652eb8607ad0621a96eb31b6764fa0",
+  "validated_artifacts": {
+   "probe_v016": {
+    "path": "/home/data4t2/lelinfeng/phase4-worktrees/R31A/V021-direct/probe-build/probe_v016",
+    "binary_sha256": "5513076e24b067864ea625ff9a0cfe9e8d1adb89262de3cebd9a3ab198df3f78",
+    "included_parent_source_sha256": "dd13093823c885e785a650abff4863827e652eb8607ad0621a96eb31b6764fa0"
+   },
+   "probe_v021": {
+    "path": "/home/data4t2/lelinfeng/phase4-worktrees/R31A/V021-direct/probe-build/probe_v021",
+    "binary_sha256": "62092bb490d61e2604e6561e2971856aace504d7875427dceb06039ace163bf0",
+    "included_candidate_source_sha256": "4f5bfc319b72d1f0bcfd453bc92e80ac64216719898757292daf1aa1b73b6063"
+   },
+   "validation": "Server3 binary and object SHA256 values match the existing host preparation record. Dependency files show probe_v016 includes parent_v016_submission.asc and probe_v021 includes ../submission.asc. No executable was launched."
+  },
+  "setup_commands_for_later_authorized_run": [
+   "source /usr/local/Ascend/ascend-toolkit/set_env.sh",
+   "cd /home/data4t2/lelinfeng/phase4-worktrees/R31A/V021-direct/probe-build"
+  ],
+  "parameters": {
+   "device": 4,
+   "rows": 2,
+   "blocks": 1,
+   "warmup": 2,
+   "repeats_per_invocation": 10,
+   "order": "parent/candidate/parent/candidate",
+   "parent_binary": "probe_v016",
+   "candidate_binary": "probe_v021"
+  },
+  "commands_by_shape": {
+   "target_D32768": [
+    "./probe_v016 4 2 32768 1 2 10",
+    "./probe_v021 4 2 32768 1 2 10",
+    "./probe_v016 4 2 32768 1 2 10",
+    "./probe_v021 4 2 32768 1 2 10"
+   ],
+   "control_D24576": [
+    "./probe_v016 4 2 24576 1 2 10",
+    "./probe_v021 4 2 24576 1 2 10",
+    "./probe_v016 4 2 24576 1 2 10",
+    "./probe_v021 4 2 24576 1 2 10"
+   ]
+  },
+  "load_snapshots": {
+   "status": "NO_COMPARABLE_WINDOW_MAIN_REPORTED_CONTAMINATED",
+   "main_reported_observation": "Server3 remains load-contaminated across all 8 devices and no Main-1 lease is active.",
+   "main_observation_timestamp": null,
+   "capture_points": [
+    "before_target",
+    "between_target_and_control",
+    "after_control"
+   ],
+   "required_fields": "Timestamp and full npu-smi device table for all 8 NPUs: device id, HBM usage/capacity, AICore utilization, and process id/name/memory. Capture only after Main grants the uncontested R31A slot; compare snapshots for stability.",
+   "device_access_this_preparation": "NONE"
+  },
+  "statistics_to_record": {
+   "per_shape_inputs": [
+    "P1 device_us",
+    "C1 device_us",
+    "P2 device_us",
+    "C2 device_us"
+   ],
+   "parent_jitter_spread_us": "abs(P2-P1)",
+   "candidate_jitter_spread_us": "abs(C2-C1)",
+   "paired_delta_us": [
+    "C1-P1",
+    "C2-P2"
+   ],
+   "median_delta_us": "median of the two paired deltas (their arithmetic mean for n=2); negative favors V021, positive favors V016.",
+   "within_shape_direction_consistency": "Consistent only when both paired deltas have the same nonzero sign; otherwise MIXED or INDETERMINATE.",
+   "target_control_direction_consistency": "Record whether target and control median deltas have matching or opposing signs; report INDETERMINATE if either is zero or missing.",
+   "sampling_note": "Each device_us is an average over 10 measured invocations; the two-point spread describes between-invocation-run variation and is not a high-sample variance estimate."
+  },
+  "execution_boundary": "No Main-1 lease is active and Main reports all 8 devices remain load-contaminated. Stop at Main Review without querying device load or launching probes. ASYNC Main-1 is frozen and must not be run. Do not create V022, modify candidate source/CMake/runner, or submit Online.",
+  "results": {
+   "target_D32768": null,
+   "control_D24576": null,
+   "overall_direction_consistency": "PENDING"
+  }
+ },
+ "FOLLOW_UP_PROBES": "D24576 on d7: Parent same-binary PASS, then 4 interleaved Parent/Candidate device-event blocks completed. Pair deltas have mixed direction; LOCAL_VERDICT=NEEDS_ONE_MORE_LOCAL. D32768 remains unqualified.",
+ "STATUS": "D24576 R15 SAME_BINARY_PASS; PAIRED_TIMING_VALID; LOCAL_VERDICT=NEEDS_ONE_MORE_LOCAL; D32768_NOT_QUALIFIED",
+ "ARCHITECTURE_NOVELTY": "NONE: existing MTE3/V synchronization primitive with a changed wait placement only.",
+ "RISKS": "D24576 paired deltas vary in direction and scale, so no performance claim is established. D32768 remains unqualified. The deferred MTE3 completion relies on each value tile remaining untouched until the row-level wait.",
+ "DECISION": "NEEDS_ONE_MORE_LOCAL",
+ "NEXT_CANDIDATE_HYPOTHESIS": "None declared; await Main Review. Any later revision must return to R31A-V016.",
+ "CLEANUP": "NONE: no files or server3 build directories deleted or cleaned.",
+ "NON_TIMING_STATUS_20260927": {
+  "SOURCE_SHA256": "4f5bfc319b72d1f0bcfd453bc92e80ac64216719898757292daf1aa1b73b6063",
+  "SERVER3_SOURCE_SHA256": "4f5bfc319b72d1f0bcfd453bc92e80ac64216719898757292daf1aa1b73b6063",
+  "DIRECT_PARENT": "R31A-V016",
+  "PARENT_SOURCE_SHA256": "dd13093823c885e785a650abff4863827e652eb8607ad0621a96eb31b6764fa0",
+  "BUILD": "PASS",
+  "COMPILE_RC": 0,
+  "LINK_RC": 0,
+  "BUILD_COMMAND": "cmake --build /home/data4t2/lelinfeng/phase4-worktrees/R31A/V021-direct/build --target r31a_submission r31a_device --parallel 1",
+  "BUILD_ARTIFACT_SHA256": {
+   "device.alink": "96fd4babb50710c5489071aa4861bc89bd07dc8fa32d309de781cd05fb7c7a4f",
+   "submission.alink": "78cd7c977222adf1ebec22e408a885426f097ac37e0a8f8829877a023f268f7f"
+  },
+  "CORRECTNESS": "PASS",
+  "CORRECTNESS_EVIDENCE": "Exact V016/V021 paired runner on d7: D=32768 and D=24576 both PASS; runner SHA256 7dbde489de951be883fe38d6cbc991800c0451a97931af8ac036c339f0e61f9a; timing_samples=0.",
+  "EXECUTABLE_IDENTITY": "PASS",
+  "EXECUTABLE_SHA256": {
+   "parent_module": "11d7a2cb60912ce23b05a768c9076abcf2c513ad8b0844cc062d158082a4d5ea",
+   "candidate_module": "9bacd8cd72b8db5c6b8a1574ce199c674b18bc2bcf858cfb91ade29f71d24674",
+   "runner": "7dbde489de951be883fe38d6cbc991800c0451a97931af8ac036c339f0e61f9a"
+  },
+  "SAME_BINARY": "D24576_PASS_ON_D7_R8; D32768_REMAINS_UNQUALIFIED",
+  "TIMING": "D24576_FOUR_VALID_INTERLEAVED_DEVICE_EVENT_BLOCKS; D32768_NOT_RUN",
+  "TIMING_BLOCKER": "D24576 paired deltas are +0.265955%, +6.740531%, -10.333604%, and 0.000000%; direction and dispersion are inconsistent. HBM admission passed; AICore and resident processes were observational only.",
+  "LOCAL_VERDICT": "NEEDS_ONE_MORE_LOCAL",
+  "READY_FOR_SAME_BINARY": false,
+  "DEVICE_WINDOW": "USED_D7_HBM_3418_TO_3485_OF_65536_MB_NO_CONFLICT",
+  "LOCAL_BEST_UPDATED": false,
+  "ONLINE_WORTHY": "NO"
+ },
+ "TIMING_RUN_20260927": {
+  "LEASE_ID": "M1-R31A-V021-D7-20260927T054149Z",
+  "DEVICE": 7,
+  "PRE_HBM_MB": 3431,
+  "POST_HBM_MB": 3432,
+  "PRE_AICORE_PERCENT": 96.2,
+  "POST_AICORE_PERCENT": 95.6,
+  "PRE_PROCESS": "none",
+  "POST_PROCESS": "none",
+  "runner_mode": "device-event-primary_wall-clock-diagnostic",
+  "warmups": 45,
+  "samples_per_block": 21,
+  "parent_v016": {
+   "D32768": {
+    "block1_median_us": 18.94,
+    "block1_mad_over_median": 0.012672,
+    "block2_median_us": 36.58,
+    "block2_mad_over_median": 0.024057,
+    "block_drift": 0.635447,
+    "protocol_result": "NOT_QUALIFIED"
+   },
+   "D24576": {
+    "block1_median_us": 18.279999,
+    "block1_mad_over_median": 0.065646,
+    "block2_median_us": 28.78,
+    "block2_mad_over_median": 0.325921,
+    "block_drift": 0.446239,
+    "protocol_result": "NOT_QUALIFIED"
+   }
+  },
+  "candidate_timing": "NOT_RUN_BECAUSE_PARENT_SHAPE_QUALIFICATION_FAILED",
+  "evidence_dir": "support/results/d7-20260927T054149Z/"
+ },
+ "TIMING_RUN_20260927_D7_R8": {
+  "LEASE_ID": "M1-R31A-V021-D7-R8-20260927T105819Z",
+  "DEVICE": 7,
+  "PRE_HBM_MB": 3418,
+  "POST_HBM_MB": 3485,
+  "PRE_HBM_RATE_PERCENT": 5,
+  "POST_HBM_RATE_PERCENT": 5,
+  "PRE_AICORE_PERCENT": 0,
+  "POST_AICORE_PERCENT": 0,
+  "PRE_PROCESS": "none",
+  "POST_PROCESS": "VLLMEngineCor pid=1343052, 121 MB; recorded only",
+  "runner_mode": "device-event-primary_wall-clock-diagnostic",
+  "warmups": 45,
+  "same_binary_samples_per_block": 21,
+  "paired_samples_per_variant_per_block": 11,
+  "parent_v016_d24576": {
+   "block_medians_us": [
+    15.64,
+    15.6
+   ],
+   "block_mad_over_median": [
+    0.021739,
+    0.064103
+   ],
+   "block_median_drift": 0.002561,
+   "protocol_result": "PASS"
+  },
+  "paired_d24576": {
+   "blocks": 4,
+   "parent_median_us": [
+    22.56,
+    21.66,
+    24.58,
+    21.44
+   ],
+   "candidate_median_us": [
+    22.62,
+    23.12,
+    22.04,
+    21.44
+   ],
+   "delta_percent": [
+    0.265955,
+    6.740531,
+    -10.333604,
+    0.0
+   ],
+   "median_delta_percent": 0.132978,
+   "correctness": "V016_PASS; V021_PASS"
+  },
+  "identity_before_after": "PASS; candidate source, parent source, runner, and both modules unchanged",
+  "evidence_dir": "/Users/sunyiyang/Desktop/Project/cann/phase4/local/R31A/V021/support/results/",
+  "evidence_files": [
+   "M1-R31A-V021-D7-R8-20260927T105819Z-d24576-parent-samples.tsv",
+   "M1-R31A-V021-D7-R8-20260927T105819Z-d24576-parent-jitter.tsv",
+   "M1-R31A-V021-D7-R8-20260927T105819Z-d24576-paired-samples.tsv",
+   "M1-R31A-V021-D7-R8-20260927T105819Z-d24576-paired-jitter.tsv",
+   "M1-R31A-V021-D7-R8-20260927T105819Z-d24576-paired-pair-blocks.tsv",
+   "M1-R31A-V021-D7-R8-20260927T105819Z-d24576-paired.postflight.npu-smi.txt",
+   "M1-R31A-V021-D7-R8-20260927T105819Z-d24576-paired.postflight.identity.sha256"
+  ],
+  "local_verdict": "NEEDS_ONE_MORE_LOCAL",
+  "local_best_updated": false,
+  "online_worthy": "NO",
+  "interpretation": "HBM was below 100% before and after; no conflicting shared lease. D24576 passed same-binary qualification and completed paired timing. Mixed block deltas do not establish a gain or regression. Lease released at 2026-09-27T11:03:42Z."
+ },
+ "TIMING_RUN_20260927_D6_R9": {
+  "LEASE_ID": "M1-R31A-V021-D6-R9-20260927T115106Z",
+  "DEVICE": 6,
+  "LEASE_START_UTC": "2026-09-27T11:51:06Z",
+  "LEASE_END_UTC": "2026-09-27T11:58:14Z",
+  "PRE_HBM_RATE_PERCENT": 91,
+  "POST_HBM_RATE_PERCENT": 91,
+  "PRE_AICORE_PERCENT": 95.5,
+  "POST_AICORE_PERCENT": 99.5,
+  "AICORE_IS_ADMISSION_CONDITION": false,
+  "RUNNER_MODE": "device-event-primary_wall-clock-diagnostic",
+  "WARMUPS": 45,
+  "SAME_BINARY_SAMPLES_PER_BLOCK": 21,
+  "PARENT_V016_D24576": {
+   "block_medians_us": [
+    14.24,
+    14.24
+   ],
+   "block_mad_over_median": [
+    0.009831,
+    0.021067
+   ],
+   "block_median_drift": 0.0,
+   "protocol_result": "PASS"
+  },
+  "PAIRED_D24576": {
+   "blocks": 4,
+   "samples_per_version_per_block": 11,
+   "parent_median_us": [
+    15.22,
+    15.5,
+    15.14,
+    14.88
+   ],
+   "candidate_median_us": [
+    15.62,
+    15.4,
+    14.86,
+    15.22
+   ],
+   "delta_percent": [
+    2.628116,
+    -0.64516,
+    -1.849401,
+    2.284951
+   ],
+   "median_delta_percent": 0.819896,
+   "status": "VALID_DEVICE_EVENT_INTERLEAVED"
+  },
+  "RUNNER_CORRECTNESS_ASSERTION": {
+   "V016": "PASS; max_abs=3.48268474e-07",
+   "V021": "PASS; max_abs=3.48268474e-07",
+   "note": "The paired runner performed its built-in per-shape correctness assertions during this timing invocation; no full correctness suite or build was rerun."
+  },
+  "IDENTITY_BEFORE_AFTER": "PASS; source, Parent module, Candidate module and runner match existing identities",
+  "EVIDENCE_DIR": "/Users/sunyiyang/Desktop/Project/cann/phase4/local/R31A/V021/support/results/",
+  "EVIDENCE_PREFIX": "M1-R31A-V021-D6-R9-20260927T115106Z-d24576-",
+  "LOCAL_VERDICT": "NEEDS_ONE_MORE_LOCAL",
+  "LOCAL_BEST_UPDATED": false,
+  "ONLINE_WORTHY": "NO",
+  "INTERPRETATION": "Noise floor and paired device-event timing are valid. Pair directions differ and median delta remains within measured Parent noise; no performance gain or regression is established. HBM remained below 100%; AICore was recorded only. Lease released at 2026-09-27T11:58:14Z."
+ },
+ "TIMING_RUN_20260927_D5_R15": {
+  "LEASE_ID": "M1-R31A-V021-D5-R15-20260927T151338Z",
+  "DEVICE": 5,
+  "LEASE_START_UTC": "2026-09-27T15:13:38Z",
+  "LEASE_END_UTC": "2026-09-27T15:19:26Z",
+  "PRE_HBM_RATE_PERCENT": 91,
+  "POST_HBM_RATE_PERCENT": 91,
+  "AICORE_IS_ADMISSION_CONDITION": false,
+  "RUNNER_MODE": "device-event-primary_wall-clock-diagnostic",
+  "WARMUPS": 45,
+  "SAME_BINARY_SAMPLES_PER_BLOCK": 21,
+  "PARENT_V016_D24576": {
+   "block_medians_us": [
+    15.04,
+    15.1
+   ],
+   "block_mad_over_median": [
+    0.047872,
+    0.033113
+   ],
+   "block_median_drift": 0.003981,
+   "protocol_result": "PASS"
+  },
+  "PAIRED_D24576": {
+   "blocks": 4,
+   "samples_per_version_per_block": 11,
+   "delta_percent_candidate_vs_parent": [
+    -0.667562,
+    -1.5625,
+    1.532032,
+    1.492542
+   ],
+   "median_delta_percent": 0.41249,
+   "status": "VALID_DEVICE_EVENT_INTERLEAVED"
+  },
+  "CORRECTNESS_ASSERTION": "V016 and V021 PASS; max_abs=3.48268474e-07",
+  "IDENTITY_BEFORE_AFTER": "PASS; Candidate, Direct Parent, runner and prebuilt executable identities matched",
+  "EVIDENCE_PREFIX": "phase4/local/R31A/V021/support/results/M1-R31A-V021-D5-R15-20260927T151338Z-",
+  "LOCAL_VERDICT": "NEEDS_ONE_MORE_LOCAL",
+  "LOCAL_BEST_UPDATED": false,
+  "ONLINE_WORTHY": "NO",
+  "INTERPRETATION": "Paired direction is split 2/2 and median delta is within the shape noise floor. No performance conclusion beyond NEEDS_ONE_MORE_LOCAL."
+ },
+ "UNIFIED_VALIDATION_20260928": {
+  "SOURCE_SHA256": "4f5bfc319b72d1f0bcfd453bc92e80ac64216719898757292daf1aa1b73b6063",
+  "SERVER3_SOURCE_SHA256": "4f5bfc319b72d1f0bcfd453bc92e80ac64216719898757292daf1aa1b73b6063",
+  "DIRECT_PARENT": "R31A-V016",
+  "PARENT_SOURCE_SHA256": "dd13093823c885e785a650abff4863827e652eb8607ad0621a96eb31b6764fa0",
+  "BUILD": "PASS",
+  "BUILD_DETAIL": "Existing server3 direct-route CMake compile and ld.lld link retained; R31A-V021-device.alink and R31A-V021-submission.alink produced. Not rerun this batch.",
+  "COMPILE_RC": 0,
+  "LINK_RC": 0,
+  "CORRECTNESS": "PASS",
+  "CORRECTNESS_DETAIL": "2026-09-28 recheck on cann-server3 d4 plus existing evidence. Parent V016 and Candidate V021 both PASS rows=2 blocks=1 at D=24576 (max_abs=3.48268474e-07) and D=32768 (max_abs=4.83928943e-07). Same-binary runner correctness lines also PASS for both versions at D=24576. Both widths exercise the final non-full 7680-element tile.",
+  "EXECUTABLE_IDENTITY": "PASS",
+  "EXECUTABLE_SHA256": {
+   "r31a_paired_probe": "7dbde489de951be883fe38d6cbc991800c0451a97931af8ac036c339f0e61f9a",
+   "libr31a_paired_v016": "11d7a2cb60912ce23b05a768c9076abcf2c513ad8b0844cc062d158082a4d5ea",
+   "libr31a_paired_v021": "9bacd8cd72b8db5c6b8a1574ce199c674b18bc2bcf858cfb91ade29f71d24674"
+  },
+  "SAME_BINARY": "PASS",
+  "TIMING": "VALID_DEVICE_EVENT_PRIMARY",
+  "TIMING_DETAIL": "Interleaved device-event P/C vs R31A-V016 parent incorporated from support/results (unified protocol: warmup=45, samples>=21 same-binary, 4 paired blocks x 11 samples, device_us primary).",
+  "TIMING_ATTEMPTS_INCORPORATED": [
+   {
+    "attempt_id": "M1-R31A-V021-D5-R15-20260927T151338Z",
+    "device": 5,
+    "shape": "rows=2 D=24576 blocks=1",
+    "hbm": "91% pre/post",
+    "source_identity": "PASS",
+    "same_binary": {
+     "result": "PASS",
+     "warmups": 45,
+     "samples": "21x2",
+     "parent_version": "V021 (run artifact labeled parent)",
+     "block_medians_us": [
+      15.04,
+      15.1
+     ],
+     "mad_over_median": [
+      0.047872,
+      0.033113
+     ],
+     "block_drift": 0.003981
+    },
+    "paired_blocks": 4,
+    "samples_per_version_per_block": 11,
+    "delta_percent": [
+     -0.667562,
+     -1.5625,
+     1.532032,
+     1.492542
+    ],
+    "delta_us": [
+     -0.100001,
+     -0.24,
+     0.22,
+     0.220001
+    ],
+    "direction": "2_NEGATIVE_2_POSITIVE",
+    "correctness": "PASS parent and candidate; max_abs=3.48268474e-07",
+    "local_verdict": "NEEDS_ONE_MORE_LOCAL",
+    "evidence": "phase4/local/R31A/V021/support/results/M1-R31A-V021-D5-R15-20260927T151338Z-*"
+   },
+   {
+    "attempt_id": "M1-R31A-V021-D5-PERF-20260927T155704Z-A2-20260927T160200Z",
+    "device": 5,
+    "shape": "rows=2 D=24576 blocks=1",
+    "hbm": "91% pre/post",
+    "source_identity": "PASS",
+    "same_binary": {
+     "result": "PASS both versions",
+     "parent_V016": {
+      "block_medians_us": [
+       14.56,
+       14.58
+      ],
+      "mad_over_median": [
+       0.013736,
+       0.010974
+      ],
+      "block_drift": 0.001373
+     },
+     "candidate_V021": {
+      "block_medians_us": [
+       14.76,
+       15.02
+      ],
+      "mad_over_median": [
+       0.03252,
+       0.014647
+      ],
+      "block_drift": 0.017461
+     }
+    },
+    "paired_blocks": 4,
+    "samples_per_version_per_block": 11,
+    "delta_percent": [
+     0.26144,
+     1.049871,
+     4.193979,
+     -0.93583
+    ],
+    "delta_us": [
+     0.04,
+     0.16,
+     0.640001,
+     -0.14
+    ],
+    "direction": "3_POSITIVE_1_NEGATIVE",
+    "correctness": "PASS parent and candidate; max_abs=3.48268474e-07",
+    "local_verdict": "NEEDS_ONE_MORE_LOCAL",
+    "evidence": "phase4/local/R31A/V021/support/results/M1-R31A-V021-D5-PERF-20260927T155704Z-A2-20260927T160200Z-*"
+   }
+  ],
+  "COMBINED_TIMING_READ": "Eight paired device-event blocks across two independent d5 attempts. Signs mixed (5 positive, 3 negative); block deltas span -1.562500% to +4.193979%. Median of the eight block deltas is approximately +0.66%. No stable candidate direction is established beyond the shape noise context; effect is within noise. Not a gain and not a regression.",
+  "LATER_ATTEMPTS_NOT_CONTRIBUTING": [
+   {
+    "attempt_id": "M1-R31A-V021-D1-PERF-20260927T200006Z",
+    "note": "parent-only same-binary, protocol result NOT_QUALIFIED (block MAD/median 0.479019/0.341536, drift 0.143945); no P/C"
+   },
+   {
+    "attempt_id": "M1-R31A-V021-D3-PERF-20260927T201445Z",
+    "note": "D=32768 parent-only same-binary, NOT_QUALIFIED (block MAD/median 0.392057/0.305864, drift 0.036816); no P/C"
+   }
+  ],
+  "LOCAL_VERDICT": "NEEDS_ONE_MORE_LOCAL",
+  "MISSING_EVIDENCE": {
+   "D32768_interleaved_PC_unified_protocol": "MISSING: no interleaved P/C exists for the target shape rows=2 D=32768 under the unified protocol. D32768 attempts (D3, D7) were parent-only same-binary and NOT_QUALIFIED. All valid interleaved P/C blocks are on control shape D=24576, which does exercise the deferred MTE3 fence placement (final non-full tile).",
+   "third_independent_D24576_attempt": "NOT_MISSING_BUT_REQUIRED_BY_PRIOR_VERDICT: R15 local-verdict NEXT_ACTION asked for one more independent D24576 attempt before any Local Best change; A2 is that attempt and it also reads NEEDS_ONE_MORE_LOCAL, so a further independent attempt remains the next action."
+  },
+  "DEVICE_WINDOW": "HBM 91% (<100%) on d5 with exclusive lease for R15 and A2; AICore/processes observational. No conflicting lease.",
+  "LOCAL_BEST_UPDATED": false,
+  "ONLINE_WORTHY": "NO",
+  "NEXT_ACTION": "One more independent local D24576 (and ideally D32768) interleaved attempt before any Local Best change; alternatively record MEASUREMENT_BLOCKED with reason if no device window."
+ }
 }
