@@ -38,7 +38,7 @@ Route Agent 和 Codex Main **都不得**自行决定：
 新增正式 Route、释放正式 Route slot
 
 他们只能：**报告事实、提出建议**。
-真正路线决定由外部 Planning / Review Layer 作出。
+真正路线决定由外部 Planning / Review Layer 作出。Online 分两级：Main 只做 ONLINE_RECOMMENDATION，Planning 做 ONLINE_DECISION，Judge Owner 仅在 APPROVED 后提交。
 
 ## 开始任何任务必须读
 

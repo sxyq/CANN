@@ -125,7 +125,7 @@ Correctness 能安全运行就执行。Performance 才需要更严格的单卡�
 
 只有经过：真实编译 → 正确性 → 可信本地结果 → Review 的 Candidate，才可能进 Online。
 
-是否值得 Online，由 Planning / Review Layer 决定（MAIN 判断 ONLINE_WORTHY 后仍可能被否）。
+两级：Codex Main 给 ONLINE_RECOMMENDATION（WORTHY/NOT_WORTHY）；Planning / Review Layer 给 ONLINE_DECISION（APPROVED/HOLD）。只有 APPROVED 才由 Judge Owner 提交。
 
 正式提交只能由统一 Judge Owner 执行：
 
