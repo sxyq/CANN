@@ -1,0 +1,43 @@
+{
+  "route": "ASYNC-OVERLAP-CHAMPION-X",
+  "revision": "V002",
+  "direct_parent": "R31B-V011",
+  "parent_source_sha": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "parent_score": 45.16,
+  "official_anchor": 45.16,
+  "single_hypothesis": "W2 NarrowMid inter-row issue reorder",
+  "context_class": "CHAMPION_PIPELINE_SCHEDULE",
+  "local_sha256": "f8f65e09570e6db931d86fb1e4640599bc63b3fef2b42746e7065c8f75150c03",
+  "compile_rc": "0/0",
+  "link_rc": "0/0",
+  "correctness_status": "PASS_VS_PARENT",
+  "correctness_detail": "All 7 OUTHASH bit-identical to parent: NarrowMid fp32/fp16/bf16 (change surface) and wide/generic controls.",
+  "single_change_audit": "PASS",
+  "measurement_protocol": "runner_ref.inc warmup=45 samples=21 device-event; same-binary 2 blocks; 4 interleaved P/C pairs; device 4; 2026-09-28",
+  "measurement_lease_note": "d4 had VLLMEngineCor + se_candidate_pr resident; HBM ~90% < 100%; no active lease from other routes on d4",
+  "same_binary_results": {
+    "128x2048_fp16": {"parent": "PASS (0.030/0.033 drift 1.032)", "candidate": "PASS (0.041/0.022 drift 1.023)", "qualification": "QUALIFIED"},
+    "128x4096_fp32": {"parent": "PASS (0.039/0.027 drift 1.053)", "candidate": "PASS (0.016/0.027 drift 1.037)", "qualification": "QUALIFIED"},
+    "128x2048_fp32": {"parent": "PASS", "candidate": "FAIL (B2 drift 1.876)", "qualification": "NOT_QUALIFIED"},
+    "128x4096_fp16": {"parent": "FAIL (drift 1.304)", "candidate": "FAIL (0.297/0.142)", "qualification": "NOT_QUALIFIED"},
+    "256x2048_fp32": {"parent": "FAIL (B1 0.326 drift 0.729)", "candidate": "FAIL (B1 0.373 drift 0.668)", "qualification": "NOT_QUALIFIED"}
+  },
+  "paired_128x2048_fp16": {
+    "pair_1": {"delta_med_pct": -1.49, "delta_p10_pct": -5.34, "note": "both_clean"},
+    "pair_2": {"delta_med_pct": 8.73, "delta_p10_pct": 6.57, "note": "both_clean"},
+    "pair_3": {"delta_med_pct": 514.9, "delta_p10_pct": -0.74, "note": "C_dirty"},
+    "pair_4": {"delta_med_pct": -8.92, "delta_p10_pct": -7.11, "note": "both_clean"},
+    "clean_direction": "2 favor V002, 1 favor parent — MIXED"
+  },
+  "paired_128x4096_fp32": {
+    "pair_1": {"delta_med_pct": -1.15, "delta_p10_pct": 0.60, "note": "both_clean"},
+    "pair_2": {"delta_med_pct": -2.62, "delta_p10_pct": -1.18, "note": "both_clean"},
+    "pair_3": {"delta_med_pct": -46.88, "delta_p10_pct": 0.60, "note": "P_dirty"},
+    "pair_4": {"delta_med_pct": 4.94, "delta_p10_pct": 2.84, "note": "both_clean"},
+    "clean_direction": "1 favor V002, 1 neutral, 1 favor parent — MIXED"
+  },
+  "local_verdict": "NEEDS_ONE_MORE_LOCAL",
+  "local_verdict_reason": "Correctness PASS_VS_PARENT on all NarrowMid shapes. Two shapes qualified for P/C (128x2048 fp16, 128x4096 fp32) but both show MIXED clean-pair direction: fp16 has 2 favor-C / 1 favor-P with large spread (-8.9% to +8.7%); fp32 has 1 favor-C / 1 neutral / 1 favor-P. p10 likewise mixed. No stable improvement and no stable regression. Kernels are ~8-10 us (per-row overhead dominated) where the hoisted next-row load may be too small to separate from noise, or the invRms tail is too short to cover the DMA. Keep candidate; do not advance LOCAL_BEST; do not open V003 without Main.",
+  "expected_next": "If Main wants to continue W2: use shapes where localRows>=2 per core AND invRms tail is longer (more batchRows), or a quieter device window. Otherwise recommend Main dispose W2 (e.g. PARK) and pick W1/W3/W4 from TRACK-B-HYPOTHESES-V002.md.",
+  "local_best_after_revision": "NOT_ADVANCED (parent chain root retained)"
+}
