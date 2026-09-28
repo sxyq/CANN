@@ -1,0 +1,14 @@
+{
+  "ROUTE": "R31B",
+  "REVISION": "V017",
+  "DIRECT_PARENT": "R31B-V016",
+  "PARENT_SOURCE_SHA": "9f5c353e65a13a740fe97dc7e6415df032d27560831a3ad142c77592b8208eb5",
+  "PARENT_SCORE": "LOCAL fp16-wide-d32768 -6.7% / Official anchor 45.16 (V011)",
+  "SINGLE_HYPOTHESIS": "H1 pass-2 store drain deferral: in ProcessWideLowPrecision pass-2, replace the per-(tile,row) SyncMTE3ToV() full drain after Store() with a deferred MTE3_V event wait that fires only before outputBuf_ is next overwritten (V006-style event pair), so the in-flight store overlaps the next unit's vector epilogue prefix",
+  "CONTEXT_CLASS": "HISTORICAL_EXPLOIT",
+  "WHY_NOT_DUPLICATE": "see 研究/R31B/next-hypotheses.md H1; V006's 2-deep MTE3 queue landed only on ProcessWideFp32FullCacheRows/generic store, never on LP wide pass-2; STORE-EPILOGUE lane changes writeback granularity (store count), this changes drain timing only (store count/payload/addresses identical); distinct from H3 (SyncVToMTE2 removal) which is not included in this revision; not tile (V016/V007/TILING), not MTE2 queue (V009), not Rsqrt/invRms math (R31A H1/H2)",
+  "EXPECTED_SHAPES": "rows=2 FP16 D=12288/16384/32768 (primary: fp16-wide-d32768), rows=2 BF16 D=12288/16384/32768 (larger overlap window on BF16 epilogue); controls rows=2 FP16/BF16 D=8192 (non-wide path unchanged), FP32 wide unchanged",
+  "EXPECTED_RISK": "modest FP16 overlap window (store of unit i overlaps only ToFloat+Muls prefix of unit i+1 before the outputBuf_ write); single output staging tile means max 1 outstanding store (2-deep queue would need +1 tile UB and would perturb wideFullYRows_ = tile axis, forbidden); magnitude 0.7-1.5us/row-batch target may not be reachable on FP16 and will be judged by the two-gate rule",
+  "DECLARED_AT": "2026-09-29T00:00:00+08:00 (before code change)",
+  "MAIN_SELECTION": "MAIN-1 2026-09-29 ONLINE_RECOMMENDATION + NEXT message: H1 selected for V017"
+}
