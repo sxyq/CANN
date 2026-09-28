@@ -42,6 +42,201 @@
   "evidence": "本地实验/R31A/V024/support/results/M1-R31A-V024-CORR-*"
  },
  "EXPECTED_PATH_NOTE": "V024 parents from V016, whose dispatch sends rows=2 D=24576 to wideFp32BatchPath. So the CachedRows pass-2 edit is only exercised at D=32768. D=24576 is the same-code control / noise band.",
- "STATUS": "BUILD_PASS_CORRECTNESS_PASS_PENDING_MEASUREMENT",
- "DECISION": "PENDING_MEASUREMENT"
+ "STATUS": "BUILD_PASS_CORRECTNESS_PASS_LOCAL_ACCEPTED",
+ "DECISION": "LOCAL_ACCEPTED",
+ "MEASUREMENT": {
+  "date": "2026-09-29",
+  "protocol": "unified device-event: warmup=45, same-binary 21x2, paired 4 blocks x 11 samples interleaved; runner SHA 7dbde489... (unchanged); parent module SHA 11d7a2cb... (byte-identical V016); candidate module SHA c9f6fda2... (V024)",
+  "lease_note": "RUN_BY_ROUTE_AGENT_M1_R31A; admission verified. Lease rows for 调度/服务器设备使用.tsv pending MAIN-1 sync.",
+  "SAME_BINARY": [
+   {
+    "device": 6,
+    "shape": "D=32768",
+    "gap_s": 5,
+    "result": "PASS",
+    "block_medians_us": [
+     18.6,
+     19.16
+    ],
+    "mad_over_median": [
+     0.027957,
+     0.017745
+    ],
+    "block_drift": 0.029661
+   },
+   {
+    "device": 4,
+    "shape": "D=32768",
+    "gap_s": 5,
+    "result": "PASS",
+    "block_medians_us": [
+     19.0,
+     18.84
+    ],
+    "mad_over_median": [
+     0.015789,
+     0.023355
+    ],
+    "block_drift": 0.008457
+   },
+   {
+    "device": 6,
+    "shape": "D=24576",
+    "gap_s": 5,
+    "result": "NOT_QUALIFIED",
+    "block_medians_us": [
+     14.72,
+     54.78
+    ],
+    "mad_over_median": [
+     0.028533,
+     0.601679
+    ],
+    "block_drift": 1.152806,
+    "note": "block2 contaminated; its paired block 1 is likewise contaminated (parent MAD 0.70)"
+   }
+  ],
+  "PAIRED_D32768_HYPOTHESIS_PROBE": {
+   "shape": "rows=2 D=32768 blocks=1 (CachedRows champion path; the only probe shape where the pass-2 Muls hoist is exercised)",
+   "attempt_d6": {
+    "parent_median_us": [
+     19.16,
+     19.18,
+     18.86,
+     18.66
+    ],
+    "candidate_median_us": [
+     18.48,
+     18.52,
+     18.08,
+     18.1
+    ],
+    "delta_percent": [
+     -3.549068,
+     -3.441086,
+     -4.135734,
+     -3.001065
+    ],
+    "delta_us": [
+     -0.680001,
+     -0.66,
+     -0.779999,
+     -0.559999
+    ],
+    "parent_mad_over_median": [
+     0.007307,
+     0.014599,
+     0.013786,
+     0.009646
+    ],
+    "candidate_mad_over_median": [
+     0.008658,
+     0.014039,
+     0.007743,
+     0.009945
+    ],
+    "direction": "4_NEGATIVE_0_POSITIVE",
+    "median_delta_percent": -3.495077,
+    "note": "all four blocks clean (MAD <= 0.015)"
+   },
+   "attempt_d4": {
+    "parent_median_us": [
+     19.06,
+     19.06,
+     18.84,
+     19.0
+    ],
+    "candidate_median_us": [
+     18.38,
+     18.16,
+     18.14,
+     18.2
+    ],
+    "delta_percent": [
+     -3.567688,
+     -4.721932,
+     -3.715503,
+     -4.210519
+    ],
+    "delta_us": [
+     -0.680001,
+     -0.9,
+     -0.700001,
+     -0.799999
+    ],
+    "parent_mad_over_median": [
+     0.018888,
+     0.011543,
+     0.011677,
+     0.027368
+    ],
+    "candidate_mad_over_median": [
+     0.018498,
+     0.009912,
+     0.00882,
+     0.020879
+    ],
+    "direction": "4_NEGATIVE_0_POSITIVE",
+    "median_delta_percent": -3.963011,
+    "note": "all four blocks clean (MAD <= 0.027). Independent confirmation device."
+   },
+   "combined": {
+    "values_percent": [
+     -3.549068,
+     -3.441086,
+     -4.135734,
+     -3.001065,
+     -3.567688,
+     -4.721932,
+     -3.715503,
+     -4.210519
+    ],
+    "median_percent": -3.656427,
+    "direction": "8_NEGATIVE_0_POSITIVE",
+    "range_percent": [
+     -4.721932,
+     -3.001065
+    ],
+    "read": "Two independent devices, 8/8 blocks negative, all clean. Median -3.66%, range -4.72% to -3.00%. STABLE IMPROVEMENT."
+   }
+  },
+  "PAIRED_D24576_SAME_CODE_CONTROL": {
+   "shape": "rows=2 D=24576 blocks=1 (V016 dispatch sends this to batch; the CachedRows edit is NOT exercised, so this is same-code)",
+   "device": 6,
+   "same_binary": "NOT_QUALIFIED (block2 contaminated); paired block 1 likewise contaminated (parent MAD 0.70, median 49.0us)",
+   "contaminated_block": {
+    "block": 1,
+    "delta_percent": -69.387755,
+    "parent_mad_over_median": 0.701633,
+    "note": "EXCLUDED from direction reading per protocol (parent MAD > 0.25); raw sample retained"
+   },
+   "clean_blocks": {
+    "delta_percent": [
+     0.536191,
+     1.104968,
+     0.0
+    ],
+    "parent_mad_over_median": [
+     0.020107,
+     0.008287,
+     0.021739
+    ],
+    "median_delta_percent": 0.536191,
+    "direction": "2_POSITIVE_1_ZERO",
+    "read": "Same-code noise band about 0% to +1.1%, median +0.54%. Candidate-slot bias about +0.5% this round."
+   }
+  },
+  "NOISE_BAND": "about plus or minus 1% (this round's same-code clean blocks: +0.54% median, range 0% to +1.1%; consistent with prior rounds' plus or minus 1.5%)",
+  "SIGNAL_VS_NOISE": "The D=32768 improvement (-3.66% median, 8/8 same sign, two devices) is roughly 3.5x the noise band and consistent in direction. It is a real path effect, not measurement noise.",
+  "LOCAL_VERDICT": "LOCAL_ACCEPTED",
+  "VERDICT_REASON": "Source identity, compile, link, correctness, and same-binary all PASS. The paired measurement on the exercising shape (D=32768) shows a stable improvement: 8/8 blocks negative across two independent devices, median -3.66%, range -4.72% to -3.00%, all blocks clean (MAD <= 0.027). The improvement is well outside the measured noise band (about plus or minus 1% from the same-code D=24576 control). Hoisting the invRms row-scale Muls out of the per-tile affine loop removes one full-tile V pass and one PipeBarrier per tile (5 tiles at D=32768), and the effect is larger than the predicted 0.4 us: observed about 0.7 us (parent 19.0 us -> candidate 18.3 us), consistent with barrier removal unblocking the V pipeline more than the per-barrier estimate.",
+  "MECHANISM_READ": "The per-tile Muls and its PipeBarrier serialized the value path five times per row at D=32768. Collapsing them into one full-row Muls before the loop removes four V instruction issues and four PipeBarriers from the critical path. The observed ~3.5% (about 0.7 us of a 19 us kernel) exceeds the naive 5 x 0.08 us = 0.4 us barrier-cost estimate, indicating each per-tile barrier carried more pipeline-stall cost than assumed. The arithmetic is bit-identical to V016 (correctness max_abs matches exactly), so the gain is purely from reduced V-issue and barrier overhead.",
+  "LOCAL_BEST": "V024",
+  "LOCAL_BEST_UPDATED": true,
+  "LOCAL_BEST_CHAIN": "V016 (OFFICIAL_BEST 45.00, qualified start) -> V024 (LOCAL_ACCEPTED, first Local Best). V021/V022/V023 did not advance Local Best.",
+  "OFFICIAL_BEST": "V016 / 45.00 (unchanged; no Online this round)",
+  "ONLINE_WORTHY": "PENDING_MAIN_ONLINE_RECOMMENDATION",
+  "NEXT_ACTION": "V024 is LOCAL_ACCEPTED and becomes LOCAL_BEST. Per the Local-first flow, Main now makes the ONLINE_RECOMMENDATION (WORTHY / NOT_WORTHY). If approved and the Judge Owner submits, the result is compared against OFFICIAL_ANCHOR V016/45.00. Future performance revisions may parent from V024 (the new LOCAL_BEST) instead of V016. Remaining research hypothesis: H4 (pass-1 staging liveness), to be evaluated on D=32768 with V024 as the baseline parent if a new revision is declared.",
+  "EVIDENCE_DIR": "本地实验/R31A/V024/support/results/"
+ }
 }
