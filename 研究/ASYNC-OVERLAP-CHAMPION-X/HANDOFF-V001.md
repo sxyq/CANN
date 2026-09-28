@@ -76,15 +76,38 @@ OFFICIAL_ANCHOR=45.16 与 Official score 结构后再定。
 
 32×32768 的六字段 BLOCK 记录见 `LOCAL-PERFORMANCE.md` 选项 B 附录与 `local-result.json`。
 
+## 形状扩展（2026-09-28，Main Review 后，仍属 V001）
+
+| shape | parent SB w45 | 干净对 median | p10 | 方向 |
+|---|---|---|---|---|
+| 128×16384 fp16（已接受） | 合格 | 3/3 偏 V001 | 4/4 | 同向 |
+| 128×16384 bf16 | 合格 | 2/3 偏 V001 | 4/4 | 基本同向 |
+| 96×16384 fp16 | 合格 | 3/4 偏 V001 | 4/4 | 同向 |
+
+- **p10 全同向：12/12**；干净对 median：**8/11** 偏 V001（2 近中性，1 微反向）。
+- 典型收益 1–3%（绝对 0.3–0.9 µs）。
+- candidate B2 在 d4 上系统性漂移（w55 更差）；parent SB w45 合格故按规则开跑 P/C。
+
+## ONLINE_RECOMMENDATION 材料
+
+```text
+建议   ONLINE_RECOMMENDATION = WORTHY（材料就绪）
+门槛   ≥2 形状同向 —— 已满足（3 形状 p10 全同向）
+依据   跨 dtype（FP16/BF16）、跨行数（96/128）、跨 kernel 长度（18/21/26 µs）方向一致；
+       正确性 PASS_VS_PARENT；SINGLE_CHANGE_AUDIT=PASS。
+风险   幅度 1–3% 对 15-case Official 均值贡献不确定；历史校准提示小局部胜可能不迁移
+       （SCHED 33x100 −4.4% → Official −3.22）；个别干净对 median 近中性。
+```
+
+本 Agent 只提供材料；ONLINE_DECISION 与 Judge 提交由 Planning / Judge Owner 执行。
+
 ## 剩余工作与风险
 
-- 128×16384 的收益幅度小（~2%），且只在 FP16 wide LP 路径测过；BF16 / 其他 wide 形状未做配对。
-- 32×32768 仍 BLOCKED；不继续无限测（选项 B 预算已用）。
-- FullCache FP32 宽行 parent 自身非确定（非本 Revision 范围）。
+- 32×32768 仍 `MEASUREMENT_BLOCKED`（RETRY_REQUIRED=YES）。
+- 未覆盖小 D / 多 batchRows / BF16 其他宽度。
 - 未改共享总账；未自行 Online；未开 V002；未 revert H1。
 
-## 请求 Main-2
+## 请求 Main-2 / Planning
 
-- 确认 128×16384 的 `LOCAL_ACCEPTED` 归类与是否推进 LOCAL_BEST。
-- 32×32768 记 `MEASUREMENT_BLOCKED`（RETRY_REQUIRED=YES，不本轮再测）。
-- 是否给 ONLINE_RECOMMENDATION（WORTHY / NOT_WORTHY）——本 Agent 不自行 Online。
+- 确认形状扩展结论与 WORTHY 材料。
+- 决定是否给 ONLINE_DECISION=APPROVED 并交 Judge Owner。

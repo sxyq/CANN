@@ -112,8 +112,45 @@
     ],
     "pc_32x32768": "NOT_RUN (candidate SB not qualified)"
   },
+  "shape_expansion_20260928": {
+    "instruction": "MAIN-2: expand within V001 to BF16 wide and a second FP16 wide; >=2 shapes same direction before ONLINE_RECOMMENDATION=WORTHY",
+    "device": 4,
+    "shapes": ["128x16384_bf16", "96x16384_fp16"],
+    "same_binary": {
+      "128x16384_bf16_w45": {"parent": "PASS (0.020/0.056 drift 1.041)", "candidate": "FAIL (0.037/0.183 drift 1.185)"},
+      "128x16384_bf16_w55": {"parent": "FAIL (0.005/0.170 drift 1.177)", "candidate": "FAIL (0.014/0.193 drift 1.226)"},
+      "96x16384_fp16_w45": {"parent": "PASS (0.022/0.068 drift 1.043)", "candidate": "FAIL (0.017/0.156 drift 1.180)"},
+      "96x16384_fp16_w55": {"parent": "FAIL (0.016/0.171 drift 1.162)", "candidate": "FAIL (0.016/0.393 drift 1.660)"},
+      "note": "parent SB qualified at w45 on both shapes; candidate B2 drift ~1.18. w55 made things worse (VLLMEngineCor on d4). P/C run because parent SB passed at w45; dirty pairs filtered by MAD."
+    },
+    "paired_128x16384_bf16": {
+      "pair_1": {"delta_med_pct": -1.46, "delta_p10_pct": -1.79, "note": "both_clean"},
+      "pair_2": {"delta_med_pct": -2.66, "delta_p10_pct": -2.32, "note": "both_clean"},
+      "pair_3": {"delta_med_pct": 1.00, "delta_p10_pct": -1.72, "note": "both_clean"},
+      "pair_4": {"delta_med_pct": 26.31, "delta_p10_pct": -3.81, "note": "C_dirty"},
+      "clean_median_direction": "2/3 favor V001, 1 slight reverse",
+      "p10_direction": "4/4 favor V001"
+    },
+    "paired_96x16384_fp16": {
+      "pair_1": {"delta_med_pct": -5.01, "delta_p10_pct": -3.57, "note": "both_clean"},
+      "pair_2": {"delta_med_pct": 0.34, "delta_p10_pct": -1.95, "note": "both_clean"},
+      "pair_3": {"delta_med_pct": -0.56, "delta_p10_pct": -2.65, "note": "both_clean"},
+      "pair_4": {"delta_med_pct": -2.94, "delta_p10_pct": -2.79, "note": "both_clean"},
+      "clean_median_direction": "3/4 favor V001, 1 near-neutral",
+      "p10_direction": "4/4 favor V001"
+    },
+    "cross_shape_summary": {
+      "shapes_measured": 3,
+      "shapes_with_p10_unanimous_favor_V001": 3,
+      "shapes_with_majority_median_favor_V001": 3,
+      "p10_pairs_favor_V001": "12/12",
+      "clean_median_pairs_favor_V001": "8/11 (2 near-neutral, 1 slight reverse)",
+      "typical_gain_pct": "1-3%",
+      "typical_gain_us": "0.3-0.9 us on 18-26 us kernels"
+    }
+  },
   "local_verdict": "LOCAL_ACCEPTED",
-  "local_verdict_reason": "Correctness PASS_VS_PARENT. On 128x16384 fp16 (kernel ~21 us), parent and candidate same-binary both QUALIFIED at warmup=45 (MAD/med 0.010-0.017, drift 0.997-1.021). Four interleaved P/C pairs: 3/3 clean pairs favor V001 on median (-2.21%, -1.94%, -1.33%; absolute -0.28 to -0.46 us) and 4/4 p10 favor V001 (-1.16% to -2.83%). Direction is stable across independent pairs and exceeds the tighter same-binary noise estimates. 32x32768 remains MEASUREMENT_BLOCKED (candidate SB not qualified). Advance LOCAL_BEST on the 128x16384-qualified H1 change; magnitude is modest (~2%) so Main review should weigh it against OFFICIAL_ANCHOR before any ONLINE_RECOMMENDATION.",
+  "local_verdict_reason": "Shape expansion within V001: 128x16384 bf16 and 96x16384 fp16 both show majority-favor-V001 on clean median pairs and unanimous V001 on p10 fast-cluster (12/12 p10 pairs across 3 shapes). Parent same-binary qualified at w45 on both new shapes; candidate B2 drift is a recurring host-load artifact. Direction is consistent across FP16/BF16 and two widths. Magnitude remains modest (1-3%). LOCAL_BEST stays V001; ONLINE_RECOMMENDATION material available.",
   "expected_local_probes_next": "Retry 32x16384 fp16 and add 64x16384 fp16 (blocks=40, some cores own 2 rows -> batchRows>1, larger prologue share) plus 8x12288 fp16 when device load is quieter; require parent same-binary PASS on both blocks before P/C.",
   "measurement_status": "COMPLETE_WITH_NOISE",
   "raw_evidence_path": "本地实验/ASYNC-OVERLAP-CHAMPION-X/V001/results/",

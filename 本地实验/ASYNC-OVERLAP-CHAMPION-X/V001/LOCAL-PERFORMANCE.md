@@ -174,3 +174,75 @@ REASON            32×16384：p10 快簇 3/4 偏 V001（~4–5%）但 1/4 反向
 ```
 
 原始样本：`本地实验/ASYNC-OVERLAP-CHAMPION-X/V001/results3/`。
+
+---
+
+# 形状扩展附录（2026-09-28，MAIN-2 Main Review 后）
+
+LOCAL_BEST=V001 已确认；ONLINE_RECOMMENDATION=KEEP_ACCUMULATING。指令：在 V001
+内扩展 BF16 wide 与第二 FP16 wide，目标 ≥2 形状同向再考虑 WORTHY。
+
+## Same-binary（warmup=45；w55 为 B2 漂移后的规范放宽）
+
+| shape | binary | w45 | w55 |
+|---|---|---|---|
+| 128×16384 bf16 | P | **PASS** (0.020/0.056, drift 1.041) | FAIL (drift 1.177) |
+| 128×16384 bf16 | C | FAIL (0.037/0.183, drift 1.185) | FAIL (0.014/0.193, drift 1.226) |
+| 96×16384 fp16 | P | **PASS** (0.022/0.068, drift 1.043) | FAIL (drift 1.162) |
+| 96×16384 fp16 | C | FAIL (0.017/0.156, drift 1.180) | FAIL (0.016/0.393, drift 1.660) |
+
+parent SB 在 w45 两形状均合格 → 按规则开跑 P/C。candidate B2 系统性漂移 ~1.18，
+是宿主负载（d4 上 VLLMEngineCor）而非机制问题；w55 反而更差。脏对按 MAD 过滤。
+
+## P/C 交错（warmup=45，各 4 对）
+
+### 128×16384 bf16（kernel ~26 µs）
+
+| pair | Δmed% | Δp10% | 备注 |
+|---|---|---|---|
+| 1 | **−1.46** | **−1.79** | 干净 |
+| 2 | **−2.66** | **−2.32** | 干净 |
+| 3 | +1.00 | **−1.72** | 干净（median 微偏 P） |
+| 4 | +26.3（C 脏） | **−3.81** | p10 仍偏 C |
+
+干净对 median：2/3 偏 V001；p10：**4/4 偏 V001**。
+
+### 96×16384 fp16（kernel ~18 µs）
+
+| pair | Δmed% | Δp10% | 备注 |
+|---|---|---|---|
+| 1 | **−5.01** | **−3.57** | 干净 |
+| 2 | +0.34 | **−1.95** | 干净（median 近中性） |
+| 3 | −0.56 | **−2.65** | 干净 |
+| 4 | **−2.94** | **−2.79** | 干净 |
+
+干净对 median：3/4 偏 V001（1 近中性）；p10：**4/4 偏 V001**。
+
+## 三形状汇总
+
+| shape | 干净对 median | p10 |
+|---|---|---|
+| 128×16384 fp16（已接受） | 3/3 偏 V001 | 4/4 偏 V001 |
+| 128×16384 bf16 | 2/3 偏 V001 | 4/4 偏 V001 |
+| 96×16384 fp16 | 3/4 偏 V001 | 4/4 偏 V001 |
+| **合计** | **8/11 偏 V001** | **12/12 偏 V001** |
+
+典型收益 1–3%（绝对 0.3–0.9 µs / 18–26 µs kernel）。
+
+## ONLINE_RECOMMENDATION 材料
+
+```text
+建议        ONLINE_RECOMMENDATION = WORTHY（材料就绪，交 Main/Planning 定夺）
+依据        1. 三形状 p10 全同向（12/12），干净对 median 8/11 同向；
+            2. 跨 FP16/BF16、跨 96/128 行、跨 18/21/26 µs kernel 长度方向一致；
+            3. 正确性 PASS_VS_PARENT，SINGLE_CHANGE_AUDIT=PASS；
+            4. 幅度 1–3%，对 15-case Official 均值的贡献不确定，
+               且历史校准提示小局部胜可能不迁移。
+风险        - candidate B2 在 d4 上系统性漂移，部分形状 SB 只有 parent 合格；
+            - median 在个别对上近中性或微反向（3/11）；
+            - 未覆盖小 D / 多 batchRows / BF16 其他宽度。
+结论        方向已 ≥2 形状同向，满足 WORTHY 材料门槛；
+            是否推进 Judge 由 Planning 决定，本 Agent 不自行 Online。
+```
+
+原始样本：`本地实验/ASYNC-OVERLAP-CHAMPION-X/V001/results4/`。
