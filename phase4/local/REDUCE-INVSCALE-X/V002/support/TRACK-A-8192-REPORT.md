@@ -14,7 +14,7 @@ grand-P    parent.asc                   94ab0ef96a1a907fa187797b6c72361b2bdacfe6
 ## Lease / device
 
 ```text
-lease   LH-REDUCE-8192  device 6 (d4 taken by ALIGN-TAIL-X, d5 by BATCH-RESIDENT-X -> secondary d6; d7 forbidden)
+lease   LH-REDUCE-8192  device 6 (d4 taken by ALIGN-TAIL-X, d5 by BATCH-RESIDENT-X -> secondary d6; d7 follows the same HBM/lease rule)
         LEASED 2026-09-25T14:26:00Z -> RELEASED 2026-09-25T14:37:00Z
 window  2026-09-25T14:31:18Z .. 14:36:08Z
 load    NPU6 AICore 0% throughout; HBM 59875-59877/65536; resident VLLMWorker_TP PID 91228 (56355 MB) documented (accepted per standing precedent)

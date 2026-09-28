@@ -173,11 +173,42 @@
 
   "decisions": {
     "correctness": "PASS",
-    "handoff": "NEEDS_ONE_MORE_LOCAL",
-    "rationale": "Correctness fully passes across D <= 32768, which was the goal of this revision, and the assigned alignment hypothesis is empirically refuted with a three-build ablation. The open item is performance: four paired probes against the Direct Parent are direction-inconsistent and an order of magnitude below the noise floor, so the cost of the added SyncVectorToMte2 is not established. One more paired run in a clean load window would settle it; alternatively Main may judge correctness PASS alone sufficient."
+    "handoff": "MEASUREMENT_BLOCKED",
+    "rationale": "Correctness fully passes across D <= 32768, which was the goal of this revision, and the assigned alignment hypothesis is empirically refuted with a three-build ablation. Performance cannot be resolved: the Track-A same-binary run on FP32 rows=1 D=8192 failed the protocol criterion (MAD/median=0.2149, block drift=0.8667 > 0.25, MEASUREMENT_PROTOCOL_BLOCKED_FOR_SHAPE), and the earlier four paired probes are direction-inconsistent (3 slower / 1 faster) and NOT_ABOVE_NOISE (abs median delta 0.126 of max within-variant range) under a contaminated load window. No valid local screen verdict can be produced, so the terminal field is MEASUREMENT_BLOCKED rather than NEEDS_ONE_MORE_LOCAL."
   },
 
-  "next_candidate_hypothesis": "Decision belongs to Main. Suggested: repeat the same four V001-versus-V002 FP32 rows=1 D=32768 pairs (or add a D=6144 pair where both variants are correct) only after a sufficiently clear load window; do not alter the source hypothesis before Main review. R019 normalization performance measurement remains deferred per Main's V002 instruction.",
+  "NON_TIMING_STATUS_20260928": {
+    "SOURCE_SHA256": "bef271b62a2c7f2d0b0ef23f5f3610129460f5a431d7d9b3dd7ac3ea9a80ad26",
+    "SERVER3_SOURCE_SHA256": "bef271b62a2c7f2d0b0ef23f5f3610129460f5a431d7d9b3dd7ac3ea9a80ad26",
+    "SOURCE_SHA_VERIFIED": true,
+    "BUILD": "PASS",
+    "COMPILE_RC": 0,
+    "LINK_RC": 0,
+    "BUILD_COMMAND": "ASC CMake on cann-server3 (Ascend910B3 / dav-2201 / CANN 8.5.0.alpha002): reduce_invscale_full_link + reduce_invscale_{parent,candidate,v001ref}_probe; Track-A refdirect/refcand probes linked -j1 with hcc 7.3.0 include path",
+    "BUILD_LOG": "phase4/local/REDUCE-INVSCALE-X/V002/support/compile.log",
+    "CORRECTNESS": "PASS",
+    "CORRECTNESS_DETAIL": "16/16 shapes PASS covering the full legal domain D in 64..32768 (FP32/FP16/BF16, rows 1 and 3, 32-byte-aligned and unaligned D). candidate_bad_total=0, candidate_gross_bad_total=0, exit codes 0 for all shapes. The D>6144 defect carried by Direct Parent V001 and grandparent FULL-R006-V001 is repaired by a single SyncVectorToMte2() after gamma/bias use in WriteNormalizedRow. Three-build ablation refutes the assigned alignment hypothesis (alignment-only still FAIL; sync-only PASS; alignment+sync PASS).",
+    "CORRECTNESS_LOG": "phase4/local/REDUCE-INVSCALE-X/V002/support/results/ (16-shape matrix) and support/TRACK-A-8192-REPORT.md (D=8192 runtime confirmation bad=0)",
+    "TIMING": "MEASUREMENT_BLOCKED",
+    "TIMING_BLOCKER": "Same-binary qualification UNQUALIFIED at FP32 rows=1 D=8192 d6 (Track-A 2026-09-25, unified device-event harness, warmup=10, 2x31 samples): MAD/median=0.2149 > 0.10 and block drift=0.8667 > 0.10; drift exceeds 0.25 so the shape is MEASUREMENT_PROTOCOL_BLOCKED_FOR_SHAPE per local-timing-protocol.md. INTERLEAVED P/C not run (threshold never met). Earlier four wall-clock pairs (2026-09-23) are direction-inconsistent (3 slower / 1 faster, worst +83.23%) and NOT_ABOVE_NOISE under PARTIAL_CONTAMINATION (91% HBM VLLMWorker_TP).",
+    "LOCAL_VERDICT": "MEASUREMENT_BLOCKED",
+    "READY_FOR_SAME_BINARY": false,
+    "NOT_READY_REASON": "Same-binary qualification fails the protocol criterion on the tested shape; noise floor never established; no valid P/C deltas exist.",
+    "DEVICE_WINDOW": "TRACK_A_D6_HBM_59875_OF_65536_VLLM_RESIDENT_AICORE_0_PERCENT; HISTORICAL_PAIR_WINDOW_D6_HBM_91_PERCENT",
+    "MISSING_EVIDENCE": "qualified same-binary block; empirical noise floor; valid interleaved P/C deltas on a device admitted by live HBM and lease state",
+    "LOCAL_BEST_UPDATED": false,
+    "ONLINE_WORTHY": "NO",
+    "TERMINAL": true
+  },
+
+  "DECISION": "MEASUREMENT_BLOCKED",
+  "DECISION_HISTORY": [
+    {"date": "2026-09-24", "decision": "NEEDS_ONE_MORE_LOCAL", "note": "historical handoff after four direction-inconsistent pairs below noise; assumed one more run would settle it"},
+    {"date": "2026-09-25", "decision": "NEEDS_ONE_MORE_LOCAL + MEASUREMENT_BLOCKED", "note": "Track-A same-binary UNQUALIFIED (drift 0.8667 > 0.25, MEASUREMENT_PROTOCOL_BLOCKED_FOR_SHAPE); both labels recorded in scheduler"},
+    {"date": "2026-09-28", "decision": "MEASUREMENT_BLOCKED", "note": "repaired to the single evidence-backed terminal field: correctness PASS but measurement layer cannot produce a valid verdict (same-binary protocol-blocked, no noise floor, no valid P/C)"}
+  ],
+
+  "next_candidate_hypothesis": "Decision belongs to Main. Suggested: repeat the same four V001-versus-V002 FP32 rows=1 D=32768 pairs (or add a D=6144 pair where both variants are correct) only on a device admitted by live HBM and lease state; do not alter the source hypothesis before Main review. R019 normalization performance measurement remains deferred per Main's V002 instruction.",
 
   "cleanup": "Remote *.o/*.d build intermediates, remote diag/ and results_diag/ directories and the scratch tarball deleted; sources, compile log and all results retained. No local source, Git history, task documents, or other route files modified or deleted.",
   "files_touched_note": "Only files under phase4/workspaces/REDUCE-INVSCALE-X/ and phase4/local/REDUCE-INVSCALE-X/{V001,V002}/ were created or written, plus server3 /home/data4t2/lelinfeng/phase4-workspaces/REDUCE-INVSCALE-X/."
