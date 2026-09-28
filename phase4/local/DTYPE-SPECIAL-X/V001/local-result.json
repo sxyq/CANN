@@ -9,7 +9,7 @@
   "npu_device": 4,
   "npu_max_abs_error": 2.6226044e-06,
   "performance_probe": "DEVICE_EVENT_PAIRED_SHAPE_7_12_PAIRS_ACROSS_3_SESSIONS",
-  "load_quality": "VLLM_ACTIVE_HIGH_HBM_WITH_LONG_TAILS; SHAPE_7_ROBUST_FLOOR_PASS",
+  "load_quality": "R15 d6 HBM 91%; AICore 0% and VLLM process recorded only; shape-specific same-binary and paired device-event samples valid; direction remains mixed",
   "prior_correctness_device_observation": {
     "device_count": 8,
     "device_4_hbm_usage_rate_percent": 90,
@@ -27,7 +27,7 @@
     "lease_id": "M1-DTYPE-V001-D6-S07-20260926"
   },
   "decision": "NEEDS_ONE_MORE_LOCAL",
-  "latest_measurement": "LOCAL_MEASUREMENT_ATTEMPT_20260927T125454Z_R12",
+  "latest_measurement": "LOCAL_MEASUREMENT_ATTEMPT_20260927T151338Z_R15",
   "official_score": null,
   "performance_claim": false,
   "online_submission": false,
@@ -424,5 +424,52 @@
     "local_best_updated": false,
     "online_worthy": "NO",
     "interpretation": "HBM admission passed and the shared d7 lease was active. Shape-7 same-binary qualification failed because block 1 MAD/median exceeded 0.10 and block median drift was 0.673281; paired Parent/Candidate timing was therefore not run. Exact source, Parent, runner, and executable identities matched; no build or correctness rerun occurred."
+  },
+  "LOCAL_MEASUREMENT_ATTEMPT_20260927T151338Z_R15": {
+    "lease_id": "M1-DTYPE-V001-D6-R15-20260927T151338Z",
+    "device": 6,
+    "lease_start_utc": "2026-09-27T15:13:38Z",
+    "lease_end_utc": "2026-09-27T15:19:36Z",
+    "source_sha256": "e2717055199f541d98d85ceef2e011e52e2749d932ca954dc887868de7db880f",
+    "parent_source_sha256": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+    "runner_source_sha256": "a4eb7b545097b6d05206a5c853d3b0081b978e43f73209c390a0795ad0db6fcb",
+    "parent_executable_sha256": "11e3c07c4e35181153b20f5acd90cad700261af9d309d52724cb0713a1646434",
+    "candidate_executable_sha256": "14cdc6cf6f986fd49f92662b4ff180266d0265cafdc0145706e37153b984a90b",
+    "runner_executable_sha256": "b14b57e32d3b9029bf01f1dca339599063b6be05bda750e189de01c7c2a81306",
+    "method": "DEVICE_EVENT_PRIMARY; persistent runner; 45 warmups; 31 samples per block; no build or full correctness rerun",
+    "same_binary": {
+      "shape": "[12,8192]",
+      "qualification": "PASS",
+      "block_medians_us": [7.58, 7.22],
+      "mad_over_median": [0.026385, 0.030471],
+      "block_median_drift": 0.048649,
+      "noise_floor": "VALID_FOR_SHAPE_7",
+      "raw": "/Users/sunyiyang/Desktop/Project/cann/phase4/local/DTYPE-SPECIAL-X/V001/support/results/M1-DTYPE-V001-D6-R15-20260927T151338Z-shape7.raw.tsv",
+      "jitter": "/Users/sunyiyang/Desktop/Project/cann/phase4/local/DTYPE-SPECIAL-X/V001/support/results/M1-DTYPE-V001-D6-R15-20260927T151338Z-shape7.jitter.txt"
+    },
+    "paired_timing": {
+      "status": "VALID_DEVICE_EVENT_INTERLEAVED",
+      "pairs": 4,
+      "order": ["PC", "CP", "PC", "CP"],
+      "pair_delta_percent_candidate_vs_parent": [3.636367, 3.916448, 0.781250, -0.516794],
+      "median_pair_delta_percent": 2.208809,
+      "raw": "/Users/sunyiyang/Desktop/Project/cann/phase4/local/DTYPE-SPECIAL-X/V001/support/results/M1-DTYPE-V001-D6-R15-20260927T151338Z-shape7-paired.raw.tsv",
+      "jitter": "/Users/sunyiyang/Desktop/Project/cann/phase4/local/DTYPE-SPECIAL-X/V001/support/results/M1-DTYPE-V001-D6-R15-20260927T151338Z-shape7-paired.jitter.txt",
+      "pairs_file": "/Users/sunyiyang/Desktop/Project/cann/phase4/local/DTYPE-SPECIAL-X/V001/support/results/M1-DTYPE-V001-D6-R15-20260927T151338Z-shape7-paired.pairs.tsv",
+      "rc": 0,
+      "interpretation": "Three blocks are slower and one is faster; no stable speedup beyond the measured shape noise floor is established."
+    },
+    "load": {
+      "pre_hbm_usage_rate": 91,
+      "post_hbm_usage_rate": 91,
+      "pre_aicore_usage_rate": 0,
+      "post_aicore_usage_rate": 0,
+      "process_observation": "VLLM remained running; recorded only",
+      "aicore_is_admission_condition": false,
+      "processes_are_admission_condition": false
+    },
+    "local_verdict": "NEEDS_ONE_MORE_LOCAL",
+    "local_best_updated": false,
+    "online_worthy": "NO"
   }
 }
