@@ -884,5 +884,102 @@
     "DEVICE_WINDOW": "UNAVAILABLE",
     "LOCAL_BEST_UPDATED": false,
     "ONLINE_WORTHY": "NO"
+  },
+  "C2C_BATCH_C_20260928": {
+    "SOURCE_SHA256": "f7628795e6699288669dbff8963181e376e10741ba4d46c768af51cf09bf6895",
+    "SERVER3_SOURCE_SHA256": "f7628795e6699288669dbff8963181e376e10741ba4d46c768af51cf09bf6895",
+    "DIRECT_PARENT": "BUILD-FIX-001",
+    "PARENT_SOURCE_SHA256": "5d0ee01165e46a281cbb7d1605feba3605ad59883845400a063e97704f27f2be",
+    "PARENT_RECOVERABLE": true,
+    "BUILD": "PASS",
+    "COMPILE_RC": 0,
+    "LINK_RC": 0,
+    "CORRECTNESS": "PASS",
+    "CORRECTNESS_DETAIL": "18/18 PASS (Parent+Candidate x FP32/FP16/BF16 x D=2048/16384/32768) from prior session. No correctness rerun needed.",
+    "EXECUTABLE_IDENTITY": "PASS",
+    "EXECUTABLE_SHA256": {
+      "parent_module": "9f03f15232d984577e559a64e90ec4e550fbef9392d6edb7eedd47ddc530071e",
+      "candidate_module": "c30be731387e0672359f47e748d65f67b7ce0e3f294dbc4f0fe986934b0890ab",
+      "unified_runner": "6328cd48d92036aeb4266248ede569f08484580e0507e185520911ed1a7e6a8b"
+    },
+    "SAME_BINARY": {
+      "status": "PASS",
+      "device": 4,
+      "method": "DEVICE_EVENT",
+      "warmups": 45,
+      "samples_per_block": 31,
+      "blocks": 2,
+      "results": [
+        {
+          "shape": "D=32768 FP32",
+          "block1_median_us": 19.460,
+          "block2_median_us": 19.240,
+          "block1_mad_med": 0.0113,
+          "block2_mad_med": 0.0083,
+          "block_drift": 0.0113,
+          "overall_mad_med": 0.0093,
+          "qualification": "PASS"
+        },
+        {
+          "shape": "D=16384 FP32",
+          "block1_median_us": 11.580,
+          "block2_median_us": 11.240,
+          "block1_mad_med": 0.0225,
+          "block2_mad_med": 0.0302,
+          "block_drift": 0.0294,
+          "qualification": "PASS"
+        }
+      ]
+    },
+    "PAIRED_TIMING": {
+      "status": "COMPLETE",
+      "device": 4,
+      "method": "DEVICE_EVENT",
+      "warmups": 45,
+      "samples_per_block": 31,
+      "blocks": 4,
+      "results": [
+        {
+          "shape": "D=32768 FP32",
+          "block_deltas_pct": [-7.514, -16.427, -22.468, -21.835],
+          "mean_delta_pct": -17.061,
+          "direction_consistency": "4/4 Candidate faster",
+          "parent_medians_us": [29.280, 27.760, 18.960, 18.960],
+          "candidate_medians_us": [27.080, 23.200, 14.700, 14.820],
+          "overall_parent_median_us": 19.290,
+          "overall_candidate_median_us": 15.300,
+          "overall_delta_pct": -20.684
+        },
+        {
+          "shape": "D=16384 FP32",
+          "block_deltas_pct": [-17.277, -16.090, -15.669, -18.007],
+          "mean_delta_pct": -16.761,
+          "direction_consistency": "4/4 Candidate faster",
+          "parent_medians_us": [11.460, 11.560, 11.360, 11.440],
+          "candidate_medians_us": [9.480, 9.700, 9.580, 9.380]
+        }
+      ]
+    },
+    "RAW_TIMING_DATA": [
+      "logs/c2c-batch-c-same-parent-d32768-fp32.tsv",
+      "logs/c2c-batch-c-paired-d32768-fp32.tsv",
+      "logs/c2c-batch-c-same-parent-d16384-fp32.tsv",
+      "logs/c2c-batch-c-paired-d16384-fp32.tsv"
+    ],
+    "LOAD_SNAPSHOT": {
+      "device": 4,
+      "pre_hbm_mb": 59192,
+      "post_hbm_mb": 59194,
+      "hbm_capacity_mb": 65536,
+      "hbm_utilization_pct": 90.3,
+      "aicore_percent": 0,
+      "resident_processes": "VLLMWorker_TP on devices 0-3; device 4 has no active lease",
+      "lease_status": "No conflicting lease on device 4"
+    },
+    "LOCAL_VERDICT": "LOCAL_ACCEPTED",
+    "VERDICT_REASON": "V001 (tile 2048→4096) shows consistent Candidate speedup on both tested shapes: D=32768 mean -17.1% (4/4), D=16384 mean -16.8% (4/4). Same-binary qualification PASS (MAD/med ≤0.03, drift ≤0.03). Device-event timing on d4 with HBM 90.3% and no conflicting lease. Candidate is 17-21% faster than Parent.",
+    "PERFORMANCE_MECHANISM": "Wide-path tile 2048→4096 with corresponding tmp_ growth",
+    "LOCAL_BEST_UPDATED": true,
+    "ONLINE_WORTHY": "PENDING_MAIN_REVIEW"
   }
 }
