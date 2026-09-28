@@ -1,5 +1,9 @@
 # HANDOFF-TO-MAIN — MULTIROW-DMA-CHAMPION-X V001 完成
 
+> **V001 Review 后补记（2026-09-28）**：LOCAL_REJECTED 与 lease 分工已确认。新增两份交付等 Main-2 确认：
+> 1. `研究/MULTIROW-DMA-CHAMPION-X/UB-GAP-CLUE.md` — FP32 wide 非确定性独立证据（交 Planning，本路线不修、不建 UB V004）。
+> 2. `研究/MULTIROW-DMA-CHAMPION-X/V002-HYPOTHESIS-DECLARATION.md` — V002 假设声明：推荐 **C1 ALIGNED-DATACOPY-FORM**（保 2-deep、UB 0 变化）；**C2 STRIDE-MERGE-2DEEP 需 Main 裁定 UB 计入**（ioTiles 4→6，附三形状数字推演）；C3 部分合并备选。未写 Kernel，等确认。
+
 ROUTE: MULTIROW-DMA-CHAMPION-X（LANE M2-5）
 WORKTREE: `/Users/sunyiyang/Desktop/Project/cann-m2-multirow`
 BRANCH: `m2/multirow-dma-champion`
