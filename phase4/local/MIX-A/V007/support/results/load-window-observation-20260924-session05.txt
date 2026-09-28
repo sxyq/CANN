@@ -1,0 +1,399 @@
+HOST=hwnput3
+SESSION_START=2026-09-23T22:45:38+00:00
+SAMPLE=1 UTC=2026-09-23T22:45:38+00:00
+PROCESSES
+  82397 /usr/local/python3.12.13/bin/python3 /usr/local/python3.12.13/bin/vllm serve /models/Qwen3.8-27B-w8a8 --host 0.0.0.0 --port 9001 --tensor-parallel-size 4 --quantization ascend --served-model-name qwen3.8 --max-model-len 256000 --max-num-seqs 8 --max-num-batched-tokens 8192 --gpu-memory-utilization 0.90 --enable-prefix-caching --trust-remote-code --reasoning-parser qwen3 --enable-auto-tool-choice --tool-call-parser qwen3_coder
+  83352 /usr/local/python3.12.13/bin/python3 /usr/local/python3.12.13/bin/vllm serve /models/Qwen3.8-27B-w8a8 --host 0.0.0.0 --port 9002 --tensor-parallel-size 2 --quantization ascend --served-model-name qwen3.8 --max-model-len 256000 --max-num-seqs 8 --max-num-batched-tokens 8192 --gpu-memory-utilization 0.90 --enable-prefix-caching --trust-remote-code --reasoning-parser qwen3 --enable-auto-tool-choice --tool-call-parser qwen3_coder
+  87336 VLLM::EngineCore
+  87670 VLLM::EngineCore
+  89395 VLLM::Worker_TP0
+  89602 VLLM::Worker_TP0
+  91055 VLLM::Worker_TP1
+  91228 VLLM::Worker_TP1
+  92813 VLLM::Worker_TP2
+  94498 VLLM::Worker_TP3
+2992910 /home/data4t1/zhangkaijie/conda/envs/qwen38_a2/bin/python3.12 /home/data4t1/zhangkaijie/conda/envs/qwen38_a2/bin/vllm serve /home/data4t2/models/Qwen3.8-27B-w8a8 --host 0.0.0.0 --port 9000 --tensor-parallel-size 1 --max-model-len 200000 --max-num-seqs 8 --max-num-batched-tokens 16384 --enable-prefix-caching --trust-remote-code --speculative-config {"method":"mtp","num_speculative_tokens":4} --enable-auto-tool-choice --tool-call-parser qwen3_coder --gpu-memory-utilization 0.85
+2999855 VLLM::EngineCore
+3587675 bash -c set -u; echo HOST=$(hostname); echo SESSION_START=$(date -Is); for i in 1 2 3 4 5 6; do echo SAMPLE=$i UTC=$(date -Is); echo PROCESSES; ps -eo pid,args | grep -E "[v]llm serve|VLLM::EngineCore|VLLM::Worker_TP"; echo NPU_SMI; npu-smi info; if [ "$i" -lt 6 ]; then sleep 10; fi; done; echo SESSION_END=$(date -Is)
+3587680 grep -E [v]llm serve|VLLM::EngineCore|VLLM::Worker_TP
+NPU_SMI
++------------------------------------------------------------------------------------------------+
+| npu-smi 25.0.rc1.1               Version: 25.0.rc1.1                                           |
++---------------------------+---------------+----------------------------------------------------+
+| NPU   Name                | Health        | Power(W)    Temp(C)           Hugepages-Usage(page)|
+| Chip                      | Bus-Id        | AICore(%)   Memory-Usage(MB)  HBM-Usage(MB)        |
++===========================+===============+====================================================+
+| 0     910B3               | OK            | 148.3       40                0    / 0             |
+| 0                         | 0000:C1:00.0  | 32          0    / 0          59957/ 65536         |
++===========================+===============+====================================================+
+| 1     910B3               | OK            | 139.7       39                0    / 0             |
+| 0                         | 0000:C2:00.0  | 32          0    / 0          60007/ 65536         |
++===========================+===============+====================================================+
+| 2     910B3               | OK            | 140.0       42                0    / 0             |
+| 0                         | 0000:81:00.0  | 32          0    / 0          59948/ 65536         |
++===========================+===============+====================================================+
+| 3     910B3               | OK            | 149.5       41                0    / 0             |
+| 0                         | 0000:82:00.0  | 32          0    / 0          59951/ 65536         |
++===========================+===============+====================================================+
+| 4     910B3               | OK            | 90.2        38                0    / 0             |
+| 0                         | 0000:01:00.0  | 0           0    / 0          59188/ 65536         |
++===========================+===============+====================================================+
+| 5     910B3               | OK            | 91.8        36                0    / 0             |
+| 0                         | 0000:02:00.0  | 0           0    / 0          59878/ 65536         |
++===========================+===============+====================================================+
+| 6     910B3               | OK            | 97.2        39                0    / 0             |
+| 0                         | 0000:41:00.0  | 0           0    / 0          59897/ 65536         |
++===========================+===============+====================================================+
+| 7     910B3               | OK            | 106.2       39                0    / 0             |
+| 0                         | 0000:42:00.0  | 0           0    / 0          65530/ 65536         |
++===========================+===============+====================================================+
++---------------------------+---------------+----------------------------------------------------+
+| NPU     Chip              | Process id    | Process name             | Process memory(MB)      |
++===========================+===============+====================================================+
+| 0       0                 | 89395         | VLLMWorker_TP            | 56434                   |
++===========================+===============+====================================================+
+| 1       0                 | 91055         | VLLMWorker_TP            | 56434                   |
++===========================+===============+====================================================+
+| 2       0                 | 92813         | VLLMWorker_TP            | 56435                   |
++===========================+===============+====================================================+
+| 3       0                 | 94498         | VLLMWorker_TP            | 56435                   |
++===========================+===============+====================================================+
+| 4       0                 | 2999855       | VLLMEngineCor            | 55664                   |
++===========================+===============+====================================================+
+| 5       0                 | 89602         | VLLMWorker_TP            | 56354                   |
++===========================+===============+====================================================+
+| 6       0                 | 91228         | VLLMWorker_TP            | 56355                   |
++===========================+===============+====================================================+
+| 7       0                 | 3458196       | python                   | 62146                   |
++===========================+===============+====================================================+
+SAMPLE=2 UTC=2026-09-23T22:45:50+00:00
+PROCESSES
+  82397 /usr/local/python3.12.13/bin/python3 /usr/local/python3.12.13/bin/vllm serve /models/Qwen3.8-27B-w8a8 --host 0.0.0.0 --port 9001 --tensor-parallel-size 4 --quantization ascend --served-model-name qwen3.8 --max-model-len 256000 --max-num-seqs 8 --max-num-batched-tokens 8192 --gpu-memory-utilization 0.90 --enable-prefix-caching --trust-remote-code --reasoning-parser qwen3 --enable-auto-tool-choice --tool-call-parser qwen3_coder
+  83352 /usr/local/python3.12.13/bin/python3 /usr/local/python3.12.13/bin/vllm serve /models/Qwen3.8-27B-w8a8 --host 0.0.0.0 --port 9002 --tensor-parallel-size 2 --quantization ascend --served-model-name qwen3.8 --max-model-len 256000 --max-num-seqs 8 --max-num-batched-tokens 8192 --gpu-memory-utilization 0.90 --enable-prefix-caching --trust-remote-code --reasoning-parser qwen3 --enable-auto-tool-choice --tool-call-parser qwen3_coder
+  87336 VLLM::EngineCore
+  87670 VLLM::EngineCore
+  89395 VLLM::Worker_TP0
+  89602 VLLM::Worker_TP0
+  91055 VLLM::Worker_TP1
+  91228 VLLM::Worker_TP1
+  92813 VLLM::Worker_TP2
+  94498 VLLM::Worker_TP3
+2992910 /home/data4t1/zhangkaijie/conda/envs/qwen38_a2/bin/python3.12 /home/data4t1/zhangkaijie/conda/envs/qwen38_a2/bin/vllm serve /home/data4t2/models/Qwen3.8-27B-w8a8 --host 0.0.0.0 --port 9000 --tensor-parallel-size 1 --max-model-len 200000 --max-num-seqs 8 --max-num-batched-tokens 16384 --enable-prefix-caching --trust-remote-code --speculative-config {"method":"mtp","num_speculative_tokens":4} --enable-auto-tool-choice --tool-call-parser qwen3_coder --gpu-memory-utilization 0.85
+2999855 VLLM::EngineCore
+3587675 bash -c set -u; echo HOST=$(hostname); echo SESSION_START=$(date -Is); for i in 1 2 3 4 5 6; do echo SAMPLE=$i UTC=$(date -Is); echo PROCESSES; ps -eo pid,args | grep -E "[v]llm serve|VLLM::EngineCore|VLLM::Worker_TP"; echo NPU_SMI; npu-smi info; if [ "$i" -lt 6 ]; then sleep 10; fi; done; echo SESSION_END=$(date -Is)
+3588799 grep -E [v]llm serve|VLLM::EngineCore|VLLM::Worker_TP
+NPU_SMI
++------------------------------------------------------------------------------------------------+
+| npu-smi 25.0.rc1.1               Version: 25.0.rc1.1                                           |
++---------------------------+---------------+----------------------------------------------------+
+| NPU   Name                | Health        | Power(W)    Temp(C)           Hugepages-Usage(page)|
+| Chip                      | Bus-Id        | AICore(%)   Memory-Usage(MB)  HBM-Usage(MB)        |
++===========================+===============+====================================================+
+| 0     910B3               | OK            | 148.0       39                0    / 0             |
+| 0                         | 0000:C1:00.0  | 32          0    / 0          59957/ 65536         |
++===========================+===============+====================================================+
+| 1     910B3               | OK            | 142.1       38                0    / 0             |
+| 0                         | 0000:C2:00.0  | 32          0    / 0          60007/ 65536         |
++===========================+===============+====================================================+
+| 2     910B3               | OK            | 140.5       42                0    / 0             |
+| 0                         | 0000:81:00.0  | 32          0    / 0          59949/ 65536         |
++===========================+===============+====================================================+
+| 3     910B3               | OK            | 145.5       40                0    / 0             |
+| 0                         | 0000:82:00.0  | 32          0    / 0          59951/ 65536         |
++===========================+===============+====================================================+
+| 4     910B3               | OK            | 91.5        38                0    / 0             |
+| 0                         | 0000:01:00.0  | 0           0    / 0          59188/ 65536         |
++===========================+===============+====================================================+
+| 5     910B3               | OK            | 93.2        36                0    / 0             |
+| 0                         | 0000:02:00.0  | 0           0    / 0          59878/ 65536         |
++===========================+===============+====================================================+
+| 6     910B3               | OK            | 94.2        39                0    / 0             |
+| 0                         | 0000:41:00.0  | 0           0    / 0          59876/ 65536         |
++===========================+===============+====================================================+
+| 7     910B3               | OK            | 106.1       40                0    / 0             |
+| 0                         | 0000:42:00.0  | 0           0    / 0          65529/ 65536         |
++===========================+===============+====================================================+
++---------------------------+---------------+----------------------------------------------------+
+| NPU     Chip              | Process id    | Process name             | Process memory(MB)      |
++===========================+===============+====================================================+
+| 0       0                 | 89395         | VLLMWorker_TP            | 56434                   |
++===========================+===============+====================================================+
+| 1       0                 | 91055         | VLLMWorker_TP            | 56434                   |
++===========================+===============+====================================================+
+| 2       0                 | 92813         | VLLMWorker_TP            | 56435                   |
++===========================+===============+====================================================+
+| 3       0                 | 94498         | VLLMWorker_TP            | 56435                   |
++===========================+===============+====================================================+
+| 4       0                 | 2999855       | VLLMEngineCor            | 55664                   |
++===========================+===============+====================================================+
+| 5       0                 | 89602         | VLLMWorker_TP            | 56354                   |
++===========================+===============+====================================================+
+| 6       0                 | 91228         | VLLMWorker_TP            | 56355                   |
++===========================+===============+====================================================+
+| 7       0                 | 3458196       | python                   | 62146                   |
++===========================+===============+====================================================+
+SAMPLE=3 UTC=2026-09-23T22:46:01+00:00
+PROCESSES
+  82397 /usr/local/python3.12.13/bin/python3 /usr/local/python3.12.13/bin/vllm serve /models/Qwen3.8-27B-w8a8 --host 0.0.0.0 --port 9001 --tensor-parallel-size 4 --quantization ascend --served-model-name qwen3.8 --max-model-len 256000 --max-num-seqs 8 --max-num-batched-tokens 8192 --gpu-memory-utilization 0.90 --enable-prefix-caching --trust-remote-code --reasoning-parser qwen3 --enable-auto-tool-choice --tool-call-parser qwen3_coder
+  83352 /usr/local/python3.12.13/bin/python3 /usr/local/python3.12.13/bin/vllm serve /models/Qwen3.8-27B-w8a8 --host 0.0.0.0 --port 9002 --tensor-parallel-size 2 --quantization ascend --served-model-name qwen3.8 --max-model-len 256000 --max-num-seqs 8 --max-num-batched-tokens 8192 --gpu-memory-utilization 0.90 --enable-prefix-caching --trust-remote-code --reasoning-parser qwen3 --enable-auto-tool-choice --tool-call-parser qwen3_coder
+  87336 VLLM::EngineCore
+  87670 VLLM::EngineCore
+  89395 VLLM::Worker_TP0
+  89602 VLLM::Worker_TP0
+  91055 VLLM::Worker_TP1
+  91228 VLLM::Worker_TP1
+  92813 VLLM::Worker_TP2
+  94498 VLLM::Worker_TP3
+2992910 /home/data4t1/zhangkaijie/conda/envs/qwen38_a2/bin/python3.12 /home/data4t1/zhangkaijie/conda/envs/qwen38_a2/bin/vllm serve /home/data4t2/models/Qwen3.8-27B-w8a8 --host 0.0.0.0 --port 9000 --tensor-parallel-size 1 --max-model-len 200000 --max-num-seqs 8 --max-num-batched-tokens 16384 --enable-prefix-caching --trust-remote-code --speculative-config {"method":"mtp","num_speculative_tokens":4} --enable-auto-tool-choice --tool-call-parser qwen3_coder --gpu-memory-utilization 0.85
+2999855 VLLM::EngineCore
+3587675 bash -c set -u; echo HOST=$(hostname); echo SESSION_START=$(date -Is); for i in 1 2 3 4 5 6; do echo SAMPLE=$i UTC=$(date -Is); echo PROCESSES; ps -eo pid,args | grep -E "[v]llm serve|VLLM::EngineCore|VLLM::Worker_TP"; echo NPU_SMI; npu-smi info; if [ "$i" -lt 6 ]; then sleep 10; fi; done; echo SESSION_END=$(date -Is)
+3590029 grep -E [v]llm serve|VLLM::EngineCore|VLLM::Worker_TP
+NPU_SMI
++------------------------------------------------------------------------------------------------+
+| npu-smi 25.0.rc1.1               Version: 25.0.rc1.1                                           |
++---------------------------+---------------+----------------------------------------------------+
+| NPU   Name                | Health        | Power(W)    Temp(C)           Hugepages-Usage(page)|
+| Chip                      | Bus-Id        | AICore(%)   Memory-Usage(MB)  HBM-Usage(MB)        |
++===========================+===============+====================================================+
+| 0     910B3               | OK            | 147.2       40                0    / 0             |
+| 0                         | 0000:C1:00.0  | 32          0    / 0          59956/ 65536         |
++===========================+===============+====================================================+
+| 1     910B3               | OK            | 141.1       38                0    / 0             |
+| 0                         | 0000:C2:00.0  | 33          0    / 0          60007/ 65536         |
++===========================+===============+====================================================+
+| 2     910B3               | OK            | 140.9       41                0    / 0             |
+| 0                         | 0000:81:00.0  | 32          0    / 0          59949/ 65536         |
++===========================+===============+====================================================+
+| 3     910B3               | OK            | 149.2       40                0    / 0             |
+| 0                         | 0000:82:00.0  | 32          0    / 0          59951/ 65536         |
++===========================+===============+====================================================+
+| 4     910B3               | OK            | 89.7        38                0    / 0             |
+| 0                         | 0000:01:00.0  | 0           0    / 0          59187/ 65536         |
++===========================+===============+====================================================+
+| 5     910B3               | OK            | 92.8        35                0    / 0             |
+| 0                         | 0000:02:00.0  | 0           0    / 0          59878/ 65536         |
++===========================+===============+====================================================+
+| 6     910B3               | OK            | 96.3        39                0    / 0             |
+| 0                         | 0000:41:00.0  | 0           0    / 0          59875/ 65536         |
++===========================+===============+====================================================+
+| 7     910B3               | OK            | 104.2       39                0    / 0             |
+| 0                         | 0000:42:00.0  | 0           0    / 0          65529/ 65536         |
++===========================+===============+====================================================+
++---------------------------+---------------+----------------------------------------------------+
+| NPU     Chip              | Process id    | Process name             | Process memory(MB)      |
++===========================+===============+====================================================+
+| 0       0                 | 89395         | VLLMWorker_TP            | 56434                   |
++===========================+===============+====================================================+
+| 1       0                 | 91055         | VLLMWorker_TP            | 56434                   |
++===========================+===============+====================================================+
+| 2       0                 | 92813         | VLLMWorker_TP            | 56435                   |
++===========================+===============+====================================================+
+| 3       0                 | 94498         | VLLMWorker_TP            | 56435                   |
++===========================+===============+====================================================+
+| 4       0                 | 2999855       | VLLMEngineCor            | 55664                   |
++===========================+===============+====================================================+
+| 5       0                 | 89602         | VLLMWorker_TP            | 56354                   |
++===========================+===============+====================================================+
+| 6       0                 | 91228         | VLLMWorker_TP            | 56355                   |
++===========================+===============+====================================================+
+| 7       0                 | 3458196       | python                   | 62146                   |
++===========================+===============+====================================================+
+SAMPLE=4 UTC=2026-09-23T22:46:12+00:00
+PROCESSES
+  82397 /usr/local/python3.12.13/bin/python3 /usr/local/python3.12.13/bin/vllm serve /models/Qwen3.8-27B-w8a8 --host 0.0.0.0 --port 9001 --tensor-parallel-size 4 --quantization ascend --served-model-name qwen3.8 --max-model-len 256000 --max-num-seqs 8 --max-num-batched-tokens 8192 --gpu-memory-utilization 0.90 --enable-prefix-caching --trust-remote-code --reasoning-parser qwen3 --enable-auto-tool-choice --tool-call-parser qwen3_coder
+  83352 /usr/local/python3.12.13/bin/python3 /usr/local/python3.12.13/bin/vllm serve /models/Qwen3.8-27B-w8a8 --host 0.0.0.0 --port 9002 --tensor-parallel-size 2 --quantization ascend --served-model-name qwen3.8 --max-model-len 256000 --max-num-seqs 8 --max-num-batched-tokens 8192 --gpu-memory-utilization 0.90 --enable-prefix-caching --trust-remote-code --reasoning-parser qwen3 --enable-auto-tool-choice --tool-call-parser qwen3_coder
+  87336 VLLM::EngineCore
+  87670 VLLM::EngineCore
+  89395 VLLM::Worker_TP0
+  89602 VLLM::Worker_TP0
+  91055 VLLM::Worker_TP1
+  91228 VLLM::Worker_TP1
+  92813 VLLM::Worker_TP2
+  94498 VLLM::Worker_TP3
+2992910 /home/data4t1/zhangkaijie/conda/envs/qwen38_a2/bin/python3.12 /home/data4t1/zhangkaijie/conda/envs/qwen38_a2/bin/vllm serve /home/data4t2/models/Qwen3.8-27B-w8a8 --host 0.0.0.0 --port 9000 --tensor-parallel-size 1 --max-model-len 200000 --max-num-seqs 8 --max-num-batched-tokens 16384 --enable-prefix-caching --trust-remote-code --speculative-config {"method":"mtp","num_speculative_tokens":4} --enable-auto-tool-choice --tool-call-parser qwen3_coder --gpu-memory-utilization 0.85
+2999855 VLLM::EngineCore
+3587675 bash -c set -u; echo HOST=$(hostname); echo SESSION_START=$(date -Is); for i in 1 2 3 4 5 6; do echo SAMPLE=$i UTC=$(date -Is); echo PROCESSES; ps -eo pid,args | grep -E "[v]llm serve|VLLM::EngineCore|VLLM::Worker_TP"; echo NPU_SMI; npu-smi info; if [ "$i" -lt 6 ]; then sleep 10; fi; done; echo SESSION_END=$(date -Is)
+3591303 grep -E [v]llm serve|VLLM::EngineCore|VLLM::Worker_TP
+NPU_SMI
++------------------------------------------------------------------------------------------------+
+| npu-smi 25.0.rc1.1               Version: 25.0.rc1.1                                           |
++---------------------------+---------------+----------------------------------------------------+
+| NPU   Name                | Health        | Power(W)    Temp(C)           Hugepages-Usage(page)|
+| Chip                      | Bus-Id        | AICore(%)   Memory-Usage(MB)  HBM-Usage(MB)        |
++===========================+===============+====================================================+
+| 0     910B3               | OK            | 147.1       39                0    / 0             |
+| 0                         | 0000:C1:00.0  | 32          0    / 0          59957/ 65536         |
++===========================+===============+====================================================+
+| 1     910B3               | OK            | 141.4       39                0    / 0             |
+| 0                         | 0000:C2:00.0  | 33          0    / 0          60006/ 65536         |
++===========================+===============+====================================================+
+| 2     910B3               | OK            | 141.5       41                0    / 0             |
+| 0                         | 0000:81:00.0  | 32          0    / 0          59949/ 65536         |
++===========================+===============+====================================================+
+| 3     910B3               | OK            | 145.4       40                0    / 0             |
+| 0                         | 0000:82:00.0  | 32          0    / 0          59951/ 65536         |
++===========================+===============+====================================================+
+| 4     910B3               | OK            | 90.2        37                0    / 0             |
+| 0                         | 0000:01:00.0  | 0           0    / 0          59187/ 65536         |
++===========================+===============+====================================================+
+| 5     910B3               | OK            | 93.0        35                0    / 0             |
+| 0                         | 0000:02:00.0  | 0           0    / 0          59877/ 65536         |
++===========================+===============+====================================================+
+| 6     910B3               | OK            | 95.2        38                0    / 0             |
+| 0                         | 0000:41:00.0  | 0           0    / 0          59875/ 65536         |
++===========================+===============+====================================================+
+| 7     910B3               | OK            | 107.8       39                0    / 0             |
+| 0                         | 0000:42:00.0  | 0           0    / 0          65532/ 65536         |
++===========================+===============+====================================================+
++---------------------------+---------------+----------------------------------------------------+
+| NPU     Chip              | Process id    | Process name             | Process memory(MB)      |
++===========================+===============+====================================================+
+| 0       0                 | 89395         | VLLMWorker_TP            | 56434                   |
++===========================+===============+====================================================+
+| 1       0                 | 91055         | VLLMWorker_TP            | 56434                   |
++===========================+===============+====================================================+
+| 2       0                 | 92813         | VLLMWorker_TP            | 56435                   |
++===========================+===============+====================================================+
+| 3       0                 | 94498         | VLLMWorker_TP            | 56435                   |
++===========================+===============+====================================================+
+| 4       0                 | 2999855       | VLLMEngineCor            | 55664                   |
++===========================+===============+====================================================+
+| 5       0                 | 89602         | VLLMWorker_TP            | 56354                   |
++===========================+===============+====================================================+
+| 6       0                 | 91228         | VLLMWorker_TP            | 56355                   |
++===========================+===============+====================================================+
+| 7       0                 | 3458196       | python                   | 61986                   |
++===========================+===============+====================================================+
+SAMPLE=5 UTC=2026-09-23T22:46:24+00:00
+PROCESSES
+  82397 /usr/local/python3.12.13/bin/python3 /usr/local/python3.12.13/bin/vllm serve /models/Qwen3.8-27B-w8a8 --host 0.0.0.0 --port 9001 --tensor-parallel-size 4 --quantization ascend --served-model-name qwen3.8 --max-model-len 256000 --max-num-seqs 8 --max-num-batched-tokens 8192 --gpu-memory-utilization 0.90 --enable-prefix-caching --trust-remote-code --reasoning-parser qwen3 --enable-auto-tool-choice --tool-call-parser qwen3_coder
+  83352 /usr/local/python3.12.13/bin/python3 /usr/local/python3.12.13/bin/vllm serve /models/Qwen3.8-27B-w8a8 --host 0.0.0.0 --port 9002 --tensor-parallel-size 2 --quantization ascend --served-model-name qwen3.8 --max-model-len 256000 --max-num-seqs 8 --max-num-batched-tokens 8192 --gpu-memory-utilization 0.90 --enable-prefix-caching --trust-remote-code --reasoning-parser qwen3 --enable-auto-tool-choice --tool-call-parser qwen3_coder
+  87336 VLLM::EngineCore
+  87670 VLLM::EngineCore
+  89395 VLLM::Worker_TP0
+  89602 VLLM::Worker_TP0
+  91055 VLLM::Worker_TP1
+  91228 VLLM::Worker_TP1
+  92813 VLLM::Worker_TP2
+  94498 VLLM::Worker_TP3
+2992910 /home/data4t1/zhangkaijie/conda/envs/qwen38_a2/bin/python3.12 /home/data4t1/zhangkaijie/conda/envs/qwen38_a2/bin/vllm serve /home/data4t2/models/Qwen3.8-27B-w8a8 --host 0.0.0.0 --port 9000 --tensor-parallel-size 1 --max-model-len 200000 --max-num-seqs 8 --max-num-batched-tokens 16384 --enable-prefix-caching --trust-remote-code --speculative-config {"method":"mtp","num_speculative_tokens":4} --enable-auto-tool-choice --tool-call-parser qwen3_coder --gpu-memory-utilization 0.85
+2999855 VLLM::EngineCore
+3587675 bash -c set -u; echo HOST=$(hostname); echo SESSION_START=$(date -Is); for i in 1 2 3 4 5 6; do echo SAMPLE=$i UTC=$(date -Is); echo PROCESSES; ps -eo pid,args | grep -E "[v]llm serve|VLLM::EngineCore|VLLM::Worker_TP"; echo NPU_SMI; npu-smi info; if [ "$i" -lt 6 ]; then sleep 10; fi; done; echo SESSION_END=$(date -Is)
+3592539 grep -E [v]llm serve|VLLM::EngineCore|VLLM::Worker_TP
+NPU_SMI
++------------------------------------------------------------------------------------------------+
+| npu-smi 25.0.rc1.1               Version: 25.0.rc1.1                                           |
++---------------------------+---------------+----------------------------------------------------+
+| NPU   Name                | Health        | Power(W)    Temp(C)           Hugepages-Usage(page)|
+| Chip                      | Bus-Id        | AICore(%)   Memory-Usage(MB)  HBM-Usage(MB)        |
++===========================+===============+====================================================+
+| 0     910B3               | OK            | 140.4       34                0    / 0             |
+| 0                         | 0000:C1:00.0  | 9           0    / 0          59957/ 65536         |
++===========================+===============+====================================================+
+| 1     910B3               | OK            | 130.3       34                0    / 0             |
+| 0                         | 0000:C2:00.0  | 10          0    / 0          60006/ 65536         |
++===========================+===============+====================================================+
+| 2     910B3               | OK            | 131.1       36                0    / 0             |
+| 0                         | 0000:81:00.0  | 11          0    / 0          59949/ 65536         |
++===========================+===============+====================================================+
+| 3     910B3               | OK            | 134.3       36                0    / 0             |
+| 0                         | 0000:82:00.0  | 13          0    / 0          59951/ 65536         |
++===========================+===============+====================================================+
+| 4     910B3               | OK            | 89.2        38                0    / 0             |
+| 0                         | 0000:01:00.0  | 0           0    / 0          59187/ 65536         |
++===========================+===============+====================================================+
+| 5     910B3               | OK            | 91.9        35                0    / 0             |
+| 0                         | 0000:02:00.0  | 0           0    / 0          59877/ 65536         |
++===========================+===============+====================================================+
+| 6     910B3               | OK            | 95.1        39                0    / 0             |
+| 0                         | 0000:41:00.0  | 0           0    / 0          59875/ 65536         |
++===========================+===============+====================================================+
+| 7     910B3               | OK            | 108.1       39                0    / 0             |
+| 0                         | 0000:42:00.0  | 0           0    / 0          65070/ 65536         |
++===========================+===============+====================================================+
++---------------------------+---------------+----------------------------------------------------+
+| NPU     Chip              | Process id    | Process name             | Process memory(MB)      |
++===========================+===============+====================================================+
+| 0       0                 | 89395         | VLLMWorker_TP            | 56434                   |
++===========================+===============+====================================================+
+| 1       0                 | 91055         | VLLMWorker_TP            | 56434                   |
++===========================+===============+====================================================+
+| 2       0                 | 92813         | VLLMWorker_TP            | 56435                   |
++===========================+===============+====================================================+
+| 3       0                 | 94498         | VLLMWorker_TP            | 56435                   |
++===========================+===============+====================================================+
+| 4       0                 | 2999855       | VLLMEngineCor            | 55664                   |
++===========================+===============+====================================================+
+| 5       0                 | 89602         | VLLMWorker_TP            | 56354                   |
++===========================+===============+====================================================+
+| 6       0                 | 91228         | VLLMWorker_TP            | 56355                   |
++===========================+===============+====================================================+
+| 7       0                 | 3458196       | python                   | 61696                   |
++===========================+===============+====================================================+
+SAMPLE=6 UTC=2026-09-23T22:46:35+00:00
+PROCESSES
+  82397 /usr/local/python3.12.13/bin/python3 /usr/local/python3.12.13/bin/vllm serve /models/Qwen3.8-27B-w8a8 --host 0.0.0.0 --port 9001 --tensor-parallel-size 4 --quantization ascend --served-model-name qwen3.8 --max-model-len 256000 --max-num-seqs 8 --max-num-batched-tokens 8192 --gpu-memory-utilization 0.90 --enable-prefix-caching --trust-remote-code --reasoning-parser qwen3 --enable-auto-tool-choice --tool-call-parser qwen3_coder
+  83352 /usr/local/python3.12.13/bin/python3 /usr/local/python3.12.13/bin/vllm serve /models/Qwen3.8-27B-w8a8 --host 0.0.0.0 --port 9002 --tensor-parallel-size 2 --quantization ascend --served-model-name qwen3.8 --max-model-len 256000 --max-num-seqs 8 --max-num-batched-tokens 8192 --gpu-memory-utilization 0.90 --enable-prefix-caching --trust-remote-code --reasoning-parser qwen3 --enable-auto-tool-choice --tool-call-parser qwen3_coder
+  87336 VLLM::EngineCore
+  87670 VLLM::EngineCore
+  89395 VLLM::Worker_TP0
+  89602 VLLM::Worker_TP0
+  91055 VLLM::Worker_TP1
+  91228 VLLM::Worker_TP1
+  92813 VLLM::Worker_TP2
+  94498 VLLM::Worker_TP3
+2992910 /home/data4t1/zhangkaijie/conda/envs/qwen38_a2/bin/python3.12 /home/data4t1/zhangkaijie/conda/envs/qwen38_a2/bin/vllm serve /home/data4t2/models/Qwen3.8-27B-w8a8 --host 0.0.0.0 --port 9000 --tensor-parallel-size 1 --max-model-len 200000 --max-num-seqs 8 --max-num-batched-tokens 16384 --enable-prefix-caching --trust-remote-code --speculative-config {"method":"mtp","num_speculative_tokens":4} --enable-auto-tool-choice --tool-call-parser qwen3_coder --gpu-memory-utilization 0.85
+2999855 VLLM::EngineCore
+3587675 bash -c set -u; echo HOST=$(hostname); echo SESSION_START=$(date -Is); for i in 1 2 3 4 5 6; do echo SAMPLE=$i UTC=$(date -Is); echo PROCESSES; ps -eo pid,args | grep -E "[v]llm serve|VLLM::EngineCore|VLLM::Worker_TP"; echo NPU_SMI; npu-smi info; if [ "$i" -lt 6 ]; then sleep 10; fi; done; echo SESSION_END=$(date -Is)
+3593895 grep -E [v]llm serve|VLLM::EngineCore|VLLM::Worker_TP
+NPU_SMI
++------------------------------------------------------------------------------------------------+
+| npu-smi 25.0.rc1.1               Version: 25.0.rc1.1                                           |
++---------------------------+---------------+----------------------------------------------------+
+| NPU   Name                | Health        | Power(W)    Temp(C)           Hugepages-Usage(page)|
+| Chip                      | Bus-Id        | AICore(%)   Memory-Usage(MB)  HBM-Usage(MB)        |
++===========================+===============+====================================================+
+| 0     910B3               | OK            | 147.3       39                0    / 0             |
+| 0                         | 0000:C1:00.0  | 33          0    / 0          59957/ 65536         |
++===========================+===============+====================================================+
+| 1     910B3               | OK            | 139.8       38                0    / 0             |
+| 0                         | 0000:C2:00.0  | 32          0    / 0          60006/ 65536         |
++===========================+===============+====================================================+
+| 2     910B3               | OK            | 139.6       41                0    / 0             |
+| 0                         | 0000:81:00.0  | 33          0    / 0          59949/ 65536         |
++===========================+===============+====================================================+
+| 3     910B3               | OK            | 145.6       40                0    / 0             |
+| 0                         | 0000:82:00.0  | 32          0    / 0          59951/ 65536         |
++===========================+===============+====================================================+
+| 4     910B3               | OK            | 88.8        38                0    / 0             |
+| 0                         | 0000:01:00.0  | 0           0    / 0          59187/ 65536         |
++===========================+===============+====================================================+
+| 5     910B3               | OK            | 92.8        35                0    / 0             |
+| 0                         | 0000:02:00.0  | 0           0    / 0          59877/ 65536         |
++===========================+===============+====================================================+
+| 6     910B3               | OK            | 94.0        37                0    / 0             |
+| 0                         | 0000:41:00.0  | 0           0    / 0          59875/ 65536         |
++===========================+===============+====================================================+
+| 7     910B3               | OK            | 121.6       39                0    / 0             |
+| 0                         | 0000:42:00.0  | 8           0    / 0          65532/ 65536         |
++===========================+===============+====================================================+
++---------------------------+---------------+----------------------------------------------------+
+| NPU     Chip              | Process id    | Process name             | Process memory(MB)      |
++===========================+===============+====================================================+
+| 0       0                 | 89395         | VLLMWorker_TP            | 56434                   |
++===========================+===============+====================================================+
+| 1       0                 | 91055         | VLLMWorker_TP            | 56434                   |
++===========================+===============+====================================================+
+| 2       0                 | 92813         | VLLMWorker_TP            | 56435                   |
++===========================+===============+====================================================+
+| 3       0                 | 94498         | VLLMWorker_TP            | 56435                   |
++===========================+===============+====================================================+
+| 4       0                 | 2999855       | VLLMEngineCor            | 55664                   |
++===========================+===============+====================================================+
+| 5       0                 | 89602         | VLLMWorker_TP            | 56354                   |
++===========================+===============+====================================================+
+| 6       0                 | 91228         | VLLMWorker_TP            | 56355                   |
++===========================+===============+====================================================+
+| 7       0                 | 3458196       | python                   | 61696                   |
++===========================+===============+====================================================+
+SESSION_END=2026-09-23T22:46:36+00:00

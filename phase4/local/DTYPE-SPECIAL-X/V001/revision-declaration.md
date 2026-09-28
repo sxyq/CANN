@@ -1,0 +1,9 @@
+ROUTE=DTYPE-SPECIAL-X
+REVISION=V001
+DIRECT_PARENT=R31B-V011
+PARENT_SOURCE_SHA=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
+PARENT_SCORE=45.16
+TARGET_DTYPE=FP32
+SINGLE_HYPOTHESIS=For aligned FP32 local copies, replace Adds(..., 0) with same-type DataCopy in both shared conversion helpers to remove vector arithmetic while preserving finite numeric values; unaligned cases retain Adds.
+CONTEXT_CLASS=HISTORICAL_DERIVED
+WHY_NOT_DUPLICATE=R004 rejects low-precision middle math, R017 covers FP32 middle precision, and R029 gains are tied to excluded wide cached-y; none tests this same-type FP32 copy change on R31B-V011.
