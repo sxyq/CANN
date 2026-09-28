@@ -1,0 +1,66 @@
+--- 线上结果/R31B/V011/submission.asc	2026-09-29 04:22:43
++++ 本地实验/ASYNC-OVERLAP-CHAMPION-X/V001/submission.asc	2026-09-29 04:48:36
+@@ -3219,6 +3219,30 @@
+             pipe_.ReleaseEventID<AscendC::HardEvent::MTE2_V>(rd1);
+             pipe_.ReleaseEventID<AscendC::HardEvent::V_MTE2>(rel0);
+             pipe_.ReleaseEventID<AscendC::HardEvent::V_MTE2>(rel1);
++            }
++
++            // V001 H1: issue pass-2 tile-0 gamma/bias MTE2 BEFORE the invRms
++            // scalar loop so parameter DMA overlaps that loop. xBuf_/residualBuf_
++            // are free after pass-1 rel0/rel1 above; invRms uses only
++            // xFp32Buf_/residualFp32Buf_/reduceFp32Buf_.
++            const AscendC::TEventID prd0 =
++                pipe_.AllocEventID<AscendC::HardEvent::MTE2_V>();
++            const AscendC::TEventID prd1 =
++                pipe_.AllocEventID<AscendC::HardEvent::MTE2_V>();
++            const AscendC::TEventID prel0 =
++                pipe_.AllocEventID<AscendC::HardEvent::V_MTE2>();
++            const AscendC::TEventID prel1 =
++                pipe_.AllocEventID<AscendC::HardEvent::V_MTE2>();
++            AscendC::LocalTensor<T> gBase = xBuf_.Get<T>();
++            AscendC::LocalTensor<T> bBase = residualBuf_.Get<T>();
++            bool pRelA = false;
++            bool pRelB = false;
++            if (tileCount > 0) {
++                Load(gBase, gammaGm_, 0, tileWidth < static_cast<int32_t>(rowWidth)
++                    ? tileWidth : static_cast<int32_t>(rowWidth));
++                Load(bBase, biasGm_, 0, tileWidth < static_cast<int32_t>(rowWidth)
++                    ? tileWidth : static_cast<int32_t>(rowWidth));
++                AscendC::SetFlag<AscendC::HardEvent::MTE2_V>(prd0);
+             }
+ 
+             for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
+@@ -3240,30 +3264,12 @@
+                 invRmsValues[batchRow] = 1.0f / xFp32.GetValue(0);
+                 SyncSToV();
+             }
+-            SyncVToMTE2();
++            // V001 H1: former SyncVToMTE2() dropped; tile-0 param Load is
++            // already in flight and ordered by pass-1 rel0/rel1 only.
+ 
+             // Pass 2: one gamma/bias tile serves the whole retained batch.
+             // V011: 2-deep param MTE2 (next tile loads during this tile's apply).
+             {
+-            const AscendC::TEventID prd0 =
+-                pipe_.AllocEventID<AscendC::HardEvent::MTE2_V>();
+-            const AscendC::TEventID prd1 =
+-                pipe_.AllocEventID<AscendC::HardEvent::MTE2_V>();
+-            const AscendC::TEventID prel0 =
+-                pipe_.AllocEventID<AscendC::HardEvent::V_MTE2>();
+-            const AscendC::TEventID prel1 =
+-                pipe_.AllocEventID<AscendC::HardEvent::V_MTE2>();
+-            AscendC::LocalTensor<T> gBase = xBuf_.Get<T>();
+-            AscendC::LocalTensor<T> bBase = residualBuf_.Get<T>();
+-            bool pRelA = false;
+-            bool pRelB = false;
+-            if (tileCount > 0) {
+-                Load(gBase, gammaGm_, 0, tileWidth < static_cast<int32_t>(rowWidth)
+-                    ? tileWidth : static_cast<int32_t>(rowWidth));
+-                Load(bBase, biasGm_, 0, tileWidth < static_cast<int32_t>(rowWidth)
+-                    ? tileWidth : static_cast<int32_t>(rowWidth));
+-                AscendC::SetFlag<AscendC::HardEvent::MTE2_V>(prd0);
+-            }
+             for (int32_t tile = 0; tile < tileCount; ++tile) {
+                 const uint64_t col = static_cast<uint64_t>(tile) * tileWidth;
+                 const int32_t valid = static_cast<int32_t>(
