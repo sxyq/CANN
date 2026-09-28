@@ -83,3 +83,5 @@
 | 2026-09-29 | R31A V023 NEEDS_ONE_MORE_LOCAL; **Rsqrt is ~2^-10 approx on 910B3** (max_abs 9.94e-4); H2 selected for V024 |
 | 2026-09-29 | EPILOGUE-ARITH V001 first signal: 1x32768 -1.51% 6/6 (noise band ±3-5%); clean remeasure directed |
 | 2026-09-29 | **R31A V024 LOCAL_ACCEPTED -3.66% 8/8 dual-device**; LOCAL_BEST V016→V024; ONLINE_RECOMMENDATION WORTHY (trigger A); package ready for Judge Owner |
+| 2026-09-29 | **R31B V016 LOCAL_ACCEPTED fp16-wide-d32768 -6.5~-7.0%**; LOCAL_BEST=V016; ONLINE_RECOMMENDATION WORTHY (trigger A); H1 selected for V017 |
+| 2026-09-29 | Two Online candidates ready: R31A V024 + R31B V016 |
