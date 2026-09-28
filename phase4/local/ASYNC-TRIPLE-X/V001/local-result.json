@@ -275,7 +275,7 @@
       "No V002",
       "No online",
       "No CANNJudge",
-      "Wait for Main-scheduled clean window"
+      "Use the next device admitted by live HBM and lease state; then qualify the exact shape"
     ]
   },
   "probes": "IDLE",
@@ -389,7 +389,7 @@
     "noise_margin_us": 63.527,
     "noise_margin_note": "|median_delta|=1.700 vs noise=63.527 (delta_stdev=63.527, half seed-range=61.585); seed CV=41.5%",
     "load_quality": {
-      "classification": "DEV4_FREE_WINDOW_VLLM_RESIDENT",
+      "classification": "HISTORICAL_VLLM_RESIDENT",
       "devices_survey": [
         {
           "dev": 0,
@@ -490,7 +490,7 @@
           ]
         }
       ],
-      "note": "dev4 free HBM 6294/65536 pages, AICore 0%; VLLMEngineCor residual 55664MB (expected). Non-VLLM process on d4 during window: ['reduce_invscale']. Per Main: residual VLLM HBM recorded as DEV4_FREE_WINDOW_VLLM_RESIDENT.",
+      "note": "Historical d4 observation: free HBM 6294/65536 pages, AICore 0%, VLLMEngineCor residual 55664MB, and reduce_invscale was present. Current rule records AICore/processes only; timing uses live HBM below 100% plus an unconflicted lease.",
       "raw_file": "support/results-set2/",
       "concurrent_non_vllm_on_d4": [
         [
@@ -511,7 +511,7 @@
   },
   "handoff_fields_set2": {
     "CORRECTNESS": "PASS (recheck on device=4: standard 8x1024 and wide 2x8192; max_abs identical to set1)",
-    "LOAD_QUALITY": "DEV4_FREE_WINDOW_VLLM_RESIDENT; d4 AICore 0%, free 6294/65536 pages; VLLMEngineCor residual; snapshot also shows ['reduce_invscale'] on d4",
+    "LOAD_QUALITY": "HISTORICAL_VLLM_RESIDENT; d4 AICore 0%, free 6294/65536 pages; VLLMEngineCor residual; snapshot also shows ['reduce_invscale'] on d4; current timing uses live HBM and lease admission",
     "PROBE_DELTAS": {
       "set2_standard_us": [
         6.047,
@@ -548,7 +548,7 @@
     "note": "Set-2 on d4 finished before serial-slot message; no further sets started; no other next6 probe was active in our run window."
   },
   "load_quality_set2": {
-    "classification": "DEV4_FREE_WINDOW_VLLM_RESIDENT",
+    "classification": "HISTORICAL_VLLM_RESIDENT",
     "devices_survey": [],
     "dev4_processes": [
       {
@@ -600,7 +600,7 @@
         ]
       }
     ],
-    "note": "Main free-HBM window: dev4 AICore 0%, free HBM pages 65536-hbm; VLLMEngineCor residual expected; residual VLLM HBM recorded as requested. Timing still high-variance (seed CV 41.5%).",
+    "note": "Historical free-HBM observation: d4 AICore 0%, free HBM pages 65536-hbm, VLLMEngineCor residual, and timing remained high-variance (seed CV 41.5%). Current timing admission uses live HBM below 100% plus an unconflicted lease.",
     "raw_file": "support/results-set2/"
   },
   "main_review_set2": {
@@ -614,8 +614,8 @@
     "actions": [
       "No V002",
       "No CANNJudge",
-      "IDLE_AWAIT_EXCLUSIVE_DEV4",
-      "Do not probe"
+      "IDLE_AFTER_HISTORICAL_SHAPE_GATE",
+      "Do not wait for AICore=0, VLLM exit, or exclusive d4; resume on any device admitted by live HBM and lease state"
     ]
   },
   "worker_status": "IDLE",

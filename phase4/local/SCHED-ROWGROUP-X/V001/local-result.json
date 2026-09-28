@@ -372,7 +372,7 @@
         "lines": 50
       }
     ],
-    "interpretation": "VLLM processes observed on devices during window; treat latency deltas as provisional."
+    "interpretation": "VLLM processes were observed during this historical window; retain the load facts, but use current live-HBM/lease admission and exact-shape qualification for any new timing."
   },
   "architecture_novelty": "R016 shape-aware rows/task baseline plus R012 32B row-group ownership only; device Process/ProcessRow unchanged from parent.",
   "risks": [
@@ -380,7 +380,7 @@
     "FP16 local golden mismatches are identical on parent and V001 (not a V001 defect) but limit absolute FP16 PASS claims.",
     "Single local screen before Main review; no CANNJudge submission by this route agent.",
     "Aligned-D control should be scheduling-neutral under V001 but measured -26.9%, indicating load contamination of probe magnitudes.",
-    "Set-2 clean-window still has VLLM HBM residency; aligned control +20.6% opposite set-1 direction."
+    "Set-2 historical poll still had VLLM HBM residency; aligned control +20.6% opposed set-1, so no performance conclusion follows."
   ],
   "decision": "ONLINE_CANDIDATE",
   "next_candidate_hypothesis": "None while idle. No source change. No timing today. Await Main.",
@@ -447,7 +447,7 @@
   },
   "local_probes_set2_clean_window": {
     "label": "set2",
-    "load_quality": "DEVICE_AICORE_IDLE_VLLM_HBM_RESIDENT",
+    "load_quality": "HISTORICAL_VLLM_HBM_RESIDENT",
     "session_start": "2026-09-23T21:06:45+00:00",
     "session_end": "2026-09-23T21:07:49+00:00",
     "device_id": 6,
@@ -516,10 +516,10 @@
     "set1_load": "LOAD_CONTAMINATED",
     "set2_median": 1.8,
     "set2_aligned": 20.623,
-    "set2_load": "DEVICE_AICORE_IDLE_VLLM_HBM_RESIDENT",
+    "set2_load": "HISTORICAL_VLLM_HBM_RESIDENT",
     "set3_median": 10.8,
     "set3_aligned": 58.492,
-    "set3_load": "DEV4_FREE_WINDOW_VLLM_RESIDENT",
+    "set3_load": "HISTORICAL_VLLM_RESIDENT",
     "L004_median": -8.91,
     "L004_aligned": 10.739,
     "L004_load": "LOAD_CONTAMINATED",
@@ -527,17 +527,17 @@
   },
   "main_review_round2": {
     "decision": "NEEDS_ONE_MORE_LOCAL",
-    "note": "set1 vs set2 disagree; aligned control opposite signs; DEVICE_AICORE_IDLE_VLLM_HBM_RESIDENT insufficient"
+    "note": "set1 vs set2 disagree; aligned control has the opposite sign; the historical load label is not a current admission rule"
   },
   "probe_status": "ONLINE_CANDIDATE",
   "probe_park": {
-    "reason": "No VLLM-free window; cannot stop root/zhangkaijie VLLM; HBM ~91-99% used; concurrent next6 probes present",
+    "reason": "Resident VLLM remained; HBM ~91-99% used; concurrent next6 probes were present. Current rule allows compile/correctness with FREE_HBM >= 100 MB and timing with live HBM below 100% plus an unconflicted lease; the retained samples still fail shape qualification.",
     "blocker_evidence": "phase4/local/SCHED-ROWGROUP-X/V001/support/probe-blocker-r3/",
     "park_note": "phase4/local/SCHED-ROWGROUP-X/V001/PROBE-PARK.md",
     "set1_preserved": "support/contaminated-set-1/",
     "set2_preserved": "support/clean-window-set-2/",
     "set3_run": true,
-    "resume_condition": "VLLM stopped or HBM free enough for near-zero aligned control; no concurrent next6 probe on device",
+    "resume_condition": "Use a device with live HBM utilization below 100%, an unconflicted lease, and no other timing process; then qualify the exact shape before P/C.",
     "unparked": true,
     "unpark_policy": "Main 2026-09-24T04:03:00Z free-HBM window; residual VLLM accepted"
   },
@@ -545,13 +545,13 @@
   "main_review_round3": {
     "decision": "NEEDS_ONE_MORE_LOCAL + PROBES PARKED",
     "accepted": true,
-    "note": "Main accepted PROBE PARK; stop VLLM polling; wait for Main ops clean window; no V002; no online; no CANNJudge",
+    "note": "Main accepted PROBE PARK; stop VLLM polling; use current HBM/lease admission and exact-shape qualification; no V002; no online; no CANNJudge",
     "received_at": "2026-09-23T21:59:59Z"
   },
   "waiting_on": "Main disposition of V001 (ONLINE_CANDIDATE ready; no V002; no CANNJudge by this route)",
   "local_probes_set3_free_window": {
     "label": "set3",
-    "load_quality": "DEV4_FREE_WINDOW_VLLM_RESIDENT",
+    "load_quality": "HISTORICAL_VLLM_RESIDENT",
     "device_id": 4,
     "session_start": "2026-09-24T04:04:22+00:00",
     "session_end": "2026-09-24T04:05:15+00:00",
@@ -616,7 +616,7 @@
   "main_review_policy_update": {
     "received_at": "2026-09-24T04:03:00Z",
     "action": "unpark probes; set-3 on ASCEND_DEVICE_ID=4; same four pairs; residual VLLM accepted",
-    "load_quality_required": "DEV4_FREE_WINDOW_VLLM_RESIDENT"
+    "load_quality_required": "LIVE_HBM_BELOW_100_PERCENT_AND_UNCONFLICTED_LEASE"
   },
   "route_stage": "IDLE_AFTER_WINDOW_UNQUALIFIED",
   "main_review_set3": {
@@ -626,7 +626,7 @@
     "set1_2_3_preserved": true,
     "device4_serial": true,
     "exclusive_slot_owner": "BATCH",
-    "action": "stay IDLE_AWAIT_EXCLUSIVE_DEV4; do not probe; no V002; no CANNJudge"
+    "action": "stay idle after the historical shape gate; resume on any device admitted by live HBM and lease state; no AICore/VLLM/exclusive-d4 wait; no V002; no CANNJudge"
   },
   "lease_L004": {
     "lease": "L004",
@@ -1336,7 +1336,7 @@
     "date_utc": "2026-09-25",
     "shared_lease_tsv_edited": false,
     "shared_lease_note": "route brief forbids shared control edits; devices verified free before each stage; no concurrent probe observed",
-    "load_quality": "DEVICE_AICORE_IDLE_VLLM_HBM_RESIDENT",
+    "load_quality": "HISTORICAL_VLLM_HBM_RESIDENT",
     "vllm_residual": "VLLMEngineCor pid 2999855 on d4 (55664 MB HBM), AICore 0%",
     "identity": {
       "v001_sha256": "0fae0a42e3942356fe3477cd518b17180b6104d57350cee705cba37a5895e65c",

@@ -5,6 +5,8 @@ Owner: MAIN-2 measurement research (lease `MR-B1B2-20260925`)
 Scope: measurement layer only. No Candidate kernel edited, no P/C run, no CANNJudge
 submission, pre-registered outlier policy untouched.
 
+> Current resource rule: compile/link/source identity/host build/correctness may use up to 8 cards in parallel, one version per card, while each card has `FREE_HBM >= 100 MB`. Timing uses live HBM utilization below 100% plus an unconflicted lease. AICore 0%, a VLLM-free device, and a so-called clean window are not prerequisites; AICore and resident processes are recorded for interpretation.
+
 ## 1. Question and answer in one paragraph
 
 The registered criterion is `PASS iff full-sample MAD/median ≤ 0.10 AND |B1_med−B2_med|/median ≤ 0.10`.
@@ -279,10 +281,10 @@ lease at a time, registered criterion unchanged):
    `MEASUREMENT_PROTOCOL_BLOCKED_FOR_SHAPE` (c) — its residual would be interference, not
    block asymmetry.
 3. ASYNC 8x8192 / 8x4096: warmup change alone does not address them (D5/D7/D8b). Sequence:
-   (b) obtain a genuinely quiet co-tenant window (VLLM inference actually idle, not just
-   "no sibling lease"), then same-binary with warmup=45; if the two-state interference persists,
-   keep both ASYNC shapes `MEASUREMENT_PROTOCOL_BLOCKED_FOR_SHAPE` (c). Do not spend further
-   quiet-retry leases on ASYNC under the current resident load — three windows already agree.
+   (b) use any device admitted by live HBM and an unconflicted lease, then same-binary with
+   warmup=45; if the two-state interference persists, keep both ASYNC shapes
+   `MEASUREMENT_PROTOCOL_BLOCKED_FOR_SHAPE` (c). Do not require VLLM to pause or AICore to reach
+   zero; use the observed raw spread and shape-specific qualification result.
 4. Optional secondary (only if Main wants it, needs its own same-binary check): gap 2 s → 0
    (or 0.5 s) to remove the rep1 cold-wake, trading inter-block idleness; and blocks=3 so drift
    is judged on more than one pair. Neither is required for (a) to work.
@@ -292,11 +294,11 @@ post-hoc rule keyed to Candidate results. This document proposes parameters only
 file is edited by MAIN-2 ownership after Main approves, and no P/C runs until the route's
 same-binary re-validation in step 1–3 passes.
 
-**(b) companion**: schedule ASYNC re-validation only when VLLM inference is actually paused
-(AICore of *all* NPUs near 0% over a sampled minute, not just d4; host load <10 if possible).
-Lease exclusivity among route probes was already shown insufficient.
+**(b) companion**: schedule ASYNC re-validation on a device admitted by live HBM and lease
+state. Record VLLM, AICore, and host load, then let same-binary and paired statistics decide
+whether the shape is usable. Lease exclusivity among route probes was already shown insufficient.
 
-**(c) fallback**: if (a) steps 1–2 still fail after a clean window, accept
+**(c) fallback**: if (a) steps 1–2 still fail after another admitted timing attempt, accept
 `MEASUREMENT_PROTOCOL_BLOCKED_FOR_SHAPE` for ALIGN/REDUCE under current policy rather than
 loosening the criterion — the criterion itself was shown achievable (D2, and prior SCHED/BATCH
 passes).

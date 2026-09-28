@@ -48,7 +48,7 @@ Without this the loader fails on `libregister.so` (seen on SCHED's first ref inv
 
 ## 4. (a) Same-binary parent-vs-parent qualification
 
-Preconditions: Main has appended the lease line (§7), `npu-smi info` shows the assigned device AICore 0%, and `ps aux | grep -E 'srx_|atx_|msprof'` shows no other timing process. Device = the leased device (`DEV` below, expected d4); never run while another Route's timing is active.
+Preconditions: Main has appended the lease line (§7), live HBM utilization on the assigned device is below 100%, and `ps aux | grep -E 'srx_|atx_|msprof'` shows no other timing process. Record AICore and resident processes but do not require AICore 0% or a VLLM-free device. Device = the leased device (`DEV` below); never run while another Route's timing is active.
 
 ```bash
 DEV=4   # value from the lease line

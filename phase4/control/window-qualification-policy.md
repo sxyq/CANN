@@ -1,8 +1,8 @@
 # Window Qualification Policy (MAIN-2)
 
-AICore 0% is not a prerequisite for timing. For timing, use a device when live HBM utilization is below 100% and the shared lease has no conflict; record AICore and resident processes as load facts only. Device 7 follows the same rule as every other device.
+AICore 0% is not a prerequisite for timing. For timing, use a device when live HBM utilization is below 100% and the shared lease has no conflict; resolve the append-only lease file by the last row for each `lease_id`, and record AICore and resident processes as load facts only. Device 7 follows the same rule as every other device.
 
-For compile, link, source/executable identity, host build, and safe correctness work, use up to 8 cards in parallel, one version per card. Continue each card while `FREE_HBM >= 100 MB`; pause only the card whose `FREE_HBM < 100 MB`. Do not wait for zero AICore or a VLLM-free window. This replaces the older over-conservative resource wording.
+For compile, link, source/executable identity, host build, and safe correctness work, the forced rule is: use up to 8 cards in parallel for 8 different versions, one version per card; continue each card while `FREE_HBM >= 100 MB`; pause that card only when `FREE_HBM < 100 MB`. AICore activity, VLLM residency, other processes, and high HBM use with at least 100 MB free do not stop the work. Do not wait for zero AICore or a VLLM-free window. This replaces the older over-conservative resource wording.
 
 Before any Candidate on a device:
 1. Parent baseline only, ≥4-6 samples (PRECHECK-A)

@@ -73,6 +73,8 @@ WHY_NOT_DUPLICATE
 
 server3 最多同时使用 8 张卡跑 8 个不同版本的编译或编译测试，每张卡只承载一个版本。按卡独立判断：该卡 `FREE_HBM >= 100 MB` 就继续；只有该卡 `FREE_HBM < 100 MB` 才暂停该卡上的编译测试或换卡。AICore 有占用、VLLM 驻留、其他进程存在，以及仍有至少 100 MB 空闲 HBM 时的高 HBM 使用率，都不能停止编译。不要等待 AICore 归零，不要等待 VLLM 退出，也不要停止其他进程。旧的“等 AICore 空闲、等干净窗口、排除 d7”口径已废止，只能作为历史负载记录，不能继续作为当前运行前提。
 
+强制警告：把 AICore、VLLM、其他进程或未满容量的 HBM 占用当成编译暂停条件，属于错误的保守处置。只按单卡 `FREE_HBM` 判断；达到 100 MB 就继续，低于 100 MB 才暂停该卡。
+
 ## I. Build Fix / Correctness Fix
 
 Build Fix 或 Correctness Fix 只能处理编译、ABI、API 使用、对齐、同步、正确性或构建兼容问题；可留在原假设及 Revision 内。禁止借 FIX 引入新性能机制。性能假设不变时，按项目记录方式保留每次修复的差异和来源。
@@ -89,7 +91,7 @@ Parent 在与 Candidate 相同的设备、形状、dtype、runner、进程方式
 
 ## L. Performance device lease
 
-所有性能测量使用 `phase4/control/server3-device-leases.tsv`。同一 device 同一时段只运行一条性能路线，不跨 Main 重叠。开测前实时读取设备、HBM、AICore 和进程；结束后记录并释放 lease。性能设备准入条件是实时 HBM 使用率低于 100% 且不存在共享租用冲突；AICore 利用率和已有进程只作为负载记录，不单独停止测量；d7 与其他设备使用同一条件。若没有满足 HBM 条件的设备，不强测；继续源码核验、编译/链接、executable 身份采集、可安全执行的正确性工作和 Track-B。设备与负载资格只限制 same-binary、噪声底及 Parent/Candidate 计时。
+所有性能测量使用 `phase4/control/server3-device-leases.tsv`。同一 device 同一时段只运行一条性能路线，不跨 Main 重叠。该文件是追加式状态记录，按每个 `lease_id` 的最后一行判断当前状态；早先的 `LEASED` 后面已有 `RELEASED` 时不再算作占用。开测前实时读取设备、HBM、AICore 和进程；结束后记录并释放 lease。性能设备准入条件是实时 HBM 使用率低于 100% 且不存在共享租用冲突；AICore 利用率和已有进程只作为负载记录，不单独停止测量；d7 与其他设备使用同一条件。若没有满足 HBM 条件的设备，不强测；继续源码核验、编译/链接、executable 身份采集、可安全执行的正确性工作和 Track-B。设备与负载资格只限制 same-binary、噪声底及 Parent/Candidate 计时。
 
 ## M. Parent/Candidate paired timing
 

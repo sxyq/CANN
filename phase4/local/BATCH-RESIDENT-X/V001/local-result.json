@@ -34,9 +34,9 @@
     ]
   },
   "load_quality": {
-    "classification": "DEV4_EXCLUSIVE_VLLM_RESIDENT",
+    "classification": "HISTORICAL_EXCLUSIVE_VLLM_RESIDENT",
     "set1_classification": "LOAD_CONTAMINATED",
-    "set2_classification": "DEV4_FREE_WINDOW_VLLM_RESIDENT",
+    "set2_classification": "HISTORICAL_VLLM_RESIDENT",
     "set3_device": 4,
     "set3_exclusive": true,
     "set3_note": "Main exclusive d4 grant 2026-09-24T04:09:19Z. Preflight no other next6 (exclusive_ok=True). Residual VLLM accepted. d4_min_hbm_free=6347; d4_aicore_spikes=0.",
@@ -96,7 +96,7 @@
     "device": 4,
     "warmups": 5,
     "repeats_per_variant": 21,
-    "load_classification": "DEV4_EXCLUSIVE_VLLM_RESIDENT",
+    "load_classification": "HISTORICAL_EXCLUSIVE_VLLM_RESIDENT",
     "exclusive_preflight_ok": true,
     "preflight_concurrent_lines": [],
     "pairs": [
@@ -192,12 +192,12 @@
     "d4_min_hbm_free": 6347,
     "d4_aicore_spikes": [],
     "local_confidence": "LOW",
-    "interpretation": "Set3 EXCLUSIVE d4 (DEV4_EXCLUSIVE_VLLM_RESIDENT): DIR INCONSISTENT (3f/1s/0flat), median=-20.315%, worst=185.495%. Never promote on mean alone. Main set3 review: controlled exclusive measurement accepted; parent-jitter load note=MODERATE; decision remains NEEDS_ONE_MORE_LOCAL.",
+    "interpretation": "Set3 historical exclusive d4 observation: DIR INCONSISTENT (3f/1s/0flat), median=-20.315%, worst=185.495%. Never promote on mean alone. Main set3 review: controlled measurement retained; parent-jitter load note=MODERATE; decision remains NEEDS_ONE_MORE_LOCAL.",
     "load_note_class": "MODERATE"
   },
   "decision": "NEEDS_ONE_MORE_LOCAL",
-  "decision_rationale": "Main-2 Q-BATCH review 2026-09-24T07:33:27Z: WINDOW_UNQUALIFIED 2/2 (d6+d4); candidate not run; pair3 not chased. Decision NEEDS_ONE_MORE_LOCAL + MEASUREMENT_BLOCKED. Stop timing BATCH today; SHA frozen; stay idle; no V002; no CANNJudge.",
-  "next_candidate_hypothesis": "No new hypothesis before Main review. If Main requests another local run, repeat the same four pairs (100x256 FP32, 80x512 FP32, 64x1024 FP16, 128x128 FP32) against A001 V017 during a clear load window.",
+  "decision_rationale": "Main-2 Q-BATCH review 2026-09-24T07:33:27Z: the historical strict-window attempt was WINDOW_UNQUALIFIED 2/2 (d6+d4); candidate not run; pair3 not chased. This is a timing-stage record only. Under the current rule, retry on any device with live HBM utilization below 100% and no conflicting lease; compile/correctness work may continue per card while FREE_HBM >= 100 MB. Keep the source SHA and do not create V002 or submit Online.",
+  "next_candidate_hypothesis": "No new hypothesis before Main review. If Main requests another local run, repeat the same four pairs (100x256 FP32, 80x512 FP32, 64x1024 FP16, 128x128 FP32) against A001 V017 on a device admitted by live HBM and lease state; exact-shape qualification remains required.",
   "architecture_novelty": "Combination of proven R014 param residency (A001 LoadFloatParamsOnce) with R015-style contiguous multi-row batch DMA ownership on the FastKernel path only.",
   "risks": [
     "No uncontaminated performance evidence.",
@@ -229,7 +229,7 @@
     "status": "NO_STRICT_CLEAN_WINDOW",
     "waited_seconds": 722,
     "attempts": 36,
-    "criteria": "strict peer/Main: no VLLM/python pressure procs; all AICore==0; max HBM frac<=0.90; no concurrent next6 runtime on chosen dev",
+    "criteria": "RETIRED_HISTORICAL_POLL; current timing admission is live HBM utilization below 100% plus no conflicting lease; compile/correctness may continue per card while FREE_HBM >= 100 MB.",
     "last_reasons": [
       "parse n_devs=0",
       "parse n_devs=0",
@@ -240,8 +240,8 @@
       "parse n_devs=0",
       "parse n_devs=0"
     ],
-    "note": "VLLM processes resident since Sep13/Sep22 may prevent strict clean indefinitely.",
-    "action": "No second probe set run; first LOAD_CONTAMINATED set retained. Awaiting strict clean (no VLLM pressure, HBM<=90%)."
+    "note": "Historical strict polling was over-conservative; do not wait for VLLM exit, AICore=0, HBM<=90%, or exclusive d4.",
+    "action": "No second probe set run; first LOAD_CONTAMINATED set retained. Retry timing under current live-HBM/lease admission and exact-shape qualification; continue non-timing work on any card with FREE_HBM >= 100 MB."
   },
   "probes_status": "IDLE_AFTER_Q_BATCH_REVIEW",
   "idle": true,
@@ -249,20 +249,20 @@
     "received_utc": "2026-09-23T21:59:59Z",
     "decision": "NEEDS_ONE_MORE_LOCAL + PROBES PARKED",
     "actions": [
-      "Stop polling for clean window",
+      "Do not poll for the retired clean-window condition; use current live-HBM/lease admission",
       "Do not start V002",
       "Do not change source",
       "No CANNJudge",
-      "Wait for Main to schedule quiet window or redefine quiet-window policy",
-      "Stay idle unless re-tasked"
+      "Do not wait for zero AICore, VLLM exit, HBM<=90%, or exclusive d4",
+      "Continue compile/link/source/executable/correctness work under the mandatory 8-card rule; timing still requires exact-shape qualification"
     ],
     "sha_frozen": "ad961c5837971bf989c9989b822cc2719a6a285c60969d35e1530463b7c8721d"
   },
   "main_policy_update": {
     "received_utc": "2026-09-24T04:03:00Z",
-    "policy": "DEV4_FREE_WINDOW_VLLM_RESIDENT",
+    "policy": "CURRENT_LIVE_HBM_LEASE_RULE",
     "primary_device": 4,
-    "note": "Residual VLLM HBM on dev4 accepted; do not wait for VLLM stop; avoid 0-3 and 7",
+    "note": "Residual VLLM HBM and AICore activity are observations only. Do not wait for VLLM stop or AICore=0; any device with live HBM utilization below 100% and no conflicting lease may be used for timing, and d7 follows the same rule.",
     "set2_completed": true
   },
   "local_probes_set1_contaminated": {
@@ -348,7 +348,7 @@
     "reason": "Main policy update 2026-09-24T04:03Z unpark on free-HBM window",
     "source_sha_unchanged": true,
     "source_sha256": "ad961c5837971bf989c9989b822cc2719a6a285c60969d35e1530463b7c8721d",
-    "load_class": "DEV4_FREE_WINDOW_VLLM_RESIDENT",
+    "load_class": "HISTORICAL_VLLM_RESIDENT",
     "completed_utc": "2026-09-24T04:05:19.478621+00:00"
   },
   "set1_vs_set2": {
@@ -383,7 +383,7 @@
   "main_grant_exclusive_d4": {
     "received_utc": "2026-09-24T04:09:19Z",
     "device": 4,
-    "load_class_target": "DEV4_EXCLUSIVE_VLLM_RESIDENT",
+    "load_class_target": "HISTORICAL_EXCLUSIVE_VLLM_RESIDENT",
     "serial_rule": "only BATCH probes on d4 during this window"
   },
   "local_probes_set2": {
@@ -392,8 +392,8 @@
     "device": 4,
     "warmups": 5,
     "repeats_per_variant": 21,
-    "load_classification": "DEV4_FREE_WINDOW_VLLM_RESIDENT",
-    "policy": "Main 2026-09-24T04:03Z: DEV4 free-HBM window; residual VLLM accepted; avoid d0-3/d7",
+    "load_classification": "HISTORICAL_VLLM_RESIDENT",
+    "policy": "HISTORICAL_LOAD_OBSERVATION; current timing admission is live HBM utilization below 100% plus no conflicting lease; d7 follows the same rule.",
     "pairs": [
       {
         "pair": 1,
@@ -486,20 +486,20 @@
     ],
     "d4_min_hbm_free_pages_or_mb": 6276,
     "d4_aicore_spikes": [],
-    "interpretation": "Set2 (DEV4_FREE_WINDOW_VLLM_RESIDENT) directional INCONSISTENT (3 faster / 1 slower / 0 flat), median=-23.925%. Never promote on mean alone.",
+    "interpretation": "Set2 historical VLLM-resident observation was directionally INCONSISTENT (3 faster / 1 slower / 0 flat), median=-23.925%. Never promote on mean alone.",
     "local_confidence": "LOW"
   },
   "third_local_round": {
     "reason": "Main exclusive device-4 grant",
     "source_sha_unchanged": true,
     "source_sha256": "ad961c5837971bf989c9989b822cc2719a6a285c60969d35e1530463b7c8721d",
-    "load_class": "DEV4_EXCLUSIVE_VLLM_RESIDENT",
+    "load_class": "HISTORICAL_EXCLUSIVE_VLLM_RESIDENT",
     "completed_utc": "2026-09-24T04:10:49.978168+00:00"
   },
   "set_history": {
     "set1": "LOAD_CONTAMINATED INCONSISTENT median +6.424%",
-    "set2": "DEV4_FREE_WINDOW_VLLM_RESIDENT INCONSISTENT 3f/1s median -23.925%",
-    "set3": "DEV4_EXCLUSIVE_VLLM_RESIDENT INCONSISTENT 3f/1s median -20.315%"
+    "set2": "HISTORICAL_VLLM_RESIDENT INCONSISTENT 3f/1s median -23.925%",
+    "set3": "HISTORICAL_EXCLUSIVE_VLLM_RESIDENT INCONSISTENT 3f/1s median -20.315%"
   },
   "main_review_set3": {
     "received_utc": "2026-09-24T04:15:40Z",
@@ -512,8 +512,8 @@
     ],
     "load_note_rule": "classify from parent jitter as CONTAMINATED or MODERATE in notes",
     "actions": [
-      "d4 released \u2014 SCHED holds next lease",
-      "Stay idle",
+      "d4 released \u2014 future timing may use any device admitted by live HBM and lease state",
+      "Do not remain idle for the retired zero-AICore/VLLM-free/exclusive-d4 condition",
       "SHA frozen",
       "No V002",
       "No CANNJudge"

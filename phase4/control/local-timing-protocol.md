@@ -2,7 +2,7 @@
 
 Scope: applies to MAIN-1 and MAIN-2 measurement infrastructure. Do not change Candidate kernel sources, SHA, architecture, or revisions while qualifying or running measurements.
 
-Today (2026-09-24): all five timing routes are WINDOW UNQUALIFIED 2/2. No window-qual, paired timing, or performance retry for the remainder of the day.
+Historical snapshot from 2026-09-24 (expired): all five then-active timing routes were WINDOW UNQUALIFIED 2/2, and retries were paused for the remainder of that date. This is not a current device-admission rule. Current performance admission is live HBM utilization below 100% plus no conflicting shared lease, as specified below; AICore and resident processes are recorded only.
 
 ## Reference harness
 
@@ -73,6 +73,8 @@ For performance work, the device admission condition is live HBM utilization bel
 
 Compile, link, source verification, executable identity collection, host build, and safe NPU correctness are non-timing operations. Use up to 8 cards in parallel for different versions, one version per card. Continue a card-local compile test while `FREE_HBM >= 100 MB`; only `FREE_HBM < 100 MB` pauses that card's compile test. AICore utilization, VLLM residency, other processes, and HBM use below full capacity are recorded observations, not compile stop conditions. The former conservative practice of waiting for zero AICore, stopping VLLM, or excluding d7 is retired.
 
+**Forced warning:** never convert AICore activity, VLLM residency, or resident-process presence into a compile pause while the assigned card still has `FREE_HBM >= 100 MB`. That earlier conservative handling was wrong; apply the per-card HBM rule above.
+
 ### Warmup
 
 - Default: **45** launch+full-stream-sync cycles before any timed sample (was 10; was 3–5).
@@ -113,6 +115,7 @@ Compile, link, source verification, executable identity collection, host build, 
 
 - Single device per lease window via the shared `phase4/control/server3-device-leases.tsv`; record the owning Main and Route for every lease.
 - One performance Route at a time per device across MAIN-1 and MAIN-2. Never run concurrent timing on the same device from different Routes or Mains.
+- `server3-device-leases.tsv` is an append-only state log. Resolve the current state by taking the last row for each `lease_id`; an older `LEASED` row followed by `RELEASED` is no longer active. Only a different `lease_id` whose last row is `LEASED` conflicts with a new reservation.
 - Use any device whose live HBM utilization is below 100% and whose shared lease is exclusive for the Route. Record HBM, AICore, and processes before and after the run; AICore is observational and is not a timing stop condition.
 
 ### Sample order
@@ -130,7 +133,7 @@ Across window-qual reps: same stats on the rep medians (current gate basis).
 ### Window qualification (for next session only)
 
 - Keep existing policy thresholds as a **temporary** gate: CV ≤ 0.15 **and** max/min ≤ 1.30 on both A and B (`window-qualification-policy.md`).
-- Budget today is exhausted (2/2). Do not re-run.
+- Historical limit on 2026-09-24: the daily retry budget was exhausted (2/2). That dated limit has expired and does not prevent a new run when current HBM and shared-lease admission requirements are met.
 - From the next session: **first** establish a **per-shape noise floor** with same-binary runs (below). Only then decide whether fixed CV≤0.15 is appropriate for that shape/dtype/method.
 
 ## Same-binary validation (noise floor)

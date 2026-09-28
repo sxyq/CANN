@@ -37,10 +37,10 @@
   "WHY_NOT_DUPLICATE": "R014 alone is param residency without multi-row batch DMA; R015 alone is multi-row DMA without post-residency combination under the phase4 champion path. This V001 tests the new combination: resident params + contiguous multi-row batch DMA ownership on A001 V017.",
   "WHY_THIS_COMBINATION_IS_NEW": "R014 alone and R015 alone were separate; post-residency multi-row batch ownership was not combined under the phase4 champion path.",
   "decision": "NEEDS_ONE_MORE_LOCAL",
-  "decision_rationale": "Main-2 Q-BATCH review 2026-09-24T07:33:27Z: WINDOW_UNQUALIFIED 2/2 (d6+d4); candidate not run; pair3 not chased. Decision NEEDS_ONE_MORE_LOCAL + MEASUREMENT_BLOCKED. Stop timing BATCH today; SHA frozen; stay idle; no V002; no CANNJudge.",
-  "probes_status": "IDLE_AFTER_Q_BATCH_REVIEW",
+  "decision_rationale": "Main-2 Q-BATCH review 2026-09-24T07:33:27Z: the historical strict-window attempt was WINDOW_UNQUALIFIED 2/2 (d6+d4); candidate not run; pair3 not chased. This remains a timing-stage record only. Current retry condition is live HBM utilization below 100% plus no conflicting lease; compile/correctness work may continue per card while FREE_HBM >= 100 MB. Source SHA remains fixed; no V002 or Online.",
+  "probes_status": "IDLE_AFTER_HISTORICAL_STRICT_WINDOW_REVIEW",
   "idle": true,
-  "load_quality_set2": "DEV4_FREE_WINDOW_VLLM_RESIDENT",
+  "load_quality_set2": "HISTORICAL_VLLM_RESIDENT",
   "local_metrics_set2": {
     "median_delta_pct": -23.925,
     "worst_delta_pct": 30.215,
@@ -53,7 +53,7 @@
   },
   "second_probe_set": "support/probes-window2/",
   "device4_serial_rule": "Only one next6 probe at a time on d4; preflight required before any future set3",
-  "load_quality_set3": "DEV4_EXCLUSIVE_VLLM_RESIDENT",
+  "load_quality_set3": "HISTORICAL_EXCLUSIVE_VLLM_RESIDENT",
   "local_metrics_set3": {
     "median_delta_pct": -20.315,
     "worst_delta_pct": 185.495,
@@ -68,5 +68,6 @@
   "load_note_class_set3": "MODERATE",
   "set3_accepted": "controlled exclusive measurement",
   "round2_baseline_only": true,
-  "measurement_status": "MEASUREMENT_BLOCKED"
+  "measurement_status": "MEASUREMENT_BLOCKED",
+  "resource_policy_note": "The previous conservative resource gate is retired. AICore and process presence are recorded only; timing uses live HBM below 100% plus an unconflicted lease, while compile/correctness continues per card at FREE_HBM >= 100 MB."
 }

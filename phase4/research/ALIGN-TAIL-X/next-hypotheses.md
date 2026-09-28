@@ -1,5 +1,7 @@
 # ALIGN-TAIL-X — Next Hypotheses (TRACK-B research, append-only)
 
+> Resource rule carried into this research record: compile/link/source identity/host build/correctness may use up to 8 cards in parallel, one version per card, while each card has `FREE_HBM >= 100 MB`. AICore, VLLM, resident processes, and HBM use below full capacity do not stop that work. Timing uses live HBM utilization below 100% plus an unconflicted lease; AICore 0% and a VLLM-free device are not prerequisites. Older text using stricter wording is historical context only.
+
 > **MAIN-2 APPROVALS 2026-09-25** — APPROVED NEXT backlog: H1 threshold-controlled bulk+tail split (bulk via direct DataCopy; small remainder via minimal tail / DataCopyPad chosen by threshold). H1 implementation FORBIDDEN while current Candidate is undecided. Scope: ALIGN keeps DataCopy / DataCopyPad / aligned bulk / tail / copy-direction asymmetry only; H2 row-group geometry DEFER_TO_SCHED. H3 copy-direction asymmetry remains in research.
 
 ## CURRENT_CANDIDATE
@@ -91,7 +93,7 @@ Per-tile copy-path cost model for the ALIGN parent architecture (R009 copy-centr
 - DUPLICATE_CHECK: HYPOTHESIS-1 is size-thresholded across dtypes; this is a dtype-keyed all-or-nothing policy with no size constants — different OFAT unit. No active route handles narrow-dtype copy tails (BATCH's batch DMA is dtype-agnostic; REDUCE owns math, not copy). R010's symmetric per-row branch is dtype-generic too.
 - MINIMAL_OFAT_DIFF: one `if constexpr` branch selecting the non-aligned path per dtype; FP32 path textually identical to V001.
 - EXPECTED_LOCAL_PROBES: FP16/BF16 correctness golden first (dtype matrix), then paired timing on one narrow non-aligned shape (e.g. 4×65 BF16) + re-run one FP32 shape to confirm no FP32 drift. Requires judge_types/runner dtype support already present in support/.
-- CLASSIFICATION: NEEDS_MORE_EVIDENCE (no local narrow-dtype timing exists for this route; needs one dtype-capable clean window after the FP32 exact-shape result).
+- CLASSIFICATION: NEEDS_MORE_EVIDENCE (no local narrow-dtype timing exists for this route; needs one dtype-capable device admitted by live HBM and lease state after the FP32 exact-shape result).
 
 ## OPTIONAL-HYPOTHESIS-5
 
@@ -175,7 +177,7 @@ Per-tile copy-path cost model for the ALIGN parent architecture (R009 copy-centr
 
 ## RECOMMENDED_NEXT
 
-1. Track-A unchanged: run exact-shape same-binary (2×100 FP32, Direct Parent, device events, warmup≥10) in the next Main-assigned clean window; no source edits until Main issues NEXT_HYPOTHESIS.
+1. Track-A unchanged: run exact-shape same-binary (2×100 FP32, Direct Parent, device events, warmup≥10) on the next Main-assigned device admitted by live HBM and lease state; no source edits until Main issues NEXT_HYPOTHESIS.
 2. HYPOTHESIS-1 (threshold-controlled split) is the leading next revision: READY_FOR_MAIN_REVIEW, execution contingent on the V001 exact-shape result — V001 neutral/negative ⇒ H1 directly; V001 positive ⇒ H1 remains the natural refinement (sweep thresholds on top of the winning split).
 3. Main decision needed: HYPOTHESIS-2 scope vs BATCH-RESIDENT-X (multi-row DMA) and SCHED-ROWGROUP-X (row-group ownership) before it can be promoted past NEEDS_MORE_EVIDENCE.
 4. OPTIONAL-4/5: gather narrow-dtype probes and the D≡1..7 (mod 4096) ReduceSum-count golden before any revision; H5 doubles as a latent correctness hardening worth a standalone correctness run even without timing.
@@ -271,7 +273,7 @@ Fields follow MAIN-2's required field order; this block is the reviewable versio
   1. Run `atx_ref_parent_probe 4 2 4100 0 … 1 1 1 0` and the V001 binary on the same shape. `bad=0` on both ⇒ edge is not exercised on this device/driver ⇒ H6 downgraded to NEEDS_MORE_EVIDENCE (doc-check only, no repair). `bad>0` ⇒ real latent corruption in parent and V001 ⇒ escalate to Main as a correctness finding before any performance revision.
   2. Cross-check with 2×4103 (also tests H5's ReduceSum `valid=7 < 8` documented minimum, `api-reduce.md`) to separate "alignment edge" from "reduce-count edge".
   3. Doc check (no device needed): official CANN `DataCopy` Restriction section for a GM-address alignment clause. Until (1) or (3) resolves, the claim stays UNKNOWN.
-- EXPECTED_LOCAL_PROBES: two correctness probes, no timing, ≤1 minute of device time — **blocked this cycle**: d4 (ASYNC), d5 (BATCH), d6 (REDUCE) all leased after 14:24Z, d7 forbidden.
+- EXPECTED_LOCAL_PROBES: two correctness probes, no timing, ≤1 minute of device time — **not run this cycle**: d4 (ASYNC), d5 (BATCH), d6 (REDUCE) were leased after 14:24Z; d7 followed the same rule but was not selected in this historical cycle.
 - CLASSIFICATION: NEEDS_MORE_EVIDENCE (decisive falsification ready; do not treat as a bug report until probe or official doc confirms).
 
 ## TRACK-B CYCLE SUMMARY 2026-09-25

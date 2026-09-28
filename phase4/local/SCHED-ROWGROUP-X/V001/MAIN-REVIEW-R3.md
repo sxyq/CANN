@@ -8,4 +8,4 @@ Received: 2026-09-23T21:59:59Z
 - set1/set2 preserved
 - DECISION: NEEDS_ONE_MORE_LOCAL + PROBES PARKED
 - Stop VLLM polling. No V002. No online. No CANNJudge.
-- Wait for Main ops clean window before any further paired probes.
+- Use the current live-HBM and shared-lease rule before exact-shape same-binary and paired probes; no AICore-zero or VLLM-free prerequisite.

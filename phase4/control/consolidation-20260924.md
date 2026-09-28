@@ -2,6 +2,10 @@
 
 No kernel source, candidate implementation, server3 run, or CANNJudge submission was performed by Main.
 
+## RESOURCE RULE UPDATE
+
+The old practice of waiting for zero AICore, stopping VLLM, requiring a VLLM-free device, or excluding d7 is retired and must not be used again. The forced compile rule is: server3 may run up to 8 different versions in parallel, one version per card; each card continues while `FREE_HBM >= 100 MB`, and only `FREE_HBM < 100 MB` pauses that card. AICore, VLLM, other processes, and high HBM use with at least 100 MB free are recorded facts, not stop conditions. For performance timing, live HBM utilization below 100% plus an unconflicted lease is sufficient; AICore and processes are recorded only. Historical HBM/AICore/process values below remain evidence, not current run conditions.
+
 ## CANONICAL
 
 - Branch: `exp/independent-breadth`
@@ -81,7 +85,7 @@ All six based on canonical HEAD `ae46d7c`.
 | SCHED-ROWGROUP-X | V001 | PASS | PASS | LOAD_CONTAMINATED; aligned control also moved | NEEDS_ONE_MORE_LOCAL |
 | REDUCE-INVSCALE-X | V001 | PASS | FAIL D>6144 parent partial-align | PARTIAL_CONTAMINATION | LOCAL_REJECTED; assign V002 correctness-only |
 | ALIGN-TAIL-X | V001 | PASS | PASS pair_max_abs=0 | LOAD_CONTAMINATED | NEEDS_ONE_MORE_LOCAL |
-| SCHED-ROWGROUP-X | V001 r2 | PASS | PASS | set1/set2 disagree; aligned control opposite | NEEDS_ONE_MORE_LOCAL; require VLLM stop |
+| SCHED-ROWGROUP-X | V001 r2 | PASS | PASS | set1/set2 disagree; aligned control opposite | NEEDS_ONE_MORE_LOCAL; require fresh same-binary qualification |
 | ASYNC-TRIPLE-X | V001 | - | - | worker general-1 UnknownError | replacement worker same route |
 
 ### NEXT6 batch review after first full handoffs
@@ -89,13 +93,13 @@ All six based on canonical HEAD `ae46d7c`.
 | route | rev | correctness | local | decision |
 |---|---|---|---|---|
 | ASYNC-TRIPLE-X | V001 | PASS | contaminated noise>signal | NEEDS_ONE_MORE_LOCAL + PROBES PARKED |
-| BATCH-RESIDENT-X | V001 | PASS batch path | no clean window | NEEDS_ONE_MORE_LOCAL + PROBES PARKED |
-| SCHED-ROWGROUP-X | V001 | PASS | set1/set2 disagree; no VLLM-free | NEEDS_ONE_MORE_LOCAL + PROBE PARKED |
+| BATCH-RESIDENT-X | V001 | PASS batch path | no statistically qualified shape | NEEDS_ONE_MORE_LOCAL + PROBES PARKED |
+| SCHED-ROWGROUP-X | V001 | PASS | set1/set2 disagree; load affected the samples | NEEDS_ONE_MORE_LOCAL + PROBE PARKED |
 | REDUCE-INVSCALE-X | V002 | PASS D<=32768 | repair cost below noise | correctness ACCEPTED; R019 perf deferred; PROBES PARKED; align hypothesis refuted; sync-only approved |
-| ALIGN-TAIL-X | V001 | PASS | no clean window 81min | NEEDS_ONE_MORE_LOCAL + PROBES PARKED |
+| ALIGN-TAIL-X | V001 | PASS | no statistically qualified shape after 81min | NEEDS_ONE_MORE_LOCAL + PROBES PARKED |
 | UB-LIVENESS-X | V001 | FAIL | N/A | LOCAL_REJECTED; assign V002 correctness-only |
 
-Shared blocker: persistent root/zhangkaijie VLLM + HBM saturation; agents cannot create clean window alone.
+Shared historical issue: persistent root/zhangkaijie VLLM and high HBM use affected timing stability; this does not stop compile or correctness work, and timing still uses HBM/lease plus shape-specific statistics.
 | UB-LIVENESS-X | V002 | partial improve still FAIL | raw invalid | LOCAL_REJECTED; assign V003 pass1 acc fix |
 | UB-LIVENESS-X | V003 | PASS bad=0 full battery | alias probes inconclusive | ONLINE_CANDIDATE frozen to pool; Judge Owner only |
 
@@ -112,7 +116,7 @@ Shared blocker: persistent root/zhangkaijie VLLM + HBM saturation; agents cannot
 | 6 | 5661 | 59875 | **0%** | VLLMWorker_TP | SECONDARY run window |
 | 7 | 9 | 65527 | 17% | python 61828MB | AVOID |
 
-Policy update: compile/link is CPU (no HBM need) and may parallelize on server3. NPU correctness + paired probes pin to **ASCEND_DEVICE_ID=4** primary; 5/6 allowed as secondary if no concurrent next6 probe. Residual VLLM HBM documented — do not wait for full VLLM stop. Device 7 forbidden.
+Policy update: compile/link and correctness may use up to 8 cards in parallel, one version per card, while each card has `FREE_HBM >= 100 MB`; AICore, VLLM, and resident processes do not stop that work. Timing may use any device with live HBM utilization below 100% and no conflicting lease, including d7; AICore and processes are recorded only.
 | ALIGN-TAIL-X | V001 dev4 | PASS pairs | DIR 2/4 noise 393pp concurrent | NEEDS_ONE_MORE_LOCAL; serialize dev4 |
 | BATCH-RESIDENT-X | V001 set2 | PASS batch | DIR 3/4 median -23.9% concurrent ALIGN | NEEDS_ONE_MORE_LOCAL; serialize dev4 |
 | ASYNC-TRIPLE-X | V001 set2 | PASS | DIR 3/6 noise CV41% concurrent reduce | NEEDS_ONE_MORE_LOCAL; exclusive later |
@@ -144,7 +148,7 @@ No Candidate source, no new revision, no timing retry, no CANNJudge submit.
 - UB V003 package re-verified: submission.asc SHA256 matches sidecar `2eb9b5d0…`, source-meta DECISION=ONLINE_CANDIDATE / AUDIT=PASS / CORRECTNESS=PASS, diff.patch 14578 B, pool row + judge-handoff present, `phase4/online/UB-LIVENESS-X/` absent. Status remains READY_FOR_FORMAL_SUBMISSION for unified Judge Owner only.
 - Measurement audit across five runners: primary method is CPU wall-clock around launch+sync (SCHED/ALIGN/REDUCE/BATCH); ASYNC uses device events over a repeat batch. Warmup only 3–5; each window-qual rep is a cold process (aclInit/finalize). Alloc/H2D outside timed loop (OK). Host launch + sync wait sit inside wall-clock samples. Persistent VLLM + ~90% HBM on d4/d6 remains. Observed parent CV 0.21–0.90 and max/min up to 9.0 within same binary/device/shape.
 - Reference harness designated: SCHED `support/runner_main.inc` (sample+jitter dump). Unified rules in `phase4/control/local-timing-protocol.md`.
-- Same-binary noise floor: NOT_RUN today. Next clean window validates SAME vs SAME before any Candidate pair; then SCHED → ALIGN → BATCH → ASYNC → REDUCE.
+- Same-binary noise floor: NOT_RUN today. Next admitted timing attempt validates SAME vs SAME before any Candidate pair; then SCHED → ALIGN → BATCH → ASYNC → REDUCE.
 - Five routes stay NEEDS_ONE_MORE_LOCAL + MEASUREMENT_BLOCKED (SERVER_RESOURCE_BLOCKED), attempts 2/2. SCHED keeps STRONG_POSITIVE_LOCAL_SIGNAL BUT LOAD_NOT_QUALIFIED.
 
 ## Unified harness SAME-BINARY validation (2026-09-24 evening)
@@ -264,7 +268,7 @@ Evidence: phase4/control/handoff-quiet-retry-requal.md; per-route results-quiet-
 
 1. **BATCH H2 ownership**: PARAMETER RESIDENCY / stripe-resident params stay with **BATCH-RESIDENT-X** per fixed route scope (PARAMETER RESIDENCY → BATCH). Historical WIDE-X idea-pool row is donor history, not active ownership. H2 is NOT DEFER_TO_WIDE-X.
 2. **ALIGN H6**: authorize one **correctness-only** device slot (no timing) for the pre-registered battery (2×4100 FP32, 2×4103 FP32, isolators 1×4100 FP32 / 2×4104 FP16 / 1×4104 FP16; 10 runs or 3-run minimal). If the 5-branch tree reports a real unaligned-start failure, Main will decide correctness-first repair scope including parent surface — not a performance revision.
-3. **ASYNC**: no dedicated window for H2. Future quiet window target floor MAD/med ≤0.03 then H1 first + H3 piggyback only.
+3. **ASYNC**: no dedicated attempt for H2. Future admitted timing attempt uses the registered MAD/med criterion, then H1 first + H3 piggyback only.
 4. **REDUCE H1 rsqrt build**: still gated on V002 disposal + NEXT_HYPOTHESIS. Control-half of the battery may run in a correctness-only slot before that if a device is free.
 5. **Measurement resolution note** (all routes): protocol floor 0.10 on 55–70µs kernels is ~5.5–7µs, larger than current hypothesis ceilings (order-1µs). Null P/C results on ordinary floors are unmeasurable, not refuted.
 6. SCHED H1/H9 remain blocked pending Judge / NEXT_HYPOTHESIS.
@@ -288,13 +292,13 @@ Independent corroboration: phase4/research/measurement-b1b2-20260925/ (keep).
 Ranked causes:
 1. warmup=10 too short — device/driver settles at ~40–45 launches; B1 of short kernels stays elevated. 20/25 historical runs show B1 slower. warmup≥30–50 yields PASS-grade floors on ALIGN 2x100 and REDUCE 1x8192.
 2. post-gap rep1 cold-wake spike (optional gap=0 removes it; MAD robust either way).
-3. co-tenant VLLM bursty interference (dominant residual for ASYNC; needs idle AICore window).
+3. co-tenant VLLM bursty interference (dominant residual for ASYNC; assess through same-binary statistics and paired raw samples, not an AICore-zero requirement).
 4. event window absorbs host delay (background; not the B1 elevation).
 
 Main action taken:
 - local-timing-protocol.md Warmup default **10 → 45**. Criterion unchanged (MAD/med ≤0.10 and drift ≤0.10). Per-route same-binary re-validation required before any new P/C.
 - Do not loosen the outlier/shape criterion.
-- ASYNC waits for a genuinely idle VLLM window (all-NPU AICore ~0%); do not spend more identical quiet-retry leases under current load.
+- ASYNC may use any timing device admitted by live HBM and lease state; do not wait for all-NPU AICore to reach zero. A shape still stops at its statistical qualification result.
 - Lease MR-B1B2-20260925 released.
 
 Next Track-A under warmup=45: ALIGN 2x100 then REDUCE 1x8192 same-binary → if PASS, interleaved P/C same window. BATCH may also re-run 100x256 P/C if time (prior 2/4 was within cross-process swing).
@@ -312,7 +316,7 @@ Warmup fix validated on ALIGN. Remaining failures are intermittent co-tenant con
 Main dispositions:
 - ALIGN: another interleaved P/C window later (need ≥4 clean pairs); H1 remains READY but waits V001 disposal.
 - REDUCE / BATCH: retry only in a new quieter window or other device; do not treat polluted cells as performance verdicts.
-- ASYNC: still needs idle VLLM window.
+- ASYNC: timing qualification remains shape/statistics dependent; no AICore-zero or VLLM-free prerequisite.
 - SCHED V001 / UB V003: still with Judge Owner (MAIN-1). No self-submit.
 - Criterion still not loosened.
 

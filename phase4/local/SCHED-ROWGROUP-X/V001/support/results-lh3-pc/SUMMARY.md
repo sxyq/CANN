@@ -17,7 +17,7 @@ host hwnput3 / cann-server3. No source edits.
 - Load average ~27.75 / 25.54 / 24.13, 34 users; root VLLM resident (d0–d3 AICore 34–35%).
 - d4: AICore 0%, HBM 59187/65536 MB (~90%), only residual VLLMEngineCor pid 2999855 —
   same residual documented in lease L004. No other next6 probe running (checked before each stage).
-- Load quality: `DEVICE_AICORE_IDLE_VLLM_HBM_RESIDENT`.
+- Load quality: historical VLLM/HBM observation; current admission uses live HBM and lease state.
 - Lease note: shared `server3-device-leases.tsv` NOT edited (route brief forbids shared control
   edits); lease intent recorded here as LH3-SCHED-33x100, devices verified free before each stage.
 

@@ -1,5 +1,7 @@
 # SCHED-ROWGROUP-X — Next-Hypotheses (TRACK-B, long-horizon)
 
+> Current resource rule: use up to 8 cards in parallel for different compile versions, one version per card, and continue each card while `FREE_HBM >= 100 MB`. AICore activity, VLLM residency, and resident processes do not stop compile or safe correctness work. Timing uses live HBM utilization below 100% plus an unconflicted lease; AICore 0% is not required. Historical load values below are observations only.
+
 > **MAIN-2 APPROVALS 2026-09-25** — APPROVED NEXT backlog: H1 CORE-FILL ROW-GROUP SCHEDULING (quantified: 17×256 currently ≈2 blocks vs ~17 potential); H2 EVEN-SPLIT TASK EXTENTS second in queue; H3 dynamic task-pull stays NEEDS_MORE_EVIDENCE. H1 implementation is FORBIDDEN while V001 is undecided. Scope arbitration: row-group ownership / rows-task / core-fill / shape scheduling fixed to this route (ALIGN-H2 geometry part deferred here).
 
 CURRENT_CANDIDATE: V001 (SHA 0fae0a42e3942356fe3477cd518b17180b6104d57350cee705cba37a5895e65c) — R016 shape-aware rows/task scheduling parent (official 17.14) + R012 32-byte-safe row-group ownership; direct parent R016-V001-COMPILEFIX-A (parent SHA 62de32df…, score 17.14). Local status **ONLINE_CANDIDATE** as of 2026-09-25 LH3 lease (see CYCLE section below): same-binary exact-shape PASS on 33×100 and 17×256, interleaved P/C 4/4 favor V001 at median −51.38% on 33×100 (order-robust), 17×256 aligned control ≈ −0.2% (in noise), bad=0 all runs, SHA unchanged. Local % ≠ Official Score; Main disposes. No kernel edits, no new revision.

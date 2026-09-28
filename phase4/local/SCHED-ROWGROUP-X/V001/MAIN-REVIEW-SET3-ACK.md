@@ -5,6 +5,6 @@ Received: 2026-09-24T04:09:19Z
 - Decision: NEEDS_ONE_MORE_LOCAL
 - SHA locked 0fae0a42e3942356fe3477cd518b17180b6104d57350cee705cba37a5895e65c
 - set1-3 preserved
-- Device 4 SERIAL; BATCH exclusive slot
-- Stage: IDLE_AWAIT_EXCLUSIVE_DEV4
-- Do not probe. No V002. No CANNJudge.
+- Device serialization applies per active performance lease; any live-HBM-admitted device may be used.
+- Stage: IDLE_AFTER_HISTORICAL_SHAPE_GATE
+- Do not wait for AICore=0, VLLM exit, or exclusive d4. No V002. No CANNJudge.

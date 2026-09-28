@@ -3,7 +3,7 @@ SINGLE_CHANGE_AUDIT=PASS (MTE3 scheduling only)
 CORRECTNESS=PASS
 LOAD=LOAD_CONTAMINATED noise>signal
 decision=NEEDS_ONE_MORE_LOCAL + PROBES PARKED
-Action: freeze source 2defc6c2…; no more probe polls until Main schedules ops clean window; no online.
+Action: freeze source 2defc6c2…; no more probe polls until Main grants a device with live HBM utilization below 100% and an unconflicted lease; no online.
 Replacement worker general-7 completed evidence package.
 
 ## set2 Main Review

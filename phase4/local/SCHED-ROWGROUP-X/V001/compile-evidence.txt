@@ -7,7 +7,7 @@ local logs: phase4/workspaces/SCHED-ROWGROUP-X/logs/
 probes: phase4/workspaces/SCHED-ROWGROUP-X/results_local/results/probes/
 correctness tsv: phase4/workspaces/SCHED-ROWGROUP-X/results_local/results/corr_*.tsv
 
-Round-2 clean-window probes (Main NEEDS_ONE_MORE_LOCAL):
+Round-2 historical load poll probes (Main NEEDS_ONE_MORE_LOCAL):
 session 2026-09-23T21:06:45Z .. 21:07:49Z device=6
 npu-smi before each pair: support/clean-window-set-2/pair-*.npu-smi.txt
 set1 preserved: support/contaminated-set-1/
@@ -17,14 +17,14 @@ handoff: NEEDS_ONE_MORE_LOCAL (set1/set2 direction disagreement)
 V001 SHA unchanged: 0fae0a42e3942356fe3477cd518b17180b6104d57350cee705cba37a5895e65c
 
 Round-3 attempt (Main r2 → park):
-2026-09-23T21:49-21:54Z: no VLLM-free window. VLLM root+zhangkaijie-owned (cannot stop as lelinfeng).
+2026-09-23T21:49-21:54Z: resident VLLM was present. VLLM was root+zhangkaijie-owned and was left untouched as lelinfeng.
 free HBM ~1-6k/65536 pages; concurrent REDUCE-INVSCALE-X / UB-LIVENESS-X activity.
 set-3 NOT run. Probes PARKED. SHA unchanged 0fae0a42e3942356fe3477cd518b17180b6104d57350cee705cba37a5895e65c.
 handoff: NEEDS_ONE_MORE_LOCAL + PARK probes. See PROBE-PARK.md
 
 Main r3 2026-09-23T21:59:59Z: ACCEPT PROBE PARK.
 NEEDS_ONE_MORE_LOCAL + PROBES PARKED. Stop VLLM polling. No V002. No online. No CANNJudge.
-Waiting for Main ops clean window. SHA unchanged 0fae0a42e3942356fe3477cd518b17180b6104d57350cee705cba37a5895e65c.
+Resume under live-HBM/lease admission and exact-shape qualification. SHA unchanged 0fae0a42e3942356fe3477cd518b17180cba37a5895e65c.
 
 LEASE L004 (Main 2026-09-24T04:15:40Z): exclusive d4 for SCHED-ROWGROUP-X.
 Preflight 2026-09-24T04:16:41+00:00: AICORE=0, FREE_HBM=6350, residual VLLMEngineCor, no next6.

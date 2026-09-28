@@ -1,5 +1,7 @@
 # REDUCE-INVSCALE-X — Next-Hypothesis Research (TRACK-B)
 
+> Current resource rule: use up to 8 cards in parallel for different compile versions, one version per card, and continue each card while `FREE_HBM >= 100 MB`. AICore activity, VLLM residency, and resident processes do not stop compile or safe correctness work. Timing uses live HBM utilization below 100% plus an unconflicted lease; AICore 0% is not required. Historical load values below are observations only.
+
 > **MAIN-2 APPROVALS 2026-09-25** — Probe shape change APPROVED (measurement design only, not a Revision): single-tile FP32 rows=1 D=6144 must not serve as primary reduction-architecture evidence; add at least one MULTI_TILE_D probe (D>6144) confirmed to traverse multiple reduction tiles in both Parent and Candidate. APPROVED NEXT backlog: H2 first-output-tile MTE2 overlap with rms tail (chosen over H1 reciprocal-sqrt, whose Rsqrt API feasibility remains in research); H3 wider ReduceSum partial stays as donor evidence.
 
 Route agent: REDUCE-INVSCALE-X (MAIN-2). Worktree `cann-next6/REDUCE-INVSCALE-X`.

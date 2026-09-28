@@ -1,5 +1,7 @@
 # BATCH-RESIDENT-X — TRACK-B Next-Hypothesis Research (append-only)
 
+> Current resource rule: use up to 8 cards in parallel for different compile versions, one version per card, and continue each card while `FREE_HBM >= 100 MB`. AICore activity, VLLM residency, and resident processes do not stop compile or safe correctness work. Timing uses live HBM utilization below 100% plus an unconflicted lease; AICore 0% is not required. Historical load values below are observations only.
+
 > **MAIN-2 APPROVALS 2026-09-25** — Scope arbitration: parameter staging / gamma-bias residency / row-batch parameter reuse fixed to this route (UB-H2 marked DUPLICATE·DEFER_TO_BATCH). APPROVED NEXT backlog: H1 two-stage row-group compute + vectorized row-local reduction state + fused epilogue — MUST be shrunk to ONE conceptual mechanism at Revision declaration; if implementation would change reduction topology + epilogue + batch ownership together, Main splits it; no three-donor single implementation. Track-A: migrate legacy wall-clock harness to unified device-event protocol before any further measurement; legacy wall-clock data (incl. +185%) never promotion evidence.
 
 ROUTE: BATCH-RESIDENT-X
@@ -28,8 +30,8 @@ Measurement record (all WALL_CLOCK harness — the BATCH runner is listed in `lo
 | set | load class | median delta | direction |
 |---|---|---|---|
 | set1 | LOAD_CONTAMINATED | +6.4% | INCONSISTENT 2f/2s |
-| set2 | DEV4_FREE_WINDOW_VLLM_RESIDENT | −23.9% | INCONSISTENT 3f/1s |
-| set3 | DEV4_EXCLUSIVE_VLLM_RESIDENT | −20.3% | INCONSISTENT 3f/1s; pair3 +185.5% |
+| set2 | HISTORICAL_VLLM_RESIDENT | −23.9% | INCONSISTENT 3f/1s |
+| set3 | HISTORICAL_EXCLUSIVE_VLLM_RESIDENT | −20.3% | INCONSISTENT 3f/1s; pair3 +185.5% |
 | round2 | parent-only reference across d4/d5/d6 | candidate skipped (parent CV 0.19–0.38, range/med 0.54–1.45) | NOT_MEASURED |
 
 ---
