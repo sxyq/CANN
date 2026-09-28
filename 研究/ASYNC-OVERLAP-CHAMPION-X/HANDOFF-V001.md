@@ -45,15 +45,23 @@
 - 约 10 µs 短 kernel 的离群点把 median 与 CV 顶爆，信号落在噪声内。
 - 不记 LOCAL_ACCEPTED，不推进 LOCAL_BEST；保留 Candidate 待重测。
 
+## 补测（2026-09-28，MAIN-2 指令）
+
+| shape | parent SB | 结果 |
+|---|---|---|
+| 64×16384 fp16 | 两次均 B2 超阈 + drift>1.10 | `MEASUREMENT_BLOCKED`，未硬测 P/C |
+| 8×12288 fp16 | drift 1.179/1.594；a2 B2 超阈 | `MEASUREMENT_BLOCKED`，未硬测 P/C |
+
+六字段 BLOCK 记录见 `LOCAL-PERFORMANCE.md` 补测附录与 `local-result.json`。
+
 ## 剩余工作与风险
 
-- 在更安静窗口重测；建议加 64×16384（batchRows>1）与 8×12288。
-- H1 的预期收益本身就是低个位数 µs 级，对短 kernel 的测量层非常敏感；
-  可能最终只能给出 unmeasurable 而非明确方向。
-- FullCache FP32 宽行 parent 自身非确定（非本 Revision 范围）。
-- 未改共享总账；未自行 Online。
+- 三个 LP 形状均拿不到「parent SB 双块合格 + 一致 P/C」完整证据链。
+- 下一步选项（不无限测）：A 安静窗口重测 64×16384；B 换更长 kernel 形状（128×16384 / 32×32768）；C 交 Main 定夺保留 Candidate。
+- H1 预期收益是低个位数 µs 级，对短 kernel 测量层极敏感。
+- 未改共享总账；未自行 Online；未开 V002；未 revert H1。
 
 ## 请求 Main-2
 
-- 确认 `NEEDS_ONE_MORE_LOCAL` 归类。
-- 是否批准在同一假设下安排重测窗口（不改源码、不建 V002）。
+- 确认 `NEEDS_ONE_MORE_LOCAL` + 两形状 `MEASUREMENT_BLOCKED` 的归类。
+- 在选项 A/B/C 中定夺下一步；本路线不自行无限补测。

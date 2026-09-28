@@ -37,8 +37,44 @@
     "clean_pair_delta_pct": [4.2, -1.8],
     "interpretation": "Fast-cluster (p10) deltas favor candidate in 3/4 pairs at roughly 4-5%, consistent with a small single-digit-us overlap saving on a ~10 us kernel. One pair reverses. Median deltas are outlier-dominated and not usable. Parent same-binary does not stably qualify."
   },
+  "remeasure_20260928": {
+    "instruction": "MAIN-2 supplemental measurement on H1: 64x16384 fp16 (batchRows>1) and 8x12288 fp16; parent same-binary must pass both blocks before P/C",
+    "device": 4,
+    "protocol": "warmup=45 samples=21 blocks=2 device-event; same-binary only, no P/C (parent SB not qualified)",
+    "same_binary_64x16384_fp16": {
+      "parent_attempt1": {"B1_mad_med": 0.022, "B2_mad_med": 0.159, "drift": 1.167, "verdict": "FAIL"},
+      "parent_attempt2": {"B1_mad_med": 0.012, "B2_mad_med": 0.181, "drift": 1.174, "verdict": "FAIL"},
+      "candidate": {"B1_mad_med": 0.050, "B2_mad_med": 0.152, "drift": 1.111, "verdict": "FAIL"},
+      "qualification": "NOT_QUALIFIED"
+    },
+    "same_binary_8x12288_fp16": {
+      "parent_attempt1": {"B1_mad_med": 0.025, "B2_mad_med": 0.083, "drift": 1.179, "verdict": "FAIL_drift"},
+      "parent_attempt2": {"B1_mad_med": 0.059, "B2_mad_med": 0.376, "drift": 1.594, "verdict": "FAIL"},
+      "candidate": {"B1_mad_med": 0.147, "B2_mad_med": 0.182, "drift": 1.152, "verdict": "FAIL"},
+      "qualification": "NOT_QUALIFIED"
+    },
+    "pc_status": "NOT_RUN (blocked by parent same-binary)",
+    "block_records": [
+      {
+        "BLOCK_REASON": "PARENT_SAME_BINARY_NOT_QUALIFIED: B2 MAD/med 0.159-0.181 > 0.10 and drift 1.167-1.174 > 1.10 on both attempts; host outliers on ~13us kernel",
+        "DATE": "2026-09-28",
+        "SHAPE": "64x16384_fp16",
+        "DEVICE": "4",
+        "SAME_BINARY_RESULT": "parent attempt1 B1 PASS(0.022)/B2 FAIL(0.159) drift 1.167; attempt2 B1 PASS(0.012)/B2 FAIL(0.181) drift 1.174; candidate B1 PASS(0.050)/B2 FAIL(0.152) drift 1.111",
+        "RETRY_REQUIRED": "YES — quieter window or different device; do not P/C until parent B1+B2 both PASS"
+      },
+      {
+        "BLOCK_REASON": "PARENT_SAME_BINARY_NOT_QUALIFIED: drift 1.179-1.594 > 1.10; attempt2 B2 MAD/med 0.376; ~7us kernel too short for stable two-block sampling under current load",
+        "DATE": "2026-09-28",
+        "SHAPE": "8x12288_fp16",
+        "DEVICE": "4",
+        "SAME_BINARY_RESULT": "parent attempt1 B1 PASS(0.025)/B2 PASS(0.083) drift 1.179 FAIL; attempt2 B1 PASS(0.059)/B2 FAIL(0.376) drift 1.594; candidate B1 FAIL(0.147)/B2 FAIL(0.182) drift 1.152",
+        "RETRY_REQUIRED": "YES — quieter window; 8x12288 kernel ~7us is below reliable measurement length"
+      }
+    ]
+  },
   "local_verdict": "NEEDS_ONE_MORE_LOCAL",
-  "local_verdict_reason": "Correctness PASS_VS_PARENT (LP outputs bit-identical). Performance signal is suggestive but not separable from a noisy ~10us kernel: p10 fast-cluster 3/4 favor V001 (~4-5%) but 1/4 reverses; clean-pair medians split 1-1; parent same-binary B2 repeatedly fails MAD/med threshold. Below or inside the noise floor for a definitive direction. Do not credit as LOCAL_ACCEPTED; keep candidate and re-measure when a quieter window or a longer LP shape (more rows per core / larger batchRows) is available.",
+  "local_verdict_reason": "Correctness PASS_VS_PARENT (LP outputs bit-identical). Primary shape 32x16384: p10 fast-cluster 3/4 favor V001 (~4-5%) but 1/4 reverses; clean-pair medians split 1-1; parent same-binary B2 repeatedly fails. Supplemental shapes 64x16384 and 8x12288 both MEASUREMENT_BLOCKED on parent same-binary (two attempts each). Overall: suggestive small positive direction on p10 but not separable from noise; no shape has a fully qualified parent SB + consistent P/C pair. Do not credit LOCAL_ACCEPTED; do not open V002.",
   "expected_local_probes_next": "Retry 32x16384 fp16 and add 64x16384 fp16 (blocks=40, some cores own 2 rows -> batchRows>1, larger prologue share) plus 8x12288 fp16 when device load is quieter; require parent same-binary PASS on both blocks before P/C.",
   "measurement_status": "COMPLETE_WITH_NOISE",
   "raw_evidence_path": "本地实验/ASYNC-OVERLAP-CHAMPION-X/V001/results/",
