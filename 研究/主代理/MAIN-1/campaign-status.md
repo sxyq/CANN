@@ -81,3 +81,4 @@
 | 2026-09-29 | R31A V022 LOCAL_REJECTED (H3 falsified +4.33% on D24576); Main selected H1 for V023 on D32768 |
 | 2026-09-29 | Tiling: segmented timing + msprof confirm pipeline-overlap is case14 gap (1.23/4); LANE_NEEDS_PLANNING_REVIEW; forwarded to R31B & EPILOGUE-ARITH |
 | 2026-09-29 | R31A V023 NEEDS_ONE_MORE_LOCAL; **Rsqrt is ~2^-10 approx on 910B3** (max_abs 9.94e-4); H2 selected for V024 |
+| 2026-09-29 | EPILOGUE-ARITH V001 first signal: 1x32768 -1.51% 6/6 (noise band ±3-5%); clean remeasure directed |
