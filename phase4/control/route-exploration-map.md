@@ -131,3 +131,29 @@ ALIGN-TAIL-X, BATCH-RESIDENT-X, ASYNC-TRIPLE-X, REDUCE-INVSCALE-X, EPI-X-FRESH, 
 ## Unscored code queue
 
 See `phase4/control/unscored-code-queue.tsv` (maintained during consolidation).
+
+## Consolidation results (2026-09-28)
+
+### Unscored-code validation — all 11 terminal
+
+| Route | Revision | Verdict | Note |
+|---|---|---|---|
+| R31B | V016 | **LOCAL_ACCEPTED** | fp16-wide −6.7%~−7.0% 15/16+16/18; bf16-wide not established |
+| R31A | V020 | CORRECTNESS_FAILED | 507035 at D=32768; parent passes |
+| R31A | V021 | NEEDS_ONE_MORE_LOCAL | mixed P/C within noise |
+| WIDE-X-FRESH4 | V001 | **LOCAL_ACCEPTED** | tile 2048→4096, −17% mean, 4/4 both shapes |
+| WIDE-X-FRESH4 | BUILD-FIX-001 | BUILD_FIX | no performance mechanism |
+| WIDE-X-FRESH4 | CURRENT | BUILD_FAILED | sqrtf + DataCopyPad narrowing |
+| MODE-X-R015C | R015C-r3 | VALID_CORRECTNESS_BASELINE | parent r2 correctness-failing |
+| MODE-X-R015C | R015C-r4 | CORRECTNESS_FAILED | AddRmsNormBias 3/3 FAIL |
+| EXT-ASCEND-X | V001 | CORRECTNESS_FAILED | FP32 27/27 FAIL |
+| REDUCE-INVSCALE-X | V001 | CORRECTNESS_FAILED | D>6144 inherited R006 defect |
+| REDUCE-INVSCALE-X | V002 | MEASUREMENT_BLOCKED | correctness PASS 16/16; same-binary unqualified |
+
+### LOCAL_ACCEPTED candidates (future Online consideration)
+
+1. **R31B V016** — fp16-wide change-domain win on champion lineage
+2. **WIDE-X-FRESH4 V001** — wide tile 2048→4096, −17% on both wide shapes
+3. **STORE-EPILOGUE-X V002** — large-shape writeback merge −5.62% (from MAIN-2 R2)
+
+No new Online submissions this phase (per task pause).
