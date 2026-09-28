@@ -10,12 +10,12 @@
   "MAIN_APPROVAL": "MAIN-2 2026-09-29: E3 PASS, N3 approved as V005; DIRECT_PARENT=FROZEN_R31B_V011; probes 1x32768/1x16384/8x8192",
   "E3_PREREQUISITE": "研究/REDUCE-HIER-X/E3-API-CONTRACT.md (PASS: ReduceSumImpl on dav-2201 = vcadd mode=1 + V/S + get_acc_val + S/V + S/MTE3; WholeReduceSum = vcadd mode=0, no handoff)",
   "ASSIGNED_HYPOTHESIS": "N3 ReduceSum -> WholeReduceSum primitive swap: same sites, same spans, same two-stage topology, same vcadd count; only the result routing and post-chain change (acc+scalar round-trip -> vector-side dst write, no V/S/S_MTE3 syncs).",
-  "SINGLE_HYPOTHESIS_AS_DELIVERED": "Helper VectorWholeReduceSum(dst,src,count) replaces AscendC::ReduceSum at S1 Process() generic first-pass (per-tile + collapse), S2 ProcessWideFp32FullCacheRows (per-tile + per-row collapse), S3 ProcessFp32FullRowOutputPipelined (per-tile + collapse). Mask set in count mode exactly as toolkit dav-2201 ReduceSumImpl (SetMaskCount + SetMask(0,count), restore SetMaskNorm + full mask). S4/S5/BF16/FP16/wide-lowprecision sites unchanged (keep ReduceSum). Square Mul, mean/epsilon, invRms, GetValue count, output pass, scheduling, dtype, DMA, tileElems, existing PipeBarrier/SyncVToS/SyncSToV positions unchanged. work buffer arg drops with the primitive (same variable).",
+  "SINGLE_HYPOTHESIS_AS_DELIVERED": "Helper VectorWholeReduceSum(dst,src,work,count) replaces AscendC::ReduceSum at S1 Process() generic first-pass (per-tile + collapse), S2 ProcessWideFp32FullCacheRows (per-tile + per-row collapse), S3 ProcessFp32FullRowOutputPipelined (per-tile + collapse). Same call signature as ReduceSum (work arg used as the partial staging area). WholeReduceSum (vcadd mode=0) emits one sum per natural repeat (64 FP32), so spans >64 are reduced in two vector-only steps: one sum per 64-element group into work, then one sum over those partials. Normal bit-mask mode, mask<=64, 2201 stride pattern (1,0,1,0) for single-repeat calls. No V/S drain, no get_acc_val, no S_MTE3 coupling anywhere in the chain. S4/S5/BF16/FP16/wide-lowprecision sites unchanged. Square Mul, mean/epsilon, invRms, GetValue count, output pass, scheduling, dtype, DMA, tileElems, existing PipeBarrier/SyncVToS/SyncSToV positions unchanged.",
   "SINGLE_CHANGE_AUDIT": "PASS (one conceptual mechanism: which primitive produces each partial and its post-processing chain)",
   "SOURCE_PATH": "本地实验/REDUCE-HIER-X/V005/submission.asc",
-  "SOURCE_SHA": "fafd1a66253eb74051b12f285992fe157d79000d32d78a411623f986f103e58f",
-  "SOURCE_LINES": 3572,
-  "SOURCE_BYTES": 191098,
+  "SOURCE_SHA": "5fa325263d18fc1aa49a7ac0c1130e7cceb5948e4423bba2ee10e6e2f6bfdd0d",
+  "SOURCE_LINES": 3580,
+  "SOURCE_BYTES": 191707,
   "FILES": [
     "本地实验/REDUCE-HIER-X/V005/REVISION-DECLARATION.md",
     "本地实验/REDUCE-HIER-X/V005/submission.asc",
@@ -25,6 +25,14 @@
   ],
   "WHY_NOT_DUPLICATE": "Not V001 fold / V003 short-span (V005 changes neither timing nor span). Not V002 tree / V004 binned (those decomposed the reduce into many Adds and lost on instruction count; V005 keeps exactly one vcadd per parent call). New E3 evidence: the per-call V/S+get_acc_val+S_MTE3 chain inside ReduceSum was never directly attacked.",
   "EXPECTED_PROBES": "1x32768 FP32 (tileCount=8), 1x16384 FP32 (4), 8x8192 FP32 (2); control 1x4096 FP32 (S5 untouched)",
-  "DECISION": "PENDING_COMPILE",
-  "CLEANUP": "Started from frozen parent source. No shared control modified. No other route touched. No CANNJudge submission."
+  "DECISION": "CORRECTNESS_PASS_PENDING_LOCAL_PERFORMANCE",
+  "CLEANUP": "Started from frozen parent source. No shared control modified. No other route touched. No CANNJudge submission.",
+  "CORRECTNESS_FIX_TRAIL": {
+    "note": "First implementation passed count-mode mask + one WholeReduceSum per span; correctness failed on all S1/S2/S3 shapes because vcadd mode=0 output granularity is per natural repeat (64 FP32). Corrected in-revision to the production two-step pattern (see support/correctness-result.json). Hypothesis unchanged.",
+    "broken_source_sha": "fafd1a66253eb74051b12f285992fe157d79000d32d78a411623f986f103e58f",
+    "fixed_source_sha": "5fa325263d18fc1aa49a7ac0c1130e7cceb5948e4423bba2ee10e6e2f6bfdd0d"
+  },
+  "COMPILE": "PASS (both builds; BUILD_RC=0)",
+  "LINK": "PASS",
+  "CORRECTNESS": "PASS (16/18 bad=0; 2 wide-FP32 parent-preexisting, candidate max_abs identical to parent)"
 }

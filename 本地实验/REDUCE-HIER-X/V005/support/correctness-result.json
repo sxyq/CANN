@@ -1,0 +1,24 @@
+{
+  "revision": "V005",
+  "date_utc": "2026-09-28T22:06:00Z",
+  "device_id": 4,
+  "host": "cann-server3 / hwnput3",
+  "method": "runner_main.inc + double-precision golden; atol/rtol per dtype",
+  "verdict": "PASS",
+  "verdict_note": "16/18 exit=0 bad=0. 1x16384 and 1x32768 FP32 fail identically on parent and candidate (PARENT_PREEXISTING wide-FP32 golden mismatch); candidate max_abs identical to parent on both.",
+  "shapes_total": 18,
+  "candidate_pass": 16,
+  "candidate_fail_parent_preexisting": [
+    {"shape": "1x16384 fp32", "parent": "exit=3 max_abs=1.1896", "candidate": "exit=3 max_abs=1.1896", "assessment": "PARENT_PREEXISTING; candidate max_abs identical"},
+    {"shape": "1x32768 fp32", "parent": "exit=3 max_abs=1.2031", "candidate": "exit=3 max_abs=1.2031", "assessment": "PARENT_PREEXISTING; candidate max_abs identical"}
+  ],
+  "max_abs_vs_parent": "Identical or better on every shape (e.g. 1x8192 fp32 cand 3.20e-07 vs parent 5.02e-07; 3x6144 cand 4.52e-07 vs parent 5.45e-07)",
+  "api_usage_fix_trail": {
+    "note": "First build of V005 used WholeReduceSum with count-mode mask and one call per span; correctness failed on every S1/S2/S3 shape (max_abs ~20) because vcadd mode=0 emits one sum per natural repeat (64 FP32), not one total for an arbitrary count. Same-revision correctness fix: two-step vector-only reduce (one sum per 64-element group, then one sum over those partials) following the production rms_norm WholeReduceSum pattern (normal bit-mask mode, mask<=64). Hypothesis unchanged: vector-output reduce with no V/S+get_acc_val+S_MTE3 chain.",
+    "broken_source_sha": "fafd1a66253eb74051b12f285992fe157d79000d32d78a411623f986f103e58f",
+    "fixed_source_sha": "5fa325263d18fc1aa49a7ac0c1130e7cceb5948e4423bba2ee10e6e2f6bfdd0d",
+    "broken_evidence": "results-v005 correctness run (retained on server3 /home/data4t2/lelinfeng/phase4-workspaces/REDUCE-HIER-X/results-v005/)"
+  },
+  "summary_tsv": "本地实验/REDUCE-HIER-X/V005/support/correctness-summary.tsv",
+  "raw_dir_server3": "/home/data4t2/lelinfeng/phase4-workspaces/REDUCE-HIER-X/results-v005-fix/"
+}
