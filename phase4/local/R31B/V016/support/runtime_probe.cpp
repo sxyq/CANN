@@ -123,8 +123,8 @@ int main(int argc, char** argv)
     const int device = std::atoi(argv[4]);
     const int warmup = std::atoi(argv[5]);
     const int repeats = std::atoi(argv[6]);
-    if ((dtype != 1 && dtype != 2) || rows <= 0 || width <= 8192 ||
-        warmup < 0 || repeats < 1) {
+    if ((dtype != 1 && dtype != 2) || rows <= 0 || width < 8192 ||
+        warmup < 0 || repeats < 0) {
         std::fprintf(stderr, "invalid probe arguments\n");
         return 2;
     }
@@ -184,16 +184,20 @@ int main(int argc, char** argv)
                    coreCount, stream, epsilon);
         CheckAcl(aclrtSynchronizeStream(stream), "kernel synchronize");
     };
-    for (int i = 0; i < warmup; ++i) {
-        launch();
-    }
     std::vector<double> samples;
-    samples.reserve(static_cast<size_t>(repeats));
-    for (int i = 0; i < repeats; ++i) {
-        const auto start = std::chrono::steady_clock::now();
+    if (repeats == 0) {
         launch();
-        const auto stop = std::chrono::steady_clock::now();
-        samples.push_back(std::chrono::duration<double, std::micro>(stop - start).count());
+    } else {
+        for (int i = 0; i < warmup; ++i) {
+            launch();
+        }
+        samples.reserve(static_cast<size_t>(repeats));
+        for (int i = 0; i < repeats; ++i) {
+            const auto start = std::chrono::steady_clock::now();
+            launch();
+            const auto stop = std::chrono::steady_clock::now();
+            samples.push_back(std::chrono::duration<double, std::micro>(stop - start).count());
+        }
     }
     CheckAcl(aclrtMemcpy(output.data(), dataBytes, dout, dataBytes, ACL_MEMCPY_DEVICE_TO_HOST),
              "copy output");
@@ -235,12 +239,19 @@ int main(int argc, char** argv)
             }
         }
     }
-    std::sort(samples.begin(), samples.end());
-    const double medianUs = samples[samples.size() / 2];
-    std::printf("dtype=%s rows=%lld width=%lld device=%d correctness=%s failures=%zu max_abs=%.8g max_rel=%.8g median_us=%.3f samples=%d\n",
-                dtype == 1 ? "fp16" : "bf16", static_cast<long long>(rows),
-                static_cast<long long>(width), device, failures == 0 ? "PASS" : "FAIL",
-                failures, maxAbs, maxRel, medianUs, repeats);
+    if (samples.empty()) {
+        std::printf("dtype=%s rows=%lld width=%lld device=%d correctness=%s failures=%zu max_abs=%.8g max_rel=%.8g median_us=NA samples=0\n",
+                    dtype == 1 ? "fp16" : "bf16", static_cast<long long>(rows),
+                    static_cast<long long>(width), device, failures == 0 ? "PASS" : "FAIL",
+                    failures, maxAbs, maxRel);
+    } else {
+        std::sort(samples.begin(), samples.end());
+        const double medianUs = samples[samples.size() / 2];
+        std::printf("dtype=%s rows=%lld width=%lld device=%d correctness=%s failures=%zu max_abs=%.8g max_rel=%.8g median_us=%.3f samples=%d\n",
+                    dtype == 1 ? "fp16" : "bf16", static_cast<long long>(rows),
+                    static_cast<long long>(width), device, failures == 0 ? "PASS" : "FAIL",
+                    failures, maxAbs, maxRel, medianUs, repeats);
+    }
 
     CheckAcl(aclrtFree(dout), "free output");
     CheckAcl(aclrtFree(db), "free bias");

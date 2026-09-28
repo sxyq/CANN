@@ -1,0 +1,56 @@
+--- phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
++++ phase4/local/R31B/V016/R31B-V016-WIDE-TILE-SEED_kernel.asc
+@@ -56,7 +56,7 @@
+         widePath_ = false;
+         wideFp32FullYPath_ = false;
+         wideFullYRows_ = 1;
+-        wideFullYTileElems_ = kWideFullYTileElems;
++        wideFullYTileElems_ = kWideFullYFp32TileElems;
+         if (rowWidth > static_cast<uint64_t>(kCacheElems)) {
+             widePath_ = true;
+             // V003: every wide shape keeps complete y rows in UB so the
+@@ -65,8 +65,9 @@
+             // reduction partials.  FP16 stores y as half (exact round-trip
+             // of the native add); FP32 and BF16 keep FP32 y.
+             const int32_t yElemsPerRow = static_cast<int32_t>(rowWidth);
+-            int32_t tileElems = kWideFullYTileElems;
++            int32_t tileElems = 0;
+             if constexpr (AscendC::IsSameType<T, float>::value) {
++                tileElems = kWideFullYFp32TileElems;
+                 wideFp32FullYPath_ = true;
+                 wideFullYRows_ = ChooseWideFullYRows(rowWidth, sizeof(float),
+                                                      2, sizeof(float), 0, tileElems);
+@@ -79,6 +80,7 @@
+                 pipe_.InitBuffer(reduceFp32Buf_,
+                                  wideFullYRows_ * reduceStride * sizeof(float));
+             } else if constexpr (std::is_same<T, half>::value) {
++                tileElems = kWideFullYLowPrecisionTileElems;
+                 wideFullYRows_ = ChooseWideFullYRows(rowWidth, sizeof(half),
+                                                      4, sizeof(half), 3, tileElems);
+                 wideFullYTileElems_ = tileElems;
+@@ -96,6 +98,7 @@
+                 pipe_.InitBuffer(reduceFp32Buf_,
+                                  wideFullYRows_ * reduceStride * sizeof(float));
+             } else {
++                tileElems = kWideFullYLowPrecisionTileElems;
+                 wideFullYRows_ = ChooseWideFullYRows(rowWidth, sizeof(float),
+                                                      4, sizeof(T), 2, tileElems);
+                 wideFullYTileElems_ = tileElems;
+@@ -1280,7 +1283,8 @@
+     // V003 adaptive full-y residency budget (Vector Core UB is 192 KiB).
+     static constexpr int32_t kWideFullYBudgetBytes = 176 * 1024;
+     static constexpr int32_t kWideFullYMaxRows = 8;
+-    static constexpr int32_t kWideFullYTileElems = 4096;
++    static constexpr int32_t kWideFullYFp32TileElems = 4096;
++    static constexpr int32_t kWideFullYLowPrecisionTileElems = 8192;
+     static constexpr int32_t kWideFullYReduceStride = 16;
+     // 910B3 has 192 KB UB with an 8 KB system reservation.  FP32 avoids the
+     // redundant output staging buffer above, leaving enough room for three
+@@ -1294,7 +1298,6 @@
+                                                   uint32_t ioTiles, uint32_t ioTypeBytes,
+                                                   uint32_t workTiles, int32_t& tileElems)
+     {
+-        tileElems = kWideFullYTileElems;
+         const int64_t yBytesPerRow =
+             static_cast<int64_t>(rowWidth) * static_cast<int64_t>(yTypeBytes);
+         for (int32_t rows = kWideFullYMaxRows; rows > 1; --rows) {

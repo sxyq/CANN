@@ -1,0 +1,37 @@
+ROUTE=R31B
+REVISION=V016
+DIRECT_PARENT=R31B-V011
+PARENT_SOURCE_SHA=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
+SOURCE_SHA_BEFORE=9f5c353e65a13a740fe97dc7e6415df032d27560831a3ad142c77592b8208eb5
+SOURCE_SHA_AFTER=9f5c353e65a13a740fe97dc7e6415df032d27560831a3ad142c77592b8208eb5
+HOST=cann-server3 (remote hostname hwnput3)
+DEVICE=4
+ROWS=2
+WARMUP=1
+REPEATS=3
+PAIRING=V011 parent then V016 candidate for each shape; same device and rounds
+LOAD_LABEL=LOAD_CONTAMINATED
+LOAD_BEFORE=2026-09-24T04:44:29+0800; AICore=0%; AIVector=0%; HBM=90%; HBM temperature=42 C; CtrlCPU=6%; HBM bandwidth=0%
+LOAD_AFTER=2026-09-24T04:46:25+0800; AICore=0%; AIVector=0%; HBM=90%; HBM temperature=43 C; CtrlCPU=18%; HBM bandwidth=0%
+
+PAIR=fp16-tail-d12288
+V011_RESULT=dtype=fp16 rows=2 width=12288 device=4 correctness=PASS failures=0 max_abs=0.0009765625 max_rel=0.0015923567 median_us=69.290 samples=3
+V016_RESULT=dtype=fp16 rows=2 width=12288 device=4 correctness=PASS failures=0 max_abs=0.0009765625 max_rel=0.0015923567 median_us=226.191 samples=3
+RAW_DELTA_US=+156.901 (V016-V011; LOAD_CONTAMINATED; no conclusion)
+
+PAIR=fp16-wide-d32768
+V011_RESULT=dtype=fp16 rows=2 width=32768 device=4 correctness=PASS failures=0 max_abs=0.001953125 max_rel=0.010989011 median_us=235.411 samples=3
+V016_RESULT=dtype=fp16 rows=2 width=32768 device=4 correctness=PASS failures=0 max_abs=0.001953125 max_rel=0.010989011 median_us=207.590 samples=3
+RAW_DELTA_US=-27.821 (V016-V011; LOAD_CONTAMINATED; no conclusion)
+
+PAIR=bf16-tail-d12288
+V011_RESULT=dtype=bf16 rows=2 width=12288 device=4 correctness=PASS failures=0 max_abs=0.0078125 max_rel=0.0073529412 median_us=122.900 samples=3
+V016_RESULT=dtype=bf16 rows=2 width=12288 device=4 correctness=PASS failures=0 max_abs=0.0078125 max_rel=0.0073529412 median_us=162.820 samples=3
+RAW_DELTA_US=+39.920 (V016-V011; LOAD_CONTAMINATED; no conclusion)
+
+PAIR=bf16-wide-d32768
+V011_RESULT=dtype=bf16 rows=2 width=32768 device=4 correctness=PASS failures=0 max_abs=0.0078125 max_rel=0.01754386 median_us=151.020 samples=3
+V016_RESULT=dtype=bf16 rows=2 width=32768 device=4 correctness=PASS failures=0 max_abs=0.0078125 max_rel=0.01754386 median_us=206.721 samples=3
+RAW_DELTA_US=+55.701 (V016-V011; LOAD_CONTAMINATED; no conclusion)
+
+PROBE_DECISION=Raw paired evidence only; no performance claim; stop at Main Review

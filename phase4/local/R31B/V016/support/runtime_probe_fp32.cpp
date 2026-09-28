@@ -37,7 +37,7 @@ int main(int argc, char** argv)
     const int64_t rows = std::atoll(argv[1]);
     const int64_t width = std::atoll(argv[2]);
     const int device = std::atoi(argv[3]);
-    if (rows <= 0 || width <= 8192) {
+    if (rows <= 0 || width < 8192) {
         std::fprintf(stderr, "invalid probe arguments\n");
         return 2;
     }
