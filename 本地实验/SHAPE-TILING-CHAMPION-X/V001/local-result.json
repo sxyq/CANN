@@ -54,15 +54,40 @@
     "status": "PASS"
   },
   "timing": {
-    "status": "AUTHORIZED_BY_MAIN_1_20260929",
-    "reason": "MAIN-1: change-domain numeric safety proven (untouched bit-identical; change-domain delta within parent noise). Latency P/C is measured against parent, not against golden. Same-binary qualification must pass first.",
-    "priority_shapes": ["fp32 D=12288", "fp32 D=16384"],
-    "control_shapes": ["fp32 D=8192", "fp32 D=32768"],
-    "blank_controls": ["fp16 all D", "bf16 all D"]
+    "status": "COMPLETE",
+    "method": "DEVICE_EVENT_PRIMARY (aclrtRecordEvent start/stop), wall_us diagnostic only",
+    "warmup": 45,
+    "pairs_per_shape": 21,
+    "device": 4,
+    "device_load_pre_post": "HBM 59192-59212/65536 (~90%, <100%), AICore 0%, no active lease on d4",
+    "same_binary_qualification": {
+      "result": "PASS 6_OF_6",
+      "log": "logs/same-binary.log",
+      "detail": {
+        "fp32-change-d12288": "PASS mad/median=0.054 block_drift=0.092 median=6.500us",
+        "fp32-change-d16384": "PASS mad/median=0.030 block_drift=0.008 median=7.380us",
+        "fp32-control-d8192": "PASS mad/median=0.038 block_drift=0.030 median=5.310us",
+        "fp32-control-d32768": "PASS mad/median=0.021 block_drift=0.019 median=11.360us",
+        "fp16-blank-d16384": "PASS mad/median=0.030 block_drift=0.021 median=6.690us",
+        "bf16-blank-d16384": "PASS mad/median=0.031 block_drift=0.023 median=7.810us"
+      }
+    },
+    "paired_results": {
+      "log": "logs/paired.log",
+      "noise_floor_from_blank_controls": "paired_delta_median in [-0.16, +0.08] us on bit-identical code (fp32-d8192 +0.080, fp32-d32768 0.000, fp16-d16384 -0.060, bf16-d16384 -0.160)",
+      "shapes": {
+        "fp32-change-d12288": "paired_delta_median=-0.160us; direction 12 neg / 9 pos; trimmed_median=-0.160; MAD=4.900 (large bidirectional outliers)",
+        "fp32-change-d16384": "paired_delta_median=-0.060us; direction 11 neg / 10 pos; trimmed_median=-0.060; MAD=0.320",
+        "fp32-control-d8192": "paired_delta_median=+0.080us (expect 0; noise)",
+        "fp32-control-d32768": "paired_delta_median=0.000us (expect 0; noise)",
+        "fp16-blank-d16384": "paired_delta_median=-0.060us (expect 0; noise)",
+        "bf16-blank-d16384": "paired_delta_median=-0.160us (expect 0; noise)"
+      }
+    }
   },
-  "local_verdict": "NOT_COMPLETE",
-  "local_verdict_note": "BUILD PASS, EXECUTABLE_IDENTITY PASS, OFAT_NUMERIC_SAFETY PASS. CORRECTNESS=COMMON_MODE_WITH_PARENT (see WIDE-FP32-NONDETERMINISM.md). MAIN-1 2026-09-29 authorized latency P/C measurement. Same-binary + interleaved P/C in progress.",
+  "local_verdict": "NEEDS_ONE_MORE_LOCAL",
+  "local_verdict_reason": "Change-domain paired medians (-0.160us at D=12288, -0.060us at D=16384) fall inside the blank-control noise band [-0.16, +0.08]us measured on bit-identical code. Direction is mixed (12/9 and 11/10). No stable improvement beyond noise. Keep current Candidate; do not stack further performance changes.",
   "main_review": "本地实验/SHAPE-TILING-CHAMPION-X/V001/MAIN-REVIEW.md",
-  "child_decision": "MEASUREMENT_IN_PROGRESS",
+  "child_decision": "NEEDS_ONE_MORE_LOCAL",
   "online_submission": false
 }
