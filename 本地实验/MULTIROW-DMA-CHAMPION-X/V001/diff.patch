@@ -1,0 +1,118 @@
+--- 线上结果/R31B/V011/submission.asc	2026-09-29 04:22:44
++++ 研究/MULTIROW-DMA-CHAMPION-X/workspace/submission.asc	2026-09-29 05:05:00
+@@ -3105,6 +3105,84 @@
+             // Pass 1: y = x + residual, retain y, accumulate sum(y^2).
+             // V011: 2-deep MTE2 across the (row, tile) stream so Load of the
+             // next unit overlaps V of the current one (large-R row pipeline).
++            // V001: when the batch can take strided multi-row tile windows,
++            // issue that input form instead of per-row single bursts.
++            if (batchRows >= 2 &&
++                ((static_cast<uint64_t>(tileWidth) * sizeof(T)) % 32u) == 0u &&
++                (((rowWidth - static_cast<uint64_t>(tileWidth)) * sizeof(T)) % 32u) == 0u) {
++                AscendC::LocalTensor<T> xBase = xBuf_.Get<T>();
++                AscendC::LocalTensor<T> rBase = residualBuf_.Get<T>();
++                AscendC::LocalTensor<float> valueFp32 = valueFp32Buf_.Get<float>();
++                AscendC::LocalTensor<float> xFp32 = xFp32Buf_.Get<float>();
++                AscendC::LocalTensor<float> residualFp32 = residualFp32Buf_.Get<float>();
++                constexpr int32_t kStrideChunkRows = 2;
++                for (int32_t tile = 0; tile < tileCount; ++tile) {
++                    const uint64_t col = static_cast<uint64_t>(tile) * tileWidth;
++                    const int32_t valid = static_cast<int32_t>(
++                        rowWidth - col < static_cast<uint64_t>(tileWidth)
++                            ? rowWidth - col : tileWidth);
++                    const bool fullTile = valid == tileWidth;
++                    for (int32_t chunkStart = 0; chunkStart < batchRows;
++                         chunkStart += kStrideChunkRows) {
++                        const int32_t chunkRows =
++                            batchRows - chunkStart < kStrideChunkRows
++                                ? batchRows - chunkStart : kStrideChunkRows;
++                        const uint64_t chunkOffset =
++                            (batchBegin + static_cast<uint64_t>(chunkStart)) * rowWidth;
++                        if (fullTile) {
++                            LoadStridedRows(xBase, xGm_, chunkOffset + col, valid,
++                                            rowWidth, chunkRows);
++                            LoadStridedRows(rBase, residualGm_, chunkOffset + col, valid,
++                                            rowWidth, chunkRows);
++                        } else {
++                            for (int32_t r = 0; r < chunkRows; ++r) {
++                                const uint64_t rowOffset =
++                                    (batchBegin + static_cast<uint64_t>(chunkStart + r)) *
++                                    rowWidth;
++                                Load(xBase[r * tileWidth], xGm_, rowOffset + col, valid);
++                                Load(rBase[r * tileWidth], residualGm_, rowOffset + col,
++                                     valid);
++                            }
++                        }
++                        SyncMTE2ToV();
++                        for (int32_t r = 0; r < chunkRows; ++r) {
++                            const int32_t batchRow = chunkStart + r;
++                            AscendC::LocalTensor<T> xLocal = xBase[r * tileWidth];
++                            AscendC::LocalTensor<T> residualLocal = rBase[r * tileWidth];
++                            if constexpr (std::is_same<T, half>::value) {
++                                AscendC::LocalTensor<half> yStore = gammaBuf_.Get<half>();
++                                AscendC::LocalTensor<half> yTile =
++                                    yStore[batchRow * rowWidth + col];
++                                AscendC::Add(xLocal, xLocal, residualLocal, valid);
++                                AscendC::PipeBarrier<PIPE_V>();
++                                AscendC::Muls(yTile, xLocal, half(1.0f), valid);
++                                AscendC::PipeBarrier<PIPE_V>();
++                                ToFloat(valueFp32, xLocal, valid);
++                                AscendC::PipeBarrier<PIPE_V>();
++                                AscendC::Mul(xFp32, valueFp32, valueFp32, valid);
++                                AscendC::PipeBarrier<PIPE_V>();
++                                AscendC::ReduceSum(
++                                    reduceLocal[batchRow * reduceStride + tile], xFp32,
++                                    residualFp32, valid);
++                            } else {
++                                AscendC::LocalTensor<float> valueTile =
++                                    valueFp32[batchRow * rowWidth + col];
++                                ToFloat(xFp32, xLocal, valid);
++                                ToFloat(residualFp32, residualLocal, valid);
++                                AscendC::PipeBarrier<PIPE_V>();
++                                AscendC::Add(valueTile, xFp32, residualFp32, valid);
++                                AscendC::PipeBarrier<PIPE_V>();
++                                AscendC::Mul(residualFp32, valueTile, valueTile, valid);
++                                AscendC::PipeBarrier<PIPE_V>();
++                                AscendC::ReduceSum(
++                                    reduceLocal[batchRow * reduceStride + tile], residualFp32,
++                                    xFp32, valid);
++                            }
++                        }
++                        SyncVToMTE2();
++                    }
++                }
++            } else {
+             {
+             const AscendC::TEventID rd0 =
+                 pipe_.AllocEventID<AscendC::HardEvent::MTE2_V>();
+@@ -3220,6 +3298,7 @@
+             pipe_.ReleaseEventID<AscendC::HardEvent::V_MTE2>(rel0);
+             pipe_.ReleaseEventID<AscendC::HardEvent::V_MTE2>(rel1);
+             }
++            }
+ 
+             for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
+                 AscendC::LocalTensor<float> xFp32 = xFp32Buf_.Get<float>();
+@@ -3382,6 +3461,22 @@
+         AscendC::DataCopyPad(dst[offset], src, copyParams);
+     }
+ 
++    // V001: one strided multi-row tile-window transfer (nBursts = rows).
++    // Callers use this only for 32B-aligned blockLen and srcStride.
++    __aicore__ inline void LoadStridedRows(const AscendC::LocalTensor<T>& dst,
++                                           const AscendC::GlobalTensor<T>& src,
++                                           uint64_t offset, int32_t rowElems,
++                                           uint64_t rowPitchElems, int32_t rows)
++    {
++        const AscendC::DataCopyExtParams copyParams(
++            static_cast<uint32_t>(rows),
++            static_cast<uint32_t>(rowElems * static_cast<int32_t>(sizeof(T))),
++            static_cast<uint32_t>(
++                (rowPitchElems - static_cast<uint64_t>(rowElems)) * sizeof(T)),
++            0, 0);
++        AscendC::DataCopy(dst, src[offset], copyParams);
++    }
++
+     __aicore__ inline void ToFloat(const AscendC::LocalTensor<float>& dst,
+                                    const AscendC::LocalTensor<T>& src, int32_t count)
+     {
