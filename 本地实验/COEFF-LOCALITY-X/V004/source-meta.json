@@ -1,0 +1,18 @@
+{
+  "route": "COEFF-LOCALITY-X",
+  "revision": "V004",
+  "revision_kind": "PERFORMANCE_SINGLE_HYPOTHESIS",
+  "direct_parent": "FROZEN_R31B_V011",
+  "parent_source_sha": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "parent_score": "45.16",
+  "official_anchor": "45.16",
+  "single_hypothesis": "NH-1 — generic path full-row parameter preload for single-row multi-tile cores: extend Process() cacheParams from (cacheRow && localRows > 1) to (cacheRow && (localRows > 1 || rowWidth > kTileElems)) so D in (4096,8192] single-row cores reuse the existing full-row preload block (gammaBuf_/biasBuf_ already allocated at kCacheElems) instead of per-tile Load(gamma/bias) in the output pass. UB increment 0, tileElems unchanged, MTE2 bytes and descriptor count unchanged (hoisted off the output-pass critical path).",
+  "single_change_audit": "PASS (one conceptual change: widen cacheParams eligibility to single-row multi-tile cores; the preload block, consumers, sync placement and store-drain are the existing semantics of the cacheParams=true path, identical to the validated multi-row population — not separate mechanisms)",
+  "context_class": "FROZEN_STRONG_BASELINE_COEFF_LOCALITY",
+  "approval": "MAIN-2 APPROVAL 2026-09-28: NH-1 (=H3 refined) approved as V004; DIRECT_PARENT=FROZEN_R31B_V011 (V001/V003 not parents)",
+  "source_sha256": "848165b6215922270f43f3d9bf8e27b9107447dd08bb96bbbe8755bc09251d8b",
+  "source_path": "本地实验/COEFF-LOCALITY-X/V004/submission.asc",
+  "diff_summary": "Process() cacheParams condition only (one line + comment). Preload block byte-identical, Init/host/CMake/runner untouched, wide FP32 / NarrowMidOverlap / multi-row paths untouched.",
+  "status": "SOURCE_READY_PENDING_BUILD",
+  "decision": "NOT_SUBMITTED"
+}

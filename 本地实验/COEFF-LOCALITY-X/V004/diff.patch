@@ -1,0 +1,17 @@
+--- /Users/sunyiyang/Desktop/Project/cann-m2-coeff/线上结果/R31B/V011/submission.asc	2026-09-29 04:22:42
++++ submission.asc	2026-09-29 06:28:54
+@@ -240,9 +240,11 @@
+             return;
+         }
+         const bool cacheRow = rowWidth <= static_cast<uint64_t>(kCacheElems);
+-        // A one-row core gains nothing from preloading channel parameters;
+-        // cores with several rows reuse the same GM loads for all their rows.
+-        const bool cacheParams = cacheRow && localRows > 1;
++        // Multi-row cores reuse the cached parameters across rows.  A one-row
++        // core with several tiles also benefits: preload the full row once
++        // instead of paying per-tile gamma/bias MTE2 in the output pass.
++        const bool cacheParams = cacheRow &&
++            (localRows > 1 || rowWidth > static_cast<uint64_t>(kTileElems));
+         const bool cacheParamFp32 = cacheParams && !AscendC::IsSameType<T, float>::value &&
+                                     !std::is_same<T, half>::value;
+ 
