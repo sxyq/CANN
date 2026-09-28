@@ -1,0 +1,54 @@
+{
+  "ROUTE": "R31A",
+  "REVISION": "V027",
+  "DIRECT_PARENT": "R31A-V026",
+  "PARENT_SOURCE_SHA": "7f2029e478d7675e02c2e017b0db3eaf33ae5dc0fa478479b340f441ab46bb18",
+  "PARENT_SCORE": "LOCAL chain -8.3% vs V016",
+  "SINGLE_HYPOTHESIS": "In ProcessWideFp32CachedRows, move the RMS finalize's 1-element vector ops (Duplicate + Sqrt) from the x staging buffer onto the reduce buffer, and move the staging release (SyncVToMTE2) to right after the squareSum pull. Then x/res staging is free while the finalize runs, and the first pass-2 gamma/bias load issues into the freed staging and overlaps the finalize's V/S round trips. The finalize arithmetic is unchanged (Duplicate + Sqrt + scalar reciprocal on the same value, just held in reduceLocal[0] instead of xLocal[0]); no Rsqrt/Reciprocal; store, dispatch, tile constants, and the pass-2 H5 logic are untouched.",
+  "CONTEXT_CLASS": "HISTORICAL_EXPLOIT",
+  "WHY_NOT_DUPLICATE": "V023 restructured the finalize's ARITHMETIC (vector-pipe meanSquare Muls+Adds + Rsqrt, corrected to Sqrt). V027 keeps the finalize arithmetic unchanged and only changes WHERE the 1-element ops live and WHEN the staging is released — a buffer-role and sync-placement change, not an arithmetic change. V025/H4 was pass-1 residual staging liveness; V026/H5 was pass-2 parameter staging liveness; V027 is the pass-1/pass-2 BOUNDARY staging release. V021 moved the pass-2 SyncMTE3ToV (store-drain wait); V027 does not touch the store drain. R31B H1 (store drain deferral) and STORE-EPILOGUE-X H1 (blocked writeback) untouched. R31B H3 (pass-1/pass-2 sync reduction) is the flagged adjacency: V027's specific mechanism is 'move the 1-element finalize ops onto the reduce buffer so the x/res staging is freed before the finalize, letting the first pass-2 parameter load overlap the finalize'. If R31B H3 reduces a different sync edge, the two are distinct; this must be confirmed at declaration against R31B H3's exact spec. Full analysis in 研究/R31A/next-hypotheses-v2.md H6 section.",
+  "FILES_CHANGED": [
+    "本地实验/R31A/V027/submission.asc: ProcessWideFp32CachedRows cross-tile finalize block only (staging release timing + finalize buffer reassignment + first-tile parameter prefetch)",
+    "本地实验/R31A/V027/source-meta.json: declaration",
+    "本地实验/R31A/V027/diff.patch",
+    "本地实验/R31A/V027/submission.sha256"
+  ],
+  "SOURCE_SHA": "ab76c2aa43db4207fce0977ac2ef50822c9f56707393ecbd6864dffcca38bc3a",
+  "SOURCE_SHA256": "ab76c2aa43db4207fce0977ac2ef50822c9f56707393ecbd6864dffcca38bc3a",
+  "SOURCE_PATH": "本地实验/R31A/V027/submission.asc",
+  "source_commit": "pending",
+  "submission_id": "NONE_NOT_SUBMITTED",
+  "local_sha256": "ab76c2aa43db4207fce0977ac2ef50822c9f56707393ecbd6864dffcca38bc3a",
+  "remote_sha256": "NOT_APPLICABLE_LOCAL_ONLY",
+  "official_score": "NONE",
+  "decision": "PENDING_BUILD_CORRECTNESS_MEASUREMENT",
+  "DECLARATION": {
+    "ROUTE": "R31A",
+    "REVISION": "V027",
+    "DIRECT_PARENT": "V026",
+    "PARENT_SOURCE_SHA": "7f2029e478d7675e02c2e017b0db3eaf33ae5dc0fa478479b340f441ab46bb18",
+    "PARENT_SCORE": "LOCAL chain -8.3% vs V016",
+    "SINGLE_HYPOTHESIS": "H6 RMS 收尾 1 元素算子移到 reduce 缓冲，让 x/res staging 在收尾前释放，pass-2 首参数加载与收尾 V/S 往返重叠",
+    "CONTEXT_CLASS": "HISTORICAL_EXPLOIT",
+    "WHY_NOT_DUPLICATE": "见 next-hypotheses-v2.md H6；与 V023 收尾算术改造不同轴"
+  },
+  "MAIN1_SELECTION_DATE": "2026-09-29",
+  "CONSTRAINTS": {
+    "parent_module_rebuild": "REQUIRED: the paired harness parent module must be rebuilt from V026 (7f2029e4...) so the OFAT comparison is V026 vs V027. Both module SHAs go in the record.",
+    "no_Rsqrt_Reciprocal": "honored; finalize stays Duplicate + Sqrt + scalar reciprocal",
+    "no_arithmetic_change": "honored; the finalize computes the same value, only its buffer location and the staging release timing change",
+    "correctness_priority": "buffer-role + sync-placement change in the pass-boundary; moderate risk (H4/H5's class of staging-liveness sync split, which passed 4 runs each)."
+  },
+  "MECHANISM_DETAIL": {
+    "finalize_buffer": "Duplicate + Sqrt move from xLocal[0] (xBuf_) to reduceLocal[0] (reduceFp32Buf_). reduceLocal is the SRC of the cross-tile ReduceSum and is free after it; the 1-element ops fit in the 8-float reduce buffer.",
+    "staging_release": "SyncVToMTE2 moves from after invRms to right after the squareSum GetValue, when xBuf_/resBuf_ are already free (cross-tile ReduceSum done).",
+    "first_tile_prefetch": "the first pass-2 gamma/bias load issues into the freed staging right after the SyncVToMTE2 and overlaps the finalize's V/S round trips (2 SyncVToS + 2 SyncSToV + scalar math + Duplicate + Sqrt). The pass-2 tile loop's paramsPrefetched flag starts true so the first tile skips its own load; the H5 next-tile prefetch logic is unchanged."
+  },
+  "PRECISION_RISK": "None. The finalize computes the same Duplicate + Sqrt + 1.0f/ on the same meanSquare value; only the buffer holding the 1-element intermediates changes (reduceLocal[0] instead of xLocal[0]).",
+  "EVALUATION_PLAN": {
+    "primary": "rows=2 D=32768 blocks=1 (the only probe shape exercising CachedRows)",
+    "same_code_control": "rows=2 D=24576 blocks=1 (batch path on the V026 parent, edit not exercised; noise band)",
+    "noise_band": "measure each round (prior round was about plus or minus 0.8%)",
+    "contaminated_blocks": "mark parent/candidate MAD > 0.25 (and especially > 0.5); exclude from direction reading, retain raw"
+  }
+}

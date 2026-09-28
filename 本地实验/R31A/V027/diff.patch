@@ -1,0 +1,43 @@
+--- 本地实验/R31A/V026/submission.asc	2026-09-29 07:24:44
++++ 本地实验/R31A/V027/submission.asc	2026-09-29 07:42:32
+@@ -2059,15 +2059,28 @@
+             AscendC::ReduceSum(residualLocal, reduceLocal, xLocal, tileCount);
+             SyncVToS();
+             const float squareSum = residualLocal.GetValue(0);
++            // H6: free the x/res staging now; the finalize's 1-element ops move
++            // onto the reduce buffer so they no longer need xBuf_. The first
++            // pass-2 gamma/bias load issues into the freed staging and overlaps
++            // the finalize's V/S round trips.
++            SyncVToMTE2();
++            bool paramsPrefetched = false;
++            if (rowWidth > 0) {
++                const int32_t firstValid = WideFp32CachedTileLength(rowWidth);
++                AscendC::LocalTensor<float> gammaLocal = xBuf_.Get<float>();
++                AscendC::LocalTensor<float> biasLocal = residualBuf_.Get<float>();
++                Load(gammaLocal, gammaGm_, 0, firstValid);
++                Load(biasLocal, biasGm_, 0, firstValid);
++                paramsPrefetched = true;
++            }
+             const float meanSquare = squareSum * invRowWidth + epsilon;
+             SyncSToV();
+-            AscendC::Duplicate(xLocal, meanSquare, 1);
+-            AscendC::Sqrt(xLocal, xLocal, 1);
++            AscendC::Duplicate(reduceLocal, meanSquare, 1);
++            AscendC::Sqrt(reduceLocal, reduceLocal, 1);
+             AscendC::PipeBarrier<PIPE_V>();
+             SyncVToS();
+-            const float invRms = 1.0f / xLocal.GetValue(0);
++            const float invRms = 1.0f / reduceLocal.GetValue(0);
+             SyncSToV();
+-            SyncVToMTE2();
+ 
+             // Hoist the invRms row-scale out of the per-tile affine loop: one
+             // full-row Muls replaces one full-tile Muls and one PipeBarrier per
+@@ -2080,7 +2093,6 @@
+             // prefetch the next tile's gamma/bias into the freed slots so the
+             // MTE2 loads overlap the current tile's Add and Store. Same UB
+             // footprint; the affine expression order (y*s)*g + b is unchanged.
+-            bool paramsPrefetched = false;
+             for (uint64_t col = 0; col < rowWidth; col += kWideFp32CachedTileElems) {
+                 const int32_t valid = WideFp32CachedTileLength(rowWidth - col);
+                 AscendC::LocalTensor<float> gammaLocal = xBuf_.Get<float>();
