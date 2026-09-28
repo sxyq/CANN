@@ -16,7 +16,9 @@
     "candidate_kernel_so_sha256": "f446e22e01313423590fb63a35fe8ae8010046267461d1bf138083ad4138b163",
     "remote_build_root": "/home/data4t2/lelinfeng/shape-tiling-champion-x/V001/support/build"
   },
-  "CORRECTNESS": "NOT_ADJUDICABLE_WIDE_FP32",
+  "CORRECTNESS": "COMMON_MODE_WITH_PARENT",
+  "OFAT_NUMERIC_SAFETY": "PASS",
+  "SHARED_BASELINE_LIMITATION": "wide-FP32 invRms nondeterminism (~0.8% run-to-run) in ProcessWideFp32FullCacheRows",
   "correctness_detail": {
     "cases_total": 12,
     "candidate_failures": 8,
@@ -52,11 +54,15 @@
     "status": "PASS"
   },
   "timing": {
-    "status": "NOT_RUN",
-    "reason": "Correctness gate not passed on the change domain (wide FP32 is nondeterministic in the parent). 本地性能测试规范.md: 正确性未 PASS 的 Candidate 不得测性能."
+    "status": "AUTHORIZED_BY_MAIN_1_20260929",
+    "reason": "MAIN-1: change-domain numeric safety proven (untouched bit-identical; change-domain delta within parent noise). Latency P/C is measured against parent, not against golden. Same-binary qualification must pass first.",
+    "priority_shapes": ["fp32 D=12288", "fp32 D=16384"],
+    "control_shapes": ["fp32 D=8192", "fp32 D=32768"],
+    "blank_controls": ["fp16 all D", "bf16 all D"]
   },
   "local_verdict": "NOT_COMPLETE",
-  "local_verdict_note": "BUILD PASS, EXECUTABLE_IDENTITY PASS. CORRECTNESS cannot be adjudicated on the change domain because the Direct Parent's ProcessWideFp32FullCacheRows is nondeterministic under this harness (invRms-level). No performance measurement performed. Needs Main/Planning direction: either (a) fix/localise the parent wide-FP32 nondeterminism before further tiling work on that path, or (b) re-point V001's change domain at a deterministic path.",
-  "child_decision": "BLOCKED_AWAITING_MAIN_REVIEW",
+  "local_verdict_note": "BUILD PASS, EXECUTABLE_IDENTITY PASS, OFAT_NUMERIC_SAFETY PASS. CORRECTNESS=COMMON_MODE_WITH_PARENT (see WIDE-FP32-NONDETERMINISM.md). MAIN-1 2026-09-29 authorized latency P/C measurement. Same-binary + interleaved P/C in progress.",
+  "main_review": "本地实验/SHAPE-TILING-CHAMPION-X/V001/MAIN-REVIEW.md",
+  "child_decision": "MEASUREMENT_IN_PROGRESS",
   "online_submission": false
 }
