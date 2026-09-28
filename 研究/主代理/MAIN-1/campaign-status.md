@@ -73,3 +73,6 @@
 - Impact: any local P/C on wide-FP32 path is noise-dominated; correctness vs golden is not adjudicable
 - Evidence: `cann-m1-tiling/研究/SHAPE-TILING-CHAMPION-X/handoff-2026-09-28.md`, `local-result.json`
 | 2026-09-29 | STORE-EPILOGUE: V002 closed LOCAL_BEST; Track-B 5 hypotheses; Main selected H1 for V003 |
+| 2026-09-29 | R31A: V021 solidified NEEDS_ONE_MORE_LOCAL; path-dispatch finding (D24576→batch); Main selected H3 for V022 |
+| 2026-09-29 | SHAPE-TILING: V001 NEEDS_ONE_MORE_LOCAL (in noise band); Main selected H2 for V002 |
+| 2026-09-29 | Wide-FP32 invRms nondeterminism forwarded to R31B lane |
