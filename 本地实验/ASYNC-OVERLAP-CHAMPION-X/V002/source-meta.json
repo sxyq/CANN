@@ -1,0 +1,27 @@
+{
+  "route": "ASYNC-OVERLAP-CHAMPION-X",
+  "revision": "V002",
+  "direct_parent": "R31B-V011",
+  "parent_source_sha": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "parent_score": 45.16,
+  "official_anchor": 45.16,
+  "single_hypothesis": "W2 NarrowMid inter-row issue reorder: hoist next-row x/res MTE2 to right after current-row inputRelease (before invRms scalar tail) so input DMA overlaps invRms; defer SyncMTE3ToV to just before overwriting the store source. BF16 keeps original order (store reads xBuf_).",
+  "context_class": "CHAMPION_PIPELINE_SCHEDULE",
+  "approval_doc": "MAIN-2 inbox 2026-09-28 W2 APPROVED",
+  "local_sha256": "f8f65e09570e6db931d86fb1e4640599bc63b3fef2b42746e7065c8f75150c03",
+  "changed_surface": "ProcessNarrowMidOverlap only: (1) added nextLoadIssued flag; (2) for FP32/FP16 hoist next-row x/res Load + SetFlag MTE2_V to right after SetFlag V_MTE2(inputRelease), before invRms scalar tail; (3) move SyncMTE3ToV from loop head to just before output Muls (store-source overwrite point); (4) BF16 (kStoreReadsInputBuf) retains loop-head SyncMTE3ToV and in-loop Load.",
+  "unchanged": [
+    "all other process paths (WideLowPrecision, WideFp32FullCache, small, batched, generic)",
+    "queue depths and UB buffer sizes",
+    "reduction / invRms arithmetic",
+    "dtype dispatch",
+    "core mapping",
+    "store schedule and output arithmetic"
+  ],
+  "expected_shapes": "NarrowMid rowWidth in (128,4096], rows such that kernel >20us; controls: shapes that do not enter NarrowMid",
+  "ub_impact": "none",
+  "dma_impact": "same bytes; next-row x/res issued earlier",
+  "sync_impact": "SyncMTE3ToV deferred to store-source overwrite; extra WaitFlag(inputRelease) to enable early load",
+  "precision_risk": "none",
+  "single_change_audit": "PASS"
+}
