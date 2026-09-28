@@ -1,0 +1,55 @@
+{
+ "ROUTE": "R31A",
+ "REVISION": "V023",
+ "DIRECT_PARENT": "R31A-V016",
+ "PARENT_SOURCE_SHA": "dd13093823c885e785a650abff4863827e652eb8607ad0621a96eb31b6764fa0",
+ "PARENT_SCORE": 45.0,
+ "OFFICIAL_ANCHOR": "R31A-V016 / 45.00",
+ "SOURCE_SHA": "66b50111a4d9f98937fe494ba13f5f078194eb0638d97bfce0cbeef6f47b3c91",
+ "SOURCE_SHA256": "66b50111a4d9f98937fe494ba13f5f078194eb0638d97bfce0cbeef6f47b3c91",
+ "SINGLE_HYPOTHESIS": "In ProcessWideFp32CachedRows, restructure the RMS finalize to keep meanSquare in the vector pipe (one-element Muls+Adds on the ReduceSum result) and finish with Sqrt plus a single GetValue and scalar reciprocal, removing one V/S round trip per row relative to V016. Rsqrt was the originally declared primitive; see CORRECTNESS_FIX for why it was replaced.",
+ "CONTEXT_CLASS": "HISTORICAL_EXPLOIT",
+ "ORIGINAL_DECLARATION": "EA-H1：ProcessWideFp32CachedRows 的 RMS 收尾用 Rsqrt 替代 Duplicate+Sqrt+标量倒数",
+ "WHY_NOT_DUPLICATE": "See 研究/R31A/next-hypotheses.md H1. V021 moved the MTE3 wait (sync placement); V022 changed the batch-entry dispatch predicate; V020 was a pass-1 dual-slot prefetch. None touches the RMS denominator finalize. The one-element vector Muls+Adds pattern is R31A's own (ProcessNarrowSingleTile, submission.asc:1174-1176). EPILOGUE-ARITH (epilogue arithmetic chain), STORE-EPILOGUE-X (store merge), SHAPE-TILING (tile policy) are untouched.",
+ "BUILD": "PASS",
+ "EXECUTABLE_IDENTITY": {
+  "runner_sha256": "7dbde489de951be883fe38d6cbc991800c0451a97931af8ac036c339f0e61f9a",
+  "parent_module_sha256": "11d7a2cb60912ce23b05a768c9076abcf2c513ad8b0844cc062d158082a4d5ea",
+  "candidate_module_sha256": "da483ebe63a25bf3fb12bdcad83fec9920debd9779647966eb104c5d09906e68",
+  "candidate_module_note": "harness slot label 'v021' retained so the runner binary is unchanged; content is R31A-V023 fixed (source 66b50111...)."
+ },
+ "CORRECTNESS_FIX": {
+  "first_attempt_primitive": "AscendC::Rsqrt (vector-pipe meanSquare + Rsqrt + single GetValue, no scalar divide)",
+  "first_attempt_source_sha": "2d313bb7a7ed577db1b0b7bdb604d2f9b76c4c9f9939066b768ca7f9da5c324f",
+  "first_attempt_result": "FAIL at D=32768: max_abs=0.00099397007 (V016 PASS max_abs=4.83928943e-07). RC=3. D=24576 passed because V016 dispatch sends that shape to the batch path, so the CachedRows edit is not exercised there.",
+  "root_cause": "AscendC::Rsqrt on this SoC is an APPROXIMATE reciprocal-sqrt primitive. Observed max_abs 9.94e-4 matches a relative error of about 2^-10 (9.77e-4), the signature of a 10-bit fast rsqrt instruction. This breaks the 1e-4 FP32 budget. Rsqrt is therefore infeasible for the RMS denominator in this kernel.",
+  "fix_applied": "Replaced Rsqrt with Sqrt and restored the precise scalar reciprocal (1.0f / GetValue). Kept the vector-pipe meanSquare (Muls+Adds) and the single V/S round trip, which are the hypothesis's performance mechanism. The scalar divide is retained because it is the precise reciprocal; the vector Reciprocal API is likely approximate too and was not risked.",
+  "fix_category": "API usage / correctness: the declared primitive (Rsqrt) violates the precision budget; substituted the precise primitive without changing the performance mechanism (vector-pipe mean/sqrt, one V/S round trip).",
+  "fixed_source_sha": "66b50111a4d9f98937fe494ba13f5f078194eb0638d97bfce0cbeef6f47b3c91"
+ },
+ "CORRECTNESS": {
+  "date": "2026-09-29",
+  "device": 4,
+  "rsqrt_variant_D32768": "FAIL max_abs=0.00099397007 (see CORRECTNESS_FIX)",
+  "fixed_D24576": {
+   "parent_V016": "PASS max_abs=3.48268474e-07",
+   "candidate_V023": "PASS max_abs=3.48268474e-07",
+   "rc": 0
+  },
+  "fixed_D32768": {
+   "parent_V016": "PASS max_abs=4.83928943e-07",
+   "candidate_V023": "PASS max_abs=4.83928943e-07",
+   "rc": 0
+  },
+  "note": "After the fix, max_abs matches V016 exactly on both shapes. The vector Muls+Adds meanSquare produces the same meanSquare as the scalar computation at these magnitudes, and Sqrt+scalar reciprocal is the original precise tail.",
+  "result": "PASS after correctness fix",
+  "evidence": "本地实验/R31A/V023/support/results/M1-R31A-V023-CORR-* and M1-R31A-V023-CORRFIX-*"
+ },
+ "NEW_INFORMATION": [
+  "AscendC::Rsqrt on Ascend 910B3 is an approximate primitive with relative error about 2^-10, incompatible with a 1e-4 FP32 budget. Any future use of Rsqrt (or likely Reciprocal) for a precision-critical denominator must be rejected or refined with a Newton step.",
+  "R31A's ProcessNarrowSingleTile already uses the vector-pipe mean/sqrt + one GetValue pattern (submission.asc:1174-1176); V023 extends it to CachedRows. The pattern itself is precision-safe when Sqrt+scalar reciprocal is used."
+ ],
+ "EXPECTED_PATH_NOTE": "V023 parents from V016, whose dispatch sends rows=2 D=24576 to wideFp32BatchPath. So the V023 CachedRows edit is only exercised at D=32768. D=24576 measurements test the untouched batch path and serve as the same-code control / noise band.",
+ "STATUS": "BUILD_PASS_CORRECTNESS_PASS_AFTER_FIX_PENDING_MEASUREMENT",
+ "DECISION": "PENDING_MEASUREMENT"
+}
