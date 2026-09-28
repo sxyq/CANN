@@ -1,0 +1,33 @@
+--- 线上结果/R31B/V011/submission.asc	2026-09-29 04:23:23
++++ 本地实验/EPILOGUE-ARITH-CHAMPION-X/V001/submission.asc	2026-09-29 05:46:19
+@@ -2154,6 +2154,17 @@
+                 invRmsValues[batchRow] = 1.0f / xLocal.GetValue(0);
+                 SyncSToV();
+             }
++            // V001: apply each row's scalar normalize once over the retained
++            // y row, before the parameter tile loop.  Per element the product
++            // is identical to the per-tile Muls it replaces; the scalar no
++            // longer waits behind the gamma/bias MTE2 handoff.
++            for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
++                AscendC::LocalTensor<float> valueRow =
++                    valueLocal[batchRow * rowWidth];
++                AscendC::Muls(valueRow, valueRow, invRmsValues[batchRow],
++                              static_cast<int32_t>(rowWidth));
++            }
++            AscendC::PipeBarrier<PIPE_V>();
+             SyncVToMTE2();
+ 
+             // Load one parameter panel and consume it for both cached rows.
+@@ -2191,12 +2202,6 @@
+                 Load(gammaLocal, gammaGm_, col, valid);
+                 Load(biasLocal, biasGm_, col, valid);
+                 SyncMTE2ToV();
+-                for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
+-                    AscendC::LocalTensor<float> valueRow =
+-                        valueLocal[batchRow * rowWidth + col];
+-                    AscendC::Muls(valueRow, valueRow, invRmsValues[batchRow], valid);
+-                    AscendC::PipeBarrier<PIPE_V>();
+-                }
+                 for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
+                     AscendC::LocalTensor<float> valueRow =
+                         valueLocal[batchRow * rowWidth + col];

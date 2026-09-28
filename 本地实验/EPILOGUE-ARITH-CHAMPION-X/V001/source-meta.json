@@ -1,0 +1,39 @@
+{
+  "route": "EPILOGUE-ARITH-CHAMPION-X",
+  "revision": "V001",
+  "hypothesis_id": "EA-H1-NORM-HOIST",
+  "single_hypothesis": "Apply each row's invRms scalar normalize once over the retained full y row before the parameter tile loop (was per-tile Muls inside ProcessWideFp32FullCacheRows second pass); expression stays (y*s)*g+b, bit-identical per element",
+  "direct_parent": "R31B-V011",
+  "parent_source_sha": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "parent_score": "Official 45.16",
+  "source_sha": "eda335d16e7e311b279e8918c6405c622bb7022e040459143f19a6240a546dbf",
+  "context_class": "CHAMPION_SEEDED_EPILOGUE_ARITH",
+  "change_site": "ProcessWideFp32FullCacheRows second pass only: hoisted per-row full-rowwidth Muls before the gamma/bias tile loop; deleted the per-tile per-row Muls subloop; gamma/bias Load+Mul+Add, Store, and all events untouched",
+  "diff_vs_parent_hunks": "seed L2154 area (hoist insert) + seed L2191-2197 area (per-tile Muls subloop delete) inside ProcessWideFp32FullCacheRows",
+  "boundaries_respected": {
+    "no_store_change": true,
+    "no_event_change": true,
+    "no_dma_change": true,
+    "no_tile_policy_change": true,
+    "no_row_scheduling_change": true,
+    "no_dtype_specialization": true,
+    "no_reduction_change": true,
+    "inv_rms_evaluation_untouched": true,
+    "expression_identity_preserved": true
+  },
+  "why_not_duplicate": {
+    "STORE-EPILOGUE-X": "they change output writeback form only; this diff leaves every Store/event byte-identical",
+    "VECTOR-MATH-X": "they change invRms evaluation (Rsqrt/vector denom/broadcast/batched tail); this diff does not touch Duplicate+Sqrt+GetValue+1.0f/",
+    "EPILOGUE-FUSE-X": "SCALE-FOLD folds s into gamma scale tile; MulAddDst/VMLA fuses affine; ROW-WIDE-AFFINE issues s*gamma*b row-wide on resident-param D=8192 paths. This diff keeps (y*s)*g+b, uses plain Muls only, and acts on wide path where gamma/bias stream per tile",
+    "R31A": "R31A affine/Rsqrt are R31A Track-B ideas on their lineage; not this mechanism"
+  },
+  "expected_shapes": "wide FP32 rowWidth>8192: 1x16384, 1x32768, 2x16384, 2x32768, 4x12288; zero-delta control 2x8192_fp32 (not this function)",
+  "precision_risk": "none - Muls multiplies each element by the same scalar regardless of issue granularity; per-element op sequence unchanged",
+  "source_commit": "PENDING",
+  "source_path": "本地实验/EPILOGUE-ARITH-CHAMPION-X/V001/submission.asc",
+  "submission_id": null,
+  "local_sha256": "eda335d16e7e311b279e8918c6405c622bb7022e040459143f19a6240a546dbf",
+  "remote_sha256": "PENDING",
+  "official_score": null,
+  "decision": "NOT_COMPLETE"
+}
