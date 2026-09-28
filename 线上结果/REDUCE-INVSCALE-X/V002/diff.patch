@@ -1,0 +1,59 @@
+--- phase4/workspaces/REDUCE-INVSCALE-X/submission_v001_reference.asc	2026-09-24 05:05:59
++++ phase4/workspaces/REDUCE-INVSCALE-X/submission.asc	2026-09-24 05:39:50
+@@ -3,14 +3,35 @@
+ #include "kernel_operator.h"
+ 
+ /*
+- * AddRmsNormBias - REDUCE-INVSCALE-X V001
+- * (FULL-R006-V001-REDUCTION-ARCH + R019 invscale normalization)
++ * AddRmsNormBias - REDUCE-INVSCALE-X V002
++ * (V001 = FULL-R006-V001-REDUCTION-ARCH + R019 invscale normalization;
++ *  V002 = V001 + missing vector->MTE2 ordering restored)
+  *
+  * Branch:
+  *   R006 / reduction-centric architecture, with the R019 normalization
+- *   mutation applied on top.  Direct parent is FULL-R006-V001-REDUCTION-ARCH
++ *   mutation applied on top.  Direct parent of V001 is
++ *   FULL-R006-V001-REDUCTION-ARCH
+  *   (sha256 94ab0ef96a1a907fa187797b6c72361b2bdacfe6faf7a95d6471bd537a913266).
++ *   Direct parent of V002 is REDUCE-INVSCALE-X V001
++ *   (sha256 f017935d840bea5a81268d9fe137f1567df0982f4f71718f65f4672ad8da8023).
++ *
++ * V002 change (correctness repair only, no performance variable):
++ *   The output loop released inputX_/inputR_ to MTE2 only before the
++ *   gamma/bias load, so on the NEXT tile iteration MTE2 could overwrite those
++ *   buffers with the next x/residual DataCopy while this tile's vector reads
++ *   of gamma/bias were still in flight.  Only the last tile of a row has no
++ *   following reload, which is why single-tile rows (D <= kReduceTileElems)
++ *   were always correct and every multi-tile row (D > 6144) failed.
++ *   A second SyncVectorToMte2() after the gamma/bias consumption restores the
++ *   missing ordering.  R019 invscale, tile size, pipeline, row scheduling,
++ *   parameter policy and the packed partial collector are all untouched.
+  *
++ * NOTE on the originally assigned hypothesis: the partial collector
++ * destination-alignment repair was implemented and tested first and did NOT
++ * fix D > 6144 (identical failure signature).  A sync-only variant on the
++ * unchanged packed collector passes the full matrix, so packed-float
++ * ReduceSum destinations were never the defect.  See source-meta.json.
++ *
+  * This is a clean branch-level rewrite.  It does NOT inherit the B0 device
+  * implementation, PURE-R012 row-group scheduler, PURE-R009 copy fast path,
+  * PURE-R010 manual tail path, or the R031 multimode architecture.
+@@ -581,6 +602,17 @@
+             }
+ 
+             AscendC::PipeBarrier<PIPE_V>();
++
++            /*
++             * V002: inputX_/inputR_ still hold this tile's gamma/bias and have
++             * just been read.  Release them to MTE2 only now, otherwise the
++             * next loop iteration's x/residual DataCopy can overwrite them
++             * while this tile's vector reads are still in flight.  The
++             * SyncVectorToMte2 above covers the x/residual read; this one
++             * covers the gamma/bias read.  Only multi-tile rows reach a next
++             * iteration, which is why single-tile rows were always correct.
++             */
++            SyncVectorToMte2();
+ 
+             FromFp32(
+                 outLocal,

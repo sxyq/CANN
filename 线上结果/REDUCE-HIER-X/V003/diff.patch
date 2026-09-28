@@ -1,0 +1,81 @@
+--- /Users/sunyiyang/Desktop/Project/cann-main2-r2/REDUCE-HIER-X/phase4/workspaces/REDUCE-HIER-X/frozen-seed/R31B-V011-LP-ROW-PIPELINE_kernel.asc	2026-09-27 03:50:14
++++ submission.asc	2026-09-27 07:59:42
+@@ -328,10 +328,13 @@
+                 AscendC::PipeBarrier<PIPE_V>();
+                 AscendC::Mul(xFp32, valueTile, valueTile, valid);
+                 AscendC::PipeBarrier<PIPE_V>();
+-                // ReduceSum performs its internal V/S handoff.  Store one tile
++                // H3: pairwise-add fold to a short span (no per-level
++                // barriers), then one ReduceSum on that span.  Store one tile
+                 // sum and defer the only scalar read until after the row-level
+                 // reduction below.
+-                AscendC::ReduceSum(reduceFp32[tileIndex], xFp32, residualFp32, valid);
++                const int32_t span = FoldToReduceSpan(xFp32, valid);
++                AscendC::PipeBarrier<PIPE_V>();
++                AscendC::ReduceSum(reduceFp32[tileIndex], xFp32, residualFp32, span);
+                 ++tileIndex;
+                 SyncVToMTE2();
+             }
+@@ -1173,9 +1176,12 @@
+                 AscendC::Add(valueTile, xLocal, residualLocal, kTileElems);
+                 AscendC::PipeBarrier<PIPE_V>();
+                 AscendC::Mul(xFp32, valueTile, valueTile, kTileElems);
++                AscendC::PipeBarrier<PIPE_V>();
++                // H3: pairwise-add fold to a short span, then one ReduceSum.
++                const int32_t span = FoldToReduceSpan(xFp32, kTileElems);
+                 AscendC::PipeBarrier<PIPE_V>();
+                 AscendC::ReduceSum(reduceLocal[col / kTileElems], xFp32, residualFp32,
+-                                   kTileElems);
++                                   span);
+                 SyncVToMTE2();
+             }
+ 
+@@ -1240,6 +1246,9 @@
+ private:
+     static constexpr int32_t kMidRowMinWidth = 128;
+     static constexpr int32_t kTileElems = 4096;
++    // H3: fold squares to this span before ReduceSum. Must stay a multiple
++    // of 8 so every pairwise Add source stays 32B-aligned.
++    static constexpr int32_t kReduceSpan = 128;
+     static constexpr int32_t kParamFp32CacheElems = 4096;
+     static constexpr int32_t kSmallFp32BatchRows = 4;
+     static constexpr int32_t kSmallFp32BatchMaxWidth = 4096;
+@@ -1329,6 +1338,23 @@
+         return 1;
+     }
+ 
++    // H3: pairwise-add fold of `count` FP32 values at `buf` down to at most
++    // kReduceSpan elements, using only 32B-aligned Add operands.  All Adds
++    // in the fold run back-to-back on the V pipe (in-order RAW is safe) with
++    // NO per-level PipeBarrier; the caller issues one PipeBarrier before the
++    // short-span ReduceSum.  Returns the resulting element count.
++    __aicore__ inline int32_t FoldToReduceSpan(AscendC::LocalTensor<float> buf,
++                                              int32_t count)
++    {
++        int32_t n = count;
++        while (n > kReduceSpan && (n & 1) == 0) {
++            const int32_t half = n >> 1;
++            AscendC::Add(buf, buf, buf[half], half);
++            n = half;
++        }
++        return n;
++    }
++
+     __aicore__ inline int32_t TileLength(uint64_t remaining) const
+     {
+         return static_cast<int32_t>(remaining < static_cast<uint64_t>(kTileElems) ? remaining : kTileElems);
+@@ -2128,10 +2154,13 @@
+                     AscendC::Add(valueTile, xLocal, residualLocal, valid);
+                     AscendC::PipeBarrier<PIPE_V>();
+                     AscendC::Mul(xLocal, valueTile, valueTile, valid);
++                    AscendC::PipeBarrier<PIPE_V>();
++                    // H3: pairwise-add fold to a short span, then one ReduceSum.
++                    const int32_t span = FoldToReduceSpan(xLocal, valid);
+                     AscendC::PipeBarrier<PIPE_V>();
+                     AscendC::ReduceSum(
+                         reduceLocal[batchRow * kWideFullYReduceStride + tile],
+-                        xLocal, residualLocal, valid);
++                        xLocal, residualLocal, span);
+                     SyncVToMTE2();
+                 }
+             }

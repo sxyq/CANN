@@ -1,0 +1,39 @@
+{
+  "ROUTE": "VECTOR-MATH-X",
+  "REVISION": "V001",
+  "DIRECT_PARENT": "FROZEN_R31B_V011",
+  "PARENT_SOURCE_SHA": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "PARENT_SCORE": "OFFICIAL_ANCHOR 45.16 (15/15)",
+  "SINGLE_HYPOTHESIS": "VM-H2 VECTOR-DENOMINATOR: move meanSquare = squareSum*invRowWidth+epsilon from scalar to vector (Muls+Adds), then Sqrt. Scalar math 3\u21921 (only the 1.0f/ reciprocal remains). V\u2192S/S\u2192V handoffs 2\u21921. Non-wide paths only.",
+  "CONTEXT_CLASS": "FROZEN_STRONG_BASELINE_VECTOR_MATH",
+  "SOURCE_SHA": "dbe776f9165a86ede9d136604e806d9f5dc0f641ee8e05a26bca1ebe8dd33424",
+  "SOURCE_PATH": "phase4/workspaces/VECTOR-MATH-X/VECTOR-MATH-X-V001_kernel.asc",
+  "BUILD_HOST": "cann-server3:/home/data4t2/lelinfeng/phase4-workspaces/VECTOR-MATH-X",
+  "COMPILE": "PASS (vector_math_x_link RC=0)",
+  "LINK": "PASS (SHA256 b5bc0ad263067efc1c56075aa20c26eab25f9139f821a0187d9a8002afb5a660)",
+  "CORRECTNESS_EXECUTABLE_SHA": "5a75e0fa505f30a0dc312189c3bef1ced82924f4a8b862a2de026efc16a26b10",
+  "CORRECTNESS": "53/54 PASS; 1 FAIL resident_wide_colsplit FP32 D=16384 is PRE_EXISTING_PARENT_FAILURE (identical max_abs 0.44175). All non-wide shapes PASS. FP16/BF16 wide also PASS (wide path untouched).",
+  "CORRECTNESS_DEVICE": "server3 d4",
+  "SINGLE_CHANGE_AUDIT": "PASS",
+  "ARCHITECTURE": "Denominator tail: scalar meanSquare computation replaced with vector Muls(sum,invD)+Adds(eps). Sqrt retained. Scalar reciprocal 1.0f/ retained (Rsqrt is inaccurate on dav-c220). V\u2192S handoffs 2\u21921. Non-wide functions only (Process, NarrowMid, FullRow*, Small*, Batched*). Wide functions untouched.",
+  "ISOLATION": [
+    "One mechanism: scalar meanSquare math \u2192 vector Muls+Adds",
+    "Rsqrt tested and rejected (max_abs 0.007 vs tol 1e-5 \u2014 fast approximate rsqrt)",
+    "Wide-path denominator code byte-identical to parent",
+    "No reduction, scheduling, DMA, dtype, or epilogue-store change"
+  ],
+  "RISKS": [
+    "Scalar reciprocal 1.0f/ remains (only scalar op left in the tail)",
+    "Rsqrt would eliminate it but is too inaccurate on this hardware",
+    "V pass count +1 (Muls+Adds+Sqrt vs Duplicate+Sqrt) \u2014 1-element ops, negligible"
+  ],
+  "DECISION": "CORRECTNESS_PASS_PENDING_TIMING",
+  "NEXT": "Timing on 8x256, 32x256, 2x4096, 8x8192 (row-dense + mid).",
+  "route": "VECTOR-MATH-X",
+  "revision": "V001",
+  "submission_id": "6abab38e694b590c3c447186",
+  "official_score": 44.22,
+  "status": "Pass",
+  "pass_count": 15,
+  "decision": "ROUTE_OFFICIAL_BEST; 44.22 vs champion 45.16 delta -0.94"
+}
