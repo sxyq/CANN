@@ -1,0 +1,39 @@
+{
+ "ROUTE": "R31A",
+ "REVISION": "V026",
+ "DIRECT_PARENT": "R31A-V025",
+ "PARENT_SOURCE_SHA": "1475116735f390b426fc694d45fcdcbc676ed0758ef326d54d8c43d35e16b4fe",
+ "PARENT_SCORE": "LOCAL chain -6.8% vs V016 (D32768)",
+ "SOURCE_SHA": "7f2029e478d7675e02c2e017b0db3eaf33ae5dc0fa478479b340f441ab46bb18",
+ "SOURCE_SHA256": "7f2029e478d7675e02c2e017b0db3eaf33ae5dc0fa478479b340f441ab46bb18",
+ "SINGLE_HYPOTHESIS": "H5 pass-2 parameter staging liveness: release the gamma staging slot after the Mul and the bias staging slot after the Add, and prefetch the next tile's gamma/bias so the MTE2 loads overlap the current tile's Add and Store. Same UB footprint; affine order unchanged.",
+ "CONTEXT_CLASS": "HISTORICAL_EXPLOIT",
+ "WHY_NOT_DUPLICATE": "V025/H4 = pass-1 residual staging; V020 = pass-1 dual-slot (added pair, failed 507035); V021 = pass-2 MTE3 store-drain wait; R31B H1 / STORE-EPILOGUE-X H1 (store drain / blocked writeback) untouched; EPILOGUE-ARITH untouched.",
+ "BUILD": "PASS",
+ "EXECUTABLE_IDENTITY": {
+  "runner_sha256": "7dbde489de951be883fe38d6cbc991800c0451a97931af8ac036c339f0e61f9a",
+  "parent_module_sha256": "96e6b924f73665f3f701ac14cfb3f925afbb1754a259a0a66ba6c2a979fd4eae",
+  "parent_module_note": "rebuilt from V025 source 14751167... per the DIRECT_PARENT rule (OFAT comparison is V025 vs V026)",
+  "candidate_module_sha256": "be7361ae207c58a352b6b43cbb3ea7e343eaeb2bf34579d4209e78f2b0b61303",
+  "candidate_module_note": "harness slot label 'v021' retained so the runner binary is unchanged; content is R31A-V026 (source 7f2029e4...)"
+ },
+ "CORRECTNESS": {
+  "date": "2026-09-29",
+  "device": 4,
+  "D24576": {
+   "parent_V025": "PASS max_abs=3.48268474e-07",
+   "candidate_V026": "PASS max_abs=3.48268474e-07",
+   "rc": 0
+  },
+  "D32768": {
+   "parent_V025": "PASS max_abs=4.83928943e-07",
+   "candidate_V026": "PASS max_abs=4.83928943e-07",
+   "rc": 0
+  },
+  "repeats_D32768": "3 additional runs, all PASS max_abs=4.83928943e-07, RC=0. No intermittent sync failure.",
+  "note": "max_abs matches the parent exactly on both shapes, confirming bit-identical arithmetic. The pass-2 staging-liveness sync split executes correctly with no 507035 across 4 runs.",
+  "result": "PASS"
+ },
+ "STATUS": "BUILD_PASS_CORRECTNESS_PASS_PENDING_MEASUREMENT",
+ "DECISION": "PENDING_MEASUREMENT"
+}
