@@ -1,0 +1,75 @@
+{
+  "route": "COEFF-LOCALITY-X",
+  "revision": "V004",
+  "revision_kind": "PERFORMANCE_SINGLE_HYPOTHESIS",
+  "direct_parent": "FROZEN_R31B_V011",
+  "parent_source_sha": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "parent_score": "45.16",
+  "official_anchor": "45.16",
+  "assigned_hypothesis": "NH-1 (=H3 refined) — generic path full-row parameter preload for single-row multi-tile cores",
+  "single_hypothesis_as_delivered": "Process() cacheParams condition extended from (cacheRow && localRows > 1) to (cacheRow && (localRows > 1 || rowWidth > kTileElems)). Single-row multi-tile generic cores (D in (4096,8192], localRows=1, tileCount=2) now reuse the existing full-row preload block (gammaBuf_/biasBuf_ already allocated at kCacheElems) instead of per-tile Load(gamma/bias) in the output pass. Preload block byte-identical. UB increment 0, tileElems unchanged, MTE2 count unchanged (hoisted off the output-pass critical path).",
+  "single_change_audit": "PASS (one conceptual change: cacheParams eligibility; the preload block, consumer branches, sync placement and store-drain are the existing semantics of the cacheParams=true path, identical to the validated multi-row population)",
+  "context_class": "FROZEN_STRONG_BASELINE_COEFF_LOCALITY",
+  "approval": "MAIN-2 APPROVAL 2026-09-28: NH-1 approved as V004; DIRECT_PARENT=FROZEN_R31B_V011",
+  "source_sha256": "848165b6215922270f43f3d9bf8e27b9107447dd08bb96bbbe8755bc09251d8b",
+  "compile": {
+    "device": "PASS",
+    "toolchain": "cann-server3 / Ascend910B3 / dav-2201 / CANN 8.5.0.alpha002",
+    "cmake_rc": 0, "obj_rc": 0, "link_rc": 0, "probe_rc": 0,
+    "log": "本地实验/COEFF-LOCALITY-X/V004/support/compile.log"
+  },
+  "link": {
+    "full_link": "PASS", "parent_probe": "PASS", "candidate_probe": "PASS",
+    "ref_parent_probe": "PASS", "ref_candidate_probe": "PASS"
+  },
+  "identity": {
+    "local_sha": "848165b6215922270f43f3d9bf8e27b9107447dd08bb96bbbe8755bc09251d8b",
+    "remote_sha": "848165b6215922270f43f3d9bf8e27b9107447dd08bb96bbbe8755bc09251d8b",
+    "match": true
+  },
+  "executable_sha_full_link": "2c7a800f66f5d88edb05ff73e47a5fa3a83dda85312f039d87fb8c77621fcce1",
+  "correctness": {
+    "verdict": "PASS",
+    "device_id": 4,
+    "summary_tsv": "本地实验/COEFF-LOCALITY-X/V004/support/correctness-summary.tsv",
+    "shapes_total": 18,
+    "note": "Candidate matches parent per-shape exactly. Both fail 1x16384/1x32768 FP32 on this runner's double-precision golden (exit=3) — the known parent shared-golden issue. Those are wide-path shapes untouched by this diff; identical failure on both sides confirms the wide path is unchanged. All other 16 shapes PASS both with identical max_abs."
+  },
+  "measurement": {
+    "status": "COMPLETE_3_ROUNDS",
+    "rounds": [
+      "R1: d4, warmup=45 samples=41, sb blocks=2, pairs=6, shapes 1x8192/1x6144/2x8192/3x6144 + ctrl 1x4096/1x32768",
+      "R2: d5, warmup=45 samples=41, sb blocks=2, pairs=8, shapes 1x8192/1x6144/2x8192 + ctrl 1x4096/1x32768",
+      "R3: d4, warmup=60 samples=81, sb blocks=3, pairs=8, shapes 1x6144/1x8192 + ctrl 1x32768"
+    ],
+    "results_dir": "本地实验/COEFF-LOCALITY-X/V004/support/",
+    "same_binary_R3_best": {
+      "1x6144_fp32": "PASS both (P MAD/med 0.098 drift 0.062; C MAD/med 0.083 drift -0.004)",
+      "1x8192_fp32": "P PASS; C FAIL (MAD/med 0.103)",
+      "1x32768_fp32_ctrl": "PASS both (P 0.024; C 0.029)"
+    },
+    "paired_clean_medians": {
+      "1x6144_fp32": "R1 -4.83% (4/4 favC), R2 -10.22% (5/6), R3 -4.25% (6/8) — pooled 15/18 favC",
+      "1x8192_fp32": "R1 -4.35% (5/5), R2 -0.52% (3/3), R3 -0.68% (4/7) — pooled 12/15",
+      "2x8192_fp32": "R1 +1.23% (2/1), R2 -4.25% (5/7)",
+      "3x6144_fp32": "R1 -1.54% (3/3)",
+      "ctrl_1x32768_wide_untouched": "R1 -1.14% (3/2), R2 +1.03% (4/3), R3 -2.77% (5/6) — pooled 11/18 favC",
+      "ctrl_1x4096_narrowmid_untouched": "R1 -5.99% (4/1), R2 +4.40% (5/2)"
+    },
+    "confounder": "The 1x32768 control (identical code path in both binaries) shows -2.77% in R3 with 5/6 favC — a binary-wide candidate-favoring apparatus bias. 1x6144's excess over that control in the same run is only ~1.5%.",
+    "falsification_check": "DECLARATION falsification: if 1x8192 clean |Δ| <= control bias, descriptor hoist is not material. R2/R3 1x8192 at -0.5%/-0.7% vs control bias up to 2.77% → 1x8192 FALSIFIED. 1x6144 keeps a residual signal not cleanly separable from apparatus bias."
+  },
+  "local_verdict": "NEEDS_ONE_MORE_LOCAL",
+  "local_verdict_reason": "Direction is candidate-favoring on the claimed band (1x6144 stable across 3 rounds, 15/18 clean pairs), but the co-primary shape 1x8192 is falsified (null in R2/R3, at or inside control bias) and the only fully-qualified round shows just ~1.5% excess over a control that itself swings candidate-favoring. Differences fall in the apparatus-bias band. Per protocol: keep V004 as CURRENT_CANDIDATE, do not stack new changes. However, with 3 rounds already spent and only a 1x6144 residual that cannot be separated from binary-wide bias, the lane-level reading is 'no material benefit' → LANE fact package written; recommend LANE_NEEDS_PLANNING_REVIEW unless a null-binary control round (parent-rebuild vs parent) is requested to settle the bias question.",
+  "files": [
+    "本地实验/COEFF-LOCALITY-X/V004/DECLARATION.md",
+    "本地实验/COEFF-LOCALITY-X/V004/submission.asc",
+    "本地实验/COEFF-LOCALITY-X/V004/submission.sha256",
+    "本地实验/COEFF-LOCALITY-X/V004/diff.patch",
+    "本地实验/COEFF-LOCALITY-X/V004/source-meta.json",
+    "本地实验/COEFF-LOCALITY-X/V004/local-result.json",
+    "本地实验/COEFF-LOCALITY-X/V004/SUMMARY.md",
+    "本地实验/COEFF-LOCALITY-X/V004/LANE-FACTS.md",
+    "本地实验/COEFF-LOCALITY-X/V004/support/"
+  ]
+}
