@@ -2,9 +2,56 @@
   "route": "WIDE-X-FRESH4",
   "revision": "CURRENT",
   "parent_revision": null,
-  "compile": "NOT_RECORDED",
+  "source_sha256": "bc4608dcb1028b61de50fc8a74d4a72661945c02c3caccb8b60dd543bdf6677c",
+  "compile": "FAIL",
   "probes": [],
-  "load_quality": "UNKNOWN",
-  "decision": "NEEDS_LOCAL_SCREEN",
-  "notes": "scheduler.tsv records DRAFT and NOT_SUBMITTED. No local build or probe result is recorded."
+  "load_quality": "NOT_APPLICABLE_BUILD_FAILED",
+
+  "NON_TIMING_STATUS_20260928": {
+    "SOURCE_SHA256": "bc4608dcb1028b61de50fc8a74d4a72661945c02c3caccb8b60dd543bdf6677c",
+    "SERVER3_SOURCE_SHA256": "bc4608dcb1028b61de50fc8a74d4a72661945c02c3caccb8b60dd543bdf6677c",
+    "SOURCE_SHA_VERIFIED": true,
+    "SOURCE_SHA_LOCATIONS": [
+      "phase4/local/WIDE-X-FRESH4/CURRENT/submission.asc",
+      "server3 /home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/src/submission.asc",
+      "server3 /home/data4t2/lelinfeng/phase4-workspaces/WIDE-X-FRESH4/wide_x_fresh4_CURRENT.asc",
+      "server3 /home/data4t2/lelinfeng/phase4-workspaces/WIDE-X-FRESH4/BUILD-FIX-001-parent-control/wide_x_fresh4.asc"
+    ],
+    "BUILD": "FAIL",
+    "COMPILE_RC": 2,
+    "LINK_RC": 2,
+    "BUILD_COMMAND": "cann-server3 /home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT: cmake --build build-retry --target device (RC=2), --target submission (RC=2), --target full_link (RC=2); CANN 8.5.0.alpha002; toolchain bisheng/Clang 15.0.5",
+    "BUILD_LOGS": {
+      "device": "logs/device.log",
+      "submission": "logs/submission.log",
+      "link": "logs/link.log",
+      "cfg": "logs/cfg.log",
+      "rc_summary": "logs/rc-summary.txt",
+      "source_sha": "logs/source-sha.txt",
+      "prior_parent_control": "phase4/local/WIDE-X-FRESH4/BUILD-FIX-001/logs/parent-control-build-attempt-2.log",
+      "server3_path": "/home/data4t2/lelinfeng/phase4-review-repro/WIDE-X-FRESH4-CURRENT/logs-retry/"
+    },
+    "BUILD_FAILURE_DETAIL": "Kernel source defects on the exact CURRENT SHA: (1) submission.asc:109:41 error: no matching function for call to 'sqrtf' (host sqrtf not available in kernel code; independently reproduced in BUILD-FIX-001 parent-control build of the same SHA with a clean ASC+CXX project). (2) submission.asc:130:25 and 147:17 error: non-constant-expression cannot be narrowed from 'unsigned long' to 'uint32_t' in DataCopyPad initializer list (26 error lines in the submission target log). Separately the review-repro harness CMakeLists has a TARGET_OBJECTS generator-expression config issue (CFG_RC=1) and the device target hits 'bisheng: error: cannot compile ASC file and CCE file together'; those are harness-side, but the kernel source defects above are independent and sufficient for BUILD_FAILED. BUILD-FIX-001 exists precisely to repair these defects (host sqrtf -> AscendC::Sqrt, DataCopyPad byte lengths narrowed to uint32_t) and is recorded as BUILD_FIX_ACCEPTED_AS_ROUTE_BASELINE.",
+    "EXECUTABLE_SHA256": null,
+    "CORRECTNESS": "NOT_RUN",
+    "CORRECTNESS_BLOCKER": "Build fails; no executable is produced.",
+    "TIMING": "NOT_STARTED",
+    "TIMING_BLOCKER": "Build fails; correctness not run; performance timing is not permitted. Local perf screen vs parent is also moot: CURRENT has PARENT_UNRESOLVED (no direct parent source) and BUILD-FIX-001 already recorded the parent as SOURCE_LINEAGE_ONLY_PARENT_UNBUILDABLE_FOR_PERFORMANCE_COMPARISON.",
+    "LOCAL_VERDICT": "BUILD_FAILED",
+    "READY_FOR_SAME_BINARY": false,
+    "NOT_READY_REASON": "COMPILE_RC=2 and LINK_RC=2 on the exact delivered source SHA; no executable, no correctness, no timing.",
+    "DEVICE_WINDOW": "COMPILE_ONLY_ON_CANN_SERVER3; HBM 90% across cards, AICore 0-30% observational (compile rule: FREE_HBM >= 100MB is sufficient; no device lease required for compile)",
+    "MISSING_EVIDENCE": "none for terminal verdict; correctness and timing not run because build failed",
+    "LOCAL_BEST_UPDATED": false,
+    "ONLINE_WORTHY": "NO",
+    "TERMINAL": true
+  },
+
+  "DECISION": "BUILD_FAILED",
+  "DECISION_HISTORY": [
+    {"date": "2026-09-23", "decision": "NEEDS_LOCAL_SCREEN", "note": "scheduler recorded DRAFT/NOT_SUBMITTED with no local build or probe result"},
+    {"date": "2026-09-28", "decision": "BUILD_FAILED", "note": "repaired from evidence: clean rebuild on cann-server3 of the exact SHA bc4608dc... gives COMPILE_RC=2 (sqrtf not found at submission.asc:109, DataCopyPad narrowing at 130/147) and LINK_RC=2; independently reproduced by BUILD-FIX-001 parent-control build"}
+  ],
+
+  "notes": "Terminal BUILD_FAILED. The historical NEEDS_LOCAL_SCREEN assumed a buildable candidate; the exact delivered source does not compile. BUILD-FIX-001 is the accepted build-fix baseline descendant and carries the repaired source SHA 5d0ee011...; performance work should continue from BUILD-FIX-001 (and its child V001), not from CURRENT."
 }
