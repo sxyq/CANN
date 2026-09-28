@@ -1,0 +1,38 @@
+{
+  "route": "ASYNC-OVERLAP-CHAMPION-X",
+  "revision": "V004",
+  "direct_parent": "R31B-V011",
+  "parent_source_sha": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "parent_score": 45.16,
+  "official_anchor": 45.16,
+  "single_hypothesis": "W1 FullCache inter-pass prologue (hoist pass-2 tile-0 param load to overlap invRms tail)",
+  "context_class": "CHAMPION_PIPELINE_SCHEDULE",
+  "local_sha256": "1a0b6e5841ef75c162e52ea01ac43b07889152bacec3bbbf8173fdcd087908fc",
+  "compile_rc": "0/0",
+  "link_rc": "0/0",
+  "correctness_status": "PASS_WITH_NONDET_PATH",
+  "correctness_detail": "Controls (NarrowMid/LP/generic) OUTHASH bit-identical to parent. FullCache FP32 wide is parent-nondeterministic (MULTIROW UB-GAP-CLUE); max_abs same band 0.10-0.13 on both. Bugfix applied: first draft overwrote invRms scratch before GetValue (max_abs 1.85) — fixed by relocating Duplicate/Sqrt to residualBuf_ and loading after GetValue.",
+  "single_change_audit": "PASS",
+  "measurement_protocol": "runner_ref.inc warmup=45 samples=21 device-event; same-binary 2 blocks; 6 interleaved P/C pairs; device 4; 2026-09-28",
+  "same_binary_results": {
+    "128x16384_fp32": {"parent": "PASS (0.019/0.034 drift 1.007)", "candidate": "PASS (0.012/0.010 drift 1.013)", "qualification": "QUALIFIED"},
+    "64x16384_fp32": {"parent": "PASS", "candidate": "FAIL (drift 1.579)", "qualification": "NOT_QUALIFIED"},
+    "64x32768_fp32": {"parent": "PASS", "candidate": "FAIL (drift 1.678)", "qualification": "NOT_QUALIFIED"},
+    "note": "128x16384 fp32 kernel ~23 us — the only fully qualified shape"
+  },
+  "paired_128x16384_fp32_x6": {
+    "clean_pairs": [
+      {"pair": 1, "delta_med_pct": -1.26, "delta_p10_pct": -1.02, "dir": "V004"},
+      {"pair": 2, "delta_med_pct": -2.55, "delta_p10_pct": -2.88, "dir": "V004"},
+      {"pair": 3, "delta_med_pct": 3.84, "delta_p10_pct": 1.72, "dir": "parent"},
+      {"pair": 4, "delta_med_pct": 1.80, "delta_p10_pct": 2.03, "dir": "parent"},
+      {"pair": 5, "delta_med_pct": 1.41, "delta_p10_pct": 2.45, "dir": "parent"},
+      {"pair": 6, "delta_med_pct": -4.87, "delta_p10_pct": -3.59, "dir": "V004"}
+    ],
+    "clean_direction": "3 favor V004, 3 favor parent — EXACTLY MIXED",
+    "magnitude": "1-5%"
+  },
+  "local_verdict": "NEEDS_ONE_MORE_LOCAL",
+  "local_verdict_reason": "128x16384 fp32 (kernel ~23 us, both SB qualified) shows exactly 3/6 favor V004 and 3/6 favor parent across clean interleaved pairs; p10 likewise 3/3. Magnitude 1-5% sits inside the noise band. W1's overlap window on FullCache is smaller than H1 on LP (invRms uses xBuf_ as scratch until the last GetValue, so the early load only covers Duplicate/Sqrt + last scalar tail). No stable improvement. Do not advance LOCAL_BEST.",
+  "local_best_after_revision": "NOT_ADVANCED (parent chain root retained)"
+}
