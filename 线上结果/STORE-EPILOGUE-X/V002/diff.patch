@@ -1,0 +1,96 @@
+2173a2174,2180
+>             // STORE-H2B-GATED predicate: merge row runs only when the row has
+>             // at least 4 output tiles (V001 showed the deferred-writeback cost
+>             // exceeds the descriptor saving below that) and every row's UB run
+>             // start is 32B-aligned (rowWidth*sizeof(float) % 32 == 0 implies
+>             // batchRow*rowWidth floats are aligned for all rows).
+>             const bool mergeRowRuns =
+>                 tileCount >= 4 && (rowWidth % static_cast<uint64_t>(8)) == 0;
+2208,2217c2215,2240
+<                 for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
+<                     const bool useFirst = (batchRow & 1) == 0;
+<                     const AscendC::TEventID storeReady =
+<                         useFirst ? storeReady0 : storeReady1;
+<                     const AscendC::TEventID storeRelease =
+<                         useFirst ? storeRelease0 : storeRelease1;
+<                     if (useFirst ? storeOutstanding0 : storeOutstanding1) {
+<                         AscendC::WaitFlag<AscendC::HardEvent::MTE3_V>(storeRelease);
+<                         if (useFirst) {
+<                             storeOutstanding0 = false;
+---
+>                 if (!mergeRowRuns) {
+>                     // STORE-H2B-GATED off (tileCount < 4 or unaligned row run
+>                     // start): keep the parent's per-tile writeback for this
+>                     // batch.
+>                     for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
+>                         const bool useFirst = (batchRow & 1) == 0;
+>                         const AscendC::TEventID storeReady =
+>                             useFirst ? storeReady0 : storeReady1;
+>                         const AscendC::TEventID storeRelease =
+>                             useFirst ? storeRelease0 : storeRelease1;
+>                         if (useFirst ? storeOutstanding0 : storeOutstanding1) {
+>                             AscendC::WaitFlag<AscendC::HardEvent::MTE3_V>(storeRelease);
+>                             if (useFirst) {
+>                                 storeOutstanding0 = false;
+>                             } else {
+>                                 storeOutstanding1 = false;
+>                             }
+>                         }
+>                         AscendC::SetFlag<AscendC::HardEvent::V_MTE3>(storeReady);
+>                         AscendC::WaitFlag<AscendC::HardEvent::V_MTE3>(storeReady);
+>                         Store(outputGm_,
+>                               (batchBegin + static_cast<uint64_t>(batchRow)) * rowWidth + col,
+>                               valueLocal[batchRow * rowWidth + col], valid);
+>                         AscendC::SetFlag<AscendC::HardEvent::MTE3_V>(storeRelease);
+>                         if (useFirst) {
+>                             storeOutstanding0 = true;
+2219c2242
+<                             storeOutstanding1 = false;
+---
+>                             storeOutstanding1 = true;
+2222,2229c2245,2261
+<                     AscendC::SetFlag<AscendC::HardEvent::V_MTE3>(storeReady);
+<                     AscendC::WaitFlag<AscendC::HardEvent::V_MTE3>(storeReady);
+<                     Store(outputGm_,
+<                           (batchBegin + static_cast<uint64_t>(batchRow)) * rowWidth + col,
+<                           valueLocal[batchRow * rowWidth + col], valid);
+<                     AscendC::SetFlag<AscendC::HardEvent::MTE3_V>(storeRelease);
+<                     if (useFirst) {
+<                         storeOutstanding0 = true;
+---
+>                 }
+>             }
+>             if (mergeRowRuns) {
+>             // STORE-H2B-GATED: each row's finished tiles form one contiguous UB
+>             // run (valueLocal[batchRow*rowWidth, +rowWidth)); one writeback per
+>             // row replaces the per-tile stores.  The 2-deep ring discipline
+>             // below is unchanged — one ring entry per row instead of per tile.
+>             for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
+>                 const bool useFirst = (batchRow & 1) == 0;
+>                 const AscendC::TEventID storeReady =
+>                     useFirst ? storeReady0 : storeReady1;
+>                 const AscendC::TEventID storeRelease =
+>                     useFirst ? storeRelease0 : storeRelease1;
+>                 if (useFirst ? storeOutstanding0 : storeOutstanding1) {
+>                     AscendC::WaitFlag<AscendC::HardEvent::MTE3_V>(storeRelease);
+>                     if (useFirst) {
+>                         storeOutstanding0 = false;
+2231c2263
+<                         storeOutstanding1 = true;
+---
+>                         storeOutstanding1 = false;
+2233a2266,2277
+>                 AscendC::SetFlag<AscendC::HardEvent::V_MTE3>(storeReady);
+>                 AscendC::WaitFlag<AscendC::HardEvent::V_MTE3>(storeReady);
+>                 Store(outputGm_,
+>                       (batchBegin + static_cast<uint64_t>(batchRow)) * rowWidth,
+>                       valueLocal[batchRow * rowWidth],
+>                       static_cast<int32_t>(rowWidth));
+>                 AscendC::SetFlag<AscendC::HardEvent::MTE3_V>(storeRelease);
+>                 if (useFirst) {
+>                     storeOutstanding0 = true;
+>                 } else {
+>                     storeOutstanding1 = true;
+>                 }
+2234a2279
+>             }

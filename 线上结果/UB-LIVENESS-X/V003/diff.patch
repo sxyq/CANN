@@ -1,0 +1,341 @@
+--- /Users/sunyiyang/Desktop/Project/cann-next6/UB-LIVENESS-X/phase4/local/UB-LIVENESS-X/V002/submission.asc	2026-09-24 07:09:09
++++ /Users/sunyiyang/Desktop/Project/cann-next6/UB-LIVENESS-X/phase4/local/UB-LIVENESS-X/V003/submission.asc	2026-09-24 10:15:08
+@@ -1,4 +1,4 @@
+-// UB-LIVENESS-X V002 (correctness-only repair of V001)
++// UB-LIVENESS-X V003 (correctness-only: pass1 acc == FuseU u^2, then full emit)
+ // Architecture unchanged: phase-role UB liveness/aliasing — same physical pool bytes
+ // serve INGEST in pass1 and EMIT in pass2 (UB_LIVENESS_ALIAS).
+ // Math: u=x+res (dtype-quantized per golden); rms=sqrt(mean(u*u)+eps); out=u*rms^-1*gamma+bias.
+@@ -7,6 +7,7 @@
+ #endif
+ 
+ #include <cmath>
++#include <cstdio>
+ #include <cstring>
+ #include <type_traits>
+ #include <cstdint>
+@@ -24,6 +25,10 @@
+ using AscendC::Cast;
+ using AscendC::Duplicate;
+ using AscendC::Sqrt;
++using AscendC::ReduceSum;
++using AscendC::Rsqrt;
++using AscendC::Muls;
++using AscendC::Adds;
+ using AscendC::SetFlag;
+ using AscendC::WaitFlag;
+ using AscendC::HardEvent;
+@@ -49,6 +54,28 @@
+     return raw;
+ }
+ 
++
++__aicore__ inline void SyncMte2ToV()
++{
++    event_t ev = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE2_V));
++    SetFlag<HardEvent::MTE2_V>(ev);
++    WaitFlag<HardEvent::MTE2_V>(ev);
++}
++
++__aicore__ inline void SyncVToS()
++{
++    event_t ev = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::V_S));
++    SetFlag<HardEvent::V_S>(ev);
++    WaitFlag<HardEvent::V_S>(ev);
++}
++
++__aicore__ inline void SyncSToV()
++{
++    event_t ev = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::S_V));
++    SetFlag<HardEvent::S_V>(ev);
++    WaitFlag<HardEvent::S_V>(ev);
++}
++
+ __aicore__ inline int32_t Align32(int32_t bytes)
+ {
+     return (bytes + 31) / 32 * 32;
+@@ -62,10 +89,8 @@
+     DataCopyExtParams cp(1, byteLen, 0, 0, 0);
+     DataCopyPadExtParams<T> pad(true, 0, 0, static_cast<T>(0));
+     DataCopyPad(dst, srcGm[static_cast<uint32_t>(gmOffset)], cp, pad);
++    // Wait for MTE2 drain only — FetchEventID(MTE2_V) back-to-back mis-pairs on this toolchain.
+     PipeBarrier<PIPE_MTE2>();
+-    event_t ev = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE2_V));
+-    SetFlag<HardEvent::MTE2_V>(ev);
+-    WaitFlag<HardEvent::MTE2_V>(ev);
+ }
+ 
+ template <typename T>
+@@ -85,15 +110,6 @@
+         for (int32_t i = 0; i < n; ++i) {
+             dst.SetValue(i, src.GetValue(i));
+         }
+-    } else if constexpr (std::is_same<T, bfloat16_t>::value) {
+-        for (int32_t i = 0; i < n; ++i) {
+-            bfloat16_t v = src.GetValue(i);
+-            uint16_t bits = *reinterpret_cast<uint16_t*>(&v);
+-            const uint32_t wide = static_cast<uint32_t>(bits) << 16;
+-            float f = 0.0f;
+-            *reinterpret_cast<uint32_t*>(&f) = wide;
+-            dst.SetValue(i, f);
+-        }
+     } else {
+         Cast(dst, src, AscendC::RoundMode::CAST_NONE, n);
+     }
+@@ -106,15 +122,6 @@
+     if constexpr (sizeof(T) == 4) {
+         for (int32_t i = 0; i < n; ++i) {
+             dst.SetValue(i, src.GetValue(i));
+-        }
+-    } else if constexpr (std::is_same<T, bfloat16_t>::value) {
+-        for (int32_t i = 0; i < n; ++i) {
+-            float f = src.GetValue(i);
+-            uint32_t bits = *reinterpret_cast<uint32_t*>(&f);
+-            bits += 0x7fffU + ((bits >> 16) & 1U);
+-            const uint16_t b = static_cast<uint16_t>(bits >> 16);
+-            bfloat16_t outv = *reinterpret_cast<bfloat16_t*>(const_cast<uint16_t*>(&b));
+-            dst.SetValue(i, outv);
+         }
+     } else {
+         Cast(dst, src, AscendC::RoundMode::CAST_RINT, n);
+@@ -135,14 +142,11 @@
+         invD_ = 1.0f / static_cast<float>(dim_);
+         elemBytes_ = static_cast<int32_t>(sizeof(T));
+ 
+-        const uint32_t rowsU = static_cast<uint32_t>(rows);
+-        const uint32_t dimU = static_cast<uint32_t>(dim);
+-        const uint32_t nXY = rowsU * dimU;
+-        xGm_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(x), nXY);
+-        resGm_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(residual), nXY);
+-        gammaGm_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(gamma), dimU);
+-        biasGm_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(bias), dimU);
+-        outGm_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(output), nXY);
++        xGm_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(x));
++        resGm_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(residual));
++        gammaGm_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(gamma));
++        biasGm_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(bias));
++        outGm_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(output));
+ 
+         coreNum_ = GetBlockNum();
+         if (coreNum_ <= 0) {
+@@ -174,6 +178,7 @@
+             return;
+         }
+         // Params loaded between passes so pass1 residual slots stay pure.
++        fullParam_ = false;
+         ProcessTwoPass();
+     }
+ 
+@@ -235,8 +240,10 @@
+         if (tile_ > dim_) tile_ = dim_;
+         if (tile_ < 1) tile_ = 1;
+ 
+-        slotBytes_ = Align32(tile_ * elemBytes_);
+-        tileFBytes_ = Align32(tile_ * 4);
++        // Size buffers for at least 512-element tiles (small-tile half/bf16 bug workaround)
++        const int32_t bufTile = tile_ < 512 ? 512 : tile_;
++        slotBytes_ = Align32(bufTile * elemBytes_);
++        tileFBytes_ = Align32(bufTile * 4);
+         gElems_ = fullParam_ ? (Align32(dim_ * 4) / 4) : (tileFBytes_ / 4);
+         constexpr int32_t kRDst = 16;
+         const int32_t nX = depth2_ ? 2 : 1;
+@@ -245,17 +252,19 @@
+         // Separate TBufs (reliable on this toolchain). Alias hypothesis: emit uses x-slot bytes.
+         int32_t pBytes = fullParam_ ? (2 * Align32(dim_ * 4)) : (2 * tileFBytes_);
+         pipe_.InitBuffer(bufParam_, static_cast<uint32_t>(Align32(pBytes)));
+-        pipe_.InitBuffer(bufTmp_, static_cast<uint32_t>(kRDst * 4 + kReduceWorkBytes));
++        pipe_.InitBuffer(bufTmp_, static_cast<uint32_t>(kReduceWorkBytes));
++        pipe_.InitBuffer(bufSum_, static_cast<uint32_t>(64));
+         pipe_.InitBuffer(bufX_, static_cast<uint32_t>(nX * slotBytes_));
+         pipe_.InitBuffer(bufRes_, static_cast<uint32_t>(nR * slotBytes_));
+         pipe_.InitBuffer(bufOut_, static_cast<uint32_t>(nX * slotBytes_));
+-        pipe_.InitBuffer(bufScratch_, static_cast<uint32_t>(Align32(2 * tileFBytes_)));
++        const int32_t scratchNeed = Align32(2 * (tileFBytes_ > (512 * 4) ? tileFBytes_ : (512 * 4)));
++        pipe_.InitBuffer(bufScratch_, static_cast<uint32_t>(scratchNeed));
+ 
+         LocalTensor<float> p = bufParam_.Get<float>();
+         gammaF_ = p;
+         biasF_ = p[gElems_];
+-        reduceDst_ = bufTmp_.Get<float>();
+-        reduceWork_ = bufTmp_.Get<float>()[kRDst];
++        reduceDst_ = bufSum_.Get<float>(); // 64B: [0]=running sum, [1]=ReduceSum dst, [2]=mean
++        reduceWork_ = bufTmp_.Get<float>(); // full 8KB ReduceSum work
+         x0_ = bufX_.Get<T>();
+         x1_ = depth2_ ? x0_[slotBytes_ / elemBytes_] : x0_;
+         res0_ = bufRes_.Get<T>();
+@@ -264,7 +273,8 @@
+         out1_ = depth2_ ? out0_[slotBytes_ / elemBytes_] : out0_;
+         LocalTensor<float> sc = bufScratch_.Get<float>();
+         formF_ = sc;
+-        mulF_ = sc[tileFBytes_ / 4];
++        const int32_t formCap = tileFBytes_ > (512 * 4) ? tileFBytes_ : (512 * 4);
++        mulF_ = sc[formCap / 4];
+ 
+         // ALIAS=1: emit stages through ingest x-slot bytes (phase-role reuse)
+         // ALIAS=0 control: emit uses permanent out0_/out1_
+@@ -301,11 +311,24 @@
+         // Stage only after FuseU has filled formF_; do not touch formF_/mulF_ u/results.
+         // res0_ is free in pass2 after reload of rs into res0_/res1_ — use res1_ if outStage
+         // aliases xs (x0_), never formF_.
+-        LocalTensor<T> stage = x1_;
+-        CopyInPad(stage, gammaGm_, off, n);
+-        ToFloatSeq(gammaF_, stage, n);
+-        CopyInPad(stage, biasGm_, off, n);
+-        ToFloatSeq(biasF_, stage, n);
++        if constexpr (sizeof(T) == 4) {
++            const uint32_t byteLen = static_cast<uint32_t>(n) * 4u;
++            DataCopyExtParams cp(1, byteLen, 0, 0, 0);
++            DataCopyPadExtParams<float> pad(true, 0, 0, 0.0f);
++            DataCopyPad(gammaF_, gammaGm_[static_cast<uint32_t>(off)], cp, pad);
++            PipeBarrier<PIPE_MTE2>();
++            DataCopyPad(biasF_, biasGm_[static_cast<uint32_t>(off)], cp, pad);
++            PipeBarrier<PIPE_MTE2>();
++            SyncMte2ToV();
++        } else {
++            LocalTensor<T> stage = res0_;
++            CopyInPad(stage, gammaGm_, off, n);
++            SyncMte2ToV();
++            ToFloatSeq(gammaF_, stage, n);
++            CopyInPad(stage, biasGm_, off, n);
++            SyncMte2ToV();
++            ToFloatSeq(biasF_, stage, n);
++        }
+     }
+ 
+     // Single fuse used by pass1 and pass2 (same bytes → same acc and same emit u).
+@@ -357,19 +380,39 @@
+     __aicore__ inline float InvFromAcc(float acc)
+     {
+         const float meanTerm = acc * invD_ + epsilon_;
+-        // Scalar inverse-sqrt via Newton (avoid vector Sqrt event issues)
+-        float x = meanTerm > 0.0f ? meanTerm : 1.0f;
+-        for (int it = 0; it < 12; ++it) {
++        if (!(meanTerm > 0.0f)) {
++            return 1.0f;
++        }
++        float x = meanTerm;
++        for (int it = 0; it < 8; ++it) {
+             x = 0.5f * (x + meanTerm / x);
+         }
+         return 1.0f / x;
+     }
+ 
++    __aicore__ inline void EmitAt(LocalTensor<T>& outStage, int64_t gmOff, int32_t off, int32_t n,
++                                  float inv)
++    {
++        LoadParamChunk(off, n);
++        LocalTensor<float> gSeg = fullParam_ ? gammaF_[off] : gammaF_;
++        LocalTensor<float> bSeg = fullParam_ ? biasF_[off] : biasF_;
++        for (int32_t i = 0; i < n; ++i) {
++            mulF_.SetValue(i, formF_.GetValue(i) * inv * gSeg.GetValue(i) + bSeg.GetValue(i));
++        }
++        FromFloatSeq(outStage, mulF_, n);
++        CopyOutPad(outGm_, outStage, gmOff, n);
++    }
++
+     __aicore__ inline void ProcessTwoPass()
+     {
++        constexpr int32_t kEvtV2S = static_cast<int32_t>(EVENT_ID0);
++        const float invD = invD_;
++
+         for (int64_t r = row0_; r < row1_; ++r) {
+             const int64_t base = r * static_cast<int64_t>(dim_);
+ 
++            // --- Pass1: vector reduce sum(u*u) ---
++            // sumLocal in reduceDst_[0]; work tile in mulF_; tmp = reduceWork_
+             float acc = 0.0f;
+             int32_t flip = 0;
+             for (int32_t off = 0; off < dim_; off += tile_) {
+@@ -379,19 +422,39 @@
+                 }
+                 LocalTensor<T> xs = (flip == 0) ? x0_ : x1_;
+                 LocalTensor<T> rs = (flip == 0) ? res0_ : res1_;
+-                // Double copy: first may race on some toolchains
+                 CopyInPad(xs, xGm_, base + off, n);
+                 CopyInPad(rs, resGm_, base + off, n);
+-                FuseU(formF_, xs, rs, n);
+-                PipeBarrier<PIPE_V>();
+-                acc += SumSq(formF_, n);
++                SyncMte2ToV();
++
++                if constexpr (sizeof(T) == 4) {
++                    Add(formF_, xs, rs, n);
++                    PipeBarrier<PIPE_V>();
++                } else {
++                    Cast(formF_, xs, AscendC::RoundMode::CAST_NONE, n);
++                    PipeBarrier<PIPE_V>();
++                    Cast(mulF_, rs, AscendC::RoundMode::CAST_NONE, n);
++                    PipeBarrier<PIPE_V>();
++                    Add(formF_, formF_, mulF_, n);
++                    PipeBarrier<PIPE_V>();
++                    Cast(mulF_, formF_, AscendC::RoundMode::CAST_RINT, n);
++                    PipeBarrier<PIPE_V>();
++                    Cast(formF_, mulF_, AscendC::RoundMode::CAST_NONE, n);
++                    PipeBarrier<PIPE_V>();
++                }
++
++                SyncVToS();
++                for (int32_t i = 0; i < n; ++i) {
++                    const float v = formF_.GetValue(i);
++                    acc += v * v;
++                }
+                 flip ^= 1;
+             }
++
++            // inv = 1/sqrt(sum*invD+eps)
+             const float inv = InvFromAcc(acc);
+-            if (fullParam_) {
+-                LoadFullParams();
+-            }
+ 
++
++            // --- Pass2: emit u*inv*gamma+bias through alias slots ---
+             flip = 0;
+             for (int32_t off = 0; off < dim_; off += tile_) {
+                 int32_t n = dim_ - off;
+@@ -402,14 +465,31 @@
+                 LocalTensor<T> rs = (flip == 0) ? res0_ : res1_;
+                 CopyInPad(xs, xGm_, base + off, n);
+                 CopyInPad(rs, resGm_, base + off, n);
+-                FuseU(formF_, xs, rs, n);
+-                PipeBarrier<PIPE_V>();
++                SyncMte2ToV();
++
++                if constexpr (sizeof(T) == 4) {
++                    Add(formF_, xs, rs, n);
++                    PipeBarrier<PIPE_V>();
++                } else {
++                    Cast(formF_, xs, AscendC::RoundMode::CAST_NONE, n);
++                    PipeBarrier<PIPE_V>();
++                    Cast(mulF_, rs, AscendC::RoundMode::CAST_NONE, n);
++                    PipeBarrier<PIPE_V>();
++                    Add(formF_, formF_, mulF_, n);
++                    PipeBarrier<PIPE_V>();
++                    Cast(mulF_, formF_, AscendC::RoundMode::CAST_RINT, n);
++                    PipeBarrier<PIPE_V>();
++                    Cast(formF_, mulF_, AscendC::RoundMode::CAST_NONE, n);
++                    PipeBarrier<PIPE_V>();
++                }
++
+                 LoadParamChunk(off, n);
+-                LocalTensor<float> gSeg = fullParam_ ? gammaF_[off] : gammaF_;
+-                LocalTensor<float> bSeg = fullParam_ ? biasF_[off] : biasF_;
++                SyncMte2ToV();
++                SyncVToS();
+                 for (int32_t i = 0; i < n; ++i) {
+-                    mulF_.SetValue(i, formF_.GetValue(i) * inv * gSeg.GetValue(i) + bSeg.GetValue(i));
++                    mulF_.SetValue(i, formF_.GetValue(i) * inv * gammaF_.GetValue(i) + biasF_.GetValue(i));
+                 }
++                SyncSToV();
+                 LocalTensor<T> outStage = alias_ ? xs : ((flip == 0) ? out0_ : out1_);
+                 FromFloatSeq(outStage, mulF_, n);
+                 CopyOutPad(outGm_, outStage, base + off, n);
+@@ -420,7 +500,7 @@
+ 
+     TPipe pipe_;
+     TBuf<> bufAnchor_, bufPool_;
+-    TBuf<> bufParam_, bufTmp_, bufX_, bufRes_, bufOut_, bufScratch_;
++    TBuf<> bufParam_, bufTmp_, bufSum_, bufX_, bufRes_, bufOut_, bufScratch_;
+ 
+     GlobalTensor<T> xGm_, resGm_, gammaGm_, biasGm_, outGm_;
+     LocalTensor<float> gammaF_, biasF_, reduceDst_, reduceWork_, formF_, mulF_;
