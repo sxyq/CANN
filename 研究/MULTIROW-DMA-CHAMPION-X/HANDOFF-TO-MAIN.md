@@ -25,7 +25,7 @@ PHASE: 第一阶段（TRACK_B_ONLY）— 完成，STOP，等 Main-2 批准
 
 ## 推荐 V001（待批）
 
-H1 STRIDE-MULTIROW-WIDE-IN：wide 低精度 full-y 路径输入侧，同 tile 列窗跨 B 行一条 stride 多行 `DataCopy`（满 tile 才合并，尾 tile 回退）；dispatch、所有权、y 驻留、Store、gamma/bias、tile 宽度全部不动。主靶 FP16/BF16 wide（B≥2 家族）。
+H1 STRIDE-MULTIROW-WIDE-IN：wide 低精度 full-y 路径输入侧，同 tile 列窗跨 B 行一条 stride 多行 `DataCopy`（满 tile 才合并，尾 tile 回退）；dispatch、所有权、y 驻留、Store、gamma/bias、tile 宽度全部不动。主靶 FP16/BF16 wide（B≥2 的形状组）。
 
 备选：H3 ALIGNED-DATACOPY-FORM（Pad→DataCopy 对齐替换，diff 更小、信息增量弱）。
 后续桶：H2 generic 多 tile 同机制；H4 FP32 wide 变体（先推演 B≥2 存在性）。

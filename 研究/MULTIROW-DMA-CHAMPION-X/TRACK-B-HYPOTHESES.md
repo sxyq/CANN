@@ -16,7 +16,7 @@ SEED: `线上结果/R31B/V011/submission.asc`（exact Champion source）
 ## H1 — STRIDE-MULTIROW-WIDE-IN：wide full-y 输入侧 stride 多行 tile 列窗搬运（推荐 V001）
 
 - **MECHANISM**：在 `ProcessWideLowPrecision` pass-1（V011 LP 行流水）中，把 unit 从 (row, tile) 改为 (tile, B 行)：同一 tile 列窗跨 `batchRows` 行的 x/residual 各用一条 stride 多行事务发出——`DataCopy(DataCopyExtParams(nBursts=B, blockLen=tileWidth*sizeof(T), srcStride=(rowWidth-tileWidth)*sizeof(T), dstStride=0))` 落入 B×tile 连续暂存。只处理满 tile（blockLen 与 srcStride 均 32B 对齐）；尾 tile 回退现有单 burst。数学序、逐 (行,tile) 的 Add/Mul/ReduceSum 写槽、full-y 驻留、参数加载、`Store`、所有 dispatch 门槛字节级语义不变。
-- **BOTTLENECK**：wide 路径输入侧 MTE2 命令数与事件对数。现状每 batch 发 `2*batchRows*tileCount` 条单 burst + 同量级事件对；B≥2 时 stride 形态把它降到 `2*tileCount` 条。官方分差最大段 idx 14（ratio 4.40，time 16486.8µs vs best 3750.1µs）与 idx 15（9637.5µs 大时长）在 wide 大形状家族；冠军 V011 的收益来自 (行,tile) 流 2-deep 流水，但发事务条数本身未减。
+- **BOTTLENECK**：wide 路径输入侧 MTE2 命令数与事件对数。现状每 batch 发 `2*batchRows*tileCount` 条单 burst + 同量级事件对；B≥2 时 stride 形态把它降到 `2*tileCount` 条。官方分差最大段 idx 14（ratio 4.40，time 16486.8µs vs best 3750.1µs）与 idx 15（9637.5µs 大时长）在 wide 大形状段；冠军 V011 的收益来自 (行,tile) 流 2-deep 流水，但发事务条数本身未减。
 - **EXPECTED_SHAPES**：FP16/BF16 wide（D>8192）且 `localRows≥2`、`wideFullYRows_≥2` 的形状——FP16 y 存 half，UB 预算下 B 最容易到 2–8（如 8×16384、16×16384、8×32768、12×12288 一类 rows×D 探针）。B=1 的形状（部分 FP32/BF16 大 D）预期中性。mid/tiny/CONTIG/BATCH 路径形状预期不动。
 - **WHY_IT_MAY_HELP**：(1) MTE2 发事务条数与 SetFlag/WaitFlag 对数按 B 倍下降，V011 流水的软件开销变浅；(2) 多行 burst 在同一 tile 列窗上天然 strided，正是 idea-pool R015 未做的「true multi-row stride DataCopy」；(3) 不与 V011 流水竞争——unit 变粗后 2-deep 仍可在 tile-group 之间重叠；(4) T14/T15 大时长段的每命令固定成本被摊薄。
 - **WHY_IT_MAY_FAIL**：(1) B=1 时机制退化为现状（无收益、无损失）；(2) 2-deep ping-pong 与 B×tile 暂存的 UB 量相乘（2B tile），可能挤压 y 预算或逼 B 下降——必须先做 UB 数字核对，若 `ChooseWideFullYRows` 语义被牵动则要么缩 B、要么本假设不成立；(3) 若瓶颈在 V 端 ReduceSum/事件等待而不是命令条数，减发事务不动中位数；(4) 尾 tile 回退使 D 非 tile 整除的形状收益变小；(5) 历史上 nBursts>1 + pad 整行曾 RUNTIME_ERROR（R015），本假设靠 32B 对齐 + 非 Pad `DataCopy` + 尾部回退规避，但 NPU 实测前不能排除 stride 事务本身的驱动坑。
@@ -42,9 +42,9 @@ SEED: `线上结果/R31B/V011/submission.asc`（exact Champion source）
 - **UB/CORE/DMA_IMPACT**：暂存增量比 wide 小（tile=4096、B 可取 2–4）；CORE 不动；DMA 输入条数下降。
 - **SYNC_IMPACT**：事件对减少；预取相关事件序需保持。
 - **PRECISION_RISK**：低（数学序不变）。
-- **DUPLICATE_CHECK**：同 H1 的排除逻辑；vs 冠军 CONTIG（D≤2048 flat）— 门槛不重叠。注意：本假设与 H1 是同一机制家族的不同形状桶，**不得与 H1 同 Revision**。
+- **DUPLICATE_CHECK**：同 H1 的排除逻辑；vs 冠军 CONTIG（D≤2048 flat）— 门槛不重叠。注意：本假设与 H1 是同一机制类型的不同形状桶，**不得与 H1 同 Revision**。
 - **MINIMAL_OFAT_DIFF**：generic 路径 pass-1 的 load 发事务段 + 同一 stride 助手复用；其余不动。
-- **EXPECTED_LOCAL_PROBES**：D=5120/6144/8192 一族的 P/C；H1 未收口前不启动。
+- **EXPECTED_LOCAL_PROBES**：D=5120/6144/8192 这组的 P/C；H1 未收口前不启动。
 - **CLASSIFICATION**：**NEEDS_MORE_EVIDENCE（排在 H1 之后，同机制第二桶）**
 
 ---
@@ -69,7 +69,7 @@ SEED: `线上结果/R31B/V011/submission.asc`（exact Champion source）
 
 ## H4 — STRIDE-MULTIROW-WIDE-IN-FP32：H1 机制的 FP32 wide 限定变体
 
-- **MECHANISM**：与 H1 完全同一形态，但只改 `ProcessWideFp32FullCacheRows`（FP32 wide，官方分差最大段 idx 14 疑似所在家族）。
+- **MECHANISM**：与 H1 完全同一形态，但只改 `ProcessWideFp32FullCacheRows`（FP32 wide，官方分差最大段 idx 14 疑似所在段）。
 - **BOTTLENECK**：同 H1；该路径更简单（无 V011 ping-pong，双层循环 batchRow×tile），diff 更干净。
 - **EXPECTED_SHAPES**：FP32 wide 且 `ChooseWideFullYRows≥2` 的 D 档（需先推演：FP32 y=4B/行，D=12288 附近 B=2 可能成立；D=16384+ 常 B=1）。
 - **WHY_IT_MAY_HELP**：(1) 路径结构简单，机制归因干净；(2) 直指 idx 14 这种 FP32-wide 抵抗型段（冠军注释：T14 resisted every FP32-wide change）。
@@ -97,11 +97,11 @@ SEED: `线上结果/R31B/V011/submission.asc`（exact Champion source）
 | CONTEXT_CLASS | FROZEN_STRONG_BASELINE_TRANSPLANT |
 | SINGLE_HYPOTHESIS | **H1 STRIDE-MULTIROW-WIDE-IN**：wide 低精度 full-y 路径输入侧，同 tile 列窗跨 B 行用一条 stride 多行 `DataCopy`（nBursts=B, blockLen=tileBytes, srcStride=(rowWidth-tile)*elem）替代逐行单 burst；满 tile 才合并，尾 tile 回退；其余全部不动 |
 | WHY_NOT_DUPLICATE | 不等同 contiguous multi-row batch ownership（无 ownership/batch 行选择器，不搬连续整行）；不等同 full-y multi-row residency（y 驻留与 `ChooseWideFullYRows` 语义原样）；不等同 row_copy microkernel（无独立搬运内核，完整 AddRmsNormBias 数学保留）；冠军 CONTIG flat 多行与 V011 2-deep 流水都不含 nBursts>1/stride 事务；dispatch 门槛不动，不与 mode-selection 重叠 |
-| EXPECTED_SHAPES | FP16/BF16 wide D>8192 且 localRows≥2、wideFullYRows_≥2（主靶 8×16384、16×16384、8×32768、12×12288 一族）；B=1 形状为阴性对照；mid/small/CONTIG/BATCH 回归必须不动 |
+| EXPECTED_SHAPES | FP16/BF16 wide D>8192 且 localRows≥2、wideFullYRows_≥2（主靶 8×16384、16×16384、8×32768、12×12288 这组探针）；B=1 形状为阴性对照；mid/small/CONTIG/BATCH 回归必须不动 |
 | OFAT | 一个概念变化：输入侧 tile 列窗发事务形态。不碰 Store、gamma/bias、dispatch、所有权、tile 宽度 |
 | 风险前置 | 实现前先做 UB 数字推演（B×tile 暂存 vs y 预算）；若推演显示必须改 `ChooseWideFullYRows` 语义 → 停下报 Main，不得自行扩成 full-y 改动 |
 
-选择 H1 的理由：它是去重结论点名的空白方向（true multi-row stride DataCopy）在冠军 hot path 上的最小落点；FP16 wide 是 `wideFullYRows_≥2` 最成立的家族（y=half）；V011 刚在此家族验证过收益方向；H3 作备选（更小但信息增量弱）；H2/H4 是同机制的第二桶/变体，须等 H1 结论。
+选择 H1 的理由：它是去重结论点名的空白方向（true multi-row stride DataCopy）在冠军 hot path 上的最小落点；FP16 wide 是 `wideFullYRows_≥2` 最成立的形状组（y=half）；V011 刚在此形状组验证过收益方向；H3 作备选（更小但信息增量弱）；H2/H4 是同机制的第二桶/变体，须等 H1 结论。
 
 ## 停止条件
 
