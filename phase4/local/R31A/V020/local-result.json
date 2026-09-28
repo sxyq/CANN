@@ -1,0 +1,41 @@
+{
+  "ROUTE": "R31A",
+  "REVISION": "V020",
+  "DIRECT_PARENT": "R31A-V016",
+  "PARENT_SOURCE_SHA": "dd13093823c885e785a650abff4863827e652eb8607ad0621a96eb31b6764fa0",
+  "PARENT_SCORE": 45.00,
+  "SINGLE_HYPOTHESIS": "In the R31A-V016 FP32 wide CachedRows path, keep kWideFp32CachedTileElems at 7680 and change only the RMS first pass to use the existing two-slot MTE2/V event-pipelined staging pattern, preloading the next x/residual tile while vector math reduces the current tile; dispatch, output pass, arithmetic, and all non-FP32 paths remain unchanged.",
+  "CONTEXT_CLASS": "HISTORICAL_EXPLOIT",
+  "FILES_CHANGED": [
+    "phase4/local/R31A/V020/source-meta.json: declaration",
+    "phase4/local/R31A/V020/submission.asc: FP32 CachedRows RMS first-pass staging only",
+    "phase4/workspaces/R31A/CMakeLists.txt: V020 build target wiring",
+    "phase4/workspaces/R31A/compile_adapter_v020.asc",
+    "phase4/workspaces/R31A/compile_adapter_v020.cpp",
+    "phase4/workspaces/R31A/R31A-V020-device.cpp",
+    "phase4/local/R31A/V020/support/*: auxiliary correctness harness",
+    "phase4/local/R31A/V020/local-result.json: handoff record"
+  ],
+  "SOURCE_SHA": "3249033942141c24df66f7e97ffa96ffe193f8eec55e992f57fac2948fd70243",
+  "COMPILE": "PASS: server3 direct route CMake; build log /home/data4t2/lelinfeng/phase4-worktrees/R31A/V020-direct/compile-v020-server3.log",
+  "LINK": "PASS: server3 direct ld.lld; /home/data4t2/lelinfeng/phase4-worktrees/R31A/V020-direct/build/R31A-V020-device.alink and R31A-V020-submission.alink; log /home/data4t2/lelinfeng/phase4-worktrees/R31A/V020-direct/link-v020-server3.log",
+  "CORRECTNESS": {
+    "candidate_target": "FAIL: server3 device=4, rows=2, D=32768, blocks=1, aclrtSynchronizeStream status=507035, observed_at=2026-09-24T04:32:41+0800",
+    "candidate_control": "NOT_RUN: stopped immediately after target failure; D=24576 was not executed",
+    "parent_reference": "R31A-V016 target D=32768 previously PASS on devices 4 and 5 with max_abs=4.83928943e-07"
+  },
+  "LOCAL_PROBES": "NOT_RUN: target correctness failed before timing",
+  "LOCAL_DELTA": "N/A: no latency measurement was started",
+  "LOAD_QUALITY": {
+    "recorded_at_local": "2026-09-24T00:56:20+0800",
+    "report_source": "Main dispatch observation",
+    "observation": "All 8 NPUs have existing VLLM/python processes; AICore ~31-49% on devices 0-3 and 7, 0% on 4-6, HBM heavily occupied on all devices.",
+    "probe_classification": "LOAD_CONTAMINATED",
+    "interpretation": "Do not interpret small latency deltas as improvement under this load; no latency probe was run."
+  },
+  "ARCHITECTURE_NOVELTY": "NONE: uses existing DAV-2201 MTE2/V event primitives; no new architecture or operator-interface mechanism.",
+  "RISKS": "Target FP32 correctness fails with status 507035 before the control case; event lifecycle, staging aliasing, and split partial-sum behavior remain unvalidated. V020 must not be used as a parent.",
+  "DECISION": "LOCAL_REJECTED",
+  "NEXT_CANDIDATE_HYPOTHESIS": "None; Main must select a new hypothesis from R31A-V016.",
+  "CLEANUP": "NONE: no files or server3 build directories deleted or cleaned."
+}
