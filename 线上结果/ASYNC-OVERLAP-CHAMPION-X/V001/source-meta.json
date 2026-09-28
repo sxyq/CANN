@@ -1,0 +1,41 @@
+{
+  "route": "ASYNC-OVERLAP-CHAMPION-X",
+  "revision": "V001",
+  "direct_parent": "R31B-V011",
+  "parent_source_sha": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "parent_score": 45.16,
+  "single_hypothesis": "H1 Inter-pass prologue param prefetch: hoist pass-2 tile-0 gamma/bias MTE2 issue above the invRms scalar loop in ProcessWideLowPrecision so parameter DMA overlaps invRms; drop the now-redundant SyncVToMTE2 that only ordered the old late load.",
+  "context_class": "CHAMPION_PIPELINE_SCHEDULE",
+  "source_commit": "7ea5e481 (branch m2/async-overlap-champion; source introduced in 772b754)",
+  "source_path": "线上结果/ASYNC-OVERLAP-CHAMPION-X/V001/submission.asc",
+  "local_sha256": "0fc71e8e62e39ed3b894b7e8fb8cabb6372f802c0a4c342eeb246629f8e4efe4",
+  "remote_sha256": "PENDING_SUBMIT",
+  "official_score": "PENDING_SUBMIT",
+  "decision": "PENDING_JUDGE",
+  "submission_id": "PENDING_SUBMIT",
+  "single_change_audit": "PASS",
+  "correctness_status": "PASS_VS_PARENT",
+  "local_verdict": "LOCAL_ACCEPTED",
+  "local_best": true,
+  "official_anchor": 45.16,
+  "online_recommendation": "WORTHY",
+  "online_decision": "PENDING_PLANNING",
+  "file_lines": 3560,
+  "file_bytes": 190430,
+  "local_sidecar_match": "PASS (LOCAL_SHA == SIDECAR_SHA)",
+  "changed_surface": "ProcessWideLowPrecision only: (1) AllocEventIDs prd0/prd1/prel0/prel1 + gBase/bBase + first gamma/bias Load + SetFlag MTE2_V moved from after invRms to before invRms; (2) removed SyncVToMTE2() between invRms and pass-2.",
+  "unchanged": [
+    "all other process paths (FullCache, NarrowMid, small, batched, generic)",
+    "queue depths and UB buffer sizes",
+    "reduction / invRms arithmetic",
+    "dtype dispatch",
+    "core mapping",
+    "store schedule inside pass-2 inner loop"
+  ],
+  "measurement_summary": {
+    "128x16384_fp16": "LOCAL_ACCEPTED 3/3 clean pairs favor V001, p10 4/4",
+    "128x16384_bf16": "same-direction 2/3 clean median, p10 4/4",
+    "96x16384_fp16": "same-direction 3/4 clean median, p10 4/4",
+    "cross_shape": "p10 12/12 favor V001; clean median 8/11 favor V001; typical gain 1-3%"
+  }
+}
