@@ -1,0 +1,44 @@
+--- 线上结果/R31B/V011/submission.asc	2026-09-29 04:22:44
++++ 研究/MULTIROW-DMA-CHAMPION-X/workspace/submission.asc	2026-09-29 06:01:49
+@@ -3368,18 +3368,34 @@
+                                 const AscendC::GlobalTensor<T>& src,
+                                 uint64_t offset, int32_t count)
+     {
+-        const AscendC::DataCopyExtParams copyParams(
+-            1, static_cast<uint32_t>(count * static_cast<int32_t>(sizeof(T))), 0, 0, 0);
+-        const AscendC::DataCopyPadExtParams<T> padParams;
+-        AscendC::DataCopyPad(dst, src[offset], copyParams, padParams);
++        const int32_t bytes = count * static_cast<int32_t>(sizeof(T));
++        if ((bytes & 31) == 0) {
++            // V002: 32B-multiple transfers use non-Pad DataCopy
++            // (DataCopyParams blockLen is in 32-byte units).
++            const AscendC::DataCopyParams copyParams(
++                1, static_cast<uint16_t>(bytes / 32), 0, 0);
++            AscendC::DataCopy(dst, src[offset], copyParams);
++        } else {
++            const AscendC::DataCopyExtParams copyParams(
++                1, static_cast<uint32_t>(bytes), 0, 0, 0);
++            const AscendC::DataCopyPadExtParams<T> padParams;
++            AscendC::DataCopyPad(dst, src[offset], copyParams, padParams);
++        }
+     }
+ 
+     __aicore__ inline void Store(const AscendC::GlobalTensor<T>& dst, uint64_t offset,
+                                  const AscendC::LocalTensor<T>& src, int32_t count)
+     {
+-        const AscendC::DataCopyExtParams copyParams(
+-            1, static_cast<uint32_t>(count * static_cast<int32_t>(sizeof(T))), 0, 0, 0);
+-        AscendC::DataCopyPad(dst[offset], src, copyParams);
++        const int32_t bytes = count * static_cast<int32_t>(sizeof(T));
++        if ((bytes & 31) == 0) {
++            const AscendC::DataCopyParams copyParams(
++                1, static_cast<uint16_t>(bytes / 32), 0, 0);
++            AscendC::DataCopy(dst[offset], src, copyParams);
++        } else {
++            const AscendC::DataCopyExtParams copyParams(
++                1, static_cast<uint32_t>(bytes), 0, 0, 0);
++            AscendC::DataCopyPad(dst[offset], src, copyParams);
++        }
+     }
+ 
+     __aicore__ inline void ToFloat(const AscendC::LocalTensor<float>& dst,
