@@ -49,3 +49,14 @@
 ## 风险注记（NPU 实测前保留）
 
 Pad/非 Pad 可能同微码——若 P/C 落在同代码噪声底（≈±5pp）内，是机制中性结论，不是测量失败。主探针仍用 48×16384 FP16（V001 同场），便于与 V001 的 -8% 对照读数。
+
+---
+
+## V002 执行记录（修改后补记）
+
+- API 探针 PASS（blockLen=32B 单位，精确传输成立），未触发停机条款。见 `support/API-PROBE-RESULT.md`。
+- 实现：仅 `Load`/`Store` 各一个对齐分支（32B 整数倍 → 非 Pad `DataCopy`+`DataCopyParams`；否则原 Pad）。SOURCE_SHA=`2c23ce32752498a96031d410bb90a5437b2046798584c948a0b77a5963ee5da6`。编译/链接 PASS。
+- Correctness：20/22 形状对逐位一致；仅 FP32 wide 两形状不同（已登记的父本非确定路径，V002 未触及）。
+- Same-binary 三形状 PASS（drift≤5.8%）。
+- P/C：主形状 8 对 6/8 为正、median −1.95%；BF16 4 对 3/4 为正、median −3.2%；同代码对照散布 −7.1%..+4.2%（1 对污染留证）。
+- **LOCAL_VERDICT = NEEDS_ONE_MORE_LOCAL**：方向温和为正但幅度全部落在噪声带内；不构成 LOCAL_ACCEPTED，也不是 LOCAL_REJECTED。Candidate 保留，不叠加新变化。
