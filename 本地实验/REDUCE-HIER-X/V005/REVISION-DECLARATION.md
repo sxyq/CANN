@@ -36,7 +36,7 @@ mask 设置与工具链 `ReduceSumImpl` 在 dav-2201 上完全同款：`set_mask
 （含非 2 幂尾块）与父版逐指令一致。helper `VectorWholeReduceSum(dst, src, count)` 是
 该 primitive 的唯一落点。
 
-### 落点（只这三个站点族）
+### 落点（只这三个站点）
 
 | 站点 | 函数 | 替换的调用 |
 |---|---|---|
