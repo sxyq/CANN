@@ -303,11 +303,11 @@
   }
  },
  "FOLLOW_UP_PROBES": "D24576 on d7: Parent same-binary PASS, then 4 interleaved Parent/Candidate device-event blocks completed. Pair deltas have mixed direction; LOCAL_VERDICT=NEEDS_ONE_MORE_LOCAL. D32768 remains unqualified.",
- "STATUS": "D24576 R15 SAME_BINARY_PASS; PAIRED_TIMING_VALID; LOCAL_VERDICT=NEEDS_ONE_MORE_LOCAL; D32768_NOT_QUALIFIED",
+ "STATUS": "V021_SOLIDIFIED_NEEDS_ONE_MORE_LOCAL; D32768_FIRST_QUALIFIED_PC_MIXED; D24576_PATH_MISMATCHED_TO_BATCH; NO_LOCAL_BEST_ADVANCE",
  "ARCHITECTURE_NOVELTY": "NONE: existing MTE3/V synchronization primitive with a changed wait placement only.",
  "RISKS": "D24576 paired deltas vary in direction and scale, so no performance claim is established. D32768 remains unqualified. The deferred MTE3 completion relies on each value tile remaining untouched until the row-level wait.",
  "DECISION": "NEEDS_ONE_MORE_LOCAL",
- "NEXT_CANDIDATE_HYPOTHESIS": "None declared; await Main Review. Any later revision must return to R31A-V016.",
+ "NEXT_CANDIDATE_HYPOTHESIS": "See 研究/R31A/next-hypotheses.md (4 OFAT hypotheses from R31A self-lineage). Next performance revision parents from V016 (dd130938...), not V021.",
  "CLEANUP": "NONE: no files or server3 build directories deleted or cleaned.",
  "NON_TIMING_STATUS_20260927": {
   "SOURCE_SHA256": "4f5bfc319b72d1f0bcfd453bc92e80ac64216719898757292daf1aa1b73b6063",
@@ -675,5 +675,93 @@
   "LOCAL_BEST_UPDATED": false,
   "ONLINE_WORTHY": "NO",
   "NEXT_ACTION": "One more independent local D24576 (and ideally D32768) interleaved attempt before any Local Best change; alternatively record MEASUREMENT_BLOCKED with reason if no device window."
+ },
+ "TIMING_RUN_20260928": {
+  "DATE": "2026-09-28",
+  "LEASE_NOTE": "RUN_BY_ROUTE_AGENT_M1_R31A; lease entries pending MAIN-1 sync to 调度/服务器设备使用.tsv (shared ledger is MAIN-1 responsibility). Admission conditions verified: live HBM < 100% and no conflicting lease on d4/d5; STORE-EPILOGUE-X R2 lease was on d6 only.",
+  "SOURCE_IDENTITY": "PASS; runner r31a_paired_probe SHA 7dbde489de951be883fe38d6cbc991800c0451a97931af8ac036c339f0e61f9a; parent module 11d7a2cb60912ce23b05a768c9076abcf2c513ad8b0844cc062d158082a4d5ea; candidate module 9bacd8cd72b8db5c6b8a1574ce199c674b18bc2bcf858cfb91ade29f71d24674; unchanged from UNIFIED_VALIDATION_20260928.",
+  "ATTEMPT_D5_D24576": {
+   "attempt_id": "M1-R31A-V021-D5-SB/PC-20260928T203106Z",
+   "device": 5,
+   "shape": "rows=2 D=24576 blocks=1 (NOTE: this shape takes the wideFp32BatchPath, NOT ProcessWideFp32CachedRows; see PATH_DISPATCH_FINDING)",
+   "same_binary": {
+    "result": "PASS",
+    "warmups": 45,
+    "samples": "21x2",
+    "block_medians_us": [
+     14.54,
+     14.86
+    ],
+    "mad_over_median": [
+     0.013755,
+     0.051144
+    ],
+    "block_drift": 0.021769
+   },
+   "paired_blocks": 4,
+   "samples_per_version_per_block": 11,
+   "delta_percent": [
+    -1.058197,
+    -0.67386,
+    0.703234,
+    0.142451
+   ],
+   "delta_us": [
+    -0.159999,
+    -0.100001,
+    0.1,
+    0.02
+   ],
+   "direction": "2_NEGATIVE_2_POSITIVE",
+   "median_delta_percent": -0.265705,
+   "correctness": "runner built-in assertion PASS both versions",
+   "local_verdict": "NEEDS_ONE_MORE_LOCAL",
+   "evidence": "本地实验/R31A/V021/support/results/M1-R31A-V021-D5-SB-20260928T203106Z-* and M1-R31A-V021-D5-PC--d24576-paired-*"
+  },
+  "ATTEMPT_D4_D32768": {
+   "attempt_id": "M1-R31A-V021-D4-SB/PC-20260928T203106Z",
+   "device": 4,
+   "shape": "rows=2 D=32768 blocks=1 (this shape DOES take ProcessWideFp32CachedRows; the only shape that exercises V021's SyncMTE3ToV placement change)",
+   "HISTORIC_FIRST": "First-ever qualified same-binary + interleaved P/C for D=32768 on any device. All prior D=32768 attempts (D3, D7) were parent-only same-binary NOT_QUALIFIED.",
+   "same_binary": {
+    "result": "PASS",
+    "warmups": 45,
+    "samples": "21x2",
+    "block_medians_us": [
+     18.72,
+     19.04
+    ],
+    "mad_over_median": [
+     0.013889,
+     0.029412
+    ],
+    "block_drift": 0.016949
+   },
+   "paired_blocks": 4,
+   "samples_per_version_per_block": 11,
+   "delta_percent": [
+    -1.997897,
+    0.426898,
+    0.637614,
+    -0.947361
+   ],
+   "delta_us": [
+    -0.38,
+    0.080001,
+    0.119999,
+    -0.179999
+   ],
+   "direction": "2_NEGATIVE_2_POSITIVE",
+   "median_delta_percent": -0.260232,
+   "correctness": "runner built-in assertion PASS both versions",
+   "local_verdict": "NEEDS_ONE_MORE_LOCAL",
+   "evidence": "本地实验/R31A/V021/support/results/M1-R31A-V021-D4-SB--d32768-parent-* and M1-R31A-V021-D4-PC--d32768-paired-*"
+  },
+  "PATH_DISPATCH_FINDING": "CRITICAL MEASUREMENT-INTERPRETATION FACT: the paired probe runs rows=2 blocks=1, so localRows=2. The V016 dispatch sends this to wideFp32BatchPath_ iff localRows>=2 && rowWidth<32768. Therefore D=24576 exercises ProcessWideFp32Batched, NOT ProcessWideFp32CachedRows where V021 changed SyncMTE3ToV placement. All five historical D=24576 paired attempts (R8/R9/R15/A2/this) never executed V021's changed code path; their mixed deltas are batch-path noise, not a test of the V021 hypothesis. Only D=32768 exercises V021. The single D=32768 paired set (today) shows mixed signs and median -0.26% within noise.",
+  "COMBINED_READ": "V021's hypothesis (defer MTE3-to-V wait to end-of-row in the FP32 CachedRows output loop) is now tested on its only exercising shape (D=32768) with one qualified 4-block interleaved P/C set: signs mixed 2/2, median -0.26%. Prior D=24576 data is path-mismatched and cannot support any V021 performance claim. No stable gain and no stable regression is established. The deferred-MTE3 mechanism is within measurement noise on D=32768.",
+  "LOCAL_VERDICT": "NEEDS_ONE_MORE_LOCAL",
+  "LOCAL_BEST_UPDATED": false,
+  "ONLINE_WORTHY": "NO",
+  "NEXT_ACTION": "V021 solidified as NEEDS_ONE_MORE_LOCAL. Do NOT use V021 as parent for the next performance revision (it is not LOCAL_ACCEPTED). The next performance revision must parent from V016. If Main requests one more V021 measurement, it must be D=32768 (the only exercising shape); further D=24576 runs cannot test V021 and only add batch-path noise data."
  }
 }
