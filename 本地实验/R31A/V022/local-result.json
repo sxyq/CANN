@@ -256,6 +256,48 @@
   "OFFICIAL_BEST": "V016 / 45.00 (unchanged)",
   "ONLINE_WORTHY": "NO",
   "NEXT_ACTION": "V022 is LOCAL_REJECTED. Per the Local Best chain rule, the next independent performance revision returns to the prior anchor: parent must be V016 (dd130938...), since LOCAL_BEST is NONE and V021 is NEEDS_ONE_MORE_LOCAL (not a legal parent either). Do not build V023 on V022.",
-  "EVIDENCE_DIR": "本地实验/R31A/V022/support/results/"
+  "EVIDENCE_DIR": "本地实验/R31A/V022/support/results/",
+  "PAIRED_ROWS3_D24576_BATCH_CONTROL": {
+   "device": 6,
+   "shape": "rows=3 D=24576 blocks=1 (kRows=3 runner variant)",
+   "runner_sha256": "5731ed08fe4cd053ff4dca34f1acee217c24bd9e1f423b7db138d3cd6686ca20",
+   "runner_note": "kRows=3 variant of the paired harness; parent and candidate modules unchanged (11d7a2cb... and 1270710a...). Samples from this runner are NOT mixed with the kRows=2 runner samples.",
+   "path_shift": "NONE: localRows=3 >= 3 so both V016 and V022 enter wideFp32BatchPath. This is the 3+ row same-code control MAIN-1 requested to confirm the batch path body is untouched.",
+   "same_binary": "PASS (block medians 18.58/18.90 us, MAD 0.0140/0.0127, drift 0.0171)",
+   "parent_median_us": [
+    19.24,
+    19.22,
+    18.74,
+    18.76
+   ],
+   "candidate_median_us": [
+    19.44,
+    19.44,
+    18.86,
+    18.78
+   ],
+   "delta_percent": [
+    1.039509,
+    1.144645,
+    0.640336,
+    0.106616
+   ],
+   "delta_us": [
+    0.200002,
+    0.220001,
+    0.119999,
+    0.020001
+   ],
+   "direction": "4_POSITIVE_0_NEGATIVE",
+   "median_delta_percent": 0.839922,
+   "interpretation": "Same-code shape: both versions run the identical batch path. The small consistent positive (median +0.84%) sits at the edge of the measured noise band (D=32768 same-code spread about 1%) and confirms (a) the batch path is not functionally changed by V022, and (b) this host shows a slight measurement bias where the candidate slot reads marginally slower even on identical code. The D=24576 path-shifting signal (+4.33%) is therefore even more clearly a real path effect on top of this small bias.",
+   "evidence": "本地实验/R31A/V022/support/results/M1-R31A-V022-R3-D6-*"
+  },
+  "NOISE_BAND_SUMMARY": {
+   "same_code_D32768_kRows2": "median -0.10%, range -0.75% to +1.18%",
+   "same_code_rows3_D24576_batch": "median +0.84%, range +0.11% to +1.14%",
+   "combined_read": "Same-code noise band on this host/protocol is about plus or minus 1%, with a slight candidate-slot bias up to +1%. The path-shifting D=24576 result (+4.33%, 4/4 same sign) is well outside this band."
+  },
+  "MAIN1_CONTROL_REQUEST_STATUS": "COMPLETE: 3+ row shape (rows=3 D=24576) measured as the batch-path same-code control. Batch path confirmed unchanged."
  }
 }
