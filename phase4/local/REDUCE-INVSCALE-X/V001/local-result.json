@@ -151,9 +151,39 @@
 
   "decisions": {
     "correctness": "FAIL",
-    "handoff": "LOCAL_REJECTED",
-    "rationale": "Correctness fails the full legal domain, so this revision cannot be handed off as ONLINE_CANDIDATE. The failure is inherited from the direct parent's reduction path and is reproduced identically by both variants, so the R019 normalization change itself is not the cause. The local performance direction favors V001 but sits below the noise floor."
+    "handoff": "CORRECTNESS_FAILED",
+    "rationale": "Correctness fails the full legal domain (D>6144 within 64..32768), so this revision is terminal CORRECTNESS_FAILED. The failure is inherited from the direct parent's reduction path and is reproduced identically by both variants, so the R019 normalization change itself is not the cause. The local performance direction favors V001 but sits below the noise floor and is not used for the verdict."
   },
+
+  "NON_TIMING_STATUS_20260928": {
+    "SOURCE_SHA256": "f017935d840bea5a81268d9fe137f1567df0982f4f71718f65f4672ad8da8023",
+    "SERVER3_SOURCE_SHA256": "f017935d840bea5a81268d9fe137f1567df0982f4f71718f65f4672ad8da8023",
+    "SOURCE_SHA_VERIFIED": true,
+    "BUILD": "PASS",
+    "COMPILE_RC": 0,
+    "LINK_RC": 0,
+    "BUILD_COMMAND": "ASC CMake on cann-server3 (Ascend910B3 / dav-2201 / CANN 8.5.0.alpha002): reduce_invscale_full_link + reduce_invscale_{parent,v001}_probe",
+    "BUILD_LOG": "phase4/local/REDUCE-INVSCALE-X/V001/support/compile.log",
+    "CORRECTNESS": "FAIL",
+    "CORRECTNESS_DETAIL": "PASS for D<=6144 (10 shapes: FP32/FP16/BF16, rows 1 and 3, aligned and unaligned D; max_abs up to 5.4e-07). FAIL for D>6144 (6 shapes: D=8192/16384/32768 FP32 and D=8192 FP16/BF16) with parent and V001 failing identically or near-identically (bad counts 2048..26623, max_abs 4.9..5.9). Full legal domain D in 64..32768 NOT covered. Root cause localized to the inherited R006 reduction path (partial collector destinations not 32-byte aligned for multi-tile rows); confidence HIGH; not introduced by V001.",
+    "CORRECTNESS_LOG": "phase4/local/REDUCE-INVSCALE-X/V001/support/results/correctness-summary.tsv",
+    "TIMING": "NOT_USABLE_FOR_VERDICT",
+    "TIMING_BLOCKER": "Correctness FAIL on D>6144 is terminal. Historical 4-pair probes on D=6144 (largest passing shape) are direction-consistent (3 faster, 1 tie) but NOT_ABOVE_NOISE under a partially contaminated load window (91% HBM resident VLLM); the -17.72% median figure is not a measured win and is not used for the verdict.",
+    "LOCAL_VERDICT": "CORRECTNESS_FAILED",
+    "READY_FOR_SAME_BINARY": false,
+    "NOT_READY_REASON": "Correctness fails the full legal domain D in 64..32768 (D>6144).",
+    "DEVICE_WINDOW": "HISTORICAL_PROBE_WINDOW_d6_HBM_91_PERCENT_VLLM_RESIDENT; AICore 0% on probe device; sibling NPUs busy",
+    "MISSING_EVIDENCE": "none for terminal verdict; performance timing intentionally not re-run because correctness is terminal-failed",
+    "LOCAL_BEST_UPDATED": false,
+    "ONLINE_WORTHY": "NO",
+    "TERMINAL": true
+  },
+
+  "DECISION": "CORRECTNESS_FAILED",
+  "DECISION_HISTORY": [
+    {"date": "2026-09-24", "decision": "LOCAL_REJECTED", "note": "historical handoff after contaminated probe window; correctness FAIL was recorded in the body but not written as the terminal verdict"},
+    {"date": "2026-09-28", "decision": "CORRECTNESS_FAILED", "note": "repaired from evidence: correctness.status=FAIL on D>6144 within legal domain 64..32768; terminal, no timing"}
+  ],
 
   "next_candidate_hypothesis": "Decision belongs to Main. Suggested next step: a correctness-only revision that repairs the R006 partials-collector destination alignment (branch from this revision, no performance variable), then re-measure the R019 normalization delta on the repaired base across D=6144 and D>6144 in a clean load window.",
 
