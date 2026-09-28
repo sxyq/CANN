@@ -9,56 +9,75 @@
   "CORRECTNESS": "PASS (20/22 bit-identical; FP32-wide differences are the recorded parent nondeterminism)",
   "EXECUTABLE_IDENTITY": "PASS (local==remote SHAs in source-meta.json)",
   "MEASUREMENT_METHOD": "DEVICE_EVENT_PRIMARY+HOST_WALL_SECONDARY, warmup=45, 31 samples per run, blocks=1 per P/C run and 2 for same-binary; unified runner_ref.inc harness",
-  "DEVICE": "server3 d4 (910B3); lease id M2-MULTIROW-V002-D4-PERF-20260928 (shared lease row left for Main-2)",
-  "SAME_BINARY": [
-    {"shape": "48x16384 fp16", "B1_median_us": 12.86, "B1_MAD_over_median": 0.012, "B2_median_us": 13.12, "B2_MAD_over_median": 0.021, "block_drift": 0.020, "verdict": "PASS"},
-    {"shape": "48x12288 bf16", "B1_median_us": 13.44, "B1_MAD_over_median": 0.027, "B2_median_us": 13.36, "B2_MAD_over_median": 0.010, "block_drift": 0.006, "verdict": "PASS"},
-    {"shape": "8x16384 fp16", "B1_median_us": 7.66, "B1_MAD_over_median": 0.023, "B2_median_us": 8.12, "B2_MAD_over_median": 0.057, "block_drift": 0.058, "verdict": "PASS"}
-  ],
-  "PAIRED_P_C_DEVICE_EVENT_MEDIANS_US": {
-    "48x16384_fp16_main_8pairs": {
-      "pairs": [
-        {"pair": 1, "order": "P,C", "parent": 13.58, "candidate": 13.32, "delta_pct": -1.9},
-        {"pair": 2, "order": "C,P", "parent": 14.28, "candidate": 12.94, "delta_pct": -9.4},
-        {"pair": 3, "order": "P,C", "parent": 13.60, "candidate": 13.18, "delta_pct": -3.1},
-        {"pair": 4, "order": "C,P", "parent": 13.48, "candidate": 13.24, "delta_pct": -1.8},
-        {"pair": 5, "order": "P,C", "parent": 13.86, "candidate": 13.58, "delta_pct": -2.0},
-        {"pair": 6, "order": "C,P", "parent": 13.88, "candidate": 14.22, "delta_pct": 2.5},
-        {"pair": 7, "order": "P,C", "parent": 14.32, "candidate": 13.58, "delta_pct": -5.2},
-        {"pair": 8, "order": "C,P", "parent": 13.32, "candidate": 13.90, "delta_pct": 4.4}
-      ],
-      "direction": "6/8 candidate faster",
-      "median_delta_pct": -1.95,
-      "assessment": "mild favorable direction but magnitude inside the shape noise band (same-binary drift up to 5.8%; identical-code cross-process spread observed -7.1%..+4.2%)"
-    },
-    "48x12288_bf16_4pairs": {
-      "pairs": [
-        {"pair": 1, "order": "P,C", "parent": 13.46, "candidate": 13.08, "delta_pct": -2.8},
-        {"pair": 2, "order": "C,P", "parent": 12.70, "candidate": 13.36, "delta_pct": 5.2},
-        {"pair": 3, "order": "P,C", "parent": 12.62, "candidate": 12.08, "delta_pct": -4.3},
-        {"pair": 4, "order": "C,P", "parent": 12.82, "candidate": 12.30, "delta_pct": -4.1}
-      ],
-      "direction": "3/4 faster",
-      "median_delta_pct": -3.2,
-      "assessment": "inside noise band"
-    },
-    "8x16384_fp16_control_identical_code": {
-      "note": "localRows=1; both binaries run the same path; measures the identical-code spread",
-      "pairs": [
-        {"pair": 1, "order": "P,C", "parent": 8.28, "candidate": 15.24, "delta_pct": 84.0, "classification": "LOAD_CONTAMINATED", "note": "candidate run MAD=7.64, bimodal spike; retained as contaminated evidence"},
-        {"pair": 2, "order": "C,P", "parent": 8.24, "candidate": 7.88, "delta_pct": -4.4},
-        {"pair": 3, "order": "P,C", "parent": 8.12, "candidate": 7.54, "delta_pct": -7.1},
-        {"pair": 4, "order": "C,P", "parent": 8.02, "candidate": 8.36, "delta_pct": 4.2}
-      ],
-      "admissible_identical_code_spread": "-7.1% .. +4.2%"
-    }
+  "DEVICE": "server3 d4 (910B3)",
+  "LEASE": {
+    "lease_id_round1": "M2-MULTIROW-V002-D4-PERF-20260928",
+    "lease_id_round2": "M2-MULTIROW-V002-D4-PERF-20260928-R2",
+    "recorded": "local evidence only; shared 调度/服务器设备使用.tsv rows left for Main-2 registration"
   },
-  "NOISE_FLOOR_NOTE": "Primary statistic is DEVICE_EVENT median + MAD/median + block drift. Identical-code control spread (-7.1%..+4.2%) is wider than V001's control window; any |delta| under ~7% is not separable from run-to-run variation on this harness at this shape family.",
-  "LOAD_CONTAMINATED_RAW_RETAINED": ["v2_C1_C (MAD=7.64)", "see support/timing-results-v002/"],
+  "SAME_BINARY_ROUND1": [
+    {"shape": "48x16384 fp16", "B1_median_us": 12.86, "B2_median_us": 13.12, "block_drift": 0.020, "verdict": "PASS"},
+    {"shape": "48x12288 bf16", "B1_median_us": 13.44, "B2_median_us": 13.36, "block_drift": 0.006, "verdict": "PASS"},
+    {"shape": "8x16384 fp16", "B1_median_us": 7.66, "B2_median_us": 8.12, "block_drift": 0.058, "verdict": "PASS"}
+  ],
+  "SAME_BINARY_ROUND2": [
+    {"shape": "48x16384 fp16", "B1_median_us": 13.46, "B2_median_us": 13.20, "block_drift": 0.019, "verdict": "PASS"},
+    {"shape": "8x16384 fp16", "B1_median_us": 7.86, "B2_median_us": 8.06, "block_drift": 0.025, "verdict": "PASS"}
+  ],
+  "PAIRED_ROUND1_MAIN_48x16384_fp16": {
+    "pairs": [
+      {"pair": 1, "parent": 13.58, "candidate": 13.32, "delta_pct": -1.9},
+      {"pair": 2, "parent": 14.28, "candidate": 12.94, "delta_pct": -9.4},
+      {"pair": 3, "parent": 13.60, "candidate": 13.18, "delta_pct": -3.1},
+      {"pair": 4, "parent": 13.48, "candidate": 13.24, "delta_pct": -1.8},
+      {"pair": 5, "parent": 13.86, "candidate": 13.58, "delta_pct": -2.0},
+      {"pair": 6, "parent": 13.88, "candidate": 14.22, "delta_pct": 2.5},
+      {"pair": 7, "parent": 14.32, "candidate": 13.58, "delta_pct": -5.2},
+      {"pair": 8, "parent": 13.32, "candidate": 13.90, "delta_pct": 4.4}
+    ],
+    "direction": "6/8 faster", "median_delta_pct": -1.96
+  },
+  "PAIRED_ROUND2_MAIN_48x16384_fp16": {
+    "pairs": [
+      {"pair": 9, "parent": 13.16, "candidate": 12.88, "delta_pct": -2.1},
+      {"pair": 10, "parent": 13.40, "candidate": 13.68, "delta_pct": 2.1},
+      {"pair": 11, "parent": 13.60, "candidate": 13.42, "delta_pct": -1.3},
+      {"pair": 12, "parent": 13.72, "candidate": 13.06, "delta_pct": -4.8},
+      {"pair": 13, "parent": 13.08, "candidate": 13.18, "delta_pct": 0.8},
+      {"pair": 14, "parent": 12.94, "candidate": 13.46, "delta_pct": 4.0},
+      {"pair": 15, "parent": 13.64, "candidate": 13.10, "delta_pct": -4.0},
+      {"pair": 16, "parent": 13.30, "candidate": 13.56, "delta_pct": 2.0}
+    ],
+    "direction": "4/8 faster, 4/8 slower (mixed)", "median_delta_pct": -0.28
+  },
+  "PAIRED_COMBINED_MAIN": {
+    "n": 16, "faster": 10, "slower": 6,
+    "median_delta_pct": -1.84, "mean_delta_pct": -1.25,
+    "range_pct": [-9.4, 4.3],
+    "assessment": "round-2 direction is mixed and round-2 median ~0; combined median -1.84% is not separable from identical-code noise"
+  },
+  "IDENTICAL_CODE_CONTROL_8x16384_fp16": {
+    "admissible_pairs": [
+      {"tag": "C2", "parent": 8.24, "candidate": 7.88, "delta_pct": -4.4},
+      {"tag": "C3", "parent": 8.12, "candidate": 7.54, "delta_pct": -7.1},
+      {"tag": "C4", "parent": 8.02, "candidate": 8.36, "delta_pct": 4.2},
+      {"tag": "K1", "parent": 7.72, "candidate": 8.14, "delta_pct": 5.4},
+      {"tag": "K4", "parent": 8.10, "candidate": 7.98, "delta_pct": -1.5}
+    ],
+    "n": 5, "median_delta_pct": -1.48, "range_pct": [-7.1, 5.4],
+    "note": "identical binaries on the same path; this is the noise band"
+  },
+  "LOAD_CONTAMINATED_RAW_RETAINED": [
+    "v2_C1_C (round1, MAD=7.64)",
+    "r2_K2_C (round2, MAD=7.32, median 15.04)",
+    "r2_K3_C (round2, MAD=17.82, median 25.98)"
+  ],
   "LOCAL_VERDICT": "NEEDS_ONE_MORE_LOCAL",
-  "VERDICT_REASON": "Correctness PASS. Direction mildly favorable on both engagement shapes (main 6/8 faster, median -1.95%; BF16 3/4 faster, median -3.2%) but every magnitude sits inside the shape noise band (identical-code spread up to 7pp; same-binary drift up to 5.8% on control). Not LOCAL_ACCEPTED (does not clear noise), not LOCAL_REJECTED (no stable regression). Keep V002 as CURRENT_CANDIDATE; do not stack further performance changes on it.",
-  "DISPOSITION": "CURRENT_CANDIDATE_KEPT; no rollback (rollback branch applies only to LOCAL_REJECTED)",
-  "NEXT_MEASUREMENT_IF_GRANTED": "another paired window on 48x16384 fp16 (more pairs or a quieter device) to decide LOCAL_ACCEPTED vs LOCAL_REJECTED; or accept the small-win/near-noise state as inconclusive and move to C2 fact package",
+  "VERDICT_ROUND": "FINAL (supplementary window completed per Main-2 instruction)",
+  "VERDICT_REASON": "Supplementary window: same-binary PASS both shapes. Round-2 main shape 8 pairs are mixed (4/8, median -0.28%). Combined 16 pairs: median -1.84%, 10/16 faster. The identical-code control's own median is -1.48% with spread -7.1%..+5.4% — the candidate's median sits inside the noise band and round-level direction is not consistent. Per Main-2 rule 3 this closes as NEEDS_ONE_MORE_LOCAL: C1 instruction form is NOT the dominant cost on this hot path.",
+  "DISPOSITION": "CURRENT_CANDIDATE_KEPT (V002 source pinned); no rollback (rollback branch applies only to LOCAL_REJECTED); no further performance change stacked",
+  "CONCLUSION_FOR_LANE": "C1 指令形态非主导成本。Pad→非 Pad 在对齐点的方向温和但与同代码噪声不可分；结合 V001（事务条数减半净退 8%），该 hot path 的主导成本是 MTE2 流水重叠与 V 端指令/事件，不是单条搬运指令形态或命令计数。",
+  "C2_FACT_PACKAGE": "研究/MULTIROW-DMA-CHAMPION-X/C2-OPTIONS-FACT-PACKAGE.md (options a/b/c, for Planning; not selected by this agent)",
   "SINGLE_CHANGE_AUDIT": "PASS",
   "ONLINE_WORTHY": "NO"
 }

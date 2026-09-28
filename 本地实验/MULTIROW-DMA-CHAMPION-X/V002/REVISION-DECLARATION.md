@@ -60,3 +60,13 @@ Pad/非 Pad 可能同微码——若 P/C 落在同代码噪声底（≈±5pp）�
 - Same-binary 三形状 PASS（drift≤5.8%）。
 - P/C：主形状 8 对 6/8 为正、median −1.95%；BF16 4 对 3/4 为正、median −3.2%；同代码对照散布 −7.1%..+4.2%（1 对污染留证）。
 - **LOCAL_VERDICT = NEEDS_ONE_MORE_LOCAL**：方向温和为正但幅度全部落在噪声带内；不构成 LOCAL_ACCEPTED，也不是 LOCAL_REJECTED。Candidate 保留，不叠加新变化。
+
+## V002 补测窗口（Main-2 指令，终局补记）
+
+- same-binary 重跑（d4）：48×16384 FP16 drift 0.019、8×16384 FP16 drift 0.025，均 PASS。
+- 主形状补测 8 对（累计 16 对）：轮 2 **4/8 混合、median −0.28%**；合并 **median −1.84%、10/16 为正向、范围 −9.4%…+4.3%**。
+- 同代码对照（累计 5 个可采信对）：median **−1.48%**、散布 **−7.1%…+5.4%**。对照自身的中位数也是负的——噪声不对称。
+- 判定：候选中位数（−1.84%）与对照中位数（−1.48%）不可分，轮间方向不一致 → **NEEDS_ONE_MORE_LOCAL 终局**（Main 规则第 3 条）。
+- **结论：C1 指令形态非主导成本。** 与 V001 合并解读：该 hot path 主导成本是 MTE2 流水重叠与 V 端指令/事件，不是单条搬运指令形态或命令计数。
+- 污染留证：v2_C1_C、r2_K2_C、r2_K3_C（双峰尖峰，MAD 7–18）。
+- C2 三选项事实包：`研究/MULTIROW-DMA-CHAMPION-X/C2-OPTIONS-FACT-PACKAGE.md`，交 Planning。
