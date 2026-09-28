@@ -532,7 +532,7 @@ void RunCase(const CaseSpec& spec, aclrtStream stream, Events& events, RunMode m
 int main(int argc, char** argv)
 {
     if (argc < 2) {
-        std::fprintf(stderr, "usage: paired_runner --same-binary|--paired [device]\n");
+        std::fprintf(stderr, "usage: paired_runner --same-binary|--paired [device] [--multiscale]\n");
         return 1;
     }
     RunMode mode;
@@ -545,6 +545,12 @@ int main(int argc, char** argv)
         return 1;
     }
     const int device = argc > 2 ? std::atoi(argv[2]) : 4;
+    bool multiscale = false;
+    for (int i = 3; i < argc; ++i) {
+        if (std::strcmp(argv[i], "--multiscale") == 0) {
+            multiscale = true;
+        }
+    }
 
     CheckAcl(aclInit(nullptr), "aclInit");
     CheckAcl(aclrtSetDevice(device), "set device");
@@ -556,7 +562,7 @@ int main(int argc, char** argv)
 
     // MAIN-1 V002 priority: change-domain FP32 D=32768; blanks are the
     // bit-identical shapes that establish the noise band.
-    const CaseSpec cases[] = {
+    const CaseSpec closedLoopCases[] = {
         {"fp32-change-d32768-r2", 0, 2, 32768},
         {"fp32-change-d32768-r8", 0, 8, 32768},
         {"fp32-blank-d16384", 0, 2, 16384},
@@ -565,8 +571,22 @@ int main(int argc, char** argv)
         {"fp16-blank-d32768", 1, 2, 32768},
         {"bf16-blank-d32768", 2, 2, 32768},
     };
-    for (const CaseSpec& spec : cases) {
-        RunCase(spec, stream, events, mode);
+    // MAIN-1 instruction A: multi-row supplement on the same V002 binary.
+    // Change domain is D=32768 at several row counts; blanks re-measure the
+    // noise band on identical code at the matching row counts.
+    const CaseSpec multiscaleCases[] = {
+        {"fp32-change-d32768-r2", 0, 2, 32768},
+        {"fp32-change-d32768-r8", 0, 8, 32768},
+        {"fp32-change-d32768-r16", 0, 16, 32768},
+        {"fp32-blank-d16384-r8", 0, 8, 16384},
+        {"fp32-blank-d16384-r2", 0, 2, 16384},
+    };
+    const CaseSpec* cases = multiscale ? multiscaleCases : closedLoopCases;
+    const size_t caseCount = multiscale
+        ? sizeof(multiscaleCases) / sizeof(multiscaleCases[0])
+        : sizeof(closedLoopCases) / sizeof(closedLoopCases[0]);
+    for (size_t i = 0; i < caseCount; ++i) {
+        RunCase(cases[i], stream, events, mode);
     }
 
     CheckAcl(aclrtDestroyEvent(events.stop), "destroy stop event");
@@ -574,7 +594,8 @@ int main(int argc, char** argv)
     CheckAcl(aclrtDestroyStream(stream), "destroy stream");
     CheckAcl(aclrtResetDevice(device), "reset device");
     CheckAcl(aclFinalize(), "aclFinalize");
-    std::printf("RUNNER_COMPLETE mode=%s device=%d cases=7 warmup_each=%d pairs_each=%d timing=DEVICE_EVENT_PRIMARY wall=DIAGNOSTIC golden=REFERENCE_ONLY\n",
-                mode == RunMode::kSameBinary ? "SAME_BINARY" : "PAIRED", device, kWarmup, kPairs);
+    std::printf("RUNNER_COMPLETE mode=%s device=%d cases=%zu multiscale=%d warmup_each=%d pairs_each=%d timing=DEVICE_EVENT_PRIMARY wall=DIAGNOSTIC golden=REFERENCE_ONLY\n",
+                mode == RunMode::kSameBinary ? "SAME_BINARY" : "PAIRED", device, caseCount,
+                multiscale ? 1 : 0, kWarmup, kPairs);
     return 0;
 }

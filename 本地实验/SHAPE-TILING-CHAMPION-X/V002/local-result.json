@@ -65,8 +65,40 @@
       }
     }
   },
+  "MULTISCALE_TIMING": {
+    "added_at": "2026-09-29",
+    "reason": "MAIN-1 instruction A: multi-row supplement on the same V002 binary and parent. Measurement completion, not a new revision. Original closed-loop timing record above is preserved unchanged.",
+    "method": "DEVICE_EVENT_PRIMARY, warmup=45, 21 interleaved pairs, device 4",
+    "same_binary": {
+      "result": "PASS 5_OF_5",
+      "log": "logs/multiscale-same-binary.log",
+      "parent_medians_us": {
+        "fp32-change-d32768-r2": 11.43,
+        "fp32-change-d32768-r8": 12.18,
+        "fp32-change-d32768-r16": 20.46,
+        "fp32-blank-d16384-r8": 8.28,
+        "fp32-blank-d16384-r2": 7.23
+      }
+    },
+    "paired": {
+      "log": "logs/multiscale-paired.log",
+      "noise_floor_from_blank_controls": "paired_delta_median in [-0.08, -0.06] us (fp32-blank-d16384-r8 -0.060, fp32-blank-d16384-r2 -0.080). Tighter than the closed-loop round; band must be re-measured every round.",
+      "shapes": {
+        "fp32-change-d32768-r2": "paired_delta_median=-0.080us; direction 13 neg / 8 pos; last10=-0.080; at blank band edge",
+        "fp32-change-d32768-r8": "paired_delta_median=-0.060us; direction 11 neg / 10 pos; last10=+0.020; inside blank band",
+        "fp32-change-d32768-r16": "paired_delta_median=-0.160us; direction 12 neg / 9 pos; first10=-0.260 last10=+0.080; median outside blank band but DIRECTION UNSTABLE (late pairs flip positive) and magnitude far below the mechanism prediction"
+      }
+    },
+    "mechanism_magnitude_check": {
+      "per_row_d32768_cost_us": "approx 8.3 (from 16x minus 8x same-binary medians: 20.46-12.18)",
+      "tile_rounds_parent_vs_candidate": "8 vs 6 (25 percent fewer)",
+      "predicted_saving_if_tile_rounds_dominated": "order 2 us per row if each tile round cost about 1 us; even at 0.1 us per round it would be 0.2 us per row",
+      "observed_r16_delta_us": -0.16,
+      "conclusion": "observed delta is 2 percent of the per-row cost while tile rounds drop 25 percent; the effect size is 10x smaller than the mechanism predicts. The r16 poke-out is therefore not attributable to the tile-tier change. Tile rounds are not the bottleneck at D=32768."
+    }
+  },
   "local_verdict": "NEEDS_ONE_MORE_LOCAL",
-  "local_verdict_reason": "Change-domain paired medians (+0.140us at rows=2, +0.080us at rows=8) fall inside the blank-control noise band [-0.14, +0.18]us established on bit-identical code. Direction is mixed to slightly-slower (6/14 and 9/11) but does not exceed the noise band, so this is not a stable regression either. No improvement signal. Keep current Candidate; do not stack further performance changes.",
+  "local_verdict_reason": "Closed loop: change-domain paired medians (+0.140/+0.080us) inside blank band [-0.14,+0.18]us. Multi-row supplement (MAIN-1 instruction A): r2 -0.080 and r8 -0.060 sit inside the blank band [-0.08,-0.06]us; r16 -0.160 pokes outside but direction is unstable (12/9, last10 flips +0.080) and the magnitude is ~2% of per-row cost while tile rounds drop 25%, so it is not attributable to the tile-tier mechanism. No stable improvement. Keep current Candidate; do not stack further performance changes. NEXT: case 14 bottleneck attribution (read-only), per MAIN-1 instruction B.",
   "child_decision": "NEEDS_ONE_MORE_LOCAL",
   "online_submission": false
 }

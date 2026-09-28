@@ -8,6 +8,11 @@ BUILD_DIR="${BUILD_DIR:-${ROOT}/build}"
 CMAKE_PACKAGE_DIR="${CANN_ROOT}/aarch64-linux/tikcpp/ascendc_kernel_cmake"
 DEVICE="${DEVICE:-4}"
 STAGE="${STAGE:-all}"   # all | build | same-binary | paired
+MULTISCALE="${MULTISCALE:-0}"
+MS_FLAG=""
+if [[ "${MULTISCALE}" == "1" ]]; then
+    MS_FLAG="--multiscale"
+fi
 
 PARENT_SHA="a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3"
 CANDIDATE_SHA="aed967513cf9c284f8a3226c790dca57a1a6f2fd19048830469291f924ea704b"
@@ -62,12 +67,12 @@ RUNNER="${BUILD_DIR}/paired_runner"
 
 if [[ "${STAGE}" == "all" || "${STAGE}" == "same-binary" ]]; then
     echo "=== SAME-BINARY QUALIFICATION (parent only) ==="
-    "${RUNNER}" --same-binary "${DEVICE}"
+    "${RUNNER}" --same-binary "${DEVICE}" ${MS_FLAG}
 fi
 
 if [[ "${STAGE}" == "all" || "${STAGE}" == "paired" ]]; then
     echo "=== INTERLEAVED P/C ==="
-    "${RUNNER}" --paired "${DEVICE}"
+    "${RUNNER}" --paired "${DEVICE}" ${MS_FLAG}
 fi
 
 echo "=== LOAD SNAPSHOT (post) ==="
