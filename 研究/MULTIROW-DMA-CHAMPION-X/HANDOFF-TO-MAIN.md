@@ -44,7 +44,7 @@ Frozen parent **FP32 wide 路径**在确定性输入下输出逐次不同（同�
 1. 登记本地结论 `LOCAL_REJECTED`（LOCAL_BEST 回到 FROZEN R31B-V011）。
 2. 共享 lease 记录：本路线测量用 `M2-MULTIROW-V001-D4-PERF-20260928`（d4），已记在 local-result.json；`调度/服务器设备使用.tsv` 的行请 Main 补登记（Route Agent 未改共享文件）。
 3. UB correctness gap 线索（FP32 wide 非确定性）转 Planning。
-4. 下一假设方向（仅建议，待批）：H3 ALIGNED-DATACOPY-FORM（独立、diff 更小）；或「保持流水的 stride 形态」（需 UB 计入方式讨论）；H2/H4 建议不再单独立项（同机制家族，且 H1 已给出负面信息）。
+4. 下一假设方向（仅建议，待批）：H3 ALIGNED-DATACOPY-FORM（独立、diff 更小）；或「保持流水的 stride 形态」（需 UB 计入方式讨论）；H2/H4 建议不再单独立项（同机制类型，且 H1 已给出负面信息）。
 
 ## 边界遵守
 
