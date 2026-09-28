@@ -39,6 +39,185 @@
   "result": "PASS",
   "evidence": "本地实验/R31A/V025/support/results/M1-R31A-V025-CORR-*"
  },
- "STATUS": "BUILD_PASS_CORRECTNESS_PASS_PENDING_MEASUREMENT",
- "DECISION": "PENDING_MEASUREMENT"
+ "STATUS": "BUILD_PASS_CORRECTNESS_PASS_LOCAL_ACCEPTED",
+ "DECISION": "LOCAL_ACCEPTED",
+ "MEASUREMENT": {
+  "date": "2026-09-29",
+  "protocol": "unified device-event: warmup=45, same-binary 21x2, paired 4 blocks x 11 samples interleaved. For the OFAT comparison the parent module was rebuilt from V024 (DIRECT_PARENT) so the paired run compares V024 vs V025 directly. Parent module SHA a8d9484c... (V024 content); candidate module SHA b3c65784... (V025 content); runner SHA 7dbde489... (unchanged).",
+  "OFAT_NOTE": "Per the Local-first rule each revision is paired against its DIRECT_PARENT. V025's DIRECT_PARENT is V024, so the decision-critical comparison is V024 vs V025. A V016-referenced run (before the parent rebuild) is also retained and cross-checks: V016 vs V025 = -6.8% clean, consistent with V024's -3.5% plus H4's -3.5%.",
+  "SAME_BINARY": [
+   {
+    "device": 6,
+    "shape": "D=32768",
+    "parent": "V024",
+    "gap_s": 5,
+    "result": "PASS",
+    "block_medians_us": [
+     19.02,
+     19.26
+    ],
+    "mad_over_median": [
+     0.018927,
+     0.011423
+    ],
+    "block_drift": 0.012539
+   },
+   {
+    "device": 4,
+    "shape": "D=32768",
+    "parent": "V024",
+    "gap_s": 5,
+    "result": "PASS",
+    "block_medians_us": [
+     18.54,
+     18.92
+    ],
+    "mad_over_median": [
+     0.011866,
+     0.023256
+    ],
+    "block_drift": 0.020288
+   },
+   {
+    "device": 6,
+    "shape": "D=24576",
+    "parent": "V024",
+    "gap_s": 5,
+    "result": "PASS",
+    "block_medians_us": [
+     14.78,
+     14.78
+    ],
+    "mad_over_median": [
+     0.016238,
+     0.016238
+    ],
+    "block_drift": 0.0
+   }
+  ],
+  "PAIRED_V024_VS_V025_D32768": {
+   "shape": "rows=2 D=32768 blocks=1 (CachedRows; the only probe shape exercising the pass-1 staging-liveness edit)",
+   "attempt_d6": {
+    "clean_blocks": {
+     "delta_percent": [
+      -3.663791,
+      -3.399123
+     ],
+     "parent_mad": [
+      0.007543,
+      0.007675
+     ],
+     "candidate_mad": [
+      0.006711,
+      0.022701
+     ],
+     "note": "blocks 1 and 4 clean; block 2 parent+candidate MAD > 0.5 contaminated; block 3 candidate MAD 0.72 contaminated"
+    },
+    "contaminated_blocks": [
+     {
+      "block": 2,
+      "delta_percent": -14.757024,
+      "parent_mad": 0.584931,
+      "candidate_mad": 0.535042,
+      "note": "both medians inflated (44.9/38.2 us); EXCLUDED from direction reading"
+     },
+     {
+      "block": 3,
+      "delta_percent": 243.468699,
+      "parent_mad": 0.015368,
+      "candidate_mad": 0.71844,
+      "note": "candidate median inflated to 62.6 us; EXCLUDED from direction reading"
+     }
+    ]
+   },
+   "attempt_d4": {
+    "clean_blocks": {
+     "delta_percent": [
+      -4.777778,
+      -4.57079
+     ],
+     "parent_mad": [
+      0.012222,
+      0.015608
+     ],
+     "candidate_mad": [
+      0.011669,
+      0.008178
+     ],
+     "note": "blocks 3 and 4 clean"
+    },
+    "questionable_block": {
+     "block": 1,
+     "delta_percent": 2.614379,
+     "parent_mad": 0.010893,
+     "candidate_mad": 0.077495,
+     "note": "candidate MAD 0.077 elevated; direction opposite the clean blocks; borderline, not used in the primary median"
+    },
+    "elevated_block": {
+     "block": 2,
+     "delta_percent": -9.756105,
+     "parent_mad": 0.088415,
+     "note": "parent median 19.68 slightly elevated; treated as unreliable"
+    }
+   },
+   "combined_clean": {
+    "values_percent": [
+     -3.663791,
+     -3.399123,
+     -4.777778,
+     -4.57079
+    ],
+    "median_percent": -4.119926,
+    "direction": "4_NEGATIVE_0_POSITIVE",
+    "range_percent": [
+     -4.777778,
+     -3.399123
+    ],
+    "read": "V025 is faster than V024 on every clean block. Median -4.12%, range -4.78% to -3.40%."
+   }
+  },
+  "PAIRED_V024_VS_V025_D24576_SAME_CODE": {
+   "shape": "rows=2 D=24576 blocks=1 (both take the batch path; the CachedRows pass-1 edit is NOT exercised; this is the same-code noise band)",
+   "device": 6,
+   "delta_percent": [
+    2.254641,
+    0.797872,
+    5.163038,
+    -1.859232
+   ],
+   "parent_mad_over_median": [
+    0.013263,
+    0.006649,
+    0.016304,
+    0.071713
+   ],
+   "candidate_mad_over_median": [
+    0.01297,
+    0.007916,
+    0.089147,
+    0.037889
+   ],
+   "cleaner_blocks": {
+    "delta_percent": [
+     2.254641,
+     0.797872
+    ],
+    "median": 1.526256,
+    "note": "blocks 1 and 2 clean; block 3 candidate MAD 0.089 elevated; block 4 parent MAD 0.072 elevated"
+   },
+   "interpretation": "Same-code shape. The candidate slot reads about +1.5% to +2.3% slower even on identical code (candidate-slot bias). Noise band this round about plus or minus 2%."
+  },
+  "SIGNAL_VS_NOISE": "The D=32768 clean-block improvement (-4.12% median, 4/4 negative) is about 2x the noise band (plus or minus 2%) and overcomes the candidate-slot bias (about +1.5-2%). The bias-adjusted H4 effect is roughly -5.5% to -6%. Consistent across two devices.",
+  "CROSS_CHECK_V016_REFERENCED": "Before the parent-module rebuild, a V016 vs V025 run measured -6.8% clean (5 blocks). V024 vs V016 was -3.5%. The difference (-3.3%) matches the direct V024 vs V025 measurement (-4.12%), confirming the result.",
+  "LOCAL_VERDICT": "LOCAL_ACCEPTED",
+  "VERDICT_REASON": "Source identity, compile, link, correctness (4 runs, no 507035), and same-binary all PASS. The paired measurement against DIRECT_PARENT V024 on the exercising shape (D=32768) shows a stable improvement: 4/4 clean blocks negative across two devices, median -4.12%, range -4.78% to -3.40%, well outside the measured noise band (about plus or minus 2% from the same-code D=24576 control) and overcoming the candidate-slot bias. H4's staging-liveness change (freeing the residual slot after Add and prefetching the next residual so MTE2 overlaps the square and reduce) delivers a real gain on top of V024.",
+  "MECHANISM_READ": "Freeing the residual staging slot right after the Add lets the next tile's residual MTE2 load overlap the current tile's square and reduce. At D=32768 three of five tiles qualify for the value-tail workspace. The observed ~4% incremental gain (about 0.7us of an 18us kernel) is comparable to V024's Muls-hoist gain, confirming that removing per-tile pipeline stalls in the CachedRows first pass is as valuable as the second-pass barrier reduction.",
+  "LOCAL_BEST": "V025",
+  "LOCAL_BEST_UPDATED": true,
+  "LOCAL_BEST_CHAIN": "V016 (OFFICIAL_BEST 45.00) -> V024 (LOCAL_ACCEPTED -3.66% vs V016) -> V025 (LOCAL_ACCEPTED, -4.12% vs V024, combined about -6.8% vs V016)",
+  "OFFICIAL_BEST": "V016 / 45.00 (unchanged; V024 Online pending Judge Owner)",
+  "ONLINE_WORTHY": "PENDING_MAIN_ONLINE_RECOMMENDATION",
+  "NEXT_ACTION": "V025 is LOCAL_ACCEPTED and becomes LOCAL_BEST. Main should consider whether to (a) recommend V025 for Online after V024's Online result returns, or (b) continue accumulating. The remaining research hypotheses are exhausted (H1 Rsqrt rejected for precision, H2 done as V024, H3 refuted, H4 done as V025). A new research round is needed for further local gains.",
+  "EVIDENCE_DIR": "本地实验/R31A/V025/support/results/"
+ }
 }
