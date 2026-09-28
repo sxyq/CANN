@@ -1,0 +1,18 @@
+{
+  "route": "COEFF-LOCALITY-X",
+  "revision": "V003",
+  "revision_kind": "PERFORMANCE_SINGLE_HYPOTHESIS",
+  "direct_parent": "FROZEN_R31B_V011",
+  "parent_source_sha": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "parent_score": "45.16",
+  "official_anchor": "45.16",
+  "single_hypothesis": "NH-2 — wide FP32 pass 2 split-phase parameter MTE2 emission in ProcessWideFp32FullCacheRows: after the last Mul consumes gamma (xBuf_ free) issue the next tile's gamma Load; after the last Add consumes bias (residualBuf_ free) issue the next tile's bias Load. Two-slot rotation on the existing xBuf_/residualBuf_ pair only. Zero new staging buffers, tileElems pinned at 4096 (Init/ChooseWideFullYRows untouched), MTE2 transaction count unchanged (2 per tile). Existing SyncMTE2ToV before each apply retained and now waits for the prefetched params. MTE3 store-drain rule retained. Arithmetic unchanged.",
+  "single_change_audit": "PASS (one mechanism: param MTE2 emission timing in pass 2 only; V_MTE2 SetFlag/WaitFlag pairs are the correctness ordering for the same mechanism, matching ProcessWideLowPrecision's prefetch idiom)",
+  "context_class": "FROZEN_STRONG_BASELINE_COEFF_LOCALITY",
+  "approval": "MAIN-2 APPROVAL (inbox 2026-09-28): NH-2 approved as V003 SINGLE_HYPOTHESIS; ruled NOT an H1 rerun (zero staging increment vs H1's 2-deep staging that forced tileElems 4096->2560)",
+  "source_sha256": "4be7c2287e8e71f540a848dc9de71c8f303f2299176baebaee062290c5ec8e82",
+  "source_path": "本地实验/COEFF-LOCALITY-X/V003/submission.asc",
+  "diff_summary": "ProcessWideFp32FullCacheRows pass 2 only: tile-0 params issued before the loop; per-tile serialized Load+SyncMTE2ToV replaced by split-phase early issue (gamma after last Mul, bias after last Add) with V_MTE2 ordering; store loop, store-drain, Muls/Mul/Add arithmetic, Init all unchanged",
+  "status": "SOURCE_READY_PENDING_BUILD",
+  "decision": "NOT_SUBMITTED"
+}

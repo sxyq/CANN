@@ -1,0 +1,91 @@
+--- /Users/sunyiyang/Desktop/Project/cann-m2-coeff/线上结果/R31B/V011/submission.asc	2026-09-29 04:22:42
++++ submission.asc	2026-09-29 05:32:43
+@@ -2161,6 +2161,16 @@
+             // V006: 2-deep MTE3 queue.  Stores of independent row tiles are
+             // issued back-to-back; the MTE3_V drain waits only before the
+             // x/residual staging pair is refilled for the next tile.
++            // COEFF-LOCALITY-X V003 (NH-2): split-phase param MTE2 emission.
++            // Two-slot rotation on the existing xBuf_/residualBuf_ pair only
++            // (zero new staging, tileElems unchanged, 2 MTE2 Loads per tile).
++            // Tile 0 params are issued before the loop; for later tiles the
++            // next gamma is issued right after Mul consumes the gamma slot and
++            // the next bias right after Add consumes the bias slot, so each
++            // param load hides behind the other operand's V work / the stores.
++            // The existing SyncMTE2ToV before each apply waits for them.  The
++            // V_MTE2 events order V's last read of each slot before MTE2
++            // overwrites it (same idiom as ProcessWideLowPrecision prefetch).
+             const AscendC::TEventID storeReady0 =
+                 pipe_.AllocEventID<AscendC::HardEvent::V_MTE3>();
+             const AscendC::TEventID storeReady1 =
+@@ -2169,8 +2179,22 @@
+                 pipe_.AllocEventID<AscendC::HardEvent::MTE3_V>();
+             const AscendC::TEventID storeRelease1 =
+                 pipe_.AllocEventID<AscendC::HardEvent::MTE3_V>();
++            const AscendC::TEventID gammaRelease =
++                pipe_.AllocEventID<AscendC::HardEvent::V_MTE2>();
++            const AscendC::TEventID biasRelease =
++                pipe_.AllocEventID<AscendC::HardEvent::V_MTE2>();
+             bool storeOutstanding0 = false;
+             bool storeOutstanding1 = false;
++            if (tileCount > 0) {
++                AscendC::LocalTensor<float> gammaLocal = xBuf_.Get<float>();
++                AscendC::LocalTensor<float> biasLocal = residualBuf_.Get<float>();
++                Load(gammaLocal, gammaGm_, 0,
++                     rowWidth < static_cast<uint64_t>(tileWidth)
++                         ? static_cast<int32_t>(rowWidth) : tileWidth);
++                Load(biasLocal, biasGm_, 0,
++                     rowWidth < static_cast<uint64_t>(tileWidth)
++                         ? static_cast<int32_t>(rowWidth) : tileWidth);
++            }
+             for (int32_t tile = 0; tile < tileCount; ++tile) {
+                 const uint64_t col = static_cast<uint64_t>(tile) * tileWidth;
+                 const int32_t valid = static_cast<int32_t>(
+@@ -2188,8 +2212,6 @@
+                     AscendC::WaitFlag<AscendC::HardEvent::MTE3_V>(storeRelease1);
+                     storeOutstanding1 = false;
+                 }
+-                Load(gammaLocal, gammaGm_, col, valid);
+-                Load(biasLocal, biasGm_, col, valid);
+                 SyncMTE2ToV();
+                 for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
+                     AscendC::LocalTensor<float> valueRow =
+@@ -2202,8 +2224,30 @@
+                         valueLocal[batchRow * rowWidth + col];
+                     AscendC::Mul(valueRow, valueRow, gammaLocal, valid);
+                     AscendC::PipeBarrier<PIPE_V>();
++                    if (batchRow + 1 == batchRows && tile + 1 < tileCount) {
++                        const uint64_t nCol =
++                            col + static_cast<uint64_t>(tileWidth);
++                        const int32_t nValid = static_cast<int32_t>(
++                            rowWidth - nCol < static_cast<uint64_t>(tileWidth)
++                                ? rowWidth - nCol
++                                : static_cast<uint64_t>(tileWidth));
++                        AscendC::SetFlag<AscendC::HardEvent::V_MTE2>(gammaRelease);
++                        AscendC::WaitFlag<AscendC::HardEvent::V_MTE2>(gammaRelease);
++                        Load(gammaLocal, gammaGm_, nCol, nValid);
++                    }
+                     AscendC::Add(valueRow, valueRow, biasLocal, valid);
+                     AscendC::PipeBarrier<PIPE_V>();
++                    if (batchRow + 1 == batchRows && tile + 1 < tileCount) {
++                        const uint64_t nCol =
++                            col + static_cast<uint64_t>(tileWidth);
++                        const int32_t nValid = static_cast<int32_t>(
++                            rowWidth - nCol < static_cast<uint64_t>(tileWidth)
++                                ? rowWidth - nCol
++                                : static_cast<uint64_t>(tileWidth));
++                        AscendC::SetFlag<AscendC::HardEvent::V_MTE2>(biasRelease);
++                        AscendC::WaitFlag<AscendC::HardEvent::V_MTE2>(biasRelease);
++                        Load(biasLocal, biasGm_, nCol, nValid);
++                    }
+                 }
+                 for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
+                     const bool useFirst = (batchRow & 1) == 0;
+@@ -2242,6 +2286,8 @@
+             pipe_.ReleaseEventID<AscendC::HardEvent::V_MTE3>(storeReady1);
+             pipe_.ReleaseEventID<AscendC::HardEvent::MTE3_V>(storeRelease0);
+             pipe_.ReleaseEventID<AscendC::HardEvent::MTE3_V>(storeRelease1);
++            pipe_.ReleaseEventID<AscendC::HardEvent::V_MTE2>(gammaRelease);
++            pipe_.ReleaseEventID<AscendC::HardEvent::V_MTE2>(biasRelease);
+         }
+     }
+ 
