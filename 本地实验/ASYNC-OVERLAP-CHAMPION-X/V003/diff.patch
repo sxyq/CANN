@@ -1,0 +1,21 @@
+--- 线上结果/R31B/V011/submission.asc	2026-09-29 04:22:43
++++ 本地实验/ASYNC-OVERLAP-CHAMPION-X/V003/submission.asc	2026-09-29 06:58:36
+@@ -562,15 +562,12 @@
+             needInputRelease = true;
+ 
+             // Param MTE2 overlaps this scalar tail (single-row case).
++            // V003 W4: collapse the two V-S round-trips into one. Same formula
++            // (squareSum * invRowWidth + epsilon, then 1/sqrt) on the scalar side.
+             SyncVToS();
+             const float squareSum = reduceLocal.GetValue(0);
+             const float meanSquare = squareSum * invRowWidth + epsilon;
+-            SyncSToV();
+-            AscendC::Duplicate(xFp32, meanSquare, 1);
+-            AscendC::Sqrt(xFp32, xFp32, 1);
+-            AscendC::PipeBarrier<PIPE_V>();
+-            SyncVToS();
+-            const float invRms = 1.0f / xFp32.GetValue(0);
++            const float invRms = 1.0f / std::sqrt(meanSquare);
+             SyncSToV();
+ 
+             if (!residentParams) {

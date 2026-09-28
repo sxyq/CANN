@@ -1,0 +1,27 @@
+{
+  "route": "ASYNC-OVERLAP-CHAMPION-X",
+  "revision": "V003",
+  "direct_parent": "R31B-V011",
+  "parent_source_sha": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "parent_score": 45.16,
+  "official_anchor": 45.16,
+  "single_hypothesis": "W4 GetValue handoff convergence: collapse NarrowMid invRms tail from two V-S round-trips to one; invRms = 1/sqrt(squareSum*invRowWidth+epsilon) computed on the scalar side with the same formula.",
+  "context_class": "CHAMPION_PIPELINE_SCHEDULE",
+  "approval_doc": "MAIN-2 inbox 2026-09-28 W4 APPROVED",
+  "local_sha256": "d23593ce88fd7011a604f50cfba3948904f4f97f66641346626143dd16af3548",
+  "changed_surface": "ProcessNarrowMidOverlap invRms tail only: removed SyncSToV/Duplicate/Sqrt/PipeBarrier/SyncVToS/second GetValue; invRms now 1.0f/std::sqrt(meanSquare) on the scalar side; one SyncVToS+SyncSToV pair remains. Muls call unchanged.",
+  "unchanged": [
+    "all other process paths",
+    "queue depths and UB buffer sizes",
+    "DMA schedule",
+    "store staging and output arithmetic",
+    "BF16 store xBuf_ alias handling",
+    "ReduceSum topology"
+  ],
+  "precision_risk": "HIGH — sqrt moves from vector Sqrt to scalar std::sqrt; OUTHASH bit-compare required; any difference stops for Main-2",
+  "expected_shapes": "NarrowMid rowWidth in (128,4096]; 512x2048 fp32, 512x1024 fp32, 128x2048; controls outside NarrowMid",
+  "ub_impact": "none",
+  "dma_impact": "none",
+  "sync_impact": "2 V-S round-trips per row reduced to 1",
+  "single_change_audit": "PASS"
+}
