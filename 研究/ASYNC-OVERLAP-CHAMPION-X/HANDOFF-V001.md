@@ -54,14 +54,37 @@
 
 六字段 BLOCK 记录见 `LOCAL-PERFORMANCE.md` 补测附录与 `local-result.json`。
 
+## 选项 B 补测（2026-09-28，MAIN-2 裁定）
+
+| shape | parent SB | candidate SB | P/C | 结论 |
+|---|---|---|---|---|
+| **128×16384 fp16** | w45 合格 | w45 合格 | 4 对已跑 | **LOCAL_ACCEPTED** |
+| 32×32768 fp16 | w45/w55 合格 | w45 drift 边缘 / w55 失败 | 未跑 | `MEASUREMENT_BLOCKED` |
+
+128×16384 关键数据：
+
+```text
+same-binary  P B1 r=0.017 B2 r=0.013 drift=1.021  PASS
+             C B1 r=0.010 B2 r=0.011 drift=0.997  PASS
+P/C 干净对   3/3 偏 V001   Δmed = -2.21% / -1.94% / -1.33%   (abs -0.46/-0.40/-0.28 us)
+p10 快簇     4/4 偏 V001   Δp10 = -2.83% / -1.84% / -2.68% / -1.16%
+```
+
+方向稳定（全部独立交错对同向），幅度约 2%（绝对 0.3–0.5 µs / 21 µs kernel）。
+收益不大：是否推进 LOCAL_BEST / 是否给 ONLINE_RECOMMENDATION，请 Main 权衡
+OFFICIAL_ANCHOR=45.16 与 Official score 结构后再定。
+
+32×32768 的六字段 BLOCK 记录见 `LOCAL-PERFORMANCE.md` 选项 B 附录与 `local-result.json`。
+
 ## 剩余工作与风险
 
-- 三个 LP 形状均拿不到「parent SB 双块合格 + 一致 P/C」完整证据链。
-- 下一步选项（不无限测）：A 安静窗口重测 64×16384；B 换更长 kernel 形状（128×16384 / 32×32768）；C 交 Main 定夺保留 Candidate。
-- H1 预期收益是低个位数 µs 级，对短 kernel 测量层极敏感。
+- 128×16384 的收益幅度小（~2%），且只在 FP16 wide LP 路径测过；BF16 / 其他 wide 形状未做配对。
+- 32×32768 仍 BLOCKED；不继续无限测（选项 B 预算已用）。
+- FullCache FP32 宽行 parent 自身非确定（非本 Revision 范围）。
 - 未改共享总账；未自行 Online；未开 V002；未 revert H1。
 
 ## 请求 Main-2
 
-- 确认 `NEEDS_ONE_MORE_LOCAL` + 两形状 `MEASUREMENT_BLOCKED` 的归类。
-- 在选项 A/B/C 中定夺下一步；本路线不自行无限补测。
+- 确认 128×16384 的 `LOCAL_ACCEPTED` 归类与是否推进 LOCAL_BEST。
+- 32×32768 记 `MEASUREMENT_BLOCKED`（RETRY_REQUIRED=YES，不本轮再测）。
+- 是否给 ONLINE_RECOMMENDATION（WORTHY / NOT_WORTHY）——本 Agent 不自行 Online。

@@ -113,3 +113,64 @@ REASON            32×16384：p10 快簇 3/4 偏 V001（~4–5%）但 1/4 反向
 | C 交 Main 定夺 | 接受当前证据为 NEEDS_ONE_MORE_LOCAL，保留 Candidate，不开 V002 | 若窗口长期不可得 |
 
 不继续无限测；不 revert H1；不叠加新优化；不开 V002；不 Online。
+
+---
+
+# 选项 B 附录（2026-09-28，MAIN-2 裁定：换更长 kernel 形状）
+
+形状：128×16384 fp16（目标 kernel>20µs）与 32×32768 fp16。warmup=45；32×32768
+因 C drift 边缘超标，按规范放宽 warmup=55 重做 same-binary 一次。
+
+## Same-binary（warmup=45）
+
+| shape | binary | B1 MAD/med | B2 MAD/med | drift | 资格 |
+|---|---|---|---|---|---|
+| 128×16384 fp16 | P | 0.017 PASS | 0.013 PASS | 1.021 | **合格** |
+| 128×16384 fp16 | C | 0.010 PASS | 0.011 PASS | 0.997 | **合格** |
+| 32×32768 fp16 | P | 0.015 PASS | 0.021 PASS | 1.002 | 合格 |
+| 32×32768 fp16 | C | 0.011 PASS | 0.079 PASS | 1.101 | 不合格（drift 边缘） |
+
+## Same-binary 32×32768（warmup=55 重试）
+
+| binary | B1 MAD/med | B2 MAD/med | drift | 资格 |
+|---|---|---|---|---|
+| P | 0.017 PASS | 0.016 PASS | 0.981 | 合格 |
+| C | 0.476 FAIL | 0.402 FAIL | 1.220 | 不合格 |
+
+→ 32×32768 记 `MEASUREMENT_BLOCKED`（六字段见 local-result.json），未跑 P/C。
+
+## P/C 交错（128×16384 fp16，4 对，双方 SB 已合格）
+
+| pair | P med / MAD | C med / MAD | Δmed% | Δp10% | 备注 |
+|---|---|---|---|---|---|
+| 1 | 20.80 / 0.18 | 20.34 / 0.42 | **-2.21** | **-2.83** | 双方干净 |
+| 2 | 21.36 / 0.48 | 31.74 / 11.44 | +48.6 | **-1.84** | C 脏 |
+| 3 | 20.64 / 0.50 | 20.24 / 0.28 | **-1.94** | **-2.68** | 双方干净 |
+| 4 | 21.02 / 0.32 | 20.74 / 0.32 | **-1.33** | **-1.16** | 双方干净 |
+
+- 干净对 median：**3/3 偏 V001**，−2.21% / −1.94% / −1.33%（绝对 −0.46 / −0.40 / −0.28 µs）。
+- p10 快簇：**4/4 偏 V001**（−1.16% ~ −2.83%）。
+- 同 binary 噪声带：MAD/med 约 0.010–0.017；干净对中有 2/3 的 |Δ| 高于该带上沿。
+- kernel 约 21 µs，节省约 0.3–0.5 µs，与「每 batch 消掉一段串行边界」的预期量级一致。
+
+## 选项 B 判定
+
+```text
+128x16384_fp16
+  LOCAL_VERDICT   LOCAL_ACCEPTED
+  REASON          parent+candidate same-binary 均合格（w45）；4 组交错 P/C 中
+                  3 个干净对 median 全部偏 V001，p10 4/4 同向；方向稳定，
+                  幅度 ~1.3-2.2%（绝对 0.28-0.46 us）超出同 binary 噪声带较紧侧。
+                  收益不大，送线上前请 Main 权衡 OFFICIAL_ANCHOR。
+
+32x32768_fp16
+  LOCAL_VERDICT   MEASUREMENT_BLOCKED
+  BLOCK_REASON    candidate same-binary 未合格（w45 drift 1.101；w55 MAD/med 0.40+ ）
+  DATE            2026-09-28
+  SHAPE           32x32768_fp16
+  DEVICE          4
+  SAME_BINARY_RESULT  P w45 PASS / C w45 FAIL_drift；P w55 PASS / C w55 FAIL
+  RETRY_REQUIRED  YES — 更安静窗口；本轮按选项 B 预算不继续
+```
+
+原始样本：`本地实验/ASYNC-OVERLAP-CHAMPION-X/V001/results3/`。
