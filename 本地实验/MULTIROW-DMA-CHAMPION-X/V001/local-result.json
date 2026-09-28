@@ -1,0 +1,70 @@
+{
+  "ROUTE": "MULTIROW-DMA-CHAMPION-X",
+  "REVISION": "V001",
+  "DIRECT_PARENT": "R31B-V011",
+  "PARENT_SOURCE_SHA": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "CANDIDATE_SOURCE_SHA": "5dea0eaf1752fd2ef671ec8d69bc8f27d490413c2043ea64bebe0ddf943dee5f",
+  "BUILD": "PASS",
+  "LINK": "PASS",
+  "CORRECTNESS": "PASS (touched LP path bit-identical to parent on repeat runs; engagement BF16 48x12288 clean 0/0; small/mid regression matrix clean)",
+  "EXECUTABLE_IDENTITY": "PASS (local==remote SHAs recorded in source-meta.json)",
+  "MEASUREMENT_METHOD": "DEVICE_EVENT_PRIMARY+HOST_WALL_SECONDARY, warmup=45, 31 samples per run, blocks=1 per P/C run and 2 for same-binary, batch_n=1; harness runner_ref.inc from the unified protocol (ASYNC-OVERLAP-CHAMPION-X timing harness reused)",
+  "DEVICE": "server3 d4 (910B3), HBM ~90% (<100%), AICore 0-15% observational; d6 excluded (LEASED by MAIN-2 STORE-EPILOGUE-X)",
+  "LEASE": {
+    "lease_id": "M2-MULTIROW-V001-D4-PERF-20260928",
+    "recorded": "local evidence only; shared 调度/服务器设备使用.tsv row left for Main-2 registration (Route Agent does not edit shared control)"
+  },
+  "SAME_BINARY": [
+    {"shape": "48x16384 fp16", "B1_median_us": 13.34, "B1_MAD_over_median": 0.024, "B2_median_us": 13.64, "B2_MAD_over_median": 0.023, "block_drift": 0.022, "verdict": "PASS"},
+    {"shape": "48x12288 bf16", "B1_median_us": 12.90, "B1_MAD_over_median": 0.014, "B2_median_us": 13.16, "B2_MAD_over_median": 0.021, "block_drift": 0.020, "verdict": "PASS"},
+    {"shape": "8x16384 fp16", "B1_median_us": 8.24, "B1_MAD_over_median": 0.022, "B2_median_us": 8.14, "B2_MAD_over_median": 0.052, "block_drift": 0.012, "verdict": "PASS"}
+  ],
+  "PAIRED_P_C_DEVICE_EVENT_MEDIANS_US": {
+    "48x16384_fp16_engagement_batchRows2": {
+      "pairs": [
+        {"pair": 1, "order": "P,C", "parent": 13.30, "candidate": 13.72, "delta_pct": 3.2},
+        {"pair": 2, "order": "C,P", "parent": 12.92, "candidate": 14.16, "delta_pct": 9.6},
+        {"pair": 3, "order": "P,C", "parent": 12.94, "candidate": 14.68, "delta_pct": 13.4},
+        {"pair": 4, "order": "C,P", "parent": 13.66, "candidate": 14.64, "delta_pct": 7.2}
+      ],
+      "direction": "4/4 candidate slower",
+      "median_delta_pct": 8.4,
+      "per_run_all_device_MAD_us": "0.22-0.96 on ~13-14us medians (MAD/median <= 0.07)",
+      "assessment": "stable regression beyond same-binary drift (~2%) and beyond identical-code control spread (~5pp)"
+    },
+    "48x12288_bf16_engagement": {
+      "pairs": [
+        {"pair": 1, "order": "P,C", "parent": 13.16, "candidate": 12.88, "delta_pct": -2.1},
+        {"pair": 2, "order": "C,P", "parent": 13.10, "candidate": 13.70, "delta_pct": 4.6},
+        {"pair": 3, "order": "P,C", "parent": 13.00, "candidate": 13.20, "delta_pct": 1.5},
+        {"pair": 4, "order": "C,P", "parent": 13.36, "candidate": 122.24, "delta_pct": 815.0, "classification": "LOAD_CONTAMINATED", "note": "candidate run p10=12.42 min=12.00 median=122.24 MAD=52.18, bimodal device spike; retained as contaminated evidence, excluded from the architecture conclusion"}
+      ],
+      "direction": "mixed on admissible pairs (3 pairs)",
+      "assessment": "within noise; no win claim"
+    },
+    "8x16384_fp16_control_localRows1": {
+      "note": "localRows=1 -> batchRows=1 -> candidate takes the unchanged V011 path; identical-code noise floor",
+      "pairs": [
+        {"pair": 1, "order": "P,C", "parent": 8.48, "candidate": 8.36, "delta_pct": -1.4},
+        {"pair": 2, "order": "C,P", "parent": 8.16, "candidate": 7.78, "delta_pct": -4.7},
+        {"pair": 3, "order": "P,C", "parent": 8.12, "candidate": 8.16, "delta_pct": 0.5},
+        {"pair": 4, "order": "C,P", "parent": 8.20, "candidate": 7.86, "delta_pct": -4.1}
+      ],
+      "direction": "mixed, |delta| <= 4.7%",
+      "assessment": "identical-code spread ~5pp; any |delta| under ~5% is indistinguishable from noise on this harness"
+    }
+  },
+  "NOISE_FLOOR_NOTE": "Primary statistic is DEVICE_EVENT median + MAD/median + block drift per 本地性能测试规范.md. Wall-clock secondary is noisy (CV ~0.3) and not used for the verdict.",
+  "LOAD_CONTAMINATED_RAW_RETAINED": ["pc_B4_C (see support/timing-results/)"],
+  "LOCAL_VERDICT": "LOCAL_REJECTED",
+  "VERDICT_REASON": "Correctness PASS on the touched path. Primary engagement shape 48x16384 FP16 shows a stable 4/4 regression of +3.2%..+13.4% (median +8.4%) on device-event medians. The stride multi-row transaction reduction (2x fewer MTE2 commands at batchRows=2) did not pay for the loss of the V011 2-deep (row,tile) prefetch, which the zero-UB-growth design forced (2-deep x B staging overflows usable UB). BF16 engagement shape is within noise. Verdict is for this mechanism as implemented, not for stride multi-row DMA in general.",
+  "NEXT_PARENT": "FROZEN_R31B_V011 (rolled back; V001 is not a valid parent)",
+  "UB_CORRECTNESS_GAP_CLUE": {
+    "status": "EVIDENCE_ONLY_REPORT_TO_MAIN",
+    "finding": "Frozen parent FP32 wide path output is nondeterministic run-to-run on identical deterministic inputs: mrx_parent_probe 8x16384 fp32 x3 runs gave bad=96269/92999/94249 and max_abs=1.299292/1.260196/1.235985; candidate binary shows the same class of nondeterminism (97390/95945/95245). LP (FP16/BF16) wide path is fully deterministic and bit-identical between parent and candidate.",
+    "interpretation": "The documented pre-existing wide-FP32 golden mismatch is at least partly kernel-side run-to-run nondeterminism in the untouched ProcessWideFp32FullCacheRows path (uninitialized UB read or buffer-alias behavior sensitive to binary layout). V001 did not touch that path. Do not fix here; recorded for Main-2 / Planning.",
+    "evidence": "本地实验/MULTIROW-DMA-CHAMPION-X/V001/support/timing-results/ and the determinism runs in the handoff log"
+  },
+  "SINGLE_CHANGE_AUDIT": "PASS",
+  "ONLINE_WORTHY": "NO"
+}
