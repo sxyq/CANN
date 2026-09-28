@@ -77,3 +77,4 @@
 | 2026-09-29 | SHAPE-TILING: V001 NEEDS_ONE_MORE_LOCAL (in noise band); Main selected H2 for V002 |
 | 2026-09-29 | Wide-FP32 invRms nondeterminism forwarded to R31B lane |
 | 2026-09-29 | SHAPE-TILING: V002 NEEDS_ONE_MORE_LOCAL (tile rounds not bottleneck at rows=2); directed multi-row re-measure before V003 |
+| 2026-09-29 | Tiling multiscale: tile axis falsified (magnitude check); case14 gap = per-tile sync/pipeline depth; forwarded to R31B & EPILOGUE-ARITH |
