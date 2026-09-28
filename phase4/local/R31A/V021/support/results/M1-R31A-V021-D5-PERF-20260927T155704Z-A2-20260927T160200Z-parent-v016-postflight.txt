@@ -1,0 +1,65 @@
+utc=2026-09-27T16:05:39Z
+hostname=hwnput3
++------------------------------------------------------------------------------------------------+
+| npu-smi 25.0.rc1.1               Version: 25.0.rc1.1                                           |
++---------------------------+---------------+----------------------------------------------------+
+| NPU   Name                | Health        | Power(W)    Temp(C)           Hugepages-Usage(page)|
+| Chip                      | Bus-Id        | AICore(%)   Memory-Usage(MB)  HBM-Usage(MB)        |
++===========================+===============+====================================================+
+| 0     910B3               | OK            | 157.2       41                0    / 0             |
+| 0                         | 0000:C1:00.0  | 36          0    / 0          59976/ 65536         |
++===========================+===============+====================================================+
+| 1     910B3               | OK            | 147.2       39                0    / 0             |
+| 0                         | 0000:C2:00.0  | 37          0    / 0          60027/ 65536         |
++===========================+===============+====================================================+
+| 2     910B3               | OK            | 144.6       42                0    / 0             |
+| 0                         | 0000:81:00.0  | 36          0    / 0          59969/ 65536         |
++===========================+===============+====================================================+
+| 3     910B3               | OK            | 154.7       41                0    / 0             |
+| 0                         | 0000:82:00.0  | 36          0    / 0          59971/ 65536         |
++===========================+===============+====================================================+
+| 4     910B3               | OK            | 89.1        37                0    / 0             |
+| 0                         | 0000:01:00.0  | 0           0    / 0          59190/ 65536         |
++===========================+===============+====================================================+
+| 5     910B3               | OK            | 91.9        35                0    / 0             |
+| 0                         | 0000:02:00.0  | 0           0    / 0          59879/ 65536         |
++===========================+===============+====================================================+
+| 6     910B3               | OK            | 94.8        39                0    / 0             |
+| 0                         | 0000:41:00.0  | 0           0    / 0          59877/ 65536         |
++===========================+===============+====================================================+
+| 7     910B3               | OK            | 95.7        39                0    / 0             |
+| 0                         | 0000:42:00.0  | 0           0    / 0          3417 / 65536         |
++===========================+===============+====================================================+
++---------------------------+---------------+----------------------------------------------------+
+| NPU     Chip              | Process id    | Process name             | Process memory(MB)      |
++===========================+===============+====================================================+
+| 0       0                 | 89395         | VLLMWorker_TP            | 56454                   |
++===========================+===============+====================================================+
+| 1       0                 | 91055         | VLLMWorker_TP            | 56454                   |
++===========================+===============+====================================================+
+| 2       0                 | 92813         | VLLMWorker_TP            | 56455                   |
++===========================+===============+====================================================+
+| 3       0                 | 94498         | VLLMWorker_TP            | 56455                   |
++===========================+===============+====================================================+
+| 4       0                 | 2999855       | VLLMEngineCor            | 55664                   |
++===========================+===============+====================================================+
+| 5       0                 | 89602         | VLLMWorker_TP            | 56354                   |
++===========================+===============+====================================================+
+| 6       0                 | 91228         | VLLMWorker_TP            | 56355                   |
++===========================+===============+====================================================+
+| No running processes found in NPU 7                                                            |
++===========================+===============+====================================================+
+--- processes ---
+  82397 root      5-09:37:37 26.5  0.4 /usr/local/python3.12.13/bin/python3 /usr/local/python3.12.13/bin/vllm serve /models/Qwen3.8-27B-w8a8 --host 0.0.0.0 --port 9001 --tensor-parallel-size 4 --quantization ascend --served-model-name qwen3.8 --max-model-len 256000 --max-num-seqs 8 --max-num-batched-tokens 8192 --gpu-memory-utilization 0.90 --enable-prefix-caching --trust-remote-code --reasoning-parser qwen3 --enable-auto-tool-choice --tool-call-parser qwen3_coder
+  83352 root      5-09:37:27  0.3  0.4 /usr/local/python3.12.13/bin/python3 /usr/local/python3.12.13/bin/vllm serve /models/Qwen3.8-27B-w8a8 --host 0.0.0.0 --port 9002 --tensor-parallel-size 2 --quantization ascend --served-model-name qwen3.8 --max-model-len 256000 --max-num-seqs 8 --max-num-batched-tokens 8192 --gpu-memory-utilization 0.90 --enable-prefix-caching --trust-remote-code --reasoning-parser qwen3 --enable-auto-tool-choice --tool-call-parser qwen3_coder
+  87336 root      5-09:36:47 75.8  0.1 VLLM::EngineCore
+  87670 root      5-09:36:43  1.9  0.1 VLLM::EngineCore
+  89395 root      5-09:36:24  168  0.4 VLLM::Worker_TP0
+  89602 root      5-09:36:21 12.7  0.4 VLLM::Worker_TP0
+  91055 root      5-09:36:05 86.5  0.4 VLLM::Worker_TP1
+  91228 root      5-09:36:03 10.4  0.4 VLLM::Worker_TP1
+  92813 root      5-09:35:46 89.9  0.4 VLLM::Worker_TP2
+  94498 root      5-09:35:27 87.8  0.4 VLLM::Worker_TP3
+2992910 zhangka+ 14-01:03:06  0.3  0.2 /home/data4t1/zhangkaijie/conda/envs/qwen38_a2/bin/python3.12 /home/data4t1/zhangkaijie/conda/envs/qwen38_a2/bin/vllm serve /home/data4t2/models/Qwen3.8-27B-w8a8 --host 0.0.0.0 --port 9000 --tensor-parallel-size 1 --max-model-len 200000 --max-num-seqs 8 --max-num-batched-tokens 16384 --enable-prefix-caching --trust-remote-code --speculative-config {"method":"mtp","num_speculative_tokens":4} --enable-auto-tool-choice --tool-call-parser qwen3_coder --gpu-memory-utilization 0.85
+2999855 zhangka+ 14-01:02:20 14.0  0.3 VLLM::EngineCore
+3886653 lelinfe+       00:06  0.1  0.0 bash -c set -o pipefail source /usr/local/Ascend/ascend-toolkit/set_env.sh cd /home/data4t2/lelinfeng/phase4-worktrees/R31A/V021-direct/probe-build {   echo 'utc='$(date -u +%Y-%m-%dT%H:%M:%SZ)   echo 'hostname='$(hostname)   echo 'device=5'   npu-smi info   echo '--- processes ---'   ps -eo pid,user,etime,pcpu,pmem,args --sort=pid | grep -E '[V]LLM|[v]llm|[E]ngineCor|[r]31a' || true } > /tmp/M1-R31A-V021-D5-PERF-20260927T155704Z-A2-20260927T160200Z-parent-v016-preflight.txt ./r31a_paired_probe same 5 V016 24576 /home/data4t2/lelinfeng/phase4-worktrees/R31A/V021-direct/probe-build/M1-R31A-V021-D5-PERF-20260927T155704Z-A2-20260927T160200Z-d24576-parent-v016 0 45 > /tmp/M1-R31A-V021-D5-PERF-20260927T155704Z-A2-20260927T160200Z-parent-v016.stdout.txt 2> /tmp/M1-R31A-V021-D5-PERF-20260927T155704Z-A2-20260927T160200Z-parent-v016.stderr.txt rc=$? printf 'runner_rc=%s\n' "$rc" > /tmp/M1-R31A-V021-D5-PERF-20260927T155704Z-A2-20260927T160200Z-parent-v016.rc.txt {   echo 'utc='$(date -u +%Y-%m-%dT%H:%M:%SZ)   echo 'hostname='$(hostname)   npu-smi info   echo '--- processes ---'   ps -eo pid,user,etime,pcpu,pmem,args --sort=pid | grep -E '[V]LLM|[v]llm|[E]ngineCor|[r]31a' || true } > /tmp/M1-R31A-V021-D5-PERF-20260927T155704Z-A2-20260927T160200Z-parent-v016-postflight.txt cat /tmp/M1-R31A-V021-D5-PERF-20260927T155704Z-A2-20260927T160200Z-parent-v016.stdout.txt /tmp/M1-R31A-V021-D5-PERF-20260927T155704Z-A2-20260927T160200Z-parent-v016.stderr.txt /tmp/M1-R31A-V021-D5-PERF-20260927T155704Z-A2-20260927T160200Z-parent-v016.rc.txt exit $rc

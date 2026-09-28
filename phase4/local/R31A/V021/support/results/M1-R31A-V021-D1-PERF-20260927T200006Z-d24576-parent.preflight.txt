@@ -1,0 +1,103 @@
+utc=2026-09-27T20:08:01Z
+hostname=hwnput3
+device=1
+lease_id=M1-R31A-V021-D1-PERF-20260927T200006Z
+exact_command=./r31a_paired_probe same 1 V016 24576 /home/data4t2/lelinfeng/phase4-worktrees/R31A/V021-direct/probe-build/M1-R31A-V021-D1-PERF-20260927T200006Z-d24576-parent 0 45
+--- npu-smi
++------------------------------------------------------------------------------------------------+
+| npu-smi 25.0.rc1.1               Version: 25.0.rc1.1                                           |
++---------------------------+---------------+----------------------------------------------------+
+| NPU   Name                | Health        | Power(W)    Temp(C)           Hugepages-Usage(page)|
+| Chip                      | Bus-Id        | AICore(%)   Memory-Usage(MB)  HBM-Usage(MB)        |
++===========================+===============+====================================================+
+| 0     910B3               | OK            | 156.9       47                0    / 0             |
+| 0                         | 0000:C1:00.0  | 37          0    / 0          59975/ 65536         |
++===========================+===============+====================================================+
+| 1     910B3               | OK            | 150.8       46                0    / 0             |
+| 0                         | 0000:C2:00.0  | 37          0    / 0          60027/ 65536         |
++===========================+===============+====================================================+
+| 2     910B3               | OK            | 150.3       49                0    / 0             |
+| 0                         | 0000:81:00.0  | 37          0    / 0          59969/ 65536         |
++===========================+===============+====================================================+
+| 3     910B3               | OK            | 154.6       47                0    / 0             |
+| 0                         | 0000:82:00.0  | 37          0    / 0          59971/ 65536         |
++===========================+===============+====================================================+
+| 4     910B3               | OK            | 91.0        43                0    / 0             |
+| 0                         | 0000:01:00.0  | 0           0    / 0          59190/ 65536         |
++===========================+===============+====================================================+
+| 5     910B3               | OK            | 93.5        41                0    / 0             |
+| 0                         | 0000:02:00.0  | 0           0    / 0          59876/ 65536         |
++===========================+===============+====================================================+
+| 6     910B3               | OK            | 97.8        44                0    / 0             |
+| 0                         | 0000:41:00.0  | 0           0    / 0          59876/ 65536         |
++===========================+===============+====================================================+
+| 7     910B3               | OK            | 139.4       48                0    / 0             |
+| 0                         | 0000:42:00.0  | 31          0    / 0          59526/ 65536         |
++===========================+===============+====================================================+
++---------------------------+---------------+----------------------------------------------------+
+| NPU     Chip              | Process id    | Process name             | Process memory(MB)      |
++===========================+===============+====================================================+
+| 0       0                 | 89395         | VLLMWorker_TP            | 56454                   |
++===========================+===============+====================================================+
+| 1       0                 | 91055         | VLLMWorker_TP            | 56454                   |
++===========================+===============+====================================================+
+| 2       0                 | 92813         | VLLMWorker_TP            | 56455                   |
++===========================+===============+====================================================+
+| 3       0                 | 94498         | VLLMWorker_TP            | 56455                   |
++===========================+===============+====================================================+
+| 4       0                 | 2999855       | VLLMEngineCor            | 55664                   |
++===========================+===============+====================================================+
+| 5       0                 | 89602         | VLLMWorker_TP            | 56354                   |
++===========================+===============+====================================================+
+| 6       0                 | 91228         | VLLMWorker_TP            | 56355                   |
++===========================+===============+====================================================+
+| 7       0                 | 1451297       | VLLMEngineCor            | 56008                   |
++===========================+===============+====================================================+
+--- usages
+	NPU ID                         : 1
+	Chip Count                     : 1
+
+	DDR Capacity(MB)               : 0
+	DDR Usage Rate(%)              : 0
+	DDR Hugepages Total(page)      : 0
+	DDR Hugepages Usage Rate(%)    : 0
+	HBM Capacity(MB)               : 65536
+	HBM Usage Rate(%)              : 91
+	Aicore Usage Rate(%)           : 38
+	Aivector Usage Rate(%)         : 37
+	Aicpu Usage Rate(%)            : 0
+	Ctrlcpu Usage Rate(%)          : 6
+	DDR Bandwidth Usage Rate(%)    : 0
+	HBM Bandwidth Usage Rate(%)    : 34
+	Chip ID                        : 0
+
+--- proc-mem
+	NPU ID                         : 1
+	Chip Count                     : 1
+
+	Process id:91055   Process name:VLLMWorker_TP     Process memory(MB):56454
+	Chip ID                        : 0
+
+--- processes
+  82397   82370 root      5-13:40:00 26.9  0.4 /usr/local/python3.12.13/bin/python3 /usr/local/python3.12.13/bin/vllm serve /models/Qwen3.8-27B-w8a8 --host 0.0.0.0 --port 9001 --tensor-parallel-size 4 --quantization ascend --served-model-name qwen3.8 --max-model-len 256000 --max-num-seqs 8 --max-num-batched-tokens 8192 --gpu-memory-utilization 0.90 --enable-prefix-caching --trust-remote-code --reasoning-parser qwen3 --enable-auto-tool-choice --tool-call-parser qwen3_coder
+  83352   83328 root      5-13:39:50  0.3  0.4 /usr/local/python3.12.13/bin/python3 /usr/local/python3.12.13/bin/vllm serve /models/Qwen3.8-27B-w8a8 --host 0.0.0.0 --port 9002 --tensor-parallel-size 2 --quantization ascend --served-model-name qwen3.8 --max-model-len 256000 --max-num-seqs 8 --max-num-batched-tokens 8192 --gpu-memory-utilization 0.90 --enable-prefix-caching --trust-remote-code --reasoning-parser qwen3 --enable-auto-tool-choice --tool-call-parser qwen3_coder
+  87336   82397 root      5-13:39:10 76.8  0.1 VLLM::EngineCore
+  87670   83352 root      5-13:39:06  1.9  0.1 VLLM::EngineCore
+  89395   87336 root      5-13:38:47  170  0.4 VLLM::Worker_TP0
+  89602   87670 root      5-13:38:44 12.6  0.4 VLLM::Worker_TP0
+  91055   87336 root      5-13:38:28 87.0  0.4 VLLM::Worker_TP1
+  91228   87670 root      5-13:38:26 10.3  0.4 VLLM::Worker_TP1
+  92813   87336 root      5-13:38:09 90.7  0.4 VLLM::Worker_TP2
+  94498   87336 root      5-13:37:50 88.5  0.4 VLLM::Worker_TP3
+1451297 1449073 hxw            07:59  189  0.2 VLLM::EngineCore
+1505851 1505832 lelinfe+       00:02  1.0  0.0 bash -c set -o pipefail; source /usr/local/Ascend/ascend-toolkit/set_env.sh; cd '/home/data4t2/lelinfeng/phase4-worktrees/R31A/V021-direct/probe-build'; { echo utc=$(date -u +%Y-%m-%dT%H:%M:%SZ); echo hostname=$(hostname); echo device=1; echo lease_id=M1-R31A-V021-D1-PERF-20260927T200006Z; echo exact_command=./r31a_paired_probe\ same\ 1\ V016\ 24576\ '/home/data4t2/lelinfeng/phase4-worktrees/R31A/V021-direct/probe-build/M1-R31A-V021-D1-PERF-20260927T200006Z-d24576-parent'\ 0\ 45; echo --- npu-smi; npu-smi info; echo --- usages; npu-smi info -t usages -i 1; echo --- proc-mem; npu-smi info -t proc-mem -i 1; echo --- processes; ps -eo pid,ppid,user,etime,pcpu,pmem,args --sort=pid | grep -E '[V]LLM|[v]llm|[E]ngineCor|[r]31a' || true; echo --- identities; sha256sum ../phase4/local/R31A/V021/submission.asc ../phase4/local/R31A/V021/support/parent_v016_submission.asc ../phase4/local/R31A/V021/support/paired_probe_v016.asc ../phase4/local/R31A/V021/support/paired_probe_v021.asc ./r31a_paired_probe ./libr31a_paired_v016.so ./libr31a_paired_v021.so; } > '/home/data4t2/lelinfeng/phase4-worktrees/R31A/V021-direct/probe-build/M1-R31A-V021-D1-PERF-20260927T200006Z-d24576-parent'.preflight.txt; ./r31a_paired_probe same 1 V016 24576 '/home/data4t2/lelinfeng/phase4-worktrees/R31A/V021-direct/probe-build/M1-R31A-V021-D1-PERF-20260927T200006Z-d24576-parent' 0 45 > '/home/data4t2/lelinfeng/phase4-worktrees/R31A/V021-direct/probe-build/M1-R31A-V021-D1-PERF-20260927T200006Z-d24576-parent'.stdout.txt 2> '/home/data4t2/lelinfeng/phase4-worktrees/R31A/V021-direct/probe-build/M1-R31A-V021-D1-PERF-20260927T200006Z-d24576-parent'.stderr.txt; rc=$?; echo runner_rc=$rc > '/home/data4t2/lelinfeng/phase4-worktrees/R31A/V021-direct/probe-build/M1-R31A-V021-D1-PERF-20260927T200006Z-d24576-parent'.rc.txt; { echo utc=$(date -u +%Y-%m-%dT%H:%M:%SZ); echo hostname=$(hostname); echo device=1; npu-smi info; echo --- usages; npu-smi info -t usages -i 1; echo --- proc-mem; npu-smi info -t proc-mem -i 1; echo --- processes; ps -eo pid,ppid,user,etime,pcpu,pmem,args --sort=pid | grep -E '[V]LLM|[v]llm|[E]ngineCor|[r]31a' || true; } > '/home/data4t2/lelinfeng/phase4-worktrees/R31A/V021-direct/probe-build/M1-R31A-V021-D1-PERF-20260927T200006Z-d24576-parent'.postflight.txt; cat '/home/data4t2/lelinfeng/phase4-worktrees/R31A/V021-direct/probe-build/M1-R31A-V021-D1-PERF-20260927T200006Z-d24576-parent'.stdout.txt '/home/data4t2/lelinfeng/phase4-worktrees/R31A/V021-direct/probe-build/M1-R31A-V021-D1-PERF-20260927T200006Z-d24576-parent'.stderr.txt '/home/data4t2/lelinfeng/phase4-worktrees/R31A/V021-direct/probe-build/M1-R31A-V021-D1-PERF-20260927T200006Z-d24576-parent'.rc.txt '/home/data4t2/lelinfeng/phase4-worktrees/R31A/V021-direct/probe-build/M1-R31A-V021-D1-PERF-20260927T200006Z-d24576-parent'.preflight.txt '/home/data4t2/lelinfeng/phase4-worktrees/R31A/V021-direct/probe-build/M1-R31A-V021-D1-PERF-20260927T200006Z-d24576-parent'.postflight.txt; exit $rc
+2992910 2577231 zhangka+ 14-05:05:29  0.3  0.2 /home/data4t1/zhangkaijie/conda/envs/qwen38_a2/bin/python3.12 /home/data4t1/zhangkaijie/conda/envs/qwen38_a2/bin/vllm serve /home/data4t2/models/Qwen3.8-27B-w8a8 --host 0.0.0.0 --port 9000 --tensor-parallel-size 1 --max-model-len 200000 --max-num-seqs 8 --max-num-batched-tokens 16384 --enable-prefix-caching --trust-remote-code --speculative-config {"method":"mtp","num_speculative_tokens":4} --enable-auto-tool-choice --tool-call-parser qwen3_coder --gpu-memory-utilization 0.85
+2999855 2992910 zhangka+ 14-05:04:43 14.0  0.3 VLLM::EngineCore
+--- identities
+4f5bfc319b72d1f0bcfd453bc92e80ac64216719898757292daf1aa1b73b6063  ../phase4/local/R31A/V021/submission.asc
+dd13093823c885e785a650abff4863827e652eb8607ad0621a96eb31b6764fa0  ../phase4/local/R31A/V021/support/parent_v016_submission.asc
+dd45d48c000b77f9fd47f8c9e050a39ad320da13319553f0722aad78e05baecc  ../phase4/local/R31A/V021/support/paired_probe_v016.asc
+4ccb96b2a9f5abf6b5f116a1bf2ff3fdff982ae42dbdac9f2f5c39a2e4541df1  ../phase4/local/R31A/V021/support/paired_probe_v021.asc
+7dbde489de951be883fe38d6cbc991800c0451a97931af8ac036c339f0e61f9a  ./r31a_paired_probe
+11d7a2cb60912ce23b05a768c9076abcf2c513ad8b0844cc062d158082a4d5ea  ./libr31a_paired_v016.so
+9bacd8cd72b8db5c6b8a1574ce199c674b18bc2bcf858cfb91ade29f71d24674  ./libr31a_paired_v021.so
