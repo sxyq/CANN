@@ -1,115 +1,251 @@
 {
-  "route": "R31B",
-  "revision": "V016",
-  "direct_parent": "R31B-V011",
-  "parent_score": 45.16,
-  "parent_source_sha": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
-  "source_sha": "9f5c353e65a13a740fe97dc7e6415df032d27560831a3ad142c77592b8208eb5",
-  "submission": "phase4/local/R31B/V016/submission.asc",
-  "decision": "NOT_COMPLETE",
-  "compile": "PASS",
-  "link": "PASS",
-  "correctness": {
-    "change_domain": "PASS",
-    "fp16_bf16_widths": [8192, 12288, 16384, 32768],
-    "fp32_control_width": 8192,
-    "fp32_width_16384": {
-      "v011_parent": {
-        "status": "FAIL",
-        "failures": 27605,
-        "max_abs": 0.0964607,
-        "max_rel": 63.790886
-      },
-      "v016_candidate": {
-        "status": "FAIL",
-        "failures": 25707,
-        "max_abs": 0.092531443,
-        "max_rel": 117.22115
-      },
-      "classification": "INHERITED_OR_HARNESS_ISSUE"
-    }
-  },
-  "paired_local_probes": {
-    "count": 4,
-    "device": 4,
-    "rows": 2,
-    "warmup": 1,
-    "repeats": 3,
-    "timing_status": "LOAD_CONTAMINATED",
-    "performance_conclusion": "NONE",
-    "cases": [
-      {"dtype": "fp16", "width": 12288, "v011_median_us": 69.290, "v016_median_us": 226.191, "raw_delta_us": 156.901},
-      {"dtype": "fp16", "width": 32768, "v011_median_us": 235.411, "v016_median_us": 207.590, "raw_delta_us": -27.821},
-      {"dtype": "bf16", "width": 12288, "v011_median_us": 122.900, "v016_median_us": 162.820, "raw_delta_us": 39.920},
-      {"dtype": "bf16", "width": 32768, "v011_median_us": 151.020, "v016_median_us": 206.721, "raw_delta_us": 55.701}
-    ]
-  },
-  "load_quality": {
-    "dispatch_observation": "All 8 NPUs had VLLM/python processes; AICore approximately 31-49% on devices 0-3 and 7, 0% on devices 4-6; HBM heavily occupied.",
-    "probe_before": "2026-09-24T04:44:29+0800 device4 AICore=0%, AIVector=0%, HBM=90%, HBM temperature=42 C, CtrlCPU=6%",
-    "probe_after": "2026-09-24T04:46:25+0800 device4 AICore=0%, AIVector=0%, HBM=90%, HBM temperature=43 C, CtrlCPU=18%",
-    "window_audit": "2026-09-24T04:51:11+0800, 04:52:27+0800, 04:53:39+0800: no clear window; VLLM services and worker processes remained present"
-  },
-  "logs": [
-    "phase4/local/R31B/V016/compile-evidence.txt",
-    "phase4/local/R31B/V016/correctness-evidence.txt",
-    "phase4/local/R31B/V016/local-probe-evidence.txt",
-    "phase4/local/R31B/V016/LOAD_QUALITY",
-    "server3:/home/data4t2/lelinfeng/phase4-review-repro/R31B-V016/build-candidate-v016-r2/configure-clean.log",
-    "server3:/home/data4t2/lelinfeng/phase4-review-repro/R31B-V016/build-candidate-v016-r2/build-clean.log",
-    "server3:/home/data4t2/lelinfeng/phase4-review-repro/R31B-V016/probe-build/build-runner-final.log"
+ "route": "R31B",
+ "revision": "V016",
+ "direct_parent": "R31B-V011",
+ "parent_score": 45.16,
+ "parent_source_sha": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+ "source_sha": "9f5c353e65a13a740fe97dc7e6415df032d27560831a3ad142c77592b8208eb5",
+ "submission": "phase4/local/R31B/V016/submission.asc",
+ "decision": "LOCAL_ACCEPTED",
+ "compile": "PASS",
+ "link": "PASS",
+ "correctness": {
+  "change_domain": "PASS",
+  "fp16_bf16_widths": [
+   8192,
+   12288,
+   16384,
+   32768
   ],
-  "next_candidate_hypothesis": "NONE; retain V016 hypothesis and await a clean local load window",
-  "NON_TIMING_STATUS_20260927": {
-    "SOURCE_SHA256": "9f5c353e65a13a740fe97dc7e6415df032d27560831a3ad142c77592b8208eb5",
-    "SERVER3_SOURCE_SHA256": "9f5c353e65a13a740fe97dc7e6415df032d27560831a3ad142c77592b8208eb5",
-    "DIRECT_PARENT": "R31B-V011",
-    "PARENT_SOURCE_SHA256": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
-    "BUILD": "PASS",
-    "COMPILE_RC": 0,
-    "LINK_RC": 0,
-    "BUILD_COMMAND": "cmake --build /home/data4t2/lelinfeng/phase4-review-repro/R31B-V016/build-candidate-v016-r2 --target device submission full_link --parallel 1 --verbose",
-    "BUILD_ARTIFACT_SHA256": {
-      "device.alink": "1d3b02d854ca15ebbab11328c77ec1319015c7e98d2dbe00ef77d59d8f005995",
-      "submission.alink": "ff0784ac91b18191e838d167cdf5ebc0a371faa9f8e9fec966e53c2625b6d4eb"
-    },
-    "CORRECTNESS": "INCOMPLETE",
-    "CORRECTNESS_DETAIL": "The changed FP16/BF16 domains pass, and both FP32 binaries pass rows=2,D=8192. Both V011 and V016 fail rows=2,D=16384 on d7 under the same runner; latest Parent result: 23803 mismatches, max_abs=0.09248662, RC=1; Candidate: 27680 mismatches, max_abs=0.0964607, RC=1. Earlier exact runs are retained and also show both fail. The FP32 ProcessWideFp32FullCacheRows function is byte-for-byte identical in Parent and Candidate; V016 changes the low-precision tile choice only. This is not a Candidate regression. Treat D=16384 FP32 as a shared baseline/reference limitation and exclude that shape from timing. The exact cause within the shared FP32 implementation/runtime versus the runner/reference remains unresolved because no independent oracle was run.",
-    "CORRECTNESS_RECHECK_20260927": {
-      "DEVICE": 7,
-      "PREFLIGHT": "Health OK; HBM=3432/65536 MB; AICore=0%; no running process listed.",
-      "PARENT_RUNNER_SHA256": "494020cb96e85a62914f4be3acf61aa0094449f6a2bfc721d5460e5cb3091da9",
-      "CANDIDATE_RUNNER_SHA256": "c56ee9e79014b405321b2c42cdf2064992692ffed9f1118cbba6325468d36b08",
-      "D8192_PARENT": "PASS; failures=0; max_abs=3.5762787e-07; RC=0",
-      "D8192_CANDIDATE": "PASS; failures=0; max_abs=3.5762787e-07; RC=0",
-      "D16384_PARENT": "FAIL; failures=23803; max_abs=0.09248662; RC=1",
-      "D16384_CANDIDATE": "FAIL; failures=27680; max_abs=0.0964607; RC=1",
-      "ROOT_CAUSE": "UNRESOLVED_SHARED_FP32_PATH_OR_REFERENCE_RUNNER",
-      "FAILURE_CLASSIFICATION": "BASELINE_OR_REFERENCE_RUNNER_LIMITATION; NOT_CANDIDATE_REGRESSION",
-      "ROOT_CAUSE_DETAIL": "Parent and Candidate use a byte-identical ProcessWideFp32FullCacheRows function and both fail under the same runner. Exact attribution between the shared kernel/runtime and the reference runner is unresolved; no independent oracle was run.",
-      "D16384_TIMING_ELIGIBLE": false,
-      "TIMING_ELIGIBLE_SHAPES_PENDING_QUALIFICATION": [
-        "FP32 rows=2,D=8192",
-        "FP16 rows=2,D=8192,12288,16384,32768",
-        "BF16 rows=2,D=8192,12288,16384,32768"
-      ],
-      "TIMING_SAMPLES": 0
-    },
-    "EXECUTABLE_IDENTITY": "PASS",
-    "EXECUTABLE_SHA256": {
-      "parent_fp32_runner": "494020cb96e85a62914f4be3acf61aa0094449f6a2bfc721d5460e5cb3091da9",
-      "candidate_fp32_runner": "c56ee9e79014b405321b2c42cdf2064992692ffed9f1118cbba6325468d36b08",
-      "parent_other_dtype_runner": "78917340dab5c0723c2d18faf493dca32f0e3412f78971c3ef7daa4db1427891",
-      "candidate_other_dtype_runner": "81a2ebfac7d3ec0cf1cf65105c7b81cc995d16ca8d57ed072eca3bdba40218b2"
-    },
-    "SAME_BINARY": "NOT_RUN",
-    "TIMING": "MEASUREMENT_BLOCKED",
-    "TIMING_BLOCKER": "No R31B shape-specific same-binary qualification or paired timing exists yet. FP32 D=16384 is excluded only for its shared Parent/Candidate failure; the other correctness-passing shapes remain eligible for independent qualification and timing under a valid lease. d7 remains excluded from timing.",
-    "LOCAL_VERDICT": "NOT_COMPLETE",
-    "READY_FOR_SAME_BINARY": true,
-    "NOT_READY_SHAPES": ["FP32 rows=2,D=16384; shared parent/candidate failure, root cause unresolved"],
-    "DEVICE_WINDOW": "UNAVAILABLE",
-    "LOCAL_BEST_UPDATED": false,
-    "ONLINE_WORTHY": "NO"
+  "fp32_control_width": 8192,
+  "fp32_width_16384": {
+   "v011_parent": {
+    "status": "FAIL",
+    "failures": 27605,
+    "max_abs": 0.0964607,
+    "max_rel": 63.790886
+   },
+   "v016_candidate": {
+    "status": "FAIL",
+    "failures": 25707,
+    "max_abs": 0.092531443,
+    "max_rel": 117.22115
+   },
+   "classification": "INHERITED_OR_HARNESS_ISSUE"
   }
+ },
+ "paired_local_probes": {
+  "count": 4,
+  "device": 4,
+  "rows": 2,
+  "warmup": 1,
+  "repeats": 3,
+  "timing_status": "LOAD_CONTAMINATED",
+  "performance_conclusion": "NONE",
+  "cases": [
+   {
+    "dtype": "fp16",
+    "width": 12288,
+    "v011_median_us": 69.29,
+    "v016_median_us": 226.191,
+    "raw_delta_us": 156.901
+   },
+   {
+    "dtype": "fp16",
+    "width": 32768,
+    "v011_median_us": 235.411,
+    "v016_median_us": 207.59,
+    "raw_delta_us": -27.821
+   },
+   {
+    "dtype": "bf16",
+    "width": 12288,
+    "v011_median_us": 122.9,
+    "v016_median_us": 162.82,
+    "raw_delta_us": 39.92
+   },
+   {
+    "dtype": "bf16",
+    "width": 32768,
+    "v011_median_us": 151.02,
+    "v016_median_us": 206.721,
+    "raw_delta_us": 55.701
+   }
+  ]
+ },
+ "load_quality": {
+  "dispatch_observation": "All 8 NPUs had VLLM/python processes; AICore approximately 31-49% on devices 0-3 and 7, 0% on devices 4-6; HBM heavily occupied.",
+  "probe_before": "2026-09-24T04:44:29+0800 device4 AICore=0%, AIVector=0%, HBM=90%, HBM temperature=42 C, CtrlCPU=6%",
+  "probe_after": "2026-09-24T04:46:25+0800 device4 AICore=0%, AIVector=0%, HBM=90%, HBM temperature=43 C, CtrlCPU=18%",
+  "window_audit": "2026-09-24T04:51:11+0800, 04:52:27+0800, 04:53:39+0800: no clear window; VLLM services and worker processes remained present"
+ },
+ "logs": [
+  "phase4/local/R31B/V016/compile-evidence.txt",
+  "phase4/local/R31B/V016/correctness-evidence.txt",
+  "phase4/local/R31B/V016/local-probe-evidence.txt",
+  "phase4/local/R31B/V016/LOAD_QUALITY",
+  "server3:/home/data4t2/lelinfeng/phase4-review-repro/R31B-V016/build-candidate-v016-r2/configure-clean.log",
+  "server3:/home/data4t2/lelinfeng/phase4-review-repro/R31B-V016/build-candidate-v016-r2/build-clean.log",
+  "server3:/home/data4t2/lelinfeng/phase4-review-repro/R31B-V016/probe-build/build-runner-final.log"
+ ],
+ "next_candidate_hypothesis": "NONE; retain V016 hypothesis and await a clean local load window",
+ "NON_TIMING_STATUS_20260927": {
+  "SOURCE_SHA256": "9f5c353e65a13a740fe97dc7e6415df032d27560831a3ad142c77592b8208eb5",
+  "SERVER3_SOURCE_SHA256": "9f5c353e65a13a740fe97dc7e6415df032d27560831a3ad142c77592b8208eb5",
+  "DIRECT_PARENT": "R31B-V011",
+  "PARENT_SOURCE_SHA256": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "BUILD": "PASS",
+  "COMPILE_RC": 0,
+  "LINK_RC": 0,
+  "BUILD_COMMAND": "cmake --build /home/data4t2/lelinfeng/phase4-review-repro/R31B-V016/build-candidate-v016-r2 --target device submission full_link --parallel 1 --verbose",
+  "BUILD_ARTIFACT_SHA256": {
+   "device.alink": "1d3b02d854ca15ebbab11328c77ec1319015c7e98d2dbe00ef77d59d8f005995",
+   "submission.alink": "ff0784ac91b18191e838d167cdf5ebc0a371faa9f8e9fec966e53c2625b6d4eb"
+  },
+  "CORRECTNESS": "INCOMPLETE",
+  "CORRECTNESS_DETAIL": "The changed FP16/BF16 domains pass, and both FP32 binaries pass rows=2,D=8192. Both V011 and V016 fail rows=2,D=16384 on d7 under the same runner; latest Parent result: 23803 mismatches, max_abs=0.09248662, RC=1; Candidate: 27680 mismatches, max_abs=0.0964607, RC=1. Earlier exact runs are retained and also show both fail. The FP32 ProcessWideFp32FullCacheRows function is byte-for-byte identical in Parent and Candidate; V016 changes the low-precision tile choice only. This is not a Candidate regression. Treat D=16384 FP32 as a shared baseline/reference limitation and exclude that shape from timing. The exact cause within the shared FP32 implementation/runtime versus the runner/reference remains unresolved because no independent oracle was run.",
+  "CORRECTNESS_RECHECK_20260927": {
+   "DEVICE": 7,
+   "PREFLIGHT": "Health OK; HBM=3432/65536 MB; AICore=0%; no running process listed.",
+   "PARENT_RUNNER_SHA256": "494020cb96e85a62914f4be3acf61aa0094449f6a2bfc721d5460e5cb3091da9",
+   "CANDIDATE_RUNNER_SHA256": "c56ee9e79014b405321b2c42cdf2064992692ffed9f1118cbba6325468d36b08",
+   "D8192_PARENT": "PASS; failures=0; max_abs=3.5762787e-07; RC=0",
+   "D8192_CANDIDATE": "PASS; failures=0; max_abs=3.5762787e-07; RC=0",
+   "D16384_PARENT": "FAIL; failures=23803; max_abs=0.09248662; RC=1",
+   "D16384_CANDIDATE": "FAIL; failures=27680; max_abs=0.0964607; RC=1",
+   "ROOT_CAUSE": "UNRESOLVED_SHARED_FP32_PATH_OR_REFERENCE_RUNNER",
+   "FAILURE_CLASSIFICATION": "BASELINE_OR_REFERENCE_RUNNER_LIMITATION; NOT_CANDIDATE_REGRESSION",
+   "ROOT_CAUSE_DETAIL": "Parent and Candidate use a byte-identical ProcessWideFp32FullCacheRows function and both fail under the same runner. Exact attribution between the shared kernel/runtime and the reference runner is unresolved; no independent oracle was run.",
+   "D16384_TIMING_ELIGIBLE": false,
+   "TIMING_ELIGIBLE_SHAPES_PENDING_QUALIFICATION": [
+    "FP32 rows=2,D=8192",
+    "FP16 rows=2,D=8192,12288,16384,32768",
+    "BF16 rows=2,D=8192,12288,16384,32768"
+   ],
+   "TIMING_SAMPLES": 0
+  },
+  "EXECUTABLE_IDENTITY": "PASS",
+  "EXECUTABLE_SHA256": {
+   "parent_fp32_runner": "494020cb96e85a62914f4be3acf61aa0094449f6a2bfc721d5460e5cb3091da9",
+   "candidate_fp32_runner": "c56ee9e79014b405321b2c42cdf2064992692ffed9f1118cbba6325468d36b08",
+   "parent_other_dtype_runner": "78917340dab5c0723c2d18faf493dca32f0e3412f78971c3ef7daa4db1427891",
+   "candidate_other_dtype_runner": "81a2ebfac7d3ec0cf1cf65105c7b81cc995d16ca8d57ed072eca3bdba40218b2"
+  },
+  "SAME_BINARY": "NOT_RUN",
+  "TIMING": "MEASUREMENT_BLOCKED",
+  "TIMING_BLOCKER": "No R31B shape-specific same-binary qualification or paired timing exists yet. FP32 D=16384 is excluded only for its shared Parent/Candidate failure; the other correctness-passing shapes remain eligible for independent qualification and timing under a valid lease. d7 remains excluded from timing.",
+  "LOCAL_VERDICT": "NOT_COMPLETE",
+  "READY_FOR_SAME_BINARY": true,
+  "NOT_READY_SHAPES": [
+   "FP32 rows=2,D=16384; shared parent/candidate failure, root cause unresolved"
+  ],
+  "DEVICE_WINDOW": "UNAVAILABLE",
+  "LOCAL_BEST_UPDATED": false,
+  "ONLINE_WORTHY": "NO"
+ },
+ "UNIFIED_VALIDATION_20260928": {
+  "SOURCE_SHA256": "9f5c353e65a13a740fe97dc7e6415df032d27560831a3ad142c77592b8208eb5",
+  "SERVER3_SOURCE_SHA256": "9f5c353e65a13a740fe97dc7e6415df032d27560831a3ad142c77592b8208eb5",
+  "DIRECT_PARENT": "R31B-V011",
+  "PARENT_SOURCE_SHA256": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "BUILD": "PASS",
+  "BUILD_DETAIL": "Existing server3 build/link evidence retained (device.alink=1d3b02d8..., submission.alink=ff0784ac...). Host paired_runner_v016 rebuilt 2026-09-28 with kWarmup 10->45 to meet the unified protocol; runner sha256=ec230928e4d983c0c1da744234ffd20b39ced3e46b8f8def21709b9cbec53ce1. No kernel source changed.",
+  "COMPILE_RC": 0,
+  "LINK_RC": 0,
+  "CORRECTNESS": "PASS",
+  "CORRECTNESS_DETAIL": "Change-domain FP16/BF16 shapes D=8192/12288/16384/32768 and FP32 D=8192 previously PASS. Shared FP32 D=16384 parent-and-candidate failure remains classified as a baseline/reference limitation (byte-identical ProcessWideFp32FullCacheRows), not a candidate regression, and is excluded from timing. Paired-runner CheckOutput passes both binaries on all 4 timing shapes in both 2026-09-28 attempts.",
+  "EXECUTABLE_IDENTITY": "PASS",
+  "EXECUTABLE_SHA256": {
+   "paired_runner_v016": "ec230928e4d983c0c1da744234ffd20b39ced3e46b8f8def21709b9cbec53ce1",
+   "probe_fp32_v011_parent": "494020cb96e85a62914f4be3acf61aa0094449f6a2bfc721d5460e5cb3091da9",
+   "probe_fp32_v016_candidate": "c56ee9e79014b405321b2c42cdf2064992692ffed9f1118cbba6325468d36b08",
+   "probe_v011_parent": "78917340dab5c0723c2d18faf493dca32f0e3412f78971c3ef7daa4db1427891",
+   "probe_v016_candidate": "81a2ebfac7d3ec0cf1cf65105c7b81cc995d16ca8d57ed072eca3bdba40218b2"
+  },
+  "SAME_BINARY": "PASS",
+  "TIMING": "VALID_DEVICE_EVENT_PRIMARY",
+  "TIMING_DETAIL": "Two independent attempts on d4 (lease M1-R31B-V016-D4-PERF-20260928T030946Z, HBM 90% pre/post, AICore 0% observational). Unified protocol: warmup=45, same-binary 21 samples x 2 blocks, paired 21 interleaved P/C samples per shape, device_us primary, wall_us diagnostic.",
+  "TIMING_ATTEMPTS": [
+   {
+    "attempt_id": "M1-R31B-V016-D4-PERF-20260928T030946Z-a1",
+    "device": 4,
+    "same_binary": {
+     "fp16-tail-d12288": "PASS med=5.910 mad/med=0.044 drift=0.014",
+     "fp16-wide-d32768": "PASS med=10.020 mad/med=0.027 drift=0.010",
+     "bf16-tail-d12288": "PASS med=6.690 mad/med=0.033 drift=0.021",
+     "bf16-wide-d32768": "NEEDS_VALIDATION med=14.600 mad/med=0.069 drift=0.130"
+    },
+    "paired_delta_us": {
+     "fp16-tail-d12288": -0.06,
+     "fp16-wide-d32768": -0.68,
+     "bf16-tail-d12288": -0.02,
+     "bf16-wide-d32768": 0.14
+    },
+    "paired_delta_percent": {
+     "fp16-tail-d12288": -0.97,
+     "fp16-wide-d32768": -6.68,
+     "bf16-tail-d12288": -0.3,
+     "bf16-wide-d32768": 1.01
+    },
+    "trimmed_clean_med_us": {
+     "fp16-tail-d12288": -0.1,
+     "fp16-wide-d32768": -0.68,
+     "bf16-tail-d12288": 0.0,
+     "bf16-wide-d32768": 0.14
+    },
+    "fp16_wide_clean_pairs_negative": "15/16"
+   },
+   {
+    "attempt_id": "M1-R31B-V016-D4-PERF-20260928T030946Z-a2",
+    "device": 4,
+    "same_binary": {
+     "fp16-tail-d12288": "PASS med=5.960 mad/med=0.034 drift=0.003",
+     "fp16-wide-d32768": "PASS med=9.920 mad/med=0.022 drift=0.024",
+     "bf16-tail-d12288": "PASS med=6.860 mad/med=0.050 drift=0.082",
+     "bf16-wide-d32768": "PASS med=13.880 mad/med=0.021 drift=0.025"
+    },
+    "paired_delta_us": {
+     "fp16-tail-d12288": -0.32,
+     "fp16-wide-d32768": -0.72,
+     "bf16-tail-d12288": -0.16,
+     "bf16-wide-d32768": -0.02
+    },
+    "paired_delta_percent": {
+     "fp16-tail-d12288": -5.13,
+     "fp16-wide-d32768": -7.05,
+     "bf16-tail-d12288": -2.34,
+     "bf16-wide-d32768": -0.14
+    },
+    "trimmed_clean_med_us": {
+     "fp16-tail-d12288": -0.26,
+     "fp16-wide-d32768": -0.62,
+     "bf16-tail-d12288": -0.16,
+     "bf16-wide-d32768": 0.0
+    },
+    "fp16_wide_clean_pairs_negative": "16/18"
+   }
+  ],
+  "COMBINED_TIMING_READ": "Candidate V016 is never meaningfully slower than parent V011 on any of the four FP16/BF16 change-domain shapes. The hypothesis target shape fp16-wide-d32768 shows a reproducible device-event improvement of -0.68us and -0.72us (about -6.5 to -7.0%) across two independent attempts, with trimmed clean pairs 15/16 and 16/18 negative. The effect (-0.65us) exceeds the shape same-binary noise floor (MAD 0.22-0.27us). Tail/control shapes move by -0.02 to -0.32us, within or near noise. bf16-wide-d32768 is flat (-0.14% and -0.02%): the 8192-element tile seed does not establish a bf16-wide gain, but it does not regress.",
+  "OUTLIER_NOTE": "10-30% of paired samples show device-event spikes of 100us or more against typical 6-15us kernels; medians and trimmed clean-sample medians are robust to these spikes and are used for the verdict. Spike rate was lower in attempt 2.",
+  "LOCAL_VERDICT": "LOCAL_ACCEPTED",
+  "LOCAL_VERDICT_BASIS": "fp16-wide-d32768 change-domain win is reproducible across two independent interleaved P/C attempts and exceeds the shape noise floor, with same-binary PASS (4/4 shapes attempt 2) and no shape regression. bf16-wide gain is not established and is recorded as a caveat, not a regression.",
+  "MISSING_EVIDENCE": {
+   "fp32_D16384_shared_failure_root_cause": "MISSING: the shared parent/candidate FP32 D=16384 failure root cause between the shared kernel/runtime and the reference runner remains unresolved; no independent oracle was run. Shape is excluded from timing.",
+   "four_separate_paired_blocks_per_attempt": "MISSING: each attempt is one interleaved block of 21 pairs per shape rather than the newer 4-block x 11-sample layout; direction stability is instead established across two independent attempts.",
+   "bf16_wide_gain": "NOT_ESTABLISHED: the hypothesis claims FP16/BF16 wide-row benefit; only FP16 wide shows a measurable gain. bf16-wide is flat."
+  },
+  "DEVICE_WINDOW": "d4 HBM 90% (<100%) with exclusive lease M1-R31B-V016-D4-PERF-20260928T030946Z; AICore 0%; VLLMEngineCor resident but observational only. Lease released after evidence.",
+  "LOCAL_BEST_UPDATED": true,
+  "LOCAL_BEST_NOTE": "R31B-V016 replaces R31B-V011 as local best on the fp16-wide change-domain win with no shape regression.",
+  "ONLINE_WORTHY": "PENDING_MAIN_DECISION",
+  "EVIDENCE": [
+   "phase4/local/R31B/V016/support/results/M1-R31B-V016-D4-PERF-20260928T030946Z-local-verdict.txt",
+   "phase4/local/R31B/V016/support/results/r31b-v016-samebinary-20260928T030946Z.log",
+   "phase4/local/R31B/V016/support/results/r31b-v016-paired-20260928T030946Z.log",
+   "phase4/local/R31B/V016/support/results/r31b-v016-samebinary-a2.log",
+   "phase4/local/R31B/V016/support/results/r31b-v016-paired-a2.log",
+   "phase4/local/R31B/V016/support/results/M1-R31B-V016-D4-PERF-20260928T030946Z-identities.txt"
+  ]
+ },
+ "DECISION": "LOCAL_ACCEPTED"
 }

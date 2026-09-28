@@ -15,7 +15,7 @@ using R31BRunKernel = decltype(&r31b_v011::run_kernel_v011);
 
 constexpr int kDevice = 4;
 constexpr int kRows = 2;
-constexpr int kWarmup = 10;
+constexpr int kWarmup = 45;
 constexpr int kPairs = 21;
 constexpr int kQualificationBlocks = 2;
 constexpr int kQualificationSamplesPerBlock = 31;
@@ -527,7 +527,7 @@ int main(int argc, char** argv)
     CheckAcl(aclrtDestroyStream(stream), "destroy stream");
     CheckAcl(aclrtResetDevice(kDevice), "reset device");
     CheckAcl(aclFinalize(), "aclFinalize");
-    std::printf("RUNNER_COMPLETE mode=%s correctness=PASS cases=4 warmup_each=10 pairs_each=21 timing=DEVICE_EVENT_PRIMARY wall=DIAGNOSTIC\n",
+    std::printf("RUNNER_COMPLETE mode=%s correctness=PASS cases=4 warmup_each=45 pairs_each=21 timing=DEVICE_EVENT_PRIMARY wall=DIAGNOSTIC\n",
                 mode == RunMode::kQualifyV011 ? "QUALIFY_V011" : "PAIRED");
     return 0;
 }

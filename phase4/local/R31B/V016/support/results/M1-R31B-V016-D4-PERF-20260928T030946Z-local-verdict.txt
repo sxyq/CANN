@@ -1,0 +1,52 @@
+ATTEMPT=M1-R31B-V016-D4-PERF-20260928T030946Z
+ROUTE=R31B
+REVISION=V016
+DIRECT_PARENT=R31B-V011
+PARENT_SOURCE_SHA=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
+SOURCE_SHA=9f5c353e65a13a740fe97dc7e6415df032d27560831a3ad142c77592b8208eb5
+DEVICE=4
+HBM_PREFLIGHT=90%
+HBM_POSTFLIGHT=90%
+AICORE=0% (observational)
+RUNNER_SHA256=ec230928e4d983c0c1da744234ffd20b39ced3e46b8f8def21709b9cbec53ce1
+RUNNER_SOURCE_SHA256=670ba116f04348ba442aa5717a9afe5d724a358c777483404629838ba76b65f3
+RUNNER_WARMUP=45 (rebuilt from warmup=10 to meet unified protocol)
+SOURCE_IDENTITY=PASS (server3 kernel sha matches queue SOURCE_SHA256)
+BUILD=NOT_RERUN (existing build/link PASS retained; only the host runner was rebuilt)
+CORRECTNESS=PASS (paired-runner CheckOutput both binaries, all 4 cases, both attempts)
+
+ATTEMPT_1_SAME_BINARY (warmup=45, 21x2 samples):
+  fp16-tail-d12288   PASS med=5.910  mad/med=0.044 drift=0.014
+  fp16-wide-d32768   PASS med=10.020 mad/med=0.027 drift=0.010
+  bf16-tail-d12288   PASS med=6.690  mad/med=0.033 drift=0.021
+  bf16-wide-d32768   NEEDS_VALIDATION med=14.600 mad/med=0.069 drift=0.130
+
+ATTEMPT_2_SAME_BINARY:
+  fp16-tail-d12288   PASS med=5.960  mad/med=0.034 drift=0.003
+  fp16-wide-d32768   PASS med=9.920  mad/med=0.022 drift=0.024
+  bf16-tail-d12288   PASS med=6.860  mad/med=0.050 drift=0.082
+  bf16-wide-d32768   PASS med=13.880 mad/med=0.021 drift=0.025
+
+PAIRED_DEVICE_EVENT_PRIMARY 21 interleaved pairs per shape per attempt (P/C alternating):
+  shape              a1_parent a1_cand a1_delta_us a1_delta%  a2_parent a2_cand a2_delta_us a2_delta%
+  fp16-tail-d12288     6.160    6.080   -0.060     -0.97%      6.240    6.060   -0.320     -5.13%
+  fp16-wide-d32768    10.180    9.540   -0.680     -6.68%     10.220    9.700   -0.720     -7.05%
+  bf16-tail-d12288     6.620    6.760   -0.020     -0.30%      6.840    6.580   -0.160     -2.34%
+  bf16-wide-d32768    13.860   14.040   +0.140     +1.01%     14.200   14.000   -0.020     -0.14%
+
+TRIMMED_SAMPLES (|delta|<10us):
+  fp16-wide-d32768: a1 15/16 neg clean_med=-0.68; a2 16/18 neg clean_med=-0.62
+  fp16-tail-d12288: a1 10/14 neg clean_med=-0.10; a2 15/18 neg clean_med=-0.26
+  bf16-tail-d12288: a1 9/18 neg  clean_med= 0.00; a2 14/19 neg clean_med=-0.16
+  bf16-wide-d32768: a1 7/14 neg  clean_med=+0.14; a2 8/18 neg  clean_med= 0.00
+
+NOISE_FLOOR: same-binary MAD/median <=0.069 all shapes attempt 2 (<=0.10 criterion)
+OUTLIER_NOTE: 10-30% of paired samples show device-event spikes >=100us; medians and trimmed means are robust; spike rate lower in attempt 2.
+
+READ: Candidate is never meaningfully slower than parent on any shape. The hypothesis target shape fp16-wide-d32768 shows a reproducible -6.5 to -7.0% device-event improvement across two independent attempts (15/16 and 16/18 clean pairs negative), which exceeds the shape noise floor (MAD ~0.22-0.27us vs effect -0.65us). Control/tail shapes are within noise. bf16-wide is flat (no gain, no regression).
+
+LOCAL_VERDICT=LOCAL_ACCEPTED
+LOCAL_BEST=R31B-V016 replaces R31B-V011 as local best on the strength of the fp16-wide change-domain win with no shape regression; bf16-wide gain is not established.
+ONLINE=NONE
+LEASE=RELEASED_AFTER_EVIDENCE
+NEXT_ACTION=Main may consider V016 for online-worthiness; official comparison remains against OFFICIAL_ANCHOR R31B-V011 / 45.16.
