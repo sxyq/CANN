@@ -1,0 +1,177 @@
+ROUTE=SHAPE-TILING-CHAMPION-X
+REVISION=V002
+CANDIDATE_SOURCE_SHA256=aed967513cf9c284f8a3226c790dca57a1a6f2fd19048830469291f924ea704b
+HOST=hwnput3
+CANN_ROOT=/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002
+DEVICE=4
+BUILD_DIR=/home/data4t2/lelinfeng/shape-tiling-champion-x/V002/support/build
+=== CONFIGURE + BUILD ===
+-- CMAKE_ASC_COMPILER: /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/compiler/ccec_compiler/bin/bisheng
+CMake Warning at /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/tikcpp/ascendc_kernel_cmake/ASC_CMake/CMakeDetermineASCCompiler.cmake:57 (message):
+  CMAKE_INSTALL_PREFIX is not set.  Set to default value
+  /home/data4t2/lelinfeng/shape-tiling-champion-x/V002/support/out.
+Call Stack (most recent call first):
+  CMakeLists.txt:3 (project)
+
+
+-- CMAKE_BUILD_TYPE: Release
+-- CMAKE_INSTALL_PREFIX: /home/data4t2/lelinfeng/shape-tiling-champion-x/V002/support/out
+-- ASCEND_CANN_PACKAGE_PATH: /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002
+-- CMAKE_ASC_LLD_LINKER: /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/tools/ccec_compiler/bin/ld.lld
+-- The CXX compiler identification is GNU 11.4.0
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/data4t2/lelinfeng/shape-tiling-champion-x/V002/support/build
+[ 12%] Building ASC object CMakeFiles/shape_tiling_v001_parent.dir/kernel_wrap_parent.asc.o
+[ 25%] Building ASC object CMakeFiles/shape_tiling_v001.dir/kernel_wrap.asc.o
+[ 37%] Linking ASC shared library libshape_tiling_v001.so
+[ 37%] Built target shape_tiling_v001
+[ 50%] Building CXX object CMakeFiles/correctness_probe.dir/correctness_probe.cpp.o
+[ 62%] Linking CXX executable correctness_probe
+[ 75%] Linking ASC shared library libshape_tiling_v001_parent.so
+[ 75%] Built target correctness_probe
+[ 75%] Built target shape_tiling_v001_parent
+[ 87%] Building CXX object CMakeFiles/correctness_probe_parent.dir/correctness_probe.cpp.o
+[100%] Linking CXX executable correctness_probe_parent
+[100%] Built target correctness_probe_parent
+BUILD=PASS
+ARTIFACT=/home/data4t2/lelinfeng/shape-tiling-champion-x/V002/support/build/libshape_tiling_v001.so
+f446e22e01313423590fb63a35fe8ae8010046267461d1bf138083ad4138b163  /home/data4t2/lelinfeng/shape-tiling-champion-x/V002/support/build/libshape_tiling_v001.so
+ARTIFACT=/home/data4t2/lelinfeng/shape-tiling-champion-x/V002/support/build/libshape_tiling_v001_parent.so
+6614f68cb49d5bfff94cb0df73640497190a511be36a286b774aacac905852e5  /home/data4t2/lelinfeng/shape-tiling-champion-x/V002/support/build/libshape_tiling_v001_parent.so
+ARTIFACT=/home/data4t2/lelinfeng/shape-tiling-champion-x/V002/support/build/correctness_probe
+611ffa7b9af175faa3a6d395f91c75820ae8e788f4931b7d97b212275596bdb7  /home/data4t2/lelinfeng/shape-tiling-champion-x/V002/support/build/correctness_probe
+ARTIFACT=/home/data4t2/lelinfeng/shape-tiling-champion-x/V002/support/build/correctness_probe_parent
+1d5fd60944ab2ca9f38dc02e944c2bef876cfd75431f7b39c226a68458f1a04d  /home/data4t2/lelinfeng/shape-tiling-champion-x/V002/support/build/correctness_probe_parent
+=== NPU CORRECTNESS (candidate vs parent on identical cases) ===
+--- dtype=0 rows=4 width=32768 ---
+CAND MISMATCH row=0 col=0 expected=0.58179498 actual=0.59850597 y=0.11 invRms=6.4897852 gamma=0.85000002 bias=-0.025
+CAND MISMATCH row=0 col=1 expected=0.74208355 actual=0.76027679 y=0.13854989 invRms=6.4897852 gamma=0.852 bias=-0.024
+CAND MISMATCH row=0 col=2 expected=0.76397777 actual=0.78234988 y=0.14199539 invRms=6.4897852 gamma=0.85400003 bias=-0.023
+CAND MISMATCH row=0 col=3 expected=0.68365854 actual=0.70125353 y=0.12702538 invRms=6.4897852 gamma=0.85600001 bias=-0.022
+CAND MISMATCH row=0 col=4 expected=0.55790442 actual=0.57430214 y=0.10396551 invRms=6.4897852 gamma=0.85800004 bias=-0.021
+CAND dtype=fp32 rows=4 width=32768 device=4 correctness=FAIL failures=119095 max_abs=0.095057845 max_rel=386.86954 median_us=NA samples=0
+PARENT MISMATCH row=0 col=0 expected=0.58179498 actual=0.59565043 y=0.11 invRms=6.4897852 gamma=0.85000002 bias=-0.025
+PARENT MISMATCH row=0 col=1 expected=0.74208355 actual=0.75668019 y=0.13854989 invRms=6.4897852 gamma=0.852 bias=-0.024
+PARENT MISMATCH row=0 col=2 expected=0.76397777 actual=0.77866381 y=0.14199539 invRms=6.4897852 gamma=0.85400003 bias=-0.023
+PARENT MISMATCH row=0 col=3 expected=0.68365854 actual=0.69795603 y=0.12702538 invRms=6.4897852 gamma=0.85600001 bias=-0.022
+PARENT MISMATCH row=0 col=4 expected=0.55790442 actual=0.57160336 y=0.10396551 invRms=6.4897852 gamma=0.85800004 bias=-0.021
+PARENT dtype=fp32 rows=4 width=32768 device=4 correctness=FAIL failures=109310 max_abs=0.094665051 max_rel=386.86954 median_us=NA samples=0
+CAND_RC=1 PARENT_RC=1
+--- dtype=0 rows=2 width=32768 ---
+CAND MISMATCH row=0 col=0 expected=0.58179498 actual=0.59921694 y=0.11 invRms=6.4897852 gamma=0.85000002 bias=-0.025
+CAND MISMATCH row=0 col=1 expected=0.74208355 actual=0.76247013 y=0.13854989 invRms=6.4897852 gamma=0.852 bias=-0.024
+CAND MISMATCH row=0 col=2 expected=0.76397777 actual=0.78472203 y=0.14199539 invRms=6.4897852 gamma=0.85400003 bias=-0.023
+CAND MISMATCH row=0 col=3 expected=0.68365854 actual=0.70284849 y=0.12702538 invRms=6.4897852 gamma=0.85600001 bias=-0.022
+CAND MISMATCH row=0 col=4 expected=0.55790442 actual=0.57469988 y=0.10396551 invRms=6.4897852 gamma=0.85800004 bias=-0.021
+CAND dtype=fp32 rows=2 width=32768 device=4 correctness=FAIL failures=56727 max_abs=0.092696071 max_rel=158.5636 median_us=NA samples=0
+PARENT MISMATCH row=0 col=0 expected=0.58179498 actual=0.59050596 y=0.11 invRms=6.4897852 gamma=0.85000002 bias=-0.025
+PARENT MISMATCH row=0 col=1 expected=0.74208355 actual=0.75227678 y=0.13854989 invRms=6.4897852 gamma=0.852 bias=-0.024
+PARENT MISMATCH row=0 col=2 expected=0.76397777 actual=0.77434993 y=0.14199539 invRms=6.4897852 gamma=0.85400003 bias=-0.023
+PARENT MISMATCH row=0 col=3 expected=0.68365854 actual=0.69325352 y=0.12702538 invRms=6.4897852 gamma=0.85600001 bias=-0.022
+PARENT MISMATCH row=0 col=4 expected=0.55790442 actual=0.56630212 y=0.10396551 invRms=6.4897852 gamma=0.85800004 bias=-0.021
+PARENT dtype=fp32 rows=2 width=32768 device=4 correctness=FAIL failures=58020 max_abs=0.092696071 max_rel=167.66969 median_us=NA samples=0
+CAND_RC=1 PARENT_RC=1
+--- dtype=0 rows=8 width=32768 ---
+CAND MISMATCH row=0 col=0 expected=0.58179498 actual=0.58465046 y=0.11 invRms=6.4897852 gamma=0.85000002 bias=-0.025
+CAND MISMATCH row=0 col=1 expected=0.74208355 actual=0.74568021 y=0.13854989 invRms=6.4897852 gamma=0.852 bias=-0.024
+CAND MISMATCH row=0 col=2 expected=0.76397777 actual=0.76766384 y=0.14199539 invRms=6.4897852 gamma=0.85400003 bias=-0.023
+CAND MISMATCH row=0 col=3 expected=0.68365854 actual=0.68695599 y=0.12702538 invRms=6.4897852 gamma=0.85600001 bias=-0.022
+CAND MISMATCH row=0 col=4 expected=0.55790442 actual=0.56060332 y=0.10396551 invRms=6.4897852 gamma=0.85800004 bias=-0.021
+CAND dtype=fp32 rows=8 width=32768 device=4 correctness=FAIL failures=171930 max_abs=0.092764497 max_rel=115.18237 median_us=NA samples=0
+PARENT MISMATCH row=0 col=0 expected=0.58179498 actual=0.58465046 y=0.11 invRms=6.4897852 gamma=0.85000002 bias=-0.025
+PARENT MISMATCH row=0 col=1 expected=0.74208355 actual=0.74568021 y=0.13854989 invRms=6.4897852 gamma=0.852 bias=-0.024
+PARENT MISMATCH row=0 col=2 expected=0.76397777 actual=0.76766384 y=0.14199539 invRms=6.4897852 gamma=0.85400003 bias=-0.023
+PARENT MISMATCH row=0 col=3 expected=0.68365854 actual=0.68695599 y=0.12702538 invRms=6.4897852 gamma=0.85600001 bias=-0.022
+PARENT MISMATCH row=0 col=4 expected=0.55790442 actual=0.56060332 y=0.10396551 invRms=6.4897852 gamma=0.85800004 bias=-0.021
+PARENT dtype=fp32 rows=8 width=32768 device=4 correctness=FAIL failures=168178 max_abs=0.092696071 max_rel=156.2869 median_us=NA samples=0
+CAND_RC=1 PARENT_RC=1
+--- dtype=0 rows=4 width=16384 ---
+CAND MISMATCH row=0 col=0 expected=0.58221489 actual=0.59378731 y=0.11 invRms=6.4942765 gamma=0.85000002 bias=-0.025
+CAND MISMATCH row=0 col=1 expected=0.74261373 actual=0.75641108 y=0.13854989 invRms=6.4942765 gamma=0.852 bias=-0.024
+CAND MISMATCH row=0 col=2 expected=0.76452237 actual=0.77858824 y=0.14199539 invRms=6.4942765 gamma=0.85400003 bias=-0.023
+CAND MISMATCH row=0 col=3 expected=0.68414688 actual=0.69704616 y=0.12702538 invRms=6.4942765 gamma=0.85600001 bias=-0.022
+CAND MISMATCH row=0 col=4 expected=0.55830508 actual=0.56940722 y=0.10396551 invRms=6.4942765 gamma=0.85800004 bias=-0.021
+CAND dtype=fp32 rows=4 width=16384 device=4 correctness=FAIL failures=44259 max_abs=0.091376305 max_rel=3807.3174 median_us=NA samples=0
+PARENT MISMATCH row=0 col=0 expected=0.58221489 actual=0.58521485 y=0.11 invRms=6.4942765 gamma=0.85000002 bias=-0.025
+PARENT MISMATCH row=0 col=1 expected=0.74261373 actual=0.74561369 y=0.13854989 invRms=6.4942765 gamma=0.852 bias=-0.024
+PARENT MISMATCH row=0 col=2 expected=0.76452237 actual=0.76752239 y=0.14199539 invRms=6.4942765 gamma=0.85400003 bias=-0.023
+PARENT MISMATCH row=0 col=3 expected=0.68414688 actual=0.6871469 y=0.12702538 invRms=6.4942765 gamma=0.85600001 bias=-0.022
+PARENT MISMATCH row=0 col=4 expected=0.55830508 actual=0.56130511 y=0.10396551 invRms=6.4942765 gamma=0.85800004 bias=-0.021
+PARENT dtype=fp32 rows=4 width=16384 device=4 correctness=FAIL failures=46639 max_abs=0.091969728 max_rel=3817.2109 median_us=NA samples=0
+CAND_RC=1 PARENT_RC=1
+--- dtype=0 rows=4 width=12288 ---
+CAND MISMATCH row=0 col=0 expected=0.58223683 actual=0.58509439 y=0.11 invRms=6.4945111 gamma=0.85000002 bias=-0.025
+CAND MISMATCH row=0 col=1 expected=0.74264139 actual=0.74624062 y=0.13854989 invRms=6.4945111 gamma=0.852 bias=-0.024
+CAND MISMATCH row=0 col=2 expected=0.76455081 actual=0.7682395 y=0.14199539 invRms=6.4945111 gamma=0.85400003 bias=-0.023
+CAND MISMATCH row=0 col=3 expected=0.68417239 actual=0.68747222 y=0.12702538 invRms=6.4945111 gamma=0.85600001 bias=-0.022
+CAND MISMATCH row=0 col=4 expected=0.55832601 actual=0.56102681 y=0.10396551 invRms=6.4945111 gamma=0.85800004 bias=-0.021
+CAND dtype=fp32 rows=4 width=12288 device=4 correctness=FAIL failures=29933 max_abs=0.092273593 max_rel=295.24146 median_us=NA samples=0
+PARENT MISMATCH row=0 col=1024 expected=-0.8720122 actual=-0.88396645 y=-0.15221658 invRms=6.4945111 gamma=0.87400001 bias=-0.0079999994
+PARENT MISMATCH row=0 col=1025 expected=-0.41892579 actual=-0.42880666 y=-0.072404973 invRms=6.4945111 gamma=0.87600005 bias=-0.0069999993
+PARENT MISMATCH row=0 col=1026 expected=0.68670374 actual=0.70094603 y=0.12481254 invRms=6.4945111 gamma=0.87800002 bias=-0.025
+PARENT MISMATCH row=0 col=1027 expected=0.73538971 actual=0.74984139 y=0.13287264 invRms=6.4945111 gamma=0.88 bias=-0.024
+PARENT MISMATCH row=0 col=1028 expected=0.67312461 actual=0.68728161 y=0.12152676 invRms=6.4945111 gamma=0.88200003 bias=-0.023
+PARENT dtype=fp32 rows=4 width=12288 device=4 correctness=FAIL failures=28254 max_abs=0.092273593 max_rel=3068.7659 median_us=NA samples=0
+CAND_RC=1 PARENT_RC=1
+--- dtype=0 rows=4 width=8192 ---
+CAND dtype=fp32 rows=4 width=8192 device=4 correctness=PASS failures=0 max_abs=2.3841858e-07 max_rel=0.00022857143 median_us=NA samples=0
+PARENT dtype=fp32 rows=4 width=8192 device=4 correctness=PASS failures=0 max_abs=2.3841858e-07 max_rel=0.00022857143 median_us=NA samples=0
+CAND_RC=0 PARENT_RC=0
+--- dtype=1 rows=4 width=32768 ---
+CAND MISMATCH row=0 col=3208 expected=-2416640 actual=-147.5 y=0 invRms=2.4181892e-08 gamma=14288 bias=-147.5
+CAND MISMATCH row=1 col=6537 expected=-6443008 actual=-393.25 y=0 invRms=2.4185606e-08 gamma=14088 bias=-393.25
+CAND MISMATCH row=1 col=8884 expected=-3758080 actual=-229.375 y=0 invRms=2.4185606e-08 gamma=14120 bias=-229.375
+CAND MISMATCH row=1 col=21683 expected=-5636096 actual=-344 y=0 invRms=2.4185606e-08 gamma=14480 bias=-344
+CAND MISMATCH row=1 col=24308 expected=-4833280 actual=-295 y=0 invRms=2.4185606e-08 gamma=14584 bias=-295
+CAND dtype=fp16 rows=4 width=32768 device=4 correctness=FAIL failures=14 max_abs=inf max_rel=0.99993902 median_us=NA samples=0
+PARENT MISMATCH row=0 col=3208 expected=-2416640 actual=-147.5 y=0 invRms=2.4181892e-08 gamma=14288 bias=-147.5
+PARENT MISMATCH row=1 col=6537 expected=-6443008 actual=-393.25 y=0 invRms=2.4185606e-08 gamma=14088 bias=-393.25
+PARENT MISMATCH row=1 col=8884 expected=-3758080 actual=-229.375 y=0 invRms=2.4185606e-08 gamma=14120 bias=-229.375
+PARENT MISMATCH row=1 col=21683 expected=-5636096 actual=-344 y=0 invRms=2.4185606e-08 gamma=14480 bias=-344
+PARENT MISMATCH row=1 col=24308 expected=-4833280 actual=-295 y=0 invRms=2.4185606e-08 gamma=14584 bias=-295
+PARENT dtype=fp16 rows=4 width=32768 device=4 correctness=FAIL failures=14 max_abs=inf max_rel=0.99993902 median_us=NA samples=0
+CAND_RC=1 PARENT_RC=1
+--- dtype=1 rows=4 width=16384 ---
+CAND MISMATCH row=0 col=3208 expected=-2416640 actual=-147.5 y=0 invRms=2.4198618e-08 gamma=14288 bias=-147.5
+CAND MISMATCH row=2 col=6537 expected=-6443008 actual=-393.25 y=0 invRms=2.4191973e-08 gamma=14088 bias=-393.25
+CAND MISMATCH row=2 col=8884 expected=-3758080 actual=-229.375 y=0 invRms=2.4191973e-08 gamma=14120 bias=-229.375
+CAND MISMATCH row=3 col=5299 expected=-2148352 actual=-131.125 y=0 invRms=2.4179247e-08 gamma=14224 bias=-131.125
+CAND MISMATCH row=3 col=7924 expected=-6443008 actual=-393.25 y=0 invRms=2.4179247e-08 gamma=14320 bias=-393.25
+CAND dtype=fp16 rows=4 width=16384 device=4 correctness=FAIL failures=5 max_abs=inf max_rel=0.99993902 median_us=NA samples=0
+PARENT MISMATCH row=0 col=3208 expected=-2416640 actual=-147.5 y=0 invRms=2.4198618e-08 gamma=14288 bias=-147.5
+PARENT MISMATCH row=2 col=6537 expected=-6443008 actual=-393.25 y=0 invRms=2.4191973e-08 gamma=14088 bias=-393.25
+PARENT MISMATCH row=2 col=8884 expected=-3758080 actual=-229.375 y=0 invRms=2.4191973e-08 gamma=14120 bias=-229.375
+PARENT MISMATCH row=3 col=5299 expected=-2148352 actual=-131.125 y=0 invRms=2.4179247e-08 gamma=14224 bias=-131.125
+PARENT MISMATCH row=3 col=7924 expected=-6443008 actual=-393.25 y=0 invRms=2.4179247e-08 gamma=14320 bias=-393.25
+PARENT dtype=fp16 rows=4 width=16384 device=4 correctness=FAIL failures=5 max_abs=inf max_rel=0.99993902 median_us=NA samples=0
+CAND_RC=1 PARENT_RC=1
+--- dtype=2 rows=4 width=32768 ---
+CAND dtype=bf16 rows=4 width=32768 device=4 correctness=PASS failures=0 max_abs=0 max_rel=0 median_us=NA samples=0
+PARENT dtype=bf16 rows=4 width=32768 device=4 correctness=PASS failures=0 max_abs=0 max_rel=0 median_us=NA samples=0
+CAND_RC=0 PARENT_RC=0
+--- dtype=2 rows=4 width=16384 ---
+CAND dtype=bf16 rows=4 width=16384 device=4 correctness=PASS failures=0 max_abs=0 max_rel=0 median_us=NA samples=0
+PARENT dtype=bf16 rows=4 width=16384 device=4 correctness=PASS failures=0 max_abs=0 max_rel=0 median_us=NA samples=0
+CAND_RC=0 PARENT_RC=0
+=== SUMMARY ===
+CANDIDATE_FAILURES=7
+PARENT_FAILURES=7
+CASES_TOTAL=10
+=== PARENT_VS_CANDIDATE OUTPUT DELTA (OFAT numeric safety) ===
+DELTA d0_r4_w32768 n=131072 changed=70144 max_abs=0.09621048 max_rel=1309.6056 worst_idx=82757
+DELTA d0_r2_w32768 n=65536 changed=44672 max_abs=0.09204817 max_rel=57.015373 worst_idx=34123
+DELTA d0_r8_w32768 n=262144 changed=197408 max_abs=0.09602034 max_rel=1953.4321 worst_idx=67948
+DELTA d0_r4_w16384 n=65536 changed=37888 max_abs=0.09609736 max_rel=129.35912 worst_idx=22614
+DELTA d0_r4_w12288 n=49152 changed=20896 max_abs=0.08945095 max_rel=74.786122 worst_idx=1399
+DELTA d0_r4_w8192 n=32768 changed=0 max_abs=0 max_rel=0 worst_idx=0
+DELTA d1_r4_w32768 n=131072 changed=0 max_abs=0 max_rel=0 worst_idx=0
+DELTA d1_r4_w16384 n=65536 changed=0 max_abs=0 max_rel=0 worst_idx=0
+DELTA d2_r4_w32768 n=131072 changed=0 max_abs=0 max_rel=0 worst_idx=0
+DELTA d2_r4_w16384 n=65536 changed=0 max_abs=0 max_rel=0 worst_idx=0
+NPU_CORRECTNESS=COMMON_MODE_WITH_PARENT (candidate inherits parent failures; see per-case CAND_RC/PARENT_RC and PARENT_VS_CANDIDATE deltas)

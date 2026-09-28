@@ -1,0 +1,72 @@
+{
+  "route": "SHAPE-TILING-CHAMPION-X",
+  "revision": "V002",
+  "direct_parent": "R31B-V011",
+  "parent_source_sha": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "candidate_source_sha256": "aed967513cf9c284f8a3226c790dca57a1a6f2fd19048830469291f924ea704b",
+  "single_hypothesis": "FP32 D=32768 wide rows seed the full-y process tile at 6112 instead of 4096 so the UB budget buys fewer tile rounds (8 to 6).",
+  "selected_by": "MAIN-1 SELECTION 2026-09-29 (H2)",
+  "BUILD": "PASS",
+  "build_host": "cann-server3 (hwnput3)",
+  "build_cann": "/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002",
+  "build_soc": "Ascend910B3 / dav-2201",
+  "device_used": 4,
+  "EXECUTABLE_IDENTITY": {
+    "status": "PASS",
+    "local_sha256": "aed967513cf9c284f8a3226c790dca57a1a6f2fd19048830469291f924ea704b",
+    "remote_sha256": "aed967513cf9c284f8a3226c790dca57a1a6f2fd19048830469291f924ea704b",
+    "local_equals_remote": true
+  },
+  "CORRECTNESS": "COMMON_MODE_WITH_PARENT",
+  "OFAT_NUMERIC_SAFETY": "PASS",
+  "SHARED_BASELINE_LIMITATION": "wide-FP32 invRms nondeterminism (~0.8% run-to-run) in ProcessWideFp32FullCacheRows",
+  "correctness_detail": {
+    "cases_total": 10,
+    "candidate_failures": 7,
+    "parent_failures": 7,
+    "classification": "COMMON_MODE_WITH_PARENT",
+    "log": "logs/build_and_test.log",
+    "untouched_deterministic_cells_delta_zero": ["fp32 D=8192", "fp16 D=32768", "fp16 D=16384", "bf16 D=32768", "bf16 D=16384"],
+    "untouched_fp32_wide_cells_show_baseline_noise": ["fp32 D=16384 delta~0.096", "fp32 D=12288 delta~0.089"],
+    "change_domain_fp32_D32768": "delta ~0.09 inside the parent run-to-run noise floor",
+    "note": "Untouched FP32 wide cells (D=12288/16384) also show ~0.09 parent-vs-candidate delta even though V002 does not touch them; this confirms the delta is shared-baseline nondeterminism, not a V002 effect."
+  },
+  "timing": {
+    "status": "COMPLETE",
+    "method": "DEVICE_EVENT_PRIMARY (aclrtRecordEvent start/stop), wall_us diagnostic only",
+    "warmup": 45,
+    "pairs_per_shape": 21,
+    "device": 4,
+    "device_load": "HBM 59212/65536 (~90%, <100%), AICore 0%, no active lease on d4",
+    "same_binary_qualification": {
+      "result": "PASS 7_OF_7",
+      "log": "logs/same-binary.log",
+      "detail": {
+        "fp32-change-d32768-r2": "PASS mad/median=0.023 block_drift=0.012 median=11.340us",
+        "fp32-change-d32768-r8": "PASS mad/median=0.029 block_drift=0.000 median=12.220us",
+        "fp32-blank-d16384": "PASS mad/median=0.026 block_drift=0.003 median=7.370us",
+        "fp32-blank-d8192": "PASS mad/median=0.039 block_drift=0.045 median=5.320us",
+        "fp32-blank-d12288": "PASS mad/median=0.041 block_drift=0.041 median=6.370us",
+        "fp16-blank-d32768": "PASS mad/median=0.023 block_drift=0.026 median=10.020us",
+        "bf16-blank-d32768": "PASS mad/median=0.019 block_drift=0.010 median=14.020us"
+      }
+    },
+    "paired_results": {
+      "log": "logs/paired.log",
+      "noise_floor_from_blank_controls": "paired_delta_median in [-0.14, +0.18] us on bit-identical code (d16384 +0.100, d8192 -0.140, d12288 +0.120, fp16-d32768 -0.140, bf16-d32768 +0.180)",
+      "shapes": {
+        "fp32-change-d32768-r2": "paired_delta_median=+0.140us; direction 6 neg / 14 pos; trimmed_median=+0.140; last10_median=+0.220",
+        "fp32-change-d32768-r8": "paired_delta_median=+0.080us; direction 9 neg / 11 pos; trimmed_median=+0.080; last10_median=+0.080",
+        "fp32-blank-d16384": "paired_delta_median=+0.100us (expect 0; noise)",
+        "fp32-blank-d8192": "paired_delta_median=-0.140us (expect 0; noise)",
+        "fp32-blank-d12288": "paired_delta_median=+0.120us (expect 0; noise)",
+        "fp16-blank-d32768": "paired_delta_median=-0.140us (expect 0; noise)",
+        "bf16-blank-d32768": "paired_delta_median=+0.180us (expect 0; noise)"
+      }
+    }
+  },
+  "local_verdict": "NEEDS_ONE_MORE_LOCAL",
+  "local_verdict_reason": "Change-domain paired medians (+0.140us at rows=2, +0.080us at rows=8) fall inside the blank-control noise band [-0.14, +0.18]us established on bit-identical code. Direction is mixed to slightly-slower (6/14 and 9/11) but does not exceed the noise band, so this is not a stable regression either. No improvement signal. Keep current Candidate; do not stack further performance changes.",
+  "child_decision": "NEEDS_ONE_MORE_LOCAL",
+  "online_submission": false
+}
