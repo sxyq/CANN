@@ -1,0 +1,96 @@
+--- /Users/sunyiyang/Desktop/Project/cann-m2-reduce/线上结果/R31B/V011/submission.asc	2026-09-29 04:22:34
++++ submission.asc	2026-09-29 05:42:19
+@@ -328,10 +328,10 @@
+                 AscendC::PipeBarrier<PIPE_V>();
+                 AscendC::Mul(xFp32, valueTile, valueTile, valid);
+                 AscendC::PipeBarrier<PIPE_V>();
+-                // ReduceSum performs its internal V/S handoff.  Store one tile
++                // N3: whole-reduce with vector-side output.  Store one tile
+                 // sum and defer the only scalar read until after the row-level
+                 // reduction below.
+-                AscendC::ReduceSum(reduceFp32[tileIndex], xFp32, residualFp32, valid);
++                VectorWholeReduceSum(reduceFp32[tileIndex], xFp32, valid);
+                 ++tileIndex;
+                 SyncVToMTE2();
+             }
+@@ -354,7 +354,7 @@
+             AscendC::LocalTensor<float> scalarLocal = residualFp32Buf_.Get<float>();
+             AscendC::LocalTensor<float> reduceFp32 = reduceFp32Buf_.Get<float>();
+             AscendC::LocalTensor<float> xFp32 = xFp32Buf_.Get<float>();
+-            AscendC::ReduceSum(scalarLocal, reduceFp32, xFp32, tileCount);
++            VectorWholeReduceSum(scalarLocal, reduceFp32, tileCount);
+             SyncVToS();
+             const float squareSum = scalarLocal.GetValue(0);
+             const float meanSquare = squareSum * invRowWidth + epsilon;
+@@ -1174,8 +1174,8 @@
+                 AscendC::PipeBarrier<PIPE_V>();
+                 AscendC::Mul(xFp32, valueTile, valueTile, kTileElems);
+                 AscendC::PipeBarrier<PIPE_V>();
+-                AscendC::ReduceSum(reduceLocal[col / kTileElems], xFp32, residualFp32,
+-                                   kTileElems);
++                // N3: whole-reduce with vector-side output.
++                VectorWholeReduceSum(reduceLocal[col / kTileElems], xFp32, kTileElems);
+                 SyncVToMTE2();
+             }
+ 
+@@ -1187,8 +1187,7 @@
+                 Load(nextResidualLocal, residualGm_, nextOffset, kTileElems);
+             }
+ 
+-            AscendC::ReduceSum(residualFp32, reduceLocal, xFp32,
+-                               kCacheElems / kTileElems);
++            VectorWholeReduceSum(residualFp32, reduceLocal, kCacheElems / kTileElems);
+             SyncVToS();
+             const float squareSum = residualFp32.GetValue(0);
+             const float meanSquare = squareSum * invRowWidth + epsilon;
+@@ -1327,6 +1326,24 @@
+             tileElems -= 512;
+         }
+         return 1;
++    }
++
++    // N3: whole-reduce sum with vector-side output.  One vcadd with mode=0
++    // writes the span sum straight to dst[0]; unlike AscendC::ReduceSum there
++    // is no V/S drain, get_acc_val scalar round-trip, or S_MTE3 coupling.
++    // Mask is set in count mode exactly like the toolkit's dav-2201
++    // ReduceSumImpl, so span handling (including non-power-of-2 tails) is
++    // identical to the parent call being replaced.
++    __aicore__ inline void VectorWholeReduceSum(AscendC::LocalTensor<float> dst,
++                                                AscendC::LocalTensor<float> src,
++                                                int32_t count)
++    {
++        AscendC::AscendCUtils::SetMaskCount<float>();
++        AscendC::AscendCUtils::SetMask<float>(0, static_cast<uint64_t>(count));
++        AscendC::WholeReduceSum<float, false>(dst, src, count, 1, 1, 1, 8);
++        AscendC::AscendCUtils::SetMaskNorm<float>();
++        AscendC::AscendCUtils::SetMask<float>(static_cast<uint64_t>(-1),
++                                              static_cast<uint64_t>(-1));
+     }
+ 
+     __aicore__ inline int32_t TileLength(uint64_t remaining) const
+@@ -2129,9 +2146,10 @@
+                     AscendC::PipeBarrier<PIPE_V>();
+                     AscendC::Mul(xLocal, valueTile, valueTile, valid);
+                     AscendC::PipeBarrier<PIPE_V>();
+-                    AscendC::ReduceSum(
++                    // N3: whole-reduce with vector-side output.
++                    VectorWholeReduceSum(
+                         reduceLocal[batchRow * kWideFullYReduceStride + tile],
+-                        xLocal, residualLocal, valid);
++                        xLocal, valid);
+                     SyncVToMTE2();
+                 }
+             }
+@@ -2139,10 +2157,10 @@
+             for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
+                 AscendC::LocalTensor<float> xLocal = xBuf_.Get<float>();
+                 AscendC::LocalTensor<float> residualLocal = residualBuf_.Get<float>();
+-                AscendC::ReduceSum(
++                VectorWholeReduceSum(
+                     residualLocal,
+                     reduceLocal[batchRow * kWideFullYReduceStride],
+-                    xLocal, tileCount);
++                    tileCount);
+                 SyncVToS();
+                 const float squareSum = residualLocal.GetValue(0);
+                 const float meanSquare = squareSum * invRowWidth + epsilon;
