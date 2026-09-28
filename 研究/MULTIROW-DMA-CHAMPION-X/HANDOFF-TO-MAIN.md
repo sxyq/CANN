@@ -1,5 +1,7 @@
 # HANDOFF-TO-MAIN — MULTIROW-DMA-CHAMPION-X
 
+> **Track-B 收口（2026-09-28）**：V002 终局确认后按 Main-2 指令收口。轴内除 C2（Planning 裁定中）与休眠 C3 外无独立待批 DMA 假设；流水级剩余空间属 ASYNC-OVERLAP 职权，未重写。平台探查无缓存模式旋钮。已写 **`研究/MULTIROW-DMA-CHAMPION-X/LANE-FACT-PACK-FOR-PLANNING.md`**，建议 **LANE_NEEDS_PLANNING_REVIEW**（非 PARK）。未建 V003。
+
 > **V002 补测完成（2026-09-28，终局）**：Main-2 补测指令执行完毕。same-binary 两形状 PASS。主形状 48×16384 FP16 补测 8 对 **4/8 混合、median −0.28%**；合并 16 对 median **−1.84%**、10/16 为正向。同代码对照（同 binary 同路径）median **−1.48%**、散布 **−7.1%…+5.4%**——候选中位数落在噪声带内且轮间方向不一致。
 > **LOCAL_VERDICT = NEEDS_ONE_MORE_LOCAL（终局）**，Candidate=V002 保留。**结论：C1 指令形态非主导成本**（结合 V001：主导成本是 MTE2 流水重叠与 V 端指令/事件，不是单条搬运指令形态或命令计数）。
 >
