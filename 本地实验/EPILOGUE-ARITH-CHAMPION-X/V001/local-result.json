@@ -1,0 +1,99 @@
+{
+  "route": "EPILOGUE-ARITH-CHAMPION-X",
+  "revision": "V001",
+  "hypothesis_id": "EA-H1-NORM-HOIST",
+  "direct_parent": "R31B-V011",
+  "parent_source_sha": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "source_sha": "eda335d16e7e311b279e8918c6405c622bb7022e040459143f19a6240a546dbf",
+  "server3_source_sha_match": true,
+  "build": {
+    "status": "PASS",
+    "host": "cann-server3 /home/data4t2/lelinfeng/phase4-workspaces/EPILOGUE-ARITH-CHAMPION-X",
+    "canner": "ASCEND_HOME_PATH=/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002, SOC Ascend910B3 dav-2201",
+    "compile_rc": 0,
+    "link_rc": 0,
+    "probe_rc": 0,
+    "executables": {
+      "se_full_link": "f8a09ce44ec28f0908476609e97703eeee59fc5d7ddc5b9fd7d856fb2e29dc84",
+      "se_parent_probe": "27d4cec830c73ae565b43be142b157b83ea584f9b7e166742075417e7d50ce58",
+      "se_candidate_probe": "a444898ec21538acaeae0ec1f016401daf62295f59f8b5f115dd304e0229973e",
+      "se_ref_parent_probe": "390bed78872317f28bb9de00670c9fd56b1c97193b600b1ec62f97c6c93a71ed",
+      "se_ref_candidate_probe": "9c22a52e2cdcdffdf1c82d1ca9d22b3ff139b6e8d1031ddca1ab1ce7efa82416"
+    }
+  },
+  "correctness": {
+    "status": "PASS_VS_PARENT",
+    "total_shapes": 26,
+    "identical_max_abs": 24,
+    "note": "24/26 shapes parent and candidate max_abs bit-identical, bad=0. 1x16384_fp32 and 1x32768_fp32 fail on BOTH sides (exit=3, runner golden mismatch, same pair STORE-EPILOGUE-X recorded as pre-existing). Wide-FP32 run-to-run non-determinism re-confirmed: parent 1x32768_fp32 max_abs 1.260115 vs 1.203099 across two runs; candidate 1.203099 both runs. No new failure introduced.",
+    "zero_delta_controls_ok": ["2x8192_fp32 max_abs 5.0175e-07 both", "3x6144_fp32 max_abs 5.44672e-07 both"],
+    "bit_identity_claim_scope": "per-element (y*s)*g+b op sequence unchanged by hoisting Muls issue granularity; verified on 24 passing shapes via identical max_abs"
+  },
+  "measurement": {
+    "status": "COMPLETE",
+    "protocol": "warmup=45, samples=41, same-binary blocks=2, 6 interleaved P/C pairs, DEVICE_EVENT primary, host wall secondary",
+    "device": 5,
+    "lease_note": "route branch does not write shared 调度/ ledger; lease facts here + handoff for MAIN-1 registration. d5 last shared-ledger state RELEASED; d6 active STORE-EPILOGUE-X lease untouched; live HBM ~91% (<100%), AICore 0% on d5 during run.",
+    "same_binary": {
+      "1x32768_fp32": {"B1_med": 12.16, "B1_MAD": 0.20, "B2_med": 12.06, "B2_MAD": 0.26, "drift": 0.008, "MAD_over_med": 0.019, "verdict": "PASS"},
+      "2x16384_fp32": {"B1_med": 8.12, "B1_MAD": 0.32, "B2_med": 8.26, "B2_MAD": 0.32, "drift": 0.017, "MAD_over_med": 0.039, "verdict": "PASS"},
+      "1x16384_fp32": {"B1_med": 7.82, "B1_MAD": 0.22, "B2_med": 170.52, "B2_MAD": 151.0, "verdict": "FAIL_BLOCK2_CONTAMINATED"},
+      "2x8192_fp32_control": {"B1_med": 7.24, "B1_MAD": 1.28, "B2_med": 6.20, "B2_MAD": 0.24, "drift": 0.155, "verdict": "NEEDS_VALIDATION (control shape, used only as noise-band reference)"},
+      "3x6144_fp32_control": {"B1_med": 6.22, "B1_MAD": 0.44, "B2_med": 7.66, "B2_MAD": 1.92, "verdict": "WINDOW_UNQUALIFIED (control shape)"}
+    },
+    "paired_delta_pct": {
+      "1x32768_fp32": {
+        "band": "change-domain (rowWidth>8192, ProcessWideFp32FullCacheRows)",
+        "per_pair": [-0.17, -1.52, -0.67, -1.49, -4.73, -4.08],
+        "median": -1.505,
+        "favor_c": 6,
+        "favor_p": 0,
+        "sb_gate": "PASS"
+      },
+      "2x16384_fp32": {
+        "band": "change-domain (rowWidth>8192)",
+        "per_pair": [0.50, -6.51, -1.68, -3.89, -0.49, 3.50],
+        "median": -1.088,
+        "favor_c": 4,
+        "favor_p": 2,
+        "sb_gate": "PASS"
+      },
+      "1x16384_fp32": {
+        "band": "change-domain but same-binary FAIL (B2 170us contamination) + pair3 C=14us outlier",
+        "median_clean": 0.0,
+        "favor_c": 2,
+        "favor_p": 3,
+        "sb_gate": "FAIL",
+        "reading": "no usable signal this window"
+      },
+      "2x8192_fp32": {
+        "band": "identical-code control (rowWidth==8192 does not enter this function)",
+        "per_pair": [5.03, -2.28, -2.98, 5.05, 2.62, 4.00],
+        "median": 3.311,
+        "favor_c": 2,
+        "favor_p": 4,
+        "reading": "noise-band reference: identical code shows +3.3% median the other way, so this window's paired noise band is roughly +/-3-5%"
+      },
+      "3x6144_fp32": {
+        "band": "identical-code control",
+        "median_clean": 0.344,
+        "reading": "noise, pair6 outlier 209% dropped by clean filter"
+      }
+    }
+  },
+  "mechanism_amplitude_check": {
+    "1x32768_fp32": "batchRows=1 tileCount=8: 8 Muls + 8 PIPE_V barriers -> 1 Muls + 1 barrier. At 30-70ns per issue+barrier predicted 3.5-8.1% on 12.05us median; measured -1.5%. Same order-of-magnitude band but measured is 2x below the conservative prediction, consistent with part of the barrier cost already hidden under MTE pipeline.",
+    "2x16384_fp32": "batchRows=2 tileCount=4: 8 Muls + 8 barriers -> 2 Muls + 1 barrier. Predicted 4.8-11.2% on 8.15us; measured -1.1%. Same direction, smaller than predicted.",
+    "barrier_vs_muls_decomposition": "The reduction in PIPE_V barriers is a natural consequence of issuing one row-wide Muls instead of tileCount per-tile Muls (fewer dependent V issue points need fewer dependency barriers). No Sync/PipeBarrier site was moved or re-semanticized on its own; the hoist is the arithmetic-granularity change. Additional effect: normalize no longer sits behind the gamma/bias SyncMTE2ToV wait, lengthening the overlap window (aligned with case14 pipeline-overlap finding)."
+  },
+  "precision_risk_note": "NORM-HOIST does not touch invRms evaluation. Path stays Duplicate+Sqrt+GetValue+scalar 1.0f/ (the verified exact path). No Rsqrt / Reciprocal anywhere in the diff (MAIN-1 Rsqrt red-line: Rsqrt is 2^-10 fast-approx on 910B3).",
+  "single_change_audit": "PASS — diff.patch has exactly two hunks, both inside ProcessWideFp32FullCacheRows second pass: insert hoisted per-row Muls + one PipeBarrier before the parameter tile loop; delete the per-tile per-row Muls subloop. Store/event/DMA/tiling/dtype/reduction untouched; invRms evaluation untouched.",
+  "local_verdict": "NEEDS_ONE_MORE_LOCAL",
+  "local_verdict_reason": "Direction is consistent on the primary change-domain shape (6/6 favor C, median -1.51%) and agrees on 2x16384 (4/6, -1.09%), but the magnitude does not clear this window's paired noise band: the identical-code control 2x8192 showed +3.3% median the other way (paired noise roughly +/-3-5%), and the same-binary MAD/median on 1x32768 (~1.9%) is the same size as the measured effect. Mechanism amplitude check is same-direction but measured sits ~2x below the conservative issue-cost prediction. Per protocol: keep this Candidate, do not stack further performance changes; one more clean paired window (or batch_n calibration on same-binary first) needed before LOCAL_ACCEPTED / LOCAL_REJECTED.",
+  "controls_and_common_mode": "2x8192/3x6144 execute byte-identical code to parent (rowWidth<=8192 never enters ProcessWideFp32FullCacheRows); their deltas are the noise band. Wide-FP32 invRms non-determinism is COMMON_MODE_WITH_PARENT as MAIN-1 noted.",
+  "next_actions": [
+    "One more paired window on 1x32768_fp32 / 2x16384_fp32 with a qualified control in the same window, or same-binary-validated batch_n to shrink the band",
+    "Mechanism decomposition follow-up: isolate barrier-count effect from Muls-issue effect only if a second revision is approved (both are one mechanism here; do not split into a scheduling change)",
+    "Track-B backlog ready: EA-H2 AXPY (now higher priority per case14 pipeline note), EA-H3 NORM-AS-DIV (exact IEEE Div; no Rsqrt), EA-H4 CONST-FOLD-MEANSQ"
+  ]
+}
