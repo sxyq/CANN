@@ -1,0 +1,62 @@
+{
+  "route": "SHAPE-TILING-CHAMPION-X",
+  "revision": "V001",
+  "direct_parent": "R31B-V011",
+  "parent_source_sha": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "candidate_source_sha256": "592c310f728a38f8353fde9d1ad12f495645d619522147e0b3ca397b2357e51b",
+  "single_hypothesis": "FP32 wide rows with 8192 < D <= 16384 seed the full-y process tile at 8192 instead of 4096 so the UB budget buys fewer tile rounds rather than more resident y rows.",
+  "BUILD": "PASS",
+  "build_host": "cann-server3 (hwnput3)",
+  "build_cann": "/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002",
+  "build_soc": "Ascend910B3 / dav-2201",
+  "build_device_used_for_correctness": 4,
+  "build_artifacts": {
+    "candidate_kernel_so": "libshape_tiling_v001.so",
+    "parent_kernel_so": "libshape_tiling_v001_parent.so",
+    "candidate_kernel_so_sha256": "f446e22e01313423590fb63a35fe8ae8010046267461d1bf138083ad4138b163",
+    "remote_build_root": "/home/data4t2/lelinfeng/shape-tiling-champion-x/V001/support/build"
+  },
+  "CORRECTNESS": "NOT_ADJUDICABLE_WIDE_FP32",
+  "correctness_detail": {
+    "cases_total": 12,
+    "candidate_failures": 8,
+    "parent_failures": 8,
+    "classification": "COMMON_MODE_WITH_PARENT",
+    "passing_untouched_cells": {
+      "bf16_all_tested_D": "PASS, bit-exact vs reference, parent==candidate (delta 0)",
+      "fp32_D8192_nonwide": "PASS, bit-exact vs reference, parent==candidate (delta 0)"
+    },
+    "fp16_wide": "3-14 elements Inf vs reference, IDENTICAL on parent and candidate (delta 0); deterministic run-to-run",
+    "fp32_wide_D_gt_8192": "Fails vs reference on BOTH parent and candidate; run-to-run NONDETERMINISTIC (same binary, same input, different invRms)"
+  },
+  "determinism_probe": {
+    "method": "two separate processes of the same binary, same input, compare full output dumps",
+    "fp32_D32768_cand_vs_cand": "changed=30304/65536 max_abs=0.0930",
+    "fp32_D32768_parent_vs_parent": "changed=35072/65536 max_abs=0.0936",
+    "fp16_D16384_cand_vs_cand": "changed=0/65536 max_abs=0",
+    "implied_invRms_row0": {
+      "run1": 6.63797,
+      "run2": 6.58295,
+      "reference": 6.49451
+    },
+    "finding": "ProcessWideFp32FullCacheRows produces an invRms that varies by ~0.8% across runs and sits ~0.5-2% off a double-precision reference. FP16/BF16 wide paths are deterministic; BF16 output quantisation hides the same-scale invRms drift (max_abs=0 after bf16 rounding)."
+  },
+  "ofat_numeric_safety": {
+    "untouched_cells_parent_vs_candidate_delta": "0 (bit-identical) for fp16/bf16 all tested D and fp32 D=8192",
+    "change_domain_fp32_D12288_D16384": "parent-vs-candidate delta (max_abs ~0.09) sits INSIDE the same-binary run-to-run noise floor (~0.09); cannot separate change effect from parent nondeterminism",
+    "note": "FP32 D=32768 is NOT in the change domain but shows the same ~0.09 delta, confirming the delta is dominated by parent nondeterminism rather than by this revision"
+  },
+  "EXECUTABLE_IDENTITY": {
+    "local_sha256": "592c310f728a38f8353fde9d1ad12f495645d619522147e0b3ca397b2357e51b",
+    "remote_sha256": "592c310f728a38f8353fde9d1ad12f495645d619522147e0b3ca397b2357e51b",
+    "status": "PASS"
+  },
+  "timing": {
+    "status": "NOT_RUN",
+    "reason": "Correctness gate not passed on the change domain (wide FP32 is nondeterministic in the parent). 本地性能测试规范.md: 正确性未 PASS 的 Candidate 不得测性能."
+  },
+  "local_verdict": "NOT_COMPLETE",
+  "local_verdict_note": "BUILD PASS, EXECUTABLE_IDENTITY PASS. CORRECTNESS cannot be adjudicated on the change domain because the Direct Parent's ProcessWideFp32FullCacheRows is nondeterministic under this harness (invRms-level). No performance measurement performed. Needs Main/Planning direction: either (a) fix/localise the parent wide-FP32 nondeterminism before further tiling work on that path, or (b) re-point V001's change domain at a deterministic path.",
+  "child_decision": "BLOCKED_AWAITING_MAIN_REVIEW",
+  "online_submission": false
+}

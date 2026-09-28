@@ -6,15 +6,42 @@
   "parent_score": "Official 45.16",
   "single_hypothesis": "FP32 wide rows with 8192 < D <= 16384 seed the full-y process tile at 8192 instead of 4096 so the UB budget buys fewer tile rounds rather than more resident y rows; every other dtype/D cell keeps the existing policy.",
   "context_class": "CHAMPION_SEEDED_TILING",
-  "why_not_duplicate": "See 研究/SHAPE-TILING-CHAMPION-X/DEDUP-MATRIX.md. WIDE-X-FRESH4 widened a global tile constant on a weak parent; R31B V016 widened the FP16/BF16 seed on the Champion; R31A uses a separate 7680 CachedRows path; FULL-R029/MODE-X is a five-mode taxonomy that never passed correctness. This change is a shape-banded tile tier on the FP32 mid-wide cell, plus the row-residency tradeoff that the existing UB budget function already computes.",
+  "why_not_duplicate": "See 研究/SHAPE-TILING-CHAMPION-X/DEDUP-MATRIX.md. WIDE-X-FRESH4 widened a global tile constant on a weak parent; R31B V016 widened the FP16/BF16 seed on the Champion; R31A uses a separate 7680 CachedRows path; FULL-R029/MODE-X is a five-mode taxonomy that never passed correctness. This change is a shape-banded tile tier on the FP32 mid-wide cell only.",
   "source_path": "本地实验/SHAPE-TILING-CHAMPION-X/V001/submission.asc",
+  "source_commit": "7be3ec86 (m1/shape-tiling-champion)",
   "local_sha256": "592c310f728a38f8353fde9d1ad12f495645d619522147e0b3ca397b2357e51b",
-  "remote_sha256": "PENDING",
-  "submission_id": "PENDING",
+  "remote_sha256": "592c310f728a38f8353fde9d1ad12f495645d619522147e0b3ca397b2357e51b",
+  "submission_id": "NONE",
   "official_score": "NONE",
   "decision": "NOT_COMPLETE",
-  "build": {"status": "NOT_RUN", "host": "cann-server3"},
-  "correctness": {"status": "NOT_RUN"},
-  "timing": {"status": "NOT_RUN"},
-  "local_verdict": "NOT_COMPLETE"
+  "single_change_audit": "PASS",
+  "change_summary": "Add a D-banded FP32 wide full-y seed tile (8192 for 8192 < D <= 16384, else 4096). No Process* function, reduction, store, dtype or scheduling change.",
+  "build": {
+    "host": "cann-server3",
+    "status": "PASS",
+    "log": "logs/build_and_test.log",
+    "cann": "/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002",
+    "soc": "Ascend910B3",
+    "kernel_so_sha256": "f446e22e01313423590fb63a35fe8ae8010046267461d1bf138083ad4138b163"
+  },
+  "correctness": {
+    "status": "NOT_ADJUDICABLE_WIDE_FP32",
+    "classification": "COMMON_MODE_WITH_PARENT",
+    "cases_total": 12,
+    "candidate_failures": 8,
+    "parent_failures": 8,
+    "log": "logs/build_and_test.log",
+    "device": 4
+  },
+  "executabe_identity": {
+    "status": "PASS",
+    "local_equals_remote": true
+  },
+  "timing": {
+    "status": "NOT_RUN",
+    "reason": "Correctness gate not passed on the change domain; wide FP32 is nondeterministic in the Direct Parent."
+  },
+  "local_verdict": "NOT_COMPLETE",
+  "child_decision": "BLOCKED_AWAITING_MAIN_REVIEW",
+  "online_submission": false
 }
