@@ -24,16 +24,21 @@ MTE2 round-trips on the critical path). Extend the condition to
 `cacheRow && (localRows > 1 || rowWidth > kTileElems)` so a single-row core
 with D∈(4096,8192] reuses the EXISTING full-row preload block (`:249-281`):
 gamma/bias load once into the already-allocated `gammaBuf_`/`biasBuf_`
-(kCacheElems=8192, covers rowWidth≤8192) before the row loop. The FP32/FP16
-preload branches are consolidated to one full-row Load each (NH-4 detail
-merged per Track-B recommendation); the BF16 ToFloat staging loop is kept
-as-is. Consumers (`:387` `:393` `:417` `:430` `:442` `:464`) already branch on
-`cacheParams` with `[col]` indexing and need no edit.
+(kCacheElems=8192, covers rowWidth≤8192) before the row loop. The preload
+block itself is reused byte-identical (its per-tile loop already fills the
+full row). Consumers (`:387` `:393` `:417` `:430` `:442` `:464`) already branch
+on `cacheParams` with `[col]` indexing and need no edit.
 
 WHY_IT_HELPS: output-pass critical path loses 2×tileCount param MTE2
 round-trips and the per-tile `SyncMTE2ToV`; loads hoist before pass 1 where
-they hide behind x/residual DMA + reduction work. Descriptor count drops
-2×tileCount → 2 on FP32/FP16.
+they hide behind x/residual DMA + reduction work.
+
+Scope refinement (2026-09-29, before code): the preload block (`:249-281`) is
+SHARED with the localRows>1 population. Consolidating its per-tile loop to a
+single full-row Load (NH-4 detail) would also change the multi-row path, i.e.
+a population outside the approved scope. OFAT therefore keeps the preload
+block byte-identical and the V004 diff is the `cacheParams` condition only
+(one line). Descriptor consolidation is deferred, not part of V004.
 
 UB budget / tile-shrink audit (mandatory):
 - UB increment: **0**. `gammaBuf_`/`biasBuf_` are allocated unconditionally in
@@ -41,7 +46,8 @@ UB budget / tile-shrink audit (mandatory):
   sized kCacheElems/kTileElems regardless of `cacheParams`.
 - tileElems: **unchanged** (generic path uses fixed kTileElems=4096; does not
   enter `ChooseWideFullYRows`).
-- Extra MTE2: **none** — fewer descriptors on FP32/FP16, same bytes.
+- Extra MTE2: **none** — same bytes and same descriptor count, hoisted off
+  the output-pass critical path.
 
 ## FORBIDDEN (per Main-2 approval, unchanged)
 
@@ -52,8 +58,8 @@ UB budget / tile-shrink audit (mandatory):
 
 ## OFAT SCOPE
 
-Only: `Process()` cacheParams condition (`:245`) + FP32/FP16 preload branch
-consolidation (`:253-265`). No other function. No Init / host / CMake / runner.
+Only: `Process()` cacheParams condition (`:245`), one line. No preload-block
+edits, no Init / host / CMake / runner, no other function.
 
 ## TARGET SHAPES
 
