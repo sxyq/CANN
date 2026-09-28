@@ -1,0 +1,49 @@
+{
+  "route": "ASYNC-OVERLAP-CHAMPION-X",
+  "revision": "V003",
+  "direct_parent": "R31B-V011",
+  "parent_source_sha": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "parent_score": 45.16,
+  "official_anchor": 45.16,
+  "single_hypothesis": "W4 GetValue handoff convergence (NarrowMid invRms tail 2 V-S round-trips -> 1)",
+  "context_class": "CHAMPION_PIPELINE_SCHEDULE",
+  "local_sha256": "d23593ce88fd7011a604f50cfba3948904f4f97f66641346626143dd16af3548",
+  "compile_rc": "0/0",
+  "link_rc": "0/0",
+  "correctness_status": "PASS_WITHIN_TOLERANCE",
+  "correctness_detail": "OUTHASH bit-identical on 6/7 shapes; 32x4096 fp32 differs (V003 9ba09b85c4c954f5 vs parent fe50b2a35f2769cf) but both golden PASS, max_abs 3.58e-07 << FP32 tol 3e-5. Accepted per Main-2 PRECISION_DECISION.",
+  "precision_decision": "ACCEPT_TOLERANCE_WITHIN_DIFF (see PRECISION-DECISION.md); rollback point = R31B-V011",
+  "single_change_audit": "PASS",
+  "measurement_protocol": "runner_ref.inc warmup=45 samples=21 device-event; same-binary 2 blocks; 6 interleaved P/C pairs; devices 4 and 5; 2026-09-28",
+  "same_binary_results": {
+    "512x1024_fp32_d4": {"parent": "FAIL (B2 drift 1.411)", "candidate": "FAIL (B2 drift 1.389)", "qualification": "NOT_QUALIFIED"},
+    "512x2048_fp32_d4": {"parent": "FAIL (B2 drift 1.321)", "candidate": "FAIL (B2 drift 1.163)", "qualification": "NOT_QUALIFIED"},
+    "512x1024_fp32_d5": {"parent": "PASS (0.016/0.079 drift 1.042)", "candidate": "FAIL (drift 1.130)", "qualification": "PARENT_ONLY"},
+    "512x2048_fp32_d5": {"parent": "FAIL (drift 1.121)", "candidate": "FAIL (drift 1.126)", "qualification": "NOT_QUALIFIED"},
+    "128x2048_fp32_d4": {"parent": "FAIL", "candidate": "PASS", "qualification": "NOT_QUALIFIED"},
+    "control_33x100_fp32_d4": {"parent": "PASS", "candidate": "FAIL", "qualification": "NOT_QUALIFIED"},
+    "note": "B2 systematic drift ~1.12-1.41 across shapes/devices. Only parent 512x1024 d5 fully passed. P/C run on d5 per Main-2 direction; dirty pairs filtered by MAD."
+  },
+  "paired_512x1024_fp32_d5_x6": {
+    "clean": [
+      {"pair": 1, "delta_med_pct": 9.31, "delta_p10_pct": 9.14, "dir": "parent"},
+      {"pair": 3, "delta_med_pct": -10.21, "delta_p10_pct": -6.93, "dir": "V003"},
+      {"pair": 4, "delta_med_pct": -10.00, "delta_p10_pct": -8.44, "dir": "V003"},
+      {"pair": 5, "delta_med_pct": 10.09, "delta_p10_pct": 8.43, "dir": "parent"}
+    ],
+    "clean_direction": "2 favor V003, 2 favor parent — MIXED (spread ±10%)"
+  },
+  "paired_512x2048_fp32_d5_x6": {
+    "clean": [
+      {"pair": 1, "delta_med_pct": -2.59, "delta_p10_pct": -1.19, "dir": "V003"},
+      {"pair": 3, "delta_med_pct": 1.15, "delta_p10_pct": -0.44, "dir": "parent"},
+      {"pair": 4, "delta_med_pct": -0.15, "delta_p10_pct": -0.46, "dir": "neutral"},
+      {"pair": 5, "delta_med_pct": -8.27, "delta_p10_pct": -7.51, "dir": "V003"},
+      {"pair": 6, "delta_med_pct": 6.22, "delta_p10_pct": 5.23, "dir": "parent"}
+    ],
+    "clean_direction": "2 favor V003, 2 favor parent, 1 neutral — MIXED"
+  },
+  "local_verdict": "NEEDS_ONE_MORE_LOCAL",
+  "local_verdict_reason": "Precision gate ACCEPTED (see PRECISION-DECISION). Both target shapes show MIXED clean-pair direction across 6 interleaved pairs: 512x1024 2/2 with ±10% swings, 512x2048 2/2/1. No stable improvement. Parent same-binary was only fully qualified on 512x1024 d5. W4 removes one V-S round-trip per row but scalar-sqrt side change may offset the sync saving; or the saving is below noise on these 11-14 us kernels. Do not advance LOCAL_BEST. Do not open V004 without Main.",
+  "local_best_after_revision": "NOT_ADVANCED (parent chain root retained)"
+}
