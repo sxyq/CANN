@@ -1,0 +1,65 @@
+{
+  "route": "REDUCE-HIER-X",
+  "revision": "V005",
+  "revision_kind": "PERFORMANCE_SINGLE_HYPOTHESIS",
+  "direct_parent": "FROZEN_R31B_V011",
+  "parent_source_sha": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "parent_score": "45.16",
+  "official_anchor": "45.16",
+  "assigned_hypothesis": "N3 ReduceSum -> WholeReduceSum primitive swap: same sites, same spans, same two-stage topology; replace vcadd mode=1 + V/S + get_acc_val + S/V + S_MTE3 chain with vector-side whole-reduce output.",
+  "single_hypothesis_as_delivered": "Helper VectorWholeReduceSum(dst,src,work,count) at S1/S2/S3 (per-tile + collapse, 6 call sites). WholeReduceSum (vcadd mode=0) emits one sum per natural repeat (64 FP32); spans >64 reduced in two vector-only steps (one sum per 64-element group, then one sum over partials) with normal bit-mask mode per the production rms_norm pattern. No scalar handoff, no pipe drain in the chain.",
+  "single_change_audit": "PASS",
+  "source_sha256": "5fa325263d18fc1aa49a7ac0c1130e7cceb5948e4423bba2ee10e6e2f6bfdd0d",
+  "compile": {"status": "PASS", "build_rc": 0, "toolchain": "cann-server3 / Ascend910B3 / dav-2201 / CANN 8.5.0.alpha002"},
+  "link": {"status": "PASS"},
+  "identity": {"local_sha": "5fa325263d18fc1aa49a7ac0c1130e7cceb5948e4423bba2ee10e6e2f6bfdd0d", "remote_sha": "5fa325263d18fc1aa49a7ac0c1130e7cceb5948e4423bba2ee10e6e2f6bfdd0d", "match": true},
+  "correctness": {
+    "verdict": "PASS",
+    "device_id": 4,
+    "summary": "16/18 bad=0. 1x16384/1x32768 FP32 parent-preexisting golden mismatch; candidate max_abs identical to parent on both. One in-revision API-usage correctness fix (vcadd mode=0 output granularity is 64 FP32/repeat, not full count) documented in support/correctness-result.json.",
+    "summary_tsv": "本地实验/REDUCE-HIER-X/V005/support/correctness-summary.tsv"
+  },
+  "measurement": {
+    "status": "COMPLETE",
+    "lease_id": "R2-REDUCE-V005-TIMING",
+    "device": "d4 (AICore 0%, HBM ~90%)",
+    "date_utc": "2026-09-28T22:10:00Z",
+    "method": "runner_ref.inc DEVICE_EVENT_PRIMARY, warmup=45, samples=41, same-binary blocks=2 gap=2s + 6 interleaved P/C pairs",
+    "results_dir": "本地实验/REDUCE-HIER-X/V005/support/results-timing-v005-20260929",
+    "summary_md": "本地实验/REDUCE-HIER-X/V005/support/results-timing-v005-20260929/SUMMARY.md",
+    "same_binary": {
+      "1x32768_fp32": "PASS both (P MAD/med 0.042 drift 0.024; C MAD/med 0.035 drift 0.032)",
+      "1x16384_fp32": "PASS both (P MAD/med 0.047 drift 0.010; C MAD/med 0.021 drift 0.005)",
+      "8x8192_fp32": "P PASS; C MEASUREMENT_PROTOCOL_BLOCKED (B1 58.12 polluted vs B2 7.08)",
+      "1x4096_fp32": "both MEASUREMENT_PROTOCOL_BLOCKED (control shape, S5 untouched)"
+    },
+    "qualified_shapes": ["1x32768_fp32", "1x16384_fp32"],
+    "blocked_shapes": ["8x8192_fp32 (candidate side)", "1x4096_fp32 (both)"],
+    "paired_delta_1x32768_clean": "median +7.50% (n=6, favC=1 favP=5); clean pairs 2/3/4/6: +9.20/+7.73/+3.85/+7.26% all favP — CANDIDATE SLOWER",
+    "paired_delta_1x16384_clean": "median +8.11% (n=6, favC=0 favP=6, +3.80..+12.37%) — CANDIDATE SLOWER",
+    "paired_delta_8x8192_clean": "median -1.26% mixed (clean pairs 1/2/3/6: -0.30/-3.12/-2.22/+3.68%) near noise; candidate same-binary BLOCKED",
+    "paired_delta_1x4096_control": "no signal (both sides blocked)",
+    "verdict_note": "Primary shapes both same-binary qualified and show consistent regression (5/6 and 6/6 favoring parent, clean-pair deltas +3.8..+12.4% vs noise MAD/med 2-5%). N3 two-step WholeReduceSum is slower than the parent ReduceSum."
+  },
+  "local_verdict": "LOCAL_REJECTED",
+  "local_verdict_reason": "Correctness PASS. Both primary probe shapes have parent and candidate same-binary PASS and show stable regression: 1x32768 +7.50% (clean pairs all favP) and 1x16384 +8.11% (6/6 favP). 8x8192 near-neutral does not rescue. Root cause: vcadd mode=0 cannot reduce more than 64 FP32 to one value per call, so the vector-output swap needs two WholeReduceSum calls per tile (2 vcadds) vs the parent's one vcadd + handoff chain; the extra vector dispatch costs more than the removed V/S+get_acc_val+S_MTE3 chain. The pure one-call primitive swap is not achievable on this hardware; the adapter makes it a net loss.",
+  "architecture_conclusion": "FIFTH reduction-structure variant refuted (V001 fold, V002 tree, V003 short-span, V004 binned single-stage, V005 primitive swap). Every reorganization of the per-call reduce loses or stays neutral: the parent's ReduceSum (one vcadd to acc + scalar round-trip) is near-optimal on dav-2201. Reduction structure/spans/primitive axis is exhausted on FROZEN_R31B_V011.",
+  "files": [
+    "本地实验/REDUCE-HIER-X/V005/REVISION-DECLARATION.md",
+    "本地实验/REDUCE-HIER-X/V005/submission.asc",
+    "本地实验/REDUCE-HIER-X/V005/submission.sha256",
+    "本地实验/REDUCE-HIER-X/V005/source-meta.json",
+    "本地实验/REDUCE-HIER-X/V005/diff.patch",
+    "本地实验/REDUCE-HIER-X/V005/local-result.json",
+    "本地实验/REDUCE-HIER-X/V005/support/"
+  ],
+  "single_change_audit_detail": {
+    "mechanisms": 1,
+    "list": ["vector-output whole-reduce primitive replacing acc-register ReduceSum (with 64-element-granularity adapter inherent to the hardware API)"],
+    "sites": ["Process() first-pass", "ProcessFp32FullRowOutputPipelined", "ProcessWideFp32FullCacheRows"],
+    "unchanged": ["two-stage topology", "spans", "square Mul", "mean/epsilon tail", "invRms sequence", "GetValue count", "output pass", "row scheduling", "dtype dispatch", "DMA layout", "tileElems", "existing PipeBarrier/SyncVToS/SyncSToV positions", "S4/S5/BF16/FP16/wide-lowprecision sites"]
+  },
+  "online_worthy": "NO",
+  "online_worthy_reason": "LOCAL_REJECTED on both primary shapes with consistent regression. Do not submit.",
+  "disposition_required": "Revert source to FROZEN_R31B_V011; write LANE_NEEDS_PLANNING_REVIEW fact package; handoff to Main-2. Not a PARK decision (Planning owns route lifecycle)."
+}
