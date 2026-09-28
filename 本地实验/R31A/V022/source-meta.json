@@ -1,0 +1,43 @@
+{
+  "ROUTE": "R31A",
+  "REVISION": "V022",
+  "DIRECT_PARENT": "R31A-V016",
+  "PARENT_SOURCE_SHA": "dd13093823c885e785a650abff4863827e652eb8607ad0621a96eb31b6764fa0",
+  "PARENT_SCORE": 45.0,
+  "OFFICIAL_ANCHOR": "R31A-V016 / 45.00",
+  "SINGLE_HYPOTHESIS": "Path-selection threshold: change the wideFp32BatchPath entry predicate from localRows >= 2 to localRows >= 3, so a 2-rows-per-core FP32 wide launch (rows=2 blocks=1, or rows=4 blocks=2) takes the full-y CachedRows path (single input read) instead of the batch path (gamma/bias tile reused across the row batch but x/residual re-read). All arithmetic, reduction, tile constants, store placement, and dtype paths remain unchanged.",
+  "CONTEXT_CLASS": "HISTORICAL_EXPLOIT",
+  "WHY_NOT_DUPLICATE": "R31A V017 changed the CachedRows dispatch D-width boundary (D24576..32768) and was Official-REJECTED 44.45 with a FALSE_POSITIVE local; V022 changes the row-count threshold of the batch entry predicate (a different axis). V016 set the D=32768 special case to send multi-row D=32768 to CachedRows and did not touch the localRows threshold. V003 changed a tile constant (6112->5760) and is SHAPE-TILING territory; V022 changes no tile constant. V021 moved an MTE3 wait (sync placement); V022 changes a dispatch predicate. Cross-route: R31B has its own multimode dispatch; DTYPE-SPECIAL-X does FP32 aligned copy; MIX-A does FastKernel path swap; none touches this batch-entry row threshold. STORE-EPILOGUE-X (store merge), EPILOGUE-ARITH (arithmetic chain fusion), SHAPE-TILING (tile policy) are all untouched. Full analysis in 研究/R31A/next-hypotheses.md H3 section.",
+  "FILES_CHANGED": [
+    "本地实验/R31A/V022/submission.asc: one boolean constant in the wideFp32BatchPath_ predicate (>= 2 -> >= 3)",
+    "本地实验/R31A/V022/source-meta.json: declaration",
+    "本地实验/R31A/V022/diff.patch",
+    "本地实验/R31A/V022/submission.sha256"
+  ],
+  "SOURCE_SHA": "088e82d5c397bbb3dece98a594bbd3cd4df446325cbcdae264fa1c6a8488d23c",
+  "SOURCE_SHA256": "088e82d5c397bbb3dece98a594bbd3cd4df446325cbcdae264fa1c6a8488d23c",
+  "SOURCE_PATH": "本地实验/R31A/V022/submission.asc",
+  "source_commit": "pending",
+  "submission_id": "NONE_NOT_SUBMITTED",
+  "local_sha256": "088e82d5c397bbb3dece98a594bbd3cd4df446325cbcdae264fa1c6a8488d23c",
+  "remote_sha256": "NOT_APPLICABLE_LOCAL_ONLY",
+  "official_score": "NONE",
+  "decision": "PENDING_BUILD_CORRECTNESS_MEASUREMENT",
+  "DECLARATION": {
+    "ROUTE": "R31A",
+    "REVISION": "V022",
+    "DIRECT_PARENT": "V016",
+    "PARENT_SOURCE_SHA": "dd13093823c885e785a650abff4863827e652eb8607ad0621a96eb31b6764fa0",
+    "PARENT_SCORE": "Official 45.00",
+    "SINGLE_HYPOTHESIS": "路径选择阈值：wideFp32BatchPath 入口 localRows>=2 改为 >=3，让 2 行宽行走 full-y CachedRows",
+    "CONTEXT_CLASS": "HISTORICAL_EXPLOIT",
+    "WHY_NOT_DUPLICATE": "对照 next-hypotheses.md H3 节 + R31A V001–V021 + 跨路线边界"
+  },
+  "MAIN1_SELECTION_DATE": "2026-09-29",
+  "EXPECTED_PATH_SHIFT": {
+    "rows=2_blocks=1_D24576": "V016: wideFp32BatchPath (localRows=2 >= 2, D<32768) -> V022: wideFp32CachedRowPath (localRows=2 < 3)",
+    "rows=2_blocks=1_D32768": "V016 and V022: wideFp32CachedRowPath (unchanged; D=32768 not < 32768 so batch never entered)",
+    "rows=3_blocks=1_D24576": "V016 and V022: wideFp32BatchPath (localRows=3 >= 3; batch path retained as control)",
+    "rows=4_blocks=2_D24576": "V016: wideFp32BatchPath (localRows=2) -> V022: wideFp32CachedRowPath (localRows=2 < 3)"
+  }
+}

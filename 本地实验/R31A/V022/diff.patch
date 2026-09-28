@@ -1,0 +1,11 @@
+--- 线上结果/R31A/V016/submission.asc	2026-09-29 04:23:22
++++ 本地实验/R31A/V022/submission.asc	2026-09-29 05:29:52
+@@ -72,7 +72,7 @@
+                 // triplet, so MTE2/V/MTE3 can overlap adjacent rows.  D=32768
+                 // multi-row stays on the full-y CachedRows path below: one
+                 // input read beats the batch path's re-read at that width.
+-                wideFp32BatchPath_ = rowCount / static_cast<uint64_t>(blockCount) >= 2 &&
++                wideFp32BatchPath_ = rowCount / static_cast<uint64_t>(blockCount) >= 3 &&
+                     rowWidth < static_cast<uint64_t>(kWideFp32CachedRowMaxWidth);
+                 if (wideFp32BatchPath_) {
+                     pipe_.InitBuffer(xBuf_, kWideFp32BatchTileElems * sizeof(float));
