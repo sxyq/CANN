@@ -1,0 +1,71 @@
+{
+  "route": "REDUCE-HIER-X",
+  "revision": "V004",
+  "revision_kind": "PERFORMANCE_SINGLE_HYPOTHESIS",
+  "direct_parent": "FROZEN_R31B_V011",
+  "parent_source_sha": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "parent_score": "45.16",
+  "official_anchor": "45.16",
+  "assigned_hypothesis": "N1 Binned streaming single-stage square-sum: replace per-tile ReduceSum + collapse with a 128-bin FP32 accumulator (barrier-free chunked Adds) + one ReduceSum(128) per row.",
+  "single_hypothesis_as_delivered": "S1 Process() generic (tileCount>=2 only; tileCount==1 keeps parent), S2 ProcessWideFp32FullCacheRows, S3 ProcessFp32FullRowOutputPipelined. kBinWidth=128. Wide FP32 reduceFp32Buf_ sized kWideAccOffset+kBinWidth. Mul, mean/epsilon, invRms, GetValue count, output pass, scheduling, dtype, DMA, existing barriers unchanged.",
+  "single_change_audit": "PASS",
+  "context_class": "FROZEN_STRONG_BASELINE_REDUCTION_TOPOLOGY",
+  "source_sha256": "1926a2f91491981f06424502dde96356661b5d5c5dc30ae190a0e5935265218d",
+  "compile": {"status": "PASS", "build_rc": 0, "toolchain": "cann-server3 / Ascend910B3 / dav-2201 / CANN 8.5.0.alpha002"},
+  "link": {"status": "PASS", "rhx_candidate_probe": "ef1db6265c6cdd68636fd4dfcc6ea79e53a7a846105b5221d4b608d64c66b02d", "rhx_ref_candidate_probe": "c539481225735e06e46bd8719e10ed5f42a94edc5c3f9fbcb20a329c0767ec2e"},
+  "identity": {"local_sha": "1926a2f91491981f06424502dde96356661b5d5c5dc30ae190a0e5935265218d", "remote_sha": "1926a2f91491981f06424502dde96356661b5d5c5dc30ae190a0e5935265218d", "match": true},
+  "correctness": {
+    "verdict": "PASS",
+    "device_id": 4,
+    "method": "runner_main.inc + double-precision golden; atol/rtol per dtype",
+    "summary": "16/18 exit=0 bad=0. 1x16384 and 1x32768 FP32 fail identically on parent and candidate (PARENT_PREEXISTING wide-FP32 golden mismatch, same as V001/V002/V003); candidate max_abs equal or better on both.",
+    "summary_tsv": "本地实验/REDUCE-HIER-X/V004/support/correctness-summary.tsv"
+  },
+  "measurement": {
+    "status": "COMPLETE",
+    "lease_id": "R2-REDUCE-V004-TIMING",
+    "device": "d4 (AICore 0%, HBM ~90%)",
+    "date_utc": "2026-09-28T21:05:00Z",
+    "method": "runner_ref.inc DEVICE_EVENT_PRIMARY, warmup=45, samples=41, same-binary blocks=2 gap=2s + 6 interleaved P/C pairs",
+    "results_dir": "本地实验/REDUCE-HIER-X/V004/support/results-timing-v004-20260929",
+    "summary_md": "本地实验/REDUCE-HIER-X/V004/support/results-timing-v004-20260929/SUMMARY.md",
+    "same_binary": {
+      "1x32768_fp32": "PASS both (P MAD/med 0.023 drift 0.005; C MAD/med 0.039 drift 0.056)",
+      "1x16384_fp32": "PASS both (P MAD/med 0.048 drift 0.060; C MAD/med 0.045 drift 0.004)",
+      "8x8192_fp32": "P PASS; C MEASUREMENT_PROTOCOL_BLOCKED (B1 118.6 vs B2 13.38 polluted block)",
+      "1x4096_fp32": "P MEASUREMENT_PROTOCOL_BLOCKED (drift 0.68); C NEEDS_VALIDATION (MAD/med 0.17)"
+    },
+    "qualified_shapes": ["1x32768_fp32", "1x16384_fp32"],
+    "blocked_shapes": ["8x8192_fp32 (candidate side)", "1x4096_fp32 (both sides)"],
+    "paired_delta_1x32768_clean": "median +23.89% (n=6, favC=0 favP=6) — CANDIDATE SLOWER",
+    "paired_delta_1x16384_clean": "median +21.17% (n=6, favC=0 favP=6) — CANDIDATE SLOWER",
+    "paired_delta_8x8192_clean": "median +15.27% (n=6 all favP; clean pairs 2/4/5/6 +10..18% favP) — CANDIDATE SLOWER",
+    "paired_delta_1x4096_control": "median +10.36% mixed 2C/4P, both sides unqualified — no signal (S5 untouched)",
+    "verdict_note": "Primary shapes both same-binary qualified and show consistent 6/0 regression. N1 binned streaming accumulate is slower than the parent's per-tile ReduceSum + collapse."
+  },
+  "local_verdict": "LOCAL_REJECTED",
+  "local_verdict_reason": "Correctness PASS (parent-preexisting wide-FP32 golden mismatch only). Both primary probe shapes (1x32768, 1x16384 FP32) have parent and candidate same-binary PASS and show stable performance regression: +23.89% and +21.17% paired median, 6/0 favoring parent on both. 8x8192 clean pairs also favor parent +10..18%. This is a clear, consistent degradation, not noise. N1 hypothesis refuted.",
+  "root_cause_hypothesis": "Zero-barrier chunked Adds were correctness-safe but not faster: replacing each 4096-element ReduceSum with 32 small Add dispatches (and the collapse with one ReduceSum(128)) multiplies vector-instruction dispatch count (D/128 Adds per row vs tileCount+1 ReduceSum calls). The per-call overhead of many small Adds exceeds any V/S saving from removing the ReduceSum API calls. Consistent with V002's lesson in a different form: it is not the barrier chain (V004 had zero barriers) and not the summation order — the manual reduction instruction count is the cost. ReduceSum as an API call is cheaper than an equivalent hand-decomposed Add sequence on this toolchain.",
+  "architecture_conclusion": "FOURTH large-D reduction-topology variant refuted (V001 fold, V002 tree, V003 short-span, V004 binned single-stage). Reduction topology on frozen R31B-V011 has no remaining win: both structural extremes (fewer ReduceSum calls via manual Adds; shorter spans via pre-fold) lose or stay neutral. The per-tile ReduceSum API call is already near-optimal for this shape band. Reduction V/S is confirmed NOT the large-D bottleneck.",
+  "files": [
+    "本地实验/REDUCE-HIER-X/V004/REVISION-DECLARATION.md",
+    "本地实验/REDUCE-HIER-X/V004/submission.asc",
+    "本地实验/REDUCE-HIER-X/V004/submission.sha256",
+    "本地实验/REDUCE-HIER-X/V004/source-meta.json",
+    "本地实验/REDUCE-HIER-X/V004/diff.patch",
+    "本地实验/REDUCE-HIER-X/V004/local-result.json",
+    "本地实验/REDUCE-HIER-X/V004/support/build-result.json",
+    "本地实验/REDUCE-HIER-X/V004/support/correctness-result.json",
+    "本地实验/REDUCE-HIER-X/V004/support/correctness-summary.tsv",
+    "本地实验/REDUCE-HIER-X/V004/support/results-timing-v004-20260929/"
+  ],
+  "single_change_audit_detail": {
+    "mechanisms": 1,
+    "list": ["binned streaming single-stage square-sum (128-bin accumulator + one ReduceSum(128) per row, replacing per-tile ReduceSum + collapse)"],
+    "sites": ["Process() first-pass (tileCount>=2)", "ProcessFp32FullRowOutputPipelined", "ProcessWideFp32FullCacheRows"],
+    "unchanged": ["square Mul", "mean/epsilon tail", "invRms sequence", "GetValue count", "output pass", "row scheduling", "dtype dispatch", "DMA layout", "tileElems", "existing PipeBarrier/SyncVToS/SyncSToV positions", "tileCount==1 single-tile path (S5 negative control)"]
+  },
+  "online_worthy": "NO",
+  "online_worthy_reason": "LOCAL_REJECTED on both primary shapes with consistent 6/0 regression. Do not submit.",
+  "disposition_required": "Revert source to FROZEN_R31B_V011 per Main-2 instruction; report reduction-topology remaining-space exhaustion fact to Main-2 for Planning."
+}

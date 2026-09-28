@@ -24,6 +24,11 @@
   ],
   "WHY_NOT_DUPLICATE": "Not V001 fold (V001 keeps per-tile ReduceSum and folds 1-element partials; V004 removes per-tile ReduceSum and bins raw square vectors). Not V002 tree (V002 is a per-tile manual Add tree with per-level PipeBarrier, refuted +6.6%; V004 has no tree, no barrier chain, cross-tile binning). Not V003 short-span (V003 keeps per-tile ReduceSum and shortens its span; V004 removes the per-tile call entirely). Not REDUCE-INVSCALE-X OPT-4 whole-row (FP32 needs D*4B, judged infeasible; V004 uses a 128-bin accumulator, 512B).",
   "EXPECTED_PROBES": "1x32768 FP32 (tileCount=8), 1x16384 FP32 (4), 8x8192 FP32 (2); negative control 1x4096 FP32 (tileCount=1, untouched S5 path)",
-  "DECISION": "PENDING_COMPILE",
-  "CLEANUP": "Started from frozen parent source (线上结果/R31B/V011/submission.asc). No shared control modified. No other route touched. No CANNJudge submission."
+  "DECISION": "LOCAL_REJECTED",
+  "CLEANUP": "Started from frozen parent source (线上结果/R31B/V011/submission.asc). No shared control modified. No other route touched. No CANNJudge submission.",
+  "EXECUTABLE_SHA_CANDIDATE_PROBE": "ef1db6265c6cdd68636fd4dfcc6ea79e53a7a846105b5221d4b608d64c66b02d",
+  "EXECUTABLE_SHA_REF_CANDIDATE": "c539481225735e06e46bd8719e10ed5f42a94edc5c3f9fbcb20a329c0767ec2e",
+  "COMPILE": "PASS (server3 / Ascend910B3 / dav-2201 / CANN 8.5.0.alpha002, BUILD_RC=0)",
+  "LINK": "PASS (rhx_candidate_probe, rhx_ref_candidate_probe)",
+  "LOCAL_VERDICT": "LOCAL_REJECTED (+23.89% on 1x32768, +21.17% on 1x16384, 6/0 favP both)"
 }
