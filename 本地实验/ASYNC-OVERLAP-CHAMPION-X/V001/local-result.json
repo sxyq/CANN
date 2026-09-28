@@ -1,0 +1,46 @@
+{
+  "route": "ASYNC-OVERLAP-CHAMPION-X",
+  "revision": "V001",
+  "direct_parent": "R31B-V011",
+  "parent_source_sha": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "parent_score": 45.16,
+  "official_anchor": 45.16,
+  "single_hypothesis": "H1 Inter-pass prologue param prefetch",
+  "context_class": "CHAMPION_PIPELINE_SCHEDULE",
+  "local_sha256": "0fc71e8e62e39ed3b894b7e8fb8cabb6372f802c0a4c342eeb246629f8e4efe4",
+  "compile_rc": "0/0",
+  "link_rc": "0/0",
+  "correctness_status": "PASS_VS_PARENT",
+  "correctness_detail": "LP-path OUTHASH bit-identical to parent on 8x16384 fp16, 4x32768 fp16, 8x16384 bf16, 8x12288 fp16; non-LP fp16 control and narrow fp32 control also bit-identical. Golden FP16 tolerance mismatches (err=0.00293) are pre-existing and fingerprint-identical on parent. FullCache fp32 wide is pre-existing non-deterministic on parent and is not in the change surface.",
+  "single_change_audit": "PASS",
+  "measurement_protocol": "runner_ref.inc unified: warmup=45, samples=21, device-event primary, same-binary 2 blocks, 4 interleaved P/C pairs, device 4, 2026-09-28",
+  "measurement_lease_note": "device 4 free of active lease at run time (STORE-EPILOGUE-X holds d6). Shared lease TSV not modified by Route Agent per task constraint.",
+  "primary_shape": "32x16384_fp16 (LP path, tileCount=4, ProcessWideLowPrecision)",
+  "same_binary_results": {
+    "32x16384_fp16_parent_first": {"B1": "PASS mad/med=0.048", "B2": "FAIL mad/med=0.474 drift=1.96"},
+    "32x16384_fp16_parent_retry": {"B1": "PASS mad/med=0.014", "B2": "FAIL mad/med=0.346"},
+    "32x16384_fp16_candidate": {"B1": "PASS mad/med=0.025", "B2": "PASS mad/med=0.057 drift=1.03"},
+    "16x32768_fp16_parent": {"B1": "PASS mad/med=0.016", "B2": "FAIL mad/med=0.169"},
+    "16x32768_fp16_candidate": {"B1": "FAIL mad/med=0.434", "B2": "FAIL mad/med=0.384"},
+    "note": "Kernel ~9-10 us on 32x16384; host launch outliers to 300+ us inflate CV. Parent B2 repeatedly fails on 32x16384. Shape-level same-binary qualification is NOT stably met for parent."
+  },
+  "paired_results_32x16384_fp16": {
+    "pair_1": {"P_med": 17.54, "P_mad": 7.86, "C_med": 9.38, "C_mad": 0.22, "delta_med_pct": -46.5, "delta_p10_pct": -4.6, "note": "P dirty (MAD 7.86)"},
+    "pair_2": {"P_med": 9.44, "P_mad": 0.34, "C_med": 9.84, "C_mad": 0.16, "delta_med_pct": +4.2, "delta_p10_pct": +6.0, "note": "both clean"},
+    "pair_3": {"P_med": 9.82, "P_mad": 0.24, "C_med": 9.64, "C_mad": 0.36, "delta_med_pct": -1.8, "delta_p10_pct": -3.8, "note": "both clean"},
+    "pair_4": {"P_med": 10.02, "P_mad": 0.26, "C_med": 16.42, "C_mad": 7.14, "delta_med_pct": +63.9, "delta_p10_pct": -5.4, "note": "C dirty (MAD 7.14)"}
+  },
+  "trimmed_p10_direction": {
+    "pairs_favoring_candidate": 3,
+    "pairs_favoring_parent": 1,
+    "p10_delta_pct_range": [-5.4, +6.0],
+    "clean_pair_delta_pct": [4.2, -1.8],
+    "interpretation": "Fast-cluster (p10) deltas favor candidate in 3/4 pairs at roughly 4-5%, consistent with a small single-digit-us overlap saving on a ~10 us kernel. One pair reverses. Median deltas are outlier-dominated and not usable. Parent same-binary does not stably qualify."
+  },
+  "local_verdict": "NEEDS_ONE_MORE_LOCAL",
+  "local_verdict_reason": "Correctness PASS_VS_PARENT (LP outputs bit-identical). Performance signal is suggestive but not separable from a noisy ~10us kernel: p10 fast-cluster 3/4 favor V001 (~4-5%) but 1/4 reverses; clean-pair medians split 1-1; parent same-binary B2 repeatedly fails MAD/med threshold. Below or inside the noise floor for a definitive direction. Do not credit as LOCAL_ACCEPTED; keep candidate and re-measure when a quieter window or a longer LP shape (more rows per core / larger batchRows) is available.",
+  "expected_local_probes_next": "Retry 32x16384 fp16 and add 64x16384 fp16 (blocks=40, some cores own 2 rows -> batchRows>1, larger prologue share) plus 8x12288 fp16 when device load is quieter; require parent same-binary PASS on both blocks before P/C.",
+  "measurement_status": "COMPLETE_WITH_NOISE",
+  "raw_evidence_path": "本地实验/ASYNC-OVERLAP-CHAMPION-X/V001/results/",
+  "local_best_after_revision": "NOT_ADVANCED (parent remains LOCAL_BEST chain root)"
+}
