@@ -1,0 +1,888 @@
+{
+  "route": "WIDE-X-FRESH4",
+  "revision": "V001",
+  "direct_parent": "BUILD-FIX-001",
+  "parent_source_sha256": "5d0ee01165e46a281cbb7d1605feba3605ad59883845400a063e97704f27f2be",
+  "parent_score": "N/A",
+  "context_class": "FRESH_BLIND",
+  "single_hypothesis": "Widen only the wide-path tile from 2048 to 4096 and grow tmp_ for that instantiation, retaining the fallback allocation. Expected to halve wide-path tile iterations per row.",
+  "candidate_source_sha256": "f7628795e6699288669dbff8963181e376e10741ba4d46c768af51cf09bf6895",
+  "candidate_source_path": "phase4/local/WIDE-X-FRESH4/V001/submission.asc",
+  "provenance_disposition": {
+    "direct_parent": "BUILD-FIX-001",
+    "parent_source_sha256": "5d0ee01165e46a281cbb7d1605feba3605ad59883845400a063e97704f27f2be",
+    "parent_module_sha256": "9f03f15232d984577e559a64e90ec4e550fbef9392d6edb7eedd47ddc530071e",
+    "candidate_module_sha256": "c30be731387e0672359f47e748d65f67b7ce0e3f294dbc4f0fe986934b0890ab",
+    "paired_runner_sha256": "6328cd48d92036aeb4266248ede569f08484580e0507e185520911ed1a7e6a8b",
+    "candidate_git_commit": "856ba8d35db2ba402213483b069592b662779ba5",
+    "source_identity": "SOURCE_SIDECAR_GIT_AND_WORKSPACE_MATCH",
+    "fresh_blind_context": "UNCONFIRMED",
+    "fresh_blind_reason": "The retained record identifies an archived problem-analysis document opened during route discovery, but does not retain its path, exposed material, or evidence of influence on V001.",
+    "timing_consequence": "Source provenance and source-bound Parent executable relation are resolved; only FRESH_BLIND context remains unresolved before timing/Online readiness."
+  },
+  "changed_source": "phase4/workspaces/WIDE-X-FRESH4/wide_x_fresh4.asc",
+  "diff": "diff.patch",
+  "source_change_lines": 2,
+  "build": {
+    "host": "cann-server3",
+    "status": "PASS",
+    "log": "logs/build.log",
+    "artifact": "/tmp/WIDE-X-FRESH4-V001-build-20260925/cmake-build/libwide_x_fresh4.so",
+    "artifact_sha256": "b5abb78cdb2e99383d5266dd3d5b76c0a1c3b022613b53cc1b2a17c5d7868a6c"
+  },
+  "link": {
+    "status": "PASS",
+    "log": "logs/link.log",
+    "correctness_executable": "/tmp/WIDE-X-FRESH4-V001-build-20260925/npu_correctness_V001",
+    "correctness_executable_sha256": "0c160793a957b1288155e37d3cb153f8da84c6352685641e646a440cce3ae2ba",
+    "runtime_dependencies": "RESOLVED_BY_LDD",
+    "executed": true
+  },
+  "correctness": {
+    "status": "PASS_9_OF_9_NPU",
+    "device": 4,
+    "run_time": "2026-09-25T07:32:55+0000",
+    "exit_code": 0,
+    "preflight_to_run_seconds": 122,
+    "log": "logs/npu-correctness.log",
+    "preflight_log": "logs/npu-correctness-preflight.log",
+    "cases": [
+      {"dtype": "FP32", "width": 2048, "max_abs_error": 1.1920929e-07},
+      {"dtype": "FP32", "width": 16384, "max_abs_error": 3.5762787e-07},
+      {"dtype": "FP32", "width": 32768, "max_abs_error": 1.1920929e-07},
+      {"dtype": "FP16", "width": 2048, "max_abs_error": 0},
+      {"dtype": "FP16", "width": 16384, "max_abs_error": 0.0009765625},
+      {"dtype": "FP16", "width": 32768, "max_abs_error": 0.00024414062},
+      {"dtype": "BF16", "width": 2048, "max_abs_error": 0},
+      {"dtype": "BF16", "width": 16384, "max_abs_error": 0},
+      {"dtype": "BF16", "width": 32768, "max_abs_error": 0}
+    ]
+  },
+  "latency_timing": {
+    "status": "NOT_RUN_NO_EXCLUSIVE_DEVICE_LEASE"
+  },
+  "device_preflight": {
+    "status": "PASS",
+    "device": 4,
+    "captured_at": "2026-09-25T07:30:53+0000",
+    "seconds_before_run": 122,
+    "aicore_percent": 0,
+    "hbm_used_mb": 59186,
+    "hbm_capacity_mb": 65536,
+    "hbm_free_mb": 6350,
+    "non_vllm_npu_process": "NONE_NEW; existing device-7 python PID 3458196 matches prior route evidence",
+    "log": "logs/npu-correctness-preflight.log"
+  },
+  "load_quality": "CORRECTNESS_PREFLIGHT_PASSED_FOR_DEVICE_4",
+  "child_decision": "NEEDS_ONE_MORE_LOCAL",
+  "official_score": null,
+  "online_submission": false,
+  "other_routes_changed": false,
+  "server_revalidation": {
+    "completed_at": "2026-09-26T12:28:53Z",
+    "host": "cann-server3",
+    "hostname": "hwnput3",
+    "host_arch": "aarch64",
+    "stage": "CORRECTNESS_ONLY_PASS_WAITING_FOR_PERFORMANCE_WINDOW",
+    "measurement_commit": "a6a38761c30c985bf6647cc2f9c9e6232b3e0747",
+    "evidence_checkpoint_commit": "b37e5e744ddc6d12228d0493252d015a44f1dffe",
+    "canonical_originals_commit": "fa0794f991d3d23279f7e765ae5175a75834d002",
+    "kernel_sources_changed": false,
+    "server_directory_reused": true,
+    "server_support_path": "/tmp/WIDE-X-FRESH4-V001-d0dd0e972ac48b07/WIDE-X-FRESH4/V001/support",
+    "build_directory": "/tmp/WIDE-X-FRESH4-V001-d0dd0e972ac48b07/WIDE-X-FRESH4/V001/support/build",
+    "toolkit": "/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002",
+    "compiler_version": "bisheng/clang 15.0.5; GCC 11.4.0; CMake 3.22",
+    "soc": "Ascend910B3",
+    "npu_arch": "dav-2201",
+    "configure_rc": 0,
+    "phase_rc_meaning": "Compile RC is from a forced make object target; link RC is from the generated CMake link script. All six operations were executed, not inferred from artifact presence.",
+    "parent": {
+      "revision": "BUILD-FIX-001",
+      "source_path": "/tmp/WIDE-X-FRESH4-V001-d0dd0e972ac48b07/WIDE-X-FRESH4/V001/support/../../BUILD-FIX-001/submission.asc",
+      "source_sha256": "5d0ee01165e46a281cbb7d1605feba3605ad59883845400a063e97704f27f2be",
+      "compile_rc": 0,
+      "link_rc": 0,
+      "object_path": "/tmp/WIDE-X-FRESH4-V001-d0dd0e972ac48b07/WIDE-X-FRESH4/V001/support/build/CMakeFiles/wide_x_fresh4_parent.dir/tmp/WIDE-X-FRESH4-V001-d0dd0e972ac48b07/WIDE-X-FRESH4/BUILD-FIX-001/submission.asc.o",
+      "object_sha256": "3d9a7b9c6f36bfa6d7c34fcbaac2668546bae8d493a192307864002b554bf362",
+      "module_path": "/tmp/WIDE-X-FRESH4-V001-d0dd0e972ac48b07/WIDE-X-FRESH4/V001/support/build/libwide_x_fresh4_parent.so",
+      "module_sha256": "9f03f15232d984577e559a64e90ec4e550fbef9392d6edb7eedd47ddc530071e"
+    },
+    "candidate": {
+      "revision": "V001",
+      "source_path": "/tmp/WIDE-X-FRESH4-V001-d0dd0e972ac48b07/WIDE-X-FRESH4/V001/support/../submission.asc",
+      "source_sha256": "f7628795e6699288669dbff8963181e376e10741ba4d46c768af51cf09bf6895",
+      "compile_rc": 0,
+      "link_rc": 0,
+      "object_path": "/tmp/WIDE-X-FRESH4-V001-d0dd0e972ac48b07/WIDE-X-FRESH4/V001/support/build/CMakeFiles/wide_x_fresh4_candidate.dir/tmp/WIDE-X-FRESH4-V001-d0dd0e972ac48b07/WIDE-X-FRESH4/V001/submission.asc.o",
+      "object_sha256": "0ea11c0b5b8e5d5f1078e47a8fc50d561da8033e493f42dda573285337d7f7de",
+      "module_path": "/tmp/WIDE-X-FRESH4-V001-d0dd0e972ac48b07/WIDE-X-FRESH4/V001/support/build/libwide_x_fresh4_candidate.so",
+      "module_sha256": "c30be731387e0672359f47e748d65f67b7ce0e3f294dbc4f0fe986934b0890ab"
+    },
+    "runner": {
+      "source_path": "phase4/local/WIDE-X-FRESH4/V001/support/runner_main.cpp",
+      "source_sha256": "2c2904615ee6445f5b49c7d862daf453ee8837518ebf6e0732d854e97625b84e",
+      "cmake_sha256": "12d545de1e31049d66e7a51ceda186100188ac10c191bfe4a7985dc305c403f2",
+      "compile_rc": 0,
+      "link_rc": 0,
+      "object_path": "/tmp/WIDE-X-FRESH4-V001-d0dd0e972ac48b07/WIDE-X-FRESH4/V001/support/build/CMakeFiles/wide_x_fresh4_unified_runner.dir/runner_main.cpp.o",
+      "object_sha256": "05fe5921ecc90561ef38acef7b76393621eaab6e7f9dd6e50e5b2121fcc35dd9",
+      "executable_path": "/tmp/WIDE-X-FRESH4-V001-d0dd0e972ac48b07/WIDE-X-FRESH4/V001/support/build/wide_x_fresh4_unified_runner",
+      "executable_sha256": "6328cd48d92036aeb4266248ede569f08484580e0507e185520911ed1a7e6a8b",
+      "executable_format": "ELF64 AArch64 PIE",
+      "dependency_status": "ALL_THREE_ARTIFACTS_RESOLVED",
+      "correctness_only_supported": true,
+      "correctness_only_execution": "PASS_18_OF_18_RUNNER_CASES_ON_D7",
+      "available_core_num": 40,
+      "launched_blocks_for_rows_2": 2,
+      "rows": 2,
+      "widths": [
+        2048,
+        16384,
+        32768
+      ],
+      "dtypes": [
+        "fp32",
+        "fp16",
+        "bf16"
+      ],
+      "epsilon": 0.00001,
+      "input_generator": "WIDE_X_FRESH4_NPU_CORRECTNESS_GEN1_SEED0",
+      "correctness_criterion": "Existing route diagnostic: all finite outputs; absolute error <= fp32 3e-5, fp16 2.5e-3, bf16 1.5e-2; rtol=0. Not an Official result.",
+      "timing_warmups": 45,
+      "timing_samples": 31,
+      "same_binary_blocks": 2,
+      "paired_blocks": 4,
+      "timing_warmup_lifecycle": "Once per selected side before all in-process blocks."
+    },
+    "host_validation": {
+      "completed_at": "2026-09-26T12:31:11Z",
+      "help_rc": 0,
+      "invalid_correctness_warmup_rc": 2,
+      "timing_warmup_below_45_rc": 2,
+      "expected_results_matched": true,
+      "npu_launches": 0,
+      "output_files_created": 0
+    },
+    "remote_preexisting_script": {
+      "path": "/tmp/WIDE-X-FRESH4-V001-d0dd0e972ac48b07/WIDE-X-FRESH4/V001/support/build_server3.sh",
+      "sha256": "0c046a52b9a6296cbdd2a374d47198e004cf8b0a5cfcc0fbd86c979f5436b351",
+      "local_script_sha256": "5b15fb671d5ef07110f790632a20243e72e518f383d9972fa7ebfd6d546da341",
+      "action": "Retained unchanged. Revalidation explicitly used the existing CMake object and link rules, with all three dependency lists inspected."
+    },
+    "recovered_legacy_remote_object": {
+      "observed_at": "2026-09-26T12:33:03Z",
+      "executable_path": "/home/data4t2/lelinfeng/phase4-workspaces/WIDE-X-FRESH4/build-server3/npu_correctness_BUILD-FIX-001",
+      "executable_sha256": "dbd7d619a8e928963df94e0479d242f465de67174291c01b60a514b5c15a4a96",
+      "library_sha256": "b54a6fbdffcef7a6131ed264c4e45a6ac29467651bd2251fdfc568d47fae1cbe",
+      "current_workspace_kernel_sha256": "f7628795e6699288669dbff8963181e376e10741ba4d46c768af51cf09bf6895",
+      "current_correctness_cpp_sha256": "219d2b8692b6dc0e134e22a112548247650c4e352811038431a6cd38716accd8",
+      "retained_correctness_cpp_sha256": "0ebe9480b2236cf749c48a50d1c1054bfeac69c0d6cfc171f4180eb8b37fc336",
+      "limitation": "The executable exists, but the current remote workspace source has moved to V001 and its correctness source differs from the retained file. Historical executable-to-source binding remains MISSING. This object was not run or reused as the new Parent control."
+    },
+    "build_command_and_raw_log": "phase4/local/WIDE-X-FRESH4/V001/support/runner-validation.md",
+    "exact_run_commands": "phase4/local/WIDE-X-FRESH4/V001/HANDOFF.md",
+    "npu_correctness": {
+      "status": "PASS_18_OF_18_RUNNER_CASES",
+      "device": 7,
+      "started_at": "2026-09-26T13:43:59Z",
+      "finished_at": "2026-09-26T13:44:42Z",
+      "runtime_library_path": "/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/lib64:/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/lib64:/usr/local/Ascend/driver/lib64/driver:/usr/local/Ascend/driver/lib64/common",
+      "cases": "Parent and Candidate x FP32/FP16/BF16 x widths 2048/16384/32768",
+      "parent_pass": 9,
+      "candidate_pass": 9,
+      "total_pass": 18,
+      "rc_failures": 0,
+      "mismatches": 0,
+      "nonfinite": 0,
+      "evidence_directory": "phase4/local/WIDE-X-FRESH4/V001/logs/correctness-only-d7-20260926T134500Z",
+      "console_log": "phase4/local/WIDE-X-FRESH4/V001/logs/correctness-only-d7-20260926T134500Z/runner-console.log",
+      "loader_failure_evidence": "phase4/local/WIDE-X-FRESH4/V001/logs/correctness-only-loader-failure-20260926.log",
+      "note": "The first invocation without LD_LIBRARY_PATH returned RC=127 before NPU launch; it produced no result file. The second invocation used the build-time runtime library path and completed all 18 correctness-only cases."
+    },
+    "same_binary": "NOT_RUN",
+    "paired_timing": "NOT_RUN",
+    "local_score": "MISSING",
+    "official_score": "MISSING",
+    "context_confirmation": "UNCONFIRMED"
+  },
+  "evidence_consolidation": {
+    "recorded_at": "2026-09-26T12:18:36Z",
+    "scope": "Existing route assets and local validation only; no new kernel or performance revision.",
+    "worktree": "/Users/sunyiyang/Desktop/Project/cann-sixlane/WIDE-X-FRESH4",
+    "branch": "exec/sixlane-20260923-wide-x-fresh4",
+    "replaced_worker": "01a0d83b-873a-7fb3-a303-121d5e6c056a",
+    "replacement_basis": "User confirmed prior worker wait and close both returned not_found.",
+    "initial_head": "61e97fad84f2ff9ed43e75594ec5dcfd353b8d87",
+    "initial_cached_origin_head": "61e97fad84f2ff9ed43e75594ec5dcfd353b8d87",
+    "initial_dirty_paths": [],
+    "canonical_scope": {
+      "root": "/Users/sunyiyang/Desktop/Project/cann",
+      "workspace_files": 6,
+      "workspace_git_state": "UNTRACKED",
+      "workspace_git_state_at": "2026-09-26T12:18:36Z",
+      "workspace_retention_commit": "fa0794f991d3d23279f7e765ae5175a75834d002",
+      "workspace_git_state_after_main_retention": "TRACKED",
+      "retention_verification": "The six original paths and CURRENT source bytes were verified in Main's commit; no cherry-pick or asset copy is needed.",
+      "local_files": 10,
+      "archive_files": 8,
+      "review_log_files": 6,
+      "online_files": 0,
+      "file_count": 30,
+      "all_file_contents_already_retained_on_route": true,
+      "copied_assets": [],
+      "note": "Content equality was verified for each original, including untracked files; absence at an identical relative path does not imply missing content. No canonical file was edited.",
+      "files": [
+        {
+          "original_path": "/Users/sunyiyang/Desktop/Project/cann/phase4/archive/active-sixlane-20260924/WIDE-X-FRESH4/build_server3.sh",
+          "sha256": "479bfcc903388895e4f3926f3c2ed46f4223e96b7321bcfce4672b13e046653d",
+          "git_state": "TRACKED",
+          "equivalent_route_paths": [
+            "phase4/workspaces/WIDE-X-FRESH4/build_server3.sh",
+            "phase4/local/WIDE-X-FRESH4/CURRENT/support/build_server3.sh",
+            "phase4/local/WIDE-X-FRESH4/BUILD-FIX-001/parent-control/build_server3.sh"
+          ]
+        },
+        {
+          "original_path": "/Users/sunyiyang/Desktop/Project/cann/phase4/archive/active-sixlane-20260924/WIDE-X-FRESH4/CMakeLists.txt",
+          "sha256": "015ae00753a6b63a9303eba704844c6b461e596a3fe0008f3ccbbde6b9f22995",
+          "git_state": "TRACKED",
+          "equivalent_route_paths": [
+            "phase4/workspaces/WIDE-X-FRESH4/CMakeLists.txt",
+            "phase4/local/WIDE-X-FRESH4/CURRENT/support/CMakeLists.txt",
+            "phase4/local/WIDE-X-FRESH4/BUILD-FIX-001/parent-control/CMakeLists.txt"
+          ]
+        },
+        {
+          "original_path": "/Users/sunyiyang/Desktop/Project/cann/phase4/archive/active-sixlane-20260924/WIDE-X-FRESH4/host_probe_shim.h",
+          "sha256": "e19714f8159b61dd56d6cff5ece8bb816cc9a51bb5b4694ec176bcad5ded5e49",
+          "git_state": "TRACKED",
+          "equivalent_route_paths": [
+            "phase4/workspaces/WIDE-X-FRESH4/host_probe_shim.h",
+            "phase4/local/WIDE-X-FRESH4/CURRENT/support/host_probe_shim.h",
+            "phase4/local/WIDE-X-FRESH4/BUILD-FIX-001/parent-control/host_probe_shim.h"
+          ]
+        },
+        {
+          "original_path": "/Users/sunyiyang/Desktop/Project/cann/phase4/archive/active-sixlane-20260924/WIDE-X-FRESH4/host_probes.cpp",
+          "sha256": "2c44111173bbd46ebbb6875e8720c314448e6f669fbe11258e5435ab47e825a7",
+          "git_state": "TRACKED",
+          "equivalent_route_paths": [
+            "phase4/workspaces/WIDE-X-FRESH4/host_probes.cpp",
+            "phase4/local/WIDE-X-FRESH4/CURRENT/support/host_probes.cpp",
+            "phase4/local/WIDE-X-FRESH4/BUILD-FIX-001/parent-control/host_probes.cpp"
+          ]
+        },
+        {
+          "original_path": "/Users/sunyiyang/Desktop/Project/cann/phase4/archive/active-sixlane-20260924/WIDE-X-FRESH4/local_abi_shim.h",
+          "sha256": "168ab8ceee645fb5e05f282105217c7e85df2e01a165f56e4c13ef08925aa427",
+          "git_state": "TRACKED",
+          "equivalent_route_paths": [
+            "phase4/workspaces/WIDE-X-FRESH4/local_abi_shim.h",
+            "phase4/local/WIDE-X-FRESH4/CURRENT/support/local_abi_shim.h",
+            "phase4/local/WIDE-X-FRESH4/BUILD-FIX-001/parent-control/local_abi_shim.h"
+          ]
+        },
+        {
+          "original_path": "/Users/sunyiyang/Desktop/Project/cann/phase4/archive/active-sixlane-20260924/WIDE-X-FRESH4/npu_correctness.cpp",
+          "sha256": "0ebe9480b2236cf749c48a50d1c1054bfeac69c0d6cfc171f4180eb8b37fc336",
+          "git_state": "TRACKED",
+          "equivalent_route_paths": [
+            "phase4/workspaces/WIDE-X-FRESH4/npu_correctness.cpp"
+          ]
+        },
+        {
+          "original_path": "/Users/sunyiyang/Desktop/Project/cann/phase4/archive/active-sixlane-20260924/WIDE-X-FRESH4/source-meta.json",
+          "sha256": "13e9458742efb4d53e0569b31efc14aa142616baa17458453910e4cbece11d89",
+          "git_state": "TRACKED",
+          "equivalent_route_paths": [
+            "phase4/workspaces/WIDE-X-FRESH4/source-meta.json"
+          ]
+        },
+        {
+          "original_path": "/Users/sunyiyang/Desktop/Project/cann/phase4/archive/active-sixlane-20260924/WIDE-X-FRESH4/wide_x_fresh4.asc",
+          "sha256": "5d0ee01165e46a281cbb7d1605feba3605ad59883845400a063e97704f27f2be",
+          "git_state": "TRACKED",
+          "equivalent_route_paths": [
+            "phase4/local/WIDE-X-FRESH4/BUILD-FIX-001/submission.asc"
+          ]
+        },
+        {
+          "original_path": "/Users/sunyiyang/Desktop/Project/cann/phase4/local/WIDE-X-FRESH4/CURRENT/diff.patch",
+          "sha256": "6687d9cf027519e6386745a6a0e19ff8881dd8a201c90244d60b25da86a2077b",
+          "git_state": "TRACKED",
+          "equivalent_route_paths": [
+            "phase4/local/WIDE-X-FRESH4/CURRENT/diff.patch"
+          ]
+        },
+        {
+          "original_path": "/Users/sunyiyang/Desktop/Project/cann/phase4/local/WIDE-X-FRESH4/CURRENT/local-result.json",
+          "sha256": "471255ef3dcfab6a29188b2ea10a851898db27bf1eccdc002c9b85490dec93ce",
+          "git_state": "TRACKED",
+          "equivalent_route_paths": [
+            "phase4/local/WIDE-X-FRESH4/CURRENT/local-result.json"
+          ]
+        },
+        {
+          "original_path": "/Users/sunyiyang/Desktop/Project/cann/phase4/local/WIDE-X-FRESH4/CURRENT/source-meta.json",
+          "sha256": "03b623790078c3cfea68697bfec48c0f2f22c5f849ff10902089a1da1be317c0",
+          "git_state": "TRACKED",
+          "equivalent_route_paths": [
+            "phase4/local/WIDE-X-FRESH4/CURRENT/source-meta.json"
+          ]
+        },
+        {
+          "original_path": "/Users/sunyiyang/Desktop/Project/cann/phase4/local/WIDE-X-FRESH4/CURRENT/submission.asc",
+          "sha256": "bc4608dcb1028b61de50fc8a74d4a72661945c02c3caccb8b60dd543bdf6677c",
+          "git_state": "TRACKED",
+          "equivalent_route_paths": [
+            "phase4/local/WIDE-X-FRESH4/CURRENT/submission.asc",
+            "phase4/local/WIDE-X-FRESH4/BUILD-FIX-001/parent-control/wide_x_fresh4.asc"
+          ]
+        },
+        {
+          "original_path": "/Users/sunyiyang/Desktop/Project/cann/phase4/local/WIDE-X-FRESH4/CURRENT/submission.sha256",
+          "sha256": "0c03c3b96254979774001cb3afd105e9513e336dc8f7aa6321234f023bf63390",
+          "git_state": "TRACKED",
+          "equivalent_route_paths": [
+            "phase4/local/WIDE-X-FRESH4/CURRENT/submission.sha256"
+          ]
+        },
+        {
+          "original_path": "/Users/sunyiyang/Desktop/Project/cann/phase4/local/WIDE-X-FRESH4/CURRENT/support/build_server3.sh",
+          "sha256": "479bfcc903388895e4f3926f3c2ed46f4223e96b7321bcfce4672b13e046653d",
+          "git_state": "TRACKED",
+          "equivalent_route_paths": [
+            "phase4/workspaces/WIDE-X-FRESH4/build_server3.sh",
+            "phase4/local/WIDE-X-FRESH4/CURRENT/support/build_server3.sh",
+            "phase4/local/WIDE-X-FRESH4/BUILD-FIX-001/parent-control/build_server3.sh"
+          ]
+        },
+        {
+          "original_path": "/Users/sunyiyang/Desktop/Project/cann/phase4/local/WIDE-X-FRESH4/CURRENT/support/CMakeLists.txt",
+          "sha256": "015ae00753a6b63a9303eba704844c6b461e596a3fe0008f3ccbbde6b9f22995",
+          "git_state": "TRACKED",
+          "equivalent_route_paths": [
+            "phase4/workspaces/WIDE-X-FRESH4/CMakeLists.txt",
+            "phase4/local/WIDE-X-FRESH4/CURRENT/support/CMakeLists.txt",
+            "phase4/local/WIDE-X-FRESH4/BUILD-FIX-001/parent-control/CMakeLists.txt"
+          ]
+        },
+        {
+          "original_path": "/Users/sunyiyang/Desktop/Project/cann/phase4/local/WIDE-X-FRESH4/CURRENT/support/host_probe_shim.h",
+          "sha256": "e19714f8159b61dd56d6cff5ece8bb816cc9a51bb5b4694ec176bcad5ded5e49",
+          "git_state": "TRACKED",
+          "equivalent_route_paths": [
+            "phase4/workspaces/WIDE-X-FRESH4/host_probe_shim.h",
+            "phase4/local/WIDE-X-FRESH4/CURRENT/support/host_probe_shim.h",
+            "phase4/local/WIDE-X-FRESH4/BUILD-FIX-001/parent-control/host_probe_shim.h"
+          ]
+        },
+        {
+          "original_path": "/Users/sunyiyang/Desktop/Project/cann/phase4/local/WIDE-X-FRESH4/CURRENT/support/host_probes.cpp",
+          "sha256": "2c44111173bbd46ebbb6875e8720c314448e6f669fbe11258e5435ab47e825a7",
+          "git_state": "TRACKED",
+          "equivalent_route_paths": [
+            "phase4/workspaces/WIDE-X-FRESH4/host_probes.cpp",
+            "phase4/local/WIDE-X-FRESH4/CURRENT/support/host_probes.cpp",
+            "phase4/local/WIDE-X-FRESH4/BUILD-FIX-001/parent-control/host_probes.cpp"
+          ]
+        },
+        {
+          "original_path": "/Users/sunyiyang/Desktop/Project/cann/phase4/local/WIDE-X-FRESH4/CURRENT/support/local_abi_shim.h",
+          "sha256": "168ab8ceee645fb5e05f282105217c7e85df2e01a165f56e4c13ef08925aa427",
+          "git_state": "TRACKED",
+          "equivalent_route_paths": [
+            "phase4/workspaces/WIDE-X-FRESH4/local_abi_shim.h",
+            "phase4/local/WIDE-X-FRESH4/CURRENT/support/local_abi_shim.h",
+            "phase4/local/WIDE-X-FRESH4/BUILD-FIX-001/parent-control/local_abi_shim.h"
+          ]
+        },
+        {
+          "original_path": "/Users/sunyiyang/Desktop/Project/cann/phase4/review/logs/WIDE-X-FRESH4-CURRENT.device.log",
+          "sha256": "4e49735c63c33db329a46d61d5ea4ced52843ca300d18075b8868684969b6269",
+          "git_state": "TRACKED",
+          "equivalent_route_paths": [
+            "phase4/review/logs/WIDE-X-FRESH4-CURRENT.device.log"
+          ]
+        },
+        {
+          "original_path": "/Users/sunyiyang/Desktop/Project/cann/phase4/review/logs/WIDE-X-FRESH4-CURRENT.link.log",
+          "sha256": "9d0a4a77fc509df6f83426d9634f69d6f7c687c393f312cdfa231c4c6772cb42",
+          "git_state": "TRACKED",
+          "equivalent_route_paths": [
+            "phase4/review/logs/WIDE-X-FRESH4-CURRENT.link.log"
+          ]
+        },
+        {
+          "original_path": "/Users/sunyiyang/Desktop/Project/cann/phase4/review/logs/WIDE-X-FRESH4-CURRENT.submission.errors",
+          "sha256": "0743e3b274f7beb9945a02e931f91971c960b8afbb7aa2f3fe349723016667c2",
+          "git_state": "TRACKED",
+          "equivalent_route_paths": [
+            "phase4/review/logs/WIDE-X-FRESH4-CURRENT.submission.errors"
+          ]
+        },
+        {
+          "original_path": "/Users/sunyiyang/Desktop/Project/cann/phase4/review/logs/WIDE-X-FRESH4-CURRENT.submission.log",
+          "sha256": "255fb188e0a987b53d6eff2c25abd114660ec1d96d9fa8d20b407eff5953e8a6",
+          "git_state": "TRACKED",
+          "equivalent_route_paths": [
+            "phase4/review/logs/WIDE-X-FRESH4-CURRENT.submission.log"
+          ]
+        },
+        {
+          "original_path": "/Users/sunyiyang/Desktop/Project/cann/phase4/review/logs/WIDE-X-FRESH4.native-build.log",
+          "sha256": "1c15357235d76d5ff0d80084a029617aa857c0bb151c0af24fe6c29f200a52b7",
+          "git_state": "TRACKED",
+          "equivalent_route_paths": [
+            "phase4/review/logs/WIDE-X-FRESH4.native-build.log"
+          ]
+        },
+        {
+          "original_path": "/Users/sunyiyang/Desktop/Project/cann/phase4/review/logs/WIDE-X-FRESH4.native-cfg.log",
+          "sha256": "157fbd12abdbaaad731957abea02d8c39557c5dd35c84ce674d58f1940d06f81",
+          "git_state": "TRACKED",
+          "equivalent_route_paths": [
+            "phase4/review/logs/WIDE-X-FRESH4.native-cfg.log"
+          ]
+        },
+        {
+          "original_path": "/Users/sunyiyang/Desktop/Project/cann/phase4/workspaces/WIDE-X-FRESH4/build_server3.sh",
+          "sha256": "479bfcc903388895e4f3926f3c2ed46f4223e96b7321bcfce4672b13e046653d",
+          "git_state": "UNTRACKED",
+          "equivalent_route_paths": [
+            "phase4/workspaces/WIDE-X-FRESH4/build_server3.sh",
+            "phase4/local/WIDE-X-FRESH4/CURRENT/support/build_server3.sh",
+            "phase4/local/WIDE-X-FRESH4/BUILD-FIX-001/parent-control/build_server3.sh"
+          ]
+        },
+        {
+          "original_path": "/Users/sunyiyang/Desktop/Project/cann/phase4/workspaces/WIDE-X-FRESH4/CMakeLists.txt",
+          "sha256": "015ae00753a6b63a9303eba704844c6b461e596a3fe0008f3ccbbde6b9f22995",
+          "git_state": "UNTRACKED",
+          "equivalent_route_paths": [
+            "phase4/workspaces/WIDE-X-FRESH4/CMakeLists.txt",
+            "phase4/local/WIDE-X-FRESH4/CURRENT/support/CMakeLists.txt",
+            "phase4/local/WIDE-X-FRESH4/BUILD-FIX-001/parent-control/CMakeLists.txt"
+          ]
+        },
+        {
+          "original_path": "/Users/sunyiyang/Desktop/Project/cann/phase4/workspaces/WIDE-X-FRESH4/host_probe_shim.h",
+          "sha256": "e19714f8159b61dd56d6cff5ece8bb816cc9a51bb5b4694ec176bcad5ded5e49",
+          "git_state": "UNTRACKED",
+          "equivalent_route_paths": [
+            "phase4/workspaces/WIDE-X-FRESH4/host_probe_shim.h",
+            "phase4/local/WIDE-X-FRESH4/CURRENT/support/host_probe_shim.h",
+            "phase4/local/WIDE-X-FRESH4/BUILD-FIX-001/parent-control/host_probe_shim.h"
+          ]
+        },
+        {
+          "original_path": "/Users/sunyiyang/Desktop/Project/cann/phase4/workspaces/WIDE-X-FRESH4/host_probes.cpp",
+          "sha256": "2c44111173bbd46ebbb6875e8720c314448e6f669fbe11258e5435ab47e825a7",
+          "git_state": "UNTRACKED",
+          "equivalent_route_paths": [
+            "phase4/workspaces/WIDE-X-FRESH4/host_probes.cpp",
+            "phase4/local/WIDE-X-FRESH4/CURRENT/support/host_probes.cpp",
+            "phase4/local/WIDE-X-FRESH4/BUILD-FIX-001/parent-control/host_probes.cpp"
+          ]
+        },
+        {
+          "original_path": "/Users/sunyiyang/Desktop/Project/cann/phase4/workspaces/WIDE-X-FRESH4/local_abi_shim.h",
+          "sha256": "168ab8ceee645fb5e05f282105217c7e85df2e01a165f56e4c13ef08925aa427",
+          "git_state": "UNTRACKED",
+          "equivalent_route_paths": [
+            "phase4/workspaces/WIDE-X-FRESH4/local_abi_shim.h",
+            "phase4/local/WIDE-X-FRESH4/CURRENT/support/local_abi_shim.h",
+            "phase4/local/WIDE-X-FRESH4/BUILD-FIX-001/parent-control/local_abi_shim.h"
+          ]
+        },
+        {
+          "original_path": "/Users/sunyiyang/Desktop/Project/cann/phase4/workspaces/WIDE-X-FRESH4/wide_x_fresh4.asc",
+          "sha256": "bc4608dcb1028b61de50fc8a74d4a72661945c02c3caccb8b60dd543bdf6677c",
+          "git_state": "UNTRACKED",
+          "equivalent_route_paths": [
+            "phase4/local/WIDE-X-FRESH4/CURRENT/submission.asc",
+            "phase4/local/WIDE-X-FRESH4/BUILD-FIX-001/parent-control/wide_x_fresh4.asc"
+          ]
+        }
+      ]
+    },
+    "context_review": {
+      "declared_class": "FRESH_BLIND",
+      "confirmation": "UNCONFIRMED",
+      "archived_analysis": {
+        "record": "phase4/local/WIDE-X-FRESH4/V001/support/runner-validation.md",
+        "main_review": "phase4/local/WIDE-X-FRESH4/V001/MAIN-REVIEW.md",
+        "source_path": "MISSING",
+        "exposed_extra_material": "MISSING",
+        "influence_on_v001": "MISSING"
+      },
+      "earlier_search_incident": {
+        "record": "phase4/local/WIDE-X-FRESH4/BUILD-FIX-001/parent-control/source-meta.json",
+        "recorded_fact": "A repository-wide search emitted results beyond this route; the previous worker reported not using them.",
+        "emitted_paths": "MISSING",
+        "independent_influence_evidence": "MISSING"
+      },
+      "disposition": "Retain existing declared class; Main disposition required. No Fresh Blind or Online eligibility resolution is claimed."
+    },
+    "current_local_verdict": "MEASUREMENT_BLOCKED",
+    "measurement_wait": {
+      "BLOCK_REASON": "Correctness-only qualification is complete; no permitted performance window is available for exact-shape same-binary and paired timing.",
+      "DATE": "2026-09-26",
+      "SHAPE": "rows=2; widths=2048,16384,32768; fp32,fp16,bf16",
+      "DEVICE": "d7 correctness-only completed; no performance device assigned",
+      "SAME_BINARY_RESULT": "NOT_RUN",
+      "RETRY_REQUIRED": "YES_AFTER_PERFORMANCE_DEVICE_ASSIGNMENT",
+      "main_device_snapshot_time": "2026-09-26T12:04:36Z",
+      "main_device_snapshot_source": "User/Main message; not an independently observed device query in this consolidation.",
+      "performance_approval": false,
+      "device7_timing_allowed": false
+    },
+    "revisions": [
+      {
+        "revision": "CURRENT",
+        "kind": "Historical unnumbered source snapshot; not a new performance revision.",
+        "source_path": "phase4/local/WIDE-X-FRESH4/CURRENT/submission.asc",
+        "source_sha256": "bc4608dcb1028b61de50fc8a74d4a72661945c02c3caccb8b60dd543bdf6677c",
+        "sidecar": "phase4/local/WIDE-X-FRESH4/CURRENT/submission.sha256",
+        "identity": "SOURCE_SIDECAR_GIT_AND_CANONICAL_UNTRACKED_SOURCE_MATCH",
+        "direct_parent": "MISSING",
+        "parent_sha256": "MISSING",
+        "git_source_commit": "4e7aef00b01c033f2ff82c38ed6f0d7f04145977",
+        "git_source_path": "phase4/local/WIDE-X-FRESH4/CURRENT/submission.asc",
+        "build": {
+          "status": "FAILED",
+          "native_make_rc": 2,
+          "compile_rc": "MISSING",
+          "link_rc": "MISSING",
+          "link_status": "NOT_REACHED",
+          "evidence": [
+            "phase4/review/logs/WIDE-X-FRESH4.native-cfg.log",
+            "phase4/review/logs/WIDE-X-FRESH4.native-build.log",
+            "phase4/review/logs/WIDE-X-FRESH4-CURRENT.device.log",
+            "phase4/review/logs/WIDE-X-FRESH4-CURRENT.submission.log",
+            "phase4/review/logs/WIDE-X-FRESH4-CURRENT.submission.errors",
+            "phase4/review/logs/WIDE-X-FRESH4-CURRENT.link.log",
+            "phase4/local/WIDE-X-FRESH4/BUILD-FIX-001/parent-control/source-meta.json",
+            "phase4/local/WIDE-X-FRESH4/BUILD-FIX-001/parent-control/logs/final-source-artifact-check.log"
+          ],
+          "reason": "Device sqrtf is unsupported; audit adapters also report uint32_t narrowing. Default and -fno-builtin-sqrtf attempts fail. Make Error 2 is retained; separate driver numeric RC is absent."
+        },
+        "npu_executable_path": "MISSING",
+        "npu_executable_sha256": "MISSING",
+        "correctness": {
+          "status": "NOT_RUN",
+          "evidence": "MISSING"
+        },
+        "same_binary": {
+          "status": "NOT_RUN",
+          "evidence": "MISSING"
+        },
+        "raw_npu_timing": "MISSING",
+        "host_shim_only_evidence": "phase4/local/WIDE-X-FRESH4/BUILD-FIX-001/logs/paired-local-probe.log",
+        "local_result": "phase4/local/WIDE-X-FRESH4/CURRENT/local-result.json",
+        "source_meta": "phase4/local/WIDE-X-FRESH4/CURRENT/source-meta.json",
+        "diff": {
+          "path": "phase4/local/WIDE-X-FRESH4/CURRENT/diff.patch",
+          "status": "PARENT_UNRESOLVED_TEXT_ONLY"
+        },
+        "handoff": "MISSING",
+        "main_review": "MISSING",
+        "online": {
+          "status": "NOT_SUBMITTED",
+          "package": "MISSING",
+          "submission_id": "MISSING",
+          "official_score": "MISSING"
+        },
+        "performance_parent_eligible": false,
+        "assets": {
+          "count": 10,
+          "paths": [
+            "phase4/local/WIDE-X-FRESH4/CURRENT/diff.patch",
+            "phase4/local/WIDE-X-FRESH4/CURRENT/local-result.json",
+            "phase4/local/WIDE-X-FRESH4/CURRENT/source-meta.json",
+            "phase4/local/WIDE-X-FRESH4/CURRENT/submission.asc",
+            "phase4/local/WIDE-X-FRESH4/CURRENT/submission.sha256",
+            "phase4/local/WIDE-X-FRESH4/CURRENT/support/CMakeLists.txt",
+            "phase4/local/WIDE-X-FRESH4/CURRENT/support/build_server3.sh",
+            "phase4/local/WIDE-X-FRESH4/CURRENT/support/host_probe_shim.h",
+            "phase4/local/WIDE-X-FRESH4/CURRENT/support/host_probes.cpp",
+            "phase4/local/WIDE-X-FRESH4/CURRENT/support/local_abi_shim.h"
+          ]
+        }
+      },
+      {
+        "revision": "BUILD-FIX-001",
+        "kind": "Build/correctness fix; V001 direct Parent.",
+        "source_path": "phase4/local/WIDE-X-FRESH4/BUILD-FIX-001/submission.asc",
+        "source_sha256": "5d0ee01165e46a281cbb7d1605feba3605ad59883845400a063e97704f27f2be",
+        "sidecar": "phase4/local/WIDE-X-FRESH4/BUILD-FIX-001/submission.sha256",
+        "identity": "SOURCE_SIDECAR_GIT_AND_CANONICAL_ARCHIVE_MATCH",
+        "direct_parent": "CURRENT",
+        "parent_sha256": "bc4608dcb1028b61de50fc8a74d4a72661945c02c3caccb8b60dd543bdf6677c",
+        "parent_role": "SOURCE_LINEAGE_ONLY; not a runnable performance control.",
+        "git_source_commit": "42e283cf407d425d172dbd0cf2ba7b49f8058b33",
+        "canonical_archive_commit": "ae46d7ca9b2ca2d60a27d0fdc430801c13268f0b",
+        "build": {
+          "status": "RECORDED_PASS",
+          "compile_rc": "MISSING",
+          "link_rc": "MISSING",
+          "metadata_build_exit_code": 0,
+          "metadata_link_exit_code": 0,
+          "numeric_rc_note": "Historical source-meta reports overall build/link exit_code 0; raw logs do not print separate compile and link RC.",
+          "build_log": "phase4/local/WIDE-X-FRESH4/BUILD-FIX-001/logs/build.log",
+          "link_log": "phase4/local/WIDE-X-FRESH4/BUILD-FIX-001/logs/link.log",
+          "library_path": "/home/data4t2/lelinfeng/phase4-workspaces/WIDE-X-FRESH4/build-server3/libwide_x_fresh4.so",
+          "library_sha256": "b54a6fbdffcef7a6131ed264c4e45a6ac29467651bd2251fdfc568d47fae1cbe"
+        },
+        "npu_executable_path": "/home/data4t2/lelinfeng/phase4-workspaces/WIDE-X-FRESH4/build-server3/npu_correctness_BUILD-FIX-001",
+        "npu_executable_sha256": "MISSING",
+        "correctness": {
+          "status": "PASS_9_OF_9_NPU_RETAINED",
+          "exit_code": 0,
+          "exit_code_source": "source-meta.json",
+          "log": "phase4/local/WIDE-X-FRESH4/BUILD-FIX-001/logs/correctness.log",
+          "rows": 2,
+          "widths": [
+            2048,
+            16384,
+            32768
+          ],
+          "dtypes": [
+            "fp32",
+            "fp16",
+            "bf16"
+          ],
+          "available_core_num": 1,
+          "max_abs_error": {
+            "fp32": 3.5762787e-7,
+            "fp16": 0.0009765625,
+            "bf16": 0
+          }
+        },
+        "same_binary": {
+          "status": "NOT_RUN",
+          "evidence": "MISSING"
+        },
+        "raw_npu_timing": "MISSING",
+        "raw_host_timing": {
+          "path": "phase4/local/WIDE-X-FRESH4/BUILD-FIX-001/logs/paired-local-probe.log",
+          "classification": "HOST_SHIM_ONLY; LOAD_CONTAMINATED; not device timing.",
+          "host_executable_sha256": "ace44840ca515de59c08c8993d263c209cae0b90745ffe36bb7af639921e64d5",
+          "identities_note": "Both host-shim executable names have the same SHA; this does not qualify an NPU Parent."
+        },
+        "local_result": "phase4/local/WIDE-X-FRESH4/BUILD-FIX-001/local-result.json",
+        "source_meta": "phase4/local/WIDE-X-FRESH4/BUILD-FIX-001/source-meta.json",
+        "diff": {
+          "path": "phase4/local/WIDE-X-FRESH4/BUILD-FIX-001/diff.patch",
+          "status": "BUILD_AND_CORRECTNESS_ONLY"
+        },
+        "handoff": "MISSING",
+        "main_review": "MISSING; V001/MAIN-REVIEW.md recognizes this direct Parent; source-meta self-audit is not a Main review.",
+        "online": {
+          "status": "NOT_SUBMITTED",
+          "package": "MISSING",
+          "submission_id": "MISSING",
+          "official_score": "MISSING"
+        },
+        "intermediate_source": {
+          "reported_sha256": "bf67df69bc5d8c52572343be7f4fa5ac890e32cb89d5e4a6d1d88b78f9b42274",
+          "exact_source": "MISSING",
+          "git_commit": "MISSING",
+          "note": "Mentioned only as previous_candidate_source_sha. No separate revision is invented."
+        },
+        "assets": {
+          "count": 32,
+          "paths": [
+            "phase4/local/WIDE-X-FRESH4/BUILD-FIX-001/device-paired-probe-plan.md",
+            "phase4/local/WIDE-X-FRESH4/BUILD-FIX-001/diff.patch",
+            "phase4/local/WIDE-X-FRESH4/BUILD-FIX-001/local-result.json",
+            "phase4/local/WIDE-X-FRESH4/BUILD-FIX-001/logs/build.log",
+            "phase4/local/WIDE-X-FRESH4/BUILD-FIX-001/logs/correctness.log",
+            "phase4/local/WIDE-X-FRESH4/BUILD-FIX-001/logs/device-timing-window.log",
+            "phase4/local/WIDE-X-FRESH4/BUILD-FIX-001/logs/link.log",
+            "phase4/local/WIDE-X-FRESH4/BUILD-FIX-001/logs/local-probes-link.log",
+            "phase4/local/WIDE-X-FRESH4/BUILD-FIX-001/logs/local-probes.log",
+            "phase4/local/WIDE-X-FRESH4/BUILD-FIX-001/logs/paired-load.log",
+            "phase4/local/WIDE-X-FRESH4/BUILD-FIX-001/logs/paired-local-probe.log",
+            "phase4/local/WIDE-X-FRESH4/BUILD-FIX-001/logs/paired-probe-compile.log",
+            "phase4/local/WIDE-X-FRESH4/BUILD-FIX-001/logs/parent-control-build-attempt-2.log",
+            "phase4/local/WIDE-X-FRESH4/BUILD-FIX-001/logs/parent-control-build.log",
+            "phase4/local/WIDE-X-FRESH4/BUILD-FIX-001/logs/parent-control-no-builtin-sqrtf.log",
+            "phase4/local/WIDE-X-FRESH4/BUILD-FIX-001/paired_local_probe.cpp",
+            "phase4/local/WIDE-X-FRESH4/BUILD-FIX-001/parent-control/CMakeLists.txt",
+            "phase4/local/WIDE-X-FRESH4/BUILD-FIX-001/parent-control/build_server3.sh",
+            "phase4/local/WIDE-X-FRESH4/BUILD-FIX-001/parent-control/host_probe_shim.h",
+            "phase4/local/WIDE-X-FRESH4/BUILD-FIX-001/parent-control/host_probes.cpp",
+            "phase4/local/WIDE-X-FRESH4/BUILD-FIX-001/parent-control/local-result.json",
+            "phase4/local/WIDE-X-FRESH4/BUILD-FIX-001/parent-control/local_abi_shim.h",
+            "phase4/local/WIDE-X-FRESH4/BUILD-FIX-001/parent-control/logs/artifact-check.log",
+            "phase4/local/WIDE-X-FRESH4/BUILD-FIX-001/parent-control/logs/documented-option-help.log",
+            "phase4/local/WIDE-X-FRESH4/BUILD-FIX-001/parent-control/logs/final-source-artifact-check.log",
+            "phase4/local/WIDE-X-FRESH4/BUILD-FIX-001/parent-control/logs/source-sha-local.log",
+            "phase4/local/WIDE-X-FRESH4/BUILD-FIX-001/parent-control/logs/source-sha-server.log",
+            "phase4/local/WIDE-X-FRESH4/BUILD-FIX-001/parent-control/source-meta.json",
+            "phase4/local/WIDE-X-FRESH4/BUILD-FIX-001/parent-control/wide_x_fresh4.asc",
+            "phase4/local/WIDE-X-FRESH4/BUILD-FIX-001/source-meta.json",
+            "phase4/local/WIDE-X-FRESH4/BUILD-FIX-001/submission.asc",
+            "phase4/local/WIDE-X-FRESH4/BUILD-FIX-001/submission.sha256"
+          ]
+        }
+      },
+      {
+        "revision": "V001",
+        "kind": "Existing performance candidate; unchanged.",
+        "source_path": "phase4/local/WIDE-X-FRESH4/V001/submission.asc",
+        "source_sha256": "f7628795e6699288669dbff8963181e376e10741ba4d46c768af51cf09bf6895",
+        "sidecar": "phase4/local/WIDE-X-FRESH4/V001/submission.sha256",
+        "identity": "SOURCE_SIDECAR_GIT_AND_OWN_WORKSPACE_MATCH",
+        "direct_parent": "BUILD-FIX-001",
+        "parent_sha256": "5d0ee01165e46a281cbb7d1605feba3605ad59883845400a063e97704f27f2be",
+        "git_source_commit": "856ba8d35db2ba402213483b069592b662779ba5",
+        "build": {
+          "status": "RECORDED_PASS",
+          "compile_rc": "MISSING",
+          "link_rc": "MISSING",
+          "build_log": "phase4/local/WIDE-X-FRESH4/V001/logs/build.log",
+          "link_log": "phase4/local/WIDE-X-FRESH4/V001/logs/link.log",
+          "library_path": "/tmp/WIDE-X-FRESH4-V001-build-20260925/cmake-build/libwide_x_fresh4.so",
+          "library_sha256": "b5abb78cdb2e99383d5266dd3d5b76c0a1c3b022613b53cc1b2a17c5d7868a6c"
+        },
+        "npu_executable_path": "/tmp/WIDE-X-FRESH4-V001-build-20260925/npu_correctness_V001",
+        "npu_executable_sha256": "0c160793a957b1288155e37d3cb153f8da84c6352685641e646a440cce3ae2ba",
+        "correctness": {
+          "status": "PASS_9_OF_9_NPU_RETAINED",
+          "exit_code": 0,
+          "exit_code_source": "source-meta.json",
+          "log": "phase4/local/WIDE-X-FRESH4/V001/logs/npu-correctness.log",
+          "rows": 2,
+          "widths": [
+            2048,
+            16384,
+            32768
+          ],
+          "dtypes": [
+            "fp32",
+            "fp16",
+            "bf16"
+          ],
+          "available_core_num": 1,
+          "max_abs_error": {
+            "fp32": 3.5762787e-7,
+            "fp16": 0.0009765625,
+            "bf16": 0
+          },
+          "limitation": "Does not qualify the separate paired runner, which requests 40 available cores and launches 2 blocks for 2 rows."
+        },
+        "paired_runner": {
+          "build_status": "RECORDED_PASS; numeric compile/link RC MISSING",
+          "git_support_commit": "7312558235900709296d92dcc3540412f180da10",
+          "git_evidence_commit": "faf7553a7b71d31eff8998af564cf32f52571f14",
+          "path": "/tmp/WIDE-X-FRESH4-V001-d0dd0e972ac48b07/WIDE-X-FRESH4/V001/support/build/wide_x_fresh4_unified_runner",
+          "sha256": "a74faf2fcf05819db15b5d0f96401f4aa1d9e09b6a54d88be870918a953eb3c4",
+          "parent_module_sha256": "9f03f15232d984577e559a64e90ec4e550fbef9392d6edb7eedd47ddc530071e",
+          "candidate_module_sha256": "c30be731387e0672359f47e748d65f67b7ce0e3f294dbc4f0fe986934b0890ab",
+          "retained_source_sha256": "2c81bee25bb30e2dd379dee598e571ce5ed1cd84ecd7d4f0c4962a04e01363f5",
+          "logs": [
+            "phase4/local/WIDE-X-FRESH4/V001/logs/server3-build-attempt-05.log",
+            "phase4/local/WIDE-X-FRESH4/V001/logs/server3-build-attempt-06.log"
+          ],
+          "failed_attempt_logs": [
+            "phase4/local/WIDE-X-FRESH4/V001/logs/server3-build-attempt-01.log",
+            "phase4/local/WIDE-X-FRESH4/V001/logs/server3-build-attempt-02.log",
+            "phase4/local/WIDE-X-FRESH4/V001/logs/server3-build-attempt-03.log",
+            "phase4/local/WIDE-X-FRESH4/V001/logs/server3-build-attempt-04.log"
+          ],
+          "execution": "NOT_RUN",
+          "correctness_only_mode": "MISSING",
+          "golden_comparison": "MISSING"
+        },
+        "same_binary": {
+          "status": "NOT_RUN",
+          "evidence": "MISSING"
+        },
+        "raw_npu_timing": "MISSING",
+        "local_result": "phase4/local/WIDE-X-FRESH4/V001/local-result.json",
+        "local_verdict": "MEASUREMENT_BLOCKED",
+        "source_meta": "phase4/local/WIDE-X-FRESH4/V001/source-meta.json",
+        "diff": {
+          "path": "phase4/local/WIDE-X-FRESH4/V001/diff.patch",
+          "status": "VERIFIED_TWO_SOURCE_LINES; tile and corresponding temporary buffer only."
+        },
+        "handoff": "phase4/local/WIDE-X-FRESH4/V001/HANDOFF.md",
+        "main_review": {
+          "path": "phase4/local/WIDE-X-FRESH4/V001/MAIN-REVIEW.md",
+          "commit": "bfa90830bf34ad549628961796bab71c3179c55a",
+          "verdict": "NEEDS_ONE_MORE_LOCAL",
+          "single_change_audit": "PASS",
+          "provenance": "UNRESOLVED"
+        },
+        "online": {
+          "status": "NOT_SUBMITTED",
+          "package": "MISSING",
+          "submission_id": "MISSING",
+          "official_score": "MISSING"
+        },
+        "assets": {
+          "count": 24,
+          "paths": [
+            "phase4/local/WIDE-X-FRESH4/V001/HANDOFF.md",
+            "phase4/local/WIDE-X-FRESH4/V001/MAIN-REVIEW.md",
+            "phase4/local/WIDE-X-FRESH4/V001/diff.patch",
+            "phase4/local/WIDE-X-FRESH4/V001/local-result.json",
+            "phase4/local/WIDE-X-FRESH4/V001/logs/build.log",
+            "phase4/local/WIDE-X-FRESH4/V001/logs/link-env-attempt.log",
+            "phase4/local/WIDE-X-FRESH4/V001/logs/link-include-attempt.log",
+            "phase4/local/WIDE-X-FRESH4/V001/logs/link.log",
+            "phase4/local/WIDE-X-FRESH4/V001/logs/npu-correctness-preflight.log",
+            "phase4/local/WIDE-X-FRESH4/V001/logs/npu-correctness.log",
+            "phase4/local/WIDE-X-FRESH4/V001/logs/server3-build-attempt-01.log",
+            "phase4/local/WIDE-X-FRESH4/V001/logs/server3-build-attempt-02.log",
+            "phase4/local/WIDE-X-FRESH4/V001/logs/server3-build-attempt-03.log",
+            "phase4/local/WIDE-X-FRESH4/V001/logs/server3-build-attempt-04.log",
+            "phase4/local/WIDE-X-FRESH4/V001/logs/server3-build-attempt-05.log",
+            "phase4/local/WIDE-X-FRESH4/V001/logs/server3-build-attempt-06.log",
+            "phase4/local/WIDE-X-FRESH4/V001/source-meta.json",
+            "phase4/local/WIDE-X-FRESH4/V001/submission.asc",
+            "phase4/local/WIDE-X-FRESH4/V001/submission.sha256",
+            "phase4/local/WIDE-X-FRESH4/V001/support/CMakeLists.txt",
+            "phase4/local/WIDE-X-FRESH4/V001/support/README.md",
+            "phase4/local/WIDE-X-FRESH4/V001/support/build_server3.sh",
+            "phase4/local/WIDE-X-FRESH4/V001/support/runner-validation.md",
+            "phase4/local/WIDE-X-FRESH4/V001/support/runner_main.cpp"
+          ]
+        }
+      }
+    ],
+    "next_stage": "Server3 compile/link and exact-source correctness-only revalidation complete; await a permitted performance window for exact-shape same-binary qualification. No paired timing has run."
+  },
+  "NON_TIMING_STATUS_20260927": {
+    "SOURCE_SHA256": "f7628795e6699288669dbff8963181e376e10741ba4d46c768af51cf09bf6895",
+    "SERVER3_SOURCE_SHA256": "f7628795e6699288669dbff8963181e376e10741ba4d46c768af51cf09bf6895",
+    "DIRECT_PARENT": "BUILD-FIX-001",
+    "PARENT_SOURCE_SHA256": "5d0ee01165e46a281cbb7d1605feba3605ad59883845400a063e97704f27f2be",
+    "BUILD": "PASS",
+    "COMPILE_RC": 0,
+    "LINK_RC": 0,
+    "BUILD_COMMAND": "bash /tmp/WIDE-X-FRESH4-V001-d0dd0e972ac48b07/WIDE-X-FRESH4/V001/support/build_server3.sh",
+    "CORRECTNESS": "PASS",
+    "CORRECTNESS_DETAIL": "Exact-source Parent/Candidate unified runner correctness-only: 18/18 PASS across FP32/FP16/BF16 at D=2048/16384/32768; mismatches=0, nonfinite=0.",
+    "EXECUTABLE_IDENTITY": "PASS",
+    "EXECUTABLE_SHA256": {
+      "parent_module": "9f03f15232d984577e559a64e90ec4e550fbef9392d6edb7eedd47ddc530071e",
+      "candidate_module": "c30be731387e0672359f47e748d65f67b7ce0e3f294dbc4f0fe986934b0890ab",
+      "unified_runner": "6328cd48d92036aeb4266248ede569f08484580e0507e185520911ed1a7e6a8b"
+    },
+    "SOURCE_PROVENANCE": "PASS: direct parent source and source-bound parent/candidate modules match recorded SHA256 values.",
+    "FRESH_BLIND_CONTEXT": "UNCONFIRMED in existing Main records; separate from source identity.",
+    "SAME_BINARY": "NOT_RUN",
+    "TIMING": "MEASUREMENT_BLOCKED",
+    "TIMING_BLOCKER": "No qualified MAIN-1 performance window on allowed devices; d7 is excluded from timing.",
+    "LOCAL_VERDICT": "NOT_COMPLETE",
+    "READY_FOR_SAME_BINARY": false,
+    "NOT_READY_REASON": "FRESH_BLIND_CONTEXT remains unconfirmed; source/executable provenance is recorded but context provenance is unresolved.",
+    "DEVICE_WINDOW": "UNAVAILABLE",
+    "LOCAL_BEST_UPDATED": false,
+    "ONLINE_WORTHY": "NO"
+  }
+}
