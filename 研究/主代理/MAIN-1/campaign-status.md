@@ -52,3 +52,23 @@
 | Date | Event |
 |---|---|
 | 2026-09-29 | Campaign start; canonical merged (`347e26f4` → `dac227c6`); 5 worktrees created; 5 agents spawned |
+
+## Progress Log (continued)
+
+| Date | Event |
+|---|---|
+| 2026-09-29 | SHAPE-TILING V001: BUILD PASS; found wide-FP32 invRms nondeterminism (~0.8%); OFAT safety PASS; timing gated |
+| 2026-09-29 | STORE-EPILOGUE: Track-B next-hypotheses.md produced (store gap analysis) |
+| 2026-09-29 | R31A: same-binary + paired measurements running on D24576/D32768 |
+| 2026-09-29 | Main-1 review sent to SHAPE-TILING: allow same-binary P/C with COMMON_MODE_WITH_PARENT documentation |
+| 2026-09-29 | R31B / EPILOGUE-ARITH: still in Track-B research |
+
+## Cross-cutting Finding (needs Planning awareness)
+
+**Wide-FP32 invRms nondeterminism in Champion `ProcessWideFp32FullCacheRows`:**
+- invRms varies ~0.8% across runs of same binary/input
+- Suspected: `kWideFullYReduceStride=16` tail partial slots unread/uninitialized (tileCount typically 3/4/8)
+- FP16/BF16 deterministic; BF16 quantization hides the drift
+- Official Judge scores this exact source 15/15, so official cases don't expose it
+- Impact: any local P/C on wide-FP32 path is noise-dominated; correctness vs golden is not adjudicable
+- Evidence: `cann-m1-tiling/研究/SHAPE-TILING-CHAMPION-X/handoff-2026-09-28.md`, `local-result.json`
