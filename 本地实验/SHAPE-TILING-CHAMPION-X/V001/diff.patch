@@ -1,0 +1,26 @@
+--- /Users/sunyiyang/Desktop/Project/cann-m1-tiling/线上结果/R31B/V011/submission.asc	2026-09-29 04:23:23
++++ submission.asc	2026-09-29 04:37:43
+@@ -68,6 +68,13 @@
+             int32_t tileElems = kWideFullYTileElems;
+             if constexpr (AscendC::IsSameType<T, float>::value) {
+                 wideFp32FullYPath_ = true;
++                // Mid-wide FP32 (D<=16384): spend the UB budget on fewer tile
++                // rounds instead of more resident y rows.  The 8192 seed makes
++                // ChooseWideFullYRows pick a smaller N at a larger tile; wider
++                // D keeps the 4096 seed so the full-y row count stays put.
++                tileElems = (rowWidth <= static_cast<uint64_t>(kWideFp32MidWideMaxWidth))
++                    ? kWideFp32MidWideTileElems
++                    : kWideFullYTileElems;
+                 wideFullYRows_ = ChooseWideFullYRows(rowWidth, sizeof(float),
+                                                      2, sizeof(float), 0, tileElems);
+                 wideFullYTileElems_ = tileElems;
+@@ -1281,6 +1288,9 @@
+     static constexpr int32_t kWideFullYBudgetBytes = 176 * 1024;
+     static constexpr int32_t kWideFullYMaxRows = 8;
+     static constexpr int32_t kWideFullYTileElems = 4096;
++    // Mid-wide FP32 tile tier: one policy knob for 8192 < D <= 16384.
++    static constexpr int32_t kWideFp32MidWideTileElems = 8192;
++    static constexpr int32_t kWideFp32MidWideMaxWidth = 16384;
+     static constexpr int32_t kWideFullYReduceStride = 16;
+     // 910B3 has 192 KB UB with an 8 KB system reservation.  FP32 avoids the
+     // redundant output staging buffer above, leaving enough room for three
