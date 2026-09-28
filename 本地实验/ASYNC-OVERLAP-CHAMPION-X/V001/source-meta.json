@@ -1,0 +1,27 @@
+{
+  "route": "ASYNC-OVERLAP-CHAMPION-X",
+  "revision": "V001",
+  "direct_parent": "R31B-V011",
+  "parent_source_sha": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "parent_score": 45.16,
+  "official_anchor": 45.16,
+  "single_hypothesis": "H1 Inter-pass prologue param prefetch: hoist pass-2 tile-0 gamma/bias MTE2 issue above the invRms scalar loop in ProcessWideLowPrecision so parameter DMA overlaps invRms; drop the now-redundant SyncVToMTE2 that only ordered the old late load.",
+  "context_class": "CHAMPION_PIPELINE_SCHEDULE",
+  "approval_doc": "研究/ASYNC-OVERLAP-CHAMPION-X/HANDOFF-TO-MAIN.md + MAIN-2 inbox approval 2026-09-28",
+  "local_sha256": "0fc71e8e62e39ed3b894b7e8fb8cabb6372f802c0a4c342eeb246629f8e4efe4",
+  "changed_surface": "ProcessWideLowPrecision only: (1) AllocEventIDs prd0/prd1/prel0/prel1 + gBase/bBase + first gamma/bias Load + SetFlag MTE2_V moved from after invRms to before invRms; (2) removed SyncVToMTE2() between invRms and pass-2 (redundant once load is hoisted; ordering now from pass-1 rel0/rel1).",
+  "unchanged": [
+    "all other process paths (FullCache, NarrowMid, small, batched, generic)",
+    "queue depths and UB buffer sizes",
+    "reduction / invRms arithmetic",
+    "dtype dispatch",
+    "core mapping",
+    "store schedule inside pass-2 inner loop"
+  ],
+  "expected_shapes": "FP16/BF16 rowWidth>8192 (ProcessWideLowPrecision); tileCount=ceil(rowWidth/4096) >= 3 on this path",
+  "ub_impact": "none",
+  "dma_impact": "same bytes; gamma/bias tile-0 issued earlier",
+  "sync_impact": "drop SyncVToMTE2; param load ordered after pass-1 V_MTE2 release",
+  "precision_risk": "none",
+  "single_change_audit": "PASS"
+}
