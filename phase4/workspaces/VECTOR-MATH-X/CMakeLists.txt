@@ -47,3 +47,7 @@ function(vmx_add_ref_probe target source)
 endfunction()
 vmx_add_ref_probe(vmx_ref_parent support/runner_ref_parent.asc)
 vmx_add_ref_probe(vmx_ref_v001 support/runner_ref_v001.asc)
+
+vmx_add_ref_probe(vmx_ref_v002 support/runner_ref_v002.asc)
+
+vmx_add_ref_probe(vmx_div_probe support/div_probe.asc)
