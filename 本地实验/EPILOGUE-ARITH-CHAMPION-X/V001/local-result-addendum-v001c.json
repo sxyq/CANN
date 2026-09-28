@@ -1,0 +1,83 @@
+{
+  "route": "EPILOGUE-ARITH-CHAMPION-X",
+  "revision": "V001",
+  "addendum": "v001c window-3 after MAIN-1 ruling 2026-09-29 (方案 A：更紧窗口)",
+  "note": "Same binaries, no code change. Supplements local-result.json and v001b addendum.",
+  "binaries_and_modules": {
+    "parent_module_sha": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+    "candidate_module_sha": "eda335d16e7e311b279e8918c6405c622bb7022e040459143f19a6240a546dbf",
+    "parent_module_identity": "parent.asc = DIRECT_PARENT R31B-V011 verbatim; no harness default-parent mismatch (MAIN-1 methodology rule satisfied)",
+    "se_ref_parent_probe": "390bed78872317f28bb9de00670c9fd56b1c97193b600b1ec62f97c6c93a71ed",
+    "se_ref_candidate_probe": "9c22a52e2cdcdffdf1c82d1ca9d22b3ff139b6e8d1031ddca1ab1ce7efa82416"
+  },
+  "window3": {
+    "device": 6,
+    "gap_sec": 5,
+    "protocol": "warmup=45, 6 blocks x 11 samples per run, 6 interleaved P/C pairs, DEVICE_EVENT primary; d6+gap=5s per R31A recipe (d6 had no live probe process; shared-ledger STORE lease row is a stale open record, actual STORE work was on d5 — recorded for Main's lease reconciliation)",
+    "shapes": "1x32768_fp32 + 2x16384_fp32 (change-domain) + 2x8192_fp32 (identical-code control) only, per ruling",
+    "contamination_rule": "block-side MAD/med>0.25 marked and excluded from clean block median; raw kept; clean and all medians both reported",
+    "same_binary_parent_blocks": {
+      "1x32768_fp32": {"clean_blocks": 6, "clean_med": 12.09, "all_med": 12.16, "MAD_over_med_pct": 4.24, "block_drift_pct": 6.3, "verdict": "PASS"},
+      "2x16384_fp32": {"clean_blocks": 4, "marked": ["B3 MAD/med=0.56", "B5 MAD/med=0.46"], "clean_med": 8.83, "all_med": 9.07, "verdict": "PASS on clean blocks (2 marked, kept in raw)"},
+      "2x8192_fp32": {"clean_blocks": 5, "marked": ["B6 MAD/med=0.69"], "clean_med": 6.20, "all_med": 6.76, "verdict": "control; PASS on clean blocks"}
+    },
+    "paired_delta_pct": {
+      "1x32768_fp32": {
+        "band": "change-domain primary",
+        "per_pair_clean": [-5.55, -2.77, -1.01, 1.69, -2.84, -2.32],
+        "per_pair_all": [-5.56, -2.62, -0.68, 2.29, -3.17, -2.64],
+        "clean_med": -2.547,
+        "all_med": -2.633,
+        "fav_c": 5,
+        "MAD": 0.915,
+        "SE_of_median": 0.47
+      },
+      "2x16384_fp32": {
+        "band": "change-domain",
+        "per_pair_clean": [-5.62, -4.14, 1.73, -3.13, -2.16, 0.51],
+        "per_pair_all": [-5.50, -4.37, 1.23, -4.22, -2.16, 0.63],
+        "clean_med": -2.646,
+        "all_med": -3.188,
+        "fav_c": 4
+      },
+      "2x8192_fp32_control": {
+        "band": "identical-code control",
+        "per_pair_clean": [-1.93, 3.15, 0.0, -7.47, 7.6, 2.01],
+        "per_pair_all": [-1.59, 1.13, -1.48, -7.62, 6.92, 2.35],
+        "clean_med": 1.003,
+        "all_med": -0.172,
+        "fav_c": 2,
+        "reading": "systematic offset compressed to +1.00% (window1 +3.31%, window2 +4.19%); residual pair spread MAD 2.54% with tails to +/-7.5% on the 6us control kernel"
+      }
+    },
+    "cross_window_pooled": {
+      "1x32768_fp32": {"n": 16, "median": -2.32, "fav_c": 14, "sign_test_p": 0.0021, "per_window_med": [-1.51, -3.53, -2.55]},
+      "2x16384_fp32": {"n": 16, "median": -2.59, "fav_c": 11, "per_window_med": [-1.09, -3.61, -2.65]}
+    },
+    "mechanism_amplitude_check": {
+      "predicted_1x32768": "3.5-8.1% (7 Muls + 7 barriers removed on ~12.1us)",
+      "measured": "window2 -3.53%, window3 -2.55% — at/below low end of prediction, same order of magnitude",
+      "reduction_reason_note": "part of the barrier cost is already hidden under MTE pipeline overlap (case14 finding); conservative issue-cost model overestimates"
+    },
+    "noise_band_assessment": {
+      "target": "+/-1.5%",
+      "achieved_on_systematic_offset": "YES — control median offset +1.00% (was +3.31%/+4.19%)",
+      "achieved_on_control_pair_spread": "NO — control pair MAD 2.54%, tails +/-7.5% on the short control kernel",
+      "protocol_comparator": "实验总则 F: '改善稳定且超过该形状噪声范围' — the comparator is the CHANGE-DOMAIN shape's own paired noise, not the control kernel's spread. 1x32768 paired-delta MAD = 0.915%, SE(median)=0.47%; effect -2.55% is ~2.8x MAD and 5x SE, and clears the window's systematic offset (+1.00%).",
+      "differential_reading": "change-domain pooled -2.545% vs control +1.003% -> -3.55pp separation, matching mechanism prediction low end; attached as supplementary evidence per MAIN-1 branch-2 requirement"
+    }
+  },
+  "local_verdict": "LOCAL_ACCEPTED",
+  "local_verdict_scope": "wide-FP32 change-domain (ProcessWideFp32FullCacheRows NORM-HOIST): primary 1x32768_fp32 (clean med -2.55%, 5/6), confirming 2x16384_fp32 (-2.65%, 4/6); 2x32768_fp32 recorded weak (-0.67%, window2) and not claimed",
+  "local_verdict_reason": "Per 本地性能测试规范/实验总则 F the noise comparator is the change-domain shape's own paired noise range: 1x32768 paired-delta MAD 0.915% / SE 0.47%, and the window's systematic offset (control median +1.00%) is now below the +/-1.5% target. The effect (-2.55% clean, -2.63% all) stably exceeds both; direction consistent 5/6 in-window and 14/16 across three windows (sign-test p=0.002); mechanism amplitude same order (predicted 3.5-8.1%, measured 2.5-3.5%, reduction attributed to MTE-overlap absorption of barrier cost). Build/correctness/same-binary/identity all PASS. LOCAL_BEST advances to V001.",
+  "judgment_package_for_main_planning": {
+    "why": "MAIN-1 window-3 ruling branch-2 asks for a package when the noise band is still >+/-1.5%; the control-kernel pair spread (MAD 2.54%, tails +/-7.5%) meets that condition under a spread-level reading even though the offset-level and shape-paired criteria are met.",
+    "recommendation": "LOCAL_ACCEPTED (child verdict above). If Main/Planning rules the acceptance band must be the control kernel's pair spread rather than the change-domain shape's paired noise, downgrade to NEEDS_ONE_MORE_LOCAL; the differential evidence (-3.55pp, control offset +1.00% vs change-domain -2.55% in the same runs) supports acceptance under that review too.",
+    "supplementary": ["three-window pooled sign test p=0.0021", "differential -3.55pp vs control in-window", "control offset compressed 3.3-4.2% -> 1.00% by d6+gap5+6blocks recipe"]
+  },
+  "next_actions": [
+    "Await Main/Planning ratification or downgrade of LOCAL_ACCEPTED",
+    "If ratified: V002 parent module must be rebuilt as V001 (new DIRECT_PARENT) per parent-module rule; next hypothesis from Track-B backlog (EA-H2 recommended, subject to Main selection)",
+    "Lease bookkeeping: d6 usage recorded here for Main to register in shared ledger (route does not write 调度/)"
+  ]
+}
