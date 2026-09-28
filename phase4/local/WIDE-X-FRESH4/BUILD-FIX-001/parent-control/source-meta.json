@@ -1,0 +1,94 @@
+{
+  "route": "WIDE-X-FRESH4",
+  "candidate_revision": "BUILD-FIX-001",
+  "control_revision": "CURRENT",
+  "control_kind": "exact-source direct-parent control",
+  "direct_parent": "CURRENT",
+  "context_class": "FRESH_BLIND",
+  "context_integrity": "MAIN_REVIEW_REQUIRED_SCOPE_INCIDENT",
+  "parent_source": {
+    "declared_path": "phase4/local/WIDE-X-FRESH4/CURRENT/submission.asc",
+    "local_absolute_path": "/Users/sunyiyang/Desktop/Project/cann-sixlane/WIDE-X-FRESH4/phase4/local/WIDE-X-FRESH4/CURRENT/submission.asc",
+    "sha256": "bc4608dcb1028b61de50fc8a74d4a72661945c02c3caccb8b60dd543bdf6677c",
+    "staged_local_path": "phase4/local/WIDE-X-FRESH4/BUILD-FIX-001/parent-control/wide_x_fresh4.asc",
+    "staged_local_sha256": "bc4608dcb1028b61de50fc8a74d4a72661945c02c3caccb8b60dd543bdf6677c",
+    "server_path": "/home/data4t2/lelinfeng/phase4-workspaces/WIDE-X-FRESH4/BUILD-FIX-001-parent-control/wide_x_fresh4.asc",
+    "server_sha256": "bc4608dcb1028b61de50fc8a74d4a72661945c02c3caccb8b60dd543bdf6677c",
+    "byte_identical_to_declared_parent": true,
+    "identity_logs": [
+      "logs/source-sha-local.log",
+      "logs/source-sha-server.log"
+    ]
+  },
+  "support_inputs": {
+    "CMakeLists.txt": "015ae00753a6b63a9303eba704844c6b461e596a3fe0008f3ccbbde6b9f22995",
+    "build_server3.sh": "479bfcc903388895e4f3926f3c2ed46f4223e96b7321bcfce4672b13e046653d",
+    "host_probe_shim.h": "e19714f8159b61dd56d6cff5ece8bb816cc9a51bb5b4694ec176bcad5ded5e49",
+    "local_abi_shim.h": "168ab8ceee645fb5e05f282105217c7e85df2e01a165f56e4c13ef08925aa427",
+    "host_probes.cpp": "2c44111173bbd46ebbb6875e8720c314448e6f669fbe11258e5435ab47e825a7"
+  },
+  "build": {
+    "host": "cann-server3",
+    "reported_hostname": "hwnput3",
+    "attempt_1": {
+      "status": "ENV_SETUP_FAILED_BEFORE_CMAKE",
+      "exit_code": 1,
+      "log": "../logs/parent-control-build.log",
+      "cause": "set_env.sh exited because LD_LIBRARY_PATH was unset under nounset"
+    },
+    "attempt_2": {
+      "command": "ssh cann-server3 'cd /home/data4t2/lelinfeng/phase4-workspaces/WIDE-X-FRESH4/BUILD-FIX-001-parent-control && LD_LIBRARY_PATH= PYTHONPATH= CANN_ROOT=/usr/local/Ascend/ascend-toolkit ASC_DIR=/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/tikcpp/ascendc_kernel_cmake CMAKE_PREFIX_PATH=/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/tikcpp/ascendc_kernel_cmake ASCENDC_CMAKE_SCRIPTS_PATH=/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/tikcpp/ascendc_kernel_cmake/modules/ascend_modules CPLUS_INCLUDE_PATH=/usr/include/c++/11:/usr/include/aarch64-linux-gnu/c++/11:/usr/include/c++/11/backward C_INCLUDE_PATH=/usr/include/aarch64-linux-gnu LIBRARY_PATH=/usr/lib/gcc/aarch64-linux-gnu/11:/usr/lib/aarch64-linux-gnu:/lib/aarch64-linux-gnu bash -x ./build_server3.sh'",
+      "exit_code": 2,
+      "log": "../logs/parent-control-build-attempt-2.log",
+      "configure": "PASS",
+      "compile": "FAIL",
+      "failure": "wide_x_fresh4.asc:109:41: no matching function for call to 'sqrtf'"
+    },
+    "documented_compatibility_trial": {
+      "setting": "-DCMAKE_ASC_FLAGS=-fno-builtin-sqrtf",
+      "documented_by": "bisheng 15.0.5 --help: -fno-builtin-<value> disables implicit builtin knowledge of a specific function",
+      "build_rule": "/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/tikcpp/ascendc_kernel_cmake/ASC_CMake/CMakeASCInformation.cmake passes <FLAGS> to bisheng for ASC compilation",
+      "command": "cmake -S . -B build-server3-no-builtin-sqrtf -DCMAKE_BUILD_TYPE=Release -DASCEND_HOME_PATH=/usr/local/Ascend/ascend-toolkit -DCMAKE_ASC_FLAGS=-fno-builtin-sqrtf && cmake --build build-server3-no-builtin-sqrtf --parallel 4 --verbose",
+      "log": "../logs/parent-control-no-builtin-sqrtf.log",
+      "compiler_option_log": "logs/documented-option-help.log",
+      "exit_code": 2,
+      "configure": "PASS",
+      "compile": "FAIL",
+      "failure": "wide_x_fresh4.asc:109:41: no matching function for call to 'sqrtf'",
+      "link": "NOT_REACHED",
+      "artifact_path": "/home/data4t2/lelinfeng/phase4-workspaces/WIDE-X-FRESH4/BUILD-FIX-001-parent-control/build-server3-no-builtin-sqrtf/libwide_x_fresh4.so",
+      "artifact_exists": false,
+      "artifact_sha256": null,
+      "source_bytes_changed": false
+    },
+    "link": "NOT_REACHED",
+    "artifact_path": "/home/data4t2/lelinfeng/phase4-workspaces/WIDE-X-FRESH4/BUILD-FIX-001-parent-control/build-server3/libwide_x_fresh4.so",
+    "artifact_exists": false,
+    "artifact_sha256": null,
+    "artifact_check_log": "logs/artifact-check.log"
+  },
+  "final_source_artifact_check_log": "logs/final-source-artifact-check.log",
+  "correctness": {
+    "parent_existing_result": "NOT_RECORDED",
+    "parent_existing_result_path": "phase4/local/WIDE-X-FRESH4/CURRENT/local-result.json",
+    "status": "NOT_RUN",
+    "npu_run": "NOT_RUN_PENDING_MAIN_RESOURCE_CONFIRMATION",
+    "reason": "The exact Parent source did not compile, so no executable artifact exists; no NPU correctness run was started."
+  },
+  "timing": {
+    "status": "NOT_RUN",
+    "reason": "Parent correctness is not PASS; candidate-only timing is prohibited."
+  },
+  "route_decision": "NEEDS_ONE_MORE_LOCAL",
+  "route_execution_state": "PAUSED_WAITING_FOR_MAIN",
+  "resume_condition": "Main provides a runnable exact-source Parent control path or parks the route.",
+  "candidate_source_sha256": "5d0ee01165e46a281cbb7d1605feba3605ad59883845400a063e97704f27f2be",
+  "candidate_source_unchanged": true,
+  "scheduler_modified": false,
+  "decision": "CONTROL_NOT_READY",
+  "audit_notes": [
+    "An initial local staging copy selected the Candidate source by mistake; its SHA mismatch was caught and corrected before any transfer or build. The server source was verified against CURRENT before compilation.",
+    "An initial repository-wide text search emitted matches outside this Route. Those results were not used; subsequent inspection was restricted to WIDE-X-FRESH4. Main should account for this Fresh Blind boundary incident.",
+    "The documented -fno-builtin-sqrtf compiler setting was passed to bisheng but did not resolve the Parent device sqrtf call. No source changes, device runs, correctness runs, or timing runs were made during this feasibility check."
+  ]
+}
