@@ -42,7 +42,7 @@
       "classification": "LOAD_CONTAMINATED"
     }
   ],
-  "LOCAL_DELTA": "Target -9.726 us and control +3.202 us; both LOAD_CONTAMINATED, so no performance improvement claim.",
+  "LOCAL_DELTA": "D24576 D5 R15 deltas -0.667562%, -1.562500%, +1.532032%, +1.492542%; mixed signs, median +0.412490%, within the shape noise floor. No gain or regression is established.",
   "LOAD_QUALITY": {
     "recorded_at_local": "2026-09-24T00:56:20+0800",
     "report_source": "Main dispatch observation",
@@ -259,7 +259,7 @@
     }
   },
   "FOLLOW_UP_PROBES": "D24576 on d7: Parent same-binary PASS, then 4 interleaved Parent/Candidate device-event blocks completed. Pair deltas have mixed direction; LOCAL_VERDICT=NEEDS_ONE_MORE_LOCAL. D32768 remains unqualified.",
-  "STATUS": "D24576_PAIRED_TIMING_VALID_NEEDS_ONE_MORE_LOCAL; D32768_NOT_QUALIFIED",
+  "STATUS": "D24576 R15 SAME_BINARY_PASS; PAIRED_TIMING_VALID; LOCAL_VERDICT=NEEDS_ONE_MORE_LOCAL; D32768_NOT_QUALIFIED",
   "ARCHITECTURE_NOVELTY": "NONE: existing MTE3/V synchronization primitive with a changed wait placement only.",
   "RISKS": "D24576 paired deltas vary in direction and scale, so no performance claim is established. D32768 remains unqualified. The deferred MTE3 completion relies on each value tile remaining untouched until the row-level wait.",
   "DECISION": "NEEDS_ONE_MORE_LOCAL",
@@ -399,5 +399,37 @@
     "LOCAL_BEST_UPDATED": false,
     "ONLINE_WORTHY": "NO",
     "INTERPRETATION": "Noise floor and paired device-event timing are valid. Pair directions differ and median delta remains within measured Parent noise; no performance gain or regression is established. HBM remained below 100%; AICore was recorded only. Lease released at 2026-09-27T11:58:14Z."
+  },
+  "TIMING_RUN_20260927_D5_R15": {
+    "LEASE_ID": "M1-R31A-V021-D5-R15-20260927T151338Z",
+    "DEVICE": 5,
+    "LEASE_START_UTC": "2026-09-27T15:13:38Z",
+    "LEASE_END_UTC": "2026-09-27T15:19:26Z",
+    "PRE_HBM_RATE_PERCENT": 91,
+    "POST_HBM_RATE_PERCENT": 91,
+    "AICORE_IS_ADMISSION_CONDITION": false,
+    "RUNNER_MODE": "device-event-primary_wall-clock-diagnostic",
+    "WARMUPS": 45,
+    "SAME_BINARY_SAMPLES_PER_BLOCK": 21,
+    "PARENT_V016_D24576": {
+      "block_medians_us": [15.04, 15.10],
+      "block_mad_over_median": [0.047872, 0.033113],
+      "block_median_drift": 0.003981,
+      "protocol_result": "PASS"
+    },
+    "PAIRED_D24576": {
+      "blocks": 4,
+      "samples_per_version_per_block": 11,
+      "delta_percent_candidate_vs_parent": [-0.667562, -1.562500, 1.532032, 1.492542],
+      "median_delta_percent": 0.412490,
+      "status": "VALID_DEVICE_EVENT_INTERLEAVED"
+    },
+    "CORRECTNESS_ASSERTION": "V016 and V021 PASS; max_abs=3.48268474e-07",
+    "IDENTITY_BEFORE_AFTER": "PASS; Candidate, Direct Parent, runner and prebuilt executable identities matched",
+    "EVIDENCE_PREFIX": "phase4/local/R31A/V021/support/results/M1-R31A-V021-D5-R15-20260927T151338Z-",
+    "LOCAL_VERDICT": "NEEDS_ONE_MORE_LOCAL",
+    "LOCAL_BEST_UPDATED": false,
+    "ONLINE_WORTHY": "NO",
+    "INTERPRETATION": "Paired direction is split 2/2 and median delta is within the shape noise floor. No performance conclusion beyond NEEDS_ONE_MORE_LOCAL."
   }
 }
