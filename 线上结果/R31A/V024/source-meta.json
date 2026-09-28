@@ -1,0 +1,57 @@
+{
+  "ROUTE": "R31A",
+  "REVISION": "V024",
+  "DIRECT_PARENT": "R31A-V016",
+  "PARENT_SOURCE_SHA": "dd13093823c885e785a650abff4863827e652eb8607ad0621a96eb31b6764fa0",
+  "PARENT_SCORE": 45.0,
+  "OFFICIAL_ANCHOR": "R31A-V016 / 45.00",
+  "SINGLE_HYPOTHESIS": "In ProcessWideFp32CachedRows pass 2, hoist the invRms row-scale Muls out of the per-tile affine loop to a single full-row Muls before the loop. Per tile this removes one full-tile V pass and one PipeBarrier from the value path (5 tiles at D=32768). The affine expression order is unchanged: still (y * invRms) * gamma + bias. The RMS finalize, store placement, dispatch conditions, tile constants, and all non-CachedRows paths are unchanged.",
+  "CONTEXT_CLASS": "HISTORICAL_EXPLOIT",
+  "WHY_NOT_DUPLICATE": "R31A V023 changed the RMS finalize primitive (denominator computation, pass-1/2 boundary); V024 changes the pass-2 affine scale placement. V021 moved the MTE3-to-V wait (sync placement in pass 2, but a different element: the store wait, not the scale op). V022 changed the batch-entry dispatch predicate. V020 was a pass-1 dual-slot prefetch. None hoists the invRms scale out of the affine loop. Cross-route: EPILOGUE-ARITH owns epilogue arithmetic-chain fusion (Mul+Add into FMA); V024 does NOT fuse the chain — Mul and Add remain separate with their barriers, and the arithmetic expression order (y*s)*g+b is preserved; it only relocates an already-separate Muls. STORE-EPILOGUE-X owns store merging and is untouched. SHAPE-TILING owns tile policy and is untouched. R31B / DTYPE-SPECIAL-X / MIX-A have no such scale hoist in the R31A CachedRows path. Full analysis in 研究/R31A/next-hypotheses.md H2 section.",
+  "FILES_CHANGED": [
+    "本地实验/R31A/V024/submission.asc: ProcessWideFp32CachedRows pass 2 only (hoist one Muls + PipeBarrier out of the tile loop)",
+    "本地实验/R31A/V024/source-meta.json: declaration",
+    "本地实验/R31A/V024/diff.patch",
+    "本地实验/R31A/V024/submission.sha256"
+  ],
+  "SOURCE_SHA": "49315432d02b238b81eb7190df6463aa2dc235d077f28b91284aab69f17fbfde",
+  "SOURCE_SHA256": "49315432d02b238b81eb7190df6463aa2dc235d077f28b91284aab69f17fbfde",
+  "SOURCE_PATH": "本地实验/R31A/V024/submission.asc",
+  "source_commit": "pending",
+  "submission_id": "NONE_NOT_SUBMITTED",
+  "local_sha256": "49315432d02b238b81eb7190df6463aa2dc235d077f28b91284aab69f17fbfde",
+  "remote_sha256": "NOT_APPLICABLE_LOCAL_ONLY",
+  "official_score": "NONE",
+  "decision": "PENDING_BUILD_CORRECTNESS_MEASUREMENT",
+  "DECLARATION": {
+    "ROUTE": "R31A",
+    "REVISION": "V024",
+    "DIRECT_PARENT": "V016",
+    "PARENT_SOURCE_SHA": "dd13093823c885e785a650abff4863827e652eb8607ad0621a96eb31b6764fa0",
+    "PARENT_SCORE": "Official 45.00",
+    "SINGLE_HYPOTHESIS": "把 invRms 行缩放 Muls 提出 CachedRows pass-2 tile 循环，每 tile 省 1 次全 tile V 遍与 1 个 PipeBarrier",
+    "CONTEXT_CLASS": "HISTORICAL_EXPLOIT",
+    "WHY_NOT_DUPLICATE": "对照 next-hypotheses.md H2；V023=收尾原语、V021=等待点、V022=路径阈值"
+  },
+  "MAIN1_SELECTION_DATE": "2026-09-29",
+  "CONSTRAINTS": {
+    "arithmetic_order": "unchanged: (y * invRms) * gamma + bias. The hoisted full-row Muls computes y*invRms before any gamma multiply, same as the per-tile Muls did.",
+    "Rsqrt_Reciprocal": "FORBIDDEN per MAIN-1. invRms evaluation stays Sqrt + scalar reciprocal. Since this revision parents from V016, the RMS finalize is V016's original form and is untouched.",
+    "scope": "only the pass-2 Muls position in ProcessWideFp32CachedRows; no arithmetic-chain fusion, no store merge, no dispatch change, no tile-constant change"
+  },
+  "MECHANISM_DELTA": {
+    "per_tile_removed": "1 full-tile Muls V pass + 1 PipeBarrier",
+    "added_before_loop": "1 full-row Muls + 1 PipeBarrier",
+    "tiles_at_D32768": 5,
+    "net_v_issues": "5 per-tile Muls -> 1 full-row Muls (4 fewer V instruction issues; same total element count)",
+    "net_barriers": "5 per-tile barriers -> 1 pre-loop barrier (4 fewer PipeBarriers)",
+    "MAIN1_magnitude_check": "predicted saving about 0.4 us (5 tile barriers at about 0.08 us each per case-14 analysis). Noise band about plus or minus 1.5% of a roughly 8 us single-row D=32768 kernel = about plus or minus 0.12 us. Predicted saving is at the edge of the noise band; a null result is acceptable and not an anomaly."
+  },
+  "PRECISION_RISK": "None. The same floating-point operations are applied in the same order; only the loop nesting of an independent scalar scale changes. invRms is a single scalar for the row, so scaling per-tile then by gamma is bit-identical to scaling the full row then per-tile by gamma.",
+  "EVALUATION_PLAN": {
+    "primary": "rows=2 D=32768 blocks=1 (CachedRows champion path; the only probe shape where the edit is exercised)",
+    "same_code_control": "rows=2 D=24576 blocks=1 (V016 dispatch sends this to batch, so the CachedRows edit is NOT exercised; serves as the noise band / no-regress control)",
+    "noise_band": "measure each round; do not reuse a prior round's band",
+    "contaminated_blocks": "mark blocks with parent MAD > 0.25; exclude them from direction reading, never silently drop samples"
+  }
+}
