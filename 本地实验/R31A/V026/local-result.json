@@ -34,6 +34,195 @@
   "note": "max_abs matches the parent exactly on both shapes, confirming bit-identical arithmetic. The pass-2 staging-liveness sync split executes correctly with no 507035 across 4 runs.",
   "result": "PASS"
  },
- "STATUS": "BUILD_PASS_CORRECTNESS_PASS_PENDING_MEASUREMENT",
- "DECISION": "PENDING_MEASUREMENT"
+ "STATUS": "BUILD_PASS_CORRECTNESS_PASS_LOCAL_ACCEPTED",
+ "DECISION": "LOCAL_ACCEPTED",
+ "MEASUREMENT": {
+  "date": "2026-09-29",
+  "protocol": "unified device-event: warmup=45, same-binary 21x2, paired 4 blocks x 11 samples interleaved. Parent module rebuilt from V025 (DIRECT_PARENT) so the OFAT comparison is V025 vs V026. Runner SHA 7dbde489... (unchanged); parent module SHA 96e6b924... (V025 content); candidate module SHA be7361ae... (V026 content).",
+  "SAME_BINARY": [
+   {
+    "device": 6,
+    "shape": "D=32768",
+    "gap_s": 5,
+    "result": "PASS",
+    "block_medians_us": [
+     17.62,
+     17.48
+    ],
+    "mad_over_median": [
+     0.010216,
+     0.006865
+    ],
+    "block_drift": 0.007977
+   },
+   {
+    "device": 4,
+    "shape": "D=32768",
+    "gap_s": 5,
+    "result": "NOT_QUALIFIED",
+    "block_medians_us": [
+     17.46,
+     21.18
+    ],
+    "mad_over_median": [
+     0.050401,
+     0.189802
+    ],
+    "block_drift": 0.192547,
+    "note": "block2 contaminated; its paired data is NOT protocol-valid (see NON_PROTOCOL_CORROBORATION)"
+   },
+   {
+    "device": 4,
+    "shape": "D=32768",
+    "gap_s": 5,
+    "result": "PASS",
+    "block_medians_us": [
+     17.8,
+     17.24
+    ],
+    "mad_over_median": [
+     0.024719,
+     0.025522
+    ],
+    "block_drift": 0.031963,
+    "note": "retry; this is the protocol-valid d4 set"
+   },
+   {
+    "device": 6,
+    "shape": "D=24576",
+    "gap_s": 5,
+    "result": "PASS",
+    "block_medians_us": [
+     14.42,
+     15.06
+    ],
+    "mad_over_median": [
+     0.042996,
+     0.038513
+    ],
+    "block_drift": 0.043419
+   }
+  ],
+  "PAIRED_V025_VS_V026_D32768": {
+   "shape": "rows=2 D=32768 blocks=1 (CachedRows; the only probe shape exercising the pass-2 staging-liveness edit)",
+   "attempt_d6_valid": {
+    "delta_percent": [
+     -2.765482,
+     -3.51262,
+     -0.692835,
+     -1.149423
+    ],
+    "parent_mad_over_median": [
+     0.011062,
+     0.012075,
+     0.010393,
+     0.006897
+    ],
+    "candidate_mad_over_median": [
+     0.007964,
+     0.009101,
+     0.016279,
+     0.02093
+    ],
+    "direction": "4_NEGATIVE_0_POSITIVE",
+    "median_delta_percent": -1.951464,
+    "note": "all four blocks clean (MAD <= 0.021)"
+   },
+   "attempt_d4_retry_valid": {
+    "delta_percent": [
+     -1.687286,
+     -4.134073,
+     -0.700111
+    ],
+    "parent_mad_over_median": [
+     0.006749,
+     0.008939,
+     0.009335
+    ],
+    "candidate_mad_over_median": [
+     0.014874,
+     0.015151,
+     0.038778
+    ],
+    "direction": "3_NEGATIVE_0_POSITIVE",
+    "median_delta_percent": -1.687286,
+    "contaminated_block": {
+     "block": 4,
+     "delta_percent": 48.299317,
+     "candidate_mad": 0.361621,
+     "note": "candidate median inflated to 26.2us; EXCLUDED from direction reading, raw retained"
+    }
+   },
+   "combined_clean": {
+    "values_percent": [
+     -2.765482,
+     -3.51262,
+     -0.692835,
+     -1.149423,
+     -1.687286,
+     -4.134073,
+     -0.700111
+    ],
+    "median_percent": -1.687286,
+    "direction": "7_NEGATIVE_0_POSITIVE",
+    "range_percent": [
+     -4.134073,
+     -0.692835
+    ],
+    "read": "V026 is faster than V025 on every clean block across two devices. Median -1.69%, range -4.13% to -0.69%."
+   }
+  },
+  "NON_PROTOCOL_CORROBORATION": {
+   "attempt_d4_first": {
+    "same_binary": "NOT_QUALIFIED (drift 0.19)",
+    "delta_percent": [
+     -3.110596,
+     -0.813009,
+     -2.893514,
+     -3.165307
+    ],
+    "direction": "4_NEGATIVE_0_POSITIVE",
+    "median_delta_percent": -3.001872,
+    "note": "same-binary gate failed so this set is NOT protocol-valid; recorded as corroboration only. The four blocks were clean and all negative, consistent with the valid sets."
+   }
+  },
+  "PAIRED_V025_VS_V026_D24576_SAME_CODE": {
+   "shape": "rows=2 D=24576 blocks=1 (both take the batch path; the pass-2 edit is NOT exercised; noise band)",
+   "device": 6,
+   "same_binary": "PASS (drift 0.043)",
+   "delta_percent": [
+    -0.788436,
+    -0.131927,
+    0.273968,
+    -0.412091
+   ],
+   "parent_mad_over_median": [
+    0.027595,
+    0.013193,
+    0.012329,
+    0.020604
+   ],
+   "candidate_mad_over_median": [
+    0.023841,
+    0.015852,
+    0.025956,
+    0.006897
+   ],
+   "direction": "3_NEGATIVE_1_POSITIVE",
+   "median_delta_percent": -0.271009,
+   "interpretation": "Same-code shape. Median -0.27%, range -0.79% to +0.27%. Noise band this round about plus or minus 0.8%."
+  },
+  "NOISE_BAND": "about plus or minus 0.8% (this round's same-code D=24576 control: median -0.27%, range -0.79% to +0.27%). Note the band tightened versus earlier rounds (which saw plus or minus 1.5-2%); always re-measure.",
+  "SIGNAL_VS_NOISE": "The D=32768 improvement (-1.69% median, 7/7 negative across two devices) is about 2x the noise band and consistent in direction. A real but modest effect — smaller than H4's -4.12%, as expected since H5's overlap window (Add+Store) is narrower than H4's (Mul+ReduceSum).",
+  "MECHANISM_READ": "Releasing the gamma staging after the Mul and the bias staging after the Add lets the next tile's parameter MTE2 overlap the current tile's Add and Store. At D=32768 four tile boundaries qualify. Observed about 0.3us of a 17.5us kernel (parent 17.5 -> candidate 17.2), at the low end of the predicted 0.4-0.8us. The per-tile extra SyncVToMTE2 round trip eats part of the overlap benefit — consistent with the magnitude being below H4's.",
+  "LOCAL_VERDICT": "LOCAL_ACCEPTED",
+  "VERDICT_REASON": "Source identity, compile, link, correctness (4 runs, no 507035), and same-binary all PASS on the valid sets. The paired measurement against DIRECT_PARENT V025 on the exercising shape (D=32768) shows a stable improvement: 7/7 clean blocks negative across two devices, median -1.69%, range -4.13% to -0.69%, about 2x the measured noise band (plus or minus 0.8% from the same-code D=24576 control). H5's pass-2 parameter staging liveness delivers a real gain on top of V025.",
+  "LOCAL_BEST": "V026",
+  "LOCAL_BEST_UPDATED": true,
+  "LOCAL_BEST_CHAIN": "V016 (OFFICIAL_BEST 45.00) -> V024 (Muls hoist, -3.66% vs V016) -> V025 (pass-1 staging liveness, -4.12% vs V024) -> V026 (pass-2 staging liveness, -1.69% vs V025). Combined V026 vs V016 about -8.3% (estimated from the chain; not directly re-measured as a single pair).",
+  "OFFICIAL_BEST": "V016 / 45.00 (V024/V025 Online pending Judge Owner)",
+  "ONLINE_WORTHY": "PENDING_MAIN_ONLINE_RECOMMENDATION",
+  "NEXT_ACTION": "V026 is LOCAL_ACCEPTED and becomes LOCAL_BEST. Per MAIN-1's note, if H5 is ACCEPTED then trigger B is satisfied (three consecutive ACCEPTED: V024, V025, V026) and Main may evaluate merging V025/V026 into the Online candidate. Remaining v2 hypotheses: H6 (pass-1/pass-2 boundary sync reduction) and H7 (pass-2 double-staging via the stored-value region) are still open; H8 is INFEASIBLE. Main to select the next step.",
+  "EVIDENCE_DIR": "本地实验/R31A/V026/support/results/"
+ }
 }
