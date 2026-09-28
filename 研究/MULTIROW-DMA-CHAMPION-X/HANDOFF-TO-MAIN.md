@@ -1,13 +1,18 @@
 # HANDOFF-TO-MAIN — MULTIROW-DMA-CHAMPION-X
 
-> **V002 结果（2026-09-28）**：C1 ALIGNED-DATACOPY-FORM 完整走完。API 探针 PASS（blockLen=32B 单位）。Correctness PASS（20/22 bit-identical）。P/C：主形状 48×16384 FP16 八对 6/8 为正、median **−1.95%**；BF16 3/4 为正、−3.2%；同代码对照散布 −7.1%..+4.2% → 幅度在噪声带内。
-> **LOCAL_VERDICT = NEEDS_ONE_MORE_LOCAL**（方向温和为正，未清噪声；非 REJECTED，Candidate 保留）。证据：`本地实验/MULTIROW-DMA-CHAMPION-X/V002/`。
+> **V002 补测完成（2026-09-28，终局）**：Main-2 补测指令执行完毕。same-binary 两形状 PASS。主形状 48×16384 FP16 补测 8 对 **4/8 混合、median −0.28%**；合并 16 对 median **−1.84%**、10/16 为正向。同代码对照（同 binary 同路径）median **−1.48%**、散布 **−7.1%…+5.4%**——候选中位数落在噪声带内且轮间方向不一致。
+> **LOCAL_VERDICT = NEEDS_ONE_MORE_LOCAL（终局）**，Candidate=V002 保留。**结论：C1 指令形态非主导成本**（结合 V001：主导成本是 MTE2 流水重叠与 V 端指令/事件，不是单条搬运指令形态或命令计数）。
 >
-> 按 Main 指示「C1 也无收益则把 C2 三选项写成事实包交 Planning」——见下方 C2 事实包。本 agent 不自行选择。
+> **C2 三选项事实包（a/b/c）**：`研究/MULTIROW-DMA-CHAMPION-X/C2-OPTIONS-FACT-PACKAGE.md`——结构约束数字、三选项内容/收益面/代价面、与 V001/V002 证据的关系齐备，交 Planning 取舍，本 agent 不选。
+>
+> 证据：`本地实验/MULTIROW-DMA-CHAMPION-X/V002/`（含 support/timing-results-v002-r2/ 80 文件；污染样本 v2_C1_C、r2_K2_C、r2_K3_C 留证）。
+> lease：`M2-MULTIROW-V002-D4-PERF-20260928` 与 `...-R2`（共享行请 Main 补）。
 
 ---
 
 ## C2 事实包（stride 合并 + 保 2-deep；交 Planning 裁定，本 agent 不选）
+
+> 正式版见 `研究/MULTIROW-DMA-CHAMPION-X/C2-OPTIONS-FACT-PACKAGE.md`。下表为摘要。
 
 | 选项 | 内容 | UB 后果 | 机制后果 | 风险 |
 |---|---|---|---|---|
@@ -19,9 +24,9 @@
 
 ## 请 Main-2 处理
 
-1. 登记 V002 `NEEDS_ONE_MORE_LOCAL`（CURRENT_CANDIDATE=V002 保留；若同意再开一个配对窗口则续测主形状；若判无收益则按 (c) 处置并给下一方向）。
-2. lease：`M2-MULTIROW-V002-D4-PERF-20260928`（d4），请补共享行。
-3. C2 三选项转 Planning。
+1. 登记 V002 `NEEDS_ONE_MORE_LOCAL`（终局；CURRENT_CANDIDATE=V002 保留；**C1 指令形态非主导成本**）。
+2. lease 两行：`M2-MULTIROW-V002-D4-PERF-20260928`、`M2-MULTIROW-V002-D4-PERF-20260928-R2`（d4），请补共享行。
+3. C2 三选项事实包转 Planning（`C2-OPTIONS-FACT-PACKAGE.md`）。
 4. UB-GAP-CLUE 已在 `UB-GAP-CLUE.md`，等 Planning 处置。
 
 ---
