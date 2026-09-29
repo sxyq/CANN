@@ -1,0 +1,158 @@
+{
+  "ROUTE": "R31B",
+  "REVISION": "V018",
+  "DIRECT_PARENT": "R31B-V017",
+  "PARENT_SOURCE_SHA": "7c168eafde4c07d2a0667253a06925070e10349ccf08327a1b287302788180c4",
+  "PARENT_SCORE": "LOCAL bf16-wide-d32768 -14.3% + fp16-wide-d32768 -6.7/-8.5% (V017 vs V016); Official anchor 45.16 (V011)",
+  "SOURCE_SHA": "31241ca2ccb6a7e705ac0bdc60f67647c68f4e4d4faa5c924d34c492e245b203",
+  "SINGLE_HYPOTHESIS": "H2 pass-1 retained-y direct write: in ProcessWideLowPrecision pass-1 FP16 branch, Add writes the retained y slot directly and the redundant Muls(xLocal, 1.0) copy plus its mid-chain PipeBarrier are deleted; subsequent ToFloat reads the y slot",
+  "CONTEXT_CLASS": "HISTORICAL_EXPLOIT",
+  "WHY_NOT_DUPLICATE": "V002 is the full-y retention architecture (what is retained); this changes the write path into the retained slot. V011 is DMA-side MTE2 depth; V017 is store drain timing; V016 is tile width; R31A H2 is pass-2 invRms arithmetic position. Not reduction (REDUCE-HIER refuted), not store granularity (STORE lane).",
+  "BUILD": "PASS",
+  "BUILD_DETAIL": "server3 exact-source build. Submission module: cmake configure RC=0, device/submission/full_link RC=0 (logs submission-configure.log / submission-build.log). device.alink=cecbc2068a1bd7a567c4d9eedf9212a925347c8719f7263c840659cc71b4e9e9, submission.alink=48001786de8866f5667e8432ccd2ce22eb6f7868e4e6f69f3ebbbc29bf9171b1. Paired runner rebuilt as paired_runner_v018 (parent=V017 kernel / candidate=V018 kernel namespaces; sha 06576df5aa5323841864cf70b31c311fe42946f4d867bc8a980163f8e912b215 after device-select rebuild). Two build fixes recorded: (1) CMAKE_ASC_COMPILER had resolved to toolkit latest/.../bisheng and the nested host compile of asc_plugin_binary_register_code.c could not find <vector>; forcing CMAKE_ASC_COMPILER=8.5.0.alpha002/.../bisheng alone was insufficient; (2) exporting CPLUS_INCLUDE_PATH=/usr/include/c++/11:/usr/include/aarch64-linux-gnu/c++/11 made the nested host compile succeed (paired-build-failed-nocpath.log retains the failing build; build2.log the passing one). Runtime needs LD_LIBRARY_PATH=/usr/lib/aarch64-linux-gnu first so system libstdc++ provides GLIBCXX_3.4.29 (run-env.txt). Kernel source SHA on server3 == local submission.asc SHA (verified pre-build and pre-run).",
+  "BUILD_RC": 0,
+  "BUILD_ARTIFACT_SHA256": {
+    "device.alink": "cecbc2068a1bd7a567c4d9eedf9212a925347c8719f7263c840659cc71b4e9e9",
+    "submission.alink": "48001786de8866f5667e8432ccd2ce22eb6f7868e4e6f69f3ebbbc29bf9171b1",
+    "paired_runner_v018": "06576df5aa5323841864cf70b31c311fe42946f4d867bc8a980163f8e912b215",
+    "kernel_source": "31241ca2ccb6a7e705ac0bdc60f67647c68f4e4d4faa5c924d34c492e245b203"
+  },
+  "CORRECTNESS": "PASS",
+  "CORRECTNESS_DETAIL": "Paired-runner CheckOutput passes BOTH binaries (PARENT_V017 and CAND_V018) on all 6 shapes in both 2026-09-29 attempts (12/12 PASS per attempt, failures=0). FP16 max_abs=0.0009765625 (tail/ctrl) and 0.001953125 (wide-d32768); BF16 max_abs=0.0078125; parent and candidate report identical max_abs/max_rel per shape. Additionally BITWISE parent-vs-candidate compare added to the runner: all 6 shapes in both attempts report parent_vs_candidate=IDENTICAL diff_elements=0 (12/12), confirming the H2 claim that half*1.0 was an exact copy and the direct write is bit-identical. Change domain is FP16-only (ProcessWideLowPrecision pass-1 half branch); BF16 pass-1 already writes valueTile via the else branch and is byte-identical between parent and candidate by construction.",
+  "EXECUTABLE_IDENTITY": "PASS",
+  "EXECUTABLE_SHA256": {
+    "paired_runner_v018": "06576df5aa5323841864cf70b31c311fe42946f4d867bc8a980163f8e912b215",
+    "parent_kernel_R31B-V017": "7c168eafde4c07d2a0667253a06925070e10349ccf08327a1b287302788180c4",
+    "candidate_kernel_R31B-V018": "31241ca2ccb6a7e705ac0bdc60f67647c68f4e4d4faa5c924d34c492e245b203"
+  },
+  "SAME_BINARY": "PASS",
+  "SAME_BINARY_DETAIL": "Parent-only same-binary (PARENT_V017 = DIRECT_PARENT V017 kernel) on all 6 shapes before any P/C (warmup=45, 2 blocks x 31 samples, device-event primary) on d5: all PASS, MAD/median <= 0.045, block drift <= 0.053. An earlier same-binary run on d4 was host-load contaminated (VLLMEngineCor active inference on d4, AICore 65%, MAD/median 0.22-0.41) and is retained as contamination evidence in qualify-parent.log; no P/C was run on d4. Measurement device switched to d5 (HBM ~91.5% < 100%, AICore 0%, VLLMWorker_TP observational) per live-HBM admission; all same-binary and both P/C attempts use d5 only.",
+  "SAME_BINARY_ROWS": [
+    {"shape": "fp16-tail-d12288", "result": "PASS", "median_us": 5.690, "mad_over_median": 0.03339, "block_drift": 0.02109},
+    {"shape": "fp16-wide-d32768", "result": "PASS", "median_us": 8.530, "mad_over_median": 0.01876, "block_drift": 0.00234},
+    {"shape": "bf16-tail-d12288", "result": "PASS", "median_us": 6.450, "mad_over_median": 0.04496, "block_drift": 0.05271},
+    {"shape": "bf16-wide-d32768", "result": "PASS", "median_us": 11.990, "mad_over_median": 0.01585, "block_drift": 0.00167},
+    {"shape": "fp16-ctrl-d8192", "result": "PASS", "median_us": 4.940, "mad_over_median": 0.03644, "block_drift": 0.01215},
+    {"shape": "bf16-ctrl-d8192", "result": "PASS", "median_us": 5.580, "mad_over_median": 0.03226, "block_drift": 0.00000}
+  ],
+  "TIMING": "VALID_DEVICE_EVENT_PRIMARY",
+  "TIMING_DETAIL": "Two independent interleaved P/C attempts (21 pairs per shape per attempt, warmup=45, device_us primary / wall_us diagnostic), same runner, parent=V017 kernel / candidate=V018 kernel, device=5 (d5).",
+  "TIMING_ATTEMPTS": [
+    {
+      "attempt_id": "R31B-V018-D5-PERF-20260929-a1",
+      "device": 5,
+      "paired_delta_median_us": {
+        "fp16-tail-d12288": 0.000,
+        "fp16-wide-d32768": -0.160,
+        "bf16-tail-d12288": 0.140,
+        "bf16-wide-d32768": -0.040,
+        "fp16-ctrl-d8192": -0.060,
+        "bf16-ctrl-d8192": 0.040
+      },
+      "parent_median_us": {
+        "fp16-tail-d12288": 5.780,
+        "fp16-wide-d32768": 8.820,
+        "bf16-tail-d12288": 6.500,
+        "bf16-wide-d32768": 12.160,
+        "fp16-ctrl-d8192": 5.360,
+        "bf16-ctrl-d8192": 5.760
+      },
+      "clean_neg_ratio": {
+        "fp16-tail-d12288": "10/19",
+        "fp16-wide-d32768": "11/15",
+        "bf16-tail-d12288": "7/18",
+        "bf16-wide-d32768": "9/16",
+        "fp16-ctrl-d8192": "8/16",
+        "bf16-ctrl-d8192": "8/20"
+      }
+    },
+    {
+      "attempt_id": "R31B-V018-D5-PERF-20260929-a2",
+      "device": 5,
+      "paired_delta_median_us": {
+        "fp16-tail-d12288": 0.060,
+        "fp16-wide-d32768": -0.020,
+        "bf16-tail-d12288": -0.020,
+        "bf16-wide-d32768": 0.060,
+        "fp16-ctrl-d8192": -0.240,
+        "bf16-ctrl-d8192": 0.040
+      },
+      "parent_median_us": {
+        "fp16-tail-d12288": 5.900,
+        "fp16-wide-d32768": 8.800,
+        "bf16-tail-d12288": 7.100,
+        "bf16-wide-d32768": 12.000,
+        "fp16-ctrl-d8192": 6.240,
+        "bf16-ctrl-d8192": 5.500
+      },
+      "clean_neg_ratio": {
+        "fp16-tail-d12288": "10/21",
+        "fp16-wide-d32768": "10/15",
+        "bf16-tail-d12288": "6/11",
+        "bf16-wide-d32768": "7/15",
+        "fp16-ctrl-d8192": "11/14",
+        "bf16-ctrl-d8192": "8/16"
+      }
+    }
+  ],
+  "TWO_GATE_JUDGEMENT": {
+    "gate1_noise_band": {
+      "result": "FAIL",
+      "blank_control_band_this_round": "|median| <= 0.24us (max among bf16-tail/bf16-wide/fp16-ctrl/bf16-ctrl paired-delta medians across both attempts)",
+      "change_domain_deltas": "fp16-wide-d32768 -0.16/-0.02us; fp16-tail-d12288 +0.00/+0.06us",
+      "note": "change-domain |median| <= 0.16us is inside the blank-control band; fp16-ctrl-d8192 (code unchanged) shows the largest single |median| of the round at -0.24us, i.e. the noise floor itself is larger than the observed change-domain effect"
+    },
+    "gate2_magnitude": {
+      "result": "FAIL",
+      "predicted_us_per_row_batch": "0.3-1.0 (mid-chain barrier + full-tile Muls per unit, per next-hypotheses.md H2 after section 0.1 revision)",
+      "observed_us_per_row_batch": "-0.16 to +0.06",
+      "note": "observed is 5-10x below the predicted lower bound and of mixed sign; not the same order of magnitude. Per H2's own pre-registered rule ('measured below 0.1us class counts as magnitude mismatch'), a2 and both tails are in the 0.0-0.1us class. The source-meta risk note applies: at this magnitude even the mid-chain barrier is cheap, so the section 0.1 calibration that priced mid-chain barriers near the V024-derived ~0.07us/unit does not transfer to this FP16 pass-1 site."
+    },
+    "overlaid_risk_check": "No shape regression (all change-domain deltas non-positive or +0.06us class; controls mixed). Outputs bit-identical, so any sub-noise delta cannot be an arithmetic effect."
+  },
+  "LOCAL_DELTA_SUMMARY": {
+    "fp16-tail-d12288": "+0.00 / +0.06 us (a1/a2) — in band",
+    "fp16-wide-d32768": "-0.16 / -0.02 us (a1/a2) — in band, weak negative not reproducible at magnitude",
+    "bf16-tail-d12288": "+0.14 / -0.02 us — control (BF16 path unchanged), in band",
+    "bf16-wide-d32768": "-0.04 / +0.06 us — control (BF16 path unchanged), in band",
+    "fp16-ctrl-d8192": "-0.06 / -0.24 us — blank control (non-wide), in band and largest |median| this round",
+    "bf16-ctrl-d8192": "+0.04 / +0.04 us — blank control (non-wide), in band"
+  },
+  "NOISE": "blank-control band |median| <= 0.24us this round (d5); same-binary MAD/median <= 0.045; paired delta MAD 0.16-2.48us with occasional single-sample device-event spikes (min -162.7us / max +199.5us classes); medians and clean-pair (both device_us < 20us) ratios robust; spikes retained in raw logs. Several paired-delta blocks have MAD > 0.25us (bf16-tail a2 2.48, fp16-ctrl a2 0.50, bf16-tail a1 0.30, fp16-wide a2 0.36) — those blocks are contamination-affected and are not used for any strong claim; the primary statistics remain the pre-registered medians over all 21 pairs, which are spike-robust.",
+  "PAIR_COUNT": "21 interleaved P/C pairs per shape per attempt x 2 attempts (42 pairs/shape total); 1 block per attempt layout (V016/V017-accepted layout), direction stability by 2 independent attempts. 4-block x 11 layout still MISSING.",
+  "LOAD_QUALITY": "d5, HBM 59901-59903/65536 (~91.5%, <100%) pre/post, AICore 0%, VLLMWorker_TP PID 89602 resident observational only. d4 first same-binary attempt was load-contaminated (VLLMEngineCor PID 2999855 active inference, AICore 65%, same-binary MAD/median 0.22-0.41 -> no P/C on d4). d6 had MAIN-2 STORE-EPILOGUE lease and was left untouched. Lease rows for this run not appended to 调度/服务器设备使用.tsv by this lane (shared file under MAIN-1 ownership per lane boundary) - request MAIN-1 to log lease_id R31B-V018-D5-PERF-20260929 retroactively; device snapshots retained.",
+  "LOCAL_VERDICT": "NEEDS_ONE_MORE_LOCAL",
+  "LOCAL_VERDICT_BASIS": "Both pre-registered gates fail: (1) change-domain paired deltas (-0.16..+0.06us) sit inside the blank-control band this round (up to |median| 0.24us on an unchanged code path); (2) mechanism magnitude is 5-10x below the predicted 0.3-1.0us band and of mixed sign. Not LOCAL_REJECTED (no stable regression; outputs bit-identical). Not LOCAL_ACCEPTED (does not exceed noise, magnitude mismatch). NEEDS_ONE_MORE_LOCAL per 'differences fall within the noise band'. A third attempt on the same pair is unlikely to move the verdict given 42 pairs across 2 independent attempts already in band; the substantive finding is the mechanism calibration one (see WHY_IT_MAY_FAIL_OBSERVED), which should feed back into the hypothesis pool before any further pass-1 op-deletion hypothesis is priced.",
+  "LOCAL_BEST_UPDATED": false,
+  "LOCAL_BEST_NOTE": "LOCAL_BEST remains R31B-V017. V018 does not advance the Local Best chain (V011 -> V016 -> V017).",
+  "ONLINE_WORTHY": "NOT_APPLICABLE (LOCAL_VERDICT != LOCAL_ACCEPTED; Main keeps ONLINE_RECOMMENDATION authority for the V016+V017 chain per prior trigger-condition-B note)",
+  "MISSING_EVIDENCE": {
+    "four_block_paired_layout": "MISSING (V016-accepted 1-block x 21 pairs layout used again; 4-block x 11 still not run)",
+    "fp32_wide_empirical_control": "MISSING (unchanged shared FP32 path; not instantiated from the changed function)",
+    "server3_lease_log": "MISSING (lane boundary: 调度/服务器设备使用.tsv is MAIN-1-owned; request retroactive lease_id R31B-V018-D5-PERF-20260929)",
+    "third_paired_attempt": "NOT RUN (judged unnecessary for the verdict; available if Main requests)"
+  },
+  "WHY_IT_MAY_HELP_CONFIRMED": "Not confirmed as a speedup. The bit-identity claim IS confirmed (12/12 IDENTICAL). Removing the Muls copy + mid-chain barrier per unit did not produce a measurable window on this machine at this resolution.",
+  "WHY_IT_MAY_FAIL_OBSERVED": "The pre-registered failure mode materialized: pass-1 is not bound by V-op throughput at this site. Deleting one full-tile Muls and one mid-chain PipeBarrier per unit changes nothing measurable, which means the MTE2 load / reduce chain, not the V instruction stream, sets the pass-1 pace for these shapes. Consequence for the hypothesis pool: the section 0.1 rule that priced mid-chain barriers at ~0.07us/unit (from the R31A V024 five-barrier result) does not transfer to this FP16 pass-1 site; at this site the barrier is ~0.01us class or free. H4 (pass-2 BF16 widen deletion, 2 Cast + 1 PB/tile) is priced at 0.1-0.4us on a similar op-deletion mechanism and should be re-checked against this finding before being run; H3 (full-sync removal) and H5 (MTE2 staging depth) are unaffected because they act on the actual suspected bottleneck (DMA/sync), not V ops.",
+  "EVIDENCE": [
+    "本地实验/R31B/V018/submission.asc",
+    "本地实验/R31B/V018/submission.sha256",
+    "本地实验/R31B/V018/diff.patch",
+    "本地实验/R31B/V018/source-meta.json",
+    "本地实验/R31B/V018/support/results/submission-configure.log",
+    "本地实验/R31B/V018/support/results/submission-build.log",
+    "本地实验/R31B/V018/support/results/configure.log",
+    "本地实验/R31B/V018/support/results/build2.log",
+    "本地实验/R31B/V018/support/results/paired-build-failed-nocpath.log",
+    "本地实验/R31B/V018/support/results/run-env.txt",
+    "本地实验/R31B/V018/support/results/qualify-parent.log",
+    "本地实验/R31B/V018/support/results/qualify-parent-d5.log",
+    "本地实验/R31B/V018/support/results/paired-a1.log",
+    "本地实验/R31B/V018/support/results/paired-a2.log",
+    "本地实验/R31B/V018/support/results/pre-snapshot.txt",
+    "本地实验/R31B/V018/support/results/pre-snapshot-paired.txt",
+    "本地实验/R31B/V018/support/results/post-snapshot-paired.txt",
+    "server3:/home/data4t2/lelinfeng/phase4-review-repro/R31B-V018/"
+  ],
+  "DECISION": "NEEDS_ONE_MORE_LOCAL"
+}
