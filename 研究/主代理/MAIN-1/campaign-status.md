@@ -93,3 +93,5 @@
 | 2026-09-29 | **EPILOGUE-ARITH V001 LOCAL_ACCEPTED** NORM-HOIST -2.55%; acceptance band = shape's own noise; ONLINE WORTHY (priority 3) |
 | 2026-09-29 | **R31B V017 LOCAL_ACCEPTED** bf16-wide -14.3% + fp16 -6.7~8.5%; trigger B; ONLINE WORTHY primary candidate |
 | 2026-09-29 | R31A Track-B v3: H9 barrier-redundancy selected for V028 |
+| 2026-09-29 | **R31A V028 LOCAL_ACCEPTED** batch -1.09%; barrier non-load-bearing finding; V028 superset of V026; ONLINE WORTHY final |
+| 2026-09-29 | R31A lane closing: LANE_NEEDS_PLANNING_REVIEW after V028 |
