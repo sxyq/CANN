@@ -1,0 +1,70 @@
+--- 本地实验/EPILOGUE-ARITH-CHAMPION-X/V001/submission.asc
++++ 本地实验/EPILOGUE-ARITH-CHAMPION-X/V002/submission.asc
+@@ -2154,17 +2154,23 @@
+                 invRmsValues[batchRow] = 1.0f / xLocal.GetValue(0);
+                 SyncSToV();
+             }
+-            // V001: apply each row's scalar normalize once over the retained
+-            // y row, before the parameter tile loop.  Per element the product
+-            // is identical to the per-tile Muls it replaces; the scalar no
+-            // longer waits behind the gamma/bias MTE2 handoff.
+-            for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
+-                AscendC::LocalTensor<float> valueRow =
+-                    valueLocal[batchRow * rowWidth];
+-                AscendC::Muls(valueRow, valueRow, invRmsValues[batchRow],
+-                              static_cast<int32_t>(rowWidth));
++            // V002 (EA-H2): when exactly one row consumes each parameter tile
++            // (batchRows == 1) the affine runs in the gamma-first Axpy form
++            //   out = bias + (y * gamma) * invRms
++            // issued per tile as Mul + Axpy.  The scalar normalize is absorbed
++            // into the Axpy, so the V001 row-wide Muls is not issued on this
++            // branch.  Shared-panel batches (batchRows > 1) keep the V001 form.
++            if (batchRows != 1) {
++                for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
++                    AscendC::LocalTensor<float> valueRow =
++                        valueLocal[batchRow * rowWidth];
++                    AscendC::Muls(valueRow, valueRow, invRmsValues[batchRow],
++                                  static_cast<int32_t>(rowWidth));
++                }
++                AscendC::PipeBarrier<PIPE_V>();
+             }
+-            AscendC::PipeBarrier<PIPE_V>();
+             SyncVToMTE2();
+@@ -2202,12 +2208,23 @@
+                 Load(gammaLocal, gammaGm_, col, valid);
+                 Load(biasLocal, biasGm_, col, valid);
+                 SyncMTE2ToV();
+-                for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
+-                    AscendC::LocalTensor<float> valueRow =
+-                        valueLocal[batchRow * rowWidth + col];
++                if (batchRows != 1) {
++                    for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
++                        AscendC::LocalTensor<float> valueRow =
++                            valueLocal[batchRow * rowWidth + col];
++                        AscendC::Mul(valueRow, valueRow, gammaLocal, valid);
++                        AscendC::PipeBarrier<PIPE_V>();
++                        AscendC::Add(valueRow, valueRow, biasLocal, valid);
++                        AscendC::PipeBarrier<PIPE_V>();
++                    }
++                } else {
++                    // V002 EA-H2: gamma-first Axpy form (batchRows == 1).
++                    AscendC::LocalTensor<float> valueRow = valueLocal[col];
+                     AscendC::Mul(valueRow, valueRow, gammaLocal, valid);
+                     AscendC::PipeBarrier<PIPE_V>();
+-                    AscendC::Add(valueRow, valueRow, biasLocal, valid);
++                    AscendC::Axpy(biasLocal, valueRow, invRmsValues[0], valid);
+                    AscendC::PipeBarrier<PIPE_V>();
+                 }
+@@ -2226,9 +2243,15 @@
+-                    Store(outputGm_,
+-                          (batchBegin + static_cast<uint64_t>(batchRow)) * rowWidth + col,
+-                          valueLocal[batchRow * rowWidth + col], valid);
++                    if (batchRows != 1) {
++                        Store(outputGm_,
++                              (batchBegin + static_cast<uint64_t>(batchRow)) * rowWidth + col,
++                              valueLocal[batchRow * rowWidth + col], valid);
++                    } else {
++                        Store(outputGm_,
++                              (batchBegin + static_cast<uint64_t>(batchRow)) * rowWidth + col,
++                              biasLocal, valid);
++                    }
