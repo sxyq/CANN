@@ -3,11 +3,12 @@
 - Date: 2026-09-29
 - Scope: DUAL MAIN COMPLIANCE + ONLINE CLOSURE
 - Branch: `main1/champion-exploit`
-- HEAD at result closure: `afa68286` (compliance update commit follows)
+- Main-1 source branch HEAD at result closure: `2e70116283527354e555530ab647c95f7733ec34`
+- Canonical consolidation target: `main` / `origin/main`
 
 ## PROCESS_DEVIATION = YES
 
-本轮不伪造历史 revert。从当前时刻起修正。
+本轮不伪造历史 revert；从当前时刻开始按三步流程执行。
 
 ---
 
@@ -46,10 +47,10 @@
 
 ---
 
-## 4. Online package 已准备但 Judge Owner 未执行
+## 4. Online package 与 Judge Owner 执行结果
 
-| ROUTE | REVISION | package 路径 | submission.asc SHA |
-|---|---|---|---|
+| ROUTE | REVISION | package 路径 | submission.asc SHA | Judge result / identity |
+|---|---|---|---|---|
 | R31B | V017 | `线上结果/R31B/V017/` | `7c168eaf…` | `6abb80ba694b590c3c970983` / 44.68 / identity PASS |
 | R31A | V028 | `线上结果/R31A/V028/` | `ee52831c…` | `6abb7eb5694b590c3c95c879` / 44.07 / identity PASS |
 | STORE-EPILOGUE-X | V003 | `线上结果/STORE-EPILOGUE-X/V003/` | `0cdef265…` | `6abb8182694b590c3c978d30` / 44.38 / identity PASS |
@@ -59,25 +60,25 @@
 
 ---
 
-## 5. 结果只在 Main branch，没有进入 canonical main
+## 5. Main-1 结果进入 canonical main 的收口
 
-**检查**：Main-1 的 Local、Online package、结果和账本更新均已在 `main1/champion-exploit` 推送；canonical 已收前三条 Main-1 Online 事实，EPI V002 的新结果仍待 Consolidation Owner 收入 `origin/main`。
+**最终事实**：Main-1 的 Local、Online package、结果和账本更新均已在 `main1/champion-exploit` 推送；四条 Online 结果（含 EPI V002）均已由 Consolidation Owner 收入 `origin/main`。
 
-**结论**：需要 DUAL-MAIN CONSOLIDATION。按指令由明确的 CONSOLIDATION OWNER 执行。
+**当前状态**：`RESULTS_IN_CANONICAL=YES`；不再存在 Main-1 结果只停留在分支的缺口。
 
 ---
 
-## 6. 共享总账在 Main-1 / Main-2 两条 branch 各自分叉
+## 6. 共享总账分支分叉与收口
 
-**检查**：Main-1 修改了 `技术路线/路线成绩表.tsv`、`技术路线/全版本记录.tsv`、`调度/当前任务.tsv`。Main-2 在 `main2/orthogonal-explore` 上独立修改。
+**历史事实**：Main-1 修改了 `技术路线/路线成绩表.tsv`、`技术路线/全版本记录.tsv`、`调度/当前任务.tsv`；Main-2 在 `main2/orthogonal-explore` 上独立修改。
 
-**结论**：共享总账已分叉。需要在 canonical consolidation 时合并（只合并事实行，不合并 Kernel）。
+**当前状态**：共享总账的分支差异已由单一 Consolidation Owner 收口到 canonical；只纳入事实、证据引用、Online package/result、scoreboard、ledger、calibration 和调度状态，未纳入 child Kernel。
 
 ---
 
 ## 7. LOCAL_BEST / SERVER_BEST / OFFICIAL_BEST 字段分离
 
-**检查**：已按要求分离。所有本地收益（-14%、-8%、-6%）均记为 LOCAL_DELTA，不冒充 Official Score。
+**字段分离结果**：所有本地收益（-14%、-8%、-6%）均记为 LOCAL_DELTA，没有写成 Official Score。
 
 **OFFICIAL_BEST 当前值**（不变）：
 
@@ -90,7 +91,7 @@
 
 ---
 
-## 修正承诺
+## 纪律承诺
 
 1. 从下一次 LOCAL_REJECTED 开始：保存源码 → commit+push → 保存证据 → commit+push → 显式 restore → commit+push。
 2. 后续性能 Revision：Track-B → Main review → MAIN_SELECTED=YES → 声明 → 实现。
@@ -109,3 +110,17 @@
 | EPILOGUE-ARITH-CHAMPION-X | V002 | -3.13~-6.64% cross-window; -3.62% | 44.96 | -0.20 vs 45.16 anchor | LOCAL_ONLINE_FALSE_POSITIVE | 保留 V002 Local/Official Best；不新建 Revision |
 
 `LOCAL_SHA = SIDECAR_SHA = REMOTE_SHA` 已在四条结果中确认。Official 结果均未超过 Overall Champion 45.16，因此没有 NEW_OFFICIAL_CHAMPION_CANDIDATE。
+
+---
+
+## 9. Local→Official calibration（与 Main-2 合并口径）
+
+| ROUTE | REVISION | LOCAL_PARENT | LOCAL_METRIC | LOCAL_DELTA | SERVER_METRIC | OFFICIAL_PARENT | OFFICIAL_SCORE | OFFICIAL_DELTA | DIRECTION_MATCH | CLASSIFICATION |
+|---|---|---|---|---|---|---|---:|---:|---|---|
+| R31B | V017 | V016 | bf16-wide D32768；fp16-wide 多组配对 | -14.3%；-6.7~-8.5% | 15/15 PASS | V011 / 45.16 | 44.68 | -0.48 | CONTRADICT | FALSE_POSITIVE |
+| R31A | V028 | V026 | D24576 双设备配对；V024–V028 链 | -1.09%；链累计 -8.3% | 15/15 PASS | V016 / 45.00 | 44.07 | -0.93 | CONTRADICT | FALSE_POSITIVE |
+| STORE-EPILOGUE-X | V003 | V002 | 8x16384 primary；1x32768 / 1x16384 辅助 | -5.64%；-3.15%；-2.90% | 15/15 PASS | V002 / 45.07 | 44.38 | -0.69 | CONTRADICT | FALSE_POSITIVE |
+| EPILOGUE-ARITH-CHAMPION-X | V002 | V001 | 1x32768、2x16384 cross-window | -3.13~-6.64%；-3.62% | 15/15 PASS | R31B V011 / 45.16 | 44.96 | -0.20 | CONTRADICT | FALSE_POSITIVE |
+| ASYNC-OVERLAP-CHAMPION-X | V001 | R31B V011 | 128x16384 FP16；BF16/96x16384 为辅助方向 | -1.3~-2.2% primary | 15/15 PASS | R31B V011 / 45.16 | 44.17 | -0.99 | CONTRADICT | FALSE_POSITIVE |
+
+本轮五个重点样本的分类计数：`TP=0, FP=5, TN=0, FN=0`。历史补充样本 `COEFF-LOCALITY-X V001` 继续保留既有 `FALSE_NEGATIVE` 标签：本地单形状退化，但 Official 44.16 曾作为该路线的有效结果；它不计入上面五个重点样本。

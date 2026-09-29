@@ -7,7 +7,7 @@
 
 ---
 
-## 1. 六条偏差逐条检查
+## 1. 六条偏差逐条核对
 
 ### 1.1 LOCAL_REJECTED 后是否缺少 explicit revert commit
 
@@ -38,7 +38,7 @@ PROCESS_DEVIATION = YES
 
 ### 1.2 child 在 Main approval 前创建性能 Revision
 
-| 检查 | 结果 |
+| 项 | 结果 |
 |---|---|
 | 研究阶段 | 5 个 child 均先只读研究 + hypothesis package，STOP 等批准 |
 | 实现阶段 | 批准后才写 Kernel / 创建 Rev 目录 |
@@ -69,9 +69,9 @@ PROCESS_DEVIATION = YES
 
 **PROCESS_DEVIATION = YES（历史结构）**
 
-- 截至本文件记录时，Main-2 wave-1 事实（含 ASYNC V001 result / ledger / calibration）已进入 `origin/main`。
-- MAIN-1 EPI V002 待 Consolidation Owner 收入 canonical。
-- 历史分支分叉与收口过程保留在 §7，不改变当前路线生命周期。
+- 截至最终收口，Main-2 wave-1 事实（含 ASYNC V001 result / ledger / calibration）以及 Main-1 四条 Online result 均已进入 `origin/main`。
+- MAIN-1 EPI V002 已由 Consolidation Owner 收入 canonical，`RESULTS_IN_CANONICAL=YES`。
+- 历史分支分叉与收口过程保留在 §7；当前共享记录已统一，路线生命周期未改变。
 
 ### 1.6 共享总账在 Main-1 / Main-2 两条 branch 分叉
 
@@ -109,7 +109,7 @@ Step 3  commit: revert(X): restore LOCAL_BEST after V00N rejection
 
 ## 3. 字段分离（LOCAL_BEST / SERVER_BEST / OFFICIAL_BEST）
 
-检查原则：`-14% / -8% / -6%` 一类只能出现在 `LOCAL_DELTA` / `最佳Local表现`，不得写入 `OFFICIAL_BEST`。
+字段分离口径：`-14% / -8% / -6%` 一类只能出现在 `LOCAL_DELTA` / `最佳Local表现`，不得写入 `OFFICIAL_BEST`。
 
 | Route | LOCAL_BEST | SERVER_BEST | OFFICIAL_BEST | 字段分离 |
 |---|---|---|---|---|
@@ -194,3 +194,12 @@ UNKNOWN_COUNT=0
 - `244a0bb3`：Main-1 TSV 行级语义映射阶段记录。
 
 以上提交号只作历史记录说明，不作为当前 canonical 状态指针；当前状态以本节 `AS_OF` 及 `origin/main` 为准。
+
+## 8. Local→Official calibration 汇总
+
+| 范围 | TP | FP | TN | FN | 说明 |
+|---|---:|---:|---:|---:|---|
+| 本轮五个重点 Online 样本：ASYNC V001、R31B V017、R31A V028、STORE V003、EPI V002 | 0 | 5 | 0 | 0 | 五条均为 Local 正向、Official 相对提交参照下降 |
+| 历史补充：COEFF-LOCALITY-X V001 | 0 | 0 | 0 | 1 | 保留既有路线级 FALSE_NEGATIVE 标签；不并入本轮五样本计数 |
+
+五个重点样本的逐项字段（LOCAL_PARENT、LOCAL_METRIC、LOCAL_DELTA、SERVER_METRIC、OFFICIAL_PARENT、OFFICIAL_SCORE、OFFICIAL_DELTA、DIRECTION_MATCH、CLASSIFICATION）已记录在 Main-1 合规报告 §9 与 `调度/本地线上校准.tsv`。

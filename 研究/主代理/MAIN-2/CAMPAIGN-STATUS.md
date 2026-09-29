@@ -84,12 +84,12 @@
 | Lane | Revs closed | 最佳 | 状态 |
 |---|---|---|---|
 | M2-1 REDUCE-HIER-X | V004 LOCAL_REJECTED, V005 LOCAL_REJECTED | Official 44.24 (V003) | **LANE_NEEDS_PLANNING_REVIEW**（五变体全伪） |
-| M2-2 VECTOR-MATH-X | V003 实现中（SEQ-FUSE-2） | Official 44.22 (V001) | active |
+| M2-2 VECTOR-MATH-X | V001–V003 + S3 probe 已收口 | Official 44.22 (V001) | **LANE_NEEDS_PLANNING_REVIEW**（SEQ-FUSE-2 轴关闭） |
 | M2-3 COEFF-LOCALITY-X | V003 LOCAL_REJECTED, V004 NEEDS_ONE_MORE_LOCAL | Official 44.16 (V001) | **LANE_NEEDS_PLANNING_REVIEW**（四维探尽） |
 | M2-4 ASYNC-OVERLAP-CHAMPION-X | V001 LOCAL_ACCEPTED→Official 44.17 REJECT; V002–V004 mixed | LOCAL_BEST=V001 | **LANE_NEEDS_PLANNING_REVIEW** |
 | M2-5 MULTIROW-DMA-CHAMPION-X | V001 LOCAL_REJECTED, V002 NEEDS_ONE_MORE_LOCAL 终局 | none | **LANE_NEEDS_PLANNING_REVIEW**（等 C2 裁定） |
 
-Online：ASYNC V001 一次正式提交（6abae4a0，Pass 15/15，44.17，REJECT vs 45.16）。
+Online：ASYNC V001 以及 Main-1 的 R31B V017、R31A V028、STORE V003、EPI V002 均已完成正式提交；五条均 15/15 PASS，但均低于各自提交参照。
 
 关键发现：
 - 归约轴五变体全伪；父版 ReduceSum 接近最优。
@@ -110,7 +110,7 @@ Planning 待裁：C2 三选项、UB-GAP-CLUE、四条 lane 生命周期、W3 vs 
 
 | 项 | 值 |
 |---|---|
-| MAIN2_HEAD | `81429361c25867ff21aeb17bd7f29cc5746a5d73` |
+| MAIN2_HEAD | `2da5620a88ab0827b8d2be839f0c60264a1d92bf` |
 | REMOTE_HEAD | 同上（local == remote） |
 
 ### 五条 Lane
@@ -144,9 +144,9 @@ Planning 待裁：C2 三选项、UB-GAP-CLUE、四条 lane 生命周期、W3 vs 
 
 | 项 | 值 |
 |---|---|
-| new online | 1（ASYNC V001，6abae4a0，Pass 15/15，44.17） |
-| false positive | 1（ASYNC 多形状 1–3% 本地胜 → Official −0.99） |
-| false negative | 0 新增（COEFF 历史 FN 保留） |
+| new online | 5（ASYNC V001 + Main-1 四条；均 15/15 PASS） |
+| false positive | 5（五个重点样本均为 Local 正向、Official 下降） |
+| false negative | 0 新增（COEFF V001 历史 FN 保留） |
 | evaluator proposal | SERVER_EVALUATOR_CANDIDATE_V1 草案（SHADOW_ONLY，未启用） |
 
 ### 约束遵守
