@@ -1,0 +1,39 @@
+{
+ "ROUTE": "R31A",
+ "REVISION": "V028",
+ "DIRECT_PARENT": "R31A-V026",
+ "PARENT_SOURCE_SHA": "7f2029e478d7675e02c2e017b0db3eaf33ae5dc0fa478479b340f441ab46bb18",
+ "PARENT_SCORE": "LOCAL chain -8.3% vs V016",
+ "SOURCE_SHA": "ee52831c435f07f51ea3917af0e7faed9a012f852ab19641882c401fb78d10f1",
+ "SOURCE_SHA256": "ee52831c435f07f51ea3917af0e7faed9a012f852ab19641882c401fb78d10f1",
+ "SINGLE_HYPOTHESIS": "H9: drop the PipeBarrier before SetFlag in the batch affine loop (2 sites). The V pipe's in-order execution already completes the Add before the SetFlag, matching the same function's RMS loop where ReduceSum -> SetFlag has no PipeBarrier.",
+ "CONTEXT_CLASS": "HISTORICAL_EXPLOIT",
+ "WHY_NOT_DUPLICATE": "H9 = barrier-count reduction in the batch affine loop. V024/H2 = invRms Muls hoist in CachedRows. H4/H5/H6 = CachedRows staging liveness / boundary release. V021 = store-drain wait. All different axes.",
+ "BUILD": "PASS",
+ "EXECUTABLE_IDENTITY": {
+  "runner_sha256": "7dbde489de951be883fe38d6cbc991800c0451a97931af8ac036c339f0e61f9a",
+  "parent_module_sha256": "27d61b36a38b59f14b07212209da0e612f8e6798c33abcb48fb01cb0ff4f8aee",
+  "parent_module_note": "rebuilt from V026 source 7f2029e4... (byte-identical to the V027 round's parent, confirming the parent is V026)",
+  "candidate_module_sha256": "ffa88a50492110f151b0c386e93ff94a13417a5d4daa7c72b48f3c6944ccc7d5",
+  "candidate_module_note": "harness slot label 'v021' retained; content is R31A-V028 (source ee52831c...)"
+ },
+ "CORRECTNESS": {
+  "date": "2026-09-29",
+  "device": 4,
+  "D24576_batch_edit_exercised": {
+   "parent_V026": "PASS max_abs=3.48268474e-07",
+   "candidate_V028": "PASS max_abs=3.48268474e-07",
+   "rc": 0
+  },
+  "D32768_edit_not_exercised": {
+   "parent_V026": "PASS max_abs=4.83928943e-07",
+   "candidate_V028": "PASS max_abs=4.83928943e-07",
+   "rc": 0
+  },
+  "repeats_D24576": "4 additional runs on the batch path (where the edit is exercised), all PASS max_abs=3.48e-7, RC=0. No intermittent sync fault.",
+  "ARCHITECTURE_FINDING": "The PipeBarrier before SetFlag<HardEvent::V_*> is NOT load-bearing. The V pipe's in-order execution completes the preceding Add before the SetFlag is processed, exactly as the same function's RMS loop (ReduceSum -> SetFlag, no PipeBarrier) indicates. 5 correctness runs on the exercised path (D=24576) all pass with bit-identical max_abs. The two removed barriers were redundant.",
+  "result": "PASS"
+ },
+ "STATUS": "BUILD_PASS_CORRECTNESS_PASS_PENDING_MEASUREMENT",
+ "DECISION": "PENDING_MEASUREMENT"
+}
