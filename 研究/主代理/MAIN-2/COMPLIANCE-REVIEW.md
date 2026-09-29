@@ -172,3 +172,9 @@ Step 3  commit: revert(X): restore LOCAL_BEST after V00N rejection
 
 CANONICAL_CONSOLIDATED（Main-2 部分）= YES  
 CANONICAL_CONSOLIDATED（含 Main-1）= NO（待 rebase）
+
+### 7.1 冲突归属（2026-09-29 第二轮）
+
+MAIN-1 请求 Consolidation Owner 代解共享 TSV 冲突。按会话冲突归属规则：**merge 冲突归被整合分支所有者**；工具层禁止第三方改 conflict marker。已两次 `merge --abort`，canonical 保持 `8162dfaa`。已通知 MAIN-1 在 `main1/champion-exploit` 自行 rebase/merge 并解三个 TSV（`全版本记录.tsv` / `路线成绩表.tsv` / `本地线上校准.tsv`），只保留双方各自 Route 行。
+
+MAIN-1 已报 R31B V017 Official 44.37（15/15，−0.79 vs 45.16，identity PASS，LOCAL_ONLINE_FALSE_POSITIVE）。其分支 tip 已含 `65245bc4` / `d69b7011`。
