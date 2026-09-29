@@ -1,0 +1,137 @@
+{
+  "ROUTE": "R31B",
+  "REVISION": "V017",
+  "DIRECT_PARENT": "R31B-V016",
+  "PARENT_SOURCE_SHA": "9f5c353e65a13a740fe97dc7e6415df032d27560831a3ad142c77592b8208eb5",
+  "PARENT_SCORE": "LOCAL fp16-wide-d32768 -6.7% (V016 vs V011) / Official anchor 45.16 (V011)",
+  "SOURCE_SHA": "7c168eafde4c07d2a0667253a06925070e10349ccf08327a1b287302788180c4",
+  "SINGLE_HYPOTHESIS": "H1 pass-2 store drain deferral: replace per-(tile,row) SyncMTE3ToV() after Store() with a deferred MTE3_V event wait that fires only before outputBuf_ is written again, so the in-flight store overlaps the next unit's epilogue prefix",
+  "CONTEXT_CLASS": "HISTORICAL_EXPLOIT",
+  "WHY_NOT_DUPLICATE": "V006 MTE3 queue landed only on ProcessWideFp32FullCacheRows/generic store; LP wide pass-2 never had it. STORE-EPILOGUE lane changes writeback granularity (store count), this changes drain timing only. Distinct from H3 (SyncVToMTE2 removal, not in this revision). Not tile (V016/V007), not MTE2 queue (V009), not invRms math (R31A H1/H2).",
+
+  "BUILD": "PASS",
+  "BUILD_DETAIL": "server3 cmake configure RC=0; device/submission/full_link RC=0. device.alink=25cde56c371462a4639118179a27414e3d66003bf6128a7ef14bb8abed96dd66, submission.alink=ffd4566bd20802b877e391f9cc2c5eb63ba2762653bab53b2942f7e0b09a73d8. Paired runner rebuilt as paired_runner_v017 (sha a6d429649d74b542ad84adf1f67ec89cbcd818c239e75ded7632f677170606c9) with parent=V016 kernel / candidate=V017 kernel namespaces; runner cases extended with fp16-ctrl-d8192 and bf16-ctrl-d8192 non-wide controls. Kernel source SHA on server3 == local submission.asc SHA (verified pre-build).",
+  "BUILD_RC": 0,
+  "BUILD_ARTIFACT_SHA256": {
+    "device.alink": "25cde56c371462a4639118179a27414e3d66003bf6128a7ef14bb8abed96dd66",
+    "submission.alink": "ffd4566bd20802b877e391f9cc2c5eb63ba2762653bab53b2942f7e0b09a73d8",
+    "paired_runner_v017": "a6d429649d74b542ad84adf1f67ec89cbcd818c239e75ded7632f677170606c9"
+  },
+
+  "CORRECTNESS": "PASS",
+  "CORRECTNESS_DETAIL": "paired-runner CheckOutput passes BOTH binaries (PARENT_V016 and CAND_V017) on all 6 shapes in both 2026-09-29 attempts (12/12 PASS per attempt, failures=0). Change-domain shapes fp16/bf16 D=12288/32768 max_abs=0.0009765625/0.001953125 (fp16) and 0.0078125 (bf16), identical to parent. Non-wide controls D=8192 pass identically. FP32 wide path is not instantiated from the changed function (ProcessWideLowPrecision is the non-FP32 wide path only) → zero-delta by construction; FP32 D=16384 shared parent/candidate limitation unchanged and excluded as before.",
+  "EXECUTABLE_IDENTITY": "PASS",
+  "EXECUTABLE_SHA256": {
+    "paired_runner_v017": "a6d429649d74b542ad84adf1f67ec89cbcd818c239e75ded7632f677170606c9",
+    "parent_kernel_R31B-V016": "9f5c353e65a13a740fe97dc7e6415df032d27560831a3ad142c77592b8208eb5",
+    "candidate_kernel_R31B-V017": "7c168eafde4c07d2a0667253a06925070e10349ccf08327a1b287302788180c4"
+  },
+
+  "SAME_BINARY": "PASS",
+  "SAME_BINARY_DETAIL": "Parent-only same-binary on all 6 shapes before any P/C (warmup=45, 2 blocks x 31 samples, device-event primary). All PASS: MAD/median <= 0.052, block drift <= 0.025.",
+  "SAME_BINARY_ROWS": [
+    {"case": "fp16-tail-d12288", "result": "PASS", "median_us": 5.880, "mad_over_median": 0.04252, "block_drift": 0.00000},
+    {"case": "fp16-wide-d32768", "result": "PASS", "median_us": 9.470, "mad_over_median": 0.02957, "block_drift": 0.02112},
+    {"case": "bf16-tail-d12288", "result": "PASS", "median_us": 6.590, "mad_over_median": 0.02883, "block_drift": 0.00607},
+    {"case": "bf16-wide-d32768", "result": "PASS", "median_us": 13.990, "mad_over_median": 0.01787, "block_drift": 0.00715},
+    {"case": "fp16-ctrl-d8192", "result": "PASS", "median_us": 5.020, "mad_over_median": 0.03984, "block_drift": 0.01992},
+    {"case": "bf16-ctrl-d8192", "result": "PASS", "median_us": 5.670, "mad_over_median": 0.05115, "block_drift": 0.02469}
+  ],
+
+  "TIMING": "VALID_DEVICE_EVENT_PRIMARY",
+  "TIMING_DETAIL": "Two independent interleaved P/C attempts (21 pairs per shape per attempt, warmup=45, device_us primary / wall_us diagnostic), same runner, parent=V016 / candidate=V017, device=4.",
+  "TIMING_ATTEMPTS": [
+    {
+      "attempt_id": "R31B-V017-D4-PERF-20260929-a1",
+      "device": 4,
+      "paired_delta_median_us": {
+        "fp16-tail-d12288": -0.26, "fp16-wide-d32768": -0.64,
+        "bf16-tail-d12288": -0.28, "bf16-wide-d32768": -2.00,
+        "fp16-ctrl-d8192": -0.14, "bf16-ctrl-d8192": -0.02
+      },
+      "parent_median_us": {
+        "fp16-tail-d12288": 6.320, "fp16-wide-d32768": 9.620,
+        "bf16-tail-d12288": 6.600, "bf16-wide-d32768": 14.120,
+        "fp16-ctrl-d8192": 5.300, "bf16-ctrl-d8192": 5.800
+      },
+      "clean_neg_ratio": {
+        "fp16-wide-d32768": "11/11", "bf16-wide-d32768": "16/16",
+        "fp16-tail-d12288": "11/13", "bf16-tail-d12288": "14/18"
+      }
+    },
+    {
+      "attempt_id": "R31B-V017-D4-PERF-20260929-a2",
+      "device": 4,
+      "paired_delta_median_us": {
+        "fp16-tail-d12288": -0.22, "fp16-wide-d32768": -0.82,
+        "bf16-tail-d12288": -0.22, "bf16-wide-d32768": -2.00,
+        "fp16-ctrl-d8192": -0.10, "bf16-ctrl-d8192": -0.12
+      },
+      "parent_median_us": {
+        "fp16-tail-d12288": 5.860, "fp16-wide-d32768": 9.620,
+        "bf16-tail-d12288": 6.720, "bf16-wide-d32768": 13.940,
+        "fp16-ctrl-d8192": 5.300, "bf16-ctrl-d8192": 6.220
+      },
+      "clean_neg_ratio": {
+        "fp16-wide-d32768": "14/19", "bf16-wide-d32768": "20/20",
+        "fp16-tail-d12288": "14/20", "bf16-tail-d12288": "16/20"
+      }
+    }
+  ],
+
+  "TWO_GATE_JUDGEMENT": {
+    "gate1_noise_band": {
+      "blank_control_band": "non-wide D=8192 paired delta medians this round: -0.14/-0.10 (fp16), -0.02/-0.12 (bf16) => |median| <= 0.14us; same-binary parent MAD/median <= 0.052 on 5-14us medians",
+      "signals_beyond_band": "bf16-wide-d32768 -2.00us both attempts (14x band); fp16-wide-d32768 -0.64/-0.82us (5-8x band); tail shapes -0.22..-0.28us marginal but mechanism-consistent",
+      "result": "PASS for bf16-wide-d32768 and fp16-wide-d32768"
+    },
+    "gate2_magnitude": {
+      "per_store_decomposition": "delta ~= (tileCount-1) x ~0.12-0.15us (one deferred store overlap window per non-final tile). V016 budget math gives effective tileElems via ChooseWideFullYRows N=1 shrink: fp16 D=32768 tile~5632 -> 6 tiles -> predicted ~0.65us, observed -0.64/-0.82; bf16 D=32768 tile~2560 -> 13 tiles -> predicted ~1.6-1.9us, observed -2.00/-2.00; tails 2 tiles -> predicted ~0.25us, observed -0.22..-0.28; controls 0 tiles (non-wide) -> predicted ~0, observed -0.02..-0.14",
+      "scaling_check": "delta/tileCount: fp16-wide 0.11-0.14 us/tile, bf16-wide 0.15 us/tile, tails 0.11-0.14 us/tile -> consistent per-tile rate; bf16 slightly larger window (3-op epilogue on retained buffer before outputBuf_ write)",
+      "result": "PASS - all shapes match per-store mechanism magnitude within factor ~1.3; not noise, not order-of-magnitude mismatch"
+    },
+    "overlaid_risk_check": "bf16-wide pre-registered band was 0.7-1.5us; observed 2.0us is 1.3x the top. Decomposition shows this is explained by more stores (13 vs 6) not by a foreign mechanism; reported as upward-revised estimate, not unexplained excess"
+  },
+
+  "LOCAL_DELTA_SUMMARY": {
+    "bf16-wide-d32768": "median -2.00us both attempts; -14.3% vs parent median 13.94-14.12us; clean neg 16/16 and 20/20",
+    "fp16-wide-d32768": "median -0.64/-0.82us; -6.7%/-8.5% vs parent median 9.62us; clean neg 11/11 and 14/19",
+    "fp16-tail-d12288": "median -0.26/-0.22us (2 tiles, mechanism-consistent small)",
+    "bf16-tail-d12288": "median -0.28/-0.22us (2 tiles, mechanism-consistent small)",
+    "controls_d8192": "fp16 -0.14/-0.10, bf16 -0.02/-0.12 -> in blank-control band, non-wide path untouched"
+  },
+  "NOISE": "blank-control band |median|<=0.14us this round; same-binary MAD/median <=0.052; paired delta MAD 0.08-1.22us with 10-30% device-event spikes >=100us (medians and clean-pair ratios robust; spikes retained in raw logs)",
+  "PAIR_COUNT": "21 interleaved P/C pairs per shape per attempt x 2 attempts (42 pairs/shape total); 1 block per attempt layout (V016-accepted layout), direction stability by 2 independent attempts",
+  "LOAD_QUALITY": "d4, HBM 59190-59193/65536 (~90%, <100%) pre/post, AICore 0%, VLLMEngineCor resident observational only; device=4 lease coordination: no conflicting active lease on d4 at run time (d6 leased by MAIN-2, left untouched). Note: lease rows for this run not appended to 调度/服务器设备使用.tsv by this lane (shared file under MAIN-1 ownership per lane boundary) - request MAIN-1 to log lease_id R31B-V017-D4-PERF-20260929 retroactively.",
+
+  "LOCAL_VERDICT": "LOCAL_ACCEPTED",
+  "LOCAL_VERDICT_BASIS": "Primary change-domain win bf16-wide-d32768 -2.00us (-14.3%) reproducible across 2 independent attempts with clean pairs 16/16 and 20/20 negative; secondary fp16-wide-d32768 -0.64/-0.82us beyond blank-control band; non-wide controls flat; two-gate rule (noise band + mechanism magnitude) both PASS with per-store scaling match. No shape regression (tail shapes small-negative, controls in band).",
+  "LOCAL_BEST_UPDATED": true,
+  "LOCAL_BEST_NOTE": "R31B-V017 replaces R31B-V016 as local best (Local Best chain V011 -> V016 -> V017). Stacked effect vs V011 champion: V016 tile seed + V017 store drain deferral.",
+  "ONLINE_WORTHY": "PENDING_MAIN_DECISION (two consecutive LOCAL_ACCEPTED V016+V017 = trigger condition B per MAIN-1 2026-09-29 note; Main makes ONLINE_RECOMMENDATION)",
+
+  "MISSING_EVIDENCE": {
+    "four_block_paired_layout": "paired layout remains 21 pairs in one block per attempt (2 attempts) rather than 4-block x 11; direction stability by independent attempts as in V016 accepted package",
+    "fp32_wide_empirical_control": "FP32 wide empirical control not run (paired runner is fp16/bf16-only); zero-delta by construction since ProcessWideLowPrecision is the non-FP32 wide path - documented, not measured",
+    "server3_lease_log": "lease row not appended to 调度/服务器设备使用.tsv by lane boundary (MAIN-1 owns shared files); pre/post device snapshots retained as substitute load evidence"
+  },
+
+  "WHY_IT_MAY_HELP_CONFIRMED": "Deferred MTE3_V wait lets the in-flight store overlap the next unit's epilogue prefix; overlap count = tileCount-1 per row-batch; observed per-tile rate 0.11-0.15us/tile consistent across 4 change-domain shapes and 2 attempts.",
+  "WHY_IT_MAY_FAIL_OBSERVED": "None materialized. Single staging tile limits in-flight stores to 1 (2-deep would need +1 tile UB = tile axis); still achieved the predicted band.",
+
+  "EVIDENCE": [
+    "本地实验/R31B/V017/submission.asc",
+    "本地实验/R31B/V017/submission.sha256",
+    "本地实验/R31B/V017/diff.patch",
+    "本地实验/R31B/V017/source-meta.json",
+    "本地实验/R31B/V017/support/results/qualify-parent.log",
+    "本地实验/R31B/V017/support/results/paired-a1.log",
+    "本地实验/R31B/V017/support/results/paired-a2.log",
+    "本地实验/R31B/V017/support/results/pre-snapshot.txt",
+    "本地实验/R31B/V017/support/results/post-snapshot.txt",
+    "本地实验/R31B/V017/support/results/kernel-build.log",
+    "server3:/home/data4t2/lelinfeng/phase4-review-repro/R31B-V017/"
+  ],
+
+  "DECISION": "LOCAL_ACCEPTED"
+}
