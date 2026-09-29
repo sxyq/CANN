@@ -91,3 +91,5 @@
 | 2026-09-29 | R31A Track-B v2: 4 hypotheses (H5-H8); Main selected H5 for V026 (pass-2 param staging) |
 | 2026-09-29 | **R31A V026 LOCAL_ACCEPTED** -1.69% incr; chain -8.3%; trigger B (3 consecutive); ONLINE WORTHY primary V026 |
 | 2026-09-29 | **EPILOGUE-ARITH V001 LOCAL_ACCEPTED** NORM-HOIST -2.55%; acceptance band = shape's own noise; ONLINE WORTHY (priority 3) |
+| 2026-09-29 | **R31B V017 LOCAL_ACCEPTED** bf16-wide -14.3% + fp16 -6.7~8.5%; trigger B; ONLINE WORTHY primary candidate |
+| 2026-09-29 | R31A Track-B v3: H9 barrier-redundancy selected for V028 |
