@@ -3,7 +3,7 @@
 - Date: 2026-09-29
 - Scope: DUAL MAIN COMPLIANCE + ONLINE CLOSURE
 - Branch: `main1/champion-exploit`
-- HEAD: `b6d787d4`
+- HEAD at result closure: `afa68286` (compliance update commit follows)
 
 ## PROCESS_DEVIATION = YES
 
@@ -37,12 +37,12 @@
 
 | ROUTE | REVISION | LOCAL | ONLINE_RECOMMENDATION | Judge result |
 |---|---|---|---|---|
-| R31B | V017 | LOCAL_ACCEPTED | WORTHY | **缺失** |
-| R31A | V028 | LOCAL_ACCEPTED | WORTHY | **缺失** |
-| STORE-EPILOGUE-X | V003 | LOCAL_ACCEPTED | WORTHY | **缺失** |
-| EPILOGUE-ARITH-CHAMPION-X | V002 | LOCAL_ACCEPTED | WORTHY | **缺失** |
+| R31B | V017 | LOCAL_ACCEPTED | WORTHY | `6abb80ba694b590c3c970983`, Pass 15/15, Official 44.68, identity PASS; LOCAL_ONLINE_FALSE_POSITIVE |
+| R31A | V028 | LOCAL_ACCEPTED | WORTHY | `6abb7eb5694b590c3c95c879`, Pass 15/15, Official 44.07, identity PASS; LOCAL_ONLINE_FALSE_POSITIVE |
+| STORE-EPILOGUE-X | V003 | LOCAL_ACCEPTED | WORTHY | `6abb8182694b590c3c978d30`, Pass 15/15, Official 44.38, identity PASS; LOCAL_ONLINE_FALSE_POSITIVE |
+| EPILOGUE-ARITH-CHAMPION-X | V002 | LOCAL_ACCEPTED | WORTHY | `6abb8840694b590c3c9b6db3`, Pass 15/15, Official 44.96, identity PASS; LOCAL_ONLINE_FALSE_POSITIVE |
 
-**结论**：4 个候选均待 Online closure。本轮第一优先级。
+**结论**：4 个候选均已完成 Online closure；四条结果均通过 15/15，均未超过各自线上参照，Local Best 证据保留。
 
 ---
 
@@ -50,18 +50,18 @@
 
 | ROUTE | REVISION | package 路径 | submission.asc SHA |
 |---|---|---|---|
-| R31B | V017 | `线上结果/R31B/V017/` | `7c168eaf…` |
-| R31A | V028 | `线上结果/R31A/V028/` | `ee52831c…` |
-| STORE-EPILOGUE-X | V003 | `线上结果/STORE-EPILOGUE-X/V003/` | `0cdef265…` |
-| EPILOGUE-ARITH | V002 | `线上结果/EPILOGUE-ARITH-CHAMPION-X/V002/` | `00a5c818…` |
+| R31B | V017 | `线上结果/R31B/V017/` | `7c168eaf…` | `6abb80ba694b590c3c970983` / 44.68 / identity PASS |
+| R31A | V028 | `线上结果/R31A/V028/` | `ee52831c…` | `6abb7eb5694b590c3c95c879` / 44.07 / identity PASS |
+| STORE-EPILOGUE-X | V003 | `线上结果/STORE-EPILOGUE-X/V003/` | `0cdef265…` | `6abb8182694b590c3c978d30` / 44.38 / identity PASS |
+| EPILOGUE-ARITH-CHAMPION-X | V002 | `线上结果/EPILOGUE-ARITH-CHAMPION-X/V002/` | `00a5c818…` | `6abb8840694b590c3c9b6db3` / 44.96 / identity PASS |
 
-**结论**：4 个包就绪，均未提交。本轮串行提交。
+**结论**：4 个包均由 Judge Owner 串行提交；每条均已保存 `result.json`，并按独立事实推送。
 
 ---
 
 ## 5. 结果只在 Main branch，没有进入 canonical main
 
-**检查**：Main-1 的 LOCAL_ACCEPTED / Online package / ledger 更新均在 `main1/champion-exploit`，canonical `origin/main` 未收到。
+**检查**：Main-1 的 Local、Online package、结果和账本更新均已在 `main1/champion-exploit` 推送；canonical 已收前三条 Main-1 Online 事实，EPI V002 的新结果仍待 Consolidation Owner 收入 `origin/main`。
 
 **结论**：需要 DUAL-MAIN CONSOLIDATION。按指令由明确的 CONSOLIDATION OWNER 执行。
 
@@ -86,7 +86,7 @@
 | R31B | V011 / 45.16 | V017 |
 | R31A | V016 / 45.00 | V028 |
 | STORE-EPILOGUE-X | V002 / 45.07 | V003 |
-| EPILOGUE-ARITH | 无 | V002 |
+| EPILOGUE-ARITH-CHAMPION-X | V002 / 44.96 | V002 |
 
 ---
 
@@ -96,3 +96,16 @@
 2. 后续性能 Revision：Track-B → Main review → MAIN_SELECTED=YES → 声明 → 实现。
 3. Online 串行提交，每次完整落盘。
 4. 不伪造历史。
+
+---
+
+## 8. Main-1 Online closure 结果
+
+| ROUTE | REVISION | LOCAL_DELTA | OFFICIAL_SCORE | OFFICIAL_DELTA | DIRECTION | NEXT ACTION |
+|---|---|---|---:|---:|---|---|
+| R31B | V017 | bf16-wide -14.3%; fp16-wide -6.7~-8.5% | 44.68 | -0.48 vs 45.16 | LOCAL_ONLINE_FALSE_POSITIVE | 保留 V017 Local Best；等 Planning |
+| R31A | V028 | chain -8.3%; V028 -1.09% | 44.07 | -0.93 vs 45.00 | LOCAL_ONLINE_FALSE_POSITIVE | 保留 V028 Local Best；等 Planning |
+| STORE-EPILOGUE-X | V003 | -5.64% primary; -3.15% wide | 44.38 | -0.69 vs V002 45.07 | LOCAL_ONLINE_FALSE_POSITIVE | 保留 V003 Local Best；等 Planning |
+| EPILOGUE-ARITH-CHAMPION-X | V002 | -3.13~-6.64% cross-window; -3.62% | 44.96 | -0.20 vs 45.16 anchor | LOCAL_ONLINE_FALSE_POSITIVE | 保留 V002 Local/Official Best；不新建 Revision |
+
+`LOCAL_SHA = SIDECAR_SHA = REMOTE_SHA` 已在四条结果中确认。Official 结果均未超过 Overall Champion 45.16，因此没有 NEW_OFFICIAL_CHAMPION_CANDIDATE。
