@@ -159,3 +159,16 @@ Step 3  commit: revert(X): restore LOCAL_BEST after V00N rejection
 | child_preapproval_violations | 0 | — |
 | results_not_in_canonical | 1（结构） | wave-1 事实尚在 main2 branch |
 | shared_ledger_divergence | 1（结构） | main1/main2 各自增量，本轮收口 |
+
+## 7. Canonical consolidation 状态（2026-09-29）
+
+| 步骤 | 状态 |
+|---|---|
+| Main-2 wave-1 事实并入 origin/main | **DONE**（fast-forward to `247f268a`，已 push） |
+| ASYNC V001 Online package / result / ledger / calibration 上 canonical | **DONE** |
+| Main-1 Local facts / Online packages 并入 | **BLOCKED** — merge `origin/main1/champion-exploit` 在 `全版本记录.tsv` / `路线成绩表.tsv` 冲突 |
+| 冲突处置 | 已 `merge --abort`；按纪律交还分支所有者；已 async 通知 MAIN-1 rebase 到 `247f268a` 并自解冲突 |
+| 每个 Main-1 Online 返回后的独立 canonical commit | 待 Main-1 |
+
+CANONICAL_CONSOLIDATED（Main-2 部分）= YES  
+CANONICAL_CONSOLIDATED（含 Main-1）= NO（待 rebase）
