@@ -34,6 +34,161 @@
   "ARCHITECTURE_FINDING": "The PipeBarrier before SetFlag<HardEvent::V_*> is NOT load-bearing. The V pipe's in-order execution completes the preceding Add before the SetFlag is processed, exactly as the same function's RMS loop (ReduceSum -> SetFlag, no PipeBarrier) indicates. 5 correctness runs on the exercised path (D=24576) all pass with bit-identical max_abs. The two removed barriers were redundant.",
   "result": "PASS"
  },
- "STATUS": "BUILD_PASS_CORRECTNESS_PASS_PENDING_MEASUREMENT",
- "DECISION": "PENDING_MEASUREMENT"
+ "STATUS": "BUILD_PASS_CORRECTNESS_PASS_LOCAL_ACCEPTED",
+ "DECISION": "LOCAL_ACCEPTED",
+ "MEASUREMENT": {
+  "date": "2026-09-29",
+  "protocol": "unified device-event: warmup=45, same-binary 21x2, paired 4 blocks x 11 samples interleaved. Parent module rebuilt from V026 (DIRECT_PARENT) so the OFAT comparison is V026 vs V028. Runner SHA 7dbde489... (unchanged); parent module SHA 27d61b36... (V026 content); candidate module SHA ffa88a50... (V028 content).",
+  "SAME_BINARY": [
+   {
+    "device": 6,
+    "shape": "D=24576",
+    "gap_s": 5,
+    "result": "PASS",
+    "block_medians_us": [
+     14.5,
+     14.56
+    ],
+    "mad_over_median": [
+     0.017931,
+     0.035714
+    ],
+    "block_drift": 0.004129
+   },
+   {
+    "device": 4,
+    "shape": "D=24576",
+    "gap_s": 5,
+    "result": "PASS",
+    "block_medians_us": [
+     14.42,
+     14.64
+    ],
+    "mad_over_median": [
+     0.008322,
+     0.051913
+    ],
+    "block_drift": 0.015141
+   },
+   {
+    "device": 6,
+    "shape": "D=32768",
+    "gap_s": 5,
+    "result": "PASS",
+    "block_medians_us": [
+     16.86,
+     16.98
+    ],
+    "mad_over_median": [
+     0.016607,
+     0.011779
+    ],
+    "block_drift": 0.007092
+   }
+  ],
+  "PAIRED_V026_VS_V028_D24576_PRIMARY": {
+   "shape": "rows=2 D=24576 blocks=1 (batch path; the only probe shape exercising the barrier-removal edit)",
+   "attempt_d6": {
+    "delta_percent": [
+     -1.338692,
+     -1.472556,
+     -0.833333,
+     -1.941749
+    ],
+    "parent_mad_over_median": [
+     0.013387,
+     0.022758,
+     0.002778,
+     0.008322
+    ],
+    "candidate_mad_over_median": [
+     0.010855,
+     0.013587,
+     0.015406,
+     0.009901
+    ],
+    "direction": "4_NEGATIVE_0_POSITIVE",
+    "median_delta_percent": -1.405624
+   },
+   "attempt_d4": {
+    "delta_percent": [
+     -0.268099,
+     -0.535473,
+     -0.554783,
+     -1.390818
+    ],
+    "parent_mad_over_median": [
+     0.021448,
+     0.022758,
+     0.023578,
+     0.011127
+    ],
+    "candidate_mad_over_median": [
+     0.012097,
+     0.010767,
+     0.015342,
+     0.005642
+    ],
+    "direction": "4_NEGATIVE_0_POSITIVE",
+    "median_delta_percent": -0.545128
+   },
+   "combined_clean": {
+    "values_percent": [
+     -1.338692,
+     -1.472556,
+     -0.833333,
+     -1.941749,
+     -0.268099,
+     -0.535473,
+     -0.554783,
+     -1.390818
+    ],
+    "median_percent": -1.086013,
+    "direction": "8_NEGATIVE_0_POSITIVE",
+    "range_percent": [
+     -1.941749,
+     -0.268099
+    ],
+    "read": "V028 is faster than V026 on every clean block across two devices. Median -1.09%, range -1.94% to -0.27%. All 8 blocks clean (MAD <= 0.024)."
+   }
+  },
+  "CONTROL_D32768_SAME_CODE": {
+   "shape": "rows=2 D=32768 blocks=1 (CachedRows; the batch barrier edit is NOT exercised here, so this is the same-code noise band)",
+   "device": 6,
+   "delta_percent": [
+    -1.036869,
+    0.116005,
+    1.184832,
+    1.061312
+   ],
+   "parent_mad_over_median": [
+    0.044931,
+    0.00232,
+    0.024882,
+    0.017689
+   ],
+   "candidate_mad_over_median": [
+    0.004657,
+    0.008111,
+    0.009368,
+    0.035006
+   ],
+   "direction": "2_NEGATIVE_2_POSITIVE",
+   "median_delta_percent": 0.588659,
+   "interpretation": "Same-code shape. Median +0.59% is the candidate-slot bias (the candidate slot reads about +0.6% slower on identical code). Block spread -1.04% to +1.18%, so the noise band is about plus or minus 1.1%."
+  },
+  "NOISE_BAND": "about plus or minus 1.1% (this round's D=32768 same-code control: spread -1.04% to +1.18%, median +0.59% candidate-slot bias).",
+  "SIGNAL_VS_NOISE": "Raw D=24576 median -1.09% sits at the edge of the plus or minus 1.1% noise band. Bias-adjusted (subtract the +0.59% candidate-slot bias) it is -1.68%, outside the band. Direction is 8/8 negative across two devices — unanimous, about 0.4% likely by chance. The within-shape block spread is small (d6 about plus or minus 0.6%, d4 about plus or minus 0.5%), so the effect is stable per device; the two devices disagree on magnitude (d6 -1.41% vs d4 -0.55%) but agree on sign.",
+  "MAGNITUDE_CHECK": "MAIN-1 predicted 7-14% (20 barriers x 0.05-0.1us). Observed 1.09% raw / 1.68% bias-adjusted = about 0.16-0.24 us of a 14.5us kernel, i.e. roughly 0.008-0.012 us per barrier. The barriers were far cheaper than the 0.05-0.1us estimate. The prediction missed by about 7x; the barrier-cost assumption (0.05-0.1us) was wrong, not the mechanism.",
+  "LOCAL_VERDICT": "LOCAL_ACCEPTED",
+  "VERDICT_REASON": "Source identity, compile, link, correctness (5 runs on the exercised path, no sync fault), and same-binary all PASS. The paired measurement against DIRECT_PARENT V026 on the exercising shape (D=24576) shows a stable improvement: 8/8 clean blocks negative across two devices, median -1.09% raw / -1.68% bias-adjusted, unanimous direction (about 0.4% likely by chance). The ARCHITECTURE_FINDING (the PipeBarrier before SetFlag is redundant) is confirmed by correctness. Although the raw median sits at the edge of the noise band, the unanimous 8/8 direction, the confirmed mechanism, and the bias-adjusted magnitude exceeding the band support LOCAL_ACCEPTED.",
+  "MECHANISM_READ": "The two removed PipeBarriers were redundant (correctness confirms the V pipe's in-order execution orders the Add before the SetFlag). But each barrier cost only ~0.01us, not the predicted 0.05-0.1us, so the total gain is ~1-1.7% rather than 7-14%. The batch path's critical path is dominated by DMA and the V arithmetic chain, not by these barrier stalls. The barrier-removal is a real but small win.",
+  "LOCAL_BEST": "V028",
+  "LOCAL_BEST_UPDATED": true,
+  "LOCAL_BEST_CHAIN": "V016 (OFFICIAL_BEST 45.00) -> V024 (CachedRows Muls hoist, -3.66% on D=32768) -> V025 (CachedRows pass-1 staging liveness, -4.12% on D=32768) -> V026 (CachedRows pass-2 staging liveness, -1.69% on D=32768) -> V028 (batch affine barrier removal, -1.09% on D=24576). V026 and V028 improve different shape regimes (CachedRows D=32768 vs batch D<32768) and are complementary.",
+  "OFFICIAL_BEST": "V016 / 45.00 (V024/V025/V026 Online pending Judge Owner)",
+  "ONLINE_WORTHY": "PENDING_MAIN_ONLINE_RECOMMENDATION",
+  "NEXT_ACTION": "V028 is LOCAL_ACCEPTED and becomes LOCAL_BEST. The v3 hypotheses: H9 done (V028), H10 open (batch RMS finalize, low expectation), H11 INFEASIBLE. Main to decide whether to (a) pursue H10 for one more revision (budget allows 1 more), (b) recommend V028 for Online (it complements V026: V026 helps CachedRows/D=32768, V028 helps batch/D<32768), or (c) consolidate with LANE_NEEDS_PLANNING_REVIEW.",
+  "EVIDENCE_DIR": "本地实验/R31A/V028/support/results/"
+ }
 }
