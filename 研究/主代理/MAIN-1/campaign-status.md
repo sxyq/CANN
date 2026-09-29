@@ -103,3 +103,4 @@
 | 2026-09-29 | R31B V019 NEEDS_ONE_MORE_LOCAL (H3 refuted); V-side deletions 2x null; bottleneck=MTE2/reduce; H5 selected for V020 |
 | 2026-09-29 | **EPI V002 LOCAL_ACCEPTED** cross-window -3.1~-6.6%; ONLINE WORTHY primary (replaces V001) |
 | 2026-09-29 | R31B V020 INFEASIBLE (UB overflow); cheap options exhausted on ProcessWideLowPrecision; recommend LANE_NEEDS_PLANNING_REVIEW |
+| 2026-09-29 | **STORE V003 LOCAL_ACCEPTED** multi-row -5.64% 6/0; cumulative 1x32768 ~-8.6%; ONLINE WORTHY (case14 primary) |
