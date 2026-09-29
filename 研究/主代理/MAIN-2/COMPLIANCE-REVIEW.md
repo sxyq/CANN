@@ -50,7 +50,7 @@ PROCESS_DEVIATION = YES
 
 | Route | Rev | LOCAL | ONLINE_WORTHY | Online result | 判定 |
 |---|---|---|---|---|---|
-| ASYNC-OVERLAP | V001 | LOCAL_ACCEPTED | YES（多形状触发） | **44.17 Pass 15/15 REJECT** | ONLINE_CLOSED |
+| ASYNC-OVERLAP-CHAMPION-X | V001 | LOCAL_ACCEPTED（仅一个合格计时形状） | YES（辅助形状方向证据） | **44.17 Pass 15/15 REJECT** | ONLINE_CLOSED |
 | SCHED-CHAMPION-X | V002 | LOCAL_ACCEPTED | NO（历史 KEEP_ACCUMULATING） | 41.94 已有 | 历史已闭环 |
 | STORE-EPILOGUE-X | V002 | LOCAL_ACCEPTED | FUTURE_CANDIDATE | 45.07 已有（MAIN-1 轴） | 非 MAIN-2 本轮 |
 
@@ -60,18 +60,18 @@ PROCESS_DEVIATION = YES
 
 | Package | 状态 |
 |---|---|
-| ASYNC-OVERLAP V001 | Judge 已执行（submission `6abae4a0694b590c3c51d6a3`） |
+| ASYNC-OVERLAP-CHAMPION-X V001 | Judge 已执行（submission `6abae4a0694b590c3c51d6a3`） |
 | 其他 MAIN-2 lane | 无待提交 package |
 
 判定：**无缺口**。
 
-### 1.5 结果只在 Main branch，未进 canonical main
+### 1.5 Main-2 事实进入 canonical 的状态
 
-**PROCESS_DEVIATION = YES（结构）**
+**PROCESS_DEVIATION = YES（历史结构）**
 
-- ASYNC V001 result / ledger / calibration 目前在 `main2/orthogonal-explore`。
-- canonical `origin/main` 尚未包含 wave-1 campaign 与 ASYNC Official 事实。
-- 本轮按第 11 节由 CONSOLIDATION OWNER 收口（见第 3 节）。
+- 截至本文件记录时，Main-2 wave-1 事实（含 ASYNC V001 result / ledger / calibration）已进入 `origin/main`。
+- MAIN-1 EPI V002 待 Consolidation Owner 收入 canonical。
+- 历史分支分叉与收口过程保留在 §7，不改变当前路线生命周期。
 
 ### 1.6 共享总账在 Main-1 / Main-2 两条 branch 分叉
 
@@ -116,35 +116,52 @@ Step 3  commit: revert(X): restore LOCAL_BEST after V00N rejection
 | REDUCE-HIER-X | V003 近中性（未推进为胜） | V003 | V003 = 44.24 | OK |
 | VECTOR-MATH-X | V001 batched（registry） | V002 fail / V001 | V001 = 44.22 | OK |
 | COEFF-LOCALITY-X | NONE | V001 | V001 = 44.16 | OK |
-| ASYNC-OVERLAP | V001 = 128×16384 −1.3..−2.2% | V001 | V001 = 44.17 | OK（Local% 仅在 Local 字段） |
-| MULTIROW-DMA | NONE | NONE | NONE | OK |
+| ASYNC-OVERLAP-CHAMPION-X | V001 = 128×16384 FP16 −1.3..−2.2%（唯一合格计时形状） | V001 | V001 = 44.17 | OK（Local% 仅在 Local 字段） |
+| MULTIROW-DMA-CHAMPION-X | NONE | NONE | NONE | OK |
 
 判定：**当前记录字段分离合规**。后续写入继续强制。
 
 ---
 
-## 4. Online gap 分类（MAIN-2 四条未闭环 lane）
+### 3.1 ASYNC V001 Local 口径
 
-| Route | 分类 | 理由 | 动作 |
-|---|---|---|---|
-| REDUCE-HIER-X | **D 机制证伪** | 五变体全伪，无 LOCAL_ACCEPTED | ONLINE_NOT_REQUIRED |
-| VECTOR-MATH-X | **D 机制证伪** | SEQ-FUSE-2 被 S3 probe 证伪（每行 −0.012µs） | ONLINE_NOT_REQUIRED |
-| COEFF-LOCALITY-X | **D 机制证伪** | 时序/驻留/预加载已触及；mid-D 残留不可分离 | ONLINE_NOT_REQUIRED |
-| MULTIROW-DMA-CHAMPION-X | **D + C** | V001 LOCAL_REJECTED；V002 terminal NEEDS_ONE_MORE_LOCAL（噪声内） | ONLINE_NOT_REQUIRED |
-| ASYNC-OVERLAP | **已闭环** | V001 Official 44.17 REJECT | ONLINE_CLOSED |
+- `LOCAL_VERDICT=LOCAL_ACCEPTED` 只依据 `128×16384 FP16` 这一合格计时形状。
+- BF16、`96×16384 FP16` 等其他形状只作为辅助方向证据，不合并为额外的合格 Local verdict。
+- `ONLINE_WORTHY=YES` 使用上述辅助方向证据作为送 Online 的理由；Online 返回 `44.17`、`15/15 PASS`、相对 `45.16` 为 `REJECT` 后，状态为 `ONLINE_CLOSED`。
+
+---
+
+## 4. Online gap 分类（MAIN-2 五条 lane）
+
+```text
+AS_OF=2026-09-29
+SCOPE=MAIN-2 R2 五条 lane：REDUCE-HIER-X / VECTOR-MATH-X / COEFF-LOCALITY-X / ASYNC-OVERLAP-CHAMPION-X / MULTIROW-DMA-CHAMPION-X
+```
+
+| Route | Evidence Revision / probe | 分类 | 理由 | 动作 |
+|---|---|---|---|---|
+| REDUCE-HIER-X | V001–V005 | **D 机制未形成可用收益** | V002/V004/V005 为 `LOCAL_REJECTED`；V001/V003 未形成 `LOCAL_ACCEPTED`，没有可送 Online 的当前 Candidate | ONLINE_NOT_REQUIRED |
+| VECTOR-MATH-X | V001–V003；S3-TAIL-PROBE | **D 机制未形成可用收益** | V002 的中等形状信号因 same-binary 不合格而不可用；V003 方向混合；S3 probe 显示每行节省为负（约 −0.012µs） | ONLINE_NOT_REQUIRED |
+| COEFF-LOCALITY-X | V001–V004 | **D 机制未形成可用收益** | V001 回退；V002 为 `NO_UB_BUDGET`；V003 时序方向被否；V004 残差不可从测量偏差中分离，没有 `LOCAL_ACCEPTED` | ONLINE_NOT_REQUIRED |
+| MULTIROW-DMA-CHAMPION-X | V001–V002 | **D + C** | V001 `LOCAL_REJECTED`；V002 terminal `NEEDS_ONE_MORE_LOCAL`，组合差异处于噪声内，没有 `LOCAL_ACCEPTED` | ONLINE_NOT_REQUIRED |
+| ASYNC-OVERLAP-CHAMPION-X | V001 | **已闭环** | 一个合格计时形状加辅助方向证据触发 Online；Official `44.17`、`15/15 PASS`，低于 `45.16`，结果为 `REJECT` | ONLINE_CLOSED |
 
 **CALIBRATION_SUBMISSION_RECOMMENDATION = NONE**
 
 理由：本 wave 无「本地信号弱但校准价值极高且尚未有 Official」的候选。ASYNC 已提供 FP 样本；COEFF/REDUCE/VECTOR/MULTIROW 均为证伪或噪声，强行提交只消耗 Online 名额、不增加 evaluator 可分性。历史 FN 样本（COEFF V001）已在校准表。
 
-**UNKNOWN = 0**
+```text
+UNKNOWN_SCOPE=MAIN-2 R2 四条未闭环 lane
+UNKNOWN_COUNT=0
+```
+历史总账中的其他 `UNKNOWN` 文本不纳入本表统计。
 
 ---
 
 ## 5. 本整改轮 MAIN-2 动作清单
 
 1. 本文件（COMPLIANCE-REVIEW.md）
-2. ASYNC V001 Online 闭环一致性核验
+2. ASYNC-OVERLAP-CHAMPION-X V001 Online 闭环一致性核验
 3. Online gap 分类（上表）
 4. Canonical consolidation（Main-2 事实并入 `main`）
 5. 不开 wave-2、不建新 Revision、不改 Planning 生命周期
@@ -157,28 +174,23 @@ Step 3  commit: revert(X): restore LOCAL_BEST after V00N rejection
 |---|---|---|
 | historical_missing_reverts | 1 | MULTIROW V001 |
 | child_preapproval_violations | 0 | — |
-| results_not_in_canonical | 1（结构） | wave-1 事实尚在 main2 branch |
+| results_not_in_canonical | 1（MAIN-1 EPI V002） | Main-2 wave-1 事实已进入 `origin/main`；MAIN-1 EPI V002 待 Consolidation Owner |
 | shared_ledger_divergence | 1（结构） | main1/main2 各自增量，本轮收口 |
 
-## 7. Canonical consolidation 状态（2026-09-29）
+## 7. Canonical consolidation 状态（AS_OF=2026-09-29）
 
-| 步骤 | 状态 |
+截至本文件记录时，Main-2 事实已进入 `origin/main`；MAIN-1 EPI V002 待 Consolidation Owner 收入 canonical。该状态不改变路线生命周期。
+
+| 事项 | 当前状态 |
 |---|---|
-| Main-2 wave-1 事实并入 origin/main | **DONE**（fast-forward to `247f268a`，已 push） |
-| ASYNC V001 Online package / result / ledger / calibration 上 canonical | **DONE** |
-| Main-1 Local facts / Online packages 并入 | **BLOCKED** — merge `origin/main1/champion-exploit` 在 `全版本记录.tsv` / `路线成绩表.tsv` 冲突 |
-| 冲突处置 | 已 `merge --abort`；按纪律交还分支所有者；已 async 通知 MAIN-1 rebase 到 `247f268a` 并自解冲突 |
-| 每个 Main-1 Online 返回后的独立 canonical commit | 待 Main-1 |
+| Main-2 wave-1 事实（含 ASYNC V001 Online package / result / ledger / calibration） | **IN_CANONICAL=YES** |
+| MAIN-1 EPI V002 | **PENDING_CONSOLIDATION_OWNER** |
+| 含 MAIN-1 EPI V002 的完整 canonical 集合 | **CANONICAL_CONSOLIDATED=NO** |
 
-CANONICAL_CONSOLIDATED（Main-2 部分）= YES  
-CANONICAL_CONSOLIDATED（含 Main-1）= NO（待 rebase）
+### 7.1 历史整合记录
 
-### 7.1 冲突归属（2026-09-29 第二轮）
+- `247f268a`：Main-2 wave-1 初次收口阶段记录。
+- `8162dfaa`：第二轮冲突处置阶段记录。
+- `244a0bb3`：Main-1 TSV 行级语义映射阶段记录。
 
-MAIN-1 请求 Consolidation Owner 代解共享 TSV 冲突。按会话冲突归属规则：**merge 冲突归被整合分支所有者**；工具层禁止第三方改 conflict marker。已两次 `merge --abort`，canonical 保持 `8162dfaa`。已通知 MAIN-1 在 `main1/champion-exploit` 自行 rebase/merge 并解三个 TSV（`全版本记录.tsv` / `路线成绩表.tsv` / `本地线上校准.tsv`），只保留双方各自 Route 行。
-
-MAIN-1 已报 R31B V017 Official 44.37（15/15，−0.79 vs 45.16，identity PASS，LOCAL_ONLINE_FALSE_POSITIVE）。其分支 tip 已含 `65245bc4` / `d69b7011`。
-
-### 7.2 行级整合完成（2026-09-29）
-
-MAIN-1 分支 TSV 为 11 列紧凑行（与 49 列表头不对齐）。Consolidation Owner 采用**行级语义映射**并入 canonical（`244a0bb3`），未改 main1 分支、未解其 merge 冲突。R31B V017 / R31A V028 已按 FALSE_POSITIVE 入校准。
+以上提交号只作历史记录说明，不作为当前 canonical 状态指针；当前状态以本节 `AS_OF` 及 `origin/main` 为准。
