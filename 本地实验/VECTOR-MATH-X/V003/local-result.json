@@ -1,0 +1,82 @@
+{
+  "ROUTE": "VECTOR-MATH-X",
+  "REVISION": "V003",
+  "SINGLE_HYPOTHESIS": "SEQ-FUSE-2 (VMX-N1): denominator-tail placement — scalar handoff chain -> pure-V chain (Muls+Adds+Sqrt+Div reciprocal) + broadcast apply",
+  "DIRECT_PARENT": "FROZEN_R31B_V011",
+  "PARENT_SOURCE_SHA": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "PARENT_SCORE": "45.16",
+  "OFFICIAL_ANCHOR": "45.16",
+  "SOURCE_SHA": "f019d099973b8ab4df07741b494376d9807a6d6a0b1686cfc0aca63ee4245bc8",
+  "BUILD": {
+    "host": "cann-server3",
+    "workspace": "/home/data4t2/lelinfeng/phase4-workspaces/VECTOR-MATH-X-V003",
+    "compile_rc": 0,
+    "link_rc": 0,
+    "link_executable_sha": "89d6944873385d38064476d6f2d707f2ef8690c80b51c52fa41970a2e82317a4",
+    "probe_executable_sha": "a5604147fa8be5ded1f6ead1dcae6d06bc1291b6226759a7b9915c5922547d4a",
+    "timing_runner_sha": "e88bf755200f8f7ffe10af160e34bbd289dfc7941a8f03ce2bb010fd67acc3f7"
+  },
+  "CORRECTNESS": {
+    "device": "server3 d5",
+    "total_cases": 54,
+    "passed": 53,
+    "failed": 1,
+    "failed_case": "dtype=0 rows=2 D=16384 resident_wide_colsplit bad=25595 max_abs=0.44175",
+    "failed_case_class": "PRE_EXISTING_PARENT_FAILURE",
+    "parent_evidence": "V002 same case FAIL bad=24441 max_abs=0.44175 (VECTOR-MATH-X/correctness5.log) — registry: frozen parent already fails local-runner goldens on wide FP32 D=16384/32768",
+    "probe_matrix": "18 shapes x 3 dtypes (FP32/FP16/BF16)"
+  },
+  "DIV_CONSTRAINT_COMPLIANCE": {
+    "form": "Div(dst, ones, denom, 8) three distinct 32B-aligned slots",
+    "onesSlot_init": "Duplicate(ones8, 1.0f, 8) once per core (host constant, no pull)",
+    "dst_aliasing": "dst distinct from both sources — never dst==src1",
+    "alignment": "all slot offsets multiples of 8 floats (32B)",
+    "probe_ref": "DIV-FEASIBILITY-PROBE.md P1/P4/P5 max_ulp=0.000"
+  },
+  "SINGLE_CHANGE_AUDIT": {
+    "status": "PASS",
+    "mechanism": "denominator-tail placement only",
+    "changed": "12 live tail sites -> SeqFuseTail/SeqFuseApply (pure-V chain + broadcast apply)",
+    "untouched": "reduction topology / store / DMA / row scheduling / tiling / dtype specialization",
+    "div_precision": "exact IEEE (probe 0 ulp) — no fast-approx op"
+  },
+  "MEASUREMENT": {
+    "method": "DEVICE_EVENT_PRIMARY+HOST_WALL_SECONDARY, warmup=45, samples=41, blocks=2, interleaved P/C 6 pairs",
+    "samebinary_policy": "MAD/median <= 0.10 AND |B1-B2|/med <= 0.10 (protocol unchanged)",
+    "S1_band_formal": {
+      "shapes": ["768x256", "1024x256", "512x512", "1024x128", "768x128", "2048x64"],
+      "kernel_length_us": "9.7-14.5 (all >= protocol-sensitive 5-6us band)",
+      "samebinary_verdict": "PASS all 6 (MAD/med 0.013-0.044, drift 0.001-0.019)",
+      "paired_median_delta_pct": {
+        "768x256": "+0.988 (favorC 1/6)",
+        "1024x256": "+7.562 (favorC 2/6)",
+        "512x512": "+1.303 (favorC 2/6)",
+        "1024x128": "-0.676 (favorC 4/6)",
+        "768x128": "-0.195 (favorC 4/6)",
+        "2048x64": "+1.990 (favorC 2/6)"
+      },
+      "interpretation": "direction mixed, all |median| < 8%, no shape-class consistency"
+    },
+    "DIR_band_directional_only": {
+      "note": "5-6us kernels — same-binary borderline/FAIL per SHORT-KERNEL-MEASUREMENT-NOTE, recorded as directional evidence only, never LOCAL_BEST",
+      "paired_median_delta_pct": {
+        "16x2048": "-4.03 (favorC 6/6, same-binary MAD/med 0.127 FAIL)",
+        "8x1024": "-1.02 (favorC 5/6)",
+        "4x2048": "-5.12 (favorC 4/6, high pair variance)"
+      }
+    },
+    "CTRL_shape": {
+      "1x32768": "same-binary PASS (MAD/med 0.025), paired med +3.3% — no regression signal, tail amortized as expected"
+    },
+    "S3_microprobe": "NOT_RUN this cycle — see handoff for recommendation"
+  },
+  "LOCAL_VERDICT": "NEEDS_ONE_MORE_LOCAL",
+  "VERDICT_REASON": "Correctness 53/54 (1 PRE_EXISTING_PARENT_FAILURE shared with parent). S1 lengthened band (6 shapes, all same-binary PASS) shows mixed direction: 2 shapes favor C (-0.2%/-0.7%), 4 shapes favor P (+1.0% to +7.6%); all medians within noise band with no shape-class consistency. Short-kernel DIR band shows favorable direction (16x2048 6/6 -4.0%) but is not admissible per measurement boundary. No stable improvement AND no stable regression -> NEEDS_ONE_MORE_LOCAL. NOT LOCAL_ACCEPTED (no consistent win), NOT LOCAL_REJECTED (no consistent degradation).",
+  "ONLINE_WORTHY": "NO",
+  "NEXT_ACTIONS": [
+    "S3 tail-cost micro-probe to get mechanism upper bound (does the pure-V tail actually save time per row on dav-c220?)",
+    "If micro-probe shows near-zero per-row saving, the tail is not binding at these lengths -> close the line per STOP_CONDITION 3",
+    "If micro-probe shows real saving, re-examine apply cost: Form A Level-0 broadcast Mul may be slower than scalar Muls on this HW — a Form B (1-pull + Muls) A/B would isolate apply cost within the same fused tail",
+    "Do not push to LOCAL_BEST from DIR-band data"
+  ]
+}
