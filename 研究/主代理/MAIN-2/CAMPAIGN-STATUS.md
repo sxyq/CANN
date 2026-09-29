@@ -78,3 +78,26 @@
 - canonical merge 完成，HEAD `7fd752f7`。
 - 5 worktree 创建并 push。
 - 5 child 已 spawn（general-1..5），第一阶段任务均为只读研究 + hypothesis package handoff，等待 MAIN-2 批准后才写 Kernel。
+
+### 2026-09-28/29 · first implementation wave
+
+| Lane | Revs closed | 最佳 | 状态 |
+|---|---|---|---|
+| M2-1 REDUCE-HIER-X | V004 LOCAL_REJECTED, V005 LOCAL_REJECTED | Official 44.24 (V003) | **LANE_NEEDS_PLANNING_REVIEW**（五变体全伪） |
+| M2-2 VECTOR-MATH-X | V003 实现中（SEQ-FUSE-2） | Official 44.22 (V001) | active |
+| M2-3 COEFF-LOCALITY-X | V003 LOCAL_REJECTED, V004 NEEDS_ONE_MORE_LOCAL | Official 44.16 (V001) | **LANE_NEEDS_PLANNING_REVIEW**（四维探尽） |
+| M2-4 ASYNC-OVERLAP-CHAMPION-X | V001 LOCAL_ACCEPTED→Official 44.17 REJECT; V002–V004 mixed | LOCAL_BEST=V001 | **LANE_NEEDS_PLANNING_REVIEW** |
+| M2-5 MULTIROW-DMA-CHAMPION-X | V001 LOCAL_REJECTED, V002 NEEDS_ONE_MORE_LOCAL 终局 | none | **LANE_NEEDS_PLANNING_REVIEW**（等 C2 裁定） |
+
+Online：ASYNC V001 一次正式提交（6abae4a0，Pass 15/15，44.17，REJECT vs 45.16）。
+
+关键发现：
+- 归约轴五变体全伪；父版 ReduceSum 接近最优。
+- param MTE2 时序在常量 tileElems 下证伪。
+- 命令计数与指令形态均非 DMA 主导成本。
+- NarrowMid 调度类改动天花板（每行 squareSum 读取硬下限）。
+- **测量装置 candidate 侧偏置 ~2.8%**；p10 在带载窗口对小信号乐观偏置。
+- vcadd mode=0 输出粒度为每 64 FP32 一个和。
+- DataCopyParams.blockLen 为 32B 单位。
+
+Planning 待裁：C2 三选项、UB-GAP-CLUE、四条 lane 生命周期、W3 vs STORE-EPILOGUE 划界、null-binary 对照授权、Official case shape map。
