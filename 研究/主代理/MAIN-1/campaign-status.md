@@ -95,3 +95,4 @@
 | 2026-09-29 | R31A Track-B v3: H9 barrier-redundancy selected for V028 |
 | 2026-09-29 | **R31A V028 LOCAL_ACCEPTED** batch -1.09%; barrier non-load-bearing finding; V028 superset of V026; ONLINE WORTHY final |
 | 2026-09-29 | R31A lane closing: LANE_NEEDS_PLANNING_REVIEW after V028 |
+| 2026-09-29 | R31A final handoff + LANE_NEEDS_PLANNING_REVIEW; two lanes now await Planning (R31A, TILING) |
