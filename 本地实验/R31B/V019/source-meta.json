@@ -1,0 +1,14 @@
+{
+  "ROUTE": "R31B",
+  "REVISION": "V019",
+  "DIRECT_PARENT": "R31B-V017",
+  "PARENT_SOURCE_SHA": "7c168eafde4c07d2a0667253a06925070e10349ccf08327a1b287302788180c4",
+  "PARENT_SCORE": "LOCAL bf16-wide-d32768 -14.3% + fp16-wide-d32768 -6.7/-8.5% (V017 vs V016); Official anchor 45.16 (V011)",
+  "SINGLE_HYPOTHESIS": "H3 delete redundant SyncVToMTE2 in ProcessWideLowPrecision: (a) the per-(tile,row) V->MTE2 full-sync before Store in pass-2 (Store reads outputBuf_ via MTE3; param staging reuse is ordered by the prel0/prel1 V_MTE2 events), and (b) the pass-1 -> pass-2 boundary V->MTE2 full-sync (rel0/rel1 already drain pass-1 staging; the invRms tail writes only FP32 buffers). SyncVToMTE3 and all event ID logic are kept.",
+  "CONTEXT_CLASS": "HISTORICAL_EXPLOIT",
+  "WHY_NOT_DUPLICATE": "see 研究/R31B/next-hypotheses.md H3. V017 changed the MTE3 drain point (store pipeline); this removes V->MTE2 full-syncs (sync count). V018 (H2) deleted a pass-1 V op copy and is NOT in this lineage (DIRECT_PARENT=V017). R31A V-Scalar round-trip saving is a different pipe pair. V009 added MTE2 queue depth (opposite direction). H6 (store-front PipeBarrier deletion) is mutually exclusive with H3 and is not included.",
+  "EXPECTED_SHAPES": "FP16/BF16 rows=2 D=12288/16384/32768 (change site is ProcessWideLowPrecision, the non-FP32 wide path); non-wide D=8192 and FP32 paths unchanged, expect |delta| in blank-control band",
+  "EXPECTED_RISK": "0.2-0.8us/row-batch predicted (full-sync cost not calibrated by the V028 barrier-only work; band deliberately kept wide). >1.5us would be suspicious (would mean more than the redundant sync was removed). If correctness fails, the syncs were load-bearing: record ARCHITECTURE_FINDING and do not patch around it.",
+  "DECLARED_AT": "2026-09-29 (before code change)",
+  "MAIN_SELECTION": "MAIN-1 2026-09-29 SELECTION message after V018: H3 selected for V019; H3/H6 mutually exclusive (H3 only); parent module rebuild to V017 required; full-sync cost must not be extrapolated from the 0.01us/barrier figure"
+}

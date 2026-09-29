@@ -1,0 +1,22 @@
+--- phase4/local/R31B/V017/submission.asc
++++ phase4/local/R31B/V019/R31B-V019-DROP-SYNC-V-MTE2_kernel.asc
+@@ -3243,7 +3243,8 @@
+                 invRmsValues[batchRow] = 1.0f / xFp32.GetValue(0);
+                 SyncSToV();
+             }
+-            SyncVToMTE2();
++            // V019 H3: rel0/rel1 already drain pass-1 staging; the invRms
++            // tail writes only FP32 buffers, so this V->MTE2 round is redundant.
+ 
+             // Pass 2: one gamma/bias tile serves the whole retained batch.
+             // V011: 2-deep param MTE2 (next tile loads during this tile's apply).
+@@ -3356,7 +3357,8 @@
+                         FromFloat(outputLocal, valueTile, valid);
+                     }
+                     AscendC::PipeBarrier<PIPE_V>();
+-                    SyncVToMTE2();
++                    // V019 H3: Store reads outputBuf_ via MTE3; param staging
++                    // reuse is ordered by prel0/prel1. V->MTE2 is redundant.
+                     SyncVToMTE3();
+                     Store(outputGm_,
+                           (batchBegin + static_cast<uint64_t>(batchRow)) * rowWidth + col,
