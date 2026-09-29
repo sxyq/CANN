@@ -1,0 +1,66 @@
+--- phase4/local/R31B/V016/submission.asc
++++ phase4/local/R31B/V017/R31B-V017-STORE-DRAIN-DEFER_kernel.asc
+@@ -3260,6 +3260,15 @@
+             AscendC::LocalTensor<T> bBase = residualBuf_.Get<T>();
+             bool pRelA = false;
+             bool pRelB = false;
++            // V017 H1: defer the MTE3 completion drain.  Store completion is
++            // tracked with one MTE3_V event; the wait fires only before
++            // outputBuf_ is written again, so the in-flight store overlaps the
++            // next unit's epilogue prefix (param wait, widen, invRms Muls).
++            // outputBuf_ holds one staging tile, so at most one store is in
++            // flight; the event pair is allocated per pass-2 block like V006.
++            const AscendC::TEventID storeRelease =
++                pipe_.AllocEventID<AscendC::HardEvent::MTE3_V>();
++            bool storeOutstanding = false;
+             if (tileCount > 0) {
+                 Load(gBase, gammaGm_, 0, tileWidth < static_cast<int32_t>(rowWidth)
+                     ? tileWidth : static_cast<int32_t>(rowWidth));
+@@ -3322,6 +3331,10 @@
+                         AscendC::PipeBarrier<PIPE_V>();
+                         AscendC::Muls(valueFp32, valueFp32, invRmsValues[batchRow], valid);
+                         AscendC::PipeBarrier<PIPE_V>();
++                        if (storeOutstanding) {
++                            AscendC::WaitFlag<AscendC::HardEvent::MTE3_V>(storeRelease);
++                            storeOutstanding = false;
++                        }
+                         FromFloat(outputLocal, valueFp32, valid);
+                         AscendC::PipeBarrier<PIPE_V>();
+                         AscendC::Mul(outputLocal, outputLocal, gammaLocal, valid);
+@@ -3336,6 +3349,10 @@
+                         AscendC::PipeBarrier<PIPE_V>();
+                         AscendC::Add(valueTile, valueTile, residualFp32, valid);
+                         AscendC::PipeBarrier<PIPE_V>();
++                        if (storeOutstanding) {
++                            AscendC::WaitFlag<AscendC::HardEvent::MTE3_V>(storeRelease);
++                            storeOutstanding = false;
++                        }
+                         FromFloat(outputLocal, valueTile, valid);
+                     }
+                     AscendC::PipeBarrier<PIPE_V>();
+@@ -3344,7 +3361,8 @@
+                     Store(outputGm_,
+                           (batchBegin + static_cast<uint64_t>(batchRow)) * rowWidth + col,
+                           outputLocal, valid);
+-                    SyncMTE3ToV();
++                    AscendC::SetFlag<AscendC::HardEvent::MTE3_V>(storeRelease);
++                    storeOutstanding = true;
+                 }
+                 AscendC::SetFlag<AscendC::HardEvent::V_MTE2>(prel);
+                 if (useA) {
+@@ -3359,10 +3377,15 @@
+             if (pRelB) {
+                 AscendC::WaitFlag<AscendC::HardEvent::V_MTE2>(prel1);
+             }
++            if (storeOutstanding) {
++                AscendC::WaitFlag<AscendC::HardEvent::MTE3_V>(storeRelease);
++                storeOutstanding = false;
++            }
+             pipe_.ReleaseEventID<AscendC::HardEvent::MTE2_V>(prd0);
+             pipe_.ReleaseEventID<AscendC::HardEvent::MTE2_V>(prd1);
+             pipe_.ReleaseEventID<AscendC::HardEvent::V_MTE2>(prel0);
+             pipe_.ReleaseEventID<AscendC::HardEvent::V_MTE2>(prel1);
++            pipe_.ReleaseEventID<AscendC::HardEvent::MTE3_V>(storeRelease);
+             }
+         }
+     }
