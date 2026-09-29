@@ -1,0 +1,156 @@
+{
+  "ROUTE": "R31B",
+  "REVISION": "V019",
+  "DIRECT_PARENT": "R31B-V017",
+  "PARENT_SOURCE_SHA": "7c168eafde4c07d2a0667253a06925070e10349ccf08327a1b287302788180c4",
+  "PARENT_SCORE": "LOCAL bf16-wide-d32768 -14.3% + fp16-wide-d32768 -6.7/-8.5% (V017 vs V016); Official anchor 45.16 (V011)",
+  "SOURCE_SHA": "ce5329da0976d5aac783eb51019a638dd8220dbf296601cba08d3391a53cc077",
+  "SINGLE_HYPOTHESIS": "H3 delete redundant SyncVToMTE2 in ProcessWideLowPrecision: (a) the per-(tile,row) V->MTE2 full-sync before Store in pass-2, (b) the pass-1 -> pass-2 boundary V->MTE2 full-sync. SyncVToMTE3 and all event ID logic kept. H6 (store-front PipeBarrier deletion) deliberately NOT included (mutually exclusive).",
+  "CONTEXT_CLASS": "HISTORICAL_EXPLOIT",
+  "WHY_NOT_DUPLICATE": "V017 changed the MTE3 drain point (store pipeline timing); this removes V->MTE2 full-syncs (sync count). V018 (H2) deleted a pass-1 V op copy and is NOT in this lineage (DIRECT_PARENT=V017, not V018). R31A V-Scalar round-trip saving is a different pipe pair. V009 added MTE2 queue depth (opposite direction, FP32 site).",
+  "BUILD": "PASS",
+  "BUILD_DETAIL": "server3 exact-source build. Submission module: cmake configure RC=0, make device/submission/full_link RC=0. device.alink=e62cbf2e2bcae60d428fe5effbc126613d56f18d8e65727c4cf57bcf6dec8637, submission.alink=9986fd4816ac1245d6e7bfba1f3851aa2219f47ecb2845d45dd67faf0f08f354. Paired runner rebuilt as paired_runner_v019 (parent=V017 kernel / candidate=V019 kernel namespaces; sha 42f067e96732c7e0286ed062d23829890e9631ebff5a371c547d93650beec900). V018 build fixes carried over: CMAKE_ASC_COMPILER forced to 8.5.0.alpha002/.../bisheng, CPLUS_INCLUDE_PATH=/usr/include/c++/11:... for the nested host compile, LD_LIBRARY_PATH=/usr/lib/aarch64-linux-gnu first at runtime. Kernel source SHA on server3 == local submission.asc SHA (verified pre-build and pre-run).",
+  "BUILD_RC": 0,
+  "BUILD_ARTIFACT_SHA256": {
+    "device.alink": "e62cbf2e2bcae60d428fe5effbc126613d56f18d8e65727c4cf57bcf6dec8637",
+    "submission.alink": "9986fd4816ac1245d6e7bfba1f3851aa2219f47ecb2845d45dd67faf0f08f354",
+    "paired_runner_v019": "42f067e96732c7e0286ed062d23829890e9631ebff5a371c547d93650beec900",
+    "kernel_source": "ce5329da0976d5aac783eb51019a638dd8220dbf296601cba08d3391a53cc077"
+  },
+  "CORRECTNESS": "PASS",
+  "CORRECTNESS_DETAIL": "Paired-runner CheckOutput passes BOTH binaries (PARENT_V017 and CAND_V019) on all 6 shapes in both attempts (12/12 PASS per attempt, failures=0). FP16 max_abs=0.0009765625 (tail/ctrl) and 0.001953125 (wide-d32768); BF16 max_abs=0.0078125; parent and candidate report identical max_abs/max_rel per shape. BITWISE parent-vs-candidate: all 6 shapes in both attempts report IDENTICAL diff_elements=0 (12/12). CONCLUSION: the two deleted SyncVToMTE2 calls were NOT load-bearing for correctness - the rel0/rel1 (pass-1 staging release) and prel0/prel1 (pass-2 param staging release) events do cover the actual UB reuse ordering. No ARCHITECTURE_FINDING needed.",
+  "EXECUTABLE_IDENTITY": "PASS",
+  "EXECUTABLE_SHA256": {
+    "paired_runner_v019": "42f067e96732c7e0286ed062d23829890e9631ebff5a371c547d93650beec900",
+    "parent_kernel_R31B-V017": "7c168eafde4c07d2a0667253a06925070e10349ccf08327a1b287302788180c4",
+    "candidate_kernel_R31B-V019": "ce5329da0976d5aac783eb51019a638dd8220dbf296601cba08d3391a53cc077"
+  },
+  "SAME_BINARY": "PASS",
+  "SAME_BINARY_DETAIL": "Parent-only same-binary (PARENT_V017 = DIRECT_PARENT V017 kernel) on all 6 shapes before any P/C (warmup=45, 2 blocks x 31 samples, device-event primary) on d5: all PASS, MAD/median <= 0.057, block drift <= 0.028.",
+  "SAME_BINARY_ROWS": [
+    {"shape": "fp16-tail-d12288", "result": "PASS", "median_us": 5.830, "mad_over_median": 0.05489, "block_drift": 0.01029},
+    {"shape": "fp16-wide-d32768", "result": "PASS", "median_us": 8.770, "mad_over_median": 0.03193, "block_drift": 0.02737},
+    {"shape": "bf16-tail-d12288", "result": "PASS", "median_us": 6.470, "mad_over_median": 0.03555, "block_drift": 0.00309},
+    {"shape": "bf16-wide-d32768", "result": "PASS", "median_us": 12.140, "mad_over_median": 0.02142, "block_drift": 0.00659},
+    {"shape": "fp16-ctrl-d8192", "result": "PASS", "median_us": 5.150, "mad_over_median": 0.05631, "block_drift": 0.00388},
+    {"shape": "bf16-ctrl-d8192", "result": "PASS", "median_us": 5.640, "mad_over_median": 0.03723, "block_drift": 0.00000}
+  ],
+  "TIMING": "VALID_DEVICE_EVENT_PRIMARY",
+  "TIMING_DETAIL": "Two independent interleaved P/C attempts (21 pairs per shape per attempt, warmup=45, device_us primary / wall_us diagnostic), same runner, parent=V017 kernel / candidate=V019 kernel, device=5.",
+  "TIMING_ATTEMPTS": [
+    {
+      "attempt_id": "R31B-V019-D5-PERF-20260929-a1",
+      "device": 5,
+      "paired_delta_median_us": {
+        "fp16-tail-d12288": 0.140,
+        "fp16-wide-d32768": -0.120,
+        "bf16-tail-d12288": -0.360,
+        "bf16-wide-d32768": -0.020,
+        "fp16-ctrl-d8192": -0.060,
+        "bf16-ctrl-d8192": -0.060
+      },
+      "parent_median_us": {
+        "fp16-tail-d12288": 15.300,
+        "fp16-wide-d32768": 9.620,
+        "bf16-tail-d12288": 6.840,
+        "bf16-wide-d32768": 12.140,
+        "fp16-ctrl-d8192": 5.120,
+        "bf16-ctrl-d8192": 5.720
+      },
+      "clean_neg_ratio": {
+        "fp16-tail-d12288": "3/5",
+        "fp16-wide-d32768": "8/15",
+        "bf16-tail-d12288": "11/15",
+        "bf16-wide-d32768": "7/16",
+        "fp16-ctrl-d8192": "8/16",
+        "bf16-ctrl-d8192": "11/21"
+      },
+      "note": "fp16-tail parent_median 15.30us is inflated vs same-binary 5.83us (spike contamination in the parent half of the block); paired median remains the pre-registered statistic"
+    },
+    {
+      "attempt_id": "R31B-V019-D5-PERF-20260929-a2",
+      "device": 5,
+      "paired_delta_median_us": {
+        "fp16-tail-d12288": 0.100,
+        "fp16-wide-d32768": 0.100,
+        "bf16-tail-d12288": -0.040,
+        "bf16-wide-d32768": -0.200,
+        "fp16-ctrl-d8192": 0.120,
+        "bf16-ctrl-d8192": 0.140
+      },
+      "parent_median_us": {
+        "fp16-tail-d12288": 5.900,
+        "fp16-wide-d32768": 8.960,
+        "bf16-tail-d12288": 6.700,
+        "bf16-wide-d32768": 13.340,
+        "fp16-ctrl-d8192": 5.140,
+        "bf16-ctrl-d8192": 5.560
+      },
+      "clean_neg_ratio": {
+        "fp16-tail-d12288": "6/16",
+        "fp16-wide-d32768": "7/16",
+        "bf16-tail-d12288": "11/18",
+        "bf16-wide-d32768": "4/9",
+        "fp16-ctrl-d8192": "8/20",
+        "bf16-ctrl-d8192": "8/16"
+      }
+    }
+  ],
+  "TWO_GATE_JUDGEMENT": {
+    "gate1_noise_band": {
+      "result": "FAIL",
+      "blank_control_band_this_round": "|median| <= 0.14us (max among non-wide D=8192 paired-delta medians across both attempts)",
+      "change_domain_deltas": "fp16-tail +0.14/+0.10; fp16-wide -0.12/+0.10; bf16-tail -0.36/-0.04; bf16-wide -0.02/-0.20",
+      "note": "H3 change site is ProcessWideLowPrecision, so all four wide shapes (FP16/BF16 x tail/wide) are in the change domain. The two largest |median| values (bf16-tail a1 -0.36, bf16-wide a2 -0.20) exceed the control band but are NOT reproduced in the paired attempt of the same shape (-0.04 and -0.02). FP16 shapes trend positive (wrong direction for a deletion hypothesis) in both attempts but at control-band magnitude. No consistent change-domain signal."
+    },
+    "gate2_magnitude": {
+      "result": "FAIL",
+      "predicted_us_per_row_batch": "0.2-0.8 (full-sync removal; band deliberately wide because SyncVToMTE2 is a SetFlag+WaitFlag pair and is NOT priced by the 0.01us/barrier figure)",
+      "observed_us_per_row_batch": "-0.36 to +0.14, reproducible component ~0.0-0.15",
+      "note": "the reproducible component is at or below the predicted lower bound and of mixed sign. Per H3's own pre-registration, >1.5us would have been suspicious; the observed ~0 result instead says these two full-sync sites are not on the critical path at these sizes."
+    },
+    "overlaid_risk_check": "No shape shows a stable regression (fp16-tail +0.10/+0.14 equals the control-band max and matches what unchanged code shows on fp16-ctrl/bf16-ctrl a2). Outputs bit-identical, so no arithmetic effect can be hiding here."
+  },
+  "LOCAL_DELTA_SUMMARY": {
+    "fp16-tail-d12288": "+0.14 / +0.10 us (a1/a2) — change domain, in band, wrong direction for a deletion hypothesis but at control magnitude",
+    "fp16-wide-d32768": "-0.12 / +0.10 us — change domain, sign flips, in band",
+    "bf16-tail-d12288": "-0.36 / -0.04 us — change domain, a1 exceeds band but not reproduced",
+    "bf16-wide-d32768": "-0.02 / -0.20 us — change domain, a2 exceeds band but not reproduced",
+    "fp16-ctrl-d8192": "-0.06 / +0.12 us — blank control (non-wide), defines the band",
+    "bf16-ctrl-d8192": "-0.06 / +0.14 us — blank control (non-wide), defines the band"
+  },
+  "NOISE": "blank-control band |median| <= 0.14us this round (d5); same-binary MAD/median <= 0.057; paired delta MAD 0.14-72.14us with occasional single-sample device-event spikes (min -185us / max +236us classes); medians and clean-pair (both device_us < 20us) ratios robust; spikes retained in raw logs. Blocks with MAD > 0.25us (fp16-tail a1 72.14, fp16-wide a1 0.58, bf16-tail a1 0.48, bf16-wide a2 7.14, several controls) are contamination-affected and are not used for any strong claim; the primary statistics remain the pre-registered medians over all 21 pairs, which are spike-robust.",
+  "PAIR_COUNT": "21 interleaved P/C pairs per shape per attempt x 2 attempts (42 pairs/shape total); 1 block per attempt layout (V016/V017-accepted layout), direction stability by 2 independent attempts. 4-block x 11 layout still MISSING.",
+  "LOAD_QUALITY": "d5, HBM 59899-59903/65536 (~91.5%, <100%) pre/post, AICore 0%, VLLMWorker_TP resident observational only. d4 was not used (V018 round recorded active VLLMEngineCor inference there). d6 left untouched. Lease rows for this run not appended to 调度/服务器设备使用.tsv by this lane (shared file under MAIN-1 ownership per lane boundary) - request MAIN-1 to log lease_id R31B-V019-D5-PERF-20260929 retroactively; device snapshots retained.",
+  "LOCAL_VERDICT": "NEEDS_ONE_MORE_LOCAL",
+  "LOCAL_VERDICT_BASIS": "Both pre-registered gates fail: (1) change-domain deltas are mixed-sign and the only two values exceeding the blank-control band are not reproduced in the paired attempt of the same shape; (2) the reproducible component (~0.0-0.15us) is at or below the predicted 0.2-0.8us band. Not LOCAL_REJECTED (no stable regression; nothing exceeds control-band magnitude reproducibly). Not LOCAL_ACCEPTED (no consistent improvement beyond noise). NEEDS_ONE_MORE_LOCAL per 'direction mixed / differences fall within the noise band'. A third paired attempt is unlikely to change the verdict given 42 pairs across 2 independent attempts already in band.",
+  "LOCAL_BEST_UPDATED": false,
+  "LOCAL_BEST_NOTE": "LOCAL_BEST remains R31B-V017. V019 does not advance the Local Best chain (V011 -> V016 -> V017).",
+  "ONLINE_WORTHY": "NOT_APPLICABLE (LOCAL_VERDICT != LOCAL_ACCEPTED; Main keeps ONLINE_RECOMMENDATION authority for the V016+V017 chain per prior trigger-condition-B note)",
+  "MISSING_EVIDENCE": {
+    "four_block_paired_layout": "MISSING (V016-accepted 1-block x 21 pairs layout used again; 4-block x 11 still not run)",
+    "fp32_wide_empirical_control": "MISSING (FP32 wide path not instantiated from ProcessWideLowPrecision)",
+    "server3_lease_log": "MISSING (lane boundary: 调度/服务器设备使用.tsv is MAIN-1-owned; request retroactive lease_id R31B-V019-D5-PERF-20260929)",
+    "third_paired_attempt": "NOT RUN (judged unnecessary for the verdict; available if Main requests)",
+    "d16384_probe_shape": "NOT RUN (runner case list is 12288/32768/8192; D=16384 not in the inherited probe set)"
+  },
+  "WHY_IT_MAY_HELP_CONFIRMED": "Not confirmed as a speedup. What IS confirmed: the deleted syncs were redundant for correctness (bitwise IDENTICAL 12/12), so the rel0/rel1 and prel0/prel1 event coverage is complete. That is a useful architecture fact even without a perf win.",
+  "WHY_IT_MAY_FAIL_OBSERVED": "The pre-registered failure mode for H3 was 'the sync might be load-bearing for ordering'. That did NOT happen - correctness is clean. The actual outcome is the perf one: these two V->MTE2 full-sync sites are not on the critical path at rows=2, D=12288/32768, tile=8192. Combined with V018 (H2: deleting a full-tile V op + mid-chain barrier in the same function also measured ~0), two independent V-side removals in ProcessWideLowPrecision have both measured ~0. The evidence now points at the MTE2 load / reduce chain as the pace-setter for this path, exactly the failure mode H2's pre-registration named.",
+  "EVIDENCE": [
+    "本地实验/R31B/V019/submission.asc",
+    "本地实验/R31B/V019/submission.sha256",
+    "本地实验/R31B/V019/diff.patch",
+    "本地实验/R31B/V019/source-meta.json",
+    "本地实验/R31B/V019/support/results/submission-configure.log",
+    "本地实验/R31B/V019/support/results/submission-build.log",
+    "本地实验/R31B/V019/support/results/paired-runner-configure.log",
+    "本地实验/R31B/V019/support/results/paired-runner-build.log",
+    "本地实验/R31B/V019/support/results/qualify-parent.log",
+    "本地实验/R31B/V019/support/results/paired-a1.log",
+    "本地实验/R31B/V019/support/results/paired-a2.log",
+    "本地实验/R31B/V019/support/results/pre-snapshot.txt",
+    "本地实验/R31B/V019/support/results/post-snapshot.txt",
+    "server3:/home/data4t2/lelinfeng/phase4-review-repro/R31B-V019/"
+  ],
+  "DECISION": "NEEDS_ONE_MORE_LOCAL"
+}
