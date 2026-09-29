@@ -1,0 +1,14 @@
+{
+  "ROUTE": "R31B",
+  "REVISION": "V018",
+  "DIRECT_PARENT": "R31B-V017",
+  "PARENT_SOURCE_SHA": "7c168eafde4c07d2a0667253a06925070e10349ccf08327a1b287302788180c4",
+  "PARENT_SCORE": "LOCAL bf16-wide-d32768 -14.3% + fp16-wide-d32768 -6.7/-8.5% (V017 vs V016); Official anchor 45.16 (V011)",
+  "SINGLE_HYPOTHESIS": "H2 pass-1 retained-y direct write: in ProcessWideLowPrecision pass-1 FP16 branch, Add writes the retained y slot directly and the redundant Muls(xLocal, 1.0) copy plus its mid-chain PipeBarrier are deleted; subsequent ToFloat reads the y slot",
+  "CONTEXT_CLASS": "HISTORICAL_EXPLOIT",
+  "WHY_NOT_DUPLICATE": "see 研究/R31B/next-hypotheses.md H2; V002 is the full-y retention architecture (what is retained), this changes the write path into the retained slot; V011 is DMA-side MTE2 depth; V017 is store drain timing; V016 is tile width; R31A H2 is pass-2 invRms arithmetic position; not reduction (REDUCE-HIER refuted), not store granularity (STORE lane)",
+  "EXPECTED_SHAPES": "FP16 rows=2 D=12288/16384/32768 only (the FP16 pass-1 copy is the only site; BF16 pass-1 already writes valueTile directly); controls bf16 wide (identical path), non-wide D=8192, expect |delta| in blank-control band",
+  "EXPECTED_RISK": "0.3-1.0us/row-batch predicted (one mid-chain barrier + one full-tile Muls per unit); if measured at ~0.01us class then even mid-chain barriers are cheap and the calibration in next-hypotheses.md section 0.1 needs revision; bit-identical outputs expected (half*1.0 is exact)",
+  "DECLARED_AT": "2026-09-29 (before code change)",
+  "MAIN_SELECTION": "MAIN-1 2026-09-29 SELECTION message: H2 selected for V018; parent module rebuild to V017 required"
+}

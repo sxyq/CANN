@@ -1,0 +1,21 @@
+--- phase4/local/R31B/V017/submission.asc
++++ phase4/local/R31B/V018/R31B-V018-PASS1-Y-DIRECT_kernel.asc
+@@ -3180,11 +3180,14 @@
+                     AscendC::LocalTensor<half> yStore = gammaBuf_.Get<half>();
+                     AscendC::LocalTensor<half> yTile =
+                         yStore[batchRow * rowWidth + col];
+-                    AscendC::Add(xLocal, xLocal, residualLocal, valid);
+-                    AscendC::PipeBarrier<PIPE_V>();
+-                    AscendC::Muls(yTile, xLocal, half(1.0f), valid);
++                    // V018 H2: write the add result straight into the retained
++                    // y slot.  The old in-place add plus Muls(yTile, 1.0) copy
++                    // produced the same half bits (multiply by 1.0 is exact),
++                    // so this removes one full-tile vector op and one mid-chain
++                    // PipeBarrier per unit with bit-identical y.
++                    AscendC::Add(yTile, xLocal, residualLocal, valid);
+                     AscendC::PipeBarrier<PIPE_V>();
+-                    ToFloat(valueFp32, xLocal, valid);
++                    ToFloat(valueFp32, yTile, valid);
+                     AscendC::PipeBarrier<PIPE_V>();
+                     AscendC::Mul(xFp32, valueFp32, valueFp32, valid);
+                     AscendC::PipeBarrier<PIPE_V>();
