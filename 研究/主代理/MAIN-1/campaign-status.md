@@ -99,3 +99,4 @@
 | 2026-09-29 | R31B hypothesis pool updated with barrier calibration; H2 selected for V018 |
 | 2026-09-29 | Three active lane agents cancelled; replacement workers spawned (general-6/7/8) inheriting R31B V018, STORE V003, EPI V002 |
 | 2026-09-29 | R31B V018 NEEDS_ONE_MORE_LOCAL (H2 refuted: pass-1 not V-bound); H3 selected for V019 |
+| 2026-09-29 | EPI V002 EA-H2 strong signal -6.64% 6/6 (differential -19pp); same-binary blocked; clean remeasure directed; precision regression on golden-error shapes not blocking |
