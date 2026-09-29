@@ -101,3 +101,74 @@ Online：ASYNC V001 一次正式提交（6abae4a0，Pass 15/15，44.17，REJECT 
 - DataCopyParams.blockLen 为 32B 单位。
 
 Planning 待裁：C2 三选项、UB-GAP-CLUE、四条 lane 生命周期、W3 vs STORE-EPILOGUE 划界、null-binary 对照授权、Official case shape map。
+
+---
+
+## 8. 最终回执（2026-09-28/29 campaign wave-1）
+
+### HEAD
+
+| 项 | 值 |
+|---|---|
+| MAIN2_HEAD | `81429361c25867ff21aeb17bd7f29cc5746a5d73` |
+| REMOTE_HEAD | 同上（local == remote） |
+
+### 五条 Lane
+
+| Lane | closed | accepted | rejected | corr-fail | server best | online | official best | next | lane state |
+|---|---|---|---|---|---|---|---|---|---|
+| M2-1 REDUCE-HIER-X | 5 (V001–V005) | 0 | 2 (V002,V004,V005) | 0 | Official 44.24 V003 | 0 new | 44.24 | Planning | **LANE_NEEDS_PLANNING_REVIEW** |
+| M2-2 VECTOR-MATH-X | 3 (V001–V003)+S3 | 0 (V001 batched hist.) | 0 | 0 | Official 44.22 V001 | 0 new | 44.22 | Planning | **LANE_NEEDS_PLANNING_REVIEW**（SEQ-FUSE-2 轴关闭） |
+| M2-3 COEFF-LOCALITY-X | 4 (V001–V004) | 0 | 2 (V001,V003) | 0 | Official 44.16 V001 | 0 new | 44.16 | Planning | **LANE_NEEDS_PLANNING_REVIEW** |
+| M2-4 ASYNC-OVERLAP-CHAMPION-X | 4 (V001–V004) | 1 (V001) | 0 | 0 | LOCAL_BEST V001 | 1 (44.17 REJECT) | 44.17 | Planning | **LANE_NEEDS_PLANNING_REVIEW** |
+| M2-5 MULTIROW-DMA-CHAMPION-X | 2 (V001–V002) | 0 | 1 (V001) | 0 | none | 0 | none | Planning（C2） | **LANE_NEEDS_PLANNING_REVIEW** |
+
+### SERVER
+
+| 项 | 值 |
+|---|---|
+| max compile concurrency | 5 lanes 并行（每 lane 串行） |
+| max jobs/card | ≤1 性能任务/卡（正式测时） |
+| HBM block | 编译按 FREE_HBM≥100MB；未因 AICore/VLLM/d7 停编译 |
+| performance runs | REDUCE V004/V005、VECTOR V003+S3、COEFF V003/V004、ASYNC V001–V004、MULTIROW V001/V002 均完成配对或记 BLOCKED |
+
+### GIT
+
+| 项 | 值 |
+|---|---|
+| main2 commit count | 22（自 BASE 141a6549） |
+| lane push count | reduce 19 / vector 10 / coeff 11 / async 27 / multirow 21 |
+| revert count | 2 显式回退（REDUCE V004、V005 → FROZEN）；MULTIROW V001 回退 |
+
+### CALIBRATION
+
+| 项 | 值 |
+|---|---|
+| new online | 1（ASYNC V001，6abae4a0，Pass 15/15，44.17） |
+| false positive | 1（ASYNC 多形状 1–3% 本地胜 → Official −0.99） |
+| false negative | 0 新增（COEFF 历史 FN 保留） |
+| evaluator proposal | SERVER_EVALUATOR_CANDIDATE_V1 草案（SHADOW_ONLY，未启用） |
+
+### 约束遵守
+
+```text
+PLANNING_DECISIONS_CHANGED = 0
+NEW_ROUTES_OUTSIDE_APPROVED_5 = 0
+```
+
+### 关键可复用事实
+
+1. 归约轴五变体全伪；父版 `ReduceSum` 接近最优。
+2. V/S handoff 成本 0.049 µs/row；纯 V 链更贵 +0.012。
+3. param MTE2 时序非 large-D 瓶颈（常量 tileElems 证伪）。
+4. DMA 命令计数与指令形态均非主导；流水重叠才是。
+5. NarrowMid 每行 squareSum 读取是硬下限。
+6. **测量装置 candidate 侧偏置 ~2.8%**；p10 带载乐观偏置。
+7. S1 形状加长（9–15µs 带）可绕开短 kernel same-binary 门槛。
+8. vcadd mode=0 每 64 FP32 一和；DataCopyParams.blockLen=32B。
+9. FullCache invRms 占用 xBuf_ 限制 prologue 窗口。
+10. UB-GAP-CLUE：FROZEN parent FP32 wide 非确定（bad 随 run 变）。
+
+### STOP 条件
+
+五条 lane 全部 `等待 Planning`，wave-1 收口。等待 Planning 裁定生命周期、C2 取舍、UB-GAP、W3 划界、null-binary 授权与 case map。
