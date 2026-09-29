@@ -97,3 +97,4 @@
 | 2026-09-29 | R31A lane closing: LANE_NEEDS_PLANNING_REVIEW after V028 |
 | 2026-09-29 | R31A final handoff + LANE_NEEDS_PLANNING_REVIEW; two lanes now await Planning (R31A, TILING) |
 | 2026-09-29 | R31B hypothesis pool updated with barrier calibration; H2 selected for V018 |
+| 2026-09-29 | Three active lane agents cancelled; replacement workers spawned (general-6/7/8) inheriting R31B V018, STORE V003, EPI V002 |
