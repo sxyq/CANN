@@ -1,0 +1,59 @@
+{
+  "ROUTE": "R31A",
+  "REVISION": "V028",
+  "DIRECT_PARENT": "R31A-V026",
+  "PARENT_SOURCE_SHA": "7f2029e478d7675e02c2e017b0db3eaf33ae5dc0fa478479b340f441ab46bb18",
+  "PARENT_SCORE": "LOCAL chain -8.3% vs V016",
+  "SINGLE_HYPOTHESIS": "In ProcessWideFp32Batched's affine tile loop, drop the PipeBarrier immediately before each SetFlag<HardEvent::V_*> (two sites: before V_MTE2 inputRelease and before V_MTE3 outputReady). The V pipe's in-order execution already completes the preceding Add before the SetFlag is processed, matching this function's own RMS loop where ReduceSum -> SetFlag has no PipeBarrier. The V->V barriers (Muls->Mul, Mul->Add) are unchanged. No arithmetic, store, dispatch, or tile-constant change.",
+  "CONTEXT_CLASS": "HISTORICAL_EXPLOIT",
+  "WHY_NOT_DUPLICATE": "H9 is a barrier-count reduction inside the batch affine loop. H6/V027 was the pass-1/pass-2 boundary staging-release timing in CachedRows (different site, different mechanism). H4/V025 and H5/V026 are CachedRows staging-liveness prefetch mechanisms; the batch path already double-buffers. V024/H2 hoisted the invRms Muls in CachedRows (tile-sized value blocks that in the batch path). V021 (store-drain wait), R31B H1 (store drain), STORE-EPILOGUE-X H1 (blocked writeback), EPILOGUE-ARITH (Mul/Add fusion) all untouched. Full analysis in 研究/R31A/next-hypotheses-v3.md H9 section.",
+  "FILES_CHANGED": [
+    "本地实验/R31A/V028/submission.asc: ProcessWideFp32Batched affine tile loop only (delete 2 PipeBarrier before SetFlag)",
+    "本地实验/R31A/V028/source-meta.json: declaration",
+    "本地实验/R31A/V028/diff.patch",
+    "本地实验/R31A/V028/submission.sha256"
+  ],
+  "SOURCE_SHA": "ee52831c435f07f51ea3917af0e7faed9a012f852ab19641882c401fb78d10f1",
+  "SOURCE_SHA256": "ee52831c435f07f51ea3917af0e7faed9a012f852ab19641882c401fb78d10f1",
+  "SOURCE_PATH": "本地实验/R31A/V028/submission.asc",
+  "source_commit": "pending",
+  "submission_id": "NONE_NOT_SUBMITTED",
+  "local_sha256": "ee52831c435f07f51ea3917af0e7faed9a012f852ab19641882c401fb78d10f1",
+  "remote_sha256": "NOT_APPLICABLE_LOCAL_ONLY",
+  "official_score": "NONE",
+  "decision": "PENDING_BUILD_CORRECTNESS_MEASUREMENT",
+  "DECLARATION": {
+    "ROUTE": "R31A",
+    "REVISION": "V028",
+    "DIRECT_PARENT": "V026",
+    "PARENT_SOURCE_SHA": "7f2029e478d7675e02c2e017b0db3eaf33ae5dc0fa478479b340f441ab46bb18",
+    "PARENT_SCORE": "LOCAL chain -8.3% vs V016",
+    "SINGLE_HYPOTHESIS": "H9 删 batch affine 循环 SetFlag 前 PipeBarrier（2 处）",
+    "CONTEXT_CLASS": "HISTORICAL_EXPLOIT",
+    "WHY_NOT_DUPLICATE": "见 next-hypotheses-v3.md H9；与 V024 Muls 提取、H4/H5/H6 staging 均不同轴"
+  },
+  "MAIN1_SELECTION_DATE": "2026-09-29",
+  "CONSTRAINTS": {
+    "parent_module_rebuild": "REQUIRED: the paired harness parent module must be rebuilt from V026 (7f2029e4...) so the OFAT comparison is V026 vs V028.",
+    "correctness_first": "CRITICAL: the PipeBarrier before SetFlag may be load-bearing. If correctness FAILS, record as ARCHITECTURE_FINDING and do NOT fix the barrier and do NOT stack other changes.",
+    "no_arithmetic_change": "honored; only 2 PipeBarrier deletions in the batch affine loop",
+    "evaluation": "primary probe rows=2 D=24576 (batch path, where the edit is exercised); control D=32768 (CachedRows, batch edit not exercised, should be bit-identical)."
+  },
+  "MECHANISM_DETAIL": {
+    "evidence": "The same function's own RMS tile loop does ReduceSum(...) -> SetFlag<V_MTE2>(releaseEvent) with NO PipeBarrier (submission.asc:2235-2236 in V026). That pattern shows SetFlag<HardEvent::V_*> can follow a V op directly. The affine loop's two PipeBarrier before SetFlag are inconsistent with this and are claimed redundant.",
+    "sites": [
+      "Add(value,x,res) -> [PipeBarrier REMOVED] -> SetFlag<V_MTE2>(inputRelease)",
+      "Add(value,bias) -> [PipeBarrier REMOVED] -> SetFlag<V_MTE3>(outputReady)"
+    ],
+    "kept": "The V->V barriers after Muls and after Mul are unchanged (they order dependent V ops on valueLocal).",
+    "count": "2 barriers removed per tile per row; at D=24576 rows=2 that is 5 tiles x 2 rows x 2 = 20 barriers."
+  },
+  "PRECISION_RISK": "None — no arithmetic change. The risk is a sync-fault (507035 class) or a wrong-value if the barrier turns out to be load-bearing; that would be an ARCHITECTURE_FINDING, not a precision issue.",
+  "EVALUATION_PLAN": {
+    "primary": "rows=2 D=24576 blocks=1 (batch path; the only probe shape exercising the edit)",
+    "control": "rows=2 D=32768 blocks=1 (CachedRows; the batch edit is NOT exercised — expect bit-identical / same-code noise band)",
+    "noise_band": "measure each round",
+    "contaminated_blocks": "mark parent/candidate MAD > 0.25 (and especially > 0.5); exclude from direction reading, retain raw",
+    "magnitude_check": "predicted 7-14% if each barrier costs ~0.05-0.1us. If correctness passes but the measured gain is <1%, that is also a conclusion (the barriers were cheap)."
+  }
+}
