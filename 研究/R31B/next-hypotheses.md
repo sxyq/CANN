@@ -16,6 +16,16 @@ case 14（Official 最大缺口 4.4x）主缺口 = **同步把 MTE2/V/MTE3 排�
 1. 超出当轮空白对照噪声带（空白对照逐轮现测）；
 2. 机制幅度核对——实测与预测同量级。幅度标定：单行 D=32768 FP32 ≈ 8.28µs/行，D 翻倍 +3.9~4.2µs/行（成本随元素线性）。探出带但幅度不匹配不算信号。
 
+### 0.1 单位成本标定（2026-09-29 R31A V028 跨路线发现，幅度外推前必读）
+
+| 项 | 实测单位成本 | 含义 |
+|---|---|---|
+| 链尾 `V_op → PipeBarrier → SetFlag` 的 barrier | **~0.01µs/个** | 非承重，可删（R31A V028 五次正确性全过、max_abs 逐位一致） |
+| V 链**中部**的 PipeBarrier | 显著更贵 | R31A V024 删 5 个中部 barrier 得 −3.66%——5×0.01µs 解释不了，说明成本在**位置**不在数量 |
+| 全同步（`SyncVToMTE2/MTE3` 等 SetFlag+WaitFlag 对） | ≠ barrier 成本 | 不可用 0.01µs 外推；H3 的量级须单独看待 |
+
+推论：**删 barrier 类假设的幅度 = 个数 × 0.01µs（尾部）或按中部位置加权；先把单位成本代入再报预期区间**。H2/H4 的幅度区间已按此下调/标注（见各节）；H5（队列加深）不受影响。V017 实测 0.12–0.15µs/tile 是**排空延迟化**（同步/重叠）收益，不是 barrier 个数收益，两者不可互相外推。
+
 已证伪/已占轴（不得重复）：
 - R31B 历史：跨核 D-slice（V008）、deep-batch UB（V004/V005）、tile 收缩（V007）、MTE2 队列深度 on FP32 full-y（V009，-0.10）、LP 宽行管线本身（V011 核心）、FP16/BF16 tile 4096→8192（V016）。
 - STORE lane：H1 分块合并写回（store 粒度合并，V003 进行中）。
@@ -28,11 +38,12 @@ case 14（Official 最大缺口 4.4x）主缺口 = **同步把 MTE2/V/MTE3 排�
 
 | ID | 一句话 | 轴 | 预期量级（D=32768 FP16/BF16 行·批） | 优先级 |
 |---|---|---|---|---|
-| H1 | pass-2 store 排空延迟化（2-deep MTE3 事件队列） | store 排空 / 流水重叠 | 0.7~1.5µs | 1 |
-| H2 | pass-1 retained-y 直写，删除 Muls(1.0) 拷贝 | Pass1 算子+barrier 削减 | 0.2~0.7µs | 2 |
-| H3 | 删除冗余 V→MTE2 全同步（store 前 / inter-pass） | 同步削减 | 0.2~0.8µs | 3 |
-| H4 | pass-2 BF16 重复 widen 块删除（2 Cast + 1 PB/tile） | 死算子+barrier 削减 | 0.1~0.4µs | 4 |
-| H5 | pass-1 MTE2 staging 2-deep→3-deep | 队列加深 | 0.2~0.6µs（有 UB 代价） | 5 |
+| H1 | pass-2 store 排空延迟化（2-deep MTE3 事件队列） | store 排空 / 流水重叠 | **已落地 V017**：实测 −0.64~−0.82µs(fp16-wide) / −2.0µs(bf16-wide)，两关 PASS | 完成 |
+| H2 | pass-1 retained-y 直写，删除 Muls(1.0) 拷贝 | Pass1 算子+中部 barrier 削减 | 0.3~1.0µs（§0.1 上修） | 1 |
+| H3 | 删除冗余 V→MTE2 全同步（store 前 / inter-pass） | 全同步削减 | 0.2~0.8µs（全同步成本待标定） | 2 |
+| H4 | pass-2 BF16 重复 widen 块删除（2 Cast + 1 PB/tile） | 死算子削减（barrier 贡献 ~0.01µs 可忽略） | 0.1~0.4µs | 3 |
+| H5 | pass-1 MTE2 staging 2-deep→3-deep | 队列加深 | 0.2~0.6µs（有 UB 代价） | 4 |
+| H6 | pass-2 store 前 `V_op→PB→SetFlag` 冗余 barrier 删除 | barrier 清账/标定 | 0.06~0.13µs（标定用途） | 5 |
 
 共同 EXPECTED_SHAPES（变更域 = LP 宽行，触发条件 `rowWidth > kCacheElems(8192)`）：
 
@@ -94,11 +105,11 @@ case 14（Official 最大缺口 4.4x）主缺口 = **同步把 MTE2/V/MTE3 排�
 
 **ASCEND_FEASIBILITY**：高——Add/ToFloat 支持任意 LocalTensor 槽位；数值逐位相同（half 加法结果原样保留，Muls×1.0 为精确拷贝）。
 
-**UB/DMA/SYNC_IMPACT**：UB/DMA 零变化；每 unit 减 1 V 指令 + 1 PipeBarrier。
+**UB/DMA/SYNC_IMPACT**：UB/DMA 零变化；每 unit 减 1 V 指令 + 1 PipeBarrier（**中部** barrier，位置贵，见 §0.1）。
 
 **PRECISION_RISK**：无——half 加法结果逐位一致，retained y 位型不变。
 
-**幅度核对基准**：预测 0.2–0.7µs/行批（D=32768 FP16）。小于 0.1µs 判幅度不匹配（更像被 MTE2 掩盖，记为信息量而非信号）。
+**幅度核对基准**：按 §0.1 重估——收益主体是**整 tile Muls 拷贝算子**（6–13 个/行批 × 约 0.05–0.1µs）+ 1 个中部 barrier/unit（比 0.01µs 贵，参照 V024 五删 −3.66% 折算约 0.07µs 量级），合计预测 **0.3–1.0µs/行批**（较原 0.2–0.7µs 上修，因删的是中部 barrier 且含整 tile 算子）。小于 0.1µs 判幅度不匹配。
 
 ---
 
@@ -127,11 +138,11 @@ case 14（Official 最大缺口 4.4x）主缺口 = **同步把 MTE2/V/MTE3 排�
 
 **ASCEND_FEASIBILITY**：高——纯删除同步调用；编译期即可验证 API 用法。
 
-**UB/DMA/SYNC_IMPACT**：UB/DMA 零变化；每 (tile,row) 减 1 次全同步（批内 8 次 + 交界 1 次）。
+**UB/DMA/SYNC_IMPACT**：UB/DMA 零变化；每 (tile,row) 减 1 次全同步（批内 8 次 + 交界 1 次）。**注意**：`SyncVToMTE2()` 是 SetFlag+WaitFlag 全同步对，成本不适用 §0.1 的 0.01µs/barrier 标定，须按全同步单独标定后外推（V028 只标定了 barrier）。
 
 **PRECISION_RISK**：无。
 
-**幅度核对基准**：预测 0.2–0.8µs/行批。若 >1.5µs 反而可疑（说明删掉的不只是冗余）。
+**幅度核对基准**：预测 0.2–0.8µs/行批（全同步成本待标定，区间保留）。若 >1.5µs 反而可疑（说明删掉的不只是冗余）。
 
 ---
 
@@ -153,11 +164,11 @@ case 14（Official 最大缺口 4.4x）主缺口 = **同步把 MTE2/V/MTE3 排�
 
 **ASCEND_FEASIBILITY**：高——删除后与删除前输出位型一致（同参数同轮次 Cast）。
 
-**UB/DMA/SYNC_IMPACT**：零 UB/DMA 变化；每 tile 减 2 Cast + 1 PB。
+**UB/DMA/SYNC_IMPACT**：零 UB/DMA 变化；每 tile 减 2 Cast + 1 PB。按 §0.1，PB 部分仅 ~0.01µs，收益主体是 **2 个整 tile Cast 算子**（重复 widen 的真实算力浪费）。
 
 **PRECISION_RISK**：无（重复计算删除）。
 
-**幅度核对基准**：0.1–0.4µs/行批；低于 0.05µs 判为噪声内。
+**幅度核对基准**：0.1–0.4µs/行批（Cast 主导，barrier 贡献可忽略）；低于 0.05µs 判为噪声内。
 
 ---
 
@@ -189,12 +200,38 @@ case 14（Official 最大缺口 4.4x）主缺口 = **同步把 MTE2/V/MTE3 排�
 
 ---
 
+## H6 — pass-2 store 前 `V_op → PipeBarrier → SetFlag` 冗余 barrier 删除（R31A V028 模式）
+
+**MECHANISM**：pass-2 每 (tile,row) 的 store 前奏是 `Add(outputLocal…) → PipeBarrier<PIPE_V> → SyncVToMTE2() → SyncVToMTE3() → Store`。`SyncVToMTE2/SyncVToMTE3` 自身以 SetFlag/WaitFlag 承担 V→MTE 顺序（R31A V028 实测：SetFlag 前的 barrier 非承重，删后正确性 5 次全过、max_abs 逐位一致）。删除该 PipeBarrier 一个，不动同步对。V017 落地后该前奏只余这一处 `V_op→PB→SetFlag` 模式（outputLocal 写入是最后 V op）。
+
+**BOTTLENECK**：barrier 计数每行 ~48 个之一；按 §0.1 标定单个仅 ~0.01µs，总量 = (tileCount×batchRows) × 0.01µs ≈ 0.06–0.13µs/行批。
+
+**WHY_IT_MAY_HELP**：零风险（V028 已五次正确性验证同模式）；逐位一致的算子删减。
+
+**WHY_IT_MAY_FAIL**：幅度极小，很可能落在噪声带内——本轮定义为**标定/清账 Revision**：若实测也≈0.01µs/个则完成本 lane 的 barrier 单位成本标定（信息量价值），不以收益论成败。
+
+**EXPECTED_SHAPES**：FP16/BF16 wide 全部；对照非宽（无该模式）。
+
+**WHY_NOT_DUPLICATE**：R31A V028 是其自身函数的验证；本假设在 R31B pass-2 站点独立落刀（不同函数不同 lane）。与 H3 不同：H3 删整个 SyncVToMTE2 全同步（V→MTE2 顺序归属存疑），H6 只删同步对**前面的** barrier（V028 已证非承重）。与 H1 已落的排空延迟化正交（H1 动 MTE3_V 等待点，H6 动 V→MTE 同步对之前的 barrier）。
+
+**MINIMAL_OFAT_DIFF**：`ProcessWideLowPrecision` pass-2 store 前奏删除一个 `AscendC::PipeBarrier<PIPE_V>();`（紧邻 `SyncVToMTE2()` 之前）。其余逐字不动。
+
+**ASCEND_FEASIBILITY**：高——V028 同模式已验证。
+
+**UB/DMA/SYNC_IMPACT**：零 UB/DMA；每 (tile,row) 减 1 barrier（~0.01µs/个）。
+
+**PRECISION_RISK**：无（V028 max_abs 逐位一致）。
+
+**幅度核对基准**：0.06–0.13µs/行批；用途为标定而非收益。
+
+---
+
 ## 2. 实现顺序建议（待 Main 选定）
 
-1. **H1**（幅度最大、机制最贴 case 14 归属、站点内有现成同型实现作对照）
-2. H2（Pass1 主体削减，逐位安全）
-3. H3（同步计数削减；与 H1 互斥实施，分开两个 Revision）
-4. H4（零风险小幅度，可作标定 Revision）
-5. H5（先 UB 预算核对，不成立则弃）
+1. **H2**（pass-1 直写，中部 barrier + 整 tile 算子，V017 后幅度最大的干净项）
+2. H3（同步削减；与 H6 二选一或先后独立——H6 幅度小但零风险，可作标定 Revision）
+3. H4（BF16 死 widen 块，零风险中等幅度）
+4. H5（MTE2 3-deep，先 UB 预算核对）
+5. H6（barrier 标定/清账，幅度 ~0.1µs 级）
 
-实施纪律：一个 Revision 只落一个假设（H1 与 H3 不得合并）；每个 Revision 先写硬性声明（ROUTE/REVISION/DIRECT_PARENT/PARENT_SOURCE_SHA/SINGLE_HYPOTHESIS/CONTEXT_CLASS/WHY_NOT_DUPLICATE/EXPECTED_SHAPES/EXPECTED_RISK）；空白对照每轮现测；两关判定写入 local-result.json。
+实施纪律：一个 Revision 只落一个假设（H1 与 H3 互斥已过；H3 与 H6 亦不得合并）；每个 Revision 先写硬性声明；空白对照每轮现测；两关判定写入 local-result.json；幅度外推先用 §0.1 单位成本。
