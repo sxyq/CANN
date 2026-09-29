@@ -1,0 +1,63 @@
+{
+  "route": "STORE-EPILOGUE-X",
+  "revision": "V003",
+  "hypothesis_id": "STORE-H3",
+  "single_hypothesis": "Chunked merged writeback K=2: split each row's merged run at a tile-multiple boundary, issue each chunk's merged Store as soon as that chunk's arithmetic finishes (restore store/compute overlap while keeping descriptor savings)",
+  "direct_parent": "V002",
+  "parent_source_sha": "59fb8eada4da0b2b83cccffa4fb89fb97b7503ba3dcb08d5e0fe348e3caeb839",
+  "source_sha": "0cdef265459d4683a1813593a881a5cf25ae75246aab49279d121896b71184ca",
+  "official_anchor": 45.07,
+  "compile_rc": "0/0",
+  "link_rc": "0/0",
+  "link_executable_sha": "7bc64714b73bac8e1b930593729dde2b3d603ff0e73710626d1386bd4d78af85",
+  "correctness_status": "PASS_VS_PARENT",
+  "correctness_total_shapes": 29,
+  "correctness_note": "24/29 shapes PASS both sides with identical max_abs and identical output.bin. 5 wide-FP32 shapes (1x16384/1x32768/2x16384/8x16384/2x32768) exit=3 on BOTH sides — pre-existing runner golden mismatch class (same as V002's treatment of 1x16384/1x32768). Same-binary determinism check: 1x8192 output.bin IDENTICAL across runs; 1x16384 output.bin DIFF across runs of the SAME parent binary (29309 bytes) — confirms pre-existing non-determinism in the wide-FP32 golden comparison (MAIN-1 open item), not a candidate defect. No new failure vs V002 class.",
+  "single_change_audit": "PASS — one conceptual variable: writeback chunk granularity + issue point (K=2 early issue) in ProcessWideFp32FullCacheRows merge branch only. Arithmetic order/count, reduction, ring depth/flags, event lifecycle, copy primitive, cross-row behavior all unchanged. Loop-head staging drain wrapped in !mergeRowRuns is the enabling condition for early issue (V002's merge branch never set storeOutstanding so the drain was a no-op there; gate-OFF path still runs the drain).",
+  "measurement_status": "COMPLETE",
+  "measurement_lease": "R2-STORE-V003-TIMING, device 5, 2026-09-29",
+  "measurement_protocol": "warmup=45, samples=41, same-binary blocks=2 (P and C both), 6 interleaved P/C pairs (odd=P->C, even=C->P), ALL_DEVICE median_us primary, clean pair |delta|<=50%",
+  "same_binary_all_pass": true,
+  "same_binary_note": "10/10 shapes sb PASS (MAD/median <= 0.15) on both P and C. Tightest window this route has seen (V002 had 3/6 sb FAIL).",
+  "gate_reachability": "V003 differs from V002 only in ProcessWideFp32FullCacheRows mergeRowRuns branch (wide FP32 rowWidth>8192, tileCount>=4, rowWidth%8==0). Shapes reaching the branch: 1x32768(t=8), 1x16384/2x16384/8x16384(t=4), 2x32768(t=8). Gate-OFF same-function control: 2x12288(t=3) runs the parent per-tile block. Outside-function identical-code controls: 2x8192, 8x8192 (rowWidth not >8192), 2x256, 1x16384_fp16 (other dtype path).",
+  "paired_delta_pct": {
+    "1x32768_fp32": {"band": "large, merge ON (t=8, K=2x4 tiles)", "median": -3.15, "clean_n": 6, "favor_c": 6, "favor_p": 0, "sb_gate": "PASS", "per_pair": [-3.11, -2.53, -5.67, -3.19, -5.40, -2.34], "reading": "clear win vs V002 whole-row late issue; entire pair range negative"},
+    "1x16384_fp32": {"band": "t=4 boundary, merge ON (K=2x2 tiles)", "median": -2.90, "clean_n": 5, "favor_c": 5, "favor_p": 0, "sb_gate": "PASS", "per_pair": [-2.91, -2.90, -2.98, -1.35, -1.62], "outliers": [-53.18], "reading": "clear win; tight range [-2.98,-1.35]; t=4 boundary first-ever P/C for this shape (V002 gap closed)"},
+    "8x16384_fp32": {"band": "multi-row wide (4 batches), merge ON (t=4)", "median": -5.64, "clean_n": 6, "favor_c": 6, "favor_p": 0, "sb_gate": "PASS", "per_pair": [-8.49, -4.16, -7.97, -2.36, -7.13, -1.40], "reading": "largest win — most batches = most overlap windows; matches mechanism amplitude prediction"},
+    "2x16384_fp32": {"band": "2-row (1 batch), merge ON (t=4)", "median": -1.87, "clean_n": 6, "favor_c": 4, "favor_p": 2, "sb_gate": "PASS", "per_pair": [-6.98, -6.75, -1.97, 0.75, 5.29, -1.77], "reading": "mixed, within noise band; no regression"},
+    "2x32768_fp32": {"band": "2-row (1 batch), merge ON (t=8)", "median": -1.62, "clean_n": 6, "favor_c": 4, "favor_p": 2, "sb_gate": "PASS", "per_pair": [1.55, -1.68, 1.04, -1.57, -3.41, -5.26], "reading": "mixed/small, within noise; no regression"},
+    "2x12288_fp32": {"band": "t=3 gate-OFF in-function control (parent per-tile block)", "median": 2.81, "clean_n": 6, "favor_c": 2, "favor_p": 4, "sb_gate": "PASS", "per_pair": [0.55, -0.28, 5.07, 5.49, -6.00, 7.42], "reading": "noise band; behaviorally identical path (drain guard always true at t<4)"},
+    "2x8192_fp32": {"band": "identical code control (not wide-FP32 fn)", "median": 1.53, "clean_n": 6, "favor_c": 1, "favor_p": 4, "sb_gate": "PASS", "reading": "noise"},
+    "8x8192_fp32": {"band": "identical code control", "median": -1.49, "clean_n": 6, "favor_c": 4, "favor_p": 2, "sb_gate": "PASS", "reading": "noise"},
+    "2x256_fp32": {"band": "identical code control (tiny kernel)", "median": -3.48, "clean_n": 6, "favor_c": 4, "favor_p": 2, "sb_gate": "PASS", "outliers": [22.88], "reading": "noisy small shape (sb MAD/med 0.10); window noise"},
+    "1x16384_fp16": {"band": "identical code control (FP16 path)", "median": 1.11, "clean_n": 5, "favor_c": 1, "favor_p": 4, "sb_gate": "PASS", "outliers": [83.64], "reading": "≈0 as expected"}
+  },
+  "noise_band_identical_code": {
+    "shapes": ["2x12288_fp32", "2x8192_fp32", "8x8192_fp32", "2x256_fp32", "1x16384_fp16"],
+    "median_range": [-3.48, 2.81],
+    "reading": "identical-code medians scatter ~±3%; direction mixed on every control (1/6 to 4/6). Merge-ON large/multi-batch shapes break out of this band with 6/6 or 5/5 direction consistency."
+  },
+  "mechanism_amplitude_check": {
+    "expected": "gain scales with store-traffic exposure: more batches and longer rows → larger delta (H1 predicted 行越长、行数越多收益越大)",
+    "observed": "8x16384 (4 batches) -5.64% > 1x32768 (t=8 long row) -3.15% ≈ 1x16384 (t=4) -2.90% > 2-row 1-batch shapes -1.6~-1.9% (in noise)",
+    "verdict": "CONSISTENT — amplitude ranks with overlap-window count/size exactly as the mechanism predicts; 2-row 1-batch shapes have the smallest overlap window and sit in the noise band"
+  },
+  "acceptance_check": {
+    "source_identity_verified": "MET (local sha 0cdef265 == server3 submission.asc == sidecar)",
+    "build_pass": "MET (compile 0/0, link 0/0, exec 7bc64714)",
+    "correctness_pass_vs_parent": "MET (no new failure class; wide-FP32 golden mismatch pre-existing on both sides)",
+    "same_binary_pass_all_shapes": "MET (10/10)",
+    "large_and_multibatch_win_beyond_noise": "MET (8x16384 -5.64% 6/6; 1x32768 -3.15% 6/6; 1x16384 -2.90% 5/5 — all pairs negative, outside identical-code ±3% scatter on direction consistency)",
+    "no_regression_anywhere": "MET (2-row merge-ON shapes in noise band; all identical-code controls in noise band)",
+    "mechanism_amplitude_consistent": "MET"
+  },
+  "local_verdict": "LOCAL_ACCEPTED",
+  "local_verdict_reason": "H1 chunked early-issue writeback delivers stable wins on the shapes where the mechanism has the most overlap window: 8x16384 (4 batches) -5.64% 6/6, 1x32768 -3.15% 6/6 (full range negative), 1x16384 -2.90% 5/5 (tight range). Same-binary PASS on all 10 shapes (cleanest window this route). Identical-code controls scatter ±3% with mixed direction, so the 6/6 and 5/5 consistency on merge-ON shapes is outside noise. No regression on any shape. Mechanism amplitude ranks exactly as predicted (batches/row-length > 2-row single-batch). V002's -5.62% (vs FROZEN parent) is extended: V003 adds -3.15% on 1x32768 on top of V002's whole-row merge.",
+  "online_worthy": "FUTURE_CANDIDATE",
+  "online_worthy_reason": "Second consecutive LOCAL_ACCEPTED on the writeback axis (V002 then V003), cumulative local gain on 1x32768 ≈ -8.6% vs FROZEN parent (compounded -5.62% then -3.15%). Multi-row wide (8x16384 -5.64%) is the case-14-like band where official gap is largest. Recommend Main consider ONLINE_RECOMMENDATION after V003 closure; not submitted this cycle.",
+  "note": "Correctness non-determinism on wide-FP32 golden comparison confirmed via same-binary output.bin diff (same parent binary, 2 runs, 1x16384: 29309 bytes differ) — pre-existing MAIN-1 open item, not V003. t<4 control (2x12288) is behaviorally identical to parent (drain guard always true); source is not literally byte-identical because of the enabling !mergeRowRuns guard on the loop-head drain.",
+  "LOCAL_VERDICT": "LOCAL_ACCEPTED",
+  "LOCAL_BEST": "V003",
+  "ONLINE_WORTHY": "FUTURE_CANDIDATE",
+  "submit_this_cycle": false
+}
