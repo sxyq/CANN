@@ -101,3 +101,5 @@
 | 2026-09-29 | R31B V018 NEEDS_ONE_MORE_LOCAL (H2 refuted: pass-1 not V-bound); H3 selected for V019 |
 | 2026-09-29 | EPI V002 EA-H2 strong signal -6.64% 6/6 (differential -19pp); same-binary blocked; clean remeasure directed; precision regression on golden-error shapes not blocking |
 | 2026-09-29 | R31B V019 NEEDS_ONE_MORE_LOCAL (H3 refuted); V-side deletions 2x null; bottleneck=MTE2/reduce; H5 selected for V020 |
+| 2026-09-29 | **EPI V002 LOCAL_ACCEPTED** cross-window -3.1~-6.6%; ONLINE WORTHY primary (replaces V001) |
+| 2026-09-29 | R31B V020 INFEASIBLE (UB overflow); cheap options exhausted on ProcessWideLowPrecision; recommend LANE_NEEDS_PLANNING_REVIEW |
