@@ -174,18 +174,18 @@ UNKNOWN_COUNT=0
 |---|---|---|
 | historical_missing_reverts | 1 | MULTIROW V001 |
 | child_preapproval_violations | 0 | — |
-| results_not_in_canonical | 1（MAIN-1 EPI V002） | Main-2 wave-1 事实已进入 `origin/main`；MAIN-1 EPI V002 待 Consolidation Owner |
+| results_not_in_canonical | 0 | Main-2 wave-1 与 Main-1 四条 Online closure 事实均已进入 `origin/main` |
 | shared_ledger_divergence | 1（结构） | main1/main2 各自增量，本轮收口 |
 
 ## 7. Canonical consolidation 状态（AS_OF=2026-09-29）
 
-截至本文件记录时，Main-2 事实已进入 `origin/main`；MAIN-1 EPI V002 待 Consolidation Owner 收入 canonical。该状态不改变路线生命周期。
+截至本文件记录时，Main-2 事实与 Main-1 四条 Online closure 事实均已进入 `origin/main`。该状态不改变路线生命周期。
 
 | 事项 | 当前状态 |
 |---|---|
 | Main-2 wave-1 事实（含 ASYNC V001 Online package / result / ledger / calibration） | **IN_CANONICAL=YES** |
-| MAIN-1 EPI V002 | **PENDING_CONSOLIDATION_OWNER** |
-| 含 MAIN-1 EPI V002 的完整 canonical 集合 | **CANONICAL_CONSOLIDATED=NO** |
+| MAIN-1 EPI V002 | **IN_CANONICAL=YES**；Official 44.96；identity PASS |
+| 含 MAIN-1 EPI V002 的完整 canonical 集合 | **CANONICAL_CONSOLIDATED=YES** |
 
 ### 7.1 历史整合记录
 
