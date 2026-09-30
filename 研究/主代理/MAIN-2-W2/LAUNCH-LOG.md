@@ -14,7 +14,7 @@
 
 以上记录是首次派发状态快照，后续事实见下节。
 
-### Main-issued 当前事实
+### Main-issued 状态快照（早于 Batch 1 完成事实）
 
 | 路线 | 当前 Agent / runtime | Track-B 状态 |
 |---|---|---|
@@ -42,7 +42,7 @@ Batch 1 已达成：两条路线均有活跃 Agent 且已进入 Track-B；未报
 
 本控制 Agent 未读取 Route worktree 文件。仅在收到 Main 后续事实后再更新本日志。
 
-### Batch 2 准备结果
+### Batch 2 工作树准备快照（Route Agent spawn 前）
 
 Canonical 根仓库先执行 `git fetch origin`。目标路径与本地/远端分支在创建前均不存在，也没有对应 worktree 登记；因此按最新 `origin/main` 建立：
 
@@ -51,4 +51,16 @@ Canonical 根仓库先执行 `git fetch origin`。目标路径与本地/远端�
 | M2-3 UB-LIFETIME-SAFE-CHAMPION-X | `/Users/sunyiyang/Desktop/Project/cann-w2-m2-ub` | `w2/m2/ub-lifetime-safe` | `ed860e392d7604694ac6664da60aff1fc1f4c04f` | 干净 |
 | M2-4 PARAM-RESIDENCY-CHAMPION-X | `/Users/sunyiyang/Desktop/Project/cann-w2-m2-param` | `w2/m2/param-residency` | `ed860e392d7604694ac6664da60aff1fc1f4c04f` | 干净 |
 
-未调用 Route-Agent spawn：当前工具接口没有 `multi_agent_v1__spawn_agent`，故 M2-3 / M2-4 均无 Agent ID，runtime 未启动，Track-B 尚未由新 Agent 确认；未用 CLI 或线程替代。派发 `429=0`。Batch 2 尚未确认，不启动 M2-5。`MAIN_SELECTED=NONE`。
+该快照记录工作树刚建立时的状态：当时 M2-3 / M2-4 尚无 Agent ID，runtime 未启动，Track-B 尚未确认。后续 Main-issued 状态见下节。
+
+### Main-issued 最新状态
+
+| 路线 | Agent ID / runtime | Track-B 与 handoff | 其他事实 |
+|---|---|---|---|
+| M2-1 | replacement `01a0f11a-bf80-7c33-8332-5a939dd96c15`；旧 ID `01a0f0ef-13f0-72e3-b66f-4c8ae589d4e4` 为 LOST/UNRECOVERABLE | Track-B handoff complete；`ROUTE_HYPOTHESIS_POOL_EXHAUSTED=YES`；`MAIN_SELECTED=NONE` | commit `ca6ee4b77469de3c84c2b978a648775ee3ddf86d` pushed clean；no tests/429 |
+| M2-2 | `01a0f129-4b39-73c0-bc7f-7d4e2fafb611` | Track-B handoff complete；`ROUTE_HYPOTHESIS_POOL_EXHAUSTED=YES`；`MAIN_SELECTED=NONE` | commit `963507930c4752573a7211ca2e54429d6cba49a3` pushed clean；no tests/429 |
+| M2-3 | `01a0f174-2b77-7292-ac20-ce975a49cc04`；runtime `RUNNING` | Track-B entry not yet confirmed | Existing clean worktree / branch from `origin/main` |
+| M2-4 | `01a0f174-2bea-78b0-b6b2-c4070898f5d3`；runtime `RUNNING` | Track-B entry not yet confirmed | Existing clean worktree / branch from `origin/main` |
+| M2-5 | 未启动 | NOT STARTED | worktree 未建立，Agent 未派发 |
+
+当前 running 的 Route Agent 为 2（M2-3、M2-4）；已完成 Track-B handoff 的路线为 M2-1、M2-2。M2-3 / M2-4 运行中不代表 Track-B 已确认。当前 Main-issued 批次事实 `429=0`。`MAIN_SELECTED=NONE`。
