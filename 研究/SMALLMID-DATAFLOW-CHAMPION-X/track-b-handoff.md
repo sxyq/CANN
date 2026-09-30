@@ -1,81 +1,118 @@
 # SMALLMID-DATAFLOW-CHAMPION-X Track-B 交接
 
-状态：Track-B 完成；未选实现；等待 `MAIN_SELECTED=YES`。
+状态：研究完成；`MAIN_SELECTED=NO`；不创建 Revision、不改 Kernel，等待 Main。
 
-## 父版与边界
+## 路线范围
 
-- 直接父版：`R31B V011`；Official anchor：`45.16`。
-- 父版源码 SHA-256：`a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`。已对照 `线上结果/R31B/V011/source-meta.json` 的 `submission_sha256`、`route_source_sha256`、`judge_payload_sha256`，`线上结果/R31B/V011/submission.sha256` 及已提交 `submission.asc` 实际值，三处一致。V011 自身的 `parent_revision=V010`，本路线仍以 V011 为直接父版。
-- 仅限 `D<=4096`、每核既有行段内的批处理固定成本、UB 数据复用、初始化和 dispatch。不得改变 `blockCount`、行到核分配、`beginRow/localRows` 归属，也不碰大 D 分块。
-- 本轮仅写本文件；未建 Revision、未改 Candidate/kernel 或共享台账；未构建、测正确性、计时或访问 server3。
+- `ROUTE_BOUNDARY`：仅限 `D<=4096` 的 V011 小/中 D 路径，研究核内既有行段的固定开销、UB 生命周期、参数准备与已有路径选择。研究函数限 `ProcessNarrowMidOverlap`、`ProcessSmallFp32ContiguousBatched` 及其既有 dispatch。
+- `ALLOWED_CHANGES`：获 Main 选择并创建 Revision 后，一次只改一个候选机制；可在既有 `beginRow/localRows` 范围内调整数据暂存、系数转换复用、batch 内等待位置或小/中 D 函数分派条件。不得扩大每核行段。
+- `FORBIDDEN_CHANGES`：不得改 `blockCount`、`blockIdx`、`baseRows`、`extraRows`、`beginRow`、`localRows` 的计算或核间行归属；不得新建 rowGroup、调整每核行数、跨核搬行、改 tile 几何或处理 `D>4096`。不得与 SYNC、STORE、INTERPASS/CROSSROW 或算术候选叠加；未收到 `MAIN_SELECTED=YES` 前不动 Kernel/Candidate、不建 Revision、不构建、不测正确性或时延、不访问 server3、不做 Online、不改共享台账。
+- row-to-core 的硬限制来自 V011 `Process()`：`baseRows=rowCount/blockCount`、`extraRows=rowCount%blockCount`、`beginRow=blockIdx*baseRows+min(blockIdx,extraRows)`、`localRows=baseRows+(blockIdx<extraRows)`。本路线只能读这些值决定是否命中既有核内路径；其值及每行所属 core 必须与 V011 完全相同。
+- `PARENT_SOURCE_SHA`：`a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`。R31B V011，Official anchor `45.16`。已核对 `source-meta.json` 三个 source 字段、`submission.sha256` 与提交的 `submission.asc` 实际 SHA，完全一致；V011 的父版记录为 V010。
 
-## 证据与重复项
+## Wave-2 边界
 
-- `线上结果/R31B/V011/submission.asc`、`diff.patch`：现有小行批处理与 `(128,4096]` `ProcessNarrowMidOverlap`；父源码内 BF16 mid 分支已在归约后用 `xBuf_` 写回，FP16 分支另用 `outputBuf_`。
-- `线上结果/R31B/V011/source-meta.json`、`submission.sha256`：父版来源身份。`技术路线/全版本记录.tsv`：V010 mid overlap；V014 只 build、批大小 8→32，无性能证据；V015 单行 mid dispatch 本地配置失败。`调度/本地线上校准.tsv`：V010 无有效配对本地数据。
-- `归档/历史阶段/retired-routes/H001/HANDOFF.md`、`线上结果/H001/V008/submission.asc`、`source-meta.json`：H001 `D<=1024` 高行批处理与非对齐 `CopyRows` 先例；V008 Official 15/15、29.04，主要变化是 wide path 归约，没有小 D 单因素配对数据。
-- `归档/历史工作区/MID-X/architecture-metadata.md`、`V001/kernel.asc`、`V002/kernel.asc`、`V003/kernel.asc`：覆盖 mid batch、参数驻留和 `D<=128` 路径；V001 部分中宽 case 有耗时记录但线上仅 2/15，V002/V003 为 Runtime Error。V002 记录了 ReduceSum 槽位对齐及 padding 单位风险；其整体行分配不纳入本路线。
-- V011 官方 case 形状映射缺失；以下收益均未实测，需先以本地探针确认实际 `localRows`、批次数和路径。
+| 相邻方向 | 本路线关系与限制 |
+|---|---|
+| ROW-OCCUPANCY / `SCHED-CHAMPION-X` | 对方只改 row ownership、core assignment、row-group scheduling。本路线固定上述 V011 行分配公式；`localRows` 只作既有路径条件，不据此改变分配。Wave-2 selective-fastpath 的整段 donor 分派也不移植。 |
+| SYNC / `SYNC-TOPOLOGY-CHAMPION-X` | 对方已提交假设落在 wide FP32/low-precision 路径。本路线不改那些函数或事件；SMD-H5 只重排 small FP32 contiguous batch 的 MTE3 等待，机制相邻，需 Main 确认跨路线归属后才可能选择。 |
+| STORE / `STORE-EPILOGUE-W2-X` | 对方改 wide path 的 Store 发出、chunk 或启用 predicate。本路线保留每个既有 batch 的 Store 地址、长度、次数與调用形态，不合并写回。 |
+| INTERPASS/CROSSROW | 不改两遍处理边界，不把一行交给另一 core。SMD-H5 可能让同一 core 既有行段中 batch N 的 Store 与 batch N+1 的计算重叠；这是跨 batch 的时间重叠，不改 ownership。是否归 SYNC 或 INTERPASS/CROSSROW lane 由 Main 确认，未确认前不选它。 |
+| EPI arithmetic | 不改变 `invRms -> norm -> gamma -> bias` 的逐元素表达式、舍入或顺序。SMD-H6 只提前并复用 BF16 gamma/bias 到 FP32 的精确转换；属于参数准备，和算术 lane 相邻但不是其表达式重排。 |
 
-## 假设
+## 已提交证据
 
-### SMD-H2：FP16 mid 输出复用已读完的 x UB
+- 父版与路径：`线上结果/R31B/V011/source-meta.json`、`submission.sha256`、`submission.asc`、`diff.patch`；`submission.asc:171-245` 是固定行归属与 dispatch，`:499-619` 是 mid overlap，`:1241-1255` 是小/中宽度常量，`:1576-1662` 是 FP32 small batch，`:1670-1774` 是 low-precision small batch。
+- H001 重复证据：`归档/历史阶段/retired-routes/H001/HANDOFF.md`；`线上结果/H001/V008/submission.asc:130-177,268-269` 已有多行 `CopyRows`、`DataCopyPad` 与 padding 后 batch 搬入；V008 15/15、29.04，路线主变化在 wide reduction。
+- SMD-H3 被拒前的候选细节保留供重复审计：目标为 `R={64,256,1024}`、`D={65,73,127}`、FP32/FP16/BF16；原提案是在既有 `localRows` 内用 32-byte padded row stride 与逐行 `DataCopyPad`，试图共用 MTE2-to-Vector 等待。该候选无独立收益数据；padding 可能抵消固定成本节省，且输出仍逐行搬运。因 H001/MID-X 已有相同 padded multi-row staging 机制，现标记 `DUPLICATE_REJECTED`，不计入候选。
+- MID-X 重复证据：`归档/历史工作区/MID-X/architecture-metadata.md`、`V001/kernel.asc:40-47,110-151`、`V002/kernel.asc:9,45-60,177-188`、`V003/kernel.asc:4,40-47,141-145`。V001/V002 已有 padded row staging 与 `batchRows`；V003 的 D<=128 tiny 分支仍复用相同搬入机制。V001 有部分 mid/wide case 耗时记录、线上 2/15；V002/V003 为 Runtime Error。这些整版结果不代表该搬运子机制单独失败。
+- 路线索引：`技术路线/技术路线总表.md`、`技术路线/技术路线图.md`、`技术路线/全项目成绩与技术路线盘点.md`、`技术路线/全版本记录.tsv`、`技术路线/路线成绩表.tsv`、`调度/当前任务.tsv`、`调度/主代理分工.md`、`调度/本地线上校准.tsv`。
+- Wave-2 已提交 handoff：SYNC `9071292b:研究/SYNC-TOPOLOGY-CHAMPION-X/TRACK-B-HANDOFF.md`；STORE `415a2429:研究/STORE-EPILOGUE-W2-X/TRACK-B-HYPOTHESES.md`；SELECTIVE-FASTPATH `9e5a5731:研究/SELECTIVE-FASTPATH-CHAMPION-X/TRACK-B-HANDOFF.md`；EPI `0ce5441e:研究/EPI-ARITH-CHAMPION-W2-X/TRACK-B-HANDOFF.md`；row ownership 规则 `研究/SCHED-CHAMPION-X/TRACK-B-BRIEF.md`。
+- R31A/R31B、MIX 与 Wave-1 证据：`本地实验/R31A/V021/`、`线上结果/R31A/V024/`、`线上结果/R31A/V028/`、`线上结果/R31B/V017/`、V011 行源码与 `技术路线/全版本记录.tsv`；`线上结果/MIX-A/V003/`、`V004/`、`V005/`、`本地实验/MIX-A/V007/`；`线上结果/STORE-EPILOGUE-X/V003/`、`线上结果/EPILOGUE-ARITH-CHAMPION-X/V001/`、`V002/`。Official case 到 shape/dtype 对照缺失，见 `研究/OFFICIAL-CASE-ANALYSIS.md`；下述局部 shape 不能映射成特定 Official case。
+
+历史边界摘要：R015/FULL-R015 已覆盖多行 DMA（FULL-R015 为 1/15 Runtime Error）；R013/FULL-R013 覆盖通用双缓冲；R014 覆盖参数驻留；R028/FULL-R028 覆盖标量同步削减。H001/MID-X 已覆盖 padded multi-row 输入搬运。R31B V010 有 mid overlap 记录，但没有有效的 parent/candidate 配对本地数据；V014 将 aligned 小 D batch cap 从 8 提至 32，仅有未提交构建记录、无正确性或性能结果；V015 的 FP32 single-row mid dispatch 本地配置失败，记录为 `MEASUREMENT_BLOCKED`。纯静态参数预留因缺少运行时开销证据未列为候选；tiny dispatch 因与 MID-X V003、R31B V015 相邻且缺少本地数据未列为候选。MIX-A V003 改 `localRows==1` 分派并加释放同步，属于多项变化；V004/V005 的 tiny FastKernel 分派 Official 低于 V003。Wave-1 R31B V017 Official 44.68、STORE V003 44.38、EPI V002 44.96，均低于 45.16；这些邻近路线只作重复与风险证据，不外推为本假设结果。
+
+## 假设池
+
+### SMD-H2：FP16 mid 输出复用已消费的 x UB
 
 - `HYPOTHESIS_ID`: `SMD-H2-FP16-MID-OUTPUT-ALIAS`
-- `MECHANISM`: 对 `2048<D<4096` 的 FP16 mid path，以归约后已读完的 `xBuf_` 代替 `outputBuf_` 完成转换、affine 与 Store；对应 shape 不预留 `outputBuf_`。
-- `BOTTLENECK`: mid path 为最终 FP16 输出单独预留 tile-sized UB。
-- `DIRECT_PARENT`: `R31B V011`; source SHA-256 `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`; Official `45.16`。
-- `TARGET_SHAPES`: FP16，`R={1,8,32,128}`，`D={2049,3072,3073,4095}`。
+- `MECHANISM`: 对 `D={2049,3072,3073,4095}` 中实际命中 FP16 `ProcessNarrowMidOverlap` 的 shape，归约完成后用 `xBuf_` 承接转换后的输出，省去该路径的独立 `outputBuf_` 预留；其余 shape 保持 V011。
+- `BOTTLENECK`: mid FP16 每核为单行输出再保留一份 tile-sized UB。
+- `DIRECT_PARENT`: R31B V011；`PARENT_SOURCE_SHA` 如上；Official `45.16`。
+- `TARGET_SHAPES`: FP16 `R={1,8,32,128}`、`D={2049,3072,3073,4095}`；必须记录实际分支和 `localRows`。
 - `TARGET_DTYPES`: FP16。
-- `WHY_IT_MAY_HELP`: 少预留最多 8192 bytes/core；同函数 BF16 分支已有 `xBuf_` 写回用法。
-- `WHY_IT_MAY_FAIL`: 数据访问与算术数量不变，UB 地址变化未必带来时延变化；错误的复用时序会覆盖尚未完成的 Store。
-- `UB_IMPACT`: 对目标 shape 少预留 `4096*sizeof(half)`；不增加容量。
-- `DMA_IMPACT`: GM 读写字节及 Store 数量不变。
-- `SYNC_IMPACT`: 不变；保留输入释放、下一行前的 MTE3 完成等待及最终写回等待。
-- `PRECISION_RISK`: 低；数值顺序不变，主要风险是 buffer 生命周期。
-- `DUPLICATE_CHECK`: 对照 `线上结果/R31B/V011/submission.asc` 的 BF16 mid 写回与 FP16 `outputBuf_` 用法；未发现 FP16 同路径省去该预留的历史记录。
-- `RELATED_OLD_ROUTES`: R31B V010/V011；H001 V008；MID-X V001-V003。
-- `MINIMAL_EXPERIMENT`: 只改目标 shape 的输出 tensor 来源与 `outputBuf_` 初始化条件；正确性跑 `R={1,8,32,128}`、`D={2049,3072,3073,4095}`，并确认下一行 MTE2 仅在前一行 Store 完成后复用 `xBuf_`；通过后对同形状做父版/候选配对计时。
-- `UNCERTAINTY`: 中；有同函数 BF16 先例，FP16 时序及收益未测。
+- `WHY_IT_MAY_HELP`: 该路径可少占最多 `4096*sizeof(half)` UB；同函数 BF16 分支已在输出阶段使用 `xBuf_`。
+- `WHY_IT_MAY_FAIL`: 不减 GM 字节或向量算术；释放 UB 未必改变时延。提前覆盖 x 输入或过早复用其地址会造成数据竞争。
+- `UB_IMPACT`: 目标 FP16 路径少一份最多 4096-element 输出缓冲；不增加 UB。
+- `DMA_IMPACT`: GM 读写字节、方向、次数与 Store 长度不变。
+- `SYNC_IMPACT`: 不改事件数量与位置；保留下一行输入复用前的 `V_MTE2`/`MTE3_V` 等待及最终 drain。
+- `PRECISION_RISK`: 低；转换与 affine 次序不变，主要风险为 UB 生命周期。
+- `DUPLICATE_CHECK`: `线上结果/R31B/V011/submission.asc:599-610` 已给出 BF16 同函数的 x-buffer 写回先例；未见 FP16 该分支采用此 buffer。`UB-LIVENESS-X V003` 是两遍间 phase-role alias，机制相邻；本项仅在单行 reduce 已消费输入后复用 x-buffer，不改变跨 pass 生命周期。保留为窄 dtype/path 候选，重复风险中。
+- `RELATED_OLD_ROUTES`: R31B V011；UB-LIVENESS-X V001-V003；H001 V008；MID-X V001-V003。
+- `PROPOSED_ONE_FACTOR_DIFF`: 僅改 FP16 目標 shape 的 `outputBuf_` 初始化條件與 `ProcessNarrowMidOverlap` 輸出 tensor 來源；不移動任何等待、DMA 或算術。
+- `MINIMAL_EXPERIMENT`: Main 选择后，对 R={1,8,32,128}、D={2049,3072,3073,4095} 先核对实际 dispatch、父子正确性及 Store 完成前 x-buffer 不被覆盖；通过后同设备交错测时，并含 D=2048/4096 邻近控制。不得改变 blockCount 或行分配。
+- `UNCERTAINTY`: 中；有 BF16 同函数先例，FP16 生命周期与时延收益未验证。
 
-### SMD-H3：非对齐 tiny-D 使用每核局部批处理
-
-- `HYPOTHESIS_ID`: `SMD-H3-UNALIGNED-LOCAL-BATCH`
-- `MECHANISM`: 对 `localRows>1 && D<=128` 的非对齐行，在现有每核行段内用 32-byte row stride 和逐行 `DataCopyPad` 暂存；保留父版逐行归约与 affine，不改行归属。
-- `BOTTLENECK`: tiny generic 路径逐行执行 MTE2/Vector 同步和标量归约设置。
-- `DIRECT_PARENT`: `R31B V011`; source SHA-256 `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`; Official `45.16`。
-- `TARGET_SHAPES`: `R={64,256,1024}`，`D={65,73,127}`；另测小行控制组。
-- `TARGET_DTYPES`: FP32、FP16、BF16。
-- `WHY_IT_MAY_HELP`: 每批共用 MTE2-to-Vector 等待；复用已分配的 `localRows`，不改核间工作。
-- `WHY_IT_MAY_FAIL`: pad 和边界操作可能抵消固定成本节省；MTE3 仍按原始 D 写回。
-- `UB_IMPACT`: 增加批内 padding，限制 `batchRows` 使 rowStride 总量不超过现有 tile 预算。
-- `DMA_IMPACT`: 有效 GM 字节不变；非对齐行仍逐行搬运，不主张减少 DMA 数量。
-- `SYNC_IMPACT`: 目标是批量搬入后共用 MTE2-to-Vector 等待；保留输出源复用所需等待。
-- `PRECISION_RISK`: 低到中；逐行算术不变，但 padding 不得参与 ReduceSum 或输出。
-- `DUPLICATE_CHECK`: `线上结果/H001/V008/submission.asc` 的 `CopyRows` 已有非对齐 padding 后批处理先例；MID-X V001/V002 也尝试过整体批处理且结果不可靠。此假设只补 V011 `D<=128` 非对齐边缘，不搬用其行分配；重复度仍偏高。
-- `RELATED_OLD_ROUTES`: H001 V008；MID-X V001/V002/V003；R31B V011。
-- `MINIMAL_EXPERIMENT`: 只新增该条件下的批处理 helper；固定父版 `blockCount` 与 `beginRow/localRows`。三 dtype、`D=65,73,127` 先跑正确性，再对 `R=64,256,1024` 配对计时并含小行控制组。
-- `UNCERTAINTY`: 中高；收益依赖逐行同步占比，pad 的逐 dtype 单位和 ReduceSum 有效长度需确认。
-
-### SMD-H5：FP32 小 D 批次延后 Store 等待
+### SMD-H5：FP32 small batch 输出双槽延后复用等待
 
 - `HYPOTHESIS_ID`: `SMD-H5-DEFER-BATCH-STORE-WAIT`
-- `MECHANISM`: 只改 `ProcessSmallFp32ContiguousBatched`，将 8192-element value buffer 分成两个 4096-element slot 交替使用；只在复用对应 slot 前等待 MTE3，保留最终 drain。
-- `BOTTLENECK`: 当前每批 Store 后立即执行 `SyncMTE3ToV`，串行等待输出搬运。
-- `DIRECT_PARENT`: `R31B V011`; source SHA-256 `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`; Official `45.16`。
-- `TARGET_SHAPES`: FP32，`D={64,256,512,1024,2048}`；选能形成 2、3 个以上 local batch 的 R，另含单 batch 控制。
+- `MECHANISM`: 仅对 `ProcessSmallFp32ContiguousBatched`，把现有 `valueFp32Buf_` 分成两个最多 4096-element 槽交替写入；MTE3 完成等待移至对应槽下次复用前，保留最终 drain。先确认现有缓冲容量至少容纳两槽。
+- `BOTTLENECK`: 当前每个 local batch Store 后立即 `SyncMTE3ToV`，挡住后续 batch 的 value 缓冲计算。
+- `DIRECT_PARENT`: R31B V011；`PARENT_SOURCE_SHA` 如上；Official `45.16`。
+- `TARGET_SHAPES`: FP32 `D={64,256,512,1024,2048}`；选用现有 launch 下可产生 1、2、3+ local batches 的 R，并记录 `blockCount/localRows/batchRows`。
 - `TARGET_DTYPES`: FP32。
-- `WHY_IT_MAY_HELP`: 父版 `rowsByInputBuffer` 限制每批不超过 4096 elements，现有 8192-element buffer 可容纳双 slot；MTE3 读一个 slot 时，Vector 可准备另一个。
-- `WHY_IT_MAY_FAIL`: 单 batch 无收益；Store 时间可能短；slot 复用时序若错会覆写未完成输出。
-- `UB_IMPACT`: 总预留不变，分为两个最多 4096-element slot。
-- `DMA_IMPACT`: GM 字节和 Store 数量不变，尝试与下一批计算重叠。
-- `SYNC_IMPACT`: 多批次的 MTE3-to-Vector wait 移到 slot 复用点，保留最终完成等待；目标是减少可见串行等待。
-- `PRECISION_RISK`: 无算术变化；风险集中在 UB 生命周期。
-- `DUPLICATE_CHECK`: `技术路线/全版本记录.tsv` 的 R31B V014 只改 batch cap 且无性能结果；H001/MID-X 有队列双缓冲，但不是 V011 该函数的 value-cache 双 slot Store 等待。
-- `RELATED_OLD_ROUTES`: H001 V008；MID-X V001/V002；R31B V011/V014。
-- `MINIMAL_EXPERIMENT`: 只改 slot offset 与 wait 位置，不改 batch cap、算术、DMA 形状或行分配。先验证父版全目标正确性，再测 `D=64,256,512,1024,2048`，覆盖 1、2、3+ 批次，同设备配对计时。
-- `UNCERTAINTY`: 中；生命周期依据明确，收益取决于 MTE3 延迟能否被下一批计算覆盖。
+- `WHY_IT_MAY_HELP`: 每批最多 4096 elements；现有 value UB 若满足双槽容量前置条件，可让前批 Store 与后批计算重叠。
+- `WHY_IT_MAY_FAIL`: 单 batch 没有重叠；Store 可能短于下一批准备；等待或槽复用顺序错误会覆盖未完成输出。
+- `UB_IMPACT`: 总 buffer 不扩大，仅分成两个最多 4096-element 槽；容量不足则此项不可行，不得缩 tile 或改分配。
+- `DMA_IMPACT`: GM 字节、Store 次数、每笔地址及长度不变。
+- `SYNC_IMPACT`: 把 batch 尾部全局等待移到同槽复用点；事件数量不增加，最后等待全部未完成 Store。
+- `PRECISION_RISK`: 无算术改动；风险集中在 MTE3 完成与 UB 槽生命周期。
+- `DUPLICATE_CHECK`: 与 Wave-2 SYNC H1 的 wide FP32 full-cache 入口等待、R31B V017 的 wide low-precision drain 相邻，但函数、D 区间和槽位不同；与 STORE 路线不同，保留每批 Store 形态。可能涉及 same-core 跨 batch Store/compute overlap，须由 Main 确认是否归 INTERPASS/CROSSROW lane。
+- `RELATED_OLD_ROUTES`: R013/FULL-R013；R31B V011/V017；ASYNC-TRIPLE-X；Wave-2 SYNC、STORE。
+- `PROPOSED_ONE_FACTOR_DIFF`: 只改 small FP32 contiguous batch 的 value slot offset 与 MTE3 wait 时点；不改 batchLimit、batch 内容、Store 形态、算术或 row ownership。
+- `MINIMAL_EXPERIMENT`: Main 选择后先静态确认 value buffer 容量与槽复用顺序；correctness 覆盖 1/2/3+ batches 和尾批，确认最终 drain。通过后测 D={64,256,512,1024,2048}，带单 batch 与不命中 dispatch 的控制，按同设备交错 P/C。
+- `UNCERTAINTY`: 中高；buffer 容量与实际 Store 可隐藏时间未测；跨路线归属待 Main 确认。
 
-## 给 Main 的建议
+### SMD-H6：BF16 mid 参数转换每核一次
 
-优先评审 SMD-H5，其次 SMD-H2。SMD-H3 与 H001/MID-X 旧路相邻，仅在主控确认非对齐 tiny-D 形状仍未覆盖后考虑。静态参数预留未进入三项，因没有运行时开销证据；tiny dispatch 未进入三项，因与 MID-X V003、R31B V015 相邻且缺少本地数据。研究排序不代表实现选择，仍等待 `MAIN_SELECTED=YES`。
+- `HYPOTHESIS_ID`: `SMD-H6-BF16-MID-PARAM-CAST-ONCE`
+- `MECHANISM`: 当 `ProcessNarrowMidOverlap` 中 `localRows>1` 时，加载 gamma/bias 后一次性转入已有 `gammaFp32Buf_`/`biasFp32Buf_`；各行复用转换结果，移除循环内重复的两次 `ToFloat`。不命中该条件时保持原代码。
+- `BOTTLENECK`: BF16 mid 路径已驻留 gamma/bias，却在每个 local row 上重复转换相同参数。
+- `DIRECT_PARENT`: R31B V011；`PARENT_SOURCE_SHA` 如上；Official `45.16`。
+- `TARGET_SHAPES`: BF16 `D={2049,3073,4095}`、`localRows>1`，并用现有分派可达的非对齐 mid D 作辅助；不指定或改动 blockCount。
+- `TARGET_DTYPES`: BF16。
+- `WHY_IT_MAY_HELP`: 复用每核常量参数，把两条 D 长度 Cast 从每行各做一次降为每核各做一次；V011 已分配这两块 FP32 缓冲，并在 generic cache、small low-precision batch 与 BF16 full-tile 函数中采用过一次转换后复用。
+- `WHY_IT_MAY_FAIL`: 目标 D/R 可能不命中 `ProcessNarrowMidOverlap` 或 `localRows<=1`；转换成本可能已被输入处理隐藏；已有缓冲可能存在未识别的该函数内生命周期约束。
+- `UB_IMPACT`: 不新增或扩大 UB；复用已分配的 `gammaFp32Buf_`、`biasFp32Buf_`，目标宽度不超过 4096。
+- `DMA_IMPACT`: 参数 GM Load 次数、字节数及输入/输出 DMA 不变。
+- `SYNC_IMPACT`: 保留现有参数 `MTE2_V` 等待及释放次序；只把转换放在参数就绪后、行循环前。
+- `PRECISION_RISK`: 低；BF16 到 FP32 是精确扩展，逐元素 `Mul/Add` 顺序不变；仍需验证输出一致。
+- `DUPLICATE_CHECK`: `Process()` 在 mid dispatch 后提前 return，绕过下方 `cacheParams && cacheParamFp32` 的每核参数转换；V011 small-low-precision batch 与 BF16 full-tile 路径已展示相同复用模式。R014/FULL-R014 和 COEFF-LOCALITY-X 研究参数驻留/搬运，不等同于减少此处逐行转换；EPI-W2 仅相邻，因本项不改 post-invRms 算术表达式或次序。
+- `RELATED_OLD_ROUTES`: R014/FULL-R014；R31B V011；COEFF-LOCALITY-X；DTYPE-SPECIAL-X；Wave-2 EPI。
+- `PROPOSED_ONE_FACTOR_DIFF`: 仅在 BF16 `ProcessNarrowMidOverlap` 的 resident-parameter 分支增加两次一次性转换，并让该分支逐行读取 FP32 参数缓冲；不改输入转换、ReduceSum、invRms、输出转换、等待或 Store。
+- `MINIMAL_EXPERIMENT`: Main 选择后，先确认 D={2049,3073,4095} 下实际命中函数、`localRows>1`、参数缓冲不与其他活跃张量重叠；跑父子正确性并逐输出对比。通过后交错测时，另含 localRows=1 与不命中路径控制。
+- `UNCERTAINTY`: 中；代码复用依据直接，实际官方形状覆盖及每行 Cast 是否处于关键路径未知。
+
+### SMD-H3：重复项，拒绝保留
+
+- `HYPOTHESIS_ID`: `SMD-H3-UNALIGNED-LOCAL-BATCH`
+- `STATUS`: `DUPLICATE_REJECTED`；不计入有效候选数。
+- `MECHANISM`: 在既有每核行段内对非对齐 tiny-D 使用 32-byte padded row stride 与逐行 `DataCopyPad` 暂存，再逐行归约。
+- `DUPLICATE_CHECK`: H001 V008 `CopyRows` 已对多行做 padded-stride `DataCopyPad`；MID-X V001/V002/V003 均已有 padded row staging、`batchRows` 及 D<=128 路径。改成只针对 V011 tiny D 不改变主要机制，故拒绝；新增 SMD-H6 为参数 Cast 复用，机制独立。
+- `EVIDENCE_PATHS`: `线上结果/H001/V008/submission.asc:130-177,268-269`；`归档/历史工作区/MID-X/V001/kernel.asc:40-47,110-151`、`V002/kernel.asc:9,45-60,177-188`、`V003/kernel.asc:4,40-47,141-145`。
+
+## 交接给 Main
+
+- `VALID_NON_DUPLICATE_CANDIDATES`: 3（SMD-H2、SMD-H5、SMD-H6）。未写 `ROUTE_HYPOTHESIS_POOL_EXHAUSTED`。
+- `CHILD_RECOMMENDED_HYPOTHESIS`: `SMD-H6-BF16-MID-PARAM-CAST-ONCE`，建议 Main 优先审阅：它只复用已有参数转换缓冲，不改 DMA、row ownership、Store 或逐元素算术；这不是实现选择。
+- `PROPOSED_ONE_FACTOR_DIFF`: 每个有效假设各有独立差异说明；不得组合。
+- `EXPECTED_LOCAL_PROBES`: 只在 Main 选定后开展。先确认实际分支、`blockCount/localRows/batchRows`、UB 生命周期与目标形状可达；然后做正确性，只有通过后才可按规范交错测时。官方 shape 映射仍未知。
+- `OPEN_QUESTIONS`：
+  1. H001/MID-X 的多行 padding 先例覆盖面明确；SMD-H3 已拒绝。Main 是否认可 SMD-H2 的单行输入消费后复用与 UB-LIVENESS-X 的跨 pass alias 为不同局部生命周期，需由 Main 判断。
+  2. H5 的 `valueFp32Buf_` 实际可用容量是否至少 8192 elements，以及跨 batch Store/compute 是否属于当前 INTERPASS/CROSSROW lane，均未从本路线证据确定。
+  3. H6 目标 shape 的官方可达性、每核 `localRows>1` 比例未知；若现有 launch 无此形状，不得通过改 blockCount 或行分配制造命中。
+  4. V011 的 Official testcase 缺少 shape/dtype 映射；局部探针无法单独证明总分收益。
+  5. Wave-2 peer handoff 均以已提交版本为依据；未读取其他 Agent 的未提交材料、私有上下文或工作树。
+
+本轮仅更新本路线 Track-B handoff。没有创建 Revision、修改 Candidate/Kernel 或共享记录，也没有构建、跑正确性、测时、访问 server3 或 Online。等待 `MAIN_SELECTED=YES`。
