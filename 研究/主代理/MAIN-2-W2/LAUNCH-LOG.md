@@ -88,3 +88,17 @@ Batch 2 的 M2-3/M2-4 均已确认进入 Track-B；Batch 3 的 M2-5 已派发且
 | M2-5 | `01a0f1a0-6a4e-7e40-b0b2-966e247d59c8`；runtime `RUNNING` | Track-B entry not yet confirmed | private assigned worktree has uncommitted handoff; not inspected. Worktree `/Users/sunyiyang/Desktop/Project/cann-w2-m2-occupancy`, branch `w2/m2/row-occupancy`, created clean from `origin/main` at `ed860e392d7604694ac6664da60aff1fc1f4c04f` after path/branch collision checks; no 429 |
 
 Current states: M2-3 is running with Track-B started and no handoff; M2-4 handoff is complete; M2-5 is running with Track-B entry pending. No 429 reported. `MAIN_SELECTED=NONE`. No route worktree or private child files were inspected.
+
+### Main 提供的最终 handoff 汇总
+
+| 路线 | Agent / 最终状态 | handoff 提交 | 补充事实 |
+|---|---|---|---|
+| M2-1 INTERPASS | replacement `01a0f11a-bf80-7c33-8332-5a939dd96c15`；旧 ID `01a0f0ef-13f0-72e3-b66f-4c8ae589d4e4` 为 LOST/UNRECOVERABLE；completed/closed | `ca6ee4b77469de3c84c2b978a648775ee3ddf86d` | 实际分支 `w2/m2/interpass`，与约定名 `w2/m2/interpass-pipeline` 不同；Main 提供的 `branch -vv` 状态为 `[origin/main: ahead 1]`；本轮 `ls-remote` 返回 `refs/heads/w2/m2/interpass` 且 SHA 相同；假设池耗尽；`MAIN_SELECTED=NONE` |
+| M2-2 CROSSROW | `01a0f129-4b39-73c0-bc7f-7d4e2fafb611`；completed/closed | `963507930c4752573a7211ca2e54429d6cba49a3` | 假设池耗尽；`MAIN_SELECTED=NONE` |
+| M2-3 UB-LIFETIME-SAFE | `01a0f174-2b77-7292-ac20-ce975a49cc04`；completed/closed | 前序 `85b95db8`；最终 `a9c9affcb49e8591f803ab409aafa6192a34caca` | handoff `/Users/sunyiyang/Desktop/Project/cann-w2-m2-ub/研究/UB-LIFETIME-SAFE-CHAMPION-X/TRACK-HANDOFF.md`；架构映射无直接相关条目，`OPEN_QUESTIONS` 留有证据缺口 |
+| M2-4 PARAM-RESIDENCY | `01a0f174-2bea-78b0-b6b2-c4070898f5d3`；completed/closed | `ff0e424bf1dde7c5a1fc9e4386e8178ed36e5a5d` | 保留 1 项条件化想法后假设池耗尽；`MAIN_SELECTED=NONE` |
+| M2-5 ROW-OCCUPANCY | `01a0f1a0-6a4e-7e40-b0b2-966e247d59c8`；completed/closed | `78c93de8453ee9874cce253cf8fca3640a4d2d1d` | 5 项种子想法重复拒绝；独立想法 0 项；假设池耗尽；`MAIN_SELECTED=NONE` |
+
+五名 Agent 均在 handoff 核实后 completed/closed；handoff 5/5，最终提交当前均有对应远端引用，路线工作树清洁状态按 Main 提供。五条均未运行测试，无 429。Revision、Kernel 改动、server job、性能运行、Online、共享 canonical 账目变更均为 0；`PLANNING_DECISIONS_CHANGED=0`；`NEW_ROUTES_OUTSIDE_APPROVED_10=0`。Canonical `origin/main` 保持干净，SHA `ed860e392d7604694ac6664da60aff1fc1f4c04f`。`MAIN_SELECTED=NONE`。
+
+M2-1 远端处理：Main 的先前只读结果称未发现 `refs/heads/w2/m2/interpass`；本轮在控制仓库重新查询时，该引用已存在且指向 `ca6ee4b77469de3c84c2b978a648775ee3ddf86d`。因此未执行 push，也未创建替代分支、覆盖或改写现有分支。路线工作树未访问；其本地跟踪设置仍按 Main 提供的 `[origin/main: ahead 1]` 记录，未在本轮复查。
