@@ -2,6 +2,8 @@
 
 ## 2026-09-30
 
+### 首次派发状态快照
+
 | 次序 | 路线 | Agent ID / 结果 | 记录 |
 |---|---|---|---|
 | 历史派发 | M2-1 | `01a0f0ef-13f0-72e3-b66f-4c8ae589d4e4` | 曾见 `pending_init`，后见 `running`，但未见 bootstrap/research 活动；另一状态入口返回 `not_found`。保留该 ID 于 lineage。 |
@@ -10,11 +12,23 @@
 | Batch 1 第二路线 | M2-2 | 未创建 | 等待 M2-1 replacement 确认 running 且进入 Track-B；本轮未派发。 |
 | Batch 2 / Batch 3 | M2-3 / M2-4 / M2-5 | 未创建 | 前序批次未确认，未派发。 |
 
-### Worktree 留存状态
+以上记录是首次派发状态快照，后续事实见下节。
+
+### Main-issued 当前事实
+
+| 路线 | 当前 Agent / runtime | Track-B 状态 |
+|---|---|---|
+| M2-1 | replacement `01a0f11a-bf80-7c33-8332-5a939dd96c15`，`RUNNING`；旧 ID `01a0f0ef-13f0-72e3-b66f-4c8ae589d4e4` 保留为 `not_found / LOST` | 已报告进入研究，但 bootstrap 未完成；Main 已续派继续，进度确认待回报 |
+| M2-2 | `01a0f129-4b39-73c0-bc7f-7d4e2fafb611`，`RUNNING` | 等待 bootstrap / Track-B 进度回报 |
+| M2-3 / M2-4 / M2-5 | 未创建 worktree，未派发 Agent | 未启动 |
+
+Batch 1 双路线确认尚未完成，Batch 2 / Batch 3 未启动。未报告 429。`MAIN_SELECTED=NONE`。
+
+### Worktree 派发起点
 
 | 路线 | 分支 | HEAD | 状态 |
 |---|---|---|---|
-| M2-1 | `w2/m2/interpass` | `ed860e392d7604694ac6664da60aff1fc1f4c04f` | 存在；干净；未改动 |
-| M2-2 | `w2/m2/crossrow` | `ed860e392d7604694ac6664da60aff1fc1f4c04f` | 存在；干净；未改动 |
+| M2-1 | `w2/m2/interpass` / `/Users/sunyiyang/Desktop/Project/cann-w2-m2-interpass` | `ed860e392d7604694ac6664da60aff1fc1f4c04f` | Main 报告：复用既有 worktree，派发起点干净 |
+| M2-2 | `w2/m2/crossrow` / `/Users/sunyiyang/Desktop/Project/cann-w2-m2-crossrow` | `ed860e392d7604694ac6664da60aff1fc1f4c04f` | Main 报告：复用既有 worktree，派发起点干净 |
 
-无 Agent 被报告为 active。未收到 429。当前停止点为 v1 派发能力不可用，等待 Main 提供可用的同一派发接口后继续。
+本控制 Agent 未读取 Route worktree 文件。仅在收到 Main 后续事实后再更新本日志。
