@@ -24,6 +24,15 @@
 
 Batch 1 双路线确认尚未完成，Batch 2 / Batch 3 未启动。未报告 429。`MAIN_SELECTED=NONE`。
 
+### Batch 1 Main-issued 完成事实
+
+| 路线 | 当前事实 | 记录 |
+|---|---|---|
+| M2-1 | replacement `01a0f11a-bf80-7c33-8332-5a939dd96c15` runtime running；旧 ID `01a0f0ef-13f0-72e3-b66f-4c8ae589d4e4` 为 LOST/UNRECOVERABLE | replacement 报告 Track-B research entered |
+| M2-2 | Agent `01a0f129-4b39-73c0-bc7f-7d4e2fafb611` | handoff commit `963507930c4752573a7211ca2e54429d6cba49a3` pushed clean；`ROUTE_HYPOTHESIS_POOL_EXHAUSTED=YES`；`MAIN_SELECTED=NONE` |
+
+Batch 1 已达成：两条路线均有活跃 Agent 且已进入 Track-B；未报告 429（`429=0`）。
+
 ### Worktree 派发起点
 
 | 路线 | 分支 | HEAD | 状态 |
@@ -32,3 +41,14 @@ Batch 1 双路线确认尚未完成，Batch 2 / Batch 3 未启动。未报告 42
 | M2-2 | `w2/m2/crossrow` / `/Users/sunyiyang/Desktop/Project/cann-w2-m2-crossrow` | `ed860e392d7604694ac6664da60aff1fc1f4c04f` | Main 报告：复用既有 worktree，派发起点干净 |
 
 本控制 Agent 未读取 Route worktree 文件。仅在收到 Main 后续事实后再更新本日志。
+
+### Batch 2 准备结果
+
+Canonical 根仓库先执行 `git fetch origin`。目标路径与本地/远端分支在创建前均不存在，也没有对应 worktree 登记；因此按最新 `origin/main` 建立：
+
+| 路线 | 工作树 | 分支 | 起始 HEAD | 创建后状态 |
+|---|---|---|---|---|
+| M2-3 UB-LIFETIME-SAFE-CHAMPION-X | `/Users/sunyiyang/Desktop/Project/cann-w2-m2-ub` | `w2/m2/ub-lifetime-safe` | `ed860e392d7604694ac6664da60aff1fc1f4c04f` | 干净 |
+| M2-4 PARAM-RESIDENCY-CHAMPION-X | `/Users/sunyiyang/Desktop/Project/cann-w2-m2-param` | `w2/m2/param-residency` | `ed860e392d7604694ac6664da60aff1fc1f4c04f` | 干净 |
+
+未调用 Route-Agent spawn：当前工具接口没有 `multi_agent_v1__spawn_agent`，故 M2-3 / M2-4 均无 Agent ID，runtime 未启动，Track-B 尚未由新 Agent 确认；未用 CLI 或线程替代。派发 `429=0`。Batch 2 尚未确认，不启动 M2-5。`MAIN_SELECTED=NONE`。
