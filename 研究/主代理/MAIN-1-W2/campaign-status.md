@@ -10,7 +10,7 @@
 - NEW_ROUTES_OUTSIDE_APPROVED_5: `0`
 - SOURCE_KERNEL_WRITTEN_BY_MAIN: `0`
 - SHARED_LEDGER_WRITTEN_BY_MAIN: `0`
-- CHILD_SPAWN_RETRIES: `initial 10 attempts failed with runtime 429; 5 fresh IDs below are active`
+- CHILD_SPAWN_RETRIES: `initial 10 attempts failed with runtime 429; one EPI child later exited on concurrency limit and was replaced`
 
 Wave-1 Local-positive candidates remain separate from the current Official anchor. The Wave-2 lanes start from the Official-backed parents recorded below; Local-positive history is donor evidence only until a new Official result proves otherwise.
 
@@ -20,7 +20,7 @@ Wave-1 Local-positive candidates remain separate from the current Official ancho
 |---|---|---|---|---|---|
 | M1-1 | SYNC-TOPOLOGY-CHAMPION-X | `w2/m1/sync-topology` | `/Users/sunyiyang/.codex/worktrees/w2-m1-sync/cann` | `01a0f038-7eae-7e13-9130-2dd37ca68948` | TRACK-B ACTIVE |
 | M1-2 | STORE-EPILOGUE-W2-X | `w2/m1/store-epilogue` | `/Users/sunyiyang/.codex/worktrees/w2-m1-store/cann` | `01a0f039-1cbb-79d1-bb77-9f63f830b5f3` | TRACK-B ACTIVE |
-| M1-3 | EPI-ARITH-CHAMPION-W2-X | `w2/m1/epi-arith` | `/Users/sunyiyang/.codex/worktrees/w2-m1-epi/cann` | `01a0f039-2319-7b80-a504-2c2af0d0f95a` | TRACK-B ACTIVE |
+| M1-3 | EPI-ARITH-CHAMPION-W2-X | `w2/m1/epi-arith` | `/Users/sunyiyang/.codex/worktrees/w2-m1-epi/cann` | `01a0f05a-3dd0-7fa1-80da-dd5b51ba0784` | TRACK-B ACTIVE; replaced failed runtime child |
 | M1-4 | SELECTIVE-FASTPATH-CHAMPION-X | `w2/m1/selective-fastpath` | `/Users/sunyiyang/.codex/worktrees/w2-m1-fastpath/cann` | `01a0f039-295d-7900-8099-8097e2e68b78` | TRACK-B ACTIVE |
 | M1-5 | SMALLMID-DATAFLOW-CHAMPION-X | `w2/m1/smallmid-dataflow` | `/Users/sunyiyang/.codex/worktrees/w2-m1-smallmid/cann` | `01a0f039-2fb0-7d52-aacb-f8e668ba426c` | TRACK-B ACTIVE; parent SHA correction sent |
 
