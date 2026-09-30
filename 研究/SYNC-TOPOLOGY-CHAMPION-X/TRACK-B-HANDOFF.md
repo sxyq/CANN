@@ -53,3 +53,59 @@
 - R028 改的是跨行归约与标量 `GetValue` 汇总，不纳入本路线；它触及归约，超出本次范围。证据：`归档/phase3-before-reset-20260920/提交/单方案/R028-标量同步削减/README.md`、`归档/历史阶段/historical-branches-20260924/independent__full-r028-scalar-sync-reduction-i001/files/提交/单方案/FULL-R028-SCALAR-SYNC-REDUCTION/I001/kernel.txt`。
 
 **停止点**：三条假设已交 Main 评估。本 child 不选方向、不创建 Revision、不改实现；等待 Main 指定后续。
+
+## Track-B 补充字段
+
+本节补齐路线边界、执行约束和跨路线去重信息；上方 H1–H3 的候选描述保持原样。所有探针都只是 Main 选定之后的建议，本 child 不据此创建 Revision。
+
+### 路线级约束
+
+- `ROUTE_BOUNDARY`：只研究 R31B-V011 宽行路径里已有 MTE3_V / MTE2_V 等待的位置与先后关系，以及不改变每元素运算顺序的既有 V 工作相对等待的位置。只讨论 `ProcessWideFp32FullCacheRows` 与 `ProcessWideLowPrecision`。
+- `ALLOWED_CHANGES`：候选获 Main 选择并创建 Revision 后，最多改动已有等待点的相对位置；H3 可移动既有 Muls 循环及紧随其后的 V 屏障。事件、缓冲区、运算、搬运和 Store 均沿用 V011。
+- `FORBIDDEN_CHANGES`：不改 tile 宽度/数量、Store 次数/范围、归约、dtype 分支、UB 大小/别名、行到核分配、blockCount 或 dispatch；不增加/删除事件、DMA、算术或缓冲区；未获 Main 选择前不碰 Kernel/Candidate、不创建 Revision。
+- `PARENT_SOURCE_SHA`：`a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`，R31B-V011，Official `45.16`。
+- `EVIDENCE_PATHS`：
+  - 父版身份及等待位置：`线上结果/R31B/V011/source-meta.json`、`submission.asc:2181-2244`、`submission.asc:3245-3297`。
+  - R001–R029 / FULL-R 关系：`技术路线/技术路线总表.md:19-47,57-85`、`技术路线/技术路线图.md:273-280`；特别相关的是 R013/FULL-R013，R028/FULL-R028 是标量归约同步，R015 是多行 DMA，R005 是 tile，R016 是行调度。
+  - R31A/R31B/MIX：`本地实验/R31A/V021/handoff.md`、`线上结果/R31A/V028/diff.patch`、`线上结果/R31B/V017/{diff.patch,source-meta.json,result.json}`、`研究/R31B/handoff-v018.md`（commit `7adf582c`）、`研究/R31B/handoff-v019.md`（commit `ebee3ded`）、`本地实验/MIX-A/V007/{handoff.md,MAIN-REVIEW.md,local-result.json}`、`线上结果/MIX-A/V003/diff.patch`。
+  - 前一波相邻证据：`技术路线/全版本记录.tsv:82`、`线上结果/ASYNC-OVERLAP-CHAMPION-X/V001/{diff.patch,result.json,ONLINE-HANDOFF.md}`；EPI 的既有算术 donor 见 `线上结果/EPILOGUE-ARITH-CHAMPION-X/V002/{diff.patch,result.json}`；写回 donor 见 `线上结果/STORE-EPILOGUE-X/V003/{diff.patch,result.json}`。
+  - Wave-2 已提交 handoff：STORE `80676bc73334fc0b7c3a912353fc02abdfec16b1:研究/STORE-EPILOGUE-W2-X/TRACK-B-HYPOTHESES.md`；EPI `5031a5fa253407ab6f65f16b00e59e21312dd1e2:研究/EPI-ARITH-CHAMPION-W2-X/TRACK-B-HANDOFF.md`；SELECTIVE-FASTPATH `9e5a573112a1dbed7b2450963b5e9961415f53b5:研究/SELECTIVE-FASTPATH-CHAMPION-X/TRACK-B-HANDOFF.md`；SMALLMID `47dacfa21f7da5158cb855567b81d8163576ff6a:研究/SMALLMID-DATAFLOW-CHAMPION-X/track-b-handoff.md`。只引用这些已提交文件，未读取其工作树内容。
+
+### 每项单因子差异
+
+- `H1 / PROPOSED_ONE_FACTOR_DIFF`：仅移除 V011 `ProcessWideFp32FullCacheRows` tile 循环入口的两处 `WaitFlag<MTE3_V>`（父源码 2183–2190）；保留已有同槽等待、事件分配、Store 语句和尾部 drain。不得改变 Store 数量、地址、tile 或行分配。
+- `H1 / EXPECTED_LOCAL_PROBES`：Main 选定后先比较父子正确性和父版同码稳定性；主形状 `rows=2,D=12288,FP32,blockCount=1`，`D=8192` 是不命中宽路径的控制。形状与实际分支命中须记录；通过后再做同设备交错 P/C。
+- `H2 / PROPOSED_ONE_FACTOR_DIFF`：仅把 `WaitFlag<MTE2_V>(prd)` 从当前 tile 参数消费前移到下一槽 gamma/bias Load 与 SetFlag 之后、当前 tile 首次读 gamma/bias 之前；保留原 `V_MTE2` 槽位释放等待、事件 ID、DMA 和双缓冲深度。
+- `H2 / EXPECTED_LOCAL_PROBES`：先用 `rows=2,D=12288,FP16,blockCount=1` 做父子正确性与同码稳定性；`BF16` 仅在 FP16 探针有稳定方向后确认，`D=8192` 作未改路径控制。之后才做同设备交错 P/C。
+- `H3 / PROPOSED_ONE_FACTOR_DIFF`：仅把 gamma/bias Load 后现有的 Muls 循环及其 V 屏障，移到 `SyncMTE2ToV()` 之前；保留等待，并保证 gamma/bias 首次被 Mul 读取前已完成等待。Mul、Add、Store、事件和每元素运算顺序不变。
+- `H3 / EXPECTED_LOCAL_PROBES`：先用 `rows=2,D=12288,FP32,blockCount=1` 做父子正确性与同码稳定性，`D=8192` 作不改路径控制；之后才做同设备交错 P/C。记录实际 `batchRows`，不改行分配。
+
+- `H1 / CROSS_ROUTE_DUPLICATE_AUDIT`：R013/FULL-R013 已有双缓冲流水，但 H1 不加缓冲或深度；R31A V021 是最接近的等待移动，最新记录没有合格 P/C timing；R31B V017 是最强相邻项，改低精度路径的 MTE3 等待且 Official `44.68`，但 donor 同时含不同 tile 策略。MIX-A V007 改的是窄中单行反向 `V_MTE2` 释放点；前一波 STORE V003 改每行 Store 分块，EPI V002 改算术。H1 的 FP32 V011 单等待探针可单独量化迁移性，但与 V017 重复风险高。
+- `H2 / CROSS_ROUTE_DUPLICATE_AUDIT`：R013/FULL-R013 是已有双缓冲的广义先例；前一波 ASYNC-OVERLAP V001 与 H2 都想让参数搬运覆盖计算，V001 提前首 tile 到 invRms 循环期间且 Official `44.17`，H2 只移动后续 tile 的 `MTE2_V` wait，首 tile 不动。R31B V019 移除的是反向 `SyncVToMTE2`，MIX-A V007 移除的是 `V_MTE2` 释放；两者不等同于参数就绪事件。STORE/EPI 前一波 donor 分别改 MTE3 写回和算术，可用 FP16 `D=12288` 单变量探针区分。
+- `H3 / CROSS_ROUTE_DUPLICATE_AUDIT`：R028/FULL-R028 是跨行标量归约，不属本项；R31A V028 删除 affine 尾部 barrier，而 H3 保留 barrier 数量；R31B V018 删除 Muls 拷贝、改变工作量，H3 保留 Muls/Mul/Add，只移动等待关系。前一波及 Wave-2 EPI 都涉及 affine 运算，但 EPI V002 改算术表达，Wave-2 EPI H3 改跨行循环分组/屏障数；H3 仅将既有 Muls 放入参数 DMA 等待窗口。STORE 改写回粒度，MIX-A 改反向同步，均可与本项分开测量。
+
+### 跨路线重复审计
+
+下表逐项对照当前 Wave-2 四条已提交 handoff。相似性用于标出重叠风险；独立验证只说明最小差异可单独测量，不代表候选已获选。
+
+| 假设 | STORE | EPI | SELECTIVE-FASTPATH | SMALLMID |
+|---|---|---|---|---|
+| H1 | 同属 MTE3 写回时序。STORE-W2 改 V002 合并写回的整行 Store 发出点/分块；H1 留在 V011 FP32 分 tile 路径，只后移循环入口等待，Store 调用不变。可用 D12288 单独隔离。 | EPI-W2 H3 调整 Mul/Add 跨行分组及屏障数；H1 不改算术或屏障。性能差异可归于 MTE3 等待点。 | SELECTIVE H1 运行完整 V017 BF16 donor，包含既有低精度 tile 策略；H1 只动 V011 FP32 等待点。二者是直接相邻的 MTE3 等待做法，重复风险高；FP32 单独探针可确认 V017 结果是否能迁移，不能把 donor 成绩归因给单个等待。 | SMALLMID H5 针对 D≤2048 的 FP32 小行双槽 value buffer；H1 是 D=12288 的宽行 full-cache，既不切分 buffer 也不增槽。D 区间和函数路径不同，可分开测。 |
+| H2 | STORE-W2 调 MTE3 Store issue/分块，H2 调 MTE2 参数就绪等待，搬运/写回引擎与改动点不同。 | EPI-W2 改 affine 算术/屏障组织；H2 保持算术，仅让下一 tile 参数 DMA 更早发出。 | SELECTIVE H1 变化是 MTE3 等待，且执行完整 BF16 V017 donor；H2 只移动 V011 宽低精度的 MTE2_V 等待，事件槽和搬运量不变。可在 FP16 目标上独立测。 | SMALLMID H3 也涉及 MTE2→V 等待，但针对 D≤128 非对齐行的每核批处理与 padding；H2 是 D=12288 低精度 gamma/bias 双缓冲预取，不批量化、不改变 DMA 形状。引擎相邻、工作路径可分。 |
+| H3 | STORE-W2 移 Store 发出点或改变写回 chunk；H3 不动 Store，只把既有 Muls 放入 MTE2 等待窗口。 | EPI-W2 H3 同样保留每元素 Muls→Mul→Add，但跨行分组以减少屏障；本项不改循环分组或屏障数，只改 Muls 相对 MTE2 等待的先后。EPI 探针需满足其 `batchRows>=2` 形状条件，本项固定两行探针，分别对 V011 测量。 | SELECTIVE H4 使用完整 EPI V002 算术 donor并改变算术表达/Store 源；H3 保留每元素顺序和 Store 源，仅重排已有工作与等待。形状、精度风险和单因子差异均可分离。 | SMALLMID 主要改变小 D buffer 复用、批处理或等待；H3 不改 buffer 生命周期、DMA 或小 D 路径，只重排宽 FP32 的 Muls 与参数就绪等待。D12288 可独立确认等待是否被有效覆盖。 |
+
+### 历史与前一波判定
+
+- R013 / FULL-R013 已覆盖广义 MTE2/V/MTE3 双缓冲流水，FULL-R013-V001 Official `18.76`；本轮不新增缓冲或流水深度，只问 V011 已有事件中某个等待是否过早。R028 / FULL-R028 虽名为同步削减，实质是逐行 GetValue 与归约标量汇总，超出边界；R015/FULL-R015 改多行 DMA，R005/FULL-R005 改 tile，R016/FULL-R016 改行/核分配，也都不作为本轮候选。
+- R31A V021 曾移动 FP32 CachedRows 的 MTE3 等待，但最新 handoff 记录 shape same-binary 未达标、没有 P/C timing，因此只能证明改动相邻，不能证明收益。R31A V028 删除的是 batch-affine 尾部 barrier，记录的单 barrier 成本约 `0.01 us`；H1–H3 均不删该类屏障。
+- R31B V017 延后低精度输出等待，Official `44.68`；它与 H1 最接近，但还包含不同 dtype/tile donor，不能独立归因。R31B V018/V019 的 V 侧算子/barrier 与 `SyncVToMTE2` 删除没有形成超出噪声的收益；H1/H2/H3 改的是具体等待的顺序并保留必要的槽位释放和尾部 drain。MIX-A V003 加入反向同步保护多行复用，V007 在单行窄中路径删释放等待也未建立稳定收益；本轮不改该反向 V_MTE2 释放点。
+- 前一波 ASYNC-OVERLAP V001 把首个 gamma/bias tile 提前到 invRms 循环期间，局部宽 FP16 有小幅收益但 Official `44.17`，低于 `45.16`。H2 不改首 tile 发出时点，只移动每轮当前 tile 等待相对下一槽预取的位置；这一历史结果提高了重复审查要求，不能当作 H2 的实测依据。前一波 STORE V003 改 chunked writeback、Official `44.38`；EPI V002 改算术、Official `44.96`，二者均未超过锚点，也都不是本轮等待点的单因子证据。
+
+`CHILD_RECOMMENDED_HYPOTHESIS`：H2 仅建议 Main 优先审阅，不代表选定。它只移动已有 MTE2_V wait，DMA 数量、事件数、双缓冲深度和算术均不变，差异边界比 H1 的 V017 等待重叠更窄，也比 H3 的算术管线重排更易单独解释。最终选择仍由 Main 作出。
+
+`OPEN_QUESTIONS`：
+
+1. H2 的关键前提是当前 V 侧等待会推迟后续 MTE2 Load 的发出；现有提交记录没有该精确等待顺序的设备证据，Main 需判断是否值得作为单因子候选。
+2. H1/H3 的 `rows=2,blockCount=1` 是否可由正式 runner 原样到达，以及 V011 实际 `batchRows`/tileWidth，需在 Main 选择后先确认；不得为命中形状改行分配。
+3. H1 必须确认 MTE3 仍在同槽复用前完成；H3 必须确认 Muls 可在 gamma/bias DMA 期间安全访问独立的 value 缓冲。两项都需先做正确性，不可由静态推断替代。
+4. Official testcase 到 shape/dtype 的映射在现有证据中未知；即使未来局部探针有收益，也不能据此推断 Official 总分变化。
