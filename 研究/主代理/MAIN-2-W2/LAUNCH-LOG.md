@@ -53,7 +53,7 @@ Canonical 根仓库先执行 `git fetch origin`。目标路径与本地/远端�
 
 该快照记录工作树刚建立时的状态：当时 M2-3 / M2-4 尚无 Agent ID，runtime 未启动，Track-B 尚未确认。后续 Main-issued 状态见下节。
 
-### Main-issued 最新状态
+### Main-issued 状态快照（先于本节更新）
 
 | 路线 | Agent ID / runtime | Track-B 与 handoff | 其他事实 |
 |---|---|---|---|
@@ -64,3 +64,15 @@ Canonical 根仓库先执行 `git fetch origin`。目标路径与本地/远端�
 | M2-5 | 未启动 | NOT STARTED | worktree 未建立，Agent 未派发 |
 
 当前 running 的 Route Agent 为 2（M2-3、M2-4）；已完成 Track-B handoff 的路线为 M2-1、M2-2。M2-3 / M2-4 运行中不代表 Track-B 已确认。当前 Main-issued 批次事实 `429=0`。`MAIN_SELECTED=NONE`。
+
+### Main-issued 最新进展
+
+| 路线 | Agent ID / runtime | Track-B 状态 | 其他事实 |
+|---|---|---|---|
+| M2-1 | replacement `01a0f11a-bf80-7c33-8332-5a939dd96c15`；旧 ID `01a0f0ef-13f0-72e3-b66f-4c8ae589d4e4` 为 LOST/UNRECOVERABLE | handoff complete；`ROUTE_HYPOTHESIS_POOL_EXHAUSTED=YES`；`MAIN_SELECTED=NONE` | commit `ca6ee4b77469de3c84c2b978a648775ee3ddf86d` pushed clean；no tests/429 |
+| M2-2 | `01a0f129-4b39-73c0-bc7f-7d4e2fafb611` | handoff complete；`ROUTE_HYPOTHESIS_POOL_EXHAUSTED=YES`；`MAIN_SELECTED=NONE` | commit `963507930c4752573a7211ca2e54429d6cba49a3` pushed clean；no tests/429 |
+| M2-3 | `01a0f174-2b77-7292-ac20-ce975a49cc04`；paused non-blockingly, then resumed on same ID; current runtime `RUNNING` | direct progress report confirms Track-B started; bootstrap incomplete | worktree remains clean from `origin/main`; no 429 |
+| M2-4 | `01a0f174-2bea-78b0-b6b2-c4070898f5d3`；paused non-blockingly, then resumed on same ID; current runtime `RUNNING` | direct progress report confirms Track-B started; bootstrap incomplete | worktree remains clean from `origin/main`; no 429 |
+| M2-5 | `01a0f1a0-6a4e-7e40-b0b2-966e247d59c8`；runtime `RUNNING` | Track-B entry not yet confirmed | worktree `/Users/sunyiyang/Desktop/Project/cann-w2-m2-occupancy`; branch `w2/m2/row-occupancy`; created from `origin/main` at `ed860e392d7604694ac6664da60aff1fc1f4c04f`; no 429 |
+
+Batch 2 的 M2-3/M2-4 均已确认进入 Track-B；Batch 3 的 M2-5 已派发且 runtime running，Track-B entry 待确认。Main-issued facts report no 429. `MAIN_SELECTED=NONE`。M2-1/M2-2 未运行测试；不推断 M2-3/M2-4/M2-5 测试状态。本控制 Agent 未查看任何 Route worktree。
