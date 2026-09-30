@@ -127,6 +127,7 @@ EXPECTED_LOCAL_PROBES: 尚未执行。H1: wide FP16 `D=16384/32768`，batchRows=
 CHILD_RECOMMENDED_HYPOTHESIS: `UBX-H1-FP16-RETAINED-Y-INPLACE-OUTPUT`，理由是最后读取点清晰、数据搬运/同步/数学顺序不动，并可静态省出 8192 B。此建议不代表 MAIN_SELECTED，也不代表实现授权。
 
 OPEN_QUESTIONS:
+- `architecture-evidence-map.md` 只有机制级相关条目，没有静态 UB lifetime/alias/cross-stage reuse 的直接证据；是否存在需要补充的已提交路线证据？
 - `result.json` 没有保留 Official case 的 shape/dtype 对照；Main 是否有 V011 case mapping 可用于选择本地探针？
 - V011 target 上 `Store` 的 MTE3 源读取完成保证是否可由现有 `SyncMTE3ToV` 在两个输出 alias 路径中直接适用？
 - Main 是否接受 H2 与 STORE-H4 的 wide/generic path 区分，或要求先由 Main 指定唯一范围？
