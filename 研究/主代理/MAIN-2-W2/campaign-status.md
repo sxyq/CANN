@@ -206,3 +206,58 @@ The checkpoint commit `f9a1253a` was pushed once with the normal
 `could not read Username for 'https://github.com': No such device or address`
 (exit 128). Therefore the control commit is local-only; no alternate remote,
 credential workaround, or force push was attempted.
+
+### Wave-2 Track-B handoff closure (2026-10-01)
+
+This is a control-only reconciliation of the five approved MAIN-2 routes. It
+does not select a hypothesis, create a Revision, run a server job, or modify a
+canonical shared ledger. All five child contexts were fresh and staged as
+Batch 1 = INTERPASS/CROSSROW, Batch 2 = UB/PARAM, Batch 3 = ROW-OCCUPANCY;
+no 429 was observed during launch. The child contexts are complete and should
+remain closed after this receipt.
+
+| Route | Branch / local HEAD | Handoff | Local tree | Remote sync | Review state |
+|---|---|---|---|---|---|
+| INTERPASS-PIPELINE-CHAMPION-X | `w2/m2/interpass-pipeline` / `f4d3aa3933608abdb4aea8b3fcb4857e3eed1500` | `研究/INTERPASS-PIPELINE-CHAMPION-X/TRACK-B-HANDOFF.md` | CLEAN | NOT_SYNCED; one normal push failed with missing HTTPS username | `MAIN_SELECTED=NONE`; 4 hypotheses; no Revision/source/test |
+| CROSSROW-PIPELINE-CHAMPION-X | `w2/m2/crossrow-pipeline` / `25a14dc8d3ccb58180b7801c75d3a61cd21e7694` | `研究/CROSSROW-PIPELINE-CHAMPION-X/TRACK-B-HANDOFF.md` | CLEAN | NOT_SYNCED; one normal push timed out | `MAIN_SELECTED=NONE`; 5 hypotheses, 2 accepted-for-review and 3 duplicate-rejected; no Revision/source/test |
+| UB-LIFETIME-SAFE-CHAMPION-X | `w2/m2/ub-lifetime-safe` / `504de9c5cfd51e2a812562a72456ab35b9039229` | `研究/UB-LIFETIME-SAFE-CHAMPION-X/TRACK-B-HANDOFF.md` | NOT CLEAN; only untracked historical `本地实验/UB-LIFETIME-SAFE-CHAMPION-X/V001/support/correctness/` and `correctness-build/` | NOT_SYNCED; one normal push failed with missing HTTPS username | `MAIN_SELECTED=NONE`; 5 static-lifetime hypotheses; no new Track-B experiment. Historical V001 build remains BUILD=PASS, CORRECTNESS=NOT_RUN, PERFORMANCE=NOT_ELIGIBLE |
+| PARAM-RESIDENCY-CHAMPION-X | `w2/m2/param-residency` / `96f2695ef771a492b825e94c818ecff73fc5f8cf` | `研究/PARAM-RESIDENCY-CHAMPION-X/TRACK-B-HANDOFF.md` | CLEAN | NOT_SYNCED; one normal push timed out/unverified | `MAIN_SELECTED=NONE`; 5 hypotheses with explicit UB/tile-shrink/extra-sync audit; no Revision/source/test |
+| ROW-OCCUPANCY-CHAMPION-X | `w2/m2/row-occupancy` / `19fd1eab9041189bde9b3e4d065e9ea4e794a9dc` | `研究/ROW-OCCUPANCY-CHAMPION-X/TRACK-B-HYPOTHESES.md` and `HANDOFF-CLOSURE.md` | CLEAN | NOT_SYNCED; one normal push failed because upstream was `origin/main`, not the route branch; no target change or retry | `MAIN_SELECTED=NONE`; 3 hypotheses; no Revision/source/test |
+
+All five routes retain direct parent `R31B V011`, Official `45.16`, and parent
+source SHA
+`a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`.
+The handoffs contain the requested route boundaries, OFAT proposals, target
+shapes/dtypes, risk fields, evidence paths, and concrete duplicate audits.
+Child recommendations are research ordering only; they are not Main or
+Planning selections.
+
+```text
+CANONICAL_HEAD=ed860e392d7604694ac6664da60aff1fc1f4c04f
+ORIGIN_MAIN_LOCAL=ed860e392d7604694ac6664da60aff1fc1f4c04f
+CANONICAL_STATUS=CLEAN
+TOTAL_ROUTES=5
+TOTAL_COMMITTED_HANDOFFS=5
+MAIN_SELECTED_COUNT=0
+REVISION_CREATED_IN_THIS_TRACK_B=0
+NEW_KERNEL_FILES_CHANGED_IN_THIS_TRACK_B=0
+SERVER_RUNS=0
+CORRECTNESS_RUNS_IN_THIS_TRACK_B=0
+PERFORMANCE_RUNS=0
+ONLINE_SUBMISSIONS=0
+CANONICAL_SHARED_LEDGER_CHANGES=0
+PLANNING_DECISIONS_CHANGED=0
+NEW_ROUTES_OUTSIDE_APPROVED_5=0
+STAGED_AGENT_LAUNCH=PASS
+M2_TRACK_B_COMPLETE=YES_LOCAL_ONLY
+ALL_5_HANDOFFS_COMMITTED=YES
+REMOTE_SYNC_ALL_5=NO
+READY_FOR_PLANNING_HYPOTHESIS_REVIEW=YES_LOCAL_ONLY
+BLOCKERS=GITHUB_REMOTE_WRITE_UNAVAILABLE; OCCUPANCY_UPSTREAM_MISMATCH; UB_HISTORICAL_UNTRACKED_SUPPORT
+```
+
+The UB route's branch contains historical V001 source/evidence commits from
+the earlier planning-selected experiment. This closure did not add to or run
+that experiment; the two untracked support directories are retained and not
+deleted. No formal Local verdict, Official result, calibration row, lifecycle
+decision, or Online recommendation was created in this Track-B-only closure.
