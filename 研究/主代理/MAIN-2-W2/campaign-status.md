@@ -66,3 +66,79 @@ The four completed handoffs were reviewed for required parent identity, route bo
 is intentionally left without a handoff because Main is forbidden to author its research
 hypotheses. GitHub pushes for the new local branches and control branch are blocked by
 missing HTTPS write credentials; no force push or repeated retry was used.
+
+## Long-run continuation bootstrap (2026-10-01)
+
+This continuation uses the new MAIN-2 portfolio instruction supplied on 2026-10-01.
+It does not rewrite the historical reconciliation above.
+
+### Canonical and champion receipt
+
+```text
+CANONICAL_BRANCH=main
+CANONICAL_HEAD=ed860e392d7604694ac6664da60aff1fc1f4c04f
+LOCAL_ORIGIN_MAIN=ed860e392d7604694ac6664da60aff1fc1f4c04f
+CANONICAL_STATUS=CLEAN
+REMOTE_FRESHNESS=UNVERIFIED; git fetch timed out connecting to github.com:443; bounded ls-remote timed out
+MAIN2_CONTROL_BRANCH=w2/main2/control
+MAIN2_CONTROL_HEAD=b56d6769b539154480b83e02fb6a1e675d922251
+OVERALL_OFFICIAL_CHAMPION=R31B V011 / 45.16
+CHAMPION_SOURCE_SHA256=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
+CHAMPION_EVIDENCE=技术路线/冠军/champions.tsv; 线上结果/R31B/V011/result.json; local retained source SHA verified
+```
+
+The repository's local `origin/main` ref is the base used below, but it cannot be
+represented as freshly fetched from GitHub in this session.
+
+### Current portfolio and owners
+
+| Lane | Route | Agent | Branch / worktree | State |
+|---|---|---|---|---|
+| M2-1 | UB-LIFETIME-SAFE-CHAMPION-X | `01a0f89c-3266-7c43-84e6-90a2c9897408` | `w2/m2/ub-lifetime-safe` / `/home/data4t2/lelinfeng/cann-w2-m2-ub` | Planning-selected UBX-H1; lifetime proof required before V001/source edit |
+| M2-2 | HOTLOOP-ADDR-HOIST-CHAMPION-X | `01a0f89c-2fbc-72b0-a373-9b823f2d6c32` | `w2/m2/hotloop-addr` / `worktrees/w2/m2/hotloop-addr` | Track-B only; `MAIN_SELECTED=NONE` |
+| M2-3 | HOTLOOP-BRANCH-HOIST-CHAMPION-X | `01a0f89d-06d2-78a1-98eb-f30de790e0fe` | `w2/m2/hotloop-branch` / `worktrees/w2/m2/hotloop-branch` | Track-B only; `MAIN_SELECTED=NONE` |
+| M2-4 | TILECOUNT-STATIC-UNROLL-CHAMPION-X | `01a0f89d-0976-78e1-aaf8-c91e389fbd8a` | `w2/m2/tilecount-unroll` / `worktrees/w2/m2/tilecount-unroll` | Track-B only; `MAIN_SELECTED=NONE` |
+| M2-5 | REDUCE-FINALIZE-HANDOFF-CHAMPION-X | `01a0f89d-e115-7190-8a4b-b8a166463ef3` | `w2/m2/reduce-finalize` / `worktrees/w2/m2/reduce-finalize` | Track-B only; `MAIN_SELECTED=NONE` |
+
+All four fresh research worktrees are clean at local `origin/main` commit
+`ed860e392d7604694ac6664da60aff1fc1f4c04f`. Their branches were absent from the
+local branch/worktree inventory before creation. The in-repository research worktrees
+are excluded locally through `.git/info/exclude`; this is not a tracked canonical edit.
+
+The latest supplied Planning instruction says the older INTERPASS, CROSSROW,
+PARAM-RESIDENCY and ROW-OCCUPANCY lanes are PARKed and retained as read-only evidence.
+Their branches/worktrees and handoffs remain untouched. This Main did not edit the
+canonical lifecycle/shared ledgers; the four Planning directives are recorded here only.
+
+### Dashboard, server, and online gates
+
+```text
+DASHBOARD_PATH=DASHBOARD_PATH_UNRESOLVED
+DASHBOARD_DATA_PATH=UNRESOLVED
+DASHBOARD_REFRESH_COMMAND=UNRESOLVED
+REASON=No canonical reference found in AGENTS.md, Skill, project rules, formal project docs, or local project files; no substitute dashboard created.
+SERVER3_STATUS=UNREACHABLE_FROM_THIS_RUNTIME
+REASON=ssh alias cann-server3 did not resolve; direct endpoint stopped at host-key verification; no device/lease freshness claim is made.
+ONLINE_QUEUE=NO_NEW_ELIGIBLE_CANDIDATE
+ONLINE_SUBMISSION=NONE
+```
+
+The last shared device-lease entries are historical (2026-09-27); without live server
+access no compile/correctness/timing job will be assigned. Existing unrelated Judge-ready
+packages are not treated as candidates from this new portfolio and will not be resubmitted.
+
+### Counters at continuation start
+
+```text
+ACTIVE_ROUTE_AGENTS=5
+TRACK_B_HANDOFFS_NEW=0
+REVISION_CREATED=0
+KERNEL_FILES_CHANGED_BY_MAIN=0
+SERVER_JOBS_STARTED=0
+PERFORMANCE_RUNS=0
+ONLINE_SUBMISSIONS=0
+CANONICAL_SHARED_LEDGER_CHANGES=0
+PLANNING_DECISIONS_MADE_BY_MAIN=0
+NEW_SLOTS_OUTSIDE_MAIN2_PORTFOLIO=0
+BLOCKERS=DASHBOARD_PATH_UNRESOLVED; GITHUB_REMOTE_UNREACHABLE; SERVER3_UNREACHABLE_FROM_RUNTIME
+```
