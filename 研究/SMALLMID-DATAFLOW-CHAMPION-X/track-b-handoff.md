@@ -1,6 +1,6 @@
 # SMALLMID-DATAFLOW-CHAMPION-X Track-B 交接
 
-状态：研究完成；`MAIN_SELECTED=NO`；不创建 Revision、不改 Kernel，等待 Main。
+状态：`MAIN_SELECTED=YES`，Main-1 已选 SMD-H6；V001 声明先行提交，之后才改 Candidate。构建、正确性和测时等待 Main 分配独立 server3 设备/job。
 
 ## 路线范围
 
@@ -9,6 +9,8 @@
 - `FORBIDDEN_CHANGES`：不得改 `blockCount`、`blockIdx`、`baseRows`、`extraRows`、`beginRow`、`localRows` 的计算或核间行归属；不得新建 rowGroup、调整每核行数、跨核搬行、改 tile 几何或处理 `D>4096`。不得与 SYNC、STORE、INTERPASS/CROSSROW 或算术候选叠加；未收到 `MAIN_SELECTED=YES` 前不动 Kernel/Candidate、不建 Revision、不构建、不测正确性或时延、不访问 server3、不做 Online、不改共享台账。
 - row-to-core 的硬限制来自 V011 `Process()`：`baseRows=rowCount/blockCount`、`extraRows=rowCount%blockCount`、`beginRow=blockIdx*baseRows+min(blockIdx,extraRows)`、`localRows=baseRows+(blockIdx<extraRows)`。本路线只能读这些值决定是否命中既有核内路径；其值及每行所属 core 必须与 V011 完全相同。
 - `PARENT_SOURCE_SHA`：`a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`。R31B V011，Official anchor `45.16`。已核对 `source-meta.json` 三个 source 字段、`submission.sha256` 与提交的 `submission.asc` 实际 SHA，完全一致；V011 的父版记录为 V010。
+- `MAIN_SELECTION_CONFIRMATION`：Main-1 在 `研究/主代理/MAIN-1-W2/campaign-status.md` 记录本路线选择 `SMD-H6`；依据已推送 receipt commit `2a27be0b`。该记录确认 Main-2 `PARAM-RESIDENCY` 是 `D>8192` 的 GM cache-policy 路径，本提案是 `D<=4096` mid path 的 BF16 参数转换复用，两者机制和范围不同。
+- `V001_REVISION_DECLARATION`：`本地实验/SMALLMID-DATAFLOW-CHAMPION-X/V001/revision-declaration.md`；必须先于 Candidate 源码提交。
 
 ## Wave-2 边界
 
@@ -80,7 +82,7 @@
 - `MECHANISM`: 当 `ProcessNarrowMidOverlap` 中 `localRows>1` 时，加载 gamma/bias 后一次性转入已有 `gammaFp32Buf_`/`biasFp32Buf_`；各行复用转换结果，移除循环内重复的两次 `ToFloat`。不命中该条件时保持原代码。
 - `BOTTLENECK`: BF16 mid 路径已驻留 gamma/bias，却在每个 local row 上重复转换相同参数。
 - `DIRECT_PARENT`: R31B V011；`PARENT_SOURCE_SHA` 如上；Official `45.16`。
-- `TARGET_SHAPES`: BF16 `D={2049,3073,4095}`、`localRows>1`，并用现有分派可达的非对齐 mid D 作辅助；不指定或改动 blockCount。
+- `TARGET_SHAPES`: BF16 `D={2049,3073,4095}`。V011 的 `run_kernel` 按 `availableCoreNum` 与 `rowCount` 计算 `blockCount`，并将其截到 `UINT32_MAX`；本地可达性探针取正的设备 `availableCoreNum=A`、leading-dimension 乘积 `rowCount=2*A`，则每个 core 的既有公式得 `localRows=2`。不改 `blockCount` 或行归属。
 - `TARGET_DTYPES`: BF16。
 - `WHY_IT_MAY_HELP`: 复用每核常量参数，把两条 D 长度 Cast 从每行各做一次降为每核各做一次；V011 已分配这两块 FP32 缓冲，并在 generic cache、small low-precision batch 与 BF16 full-tile 函数中采用过一次转换后复用。
 - `WHY_IT_MAY_FAIL`: 目标 D/R 可能不命中 `ProcessNarrowMidOverlap` 或 `localRows<=1`；转换成本可能已被输入处理隐藏；已有缓冲可能存在未识别的该函数内生命周期约束。
@@ -91,8 +93,8 @@
 - `DUPLICATE_CHECK`: `Process()` 在 mid dispatch 后提前 return，绕过下方 `cacheParams && cacheParamFp32` 的每核参数转换；V011 small-low-precision batch 与 BF16 full-tile 路径已展示相同复用模式。R014/FULL-R014 和 COEFF-LOCALITY-X 研究参数驻留/搬运，不等同于减少此处逐行转换；EPI-W2 仅相邻，因本项不改 post-invRms 算术表达式或次序。
 - `RELATED_OLD_ROUTES`: R014/FULL-R014；R31B V011；COEFF-LOCALITY-X；DTYPE-SPECIAL-X；Wave-2 EPI。
 - `PROPOSED_ONE_FACTOR_DIFF`: 仅在 BF16 `ProcessNarrowMidOverlap` 的 resident-parameter 分支增加两次一次性转换，并让该分支逐行读取 FP32 参数缓冲；不改输入转换、ReduceSum、invRms、输出转换、等待或 Store。
-- `MINIMAL_EXPERIMENT`: Main 选择后，先确认 D={2049,3073,4095} 下实际命中函数、`localRows>1`、参数缓冲不与其他活跃张量重叠；跑父子正确性并逐输出对比。通过后交错测时，另含 localRows=1 与不命中路径控制。
-- `UNCERTAINTY`: 中；代码复用依据直接，实际官方形状覆盖及每行 Cast 是否处于关键路径未知。
+- `MINIMAL_EXPERIMENT`: 声明提交后仅实现预转换复用。目标 D 均满足 `128<D<=4096`、不命中 `D<=2048` 的 low-precision contiguous 分支，并进入 `ProcessNarrowMidOverlap`。BF16 narrow `Init` 为两个参数各分配 8192 个 FP32 元素；mid 分支提前返回，所用缓冲在本函数内无并行消费者。Main 分配独立设备/job 后，对三个 D 各用 `rowCount=2*availableCoreNum` 跑正确性并核对实际 dispatch、localRows 与输出；通过后按统一协议测试。不得改行分配或其他机制。
+- `UNCERTAINTY`: 中；V011 控制流和缓冲生命周期已静态确认，官方 testcase 的 shape 映射仍缺失；收益尚未构建、验证或测量。
 
 ### SMD-H3：重复项，拒绝保留
 
@@ -105,14 +107,14 @@
 ## 交接给 Main
 
 - `VALID_NON_DUPLICATE_CANDIDATES`: 3（SMD-H2、SMD-H5、SMD-H6）。未写 `ROUTE_HYPOTHESIS_POOL_EXHAUSTED`。
-- `CHILD_RECOMMENDED_HYPOTHESIS`: `SMD-H6-BF16-MID-PARAM-CAST-ONCE`，建议 Main 优先审阅：它只复用已有参数转换缓冲，不改 DMA、row ownership、Store 或逐元素算术；这不是实现选择。
+- `CHILD_RECOMMENDED_HYPOTHESIS`: `SMD-H6-BF16-MID-PARAM-CAST-ONCE`；Main-1 已记录选择，见 receipt `2a27be0b`。
 - `PROPOSED_ONE_FACTOR_DIFF`: 每个有效假设各有独立差异说明；不得组合。
 - `EXPECTED_LOCAL_PROBES`: 只在 Main 选定后开展。先确认实际分支、`blockCount/localRows/batchRows`、UB 生命周期与目标形状可达；然后做正确性，只有通过后才可按规范交错测时。官方 shape 映射仍未知。
 - `OPEN_QUESTIONS`：
   1. H001/MID-X 的多行 padding 先例覆盖面明确；SMD-H3 已拒绝。Main 是否认可 SMD-H2 的单行输入消费后复用与 UB-LIVENESS-X 的跨 pass alias 为不同局部生命周期，需由 Main 判断。
   2. H5 的 `valueFp32Buf_` 实际可用容量是否至少 8192 elements，以及跨 batch Store/compute 是否属于当前 INTERPASS/CROSSROW lane，均未从本路线证据确定。
-  3. H6 目标 shape 的官方可达性、每核 `localRows>1` 比例未知；若现有 launch 无此形状，不得通过改 blockCount 或行分配制造命中。
+  3. 本地参数化探针可确定触发 H6；实际 Official shape 的 `rowCount/availableCoreNum` 分布未知，不能外推覆盖率。
   4. V011 的 Official testcase 缺少 shape/dtype 映射；局部探针无法单独证明总分收益。
   5. Wave-2 peer handoff 均以已提交版本为依据；未读取其他 Agent 的未提交材料、私有上下文或工作树。
 
-本轮仅更新本路线 Track-B handoff。没有创建 Revision、修改 Candidate/Kernel 或共享记录，也没有构建、跑正确性、测时、访问 server3 或 Online。等待 `MAIN_SELECTED=YES`。
+Main 已选定 SMD-H6。V001 声明提交后才开始单因子 Candidate 修改；构建、正确性与测时等 Main 分配独立设备/job 后再做。本路线不改共享记录，不实施 Online。
