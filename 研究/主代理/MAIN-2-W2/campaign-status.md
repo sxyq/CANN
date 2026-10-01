@@ -142,3 +142,37 @@ PLANNING_DECISIONS_MADE_BY_MAIN=0
 NEW_SLOTS_OUTSIDE_MAIN2_PORTFOLIO=0
 BLOCKERS=DASHBOARD_PATH_UNRESOLVED; GITHUB_REMOTE_UNREACHABLE; SERVER3_UNREACHABLE_FROM_RUNTIME
 ```
+
+### Long-run checkpoint (2026-10-01, after committed-handoff review)
+
+This checkpoint is based on control-branch HEAD `6fc4d09a74bdd61b42a6f5c15a04bd69805c38dd`.
+It preserves the continuation-start snapshot above and records only new, verified
+events. The repository canonical HEAD remains `ed860e392d7604694ac6664da60aff1fc1f4c04f`;
+the ADDR and BRANCH route agents each completed a bounded fetch confirming that
+`origin/main` resolves to this same SHA.
+
+| Lane | Latest durable fact | Git / gate state |
+|---|---|---|
+| UB-LIFETIME-SAFE | Static proof `研究/UB-LIFETIME-SAFE-CHAMPION-X/BUFFER-LIFETIME-PROOF-V001.md` | Commit `3f015003cdba8e9188b9345bc45c9a2e404d22ab`; Main static-lifetime gate PASS for Planning-selected UBX-H1. Proof now explicitly guards the old unconditional `outputBuf_.Get<T>()`; no Kernel edit observed. Formal V001 declaration is still uncommitted; implementation/build/correctness/performance remain pending. |
+| HOTLOOP-ADDR-HOIST | Track-B handoff `研究/HOTLOOP-ADDR-HOIST-CHAMPION-X/TRACK-B-HANDOFF.md` | Commit `3c65f7e053f79bf8b4d87a1b2d8de43fba4d7889`; 3 surviving hypotheses; `MAIN_SELECTED=NONE`; worktree clean at last check. Cross-route duplicate-audit follow-up requested. |
+| HOTLOOP-BRANCH-HOIST | Track-B handoff `研究/HOTLOOP-BRANCH-HOIST-CHAMPION-X/TRACK-B-HANDOFF.md` | Commit `7e46bd771aa6fa3dd0216d643ebbed1f31e7f332`; 3 surviving hypotheses; `MAIN_SELECTED=NONE`; worktree clean at last check. Cross-route duplicate-audit follow-up requested. |
+| TILECOUNT-STATIC-UNROLL | No new committed handoff observed | No Revision or source change observed; handoff/runtime completion not yet received. |
+| REDUCE-FINALIZE-HANDOFF | No new committed handoff observed | No Revision or source change observed; handoff/runtime completion not yet received. |
+
+Remote and execution gates:
+
+```text
+REMOTE_READ_FRESHNESS=VERIFIED_AT_ed860e392d7604694ac6664da60aff1fc1f4c04f
+REMOTE_WRITE=BLOCKED; normal HTTPS pushes failed because GitHub write credentials are unavailable
+FORCE_PUSH_OR_ALTERNATE_REMOTE=NOT_USED
+DASHBOARD_PATH=DASHBOARD_PATH_UNRESOLVED
+SERVER3=UNREACHABLE_FROM_THIS_RUNTIME; no live lease/HBM snapshot
+SERVER_JOBS=0; CORRECTNESS_RUNS=0; PERFORMANCE_RUNS=0; ONLINE_SUBMISSIONS=0
+CANONICAL_SHARED_LEDGER_CHANGES=0
+PLANNING_DECISIONS_MADE_BY_MAIN=0
+NEW_SLOTS_OUTSIDE_MAIN2_PORTFOLIO=0
+```
+
+Both completed Track-B handoffs remain research-only. Their cross-route audit
+supplements and the remaining two route handoffs are still open; do not treat the
+local commits as remote-synced or the overall MAIN-2 long-run as complete.
