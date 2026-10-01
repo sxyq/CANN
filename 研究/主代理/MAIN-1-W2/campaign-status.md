@@ -201,3 +201,11 @@ Have each existing Route Agent prepare and commit its reproducible route-local b
   "newRoutes": 0
 }
 ```
+
+### MAIN-1 branch publication
+
+- `LOCAL_HEAD`: `fa32b2d43ea61732f54239171087ad6a18f8a613`.
+- `REMOTE_HEAD_AT_ATTEMPT`: `de46001b80c68118313af2befc25924d00f1ed9d`.
+- `PUSH_ATTEMPT`: HTTPS push timed out; a later `git ls-remote` still reported the remote at `de46001b80c68118313af2befc25924d00f1ed9d`.
+- `PUSH_PENDING`: `YES`.
+- `NEXT_ACTION`: retry with ordinary push only; preserve the existing commit history.
