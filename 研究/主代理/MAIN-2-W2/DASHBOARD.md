@@ -4,6 +4,16 @@ UPDATED_UTC: 2026-10-01T21:23:49Z
 SCOPE: MAIN-2 local control only
 CANONICAL_SHARED_LEDGER: UNMODIFIED
 
+## Latest closure receipt
+
+The task-scoped Track-B reconciliation for the five originally approved M2
+routes is recorded in
+`研究/主代理/MAIN-2-W2/TRACK-B-HANDOFF-CLOSURE-20261001.md`. It confirms
+five local committed handoffs, `MAIN_SELECTED=NONE` throughout, no new
+implementation or experiment, and unresolved remote write synchronization.
+The later portfolio notes in this dashboard remain historical control records;
+this receipt does not make a lifecycle decision or change the shared ledgers.
+
 This file is the explicit Dashboard for the current MAIN-2 long-run because
 the repository has no pre-existing Dashboard path. It is not a replacement
 for `调度/当前任务.tsv`, `技术路线/路线成绩表.tsv`, or any other canonical

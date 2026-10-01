@@ -181,3 +181,13 @@ READY_FOR_PLANNING_REVIEW=YES_FOR_TRACK_B_FACTS; NO_FOR_UB_CORRECTNESS
 The only formal candidate in the current portfolio is UB V001, which remains
 blocked before correctness. The four Track-B lanes provide committed facts
 and open questions for Planning; none has been promoted to implementation.
+
+## Latest task-scoped Track-B closure
+
+The five-route reconciliation requested for the original MAIN-2 portfolio is
+recorded in `TRACK-B-HANDOFF-CLOSURE-20261001.md`. The local result is 5/5
+committed handoffs and 0 selections, while the explicit aggregate push and the
+bounded `ls-remote` verification both timed out. The UB worktree remains dirty
+only because earlier V001 correctness support is retained; that earlier run
+reported a correctness failure and is not counted as a Track-B result. Child
+contexts are closed and the next decision belongs to Planning / Review.
