@@ -1,0 +1,17 @@
+--- 线上结果/R31B/V011/submission.asc
++++ 本地实验/EPI-ARITH-CHAMPION-W2-X/V001/submission.asc
+@@ -2201,10 +2201,14 @@
+                     AscendC::LocalTensor<float> valueRow =
+                         valueLocal[batchRow * rowWidth + col];
+                     AscendC::Mul(valueRow, valueRow, gammaLocal, valid);
+-                    AscendC::PipeBarrier<PIPE_V>();
++                }
++                AscendC::PipeBarrier<PIPE_V>();
++                for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
++                    AscendC::LocalTensor<float> valueRow =
++                        valueLocal[batchRow * rowWidth + col];
+                     AscendC::Add(valueRow, valueRow, biasLocal, valid);
+-                    AscendC::PipeBarrier<PIPE_V>();
+                 }
++                AscendC::PipeBarrier<PIPE_V>();
+                 for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {

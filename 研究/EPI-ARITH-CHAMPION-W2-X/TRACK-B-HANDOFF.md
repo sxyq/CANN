@@ -2,7 +2,7 @@
 
 - BRANCH / WORKTREE: `w2/m1/epi-arith` / `/Users/sunyiyang/Desktop/Project/cann/worktrees/w2/m1/epi-arith`
 - DIRECT_PARENT: R31B V011, Official 45.16, source SHA `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`
-- STATUS: H3 selected by Planning and confirmed by Main-1; V001 declaration recorded; Candidate awaits its first source commit
+- STATUS: H3 selected by Planning and confirmed by Main-1; V001 Candidate source prepared; device validation awaits Main assignment
 - MAIN_SELECTED: `YES`
 - SELECTED_HYPOTHESIS: `H3 EAW2-H3-ROW-OP-GROUP`
 - SELECTION_EVIDENCE: `研究/主代理/MAIN-1-W2/campaign-status.md` at commit `2a27be0bbaa81b7f67777f7d8e99277cbe23946a`, section `Current lane instructions and Main review`
