@@ -57,7 +57,8 @@ No route lifecycle decision was made in this bootstrap. Any `LANE_NEEDS_PLANNING
 ## RECOVERY_RECEIPT / BOOTSTRAP_RECEIPT (2026-10-02)
 
 - `CONTEXT_EPOCH`: 2026-10-02; recovery followed a loaded summary.
-- `HEAD`: `d37d67559416d4523c6b2e161d476af63b45b6f1` on `main1/champion-exploit`; worktree clean and equal to its same-name `origin` branch.
+- `HEAD_AT_RECOVERY`: `d37d67559416d4523c6b2e161d476af63b45b6f1` on `main1/champion-exploit`; worktree clean and equal to its same-name `origin` branch before this receipt was recorded.
+- `BOOTSTRAP_RECEIPT_COMMIT`: `52cfcbe22e6a2a66a87b1836c75187ca25941a09`, pushed to `origin/main1/champion-exploit`.
 - `ORIGIN_MAIN` / `CANONICAL_HEAD`: `ed860e392d7604694ac6664da60aff1fc1f4c04f`; fetched and verified equal.
 - `MAIN_BRANCH`: `main1/champion-exploit`.
 - `MAIN1_WORKTREE`: `/Users/sunyiyang/Desktop/Project/cann/worktrees/main/main1`.
