@@ -1,6 +1,7 @@
 # SELECTIVE-FASTPATH-CHAMPION-X — Track-B Handoff
 
 STATUS: RESEARCH_COMPLETE; MAIN_SELECTED=WAITING
+H1_QUALIFICATION: QUALIFICATION_INCOMPLETE
 DIRECT_PARENT: R31B V011
 OFFICIAL_ANCHOR: 45.16
 PARENT_SOURCE_SHA: `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`
@@ -73,6 +74,33 @@ MINIMAL_EXPERIMENT: MAIN_SELECTED=YES 后先确认旧探针 M；V011 与 V017 �
 EXPECTED_LOCAL_PROBES: 先从共享 workload 清单恢复 V017 BF16 D32768 的确切 M 集合；每个目标形状分别核对 V011 与完整 V017 的 correctness、same-binary 和设备事件噪声底，再做同设备交错 P/C。控制只取 FP16 D32768 与一个 BF16 非目标宽度，确认分派不外溢；按每个 shape 报告原始样本、paired delta 与方向一致性，不合并成 Official 预测。
 OPEN_QUESTIONS: V017 原始 BF16 局部样本的 M 未在此处来源中出现；工作负载是否含 BF16 D32768 尚需公开清单支持；实际 tile、blockCount 和每核 batchRows 是否与旧记录一致；无 Official case shape/dtype 映射，无法估算该分支对 15 case 的覆盖。
 UNCERTAINTY: V017 原始局部样本与 M 未在本工作树证据中；Official shape/dtype 映射未知。
+
+### H1 资格确认（只读）
+
+RESULT: `QUALIFICATION_INCOMPLETE`。本节只整理当前分支已提交材料；未运行构建、正确性或测时。
+
+**版本与来源**
+
+- V011 fallback：`a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`，见 `线上结果/R31B/V011/source-meta.json` 与 `submission.sha256`。
+- 完整 V017 donor：`7c168eafde4c07d2a0667253a06925070e10349ccf08327a1b287302788180c4`；direct parent 是 V016，source SHA 为 `9f5c353e65a13a740fe97dc7e6415df032d27560831a3ad142c77592b8208eb5`。V017 包含 V016 的低精度宽行 tile 调整及 V017 的等待调整；拟议对照必须使用完整 V017，不能把它当作仅含 V017 单点变化的 V011 子版本。
+
+**已确认形状与可达分派**
+
+- V017 的公开局部摘要只写 `BF16 wide D32768`，没有 M、完整输入 shape 或 runner 参数。已提交 V016 parent-control runner 明确使用 `M=2, D=32768, BF16`，`kCoreCount=8`；这是 V011/V016 的同形状证据，不能证明 V017 的 `20/20` 使用同一个 M。
+- 在 V011 与 V017 源码中，`D=32768 > kCacheElems(8192)` 会令 `widePath_` 生效；BF16 (`dtype=2`) 进入 `ProcessWideLowPrecision`，其中包含 pass-2 store 等待代码。因此该 donor 路径在目标 dtype/width 上可达，M 不参与该入口判断。
+- 对已记录的 V016 runner 配置 `M=2, availableCoreNum=8`，源码规则推得 `blockCount=min(8,2)=2`，每个 block `localRows=1`。V017 的 BF16 UB 预算选择推得 `wideFullYRows/batchLimit=1`、`tileWidth=2560`、`tileCount=ceil(32768/2560)=13`，故该配置每轮 `batchRows=1`。这些数值是依据提交源码与 runner 参数的静态推导；日志没有逐 block 运行时遥测，且未证明它们对应 V017 的历史 `20/20` 执行。
+
+**已有稳定性与配对记录**
+
+- V016 的统一本地记录在 d4、`M=2`、`D=32768`、BF16、45 次 warmup 下运行 V011 parent-only same-binary：第一次为 `NEEDS_VALIDATION`（MAD/median=0.069、block drift=0.130），第二次为 `PASS`（0.021、0.025）。这是 V011 的历史形状证据，不替代本轮新窗口资格。
+- 同一 V011/V016 配对记录的 BF16 D32768 delta 分别为 `+0.14 us (+1.01%)` 与 `-0.02 us (-0.14%)`，未显示有意义的 V016 改善；这不是 V011/V017 对照。
+- V017 公开摘要报告相对 V016 的 BF16-wide D32768 局部结果为 `-2.0 us / -14.3%`、`20/20`，并记载 same-binary `PASS 6/6`；摘要未给 M、blockCount、localRows、batchRows、runner/executable 身份或原始样本。V017 Official 为 15/15 PASS、44.68，相对 V011 的 45.16 为 -0.48；该 Official 结果不用于推断局部对照或整体收益。
+
+**仍缺材料与最小后续探针**
+
+- 当前提交树没有 `本地实验/R31B/V017/`；缺 V017 局部 runner/shape manifest、原始 same-binary 与配对样本、执行时 `availableCoreNum/blockCount`、逐 block `localRows/batchRows` 记录，以及实际 tile width/count 和 executable 身份。也没有 V011/V017 的直接配对 delta。
+- 因 V017 历史 M 无法从本分支已提交记录恢复，不能把 M=2 的 V016 记录代填为 V017 的 exact M；资格状态保持 `QUALIFICATION_INCOMPLETE`，本阶段停止于只读报告。
+- 后续仅在 Main 提供独立 job、device 与时间窗口后，先用恢复出的 exact M/shape 对 V011 按项目统一协议重做 same-binary；通过后再以相同 runner、device、dtype、shape 交错比较 V011 与完整 V017。记录实际 `blockCount/localRows/batchRows/tileWidth/tileCount` 及原始样本。未恢复 exact M 前不启动探针、不形成局部收益结论，也不选择实现方向。
 
 ## H3 — FP32 chunked writeback
 
