@@ -1,8 +1,14 @@
 # SYNC-TOPOLOGY-CHAMPION-X Track-B 交接
 
-状态：研究完成，等待 Main 选择；本轮不创建 Revision，也不改 kernel 或共用记录。
+状态：Planning 已选 H2，Main-1 回执已记录；先提交 V001 声明，再改 Candidate 源码。
 
 共同父版本：`R31B-V011`，Official `45.16`，源码 SHA `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`，来源 `线上结果/R31B/V011/submission.asc`。
+
+## Main 选择确认
+
+- `PLANNING_SELECTION=H2`：C2C CONTROL 指定在 `ProcessWideLowPrecision` 第二遍，先发下一槽 gamma/bias Load，再等待当前参数首次消费前的 `MTE2_V`。
+- `MAIN1_RECEIPT=2a27be0b`：`研究/主代理/MAIN-1-W2/campaign-status.md` 的 Wave-2 lane 指令和 Main review 记为 H2；本路线 V001 声明在 `本地实验/SYNC-TOPOLOGY-CHAMPION-X/V001/REVISION-DECLARATION.md`。
+- 这项确认只授权登记 H2 的单因子 Revision；不包含其他候选、设备作业或 Online 提交。
 
 下列三项分别调整 MTE3 完成等待、MTE2 参数就绪等待、以及独立 V 工作与 MTE2 等待的相对次序。每项均以 V011 为直接父版本，单项验证，不合并实施。形状名中的 `rows` 指输入总行数，探针使用 `blockCount=1`，代码不改行分配。
 
