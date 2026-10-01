@@ -1,0 +1,33 @@
+diff --git "a/\347\272\277\344\270\212\347\273\223\346\236\234/R31B/V011/submission.asc" "b/\346\234\254\345\234\260\345\256\236\351\252\214/SMALLMID-DATAFLOW-CHAMPION-X/V001/submission.asc"
+index 6adb6f58..220370d2 100644
+--- "a/\347\272\277\344\270\212\347\273\223\346\236\234/R31B/V011/submission.asc"
++++ "b/\346\234\254\345\234\260\345\256\236\351\252\214/SMALLMID-DATAFLOW-CHAMPION-X/V001/submission.asc"
+@@ -517,0 +518,6 @@ public:
++            if constexpr (!AscendC::IsSameType<T, float>::value && !std::is_same<T, half>::value) {
++                AscendC::LocalTensor<float> gammaFp32 = gammaFp32Buf_.Get<float>();
++                AscendC::LocalTensor<float> biasFp32 = biasFp32Buf_.Get<float>();
++                ToFloat(gammaFp32, gammaLocal, valid);
++                ToFloat(biasFp32, biasLocal, valid);
++            }
+@@ -599,6 +605,15 @@ public:
+-                ToFloat(xFp32, gammaLocal, valid);
+-                ToFloat(residualFp32, biasLocal, valid);
+-                AscendC::PipeBarrier<PIPE_V>();
+-                AscendC::Mul(valueLocal, valueLocal, xFp32, valid);
+-                AscendC::PipeBarrier<PIPE_V>();
+-                AscendC::Add(valueLocal, valueLocal, residualFp32, valid);
++                if (residentParams) {
++                    AscendC::LocalTensor<float> gammaFp32 = gammaFp32Buf_.Get<float>();
++                    AscendC::LocalTensor<float> biasFp32 = biasFp32Buf_.Get<float>();
++                    AscendC::PipeBarrier<PIPE_V>();
++                    AscendC::Mul(valueLocal, valueLocal, gammaFp32, valid);
++                    AscendC::PipeBarrier<PIPE_V>();
++                    AscendC::Add(valueLocal, valueLocal, biasFp32, valid);
++                } else {
++                    ToFloat(xFp32, gammaLocal, valid);
++                    ToFloat(residualFp32, biasLocal, valid);
++                    AscendC::PipeBarrier<PIPE_V>();
++                    AscendC::Mul(valueLocal, valueLocal, xFp32, valid);
++                    AscendC::PipeBarrier<PIPE_V>();
++                    AscendC::Add(valueLocal, valueLocal, residualFp32, valid);
++                }

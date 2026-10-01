@@ -32,4 +32,5 @@
 `CORRECTNESS`: `NOT_STARTED`
 `EXECUTABLE_IDENTITY`: `NOT_STARTED`
 `LOCAL_VERDICT`: `NOT_COMPLETE`
+`SOURCE_STATE`: `IMPLEMENTED_NOT_BUILT`
 `SERVER_WORK`: 等待 Main 分配独立设备/job；当前不运行 server3 compile、correctness 或 measurement。

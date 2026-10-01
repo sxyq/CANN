@@ -1,6 +1,6 @@
 # SMALLMID-DATAFLOW-CHAMPION-X Track-B 交接
 
-状态：`MAIN_SELECTED=YES`，Main-1 已选 SMD-H6；V001 声明先行提交，之后才改 Candidate。构建、正确性和测时等待 Main 分配独立 server3 设备/job。
+状态：`MAIN_SELECTED=YES`，V001 Candidate 已实现并待 Main 安排独立 server3 设备/job；尚未构建、跑正确性或测时。
 
 ## 路线范围
 
@@ -85,7 +85,7 @@
 - `TARGET_SHAPES`: BF16 `D={2049,3073,4095}`。V011 的 `run_kernel` 按 `availableCoreNum` 与 `rowCount` 计算 `blockCount`，并将其截到 `UINT32_MAX`；本地可达性探针取正的设备 `availableCoreNum=A`、leading-dimension 乘积 `rowCount=2*A`，则每个 core 的既有公式得 `localRows=2`。不改 `blockCount` 或行归属。
 - `TARGET_DTYPES`: BF16。
 - `WHY_IT_MAY_HELP`: 复用每核常量参数，把两条 D 长度 Cast 从每行各做一次降为每核各做一次；V011 已分配这两块 FP32 缓冲，并在 generic cache、small low-precision batch 与 BF16 full-tile 函数中采用过一次转换后复用。
-- `WHY_IT_MAY_FAIL`: 目标 D/R 可能不命中 `ProcessNarrowMidOverlap` 或 `localRows<=1`；转换成本可能已被输入处理隐藏；已有缓冲可能存在未识别的该函数内生命周期约束。
+- `WHY_IT_MAY_FAIL`: 目标 D/R 可能不命中 `ProcessNarrowMidOverlap` 或 `localRows<=1`；首行输入前执行的转换及每行条件分支开销可能抵消省下的转换；已有缓冲可能存在未识别的该函数内生命周期约束。
 - `UB_IMPACT`: 不新增或扩大 UB；复用已分配的 `gammaFp32Buf_`、`biasFp32Buf_`，目标宽度不超过 4096。
 - `DMA_IMPACT`: 参数 GM Load 次数、字节数及输入/输出 DMA 不变。
 - `SYNC_IMPACT`: 保留现有参数 `MTE2_V` 等待及释放次序；只把转换放在参数就绪后、行循环前。
@@ -109,7 +109,7 @@
 - `VALID_NON_DUPLICATE_CANDIDATES`: 3（SMD-H2、SMD-H5、SMD-H6）。未写 `ROUTE_HYPOTHESIS_POOL_EXHAUSTED`。
 - `CHILD_RECOMMENDED_HYPOTHESIS`: `SMD-H6-BF16-MID-PARAM-CAST-ONCE`；Main-1 已记录选择，见 receipt `2a27be0b`。
 - `PROPOSED_ONE_FACTOR_DIFF`: 每个有效假设各有独立差异说明；不得组合。
-- `EXPECTED_LOCAL_PROBES`: 只在 Main 选定后开展。先确认实际分支、`blockCount/localRows/batchRows`、UB 生命周期与目标形状可达；然后做正确性，只有通过后才可按规范交错测时。官方 shape 映射仍未知。
+- `EXPECTED_LOCAL_PROBES`: Main 已选择 SMD-H6。源码身份与 diff 静态核对完成；compile、correctness 和 timing 等 Main 分配独立设备/job 后进行。核对实际分支、`blockCount/localRows` 与逐元素输出；correctness PASS 后才按规范交错测时。官方 shape 映射仍未知。
 - `OPEN_QUESTIONS`：
   1. H001/MID-X 的多行 padding 先例覆盖面明确；SMD-H3 已拒绝。Main 是否认可 SMD-H2 的单行输入消费后复用与 UB-LIVENESS-X 的跨 pass alias 为不同局部生命周期，需由 Main 判断。
   2. H5 的 `valueFp32Buf_` 实际可用容量是否至少 8192 elements，以及跨 batch Store/compute 是否属于当前 INTERPASS/CROSSROW lane，均未从本路线证据确定。
@@ -117,4 +117,4 @@
   4. V011 的 Official testcase 缺少 shape/dtype 映射；局部探针无法单独证明总分收益。
   5. Wave-2 peer handoff 均以已提交版本为依据；未读取其他 Agent 的未提交材料、私有上下文或工作树。
 
-Main 已选定 SMD-H6。V001 声明提交后才开始单因子 Candidate 修改；构建、正确性与测时等 Main 分配独立设备/job 后再做。本路线不改共享记录，不实施 Online。
+Main 已选定 SMD-H6。V001 Candidate 已按声明实现；构建、正确性与测时等 Main 分配独立设备/job 后再做。本路线不改共享记录，不实施 Online。
