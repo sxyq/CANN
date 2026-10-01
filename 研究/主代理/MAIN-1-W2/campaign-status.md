@@ -135,11 +135,11 @@ The attached C2C CONTROL supplies these current Planning selections. Each Route 
 
 | Route | Current instruction | Main review / first action | Revision state |
 |---|---|---|---|
-| SYNC-TOPOLOGY-CHAMPION-X | H2, low-precision parameter prefetch ordering | `SINGLE_CHANGE_AUDIT=PASS`; only the existing MTE2_V wait moved, and it remains before current-slot reads. | V001; source SHA `27c853e1...`; package committed; build/correctness not started. Assigned device 4. |
-| STORE-EPILOGUE-W2-X | H1, move the existing full-row Store issue point | `SINGLE_CHANGE_AUDIT=PASS`; the same Store body is issued after the final tile barrier; address, count, geometry, and event sequence are unchanged. | V001; source SHA `48b9428d...`; package committed; build/correctness not started. Assigned device 5. |
-| EPI-ARITH-CHAMPION-W2-X | H3, group independent row Mul/Add operations | `SINGLE_CHANGE_AUDIT=PASS`; per-element Mul -> Add order is preserved, with independent rows grouped and only the intended barriers moved. | V001; source SHA `9a28f5cd...`; package committed; build/correctness not started. Assigned device 7. |
-| SELECTIVE-FASTPATH-CHAMPION-X | H1, BF16 D32768 full V017 donor qualification | Qualification only: recover exact M and V011/V017 same-binary and paired evidence. No dispatch Revision. | `QUALIFICATION_INCOMPLETE`; existing Agent is searching committed evidence; no device job assigned. |
-| SMALLMID-DATAFLOW-CHAMPION-X | SMD-H6, reuse BF16 parameter conversion for existing rows | `SINGLE_CHANGE_AUDIT=PASS`; FP32 parameter buffers are separately allocated and reused only for BF16 `localRows>1`, within declared D<=4096 scope. | V001; source SHA `a689e5ab…`; package verified; build/correctness not started. Assigned device 1. |
+| SYNC-TOPOLOGY-CHAMPION-X | H2, low-precision parameter prefetch ordering | `SINGLE_CHANGE_AUDIT=PASS`; only the existing MTE2_V wait moved, and it remains before current-slot reads. | V001; source SHA `27c853e1...`; branch `6ef96570` pushed and verified; harness preparation pending. Assigned device 4. |
+| STORE-EPILOGUE-W2-X | H1, move the existing full-row Store issue point | `SINGLE_CHANGE_AUDIT=PASS`; the same Store body is issued after the final tile barrier; address, count, geometry, and event sequence are unchanged. | V001; source SHA `48b9428d...`; branch `62809fd4` pushed and verified; harness preparation pending. Assigned device 5. |
+| EPI-ARITH-CHAMPION-W2-X | H3, group independent row Mul/Add operations | `SINGLE_CHANGE_AUDIT=PASS`; per-element Mul -> Add order is preserved, with independent rows grouped and only the intended barriers moved. | V001; source SHA `9a28f5cd...`; branch `d5585f04` pushed and verified; harness preparation pending. Assigned device 7. |
+| SELECTIVE-FASTPATH-CHAMPION-X | H1, BF16 D32768 full V017 donor qualification | Qualification only: exact M and direct V011/V017 same-binary/paired evidence are still missing. | `QUALIFICATION_INCOMPLETE`; committed evidence audit `85aff92e`; V016 M=2 runner is not evidence of V017's M. No device job assigned. |
+| SMALLMID-DATAFLOW-CHAMPION-X | SMD-H6, reuse BF16 parameter conversion for existing rows | `SINGLE_CHANGE_AUDIT=PASS`; FP32 parameter buffers are separately allocated and reused only for BF16 `localRows>1`, within declared D<=4096 scope. | V001; source SHA `a689e5ab...`; branch `47f72c55` pushed and verified; harness preparation pending. Assigned device 1. |
 
 #### Main Review facts
 
@@ -150,7 +150,7 @@ The attached C2C CONTROL supplies these current Planning selections. Each Route 
 | EPI V001 | `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3` | `9a28f5cd8703dc4ff5c46fba09f59a537132594e5a879a50a17349086bfe4d59` | `PASS`; only same-kind row operations are grouped; each row retains Mul before Add. | `BUILD=NOT_STARTED; CORRECTNESS=NOT_STARTED; LOCAL_VERDICT=NOT_COMPLETE` |
 | SMALLMID V001 | `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3` | `a689e5abc03d2770b277812d9a52ae0a1aaf910952b737525e1722f06bdb340a` | `PASS`; separately allocated FP32 parameter buffers cover selected BF16 mid widths and remain live through their final use. | `BUILD=NOT_STARTED; CORRECTNESS=NOT_STARTED; LOCAL_VERDICT=NOT_COMPLETE` |
 
-Every source SHA above was recomputed from the committed `submission.asc`; parent SHAs were recomputed from their declared parent files. SYNC, STORE, and EPI metadata now have the required parent/source fields; SMALLMID metadata and sidecar agree. No performance timing is authorized until each assigned Candidate has build and correctness evidence.
+Every source SHA above was recomputed from the committed `submission.asc`; parent SHAs were recomputed from their declared parent files. SYNC, STORE, and EPI metadata now have the required parent/source fields; SMALLMID metadata and sidecar agree. All four branch pushes and server-side fast-forwards were verified. No performance timing is authorized until each assigned Candidate has build and correctness evidence.
 
 Route worktrees and branches are the current locations returned by Git, not the older paths in handoff launch tables:
 
@@ -176,13 +176,13 @@ These conflicts affect formal Online submissions and concurrency above one versi
 - Existing VLLM / user Python activity remains untouched. No AddRmsNormBias probe or project build process was present during the process query. The historical `phase4-review-repro/R31B-V016` directory is absent from server3; new build outputs must use unique paths under `/home/data4t2/lelinfeng/cann/`.
 - The latest-row lease view has one unreleased entry for device 6: owner `MAIN-2`, route `STORE-EPILOGUE-X`, lease `R2-STORE-V002-TIMING`, started `2026-09-28T00:00:00Z`. Main-1 will avoid device 6 for timing until its owner resolves the lease. No other device has an unreleased lease in the local schedule log.
 - `SERVER_JOB_BOARD`: SYNC V001 → device 4; STORE V001 → device 5; EPI V001 → device 7; SMALLMID V001 → device 1. Assigned for build/correctness only, one Candidate per device. Each Route Agent must repeat live device/HBM/process preflight immediately before its run. No performance lease is active for these assignments.
-- `SERVER_JOBS`: four assignments staged; all remain `NOT_STARTED` pending package push and Route Agent acknowledgment.
+- `SERVER_JOBS`: four assignments staged; source branches are pushed and corresponding server mirrors are fast-forwarded. Harness preparation is pending; no build or correctness job has started.
 - `NEW_REVERTS`: `0`; historical records remain unchanged.
 - `PROCESS_VIOLATIONS`: none observed in this bootstrap.
 
 ### Next action
 
-Push the reviewed Candidate/evidence commits, then have each existing Route Agent build and run only its assigned correctness matrix on its assigned device. Keep timing and Online closed until those facts are complete. Agents may edit only their own Route worktree; no route may change another route, shared lifecycle state, or Planning decisions. Refresh the Dashboard after the committed campaign update.
+Have each existing Route Agent prepare and commit its reproducible route-local build/correctness harness, then perform one central fetch/fast-forward before running the assigned matrices. Keep timing and Online closed until those facts are complete. Agents may edit only their own Route worktree; no route may change another route, shared lifecycle state, or Planning decisions. Refresh the Dashboard after the committed campaign update.
 
 ### Dashboard export
 
@@ -192,10 +192,10 @@ Push the reviewed Candidate/evidence commits, then have each existing Route Agen
   "selected": "4 implementation lanes; 1 qualification lane",
   "activeAgents": 0,
   "pendingAgents": 5,
-  "activeRevision": "Four V001 candidates; build/correctness pending",
-  "stage": "MAIN_REVIEW_PASS",
-  "state": "Four single-factor Candidates passed Main review; four distinct device assignments are staged for build/correctness",
-  "nextStep": "Push reviewed evidence; run exact-source build and correctness on devices 4, 5, 7, and 1",
+  "activeRevision": "Four V001 candidates; harness preparation",
+  "stage": "SOURCE_PUSHED",
+  "state": "Four reviewed Candidate branches are pushed and mirrored on server3; harnesses are being prepared before build/correctness",
+  "nextStep": "Commit route-local harnesses, then run exact-source build and correctness on devices 4, 5, 7, and 1",
   "blocker": "Formal Online submission owner and cadence require Planning resolution",
   "planningDecisionsChanged": 0,
   "newRoutes": 0
