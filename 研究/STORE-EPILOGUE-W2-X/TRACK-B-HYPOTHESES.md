@@ -129,4 +129,5 @@
 - `MAIN_SELECTED=YES`；Main review 确认只移动 V002 的现有整行 Store 发出点，Store 次数、地址、chunk geometry、条件、event 顺序、算术和 tiling 保持不变。
 - `REVISION=V001`；`DIRECT_PARENT=STORE-EPILOGUE-X V002`；`PARENT_SOURCE_SHA=59fb8eada4da0b2b83cccffa4fb89fb97b7503ba3dcb08d5e0fe348e3caeb839`；`OFFICIAL_ANCHOR=45.07`。
 - Revision declaration：`本地实验/STORE-EPILOGUE-W2-X/V001/REVISION-DECLARATION.md`。
+- Candidate source：`本地实验/STORE-EPILOGUE-W2-X/V001/submission.asc`；SHA `48b9428dc2fc97c7c9d95f03ad8cec8e758c88e1197aa2328b1b1edebc018f88`。静态差异仅移动整行 Store 块并增加末 tile 发出条件；BUILD、CORRECTNESS、SAME_BINARY、LOCAL_MEASUREMENT 尚未执行。
 - H4 的 `128x12288 FP32` 可达性问题不影响当前 H1；H1 主探针为 `1x32768 FP32`。correctness、same-binary 与 P/C 测量须使用项目现行协议，并等待 Main 分配 server3 job。
