@@ -34,5 +34,5 @@
 `LOCAL_VERDICT`: `NOT_COMPLETE`
 `SOURCE_STATE`: `IMPLEMENTED_NOT_BUILT`
 `SOURCE_SHA256`: `a689e5abc03d2770b277812d9a52ae0a1aaf910952b737525e1722f06bdb340a`
-`SOURCE_COMMIT`: `9abea741`
+`SOURCE_COMMIT`: `9abea741d4d0b40efdc322da5255c463fede481b`
 `SERVER_WORK`: 等待 Main 分配独立设备/job；当前不运行 server3 compile、correctness 或 measurement。
