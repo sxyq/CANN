@@ -54,6 +54,18 @@ All line numbers below refer to the SHA-bound parent source named above.
    that MTE3 read/store to complete (helper: `:3427-3430`). These calls and
    their order remain unchanged.
 
+6. Source-use guard at the existing `outputBuf_.Get<T>()` site is mandatory.
+   V011 line `:3299` currently obtains `outputLocal` before the
+   `if constexpr (T=half)` row loop. The candidate must not retain that
+   unconditional FP16 Get after omitting the FP16-wide `outputBuf_`
+   allocation: in the half branch, after `yTile` is formed at `:3315-3317`,
+   bind `outputLocal` to the same indexed
+   `yStore[batchRow * rowWidth + col]` range before the existing `FromFloat`
+   at `:3322`. The `outputBuf_.Get<T>()` expression remains only for the
+   non-half (BF16) path, where its allocation is unchanged. This is a
+   source-use/lifetime guard, not a second mechanism; it preserves the same
+   output view, count, store, and ordering.
+
 ## Buffer lifetime table
 
 The alias edge involves the retained-y backing and the parent's separate
@@ -101,6 +113,10 @@ next pass-1 write at `:3182` in a later `batchBegin`.
   only `outputLocal` (`:3341-3343`). Gamma/bias continue to use the existing
   `xBuf_`/`residualBuf_` ping-pong views (`:3256-3297`). No other buffer is
   aliased or removed.
+- The candidate must remove the FP16-wide use of `outputBuf_` at `:3299` as
+  well as its FP16-wide allocation at `:88`; leaving the unallocated Get in
+  the shared pre-branch would invalidate the implementation. The BF16
+  `outputBuf_` Get remains valid and unchanged.
 - The next overwrite of the same `gammaBuf_` range occurs only after the
   previous batch's pass-2 output loop (`:3245-3363`) and its final per-store
   `SyncMTE3ToV` (`:3344`); the outer `batchBegin` loop advances at `:3096-3101`.
