@@ -124,22 +124,33 @@ At that recovery point, the next step was to request Planning / Review selection
 - `DASHBOARD_DATA_PATH`: the embedded JSON snapshot in `归档/任务看板/index.html`, generated from project ledgers, result records, Main campaign status, and registered worktrees.
 - `DASHBOARD_REFRESH_COMMAND`: `node 归档/任务看板/refresh.mjs`.
 - `LAST_ONLINE_SUBMIT_AT`: EPILOGUE-ARITH-CHAMPION-X V002, submission `6abb8840694b590c3c9b6db3`, Official `44.96`, result timestamp `2026-09-29T09:43:28.310Z`.
-- `CURRENT_ROUTE`: none yet executing; existing child Agent IDs were resumed for this campaign and are awaiting task input.
-- `ACTIVE_REVISION`: none. No Wave-2 Candidate source, build, correctness run, local timing, or Online submission has been created.
+- `CURRENT_ROUTE`: four existing implementation lanes are in Main-reviewed V001 build/correctness preparation; SELECTIVE-FASTPATH remains qualification-only.
+- `ACTIVE_REVISION`: SYNC V001, STORE V001, EPI V001, SMALLMID V001. Candidate source commits exist; build, correctness, performance, and Online have not run.
 - `PLANNING_DECISIONS_CHANGED`: `0`.
 - `NEW_ROUTES`: `0`.
 
 ### Current lane instructions and Main review
 
-The attached C2C CONTROL supplies these current Planning selections. Main review confirms the proposed single-factor boundaries against the committed handoffs. Each Route Agent must record its Revision declaration and commit it before touching Candidate source.
+The attached C2C CONTROL supplies these current Planning selections. Each Route Agent declared its Revision before the source commit. Main's V001 single-factor review is recorded below; Main approved build/correctness only. No Candidate has local measurement approval yet.
 
 | Route | Current instruction | Main review / first action | Revision state |
 |---|---|---|---|
-| SYNC-TOPOLOGY-CHAMPION-X | H2, low-precision parameter prefetch ordering | Ready for a single-factor declaration; preserve event ownership and buffer depth. | None |
-| STORE-EPILOGUE-W2-X | H1, move the existing full-row Store issue point | Ready for a single-factor declaration from STORE V002; Store count, address, chunk shape, events, and arithmetic stay fixed. | None |
-| EPI-ARITH-CHAMPION-W2-X | H3, group independent row Mul/Add operations | Ready for a single-factor declaration. The selected SYNC H2 is limited to the low-precision path, so it does not share EPI H3's wide-FP32 arithmetic loop. | None |
-| SELECTIVE-FASTPATH-CHAMPION-X | H1, BF16 D32768 full V017 donor qualification | Qualification only first: recover exact M values, prove dispatch reachability, then compare exact V011/V017 sources. No dispatch Revision unless the qualification evidence supports it. | None |
-| SMALLMID-DATAFLOW-CHAMPION-X | SMD-H6, reuse BF16 parameter conversion for existing rows | Ready for a single-factor declaration after confirming `localRows>1` and buffer lifetime. This is D<=4096 FP32 conversion reuse; Main-2 PARAM-RESIDENCY is D>8192 GM cache policy, so the committed scopes do not overlap. | None |
+| SYNC-TOPOLOGY-CHAMPION-X | H2, low-precision parameter prefetch ordering | `SINGLE_CHANGE_AUDIT=PASS`; only the existing MTE2_V wait moved, and it remains before current-slot reads. | V001; source SHA `27c853e1...`; package committed; build/correctness not started. Assigned device 4. |
+| STORE-EPILOGUE-W2-X | H1, move the existing full-row Store issue point | `SINGLE_CHANGE_AUDIT=PASS`; the same Store body is issued after the final tile barrier; address, count, geometry, and event sequence are unchanged. | V001; source SHA `48b9428d...`; package committed; build/correctness not started. Assigned device 5. |
+| EPI-ARITH-CHAMPION-W2-X | H3, group independent row Mul/Add operations | `SINGLE_CHANGE_AUDIT=PASS`; per-element Mul -> Add order is preserved, with independent rows grouped and only the intended barriers moved. | V001; source SHA `9a28f5cd...`; package committed; build/correctness not started. Assigned device 7. |
+| SELECTIVE-FASTPATH-CHAMPION-X | H1, BF16 D32768 full V017 donor qualification | Qualification only: recover exact M and V011/V017 same-binary and paired evidence. No dispatch Revision. | `QUALIFICATION_INCOMPLETE`; existing Agent is searching committed evidence; no device job assigned. |
+| SMALLMID-DATAFLOW-CHAMPION-X | SMD-H6, reuse BF16 parameter conversion for existing rows | `SINGLE_CHANGE_AUDIT=PASS`; FP32 parameter buffers are separately allocated and reused only for BF16 `localRows>1`, within declared D<=4096 scope. | V001; source SHA `a689e5ab…`; package verified; build/correctness not started. Assigned device 1. |
+
+#### Main Review facts
+
+| Revision | Direct parent SHA | Candidate SHA | Main review | Local state |
+|---|---|---|---|---|
+| SYNC V001 | `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3` | `27c853e1cb0c47307899b874338c3aecb912ad5dc125c0d67f6afba76a9117ec` | `PASS`; only the declared wait ordering changed; event ownership and buffer depth remain intact. | `BUILD=NOT_STARTED; CORRECTNESS=NOT_STARTED; LOCAL_VERDICT=NOT_COMPLETE` |
+| STORE V001 | `59fb8eada4da0b2b83cccffa4fb89fb97b7503ba3dcb08d5e0fe348e3caeb839` | `48b9428dc2fc97c7c9d95f03ad8cec8e758c88e1197aa2328b1b1edebc018f88` | `PASS`; existing Store body moved to the final-tile point; fallback and drain remain unchanged. | `BUILD=NOT_STARTED; CORRECTNESS=NOT_STARTED; LOCAL_VERDICT=NOT_COMPLETE` |
+| EPI V001 | `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3` | `9a28f5cd8703dc4ff5c46fba09f59a537132594e5a879a50a17349086bfe4d59` | `PASS`; only same-kind row operations are grouped; each row retains Mul before Add. | `BUILD=NOT_STARTED; CORRECTNESS=NOT_STARTED; LOCAL_VERDICT=NOT_COMPLETE` |
+| SMALLMID V001 | `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3` | `a689e5abc03d2770b277812d9a52ae0a1aaf910952b737525e1722f06bdb340a` | `PASS`; separately allocated FP32 parameter buffers cover selected BF16 mid widths and remain live through their final use. | `BUILD=NOT_STARTED; CORRECTNESS=NOT_STARTED; LOCAL_VERDICT=NOT_COMPLETE` |
+
+Every source SHA above was recomputed from the committed `submission.asc`; parent SHAs were recomputed from their declared parent files. SYNC, STORE, and EPI metadata now have the required parent/source fields; SMALLMID metadata and sidecar agree. No performance timing is authorized until each assigned Candidate has build and correctness evidence.
 
 Route worktrees and branches are the current locations returned by Git, not the older paths in handoff launch tables:
 
@@ -161,16 +172,17 @@ These conflicts affect formal Online submissions and concurrency above one versi
 
 ### Server snapshot and scheduler state
 
-- Read-only server snapshot: `hwnput3`, 8 x 910B3, 2026-10-02. Free HBM by device 0–7: `5313, 1409, 5319, 5318, 6346, 1530, 5377, 32332 MB`. Project disk availability: `707 GB`.
-- VLLM and Python processes were present on multiple devices and left untouched. No Main-1 job was started by this bootstrap.
+- Live read-only snapshot: `hwnput3`, 8 x 910B3, Toolkit `8.5.0.alpha002` available. Free HBM by device 0–7: `5313, 5262, 5319, 5318, 6346, 5356, 5357, 13428 MB`; project disk availability `698 GB`; host RAM available `711 GiB`, Swap full but no swap-in/out during the sample, CPU idle 90%, no measured I/O wait.
+- Existing VLLM / user Python activity remains untouched. No AddRmsNormBias probe or project build process was present during the process query. The historical `phase4-review-repro/R31B-V016` directory is absent from server3; new build outputs must use unique paths under `/home/data4t2/lelinfeng/cann/`.
 - The latest-row lease view has one unreleased entry for device 6: owner `MAIN-2`, route `STORE-EPILOGUE-X`, lease `R2-STORE-V002-TIMING`, started `2026-09-28T00:00:00Z`. Main-1 will avoid device 6 for timing until its owner resolves the lease. No other device has an unreleased lease in the local schedule log.
-- `SERVER_JOBS`: zero Main-1 jobs started.
+- `SERVER_JOB_BOARD`: SYNC V001 → device 4; STORE V001 → device 5; EPI V001 → device 7; SMALLMID V001 → device 1. Assigned for build/correctness only, one Candidate per device. Each Route Agent must repeat live device/HBM/process preflight immediately before its run. No performance lease is active for these assignments.
+- `SERVER_JOBS`: four assignments staged; all remain `NOT_STARTED` pending package push and Route Agent acknowledgment.
 - `NEW_REVERTS`: `0`; historical records remain unchanged.
 - `PROCESS_VIOLATIONS`: none observed in this bootstrap.
 
 ### Next action
 
-Monitor the five resumed Route Agent IDs, review their committed declarations and qualification report, then assign server jobs by device. Agents may work only in their own worktree. No route may alter another route's files, shared schedule, or lifecycle state. Rebuild the Dashboard after each committed event.
+Push the reviewed Candidate/evidence commits, then have each existing Route Agent build and run only its assigned correctness matrix on its assigned device. Keep timing and Online closed until those facts are complete. Agents may edit only their own Route worktree; no route may change another route, shared lifecycle state, or Planning decisions. Refresh the Dashboard after the committed campaign update.
 
 ### Dashboard export
 
@@ -180,10 +192,10 @@ Monitor the five resumed Route Agent IDs, review their committed declarations an
   "selected": "4 implementation lanes; 1 qualification lane",
   "activeAgents": 0,
   "pendingAgents": 5,
-  "activeRevision": "Declarations not yet committed",
-  "stage": "ROUTE_CONTEXTS_ASSIGNED",
-  "state": "Five existing Route Agent tasks are queued; Main-1 is waiting for declaration commits and the Fastpath qualification report",
-  "nextStep": "Review declaration commits; then allocate distinct server devices for build and correctness",
+  "activeRevision": "Four V001 candidates; build/correctness pending",
+  "stage": "MAIN_REVIEW_PASS",
+  "state": "Four single-factor Candidates passed Main review; four distinct device assignments are staged for build/correctness",
+  "nextStep": "Push reviewed evidence; run exact-source build and correctness on devices 4, 5, 7, and 1",
   "blocker": "Formal Online submission owner and cadence require Planning resolution",
   "planningDecisionsChanged": 0,
   "newRoutes": 0
