@@ -1,13 +1,17 @@
 # EPI-ARITH-CHAMPION-W2-X Track-B Handoff
 
-- BRANCH / WORKTREE: `w2/m1/epi-arith` / `/Users/sunyiyang/.codex/worktrees/w2-m1-epi/cann`
+- BRANCH / WORKTREE: `w2/m1/epi-arith` / `/Users/sunyiyang/Desktop/Project/cann/worktrees/w2/m1/epi-arith`
 - DIRECT_PARENT: R31B V011, Official 45.16, source SHA `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`
-- STATUS: Track-B only; no implementation direction selected; no Revision created
-- CHILD_RECOMMENDED_HYPOTHESIS: retain H3 for Main review only; selection remains with Main
+- STATUS: H3 selected by Planning and confirmed by Main-1; V001 declaration recorded; Candidate awaits its first source commit
+- MAIN_SELECTED: `YES`
+- SELECTED_HYPOTHESIS: `H3 EAW2-H3-ROW-OP-GROUP`
+- SELECTION_EVIDENCE: `研究/主代理/MAIN-1-W2/campaign-status.md` at commit `2a27be0bbaa81b7f67777f7d8e99277cbe23946a`, section `Current lane instructions and Main review`
+- CHILD_RECOMMENDED_HYPOTHESIS: H3, as selected by Planning and confirmed by Main-1
+- REVISION_DECLARATION: `研究/EPI-ARITH-CHAMPION-W2-X/V001-REVISION-DECLARATION.md`
 
 ## ROUTE_BOUNDARY
 
-Arithmetic after `invRms` and before Store: norm, gamma, bias, AXPY, Muls/Mul/Add, and ordering of independent arithmetic operations. The Wave-2 peer labels below are taken from the task request; peer-private contexts and other worktrees were not read.
+Arithmetic after `invRms` and before Store: norm, gamma, bias, AXPY, Muls/Mul/Add, and ordering of independent arithmetic operations. Wave-2 peer boundaries below are sourced from Main-1's committed review; no peer worktree or private context was read.
 
 ## ALLOWED_CHANGES
 
@@ -15,7 +19,7 @@ One-factor changes confined to the post-`invRms` arithmetic expression or issue 
 
 ## FORBIDDEN_CHANGES
 
-Store transaction or source, DMA, dispatch/fast-path selection, tiling, row-to-core assignment, reduction organization, dtype specialization, build files, and any implementation or measurement before Main selection.
+Store transaction or source, DMA, dispatch/fast-path selection, tiling, row-to-core assignment, reduction organization, dtype specialization, build files, shared records, other routes, Online activity, and compile/correctness/performance work before Main assigns a device and job.
 
 ## Duplicate Rejections
 
@@ -32,7 +36,7 @@ Store transaction or source, DMA, dispatch/fast-path selection, tiling, row-to-c
 - MECHANISM: For each current parameter tile, issue Mul for all resident rows, one `PIPE_V` barrier, then Add for all rows and one barrier. Per-element order remains `Muls -> Mul -> Add`.
 - BOTTLENECK: With `batchRows=2`, the current Mul/Add loops use four barriers per tile; grouped issue uses two. Vector-op count and elements are unchanged.
 - DIRECT_PARENT: R31B V011, source SHA above.
-- TARGET_SHAPES: FP32, `rowWidth > 8192`, with `rowCount >= 2 * availableCoreNum` and actual `batchRows >= 2`; example `80x16384_fp32` only when 40 cores are available. `1x32768_fp32` is an inactive control.
+- TARGET_SHAPES: `rows=2, D=12288, FP32, blockCount=1`; record runtime `batchRows` before interpreting results. `D=8192` is an unchanged-path control and must not receive this arithmetic edit.
 - TARGET_DTYPES: FP32 only; no dtype branch.
 - WHY_IT_MAY_HELP: Fewer waits between independent rows while retaining the shared gamma/bias loads.
 - WHY_IT_MAY_FAIL: The device may hide these waits; Store or another stage may dominate. R31A V028 also reduced affine barriers, so the remaining opportunity may be small.
@@ -40,11 +44,11 @@ Store transaction or source, DMA, dispatch/fast-path selection, tiling, row-to-c
 - DMA_IMPACT: None; Load count and order unchanged.
 - SYNC_IMPACT: Mul/Add barriers change from `2 * batchRows` to 2 per tile; Muls and Store synchronization stay unchanged.
 - PRECISION_RISK: Low; each element executes the same operations in the same order. Precision validation must precede timing.
-- DUPLICATE_CHECK: Not the V001 row-wide Muls hoist. R31A V028 removes terminal barriers immediately before events while retaining row-wise arithmetic; H3 groups Mul and Add across resident rows and retains one barrier after each operation group. Possible Wave-2 SYNC overlap remains open.
+- DUPLICATE_CHECK: Not the V001 row-wide Muls hoist. R31A V028 removes terminal barriers immediately before events while retaining row-wise arithmetic; H3 groups Mul and Add across resident rows and retains one barrier after each operation group. Main confirms Wave-2 SYNC H2 is limited to low-precision execution, so it does not overlap this wide-FP32 loop.
 - RELATED_OLD_ROUTES: R001-R029 / FULL-R, R31A V024/V028, R31B V011, MIX-A V003, Wave-1 EPI V001/V002 and STORE V003.
-- PROPOSED_ONE_FACTOR_DIFF: Only regroup the second-pass Mul/Add loops at `线上结果/R31B/V011/submission.asc:2200-2207`; do not change Muls, Load, Store, dispatch, buffers, or row ownership.
-- MINIMAL_EXPERIMENT: After Main selects H3 and authorizes implementation, first run full precision validation. Then use paired, interleaved V011/candidate timing on one confirmed `batchRows>=2` wide-FP32 shape and the same width with `batchRows=1` as control. Stop if dispatch misses, precision fails, or gain stays within that shape's measured noise.
-- UNCERTAINTY: Active shape depends on launch core count and row distribution; no timing evidence exists for this exact grouping.
+- PROPOSED_ONE_FACTOR_DIFF: Only regroup the second-pass Mul/Add loops in `ProcessWideFp32FullCacheRows` in the V011 parent. Preserve per-element `Muls -> Mul -> Add`; leave Muls, Load, Store, dispatch, buffers, and row ownership unchanged.
+- MINIMAL_EXPERIMENT: After Main assigns the device and job, compile/link the exact source, then run precision validation before timing. Use `rows=2,D=12288,FP32,blockCount=1` as target and `D=8192` as an unchanged-path control; record runtime `batchRows`, path, and block count. Time only after correctness passes, using paired/interleaved V011 and candidate runs on the target.
+- UNCERTAINTY: The target is expected to produce `batchRows=2`, but this must be observed in the assigned run. No correctness or timing evidence exists for the grouped issue order.
 
 ## Route Comparisons
 
@@ -55,24 +59,23 @@ Store transaction or source, DMA, dispatch/fast-path selection, tiling, row-to-c
 | MIX / MIX-A | MIX-A V003 combines a narrow/mid FastKernel dispatch guard (`localRows==1`) with `SyncVToMTE2`; this is relevant precedent for FASTPATH and SYNC ownership. | It changes dispatch and MTE2 reuse in `ProcessNarrowMidFast`, not the wide-FP32 post-invRms affine chain. Its audit classifies the change as multi-change. `线上结果/MIX-A/V003/diff.patch`, `source-meta.json` |
 | Wave-1 EPI / STORE | EPI V001/V002 are the rejected arithmetic duplicates above. STORE V003 merges output writebacks and reports 44.38 Official. | STORE changes output writeback count; H3 leaves Store source, calls, and events unchanged. `研究/主代理/MAIN-1/campaign-status.md`, `研究/主代理/MAIN-1/ONLINE-RECOMMENDATION-STORE-V003.md`, `线上结果/STORE-EPILOGUE-X/V003/` |
 | Wave-2 STORE | Same kernel and wide-row area. | Committed STORE spec owns intra-row writeback merging; H3 changes only arithmetic issue grouping and leaves output transactions intact. H4 is excluded because its direct form changes the Store source. `研究/STORE-EPILOGUE-X/STORE-H2B-SPEC.md` |
-| Wave-2 FASTPATH | MIX-A V003 is a historical dispatch/FastKernel analog. | H3 does not change dispatch and only targets wide FP32. No FASTPATH-specific Wave-2 handoff is present in this branch's committed records, so exact peer boundary is unconfirmed. `线上结果/MIX-A/V003/diff.patch`; `调度/当前任务.tsv`; `调度/主代理分工.md` |
-| Wave-2 SYNC | H3 changes `PIPE_V` barrier grouping; R31A V028 and MIX-A V003 show prior barrier/event work. | H3 retains the barrier after each operation group and does not alter MTE events, but may overlap a SYNC lane whose approved scope includes these `PIPE_V` barriers. No SYNC-specific Wave-2 handoff is present in this branch. `线上结果/R31A/V028/diff.patch`; `线上结果/MIX-A/V003/diff.patch` |
-| Wave-2 SMALLMID | MIX-A V003 and historical mid paths use narrow/mid dispatch. | H3 is limited to `rowWidth>8192` wide FP32 and does not touch small/mid functions. The exact SMALLMID cutoff and approved changes are not present in this branch. `线上结果/MIX-A/V003/diff.patch`; `调度/当前任务.tsv` |
+| Wave-2 FASTPATH | MIX-A V003 is a historical dispatch/FastKernel analog. | FASTPATH H1 qualifies a BF16 D32768 donor; H3 does not change dispatch and targets only the wide-FP32 arithmetic loop at D12288. `研究/主代理/MAIN-1-W2/campaign-status.md` at `2a27be0b`; `线上结果/MIX-A/V003/diff.patch` |
+| Wave-2 SYNC | H3 changes `PIPE_V` barrier grouping; R31A V028 and MIX-A V003 show prior barrier/event work. | SYNC H2 is confined to low-precision parameter-prefetch order. H3 retains a barrier after each arithmetic group and does not change MTE events; Main confirms the execution paths do not overlap. `研究/主代理/MAIN-1-W2/campaign-status.md` at `2a27be0b`; `线上结果/R31A/V028/diff.patch`; `线上结果/MIX-A/V003/diff.patch` |
+| Wave-2 SMALLMID | MIX-A V003 and historical mid paths use narrow/mid dispatch. | SMALLMID SMD-H6 reuses BF16 parameter conversion for D<=4096 conversion work; H3 is wide FP32 at D12288 and does not touch those functions. `研究/主代理/MAIN-1-W2/campaign-status.md` at `2a27be0b`; `线上结果/MIX-A/V003/diff.patch` |
 
 ## EXPECTED_LOCAL_PROBES
 
-No probe was run. After Main selection only: confirm actual launch core count and `batchRows`; precision-check all required shapes first; then paired/interleaved parent-candidate timing on an active wide-FP32 multi-row shape. Use identical `rowWidth` with `batchRows=1` as a zero-effect control and calculate noise independently for each shape.
+No probe was run. Main has selected H3. After Main assigns a device and job: record actual `blockCount`, execution path, and `batchRows` for `rows=2,D=12288,FP32`; run precision validation before any timing. Confirm D8192 stays on the unchanged path. If correctness passes, perform paired/interleaved V011-candidate timing for the target and report its noise; do not infer an arithmetic effect from the D8192 control.
 
 ## OPEN_QUESTIONS
 
-- Does the Wave-2 SYNC lane own the `PIPE_V` barriers in this affine loop? Until answered, H3 is research-only.
-- Which official/local shape has `rowWidth>8192` and `batchRows>=2` with the actual launch core count?
-- What are the approved mechanism boundaries for Wave-2 FASTPATH and SMALLMID? Their peer-specific briefs are absent from this branch; no other worktree or private context was consulted.
-- Does grouping barriers across rows add anything beyond R31A V028's terminal barrier removal?
+- When will Main assign a device and job for compile, precision validation, and timing?
+- Does the assigned runtime report `batchRows=2` for the target; if not, does the grouped loop still exercise more than one resident row?
+- What timing noise does the target shape show under the approved paired/interleaved protocol?
 
 ## ROUTE_HYPOTHESIS_POOL_EXHAUSTED
 
 ROUTE_HYPOTHESIS_POOL_EXHAUSTED: `YES`
-VALID_NON_DUPLICATE_CANDIDATES: `1` (H3 retained for Main review; no implementation selection)
+VALID_NON_DUPLICATE_CANDIDATES: `1` (H3 selected; H1/H2/H4/H5 were explicitly rejected above)
 
-H1/H2/H4/H5 are `DUPLICATE_REJECTED`. Replacement searches map back to the same four transforms (row-wide norm hoist, gamma-first AXPY, VMLA, SCALE-FOLD); exact-rounding fusion was not found, and additional barrier regrouping would be a variant of H3 with unresolved SYNC overlap. Claiming three candidates would repeat known mechanisms or split one scheduling idea into labels.
+H1/H2/H4/H5 are `DUPLICATE_REJECTED`. Replacement searches map back to the same four transforms (row-wide norm hoist, gamma-first AXPY, VMLA, SCALE-FOLD); exact-rounding fusion was not found, and additional barrier regrouping would be a variant of H3. Claiming three candidates would repeat known mechanisms or split one scheduling idea into labels.
