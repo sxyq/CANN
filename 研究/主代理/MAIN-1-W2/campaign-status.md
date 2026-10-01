@@ -220,3 +220,10 @@ Have each existing Route Agent prepare and commit its reproducible route-local b
 - `LOCAL_HEAD_AFTER_RETRY`: `dc1cb8a20fcb1360dd7306df7f573dbd7e208fb9`.
 - `REMOTE_HEAD_AFTER_RETRY`: `dc1cb8a20fcb1360dd7306df7f573dbd7e208fb9`.
 - `PUSH_PENDING`: `NO`.
+
+### Current branch publication state
+
+- `LOCAL_HEAD`: `c6aa5b5751191fb8729402c3a810bd43a37bb699`.
+- `LAST_CONFIRMED_REMOTE_HEAD`: `f455e54c`.
+- `PUSH_RESULT`: not confirmed; the push process returned no captured result, and a later origin query failed to connect to GitHub port 443 after 75 seconds.
+- `PUSH_PENDING`: `YES`.
