@@ -88,6 +88,8 @@ The earlier tables retain the paths used when the agents launched. Current paths
 
 ### Dashboard discovery
 
+This section records the initial recovery-time search and is superseded by the 2026-10-02 discovery in `MAIN1_LONGRUN_STATUS` below.
+
 - `DASHBOARD_PATH_UNRESOLVED`
 - `DASHBOARD_DATA_PATH_UNRESOLVED`
 - `DASHBOARD_REFRESH_COMMAND_UNRESOLVED`
@@ -105,4 +107,84 @@ The earlier tables retain the paths used when the agents launched. Current paths
 - No Candidate source, Revision, server run, performance measurement, or Online submission was created in this recovery.
 - `PLANNING_DECISIONS_CHANGED=0`; `NEW_ROUTES_OUTSIDE_APPROVED_5=0`.
 
-Current next step: Planning / Review must select or return Track-B directions, and identify the official Dashboard. Until then, no performance implementation is authorized.
+At that recovery point, the next step was to request Planning / Review selections and identify the Dashboard. The later C2C CONTROL and current Dashboard reference are recorded below.
+
+## MAIN1_LONGRUN_STATUS (2026-10-02)
+
+### BOOTSTRAP_RECEIPT
+
+- `HEAD`: `b78bb071c916700c64ca345450dfd74db4eb2371` before this receipt.
+- `ORIGIN_MAIN`: `ed860e392d7604694ac6664da60aff1fc1f4c04f`; fetched from `origin` and unchanged.
+- `MAIN_BRANCH`: `main1/champion-exploit`; `origin/main1/champion-exploit` matched the recorded Main-1 HEAD before this receipt.
+- `WORKTREES`: 22 linked worktrees under `/Users/sunyiyang/Desktop/Project/cann/worktrees/`, plus the canonical checkout. Paths and branches came from `git worktree list --porcelain`.
+- `OVERALL_CHAMPION`: `R31B V011`, Official `45.16`, `15/15`; source SHA `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`.
+- `RULES_READ`: root `AGENTS.md`; `.agents/skills/cann-mainline/SKILL.md`; all six current `项目规则/` files; `技术路线/技术路线总表.md`; `技术路线/技术路线图.md`; `技术路线/全版本记录.tsv`; `技术路线/路线成绩表.tsv`; `调度/当前任务.tsv`; `调度/线上候选.tsv`; `调度/本地线上校准.tsv`; `调度/服务器设备使用.tsv`; `调度/主代理分工.md`; Main-1 and Main-2 campaign status; Main-1 Wave-2 review; five Main-1 and five Main-2 committed Track-B handoffs.
+- `SKILL_READ`: `.agents/skills/cann-mainline/SKILL.md`, complete.
+- `DASHBOARD_PATH`: `归档/任务看板/index.html`.
+- `DASHBOARD_DATA_PATH`: the embedded JSON snapshot in `归档/任务看板/index.html`, generated from project ledgers, result records, Main campaign status, and registered worktrees.
+- `DASHBOARD_REFRESH_COMMAND`: `node 归档/任务看板/refresh.mjs`.
+- `LAST_ONLINE_SUBMIT_AT`: EPILOGUE-ARITH-CHAMPION-X V002, submission `6abb8840694b590c3c9b6db3`, Official `44.96`, result timestamp `2026-09-29T09:43:28.310Z`.
+- `CURRENT_ROUTE`: none yet executing; existing child Agent IDs were resumed for this campaign and are awaiting task input.
+- `ACTIVE_REVISION`: none. No Wave-2 Candidate source, build, correctness run, local timing, or Online submission has been created.
+- `PLANNING_DECISIONS_CHANGED`: `0`.
+- `NEW_ROUTES`: `0`.
+
+### Current lane instructions and Main review
+
+The attached C2C CONTROL supplies these current Planning selections. Main review confirms the proposed single-factor boundaries against the committed handoffs. Each Route Agent must record its Revision declaration and commit it before touching Candidate source.
+
+| Route | Current instruction | Main review / first action | Revision state |
+|---|---|---|---|
+| SYNC-TOPOLOGY-CHAMPION-X | H2, low-precision parameter prefetch ordering | Ready for a single-factor declaration; preserve event ownership and buffer depth. | None |
+| STORE-EPILOGUE-W2-X | H1, move the existing full-row Store issue point | Ready for a single-factor declaration from STORE V002; Store count, address, chunk shape, events, and arithmetic stay fixed. | None |
+| EPI-ARITH-CHAMPION-W2-X | H3, group independent row Mul/Add operations | Ready for a single-factor declaration. The selected SYNC H2 is limited to the low-precision path, so it does not share EPI H3's wide-FP32 arithmetic loop. | None |
+| SELECTIVE-FASTPATH-CHAMPION-X | H1, BF16 D32768 full V017 donor qualification | Qualification only first: recover exact M values, prove dispatch reachability, then compare exact V011/V017 sources. No dispatch Revision unless the qualification evidence supports it. | None |
+| SMALLMID-DATAFLOW-CHAMPION-X | SMD-H6, reuse BF16 parameter conversion for existing rows | Ready for a single-factor declaration after confirming `localRows>1` and buffer lifetime. This is D<=4096 FP32 conversion reuse; Main-2 PARAM-RESIDENCY is D>8192 GM cache policy, so the committed scopes do not overlap. | None |
+
+Route worktrees and branches are the current locations returned by Git, not the older paths in handoff launch tables:
+
+| Route | Branch | Current worktree | Last handoff commit |
+|---|---|---|---|
+| SYNC-TOPOLOGY-CHAMPION-X | `w2/m1/sync-topology` | `/Users/sunyiyang/Desktop/Project/cann/worktrees/w2/m1/sync-topology` | `9071292b916d88a9aed0304db64d30435a5f51c4` |
+| STORE-EPILOGUE-W2-X | `w2/m1/store-epilogue` | `/Users/sunyiyang/Desktop/Project/cann/worktrees/w2/m1/store-epilogue` | `415a24295525f88babd2abdb300bfcfc6a04074e` |
+| EPI-ARITH-CHAMPION-W2-X | `w2/m1/epi-arith` | `/Users/sunyiyang/Desktop/Project/cann/worktrees/w2/m1/epi-arith` | `0ce5441e0e94b06d92f3db596631f35c38870d6c` |
+| SELECTIVE-FASTPATH-CHAMPION-X | `w2/m1/selective-fastpath` | `/Users/sunyiyang/Desktop/Project/cann/worktrees/w2/m1/selective-fastpath` | `4d8e073e0279b6860c371d7a13d4c06fdc6f1fec` |
+| SMALLMID-DATAFLOW-CHAMPION-X | `w2/m1/smallmid-dataflow` | `/Users/sunyiyang/Desktop/Project/cann/worktrees/w2/m1/smallmid-dataflow` | `7f51d2506693b5c6c91fef2f0b867c6bb41aacc9` |
+
+### RULE_CONFLICT
+
+- `ONLINE_OWNER`: the attachment assigns submission ownership and automatic cadence to Main-1. Current `线上提交规范.md` and `调度/主代理分工.md` reserve submission for one unified Judge Owner after Planning approval and explicit confirmation. Main-1 will prepare exact-source packages and queue entries only; formal Judge submission awaits Planning's written resolution and the designated owner.
+- `SERVER_CONCURRENCY`: the attachment allows up to five NPU-associated jobs per device; current `服务器实验规范.md` allows up to eight distinct versions total, one per device. The planned five lanes fit the shared allowance when assigned to distinct devices. No second NPU-associated job will be placed on a device; broader concurrency needs Planning to update the project rule.
+- `ONLINE_CADENCE`: automatic submission every 18–22 minutes is not compatible with the current approval-and-owner sequence. No timer-driven submission will run while this remains unresolved.
+
+These conflicts affect formal Online submissions and concurrency above one version per device; they do not prevent the four independent Local candidates or the Fastpath qualification from proceeding under the current project rules.
+
+### Server snapshot and scheduler state
+
+- Read-only server snapshot: `hwnput3`, 8 x 910B3, 2026-10-02. Free HBM by device 0–7: `5313, 1409, 5319, 5318, 6346, 1530, 5377, 32332 MB`. Project disk availability: `707 GB`.
+- VLLM and Python processes were present on multiple devices and left untouched. No Main-1 job was started by this bootstrap.
+- The latest-row lease view has one unreleased entry for device 6: owner `MAIN-2`, route `STORE-EPILOGUE-X`, lease `R2-STORE-V002-TIMING`, started `2026-09-28T00:00:00Z`. Main-1 will avoid device 6 for timing until its owner resolves the lease. No other device has an unreleased lease in the local schedule log.
+- `SERVER_JOBS`: zero Main-1 jobs started.
+- `NEW_REVERTS`: `0`; historical records remain unchanged.
+- `PROCESS_VIOLATIONS`: none observed in this bootstrap.
+
+### Next action
+
+Resume the five existing Route Agent IDs and send each only its assigned route brief. Agents may write the declaration and perform the selected qualification or Candidate work in their own worktree. No route may alter another route's files, shared schedule, or lifecycle state. Rebuild the Dashboard after each committed event.
+
+### Dashboard export
+
+```dashboard-json
+{
+  "handoffs": "5/5",
+  "selected": "4 implementation lanes; 1 qualification lane",
+  "activeAgents": 5,
+  "activeRevision": "No declarations committed yet",
+  "stage": "ROUTE_CONTEXT_ASSIGNMENT",
+  "state": "Planning selections received; Main review complete; assigning the five existing Route Contexts",
+  "nextStep": "Commit each declaration before Candidate edits; then build, correctness, and qualified Local measurements",
+  "blocker": "Formal Online submission owner and cadence require Planning resolution",
+  "planningDecisionsChanged": 0,
+  "newRoutes": 0
+}
+```
