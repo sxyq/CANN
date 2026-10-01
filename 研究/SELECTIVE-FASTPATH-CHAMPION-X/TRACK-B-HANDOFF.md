@@ -88,7 +88,7 @@ RESULT: `QUALIFICATION_INCOMPLETE`。本节只整理当前分支已提交材料�
 
 - V017 的公开局部摘要只写 `BF16 wide D32768`，没有 M、完整输入 shape 或 runner 参数。已提交 V016 parent-control runner 明确使用 `M=2, D=32768, BF16`，`kCoreCount=8`；这是 V011/V016 的同形状证据，不能证明 V017 的 `20/20` 使用同一个 M。
 - 在 V011 与 V017 源码中，`D=32768 > kCacheElems(8192)` 会令 `widePath_` 生效；BF16 (`dtype=2`) 进入 `ProcessWideLowPrecision`，其中包含 pass-2 store 等待代码。因此该 donor 路径在目标 dtype/width 上可达，M 不参与该入口判断。
-- 对已记录的 V016 runner 配置 `M=2, availableCoreNum=8`，源码规则推得 `blockCount=min(8,2)=2`，每个 block `localRows=1`。V017 的 BF16 UB 预算选择推得 `wideFullYRows/batchLimit=1`、`tileWidth=2560`、`tileCount=ceil(32768/2560)=13`，故该配置每轮 `batchRows=1`。这些数值是依据提交源码与 runner 参数的静态推导；日志没有逐 block 运行时遥测，且未证明它们对应 V017 的历史 `20/20` 执行。
+- 已记录的 V016 runner 配置为 `M=2, availableCoreNum=8`；对该 V011/V016 runner，源码规则推得 `blockCount=2`、每个 block `localRows=1`。V017 的 BF16 D32768 源码按 176 KiB UB 预算将初始 tile 8192 逐步缩到 2560：每元素的 4 个 16-bit I/O tile 与 2 个 FP32 work tile 共占 `16*tileElems` bytes；3072 时需求为 180288 bytes，超过 180224-byte 预算 64 bytes，2560 可容纳。故静态推得 V017 `wideFullYRows/batchLimit=1`、`tileCount=ceil(32768/2560)=13`，每次循环 `batchRows=1`。这不是 V017 历史运行时遥测；M、availableCoreNum、blockCount 和 localRows 仍不能由 V016 参数代填。
 
 **已有稳定性与配对记录**
 
@@ -101,6 +101,26 @@ RESULT: `QUALIFICATION_INCOMPLETE`。本节只整理当前分支已提交材料�
 - 当前提交树没有 `本地实验/R31B/V017/`；缺 V017 局部 runner/shape manifest、原始 same-binary 与配对样本、执行时 `availableCoreNum/blockCount`、逐 block `localRows/batchRows` 记录，以及实际 tile width/count 和 executable 身份。也没有 V011/V017 的直接配对 delta。
 - 因 V017 历史 M 无法从本分支已提交记录恢复，不能把 M=2 的 V016 记录代填为 V017 的 exact M；资格状态保持 `QUALIFICATION_INCOMPLETE`，本阶段停止于只读报告。
 - 后续仅在 Main 提供独立 job、device 与时间窗口后，先用恢复出的 exact M/shape 对 V011 按项目统一协议重做 same-binary；通过后再以相同 runner、device、dtype、shape 交错比较 V011 与完整 V017。记录实际 `blockCount/localRows/batchRows/tileWidth/tileCount` 及原始样本。未恢复 exact M 前不启动探针、不形成局部收益结论，也不选择实现方向。
+
+### V017 本地记录追查补充
+
+SCOPE: 查阅本路线已提交 handoff、当前 HEAD `5b89f2fb58027386ccfe2047e0273b686c40e412` 的公开项目记录、R31B Official package、可达 Git 历史及其路径清单；未查看其他 Agent 对话或工作树。
+
+| 记录路径 @ 记录提交 | 可核验字段和值 | 对资格问题的意义 |
+|---|---|---|
+| `线上结果/R31B/V011/source-meta.json` @ `0a6b8f7cbcb1248601d76de3bc442a55141568fb` | `revision=V011`; `submission_sha256=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`; source commit `43a1049a1e08e518c88e354a754fdebb85a96f99` | 确认本资格研究使用的 V011 源码身份。 |
+| `线上结果/R31B/V017/source-meta.json` @ `cac29e8b6caa323d47f8841922ddb032ebff5854` | `direct_parent=V016`; `parent_source_sha=9f5c353e65a13a740fe97dc7e6415df032d27560831a3ad142c77592b8208eb5`; `source_sha=7c168eafde4c07d2a0667253a06925070e10349ccf08327a1b287302788180c4`; `source_commit=b33f03630f60be57b4e17c72f3e516f9e26b19be` | 确认完整 donor 身份与 V016 父版；没有 Local runner、M 或测量配置字段。 |
+| `研究/主代理/MAIN-1/ONLINE-RECOMMENDATION-R31B-V017.md` @ `244a0bb372656951f7dc9764fb001d1c3857e5ad` | `V017` 摘要为 `BF16 wide -14.3% (20/20)`；审阅表称 `SAME_BINARY=PASS 6/6`；revision direct parent 为 V016 | 这是 Main 已提交摘要；未注明 20/20 的计数定义、M、shape 的首维、blockCount、runner 参数、executable identity 或原始样本路径。6/6 也没有列出六个 shape 或各自设置。 |
+| `调度/本地线上校准.tsv` @ `6d32a7d1cb0cff82d8342b948e818793f85122d6` | R31B V017 行：`local_before=V016`; `local_probe=bf16-wide-d32768 -2.0us/-14.3% dual-attempt`; `local_after=V017`; timing quality=`QUALIFIED_LOCAL dual-attempt` | 明确这是 V016→V017 的摘要，不是 V011→V017 直接配对数据；未含 exact M 或原始样本位置。 |
+| `技术路线/全版本记录.tsv` @ `6d32a7d1cb0cff82d8342b948e818793f85122d6` | R31B V017 行：`DIRECT_PARENT=V016`; hypothesis=`H1 pass-2 store drain defer (MTE3_V event wait)`; note=`bf16-wide-d32768 -14.3% 20/20 dual-attempt` | 版本总表只提供摘要，缺 exact M 与局部运行包引用。 |
+| `研究/主代理/MAIN-1/COMPLIANCE-REVIEW.md` @ `5177cf88153b658215728ffc8d1fdd25ef56f083` | V017 行将 Local parent 列为 V016、probe 写为 `bf16-wide D32768`、delta `-14.3%` | 再次确认比较父版为 V016；没有 M 或执行参数。 |
+| `本地实验/R31B/V016/support/paired/paired_runner.cpp` @ `0a6b8f7cbcb1248601d76de3bc442a55141568fb` | `kRows=2`; `kCoreCount=8`; `kWarmup=45`; `kPairs=21`; `kQualificationBlocks=2`; `kQualificationSamplesPerBlock=31`; `kDevice=4`; case=`bf16-wide-d32768`; runner 函数类型为 V011，配对候选为 V016 | 可核验的 M=2 与设置属于 V011/V016 runner，不属于缺失的 V017 runner。不得据此声称 V017 的 M 或 blockCount。 |
+| `本地实验/R31B/V016/local-result.json` @ `0a6b8f7cbcb1248601d76de3bc442a55141568fb` | BF16 D32768 V011 same-binary attempt 1=`NEEDS_VALIDATION`（median 14.600 us, MAD/median 0.069, drift 0.130）；attempt 2=`PASS`（13.880 us, 0.021, 0.025）；V011↔V016 delta 为 `+0.14 us (+1.01%)` 与 `-0.02 us (-0.14%)` | 是 exact M=2 的旧 V011 稳定性及 V011/V016 对照；不能充当 V017 same-binary 或 V011/V017 配对证据。原始 V016 runner 日志也只记录 V011 与 V016。 |
+| `线上结果/R31B/V017/submission.asc` @ `cac29e8b6caa323d47f8841922ddb032ebff5854` | 对 BF16 D32768：`rowWidth>kCacheElems(8192)` 进入 wide path；dtype=2 进入 `ProcessWideLowPrecision`；host 取 `availableCoreNum>0 ? availableCoreNum : 1`，再限制到 `rowCount` 和 `UINT32_MAX` 形成 `blockCount`；V017 BF16 UB 计算得到 `wideFullYRows=1`、`tileWidth=2560`、`tileCount=13`、每次批处理 `batchRows=1` | dispatch 与批容量可由 donor 源码静态确认。实际 Local 的 `availableCoreNum`、M、`blockCount`、`localRows` 未记录；`batchRows=1` 是源码可推值，不是运行日志观测。 |
+
+缺失文件与记录：当前提交树没有 `本地实验/R31B/V017/`、V017 paired runner、V017 raw same-binary/P-C 日志或 shape manifest；V017 路径历史只收录 Official package。全树的 `20/20` 命中仅为路线/成绩表、Main 推荐/校准摘要与本 handoff，没有逐样本记录。Official `线上结果/R31B/V017/result.json` 只给 15 个 testcase ID、状态、时间和总分，没有 M/shape/dtype 映射。
+
+结论仍为 `QUALIFICATION_INCOMPLETE`：V017 既有 Local 的 exact M 和可用核心数无法从当前可读提交记录恢复，因此不能给出其实际 `blockCount/localRows`；公开的 `batchRows=1` 只是源码静态推导。没有 V011↔V017 exact-shape same-binary 与配对样本，现存 V011↔V016、V016↔V017 汇总不能拼成 V011↔V017 结果。需由 Main 提供已提交 V017 原始运行资料；否则等待 Main 单独下发设备 job 与窗口，再按统一协议重新资格确认及配对。
 
 ## H3 — FP32 chunked writeback
 
