@@ -170,7 +170,7 @@ These conflicts affect formal Online submissions and concurrency above one versi
 
 ### Next action
 
-Resume the five existing Route Agent IDs and send each only its assigned route brief. Agents may write the declaration and perform the selected qualification or Candidate work in their own worktree. No route may alter another route's files, shared schedule, or lifecycle state. Rebuild the Dashboard after each committed event.
+Monitor the five resumed Route Agent IDs, review their committed declarations and qualification report, then assign server jobs by device. Agents may work only in their own worktree. No route may alter another route's files, shared schedule, or lifecycle state. Rebuild the Dashboard after each committed event.
 
 ### Dashboard export
 
@@ -178,11 +178,12 @@ Resume the five existing Route Agent IDs and send each only its assigned route b
 {
   "handoffs": "5/5",
   "selected": "4 implementation lanes; 1 qualification lane",
-  "activeAgents": 5,
-  "activeRevision": "No declarations committed yet",
-  "stage": "ROUTE_CONTEXT_ASSIGNMENT",
-  "state": "Planning selections received; Main review complete; assigning the five existing Route Contexts",
-  "nextStep": "Commit each declaration before Candidate edits; then build, correctness, and qualified Local measurements",
+  "activeAgents": 0,
+  "pendingAgents": 5,
+  "activeRevision": "Declarations not yet committed",
+  "stage": "ROUTE_CONTEXTS_ASSIGNED",
+  "state": "Five existing Route Agent tasks are queued; Main-1 is waiting for declaration commits and the Fastpath qualification report",
+  "nextStep": "Review declaration commits; then allocate distinct server devices for build and correctness",
   "blocker": "Formal Online submission owner and cadence require Planning resolution",
   "planningDecisionsChanged": 0,
   "newRoutes": 0
