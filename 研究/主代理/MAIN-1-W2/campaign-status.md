@@ -207,5 +207,7 @@ Have each existing Route Agent prepare and commit its reproducible route-local b
 - `LOCAL_HEAD`: `fa32b2d43ea61732f54239171087ad6a18f8a613`.
 - `REMOTE_HEAD_AT_ATTEMPT`: `de46001b80c68118313af2befc25924d00f1ed9d`.
 - `PUSH_ATTEMPT`: HTTPS push timed out; a later `git ls-remote` still reported the remote at `de46001b80c68118313af2befc25924d00f1ed9d`.
-- `PUSH_PENDING`: `YES`.
-- `NEXT_ACTION`: retry with ordinary push only; preserve the existing commit history.
+- `RETRY_RESULT`: ordinary push succeeded.
+- `LOCAL_HEAD_AFTER_RETRY`: `dc1cb8a20fcb1360dd7306df7f573dbd7e208fb9`.
+- `REMOTE_HEAD_AFTER_RETRY`: `dc1cb8a20fcb1360dd7306df7f573dbd7e208fb9`.
+- `PUSH_PENDING`: `NO`.
