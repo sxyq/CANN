@@ -5,10 +5,10 @@
 - `PARENT_SOURCE_SHA`：`59fb8eada4da0b2b83cccffa4fb89fb97b7503ba3dcb08d5e0fe348e3caeb839`
 - Official anchor：45.07
 - 分支：`w2/m1/store-epilogue`
-- 状态：`MAIN_SELECTED=NO`
-- `CHILD_RECOMMENDED_HYPOTHESIS`：H4 仅供 Main 优先确认多行 t=3 形状是否可达；不代表实现选择，H1/H3 仍保留。
+- 状态：`MAIN_SELECTED=YES`；选择 H1，Revision `V001` 已声明。
+- `CHILD_RECOMMENDED_HYPOTHESIS`：Track-B 初始建议 H4 先做可达性判断；该建议已被 Planning 对 H1 的正式选择取代。
 
-本轮仅写路线研究。V003 是 Wave-1 供体证据，不是父版本。没有创建 Revision、修改 Candidate/kernel、构建、测时或访问 server3。
+本 handoff 初始阶段只写路线研究。V003 是 Wave-1 供体证据，不是父版本。Main 收到 Planning 选择后，才声明 V001；源码实现与实验状态另见本路线 Revision 记录。
 
 ## 范围与父版
 
@@ -25,7 +25,7 @@
 ## H1 — 整行 Store 发出点
 
 - `HYPOTHESIS_ID=STORE-W2-H1-ISSUE-POINT`
-- `STATUS=READY_FOR_MAIN_REVIEW`
+- `STATUS=PLANNING_SELECTED_MAIN_REVIEWED`
 - `MECHANISM`：合并条件、整行 Store 次数及所有 event 操作不变；把唯一整行 Store 从 tile 循环之后移到最后一个 tile 的算术和 `PIPE_V` barrier 之后、循环退出之前。
 - `BOTTLENECK`：最后一次 Store issue 前的循环退出指令可能推迟 MTE3 启动。
 - `DIRECT_PARENT`：V002，SHA `59fb8eada4da0b2b83cccffa4fb89fb97b7503ba3dcb08d5e0fe348e3caeb839`。
@@ -98,7 +98,7 @@
 
 - H2：`STATUS=INFEASIBLE`。V002 的最终 `WaitFlag<MTE3_V>` 后立即释放对应 event ID（`submission.asc:2280-2289`），后面没有可合法并行的工作。单纯移动 drain 只能把完成等待移到资源释放之后，不能构成有意义的 OFAT；不得把它保留为候选。
 - H5：`STATUS=DUPLICATE_REJECTED`。旧提交 `acc92000` 的 STORE H4 已提出删除 `ProcessWideFp32FullCacheRows` tile 循环入口两个 `WaitFlag<MTE3_V>` 块，让 gamma/bias MTE2 Load 与前序 Store 重叠；证据为该提交 `研究/STORE-EPILOGUE-X/next-hypotheses.md` 的 H4 段及 V002 `线上结果/STORE-EPILOGUE-X/V002/submission.asc:2186-2200`。本轮 H5 也是只改同一依赖链、Store/Copy 数不变；与旧 H4 的机制、位置和最小 diff 完全相同，`DIFFERENCE=NONE`。Wave-2 SYNC H1 也删除同一对入口等待并保留逐槽等待，见 `6a19f78c:研究/SYNC-TOPOLOGY-CHAMPION-X/TRACK-B-HANDOFF.md`；不得另立 H5。
-- H1、H3、H4 是本轮三个有效候选。建议 Main 先做 H4 的只读可达性判断；H1 的预期收益小且未隔离测量，H3 与 Wave-1 V003 同属分块写回且 Official 有回退风险。`MAIN_SELECTED=NO`，未选实现。
+- Track-B 曾保留 H1、H3、H4 三个有效候选。Planning 随后选择 H1，Main-1 review 确认从 V002 移动现有整行 Store issue point 是单变量范围；V001 声明不把 H3/V003 donor 引入 Candidate。H3 与 H4 仍只是未选研究项。
 
 ## 路线证据对照
 
@@ -123,4 +123,10 @@
 
 ## Main 交接
 
-Main 可先从已提交 workload/tiling 证据确认 `128x12288 FP32` 是否满足 `batchRows>1`；不可达则 H4 暂无有效探针。最终实现选择由 Main 作出。H1/H3/H4 的 `EXPECTED_LOCAL_PROBES` 与 `MINIMAL_OFAT_DIFF` 保持不变；三项字段齐全。未创建 Revision，未修改 Candidate/kernel，未构建、跑正确性、测时、访问 server3 或 Online。
+### Main 选择确认
+
+- `PLANNING_SELECTED_HYPOTHESIS=STORE-W2-H1-ISSUE-POINT`；来源为 C2C CONTROL，Main-1 回执与审阅记录在 `研究/主代理/MAIN-1-W2/campaign-status.md`，提交 `2a27be0bbaa81b7f67777f7d8e99277cbe23946a`。
+- `MAIN_SELECTED=YES`；Main review 确认只移动 V002 的现有整行 Store 发出点，Store 次数、地址、chunk geometry、条件、event 顺序、算术和 tiling 保持不变。
+- `REVISION=V001`；`DIRECT_PARENT=STORE-EPILOGUE-X V002`；`PARENT_SOURCE_SHA=59fb8eada4da0b2b83cccffa4fb89fb97b7503ba3dcb08d5e0fe348e3caeb839`；`OFFICIAL_ANCHOR=45.07`。
+- Revision declaration：`本地实验/STORE-EPILOGUE-W2-X/V001/REVISION-DECLARATION.md`。
+- H4 的 `128x12288 FP32` 可达性问题不影响当前 H1；H1 主探针为 `1x32768 FP32`。correctness、same-binary 与 P/C 测量须使用项目现行协议，并等待 Main 分配 server3 job。

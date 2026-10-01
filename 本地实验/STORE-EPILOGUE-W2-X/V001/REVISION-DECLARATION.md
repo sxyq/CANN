@@ -1,0 +1,30 @@
+# REVISION DECLARATION — STORE-EPILOGUE-W2-X V001
+
+ROUTE=STORE-EPILOGUE-W2-X
+REVISION=V001
+DIRECT_PARENT=STORE-EPILOGUE-X V002
+PARENT_SOURCE_SHA=59fb8eada4da0b2b83cccffa4fb89fb97b7503ba3dcb08d5e0fe348e3caeb839
+PARENT_SCORE=45.07
+OFFICIAL_ANCHOR=45.07
+HYPOTHESIS_ID=STORE-W2-H1-ISSUE-POINT
+HYPOTHESIS=Move the existing full-row Store issue point to the end of the final tile's arithmetic.
+SINGLE_HYPOTHESIS=Move the existing mergeRowRuns full-row Store block from after the tile loop to after the final tile's arithmetic and PIPE_V barrier, before loop exit. Issue it only on the final tile when mergeRowRuns is true.
+CONTEXT_CLASS=PLANNING_SELECTED_WAVE2_SINGLE_FACTOR
+FOCUS_AXIS=STORE_ISSUE_TIMING
+FOCUS_VALUE=AFTER_FINAL_TILE_ARITHMETIC_PIPE_V_BARRIER_BEFORE_LOOP_EXIT
+ONE_FACTOR_DIFF=Relocate the complete existing full-row Store block to the selected issue point; preserve its body, Store count, address, chunk geometry, enable condition, event operations and order. Keep the per-tile fallback unchanged.
+TARGET_SHAPE=1x32768 FP32
+TARGET_DTYPE=FP32
+EXPECTED_EFFECT=Issue MTE3 before the final loop-exit control instructions, potentially reducing the gap after the final result barrier; expected gain is small and may be below noise.
+FAILURE_MODE=No measurable change, or a regression from the final-tile guard overhead; any incorrect guard placement could issue before the last tile is complete. The Store must remain after the final tile's arithmetic barrier.
+WHY_NOT_DUPLICATE=Wave-1 STORE V003 changes one row from one Store to two chunks and changes chunk geometry; H1 preserves the single full-row Store and only relocates its issue point. The rejected H5 and Wave-2 SYNC H1 change MTE3_V dependency waits, not Store issue position.
+ROUTE_BOUNDARY=Store issue timing, drain, writeback dependency, intra-row chunk boundary and last-chunk policy only.
+ALLOWED_CHANGES=Move the existing full-row Store block within ProcessWideFp32FullCacheRows to after the last tile's arithmetic and PIPE_V barrier and before loop exit.
+FORBIDDEN_CHANGES=Reduction, arithmetic, dtype, multi-row or stride DMA, tiling, row scheduling/ownership, Store count/address/geometry/condition, event order, helpers, and any other route or shared file.
+MAIN_APPROVAL=YES; Planning selected H1 and Main-1 reviewed the boundary in commit 2a27be0bbaa81b7f67777f7d8e99277cbe23946a, 研究/主代理/MAIN-1-W2/campaign-status.md.
+SINGLE_CHANGE_AUDIT=PENDING_SOURCE_REVIEW
+BUILD=NOT_STARTED
+CORRECTNESS=NOT_STARTED
+SAME_BINARY=NOT_STARTED
+LOCAL_MEASUREMENT=NOT_STARTED
+SOURCE_SHA=NOT_CREATED_AT_DECLARATION
