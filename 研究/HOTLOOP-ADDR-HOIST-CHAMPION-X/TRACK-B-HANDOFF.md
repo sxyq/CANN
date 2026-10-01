@@ -194,6 +194,34 @@ and record the concrete shape/dtype; do not infer a testcase mapping.
 The distinction is therefore `OLD_MECHANISM` versus `NEW_DIFFERENCE`, not a
 new parent label. All three candidates keep V011's algorithm and dispatch.
 
+## 2A. Cross-route duplicate audit: branch-hoist hypotheses
+
+Compared against `HOTLOOP-BRANCH-HOIST-CHAMPION-X` hypotheses in committed
+branch-hand-off commit
+`7e46bd771aa6fa3dd0216d643ebbed1f31e7f332`
+(`研究/HOTLOOP-BRANCH-HOIST-CHAMPION-X/TRACK-B-HANDOFF.md`). Both routes name
+the same frozen parent, R31B V011 at source SHA
+`a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`.
+Here `(a)` means address/index expressions, `(b)` row-tail or prefetch branch,
+and `(c)` per-tile valid/tail length. “Adjacent” means a shared loop boundary
+or possible integration surface, not the same changed expression/predicate.
+
+| ADDR candidate | HBH-01 coefficient-mode guard | HBH-02 terminal-row prefetch guard | HBH-03 full/tail tile split |
+|---|---|---|---|
+| ADDR-H1 row-base hoist | (a) none; (b) none; (c) none | (a) none; (b) adjacent row-boundary bookkeeping only—the generic final-row prefetch predicate is different; (c) none | (a) none; (b) none; (c) adjacent loop surface only—H1 preserves `valid` |
+| ADDR-H2 rolling input cursor | (a) none; (b) none; (c) none | (a) none; (b) adjacent row-boundary correction only—not the generic prefetch predicate; (c) none (cursor correction changes an element offset, not DMA valid length) | (a) address-vs-loop traversal surface only; (b) none; (c) adjacent tail boundary only—H2 preserves `valid` |
+| ADDR-H3 stateful row/tile counters | (a) none; (b) none; (c) none | (a) none; (b) adjacent row-counter wrap only—not the generic prefetch predicate; (c) none | (a) partial traversal/index surface overlap: HBH-03's per-row loops could subsume the flattened decode H3 targets; (b) none; (c) adjacent final-tile boundary only—H3 preserves `valid` |
+
+**Decision:** no ADDR candidate duplicates HBH-01/02/03's exact mechanism on
+any of the three audited axes. HBH-02 and ADDR row-rollover state touch a
+conceptual row boundary but use different predicates in different V011 paths;
+HBH-03 alone changes full-versus-tail tile control, while all ADDR candidates
+leave per-tile valid lengths and DMA byte counts unchanged. The one material
+cross-route implementation-surface interaction is ADDR-H3 × HBH-03: a
+per-row loop split may make flat `(u / tileCount, u - batchRow * tileCount)`
+decode unnecessary. Keep those changes separate if Planning ever considers
+them; this is not a reason to remove or select an ADDR candidate.
+
 MAIN-2 Wave-1 provides a useful negative-control context rather than a prior
 address candidate: REDUCE-HIER-X's reduction variants did not establish a
 reduction bottleneck; VECTOR-MATH-X measured V/S handoff cost at about
