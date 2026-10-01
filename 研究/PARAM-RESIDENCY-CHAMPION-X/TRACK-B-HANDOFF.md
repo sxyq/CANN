@@ -6,7 +6,10 @@ WORKTREE=/home/data4t2/lelinfeng/cann-w2-m2-param
 TRACK=TRACK-B-ONLY
 BASELINE=R31B-V011
 BASELINE_OFFICIAL=45.16
+PARENT_SCORE=45.16
 PARENT_SOURCE_SHA=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
+CONTEXT_CLASS=FROZEN_STRONG_BASELINE_PARAM_RESIDENCY_RESEARCH
+WHY_NOT_DUPLICATE=Only bounded gamma/bias consumer lifetime is studied; broad residency, prefetch timing, multi-row DMA, scheduling, arithmetic, store merge, and tile search are explicitly rejected by the audit.
 MAIN_SELECTED=NONE
 IMPLEMENTATION_SELECTED=NO
 REVISION_CREATED=NO
@@ -60,6 +63,16 @@ PRECISION_RISK=No arithmetic change. The main risk is stale gamma data at a row 
 DUPLICATE_CHECK=PASS_WITH_SCOPE. The unrestricted gamma/bias cache in R014/FULL-R014/R030 is DUPLICATE_REJECTED; this is gamma-only, exactly two rows, fixed tiles, and no wide-row cache redesign. COEFF generic preload and R31A parameter staging-liveness are adjacent but change staging lifetime/prefetch, not this bounded gamma-only consumer lifetime.
 RELATED_OLD_ROUTES=R014; FULL-R014; R030/FULL-R030; COEFF-LOCALITY-X V001/V004; R31A V025/V026; R31B V011.
 MINIMAL_EXPERIMENT=After Planning approval, one FP32-only source change that retains one gamma tile for exactly two existing adjacent rows. Use one D=16384 and one D=32768 shape with localRows>=2, plus the D=8192 control. First verify UB footprint and exact output bytes, then use the prescribed same-binary and interleaved P/C protocol. Do not combine bias reuse or pipeline reordering.
+ROUTE_BOUNDARY=Gamma only, exactly two existing adjacent row consumers; no row scheduling, row-group ownership, tile search, arithmetic fusion, store merge, or DMA-shape change.
+ALLOWED_CHANGES=One gamma consumer-lifetime extension using existing V011 parameter tile/event machinery after Planning approval.
+FORBIDDEN_CHANGES=Bias reuse, P/tile shrink, row mapping, arithmetic, store merge, stride/multi-row DMA, new event family, or new barrier.
+ASCEND_FEASIBILITY=MEDIUM. Existing single-tile parameter loads and existing ready/release events are reusable; feasibility depends on proving a two-row lifetime without allocating beside live V011 buffers.
+CORE_IMPACT=NONE. Block count, row ownership, row order, and per-core work are unchanged.
+EVIDENCE_PATHS=技术路线/冠军/champions.tsv; 技术路线/冠军/R31B-V011/RESULT_REF.txt; 本地实验/COEFF-LOCALITY-X/V001/; 本地实验/COEFF-LOCALITY-X/V003/; 技术路线/全版本记录.tsv
+PROPOSED_ONE_FACTOR_DIFF=Gamma-only lifetime extension across exactly two existing adjacent rows; P, bias lifetime, DMA form, arithmetic, and event topology unchanged.
+EXPECTED_LOCAL_PROBES=Exact source/UB/lifetime audit; deterministic FP32 correctness with distinct gamma/bias; same-binary qualified FP32 D=16384, D=32768, D=8192 control; >=4 interleaved P/C pairs only after qualification.
+CHILD_RECOMMENDED_HYPOTHESIS=NONE
+OPEN_QUESTIONS=Does the exact FP32 wide path reload gamma per row, and can an existing slot retain it through the second consumer without a tile shrink or additional fence?
 
 ### H2
 
@@ -79,6 +92,16 @@ PRECISION_RISK=No arithmetic change. A stale bias is an additive error that can 
 DUPLICATE_CHECK=PASS_WITH_SCOPE. Broad gamma+bias residency in R014/FULL-R014/R030 is DUPLICATE_REJECTED; this is bias-only and two-row bounded. COEFF V003 split-phase emission is DUPLICATE_REJECTED as a loading-timing change, not reused bias lifetime. H2 remains distinct from H1 by the sole resident parameter.
 RELATED_OLD_ROUTES=R014; FULL-R014; R030/FULL-R030; COEFF-LOCALITY-X V003/V004; BATCH-RESIDENT-X; R31B V011.
 MINIMAL_EXPERIMENT=After Planning approval, one FP32-only source change that retains only bias for exactly two existing adjacent rows. Use the same shape/control matrix as H1 and verify that gamma remains byte-identical to the parent path. Do not change gamma, row mapping, tile width, or arithmetic.
+ROUTE_BOUNDARY=Bias only, exactly two existing adjacent row consumers; no gamma lifetime change, row scheduling, row-group ownership, tile search, arithmetic fusion, store merge, or DMA-shape change.
+ALLOWED_CHANGES=One bias consumer-lifetime extension using existing V011 parameter tile/event machinery after Planning approval.
+FORBIDDEN_CHANGES=Gamma reuse, P/tile shrink, row mapping, arithmetic, store merge, stride/multi-row DMA, new event family, or new barrier.
+ASCEND_FEASIBILITY=MEDIUM. The operation is a single existing bias load with a bounded lifetime extension; exact feasibility depends on bias-buffer alias/liveness and existing event ordering.
+CORE_IMPACT=NONE. Block count, row ownership, row order, and per-core work are unchanged.
+EVIDENCE_PATHS=技术路线/冠军/champions.tsv; 技术路线/冠军/R31B-V011/RESULT_REF.txt; 本地实验/COEFF-LOCALITY-X/V003/; 本地实验/COEFF-LOCALITY-X/V004/; 技术路线/全版本记录.tsv
+PROPOSED_ONE_FACTOR_DIFF=Bias-only lifetime extension across exactly two existing adjacent rows; P, gamma lifetime, DMA form, arithmetic, and event topology unchanged.
+EXPECTED_LOCAL_PROBES=Exact source/UB/lifetime audit with distinct nonzero bias; deterministic FP32 correctness; same-binary qualified FP32 D=16384, D=32768, D=8192 control; >=4 interleaved P/C pairs only after qualification.
+CHILD_RECOMMENDED_HYPOTHESIS=NONE
+OPEN_QUESTIONS=Does the exact FP32 wide path reload bias per row, and is its staging lifetime independently extendable without stale additive coefficients or an extra wait?
 
 ### H3
 
@@ -98,6 +121,16 @@ PRECISION_RISK=No arithmetic change, but stale or cross-row pair reuse corrupts 
 DUPLICATE_CHECK=PASS_ONLY_IF_GATED. Generic pair staging, full-row caching, stripe residency, or prefetch timing is DUPLICATE_REJECTED against R014/FULL-R014/R030, COEFF V001-V004, BATCH-RESIDENT-X, and R31B V011. The only non-duplicate claim is the bounded two-row pair with a prior single-parameter signal and no tile change; without that gate this item is DUPLICATE_REJECTED.
 RELATED_OLD_ROUTES=R014; FULL-R014; R030/FULL-R030; BATCH-RESIDENT-X; COEFF-LOCALITY-X V001-V004; R31B V011/V020.
 MINIMAL_EXPERIMENT=Do not implement first. If H1 or H2 is later LOCAL_ACCEPTED by Main, run one pair-only follow-up on the exact winning shape and one control. Keep P fixed, account for 32 KiB at P=4096, and abort at research review if aliasing or tile preservation is not proven.
+ROUTE_BOUNDARY=Gamma+bias pair only after a positive single-parameter gate, exactly two existing rows; no independent first implementation or broader row group.
+ALLOWED_CHANGES=One gated pair-lifetime extension using existing V011 tiles/events with P fixed.
+FORBIDDEN_CHANGES=Ungated pair staging, tile search/shrink, scheduling, arithmetic fusion, store merge, stride/multi-row DMA, new event topology, or extra stage.
+ASCEND_FEASIBILITY=LOW-to-MEDIUM and gated. The pair is expressible with existing operations only if two coefficient tiles fit or safely alias dead storage; otherwise it is infeasible before code work.
+CORE_IMPACT=NONE. No block, ownership, scheduling, or cross-core behavior may change.
+EVIDENCE_PATHS=技术路线/冠军/champions.tsv; 本地实验/COEFF-LOCALITY-X/V002/; 本地实验/COEFF-LOCALITY-X/V003/; 技术路线/全版本记录.tsv; 研究/COEFF-LOCALITY-X/TRACK-B-HYPOTHESES.md
+PROPOSED_ONE_FACTOR_DIFF=After a positive H1 or H2 gate, extend both coefficient lifetimes across exactly two rows; P and existing event topology remain fixed.
+EXPECTED_LOCAL_PROBES=Review gate only; 32 KiB FP32 footprint proof at P=4096; exact deterministic output on the winning shape and one control; >=4 interleaved P/C pairs only if tile capacity and identity remain unchanged.
+CHILD_RECOMMENDED_HYPOTHESIS=NONE
+OPEN_QUESTIONS=Can both tiles coexist with every live V011 buffer at the winning shape, or does the pair necessarily reproduce COEFF V002's no-UB-budget result?
 
 ### H4
 
@@ -117,6 +150,16 @@ PRECISION_RISK=Parameter values must be copied exactly; stripe boundaries must p
 DUPLICATE_CHECK=PASS_WITH_STRICT_BOUNDARY. Full stripe residency and gamma+bias tile staging are DUPLICATE_REJECTED against COEFF V002 and BATCH-RESIDENT-X. H4 is only a bounded, small-stripe lifetime with fixed K/S, no multi-row DMA, no row scheduling, and no tile search; any implementation that changes tile width or block rows is DUPLICATE_REJECTED against R015/R016/SCHED routes.
 RELATED_OLD_ROUTES=R014; FULL-R014; R015/FULL-R015; R016/FULL-R016; R030/FULL-R030; BATCH-RESIDENT-X; COEFF-LOCALITY-X V002/V004; SCHED-ROWGROUP-X; SCHED-CHAMPION-X.
 MINIMAL_EXPERIMENT=After Planning approval, choose one fixed K and S before source edit, use one FP32 D=8192 and one D=16384 shape with localRows>=K, and compare against the unchanged V011 tile count. Reject if the footprint changes tile capacity, row ownership, or parameter load order outside the bounded stripe.
+ROUTE_BOUNDARY=Fixed bounded K-row consumer group and fixed S-element parameter stripe; no ownership or row-order change.
+ALLOWED_CHANGES=One predeclared K/S stripe lifetime with ordinary single-row/tile parameter loads and unchanged P.
+FORBIDDEN_CHANGES=Tile search/shrink, changed row order/ownership, stride/multi-row DMA, store merge, arithmetic fusion, mode selection, or route-wide pipeline.
+ASCEND_FEASIBILITY=MEDIUM-LOW. Ordinary single-row/tile copies are available, but fixed K/S stripe traversal must preserve parent tails and cannot pay a per-stripe synchronization cost that exceeds the bounded reuse.
+CORE_IMPACT=NONE. The K rows are existing consumers only; block ownership, row order, and mode dispatch remain unchanged.
+EVIDENCE_PATHS=技术路线/冠军/champions.tsv; 本地实验/COEFF-LOCALITY-X/V002/; 本地实验/COEFF-LOCALITY-X/V004/; 研究/BATCH-RESIDENT-X/next-hypotheses.md; 技术路线/技术路线图.md
+PROPOSED_ONE_FACTOR_DIFF=One fixed K/S coefficient-stripe lifetime across existing row consumers; no tile search, row-group ownership change, stride DMA, arithmetic, or store change.
+EXPECTED_LOCAL_PROBES=Pre-edit footprint and tile-count proof; exact FP32 correctness at D=8192/16384 with localRows>=K; same-binary qualification and >=4 interleaved P/C pairs; D=32768 is control only if P/tile count is unchanged.
+CHILD_RECOMMENDED_HYPOTHESIS=NONE
+OPEN_QUESTIONS=Can a fixed S<=1024 preserve P=4096 and parent tail behavior, or does the extra stripe loop introduce enough DMA/sync overhead to erase row reuse?
 
 ### H5
 
@@ -136,6 +179,61 @@ PRECISION_RISK=High correctness sensitivity from aliasing/lifetime only; arithme
 DUPLICATE_CHECK=PASS_WITH_BOUNDARY. R31B V011 already has a two-deep parameter MTE2 stream, so redoing that exact tile prefetch is DUPLICATE_REJECTED. R31A V025/V026 and COEFF V001-V004 cover generic staging liveness or parameter-load timing and are DUPLICATE_REJECTED. H5 is narrower: existing row-pipeline slot alias at the row boundary, no prefetch reorder, no third stage, and no new sync topology. Any extra fence or reorder makes it a duplicate.
 RELATED_OLD_ROUTES=R013/FULL-R013; R014/FULL-R014; R030/FULL-R030; R31B V011/V020; R31A V025/V026; COEFF-LOCALITY-X; ASYNC-OVERLAP-CHAMPION-X Wave-1 V001-V004; ASYNC-TRIPLE-X; MIX-A.
 MINIMAL_EXPERIMENT=After Planning approval, choose one parameter (gamma or bias) and one existing pipeline slot from an exact source audit. Make one alias/lifetime change only, with no new buffer, event, or prefetch location. Validate a two-row FP16/BF16 wide shape first, then one FP32 control if the slot exists; stop on any output nondeterminism or new synchronization.
+ROUTE_BOUNDARY=One existing V011 row-pipeline slot alias at a row boundary for one parameter stream; no prefetch relocation.
+ALLOWED_CHANGES=One gamma-only or bias-only zero-new-UB alias/lifetime change using existing event IDs, after exact source audit and Planning approval.
+FORBIDDEN_CHANGES=New buffer, third stage, prefetch reorder, extra fence/event topology, scheduling, arithmetic fusion, store merge, stride/multi-row DMA, or tile search.
+ASCEND_FEASIBILITY=MEDIUM but binary. It is feasible only if a source-level lifetime proof shows an existing slot is dead at the alias point and all existing event IDs already express the handoff; otherwise classify INFEASIBLE.
+CORE_IMPACT=NONE. No block, ownership, row order, mode, or cross-core behavior changes.
+EVIDENCE_PATHS=技术路线/冠军/champions.tsv; 技术路线/冠军/R31B-V011/RESULT_REF.txt; 本地实验/R31B/V016/; 本地实验/ASYNC-OVERLAP-CHAMPION-X/V001/; 本地实验/ASYNC-OVERLAP-CHAMPION-X/V004/; 技术路线/全版本记录.tsv
+PROPOSED_ONE_FACTOR_DIFF=Alias one existing V011 row-pipeline slot for one parameter stream at the row boundary; zero new UB, no prefetch movement, no new event/fence, and no arithmetic change.
+EXPECTED_LOCAL_PROBES=Exact source lifetime and event audit; repeated deterministic output with distinct gamma/bias; FP16/BF16 two-row wide correctness and same-binary qualification; one FP32 control; >=4 interleaved P/C pairs only after all gates pass.
+CHILD_RECOMMENDED_HYPOTHESIS=NONE
+OPEN_QUESTIONS=Which exact dtype path has a genuinely dead row-pipeline half after input consumption, and can the alias avoid the known V011/FullCache lifetime races without a new fence?
+
+## REQUIRED_FIELD_AUDIT
+
+The five hypotheses above are complete research records. The following matrix makes the
+fields that are shared by the route handoff explicit for every hypothesis, so a child or
+Main review does not infer scope from prose. `P` means the existing parent tile width;
+the audit uses `P=4096` as the V011 wide-path anchor and does not authorize changing it.
+
+| HYPOTHESIS_ID | ROUTE_BOUNDARY | ALLOWED_CHANGES | FORBIDDEN_CHANGES | EVIDENCE_PATHS | PROPOSED_ONE_FACTOR_DIFF | EXPECTED_LOCAL_PROBES | CHILD_RECOMMENDED_HYPOTHESIS |
+|---|---|---|---|---|---|---|---|
+| H1-GAMMA-TWO-ROW-LIFETIME | gamma lifetime across exactly two existing adjacent row consumers; no row-group scheduling | one gamma lifetime extension using existing tile/event machinery, after Planning approval | bias reuse, tile search/shrink, row mapping, arithmetic, store merge, stride/multi-row DMA, new sync topology | V011 champion/evidence paths listed below; COEFF V001-V004; R31A V025/V026 | gamma-only two-row lifetime extension; P fixed | source/UB audit, exact-output deterministic check, then FP32 D=16384/32768 plus D=8192 control with interleaved P/C | NONE; Planning selects |
+| H2-BIAS-TWO-ROW-LIFETIME | bias lifetime across exactly two existing adjacent row consumers; no gamma lifetime change | one bias lifetime extension using existing tile/event machinery, after Planning approval | gamma reuse, tile search/shrink, row mapping, arithmetic, store merge, stride/multi-row DMA, new sync topology | V011 champion/evidence paths listed below; COEFF V003/V004; BATCH-RESIDENT-X | bias-only two-row lifetime extension; P fixed | source/UB audit with distinct nonzero bias, exact-output check, then same FP32 matrix as H1 | NONE; Planning selects |
+| H3-GAMMA-BIAS-TWO-ROW-PAIR | paired coefficient lifetime across exactly two rows, gated by a prior H1 or H2 signal | pair lifetime only after gate; existing tile/events only | first implementation without gate, tile search/shrink, scheduling, arithmetic, store merge, stride DMA, new event topology | V011 champion/evidence paths listed below; R014/FULL-R014/R030; COEFF V002 | gamma+bias pair lifetime; P fixed | gate review, 32 KiB footprint proof, exact-output check on winning shape and one control, then interleaved P/C | NONE; Planning selects |
+| H4-BOUNDED-ROW-GROUP-PARAM-STRIPE | fixed small K-row consumer group and fixed S-element coefficient stripe; no ownership change | one predeclared K/S stripe lifetime with ordinary single-row/tile loads | tile search, changed row order/ownership, stride/multi-row DMA, store merge, arithmetic, new route-wide pipeline | V011 champion/evidence paths listed below; COEFF V002/V004; R015/R016/SCHED evidence | one fixed bounded stripe lifetime; K and S chosen before edit | prove unchanged tile capacity and parent load order, then FP32 D=8192/16384 with localRows>=K plus unchanged control | NONE; Planning selects |
+| H5-PARAM-LIFETIME-ROW-PIPELINE-MINIMAL-SHARE | one existing V011 row-pipeline slot alias at a row boundary; no prefetch relocation | one gamma-only or bias-only alias/lifetime change with existing event IDs | new buffer, third stage, prefetch reorder, extra fence/event topology, scheduling, arithmetic, store merge, stride DMA | V011 champion/evidence paths listed below; R013/R014/R030; ASYNC/COEFF/UB-LIVENESS evidence | zero-new-UB alias of one parameter tile into a proven-free slot | exact source lifetime audit, repeated deterministic output, then FP16/BF16 two-row wide shape and FP32 control | NONE; Planning selects |
+
+All five rows have explicit `MECHANISM`, `BOTTLENECK`, `DIRECT_PARENT`,
+`PARENT_SOURCE_SHA`, `TARGET_SHAPES`, `TARGET_DTYPES`, `WHY_IT_MAY_HELP`,
+`WHY_IT_MAY_FAIL`, `UB_IMPACT`, `DMA_IMPACT`, `SYNC_IMPACT`, `PRECISION_RISK`,
+`DUPLICATE_CHECK`, `RELATED_OLD_ROUTES`, and `MINIMAL_EXPERIMENT` fields immediately
+under their hypothesis heading. `CHILD_RECOMMENDED_HYPOTHESIS=NONE` is intentional:
+this Track-B agent does not select an implementation.
+
+## UB_FOOTPRINT_AND_RISK_CALCULATION
+
+The relevant coefficient footprint is `gamma + bias = 2 * P * sizeof(dtype)` per
+resident stripe/tile. At the frozen wide-path anchor `P=4096`:
+
+| dtype | one gamma-or-bias tile | H1 or H2 added resident tile | H3 gamma+bias pair | H4 at S=1024 pair | H5 new UB |
+|---|---:|---:|---:|---:|---:|
+| FP32 | 16 KiB | 16 KiB | 32 KiB | 8 KiB pair | 0 KiB (alias only) |
+| FP16/BF16 | 8 KiB | 8 KiB | 16 KiB | 4 KiB pair | 0 KiB (alias only) |
+
+For the V011 wide FP32 budget, `176 KiB` total and `D=32768` y storage alone is
+`32768*4 = 128 KiB`; therefore H1/H2 consume 16 KiB of remaining budget before
+any live x/residual/reduction storage, H3 consumes 32 KiB, and H4 consumes 8 KiB
+at `S=1024`. These are feasibility bounds, not permission to resize the parent:
+if the exact live-buffer audit cannot fit the proposed footprint while preserving
+`P=4096`, classify the hypothesis `INFEASIBLE`/`DUPLICATE_REJECTED` and stop.
+
+`TILE_SHRINK_RISK`: H1=HIGH, H2=HIGH, H3=VERY_HIGH, H4=LOW-to-MEDIUM only if
+aliased (otherwise HIGH), H5=LOW by construction. `EXTRA_SYNC_RISK`: H1=MEDIUM,
+H2=MEDIUM, H3=HIGH, H4=MEDIUM-HIGH, H5=HIGH. Any implementation that pays these
+risks through a new barrier, new event family, or changed tile count is outside
+this route and must not be created.
 
 ## DUPLICATE_AUDIT
 
