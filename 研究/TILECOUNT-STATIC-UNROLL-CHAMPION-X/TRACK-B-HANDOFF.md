@@ -8,7 +8,7 @@ ASSIGNMENT=MAIN-2 research-only M2-4 (per task assignment)
 TRACK=TRACK-B
 MAIN_SELECTED=NONE
 IMPLEMENTATION=NOT_STARTED
-ROUTE_HYPOTHESIS_POOL_EXHAUSTED=NO (3 source-level candidates; codegen-gated)
+ROUTE_HYPOTHESIS_POOL_EXHAUSTED=YES (3 admissible source-level candidates; codegen-gated; no fourth distinct candidate)
 REMOTE_FRESHNESS=UNKNOWN
 ```
 
