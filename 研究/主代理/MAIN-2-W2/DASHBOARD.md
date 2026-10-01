@@ -68,6 +68,29 @@ PLANNING_DECISIONS_CHANGED=0
 READY_FOR_PLANNING_REVIEW=YES_LOCAL_ONLY
 ```
 
+## Remote synchronization audit
+
+AUDIT_UTC: 2026-10-01 (current continuation)
+
+```text
+FETCH_ORIGIN_MAIN=PASS; origin/main=02482b46c2ee1fdd5bab1f88a474c7e70426f661
+REMOTE_HOTLOOP_ADDR=ABSENT
+REMOTE_HOTLOOP_BRANCH=ABSENT
+REMOTE_TILECOUNT=ABSENT
+REMOTE_REDUCE_FINALIZE=ABSENT
+REMOTE_UB=a9c9affcb49e8591f803ab409aafa6192a34caca
+ACTIVE_PUSH_RESULT=FAILED; exit=128; could not read Username for https://github.com
+UB_REMOTE_RELATION=NON_FAST_FORWARD_DIVERGENCE; common_base=ed860e39
+FORCE_PUSH=NOT_USED
+OVERWRITE=NOT_USED
+ALTERNATE_REMOTE=NOT_USED
+```
+
+The remote UB branch is an existing older evidence line and is not overwritten.
+The four absent active branches remain locally committed and ready for Planning;
+remote publication requires restored GitHub write credentials. This is a remote
+delivery blocker, not a reason to select a new hypothesis or alter route code.
+
 This file is the explicit Dashboard for the current MAIN-2 long-run because
 the repository has no pre-existing Dashboard path. It is not a replacement
 for `调度/当前任务.tsv`, `技术路线/路线成绩表.tsv`, or any other canonical

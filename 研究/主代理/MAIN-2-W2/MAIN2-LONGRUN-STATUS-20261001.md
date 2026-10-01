@@ -219,3 +219,13 @@ REMOTE_SYNC=UNCONFIRMED; active-branch push and ls-remote timed out with exit 12
 The latest local NPU snapshot is retained in `DASHBOARD.md`. Existing VLLM,
 Ray, and Python workloads were left untouched. This Main stops here pending
 Planning/Review selection or an explicit lifecycle decision.
+
+## Remote audit continuation
+
+`git fetch origin main` succeeded and confirmed canonical `origin/main` at
+`02482b46`. The four active HOTLOOP/TILECOUNT/REDUCE remote branches are
+absent. A normal push attempt failed with exit 128 because HTTPS credentials
+were unavailable. The same-name remote UB branch exists at `a9c9affc`, but it
+diverges from the local UB branch after common base `ed860e39`; no force push,
+overwrite, or alternate remote was used. Local route commits remain intact and
+the work stays at `READY_FOR_PLANNING_REVIEW=YES_LOCAL_ONLY`.
