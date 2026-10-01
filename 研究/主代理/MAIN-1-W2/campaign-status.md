@@ -177,6 +177,15 @@ These conflicts affect formal Online submissions and concurrency above one versi
 - The latest-row lease view has one unreleased entry for device 6: owner `MAIN-2`, route `STORE-EPILOGUE-X`, lease `R2-STORE-V002-TIMING`, started `2026-09-28T00:00:00Z`. Main-1 will avoid device 6 for timing until its owner resolves the lease. No other device has an unreleased lease in the local schedule log.
 - `SERVER_JOB_BOARD`: SYNC V001 → device 4; STORE V001 → device 5; EPI V001 → device 7; SMALLMID V001 → device 1. Assigned for build/correctness only, one Candidate per device. Each Route Agent must repeat live device/HBM/process preflight immediately before its run. No performance lease is active for these assignments.
 - `SERVER_JOBS`: four assignments staged; source branches are pushed and corresponding server mirrors are fast-forwarded. Harness preparation is pending; no build or correctness job has started.
+- `SOURCE_TRANSFER_STATE` (2026-10-02): for each row, local `submission.asc` SHA256, local `submission.sha256` value, server `submission.asc` SHA256, and server sidecar value matched exactly.
+
+| Route | server mirror HEAD | exact source SHA256 |
+|---|---|---|
+| SYNC V001 | `6ef9657013bf56a08ae2c6b85bf30b1ea7c84a1e` | `27c853e1cb0c47307899b874338c3aecb912ad5dc125c0d67f6afba76a9117ec` |
+| STORE V001 | `62809fd4c4ff0de516fe307465b1aeb221b349d4` | `48b9428dc2fc97c7c9d95f03ad8cec8e758c88e1197aa2328b1b1edebc018f88` |
+| EPI V001 | `d5585f0427897c583c61e73dd5a9311496b427d3` | `9a28f5cd8703dc4ff5c46fba09f59a537132594e5a879a50a17349086bfe4d59` |
+| SMALLMID V001 | `47f72c55d72c01ca6abbb917bd3a1ff4b456bc78` | `a689e5abc03d2770b277812d9a52ae0a1aaf910952b737525e1722f06bdb340a` |
+
 - `NEW_REVERTS`: `0`; historical records remain unchanged.
 - `PROCESS_VIOLATIONS`: none observed in this bootstrap.
 
