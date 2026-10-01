@@ -1,6 +1,6 @@
 # MAIN-2 Local Control Dashboard
 
-UPDATED_UTC: 2026-10-01T22:20:43Z
+UPDATED_UTC: 2026-10-01T22:40:43Z
 SCOPE: MAIN-2 local control only
 CANONICAL_SHARED_LEDGER: UNMODIFIED
 
@@ -110,15 +110,15 @@ CHAMPION_SOURCE_SHA256=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c28
 remote commit only registers MAIN-1 Wave-2 schedule rows; no Candidate source
 or score changed.
 
-## Active lanes
+## Route lanes and final gates
 
 | Lane | Route | Branch / worktree | State | Current gate |
 |---|---|---|---|---|
-| M2-1 | UB-LIFETIME-SAFE-CHAMPION-X | `w2/m2/ub-lifetime-safe` / `/home/data4t2/lelinfeng/cann-w2-m2-ub` | Track-A | correctness harness repair and exact-source correctness |
-| M2-2 | HOTLOOP-ADDR-HOIST-CHAMPION-X | `w2/m2/hotloop-addr` / `worktrees/w2/m2/hotloop-addr` | Track-B | next 3 hypotheses / codegen gate |
-| M2-3 | HOTLOOP-BRANCH-HOIST-CHAMPION-X | `w2/m2/hotloop-branch` / `worktrees/w2/m2/hotloop-branch` | Track-B | next 3 hypotheses / invariant branch proof |
-| M2-4 | TILECOUNT-STATIC-UNROLL-CHAMPION-X | `w2/m2/tilecount-unroll` / `worktrees/w2/m2/tilecount-unroll` | Track-B | parent codegen gate; no implementation |
-| M2-5 | REDUCE-FINALIZE-HANDOFF-CHAMPION-X | `w2/m2/reduce-finalize` / `worktrees/w2/m2/reduce-finalize` | Track-B | RFH-1 Planning decision; pool exhausted |
+| M2-1 | UB-LIFETIME-SAFE-CHAMPION-X | `w2/m2/ub-lifetime-safe` / `/home/data4t2/lelinfeng/cann-w2-m2-ub` | Track-A result recorded; context closed | V001 `CORRECTNESS_FAILED`; restore trail recorded; no V002 |
+| M2-2 | HOTLOOP-ADDR-HOIST-CHAMPION-X | `w2/m2/hotloop-addr` / `worktrees/w2/m2/hotloop-addr` | Track-B handoff closed; context closed | committed research only; `MAIN_SELECTED=NONE` |
+| M2-3 | HOTLOOP-BRANCH-HOIST-CHAMPION-X | `w2/m2/hotloop-branch` / `worktrees/w2/m2/hotloop-branch` | Track-B handoff closed; context closed | committed research only; `MAIN_SELECTED=NONE` |
+| M2-4 | TILECOUNT-STATIC-UNROLL-CHAMPION-X | `w2/m2/tilecount-unroll` / `worktrees/w2/m2/tilecount-unroll` | Track-B handoff closed; context closed | pool exhausted; `MAIN_SELECTED=NONE`; no implementation |
+| M2-5 | REDUCE-FINALIZE-HANDOFF-CHAMPION-X | `w2/m2/reduce-finalize` / `worktrees/w2/m2/reduce-finalize` | Track-B handoff closed; context closed | pool exhausted; `MAIN_SELECTED=NONE`; Planning review pending |
 
 The older INTERPASS, CROSSROW, PARAM-RESIDENCY, and ROW-OCCUPANCY routes
 remain Planning-owned read-only evidence and are not active in this dashboard.
@@ -126,8 +126,12 @@ remain Planning-owned read-only evidence and are not active in this dashboard.
 ## Current candidate and queue
 
 ```text
-UB_V001=BUILD_PASS; EXECUTABLE_IDENTITY_PASS; CORRECTNESS=NOT_RUN
+UB_V001=BUILD_PASS; LINK_PASS; EXECUTABLE_IDENTITY_PASS; CORRECTNESS=CORRECTNESS_FAILED (7/8; fp32-wide-16384)
 UB_SOURCE_SHA256=9b73bb5626b5e98be53faeb91eba024b2589bf0b8b5b46e36c48ec18e009f989
+UB_CORRECTNESS_EVIDENCE_COMMIT=c44e1a8933e11660ce78842231ffa2ef1069294a
+UB_RESTORE_TRAIL_COMMIT=6b6972a0c16b05aa9345511bae9d262e22ae5693
+UB_PERFORMANCE=NOT_ELIGIBLE
+UB_ONLINE=NOT_AUTHORIZED
 TRACK_B_MAIN_SELECTED_COUNT=0
 NEW_REVISION_CREATED_BY_MAIN=0
 LOCAL_BEST_CHANGES=0
@@ -136,40 +140,43 @@ ONLINE_SUBMISSIONS=0
 LAST_OFFICIAL_RESULT=NONE_THIS_LONGRUN
 ```
 
-No Track-B route may create a Candidate. UB cannot enter same-binary timing or
-Online until correctness passes and Main/Planning gates are recorded.
+All Track-B lanes remain handoff-only and created no Candidate. UB V001 failed
+the exact-source correctness gate, so it cannot enter same-binary timing or
+Online; no V002 is authorized from this checkpoint.
 
-## Live host resource snapshot
+## Latest host resource snapshot
 
 ```text
 LOCAL_HOSTNAME=hwnput3
 SSH_ALIAS=cann-server3 (DNS_UNRESOLVED_FROM_THIS_RUNTIME)
 NPU_COUNT=8
-FREE_HBM_MB_BY_DEVICE=0:5313,1:1408,2:5319,3:5318,4:6346,5:5356,6:5357,7:13310
-AICORE_PERCENT_BY_DEVICE=0:32,1:39,2:31,3:30,4:0,5:0,6:0,7:32
-CORRECTNESS_DEVICE_PLAN=4 (non-formal; recheck immediately before run)
+SNAPSHOT_UTC=2026-10-01T22:12:02Z
+FREE_HBM_MB_BY_DEVICE=0:5313,1:5263,2:5319,3:5318,4:6346,5:5356,6:5357,7:12508
+AICORE_PERCENT_BY_DEVICE=0:18,1:20,2:33,3:33,4:0,5:0,6:0,7:1
+CORRECTNESS_DEVICE_PLAN=NONE; V001 correctness result already recorded
 FORMAL_PERFORMANCE_LEASES_CREATED=0
 ```
 
 HBM and load values are observational. Existing vLLM and other processes are
-not stopped, paused, migrated, or treated as experiment failures. Device 4 is
-only a correctness candidate and must be rechecked immediately before use.
+not stopped, paused, migrated, or treated as experiment failures. No new device
+job is authorized from this checkpoint.
 
 ## Agent events
 
 ```text
-UB_AGENT=01a0f956-8bbc-7193-a7da-73d463dcd6b8 (fresh; Track-A correctness gate)
-ADDR_AGENT=01a0f957-7963-70a3-afe9-84683e1c6227 (fresh; Track-B)
-BRANCH_AGENT=01a0f957-7c60-7c92-ac0a-8217713e493d (fresh; Track-B)
-TILECOUNT_AGENT=NOT_STARTED_THIS_BATCH
-REDUCE_AGENT=NOT_STARTED_THIS_BATCH
+UB_AGENT=01a0f97d-9396-7b00-81cf-c68a64db2f32 (fresh; closed after V001 evidence and restore)
+ADDR_AGENT=01a0f97d-97e8-72f1-9fed-d8246e743cb7 (fresh; closed after Track-B handoff)
+BRANCH_AGENT=01a0f97f-014e-7b71-85e7-9b8c1dccc2df (fresh; closed after Track-B handoff)
+TILECOUNT_AGENT=01a0f97f-fe62-7f72-b64b-dd3a00b48fb4 (fresh; closed after pool audit)
+REDUCE_AGENT=01a0f97f-93bf-74c2-afa9-d788d434d39d (fresh; closed after boundary audit)
+ALL_WAVE2_CONTEXTS_CLOSED=YES
 429_OCCURRED=NO
 CONTEXT_SHARING=NO
 ```
 
-The three active contexts each own one route and one worktree. Their current
-work is bounded and must end in a committed route-local evidence file or an
-explicit pool-exhausted finding.
+Each fresh context owned one route and one worktree. All five bounded tasks
+ended in committed route-local evidence or an explicit pool-exhausted finding;
+no context remains active.
 
 ## Event log
 
@@ -180,6 +187,9 @@ explicit pool-exhausted finding.
 | 2026-10-01T21:17Z | UB harness audit | `support/correctness/correctness_runner.asc` referenced missing `../submission.asc`; Candidate source itself unchanged |
 | 2026-10-01T21:18Z | UB correctness context created | support-only binding fix and exact-source correctness are the next gate |
 | 2026-10-01T21:19Z | ADDR/BRANCH contexts created | Track-B only; no Revision or device work |
+| 2026-10-01T21:38Z | UB exact-source correctness completed | 7/8 passed; `fp32-wide-16384` failed; performance and Online remain ineligible |
+| 2026-10-01T22:20Z | Track-B reconciliation closed | five handoffs committed locally; all contexts closed; `MAIN_SELECTED=NONE` |
+| 2026-10-01T22:34Z | Remote branch audit completed | four active branches absent remotely; normal push blocked by GitHub HTTPS credentials; no force push |
 
 ## Blockers and invariants
 
@@ -187,7 +197,7 @@ explicit pool-exhausted finding.
 DASHBOARD_PATH=研究/主代理/MAIN-2-W2/DASHBOARD.md
 SERVER3_REMOTE_ACCESS=BLOCKED_BY_DNS_ALIAS
 LOCAL_SERVER_HOST=AVAILABLE_FOR_NONFORMAL_CHECKS
-GITHUB_WRITE=NOT_CONFIRMED; no repeated push attempted
+GITHUB_WRITE=BLOCKED; normal HTTPS push failed due to missing username; no retry
 CANONICAL_SHARED_LEDGER_CHANGES=0
 KERNEL_FILES_CHANGED_BY_CURRENT_LONGRUN=0
 PERFORMANCE_RUNS=0
