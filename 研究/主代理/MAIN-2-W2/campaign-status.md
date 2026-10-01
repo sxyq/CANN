@@ -176,3 +176,11 @@ NEW_SLOTS_OUTSIDE_MAIN2_PORTFOLIO=0
 Both completed Track-B handoffs remain research-only. Their cross-route audit
 supplements and the remaining two route handoffs are still open; do not treat the
 local commits as remote-synced or the overall MAIN-2 long-run as complete.
+
+### Control branch push receipt
+
+The checkpoint commit `f9a1253a` was pushed once with the normal
+`git push -u origin w2/main2/control` command. GitHub returned
+`could not read Username for 'https://github.com': No such device or address`
+(exit 128). Therefore the control commit is local-only; no alternate remote,
+credential workaround, or force push was attempted.
