@@ -78,3 +78,26 @@ This receipt is a control checkpoint. Route-local facts must be committed in
 the owning branch before the Dashboard is updated. The long-run remains active
 until the UB gate and all four research lanes reach a Planning-reviewable state,
 or an explicit system/Planning stop occurs.
+
+## Superseded prior snapshot retained
+
+The parent version of this file recorded the earlier continuation snapshot and
+remains available in Git history. Its material facts are retained here rather
+than silently discarded:
+
+```text
+PRIOR_CANONICAL_HEAD=ed860e392d7604694ac6664da60aff1fc1f4c04f
+PRIOR_REMOTE_FRESHNESS=UNVERIFIED
+PRIOR_DASHBOARD_PATH=UNRESOLVED
+PRIOR_SERVER3=UNREACHABLE_FROM_THIS_RUNTIME
+PRIOR_SERVER_JOBS=0
+PRIOR_CORRECTNESS_RUNS=0_AT_THAT_CHECKPOINT
+PRIOR_PERFORMANCE_RUNS=0
+PRIOR_ONLINE_SUBMISSIONS=0
+PRIOR_CANONICAL_SHARED_LEDGER_CHANGES=0
+PRIOR_ACTIVE_PORTFOLIO=UB plus HOTLOOP-ADDR, HOTLOOP-BRANCH, TILECOUNT, REDUCE-FINALIZE
+PRIOR_AGENT_HANDLES=previous handles were checked and returned not_found; no duplicate replacement was retained
+```
+
+That snapshot predates the later exact-source UB correctness run and the current
+fetch to `02482b46`; it is historical evidence, not the current gate.
