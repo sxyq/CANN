@@ -74,6 +74,8 @@ V011 `ProcessWideLowPrecision` 的相关顺序为：
 - DMA_IMPACT: DMA 次数、字节数、地址和 tile 大小不变；仅 tile-0 gamma/bias issue 时间前移。
 - SYNC_IMPACT: 不删除任何同步；需要消费空闲 slot 的旧 `V_MTE2` release，再沿用 pass-2 tile-0 `MTE2_V` ready event。pass-1 当前 slot 的 release/drain 保留。
 - PRECISION_RISK: 数学无变化；正确性风险为错认空闲 slot、event 二次消费或在 pass-1 仍读 slot 时覆盖。
+- ASCEND_FEASIBILITY: `CONDITIONAL`；只复用现有 MTE2 DataCopy 与 event 形式，必须先静态证明末 unit 的 slot parity、release consumption 和 ready-event 生命周期。
+- CORE_IMPACT: `0`；row/core ownership、blockCount、launch 数和每 core 工作量不变。
 - DUPLICATE_CHECK: 最接近 R013/FULL-R013 与 V011 pass-1 next-unit prefetch，但它们预取的是同一 pass 的下一个输入；本项把父版现有 slot 在最后 unit 时跨 pass 交给 parameter DMA。Wave-1 `SYNC-TOPOLOGY H2` 调整的是 pass-2 内当前 wait 与下一 tile Load 的顺序，没有在 pass-1 尾段发 tile-0。不是 queue depth 增长。
 - RELATED_OLD_ROUTES: `R013/FULL-R013`, `R31B V011`, `ASYNC-TRIPLE-X`, Wave-1 `SYNC-TOPOLOGY-CHAMPION-X H2`。
 - MINIMAL_EXPERIMENT: Main 选择后，仅对最后 pass-1 unit 增加空闲 slot 的 tile-0 gamma/bias Load、ready event 和 pass-2 起始 slot 标记；后续 tile prefetch、reduction、Store 全部保持 V011。先做上述 FP16/BF16 正确性，再按当前协议做 same-binary 与至少 4 组交错 P/C。
@@ -95,6 +97,8 @@ V011 `ProcessWideLowPrecision` 的相关顺序为：
 - DMA_IMPACT: 次数、字节数和顺序不变；只有 tile-0 issue 点从 reduction 之后移动到 reduction 之前。
 - SYNC_IMPACT: pass-1 release waits 全保留；父版 `SyncVToMTE2()` 不作为独立删除项。tile-0 `WaitFlag<MTE2_V>` 延迟到 pass-2 first use。
 - PRECISION_RISK: 低；数学和 dataflow 不变。风险仅为 event 生命周期跨过 reduction scalar section 后是否仍合法。
+- ASCEND_FEASIBILITY: `CONDITIONAL`；现有参数 DataCopy、`SetFlag<MTE2_V>` 和 `WaitFlag<MTE2_V>` 足以表达 issue-point 移动，但 event 是否可跨 V/S 往返 outstanding 必须由 Main 先确认。
+- CORE_IMPACT: `0`；不改 row ownership、blockCount、core 数或工作分配。
 - DUPLICATE_CHECK: MAIN-2 初始化报告把 `pass-2 tile-0 MTE2 提前到 FinishRms 之前` 明确列为 Champion 上尚可能独立的 inter-pass 空间。本项正好限定该差异。不同于 R028/FULL-R028 的 scalar sync reduction（改变标量汇总策略），也不同于 Wave-1 `SYNC H2/H3` 的 pass-2 内 wait/work 重排。
 - RELATED_OLD_ROUTES: `R028/FULL-R028`, `R31B V011`, `COEFF-LOCALITY-X`, Wave-1 `SYNC-TOPOLOGY-CHAMPION-X`。
 - MINIMAL_EXPERIMENT: 只把现有 tile-0 gamma/bias Load、`SetFlag<MTE2_V>(prd0)` 和 parameter event allocation 移到 pass-1 release drain 后、reduction-final loop 前；pass-2 首次消费前保留 wait。未来先测 `1x16384` 与 `1x32768` FP16/BF16，再以 D=8192 非 wide 路径作空白控制。
@@ -116,6 +120,8 @@ V011 `ProcessWideLowPrecision` 的相关顺序为：
 - DMA_IMPACT: `0`；issue 点、次数、字节和 slot 全不变。
 - SYNC_IMPACT: 同一个 tile-0 ready wait 只向后移动，不删除；tile 1+ waits 和 release events 不变。
 - PRECISION_RISK: 低；每元素 `normalize -> gamma -> bias` 顺序保持。风险是把 wait 越过了第一条参数读取，因此 diff 必须以首次 gamma/bias consumer 为硬边界。
+- ASCEND_FEASIBILITY: `CONDITIONAL`；只重排既有 V 操作与既有 ready wait，不引入 API 或 buffer，但每个 dtype path 的 first parameter consumer 必须可静态定位。
+- CORE_IMPACT: `0`；不改 row/core ownership、blockCount、tile count 或 launch geometry。
 - DUPLICATE_CHECK: Wave-1 `SYNC-TOPOLOGY H3` 在 FP32 full-cache path 把既有 `Muls` 放到 parameter wait 前，机制家族相似；本项只针对 V011 的 LP wide inter-pass first tile，且 FP16 还包含 retained half 到 FP32 的 prepare，后续 tile 不改。应标为 `PARTIAL_ADJACENCY`，不能声称全项目未试。独立价值在 dtype/path/仅首 tile边界。
 - RELATED_OLD_ROUTES: Wave-1 `SYNC-TOPOLOGY-CHAMPION-X H3`, `R31B V011`, `EPILOGUE-ARITH-CHAMPION-X`, `EPILOGUE-FUSE-X`。
 - MINIMAL_EXPERIMENT: 只对 `tile==0` 拆分 normalization prelude 和 parameter-consuming affine；把 `prd0` wait 放在第一条参数 consumer 前。先验证 FP16/BF16 全目标 shape 与父版结果，再配对测量；若 tile 1+ diff 非空则 OFAT 失败。
@@ -137,6 +143,8 @@ V011 `ProcessWideLowPrecision` 的相关顺序为：
 - DMA_IMPACT: 次数、总字节、tile 大小不变；只把 tile-1 issue 从 tile-0 wait 后移动到 reduction 前。
 - SYNC_IMPACT: 两个既有 ready events 跨 reduction 存活；pass-2 对 tile0/tile1 分别等待原 ready event，tile2 起恢复原 release-before-reuse 规则。
 - PRECISION_RISK: 数学无变化；风险为 event outstanding 顺序、slot parity 和 tileCount==1 边界。
+- ASCEND_FEASIBILITY: `CONDITIONAL_LOW`；只使用父版两槽和两组既有 events，但连续 MTE2 issue 的 FIFO、slot parity 与 tileCount 边界必须先通过静态审计。
+- CORE_IMPACT: `0`；不改 row/core ownership、blockCount、core 数或 launch geometry。
 - DUPLICATE_CHECK: 与 R31B Track-B H5 的 `2-deep -> 3-deep` 不同，本项绝不增加 queue depth；与 V011 稳态 2-deep 不同之处只有两槽都跨 inter-pass 提前 prime。与 H2 相比，新增的单因素是 tile-1 也跨边界 issue；若 Main 要严格测第二槽增量，可先有 H2 结果后再由 Planning 决定父版，但本研究不创建链。
 - RELATED_OLD_ROUTES: `R013/FULL-R013`, `R31B V009/V011`, R31B Track-B `H5`, `ASYNC-TRIPLE-X`。
 - MINIMAL_EXPERIMENT: 仅在 `tileCount>=2` 时于 reduction 前发 tile0/tile1；pass-2 前两轮不再重复 issue，tile2 起原逻辑逐字保持。未来先静态审计 event 数量和 slot parity，再做 correctness 与 P/C。
@@ -214,7 +222,7 @@ adjacent mechanism into this route is explicitly `DUPLICATE_REJECTED` below.
 
 ### Wave-2 sibling boundary audit
 
-审计时 `w2/m2/crossrow-pipeline`、`w2/m2/param-residency`、`w2/m2/row-occupancy`、`w2/m2/ub-lifetime-safe` 相对 `origin/main` 尚无 committed research delta，因此不读取任何 sibling 私有上下文，也不伪造其具体 hypothesis。仅按本任务硬边界避让：
+本次核验只检查 sibling branch/file metadata，不读取 sibling handoff 内容，也不依赖其私有 hypothesis：`w2/m2/crossrow-pipeline` 在 `25a14dc8` 有 committed `研究/CROSSROW-PIPELINE-CHAMPION-X/TRACK-B-HANDOFF.md`；`w2/m2/param-residency` 在 `62b57cb0` 有 committed `研究/PARAM-RESIDENCY-CHAMPION-X/TRACK-B-HANDOFF.md`；`w2/m2/ub-lifetime-safe` 在 `c1281d4b` 有 committed `研究/UB-LIFETIME-SAFE-CHAMPION-X/TRACK-B-HANDOFF.md`；`w2/m2/row-occupancy` 的当前 `ed860e39` tree 没有 route-specific Track-B handoff。为避免跨 Route 工作，仅按本任务硬边界避让：
 
 - cross-row pipeline：本路线所有主探针单 row/core，禁止 next-row overlap；
 - parameter residency：parameter 仍按 tile 搬运，不扩大生命周期；
@@ -293,7 +301,7 @@ Main 若后续选择，只能四选一：
 4. H3 中 FP16 `ToFloat + Muls` 和 BF16 `Muls` 能覆盖多少 tile-0 DMA，是否因 MTE2/V issue 竞争反而延长首 tile？
 5. H4 连续发两组 parameter DMA 时，硬件 FIFO 是否导致 tile-1 命令阻塞 tile-0 completion 可见性？
 6. Official case shape map 仍缺失；本地单 row/core probe 只能验证机制，不能声称对应某个 Official testcase。
-7. Wave-2 sibling handoff 尚未 committed；Main review 前应再次核对是否出现 parameter-residency、UB-lifetime 或 cross-row 机制碰撞。
+7. 当前 sibling metadata 已显示 crossrow、parameter-residency、UB-lifetime 三条路线存在 committed handoff，而 row-occupancy 当前 branch tip 尚无 route-specific handoff；Main review 前仍应再次核对是否出现 parameter-residency、UB-lifetime 或 cross-row 机制碰撞，但不得读取或依赖 sibling 私有 hypothesis。
 
 ## HANDOFF ASSERTIONS
 
