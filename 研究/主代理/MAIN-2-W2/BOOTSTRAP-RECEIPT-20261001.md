@@ -1,93 +1,80 @@
-# MAIN-2 Wave-2 Long-Run Bootstrap Receipt
+# MAIN-2 Long-Run Bootstrap Receipt
 
 DATE: 2026-10-01
-ROLE: MAIN-2 control-only record
-SCOPE: continuation bootstrap, route ownership, evidence gates, and runtime blockers
+ROLE: MAIN-2 long-run control
+SOURCE: current canonical files plus the supplied MAIN-2 long-run directive
 
-## Canonical anchor
+## Mandatory read and canonical anchors
 
 ```text
-CANONICAL_BRANCH=main
-CANONICAL_HEAD=ed860e392d7604694ac6664da60aff1fc1f4c04f
-LOCAL_ORIGIN_MAIN=ed860e392d7604694ac6664da60aff1fc1f4c04f
+AGENTS=READ
+CANN_MAINLINE_SKILL=READ
+PROJECT_RULES=READ
+TECHNICAL_ROUTE_HISTORY=READ
+WAVE1_MAIN2_RECORDS=READ
+WAVE2_HANDOFFS=READ
+CANONICAL_HEAD=02482b46c2ee1fdd5bab1f88a474c7e70426f661
+ORIGIN_MAIN=02482b46c2ee1fdd5bab1f88a474c7e70426f661
 CANONICAL_STATUS=CLEAN
-REMOTE_FRESHNESS=UNVERIFIED_FOR_THIS_RECEIPT
 OVERALL_OFFICIAL_CHAMPION=R31B V011 / 45.16
 CHAMPION_SOURCE_SHA256=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
 ```
 
-The local `origin/main` ref is the reproducible base for this continuation. A
-fresh GitHub read/write confirmation is not claimed because the normal HTTPS
-remote is currently unavailable from this runtime. No force push or alternate
-remote was used.
+The four older inter-pass/cross-row/parameter-residency/row-occupancy routes
+remain read-only evidence under the supplied Planning lifecycle directive.
+This receipt does not independently make a PARK, CLOSE, MERGE, REPLACE, or
+slot decision.
 
-## Current portfolio and ownership
+## Active portfolio and context isolation
 
-| Lane | Route | Branch | Worktree | Current runtime fact |
-|---|---|---|---|---|
-| M2-1 | UB-LIFETIME-SAFE-CHAMPION-X | `w2/m2/ub-lifetime-safe` | `/home/data4t2/lelinfeng/cann-w2-m2-ub` | V001 evidence exists; correctness gate pending |
-| M2-2 | HOTLOOP-ADDR-HOIST-CHAMPION-X | `w2/m2/hotloop-addr` | `/home/data4t2/lelinfeng/cann/worktrees/w2/m2/hotloop-addr` | Batch 1 fresh Track-B context created |
-| M2-3 | HOTLOOP-BRANCH-HOIST-CHAMPION-X | `w2/m2/hotloop-branch` | `/home/data4t2/lelinfeng/cann/worktrees/w2/m2/hotloop-branch` | Batch 1 fresh Track-B context created |
-| M2-4 | TILECOUNT-STATIC-UNROLL-CHAMPION-X | `w2/m2/tilecount-unroll` | `/home/data4t2/lelinfeng/cann/worktrees/w2/m2/tilecount-unroll` | Track-B only; no current runtime handle verified |
-| M2-5 | REDUCE-FINALIZE-HANDOFF-CHAMPION-X | `w2/m2/reduce-finalize` | `/home/data4t2/lelinfeng/cann/worktrees/w2/m2/reduce-finalize` | Track-B only; no current runtime handle verified |
+| Lane | Route | Agent | Branch | Worktree | Mode |
+|---|---|---|---|---|---|
+| M2-1 | UB-LIFETIME-SAFE-CHAMPION-X | `01a0f97d-9396-7b00-81cf-c68a64db2f32` | `w2/m2/ub-lifetime-safe` | `/home/data4t2/lelinfeng/cann-w2-m2-ub` | Track-A recovery for Planning-selected UBX-H1 |
+| M2-2 | HOTLOOP-ADDR-HOIST-CHAMPION-X | `01a0f97d-97e8-72f1-9fed-d8246e743cb7` | `w2/m2/hotloop-addr` | `/home/data4t2/lelinfeng/cann/worktrees/w2/m2/hotloop-addr` | Track-B, address expression axis |
+| M2-3 | HOTLOOP-BRANCH-HOIST-CHAMPION-X | `01a0f97f-014e-7b71-85e7-9b8c1dccc2df` | `w2/m2/hotloop-branch` | `/home/data4t2/lelinfeng/cann/worktrees/w2/m2/hotloop-branch` | Track-B, one branch-kind axis |
+| M2-4 | TILECOUNT-STATIC-UNROLL-CHAMPION-X | `01a0f97f-fe62-7f72-b64b-dd3a00b48fb4` | `w2/m2/tilecount-unroll` | `/home/data4t2/lelinfeng/cann/worktrees/w2/m2/tilecount-unroll` | Track-B, one tile-count axis |
+| M2-5 | REDUCE-FINALIZE-HANDOFF-CHAMPION-X | `01a0f97f-93bf-74c2-afa9-d788d434d39d` | `w2/m2/reduce-finalize` | `/home/data4t2/lelinfeng/cann/worktrees/w2/m2/reduce-finalize` | Track-B, scalar handoff-edge axis |
 
-Previous handles for the five continuation lanes were checked once and all
-returned `not_found`; no same-route replacement was created before that check.
-The two Batch 1 contexts were created with separate route ownership and no
-immediate 429. Their work is limited to committed research in their own
-worktrees.
+Each Agent received only its own worktree and route scope. No sibling private
+context is shared. The four research Agents are forbidden from source edits,
+Revision creation, build, correctness, timing, profiling, server3, and Online.
 
-## UB V001 gate receipt
+## Current UB gate
 
 ```text
-UB_ROUTE=UB-LIFETIME-SAFE-CHAMPION-X
-UB_REVISION=V001
-MAIN_SELECTED=YES_FOR_UBX-H1_ONLY
-PARENT=R31B V011 / 45.16
-PARENT_SOURCE_SHA256=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
+ROUTE=UB-LIFETIME-SAFE-CHAMPION-X
+REVISION=V001
+DIRECT_PARENT=R31B V011 / 45.16
+SELECTED_HYPOTHESIS=UBX-H1-FP16-RETAINED-Y-INPLACE-OUTPUT
 CANDIDATE_SOURCE_SHA256=9b73bb5626b5e98be53faeb91eba024b2589bf0b8b5b46e36c48ec18e009f989
-SOURCE_IDENTITY=PASS
-STATIC_LIFETIME_PROOF=PASS_STATIC_LIFETIME_PROOF
-BUILD_STATUS=PASS
-LINK_STATUS=PASS
+BUILD=PASS
+LINK=PASS
 EXECUTABLE_IDENTITY=PASS
-CORRECTNESS_STATUS=NOT_RUN
-PERFORMANCE_STATUS=NOT_ELIGIBLE
+CORRECTNESS=CORRECTNESS_FAILED; 7/8 passed; fp32-wide-16384 failed
+PERFORMANCE=NOT_ELIGIBLE
 ONLINE=NOT_AUTHORIZED
 ```
 
-The source identity was recomputed from the retained `submission.asc` and
-matches `submission.sha256` and `source-meta.json`. The untracked
-`V001/support/correctness/` and `V001/support/correctness-build/` directories
-are retained historical support evidence; they are not deleted or implicitly
-staged. Correctness is not claimed until a reachable server3 and an exact
-source run are available.
+The failed V001 source and raw correctness evidence remain retained. The UB
+Agent is handling the required independent evidence commit and explicit
+restore/revert audit. No V002 or second performance mechanism is authorized.
 
-## Execution gates
+## Control gates
 
 ```text
-DASHBOARD_PATH=DASHBOARD_PATH_UNRESOLVED
-SERVER3=UNREACHABLE_FROM_THIS_RUNTIME
-SERVER3_REASON=ssh cann-server3 hostname resolution failed
-SERVER_JOBS_STARTED=0
-CORRECTNESS_RUNS_STARTED=0
-PERFORMANCE_RUNS_STARTED=0
+MAIN_SELECTED_FOR_RESEARCH_LANES=NONE
+REVISION_CREATED_BY_THIS_BOOTSTRAP=0
+KERNEL_FILES_CHANGED_BY_MAIN=0
+SERVER_JOBS_STARTED_BY_THIS_BOOTSTRAP=0
+PERFORMANCE_RUNS=0
 ONLINE_SUBMISSIONS=0
 CANONICAL_SHARED_LEDGER_CHANGES=0
-PLANNING_DECISIONS_MADE_BY_MAIN=0
+NEW_ROUTES_OUTSIDE_APPROVED_10=0
+ONLINE_QUEUE=NO_NEW_ELIGIBLE_CANDIDATE
+DASHBOARD=研究/主代理/MAIN-2-W2/DASHBOARD.md
 ```
 
-No device lease or HBM state is inferred while server3 is unreachable. The
-next legal UB action is exact-source correctness after server reachability and
-the required device gate are confirmed. The Track-B lanes remain research-only
-until Planning selection.
-
-## Control invariants
-
-```text
-MAIN_SELECTED_FOR_TRACK_B_LANES=NONE
-NEW_ROUTE_SLOTS_CREATED=0
-KERNEL_FILES_CHANGED_BY_MAIN=0
-ROUTE_CONTEXT_SHARING=FORBIDDEN
-REMOTE_WRITE=BLOCKED_BY_NORMAL_HTTPS_CREDENTIAL/CONNECTIVITY_FAILURE
-```
+This receipt is a control checkpoint. Route-local facts must be committed in
+the owning branch before the Dashboard is updated. The long-run remains active
+until the UB gate and all four research lanes reach a Planning-reviewable state,
+or an explicit system/Planning stop occurs.
