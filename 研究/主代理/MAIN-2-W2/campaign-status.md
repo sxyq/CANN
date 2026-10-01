@@ -157,7 +157,29 @@ the ADDR and BRANCH route agents each completed a bounded fetch confirming that
 | HOTLOOP-ADDR-HOIST | Track-B handoff `研究/HOTLOOP-ADDR-HOIST-CHAMPION-X/TRACK-B-HANDOFF.md` | Commit `3c65f7e053f79bf8b4d87a1b2d8de43fba4d7889`; 3 surviving hypotheses; `MAIN_SELECTED=NONE`; worktree clean at last check. Cross-route duplicate-audit follow-up requested. |
 | HOTLOOP-BRANCH-HOIST | Track-B handoff `研究/HOTLOOP-BRANCH-HOIST-CHAMPION-X/TRACK-B-HANDOFF.md` | Commit `7e46bd771aa6fa3dd0216d643ebbed1f31e7f332`; 3 surviving hypotheses; `MAIN_SELECTED=NONE`; worktree clean at last check. Cross-route duplicate-audit follow-up requested. |
 | TILECOUNT-STATIC-UNROLL | No new committed handoff observed | No Revision or source change observed; handoff/runtime completion not yet received. |
-| REDUCE-FINALIZE-HANDOFF | No new committed handoff observed | No Revision or source change observed; handoff/runtime completion not yet received. |
+| REDUCE-FINALIZE-HANDOFF | Track-B handoff `研究/REDUCE-FINALIZE-HANDOFF-CHAMPION-X/TRACK-B-HANDOFF.md` | Commit `6546c77a24ac30184e0309bc74e29e5a91ebcee6`; one independent RFH-1 remains, RFH-2..4 are `DUPLICATE_REJECTED`; `ROUTE_HYPOTHESIS_POOL_EXHAUSTED=YES`; `MAIN_SELECTED=NONE`; worktree clean. |
+
+The TILECOUNT handoff is now also durable at commit
+`429d7ef745092eeeaca9fd4f20f21dd5e6b68291`, with three codegen-gated N=2
+hypotheses and `MAIN_SELECTED=NONE`. ADDR and BRANCH cross-route audit commits
+are `1e605148` and `01641fed` respectively; both remain research-only.
+
+UB implementation checkpoint:
+
+```text
+UB_ROUTE=UB-LIFETIME-SAFE-CHAMPION-X
+UB_REVISION=V001
+UB_PROOF=PASS_STATIC_LIFETIME_PROOF
+UB_SOURCE_SHA256=9b73bb5626b5e98be53faeb91eba024b2589bf0b8b5b46e36c48ec18e009f989
+UB_BUILD_STATUS=PASS
+UB_BUILD_EVIDENCE_COMMIT=f8ea444a
+UB_IDENTITY_EVIDENCE_COMMIT=c1281d4b
+UB_DEVICE_ALINK_SHA256=bee9d24a69970dad8c67bc9bbd4f3a5f89fd62fbcd4c911aa31807460dd27fd9
+UB_SUBMISSION_ALINK_SHA256=57e2d90306c45f929ccf488cccf18ba417a6b8db1edf3d09c7c4e3ad78cb3673
+UB_CORRECTNESS_STATUS=NOT_RUN
+UB_PERFORMANCE_STATUS=NOT_ELIGIBLE
+UB_ONLINE=NOT_AUTHORIZED
+```
 
 Remote and execution gates:
 
