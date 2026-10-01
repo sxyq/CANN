@@ -91,6 +91,22 @@ The four absent active branches remain locally committed and ready for Planning;
 remote publication requires restored GitHub write credentials. This is a remote
 delivery blocker, not a reason to select a new hypothesis or alter route code.
 
+## Final continuation audit
+
+AUDIT_UTC: 2026-10-01T22:50:18Z
+
+```text
+READ_ONLY_LS_REMOTE=TIMEOUT_20S
+FETCH_ORIGIN_MAIN=INTERRUPTED_AFTER_30S; no ref update observed
+CONTROL_PUSH=TIMEOUT_30S; remote synchronization unconfirmed
+FORCE_PUSH=NOT_USED
+REMOTE_REF_CHANGES=NONE_CONFIRMED
+```
+
+The local canonical and control evidence remain intact. The timeout is carried
+as a remote delivery blocker; it does not authorize a new Revision, route
+selection, or lifecycle change.
+
 This file is the explicit Dashboard for the current MAIN-2 long-run because
 the repository has no pre-existing Dashboard path. It is not a replacement
 for `调度/当前任务.tsv`, `技术路线/路线成绩表.tsv`, or any other canonical
@@ -197,7 +213,7 @@ no context remains active.
 DASHBOARD_PATH=研究/主代理/MAIN-2-W2/DASHBOARD.md
 SERVER3_REMOTE_ACCESS=BLOCKED_BY_DNS_ALIAS
 LOCAL_SERVER_HOST=AVAILABLE_FOR_NONFORMAL_CHECKS
-GITHUB_WRITE=BLOCKED; normal HTTPS push failed due to missing username; no retry
+GITHUB_WRITE=BLOCKED; prior HTTPS auth failure and latest bounded push timeout
 CANONICAL_SHARED_LEDGER_CHANGES=0
 KERNEL_FILES_CHANGED_BY_CURRENT_LONGRUN=0
 PERFORMANCE_RUNS=0
