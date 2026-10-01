@@ -1,0 +1,18 @@
+--- a/线上结果/R31B/V011/submission.asc
++++ b/本地实验/SYNC-TOPOLOGY-CHAMPION-X/V001/submission.asc
+@@ -3274,7 +3274,6 @@
+                 AscendC::LocalTensor<T> biasLocal = useA ? bBase : bBase[tileWidth];
+                 const AscendC::TEventID prd = useA ? prd0 : prd1;
+                 const AscendC::TEventID prel = useA ? prel0 : prel1;
+-                AscendC::WaitFlag<AscendC::HardEvent::MTE2_V>(prd);
+                 if (tile + 1 < tileCount) {
+                     const bool nextA = !useA;
+                     if (nextA) {
+@@ -3296,6 +3295,7 @@
+                     Load(nextA ? bBase : bBase[tileWidth], biasGm_, nCol, nValid);
+                     AscendC::SetFlag<AscendC::HardEvent::MTE2_V>(nextA ? prd0 : prd1);
+                 }
++                AscendC::WaitFlag<AscendC::HardEvent::MTE2_V>(prd);
+                 AscendC::LocalTensor<T> outputLocal = outputBuf_.Get<T>();
+                 AscendC::LocalTensor<float> valueFp32 = valueFp32Buf_.Get<float>();
+                 AscendC::LocalTensor<float> xFp32 = xFp32Buf_.Get<float>();
