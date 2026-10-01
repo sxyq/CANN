@@ -287,7 +287,9 @@ PARENT_SOURCE_SHA: `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b
 
 TARGET_SHAPES: BF16 shapes that actually reach `ProcessNarrowMidOverlap`, for
   example `[1,256]`, `[1,1024]`, `[1,2048]`, `[1,4095]`, and an unaligned
-  multi-row case such as `[2,257]`; exclude earlier contiguous/special returns.
+  multi-row case such as `[2,257]`. For aligned `129<=D<=2048`, require
+  `rowCount==1` (otherwise the earlier contiguous-batched path reads these
+  caches); exclude `D==4096` when a core may take the full-tile batched path.
 
 TARGET_DTYPES: `BF16` only.
 
@@ -295,10 +297,12 @@ WHY_IT_MAY_HELP: It can remove two `8192 * sizeof(float)` reservations, up to
   64 KiB, from a path that uses native parameter buffers and the existing
   `valueFp32Buf_`/work buffers instead.
 
-WHY_IT_MAY_FAIL: `Init` may not be able to express the exact dispatcher
-  predicate without changing template layout, or a hidden instantiation may
-  require the members. If any cache access exists on the selected path, omit
-  nothing and reject H3.
+WHY_IT_MAY_FAIL: `Init` may not be able to express the exact safe predicate
+  without changing template layout, or a hidden instantiation may require the
+  members. The aligned small contiguous-batched function explicitly gets both
+  caches at `:1682-1683`, and the BF16 full-tile batched function gets them at
+  `:631-632`; if either dispatcher can reach those functions, omit nothing and
+  reject H3 for that shape.
 
 UB_IMPACT: Potential reduction of `2 * 8192 * sizeof(float) = 65536` bytes on
   the proven narrow-mid BF16 path; no replacement buffer.
@@ -321,9 +325,11 @@ RELATED_OLD_ROUTES: `R014/FULL-R014`, `BATCH-RESIDENT-X`,
   `COEFF-LOCALITY-X`, `DTYPE-SPECIAL-X`, and parent BF16 generic cache logic.
 
 MINIMAL_EXPERIMENT: Read-only dispatcher/call-graph audit from `:212-240` and
-  `:499-620`, followed by a member-use search proving zero
-  `gammaFp32Buf_`/`biasFp32Buf_` accesses on the selected path. No source edit
-  or runtime action is allowed now.
+  `:499-620`, including the competing cache users at `:622-639` and
+  `:1665-1688`; prove the proposed Init guard implies the narrow-mid dispatch
+  for every block. In particular, aligned `129<=D<=2048` is allowed only when
+  `rowCount==1`, while `2048<D<4096` cannot take the small contiguous path.
+  No source edit or runtime action is allowed now.
 
 ROUTE_BOUNDARY: Allocation omission only on the exact BF16 narrow-mid path;
   no parameter residency, conversion, DMA, arithmetic, or synchronization
@@ -358,9 +364,13 @@ LAST_READ: `NONE` on the selected path; `:631-639` and later cache consumers
 REUSE_POINT: No alias or reuse is proposed. The safe reuse point is the freed
   UB reservation itself: do not allocate A for this path, leaving B unchanged.
 
-LIFETIME_PROOF: `LAST_READ(A)=NONE`, and the dispatcher returns to
-  `ProcessNarrowMidOverlap` before any cache allocation consumer. Therefore the
-  omission is stronger than a concurrent alias; no live value is overwritten.
+LIFETIME_PROOF: `LAST_READ(A)=NONE` on the exact proven path. For aligned
+  `129<=D<=2048`, `rowCount==1` prevents the multi-row contiguous-batched
+  return; unaligned widths cannot satisfy its `%16==0` gate; and
+  `2048<D<4096` cannot satisfy its width gate or the `D==4096` special path.
+  The dispatcher therefore reaches `ProcessNarrowMidOverlap` before any cache
+  consumer. If `Init` cannot encode a predicate with these implications, H3 is
+  infeasible; no cache may be omitted.
 
 PROPOSED_ONE_FACTOR_DIFF: Guard only the two cache `InitBuffer` calls with the
   exact proven path predicate; do not add a replacement cache or alter the
@@ -522,8 +532,9 @@ WHY_IT_MAY_FAIL: The generic dispatcher may share Init state with a path that
   makes H5 infeasible rather than permitting a broad alias.
 
 UB_IMPACT: Potential removal of `fp16OutputElems * sizeof(half)` at parent
-  `:132` for the exact single-row generic path; normally 8192 bytes when
-  `fp16OutputElems=4096`.
+  `:132` for the exact single-row generic path: 8192 bytes when
+  `fp16OutputElems=4096`, or 16384 bytes for the `rowWidth==8192` allocation
+  branch. This is an allocation amount, not a predicted latency gain.
 
 DMA_IMPACT: Output GM offsets, valid counts, `DataCopyPad`, store count, and
   order stay identical.
