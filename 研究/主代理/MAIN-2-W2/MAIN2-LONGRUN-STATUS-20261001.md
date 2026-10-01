@@ -191,3 +191,31 @@ bounded `ls-remote` verification both timed out. The UB worktree remains dirty
 only because earlier V001 correctness support is retained; that earlier run
 reported a correctness failure and is not counted as a Track-B result. Child
 contexts are closed and the next decision belongs to Planning / Review.
+
+## Long-run checkpoint 2026-10-01T22:20:43Z
+
+The current active portfolio has reached a Planning-reviewable boundary. UB
+V001 is a retained failed candidate with separate correctness evidence commit
+`c44e1a89`, explicit restore trail `6b6972a0`, and status synchronization
+`12cfb16`; no V002 is authorized. ADDR and BRANCH each delivered committed
+four-item Track-B research packets (`ee5f3b73`, `4a144c78`). TILECOUNT and
+REDUCE delivered committed pool/boundary audits (`526c181a`, `6ac8774b`) and
+both report `ROUTE_HYPOTHESIS_POOL_EXHAUSTED=YES`. All five contexts are
+closed, and all five worktrees are clean.
+
+```text
+CANONICAL_HEAD=02482b46c2ee1fdd5bab1f88a474c7e70426f661
+OVERALL_OFFICIAL_CHAMPION=R31B V011 / 45.16
+MAIN_SELECTED_FOR_RESEARCH=0
+NEW_REVISION=0
+SERVER_JOBS=0
+FORMAL_PERFORMANCE_RUNS=0
+ONLINE_SUBMISSIONS=0
+ONLINE_QUEUE=NO_NEW_ELIGIBLE_CANDIDATE
+READY_FOR_PLANNING_REVIEW=YES_LOCAL_ONLY
+REMOTE_SYNC=UNCONFIRMED; active-branch push and ls-remote timed out with exit 124
+```
+
+The latest local NPU snapshot is retained in `DASHBOARD.md`. Existing VLLM,
+Ray, and Python workloads were left untouched. This Main stops here pending
+Planning/Review selection or an explicit lifecycle decision.

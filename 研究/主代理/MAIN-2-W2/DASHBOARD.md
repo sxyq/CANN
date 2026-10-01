@@ -1,6 +1,6 @@
 # MAIN-2 Local Control Dashboard
 
-UPDATED_UTC: 2026-10-01T21:23:49Z
+UPDATED_UTC: 2026-10-01T22:20:43Z
 SCOPE: MAIN-2 local control only
 CANONICAL_SHARED_LEDGER: UNMODIFIED
 
@@ -13,6 +13,60 @@ five local committed handoffs, `MAIN_SELECTED=NONE` throughout, no new
 implementation or experiment, and unresolved remote write synchronization.
 The later portfolio notes in this dashboard remain historical control records;
 this receipt does not make a lifecycle decision or change the shared ledgers.
+
+## Latest long-run checkpoint
+
+BOOTSTRAP_RECEIPT: `BOOTSTRAP-RECEIPT-20261001.md`
+CANONICAL_HEAD: `02482b46c2ee1fdd5bab1f88a474c7e70426f661`
+OVERALL_OFFICIAL_CHAMPION: `R31B V011 / 45.16`
+
+| Route | Latest local fact | Revision / selection | Worktree |
+|---|---|---|---|
+| UB-LIFETIME-SAFE-CHAMPION-X | V001 build/link/identity PASS; correctness FAILED (7/8, FP32-wide-16384); evidence `c44e1a89`; restore trail `6b6972a0`; status update `12cfb16` | V001 failed and restored to legal parent evidence; no V002 | CLEAN |
+| HOTLOOP-ADDR-HOIST-CHAMPION-X | V005 committed `ee5f3b73`; four refined items; duplicate audit and shape qualification complete | `MAIN_SELECTED=NONE`; Track-B only | CLEAN |
+| HOTLOOP-BRANCH-HOIST-CHAMPION-X | V003 committed `4a144c78`; HBH-09..HBH-12 | `MAIN_SELECTED=NONE`; Track-B only | CLEAN |
+| TILECOUNT-STATIC-UNROLL-CHAMPION-X | pool audit committed `526c181a`; TCSU-H1..H3 only | `MAIN_SELECTED=NONE`; `ROUTE_HYPOTHESIS_POOL_EXHAUSTED=YES` | CLEAN |
+| REDUCE-FINALIZE-HANDOFF-CHAMPION-X | boundary audit committed `6ac8774b`; RFH-1 only | `MAIN_SELECTED=NONE`; `ROUTE_HYPOTHESIS_POOL_EXHAUSTED=YES` | CLEAN |
+
+All route-local contexts are closed. No research lane created a Revision or
+changed kernel/build/runner files. No formal timing, Online, or Judge action
+is eligible from this checkpoint.
+
+## Resource and online snapshot
+
+```text
+SNAPSHOT_UTC=2026-10-01T22:12:02Z
+HOST=hwnput3
+FREE_HBM_MB=0:5313,1:5263,2:5319,3:5318,4:6346,5:5356,6:5357,7:12508
+AICORE_PERCENT=0:18,1:20,2:33,3:33,4:0,5:0,6:0,7:1
+EXISTING_USERS=VLLM_WORKERS_ON_0_TO_6; VLLM/RAY/PYTHON_ON_7
+PROCESS_ACTIONS=NONE; no user process stopped, paused, migrated, or preempted
+SERVER3_ALIAS=cann-server3; DNS_UNRESOLVED_FROM_THIS_RUNTIME
+SERVER_JOBS_STARTED_BY_THIS_CHECKPOINT=0
+FORMAL_PERFORMANCE_RUNS=0
+ONLINE_QUEUE=NO_NEW_ELIGIBLE_CANDIDATE
+ONLINE_SUBMISSIONS=0
+```
+
+The active-branch aggregate push and its bounded `ls-remote` verification each
+timed out (`exit 124`). Remote synchronization is therefore unconfirmed; no
+force push or alternate remote was used.
+
+## Planning gate
+
+```text
+UB_REVIEWABLE=YES; V001_CORRECTNESS_FAILED_AND_RESTORE_TRAIL_RECORDED
+ADDR_TRACK_B_REVIEWABLE=YES
+BRANCH_TRACK_B_REVIEWABLE=YES
+TILECOUNT_TRACK_B_REVIEWABLE=YES; POOL_EXHAUSTED
+REDUCE_TRACK_B_REVIEWABLE=YES; POOL_EXHAUSTED
+MAIN_SELECTED_FOR_RESEARCH=0
+REVISION_CREATED_BY_THIS_CHECKPOINT=0
+KERNEL_FILES_CHANGED_BY_MAIN=0
+CANONICAL_SHARED_LEDGER_CHANGES=0
+PLANNING_DECISIONS_CHANGED=0
+READY_FOR_PLANNING_REVIEW=YES_LOCAL_ONLY
+```
 
 This file is the explicit Dashboard for the current MAIN-2 long-run because
 the repository has no pre-existing Dashboard path. It is not a replacement
