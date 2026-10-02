@@ -197,23 +197,23 @@ Have each existing Route Agent prepare and commit its reproducible route-local b
 
 ```dashboard-json
 {
-  "handoffs": "3 replacement worktrees and 4 Track-B contexts assigned; SYNC V001 Build Fix continues",
+  "handoffs": "CASE14, CASE47, FASTPATH, and TINY Track-B reviews recorded; SYNC V001 Build Fix remains active",
   "selected": "5 Planning-approved routes; 0/5 performance hypotheses MAIN_SELECTED",
-  "activeAgents": 5,
+  "activeAgents": 1,
   "pendingAgents": 0,
   "activeRevision": "SYNC V001 only",
   "stage": "EVENT_DRIVEN_TRACK_B_AND_SYNC_BUILD_FIX",
-  "state": "The five approved lanes are active; STORE/EPI/SMALLMID worktrees are closed with branches and V001 evidence retained; no new performance Revision exists",
-  "nextStep": "Continue SYNC V001 harness Build Fix; review each Track-B handoff on arrival; acquire Official case metadata before selecting a performance hypothesis",
+  "state": "Five approved lanes remain in the portfolio; four Track-B reviews are recorded; no new performance Revision exists",
+  "nextStep": "Continue SYNC V001 timing-harness Link; obtain Judge case input metadata before selecting a performance hypothesis",
   "blocker": "Official case-to-shape/dtype mapping and case14 raw profiler exports are absent; latest SYNC timing harness Link failed",
   "planningDecisionsChanged": 0,
   "newRoutes": 3,
   "lanes": [
     {"route":"SYNC-TOPOLOGY-CHAMPION-X","instruction":"Continue approved V001 Local closure","firstAction":"Repair harness kernel-entry registration; Build/Link, then Correctness; Main issues lease before timing","revisionState":"Candidate SHA unchanged; timing harness Link exit 2, no executable; no new Correctness or Local score"},
-    {"route":"CASE47-SMALL-CLUSTER-CHAMPION-X","instruction":"Track-B: cases 4 and 7; Agent 01a0fe2e-76e0-7201-b1d2-6c9487eb1823","firstAction":"Find exact Official shape/path facts; audit R008/SCHED row ownership overlap","revisionState":"Fresh sparse worktree; no Revision; Official case mapping missing"},
+    {"route":"CASE47-SMALL-CLUSTER-CHAMPION-X","instruction":"Track-B Main review: NEEDS_MORE_EVIDENCE; no MAIN_SELECTED","firstAction":"Obtain Judge case4/case7 shape and dtype; revisit H1 only after evidence arrives","revisionState":"Commit 2404d4e4; H2/H5 DUPLICATE; H3 INFEASIBLE; H4 overlaps prior wide-tile work; no Revision"},
     {"route":"CASE14-INTRAROW-PARALLELISM-CHAMPION-X","instruction":"Track-B: case 14; Agent 01a0fe2e-7772-7e83-825d-e90811e0db2c","firstAction":"Obtain case metadata, raw profile, C001 source/TLE log and workspace ABI evidence","revisionState":"Track-B commit 5fda6e90; NEEDS_MORE_EVIDENCE; H1 overlaps R008/C001; H2-H4 duplicate; MAIN_SELECTED=NONE"},
-    {"route":"SELECTIVE-FASTPATH-CHAMPION-X","instruction":"One research-only cycle; Agent 01a0fe2e-799a-70e0-8b87-6c81ff9a3292","firstAction":"Name exact donor/source and target scope; distinguish mechanism from CASE47/TINY","revisionState":"Existing branch/worktree; no Revision; case input mapping remains unknown"},
-    {"route":"TINY-FIXED-OVERHEAD-CHAMPION-X","instruction":"Track-B: cases 1, 3 and 5; Agent 01a0fe2e-785a-7332-995f-0e9be2faf3a5","firstAction":"Audit fixed-cost hypotheses against SELECTIVE-FASTPATH using source paths, not time bands","revisionState":"Fresh sparse worktree; no Revision; Official case mapping missing"}
+    {"route":"SELECTIVE-FASTPATH-CHAMPION-X","instruction":"Track-B cycle complete: NEEDS_MORE_EVIDENCE; no MAIN_SELECTED","firstAction":"Obtain Judge input mapping; no implementation until Main selects a hypothesis","revisionState":"Commit 5f669c30; STORE V003 donor is precisely sourced; Official 44.38 vs V011 45.16; TINY mechanism review complete, case overlap unknown"},
+    {"route":"TINY-FIXED-OVERHEAD-CHAMPION-X","instruction":"Track-B Main review: NEEDS_MORE_EVIDENCE; no MAIN_SELECTED","firstAction":"Obtain Judge case1/3/5 metadata, dispatch facts, and Official timer boundary","revisionState":"Commit 990a6a37; five hypotheses reviewed; no Revision; shape/dtype mapping missing"}
   ]
 }
 ```
@@ -315,6 +315,28 @@ The three new worktrees are sparse, approximately 7.5 MB each, and were created 
 
 - `PLANNING_DECISIONS_CHANGED=0`; `NEW_ROUTES_WITHIN_APPROVED_PORTFOLIO=3`; `NEW_ROUTES_OUTSIDE_APPROVED_5=0`; `PERFORMANCE_HYPOTHESES_MAIN_SELECTED=0`.
 - Main-1 and canonical changes are committed locally. No external push was made under the repository push policy; user changes in the canonical worktree remain untouched.
+
+## MAIN1_TRACK_B_HANDOFF_REVIEW (2026-10-03)
+
+### CASE47
+
+- Route handoff commit `2404d4e4` records five hypotheses against R31B V011 source SHA `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`.
+- Main review: `NEEDS_MORE_EVIDENCE`; no hypothesis selected. H2/H5 duplicate recorded row-ownership or transfer-order mechanisms; H3 requires cross-block reduction support unavailable in the current call interface; H4 overlaps prior wide-tile work. H1 is conditionally distinct, but needs the actual case4/case7 shape and dtype plus a minimal API-feasibility prototype before reconsideration.
+- Judge testcase IDs and times do not establish input shape, dtype, rows, D, dispatch, or core ownership. No Revision, Build, correctness run, device use, or performance measurement was started.
+
+### SELECTIVE-FASTPATH
+
+- Route handoff commit `5f669c30` studies the complete STORE-EPILOGUE-X V003 donor, source SHA `0cdef265459d4683a1813593a881a5cf25ae75246aab49279d121896b71184ca`, against the R31B V011 fallback. The candidate probe shapes are FP32 `(M,D)=(8,16384),(1,32768),(1,16384)`; none is mapped to an Official testcase.
+- The donor's Official score is `44.38`, below V011 `45.16`; its reported Local gains compare against STORE V002 and do not establish a V011 gain. Comparison against visible CASE47 and TINY hypotheses found distinct source-level mechanisms for short-row epilogue, wide-row output chunking, core count, row ownership, generic loop control, buffer footprint, and event-ID lifetime. Actual Official workload overlap remains unknown without the input manifest.
+- Main review: `NEEDS_MORE_EVIDENCE`; no hypothesis selected. Obtain Judge input mapping before any implementation discussion. No Revision, Build, correctness run, device use, or performance measurement was started.
+
+### TINY
+
+- Route handoff commit `990a6a37` records five hypotheses against R31B V011 source SHA `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`; case1/3/5 input shape and dtype are not retained in Judge results.
+- Main review: `NEEDS_MORE_EVIDENCE`; no hypothesis selected. H1 changes active core count and may alter `localRows` or select another existing specialization; H2 depends on `rowCount == blockCount`; H3 only applies to a confirmed generic single-tile path; H4 needs generated UB layout/resource evidence; H5 needs API confirmation for conditional event-ID allocation and release.
+- The five mechanisms are separate at source level from FASTPATH's wide FP32 store donor, but Official case-to-path mapping is absent, so workload overlap cannot be ruled out. No Revision, Build, correctness run, device use, or performance measurement was started.
+
+- `PLANNING_DECISIONS_CHANGED=0`; `NEW_ROUTES=0`; `PERFORMANCE_HYPOTHESES_MAIN_SELECTED=0`.
 
 ## MAIN1_EVENT_DRIVEN_EXECUTION (2026-10-02)
 
