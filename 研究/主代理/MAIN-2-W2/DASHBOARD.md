@@ -285,3 +285,25 @@ PROCESS_ACTIONS=NONE
 GitHub publication remains `PUSH_PENDING` because HTTPS remote access is
 unconfirmed; this does not gate the three local research contexts. No force
 push, reset, clean, alternate remote, or remote branch overwrite is allowed.
+
+### Event receipt: ADDR planning pack
+
+```text
+EVENT_UTC=2026-10-02T01:27:56Z
+ROUTE=HOTLOOP-ADDR-HOIST-CHAMPION-X
+LOCAL_COMMIT=cf148d5f8103c931cb253d2f36f0d7c59068fe23
+EVIDENCE=研究/HOTLOOP-ADDR-HOIST-CHAMPION-X/ADDR-PLANNING-PACK-20261002.md
+ADDR_PLANNING_CANDIDATE_1=ADDR-H3
+ADDR_PLANNING_CANDIDATE_2=ADDR-H1
+REJECTED=DUPLICATE_OR_NO_EFFECT_REJECTED (H2,H4-H8,Q9,Q10)
+MAIN_SELECTED=NONE
+REVISION=NONE
+BUILD=NOT_RUN
+CORRECTNESS=NOT_RUN
+TIMING=NOT_RUN
+ONLINE=NOT_RUN
+PUSH=PUSH_PENDING; remote publication is not a local-stage gate
+```
+
+ADDR's first event is a committed research handoff, not a Candidate score;
+the Online queue remains empty and no sibling route was held for this receipt.
