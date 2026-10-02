@@ -197,19 +197,19 @@ Have each existing Route Agent prepare and commit its reproducible route-local b
 
 ```dashboard-json
 {
-  "handoffs": "CASE14, CASE47, FASTPATH, and TINY Track-B reviews recorded; SYNC V001 ASC parsing now sees metadata, but the stream type remains unavailable there",
+  "handoffs": "CASE14, CASE47, FASTPATH, and TINY Track-B reviews recorded; SYNC V001 Build/Correctness pass and Parent stability blocks Local timing",
   "selected": "5 Planning-approved routes; 0/5 performance hypotheses MAIN_SELECTED",
   "activeAgents": 1,
   "pendingAgents": 0,
   "activeRevision": "SYNC V001 only",
-  "stage": "EVENT_DRIVEN_SYNC_BUILD_FIX",
-  "state": "SYNC V001 Candidate and Parent identities match; Configure passes; corrected include routing clears metadata errors; Build/Link still fails on aclrtStream; no Correctness or timing run",
-  "nextStep": "Expose the exact opaque stream type to ASC parsing in support metadata; Main reviews, retries Build/Link immediately, then runs Correctness immediately on PASS",
-  "blocker": "aclrtStream is declared by the ACL host header only; the ASC parser still reports it undeclared in both source wrappers",
+  "stage": "EVENT_DRIVEN_SYNC_LOCAL_MEASUREMENT_BLOCKED",
+  "state": "SYNC V001 Build/Link and both Correctness cases pass; Parent same-binary shows 29.29% block drift, so no Parent window or Candidate timing ran",
+  "nextStep": "Preserve raw evidence and review shape stability before any fresh lease; do not alter Candidate source or infer a performance verdict",
+  "blocker": "Parent same-binary block drift is 0.292906 (>0.25); Candidate P/C and Local score are unavailable",
   "planningDecisionsChanged": 0,
   "newRoutes": 3,
   "lanes": [
-    {"route":"SYNC-TOPOLOGY-CHAMPION-X","instruction":"Continue approved V001 Local closure","firstAction":"Expose aclrtStream in support metadata without changing Candidate source; Main review, Build/Link, then Correctness; lease only for timing","revisionState":"RUN_ID SYNC-TOPOLOGY-CHAMPION-X-V001-D4-BUILD-FIX-9ed79938-20261002T230002Z; Configure PASS, Build/Link RC=2; metadata types now visible, both sources still report aclrtStream undeclared; no new executable, Correctness, or timing"},
+    {"route":"SYNC-TOPOLOGY-CHAMPION-X","instruction":"Continue approved V001 Local closure","firstAction":"Review Parent same-binary drift evidence before any fresh measurement lease; preserve source and score state","revisionState":"RUN_ID SYNC-TOPOLOGY-CHAMPION-X-V001-D4-BUILD-FIX-6e650cf5-20261002T231909Z; Configure/Build PASS, Correctness PASS 2/2; Parent same-binary 62 samples, MAD/median 0.062929, block drift 0.292906 (>0.25); no Parent window, Candidate P/C, or Local score; lease released"},
     {"route":"CASE47-SMALL-CLUSTER-CHAMPION-X","instruction":"Track-B Main review: NEEDS_MORE_EVIDENCE; no MAIN_SELECTED","firstAction":"Obtain Judge case4/case7 shape and dtype; revisit H1 only after evidence arrives","revisionState":"Commit 2404d4e4; H2/H5 DUPLICATE; H3 INFEASIBLE; H4 overlaps prior wide-tile work; no Revision"},
     {"route":"CASE14-INTRAROW-PARALLELISM-CHAMPION-X","instruction":"Track-B: case 14; Agent 01a0fe2e-7772-7e83-825d-e90811e0db2c","firstAction":"Obtain case metadata, raw profile, C001 source/TLE log and workspace ABI evidence","revisionState":"Track-B commit 5fda6e90; NEEDS_MORE_EVIDENCE; H1 overlaps R008/C001; H2-H4 duplicate; MAIN_SELECTED=NONE"},
     {"route":"SELECTIVE-FASTPATH-CHAMPION-X","instruction":"Track-B cycle complete: NEEDS_MORE_EVIDENCE; no MAIN_SELECTED","firstAction":"Obtain Judge input mapping; no implementation until Main selects a hypothesis","revisionState":"Commit 5f669c30; STORE V003 donor is precisely sourced; Official 44.38 vs V011 45.16; TINY mechanism review complete, case overlap unknown"},
@@ -445,4 +445,15 @@ The three new worktrees are sparse, approximately 7.5 MB each, and were created 
 - No new timing or correctness executable was produced; Correctness and timing were not run. The existing Candidate shared library timestamp predates this run and was not treated as its output.
 - Configure, Build/Link, identity, and before/after resource files remain under `/home/data4t2/lelinfeng/cann/w2/SYNC-TOPOLOGY-CHAMPION-X/V001/results/SYNC-TOPOLOGY-CHAMPION-X-V001-D4-BUILD-FIX-9ed79938-20261002T230002Z/`.
 - Next: Route Agent records this failed attempt, then makes a support-only declaration of the exact `aclrtStream` ABI type for ASC parsing and updates the build notes. Main reviews before another Build; Correctness follows immediately only after both Build targets pass. No score or Online Queue entry was added.
+- `PLANNING_DECISIONS_CHANGED=0`; `NEW_ROUTES=0`; `PERFORMANCE_HYPOTHESES_MAIN_SELECTED=0`.
+
+## MAIN1_SYNC_BUILD_CORRECTNESS_AND_LOCAL_QUALIFICATION (2026-10-03)
+
+- Route commit `6e650cf5224ca0750d9d4886f5ccc428a9edde19` adds the `aclrtStream` ABI alias to the support metadata header. Candidate source SHA remains `27c853e1cb0c47307899b874338c3aecb912ad5dc125c0d67f6afba76a9117ec`; Direct Parent R31B V011 SHA remains `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`.
+- Build RUN_ID: `SYNC-TOPOLOGY-CHAMPION-X-V001-D4-BUILD-FIX-6e650cf5-20261002T231909Z`. Configure and both targets passed. Timing executable SHA `3628f9156ab7171e28c0d88a13f6e528f2cf85f138bb412eeab47d35bb24de2f`; correctness executable SHA `7a8335eec7156cf695cf75281a576a2b403e7df5da24de7fd7c1d8759abc97a7`; Parent DSO `017ab02a4fe0da2c2692ba18c17c89ad27cd928ef66a14bf8035d2c4731ec4ec`; Candidate DSO `1a7172946ceab8786920f0e386d2df11307d58e22d86a8f6da90d11cce3844f4`. Build log and identities remain in the RUN_ID directory.
+- Correctness ran immediately after Build. `[2,12288] FP16` and `[2,8192] FP16` both PASS, matched ratio `1.0`, max absolute error `0.00048828125`, return code `0`. No performance result was inferred from this stage.
+- Timing lease `M1-SYNC-V001-D4-PERF-20261002T232615Z` was added and released; Main-1 lease commits are `2ea6348a` and `18dd2485`, both pushed. First same-binary launch omitted `set_env.sh`, failed to load `libruntime.so` with RC `127`, and produced no samples. Retry sourced the CANN environment and used `SAME-BINARY-SETENV`.
+- Parent same-binary retry completed 45 warmups and 62 device-event samples. Parent correctness PASS; overall MAD/median `0.062929`, block medians `10.98 us` and `8.42 us`, block drift `0.292906` (`29.29%`). This exceeds the `0.25` protocol-block threshold: `MEASUREMENT_PROTOCOL_BLOCKED_FOR_SHAPE`. No Parent window qualification or Candidate P/C ran; no Local delta/score exists. This is not `LOCAL_REJECTED` and does not establish a Candidate defect.
+- Parent raw samples, jitter, runner output, and pre/post resource snapshots remain under `/home/data4t2/lelinfeng/cann/w2/SYNC-TOPOLOGY-CHAMPION-X/V001/results/SYNC-TOPOLOGY-CHAMPION-X-V001-D4-BUILD-FIX-6e650cf5-20261002T231909Z/`. d4 HBM stayed `59190/65536 MB`, AICore `0%`, VLLM EngineCore PID `2999855` unchanged, disk `616 GB`; no experiment process remained after release.
+- Current Local state: `BUILD=PASS; CORRECTNESS=PASS; PERFORMANCE=MEASUREMENT_BLOCKED; LOCAL_VERDICT=MEASUREMENT_BLOCKED`. Preserve the Local evidence and source identity. Any fresh measurement requires a new lease after the measurement stability issue is reviewed; no further device work is assigned here.
 - `PLANNING_DECISIONS_CHANGED=0`; `NEW_ROUTES=0`; `PERFORMANCE_HYPOTHESES_MAIN_SELECTED=0`.
