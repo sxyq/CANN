@@ -228,3 +228,30 @@ Have each existing Route Agent prepare and commit its reproducible route-local b
 - `LOCAL_HEAD`: `bc34b8c7f8ed4638595dc4f526dc749aa201c212`.
 - `REMOTE_HEAD`: `bc34b8c7f8ed4638595dc4f526dc749aa201c212`.
 - `PUSH_PENDING`: `NO`.
+
+## MAIN1_W2_HARNESS_DELIVERY (2026-10-02)
+
+- `MAIN1_HEAD_BEFORE_UPDATE`: `c818012a11557a0ec9d1f364bcd835f8589ec08f`; matched `origin/main1/champion-exploit` after fetch.
+- Four implementation lanes now have committed build/correctness harness changes. The SELECTIVE-FASTPATH lane remains qualification-only.
+
+| Route | Harness commit | Server route mirror | Assigned device | Dedicated output path |
+|---|---|---|---:|---|
+| SYNC V001 | `c0063657a04f4f1c9b746a8377bd820cb26469b4` | `/home/data4t2/lelinfeng/cann-w2-m1-sync` at the same commit | 4 | `/home/data4t2/lelinfeng/cann/w2/SYNC-TOPOLOGY-CHAMPION-X/V001/` |
+| STORE V001 | `5b632c4da540cb3d711d72c1c2b9843bae759eba` | `/home/data4t2/lelinfeng/cann-w2-m1-store` at the same commit | 5 | `/home/data4t2/lelinfeng/cann/STORE-EPILOGUE-W2-X/V001/` |
+| EPI V001 | `728465c2fc8cd83b1f7fdd67e46d956f1a9305d6` | `/home/data4t2/lelinfeng/cann-w2-m1-epi` at the same commit | 7 | `/home/data4t2/lelinfeng/cann/server_runs/EPI-ARITH-CHAMPION-W2-X/V001/${RUN_ID}/` |
+| SMALLMID V001 | `fefa4ea3321c065e307aae1bcedd8d5e1f5adec8` | `/home/data4t2/lelinfeng/cann-w2-m1-smallmid` at the same commit | 1 | `/home/data4t2/lelinfeng/cann/local-experiments/SMALLMID-DATAFLOW-CHAMPION-X/V001/a689e5abc03d2770b277812d9a52ae0a1aaf910952b737525e1722f06bdb340a/` |
+
+The exact Candidate source, `submission.sha256`, server route-tree source, and server sidecar values matched for all four lanes:
+
+| Route | SOURCE_SHA256 |
+|---|---|
+| SYNC V001 | `27c853e1cb0c47307899b874338c3aecb912ad5dc125c0d67f6afba76a9117ec` |
+| STORE V001 | `48b9428dc2fc97c7c9d95f03ad8cec8e758c88e1197aa2328b1b1edebc018f88` |
+| EPI V001 | `9a28f5cd8703dc4ff5c46fba09f59a537132594e5a879a50a17349086bfe4d59` |
+| SMALLMID V001 | `a689e5abc03d2770b277812d9a52ae0a1aaf910952b737525e1722f06bdb340a` |
+
+- All four dedicated output paths were absent before staging; no existing server result was replaced. The server canonical checkout remains on `main`, one commit behind its origin, and was not changed.
+- Live server snapshot on 2026-10-02: `hwnput3`, free HBM d1/d4/d5/d7 = 5262/6346/5336/11446 MB; project disk available = 698 GB. No active scheduler lease was found on the four assigned devices. VLLM was present on d0-d6; d7 also showed Python/Ray processes. These processes remain untouched. No lane-specific build/correctness process was present.
+- `BUILD=NOT_STARTED`; `CORRECTNESS=NOT_STARTED`; `PERFORMANCE=NOT_RUN`; `ONLINE=NOT_RUN`.
+- Next action: each existing Route Agent repeats the device/resource snapshot immediately before its assigned exact-source build and correctness run. No timing or Online action is authorized in this stage.
+- `PLANNING_DECISIONS_CHANGED=0`; `NEW_ROUTES=0`.
