@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 
 find_package(ASC REQUIRED)
-project(hotloop_branch_v001 LANGUAGES ASC)
+project(hotloop_branch_v001 LANGUAGES ASC CXX)
 
 set(ASCEND_HOME_PATH "$ENV{ASCEND_HOME_PATH}" CACHE PATH "CANN toolkit root")
 if(NOT ASCEND_HOME_PATH)
@@ -30,3 +30,17 @@ endforeach()
 
 ascendc_compile_definitions(hotloop_branch_v001_parent PRIVATE run_kernel=run_kernel_parent)
 ascendc_compile_definitions(hotloop_branch_v001_candidate PRIVATE run_kernel=run_kernel_candidate)
+
+add_executable(hotloop_branch_v001_correctness correctness_main.cpp)
+target_include_directories(hotloop_branch_v001_correctness PRIVATE
+    "${CMAKE_CURRENT_LIST_DIR}"
+    "${ASCEND_HOME_PATH}/aarch64-linux/include")
+add_dependencies(hotloop_branch_v001_correctness
+    hotloop_branch_v001_parent hotloop_branch_v001_candidate)
+target_link_libraries(hotloop_branch_v001_correctness PRIVATE
+    hotloop_branch_v001_parent
+    hotloop_branch_v001_candidate
+    "${ASCEND_HOME_PATH}/aarch64-linux/lib64/libascendcl.so"
+    dl m)
+set_target_properties(hotloop_branch_v001_correctness PROPERTIES
+    BUILD_RPATH "${ASCEND_HOME_PATH}/aarch64-linux/lib64;${ASCEND_HOME_PATH}/lib64;${CMAKE_CURRENT_BINARY_DIR}")
