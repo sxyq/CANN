@@ -1,0 +1,50 @@
+FORENSIC_EVENT=V001_STATIC_DIFF_AND_LIFETIME_AUDIT
+UTC_DATE=2026-10-02
+WORKTREE=/home/data4t2/lelinfeng/cann-w2-m2-ub
+BRANCH=w2/m2/ub-lifetime-safe
+PARENT=本地实验/UB-LIFETIME-SAFE-CHAMPION-X/V001/parent-submission.asc
+CANDIDATE=本地实验/UB-LIFETIME-SAFE-CHAMPION-X/V001/submission.asc
+PARENT_SHA256=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
+CANDIDATE_SHA256=9b73bb5626b5e98be53faeb91eba024b2589bf0b8b5b46e36c48ec18e009f989
+
+COMMAND=diff -u parent-submission.asc submission.asc
+DIFF_HUNKS=3
+DIFF_SCOPE=
+- remove only wide-FP16 InitBuffer(outputBuf_, tileElems*sizeof(half))
+- defer the ProcessWideLowPrecision outputLocal binding
+- bind half outputLocal to gammaBuf_/yStore indexed range and retain outputBuf_.Get<T>() for non-half
+
+EXACT_DIFF=
+@@ -85,7 +85,6 @@
+                 pipe_.InitBuffer(xBuf_, 2 * tileElems * sizeof(half));
+                 pipe_.InitBuffer(residualBuf_, 2 * tileElems * sizeof(half));
+-                pipe_.InitBuffer(outputBuf_, tileElems * sizeof(half));
+@@ -3296,7 +3295,7 @@
+-                AscendC::LocalTensor<T> outputLocal = outputBuf_.Get<T>();
++                AscendC::LocalTensor<T> outputLocal;
+@@ -3319,12 +3318,14 @@
++                        outputLocal = yStore[batchRow * rowWidth + col];
+                         FromFloat(outputLocal, valueFp32, valid);
+@@
+                     } else {
++                        outputLocal = outputBuf_.Get<T>();
+
+UNCHANGED_AUDIT=
+- TBuf member declarations and all FP32 buffer members
+- FP32 Init arm and non-half/BF16 output allocation
+- FP32/common arithmetic, reduction, conversion, Store/DataCopyPad, counts, offsets
+- PipeBarrier and SyncVToMTE2/SyncVToMTE3/SyncMTE3ToV ordering
+
+LIFETIME_ORDER=
+last retained-y read :3318 < first same-range output write :3322
+store source / issue :3342-3344
+store completion     :3345
+next y overwrite     :3182 of later batch
+
+PARENT_HARNESS_AUDIT=
+support/correctness/correctness_runner.asc includes ../../submission.asc
+No parent executable is preserved in this V001 route evidence directory.
+Running parent requires source/include replacement; not permitted by task.
+
+STATIC_CONCLUSION=scope-limited FP16 alias is textually proven; compiled shared-path side effect is not ruled out.
+FORENSIC_CLASSIFICATION=UNRESOLVED
