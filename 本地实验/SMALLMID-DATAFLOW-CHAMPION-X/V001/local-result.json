@@ -7,12 +7,12 @@
   "source_commit": "9abea741d4d0b40efdc322da5255c463fede481b",
   "single_hypothesis": "SMD-H6-BF16-MID-PARAM-CAST-ONCE",
   "build": "PASS",
-  "correctness": "INCOMPLETE",
+  "correctness": "FAIL",
   "executable_identity": "PASS",
   "same_binary": "NOT_STARTED",
   "measurement": "NOT_STARTED",
-  "local_verdict": "NOT_COMPLETE",
-  "block_reason": "Correctness attempt 1 did not start the executable because CANN aarch64-linux/lib64 was absent from LD_LIBRARY_PATH; libgraph.so could not be loaded",
+  "local_verdict": "CORRECTNESS_FAILED",
+  "block_reason": "Correctness attempt 2 entered main and failed the first target case at D=2049; later cases were not run",
   "correctness_attempts": [
     {
       "attempt": 1,
@@ -24,6 +24,47 @@
       "device": 1,
       "log_path": "/home/data4t2/lelinfeng/cann/local-experiments/SMALLMID-DATAFLOW-CHAMPION-X/V001/a689e5abc03d2770b277812d9a52ae0a1aaf910952b737525e1722f06bdb340a/runs/20261002T151744Z-device1/correctness-device1.log",
       "diagnosis": "The dynamic loader failed to find libgraph.so before main because CANN aarch64-linux/lib64 was absent from LD_LIBRARY_PATH; no shape case or kernel ran."
+    },
+    {
+      "attempt": 2,
+      "run_id": "20261002T151744Z-device1-correctness2",
+      "runner_commit": "b051d2d8",
+      "build_run_id": "20261002T151744Z-device1",
+      "result": "FAIL",
+      "return_code": 3,
+      "candidate_sha256": "a689e5abc03d2770b277812d9a52ae0a1aaf910952b737525e1722f06bdb340a",
+      "executable_sha256": "159532deffb1ddaf33792c0b7c296c3bcf7cf2f0cc2ea68fbc0e8de7b68e5208",
+      "device": 1,
+      "toolkit": "/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002",
+      "start_utc": "2026-10-02T15:56:00Z",
+      "end_utc": "2026-10-02T15:56:29Z",
+      "log_path": "/home/data4t2/lelinfeng/cann/local-experiments/SMALLMID-DATAFLOW-CHAMPION-X/V001/a689e5abc03d2770b277812d9a52ae0a1aaf910952b737525e1722f06bdb340a/runs/20261002T151744Z-device1/correctness-device1-attempt2.log",
+      "environment": {
+        "hbm_usage_percent_before": 96,
+        "hbm_usage_percent_after": 96,
+        "aicore_percent_before": 36,
+        "aicore_percent_after": 36,
+        "available_disk_gb_before": 628,
+        "available_disk_gb_after": 628,
+        "device_processes": "python PID 2305560; VLLMWorker_TP PID 91055"
+      },
+      "cases": [
+        {
+          "dtype": "BF16",
+          "rows": 80,
+          "width": 2049,
+          "matched_ratio": 0.56540386,
+          "bad_elements": 71239,
+          "max_abs_error": 4.26492296,
+          "atol": 0.015625,
+          "rtol": 0.015625,
+          "max_abs_error_limit": 1.0,
+          "result": "FAIL"
+        },
+        {"dtype": "BF16", "width": 3073, "result": "NOT_RUN_AFTER_PRIOR_FAILURE"},
+        {"dtype": "BF16", "width": 4095, "result": "NOT_RUN_AFTER_PRIOR_FAILURE"}
+      ],
+      "diagnosis": "CANN environment loaded and executable entered main. The first correctness case failed numerically, so the harness stopped before later cases. No Candidate source change or timing run occurred."
     }
   ],
   "build_attempts": [
