@@ -478,3 +478,42 @@ FORCE_PUSH=0
 RETRY_LOOP=0
 LOCAL_EXPERIMENT_GATE=NO
 ```
+
+## Event-driven implementation checkpoint — 2026-10-02T16:32Z
+
+This checkpoint supersedes the stale startup-only stage fields above for the
+three active contexts. It is a local control record; it does not alter the
+canonical shared ledgers or the Official champion.
+
+```text
+CONTROL_HEAD_BEFORE_CHECKPOINT=68d02d92
+CANONICAL_HEAD=02482b46c2ee1fdd5bab1f88a474c7e70426f661
+ORIGIN_MAIN=15e7d8dc0a9269fdcdb09af0d1b9e4660c070778
+OVERALL_OFFICIAL_CHAMPION=R31B V011 / 45.16
+EVENT_DRIVEN_PIPELINE=ENABLED
+BATCH_GATE=DISABLED
+DIRECT_ONLINE_SUBMISSION=FORBIDDEN
+PLANNING_DECISIONS_CHANGED=0
+NEW_ROUTES_OUTSIDE_APPROVED_5=0
+```
+
+| Lane | Revision / parent | Build | Correctness | Formal Local | Online | Current evidence |
+|---|---|---|---|---|---|---|
+| ADDR / `HOTLOOP-ADDR-HOIST-CHAMPION-X` | V001 / R31B V011 (`a8c19a…15e3`), ADDR-H3 | `BUILD_FAILED` after two preserved attempts; both fail in generated host registration with missing `<vector>` | NOT_RUN | NOT_ELIGIBLE | NOT_AUTHORIZED | route HEAD `558196b8`; `BUILD-ATTEMPT-1.md`, `BUILD-RETRY-1.md`, `local-result.json` |
+| BRANCH / `HOTLOOP-BRANCH-HOIST-CHAMPION-X` | V001 / R31B V011 (`a8c19a…15e3`), HBH-10 | `PASS` after harness-only ABI fix; parent/candidate shared libraries produced | NEXT IMMEDIATELY | NOT_STARTED | NOT_AUTHORIZED | route HEAD `ee6a3532`; `support/build-fix-001.log`, `build-result.json` |
+| UB / `UB-LIFETIME-SAFE-CHAMPION-X` | preserved V001 / exact R31B V011 | diagnostic harness `PASS` | FP16/BF16 cases PASS; FP32-wide-16384 parent and candidate both unstable | NOT_ELIGIBLE | NOT_AUTHORIZED | route HEAD `12e67f3b`; final class `PARENT_INSTABILITY` |
+
+The ADDR retry is a build-chain fact, not a performance or correctness
+verdict. A bounded support-only include-path Build Fix is being evaluated; no
+H3 kernel change, H1 sibling, or V002 is authorized from this checkpoint.
+The BRANCH Build PASS immediately opens its independent Correctness stage; it
+does not wait for ADDR. UB remains closed as a diagnostic and cannot create
+V002. `ONLINE_QUEUE=EMPTY`; `FORMAL_PERFORMANCE_RUNS=0`.
+
+```text
+SERVER_HOST=hwnput3
+SERVER3_ALIAS=cann-server3; DNS_UNRESOLVED_FROM_THIS_RUNTIME
+HBM_GATE=NO_BLOCK_RECORDED_AT_LAST_ROUTE_PREFLIGHT
+PROCESS_ACTIONS=NONE; existing VLLM/Ray/Python processes untouched
+GITHUB_PUSH=PUSH_PENDING; not a local-stage gate
+```
