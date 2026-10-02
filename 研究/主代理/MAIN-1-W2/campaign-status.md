@@ -197,19 +197,19 @@ Have each existing Route Agent prepare and commit its reproducible route-local b
 
 ```dashboard-json
 {
-  "handoffs": "CASE14, CASE47, FASTPATH, and TINY Track-B reviews recorded; SYNC V001 Build Fix remains active",
+  "handoffs": "CASE14, CASE47, FASTPATH, and TINY Track-B reviews recorded; SYNC V001 Build Fix continues after logged Parent Link failure",
   "selected": "5 Planning-approved routes; 0/5 performance hypotheses MAIN_SELECTED",
   "activeAgents": 1,
   "pendingAgents": 0,
   "activeRevision": "SYNC V001 only",
   "stage": "EVENT_DRIVEN_TRACK_B_AND_SYNC_BUILD_FIX",
   "state": "Five approved lanes remain in the portfolio; four Track-B reviews are recorded; no new performance Revision exists",
-  "nextStep": "Continue SYNC V001 timing-harness Link; obtain Judge case input metadata before selecting a performance hypothesis",
-  "blocker": "Official case-to-shape/dtype mapping and case14 raw profiler exports are absent; latest SYNC timing harness Link failed",
+  "nextStep": "Review the direct-source ASC target update; on Build/Link PASS immediately run Correctness; timing still waits for a Main lease",
+  "blocker": "Official case-to-shape/dtype mapping is absent; current SYNC Parent module reports Unknown kernelInfo and unresolved __origin__ entries",
   "planningDecisionsChanged": 0,
   "newRoutes": 3,
   "lanes": [
-    {"route":"SYNC-TOPOLOGY-CHAMPION-X","instruction":"Continue approved V001 Local closure","firstAction":"Repair harness kernel-entry registration; Build/Link, then Correctness; Main issues lease before timing","revisionState":"Candidate SHA unchanged; timing harness Link exit 2, no executable; no new Correctness or Local score"},
+    {"route":"SYNC-TOPOLOGY-CHAMPION-X","instruction":"Continue approved V001 Local closure","firstAction":"Use direct ASC source targets for Parent/Candidate; Build/Link, then Correctness; Main lease only for timing","revisionState":"Harness commit 6f0e9046 reviewed; RUN_ID 20261002T210858Z Configure PASS, Parent Link exit 2; no executable or new Correctness"},
     {"route":"CASE47-SMALL-CLUSTER-CHAMPION-X","instruction":"Track-B Main review: NEEDS_MORE_EVIDENCE; no MAIN_SELECTED","firstAction":"Obtain Judge case4/case7 shape and dtype; revisit H1 only after evidence arrives","revisionState":"Commit 2404d4e4; H2/H5 DUPLICATE; H3 INFEASIBLE; H4 overlaps prior wide-tile work; no Revision"},
     {"route":"CASE14-INTRAROW-PARALLELISM-CHAMPION-X","instruction":"Track-B: case 14; Agent 01a0fe2e-7772-7e83-825d-e90811e0db2c","firstAction":"Obtain case metadata, raw profile, C001 source/TLE log and workspace ABI evidence","revisionState":"Track-B commit 5fda6e90; NEEDS_MORE_EVIDENCE; H1 overlaps R008/C001; H2-H4 duplicate; MAIN_SELECTED=NONE"},
     {"route":"SELECTIVE-FASTPATH-CHAMPION-X","instruction":"Track-B cycle complete: NEEDS_MORE_EVIDENCE; no MAIN_SELECTED","firstAction":"Obtain Judge input mapping; no implementation until Main selects a hypothesis","revisionState":"Commit 5f669c30; STORE V003 donor is precisely sourced; Official 44.38 vs V011 45.16; TINY mechanism review complete, case overlap unknown"},
@@ -305,7 +305,7 @@ The three local linked worktrees were removed after confirming clean status, no 
 
 | Route | Branch | Worktree | Agent | Direct Parent | Current stage |
 |---|---|---|---|---|---|
-| SYNC-TOPOLOGY-CHAMPION-X | `w2/m1/sync-topology` | `worktrees/w2/m1/sync-topology` | `01a0fd8f-8a90-75a2-b10d-9e4eda3e00dd` | R31B V011 | V001 timing harness Link fails with `Unknown kernelInfo` / unresolved Parent `__origin__` entry; no executable. Agent continues harness-only Build Fix; no new Correctness or timing. |
+| SYNC-TOPOLOGY-CHAMPION-X | `w2/m1/sync-topology` | `worktrees/w2/m1/sync-topology` | `01a0fd8f-8a90-75a2-b10d-9e4eda3e00dd` | R31B V011 | Harness commit `6f0e9046` reviewed. RUN_ID `...210858Z`: Configure PASS; Candidate module linked; Parent module failed with `Unknown kernelInfo` and three unresolved `__origin__` variants. No timing/correctness executable; no new Correctness or timing. Exact attempt logs remain under server3 V001 `results/`; original Candidate SHA unchanged. |
 | CASE47-SMALL-CLUSTER-CHAMPION-X | `w2/m1/case47-small-cluster` | `worktrees/w2/m1/case47-small-cluster` | `01a0fe2e-76e0-7201-b1d2-6c9487eb1823` | R31B V011 | Track-B; no Revision or `MAIN_SELECTED`. |
 | CASE14-INTRAROW-PARALLELISM-CHAMPION-X | `w2/m1/case14-intrarow-parallelism` | `worktrees/w2/m1/case14-intrarow-parallelism` | `01a0fe2e-7772-7e83-825d-e90811e0db2c` | R31B V011 | Track-B reviewed; `NEEDS_MORE_EVIDENCE`; no direction selected. |
 | SELECTIVE-FASTPATH-CHAMPION-X | `w2/m1/selective-fastpath` | `worktrees/w2/m1/selective-fastpath` | `01a0fe2e-799a-70e0-8b87-6c81ff9a3292` | R31B V011 | Fresh context on existing branch/worktree; one research-only cycle. |
@@ -336,6 +336,15 @@ The three new worktrees are sparse, approximately 7.5 MB each, and were created 
 - Main review: `NEEDS_MORE_EVIDENCE`; no hypothesis selected. H1 changes active core count and may alter `localRows` or select another existing specialization; H2 depends on `rowCount == blockCount`; H3 only applies to a confirmed generic single-tile path; H4 needs generated UB layout/resource evidence; H5 needs API confirmation for conditional event-ID allocation and release.
 - The five mechanisms are separate at source level from FASTPATH's wide FP32 store donor, but Official case-to-path mapping is absent, so workload overlap cannot be ruled out. No Revision, Build, correctness run, device use, or performance measurement was started.
 
+- `PLANNING_DECISIONS_CHANGED=0`; `NEW_ROUTES=0`; `PERFORMANCE_HYPOTHESES_MAIN_SELECTED=0`.
+
+## MAIN1_SYNC_TIMING_HARNESS_BUILD_ATTEMPT (2026-10-03)
+
+- Main reviewed Route commit `6f0e9046`; it changes timing-harness module registration only. Candidate source SHA remains `27c853e1cb0c47307899b874338c3aecb912ad5dc125c0d67f6afba76a9117ec`; Direct Parent R31B V011 SHA remains `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`.
+- RUN_ID: `SYNC-TOPOLOGY-CHAMPION-X-V001-D4-BUILD-FIX-6f0e9046-20261002T210858Z`. Source, sidecar, Parent and all nine staged harness-file SHA values matched before Configure. CANN `8.5.0.alpha002`, SoC `Ascend 910B3`; d4 free HBM before Build was 2494 MB and project disk available was 617 GB. Existing Python/VLLM processes were left untouched.
+- Configure: PASS. Build/Link: FAIL, exit 2. The Candidate module linked, but ASCPLUGIN reported `Unknown kernelInfo` for Parent `add_rms_norm_bias_custom`; the Parent module link then reported three unresolved `__origin__add_rms_norm_bias_custom<T>` symbols. Neither timing nor correctness executable was produced; no Correctness or timing ran.
+- Server logs and before/after resource snapshots are under `/home/data4t2/lelinfeng/cann/w2/SYNC-TOPOLOGY-CHAMPION-X/V001/results/SYNC-TOPOLOGY-CHAMPION-X-V001-D4-BUILD-FIX-6f0e9046-20261002T210858Z/`.
+- Main's next action is to review a harness-only change that registers Parent and Candidate from their exact ASC source paths and renames only their host `run_kernel` wrappers, following the in-repository WIDE-X-FRESH4 CMake pattern. After commit review, Build/Link proceeds immediately; PASS triggers Correctness immediately. Timing still requires a separate Main lease.
 - `PLANNING_DECISIONS_CHANGED=0`; `NEW_ROUTES=0`; `PERFORMANCE_HYPOTHESES_MAIN_SELECTED=0`.
 
 ## MAIN1_EVENT_DRIVEN_EXECUTION (2026-10-02)
