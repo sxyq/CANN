@@ -33,6 +33,8 @@ printf 'HOST=%s\n' "$(hostname)"
 printf 'BRANCH=%s\n' "$(git -C "${WORKTREE_ROOT}" branch --show-current)"
 printf 'COMMIT=%s\n' "$(git -C "${WORKTREE_ROOT}" rev-parse HEAD)"
 printf 'ASCEND_HOME_PATH_EXPECTED=%s\n' "${ASCEND_HOME_PATH_EXPECTED}"
+export LD_LIBRARY_PATH="${LD_LIBRARY_PATH:-}"
+export PYTHONPATH="${PYTHONPATH:-}"
 source /usr/local/Ascend/ascend-toolkit/set_env.sh
 export ASCEND_HOME_PATH="${ASCEND_HOME_PATH_EXPECTED}"
 printf 'ASCEND_HOME_PATH=%s\n' "${ASCEND_HOME_PATH}"
