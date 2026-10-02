@@ -197,23 +197,23 @@ Have each existing Route Agent prepare and commit its reproducible route-local b
 
 ```dashboard-json
 {
-  "handoffs": "5/5",
-  "selected": "4 implementation lanes; 1 qualification lane",
-  "activeAgents": 1,
-  "pendingAgents": 1,
-  "activeRevision": "SYNC, STORE, EPI, SMALLMID V001",
-  "stage": "EVENT_DRIVEN_LOCAL_PIPELINE",
-  "state": "Existing V001 lanes continue independently from their current evidence; no Official or Local score has been recorded for these lanes",
-  "nextStep": "Finish SYNC timing harness review and request a fresh d4 lease only after readiness; preserve completed STORE and EPI evidence",
-  "blocker": "SYNC has no timing score yet; STORE Parent/Candidate outputs remain unstable; EPI correctness matrix failed",
+  "handoffs": "SUPPORT-A/B started; 3 Route Agents pending worktree creation",
+  "selected": "5 Planning-approved routes; 0/5 performance hypotheses MAIN_SELECTED",
+  "activeAgents": 3,
+  "pendingAgents": 0,
+  "activeRevision": "SYNC V001 only",
+  "stage": "PORTFOLIO_REBALANCE_EVENT_DRIVEN",
+  "state": "The approved Main-1 portfolio is SYNC, CASE47, CASE14, SELECTIVE-FASTPATH, and TINY; STORE/EPI/SMALLMID are being offboarded with their evidence retained",
+  "nextStep": "Validate SYNC Build then Correctness; finish the three old worktree closures; create the three approved sparse worktrees and fresh Route Agent contexts",
+  "blocker": "SYNC formal timing needs a fresh d4 lease after its final Build/Correctness result; new performance hypotheses await Track-B and Main selection",
   "planningDecisionsChanged": 0,
-  "newRoutes": 0,
+  "newRoutes": 3,
   "lanes": [
-    {"route":"SYNC V001","instruction":"H2 low-precision parameter prefetch order","firstAction":"Prepare exact-shape device-event timing harness; request d4 lease after readiness","revisionState":"BUILD PASS; CORRECTNESS PASS on 2 shapes; no timing runner or samples yet; previous d4 lease released"},
-    {"route":"STORE V001","instruction":"H1 full-row Store issue point","firstAction":"Retain completed run-004 evidence; no further execution assigned","revisionState":"BUILD PASS; run-004 Parent repeats differ by 94690 bytes, Candidate repeats by 79925 bytes; all 4 calls RC=3; evidence commit a1ae33c pushed; no timing"},
-    {"route":"EPI V001","instruction":"H3 group independent row arithmetic","firstAction":"Retain completed correctness failure evidence; no more run assigned","revisionState":"BUILD PASS; matrix 2 PASS, 10 FAIL, 2 MISSING; D8193 retry returned ACL 507035 for both sides; no timing"},
-    {"route":"SMALLMID V001","instruction":"SMD-H6 reuse BF16 parameter conversion","firstAction":"Keep failed V001 evidence; no further work assigned","revisionState":"BUILD PASS; CORRECTNESS FAILED at BF16 D2049; D3073/D4095 not run; no timing"},
-    {"route":"SELECTIVE-FASTPATH","instruction":"BF16 D32768 donor qualification only","firstAction":"Resolve missing exact runtime M and paired evidence","revisionState":"QUALIFICATION_ONLY; no V001 created"}
+    {"route":"SYNC-TOPOLOGY-CHAMPION-X","instruction":"Continue approved V001 Local closure","firstAction":"Validate latest timing-harness Build, then Correctness; Main grants a fresh lease before timing","revisionState":"Previous Build/Correctness passed; latest pointer-cast fix requires event-driven revalidation; no Local score"},
+    {"route":"CASE47-SMALL-CLUSTER-CHAMPION-X","instruction":"Read-only Track-B; cases 4 and 7","firstAction":"Use Support-A case facts and audit overlap with R016/SCHED/row occupancy","revisionState":"No Revision; Main selection required before implementation"},
+    {"route":"CASE14-INTRAROW-PARALLELISM-CHAMPION-X","instruction":"Read-only Track-B; case 14 wide-row occupancy","firstAction":"Establish rows, D, dtype, core/tile use, reduction and launch feasibility","revisionState":"No Revision; Main selection required before implementation"},
+    {"route":"SELECTIVE-FASTPATH-CHAMPION-X","instruction":"One research-only cycle","firstAction":"Name exact donor/source, target cases and dtype; distinguish mechanism from CASE47 and TINY","revisionState":"No Revision; wait for case-family evidence before duplicate verdict"},
+    {"route":"TINY-FIXED-OVERHEAD-CHAMPION-X","instruction":"Read-only Track-B; cases 1, 3 and 5","firstAction":"Audit fixed-cost mechanisms against SELECTIVE-FASTPATH","revisionState":"No Revision; Main selection required before implementation"}
   ]
 }
 ```
@@ -262,6 +262,21 @@ The exact Candidate source, `submission.sha256`, server route-tree source, and s
 - `BUILD=NOT_STARTED`; `CORRECTNESS=NOT_STARTED`; `PERFORMANCE=NOT_RUN`; `ONLINE=NOT_RUN`.
 - Next action: each existing Route Agent repeats the device/resource snapshot immediately before its assigned exact-source build and correctness run. No timing or Online action is authorized in this stage.
 - `PLANNING_DECISIONS_CHANGED=0`; `NEW_ROUTES=0`.
+
+## MAIN1_PORTFOLIO_CORRECTION (2026-10-03)
+
+- Planning portfolio: SYNC continues; STORE and EPI are parked and their worktrees are to close; SMALLMID V001 is correctness-rejected and its worktree is to close; SELECTIVE-FASTPATH gets one research-only cycle. The three approved replacement routes are CASE47-SMALL-CLUSTER, CASE14-INTRAROW-PARALLELISM, and TINY-FIXED-OVERHEAD. No sixth lane is opened.
+- Current active portfolio: SYNC, CASE47, CASE14, SELECTIVE-FASTPATH, TINY. Planning decisions are followed as received; this Main changes none of them. Three approved route slots are being populated, with zero routes outside the approved five.
+- Champion recomputation from fetched `origin/main`: `OVERALL_CHAMPION=R31B V011`, Official `45.16`, `15/15`. The canonical `result.json`, `source-meta.json`, `submission.sha256`, and retained `submission.asc` all identify source SHA `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`.
+- STORE V001 closure class: `PARKED_BY_BASELINE_OR_ENVIRONMENT_BLOCK`. Run-004 has Parent and Candidate output variation; all four calls returned RC=3. No Candidate-only correctness failure is established. Preserve branch and V001 evidence.
+- EPI V001 closure class: `PARKED_BY_BASELINE_OR_ENVIRONMENT_BLOCK`. The matrix is 2 PASS, 10 FAIL, 2 MISSING; at D8193 both Parent and Candidate returned ACL 507035. The shared wide-FP32 failures do not establish that H3 alone caused them. Preserve branch and V001 evidence.
+- SMALLMID V001 closure class: `CORRECTNESS_REJECTED`. BF16 D2049 failed; D3073 and D4095 remain unrun. Preserve branch and complete V001 evidence.
+- The STORE, EPI, and SMALLMID worktrees are clean with no ignored or untracked files. Their branches remain present; all existing evidence commits remain reachable. No matching route process or active device lease was found. Before removing those linked worktrees, add an explicit current-source restoration record to each branch while keeping its V001 submission package unchanged.
+- SYNC V001 remains the only active Revision. Its first Build/Correctness run passed, but the later pointer-cast Build attempt failed. The current Route Agent is validating the committed fix; no timing process is running. Main will add a fresh d4 lease only after the latest Build and Correctness both pass.
+- Support-A (`01a0fe0f-8958-78d2-a7c7-d4eb803a2210`) is mapping Official case families from recorded sources. Support-B (`01a0fe0f-8a32-75c2-930a-4bd3bfab9fb6`) is evaluating existing pipeline and profiler evidence. Both are read-only and may not start device jobs.
+- Branch/worktree names for the approved replacements: `w2/m1/case47-small-cluster`, `w2/m1/case14-intrarow-parallelism`, and `w2/m1/tiny-fixed-overhead`, under `worktrees/w2/m1/`. Each will use a minimal sparse checkout and a fresh Route Agent context. All three Direct Parents are the exact Official-backed R31B V011 source above.
+- Event order: each Route Agent's committed source triggers its own Build immediately; Build PASS triggers Correctness; Correctness PASS triggers Formal Local Performance once Main records that lane's device lease. Score recording and dashboard refresh happen per result; no lane waits for unrelated routes or pushes.
+- `PLANNING_DECISIONS_CHANGED=0`; `NEW_ROUTES_OUTSIDE_APPROVED_5=0`; `PERFORMANCE_HYPOTHESES_MAIN_SELECTED=0`.
 
 ## MAIN1_EVENT_DRIVEN_EXECUTION (2026-10-02)
 
