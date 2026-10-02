@@ -1,0 +1,49 @@
+{
+  "route": "HOTLOOP-BRANCH-HOIST-CHAMPION-X",
+  "revision": "V002",
+  "hypothesis": "HBH-09",
+  "stage": "CORRECTNESS",
+  "verdict": "PASS",
+  "host": "hwnput3",
+  "device": 7,
+  "device_access": "local npu-smi",
+  "remote_access": "cann-server3 DNS unresolved from this runtime",
+  "executable": "support/build-004/hotloop_branch_v002_correctness",
+  "executable_sha256": "e57480e78b52454d224e59a8792944610838785b44a4c962aedfa0ea5f05541a",
+  "parent_source_sha256": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "candidate_source_sha256": "1aa6d8ecaa1af058b039341f63c67f4f67403bb4a8e5c6bc57dd96914f42cb65",
+  "launch_contract": {
+    "available_core_num": 40,
+    "epsilon": 0.00001,
+    "same_stream": true,
+    "output_initialized_before_launch": true,
+    "generic_width": 6144,
+    "local_rows_modes": [1, 2]
+  },
+  "cases": [
+    {"side": "parent", "dtype": "fp32", "width": 6144, "rows": 40, "local_rows": 1, "status": "PASS", "max_abs_error": 4.76837158e-07, "tolerance": 0.0001, "mismatches": 0},
+    {"side": "parent", "dtype": "fp32", "width": 6144, "rows": 80, "local_rows": 2, "status": "PASS", "max_abs_error": 4.76837158e-07, "tolerance": 0.0001, "mismatches": 0},
+    {"side": "parent", "dtype": "bf16", "width": 6144, "rows": 40, "local_rows": 1, "status": "PASS", "max_abs_error": 0.00390625, "tolerance": 0.015, "mismatches": 0},
+    {"side": "parent", "dtype": "bf16", "width": 6144, "rows": 80, "local_rows": 2, "status": "PASS", "max_abs_error": 0.0078125, "tolerance": 0.015, "mismatches": 0},
+    {"side": "parent", "dtype": "fp16", "width": 6144, "rows": 40, "local_rows": 1, "status": "PASS", "max_abs_error": 0.001953125, "tolerance": 0.0025, "mismatches": 0},
+    {"side": "parent", "dtype": "fp16", "width": 6144, "rows": 80, "local_rows": 2, "status": "PASS", "max_abs_error": 0.001953125, "tolerance": 0.0025, "mismatches": 0},
+    {"side": "candidate", "dtype": "fp32", "width": 6144, "rows": 40, "local_rows": 1, "status": "PASS", "max_abs_error": 4.76837158e-07, "tolerance": 0.0001, "mismatches": 0},
+    {"side": "candidate", "dtype": "fp32", "width": 6144, "rows": 80, "local_rows": 2, "status": "PASS", "max_abs_error": 4.76837158e-07, "tolerance": 0.0001, "mismatches": 0},
+    {"side": "candidate", "dtype": "bf16", "width": 6144, "rows": 40, "local_rows": 1, "status": "PASS", "max_abs_error": 0.00390625, "tolerance": 0.015, "mismatches": 0},
+    {"side": "candidate", "dtype": "bf16", "width": 6144, "rows": 80, "local_rows": 2, "status": "PASS", "max_abs_error": 0.0078125, "tolerance": 0.015, "mismatches": 0},
+    {"side": "candidate", "dtype": "fp16", "width": 6144, "rows": 40, "local_rows": 1, "status": "PASS", "max_abs_error": 0.001953125, "tolerance": 0.0025, "mismatches": 0},
+    {"side": "candidate", "dtype": "fp16", "width": 6144, "rows": 80, "local_rows": 2, "status": "PASS", "max_abs_error": 0.001953125, "tolerance": 0.0025, "mismatches": 0}
+  ],
+  "geometry_record": [
+    {"dtype": "fp32", "width": 6144, "tile_width": 4096, "tile_count": 2, "rows": 40, "local_rows": 1, "cache_row": true, "cache_params": false, "reuse_fence_mode": true},
+    {"dtype": "fp32", "width": 6144, "tile_width": 4096, "tile_count": 2, "rows": 80, "local_rows": 2, "cache_row": true, "cache_params": true, "reuse_fence_mode": false},
+    {"dtype": "bf16", "width": 6144, "tile_width": 4096, "tile_count": 2, "rows": 40, "local_rows": 1, "cache_row": true, "cache_params": false, "reuse_fence_mode": true},
+    {"dtype": "bf16", "width": 6144, "tile_width": 4096, "tile_count": 2, "rows": 80, "local_rows": 2, "cache_row": true, "cache_params": true, "reuse_fence_mode": false},
+    {"dtype": "fp16", "width": 6144, "tile_width": 4096, "tile_count": 2, "rows": 40, "local_rows": 1, "cache_row": true, "cache_params": false, "reuse_fence_mode": true},
+    {"dtype": "fp16", "width": 6144, "tile_width": 4096, "tile_count": 2, "rows": 80, "local_rows": 2, "cache_row": true, "cache_params": true, "reuse_fence_mode": false}
+  ],
+  "raw_output": "support/correctness-run.log",
+  "resource_snapshot_pre": "support/correctness.npu-smi-pre.txt",
+  "resource_snapshot_post": "support/correctness.npu-smi-post.txt",
+  "next_gate": "FORMAL_LOCAL_SAME_BINARY"
+}
