@@ -1,0 +1,63 @@
+{
+  "route": "HOTLOOP-BRANCH-HOIST-CHAMPION-X",
+  "revision": "V001",
+  "hypothesis": "HBH-10",
+  "stage": "FORMAL_LOCAL_FINAL_WINDOW_2",
+  "final_verdict": "LOCAL_REJECTED",
+  "formal_score_claim": false,
+  "online": "NOT_PERMITTED",
+  "host": "hwnput3",
+  "device": 4,
+  "shape": {"dtype": "bf16", "width": 32768},
+  "parent_source_sha256": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "candidate_source_sha256": "4dc1973ef198cd67693610b6ffedad6883b59f52207b9804052975a13f4e032b",
+  "performance_executable_sha256": "dadafae6835854a799f4fc63ca1c5ae45c4495500ed18bfd9ac7f141c0ea9e61",
+  "protocol": {
+    "warmups_per_side": 45,
+    "samples_per_block": 31,
+    "blocks": 4,
+    "block_orders": ["P_then_C", "C_then_P", "P_then_C", "C_then_P"],
+    "timing_primary": "aclrtRecordEvent/aclrtSynchronizeEvent/aclrtEventElapsedTime",
+    "raw_samples": 248,
+    "run_rc": 0
+  },
+  "window_1": {
+    "evidence_commit": "c3c6b4c6b3520873eeaeade06101ecd6488acb62",
+    "run_commit": "2d8ae49e1a8a54390b40bd0ac1b2a6dd20b871a6",
+    "block_median_delta_percent": [-1.267609, 0.071586, -0.141244, -0.636044],
+    "direction": "MIXED",
+    "raw_sha256": "274ef5319d9a386711f50e8cca510aac552a22802fa0aee9a7c4f1ba726b6d3f"
+  },
+  "window_2": {
+    "evidence_commit": "99ff9a76668be8ab8f626a48a7f1b22cec57ebcc",
+    "start_utc": "2026-10-02T19:06:01Z",
+    "end_utc": "2026-10-02T19:06:11Z",
+    "block_median_delta_percent": [-0.071280, 0.000000, 0.278936, 0.722542],
+    "parent_block_median_us": [28.320000, 28.279999, 27.860001, 28.320000],
+    "candidate_block_median_us": [28.279999, 28.279999, 27.899999, 28.240001],
+    "direction": "MIXED",
+    "raw_sha256": "63cc098a4c8832e8a733633e61625c2ce2d488b1688559ad75b376a7ab9219f3",
+    "log_sha256": "423d9c7eef2c409d9808a9bebae36307f47b950f8239b216ae4849bbe7d5a2a1"
+  },
+  "same_binary_noise": {
+    "window_1_mad_over_median": 0.014524,
+    "window_1_block_drift": 0.012044,
+    "window_2_mad_over_median": 0.019184,
+    "window_2_block_drift": 0.025811,
+    "stable_candidate_gain_above_noise": false
+  },
+  "final_interpretation": {
+    "all_eight_block_medians": [-1.267609, 0.071586, -0.141244, -0.636044, -0.071280, 0.000000, 0.278936, 0.722542],
+    "direction": "MIXED",
+    "reason": "The two valid windows do not show a stable Candidate advantage; the second window is mixed and its small deltas remain below the observed same-binary noise scale.",
+    "local_score": null,
+    "official_score": null
+  },
+  "load_snapshot": {
+    "before_hbm_usage_percent": 93,
+    "after_hbm_usage_percent": 93,
+    "resident_processes": "python 2088 MB; VLLMEngineCor 55664 MB",
+    "process_actions": "NONE"
+  },
+  "next_gate": "EXPLICIT_RESTORE_TO_R31B_V011"
+}
