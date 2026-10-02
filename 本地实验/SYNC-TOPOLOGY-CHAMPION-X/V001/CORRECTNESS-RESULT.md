@@ -1,6 +1,22 @@
 # SYNC-TOPOLOGY-CHAMPION-X V001 Correctness Result
 
-Status: `CORRECTNESS=PASS`; `PERFORMANCE=NOT_RUN`.
+Latest Correctness: `PASS`, return code `0`, in `SYNC-TOPOLOGY-CHAMPION-X-V001-D4-BUILD-FIX-6e650cf5-20261002T231909Z`.
+
+## Latest Correctness Run
+
+- Route HEAD: `6e650cf5224ca0750d9d4886f5ccc428a9edde19`
+- Candidate SHA256: `27c853e1cb0c47307899b874338c3aecb912ad5dc125c0d67f6afba76a9117ec`
+- Direct Parent: `R31B V011`; Parent SHA256: `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`
+- Correctness executable SHA256: `7a8335eec7156cf695cf75281a576a2b403e7df5da24de7fd7c1d8759abc97a7`
+- `[2,12288]` FP16: `PASS`, matched ratio `1.0`, maximum absolute error `0.00048828125`.
+- `[2,8192]` FP16 control: `PASS`, matched ratio `1.0`, maximum absolute error `0.00048828125`.
+- Device 4 before/after: HBM `59190/65536 MB`; AICore `0%`; `VLLMEngineCor` PID `2999855` unchanged; available disk `616 GB`; no SYNC process remained after the run.
+- Correctness log: `/home/data4t2/lelinfeng/cann/w2/SYNC-TOPOLOGY-CHAMPION-X/V001/results/SYNC-TOPOLOGY-CHAMPION-X-V001-D4-BUILD-FIX-6e650cf5-20261002T231909Z/correctness.log`
+- Return code: `/home/data4t2/lelinfeng/cann/w2/SYNC-TOPOLOGY-CHAMPION-X/V001/results/SYNC-TOPOLOGY-CHAMPION-X-V001-D4-BUILD-FIX-6e650cf5-20261002T231909Z/correctness-status.txt`
+- Executable identities are recorded in the matching `executable-identity.txt`.
+- No timing mode ran in this correctness invocation.
+
+## Earlier Correctness Run
 
 ## Source and executable identity
 
