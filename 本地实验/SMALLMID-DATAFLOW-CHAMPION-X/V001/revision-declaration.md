@@ -28,10 +28,10 @@
 
 只移动 BF16 gamma/bias 的两次 `ToFloat`，从逐行输出阶段移到现有参数 MTE2 等待之后、行循环之前；每行改读 FP32 参数缓冲。保持现有行分配、UB 总量、GM Load、DMA、事件同步、Store 和逐元素算术次序不变。不扩大 tile，不加入第二个性能机制。
 
-`BUILD`: `FAIL` (attempt 1, RC=1; empty log at server3 `.../artifacts/build-device1.log`; CANN env `find` returned 1 on protected sibling directories under errexit; Build wrapper fix in progress, see `local-result.json`)
+`BUILD`: `FAIL` (attempt 1 stopped at CANN env loading; attempt 2 stopped at CMake configure because `ASCEND_HOME_PATH` was not exported; see both server3 logs in `local-result.json`; retry in progress)
 `CORRECTNESS`: `NOT_STARTED`
 `EXECUTABLE_IDENTITY`: `MISSING`
-`LOCAL_VERDICT`: `BUILD_FAILED` (attempt 1; diagnosis in progress)
+`LOCAL_VERDICT`: `BUILD_FAILED` (attempts 1-2; retry in progress)
 `SOURCE_STATE`: `IMPLEMENTED_NOT_BUILT`
 `SOURCE_SHA256`: `a689e5abc03d2770b277812d9a52ae0a1aaf910952b737525e1722f06bdb340a`
 `SOURCE_COMMIT`: `9abea741d4d0b40efdc322da5255c463fede481b`
