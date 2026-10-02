@@ -1,6 +1,6 @@
 # MAIN-2 Local Control Dashboard
 
-UPDATED_UTC: 2026-10-01T22:40:43Z
+UPDATED_UTC: 2026-10-02T01:57:17Z
 SCOPE: MAIN-2 local control only
 CANONICAL_SHARED_LEDGER: UNMODIFIED
 
@@ -39,7 +39,7 @@ SNAPSHOT_UTC=2026-10-01T22:12:02Z
 HOST=hwnput3
 FREE_HBM_MB=0:5313,1:5263,2:5319,3:5318,4:6346,5:5356,6:5357,7:12508
 AICORE_PERCENT=0:18,1:20,2:33,3:33,4:0,5:0,6:0,7:1
-EXISTING_USERS=VLLM_WORKERS_ON_0_TO_6; VLLM/RAY/PYTHON_ON_7
+EXISTING_USERS=VLLM_WORKERS_ON_0_TO_6; PYTHON3_ON_7 (PID 439848)
 PROCESS_ACTIONS=NONE; no user process stopped, paused, migrated, or preempted
 SERVER3_ALIAS=cann-server3; DNS_UNRESOLVED_FROM_THIS_RUNTIME
 SERVER_JOBS_STARTED_BY_THIS_CHECKPOINT=0
@@ -236,23 +236,23 @@ GITHUB_PUSH_IS_LOCAL_STAGE_GATE=NO
 MAIN_SELECTED_COUNT=0
 NEW_REVISION_COUNT=0
 ONLINE_QUEUE=EMPTY
-ONLINE_TICK=SKIPPED; REASON=NO_ELIGIBLE_CANDIDATE
+ONLINE_TICK=SKIPPED; REASON=NO_ELIGIBLE_CANDIDATE (initial check)
 ONLINE_SUBMISSIONS=0
 PLANNING_DECISIONS_CHANGED=0
 ```
 
 | Route | Planning lifecycle | Context / worktree | Current event |
 |---|---|---|---|
-| UB-LIFETIME-SAFE-CHAMPION-X | KEEP / DIAGNOSTIC | `01a0fa2f-2b44-7be0-b76c-8a2dadf07d08` / `/home/data4t2/lelinfeng/cann-w2-m2-ub` | forensic V001 diagnostic; no V002 |
-| HOTLOOP-ADDR-HOIST-CHAMPION-X | KEEP / RESEARCH | `01a0fa2f-2e7f-7461-85e0-0a1d446944c8` / `/home/data4t2/lelinfeng/cann/worktrees/w2/m2/hotloop-addr` | code-site + baseline-cost audit |
-| HOTLOOP-BRANCH-HOIST-CHAMPION-X | KEEP / RESEARCH | `01a0fa2f-3610-7d03-a158-a196219dcfff` / `/home/data4t2/lelinfeng/cann/worktrees/w2/m2/hotloop-branch` | parent-only branch/codegen audit |
+| UB-LIFETIME-SAFE-CHAMPION-X | KEEP / DIAGNOSTIC | `01a0fa2f-2b44-7be0-b76c-8a2dadf07d08` (closed) / `/home/data4t2/lelinfeng/cann-w2-m2-ub` | forensic V001 closed; `UNRESOLVED`; no V002 |
+| HOTLOOP-ADDR-HOIST-CHAMPION-X | KEEP / RESEARCH | `01a0fa2f-2e7f-7461-85e0-0a1d446944c8` (closed) / `/home/data4t2/lelinfeng/cann/worktrees/w2/m2/hotloop-addr` | planning pack committed; context closed |
+| HOTLOOP-BRANCH-HOIST-CHAMPION-X | KEEP / RESEARCH | replacement `01a0fa4b-0161-7351-b95f-a8b1df5482a5` (closed) / `/home/data4t2/lelinfeng/cann/worktrees/w2/m2/hotloop-branch` | planning pack committed; context closed |
 | TILECOUNT-STATIC-UNROLL-CHAMPION-X | PARK | no Agent | no hypothesis or Revision allowed |
 | REDUCE-FINALIZE-HANDOFF-CHAMPION-X | PARK | no Agent | no hypothesis or Revision allowed |
 
 ```text
 UB_V001=CORRECTNESS_FAILED; no V002; no performance; no Online
-ADDR_MAIN_SELECTED=NONE; no Candidate; planning pack pending
-BRANCH_MAIN_SELECTED=NONE; no Candidate; planning pack pending
+ADDR_MAIN_SELECTED=NONE; no Candidate; planning pack committed
+BRANCH_MAIN_SELECTED=NONE; no Candidate; planning pack committed
 TILECOUNT=PARKED; REDUCE=PARKED
 FORMAL_PERFORMANCE_RUNS=0
 KERNEL_FILES_CHANGED_BY_MAIN=0
@@ -269,18 +269,27 @@ are research-only.
 ## Current host snapshot for event scheduling
 
 ```text
-SNAPSHOT_UTC=2026-10-02T01:17:18Z
+SNAPSHOT_UTC=2026-10-02T01:57:17Z
 HOST=hwnput3
 SERVER3_ALIAS=cann-server3
 SERVER3_DNS=UNRESOLVED
-FREE_HBM_MB_BY_DEVICE=0:5312,1:5262,2:5319,3:5318,4:6346,5:5336,6:5337,7:11632
-AICORE_PERCENT_BY_DEVICE=0:32,1:33,2:32,3:32,4:0,5:0,6:0,7:32
+FREE_HBM_MB_BY_DEVICE=0:5312,1:5262,2:5319,3:5318,4:6346,5:5336,6:5337,7:40748
+AICORE_PERCENT_BY_DEVICE=0:0,1:0,2:0,3:0,4:0,5:0,6:0,7:8
 EXISTING_USERS=VLLM_WORKERS_ON_0_TO_6; VLLM/RAY/PYTHON_ON_7
-NEW_JOBS_STARTED_BY_MAIN=0
+UB_FORENSIC_REBUILD=3_ATTEMPTS (1_PASS; 2_TOOLCHAIN_ENV_FAILURES)
+UB_FORENSIC_CORRECTNESS=2_NONFORMAL_RUNS_ON_DEVICE7
+BRANCH_PARENT_COMPILE=1_PASS; STATIC_CODEGEN_PROBE_ONLY
+ADDR_COMPILE_OR_PROFILE=0
+NEW_NPU_JOBS_STILL_RUNNING=0
 FORMAL_LEASES=0
+FORMAL_PERFORMANCE_RUNS=0
 HBM_BLOCKS=NONE_AT_SNAPSHOT
 PROCESS_ACTIONS=NONE
 ```
+
+The V001 reruns were non-formal correctness diagnostics and are preserved in
+the UB route evidence; they do not make V001 performance-eligible. Existing
+vLLM/Ray/Python processes were observed only and left untouched.
 
 GitHub publication remains `PUSH_PENDING` because HTTPS remote access is
 unconfirmed; this does not gate the three local research contexts. No force
@@ -371,6 +380,12 @@ NEW_REVISION_COUNT=0
 ONLINE_SUBMISSIONS=0
 PLANNING_DECISIONS_CHANGED=0
 NEW_ROUTES_OUTSIDE_APPROVED_5=0
+FORENSIC_AGENT=01a0fa2f-2b44-7be0-b76c-8a2dadf07d08 CLOSED
+ADDR_AGENT=01a0fa2f-2e7f-7461-85e0-0a1d446944c8 CLOSED
+BRANCH_AGENT_REPLACED=01a0fa2f-3610-7d03-a158-a196219dcfff SHUTDOWN_NO_HANDOFF
+BRANCH_AGENT=01a0fa4b-0161-7351-b95f-a8b1df5482a5 CLOSED
+ONLINE_TICK_2026-10-02T01:37Z=RETROSPECTIVE_SKIP; REASON=NO_ELIGIBLE_CANDIDATE (ADDR/BRANCH research-only; UB V001 correctness-failed/diagnostic)
+ONLINE_TICK_2026-10-02T01:57Z=SKIPPED; REASON=NO_ELIGIBLE_CANDIDATE
 ```
 
 The three required independent contexts have produced committed route-local
