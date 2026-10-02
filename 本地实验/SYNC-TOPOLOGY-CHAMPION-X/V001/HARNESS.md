@@ -1,6 +1,6 @@
 # SYNC-TOPOLOGY-CHAMPION-X V001 Build / Correctness Harness
 
-Status: prepared only. No server connection, build, correctness run, timing, profiling, or Online action was performed while preparing this harness.
+Status: the initial Build/Link attempt failed; see `BUILD-RESULT.md`. Correctness and timing have not run.
 
 ## Source identity
 
@@ -45,6 +45,8 @@ scp 本地实验/SYNC-TOPOLOGY-CHAMPION-X/V001/support/npu_correctness.asc cann-
 ```
 
 ## Exact commands
+
+The server's `bisheng` host compiler selects GCC 12, whose default search path omits the installed GCC 11 C++ headers. The CANN linker also compiles a generated host registration unit in a child process that does not inherit the ASC `-Xhost-start` include arguments. The CMake target therefore supplies the verified GCC 11 directories through `CPATH` for the compiler process and its children.
 
 Run these from a server shell only when Main's device/job allocation is active. Set the paths and a fresh attempt ID first:
 

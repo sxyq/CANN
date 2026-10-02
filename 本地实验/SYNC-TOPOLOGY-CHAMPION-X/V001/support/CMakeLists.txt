@@ -35,6 +35,10 @@ set(CMAKE_ASC_COMPILE_OBJECT
 
 set_source_files_properties(npu_correctness.asc PROPERTIES LANGUAGE ASC)
 add_executable(sync_topology_v001_correctness npu_correctness.asc)
+set(SYNC_HOST_CXX_INCLUDE_PATHS
+    "/usr/include/c++/11:/usr/include/aarch64-linux-gnu/c++/11:/usr/include/c++/11/backward")
+set_property(TARGET sync_topology_v001_correctness PROPERTY RULE_LAUNCH_COMPILE
+    "${CMAKE_COMMAND} -E env CPATH=${SYNC_HOST_CXX_INCLUDE_PATHS}")
 target_include_directories(sync_topology_v001_correctness PRIVATE
     "${CMAKE_CURRENT_LIST_DIR}"
     "${CMAKE_CURRENT_LIST_DIR}/.."
