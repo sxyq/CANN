@@ -1,0 +1,42 @@
+{
+  "route": "HOTLOOP-BRANCH-HOIST-CHAMPION-X",
+  "revision": "V001",
+  "hypothesis": "HBH-10",
+  "stage": "CORRECTNESS",
+  "verdict": "PASS",
+  "host": "hwnput3",
+  "device": 7,
+  "device_access": "local npu-smi",
+  "remote_access": "cann-server3 DNS unresolved from this runtime",
+  "harness_commit": "aeedc1b64d69c2cb0060f09f1f52a0e2dc2e8fdb",
+  "executable": "support/build/hotloop_branch_v001_correctness",
+  "executable_sha256": "8d35822b51da2cd975c26e24137a61909ba46f749b83f4f64cfa5098594d2b92",
+  "parent_source_sha256": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "candidate_source_sha256": "4dc1973ef198cd67693610b6ffedad6883b59f52207b9804052975a13f4e032b",
+  "launch_contract": {
+    "rows": 80,
+    "available_core_num": 40,
+    "epsilon": 0.00001,
+    "same_stream": true,
+    "output_initialized_before_launch": true
+  },
+  "cases": [
+    {"side": "parent", "dtype": "fp16", "width": 16384, "rows": 80, "status": "PASS", "max_abs_error": 0.001953125, "tolerance": 0.0025, "mismatches": 0},
+    {"side": "parent", "dtype": "fp16", "width": 32768, "rows": 80, "status": "PASS", "max_abs_error": 0.001953125, "tolerance": 0.0025, "mismatches": 0},
+    {"side": "parent", "dtype": "bf16", "width": 32768, "rows": 80, "status": "PASS", "max_abs_error": 0.0078125, "tolerance": 0.015, "mismatches": 0},
+    {"side": "parent", "dtype": "bf16", "width": 20000, "rows": 80, "status": "PASS", "max_abs_error": 0.0078125, "tolerance": 0.015, "mismatches": 0},
+    {"side": "candidate", "dtype": "fp16", "width": 16384, "rows": 80, "status": "PASS", "max_abs_error": 0.001953125, "tolerance": 0.0025, "mismatches": 0},
+    {"side": "candidate", "dtype": "fp16", "width": 32768, "rows": 80, "status": "PASS", "max_abs_error": 0.001953125, "tolerance": 0.0025, "mismatches": 0},
+    {"side": "candidate", "dtype": "bf16", "width": 32768, "rows": 80, "status": "PASS", "max_abs_error": 0.0078125, "tolerance": 0.015, "mismatches": 0},
+    {"side": "candidate", "dtype": "bf16", "width": 20000, "rows": 80, "status": "PASS", "max_abs_error": 0.0078125, "tolerance": 0.015, "mismatches": 0}
+  ],
+  "geometry_record": [
+    {"dtype": "fp16", "width": 16384, "tile_width": 4096, "tile_count": 4, "batch_rows": 2, "units": 8, "tail": 0},
+    {"dtype": "fp16", "width": 32768, "tile_width": 4096, "tile_count": 8, "batch_rows": 2, "units": 16, "tail": 0},
+    {"dtype": "bf16", "width": 32768, "tile_width": 2560, "tile_count": 13, "batch_rows": 2, "units": 26, "tail": 2048},
+    {"dtype": "bf16", "width": 20000, "tile_width": 4096, "tile_count": 5, "batch_rows": 2, "units": 10, "tail": 3616}
+  ],
+  "raw_output": "support/correctness.log",
+  "resource_snapshot": "support/correctness.npu-smi.txt",
+  "next_gate": "FORMAL_LOCAL_PERFORMANCE"
+}
