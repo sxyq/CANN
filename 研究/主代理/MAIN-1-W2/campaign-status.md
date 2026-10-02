@@ -212,7 +212,7 @@ Have each existing Route Agent prepare and commit its reproducible route-local b
     {"route":"SYNC V001","instruction":"H2 low-precision parameter prefetch order","firstAction":"Build on device 4, then correctness","revisionState":"BUILD_FAILED; missing C++ vector include; harness retry active; Candidate SHA unchanged"},
     {"route":"STORE V001","instruction":"H1 full-row Store issue point","firstAction":"Build on device 5, then correctness","revisionState":"BUILD_PASS; run-001 INCOMPLETE (libgraph.so); run-002 FAIL 23/25 with two FP32 output differences; targeted diagnosis active; Candidate SHA unchanged"},
     {"route":"EPI V001","instruction":"H3 group independent row arithmetic","firstAction":"Build on device 7, then correctness","revisionState":"BUILD_INCOMPLETE before CMake; df option compatibility retry active; Candidate SHA unchanged"},
-    {"route":"SMALLMID V001","instruction":"SMD-H6 reuse BF16 parameter conversion","firstAction":"Build on device 1, then correctness","revisionState":"BUILD_MISSING; prior server log empty and no executable found; replacement active; Candidate SHA unchanged"},
+    {"route":"SMALLMID V001","instruction":"SMD-H6 reuse BF16 parameter conversion","firstAction":"Build on device 1, then correctness","revisionState":"BUILD_PASS; Correctness launch INCOMPLETE due libgraph.so loader; ownership conflict resolved; single owner retrying; Candidate SHA unchanged"},
     {"route":"SELECTIVE-FASTPATH","instruction":"BF16 D32768 donor qualification only","firstAction":"Resolve missing exact runtime M and paired evidence","revisionState":"QUALIFICATION_ONLY; no V001 created"}
   ]
 }
@@ -268,12 +268,12 @@ The exact Candidate source, `submission.sha256`, server route-tree source, and s
 - The four earlier Route Agent IDs returned `not_found` from the current runtime. No route process or lane output directory existed at the next server snapshot; no test stage was running then.
 - Replacement execution contexts use the same four existing local branches and worktrees. No source change, Revision declaration, route change, or Planning decision was made while replacing the unavailable contexts.
 
-| Route | Agent ID at dispatch | Existing branch | Existing worktree | Candidate SHA256 | Stage |
+| Route | Agent ID at latest assignment | Existing branch | Existing worktree | Candidate SHA256 | Stage |
 |---|---|---|---|---|---|
 | SYNC V001 | `01a0fcf7-fece-7570-958c-1720fc7bc486` | `w2/m1/sync-topology` | `worktrees/w2/m1/sync-topology` | `27c853e1cb0c47307899b874338c3aecb912ad5dc125c0d67f6afba76a9117ec` | STARTED; agent preparing own build |
 | STORE V001 | `01a0fcf7-ff78-7313-868d-a3d74ee616fc` | `w2/m1/store-epilogue` | `worktrees/w2/m1/store-epilogue` | `48b9428dc2fc97c7c9d95f03ad8cec8e758c88e1197aa2328b1b1edebc018f88` | STARTED; agent preparing own build |
 | EPI V001 | `01a0fcf7-ffe5-74a0-baa2-3cad636c6e80` | `w2/m1/epi-arith` | `worktrees/w2/m1/epi-arith` | `9a28f5cd8703dc4ff5c46fba09f59a537132594e5a879a50a17349086bfe4d59` | STARTED; agent preparing own build |
-| SMALLMID V001 | `01a0fcf8-0053-7800-a592-897178653e7d` | `w2/m1/smallmid-dataflow` | `worktrees/w2/m1/smallmid-dataflow` | `a689e5abc03d2770b277812d9a52ae0a1aaf910952b737525e1722f06bdb340a` | STARTED; agent preparing own build |
+| SMALLMID V001 | `01a0fd14-5474-7140-83fd-054dd4f35187` | `w2/m1/smallmid-dataflow` | `worktrees/w2/m1/smallmid-dataflow` | `a689e5abc03d2770b277812d9a52ae0a1aaf910952b737525e1722f06bdb340a` | BUILD PASS; first Correctness launch stopped before cases because `libgraph.so` was not loaded; Main reaffirmed this Agent as sole owner |
 
 - Server snapshot: free HBM d1/d4/d5/d7 = 1412/5121/1494/40757 MB; project disk available = 630 GB. Existing VLLM and Python work remains untouched. No lane-specific compile or runner process was present at this snapshot.
 - Per-route flow: fixed local source commit → build → correctness → immediate formal local performance, subject only to that route's own result and the existing per-device timing protocol. GitHub push and unrelated route progress are not prerequisites.
@@ -288,7 +288,7 @@ The exact Candidate source, `submission.sha256`, server route-tree source, and s
 | SYNC V001 | FAILED; generated host code cannot find `<vector>` | NOT_RUN | Route Agent is resolving the C++ include path; Candidate SHA is unchanged |
 | STORE V001 | PASS | run-001 INCOMPLETE (`libgraph.so`); run-002 FAIL 23/25, two FP32 parent/Candidate outputs differ while both fail golden | Route Agent is repeating only the two failing shapes for diagnosis; no timing |
 | EPI V001 | INCOMPLETE; disk probe stopped before CMake due incompatible `df` options | NOT_RUN | Route Agent is updating only the two run scripts; prior attempt remains preserved |
-| SMALLMID V001 | MISSING; prior server log is zero bytes and no executable was found at the queried output path | NOT_RUN | Replacement Agent is tracing the prior invocation and will use a new attempt path |
+| SMALLMID V001 | PASS; executable SHA `159532de...68e5208`, source SHA matches | First launch INCOMPLETE; runner could not load `libgraph.so` before running a case | Sole owner is adding the runtime library path and will use a new run directory |
 
 - The former SMALLMID Agent ID returned `not_found`; replacement `01a0fd14-5474-7140-83fd-054dd4f35187` uses the same branch and worktree.
 - No lane has started performance measurement; Main will add a per-device lease only after that lane's correctness PASS.
@@ -300,3 +300,12 @@ The exact Candidate source, `submission.sha256`, server route-tree source, and s
 - Run 002 resolved runtime loading and completed all 25 cases: 23 PASS; `1x16384 FP32` and `1x32768 FP32` each returned RC=3 for Parent and Candidate, and their output bytes differ. This does not establish correctness against an independent golden on those shapes.
 - Run-002 evidence: local commit `34f5063e`; Candidate source SHA remains `48b9428dc2fc97c7c9d95f03ad8cec8e758c88e1197aa2328b1b1edebc018f88`; server logs are under `/home/data4t2/lelinfeng/cann/STORE-EPILOGUE-W2-X/V001/logs/correctness-run-002/`.
 - A targeted repeatability and output-difference diagnosis is active. No measurement lease or Local timing has started.
+
+### SMALLMID ownership and stage update
+
+- The previous Agent ID `01a0fcf8-0053-7800-a592-897178653e7d` reported work in the same V001 context while replacement `01a0fd14-5474-7140-83fd-054dd4f35187` owned that worktree. Record `OWNERSHIP_CONFLICT=YES`; no Candidate source change is observed.
+- Main confirmed the previous Agent is not active, the replacement reports no running command, and server3 has no active SMALLMID runner/build process. Main assigns the replacement as the sole owner of the existing branch/worktree; no second worktree or Revision was created.
+- Fixed Candidate SHA: `a689e5abc03d2770b277812d9a52ae0a1aaf910952b737525e1722f06bdb340a`. Existing Build run `20261002T151744Z-device1` passed and produced executable SHA `159532deffb1ddaf33792c0b7c296c3bcf7cf2f0cc2ea68fbc0e8de7b68e5208`.
+- Its first Correctness launch stopped before a test case because the executable could not load `libgraph.so`; classify it as `INCOMPLETE`, not a Kernel result. The sole owner is adjusting only the runtime library path before a fresh Correctness run.
+- Seven route-local commits are present beyond the remote branch; `source-meta.json` has one uncommitted Build-status update. The owner must review and preserve these records before deciding which exact paths to commit and publish.
+- `PLANNING_DECISIONS_CHANGED=0`; `NEW_ROUTES=0`.
