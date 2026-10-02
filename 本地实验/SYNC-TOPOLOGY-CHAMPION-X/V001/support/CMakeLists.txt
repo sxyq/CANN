@@ -105,13 +105,25 @@ set(SYNC_PARENT_SOURCE
 if(NOT EXISTS "${SYNC_PARENT_SOURCE}")
     message(FATAL_ERROR "SYNC_PARENT_SOURCE is missing: ${SYNC_PARENT_SOURCE}")
 endif()
+set(SYNC_CANDIDATE_SOURCE "${SYNC_V001_SOURCE_DIR}/submission.asc")
+if(NOT EXISTS "${SYNC_CANDIDATE_SOURCE}")
+    message(FATAL_ERROR "SYNC_CANDIDATE_SOURCE is missing: ${SYNC_CANDIDATE_SOURCE}")
+endif()
 
-ascendc_library(sync_topology_v001_parent SHARED parent_module.asc)
+ascendc_library(sync_topology_v001_parent SHARED "${SYNC_PARENT_SOURCE}")
 ascendc_compile_definitions(sync_topology_v001_parent PRIVATE
-    SYNC_PARENT_SOURCE="${SYNC_PARENT_SOURCE}")
+    run_kernel=sync_parent_run_kernel)
+ascendc_compile_options(sync_topology_v001_parent PRIVATE
+    -forward-options-to-host-compiler
+    -include "${SYNC_V001_SUPPORT_DIR}/local_abi_shim.h")
 configure_sync_v001_asc_target(sync_topology_v001_parent)
 
-ascendc_library(sync_topology_v001_candidate SHARED candidate_module.asc)
+ascendc_library(sync_topology_v001_candidate SHARED "${SYNC_CANDIDATE_SOURCE}")
+ascendc_compile_definitions(sync_topology_v001_candidate PRIVATE
+    run_kernel=sync_candidate_run_kernel)
+ascendc_compile_options(sync_topology_v001_candidate PRIVATE
+    -forward-options-to-host-compiler
+    -include "${SYNC_V001_SUPPORT_DIR}/local_abi_shim.h")
 configure_sync_v001_asc_target(sync_topology_v001_candidate)
 
 add_executable(sync_topology_v001_timing timing_runner.cpp)
