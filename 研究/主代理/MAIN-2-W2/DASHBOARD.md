@@ -518,6 +518,37 @@ PROCESS_ACTIONS=NONE; existing VLLM/Ray/Python processes untouched
 GITHUB_PUSH=PUSH_PENDING; not a local-stage gate
 ```
 
+## Event receipt — ADDR Build PASS / BRANCH timing preparation — 2026-10-02T17:00Z
+
+```text
+CONTROL_HEAD_BEFORE_RECEIPT=c8bf65bd
+CANONICAL_HEAD=02482b46c2ee1fdd5bab1f88a474c7e70426f661
+OVERALL_OFFICIAL_CHAMPION=R31B V011 / 45.16
+PLANNING_DECISIONS_CHANGED=0
+NEW_ROUTES_OUTSIDE_APPROVED_5=0
+```
+
+ADDR V001 H3 has now crossed Build: the third bounded support fix propagates
+the HCC C++ include environment to the generated ASCPLUGIN host compiler.
+Evidence is route commit `47e01be4`, with executable SHA256
+`2b2390ae67e74cc3474e9a0cf77f496628feb825bdd99891f2903157d0d506c8` and
+`BUILD_RC=0`. Candidate source remains H3-only with SHA256
+`26aa65a2e1313e0681ca7ad29f85ca20f667d33ede1a4d2d9e7e1557d6192602`.
+ADDR Correctness is the immediate independent next event; no timing or V002
+has started.
+
+BRANCH V001 remains Correctness PASS at `e1346fce` and is preparing its formal
+paired timing harness. No timing samples or Local score have yet been
+committed. UB remains closed as `PARENT_INSTABILITY` at `12e67f3b`.
+
+```text
+EVENT_DRIVEN_PIPELINE=ENABLED
+ONLINE_QUEUE=EMPTY
+FORMAL_PERFORMANCE_RUNS=0_AT_RECEIPT
+DIRECT_ONLINE_SUBMISSION=0
+GITHUB_PUSH=PUSH_PENDING; not a local-stage gate
+```
+
 ## Event receipt — BRANCH correctness / ADDR bounded build fix — 2026-10-02T16:52Z
 
 ```text
