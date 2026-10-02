@@ -30,4 +30,15 @@ add_executable(addr_v001_h3 compile_adapter.asc)
 target_include_directories(addr_v001_h3 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_options(addr_v001_h3 PRIVATE
     $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=dav-2201>)
+# The ASC compiler emits a host registration/ASCPLUGIN translation unit and
+# invokes a nested host compiler for it.  Pass the HCC C++ search path through
+# the environment as well as the explicit outer command-line flags above.
+set(ADDR_HCC_INCLUDE_ENV_VALUE
+    "${ADDR_HCC_ROOT}/aarch64-target-linux-gnu/include:${ADDR_HCC_ROOT}/aarch64-target-linux-gnu/include/c++/7.3.0:${ADDR_HCC_ROOT}/aarch64-target-linux-gnu/include/c++/7.3.0/aarch64-target-linux-gnu:${ADDR_HCC_ROOT}/aarch64-target-linux-gnu/include/c++/7.3.0/backward")
+set(ADDR_CPLUS_INCLUDE_PATH
+    "${ADDR_HCC_INCLUDE_ENV_VALUE}:$ENV{CPLUS_INCLUDE_PATH}")
+set(ADDR_CPLUSPLUS_INCLUDE_PATH
+    "${ADDR_HCC_INCLUDE_ENV_VALUE}:$ENV{CPLUSPLUS_INCLUDE_PATH}")
+set_property(TARGET addr_v001_h3 PROPERTY RULE_LAUNCH_COMPILE
+    "${CMAKE_COMMAND} -E env CPLUS_INCLUDE_PATH=${ADDR_CPLUS_INCLUDE_PATH} CPLUSPLUS_INCLUDE_PATH=${ADDR_CPLUSPLUS_INCLUDE_PATH}")
 target_link_libraries(addr_v001_h3 PRIVATE stdc++ m dl)
