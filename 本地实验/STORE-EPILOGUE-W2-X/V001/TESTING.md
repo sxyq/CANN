@@ -48,13 +48,15 @@ DEVICE_ID=5 RESULT_DIR=/home/data4t2/lelinfeng/cann/STORE-EPILOGUE-W2-X/V001/log
   > /home/data4t2/lelinfeng/cann/STORE-EPILOGUE-W2-X/V001/logs/correctness-run-001.log 2>&1
 ```
 
-The matrix contains 26 `(rows, width, dtype)` inputs; dtype codes are `0=FP32`, `1=FP16`, `2=BF16`:
+The matrix contains 25 unique `(rows, width, dtype)` inputs; dtype codes are `0=FP32`, `1=FP16`, `2=BF16`:
 
-- FP32 (16): `1x1024`, `1x4096`, `2x4096`, `1x8192`, `2x8192`, `1x16384`, `1x32768`, `3x6144`, `1x100`, `33x100`, `8x256`, `2x256`, `32x256`, `2x6144`, `2x8192`, `8x8192`.
+- FP32 (15): `1x1024`, `1x4096`, `2x4096`, `1x8192`, `2x8192`, `1x16384`, `1x32768`, `3x6144`, `1x100`, `33x100`, `8x256`, `2x256`, `32x256`, `2x6144`, `8x8192`.
 - FP16 (6): `1x256`, `1x4096`, `1x8192`, `1x16384`, `1x65`, `17x257`.
 - BF16 (4): `1x256`, `1x4096`, `1x8192`, `1x32768`.
 
-Each case has separate `parent_*.log` and `candidate_*.log`, binary output, and result TSV under `logs/correctness-run-001/`; the matrix summary is `correctness-summary.tsv`. A pair passes when both golden checks pass and outputs are byte-identical. The committed STORE V002 record reports matching parent/candidate golden mismatches for `1x16384 FP32` and `1x32768 FP32`; for these two cases the script records `PARENT_GOLDEN_MISMATCH_OUTPUT_EQUAL` only when both runs return the golden-mismatch status and the output bytes still match exactly. Other golden failures or any byte difference fail the matrix.
+The committed V002 runner and correctness summary (`e50842cebcf4941d3d17d560ab683cfb56635d4c`, `phase4/workspaces/STORE-EPILOGUE-X/V002/run_correctness.sh` and `phase4/local/STORE-EPILOGUE-X/V002/support/correctness-summary.tsv`) both list 26 cases but contain only 25 unique keys: `(2,8192,0)` is repeated. The Official V002 result (`cac29e8b`, `线上结果/STORE-EPILOGUE-X/V002/result.json`) has 15 testcase IDs without a shape mapping, so there is no documented distinct input to substitute. V001 removes the repeated entry and runs 25 unique cases.
+
+Each case has separate `parent_*.log` and `candidate_*.log`, binary output, and result TSV under `logs/correctness-run-001/`; the matrix summary is `correctness-summary.tsv`. A pair passes when both golden checks pass and outputs are byte-identical. The committed STORE V002 record reports matching parent/candidate golden mismatches for `1x16384 FP32` and `1x32768 FP32`; for these two cases the script records `PARENT_GOLDEN_MISMATCH_OUTPUT_EQUAL` only when both runs return the golden-mismatch status and the output bytes still match exactly. After comparing the outputs, the runner removes only the two generated `.bin` files for `PASS` and `PARENT_GOLDEN_MISMATCH_OUTPUT_EQUAL`; case logs, result TSVs, and the matrix summary remain. A case with `FAIL` retains its generated `.bin` outputs. Other golden failures or any byte difference fail the matrix.
 
 ## Current state
 

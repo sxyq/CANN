@@ -27,10 +27,8 @@ if [[ -e "$RESULT_DIR" ]]; then
   echo "result directory already exists: $RESULT_DIR" >&2
   exit 2
 fi
-mkdir -p "$RESULT_DIR"
 
 SUMMARY="$RESULT_DIR/correctness-summary.tsv"
-printf 'rows\twidth\tdtype\tparent_rc\tcandidate_rc\tbyte_equal\tparent_bad\tcandidate_bad\tstatus\n' > "$SUMMARY"
 
 SHAPES=(
   "1 1024 0" "1 4096 0" "2 4096 0" "1 8192 0" "2 8192 0"
@@ -38,8 +36,24 @@ SHAPES=(
   "1 256 1" "1 4096 1" "1 8192 1" "1 16384 1"
   "1 256 2" "1 4096 2" "1 8192 2" "1 32768 2"
   "1 100 0" "1 65 1" "33 100 0" "8 256 0" "2 256 0"
-  "32 256 0" "17 257 1" "2 6144 0" "2 8192 0" "8 8192 0"
+  "32 256 0" "17 257 1" "2 6144 0" "8 8192 0"
 )
+
+seen_tags=()
+for shape in "${SHAPES[@]}"; do
+  read -r rows width dtype <<< "$shape"
+  tag="r${rows}_d${width}_t${dtype}"
+  for seen_tag in "${seen_tags[@]}"; do
+    if [[ "$seen_tag" == "$tag" ]]; then
+      printf 'duplicate correctness case key: %s\n' "$tag" >&2
+      exit 2
+    fi
+  done
+  seen_tags+=("$tag")
+done
+
+mkdir -p "$RESULT_DIR"
+printf 'rows\twidth\tdtype\tparent_rc\tcandidate_rc\tbyte_equal\tparent_bad\tcandidate_bad\tstatus\n' > "$SUMMARY"
 
 failed=0
 for shape in "${SHAPES[@]}"; do
@@ -81,7 +95,14 @@ for shape in "${SHAPES[@]}"; do
   printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
     "$rows" "$width" "$dtype" "$parent_rc" "$candidate_rc" "$byte_equal" \
     "$parent_bad" "$candidate_bad" "$status" >> "$SUMMARY"
-  [[ "$status" == PASS || "$status" == PARENT_GOLDEN_MISMATCH_OUTPUT_EQUAL ]] || failed=1
+  if [[ "$status" == PASS || "$status" == PARENT_GOLDEN_MISMATCH_OUTPUT_EQUAL ]]; then
+    if ! rm -f -- "${parent_prefix}.bin" "${candidate_prefix}.bin"; then
+      printf 'failed to remove compared binary outputs for %s\n' "$tag" >&2
+      failed=1
+    fi
+  else
+    failed=1
+  fi
 done
 
 echo "summary=$SUMMARY"
