@@ -1,0 +1,56 @@
+{
+  "route": "HOTLOOP-BRANCH-HOIST-CHAMPION-X",
+  "revision": "V002",
+  "hypothesis": "HBH-09 generic reuse-fence guard factoring",
+  "direct_parent": "R31B V011",
+  "parent_source_sha256": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "parent_official_score": 45.16,
+  "candidate_source_sha256": "1aa6d8ecaa1af058b039341f63c67f4f67403bb4a8e5c6bc57dd96914f42cb65",
+  "candidate_source_commit": "28b7b3bdc218c45742971d468a1dbb056c3c53c4",
+  "single_change_audit": "PASS_INTENDED_SINGLE_HBH-09_REUSE_FENCE_FACTORING",
+  "build": {
+    "verdict": "PASS",
+    "bounded_retry": "attempts 001-003 failed and were retained; attempt 004 passed after exact toolchain/product pinning",
+    "evidence": "build-result.json",
+    "logs": [
+      "support/build.log",
+      "support/build-attempt-002.log",
+      "support/build-attempt-003.log",
+      "support/build-attempt-004.log"
+    ],
+    "toolkit": "/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002",
+    "soc": "Ascend910B3",
+    "npu_arch": "dav-2201"
+  },
+  "correctness": {
+    "verdict": "PASS",
+    "cases": 12,
+    "scope": "generic D=6144, FP32/BF16 primary plus FP16 control, rows=40/80, Parent and Candidate",
+    "device": 7,
+    "evidence": "correctness-result.json"
+  },
+  "formal_local": {
+    "same_binary": "PRIMARY_SHAPES_BLOCKED_OR_NEEDS_VALIDATION; FP16_ROWS80_PASS",
+    "paired_verdict": "MEASUREMENT_BLOCKED",
+    "paired_scope": "FP16 rows=80 width=6144, 45 warmups per side, 4 interleaved blocks, 31 samples per side per block",
+    "paired_runner_result": "PASS; RUNNER_RC=0",
+    "paired_device": 7,
+    "paired_raw": "support/formal-20261002/fp16-r80-paired-raw.tsv",
+    "paired_log": "support/formal-20261002/fp16-r80-paired.log",
+    "noise_gate": {
+      "threshold_mad_over_median": 0.10,
+      "parent_mad_over_median_by_block": [0.179208, 0.299904, 0.257561, 0.222965],
+      "classification": "MEASUREMENT_BLOCKED",
+      "reason": "All four paired Parent blocks exceeded the stability threshold; deltas are not admissible as a performance conclusion."
+    },
+    "load_snapshots": [
+      "support/formal-20261002/fp16-r80-paired-npu-smi-pre.txt",
+      "support/formal-20261002/fp16-r80-paired-npu-smi-post.txt"
+    ],
+    "lease": "device 7 admitted under local flock; shared lease table had no active device-7 lease and was not modified"
+  },
+  "local_verdict": "MEASUREMENT_BLOCKED",
+  "local_best_changed": false,
+  "online": "NOT_PERMITTED",
+  "next_step": "Planning/Review may decide lifecycle; Route Agent stops here. No further Build Fix, timing retry, second mechanism, Main-2 control edit, or Online submission."
+}
