@@ -1,0 +1,42 @@
+{
+  "route": "HOTLOOP-BRANCH-HOIST-CHAMPION-X",
+  "revision": "V002",
+  "stage": "FORMAL_LOCAL_SAME_BINARY",
+  "status": "COMPLETED_SHAPE_GATE",
+  "host": "hwnput3",
+  "device": 7,
+  "lease": {
+    "method": "local flock",
+    "lock": "/tmp/hbh09-v002-device7-formal.lock",
+    "shared_table_active_lease_for_device": false,
+    "shared_table_was_not_modified": true
+  },
+  "parent_source_sha256": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "candidate_source_sha256": "1aa6d8ecaa1af058b039341f63c67f4f67403bb4a8e5c6bc57dd96914f42cb65",
+  "performance_executable_sha256": "c4d7b89494ed771c5ce89444c7b5ad4f8fd321c087b1fdb80097ce7ba2c82fb7",
+  "protocol": {
+    "warmups": 45,
+    "samples_per_block": 31,
+    "blocks": 2,
+    "timing_primary": "aclrtRecordEvent/aclrtSynchronizeEvent/aclrtEventElapsedTime",
+    "raw_samples_per_shape": 62,
+    "device": 7,
+    "width": 6144,
+    "rows": [40, 80]
+  },
+  "shapes": [
+    {"dtype": "fp32", "rows": 40, "local_rows": 1, "result": "MEASUREMENT_PROTOCOL_BLOCKED_FOR_SHAPE", "median_us": 17.4, "mad_over_median": 0.286207, "block_drift": 0.135632, "p10_us": 9.22, "p90_us": 86.58, "raw": "support/formal-20261002/fp32-r40-same-raw.tsv"},
+    {"dtype": "fp32", "rows": 80, "local_rows": 2, "result": "NEEDS_VALIDATION", "median_us": 17.21, "mad_over_median": 0.223707, "block_drift": 0.003486, "p10_us": 9.78, "p90_us": 26.84, "raw": "support/formal-20261002/fp32-r80-same-raw.tsv"},
+    {"dtype": "bf16", "rows": 40, "local_rows": 1, "result": "MEASUREMENT_PROTOCOL_BLOCKED_FOR_SHAPE", "median_us": 14.42, "mad_over_median": 0.342580, "block_drift": 0.011096, "p10_us": 7.92, "p90_us": 24.58, "raw": "support/formal-20261002/bf16-r40-same-raw.tsv"},
+    {"dtype": "bf16", "rows": 80, "local_rows": 2, "result": "MEASUREMENT_PROTOCOL_BLOCKED_FOR_SHAPE", "median_us": 14.39, "mad_over_median": 0.252259, "block_drift": 0.289090, "p10_us": 10.52, "p90_us": 23.12, "raw": "support/formal-20261002/bf16-r80-same-raw.tsv"},
+    {"dtype": "fp16", "rows": 40, "local_rows": 1, "result": "MEASUREMENT_PROTOCOL_BLOCKED_FOR_SHAPE", "median_us": 16.62, "mad_over_median": 0.345367, "block_drift": 0.482551, "p10_us": 7.84, "p90_us": 22.36, "raw": "support/formal-20261002/fp16-r40-same-raw.tsv"},
+    {"dtype": "fp16", "rows": 80, "local_rows": 2, "result": "PASS", "median_us": 9.78, "mad_over_median": 0.049080, "block_drift": 0.022495, "p10_us": 9.34, "p90_us": 18.12, "raw": "support/formal-20261002/fp16-r80-same-raw.tsv"}
+  ],
+  "primary_shape_gate": "BLOCKED_OR_NEEDS_VALIDATION",
+  "control_shape_gate": "PASS_FP16_ROWS80",
+  "paired_gate": "ONLY_FP16_ROWS80_AUTHORIZED",
+  "load_pre": "support/formal-20261002/session-npu-smi-pre.txt",
+  "load_post": "support/formal-20261002/session-npu-smi-post.txt",
+  "session_log": "support/formal-20261002/same-binary-session.log",
+  "next_gate": "FORMAL_LOCAL_PAIRED_FP16_ROWS80"
+}
