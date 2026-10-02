@@ -1,3 +1,5 @@
+#include "local_abi_shim.h"
+
 #include <acl/acl.h>
 
 #include <algorithm>
@@ -13,36 +15,14 @@
 #include <string>
 #include <vector>
 
-#if !defined(SYNC_PARENT_SOURCE)
-#error "Define SYNC_PARENT_SOURCE to the verified R31B V011 source path"
-#endif
-
-struct TensorInfo {
-    const int64_t* shape;
-    int64_t numDims;
-    int32_t dtype;
-};
-
-struct TensorGroupInfo {
-    const TensorInfo* tensors;
-    int64_t numTensors;
-};
-
-#define AddRmsNormBiasKernel SyncParentAddRmsNormBiasKernel
-#define add_rms_norm_bias_custom sync_parent_add_rms_norm_bias_custom
-#define run_kernel sync_parent_run_kernel
-#include SYNC_PARENT_SOURCE
-#undef run_kernel
-#undef add_rms_norm_bias_custom
-#undef AddRmsNormBiasKernel
-
-#define AddRmsNormBiasKernel SyncCandidateAddRmsNormBiasKernel
-#define add_rms_norm_bias_custom sync_candidate_add_rms_norm_bias_custom
-#define run_kernel sync_candidate_run_kernel
-#include "../submission.asc"
-#undef run_kernel
-#undef add_rms_norm_bias_custom
-#undef AddRmsNormBiasKernel
+extern "C" void sync_parent_run_kernel(
+    GM_ADDR, const TensorGroupInfo&, GM_ADDR, const TensorGroupInfo&,
+    GM_ADDR, const TensorGroupInfo&, GM_ADDR, const TensorGroupInfo&,
+    GM_ADDR, const TensorGroupInfo&, int64_t, aclrtStream, float);
+extern "C" void sync_candidate_run_kernel(
+    GM_ADDR, const TensorGroupInfo&, GM_ADDR, const TensorGroupInfo&,
+    GM_ADDR, const TensorGroupInfo&, GM_ADDR, const TensorGroupInfo&,
+    GM_ADDR, const TensorGroupInfo&, int64_t, aclrtStream, float);
 
 namespace {
 

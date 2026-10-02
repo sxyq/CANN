@@ -1,6 +1,6 @@
 # SYNC-TOPOLOGY-CHAMPION-X V001 Build / Correctness / Timing Harness
 
-Build/Link and Candidate correctness passed; see `BUILD-FIX-RESULT.md` and `CORRECTNESS-RESULT.md`. Local timing has not run. The timing executable is prepared locally but has not been built or copied to server3. Do not start server work until Main confirms device 4 is free and issues a new lease.
+Candidate correctness passed previously; see `CORRECTNESS-RESULT.md`. The latest timing harness Build/Link attempt failed after Configure, so no timing executable exists. Local timing has not run. The new Build Fix separates the Parent and Candidate ASC modules while preserving their registered kernel entry names; device lease approval is required only before timing.
 
 ## Source identity
 
@@ -37,7 +37,7 @@ Keep the timing build in `build-timing/`. Each run gets a new `results/<RUN_ID>/
 
 ## Stage files
 
-After Main confirms the new lease, stage these files from the route worktree. The Parent remains the existing root source; do not edit or replace it. Keep `RUN_ID` fresh for every attempt.
+Stage these files from the route worktree for Build/Correctness. The Parent remains the existing root source; do not edit or replace it. A new Main lease is required before starting any timing stage. Keep `RUN_ID` fresh for every attempt.
 
 ```bash
 REMOTE_ROOT=/home/data4t2/lelinfeng/cann/w2/SYNC-TOPOLOGY-CHAMPION-X/V001
@@ -45,17 +45,22 @@ ssh cann-server3 "mkdir -p '$REMOTE_ROOT/support' '$REMOTE_ROOT/results'"
 scp 本地实验/SYNC-TOPOLOGY-CHAMPION-X/V001/submission.asc cann-server3:"$REMOTE_ROOT/submission.asc"
 scp 本地实验/SYNC-TOPOLOGY-CHAMPION-X/V001/support/CMakeLists.txt cann-server3:"$REMOTE_ROOT/support/CMakeLists.txt"
 scp 本地实验/SYNC-TOPOLOGY-CHAMPION-X/V001/support/npu_correctness.asc cann-server3:"$REMOTE_ROOT/support/npu_correctness.asc"
-scp 本地实验/SYNC-TOPOLOGY-CHAMPION-X/V001/support/timing_runner.asc cann-server3:"$REMOTE_ROOT/support/timing_runner.asc"
+scp 本地实验/SYNC-TOPOLOGY-CHAMPION-X/V001/support/local_abi_shim.h cann-server3:"$REMOTE_ROOT/support/local_abi_shim.h"
+scp 本地实验/SYNC-TOPOLOGY-CHAMPION-X/V001/support/parent_module.asc cann-server3:"$REMOTE_ROOT/support/parent_module.asc"
+scp 本地实验/SYNC-TOPOLOGY-CHAMPION-X/V001/support/candidate_module.asc cann-server3:"$REMOTE_ROOT/support/candidate_module.asc"
+scp 本地实验/SYNC-TOPOLOGY-CHAMPION-X/V001/support/timing_runner.cpp cann-server3:"$REMOTE_ROOT/support/timing_runner.cpp"
 scp 本地实验/SYNC-TOPOLOGY-CHAMPION-X/V001/support/runner_main.inc cann-server3:"$REMOTE_ROOT/support/runner_main.inc"
 scp 本地实验/SYNC-TOPOLOGY-CHAMPION-X/V001/support/summarize_window.mjs cann-server3:"$REMOTE_ROOT/support/summarize_window.mjs"
 scp 本地实验/SYNC-TOPOLOGY-CHAMPION-X/V001/support/run_parent_window.sh cann-server3:"$REMOTE_ROOT/support/run_parent_window.sh"
 ```
 
-Before copying, record `sha256sum` for `CMakeLists.txt`, `timing_runner.asc`, `runner_main.inc`, `summarize_window.mjs`, and `run_parent_window.sh` from the route worktree. After copying, write the same server-side command output to `$RESULT_DIR/runner-source-identity.log` and compare every entry with the worktree output before configuring. Any mismatch means stop and do not build or measure.
+The module wrappers include the exact Parent and Candidate sources in separate `ascendc_library()` targets. They retain `add_rms_norm_bias_custom` as the `__global__` entry and rename only the host `run_kernel` wrapper. The C++ runner links the two registered modules and calls those wrappers through the existing `runner_main.inc` implementation.
+
+Before copying, record `sha256sum` for `CMakeLists.txt`, `local_abi_shim.h`, `parent_module.asc`, `candidate_module.asc`, `timing_runner.cpp`, `runner_main.inc`, `summarize_window.mjs`, and `run_parent_window.sh` from the route worktree. After copying, write the same server-side command output to `$RESULT_DIR/runner-source-identity.log` and compare every entry with the worktree output before configuring. Any mismatch means stop and do not build or measure.
 
 ## Exact commands
 
-The server's `bisheng` host compiler selects GCC 12, whose default search path omits the installed GCC 11 C++ headers. The CANN linker also compiles a generated host registration unit in a child process that does not inherit the ASC `-Xhost-start` include arguments. The CMake target therefore supplies the verified GCC 11 directories through `CPATH` for the compiler process and its children.
+The server's `bisheng` host compiler selects GCC 12, whose default search path omits the installed GCC 11 C++ headers. The CANN linker also compiles a generated host registration unit in a child process that does not inherit the ASC `-Xhost-start` include arguments. The CMake target therefore supplies the verified GCC 11 directories through `CPATH` for the compiler process and its children. The installed CANN `FindASC.cmake` implements `ascendc_library()` by marking each `.asc` source as ASC and attaching its registration/runtime link interface.
 
 The server checkout is `/home/data4t2/lelinfeng/cann-w2-m1-sync`. Verify both source files against the SHA values above before configuring. The prior correctness executable is not accepted as the timing executable because the latter includes both kernel implementations.
 
@@ -90,14 +95,39 @@ cmake -S "$REMOTE_ROOT/support" -B "$REMOTE_ROOT/build-timing" \
   > "$RESULT_DIR/configure.log" 2>&1
 ```
 
-3. Compile and link the exact Parent/Candidate timing executable. Log: `$RESULT_DIR/build-link.log`
+3. Compile and link both exact-source executables. Log: `$RESULT_DIR/build-link.log`
 
 ```bash
 cmake --build "$REMOTE_ROOT/build-timing" \
-  --target sync_topology_v001_timing --verbose -j2 \
+  --target sync_topology_v001_timing sync_topology_v001_correctness --verbose -j2 \
   > "$RESULT_DIR/build-link.log" 2>&1
 sha256sum "$REMOTE_ROOT/build-timing/sync_topology_v001_timing" \
-  > "$RESULT_DIR/timing-executable-identity.txt"
+  "$REMOTE_ROOT/build-timing/sync_topology_v001_correctness" \
+  "$REMOTE_ROOT/build-timing/libsync_topology_v001_parent.so" \
+  "$REMOTE_ROOT/build-timing/libsync_topology_v001_candidate.so" \
+  > "$RESULT_DIR/executable-identity.txt"
+```
+
+4. After Build/Link PASS, immediately run the existing correctness target on device 4. Save the pre/post resource and process snapshots plus its complete output; do not run any timing mode.
+
+```bash
+npu-smi info > "$RESULT_DIR/pre-correctness-device.txt" 2>&1
+df -h /home/data4t2/lelinfeng/cann > "$RESULT_DIR/pre-correctness-disk.txt" 2>&1
+du -sh /home/data4t2/lelinfeng/cann/* > "$RESULT_DIR/pre-correctness-project-usage.txt" 2>&1
+ps -eo pid,etime,args > "$RESULT_DIR/pre-correctness-processes.txt"
+if LD_LIBRARY_PATH="$ASCEND_HOME_PATH/aarch64-linux/lib64${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" \
+  "$REMOTE_ROOT/build-timing/sync_topology_v001_correctness" \
+  > "$RESULT_DIR/correctness.log" 2>&1; then
+  correctness_rc=0
+else
+  correctness_rc=$?
+fi
+npu-smi info > "$RESULT_DIR/post-correctness-device.txt" 2>&1
+df -h /home/data4t2/lelinfeng/cann > "$RESULT_DIR/post-correctness-disk.txt" 2>&1
+du -sh /home/data4t2/lelinfeng/cann/* > "$RESULT_DIR/post-correctness-project-usage.txt" 2>&1
+ps -eo pid,etime,args > "$RESULT_DIR/post-correctness-processes.txt"
+printf 'CORRECTNESS_RC=%s\n' "$correctness_rc" > "$RESULT_DIR/correctness-status.txt"
+test "$correctness_rc" -eq 0
 ```
 
 ## Timing sequence
