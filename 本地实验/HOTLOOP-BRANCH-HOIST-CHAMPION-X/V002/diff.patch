@@ -1,0 +1,257 @@
+--- 线上结果/R31B/V011/submission.asc	2026-10-01 17:52:48.860089684 +0000
++++ 本地实验/HOTLOOP-BRANCH-HOIST-CHAMPION-X/V002/submission.asc	2026-10-02 19:48:23.949680990 +0000
+@@ -366,129 +366,148 @@
+             const float invRms = 1.0f / xFp32.GetValue(0);
+             SyncSToV();
+ 
+-            // Second pass: y * inv_rms * gamma + bias.
+-            for (uint64_t col = 0; col < rowWidth; col += kTileElems) {
+-                const int32_t valid = TileLength(rowWidth - col);
+-                AscendC::LocalTensor<T> xLocal = xBuf_.Get<T>();
+-                AscendC::LocalTensor<T> residualLocal = residualBuf_.Get<T>();
+-                AscendC::LocalTensor<T> gammaLocal = gammaBuf_.Get<T>();
+-                AscendC::LocalTensor<T> biasLocal = biasBuf_.Get<T>();
+-                AscendC::LocalTensor<T> outputLocal;
+-                if constexpr (std::is_same<T, half>::value) {
+-                    outputLocal = outputBuf_.Get<T>();
+-                } else if constexpr (!AscendC::IsSameType<T, float>::value) {
+-                    // With one local row gamma is still the source of the
+-                    // uncached parameter conversion; xBuf_ has no prefetched
+-                    // successor in that case and is the safe output staging.
+-                    outputLocal = cacheParams ? gammaBuf_.Get<T>() : xBuf_.Get<T>();
+-                }
+-                if (!cacheRow) {
+-                    Load(xLocal, xGm_, rowOffset + col, valid);
+-                    Load(residualLocal, residualGm_, rowOffset + col, valid);
+-                }
+-                if (!cacheParams) {
+-                    Load(gammaLocal, gammaGm_, col, valid);
+-                    Load(biasLocal, biasGm_, col, valid);
+-                }
+-                if (!cacheRow || !cacheParams) {
+-                    SyncMTE2ToV();
+-                }
++            // HBH-09: choose the unchanged reuse-fence mode once per row.
++            // The templated loop keeps the two existing fence sites in their
++            // original order while removing their repeated runtime decision.
++            const bool needsReuseFence = !cacheRow || !cacheParams;
++            if (needsReuseFence) {
++                ProcessGenericOutputTiles<true>(rowOffset, rowWidth, cacheRow,
++                                                 cacheParams, cacheParamFp32, invRms);
++            } else {
++                ProcessGenericOutputTiles<false>(rowOffset, rowWidth, cacheRow,
++                                                  cacheParams, cacheParamFp32, invRms);
++            }
++        }
++    }
+ 
+-                AscendC::LocalTensor<float> xFp32 = xFp32Buf_.Get<float>();
+-                AscendC::LocalTensor<float> residualFp32 = residualFp32Buf_.Get<float>();
+-                AscendC::LocalTensor<float> valueFp32 = valueFp32Buf_.Get<float>();
+-                AscendC::LocalTensor<float> valueTile = cacheRow ? valueFp32[col] : valueFp32;
+-                if (!cacheRow) {
+-                    if constexpr (AscendC::IsSameType<T, float>::value) {
+-                        AscendC::Add(valueTile, xLocal, residualLocal, valid);
+-                    } else {
+-                        ToFloat(xFp32, xLocal, valid);
+-                        ToFloat(residualFp32, residualLocal, valid);
+-                        AscendC::PipeBarrier<PIPE_V>();
+-                        AscendC::Add(valueTile, xFp32, residualFp32, valid);
+-                    }
+-                    AscendC::PipeBarrier<PIPE_V>();
+-                }
++    template <bool NeedsReuseFence>
++    __aicore__ inline void ProcessGenericOutputTiles(uint64_t rowOffset, uint64_t rowWidth,
++                                                     bool cacheRow, bool cacheParams,
++                                                     bool cacheParamFp32, float invRms)
++    {
++        // Second pass: y * inv_rms * gamma + bias.  The only compile-time
++        // specialization here is the already-selected row reuse-fence mode.
++        for (uint64_t col = 0; col < rowWidth; col += kTileElems) {
++            const int32_t valid = TileLength(rowWidth - col);
++            AscendC::LocalTensor<T> xLocal = xBuf_.Get<T>();
++            AscendC::LocalTensor<T> residualLocal = residualBuf_.Get<T>();
++            AscendC::LocalTensor<T> gammaLocal = gammaBuf_.Get<T>();
++            AscendC::LocalTensor<T> biasLocal = biasBuf_.Get<T>();
++            AscendC::LocalTensor<T> outputLocal;
++            if constexpr (std::is_same<T, half>::value) {
++                outputLocal = outputBuf_.Get<T>();
++            } else if constexpr (!AscendC::IsSameType<T, float>::value) {
++                // With one local row gamma is still the source of the
++                // uncached parameter conversion; xBuf_ has no prefetched
++                // successor in that case and is the safe output staging.
++                outputLocal = cacheParams ? gammaBuf_.Get<T>() : xBuf_.Get<T>();
++            }
++            if (!cacheRow) {
++                Load(xLocal, xGm_, rowOffset + col, valid);
++                Load(residualLocal, residualGm_, rowOffset + col, valid);
++            }
++            if (!cacheParams) {
++                Load(gammaLocal, gammaGm_, col, valid);
++                Load(biasLocal, biasGm_, col, valid);
++            }
++            if constexpr (NeedsReuseFence) {
++                SyncMTE2ToV();
++            }
+ 
+-                if constexpr (!AscendC::IsSameType<T, float>::value && !std::is_same<T, half>::value) {
+-                    // xFp32/residualFp32 are no longer needed for y, so reuse
+-                    // them for uncached per-channel gamma and bias values.
+-                    if (!cacheParamFp32) {
+-                        if (cacheParams) {
+-                            ToFloat(xFp32, gammaLocal[col], valid);
+-                            ToFloat(residualFp32, biasLocal[col], valid);
+-                        } else {
+-                            ToFloat(xFp32, gammaLocal, valid);
+-                            ToFloat(residualFp32, biasLocal, valid);
+-                        }
+-                        AscendC::PipeBarrier<PIPE_V>();
+-                    }
++            AscendC::LocalTensor<float> xFp32 = xFp32Buf_.Get<float>();
++            AscendC::LocalTensor<float> residualFp32 = residualFp32Buf_.Get<float>();
++            AscendC::LocalTensor<float> valueFp32 = valueFp32Buf_.Get<float>();
++            AscendC::LocalTensor<float> valueTile = cacheRow ? valueFp32[col] : valueFp32;
++            if (!cacheRow) {
++                if constexpr (AscendC::IsSameType<T, float>::value) {
++                    AscendC::Add(valueTile, xLocal, residualLocal, valid);
++                } else {
++                    ToFloat(xFp32, xLocal, valid);
++                    ToFloat(residualFp32, residualLocal, valid);
++                    AscendC::PipeBarrier<PIPE_V>();
++                    AscendC::Add(valueTile, xFp32, residualFp32, valid);
+                 }
+-                AscendC::Muls(valueTile, valueTile, invRms, valid);
+                 AscendC::PipeBarrier<PIPE_V>();
+-                if constexpr (AscendC::IsSameType<T, float>::value) {
++            }
++
++            if constexpr (!AscendC::IsSameType<T, float>::value && !std::is_same<T, half>::value) {
++                // xFp32/residualFp32 are no longer needed for y, so reuse
++                // them for uncached per-channel gamma and bias values.
++                if (!cacheParamFp32) {
+                     if (cacheParams) {
+-                        AscendC::Mul(valueTile, valueTile, gammaLocal[col], valid);
+-                        AscendC::PipeBarrier<PIPE_V>();
+-                        AscendC::Add(valueTile, valueTile, biasLocal[col], valid);
++                        ToFloat(xFp32, gammaLocal[col], valid);
++                        ToFloat(residualFp32, biasLocal[col], valid);
+                     } else {
+-                        AscendC::Mul(valueTile, valueTile, gammaLocal, valid);
+-                        AscendC::PipeBarrier<PIPE_V>();
+-                        AscendC::Add(valueTile, valueTile, biasLocal, valid);
++                        ToFloat(xFp32, gammaLocal, valid);
++                        ToFloat(residualFp32, biasLocal, valid);
+                     }
+-                } else if constexpr (std::is_same<T, half>::value) {
+-                    FromFloat(outputLocal, valueTile, valid);
+                     AscendC::PipeBarrier<PIPE_V>();
+-                    if (cacheParams) {
+-                        AscendC::Mul(outputLocal, outputLocal, gammaLocal[col], valid);
+-                        AscendC::PipeBarrier<PIPE_V>();
+-                        AscendC::Add(outputLocal, outputLocal, biasLocal[col], valid);
+-                    } else {
+-                        AscendC::Mul(outputLocal, outputLocal, gammaLocal, valid);
+-                        AscendC::PipeBarrier<PIPE_V>();
+-                        AscendC::Add(outputLocal, outputLocal, biasLocal, valid);
+-                    }
+-                } else if (cacheParamFp32) {
+-                    AscendC::LocalTensor<float> gammaFp32 = gammaFp32Buf_.Get<float>();
+-                    AscendC::LocalTensor<float> biasFp32 = biasFp32Buf_.Get<float>();
+-                    AscendC::Mul(valueTile, valueTile, gammaFp32[col], valid);
++                }
++            }
++            AscendC::Muls(valueTile, valueTile, invRms, valid);
++            AscendC::PipeBarrier<PIPE_V>();
++            if constexpr (AscendC::IsSameType<T, float>::value) {
++                if (cacheParams) {
++                    AscendC::Mul(valueTile, valueTile, gammaLocal[col], valid);
+                     AscendC::PipeBarrier<PIPE_V>();
+-                    AscendC::Add(valueTile, valueTile, biasFp32[col], valid);
++                    AscendC::Add(valueTile, valueTile, biasLocal[col], valid);
+                 } else {
+-                    AscendC::Mul(valueTile, valueTile, xFp32, valid);
++                    AscendC::Mul(valueTile, valueTile, gammaLocal, valid);
+                     AscendC::PipeBarrier<PIPE_V>();
+-                    AscendC::Add(valueTile, valueTile, residualFp32, valid);
++                    AscendC::Add(valueTile, valueTile, biasLocal, valid);
+                 }
++            } else if constexpr (std::is_same<T, half>::value) {
++                FromFloat(outputLocal, valueTile, valid);
+                 AscendC::PipeBarrier<PIPE_V>();
+-                if constexpr (AscendC::IsSameType<T, float>::value) {
+-                    if (!cacheRow || !cacheParams) {
+-                        SyncVToMTE2();
+-                    }
+-                    SyncVToMTE3();
+-                    Store(outputGm_, rowOffset + col, valueTile, valid);
+-                    // V006: when y is cached per-slice, defer the MTE3 drain
+-                    // to the end of the row.  A streamed single value tile
+-                    // must drain every iteration before it is overwritten.
+-                    if (!cacheRow || col + kTileElems >= rowWidth) {
+-                        SyncMTE3ToV();
+-                    }
+-                } else if constexpr (std::is_same<T, half>::value) {
+-                    if (!cacheRow || !cacheParams) {
+-                        SyncVToMTE2();
+-                    }
+-                    SyncVToMTE3();
+-                    Store(outputGm_, rowOffset + col, outputLocal, valid);
+-                    SyncMTE3ToV();
++                if (cacheParams) {
++                    AscendC::Mul(outputLocal, outputLocal, gammaLocal[col], valid);
++                    AscendC::PipeBarrier<PIPE_V>();
++                    AscendC::Add(outputLocal, outputLocal, biasLocal[col], valid);
+                 } else {
+-                    FromFloat(outputLocal, valueTile, valid);
++                    AscendC::Mul(outputLocal, outputLocal, gammaLocal, valid);
+                     AscendC::PipeBarrier<PIPE_V>();
+-                    if (!cacheRow || !cacheParams) {
+-                        SyncVToMTE2();
+-                    }
+-                    SyncVToMTE3();
+-                    Store(outputGm_, rowOffset + col, outputLocal, valid);
++                    AscendC::Add(outputLocal, outputLocal, biasLocal, valid);
++                }
++            } else if (cacheParamFp32) {
++                AscendC::LocalTensor<float> gammaFp32 = gammaFp32Buf_.Get<float>();
++                AscendC::LocalTensor<float> biasFp32 = biasFp32Buf_.Get<float>();
++                AscendC::Mul(valueTile, valueTile, gammaFp32[col], valid);
++                AscendC::PipeBarrier<PIPE_V>();
++                AscendC::Add(valueTile, valueTile, biasFp32[col], valid);
++            } else {
++                AscendC::Mul(valueTile, valueTile, xFp32, valid);
++                AscendC::PipeBarrier<PIPE_V>();
++                AscendC::Add(valueTile, valueTile, residualFp32, valid);
++            }
++            AscendC::PipeBarrier<PIPE_V>();
++            if constexpr (AscendC::IsSameType<T, float>::value) {
++                if constexpr (NeedsReuseFence) {
++                    SyncVToMTE2();
++                }
++                SyncVToMTE3();
++                Store(outputGm_, rowOffset + col, valueTile, valid);
++                // V006: when y is cached per-slice, defer the MTE3 drain
++                // to the end of the row.  A streamed single value tile
++                // must drain every iteration before it is overwritten.
++                if (!cacheRow || col + kTileElems >= rowWidth) {
+                     SyncMTE3ToV();
+                 }
++            } else if constexpr (std::is_same<T, half>::value) {
++                if constexpr (NeedsReuseFence) {
++                    SyncVToMTE2();
++                }
++                SyncVToMTE3();
++                Store(outputGm_, rowOffset + col, outputLocal, valid);
++                SyncMTE3ToV();
++            } else {
++                FromFloat(outputLocal, valueTile, valid);
++                AscendC::PipeBarrier<PIPE_V>();
++                if constexpr (NeedsReuseFence) {
++                    SyncVToMTE2();
++                }
++                SyncVToMTE3();
++                Store(outputGm_, rowOffset + col, outputLocal, valid);
++                SyncMTE3ToV();
+             }
+         }
+     }

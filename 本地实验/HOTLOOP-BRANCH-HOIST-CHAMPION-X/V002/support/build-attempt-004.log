@@ -1,0 +1,146 @@
+BUILD_PROTOCOL=V002_HBH09_RETRY_004
+HOST=hwnput3
+BRANCH=w2/m2/hotloop-branch
+COMMIT=e6c6e2fdfc9a122353b7857f525b395ebc541dc3
+ASCEND_HOME_PATH=/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002
+ASC=/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/bin/bisheng
+ASCEND_PRODUCT_TYPE=ascend910b3
+PARENT_SOURCE_SHA256=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3  线上结果/R31B/V011/submission.asc
+CANDIDATE_SOURCE_SHA256=1aa6d8ecaa1af058b039341f63c67f4f67403bb4a8e5c6bc57dd96914f42cb65  本地实验/HOTLOOP-BRANCH-HOIST-CHAMPION-X/V002/submission.asc
+--- npu-smi pre-build ---
++------------------------------------------------------------------------------------------------+
+| npu-smi 25.0.rc1.1               Version: 25.0.rc1.1                                           |
++---------------------------+---------------+----------------------------------------------------+
+| NPU   Name                | Health        | Power(W)    Temp(C)           Hugepages-Usage(page)|
+| Chip                      | Bus-Id        | AICore(%)   Memory-Usage(MB)  HBM-Usage(MB)        |
++===========================+===============+====================================================+
+| 0     910B3               | OK            | 143.8       42                0    / 0             |
+| 0                         | 0000:C1:00.0  | 33          0    / 0          60224/ 65536         |
++===========================+===============+====================================================+
+| 1     910B3               | OK            | 140.4       41                0    / 0             |
+| 0                         | 0000:C2:00.0  | 34          0    / 0          61961/ 65536         |
++===========================+===============+====================================================+
+| 2     910B3               | OK            | 137.7       43                0    / 0             |
+| 0                         | 0000:81:00.0  | 34          0    / 0          60217/ 65536         |
++===========================+===============+====================================================+
+| 3     910B3               | OK            | 139.9       41                0    / 0             |
+| 0                         | 0000:82:00.0  | 27          0    / 0          60218/ 65536         |
++===========================+===============+====================================================+
+| 4     910B3               | OK            | 100.2       41                0    / 0             |
+| 0                         | 0000:01:00.0  | 0           0    / 0          60432/ 65536         |
++===========================+===============+====================================================+
+| 5     910B3               | OK            | 178.1       56                0    / 0             |
+| 0                         | 0000:02:00.0  | 46          0    / 0          64050/ 65536         |
++===========================+===============+====================================================+
+| 6     910B3               | OK            | 179.4       54                0    / 0             |
+| 0                         | 0000:41:00.0  | 46          0    / 0          64051/ 65536         |
++===========================+===============+====================================================+
+| 7     910B3               | OK            | 144.6       45                0    / 0             |
+| 0                         | 0000:42:00.0  | 36          0    / 0          24790/ 65536         |
++===========================+===============+====================================================+
++---------------------------+---------------+----------------------------------------------------+
+| NPU     Chip              | Process id    | Process name             | Process memory(MB)      |
++===========================+===============+====================================================+
+| 0       0                 | 89395         | VLLMWorker_TP            | 56702                   |
++===========================+===============+====================================================+
+| 1       0                 | 1572621       | python                   | 1740                    |
+| 1       0                 | 91055         | VLLMWorker_TP            | 56702                   |
++===========================+===============+====================================================+
+| 2       0                 | 92813         | VLLMWorker_TP            | 56703                   |
++===========================+===============+====================================================+
+| 3       0                 | 94498         | VLLMWorker_TP            | 56703                   |
++===========================+===============+====================================================+
+| 4       0                 | 1565026       | python                   | 1294                    |
+| 4       0                 | 2999855       | VLLMEngineCor            | 55664                   |
++===========================+===============+====================================================+
+| 5       0                 | 89602         | VLLMWorker_TP            | 56678                   |
+| 5       0                 | 2771372       | python                   | 3902                    |
++===========================+===============+====================================================+
+| 6       0                 | 3492500       | python                   | 3904                    |
+| 6       0                 | 91228         | VLLMWorker_TP            | 56679                   |
++===========================+===============+====================================================+
+| 7       0                 | 439848        | python3                  | 21260                   |
++===========================+===============+====================================================+
+--- cmake configure/build ---
+-- CMAKE_ASC_COMPILER: /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/bin/bisheng
+-- The CXX compiler identification is GNU 11.4.0
+-- ASCEND_HOME_PATH: /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002
+-- ASCEND_PRODUCT_TYPE: Ascend910B3
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/data4t2/lelinfeng/cann/worktrees/w2/m2/hotloop-branch/本地实验/HOTLOOP-BRANCH-HOIST-CHAMPION-X/V002/support/build-004
+[ 16%] Building ASC object CMakeFiles/hotloop_branch_v002_parent.dir/parent_wrapper.asc.o
+[ 33%] Building ASC object CMakeFiles/hotloop_branch_v002_candidate.dir/candidate_wrapper.asc.o
+[ 50%] Linking ASC shared library libhotloop_branch_v002_parent.so
+[ 50%] Built target hotloop_branch_v002_parent
+[ 66%] Linking ASC shared library libhotloop_branch_v002_candidate.so
+[ 66%] Built target hotloop_branch_v002_candidate
+[ 83%] Building CXX object CMakeFiles/hotloop_branch_v002_performance.dir/performance_main.cpp.o
+[100%] Linking CXX executable hotloop_branch_v002_performance
+[100%] Built target hotloop_branch_v002_performance
+--- build artifacts ---
+7560b0fe1a918d9e3dcccdd8028c9da92d840a3f6d0eb60b83c8c4278287c5e0  /home/data4t2/lelinfeng/cann/worktrees/w2/m2/hotloop-branch/本地实验/HOTLOOP-BRANCH-HOIST-CHAMPION-X/V002/support/build-004/libhotloop_branch_v002_parent.so
+bd7c5e9cf0e67fa3520ddde617ba61ce3c53727eb76092df6ef5d1ecebec761e  /home/data4t2/lelinfeng/cann/worktrees/w2/m2/hotloop-branch/本地实验/HOTLOOP-BRANCH-HOIST-CHAMPION-X/V002/support/build-004/libhotloop_branch_v002_candidate.so
+30eda7dde14be945392d781ffd3bd5ba074d7039dc3aae3693ed9f277b06cbbc  /home/data4t2/lelinfeng/cann/worktrees/w2/m2/hotloop-branch/本地实验/HOTLOOP-BRANCH-HOIST-CHAMPION-X/V002/support/build-004/hotloop_branch_v002_performance
+/home/data4t2/lelinfeng/cann/worktrees/w2/m2/hotloop-branch/本地实验/HOTLOOP-BRANCH-HOIST-CHAMPION-X/V002/support/build-004/libhotloop_branch_v002_parent.so:    ELF 64-bit LSB shared object, ARM aarch64, version 1 (GNU/Linux), dynamically linked, BuildID[sha1]=e88fbdd8ce8eb998d42506b4cdad5e544401a0f2, not stripped
+/home/data4t2/lelinfeng/cann/worktrees/w2/m2/hotloop-branch/本地实验/HOTLOOP-BRANCH-HOIST-CHAMPION-X/V002/support/build-004/libhotloop_branch_v002_candidate.so: ELF 64-bit LSB shared object, ARM aarch64, version 1 (GNU/Linux), dynamically linked, BuildID[sha1]=265ea6708234a9de10da31929e16137da1acaa92, not stripped
+/home/data4t2/lelinfeng/cann/worktrees/w2/m2/hotloop-branch/本地实验/HOTLOOP-BRANCH-HOIST-CHAMPION-X/V002/support/build-004/hotloop_branch_v002_performance:     ELF 64-bit LSB pie executable, ARM aarch64, version 1 (SYSV), dynamically linked, interpreter /lib/ld-linux-aarch64.so.1, BuildID[sha1]=88f14daa62474d999d17091b6eafd204598b1b22, for GNU/Linux 3.7.0, not stripped
+--- npu-smi post-build ---
++------------------------------------------------------------------------------------------------+
+| npu-smi 25.0.rc1.1               Version: 25.0.rc1.1                                           |
++---------------------------+---------------+----------------------------------------------------+
+| NPU   Name                | Health        | Power(W)    Temp(C)           Hugepages-Usage(page)|
+| Chip                      | Bus-Id        | AICore(%)   Memory-Usage(MB)  HBM-Usage(MB)        |
++===========================+===============+====================================================+
+| 0     910B3               | OK            | 141.1       40                0    / 0             |
+| 0                         | 0000:C1:00.0  | 27          0    / 0          60223/ 65536         |
++===========================+===============+====================================================+
+| 1     910B3               | OK            | 153.4       41                0    / 0             |
+| 0                         | 0000:C2:00.0  | 36          0    / 0          61961/ 65536         |
++===========================+===============+====================================================+
+| 2     910B3               | OK            | 134.7       42                0    / 0             |
+| 0                         | 0000:81:00.0  | 33          0    / 0          60217/ 65536         |
++===========================+===============+====================================================+
+| 3     910B3               | OK            | 143.7       41                0    / 0             |
+| 0                         | 0000:82:00.0  | 33          0    / 0          60218/ 65536         |
++===========================+===============+====================================================+
+| 4     910B3               | OK            | 101.4       41                0    / 0             |
+| 0                         | 0000:01:00.0  | 0           0    / 0          60432/ 65536         |
++===========================+===============+====================================================+
+| 5     910B3               | OK            | 181.9       55                0    / 0             |
+| 0                         | 0000:02:00.0  | 48          0    / 0          64050/ 65536         |
++===========================+===============+====================================================+
+| 6     910B3               | OK            | 182.0       54                0    / 0             |
+| 0                         | 0000:41:00.0  | 49          0    / 0          64051/ 65536         |
++===========================+===============+====================================================+
+| 7     910B3               | OK            | 133.4       44                0    / 0             |
+| 0                         | 0000:42:00.0  | 16          0    / 0          24790/ 65536         |
++===========================+===============+====================================================+
++---------------------------+---------------+----------------------------------------------------+
+| NPU     Chip              | Process id    | Process name             | Process memory(MB)      |
++===========================+===============+====================================================+
+| 0       0                 | 89395         | VLLMWorker_TP            | 56702                   |
++===========================+===============+====================================================+
+| 1       0                 | 1572621       | python                   | 1740                    |
+| 1       0                 | 91055         | VLLMWorker_TP            | 56702                   |
++===========================+===============+====================================================+
+| 2       0                 | 92813         | VLLMWorker_TP            | 56703                   |
++===========================+===============+====================================================+
+| 3       0                 | 94498         | VLLMWorker_TP            | 56703                   |
++===========================+===============+====================================================+
+| 4       0                 | 1565026       | python                   | 1294                    |
+| 4       0                 | 2999855       | VLLMEngineCor            | 55664                   |
++===========================+===============+====================================================+
+| 5       0                 | 89602         | VLLMWorker_TP            | 56678                   |
+| 5       0                 | 2771372       | python                   | 3902                    |
++===========================+===============+====================================================+
+| 6       0                 | 3492500       | python                   | 3904                    |
+| 6       0                 | 91228         | VLLMWorker_TP            | 56679                   |
++===========================+===============+====================================================+
+| 7       0                 | 439848        | python3                  | 21260                   |
++===========================+===============+====================================================+
