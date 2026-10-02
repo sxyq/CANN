@@ -412,3 +412,42 @@ CANONICAL_MAIN_MODIFIED=NO (the Planning directive forbids it)
 REMOTE_PUSH_STATE=UNCONFIRMED_TIMEOUT; newest control commits remain local/PUSH_PENDING
 CONTROL_HEAD_AFTER_FINAL_AUDIT=db176dca
 ```
+
+## Event-driven implementation wave startup — 2026-10-02T14:48Z
+
+```text
+CONTROL_HEAD_AT_WAVE_START=50ea8cf1a4a8f1e014bfe8a003c56ff161424afd
+CANONICAL_HEAD=02482b46c2ee1fdd5bab1f88a474c7e70426f661
+ORIGIN_MAIN=15e7d8dc0a9269fdcdb09af0d1b9e4660c070778
+OVERALL_OFFICIAL_CHAMPION=R31B V011 / 45.16
+EVENT_DRIVEN_PIPELINE=ENABLED
+BATCH_GATE=DISABLED
+DIRECT_ONLINE_SUBMISSION=FORBIDDEN
+PLANNING_DECISIONS_CHANGED=0
+NEW_ROUTES_OUTSIDE_APPROVED_5=0
+```
+
+| Lane | Fresh Agent | Branch / worktree | Current event | Parent |
+|---|---|---|---|---|
+| ADDR | `01a0fd14-133f-72f2-a53e-ceaf4b669876` | `w2/m2/hotloop-addr` / `worktrees/w2/m2/hotloop-addr` | `ADDR-H3` authorized; V001 declaration gate in progress | `R31B V011`, source SHA `a8c19a…15e3` |
+| BRANCH | `01a0fd14-1f3d-7dd2-b955-0bcdbb7c1ac1` | `w2/m2/hotloop-branch` / `worktrees/w2/m2/hotloop-branch` | `HBH-10` authorized; V001 declaration gate in progress | `R31B V011`, source SHA `a8c19a…15e3` |
+| UB forensic | `01a0fd14-1611-7153-83fc-f5a92fb52786` | `w2/m2/ub-lifetime-safe` / `cann-w2-m2-ub` | `UB-DIAG-2` started; no Candidate source change permitted | preserved V001 / exact R31B V011 |
+
+```text
+LOCAL_STAGE_GATE=local_commit_then_build_then_correctness_then_formal_local
+GITHUB_PUSH_IS_LOCAL_STAGE_GATE=NO
+ONLINE_QUEUE=EMPTY_AT_START
+FORMAL_PERFORMANCE_RUNS=0_AT_START
+SERVER_HOST=hwnput3
+SERVER3_ALIAS=cann-server3; DNS_UNRESOLVED_FROM_THIS_RUNTIME
+FREE_HBM_MB=0:5312,1:4044,2:1440,3:4076,4:5121,5:1486,6:1487,7:40758
+HOST_AVAILABLE_DISK=629G
+HOST_MEMORY_AVAILABLE=736GiB
+NPU_JOBS_STARTED_BY_MAIN=0
+EXISTING_VLLM_AND_OTHER_PROCESSES=OBSERVED_ONLY; NOT_STOPPED_OR_MOVED
+PUSH_STATE=PUSH_PENDING; no bounded push attempted in this startup event
+```
+
+This is a startup receipt only. It records no Build, Correctness, Local score,
+Online-ready package, or Official result until the corresponding route-local
+evidence is committed.
