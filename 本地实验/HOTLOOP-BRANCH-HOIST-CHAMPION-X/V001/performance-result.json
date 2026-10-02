@@ -1,0 +1,138 @@
+{
+  "route": "HOTLOOP-BRANCH-HOIST-CHAMPION-X",
+  "revision": "V001",
+  "hypothesis": "HBH-10",
+  "stage": "FORMAL_LOCAL_PERFORMANCE",
+  "verdict": "NEEDS_ONE_MORE_LOCAL",
+  "main_review_recommendation": "NEEDS_ONE_MORE_LOCAL",
+  "formal_score_claim": false,
+  "local_accepted": false,
+  "online": "NOT_PERMITTED",
+  "host": "hwnput3",
+  "device": 4,
+  "device_access": "local npu-smi",
+  "remote_access_fact": "cann-server3 DNS unresolved from this runtime",
+  "started_utc": "2026-10-02T18:01:06Z",
+  "ended_utc": "2026-10-02T18:01:17Z",
+  "run_commit": "2d8ae49e1a8a54390b40bd0ac1b2a6dd20b871a6",
+  "qualification": {
+    "shape": {"dtype": "bf16", "width": 32768},
+    "qualification_evidence": "support/qualification-d4-001.log",
+    "qualification_result": "PASS",
+    "qualification_median_us": 28.23,
+    "qualification_mad_over_median": 0.014524,
+    "qualification_block_drift": 0.012044
+  },
+  "lease": {
+    "record": "LOCAL_FLOCK_DEVICE4_FORMAL_V001",
+    "local_lock": "/tmp/hotloop-branch-v001-device4-formal.lock",
+    "canonical_d4_active_lease_count_at_start": 0,
+    "scope": "exclusive route formal-timing lease; resident background processes were observed and preserved"
+  },
+  "protocol": {
+    "executable": "support/build/hotloop_branch_v001_performance",
+    "warmups_per_side": 45,
+    "samples_per_block": 31,
+    "blocks": 4,
+    "block_orders": ["P_then_C", "C_then_P", "P_then_C", "C_then_P"],
+    "timing_primary": "aclrtRecordEvent/aclrtSynchronizeEvent/aclrtEventElapsedTime",
+    "device_event_primary": true,
+    "raw_samples": 248,
+    "raw_rows_including_header": 249,
+    "raw_side_counts": {"parent": 124, "candidate": 124},
+    "raw_order_counts": {"P_then_C": 124, "C_then_P": 124},
+    "run_command": "support/build/hotloop_branch_v001_performance 4 32768 bf16 paired 45 31 4 support/formal-paired-d4-001/bf16-d32768-paired-raw.tsv",
+    "runner_return_code": 0,
+    "execution_result": "PASS"
+  },
+  "source_identity": {
+    "parent_source_sha256": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+    "candidate_source_sha256": "4dc1973ef198cd67693610b6ffedad6883b59f52207b9804052975a13f4e032b",
+    "performance_executable_sha256": "dadafae6835854a799f4fc63ca1c5ae45c4495500ed18bfd9ac7f141c0ea9e61",
+    "parent_so_sha256": "00187da7f33eef731055f47c7c285a049adeb98aa6b16d62537e5f9267fc46f9",
+    "candidate_so_sha256": "31bc1ab4a3e0f03e6a31bf5e274a631d834b4030c0c8f43a1f97f85ab427751a"
+  },
+  "blocks_summary": [
+    {
+      "block": 0,
+      "order": "P_then_C",
+      "parent_median_us": 28.379999,
+      "candidate_median_us": 28.08,
+      "median_delta_percent": -1.267609,
+      "mean_delta_percent": -3.791137,
+      "parent_mad_over_median": 0.01198,
+      "candidate_mad_over_median": 0.007122,
+      "delta_counts": {"positive": 7, "negative": 23, "zero": 1}
+    },
+    {
+      "block": 1,
+      "order": "C_then_P",
+      "parent_median_us": 28.08,
+      "candidate_median_us": 28.16,
+      "median_delta_percent": 0.071586,
+      "mean_delta_percent": 49.757307,
+      "parent_mad_over_median": 0.008547,
+      "candidate_mad_over_median": 0.009943,
+      "delta_counts": {"positive": 16, "negative": 15, "zero": 0}
+    },
+    {
+      "block": 2,
+      "order": "P_then_C",
+      "parent_median_us": 28.06,
+      "candidate_median_us": 28.200001,
+      "median_delta_percent": -0.141244,
+      "mean_delta_percent": 44.309778,
+      "parent_mad_over_median": 0.009266,
+      "candidate_mad_over_median": 0.011348,
+      "delta_counts": {"positive": 15, "negative": 16, "zero": 0}
+    },
+    {
+      "block": 3,
+      "order": "C_then_P",
+      "parent_median_us": 28.56,
+      "candidate_median_us": 28.12,
+      "median_delta_percent": -0.636044,
+      "mean_delta_percent": 2.013098,
+      "parent_mad_over_median": 0.029412,
+      "candidate_mad_over_median": 0.01138,
+      "delta_counts": {"positive": 12, "negative": 19, "zero": 0}
+    }
+  ],
+  "interpretation": {
+    "median_delta_percent_by_block": [-1.267609, 0.071586, -0.141244, -0.636044],
+    "direction_consistency": "MIXED",
+    "noise_floor": "NOT_ESTABLISHED",
+    "reason": "Three block medians are negative and one is positive; the small mixed deltas are not demonstrated to exceed the same-binary Parent noise floor. Resident VLLM processes and 93% HBM usage were observed in both snapshots, so no score is claimed.",
+    "next_gate": "ONE_BOUNDED_ADDITIONAL_LOCAL_FORMAL_RUN_IF_REVIEW_APPROVES",
+    "forbidden_followups": ["LOCAL_ACCEPTED", "ONLINE", "HBH-09", "V002"]
+  },
+  "load_snapshot": {
+    "before": {
+      "hbm_usage_percent": 93,
+      "aicore_usage_percent": 0,
+      "resident_d4_processes": "python 2088 MB; VLLMEngineCor 55664 MB"
+    },
+    "after": {
+      "hbm_usage_percent": 93,
+      "aicore_usage_percent": 0,
+      "resident_d4_processes": "python 2088 MB; VLLMEngineCor 55664 MB"
+    },
+    "quality": "BACKGROUND_RESIDENT_PROCESSES_OBSERVED",
+    "evidence": "support/formal-paired-d4-001.log"
+  },
+  "artifacts": {
+    "formal_log": {
+      "path": "support/formal-paired-d4-001.log",
+      "sha256": "1242207a6c349865f360ae91fb66c1047e8c61e41371c1010ea58f8181360af2"
+    },
+    "raw_tsv": {
+      "path": "support/formal-paired-d4-001/bf16-d32768-paired-raw.tsv",
+      "sha256": "274ef5319d9a386711f50e8cca510aac552a22802fa0aee9a7c4f1ba726b6d3f"
+    },
+    "stdout": {
+      "path": "support/formal-paired-d4-001/bf16-d32768-paired.stdout.log",
+      "sha256": "71a54c60007440ec815b6848e7d9e12492fa9ae10d698d6cb82604d02566f884"
+    }
+  },
+  "evidence_preserved": ["raw_samples", "stdout", "load_snapshot", "process_snapshot", "lease_record", "source_identity"]
+}
