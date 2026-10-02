@@ -11,6 +11,11 @@ RUN_ID="${EPI_RUN_ID:-}"
 DEVICE_ID="${DEVICE_ID:-7}"
 OUTPUT_ROOT="${EPI_SERVER_OUTPUT_ROOT:-/home/data4t2/lelinfeng/cann/server_runs/EPI-ARITH-CHAMPION-W2-X/V001}"
 SERVER_ROOT="/home/data4t2/lelinfeng/cann"
+CANN_ROOT="${CANN_ROOT:-/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002}"
+
+export ASCEND_HOME_PATH="${CANN_ROOT}"
+export ASCEND_CANN_PACKAGE_PATH="${CANN_ROOT}"
+export LD_LIBRARY_PATH="${CANN_ROOT}/aarch64-linux/lib64:${CANN_ROOT}/lib64:/usr/local/Ascend/driver/lib64/driver:/usr/local/Ascend/driver/lib64/common${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"
 
 [[ "${RUN_ID}" =~ ^[0-9]{8}T[0-9]{6}Z$ ]] || {
     echo "EPI_RUN_ID must use UTC format YYYYMMDDTHHMMSSZ" >&2
