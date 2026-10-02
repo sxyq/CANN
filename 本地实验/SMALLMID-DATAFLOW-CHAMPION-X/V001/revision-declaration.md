@@ -28,11 +28,11 @@
 
 只移动 BF16 gamma/bias 的两次 `ToFloat`，从逐行输出阶段移到现有参数 MTE2 等待之后、行循环之前；每行改读 FP32 参数缓冲。保持现有行分配、UB 总量、GM Load、DMA、事件同步、Store 和逐元素算术次序不变。不扩大 tile，不加入第二个性能机制。
 
-`BUILD`: `FAIL` (attempt 1 stopped at CANN env loading; attempt 2 stopped at CMake configure because `ASCEND_HOME_PATH` was not exported; attempt 3 configured but failed compiling the Correctness host runner pointer cast; logs are in `local-result.json`, runner-only fix in progress)
+`BUILD`: `PASS` (RUN_ID `20261002T151744Z-device1`; record in `BUILD-RESULT.md`; exact candidate SHA verified; compile and link passed)
 `CORRECTNESS`: `NOT_STARTED`
-`EXECUTABLE_IDENTITY`: `MISSING`
-`LOCAL_VERDICT`: `BUILD_FAILED` (attempts 1-3; support runner fix in progress)
-`SOURCE_STATE`: `IMPLEMENTED_NOT_BUILT`
+`EXECUTABLE_IDENTITY`: `PASS` (`159532deffb1ddaf33792c0b7c296c3bcf7cf2f0cc2ea68fbc0e8de7b68e5208`)
+`LOCAL_VERDICT`: `NOT_COMPLETE` (Build passed; Correctness starts next)
+`SOURCE_STATE`: `BUILT_NOT_VALIDATED`
 `SOURCE_SHA256`: `a689e5abc03d2770b277812d9a52ae0a1aaf910952b737525e1722f06bdb340a`
 `SOURCE_COMMIT`: `9abea741d4d0b40efdc322da5255c463fede481b`
-`SERVER_WORK`: device 1 已分配；Build attempt 1 返回 RC=1，尚未运行 correctness 或 measurement。
+`SERVER_WORK`: device 1 Build 已通过；Correctness 尚未开始，未进行测时。
