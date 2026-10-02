@@ -227,7 +227,7 @@ The older route tables above are retained as historical evidence; this section
 is the active view for the current forensic/research run.
 
 ```text
-CONTROL_HEAD=17425aeca0c34cc34f2f94183e0686416ad2037c
+CONTROL_HEAD_AT_RUN_START=17425aeca0c34cc34f2f94183e0686416ad2037c
 CANONICAL_HEAD=02482b46c2ee1fdd5bab1f88a474c7e70426f661
 OVERALL_OFFICIAL_CHAMPION=R31B V011 / 45.16
 EVENT_DRIVEN_PIPELINE=ENABLED
@@ -378,3 +378,12 @@ evidence. This Main stops at Planning/Review: it does not select HBH-10,
 HBH-09, ADDR-H3, or ADDR-H1; it does not open UB V002, ADDR V001, or BRANCH
 V001. No formal Local score exists in this run, so the Online queue remains
 empty and no score commit is fabricated.
+
+```text
+CONTROL_HEAD_AT_FINAL_RECEIPT=bf96bff5a235b59b698d35ba20e6768a90166537
+UB_ROUTE_HEAD=6d620289c2764e502ed4795f679caa5110896b3e
+ADDR_ROUTE_HEAD=cf148d5f8103c931cb253d2f36f0d7c59068fe23
+BRANCH_ROUTE_HEAD=7ffd28bcf01a0ea7420a283043bcfaea5af146d8
+CONTROL_PUSH=TIMEOUT_30S; PUSH_PENDING
+LAST_PUSH_WINDOW_UTC=2026-10-02T01:56:00Z
+```
