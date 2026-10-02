@@ -6,6 +6,7 @@
 - PARENT_SOURCE_SHA: `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`
 - SELECTED_HYPOTHESIS: `EAW2-H3-ROW-OP-GROUP`
 - DEVICE_AND_JOB: Await Main assignment; no device lease or server connection created by this route.
+- HARNESS: `TEST-HARNESS.md`; exact-source ASC/ACL build and correctness commands are prepared, not executed.
 
 ## Target
 
@@ -21,10 +22,10 @@ In the wide-FP32 full-cache output pass, keep the existing per-row Muls loop. Re
 
 ## Probe Order
 
-1. Wait for Main to assign the device and job, with target inputs and `blockCount=1` confirmed.
-2. Build and link the exact Candidate source; preserve the returned source and executable identities.
-3. Run precision validation before any performance timing. Include the target and unchanged-path control in the assigned correctness matrix.
-4. Confirm `blockCount`, selected path, and `batchRows` from the assigned run context against the source-derived value above.
-5. Only after correctness passes, run paired/interleaved V011 and V001 timing on the target and report the measured noise.
+1. Wait for Main to assign device 7 and the job, then synchronize the committed Route tree and V011 parent source to the documented server root.
+2. Run the exact-source build command in `TEST-HARNESS.md`; preserve its source checks, artifact identities, and build log.
+3. Run the separate correctness command for Parent and Candidate across the documented FP32 matrix before any performance timing.
+4. Confirm device, `blockCount`, selected path, and logged source-derived effective `batchRows` against the matrix. This does not instrument the kernel-local variable; Main may verify the compiled execution only after the assigned correctness run.
+5. Only after correctness passes, wait for a separate Main-assigned performance job before any measurement.
 
 No probe output exists yet. Do not start a server job or create a device lease before Main assignment.
