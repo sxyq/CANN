@@ -197,23 +197,23 @@ Have each existing Route Agent prepare and commit its reproducible route-local b
 
 ```dashboard-json
 {
-  "handoffs": "SUPPORT-A/B started; 3 Route Agents pending worktree creation",
+  "handoffs": "3 replacement worktrees and 4 Track-B contexts assigned; SYNC V001 Build Fix continues",
   "selected": "5 Planning-approved routes; 0/5 performance hypotheses MAIN_SELECTED",
-  "activeAgents": 3,
+  "activeAgents": 5,
   "pendingAgents": 0,
   "activeRevision": "SYNC V001 only",
-  "stage": "PORTFOLIO_REBALANCE_EVENT_DRIVEN",
-  "state": "The approved Main-1 portfolio is SYNC, CASE47, CASE14, SELECTIVE-FASTPATH, and TINY; STORE/EPI/SMALLMID are being offboarded with their evidence retained",
-  "nextStep": "Validate SYNC Build then Correctness; finish the three old worktree closures; create the three approved sparse worktrees and fresh Route Agent contexts",
-  "blocker": "SYNC formal timing needs a fresh d4 lease after its final Build/Correctness result; new performance hypotheses await Track-B and Main selection",
+  "stage": "EVENT_DRIVEN_TRACK_B_AND_SYNC_BUILD_FIX",
+  "state": "The five approved lanes are active; STORE/EPI/SMALLMID worktrees are closed with branches and V001 evidence retained; no new performance Revision exists",
+  "nextStep": "Continue SYNC V001 harness Build Fix; review each Track-B handoff on arrival; acquire Official case metadata before selecting a performance hypothesis",
+  "blocker": "Official case-to-shape/dtype mapping and case14 raw profiler exports are absent; latest SYNC timing harness Link failed",
   "planningDecisionsChanged": 0,
   "newRoutes": 3,
   "lanes": [
-    {"route":"SYNC-TOPOLOGY-CHAMPION-X","instruction":"Continue approved V001 Local closure","firstAction":"Validate latest timing-harness Build, then Correctness; Main grants a fresh lease before timing","revisionState":"Previous Build/Correctness passed; latest pointer-cast fix requires event-driven revalidation; no Local score"},
-    {"route":"CASE47-SMALL-CLUSTER-CHAMPION-X","instruction":"Read-only Track-B; cases 4 and 7","firstAction":"Use Support-A case facts and audit overlap with R016/SCHED/row occupancy","revisionState":"No Revision; Main selection required before implementation"},
-    {"route":"CASE14-INTRAROW-PARALLELISM-CHAMPION-X","instruction":"Read-only Track-B; case 14 wide-row occupancy","firstAction":"Establish rows, D, dtype, core/tile use, reduction and launch feasibility","revisionState":"No Revision; Main selection required before implementation"},
-    {"route":"SELECTIVE-FASTPATH-CHAMPION-X","instruction":"One research-only cycle","firstAction":"Name exact donor/source, target cases and dtype; distinguish mechanism from CASE47 and TINY","revisionState":"No Revision; wait for case-family evidence before duplicate verdict"},
-    {"route":"TINY-FIXED-OVERHEAD-CHAMPION-X","instruction":"Read-only Track-B; cases 1, 3 and 5","firstAction":"Audit fixed-cost mechanisms against SELECTIVE-FASTPATH","revisionState":"No Revision; Main selection required before implementation"}
+    {"route":"SYNC-TOPOLOGY-CHAMPION-X","instruction":"Continue approved V001 Local closure","firstAction":"Repair harness kernel-entry registration; Build/Link, then Correctness; Main issues lease before timing","revisionState":"Candidate SHA unchanged; timing harness Link exit 2, no executable; no new Correctness or Local score"},
+    {"route":"CASE47-SMALL-CLUSTER-CHAMPION-X","instruction":"Track-B: cases 4 and 7; Agent 01a0fe2e-76e0-7201-b1d2-6c9487eb1823","firstAction":"Find exact Official shape/path facts; audit R008/SCHED row ownership overlap","revisionState":"Fresh sparse worktree; no Revision; Official case mapping missing"},
+    {"route":"CASE14-INTRAROW-PARALLELISM-CHAMPION-X","instruction":"Track-B: case 14; Agent 01a0fe2e-7772-7e83-825d-e90811e0db2c","firstAction":"Obtain case metadata, raw profile, C001 source/TLE log and workspace ABI evidence","revisionState":"Track-B commit 5fda6e90; NEEDS_MORE_EVIDENCE; H1 overlaps R008/C001; H2-H4 duplicate; MAIN_SELECTED=NONE"},
+    {"route":"SELECTIVE-FASTPATH-CHAMPION-X","instruction":"One research-only cycle; Agent 01a0fe2e-799a-70e0-8b87-6c81ff9a3292","firstAction":"Name exact donor/source and target scope; distinguish mechanism from CASE47/TINY","revisionState":"Existing branch/worktree; no Revision; case input mapping remains unknown"},
+    {"route":"TINY-FIXED-OVERHEAD-CHAMPION-X","instruction":"Track-B: cases 1, 3 and 5; Agent 01a0fe2e-785a-7332-995f-0e9be2faf3a5","firstAction":"Audit fixed-cost hypotheses against SELECTIVE-FASTPATH using source paths, not time bands","revisionState":"Fresh sparse worktree; no Revision; Official case mapping missing"}
   ]
 }
 ```
@@ -277,6 +277,44 @@ The exact Candidate source, `submission.sha256`, server route-tree source, and s
 - Branch/worktree names for the approved replacements: `w2/m1/case47-small-cluster`, `w2/m1/case14-intrarow-parallelism`, and `w2/m1/tiny-fixed-overhead`, under `worktrees/w2/m1/`. Each will use a minimal sparse checkout and a fresh Route Agent context. All three Direct Parents are the exact Official-backed R31B V011 source above.
 - Event order: each Route Agent's committed source triggers its own Build immediately; Build PASS triggers Correctness; Correctness PASS triggers Formal Local Performance once Main records that lane's device lease. Score recording and dashboard refresh happen per result; no lane waits for unrelated routes or pushes.
 - `PLANNING_DECISIONS_CHANGED=0`; `NEW_ROUTES_OUTSIDE_APPROVED_5=0`; `PERFORMANCE_HYPOTHESES_MAIN_SELECTED=0`.
+
+## MAIN1_PORTFOLIO_REBALANCE_COMPLETED (2026-10-03)
+
+### Champion and Official Case Evidence
+
+- Recomputed from fetched `origin/main`: current verified anchor remains R31B V011, Official `45.16`, `15/15`. Retained source, sidecar, and result source field all match SHA `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`.
+- SUPPORT-A found no retained Official testcase→shape/dtype/rows map. `result.json` records IDs, time, and score only. Cases 1/3/5 are each below 10us; cases 4/7 are within the 10–70us time band. Time bands do not prove shared dispatch or a structural cluster. V011 source comments describe intended paths but do not prove the actual Official case inputs.
+- SUPPORT-B concluded `PIPELINE_ONLY_EXPLANATION=INSUFFICIENT` for case14's approximately 4.40x Official time ratio. Historical 2.16x full-overlap ceiling and profiler summaries lack original in-repo exports for re-computation; exact case14 rows/D/dtype and utilization remain unknown.
+
+### CASE14 Main Review
+
+- Route Agent commit `5fda6e90` records four Track-B hypotheses at `研究/CASE14-INTRAROW-PARALLELISM-CHAMPION-X/Track-B.md`. Direct Parent SHA matches R31B V011.
+- Main review: `NEEDS_MORE_EVIDENCE`; no hypothesis selected. H1's same-row D-slice reduction overlaps historical R008/C001; H2–H4 overlap prior tile, pipeline, and multirow axes. Need Official case metadata, case14 raw profile, C001 exact source/TLE log, and direct-invoke workspace ABI facts before reconsideration.
+
+### Closed Worktrees
+
+| Route | Planning classification | Current source pointer | Restore commit |
+|---|---|---|---|
+| STORE-EPILOGUE-W2-X V001 | `PARKED_BY_BASELINE_OR_ENVIRONMENT_BLOCK` | STORE-EPILOGUE-X V002 / `59fb8eada4da0b2b83cccffa4fb89fb97b7503ba3dcb08d5e0fe348e3caeb839` | `53d9f04b` |
+| EPI-ARITH-CHAMPION-W2-X V001 | `PARKED_BY_BASELINE_OR_ENVIRONMENT_BLOCK` | R31B V011 / `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3` | `d9c08342` |
+| SMALLMID-DATAFLOW-CHAMPION-X V001 | `CORRECTNESS_REJECTED` | R31B V011 / `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3` | `351be0cd` |
+
+The three local linked worktrees were removed after confirming clean status, no ignored/untracked files, no active route process, and no lease. Branches and all source/build/correctness evidence remain. Each V001 `submission.asc` remained unchanged; restoration is recorded separately in `CURRENT_SOURCE.json`.
+
+### Active Main-1 Portfolio
+
+| Route | Branch | Worktree | Agent | Direct Parent | Current stage |
+|---|---|---|---|---|---|
+| SYNC-TOPOLOGY-CHAMPION-X | `w2/m1/sync-topology` | `worktrees/w2/m1/sync-topology` | `01a0fd8f-8a90-75a2-b10d-9e4eda3e00dd` | R31B V011 | V001 timing harness Link fails with `Unknown kernelInfo` / unresolved Parent `__origin__` entry; no executable. Agent continues harness-only Build Fix; no new Correctness or timing. |
+| CASE47-SMALL-CLUSTER-CHAMPION-X | `w2/m1/case47-small-cluster` | `worktrees/w2/m1/case47-small-cluster` | `01a0fe2e-76e0-7201-b1d2-6c9487eb1823` | R31B V011 | Track-B; no Revision or `MAIN_SELECTED`. |
+| CASE14-INTRAROW-PARALLELISM-CHAMPION-X | `w2/m1/case14-intrarow-parallelism` | `worktrees/w2/m1/case14-intrarow-parallelism` | `01a0fe2e-7772-7e83-825d-e90811e0db2c` | R31B V011 | Track-B reviewed; `NEEDS_MORE_EVIDENCE`; no direction selected. |
+| SELECTIVE-FASTPATH-CHAMPION-X | `w2/m1/selective-fastpath` | `worktrees/w2/m1/selective-fastpath` | `01a0fe2e-799a-70e0-8b87-6c81ff9a3292` | R31B V011 | Fresh context on existing branch/worktree; one research-only cycle. |
+| TINY-FIXED-OVERHEAD-CHAMPION-X | `w2/m1/tiny-fixed-overhead` | `worktrees/w2/m1/tiny-fixed-overhead` | `01a0fe2e-785a-7332-995f-0e9be2faf3a5` | R31B V011 | Track-B; no Revision or `MAIN_SELECTED`. |
+
+The three new worktrees are sparse, approximately 7.5 MB each, and were created under `cann/worktrees/w2/m1/`. Their working trees are clean. All three use exact Official-backed R31B V011 as Direct Parent; no Local-positive revision is used as a parent.
+
+- `PLANNING_DECISIONS_CHANGED=0`; `NEW_ROUTES_WITHIN_APPROVED_PORTFOLIO=3`; `NEW_ROUTES_OUTSIDE_APPROVED_5=0`; `PERFORMANCE_HYPOTHESES_MAIN_SELECTED=0`.
+- Main-1 and canonical changes are committed locally. No external push was made under the repository push policy; user changes in the canonical worktree remain untouched.
 
 ## MAIN1_EVENT_DRIVEN_EXECUTION (2026-10-02)
 
