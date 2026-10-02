@@ -4,6 +4,9 @@ set(ENV{ASCEND_HOME_PATH} "${ASCEND_CANN_PACKAGE_PATH}")
 set(CMAKE_PREFIX_PATH
     "${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/tikcpp/ascendc_kernel_cmake"
     ${CMAKE_PREFIX_PATH})
+set(CMAKE_ASC_COMPILER
+    "${ASCEND_CANN_PACKAGE_PATH}/compiler/ccec_compiler/bin/bisheng"
+    CACHE FILEPATH "CANN ASC compiler" FORCE)
 find_package(ASC REQUIRED)
 project(addr_v001_h3 LANGUAGES ASC)
 

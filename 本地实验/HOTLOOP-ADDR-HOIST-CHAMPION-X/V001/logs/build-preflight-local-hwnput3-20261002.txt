@@ -1,0 +1,91 @@
+2026-10-02T15:40:20Z
+hwnput3
+=== df ===
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/nvme1n1p1  3.5T  2.7T  628G  82% /home/data4t2
+=== du (top-level, sorted) ===
+4.0K	/home/data4t2/lelinfeng/cann/AGENTS.md
+4.0K	/home/data4t2/lelinfeng/cann/README.md
+4.0K	/home/data4t2/lelinfeng/cann/package-lock.json
+4.0K	/home/data4t2/lelinfeng/cann/package.json
+4.0K	/home/data4t2/lelinfeng/cann/项目结构.md
+56K	/home/data4t2/lelinfeng/cann/工具
+72K	/home/data4t2/lelinfeng/cann/项目规则
+216K	/home/data4t2/lelinfeng/cann/调度
+348K	/home/data4t2/lelinfeng/cann/技术路线
+748K	/home/data4t2/lelinfeng/cann/w2
+1.6M	/home/data4t2/lelinfeng/cann/local-experiments
+1.7M	/home/data4t2/lelinfeng/cann/研究
+2.7M	/home/data4t2/lelinfeng/cann/server_runs
+3.4M	/home/data4t2/lelinfeng/cann/STORE-EPILOGUE-W2-X
+7.3M	/home/data4t2/lelinfeng/cann/线上结果
+39M	/home/data4t2/lelinfeng/cann/本地实验
+52M	/home/data4t2/lelinfeng/cann/归档
+396M	/home/data4t2/lelinfeng/cann/worktrees
+=== npu-smi ===
++------------------------------------------------------------------------------------------------+
+| npu-smi 25.0.rc1.1               Version: 25.0.rc1.1                                           |
++---------------------------+---------------+----------------------------------------------------+
+| NPU   Name                | Health        | Power(W)    Temp(C)           Hugepages-Usage(page)|
+| Chip                      | Bus-Id        | AICore(%)   Memory-Usage(MB)  HBM-Usage(MB)        |
++===========================+===============+====================================================+
+| 0     910B3               | OK            | 144.9       34                0    / 0             |
+| 0                         | 0000:C1:00.0  | 30          0    / 0          60224/ 65536         |
++===========================+===============+====================================================+
+| 1     910B3               | OK            | 142.6       33                0    / 0             |
+| 0                         | 0000:C2:00.0  | 31          0    / 0          63080/ 65536         |
++===========================+===============+====================================================+
+| 2     910B3               | OK            | 142.6       37                0    / 0             |
+| 0                         | 0000:81:00.0  | 33          0    / 0          62826/ 65536         |
++===========================+===============+====================================================+
+| 3     910B3               | OK            | 150.6       36                0    / 0             |
+| 0                         | 0000:82:00.0  | 32          0    / 0          64070/ 65536         |
++===========================+===============+====================================================+
+| 4     910B3               | OK            | 99.6        34                0    / 0             |
+| 0                         | 0000:01:00.0  | 1           0    / 0          61222/ 65536         |
++===========================+===============+====================================================+
+| 5     910B3               | OK            | 99.9        32                0    / 0             |
+| 0                         | 0000:02:00.0  | 0           0    / 0          61443/ 65536         |
++===========================+===============+====================================================+
+| 6     910B3               | OK            | 108.6       35                0    / 0             |
+| 0                         | 0000:41:00.0  | 4           0    / 0          64049/ 65536         |
++===========================+===============+====================================================+
+| 7     910B3               | OK            | 94.3        37                0    / 0             |
+| 0                         | 0000:42:00.0  | 0           0    / 0          24779/ 65536         |
++===========================+===============+====================================================+
++---------------------------+---------------+----------------------------------------------------+
+| NPU     Chip              | Process id    | Process name             | Process memory(MB)      |
++===========================+===============+====================================================+
+| 0       0                 | 89395         | VLLMWorker_TP            | 56702                   |
++===========================+===============+====================================================+
+| 1       0                 | 2305560       | python                   | 2858                    |
+| 1       0                 | 91055         | VLLMWorker_TP            | 56702                   |
++===========================+===============+====================================================+
+| 2       0                 | 92813         | VLLMWorker_TP            | 56703                   |
+| 2       0                 | 2666111       | python                   | 2662                    |
++===========================+===============+====================================================+
+| 3       0                 | 94498         | VLLMWorker_TP            | 56703                   |
+| 3       0                 | 2432846       | python                   | 3904                    |
++===========================+===============+====================================================+
+| 4       0                 | 1819590       | python                   | 2084                    |
+| 4       0                 | 2999855       | VLLMEngineCor            | 55664                   |
++===========================+===============+====================================================+
+| 5       0                 | 89602         | VLLMWorker_TP            | 56678                   |
+| 5       0                 | 2771372       | python                   | 1294                    |
++===========================+===============+====================================================+
+| 6       0                 | 3492500       | python                   | 3902                    |
+| 6       0                 | 91228         | VLLMWorker_TP            | 56679                   |
++===========================+===============+====================================================+
+| 7       0                 | 439848        | python3                  | 21260                   |
++===========================+===============+====================================================+
+=== ssh alias ===
+ssh: Could not resolve hostname cann-server3: Temporary failure in name resolution
+=== toolkit ===
+ASCEND_AICPU_PATH=/usr/local/Ascend/ascend-toolkit/latest
+ASCEND_HOME_PATH=/usr/local/Ascend/ascend-toolkit/latest
+ASCEND_OPP_PATH=/usr/local/Ascend/ascend-toolkit/latest/opp
+ASCEND_TOOLKIT_HOME=/usr/local/Ascend/ascend-toolkit/latest
+CODEX_REMOTE_PAYLOAD=printf '%b' '\221\275\207\330\350\055\356\267'; PATH="${CODEX_INSTALL_DIR:-$HOME/.local/bin}:$PATH"; export PATH; if [ "${CODEX_SSH_SKIP_APP_SERVER_BOOT:-}" = "true" ]; then exit 0; fi; (umask 077; mkdir -p -- "${CODEX_HOME:-$HOME/.codex}/app-server-control" && (pkill -9 -U "$(id -u)" -f 'codex.*[d]esktop-ssh-websocket-v0.sock' || true) && if [ -S "${SSH_AUTH_SOCK:-}" ]; then ln -sfn -- "$SSH_AUTH_SOCK" "${CODEX_HOME:-$HOME/.codex}/app-server-control/forwarded-ssh-agent.sock"; elif [ ! -S "${CODEX_HOME:-$HOME/.codex}/app-server-control/forwarded-ssh-agent.sock" ]; then rm -f -- "${CODEX_HOME:-$HOME/.codex}/app-server-control/forwarded-ssh-agent.sock"; fi && : >"${CODEX_HOME:-$HOME/.codex}/app-server-control/app-server.log") && SSH_AUTH_SOCK="${CODEX_HOME:-$HOME/.codex}/app-server-control/forwarded-ssh-agent.sock" nohup codex -c features.code_mode_host=true app-server --listen unix:// >"${CODEX_HOME:-$HOME/.codex}/app-server-control/app-server.log" 2>&1 &
+LD_LIBRARY_PATH=/usr/local/Ascend/ascend-toolkit/latest/tools/aml/lib64:/usr/local/Ascend/ascend-toolkit/latest/tools/aml/lib64/plugin:/usr/local/Ascend/ascend-toolkit/latest/lib64:/usr/local/Ascend/ascend-toolkit/latest/lib64/plugin/opskernel:/usr/local/Ascend/ascend-toolkit/latest/lib64/plugin/nnengine:/usr/local/Ascend/ascend-toolkit/latest/opp/built-in/op_impl/ai_core/tbe/op_tiling/lib/linux/aarch64:/usr/local/Ascend/driver/lib64:/usr/local/Ascend/driver/lib64/common:/usr/local/Ascend/driver/lib64/driver:
+PATH=/usr/local/Ascend/ascend-toolkit/latest/bin:/usr/local/Ascend/ascend-toolkit/latest/compiler/ccec_compiler/bin:/usr/local/Ascend/ascend-toolkit/latest/tools/ccec_compiler/bin:/home/data4t2/lelinfeng/.local/bin:/home/data4t2/lelinfeng/.codex/packages/standalone/releases/0.154.0-aarch64-unknown-linux-musl/codex-path:/home/data4t2/lelinfeng/.codex/tmp/arg0/codex-arg0MRzTVM:/home/data4t2/lelinfeng/.local/bin:/home/data4t2/lelinfeng/.local/bin:/home/data4t2/lelinfeng/.nvm/versions/node/v24.20.0/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
+PYTHONPATH=/usr/local/Ascend/ascend-toolkit/latest/python/site-packages:/usr/local/Ascend/ascend-toolkit/latest/opp/built-in/op_impl/ai_core/tbe:
