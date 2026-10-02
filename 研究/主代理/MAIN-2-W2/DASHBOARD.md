@@ -517,3 +517,36 @@ HBM_GATE=NO_BLOCK_RECORDED_AT_LAST_ROUTE_PREFLIGHT
 PROCESS_ACTIONS=NONE; existing VLLM/Ray/Python processes untouched
 GITHUB_PUSH=PUSH_PENDING; not a local-stage gate
 ```
+
+## Event receipt — BRANCH correctness / ADDR bounded build fix — 2026-10-02T16:52Z
+
+```text
+CONTROL_HEAD_BEFORE_RECEIPT=ffc2bf90
+CANONICAL_HEAD=02482b46c2ee1fdd5bab1f88a474c7e70426f661
+OVERALL_OFFICIAL_CHAMPION=R31B V011 / 45.16
+PLANNING_DECISIONS_CHANGED=0
+NEW_ROUTES_OUTSIDE_APPROVED_5=0
+DIRECT_ONLINE_SUBMISSION=0
+ONLINE_QUEUE=EMPTY
+```
+
+| Route | Revision | Latest event | Evidence / next event |
+|---|---|---|---|
+| HOTLOOP-ADDR-HOIST-CHAMPION-X | V001 / ADDR-H3 | `BUILD_FAILED` after bounded HCC include and environment propagation fix; generated ASCPLUGIN host unit still reports `<vector>` missing | route HEAD `8ef756a3`; `BUILD-FIX-1.md`; Correctness and timing prohibited; no V002 |
+| HOTLOOP-BRANCH-HOIST-CHAMPION-X | V001 / HBH-10 | `CORRECTNESS_PASS`; 8/8 Parent/Candidate cases pass, including BF16 tail geometry | route HEAD `e1346fce`; `correctness-result.json`; Formal Local Performance starts immediately on exclusive device 7 |
+| UB-LIFETIME-SAFE-CHAMPION-X | preserved V001 / diagnostic | closed `PARENT_INSTABILITY` | route HEAD `12e67f3b`; no Candidate change, V002, timing, or Online |
+
+BRANCH correctness source identity remains exact: Parent
+`a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`, Candidate
+`4dc1973ef198cd67693610b6ffedad6883b59f52207b9804052975a13f4e032b`.
+The formal stage is independent of ADDR and does not wait for its build
+blocker. No Local score is recorded until the paired timing evidence is
+complete; `FORMAL_PERFORMANCE_RUNS` remains `0` at receipt creation.
+
+```text
+SERVER_DEVICE_FOR_BRANCH_FORMAL=7
+DEVICE_SNAPSHOT_SOURCE=V001 correctness snapshot at 2026-10-02T16:40Z
+DEVICE7_HBM_USED_MB=24789/65536; FREE_HBM_APPROX_MB=40747
+PROCESS_ACTIONS=NONE; existing users untouched
+GITHUB_PUSH=PUSH_PENDING; not a local-stage gate
+```
