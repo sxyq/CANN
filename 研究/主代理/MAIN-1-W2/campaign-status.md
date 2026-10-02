@@ -197,19 +197,19 @@ Have each existing Route Agent prepare and commit its reproducible route-local b
 
 ```dashboard-json
 {
-  "handoffs": "CASE14, CASE47, FASTPATH, and TINY Track-B reviews recorded; SYNC V001 Build Fix continues after logged Parent Link failure",
+  "handoffs": "CASE14, CASE47, FASTPATH, and TINY Track-B reviews recorded; SYNC direct-source harness build needs ACL host type in shim",
   "selected": "5 Planning-approved routes; 0/5 performance hypotheses MAIN_SELECTED",
   "activeAgents": 1,
   "pendingAgents": 0,
   "activeRevision": "SYNC V001 only",
   "stage": "EVENT_DRIVEN_TRACK_B_AND_SYNC_BUILD_FIX",
   "state": "Five approved lanes remain in the portfolio; four Track-B reviews are recorded; no new performance Revision exists",
-  "nextStep": "Review the direct-source ASC target update; on Build/Link PASS immediately run Correctness; timing still waits for a Main lease",
-  "blocker": "Official case-to-shape/dtype mapping is absent; current SYNC Parent module reports Unknown kernelInfo and unresolved __origin__ entries",
+  "nextStep": "Add ACL type dependency to the SYNC harness shim; Main review, then Build/Link and immediate Correctness on PASS",
+  "blocker": "Official case-to-shape/dtype mapping is absent; latest SYNC attempt fails host compilation because aclrtStream is undeclared",
   "planningDecisionsChanged": 0,
   "newRoutes": 3,
   "lanes": [
-    {"route":"SYNC-TOPOLOGY-CHAMPION-X","instruction":"Continue approved V001 Local closure","firstAction":"Use direct ASC source targets for Parent/Candidate; Build/Link, then Correctness; Main lease only for timing","revisionState":"Harness commit 6f0e9046 reviewed; RUN_ID 20261002T210858Z Configure PASS, Parent Link exit 2; no executable or new Correctness"},
+    {"route":"SYNC-TOPOLOGY-CHAMPION-X","instruction":"Continue approved V001 Local closure","firstAction":"Include ACL types in force-included shim; Main review, Build/Link, then Correctness; lease only for timing","revisionState":"Direct-source harness commit 84c9cd14 reviewed; RUN_ID 20261002T214024Z Configure PASS, both host compiles exit 2 on aclrtStream; no executable or new Correctness"},
     {"route":"CASE47-SMALL-CLUSTER-CHAMPION-X","instruction":"Track-B Main review: NEEDS_MORE_EVIDENCE; no MAIN_SELECTED","firstAction":"Obtain Judge case4/case7 shape and dtype; revisit H1 only after evidence arrives","revisionState":"Commit 2404d4e4; H2/H5 DUPLICATE; H3 INFEASIBLE; H4 overlaps prior wide-tile work; no Revision"},
     {"route":"CASE14-INTRAROW-PARALLELISM-CHAMPION-X","instruction":"Track-B: case 14; Agent 01a0fe2e-7772-7e83-825d-e90811e0db2c","firstAction":"Obtain case metadata, raw profile, C001 source/TLE log and workspace ABI evidence","revisionState":"Track-B commit 5fda6e90; NEEDS_MORE_EVIDENCE; H1 overlaps R008/C001; H2-H4 duplicate; MAIN_SELECTED=NONE"},
     {"route":"SELECTIVE-FASTPATH-CHAMPION-X","instruction":"Track-B cycle complete: NEEDS_MORE_EVIDENCE; no MAIN_SELECTED","firstAction":"Obtain Judge input mapping; no implementation until Main selects a hypothesis","revisionState":"Commit 5f669c30; STORE V003 donor is precisely sourced; Official 44.38 vs V011 45.16; TINY mechanism review complete, case overlap unknown"},
@@ -305,7 +305,7 @@ The three local linked worktrees were removed after confirming clean status, no 
 
 | Route | Branch | Worktree | Agent | Direct Parent | Current stage |
 |---|---|---|---|---|---|
-| SYNC-TOPOLOGY-CHAMPION-X | `w2/m1/sync-topology` | `worktrees/w2/m1/sync-topology` | `01a0fd8f-8a90-75a2-b10d-9e4eda3e00dd` | R31B V011 | Harness commit `6f0e9046` reviewed. RUN_ID `...210858Z`: Configure PASS; Candidate module linked; Parent module failed with `Unknown kernelInfo` and three unresolved `__origin__` variants. No timing/correctness executable; no new Correctness or timing. Exact attempt logs remain under server3 V001 `results/`; original Candidate SHA unchanged. |
+| SYNC-TOPOLOGY-CHAMPION-X | `w2/m1/sync-topology` | `worktrees/w2/m1/sync-topology` | `01a0fd8f-8a90-75a2-b10d-9e4eda3e00dd` | R31B V011 | Direct-source harness commit `84c9cd14` reviewed and ASCPLUGIN registration issue cleared. Latest RUN_ID `...214024Z`: Configure PASS; Parent/Candidate host wrapper compiles failed because `aclrtStream` was undeclared in force-included shim. No new executable, Correctness, or timing; Candidate SHA unchanged. |
 | CASE47-SMALL-CLUSTER-CHAMPION-X | `w2/m1/case47-small-cluster` | `worktrees/w2/m1/case47-small-cluster` | `01a0fe2e-76e0-7201-b1d2-6c9487eb1823` | R31B V011 | Track-B; no Revision or `MAIN_SELECTED`. |
 | CASE14-INTRAROW-PARALLELISM-CHAMPION-X | `w2/m1/case14-intrarow-parallelism` | `worktrees/w2/m1/case14-intrarow-parallelism` | `01a0fe2e-7772-7e83-825d-e90811e0db2c` | R31B V011 | Track-B reviewed; `NEEDS_MORE_EVIDENCE`; no direction selected. |
 | SELECTIVE-FASTPATH-CHAMPION-X | `w2/m1/selective-fastpath` | `worktrees/w2/m1/selective-fastpath` | `01a0fe2e-799a-70e0-8b87-6c81ff9a3292` | R31B V011 | Fresh context on existing branch/worktree; one research-only cycle. |
@@ -346,6 +346,14 @@ The three new worktrees are sparse, approximately 7.5 MB each, and were created 
 - Configure: PASS. Build/Link: FAIL, exit 2. The Candidate module linked, but ASCPLUGIN reported `Unknown kernelInfo` for Parent `add_rms_norm_bias_custom`; the Parent module link then reported three unresolved `__origin__add_rms_norm_bias_custom<T>` symbols. Neither timing nor correctness executable was produced; no Correctness or timing ran.
 - Server logs and before/after resource snapshots are under `/home/data4t2/lelinfeng/cann/w2/SYNC-TOPOLOGY-CHAMPION-X/V001/results/SYNC-TOPOLOGY-CHAMPION-X-V001-D4-BUILD-FIX-6f0e9046-20261002T210858Z/`.
 - Main's next action is to review a harness-only change that registers Parent and Candidate from their exact ASC source paths and renames only their host `run_kernel` wrappers, following the in-repository WIDE-X-FRESH4 CMake pattern. After commit review, Build/Link proceeds immediately; PASS triggers Correctness immediately. Timing still requires a separate Main lease.
+- `PLANNING_DECISIONS_CHANGED=0`; `NEW_ROUTES=0`; `PERFORMANCE_HYPOTHESES_MAIN_SELECTED=0`.
+
+## MAIN1_SYNC_TIMING_HARNESS_BUILD_ATTEMPT_2 (2026-10-03)
+
+- Harness commit `84c9cd14` registers the exact Parent and Candidate ASC source files directly and gives their host `run_kernel` wrappers distinct names. Candidate source SHA remains `27c853e1cb0c47307899b874338c3aecb912ad5dc125c0d67f6afba76a9117ec`; Parent R31B V011 SHA remains `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`.
+- RUN_ID: `SYNC-TOPOLOGY-CHAMPION-X-V001-D4-BUILD-FIX-84c9cd14-20261002T214024Z`. Source and seven harness file identities matched. CANN `8.5.0.alpha002`; d4 free HBM before Build was 2488 MB and project disk available was 616 GB.
+- Configure: PASS. Build/Link: FAIL, return code `2`; Parent and Candidate host wrapper compilation both report `unknown type name 'aclrtStream'` from `submission.asc:3479`. The force-included `local_abi_shim.h` lacks the ACL declaration. No new executable was produced; Correctness and timing did not run.
+- Direct-source module registration cleared the previous ASCPLUGIN `Unknown kernelInfo` failure. Main requested that the next harness-only change add the ACL header to the shim, preserve `submission.asc`, index this failure attempt separately, and submit the shim change for review before another Build.
 - `PLANNING_DECISIONS_CHANGED=0`; `NEW_ROUTES=0`; `PERFORMANCE_HYPOTHESES_MAIN_SELECTED=0`.
 
 ## MAIN1_EVENT_DRIVEN_EXECUTION (2026-10-02)
