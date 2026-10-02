@@ -36,6 +36,9 @@ if [[ "${SMD_ENV_RC}" -ne 0 ]]; then
     exit 2
 fi
 
+SMD_CANN_LIB_DIR="${ASCEND_HOME_PATH}/aarch64-linux/lib64"
+export LD_LIBRARY_PATH="${SMD_CANN_LIB_DIR}${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"
+
 if [[ ! -x "${SMD_CORRECTNESS_BIN}" ]]; then
     echo "correctness executable is missing: ${SMD_CORRECTNESS_BIN}" >&2
     exit 2
