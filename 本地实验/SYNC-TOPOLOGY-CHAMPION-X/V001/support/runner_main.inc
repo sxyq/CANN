@@ -257,11 +257,11 @@ void Launch(KernelFn kernel, void* output, const DeviceBuffers& buffers,
             const TensorGroupInfo& dataInfo, const TensorGroupInfo& paramInfo,
             aclrtStream stream)
 {
-    kernel(static_cast<GM_ADDR>(buffers.x), dataInfo,
-           static_cast<GM_ADDR>(buffers.residual), dataInfo,
-           static_cast<GM_ADDR>(buffers.gamma), paramInfo,
-           static_cast<GM_ADDR>(buffers.bias), paramInfo,
-           static_cast<GM_ADDR>(output), dataInfo, 1, stream, kEpsilon);
+    kernel((GM_ADDR)buffers.x, dataInfo,
+           (GM_ADDR)buffers.residual, dataInfo,
+           (GM_ADDR)buffers.gamma, paramInfo,
+           (GM_ADDR)buffers.bias, paramInfo,
+           (GM_ADDR)output, dataInfo, 1, stream, kEpsilon);
 }
 
 TimedSample Measure(KernelFn kernel, void* output, const DeviceBuffers& buffers,
