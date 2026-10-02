@@ -12,17 +12,17 @@
 
 ## Server Paths
 
-Stage `submission.asc` and this `support/` directory together under:
+Stage `submission.asc` and this `support/` directory together under a new run directory:
 
 ```text
-/home/data4t2/lelinfeng/cann/local-experiments/SMALLMID-DATAFLOW-CHAMPION-X/V001/a689e5abc03d2770b277812d9a52ae0a1aaf910952b737525e1722f06bdb340a/
+/home/data4t2/lelinfeng/cann/local-experiments/SMALLMID-DATAFLOW-CHAMPION-X/V001/runs/<RUN_ID>/
 ```
 
-Set the output directory to that staged directory's `artifacts/` child. Build files go under `artifacts/build/`; the two command logs remain separate:
+Use a unique `RUN_ID` for every attempt. Build files go under that run's `artifacts/build/`; preserve the original source package and earlier attempt directories. The ASC compilation unit contains the fixed Candidate; a separate AArch64 C++ host driver calls its C ABI entry point so ordinary ACL device pointers are not cast to the ASC `__gm__` address space. Both scripts load the selected CANN environment before use. The two command logs remain separate:
 
 ```text
-artifacts/build-device1.log
-artifacts/correctness-device1.log
+<RUN_ID>/build.log
+<RUN_ID>/correctness.log
 ```
 
 ## Commands
@@ -30,12 +30,12 @@ artifacts/correctness-device1.log
 Run on server3 from the staged V001 directory. Each command writes only its own log file.
 
 ```bash
-SMD_ROOT=/home/data4t2/lelinfeng/cann/local-experiments/SMALLMID-DATAFLOW-CHAMPION-X/V001/a689e5abc03d2770b277812d9a52ae0a1aaf910952b737525e1722f06bdb340a
-SMD_OUT="$SMD_ROOT/artifacts"
-mkdir -p "$SMD_OUT"
-cd "$SMD_ROOT"
-SMD_V001_OUTPUT="$SMD_OUT" bash support/build_server3.sh > "$SMD_OUT/build-device1.log" 2>&1
-DEVICE_ID=1 SMD_V001_OUTPUT="$SMD_OUT" bash support/run_correctness_server3.sh > "$SMD_OUT/correctness-device1.log" 2>&1
+SMD_RUN=/home/data4t2/lelinfeng/cann/local-experiments/SMALLMID-DATAFLOW-CHAMPION-X/V001/runs/<RUN_ID>
+SMD_OUT="$SMD_RUN/artifacts"
+mkdir -p "$SMD_RUN"
+cd "$SMD_RUN"
+SMD_V001_OUTPUT="$SMD_OUT" bash support/build_server3.sh > "$SMD_RUN/build.log" 2>&1
+DEVICE_ID=1 SMD_V001_OUTPUT="$SMD_OUT" bash support/run_correctness_server3.sh > "$SMD_RUN/correctness.log" 2>&1
 ```
 
-The build script configures `support/CMakeLists.txt` and builds target `smd_v001_correctness`. The correctness script runs exactly the three BF16 cases listed above. A nonzero command exit or any `result=FAIL` is a failed correctness run; no performance conclusion is produced by this harness.
+The build script configures the staged `support/CMakeLists.txt` and builds target `smd_v001_correctness`. The correctness script runs exactly the three BF16 cases listed above. A nonzero command exit or any `result=FAIL` is a failed correctness run; no performance conclusion is produced by this harness. Never reuse an output directory: this prevents a prior executable from being mistaken for the current attempt.

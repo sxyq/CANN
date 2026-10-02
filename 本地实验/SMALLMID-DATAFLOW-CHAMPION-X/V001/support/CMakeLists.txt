@@ -10,7 +10,7 @@ list(APPEND CMAKE_MODULE_PATH "${_ASC_CMAKE}/ASC_CMake" "${_ASC_CMAKE}")
 list(APPEND CMAKE_PREFIX_PATH "${_ASC_CMAKE}")
 find_package(ASC REQUIRED)
 
-project(smallmid_v001_correctness LANGUAGES ASC)
+project(smallmid_v001_correctness LANGUAGES ASC CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(SOC_VERSION Ascend910B3)
@@ -27,10 +27,12 @@ string(JOIN " " HCC_CXX_INCLUDES_STR ${HCC_CXX_INCLUDES})
 set(CMAKE_ASC_COMPILE_OBJECT
     "<CMAKE_ASC_COMPILER> ${CMAKE_COMPILE_AS_ASC_FLAG} <DEFINES> <INCLUDES> --cce-aicore-arch=dav-c220 ${HCC_CXX_INCLUDES_STR} -Xaicore-start -O3 -std=c++17 -Xaicore-end -Xhost-start ${HCC_CXX_INCLUDES_STR} -fPIC -O2 -std=c++17 -Xhost-end <FLAGS> -o <OBJECT> -c -x asc <SOURCE>")
 
-add_executable(smd_v001_correctness candidate_correctness.asc)
+add_executable(smd_v001_correctness candidate_correctness.asc correctness_main.cpp)
+set_target_properties(smd_v001_correctness PROPERTIES LINKER_LANGUAGE ASC)
 target_include_directories(smd_v001_correctness PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}"
-    "${CMAKE_CURRENT_SOURCE_DIR}/..")
+    "${CMAKE_CURRENT_SOURCE_DIR}/.."
+    "${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include")
 target_compile_options(smd_v001_correctness PRIVATE
     $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=${SOC_ARCH}>)
 target_link_directories(smd_v001_correctness PRIVATE
