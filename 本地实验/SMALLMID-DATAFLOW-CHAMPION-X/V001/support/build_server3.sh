@@ -2,6 +2,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+SUPPORT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OUTPUT="${SMD_V001_OUTPUT:-${ROOT}/output}"
 BUILD="${OUTPUT}/build"
 EXPECTED_SOURCE_SHA256="a689e5abc03d2770b277812d9a52ae0a1aaf910952b737525e1722f06bdb340a"
@@ -53,7 +54,7 @@ if [[ "${SOURCE_SHA256}" != "${EXPECTED_SOURCE_SHA256}" ]]; then
 fi
 echo "ASCEND_HOME_PATH=${ASCEND_HOME_PATH}"
 echo "SOC_VERSION=Ascend910B3 NPU_ARCH=dav-2201"
-cmake -S "${ROOT}/support" -B "${BUILD}" \
+cmake -S "${SUPPORT}" -B "${BUILD}" \
     -DCMAKE_MODULE_PATH="${KIT}/ASC_CMake;${KIT}" \
     -DCMAKE_PREFIX_PATH="${KIT}" \
     -DSOC_VERSION=Ascend910B3 \

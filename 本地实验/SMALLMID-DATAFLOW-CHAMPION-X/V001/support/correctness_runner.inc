@@ -112,16 +112,16 @@ int main(int argc, char** argv)
             static_cast<float>((i * 7) % 100) / 400.0f - 0.125f);
     }
 
-    void* deviceX = nullptr;
-    void* deviceResidual = nullptr;
-    void* deviceGamma = nullptr;
-    void* deviceBias = nullptr;
-    void* deviceOutput = nullptr;
-    ACL_CHECK(aclrtMalloc(&deviceX, dataBytes, ACL_MEM_MALLOC_HUGE_FIRST));
-    ACL_CHECK(aclrtMalloc(&deviceResidual, dataBytes, ACL_MEM_MALLOC_HUGE_FIRST));
-    ACL_CHECK(aclrtMalloc(&deviceGamma, paramBytes, ACL_MEM_MALLOC_HUGE_FIRST));
-    ACL_CHECK(aclrtMalloc(&deviceBias, paramBytes, ACL_MEM_MALLOC_HUGE_FIRST));
-    ACL_CHECK(aclrtMalloc(&deviceOutput, dataBytes, ACL_MEM_MALLOC_HUGE_FIRST));
+    uint8_t* deviceX = nullptr;
+    uint8_t* deviceResidual = nullptr;
+    uint8_t* deviceGamma = nullptr;
+    uint8_t* deviceBias = nullptr;
+    uint8_t* deviceOutput = nullptr;
+    ACL_CHECK(aclrtMalloc(reinterpret_cast<void**>(&deviceX), dataBytes, ACL_MEM_MALLOC_HUGE_FIRST));
+    ACL_CHECK(aclrtMalloc(reinterpret_cast<void**>(&deviceResidual), dataBytes, ACL_MEM_MALLOC_HUGE_FIRST));
+    ACL_CHECK(aclrtMalloc(reinterpret_cast<void**>(&deviceGamma), paramBytes, ACL_MEM_MALLOC_HUGE_FIRST));
+    ACL_CHECK(aclrtMalloc(reinterpret_cast<void**>(&deviceBias), paramBytes, ACL_MEM_MALLOC_HUGE_FIRST));
+    ACL_CHECK(aclrtMalloc(reinterpret_cast<void**>(&deviceOutput), dataBytes, ACL_MEM_MALLOC_HUGE_FIRST));
     ACL_CHECK(aclrtMemset(deviceOutput, dataBytes, 0, dataBytes));
     ACL_CHECK(aclrtMemcpy(deviceX, dataBytes, hostX.data(), dataBytes,
                           ACL_MEMCPY_HOST_TO_DEVICE));
@@ -132,11 +132,11 @@ int main(int argc, char** argv)
     ACL_CHECK(aclrtMemcpy(deviceBias, paramBytes, hostBias.data(), paramBytes,
                           ACL_MEMCPY_HOST_TO_DEVICE));
 
-    run_kernel(reinterpret_cast<GM_ADDR>(deviceX), infoX,
-               reinterpret_cast<GM_ADDR>(deviceResidual), infoResidual,
-               reinterpret_cast<GM_ADDR>(deviceGamma), infoGamma,
-               reinterpret_cast<GM_ADDR>(deviceBias), infoBias,
-               reinterpret_cast<GM_ADDR>(deviceOutput), infoOutput,
+    run_kernel(deviceX, infoX,
+               deviceResidual, infoResidual,
+               deviceGamma, infoGamma,
+               deviceBias, infoBias,
+               deviceOutput, infoOutput,
                availableCoreNum, stream, kEpsilon);
     ACL_CHECK(aclrtSynchronizeStream(stream));
     ACL_CHECK(aclrtMemcpy(hostOutput.data(), dataBytes, deviceOutput, dataBytes,
