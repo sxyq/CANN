@@ -10,13 +10,27 @@ export ASCEND_HOME_PATH
 export PATH="${ASCEND_HOME_PATH}/bin:${ASCEND_HOME_PATH}/aarch64-linux/ccec_compiler/bin:${PATH}"
 
 if [[ -f "${ASCEND_HOME_PATH}/bin/setenv.bash" ]]; then
+    set +e
     set +u
     source "${ASCEND_HOME_PATH}/bin/setenv.bash"
+    ENV_RC=$?
+    set -e
     set -u
+    if [[ "${ENV_RC}" -ne 0 ]]; then
+        echo "CANN environment setup failed with return code ${ENV_RC}" >&2
+        exit 2
+    fi
 elif [[ -f "${ASCEND_HOME_PATH}/set_env.sh" ]]; then
+    set +e
     set +u
     source "${ASCEND_HOME_PATH}/set_env.sh"
+    ENV_RC=$?
+    set -e
     set -u
+    if [[ "${ENV_RC}" -ne 0 ]]; then
+        echo "CANN environment setup failed with return code ${ENV_RC}" >&2
+        exit 2
+    fi
 else
     echo "CANN environment entry was not found under ${ASCEND_HOME_PATH}" >&2
     exit 2
