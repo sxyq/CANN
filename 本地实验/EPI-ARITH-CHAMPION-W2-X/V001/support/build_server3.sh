@@ -38,7 +38,7 @@ record_server_snapshot() {
 
 check_disk_space() {
     local available_kb
-    available_kb="$(df -Pk --output=avail "${SERVER_ROOT}" | tail -n 1 | tr -d '[:space:]')"
+    available_kb="$(df -Pk "${SERVER_ROOT}" | awk 'NR == 2 {print $4}')"
     [[ "${available_kb}" =~ ^[0-9]+$ ]]
     printf 'AVAILABLE_DISK_KB=%s REQUIRED_DISK_KB=15728640\n' "${available_kb}"
     (( available_kb >= 15728640 ))
