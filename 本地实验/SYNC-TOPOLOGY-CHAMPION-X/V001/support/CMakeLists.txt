@@ -24,13 +24,21 @@ set(SYNC_ACL_LIB_DIR "${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/lib64")
 set(SYNC_DRIVER_LIB_DIR "/usr/local/Ascend/driver/lib64/driver")
 set(SYNC_DRIVER_COMMON_LIB_DIR "/usr/local/Ascend/driver/lib64/common")
 set(HCC_ROOT "${ASCEND_CANN_PACKAGE_PATH}/toolkit/toolchain/hcc")
+set(SYNC_ASC_ARCH_OPTIONS
+    "--cce-aicore-arch=dav-c220")
+string(JOIN " " SYNC_ASC_ARCH_OPTIONS_STR ${SYNC_ASC_ARCH_OPTIONS})
 set(SYNC_ASC_KERNEL_OPTIONS
-    "--cce-aicore-arch=dav-c220"
+    "-include"
+    "${SYNC_V001_SUPPORT_DIR}/local_tensor_metadata.h"
     "-I${HCC_ROOT}/aarch64-target-linux-gnu/include/c++/7.3.0"
     "-I${HCC_ROOT}/aarch64-target-linux-gnu/include/c++/7.3.0/aarch64-target-linux-gnu"
     "-I${HCC_ROOT}/aarch64-target-linux-gnu/include/c++/7.3.0/backward")
 string(JOIN " " SYNC_ASC_KERNEL_OPTIONS_STR ${SYNC_ASC_KERNEL_OPTIONS})
 set(SYNC_ASC_HOST_OPTIONS
+    "-include"
+    "${SYNC_V001_SUPPORT_DIR}/local_tensor_metadata.h"
+    "-include"
+    "${SYNC_V001_SUPPORT_DIR}/local_abi_shim.h"
     "-I/usr/include/c++/11"
     "-I/usr/include/aarch64-linux-gnu/c++/11"
     "-I/usr/include/c++/11/backward"
@@ -39,7 +47,7 @@ set(SYNC_ASC_HOST_OPTIONS
     "-I${HCC_ROOT}/aarch64-target-linux-gnu/include/c++/7.3.0/backward")
 string(JOIN " " SYNC_ASC_HOST_OPTIONS_STR ${SYNC_ASC_HOST_OPTIONS})
 set(CMAKE_ASC_COMPILE_OBJECT
-    "<CMAKE_ASC_COMPILER> ${CMAKE_COMPILE_AS_ASC_FLAG} <DEFINES> <INCLUDES> ${SYNC_ASC_KERNEL_OPTIONS_STR} -Xaicore-start -O3 -std=c++17 -Xaicore-end -Xhost-start ${SYNC_ASC_HOST_OPTIONS_STR} -fPIC -O2 -Xhost-end <FLAGS> -o <OBJECT> -c -x asc <SOURCE>")
+    "<CMAKE_ASC_COMPILER> ${CMAKE_COMPILE_AS_ASC_FLAG} <DEFINES> <INCLUDES> ${SYNC_ASC_ARCH_OPTIONS_STR} -Xaicore-start ${SYNC_ASC_KERNEL_OPTIONS_STR} -O3 -std=c++17 -Xaicore-end -Xhost-start ${SYNC_ASC_HOST_OPTIONS_STR} -fPIC -O2 -Xhost-end <FLAGS> -o <OBJECT> -c -x asc <SOURCE>")
 
 set(SYNC_HOST_CXX_INCLUDE_PATHS
     "/usr/include/c++/11:/usr/include/aarch64-linux-gnu/c++/11:/usr/include/c++/11/backward")
@@ -113,19 +121,11 @@ endif()
 ascendc_library(sync_topology_v001_parent SHARED "${SYNC_PARENT_SOURCE}")
 ascendc_compile_definitions(sync_topology_v001_parent PRIVATE
     run_kernel=sync_parent_run_kernel)
-ascendc_compile_options(sync_topology_v001_parent PRIVATE
-    -include "${SYNC_V001_SUPPORT_DIR}/local_tensor_metadata.h"
-    -forward-options-to-host-compiler
-    -include "${SYNC_V001_SUPPORT_DIR}/local_abi_shim.h")
 configure_sync_v001_asc_target(sync_topology_v001_parent)
 
 ascendc_library(sync_topology_v001_candidate SHARED "${SYNC_CANDIDATE_SOURCE}")
 ascendc_compile_definitions(sync_topology_v001_candidate PRIVATE
     run_kernel=sync_candidate_run_kernel)
-ascendc_compile_options(sync_topology_v001_candidate PRIVATE
-    -include "${SYNC_V001_SUPPORT_DIR}/local_tensor_metadata.h"
-    -forward-options-to-host-compiler
-    -include "${SYNC_V001_SUPPORT_DIR}/local_abi_shim.h")
 configure_sync_v001_asc_target(sync_topology_v001_candidate)
 
 add_executable(sync_topology_v001_timing timing_runner.cpp)
