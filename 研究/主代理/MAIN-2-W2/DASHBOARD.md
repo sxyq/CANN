@@ -451,3 +451,20 @@ PUSH_STATE=PUSH_PENDING; no bounded push attempted in this startup event
 This is a startup receipt only. It records no Build, Correctness, Local score,
 Online-ready package, or Official result until the corresponding route-local
 evidence is committed.
+
+## Event receipt — declarations and diagnostic start — 2026-10-02T15:26Z
+
+```text
+ADDR_V001=DECLARED; HYPOTHESIS=ADDR-H3; DECLARATION_COMMIT=3353747f2b1ca7a4cf2c3caa026d2d3f91f0cc10
+ADDR_SOURCE=WORKING_TREE_UNCOMMITTED; BUILD=NOT_STARTED; CORRECTNESS=NOT_STARTED; FORMAL_LOCAL=NOT_STARTED
+BRANCH_V001=DECLARED; HYPOTHESIS=HBH-10; DECLARATION_COMMIT=2fa435dad89a0231b536ed662c089ef828023cb8
+BRANCH_SOURCE=NOT_YET_WRITTEN; BUILD=NOT_STARTED; CORRECTNESS=NOT_STARTED; FORMAL_LOCAL=NOT_STARTED
+UB_DIAG_2=HARNESS_CREATED_IN_WORKTREE; CANDIDATE_SOURCE=UNCHANGED; V002=FORBIDDEN
+FORMAL_PERFORMANCE_RUNS=0
+ONLINE_QUEUE=EMPTY
+LOCAL_SCORE=NONE
+```
+
+The ADDR and BRANCH declarations are separate local commits and precede their
+Candidate source edits. UB-DIAG-2 currently has only route-local support files
+in its worktree; no diagnostic result or classification is claimed yet.
