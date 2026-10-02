@@ -35,9 +35,11 @@ printf 'COMMIT=%s\n' "$(git -C "${WORKTREE_ROOT}" rev-parse HEAD)"
 printf 'ASCEND_HOME_PATH_EXPECTED=%s\n' "${ASCEND_HOME_PATH_EXPECTED}"
 export LD_LIBRARY_PATH="${LD_LIBRARY_PATH:-}"
 export PYTHONPATH="${PYTHONPATH:-}"
+export CPLUS_INCLUDE_PATH="/usr/include/c++/11:/usr/include/aarch64-linux-gnu/c++/11:/usr/include/c++/11/backward${CPLUS_INCLUDE_PATH:+:${CPLUS_INCLUDE_PATH}}"
 source /usr/local/Ascend/ascend-toolkit/set_env.sh
 export ASCEND_HOME_PATH="${ASCEND_HOME_PATH_EXPECTED}"
 printf 'ASCEND_HOME_PATH=%s\n' "${ASCEND_HOME_PATH}"
+printf 'CPLUS_INCLUDE_PATH=%s\n' "${CPLUS_INCLUDE_PATH}"
 
 check_sha256 PARENT_SOURCE_SHA256 "${PARENT_SOURCE}" "${EXPECTED_PARENT_SOURCE_SHA256}"
 check_sha256 CANDIDATE_SOURCE_SHA256 "${CANDIDATE_SOURCE}" "${EXPECTED_CANDIDATE_SOURCE_SHA256}"
