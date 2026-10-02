@@ -210,7 +210,7 @@ Have each existing Route Agent prepare and commit its reproducible route-local b
   "newRoutes": 0,
   "lanes": [
     {"route":"SYNC V001","instruction":"H2 low-precision parameter prefetch order","firstAction":"Build on device 4, then correctness","revisionState":"BUILD_FAILED; missing C++ vector include; harness retry active; Candidate SHA unchanged"},
-    {"route":"STORE V001","instruction":"H1 full-row Store issue point","firstAction":"Build on device 5, then correctness","revisionState":"BUILD_PASS; CORRECTNESS_INCOMPLETE; libgraph.so runtime path retry active; Candidate SHA unchanged"},
+    {"route":"STORE V001","instruction":"H1 full-row Store issue point","firstAction":"Build on device 5, then correctness","revisionState":"BUILD_PASS; run-001 INCOMPLETE (libgraph.so); run-002 FAIL 23/25 with two FP32 output differences; targeted diagnosis active; Candidate SHA unchanged"},
     {"route":"EPI V001","instruction":"H3 group independent row arithmetic","firstAction":"Build on device 7, then correctness","revisionState":"BUILD_INCOMPLETE before CMake; df option compatibility retry active; Candidate SHA unchanged"},
     {"route":"SMALLMID V001","instruction":"SMD-H6 reuse BF16 parameter conversion","firstAction":"Build on device 1, then correctness","revisionState":"BUILD_MISSING; prior server log empty and no executable found; replacement active; Candidate SHA unchanged"},
     {"route":"SELECTIVE-FASTPATH","instruction":"BF16 D32768 donor qualification only","firstAction":"Resolve missing exact runtime M and paired evidence","revisionState":"QUALIFICATION_ONLY; no V001 created"}
@@ -286,10 +286,17 @@ The exact Candidate source, `submission.sha256`, server route-tree source, and s
 | Route | Build | Correctness | Current action |
 |---|---|---|---|
 | SYNC V001 | FAILED; generated host code cannot find `<vector>` | NOT_RUN | Route Agent is resolving the C++ include path; Candidate SHA is unchanged |
-| STORE V001 | PASS | INCOMPLETE; parent and Candidate runners cannot load `libgraph.so` | Route Agent is setting the runtime library path; all 25 prior cases remain preserved |
+| STORE V001 | PASS | run-001 INCOMPLETE (`libgraph.so`); run-002 FAIL 23/25, two FP32 parent/Candidate outputs differ while both fail golden | Route Agent is repeating only the two failing shapes for diagnosis; no timing |
 | EPI V001 | INCOMPLETE; disk probe stopped before CMake due incompatible `df` options | NOT_RUN | Route Agent is updating only the two run scripts; prior attempt remains preserved |
 | SMALLMID V001 | MISSING; prior server log is zero bytes and no executable was found at the queried output path | NOT_RUN | Replacement Agent is tracing the prior invocation and will use a new attempt path |
 
 - The former SMALLMID Agent ID returned `not_found`; replacement `01a0fd14-5474-7140-83fd-054dd4f35187` uses the same branch and worktree.
 - No lane has started performance measurement; Main will add a per-device lease only after that lane's correctness PASS.
 - `PLANNING_DECISIONS_CHANGED=0`; `NEW_ROUTES=0`.
+
+### STORE correctness detail
+
+- Run 001 remains preserved as `INCOMPLETE` because both executables failed to load `libgraph.so`.
+- Run 002 resolved runtime loading and completed all 25 cases: 23 PASS; `1x16384 FP32` and `1x32768 FP32` each returned RC=3 for Parent and Candidate, and their output bytes differ. This does not establish correctness against an independent golden on those shapes.
+- Run-002 evidence: local commit `34f5063e`; Candidate source SHA remains `48b9428dc2fc97c7c9d95f03ad8cec8e758c88e1197aa2328b1b1edebc018f88`; server logs are under `/home/data4t2/lelinfeng/cann/STORE-EPILOGUE-W2-X/V001/logs/correctness-run-002/`.
+- A targeted repeatability and output-difference diagnosis is active. No measurement lease or Local timing has started.
