@@ -87,7 +87,7 @@ and use are unchanged. `outputBuf_` remains allocated for the non-half wide
 arm and all other paths visible in the source. Static ordering supports the
 declared half alias, but cannot account for the observed FP32 failure.
 
-## B–D. Execution status at static-audit checkpoint
+## B. Parent same-binary correctness
 
 The existing correctness runner is source-bound by
 `support/correctness/correctness_runner.asc`:
@@ -97,17 +97,78 @@ The existing correctness runner is source-bound by
 #include "correctness_runner.cpp"
 ```
 
-There is no preserved parent executable in the V001 evidence directory. A
-parent same-binary run therefore cannot be made without changing/replacing a
-runner or its source include, which is outside this task. Parent PASS/FAIL and
-nondeterminism are `MISSING_PARENT_RUN`, not inferred.
+There is no preserved parent executable in the V001 evidence directory. The
+existing runner is hard-bound to V001 by the two includes shown above. Running
+the parent would require replacing that include or creating a second runner,
+which is forbidden by this task. Therefore:
 
-The existing V001 runner output records seven PASS cases and one failure on
-`fp32-wide-16384`; it reports aggregate failures/max error only. First
-mismatch index, matched ratio, `invRms`, output-value differences, and
-NaN/Inf/padding classification are not present in the available output.
-Those fields remain `UNAVAILABLE_FROM_EXISTING_RUNNER` until a separately
-authorized diagnostic harness exists.
+```text
+PARENT_SAME_BINARY_RESULT=MISSING_PARENT_RUN
+PARENT_PASS_FAIL=UNAVAILABLE
+PARENT_NONDETERMINISM=UNAVAILABLE
+```
 
-Detailed rebuild/run evidence is appended under the route-local V001 support
-directory as it becomes available.
+This is a precise harness/evidence blocker, not a guessed parent result.
+
+## C. Exact V001 rebuild and same-case correctness
+
+After one environment-only failed attempt and one toolkit/plugin include-path
+failed attempt, the existing correctness target rebuilt successfully from the
+unchanged V001 source. The resulting executable SHA-256 is
+`c7b8fc47ee0e54f509499fd5829dcc5744eefcd9e57d4d323a1f51dd57f30849`, matching
+the preserved V001 binary identity. Device 7 had `24621/65536` MB HBM used
+before the run, i.e. `40915 MB` free; no timing was performed.
+
+Two runs of the exact rebuilt binary on device 7 produced seven identical
+non-target PASS lines and the following failing `fp32-wide-16384` lines:
+
+```text
+run 1: result=FAIL failures=16342 max_abs=3.32307e+38 max_rel=inf rc=3
+run 2: result=FAIL failures=16347 max_abs=inf max_rel=inf rc=3
+```
+
+The earlier preserved run on device 4 recorded failures `16337` and
+`max_abs=3.2167317e+38`. The changing aggregate failure count/max error across
+the same binary/case is `NONDETERMINISTIC` evidence, not a timing result.
+Complete command output and resource excerpts are in
+`本地实验/UB-LIFETIME-SAFE-CHAMPION-X/V001/support/forensic-execution-20261002.txt`.
+
+## D. Mismatch-pattern extraction limits
+
+The existing runner prints only one aggregate line after comparing the full
+row. The failing case is one full row of 16384 elements (four 4096-element
+tiles), not a tail case. From the printed failure count, the derived matched
+ratios are:
+
+| run | failures | derived matches | derived matched ratio | max abs | max rel |
+|---|---:|---:|---:|---:|---:|
+| preserved device-4 run | 16337 | 47 | 0.00286865234375 | 3.2167317e+38 | inf |
+| fresh run 1 | 16342 | 42 | 0.0025634765625 | 3.32307e+38 | inf |
+| fresh run 2 | 16347 | 37 | 0.00225830078125 | inf | inf |
+
+First mismatch index, per-element output/reference values, reference or actual
+`invRms`, mismatch location distribution, NaN/Inf counts/locations, and
+padding status are not available from this runner. The second fresh run's
+aggregate `max_abs=inf` proves an infinite aggregate difference was observed,
+but does not identify the element or whether other special values were
+present. No stronger pattern is inferred.
+
+## E. Final decision
+
+The static lifetime ordering for the intended FP16 alias is valid, and the
+diff audit proves the declared source scope. However, the only runtime failure
+is in the separately dispatched wide-FP32 path, the exact parent baseline
+cannot be run with the existing source-bound harness, and the runner omits
+the per-element diagnostics needed to identify the corruption pattern.
+
+`FINAL_CLASSIFICATION: UNRESOLVED`
+
+Missing evidence that would be required to distinguish the remaining classes:
+
+- a parent `R31B V011` executable/run using the same runner, device, and
+  `fp32-wide-16384` case, repeated enough to establish its baseline;
+- a permitted diagnostic runner that reports first mismatch, values,
+  `invRms`, special-value locations, and padding/tile distribution.
+
+No V002, source fix, timing, Online submission, shared-ledger update, or
+route-lifecycle decision was made.

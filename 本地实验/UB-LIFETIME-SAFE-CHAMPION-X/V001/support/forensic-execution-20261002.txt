@@ -1,0 +1,138 @@
+FORENSIC_EVENT=V001_EXACT_SOURCE_REBUILD_AND_FP32_CORRECTNESS
+UTC_WINDOW=2026-10-02T01:24:58Z onward
+HOST=hwnput3
+WORKTREE=/home/data4t2/lelinfeng/cann-w2-m2-ub
+BRANCH=w2/m2/ub-lifetime-safe
+REVISION=V001
+DEVICE=7
+TIMING=NOT_RUN
+ONLINE=NOT_RUN
+
+SOURCE_IDENTITY=
+9b73bb5626b5e98be53faeb91eba024b2589bf0b8b5b46e36c48ec18e009f989  本地实验/UB-LIFETIME-SAFE-CHAMPION-X/V001/submission.asc
+a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3  本地实验/UB-LIFETIME-SAFE-CHAMPION-X/V001/parent-submission.asc
+4cd1bebbc589bc39024c417986b0d10bcb9c2778b59baeeed6492eb20a00f86f  本地实验/UB-LIFETIME-SAFE-CHAMPION-X/V001/support/correctness/correctness_runner.asc
+d349d125e6c4c3e5b9075236e48dec6269e927ad5c9853828322e47e02543273  本地实验/UB-LIFETIME-SAFE-CHAMPION-X/V001/support/correctness/correctness_runner.cpp
+
+REBUILD_COMMAND=
+source /usr/local/Ascend/ascend-toolkit/set_env.sh
+export CPLUS_INCLUDE_PATH=/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0:/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0/aarch64-target-linux-gnu:/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0/backward:/usr/include/c++/11:/usr/include/aarch64-linux-gnu/c++/11
+cmake --build support/correctness-build --target ub_v001_correctness --parallel 2
+
+REBUILD_ATTEMPT_1_RC=2
+REBUILD_ATTEMPT_1_RAW=
+[ 50%] Building ASC object CMakeFiles/ub_v001_correctness.dir/correctness_runner.asc.o
+PlugIn Err: can not find ASCEND_HOME_PATH.
+PlugIn Err: can not find ASCEND_HOME_PATH.
+bisheng: error: clang frontend command failed with exit code 139
+gmake[3]: *** [CMakeFiles/ub_v001_correctness.dir/build.make:76: CMakeFiles/ub_v001_correctness.dir/correctness_runner.asc.o] Error 1
+gmake: *** [Makefile:124: ub_v001_correctness] Error 2
+
+REBUILD_ATTEMPT_2_RC=2
+REBUILD_ATTEMPT_2_RAW=
+[ 50%] Building ASC object CMakeFiles/ub_v001_correctness.dir/correctness_runner.asc.o
+5 warnings generated.
+/tmp/asc_plugin_binary_register_code-a0db73.c:3:10: fatal error: 'vector' file not found
+cceld: ccec ReturnCode: 1
+ld.lld: error: cannot open /tmp/cce_all_link-1eed45.o: No such file or directory
+gmake: *** [Makefile:124: ub_v001_correctness] Error 2
+
+REBUILD_ATTEMPT_3_RC=0
+REBUILD_ATTEMPT_3_RAW=
+Consolidate compiler generated dependencies of target ub_v001_correctness
+[ 50%] Building ASC object CMakeFiles/ub_v001_correctness.dir/correctness_runner.asc.o
+5 warnings generated.
+[100%] Linking ASC executable ub_v001_correctness
+[100%] Built target ub_v001_correctness
+
+REBUILT_EXECUTABLE=
+path=本地实验/UB-LIFETIME-SAFE-CHAMPION-X/V001/support/correctness-build/ub_v001_correctness
+bytes=477816
+sha256=c7b8fc47ee0e54f509499fd5829dcc5744eefcd9e57d4d323a1f51dd57f30849
+mtime=2026-10-02 01:27:25.218654965 +0000
+The rebuilt hash matches the preserved V001 executable hash in the prior
+correctness evidence.
+
+PARENT_HARNESS_RAW=
+support/correctness/correctness_runner.asc contains:
+#include "../../submission.asc"
+#include "correctness_runner.cpp"
+No parent executable or parent correctness runner output exists under the
+V001 route evidence path. Replacing the include/source would modify or create
+a runner, which is forbidden for this task.
+PARENT_SAME_BINARY_RESULT=MISSING_PARENT_RUN
+PARENT_NONDETERMINISM=UNAVAILABLE
+
+PRE_NPU_SMI_RAW_DEVICE7=
+| 7     910B3               | OK            | 106.0       39                0    / 0             |
+| 7                         | 0000:42:00.0  | 0           0    / 0          24621/ 65536         |
+| 7       0                 | 439848        | python3                  | 21264                   |
+PRE_FREE_HBM_MB=40915
+PRE_AICORE_PERCENT=0
+
+RUN_1_COMMAND=
+source /usr/local/Ascend/ascend-toolkit/set_env.sh
+./support/correctness-build/ub_v001_correctness 7
+RUN_1_RC=3
+RUN_1_STDOUT_RAW=
+CORRECTNESS case=fp16-wide-16384 dtype=1 rows=1 width=16384 blocks=1 device=7 atol=0.0040000002 result=PASS failures=0 max_abs=0.001953125 max_rel=0.0017985612
+CORRECTNESS case=fp16-wide-16384-rows3 dtype=1 rows=3 width=16384 blocks=1 device=7 atol=0.0040000002 result=PASS failures=0 max_abs=0.001953125 max_rel=0.002244669
+CORRECTNESS case=fp16-wide-32768 dtype=1 rows=1 width=32768 blocks=1 device=7 atol=0.0040000002 result=PASS failures=0 max_abs=0.001953125 max_rel=0.0019267823
+CORRECTNESS case=fp16-wide-32768-rows2 dtype=1 rows=2 width=32768 blocks=1 device=7 atol=0.0040000002 result=PASS failures=0 max_abs=0.001953125 max_rel=0.010989011
+CORRECTNESS case=fp16-boundary-8192 dtype=1 rows=1 width=8192 blocks=1 device=7 atol=0.0040000002 result=PASS failures=0 max_abs=0.0009765625 max_rel=0.0012618296
+CORRECTNESS case=fp16-tail-16385 dtype=1 rows=1 width=16385 blocks=1 device=7 atol=0.0040000002 result=PASS failures=0 max_abs=0.0009765625 max_rel=0.0012360939
+CORRECTNESS case=bf16-wide-16384 dtype=2 rows=1 width=16384 blocks=1 device=7 atol=0.02 result=PASS failures=0 max_abs=0.0078125 max_rel=0.0069930069
+CORRECTNESS case=fp32-wide-16384 dtype=0 rows=1 width=16384 blocks=1 device=7 atol=9.9999997e-05 result=FAIL failures=16342 max_abs=3.32307e+38 max_rel=inf
+
+POST_1_NPU_SMI_RAW_DEVICE7=
+| 7     910B3               | OK            | 192.3       44                0    / 0             |
+| 7                         | 0000:42:00.0  | 13          0    / 0          24788/ 65536         |
+| 7       0                 | 439848        | python3                  | 21260                   |
+POST_1_FREE_HBM_MB=40748
+
+RUN_2_COMMAND=
+source /usr/local/Ascend/ascend-toolkit/set_env.sh
+./support/correctness-build/ub_v001_correctness 7
+RUN_2_RC=3
+RUN_2_STDOUT_RAW=
+CORRECTNESS case=fp16-wide-16384 dtype=1 rows=1 width=16384 blocks=1 device=7 atol=0.0040000002 result=PASS failures=0 max_abs=0.001953125 max_rel=0.0017985612
+CORRECTNESS case=fp16-wide-16384-rows3 dtype=1 rows=3 width=16384 blocks=1 device=7 atol=0.0040000002 result=PASS failures=0 max_abs=0.001953125 max_rel=0.002244669
+CORRECTNESS case=fp16-wide-32768 dtype=1 rows=1 width=32768 blocks=1 device=7 atol=0.0040000002 result=PASS failures=0 max_abs=0.001953125 max_rel=0.0019267823
+CORRECTNESS case=fp16-wide-32768-rows2 dtype=1 rows=2 width=32768 blocks=1 device=7 atol=0.0040000002 result=PASS failures=0 max_abs=0.001953125 max_rel=0.010989011
+CORRECTNESS case=fp16-boundary-8192 dtype=1 rows=1 width=8192 blocks=1 device=7 atol=0.0040000002 result=PASS failures=0 max_abs=0.0009765625 max_rel=0.0012618296
+CORRECTNESS case=fp16-tail-16385 dtype=1 rows=1 width=16385 blocks=1 device=7 atol=0.0040000002 result=PASS failures=0 max_abs=0.0009765625 max_rel=0.0012360939
+CORRECTNESS case=bf16-wide-16384 dtype=2 rows=1 width=16384 blocks=1 device=7 atol=0.02 result=PASS failures=0 max_abs=0.0078125 max_rel=0.0069930069
+CORRECTNESS case=fp32-wide-16384 dtype=0 rows=1 width=16384 blocks=1 device=7 atol=9.9999997e-05 result=FAIL failures=16347 max_abs=inf max_rel=inf
+
+POST_2_NPU_SMI_RAW_DEVICE7=
+| 7     910B3               | OK            | 143.4       39                0    / 0             |
+| 7                         | 0000:42:00.0  | 13          0    / 0          24788/ 65536         |
+| 7       0                 | 439848        | python3                  | 21260                   |
+POST_2_FREE_HBM_MB=40748
+
+AVAILABLE_RUNNER_DIAGNOSTICS=
+case total elements=16384 (one full row, four 4096-element tiles; no tail)
+RUN_1 failures=16342; derived matched=42; derived matched_ratio=42/16384=0.0025634765625
+RUN_2 failures=16347; derived matched=37; derived matched_ratio=37/16384=0.00225830078125
+prior preserved run failures=16337; derived matched=47; derived matched_ratio=47/16384=0.00286865234375
+prior preserved run max_abs=3.2167317e+38; max_rel=inf
+RUN_1 max_abs=3.32307e+38; max_rel=inf
+RUN_2 max_abs=inf; max_rel=inf
+
+UNAVAILABLE_RUNNER_DIAGNOSTICS=
+first mismatch index: not printed
+per-element mismatch/tail/full-row distribution: not printed
+reference invRms: not printed
+actual invRms: not printed
+per-element output/reference differences: not printed
+NaN/Inf counts and locations: not printed (only aggregate max_abs/max_rel)
+padding bytes/elements: not printed
+
+EXECUTION_CONCLUSION=
+The exact rebuilt V001 binary was run twice on the same fp32-wide-16384 case
+with the same device and runner. Seven non-target cases passed identically;
+the failing FP32 aggregate varied in failure count and max error, so the
+candidate observation is NONDETERMINISTIC at the runner's aggregate level.
+This does not establish whether the parent has the same behavior because the
+parent same-binary run is unavailable.
+FINAL_CLASSIFICATION=UNRESOLVED
