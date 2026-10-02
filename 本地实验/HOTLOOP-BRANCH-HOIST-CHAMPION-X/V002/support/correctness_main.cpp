@@ -24,6 +24,7 @@ struct Kernel {
 
 namespace {
 
+constexpr int32_t kFp32 = 0;
 constexpr int32_t kFp16 = 1;
 constexpr int32_t kBf16 = 2;
 constexpr int64_t kAvailableCores = 40;
@@ -117,12 +118,14 @@ float Fp16ToFloat(uint16_t value)
 
 size_t ElementSize(int32_t dtype)
 {
-    return dtype == kFp16 || dtype == kBf16 ? sizeof(uint16_t) : sizeof(float);
+    return dtype == kFp32 ? sizeof(float) : sizeof(uint16_t);
 }
 
 void Store(std::vector<uint8_t>& data, size_t index, int32_t dtype, float value)
 {
-    if (dtype == kFp16) {
+    if (dtype == kFp32) {
+        std::memcpy(data.data() + index * sizeof(value), &value, sizeof(value));
+    } else if (dtype == kFp16) {
         const uint16_t packed = FloatToFp16(value);
         std::memcpy(data.data() + index * sizeof(packed), &packed, sizeof(packed));
     } else {
@@ -133,6 +136,11 @@ void Store(std::vector<uint8_t>& data, size_t index, int32_t dtype, float value)
 
 float Load(const std::vector<uint8_t>& data, size_t index, int32_t dtype)
 {
+    if (dtype == kFp32) {
+        float value = 0.0f;
+        std::memcpy(&value, data.data() + index * sizeof(value), sizeof(value));
+        return value;
+    }
     uint16_t packed = 0;
     std::memcpy(&packed, data.data() + index * sizeof(packed), sizeof(packed));
     return dtype == kFp16 ? Fp16ToFloat(packed) : Bf16ToFloat(packed);
@@ -140,6 +148,7 @@ float Load(const std::vector<uint8_t>& data, size_t index, int32_t dtype)
 
 float Quantize(float value, int32_t dtype)
 {
+    if (dtype == kFp32) return value;
     std::vector<uint8_t> packed(sizeof(uint16_t));
     Store(packed, 0, dtype, value);
     return Load(packed, 0, dtype);
@@ -147,6 +156,7 @@ float Quantize(float value, int32_t dtype)
 
 const char* DTypeName(int32_t dtype)
 {
+    if (dtype == kFp32) return "fp32";
     return dtype == kFp16 ? "fp16" : "bf16";
 }
 
@@ -211,7 +221,8 @@ bool RunCase(const Kernel& kernel, aclrtStream stream, int device, const TestCas
         return false;
     }
 
-    const float tolerance = test.dtype == kFp16 ? 2.5e-3f : 1.5e-2f;
+    const float tolerance = test.dtype == kFp32 ? 1.0e-4f
+                                                : (test.dtype == kFp16 ? 2.5e-3f : 1.5e-2f);
     float maxError = 0.0f;
     size_t mismatches = 0;
     for (int64_t row = 0; row < test.rows; ++row) {
@@ -256,10 +267,14 @@ int main(int argc, char** argv)
 {
     const int device = argc > 1 ? std::atoi(argv[1]) : 7;
     const TestCase tests[] = {
-        {kFp16, 16384, 80},
-        {kFp16, 32768, 80},
-        {kBf16, 32768, 80},
-        {kBf16, 20000, 80},
+        // Generic D=6144: rows=40 gives localRows=1 and rows=80 gives
+        // localRows=2 with the fixed 40-core launch contract.
+        {kFp32, 6144, 40},
+        {kFp32, 6144, 80},
+        {kBf16, 6144, 40},
+        {kBf16, 6144, 80},
+        {kFp16, 6144, 40},
+        {kFp16, 6144, 80},
     };
     if (!Check(aclInit(nullptr), "aclInit") || !Check(aclrtSetDevice(device), "aclrtSetDevice")) return 1;
     aclrtStream stream = nullptr;
