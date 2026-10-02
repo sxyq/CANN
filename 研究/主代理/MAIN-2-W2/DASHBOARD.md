@@ -627,6 +627,52 @@ PUSH_STATE=PUSH_PENDING; GITHUB_PUSH_IS_LOCAL_STAGE_GATE=NO
 PROCESS_ACTIONS=NONE; existing VLLM/Ray/Python processes untouched
 ```
 
+## Event receipt — BRANCH BF16-D32768 formal Local complete — 2026-10-02T18:01Z
+
+```text
+CONTROL_HEAD_BEFORE_RECEIPT=cf6c527f
+CANONICAL_MAIN_HEAD=02482b46c2ee1fdd5bab1f88a474c7e70426f661
+ORIGIN_MAIN_OBSERVED=62695ef8254c1bba61ac8534c15d23e70cf36588
+OVERALL_OFFICIAL_CHAMPION=R31B V011 / 45.16
+PLANNING_DECISIONS_CHANGED=0
+NEW_ROUTES_OUTSIDE_APPROVED_5=0
+EVENT_DRIVEN_PIPELINE=ENABLED
+DIRECT_ONLINE_SUBMISSION=FORBIDDEN
+```
+
+BRANCH V001 HBH-10 completed the only shape that passed the alternate-device
+qualification: BF16-D32768 on device 4. The formal run is recorded in route
+commit `c3c6b4c6`, returned `0`, and preserved 248 device-event samples (124
+Parent / 124 Candidate), four interleaved blocks in both orders, raw TSV,
+stdout, source identities, lease lock, and before/after load snapshots. Exact
+identities are Parent source SHA256
+`a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`, Candidate
+source SHA256
+`4dc1973ef198cd67693610b6ffedad6883b59f52207b9804052975a13f4e032b`, and
+performance executable SHA256
+`dadafae6835854a799f4fc63ca1c5ae45c4495500ed18bfd9ac7f141c0ea9e61`.
+
+The four block median Candidate-vs-Parent deltas were `-1.267609%`,
+`+0.071586%`, `-0.141244%`, and `-0.636044%`. Three blocks were negative but
+the direction and magnitude were mixed; the same-binary noise floor was not
+established, with resident d4 VLLM/Python processes observed and unchanged at
+93% HBM. Main classification is `NEEDS_ONE_MORE_LOCAL`, not
+`LOCAL_ACCEPTED` or `LOCAL_REJECTED`; no Local score is claimed and the
+Online queue remains empty. The next possible action is one bounded additional
+formal run only after review. HBH-09/V002 remains forbidden.
+
+```text
+BRANCH_BUILD=PASS; BRANCH_CORRECTNESS=PASS; BRANCH_FORMAL_LOCAL=COMPLETE
+BRANCH_LOCAL_VERDICT=NEEDS_ONE_MORE_LOCAL; BRANCH_LOCAL_SCORE=NONE
+BRANCH_ONLINE_READY=NO; BRANCH_ONLINE_QUEUE=EMPTY
+BRANCH_V002=FORBIDDEN
+FORMAL_PERFORMANCE_RUNS=1_SHAPE
+ADDR_CORRECTNESS=INCOMPLETE_D40960_DIAGNOSTIC_PENDING
+UB_CLASS=PARENT_INSTABILITY; UB_V002=FORBIDDEN
+PUSH_STATE=PUSH_PENDING; GITHUB_PUSH_IS_LOCAL_STAGE_GATE=NO
+PROCESS_ACTIONS=NONE; existing VLLM/Ray/Python processes untouched
+```
+
 ## Event receipt — ADDR correctness partial pass / BRANCH qualification retry blocked — 2026-10-02T17:50Z
 
 ```text
