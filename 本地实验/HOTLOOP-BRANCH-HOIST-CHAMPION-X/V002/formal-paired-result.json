@@ -1,0 +1,99 @@
+{
+  "route": "HOTLOOP-BRANCH-HOIST-CHAMPION-X",
+  "revision": "V002",
+  "hypothesis": "HBH-09",
+  "stage": "FORMAL_LOCAL_PAIRED",
+  "verdict": "MEASUREMENT_BLOCKED",
+  "status": "RUNNER_PASS_NOISE_GATE_FAIL",
+  "host": "hwnput3",
+  "device": 7,
+  "lease": {
+    "method": "local flock",
+    "lock": "/tmp/hbh09-v002-device7-formal.lock",
+    "shared_table_active_lease_for_device": false,
+    "shared_table_was_not_modified": true
+  },
+  "parent_source_sha256": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "candidate_source_sha256": "1aa6d8ecaa1af058b039341f63c67f4f67403bb4a8e5c6bc57dd96914f42cb65",
+  "performance_executable": "support/build-004/hotloop_branch_v002_performance",
+  "performance_executable_sha256": "c4d7b89494ed771c5ce89444c7b5ad4f8fd321c087b1fdb80097ce7ba2c82fb7",
+  "protocol": {
+    "mode": "paired",
+    "warmups_per_side": 45,
+    "samples_per_side_per_block": 31,
+    "blocks": 4,
+    "raw_sample_rows": 248,
+    "timing": "aclrtRecordEvent + aclrtSynchronizeEvent + aclrtEventElapsedTime",
+    "dtype": "fp16",
+    "rows": 80,
+    "width": 6144,
+    "interleaving": "P_then_C or C_then_P as recorded"
+  },
+  "same_binary_gate": {
+    "primary_shapes": "BLOCKED_OR_NEEDS_VALIDATION",
+    "authorized_control": "FP16_ROWS80_PASS",
+    "evidence": "formal-same-binary-result.json"
+  },
+  "blocks": [
+    {
+      "block": 0,
+      "parent": {"n": 31, "median_us": 20.199999, "mad_over_median": 0.179208, "cv": 0.317003},
+      "candidate": {"n": 31, "median_us": 20.059999, "mad_over_median": 0.200399, "cv": 0.403447},
+      "pair_delta_median_percent": 4.574468,
+      "pair_delta_positive": 17,
+      "pair_delta_negative": 14
+    },
+    {
+      "block": 1,
+      "parent": {"n": 31, "median_us": 20.940000, "mad_over_median": 0.299904, "cv": 0.463507},
+      "candidate": {"n": 31, "median_us": 21.840001, "mad_over_median": 0.274725, "cv": 0.472445},
+      "pair_delta_median_percent": 0.304267,
+      "pair_delta_positive": 18,
+      "pair_delta_negative": 13
+    },
+    {
+      "block": 2,
+      "parent": {"n": 31, "median_us": 20.500001, "mad_over_median": 0.257561, "cv": 0.323617},
+      "candidate": {"n": 31, "median_us": 20.120000, "mad_over_median": 0.094433, "cv": 0.426125},
+      "pair_delta_median_percent": 2.020197,
+      "pair_delta_positive": 18,
+      "pair_delta_negative": 13
+    },
+    {
+      "block": 3,
+      "parent": {"n": 31, "median_us": 17.940000, "mad_over_median": 0.222965, "cv": 0.347586},
+      "candidate": {"n": 31, "median_us": 15.699999, "mad_over_median": 0.312102, "cv": 0.345739},
+      "pair_delta_median_percent": -2.277431,
+      "pair_delta_positive": 14,
+      "pair_delta_negative": 17
+    }
+  ],
+  "noise_gate": {
+    "required": "Parent same-binary/paired timing must remain stable before interpreting P/C deltas",
+    "parent_mad_over_median_by_block": [0.179208, 0.299904, 0.257561, 0.222965],
+    "threshold": 0.10,
+    "result": "FAIL",
+    "reason": "All four paired Parent blocks exceed the 0.10 MAD/median stability threshold; P/C delta directions are not a stable performance signal."
+  },
+  "raw_evidence": {
+    "samples": "support/formal-20261002/fp16-r80-paired-raw.tsv",
+    "run_log": "support/formal-20261002/fp16-r80-paired.log",
+    "session_log": "support/formal-20261002/paired-session.log"
+  },
+  "load_evidence": {
+    "pre_snapshot": "support/formal-20261002/fp16-r80-paired-npu-smi-pre.txt",
+    "post_snapshot": "support/formal-20261002/fp16-r80-paired-npu-smi-post.txt",
+    "device_7_hbm_usage_pages_pre": 24790,
+    "device_7_hbm_usage_pages_post": 24792,
+    "device_7_aicore_percent_pre": 0,
+    "device_7_aicore_percent_post": 0,
+    "device_7_resident_process": "python3 PID 439848, 21260 MB at both snapshots",
+    "interpretation": "Device admission and lease checks passed; the formal timing result is blocked by the measured timing noise, not by a source identity or lease failure."
+  },
+  "runner_result": {
+    "performance_run_result": "PASS",
+    "runner_rc": 0,
+    "end_utc": "2026-10-02T20:41:50Z"
+  },
+  "next_gate": "STOP_FORMAL_LOCAL_REVIEW_REQUIRED_NO_ONLINE"
+}
