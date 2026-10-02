@@ -581,3 +581,48 @@ DEVICE7_HBM_USED_MB=24789/65536; FREE_HBM_APPROX_MB=40747
 PROCESS_ACTIONS=NONE; existing users untouched
 GITHUB_PUSH=PUSH_PENDING; not a local-stage gate
 ```
+
+## Event receipt — BRANCH timing Build PASS / ADDR correctness harness Build failure — 2026-10-02T17:35Z
+
+```text
+CONTROL_HEAD_BEFORE_RECEIPT=ee491bb1
+ORIGIN_MAIN_FETCH=PASS; OBSERVED_ORIGIN_MAIN=62695ef8254c1bba61ac8534c15d23e70cf36588
+CANONICAL_MAIN_HEAD=02482b46c2ee1fdd5bab1f88a474c7e70426f661
+OVERALL_OFFICIAL_CHAMPION=R31B V011 / 45.16
+PLANNING_DECISIONS_CHANGED=0
+NEW_ROUTES_OUTSIDE_APPROVED_5=0
+EVENT_DRIVEN_PIPELINE=ENABLED
+DIRECT_ONLINE_SUBMISSION=FORBIDDEN
+ONLINE_QUEUE=EMPTY
+```
+
+BRANCH V001 HBH-10 timing support build passed after the bounded host C++
+include-path fix. Route commits `94f85948` and `d8d6e4ef` are the support fix
+and independent Build evidence. Exact identities in the pass log remain:
+Parent source SHA256 `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`,
+Candidate source SHA256
+`4dc1973ef198cd67693610b6ffedad6883b59f52207b9804052975a13f4e032b`, and
+timing executable SHA256
+`dadafae6835854a799f4fc63ca1c5ae45c4495500ed18bfd9ac7f141c0ea9e61`.
+The next event is same-binary qualification; no Formal Local samples or Local
+verdict exist yet.
+
+ADDR V001 H3 correctness support harness Build then failed at route commit
+`2fc0ad83`: `correctness_runner.cpp:149` rejects the support-only C-style
+conversion to the `__gm__ uint8_t*` kernel ABI. Candidate H3 source is
+unchanged (SHA256
+`26aa65a2e1313e0681ca7ad29f85ca20f667d33ede1a4d2d9e7e1557d6192602`), so
+Correctness is `NOT_RUN`, Formal Local is `NOT_ELIGIBLE`, and the next event is
+a support-only cast fix followed by an immediate rebuild. This is not an H3
+failure and does not authorize ADDR-H1 or V002.
+
+```text
+BRANCH_BUILD=PASS; BRANCH_CORRECTNESS=PASS; BRANCH_TIMING_BUILD=PASS
+BRANCH_SAME_BINARY=NOT_STARTED; BRANCH_FORMAL_LOCAL=NOT_STARTED
+ADDR_BUILD=PASS; ADDR_CORRECTNESS_HARNESS_BUILD=FAILED; ADDR_CORRECTNESS=NOT_RUN
+ADDR_FORMAL_LOCAL=NOT_ELIGIBLE
+UB_CLASS=PARENT_INSTABILITY; UB_V002=FORBIDDEN
+FORMAL_PERFORMANCE_RUNS=0_AT_RECEIPT
+PUSH_STATE=PUSH_PENDING; GITHUB_PUSH_IS_LOCAL_STAGE_GATE=NO
+PROCESS_ACTIONS=NONE; existing VLLM/Ray/Python processes untouched
+```
