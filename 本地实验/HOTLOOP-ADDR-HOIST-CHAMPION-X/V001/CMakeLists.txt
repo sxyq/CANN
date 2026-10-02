@@ -17,19 +17,14 @@ link_directories(
     /usr/lib/aarch64-linux-gnu)
 
 set(ADDR_HCC_ROOT "${ASCEND_CANN_PACKAGE_PATH}/toolkit/toolchain/hcc")
-set(ADDR_ASC_KERNEL_OPTIONS
-    "--cce-aicore-arch=dav-c220"
+set(ADDR_HCC_INCLUDE_FLAGS
+    "-I${ADDR_HCC_ROOT}/aarch64-target-linux-gnu/include"
     "-I${ADDR_HCC_ROOT}/aarch64-target-linux-gnu/include/c++/7.3.0"
     "-I${ADDR_HCC_ROOT}/aarch64-target-linux-gnu/include/c++/7.3.0/aarch64-target-linux-gnu"
     "-I${ADDR_HCC_ROOT}/aarch64-target-linux-gnu/include/c++/7.3.0/backward")
-string(JOIN " " ADDR_ASC_KERNEL_OPTIONS_STR ${ADDR_ASC_KERNEL_OPTIONS})
-set(ADDR_ASC_HOST_OPTIONS
-    "-I${ADDR_HCC_ROOT}/aarch64-target-linux-gnu/include/c++/7.3.0"
-    "-I${ADDR_HCC_ROOT}/aarch64-target-linux-gnu/include/c++/7.3.0/aarch64-target-linux-gnu"
-    "-I${ADDR_HCC_ROOT}/aarch64-target-linux-gnu/include/c++/7.3.0/backward")
-string(JOIN " " ADDR_ASC_HOST_OPTIONS_STR ${ADDR_ASC_HOST_OPTIONS})
+string(JOIN " " ADDR_HCC_INCLUDE_FLAGS_STR ${ADDR_HCC_INCLUDE_FLAGS})
 set(CMAKE_ASC_COMPILE_OBJECT
-    "<CMAKE_ASC_COMPILER> ${CMAKE_COMPILE_AS_ASC_FLAG} <DEFINES> <INCLUDES> ${ADDR_ASC_KERNEL_OPTIONS_STR} -Xaicore-start -O3 -std=c++17 -Xaicore-end -Xhost-start ${ADDR_ASC_HOST_OPTIONS_STR} -fPIC -O2 -Xhost-end <FLAGS> -o <OBJECT> -c -x asc <SOURCE>")
+    "<CMAKE_ASC_COMPILER> ${CMAKE_COMPILE_AS_ASC_FLAG} <DEFINES> <INCLUDES> ${ADDR_HCC_INCLUDE_FLAGS_STR} --cce-aicore-arch=dav-c220 -Xaicore-start -O3 -std=c++17 -Xaicore-end -Xhost-start ${ADDR_HCC_INCLUDE_FLAGS_STR} -fPIC -O2 -std=c++17 -Xhost-end <FLAGS> -o <OBJECT> -c -x asc <SOURCE>")
 
 add_executable(addr_v001_h3 compile_adapter.asc)
 target_include_directories(addr_v001_h3 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
