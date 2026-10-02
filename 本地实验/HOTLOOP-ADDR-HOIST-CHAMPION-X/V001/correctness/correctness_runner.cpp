@@ -37,6 +37,12 @@ struct DeviceBuffers {
     void* candidateOutput = nullptr;
 };
 
+enum class BinarySelection {
+    kBoth,
+    kParentOnly,
+    kCandidateOnly,
+};
+
 void CheckAcl(aclError status, const char* operation)
 {
     if (status != ACL_SUCCESS) {
@@ -225,7 +231,8 @@ size_t CountOutputMismatches(const CaseSpec& spec, const std::vector<uint16_t>& 
     return mismatches;
 }
 
-bool RunCase(const CaseSpec& spec, int device, aclrtStream stream)
+bool RunCase(const CaseSpec& spec, int device, aclrtStream stream,
+             BinarySelection selection)
 {
     const size_t elementCount = static_cast<size_t>(spec.rows) * spec.width;
     const size_t dataBytes = elementCount * sizeof(uint16_t);
@@ -274,21 +281,31 @@ bool RunCase(const CaseSpec& spec, int device, aclrtStream stream)
     std::printf("CASE_BEGIN name=%s dtype=%s rows=%d width=%d device=%d core_count=%d expected_tile=%d expected_tail=%d\n",
                 spec.name, spec.dtype == 1 ? "fp16" : "bf16", spec.rows, spec.width,
                 device, kCoreCount, spec.expectedTileWidth, spec.expectedTail);
-    Launch(&addr_v001_parent::addr_v001_parent_run_kernel, buffers.parentOutput, buffers,
-           dataGroup, paramGroup, stream, spec.name, "PARENT_R31B_V011");
-    Launch(&addr_v001_candidate::addr_v001_candidate_run_kernel, buffers.candidateOutput,
-           buffers, dataGroup, paramGroup, stream, spec.name, "CANDIDATE_ADDR_V001");
-    CheckAcl(aclrtMemcpy(parentOutput.data(), dataBytes, buffers.parentOutput, dataBytes,
-                         ACL_MEMCPY_DEVICE_TO_HOST), "copy parent output");
-    CheckAcl(aclrtMemcpy(candidateOutput.data(), dataBytes, buffers.candidateOutput, dataBytes,
-                         ACL_MEMCPY_DEVICE_TO_HOST), "copy candidate output");
+    const bool runParent = selection != BinarySelection::kCandidateOnly;
+    const bool runCandidate = selection != BinarySelection::kParentOnly;
+    if (runParent) {
+        Launch(&addr_v001_parent::addr_v001_parent_run_kernel, buffers.parentOutput, buffers,
+               dataGroup, paramGroup, stream, spec.name, "PARENT_R31B_V011");
+        CheckAcl(aclrtMemcpy(parentOutput.data(), dataBytes, buffers.parentOutput, dataBytes,
+                             ACL_MEMCPY_DEVICE_TO_HOST), "copy parent output");
+    }
+    if (runCandidate) {
+        Launch(&addr_v001_candidate::addr_v001_candidate_run_kernel, buffers.candidateOutput,
+               buffers, dataGroup, paramGroup, stream, spec.name, "CANDIDATE_ADDR_V001");
+        CheckAcl(aclrtMemcpy(candidateOutput.data(), dataBytes, buffers.candidateOutput, dataBytes,
+                             ACL_MEMCPY_DEVICE_TO_HOST), "copy candidate output");
+    }
 
-    const bool parentPass = CheckOutput(spec, x, residual, gamma, bias, parentOutput, "PARENT_R31B_V011");
-    const bool candidatePass = CheckOutput(spec, x, residual, gamma, bias, candidateOutput, "CANDIDATE_ADDR_V001");
-    const bool identical = CountOutputMismatches(spec, parentOutput, candidateOutput) == 0;
+    const bool parentPass = !runParent ||
+        CheckOutput(spec, x, residual, gamma, bias, parentOutput, "PARENT_R31B_V011");
+    const bool candidatePass = !runCandidate ||
+        CheckOutput(spec, x, residual, gamma, bias, candidateOutput, "CANDIDATE_ADDR_V001");
+    const bool identical = !runParent || !runCandidate ||
+        CountOutputMismatches(spec, parentOutput, candidateOutput) == 0;
     std::printf("CASE_END name=%s parent=%s candidate=%s exact_output_match=%s\n",
-                spec.name, parentPass ? "PASS" : "FAIL", candidatePass ? "PASS" : "FAIL",
-                identical ? "PASS" : "DIFFERENT");
+                spec.name, runParent ? (parentPass ? "PASS" : "FAIL") : "SKIPPED",
+                runCandidate ? (candidatePass ? "PASS" : "FAIL") : "SKIPPED",
+                runParent && runCandidate ? (identical ? "PASS" : "DIFFERENT") : "NOT_APPLICABLE");
     FreeBuffers(buffers);
     return parentPass && candidatePass && identical;
 }
@@ -297,8 +314,8 @@ bool RunCase(const CaseSpec& spec, int device, aclrtStream stream)
 
 int main(int argc, char** argv)
 {
-    if (argc != 2 && argc != 3) {
-        std::fprintf(stderr, "usage: addr_v001_correctness <device> [case-name]\n");
+    if (argc < 2 || argc > 4) {
+        std::fprintf(stderr, "usage: addr_v001_correctness <device> [case-name] [both|parent|candidate]\n");
         return 2;
     }
     const int device = std::atoi(argv[1]);
@@ -326,7 +343,20 @@ int main(int argc, char** argv)
         {"bf16-d40960", 2, 40960, 9, 2048, 2048},
     };
 
-    const char* caseFilter = argc == 3 ? argv[2] : nullptr;
+    const char* caseFilter = argc >= 3 ? argv[2] : nullptr;
+    const char* binaryFilter = argc == 4 ? argv[3] : "both";
+    BinarySelection selection = BinarySelection::kBoth;
+    if (std::strcmp(binaryFilter, "parent") == 0) {
+        selection = BinarySelection::kParentOnly;
+    } else if (std::strcmp(binaryFilter, "candidate") == 0) {
+        selection = BinarySelection::kCandidateOnly;
+    } else if (std::strcmp(binaryFilter, "both") != 0) {
+        std::fprintf(stderr, "unknown binary filter: %s\n", binaryFilter);
+        CheckAcl(aclrtDestroyStream(stream), "destroy stream");
+        CheckAcl(aclrtResetDevice(device), "reset device");
+        CheckAcl(aclFinalize(), "aclFinalize");
+        return 2;
+    }
     bool allPass = true;
     size_t selectedCases = 0;
     for (const CaseSpec& spec : cases) {
@@ -334,7 +364,7 @@ int main(int argc, char** argv)
             continue;
         }
         ++selectedCases;
-        allPass = RunCase(spec, device, stream) && allPass;
+        allPass = RunCase(spec, device, stream, selection) && allPass;
     }
     if (selectedCases == 0) {
         std::fprintf(stderr, "unknown case filter: %s\n", caseFilter ? caseFilter : "");
@@ -347,8 +377,10 @@ int main(int argc, char** argv)
     CheckAcl(aclrtDestroyStream(stream), "destroy stream");
     CheckAcl(aclrtResetDevice(device), "reset device");
     CheckAcl(aclFinalize(), "aclFinalize");
-    std::printf("CORRECTNESS_COMPLETE result=%s cases=%zu parent_candidate_same_runner=PASS target_dtypes=FP16,BF16 filter=%s\n",
+    std::printf("CORRECTNESS_COMPLETE result=%s cases=%zu binary_filter=%s parent_candidate_same_runner=%s target_dtypes=FP16,BF16 filter=%s\n",
                 allPass ? "PASS" : "FAIL", selectedCases,
+                binaryFilter,
+                selection == BinarySelection::kBoth ? "PASS" : "NOT_APPLICABLE",
                 caseFilter == nullptr ? "ALL" : caseFilter);
     return allPass ? 0 : 1;
 }
