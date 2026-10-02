@@ -114,6 +114,7 @@ ascendc_library(sync_topology_v001_parent SHARED "${SYNC_PARENT_SOURCE}")
 ascendc_compile_definitions(sync_topology_v001_parent PRIVATE
     run_kernel=sync_parent_run_kernel)
 ascendc_compile_options(sync_topology_v001_parent PRIVATE
+    -include "${SYNC_V001_SUPPORT_DIR}/local_tensor_metadata.h"
     -forward-options-to-host-compiler
     -include "${SYNC_V001_SUPPORT_DIR}/local_abi_shim.h")
 configure_sync_v001_asc_target(sync_topology_v001_parent)
@@ -122,6 +123,7 @@ ascendc_library(sync_topology_v001_candidate SHARED "${SYNC_CANDIDATE_SOURCE}")
 ascendc_compile_definitions(sync_topology_v001_candidate PRIVATE
     run_kernel=sync_candidate_run_kernel)
 ascendc_compile_options(sync_topology_v001_candidate PRIVATE
+    -include "${SYNC_V001_SUPPORT_DIR}/local_tensor_metadata.h"
     -forward-options-to-host-compiler
     -include "${SYNC_V001_SUPPORT_DIR}/local_abi_shim.h")
 configure_sync_v001_asc_target(sync_topology_v001_candidate)
