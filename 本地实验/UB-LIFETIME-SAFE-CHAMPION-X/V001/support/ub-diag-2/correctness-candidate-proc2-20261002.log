@@ -1,0 +1,178 @@
+RUN_METADATA source=CANDIDATE_V001 process=2 device=7 runs=2 started_utc=2026-10-02T15:52:40Z host=hwnput3
+COMMAND source /usr/local/Ascend/ascend-toolkit/set_env.sh && timeout 300s ./build/ub_diag_2_candidate 7 2
++------------------------------------------------------------------------------------------------+
+| npu-smi 25.0.rc1.1               Version: 25.0.rc1.1                                           |
++---------------------------+---------------+----------------------------------------------------+
+| NPU   Name                | Health        | Power(W)    Temp(C)           Hugepages-Usage(page)|
+| Chip                      | Bus-Id        | AICore(%)   Memory-Usage(MB)  HBM-Usage(MB)        |
++===========================+===============+====================================================+
+| 0     910B3               | OK            | 124.6       33                0    / 0             |
+| 0                         | 0000:C1:00.0  | 13          0    / 0          60224/ 65536         |
++===========================+===============+====================================================+
+| 1     910B3               | OK            | 118.3       33                0    / 0             |
+| 0                         | 0000:C2:00.0  | 10          0    / 0          63080/ 65536         |
++===========================+===============+====================================================+
+| 2     910B3               | OK            | 115.9       36                0    / 0             |
+| 0                         | 0000:81:00.0  | 16          0    / 0          62826/ 65536         |
++===========================+===============+====================================================+
+| 3     910B3               | OK            | 133.1       36                0    / 0             |
+| 0                         | 0000:82:00.0  | 28          0    / 0          64070/ 65536         |
++===========================+===============+====================================================+
+| 4     910B3               | OK            | 96.6        35                0    / 0             |
+| 0                         | 0000:01:00.0  | 1           0    / 0          61221/ 65536         |
++===========================+===============+====================================================+
+| 5     910B3               | OK            | 104.4       33                0    / 0             |
+| 0                         | 0000:02:00.0  | 1           0    / 0          61443/ 65536         |
++===========================+===============+====================================================+
+| 6     910B3               | OK            | 104.4       36                0    / 0             |
+| 0                         | 0000:41:00.0  | 0           0    / 0          64048/ 65536         |
++===========================+===============+====================================================+
+| 7     910B3               | OK            | 103.6       37                0    / 0             |
+| 0                         | 0000:42:00.0  | 1           0    / 0          24788/ 65536         |
++===========================+===============+====================================================+
++---------------------------+---------------+----------------------------------------------------+
+| NPU     Chip              | Process id    | Process name             | Process memory(MB)      |
++===========================+===============+====================================================+
+| 0       0                 | 89395         | VLLMWorker_TP            | 56702                   |
++===========================+===============+====================================================+
+| 1       0                 | 2305560       | python                   | 2858                    |
+| 1       0                 | 91055         | VLLMWorker_TP            | 56702                   |
++===========================+===============+====================================================+
+| 2       0                 | 92813         | VLLMWorker_TP            | 56703                   |
+| 2       0                 | 2666111       | python                   | 2662                    |
++===========================+===============+====================================================+
+| 3       0                 | 94498         | VLLMWorker_TP            | 56703                   |
+| 3       0                 | 2432846       | python                   | 3904                    |
++===========================+===============+====================================================+
+| 4       0                 | 1819590       | python                   | 2084                    |
+| 4       0                 | 2999855       | VLLMEngineCor            | 55664                   |
++===========================+===============+====================================================+
+| 5       0                 | 89602         | VLLMWorker_TP            | 56678                   |
+| 5       0                 | 2771372       | python                   | 1294                    |
++===========================+===============+====================================================+
+| 6       0                 | 3492500       | python                   | 3902                    |
+| 6       0                 | 91228         | VLLMWorker_TP            | 56679                   |
++===========================+===============+====================================================+
+| 7       0                 | 439848        | python3                  | 21260                   |
++===========================+===============+====================================================+
+DIAG_BOOTSTRAP source=CANDIDATE_V001 source_path=本地实验/UB-LIFETIME-SAFE-CHAMPION-X/V001/submission.asc source_sha=9b73bb5626b5e98be53faeb91eba024b2589bf0b8b5b46e36c48ec18e009f989 device=7 runs=2 toolkit_expected=CANN_8.5.0.alpha002 soc=Ascend910B3 arch=dav-2201
+DIAG_PROTOCOL dtype0=FP32 storage_bytes=4 dtype1=FP16 storage_bytes=2 dtype2=BF16 storage_bytes=2 reference_rounding=FP32_raw_FP16_stagewise_BF16_final protocol_cases=8 tile_elems=4096 timing=NOT_RUN online=NOT_RUN
+DIAG_CASE source=CANDIDATE_V001 run=1 case=fp16-wide-16384 dtype=1 rows=1 width=16384 blocks=1 tile_elems=4096 tile_count=4 tail=NON_TAIL tail_elements=0 launch=PASS sync=0 copy=PASS result=PASS failures=0 max_abs=0.001953125 max_rel=0.00179856119 actual_nan=0 actual_inf=0 reference_nan=0 reference_inf=0 reference_inv_rms_min=6.49436474 reference_inv_rms_max=6.49436474 actual_inv_rms=UNAVAILABLE actual_first=0.582519531 reference_first=0.582519531 actual_last=-0.646972656 reference_last=-0.646972656
+DIAG_FIRST_MISMATCH source=CANDIDATE_V001 run=1 case=fp16-wide-16384 index=NONE actual_output=NONE reference_output=NONE
+DIAG_INVRMS source=CANDIDATE_V001 run=1 case=fp16-wide-16384 row=0 reference_inv_rms=6.49436474 actual_inv_rms=UNAVAILABLE
+DIAG_CASE source=CANDIDATE_V001 run=2 case=fp16-wide-16384 dtype=1 rows=1 width=16384 blocks=1 tile_elems=4096 tile_count=4 tail=NON_TAIL tail_elements=0 launch=PASS sync=0 copy=PASS result=PASS failures=0 max_abs=0.001953125 max_rel=0.00179856119 actual_nan=0 actual_inf=0 reference_nan=0 reference_inf=0 reference_inv_rms_min=6.49436474 reference_inv_rms_max=6.49436474 actual_inv_rms=UNAVAILABLE actual_first=0.582519531 reference_first=0.582519531 actual_last=-0.646972656 reference_last=-0.646972656
+DIAG_FIRST_MISMATCH source=CANDIDATE_V001 run=2 case=fp16-wide-16384 index=NONE actual_output=NONE reference_output=NONE
+DIAG_INVRMS source=CANDIDATE_V001 run=2 case=fp16-wide-16384 row=0 reference_inv_rms=6.49436474 actual_inv_rms=UNAVAILABLE
+DIAG_REPEATABILITY source=CANDIDATE_V001 case=fp16-wide-16384 previous_run=1 current_run=2 status=IDENTICAL differing_elements=0 first_diff_index=NONE
+DIAG_CASE source=CANDIDATE_V001 run=1 case=fp16-wide-16384-rows3 dtype=1 rows=3 width=16384 blocks=1 tile_elems=4096 tile_count=4 tail=NON_TAIL tail_elements=0 launch=PASS sync=0 copy=PASS result=PASS failures=0 max_abs=0.001953125 max_rel=0.00224466901 actual_nan=0 actual_inf=0 reference_nan=0 reference_inf=0 reference_inv_rms_min=6.48541403 reference_inv_rms_max=6.49436474 actual_inv_rms=UNAVAILABLE actual_first=0.582519531 reference_first=0.582519531 actual_last=1.32324219 reference_last=1.32324219
+DIAG_FIRST_MISMATCH source=CANDIDATE_V001 run=1 case=fp16-wide-16384-rows3 index=NONE actual_output=NONE reference_output=NONE
+DIAG_INVRMS source=CANDIDATE_V001 run=1 case=fp16-wide-16384-rows3 row=0 reference_inv_rms=6.49436474 actual_inv_rms=UNAVAILABLE
+DIAG_INVRMS source=CANDIDATE_V001 run=1 case=fp16-wide-16384-rows3 row=1 reference_inv_rms=6.48541403 actual_inv_rms=UNAVAILABLE
+DIAG_INVRMS source=CANDIDATE_V001 run=1 case=fp16-wide-16384-rows3 row=2 reference_inv_rms=6.49259233 actual_inv_rms=UNAVAILABLE
+DIAG_CASE source=CANDIDATE_V001 run=2 case=fp16-wide-16384-rows3 dtype=1 rows=3 width=16384 blocks=1 tile_elems=4096 tile_count=4 tail=NON_TAIL tail_elements=0 launch=PASS sync=0 copy=PASS result=PASS failures=0 max_abs=0.001953125 max_rel=0.00224466901 actual_nan=0 actual_inf=0 reference_nan=0 reference_inf=0 reference_inv_rms_min=6.48541403 reference_inv_rms_max=6.49436474 actual_inv_rms=UNAVAILABLE actual_first=0.582519531 reference_first=0.582519531 actual_last=1.32324219 reference_last=1.32324219
+DIAG_FIRST_MISMATCH source=CANDIDATE_V001 run=2 case=fp16-wide-16384-rows3 index=NONE actual_output=NONE reference_output=NONE
+DIAG_INVRMS source=CANDIDATE_V001 run=2 case=fp16-wide-16384-rows3 row=0 reference_inv_rms=6.49436474 actual_inv_rms=UNAVAILABLE
+DIAG_INVRMS source=CANDIDATE_V001 run=2 case=fp16-wide-16384-rows3 row=1 reference_inv_rms=6.48541403 actual_inv_rms=UNAVAILABLE
+DIAG_INVRMS source=CANDIDATE_V001 run=2 case=fp16-wide-16384-rows3 row=2 reference_inv_rms=6.49259233 actual_inv_rms=UNAVAILABLE
+DIAG_REPEATABILITY source=CANDIDATE_V001 case=fp16-wide-16384-rows3 previous_run=1 current_run=2 status=IDENTICAL differing_elements=0 first_diff_index=NONE
+DIAG_CASE source=CANDIDATE_V001 run=1 case=fp16-wide-32768 dtype=1 rows=1 width=32768 blocks=1 tile_elems=4096 tile_count=8 tail=NON_TAIL tail_elements=0 launch=PASS sync=0 copy=PASS result=PASS failures=0 max_abs=0.001953125 max_rel=0.00192678231 actual_nan=0 actual_inf=0 reference_nan=0 reference_inf=0 reference_inv_rms_min=6.48986006 reference_inv_rms_max=6.48986006 actual_inv_rms=UNAVAILABLE actual_first=0.58203125 reference_first=0.58203125 actual_last=-0.18359375 reference_last=-0.18359375
+DIAG_FIRST_MISMATCH source=CANDIDATE_V001 run=1 case=fp16-wide-32768 index=NONE actual_output=NONE reference_output=NONE
+DIAG_INVRMS source=CANDIDATE_V001 run=1 case=fp16-wide-32768 row=0 reference_inv_rms=6.48986006 actual_inv_rms=UNAVAILABLE
+DIAG_CASE source=CANDIDATE_V001 run=2 case=fp16-wide-32768 dtype=1 rows=1 width=32768 blocks=1 tile_elems=4096 tile_count=8 tail=NON_TAIL tail_elements=0 launch=PASS sync=0 copy=PASS result=PASS failures=0 max_abs=0.001953125 max_rel=0.00192678231 actual_nan=0 actual_inf=0 reference_nan=0 reference_inf=0 reference_inv_rms_min=6.48986006 reference_inv_rms_max=6.48986006 actual_inv_rms=UNAVAILABLE actual_first=0.58203125 reference_first=0.58203125 actual_last=-0.18359375 reference_last=-0.18359375
+DIAG_FIRST_MISMATCH source=CANDIDATE_V001 run=2 case=fp16-wide-32768 index=NONE actual_output=NONE reference_output=NONE
+DIAG_INVRMS source=CANDIDATE_V001 run=2 case=fp16-wide-32768 row=0 reference_inv_rms=6.48986006 actual_inv_rms=UNAVAILABLE
+DIAG_REPEATABILITY source=CANDIDATE_V001 case=fp16-wide-32768 previous_run=1 current_run=2 status=IDENTICAL differing_elements=0 first_diff_index=NONE
+DIAG_CASE source=CANDIDATE_V001 run=1 case=fp16-wide-32768-rows2 dtype=1 rows=2 width=32768 blocks=1 tile_elems=4096 tile_count=8 tail=NON_TAIL tail_elements=0 launch=PASS sync=0 copy=PASS result=PASS failures=0 max_abs=0.001953125 max_rel=0.0109890113 actual_nan=0 actual_inf=0 reference_nan=0 reference_inf=0 reference_inv_rms_min=6.48986006 reference_inv_rms_max=6.49085093 actual_inv_rms=UNAVAILABLE actual_first=0.58203125 reference_first=0.58203125 actual_last=0.0340881348 reference_last=0.0340881348
+DIAG_FIRST_MISMATCH source=CANDIDATE_V001 run=1 case=fp16-wide-32768-rows2 index=NONE actual_output=NONE reference_output=NONE
+DIAG_INVRMS source=CANDIDATE_V001 run=1 case=fp16-wide-32768-rows2 row=0 reference_inv_rms=6.48986006 actual_inv_rms=UNAVAILABLE
+DIAG_INVRMS source=CANDIDATE_V001 run=1 case=fp16-wide-32768-rows2 row=1 reference_inv_rms=6.49085093 actual_inv_rms=UNAVAILABLE
+DIAG_CASE source=CANDIDATE_V001 run=2 case=fp16-wide-32768-rows2 dtype=1 rows=2 width=32768 blocks=1 tile_elems=4096 tile_count=8 tail=NON_TAIL tail_elements=0 launch=PASS sync=0 copy=PASS result=PASS failures=0 max_abs=0.001953125 max_rel=0.0109890113 actual_nan=0 actual_inf=0 reference_nan=0 reference_inf=0 reference_inv_rms_min=6.48986006 reference_inv_rms_max=6.49085093 actual_inv_rms=UNAVAILABLE actual_first=0.58203125 reference_first=0.58203125 actual_last=0.0340881348 reference_last=0.0340881348
+DIAG_FIRST_MISMATCH source=CANDIDATE_V001 run=2 case=fp16-wide-32768-rows2 index=NONE actual_output=NONE reference_output=NONE
+DIAG_INVRMS source=CANDIDATE_V001 run=2 case=fp16-wide-32768-rows2 row=0 reference_inv_rms=6.48986006 actual_inv_rms=UNAVAILABLE
+DIAG_INVRMS source=CANDIDATE_V001 run=2 case=fp16-wide-32768-rows2 row=1 reference_inv_rms=6.49085093 actual_inv_rms=UNAVAILABLE
+DIAG_REPEATABILITY source=CANDIDATE_V001 case=fp16-wide-32768-rows2 previous_run=1 current_run=2 status=IDENTICAL differing_elements=0 first_diff_index=NONE
+DIAG_CASE source=CANDIDATE_V001 run=1 case=fp16-boundary-8192 dtype=1 rows=1 width=8192 blocks=1 tile_elems=4096 tile_count=2 tail=NON_TAIL tail_elements=0 launch=PASS sync=0 copy=PASS result=PASS failures=0 max_abs=0.0009765625 max_rel=0.00126182963 actual_nan=0 actual_inf=0 reference_nan=0 reference_inf=0 reference_inv_rms_min=6.48996925 reference_inv_rms_max=6.48996925 actual_inv_rms=UNAVAILABLE actual_first=0.58203125 reference_first=0.58203125 actual_last=1.13867188 reference_last=1.13867188
+DIAG_FIRST_MISMATCH source=CANDIDATE_V001 run=1 case=fp16-boundary-8192 index=NONE actual_output=NONE reference_output=NONE
+DIAG_INVRMS source=CANDIDATE_V001 run=1 case=fp16-boundary-8192 row=0 reference_inv_rms=6.48996925 actual_inv_rms=UNAVAILABLE
+DIAG_CASE source=CANDIDATE_V001 run=2 case=fp16-boundary-8192 dtype=1 rows=1 width=8192 blocks=1 tile_elems=4096 tile_count=2 tail=NON_TAIL tail_elements=0 launch=PASS sync=0 copy=PASS result=PASS failures=0 max_abs=0.0009765625 max_rel=0.00126182963 actual_nan=0 actual_inf=0 reference_nan=0 reference_inf=0 reference_inv_rms_min=6.48996925 reference_inv_rms_max=6.48996925 actual_inv_rms=UNAVAILABLE actual_first=0.58203125 reference_first=0.58203125 actual_last=1.13867188 reference_last=1.13867188
+DIAG_FIRST_MISMATCH source=CANDIDATE_V001 run=2 case=fp16-boundary-8192 index=NONE actual_output=NONE reference_output=NONE
+DIAG_INVRMS source=CANDIDATE_V001 run=2 case=fp16-boundary-8192 row=0 reference_inv_rms=6.48996925 actual_inv_rms=UNAVAILABLE
+DIAG_REPEATABILITY source=CANDIDATE_V001 case=fp16-boundary-8192 previous_run=1 current_run=2 status=IDENTICAL differing_elements=0 first_diff_index=NONE
+DIAG_CASE source=CANDIDATE_V001 run=1 case=fp16-tail-16385 dtype=1 rows=1 width=16385 blocks=1 tile_elems=4096 tile_count=5 tail=TAIL tail_elements=1 launch=PASS sync=0 copy=PASS result=PASS failures=0 max_abs=0.0009765625 max_rel=0.00123609393 actual_nan=0 actual_inf=0 reference_nan=0 reference_inf=0 reference_inv_rms_min=6.49434376 reference_inv_rms_max=6.49434376 actual_inv_rms=UNAVAILABLE actual_first=0.582519531 reference_first=0.582519531 actual_last=-0.931640625 reference_last=-0.931640625
+DIAG_FIRST_MISMATCH source=CANDIDATE_V001 run=1 case=fp16-tail-16385 index=NONE actual_output=NONE reference_output=NONE
+DIAG_INVRMS source=CANDIDATE_V001 run=1 case=fp16-tail-16385 row=0 reference_inv_rms=6.49434376 actual_inv_rms=UNAVAILABLE
+DIAG_CASE source=CANDIDATE_V001 run=2 case=fp16-tail-16385 dtype=1 rows=1 width=16385 blocks=1 tile_elems=4096 tile_count=5 tail=TAIL tail_elements=1 launch=PASS sync=0 copy=PASS result=PASS failures=0 max_abs=0.0009765625 max_rel=0.00123609393 actual_nan=0 actual_inf=0 reference_nan=0 reference_inf=0 reference_inv_rms_min=6.49434376 reference_inv_rms_max=6.49434376 actual_inv_rms=UNAVAILABLE actual_first=0.582519531 reference_first=0.582519531 actual_last=-0.931640625 reference_last=-0.931640625
+DIAG_FIRST_MISMATCH source=CANDIDATE_V001 run=2 case=fp16-tail-16385 index=NONE actual_output=NONE reference_output=NONE
+DIAG_INVRMS source=CANDIDATE_V001 run=2 case=fp16-tail-16385 row=0 reference_inv_rms=6.49434376 actual_inv_rms=UNAVAILABLE
+DIAG_REPEATABILITY source=CANDIDATE_V001 case=fp16-tail-16385 previous_run=1 current_run=2 status=IDENTICAL differing_elements=0 first_diff_index=NONE
+DIAG_CASE source=CANDIDATE_V001 run=1 case=bf16-wide-16384 dtype=2 rows=1 width=16384 blocks=1 tile_elems=4096 tile_count=4 tail=NON_TAIL tail_elements=0 launch=PASS sync=0 copy=PASS result=PASS failures=0 max_abs=0.0078125 max_rel=0.00699300691 actual_nan=0 actual_inf=0 reference_nan=0 reference_inf=0 reference_inv_rms_min=6.49402237 reference_inv_rms_max=6.49402237 actual_inv_rms=UNAVAILABLE actual_first=0.58203125 reference_first=0.58203125 actual_last=-0.6484375 reference_last=-0.6484375
+DIAG_FIRST_MISMATCH source=CANDIDATE_V001 run=1 case=bf16-wide-16384 index=NONE actual_output=NONE reference_output=NONE
+DIAG_INVRMS source=CANDIDATE_V001 run=1 case=bf16-wide-16384 row=0 reference_inv_rms=6.49402237 actual_inv_rms=UNAVAILABLE
+DIAG_CASE source=CANDIDATE_V001 run=2 case=bf16-wide-16384 dtype=2 rows=1 width=16384 blocks=1 tile_elems=4096 tile_count=4 tail=NON_TAIL tail_elements=0 launch=PASS sync=0 copy=PASS result=PASS failures=0 max_abs=0.0078125 max_rel=0.00699300691 actual_nan=0 actual_inf=0 reference_nan=0 reference_inf=0 reference_inv_rms_min=6.49402237 reference_inv_rms_max=6.49402237 actual_inv_rms=UNAVAILABLE actual_first=0.58203125 reference_first=0.58203125 actual_last=-0.6484375 reference_last=-0.6484375
+DIAG_FIRST_MISMATCH source=CANDIDATE_V001 run=2 case=bf16-wide-16384 index=NONE actual_output=NONE reference_output=NONE
+DIAG_INVRMS source=CANDIDATE_V001 run=2 case=bf16-wide-16384 row=0 reference_inv_rms=6.49402237 actual_inv_rms=UNAVAILABLE
+DIAG_REPEATABILITY source=CANDIDATE_V001 case=bf16-wide-16384 previous_run=1 current_run=2 status=IDENTICAL differing_elements=0 first_diff_index=NONE
+DIAG_CASE source=CANDIDATE_V001 run=1 case=fp32-wide-16384 dtype=0 rows=1 width=16384 blocks=1 tile_elems=4096 tile_count=4 tail=NON_TAIL tail_elements=0 launch=PASS sync=0 copy=PASS result=FAIL failures=12247 max_abs=0.0924866199 max_rel=63.188633 actual_nan=0 actual_inf=0 reference_nan=0 reference_inf=0 reference_inv_rms_min=6.49427986 reference_inv_rms_max=6.49427986 actual_inv_rms=UNAVAILABLE actual_first=0.596072376 reference_first=0.58221519 actual_last=-0.647432327 reference_last=-0.647432685
+DIAG_FIRST_MISMATCH source=CANDIDATE_V001 run=1 case=fp32-wide-16384 index=0 row=0 col=0 tail=NON_TAIL actual_output=0.596072376 reference_output=0.58221519 abs=0.0138571858 rel=0.0238007978 reference_inv_rms=6.49427986 actual_inv_rms=UNAVAILABLE
+DIAG_INVRMS source=CANDIDATE_V001 run=1 case=fp32-wide-16384 row=0 reference_inv_rms=6.49427986 actual_inv_rms=UNAVAILABLE
+DIAG_CASE source=CANDIDATE_V001 run=2 case=fp32-wide-16384 dtype=0 rows=1 width=16384 blocks=1 tile_elems=4096 tile_count=4 tail=NON_TAIL tail_elements=0 launch=PASS sync=0 copy=PASS result=FAIL failures=12828 max_abs=0.0924866199 max_rel=63.188633 actual_nan=0 actual_inf=0 reference_nan=0 reference_inf=0 reference_inv_rms_min=6.49427986 reference_inv_rms_max=6.49427986 actual_inv_rms=UNAVAILABLE actual_first=0.585072398 reference_first=0.58221519 actual_last=-0.647432327 reference_last=-0.647432685
+DIAG_FIRST_MISMATCH source=CANDIDATE_V001 run=2 case=fp32-wide-16384 index=0 row=0 col=0 tail=NON_TAIL actual_output=0.585072398 reference_output=0.58221519 abs=0.00285720825 rel=0.00490747811 reference_inv_rms=6.49427986 actual_inv_rms=UNAVAILABLE
+DIAG_INVRMS source=CANDIDATE_V001 run=2 case=fp32-wide-16384 row=0 reference_inv_rms=6.49427986 actual_inv_rms=UNAVAILABLE
+DIAG_REPEATABILITY source=CANDIDATE_V001 case=fp32-wide-16384 previous_run=1 current_run=2 status=DIFFERENT differing_elements=11392 first_diff_index=0 previous_output=0.596072376 current_output=0.585072398
+DIAG_COMPLETE source=CANDIDATE_V001 result=FAIL timing=NOT_RUN online=NOT_RUN
+RUN_RETURN_CODE=3 finished_utc=2026-10-02T15:52:48Z
++------------------------------------------------------------------------------------------------+
+| npu-smi 25.0.rc1.1               Version: 25.0.rc1.1                                           |
++---------------------------+---------------+----------------------------------------------------+
+| NPU   Name                | Health        | Power(W)    Temp(C)           Hugepages-Usage(page)|
+| Chip                      | Bus-Id        | AICore(%)   Memory-Usage(MB)  HBM-Usage(MB)        |
++===========================+===============+====================================================+
+| 0     910B3               | OK            | 147.7       37                0    / 0             |
+| 0                         | 0000:C1:00.0  | 30          0    / 0          60224/ 65536         |
++===========================+===============+====================================================+
+| 1     910B3               | OK            | 141.5       37                0    / 0             |
+| 0                         | 0000:C2:00.0  | 30          0    / 0          63080/ 65536         |
++===========================+===============+====================================================+
+| 2     910B3               | OK            | 144.6       39                0    / 0             |
+| 0                         | 0000:81:00.0  | 35          0    / 0          62826/ 65536         |
++===========================+===============+====================================================+
+| 3     910B3               | OK            | 150.8       38                0    / 0             |
+| 0                         | 0000:82:00.0  | 35          0    / 0          64070/ 65536         |
++===========================+===============+====================================================+
+| 4     910B3               | OK            | 101.3       34                0    / 0             |
+| 0                         | 0000:01:00.0  | 2           0    / 0          61222/ 65536         |
++===========================+===============+====================================================+
+| 5     910B3               | OK            | 111.3       33                0    / 0             |
+| 0                         | 0000:02:00.0  | 1           0    / 0          61444/ 65536         |
++===========================+===============+====================================================+
+| 6     910B3               | OK            | 109.2       36                0    / 0             |
+| 0                         | 0000:41:00.0  | 4           0    / 0          64049/ 65536         |
++===========================+===============+====================================================+
+| 7     910B3               | OK            | 170.3       42                0    / 0             |
+| 0                         | 0000:42:00.0  | 0           0    / 0          24791/ 65536         |
++===========================+===============+====================================================+
++---------------------------+---------------+----------------------------------------------------+
+| NPU     Chip              | Process id    | Process name             | Process memory(MB)      |
++===========================+===============+====================================================+
+| 0       0                 | 89395         | VLLMWorker_TP            | 56702                   |
++===========================+===============+====================================================+
+| 1       0                 | 2305560       | python                   | 2858                    |
+| 1       0                 | 91055         | VLLMWorker_TP            | 56702                   |
++===========================+===============+====================================================+
+| 2       0                 | 92813         | VLLMWorker_TP            | 56703                   |
+| 2       0                 | 2666111       | python                   | 2662                    |
++===========================+===============+====================================================+
+| 3       0                 | 94498         | VLLMWorker_TP            | 56703                   |
+| 3       0                 | 2432846       | python                   | 3904                    |
++===========================+===============+====================================================+
+| 4       0                 | 1819590       | python                   | 2084                    |
+| 4       0                 | 2999855       | VLLMEngineCor            | 55664                   |
++===========================+===============+====================================================+
+| 5       0                 | 89602         | VLLMWorker_TP            | 56678                   |
+| 5       0                 | 2771372       | python                   | 1294                    |
++===========================+===============+====================================================+
+| 6       0                 | 3492500       | python                   | 3902                    |
+| 6       0                 | 91228         | VLLMWorker_TP            | 56679                   |
++===========================+===============+====================================================+
+| 7       0                 | 439848        | python3                  | 21260                   |
++===========================+===============+====================================================+

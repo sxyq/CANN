@@ -12,17 +12,19 @@ CANDIDATE_SOURCE_SHA256: `9b73bb5626b5e98be53faeb91eba024b2589bf0b8b5b46e36c48ec
 ## Scope and final classification
 
 This is a bounded forensic audit of the preserved V001 source and its existing
-correctness harness. No `.asc`, `.cpp`, `.h`, `.hpp`, CMake, runner, or host
-wrapper source was modified. No timing or Online action was performed.
+correctness evidence. No Candidate `.asc`, `.cpp`, `.h`, or `.hpp` source was
+modified. The pre-existing correctness runner was not modified; a separate,
+route-local UB-DIAG-2 read-only harness was added under the V001 evidence
+directory. No timing or Online action was performed.
 
-`FINAL_CLASSIFICATION: UNRESOLVED`
+`FINAL_CLASSIFICATION: PARENT_INSTABILITY`
 
-The classification is deliberately conservative. The preserved exact V001
-binary has a reproducible-looking FP32 failure record, but the existing
-harness cannot run the parent without replacing its hard-coded candidate
-include, and it does not print the requested first-mismatch/value diagnostics.
-Therefore the evidence cannot distinguish a candidate-induced shared-path
-effect from a parent/harness effect with proof.
+UB-DIAG-2 compiled and repeatedly ran exact Parent `R31B V011` and exact
+Candidate `V001` sources under the same corrected eight-case protocol. The
+Parent itself fails and is non-repeatable on `fp32-wide-16384` in both
+independent processes, so it is not a stable baseline for attributing that
+failure to V001. The complete metrics and raw logs are in
+`本地实验/UB-LIFETIME-SAFE-CHAMPION-X/V001/support/ub-diag-2/`.
 
 ## A. Exact V001 diff audit
 
@@ -87,7 +89,7 @@ and use are unchanged. `outputBuf_` remains allocated for the non-half wide
 arm and all other paths visible in the source. Static ordering supports the
 declared half alias, but cannot account for the observed FP32 failure.
 
-## B. Parent same-binary correctness
+## B. Pre-UB-DIAG-2 parent-run limitation
 
 The existing correctness runner is source-bound by
 `support/correctness/correctness_runner.asc`:
@@ -97,20 +99,21 @@ The existing correctness runner is source-bound by
 #include "correctness_runner.cpp"
 ```
 
-There is no preserved parent executable in the V001 evidence directory. The
-existing runner is hard-bound to V001 by the two includes shown above. Running
-the parent would require replacing that include or creating a second runner,
-which is forbidden by this task. Therefore:
+There was no preserved parent executable in the V001 evidence directory. The
+pre-existing runner was hard-bound to V001 by the two includes shown above.
+Before UB-DIAG-2, the parent status in that runner was therefore:
 
 ```text
-PARENT_SAME_BINARY_RESULT=MISSING_PARENT_RUN
-PARENT_PASS_FAIL=UNAVAILABLE
-PARENT_NONDETERMINISM=UNAVAILABLE
+PRE_UB_DIAG_PARENT_SAME_BINARY_RESULT=MISSING_PARENT_RUN
+PRE_UB_DIAG_PARENT_PASS_FAIL=UNAVAILABLE
+PRE_UB_DIAG_PARENT_NONDETERMINISM=UNAVAILABLE
 ```
 
-This is a precise harness/evidence blocker, not a guessed parent result.
+This was a precise pre-diagnostic evidence gap, not a guessed parent result. It
+was closed by the separate exact-source UB-DIAG-2 harness; it is not a current
+blocker.
 
-## C. Exact V001 rebuild and same-case correctness
+## C. Pre-UB-DIAG-2 exact V001 rebuild and same-case correctness
 
 After one environment-only failed attempt and one toolkit/plugin include-path
 failed attempt, the existing correctness target rebuilt successfully from the
@@ -133,7 +136,7 @@ the same binary/case is `NONDETERMINISTIC` evidence, not a timing result.
 Complete command output and resource excerpts are in
 `本地实验/UB-LIFETIME-SAFE-CHAMPION-X/V001/support/forensic-execution-20261002.txt`.
 
-## D. Mismatch-pattern extraction limits
+## D. Pre-UB-DIAG-2 mismatch-pattern extraction limits
 
 The existing runner prints only one aggregate line after comparing the full
 row. The failing case is one full row of 16384 elements (four 4096-element
@@ -153,22 +156,34 @@ aggregate `max_abs=inf` proves an infinite aggregate difference was observed,
 but does not identify the element or whether other special values were
 present. No stronger pattern is inferred.
 
-## E. Final decision
+## E. UB-DIAG-2 final decision
 
-The static lifetime ordering for the intended FP16 alias is valid, and the
-diff audit proves the declared source scope. However, the only runtime failure
-is in the separately dispatched wide-FP32 path, the exact parent baseline
-cannot be run with the existing source-bound harness, and the runner omits
-the per-element diagnostics needed to identify the corruption pattern.
+The static lifetime ordering for the intended FP16 alias remains valid, and the
+diff audit proves the declared source scope. UB-DIAG-2 then built and ran the
+exact Parent and Candidate separately with the same diagnostic runner. All
+seven FP16/BF16 cases pass identically for both sources, including the FP16
+tail case. The only failing case is the unchanged wide-FP32 control, and it
+fails in both Parent processes and both Candidate processes with a differing
+run-to-run output each time.
 
-`FINAL_CLASSIFICATION: UNRESOLVED`
+`FINAL_CLASSIFICATION: PARENT_INSTABILITY`
 
-Missing evidence that would be required to distinguish the remaining classes:
+The corrected protocol records first mismatch index `0`, actual/reference
+outputs, max absolute/relative error, NaN/Inf counts, reference `invRms`,
+tail/non-tail status, and repeatability. For the failing FP32 case, Parent
+repeatability differs in `12032` and `12544` elements across the two processes;
+Candidate differs in `11392` and `13312` elements. Both sources have
+`actual_nan=0 actual_inf=0 reference_nan=0 reference_inf=0`; actual `invRms`
+is unavailable because the kernel exposes no such output. See the complete
+table and raw logs in
+`本地实验/UB-LIFETIME-SAFE-CHAMPION-X/V001/support/ub-diag-2/correctness-evidence-20261002.md`.
 
-- a parent `R31B V011` executable/run using the same runner, device, and
-  `fp32-wide-16384` case, repeated enough to establish its baseline;
-- a permitted diagnostic runner that reports first mismatch, values,
-  `invRms`, special-value locations, and padding/tile distribution.
+The old runner's FP32 host-width defect was corrected in UB-DIAG-2 by using
+4-byte FP32 storage and reference decoding. The remaining identical Parent
+failure family is therefore not classified as `HARNESS_BUG`. Because the
+Parent is itself unstable on the failing case, this evidence does not support
+`CANDIDATE_BUG` or `SHARED_PATH_SIDE_EFFECT`; the precise classification is
+`PARENT_INSTABILITY`, not generic `UNRESOLVED_WITH_EXACT_BLOCKER`.
 
 No V002, source fix, timing, Online submission, shared-ledger update, or
 route-lifecycle decision was made.
