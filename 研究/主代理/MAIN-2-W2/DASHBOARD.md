@@ -627,6 +627,42 @@ PUSH_STATE=PUSH_PENDING; GITHUB_PUSH_IS_LOCAL_STAGE_GATE=NO
 PROCESS_ACTIONS=NONE; existing VLLM/Ray/Python processes untouched
 ```
 
+## Event receipt — ADDR isolated D40960 diagnostic Build PASS — 2026-10-02T18:15Z
+
+```text
+CONTROL_HEAD_BEFORE_RECEIPT=58f9fc41
+CANONICAL_MAIN_HEAD=02482b46c2ee1fdd5bab1f88a474c7e70426f661
+ORIGIN_MAIN_OBSERVED=62695ef8254c1bba61ac8534c15d23e70cf36588
+OVERALL_OFFICIAL_CHAMPION=R31B V011 / 45.16
+PLANNING_DECISIONS_CHANGED=0
+NEW_ROUTES_OUTSIDE_APPROVED_5=0
+EVENT_DRIVEN_PIPELINE=ENABLED
+DIRECT_ONLINE_SUBMISSION=FORBIDDEN
+```
+
+ADDR V001 H3 added only a correctness-harness binary-selection filter so the
+previous BF16-D40960 synchronization blocker can be isolated to exact Parent
+and Candidate launches. The support diagnostic Build passed at route commit
+`4e045d1a`; H3 Candidate source remains unchanged at SHA256
+`26aa65a2e1313e0681ca7ad29f85ca20f667d33ede1a4d2d9e7e1557d6192602`, with
+the exact R31B V011 Parent SHA256
+`a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`.
+Correctness is still `INCOMPLETE` pending the isolated Parent-only and
+Candidate-only D40960 runs; no Formal Local timing is allowed yet. The support
+filter is not a second performance mechanism and does not authorize ADDR-H1
+or V002.
+
+```text
+ADDR_BUILD=PASS; ADDR_CORRECTNESS_HARNESS_DIAG_BUILD=PASS
+ADDR_D40960_PARENT_RUN=NOT_RECORDED; ADDR_D40960_CANDIDATE_RUN=NOT_RECORDED
+ADDR_CORRECTNESS=INCOMPLETE; ADDR_FORMAL_LOCAL=NOT_ELIGIBLE
+BRANCH_LOCAL_VERDICT=NEEDS_ONE_MORE_LOCAL; BRANCH_ONLINE_QUEUE=EMPTY
+UB_CLASS=PARENT_INSTABILITY; UB_V002=FORBIDDEN
+FORMAL_PERFORMANCE_RUNS=1_SHAPE
+PUSH_STATE=PUSH_PENDING; GITHUB_PUSH_IS_LOCAL_STAGE_GATE=NO
+PROCESS_ACTIONS=NONE; existing VLLM/Ray/Python processes untouched
+```
+
 ## Event receipt — BRANCH BF16-D32768 formal Local complete — 2026-10-02T18:01Z
 
 ```text
