@@ -5,6 +5,12 @@ ROOT="$(cd "$(dirname "$0")" && pwd)"
 DEVICE_ID="${DEVICE_ID:-5}"
 RESULT_DIR="${RESULT_DIR:-$ROOT/logs/correctness-run-001}"
 BUILD_DIR="${BUILD_DIR:-$ROOT/build}"
+CANN_RUNTIME_LIB_DIR="${CANN_RUNTIME_LIB_DIR:-/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/lib64}"
+if [[ ! -d "$CANN_RUNTIME_LIB_DIR" ]]; then
+  printf 'CANN runtime library directory not found: %s\n' "$CANN_RUNTIME_LIB_DIR" >&2
+  exit 2
+fi
+export LD_LIBRARY_PATH="${CANN_RUNTIME_LIB_DIR}${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 PARENT_BIN="$BUILD_DIR/store_v001_parent_correctness"
 CANDIDATE_BIN="$BUILD_DIR/store_v001_candidate_correctness"
 EXPECTED_CANDIDATE_SHA="48b9428dc2fc97c7c9d95f03ad8cec8e758c88e1197aa2328b1b1edebc018f88"
