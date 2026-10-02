@@ -197,19 +197,19 @@ Have each existing Route Agent prepare and commit its reproducible route-local b
 
 ```dashboard-json
 {
-  "handoffs": "CASE14, CASE47, FASTPATH, and TINY Track-B reviews recorded; SYNC V001 host argument routing still omits the required metadata and ACL declarations",
+  "handoffs": "CASE14, CASE47, FASTPATH, and TINY Track-B reviews recorded; SYNC V001 ASC parsing now sees metadata, but the stream type remains unavailable there",
   "selected": "5 Planning-approved routes; 0/5 performance hypotheses MAIN_SELECTED",
   "activeAgents": 1,
   "pendingAgents": 0,
   "activeRevision": "SYNC V001 only",
   "stage": "EVENT_DRIVEN_SYNC_BUILD_FIX",
-  "state": "SYNC V001 Candidate and Parent identities match; Configure passes; latest Build/Link fails in host wrapper compilation; no Correctness or timing run",
-  "nextStep": "Route Agent fixes support-only CMake argument routing and documents it; Main reviews, retries Build/Link immediately, then runs Correctness immediately on PASS",
-  "blocker": "Latest compiler command places metadata include in the AICore segment and omits -include from the host segment; both sources still report undeclared types",
+  "state": "SYNC V001 Candidate and Parent identities match; Configure passes; corrected include routing clears metadata errors; Build/Link still fails on aclrtStream; no Correctness or timing run",
+  "nextStep": "Expose the exact opaque stream type to ASC parsing in support metadata; Main reviews, retries Build/Link immediately, then runs Correctness immediately on PASS",
+  "blocker": "aclrtStream is declared by the ACL host header only; the ASC parser still reports it undeclared in both source wrappers",
   "planningDecisionsChanged": 0,
   "newRoutes": 3,
   "lanes": [
-    {"route":"SYNC-TOPOLOGY-CHAMPION-X","instruction":"Continue approved V001 Local closure","firstAction":"Fix host argument routing for metadata and ACL declarations with support-only changes; Main review, Build/Link, then Correctness; lease only for timing","revisionState":"RUN_ID SYNC-TOPOLOGY-CHAMPION-X-V001-D4-BUILD-FIX-7f73e93d-20261002T223305Z; Configure PASS, Build/Link RC=2 for both sources; metadata include is in the AICore segment and host segment omits -include; no new executable, Correctness, or timing"},
+    {"route":"SYNC-TOPOLOGY-CHAMPION-X","instruction":"Continue approved V001 Local closure","firstAction":"Expose aclrtStream in support metadata without changing Candidate source; Main review, Build/Link, then Correctness; lease only for timing","revisionState":"RUN_ID SYNC-TOPOLOGY-CHAMPION-X-V001-D4-BUILD-FIX-9ed79938-20261002T230002Z; Configure PASS, Build/Link RC=2; metadata types now visible, both sources still report aclrtStream undeclared; no new executable, Correctness, or timing"},
     {"route":"CASE47-SMALL-CLUSTER-CHAMPION-X","instruction":"Track-B Main review: NEEDS_MORE_EVIDENCE; no MAIN_SELECTED","firstAction":"Obtain Judge case4/case7 shape and dtype; revisit H1 only after evidence arrives","revisionState":"Commit 2404d4e4; H2/H5 DUPLICATE; H3 INFEASIBLE; H4 overlaps prior wide-tile work; no Revision"},
     {"route":"CASE14-INTRAROW-PARALLELISM-CHAMPION-X","instruction":"Track-B: case 14; Agent 01a0fe2e-7772-7e83-825d-e90811e0db2c","firstAction":"Obtain case metadata, raw profile, C001 source/TLE log and workspace ABI evidence","revisionState":"Track-B commit 5fda6e90; NEEDS_MORE_EVIDENCE; H1 overlaps R008/C001; H2-H4 duplicate; MAIN_SELECTED=NONE"},
     {"route":"SELECTIVE-FASTPATH-CHAMPION-X","instruction":"Track-B cycle complete: NEEDS_MORE_EVIDENCE; no MAIN_SELECTED","firstAction":"Obtain Judge input mapping; no implementation until Main selects a hypothesis","revisionState":"Commit 5f669c30; STORE V003 donor is precisely sourced; Official 44.38 vs V011 45.16; TINY mechanism review complete, case overlap unknown"},
@@ -434,4 +434,15 @@ The three new worktrees are sparse, approximately 7.5 MB each, and were created 
 - No new timing or correctness executable was produced; Correctness and timing were not run. The existing Candidate shared library still had the earlier timestamp `2026-10-02 21:14:19Z` and was not treated as output from this run.
 - Configure, Build/Link, identity, and before/after resource files remain under `/home/data4t2/lelinfeng/cann/w2/SYNC-TOPOLOGY-CHAMPION-X/V001/results/SYNC-TOPOLOGY-CHAMPION-X-V001-D4-BUILD-FIX-7f73e93d-20261002T223305Z/`.
 - Next: Route Agent fixes support-only compiler argument routing and updates its reproducibility notes. Main reviews the commits before another Build; Correctness follows immediately only if both targets Build/Link successfully. No score or Online Queue entry was added.
+- `PLANNING_DECISIONS_CHANGED=0`; `NEW_ROUTES=0`; `PERFORMANCE_HYPOTHESES_MAIN_SELECTED=0`.
+
+## MAIN1_SYNC_TIMING_HARNESS_BUILD_ATTEMPT_5 (2026-10-03)
+
+- Harness commit: `9ed799384956d1a747a632ecbd8321730c6882c3`. Candidate source SHA remains `27c853e1cb0c47307899b874338c3aecb912ad5dc125c0d67f6afba76a9117ec`; Direct Parent R31B V011 SHA remains `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`.
+- RUN_ID: `SYNC-TOPOLOGY-CHAMPION-X-V001-D4-BUILD-FIX-9ed79938-20261002T230002Z`. Candidate, sidecar, source metadata, Parent, and all eight support-file identities matched; remote sidecar verification passed.
+- Server: `hwnput3`, Ascend 910B3, CANN `8.5.0.alpha002`, `npu-smi 25.0.rc1.1`. Before and after Build, d4 HBM was `59190/65536 MB` used, AICore `0%`; VLLM EngineCore PID `2999855` remained unchanged. Project disk availability stayed at `616 GB`.
+- Configure: PASS. Build/Link: FAIL, return code `2`. The generated command now includes both metadata and shim `-include` arguments in the intended compiler sections. Errors for `TensorGroupInfo` and `TensorInfo` are cleared; Parent and Candidate both still report `aclrtStream` undeclared.
+- No new timing or correctness executable was produced; Correctness and timing were not run. The existing Candidate shared library timestamp predates this run and was not treated as its output.
+- Configure, Build/Link, identity, and before/after resource files remain under `/home/data4t2/lelinfeng/cann/w2/SYNC-TOPOLOGY-CHAMPION-X/V001/results/SYNC-TOPOLOGY-CHAMPION-X-V001-D4-BUILD-FIX-9ed79938-20261002T230002Z/`.
+- Next: Route Agent records this failed attempt, then makes a support-only declaration of the exact `aclrtStream` ABI type for ASC parsing and updates the build notes. Main reviews before another Build; Correctness follows immediately only after both Build targets pass. No score or Online Queue entry was added.
 - `PLANNING_DECISIONS_CHANGED=0`; `NEW_ROUTES=0`; `PERFORMANCE_HYPOTHESES_MAIN_SELECTED=0`.
