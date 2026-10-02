@@ -131,26 +131,26 @@ At that recovery point, the next step was to request Planning / Review selection
 
 ### Current lane instructions and Main review
 
-The attached C2C CONTROL supplies these current Planning selections. Each Route Agent declared its Revision before the source commit. Main's V001 single-factor review is recorded below; Main approved build/correctness only. No Candidate has local measurement approval yet.
+The attached C2C CONTROL supplies these current Planning selections. Each Route Agent declared its Revision before the source commit. Main's V001 single-factor review is recorded below. Build and correctness work is approved; SYNC local timing is approved only for its declared primary shape after harness and device-lease revalidation.
 
 | Route | Current instruction | Main review / first action | Revision state |
 |---|---|---|---|
-| SYNC-TOPOLOGY-CHAMPION-X | H2, low-precision parameter prefetch ordering | `SINGLE_CHANGE_AUDIT=PASS`; only the existing MTE2_V wait moved, and it remains before current-slot reads. | V001; source SHA `27c853e1...`; branch `6ef96570` pushed and verified; harness preparation pending. Assigned device 4. |
-| STORE-EPILOGUE-W2-X | H1, move the existing full-row Store issue point | `SINGLE_CHANGE_AUDIT=PASS`; the same Store body is issued after the final tile barrier; address, count, geometry, and event sequence are unchanged. | V001; source SHA `48b9428d...`; branch `62809fd4` pushed and verified; harness preparation pending. Assigned device 5. |
-| EPI-ARITH-CHAMPION-W2-X | H3, group independent row Mul/Add operations | `SINGLE_CHANGE_AUDIT=PASS`; per-element Mul -> Add order is preserved, with independent rows grouped and only the intended barriers moved. | V001; source SHA `9a28f5cd...`; branch `d5585f04` pushed and verified; harness preparation pending. Assigned device 7. |
+| SYNC-TOPOLOGY-CHAMPION-X | H2, low-precision parameter prefetch ordering | `SINGLE_CHANGE_AUDIT=PASS`; only the existing MTE2_V wait moved, and it remains before current-slot reads. | V001; source SHA `27c853e1...`; Build and Correctness PASS on primary/control. Timing harness is being prepared; d4 lease released until a fresh lease is granted. |
+| STORE-EPILOGUE-W2-X | H1, move the existing full-row Store issue point | `SINGLE_CHANGE_AUDIT=PASS`; the same Store body is issued after the final tile barrier; address, count, geometry, and event sequence are unchanged. | V001; source SHA `48b9428d...`; run-004 evidence committed and pushed; Parent/Candidate outputs both vary across repeats, all four calls RC=3; no timing. |
+| EPI-ARITH-CHAMPION-W2-X | H3, group independent row Mul/Add operations | `SINGLE_CHANGE_AUDIT=PASS`; per-element Mul -> Add order is preserved, with independent rows grouped and only the intended barriers moved. | V001; source SHA `9a28f5cd...`; full matrix failed (2 PASS, 10 FAIL, 2 MISSING). D8193 retry also returned ACL 507035 for both sides; no timing. |
 | SELECTIVE-FASTPATH-CHAMPION-X | H1, BF16 D32768 full V017 donor qualification | Qualification only: exact M and direct V011/V017 same-binary/paired evidence are still missing. | `QUALIFICATION_INCOMPLETE`; committed evidence audit `85aff92e`; V016 M=2 runner is not evidence of V017's M. No device job assigned. |
-| SMALLMID-DATAFLOW-CHAMPION-X | SMD-H6, reuse BF16 parameter conversion for existing rows | `SINGLE_CHANGE_AUDIT=PASS`; FP32 parameter buffers are separately allocated and reused only for BF16 `localRows>1`, within declared D<=4096 scope. | V001; source SHA `a689e5ab...`; branch `47f72c55` pushed and verified; harness preparation pending. Assigned device 1. |
+| SMALLMID-DATAFLOW-CHAMPION-X | SMD-H6, reuse BF16 parameter conversion for existing rows | `SINGLE_CHANGE_AUDIT=PASS`; FP32 parameter buffers are separately allocated and reused only for BF16 `localRows>1`, within declared D<=4096 scope. | V001; source SHA `a689e5ab...`; Correctness failed at BF16 D=2049; D=3073 and D=4095 were not run. No timing. |
 
 #### Main Review facts
 
 | Revision | Direct parent SHA | Candidate SHA | Main review | Local state |
 |---|---|---|---|---|
-| SYNC V001 | `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3` | `27c853e1cb0c47307899b874338c3aecb912ad5dc125c0d67f6afba76a9117ec` | `PASS`; only the declared wait ordering changed; event ownership and buffer depth remain intact. | `BUILD=NOT_STARTED; CORRECTNESS=NOT_STARTED; LOCAL_VERDICT=NOT_COMPLETE` |
-| STORE V001 | `59fb8eada4da0b2b83cccffa4fb89fb97b7503ba3dcb08d5e0fe348e3caeb839` | `48b9428dc2fc97c7c9d95f03ad8cec8e758c88e1197aa2328b1b1edebc018f88` | `PASS`; existing Store body moved to the final-tile point; fallback and drain remain unchanged. | `BUILD=NOT_STARTED; CORRECTNESS=NOT_STARTED; LOCAL_VERDICT=NOT_COMPLETE` |
-| EPI V001 | `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3` | `9a28f5cd8703dc4ff5c46fba09f59a537132594e5a879a50a17349086bfe4d59` | `PASS`; only same-kind row operations are grouped; each row retains Mul before Add. | `BUILD=NOT_STARTED; CORRECTNESS=NOT_STARTED; LOCAL_VERDICT=NOT_COMPLETE` |
-| SMALLMID V001 | `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3` | `a689e5abc03d2770b277812d9a52ae0a1aaf910952b737525e1722f06bdb340a` | `PASS`; separately allocated FP32 parameter buffers cover selected BF16 mid widths and remain live through their final use. | `BUILD=NOT_STARTED; CORRECTNESS=NOT_STARTED; LOCAL_VERDICT=NOT_COMPLETE` |
+| SYNC V001 | `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3` | `27c853e1cb0c47307899b874338c3aecb912ad5dc125c0d67f6afba76a9117ec` | `PASS`; only the declared wait ordering changed; event ownership and buffer depth remain intact. | `BUILD=PASS; CORRECTNESS=PASS (2 shapes); PERFORMANCE=NOT_RUN; LOCAL_VERDICT=NOT_COMPLETE` |
+| STORE V001 | `59fb8eada4da0b2b83cccffa4fb89fb97b7503ba3dcb08d5e0fe348e3caeb839` | `48b9428dc2fc97c7c9d95f03ad8cec8e758c88e1197aa2328b1b1edebc018f88` | `PASS`; existing Store body moved to the final-tile point; fallback and drain remain unchanged. | `BUILD=PASS; CORRECTNESS=UNRESOLVED (Parent/Candidate both vary on repeated FP32 outputs); PERFORMANCE=NOT_RUN; LOCAL_VERDICT=NOT_COMPLETE` |
+| EPI V001 | `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3` | `9a28f5cd8703dc4ff5c46fba09f59a537132594e5a879a50a17349086bfe4d59` | `PASS`; only same-kind row operations are grouped; each row retains Mul before Add. | `BUILD=PASS; CORRECTNESS=FAILED (2 PASS, 10 FAIL, 2 MISSING); LOCAL_VERDICT=CORRECTNESS_FAILED; PERFORMANCE=NOT_RUN` |
+| SMALLMID V001 | `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3` | `a689e5abc03d2770b277812d9a52ae0a1aaf910952b737525e1722f06bdb340a` | `PASS`; separately allocated FP32 parameter buffers cover selected BF16 mid widths and remain live through their final use. | `BUILD=PASS; CORRECTNESS=FAILED at BF16 D=2049; D=3073/D=4095 not run; PERFORMANCE=NOT_RUN` |
 
-Every source SHA above was recomputed from the committed `submission.asc`; parent SHAs were recomputed from their declared parent files. SYNC, STORE, and EPI metadata now have the required parent/source fields; SMALLMID metadata and sidecar agree. All four branch pushes and server-side fast-forwards were verified. No performance timing is authorized until each assigned Candidate has build and correctness evidence.
+Every source SHA above was recomputed from the committed `submission.asc`; parent SHAs were recomputed from their declared parent files. SYNC, STORE, and EPI metadata have the required parent/source fields; SMALLMID metadata and sidecar agree. The original Candidate source pushes and server-side fast-forwards were verified. Subsequent evidence changes are local commits unless a push is separately confirmed. SYNC timing is authorized only after its timing harness is ready and a fresh device lease is recorded; STORE, EPI, and SMALLMID have no timing eligibility in their current correctness state.
 
 Route worktrees and branches are the current locations returned by Git, not the older paths in handoff launch tables:
 
@@ -199,20 +199,20 @@ Have each existing Route Agent prepare and commit its reproducible route-local b
 {
   "handoffs": "5/5",
   "selected": "4 implementation lanes; 1 qualification lane",
-  "activeAgents": 4,
+  "activeAgents": 1,
   "pendingAgents": 1,
   "activeRevision": "SYNC, STORE, EPI, SMALLMID V001",
   "stage": "EVENT_DRIVEN_LOCAL_PIPELINE",
-  "state": "Four existing V001 lanes advance independently from each lane's own build and correctness result",
-  "nextStep": "Continue each lane from its current stage; GitHub push and unrelated Route progress do not delay local work",
-  "blocker": "Formal performance requires correctness PASS and a live device lease; Online follows the Planning/Judge Owner process",
+  "state": "Existing V001 lanes continue independently from their current evidence; no Official or Local score has been recorded for these lanes",
+  "nextStep": "Finish SYNC timing harness review and request a fresh d4 lease only after readiness; preserve completed STORE and EPI evidence",
+  "blocker": "SYNC has no timing score yet; STORE Parent/Candidate outputs remain unstable; EPI correctness matrix failed",
   "planningDecisionsChanged": 0,
   "newRoutes": 0,
   "lanes": [
-    {"route":"SYNC V001","instruction":"H2 low-precision parameter prefetch order","firstAction":"Build on device 4, then correctness","revisionState":"BUILD_FAILED; missing C++ vector include; harness retry active; Candidate SHA unchanged"},
-    {"route":"STORE V001","instruction":"H1 full-row Store issue point","firstAction":"Build on device 5, then correctness","revisionState":"BUILD_PASS; run-001 INCOMPLETE (libgraph.so); run-002 FAIL 23/25 with two FP32 output differences; targeted diagnosis active; Candidate SHA unchanged"},
-    {"route":"EPI V001","instruction":"H3 group independent row arithmetic","firstAction":"Build on device 7, then correctness","revisionState":"BUILD_INCOMPLETE before CMake; df option compatibility retry active; Candidate SHA unchanged"},
-    {"route":"SMALLMID V001","instruction":"SMD-H6 reuse BF16 parameter conversion","firstAction":"Build on device 1, then correctness","revisionState":"BUILD_PASS; Correctness launch INCOMPLETE due libgraph.so loader; ownership conflict resolved; single owner retrying; Candidate SHA unchanged"},
+    {"route":"SYNC V001","instruction":"H2 low-precision parameter prefetch order","firstAction":"Prepare exact-shape device-event timing harness; request d4 lease after readiness","revisionState":"BUILD PASS; CORRECTNESS PASS on 2 shapes; no timing runner or samples yet; previous d4 lease released"},
+    {"route":"STORE V001","instruction":"H1 full-row Store issue point","firstAction":"Retain completed run-004 evidence; no further execution assigned","revisionState":"BUILD PASS; run-004 Parent repeats differ by 94690 bytes, Candidate repeats by 79925 bytes; all 4 calls RC=3; evidence commit a1ae33c pushed; no timing"},
+    {"route":"EPI V001","instruction":"H3 group independent row arithmetic","firstAction":"Retain completed correctness failure evidence; no more run assigned","revisionState":"BUILD PASS; matrix 2 PASS, 10 FAIL, 2 MISSING; D8193 retry returned ACL 507035 for both sides; no timing"},
+    {"route":"SMALLMID V001","instruction":"SMD-H6 reuse BF16 parameter conversion","firstAction":"Keep failed V001 evidence; no further work assigned","revisionState":"BUILD PASS; CORRECTNESS FAILED at BF16 D2049; D3073/D4095 not run; no timing"},
     {"route":"SELECTIVE-FASTPATH","instruction":"BF16 D32768 donor qualification only","firstAction":"Resolve missing exact runtime M and paired evidence","revisionState":"QUALIFICATION_ONLY; no V001 created"}
   ]
 }
@@ -270,10 +270,10 @@ The exact Candidate source, `submission.sha256`, server route-tree source, and s
 
 | Route | Agent ID at latest assignment | Existing branch | Existing worktree | Candidate SHA256 | Stage |
 |---|---|---|---|---|---|
-| SYNC V001 | `01a0fcf7-fece-7570-958c-1720fc7bc486` | `w2/m1/sync-topology` | `worktrees/w2/m1/sync-topology` | `27c853e1cb0c47307899b874338c3aecb912ad5dc125c0d67f6afba76a9117ec` | STARTED; agent preparing own build |
-| STORE V001 | `01a0fcf7-ff78-7313-868d-a3d74ee616fc` | `w2/m1/store-epilogue` | `worktrees/w2/m1/store-epilogue` | `48b9428dc2fc97c7c9d95f03ad8cec8e758c88e1197aa2328b1b1edebc018f88` | STARTED; agent preparing own build |
-| EPI V001 | `01a0fcf7-ffe5-74a0-baa2-3cad636c6e80` | `w2/m1/epi-arith` | `worktrees/w2/m1/epi-arith` | `9a28f5cd8703dc4ff5c46fba09f59a537132594e5a879a50a17349086bfe4d59` | STARTED; agent preparing own build |
-| SMALLMID V001 | `01a0fd14-5474-7140-83fd-054dd4f35187` | `w2/m1/smallmid-dataflow` | `worktrees/w2/m1/smallmid-dataflow` | `a689e5abc03d2770b277812d9a52ae0a1aaf910952b737525e1722f06bdb340a` | BUILD PASS; first Correctness launch stopped before cases because `libgraph.so` was not loaded; Main reaffirmed this Agent as sole owner |
+| SYNC V001 | `01a0fd8f-8a90-75a2-b10d-9e4eda3e00dd` | `w2/m1/sync-topology` | `worktrees/w2/m1/sync-topology` | `27c853e1cb0c47307899b874338c3aecb912ad5dc125c0d67f6afba76a9117ec` | BUILD PASS; CORRECTNESS PASS; adding route-local timing harness; no server timing process |
+| STORE V001 | `01a0fd8f-8a18-7640-9d7d-7098151510fc` | `w2/m1/store-epilogue` | `worktrees/w2/m1/store-epilogue` | `48b9428dc2fc97c7c9d95f03ad8cec8e758c88e1197aa2328b1b1edebc018f88` | run-004 recorded in commit `a1ae33c27513583db2111cdedb5daf87ee5ff02f`; pushed; no timing |
+| EPI V001 | `01a0fd8f-8b02-72b2-964d-7b2fed1ba3ad` | `w2/m1/epi-arith` | `worktrees/w2/m1/epi-arith` | `9a28f5cd8703dc4ff5c46fba09f59a537132594e5a879a50a17349086bfe4d59` | D8193 retry complete; both calls ACL 507035; evidence commit `4571c82e` local only, not pushed; no timing |
+| SMALLMID V001 | `01a0fd14-5474-7140-83fd-054dd4f35187` | `w2/m1/smallmid-dataflow` | `worktrees/w2/m1/smallmid-dataflow` | `a689e5abc03d2770b277812d9a52ae0a1aaf910952b737525e1722f06bdb340a` | BUILD PASS; CORRECTNESS FAILED at BF16 D=2049; no timing; closed |
 
 - Server snapshot: free HBM d1/d4/d5/d7 = 1412/5121/1494/40757 MB; project disk available = 630 GB. Existing VLLM and Python work remains untouched. No lane-specific compile or runner process was present at this snapshot.
 - Per-route flow: fixed local source commit → build → correctness → immediate formal local performance, subject only to that route's own result and the existing per-device timing protocol. GitHub push and unrelated route progress are not prerequisites.
@@ -285,27 +285,38 @@ The exact Candidate source, `submission.sha256`, server route-tree source, and s
 
 | Route | Build | Correctness | Current action |
 |---|---|---|---|
-| SYNC V001 | FAILED; generated host code cannot find `<vector>` | NOT_RUN | Route Agent is resolving the C++ include path; Candidate SHA is unchanged |
-| STORE V001 | PASS | run-001 INCOMPLETE (`libgraph.so`); run-002 FAIL 23/25, two FP32 parent/Candidate outputs differ while both fail golden | Route Agent is repeating only the two failing shapes for diagnosis; no timing |
-| EPI V001 | INCOMPLETE; disk probe stopped before CMake due incompatible `df` options | NOT_RUN | Route Agent is updating only the two run scripts; prior attempt remains preserved |
-| SMALLMID V001 | PASS; executable SHA `159532de...68e5208`, source SHA matches | First launch INCOMPLETE; runner could not load `libgraph.so` before running a case | Sole owner is adding the runtime library path and will use a new run directory |
+| SYNC V001 | PASS | PASS: `[2,12288] FP16` and `[2,8192] FP16`; matched ratio 1.0 for both | Timing has not run: no device-event harness or active process existed. Idle d4 lease released; prepare harness, then request a fresh lease. |
+| STORE V001 | PASS | run-004: Parent repeats differ in 94,690 bytes; Candidate repeats differ in 79,925 bytes; all four golden comparisons return RC=3 | Both variants are unstable on repeated identical inputs; correctness remains unresolved and timing is not eligible. Evidence recorded in route commit `a1ae33c2`. |
+| EPI V001 | PASS | Matrix result: 2 PASS, 10 FAIL, 2 MISSING; D8193 retry again returned ACL 507035 for both sides | Correctness failure evidence is complete; no timing eligibility and no further runner assigned. |
+| SMALLMID V001 | PASS; executable SHA `159532deffb1ddaf33792c0b7c296c3bcf7cf2f0cc2ea68fbc0e8de7b68e5208`; source SHA matches | FAIL at BF16 D=2049; matched ratio `0.56540386`, max abs `4.26492296`, RC=3; D=3073 and D=4095 not run | Preserve failure evidence; no timing or new Revision |
 
 - The former SMALLMID Agent ID returned `not_found`; replacement `01a0fd14-5474-7140-83fd-054dd4f35187` uses the same branch and worktree.
-- No lane has started performance measurement; Main will add a per-device lease only after that lane's correctness PASS.
+- SYNC's idle lease `M1-SYNC-V001-D4-PERF-20261002T161619Z` was released at `2026-10-02T17:14:57Z`; no timing runner or samples existed. d4's existing Python and VLLM EngineCore processes were left unchanged. Re-lease only after the harness is ready.
+- EPI primary and D8193 retry evidence are at `/home/data4t2/lelinfeng/cann/server_runs/EPI-ARITH-CHAMPION-W2-X/V001/20261002T163852Z/` and `/home/data4t2/lelinfeng/cann/server_runs/EPI-ARITH-CHAMPION-W2-X/V001/20261002T171334Z/`. Both retry calls returned ACL 507035; no TSV was written. No further run or Local performance is assigned.
+- STORE run-004 is at `/home/data4t2/lelinfeng/cann/STORE-EPILOGUE-W2-X/V001/logs/correctness-run-004.log` and its sibling output directory. Parent and Candidate both vary across repeated identical inputs; do not infer a Candidate-only regression or run timing.
+- No new Local score was produced by SYNC, STORE, EPI, or SMALLMID. None was added to the Online Queue; no Official result or score was changed.
 - `PLANNING_DECISIONS_CHANGED=0`; `NEW_ROUTES=0`.
+
+### RECOVERY_UPDATE (2026-10-03)
+
+- SYNC V001: Build and Correctness PASS; Local timing has not run. No timing harness or SYNC process was present on d4, so the idle lease was released. The existing Route Agent is preparing the exact-shape timing harness; a new lease is required before any device measurement.
+- STORE V001: run-004 finished on `1x32768 FP32`. Parent repeats differ in 94,690 bytes and Candidate repeats differ in 79,925 bytes. All four invocations return RC=3. The Parent is also nondeterministic, so evidence does not isolate a Candidate-only defect. No performance data exists.
+- EPI V001: matrix result is 2 PASS, 10 FAIL, 2 MISSING. D8193 Parent/Candidate retry again returned ACL `507035` and produced no TSV; both sides also fail the runner golden at D12288, D16384, D18416, D18417, and D32768. Local performance was not authorized or run; no more runner is assigned.
+- SMALLMID V001: Correctness failure at BF16 D2049 remains; D3073 and D4095 are unrun. No follow-up performance work is assigned.
+- No Local result or Official submission was produced. No Online Queue row was added. Main decisions remain unchanged; `PLANNING_DECISIONS_CHANGED=0`, `NEW_ROUTES=0`.
 
 ### STORE correctness detail
 
 - Run 001 remains preserved as `INCOMPLETE` because both executables failed to load `libgraph.so`.
 - Run 002 resolved runtime loading and completed all 25 cases: 23 PASS; `1x16384 FP32` and `1x32768 FP32` each returned RC=3 for Parent and Candidate, and their output bytes differ. This does not establish correctness against an independent golden on those shapes.
 - Run-002 evidence: local commit `34f5063e`; Candidate source SHA remains `48b9428dc2fc97c7c9d95f03ad8cec8e758c88e1197aa2328b1b1edebc018f88`; server logs are under `/home/data4t2/lelinfeng/cann/STORE-EPILOGUE-W2-X/V001/logs/correctness-run-002/`.
-- A targeted repeatability and output-difference diagnosis is active. No measurement lease or Local timing has started.
+- Source review confirms deterministic `x`, residual, gamma, and bias generation shared by Parent and Candidate. Run-003 output variation therefore remains unexplained; no Candidate-specific correctness conclusion is recorded. A four-invocation run-004 on `1x32768 FP32` is assigned, with existing executable identities and a new output directory. No measurement lease or Local timing has started.
 
 ### SMALLMID ownership and stage update
 
 - The previous Agent ID `01a0fcf8-0053-7800-a592-897178653e7d` reported work in the same V001 context while replacement `01a0fd14-5474-7140-83fd-054dd4f35187` owned that worktree. Record `OWNERSHIP_CONFLICT=YES`; no Candidate source change is observed.
 - Main confirmed the previous Agent is not active, the replacement reports no running command, and server3 has no active SMALLMID runner/build process. Main assigns the replacement as the sole owner of the existing branch/worktree; no second worktree or Revision was created.
 - Fixed Candidate SHA: `a689e5abc03d2770b277812d9a52ae0a1aaf910952b737525e1722f06bdb340a`. Existing Build run `20261002T151744Z-device1` passed and produced executable SHA `159532deffb1ddaf33792c0b7c296c3bcf7cf2f0cc2ea68fbc0e8de7b68e5208`.
-- Its first Correctness launch stopped before a test case because the executable could not load `libgraph.so`; classify it as `INCOMPLETE`, not a Kernel result. The sole owner is adjusting only the runtime library path before a fresh Correctness run.
-- Seven route-local commits are present beyond the remote branch; `source-meta.json` has one uncommitted Build-status update. The owner must review and preserve these records before deciding which exact paths to commit and publish.
+- The first launch stopped before a test case because the executable could not load `libgraph.so`; the next run reached the first BF16 case and failed at D=2049 with matched ratio `0.56540386`, max abs `4.26492296`, RC=3. D=3073 and D=4095 were not run. This is `CORRECTNESS_FAILED`; no timing lease was added.
+- Evidence is committed at local HEAD `52a54ce6` on `w2/m1/smallmid-dataflow`. Both former owners report completion and are closed; no command is running and no follow-up implementation is authorized in this turn.
 - `PLANNING_DECISIONS_CHANGED=0`; `NEW_ROUTES=0`.
