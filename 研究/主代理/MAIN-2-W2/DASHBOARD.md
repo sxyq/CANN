@@ -307,3 +307,30 @@ PUSH=PUSH_PENDING; remote publication is not a local-stage gate
 
 ADDR's first event is a committed research handoff, not a Candidate score;
 the Online queue remains empty and no sibling route was held for this receipt.
+
+### Event receipt: UB V001 forensic closure
+
+```text
+EVENT_UTC=2026-10-02T01:27:25Z onward
+ROUTE=UB-LIFETIME-SAFE-CHAMPION-X
+REVISION=V001
+STATIC_AUDIT_COMMIT=1922013f
+EXECUTION_COMMIT=6d620289
+EVIDENCE=研究/UB-LIFETIME-SAFE-CHAMPION-X/V001-FORENSIC-DIAGNOSTIC.md
+FORENSIC=CLOSED
+UB_V001_CLASS=UNRESOLVED
+PARENT_SAME_BINARY=MISSING_PARENT_RUN
+V001_REBUILT_EXECUTABLE_SHA256=c7b8fc47ee0e54f509499fd5829dcc5744eefcd9e57d4d323a1f51dd57f30849
+V001_FP32_WIDE_16384_RUNS=FAIL; failures=16342,max_abs=3.32307e+38; failures=16347,max_abs=inf
+V001_AGGREGATE=NONDETERMINISTIC
+LIFETIME_ORDER=PASS_STATIC; last_y_read_3318 < output_write_3322 < store_wait_3345
+PERFORMANCE=NOT_ELIGIBLE
+ONLINE=NOT_AUTHORIZED
+LANE_STATE=LANE_NEEDS_PLANNING_REVIEW
+PUSH=PUSH_PENDING
+```
+
+The forensic closure does not authorize a V002, a source fix, timing, or
+Online. The parent comparison and per-element mismatch diagnostics remain
+explicitly missing from the existing source-bound harness; no stronger class
+than `UNRESOLVED` is inferred.
