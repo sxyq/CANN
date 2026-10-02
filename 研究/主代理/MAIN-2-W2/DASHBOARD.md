@@ -1,6 +1,6 @@
 # MAIN-2 Local Control Dashboard
 
-UPDATED_UTC: 2026-10-02T18:42:27Z
+UPDATED_UTC: 2026-10-02T19:40:14Z
 SCOPE: MAIN-2 local control only
 CANONICAL_SHARED_LEDGER: UNMODIFIED
 
@@ -46,6 +46,58 @@ SERVER_JOBS_STARTED_BY_THIS_CHECKPOINT=0
 FORMAL_PERFORMANCE_RUNS=0
 ONLINE_QUEUE=NO_NEW_ELIGIBLE_CANDIDATE
 ONLINE_SUBMISSIONS=0
+```
+
+## Event receipt — BRANCH V001 final closure / ADDR known-good closure — 2026-10-02T19:40Z
+
+```text
+CONTROL_HEAD_BEFORE_RECEIPT=76d51ecb
+CANONICAL_MAIN_HEAD=02482b46c2ee1fdd5bab1f88a474c7e70426f661
+OVERALL_OFFICIAL_CHAMPION=R31B V011 / 45.16
+EVENT_DRIVEN_PIPELINE=ENABLED
+PLANNING_DECISIONS_CHANGED=0
+NEW_ROUTES_OUTSIDE_APPROVED_5=0
+CANONICAL_SHARED_LEDGER_CHANGES=0
+DIRECT_ONLINE_SUBMISSION=0
+ONLINE_QUEUE=EMPTY
+```
+
+BRANCH HBH-10 V001 is now closed with final `LOCAL_REJECTED` after two valid
+formal windows on BF16-D32768. The second window deltas were
+`-0.071280%, 0.000000%, +0.278936%, +0.722542%`; combined with window 1 they
+remain mixed and below the observed same-binary noise scale. No Local or
+Official score is claimed. Evidence commit `b0d33c09` is followed by the
+explicit restore commit `c24dbb2a`; the route source is byte-identical to
+R31B V011 (`a8c19a...`). HBH-09 is now the only authorized sibling and its
+fresh Route Agent has started; no V002 result exists yet.
+
+ADDR H3 V001 used a support-only runner rebuilt from the historical R31B V016
+paired runner. The exact Parent failed at the first D40960 warmup synchronize
+with `507035`; prior isolated Parent/Candidate d4/d7 runs recorded the same
+blocker for both binaries. Final classification is
+`MEASUREMENT_BLOCKED / SHARED_RUNTIME_BLOCKER`; Formal Local, ADDR-H1, V002,
+and Direct Online are forbidden. Closure commit is `53db8038`.
+
+```text
+BRANCH_V001_FINAL_VERDICT=LOCAL_REJECTED
+BRANCH_V001_FORMAL_WINDOWS=2
+BRANCH_V001_LOCAL_SCORE=NONE
+BRANCH_V001_RESTORE_COMMIT=c24dbb2a
+BRANCH_V001_RESTORED_SOURCE_SHA256=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
+BRANCH_HBH09_AGENT=01a0fe20-e90a-7922-a74e-d414ff7a491c
+BRANCH_HBH09_V002=IN_PROGRESS_NO_RESULT
+ADDR_V001_BUILD=PASS
+ADDR_V001_KNOWN_GOOD_BUILD=PASS
+ADDR_V001_FINAL_CORRECTNESS=MEASUREMENT_BLOCKED
+ADDR_V001_CLASSIFICATION=SHARED_RUNTIME_BLOCKER
+ADDR_V001_FORMAL_LOCAL=NOT_ELIGIBLE
+ADDR_V001_H1=FORBIDDEN
+ADDR_V001_V002=FORBIDDEN
+UB=FORENSIC_CLOSED_PARENT_INSTABILITY
+TILECOUNT=PARKED
+REDUCE=PARKED
+PUSH_STATE=PUSH_PENDING; GITHUB_PUSH_IS_LOCAL_STAGE_GATE=NO
+PROCESS_ACTIONS=NONE; existing VLLM/Ray/Python processes untouched
 ```
 
 ## Event receipt — ADDR BF16-D40960 final shared-path classification — 2026-10-02T18:42Z
