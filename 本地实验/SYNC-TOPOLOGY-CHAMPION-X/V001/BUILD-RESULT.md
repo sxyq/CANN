@@ -1,8 +1,24 @@
 # SYNC-TOPOLOGY-CHAMPION-X V001 Build Result
 
-Status: `BUILD=FAIL`, `CORRECTNESS=NOT_RUN`, `PERFORMANCE=NOT_RUN`.
+Latest Build/Link: `PASS`, Configure `PASS`, return code `0` in `SYNC-TOPOLOGY-CHAMPION-X-V001-D4-BUILD-FIX-6e650cf5-20261002T231909Z`. The earlier failed attempt remains below as historical evidence.
 
-## Source identity
+## Latest Build/Link
+
+- Route HEAD: `6e650cf5224ca0750d9d4886f5ccc428a9edde19`
+- Candidate SHA256: `27c853e1cb0c47307899b874338c3aecb912ad5dc125c0d67f6afba76a9117ec`
+- Direct Parent: `R31B V011`
+- Parent SHA256: `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`
+- Timing executable SHA256: `3628f9156ab7171e28c0d88a13f6e528f2cf85f138bb412eeab47d35bb24de2f`
+- Correctness executable SHA256: `7a8335eec7156cf695cf75281a576a2b403e7df5da24de7fd7c1d8759abc97a7`
+- Parent DSO SHA256: `017ab02a4fe0da2c2692ba18c17c89ad27cd928ef66a14bf8035d2c4731ec4ec`
+- Candidate DSO SHA256: `1a7172946ceab8786920f0e386d2df11307d58e22d86a8f6da90d11cce3844f4`
+- The log has no errors and a small number of `GM_ADDR` ignored-attributes warnings.
+- Build/Link log: `/home/data4t2/lelinfeng/cann/w2/SYNC-TOPOLOGY-CHAMPION-X/V001/results/SYNC-TOPOLOGY-CHAMPION-X-V001-D4-BUILD-FIX-6e650cf5-20261002T231909Z/build-link.log`
+- Executable identity: `/home/data4t2/lelinfeng/cann/w2/SYNC-TOPOLOGY-CHAMPION-X/V001/results/SYNC-TOPOLOGY-CHAMPION-X-V001-D4-BUILD-FIX-6e650cf5-20261002T231909Z/executable-identity.txt`
+
+## Historical First Build Attempt
+
+### Source identity
 
 - Workstation route branch: `w2/m1/sync-topology`
 - Workstation HEAD: `c0063657a04f4f1c9b746a8377bd820cb26469b4`
