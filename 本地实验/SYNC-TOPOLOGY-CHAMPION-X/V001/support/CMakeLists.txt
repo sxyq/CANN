@@ -23,6 +23,9 @@ set(SYNC_ASC_KERNEL_OPTIONS
     "-I${HCC_ROOT}/aarch64-target-linux-gnu/include/c++/7.3.0/backward")
 string(JOIN " " SYNC_ASC_KERNEL_OPTIONS_STR ${SYNC_ASC_KERNEL_OPTIONS})
 set(SYNC_ASC_HOST_OPTIONS
+    "-I/usr/include/c++/11"
+    "-I/usr/include/aarch64-linux-gnu/c++/11"
+    "-I/usr/include/c++/11/backward"
     "-I${HCC_ROOT}/aarch64-target-linux-gnu/include/c++/7.3.0"
     "-I${HCC_ROOT}/aarch64-target-linux-gnu/include/c++/7.3.0/aarch64-target-linux-gnu"
     "-I${HCC_ROOT}/aarch64-target-linux-gnu/include/c++/7.3.0/backward")
