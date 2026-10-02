@@ -626,3 +626,57 @@ FORMAL_PERFORMANCE_RUNS=0_AT_RECEIPT
 PUSH_STATE=PUSH_PENDING; GITHUB_PUSH_IS_LOCAL_STAGE_GATE=NO
 PROCESS_ACTIONS=NONE; existing VLLM/Ray/Python processes untouched
 ```
+
+## Event receipt — ADDR correctness partial pass / BRANCH qualification retry blocked — 2026-10-02T17:50Z
+
+```text
+CONTROL_HEAD_BEFORE_RECEIPT=dbf3586d
+CANONICAL_MAIN_HEAD=02482b46c2ee1fdd5bab1f88a474c7e70426f661
+ORIGIN_MAIN_OBSERVED=62695ef8254c1bba61ac8534c15d23e70cf36588
+OVERALL_OFFICIAL_CHAMPION=R31B V011 / 45.16
+PLANNING_DECISIONS_CHANGED=0
+NEW_ROUTES_OUTSIDE_APPROVED_5=0
+EVENT_DRIVEN_PIPELINE=ENABLED
+DIRECT_ONLINE_SUBMISSION=FORBIDDEN
+ONLINE_QUEUE=EMPTY
+```
+
+ADDR V001 H3 correctness support Build passed after the runner-only GM
+address-cast fix (`72dac4a0`, Build evidence `af6b1fd2`). The first execution
+was a loader-only failure because the HCC runtime selected a `libstdc++.so.6`
+without `GLIBCXX_3.4.29`; this was corrected only in the execution environment
+by putting system runtime libraries first. The rerun then passed Parent and
+Candidate with exact output equality on eight cases: FP16 widths 12288,
+16384, 24576, 32768 and BF16 widths 12288, 16384, 24576, 32768-tail.
+Parent/Candidate source identities remained exact: parent SHA256
+`a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`, H3
+candidate SHA256
+`26aa65a2e1313e0681ca7ad29f85ca20f667d33ede1a4d2d9e7e1557d6192602`, runner
+SHA256 `fe4607229e2a962e5d2d39dcc4b510cb13d7cf0b6ce265bf875c470e4eb3f770`.
+The same run stopped at the next BF16 width 40960 with
+`aclrtSynchronizeStream=507035`; therefore ADDR correctness is
+`INCOMPLETE`, not PASS or Candidate failure. Timing remains prohibited. The
+next event is an exact single-case/support diagnostic for D40960, with no H3
+source change.
+
+BRANCH V001 HBH-10 timing qualification retry `5848a7ed` also failed to
+qualify any of the four target shapes on device 7. FP16-16384 and BF16-20000
+were protocol-blocked; FP16-32768 was protocol-blocked with block drift
+0.392333; BF16-32768 was `NEEDS_VALIDATION` with MAD/median 0.170151 and
+drift 0.033871. No Parent/Candidate paired samples ran and no Local score is
+claimed. The retry's load snapshot recorded HBM 37% and AICore 0% before the
+run, with the existing d7 `python3` process retained. This is
+`MEASUREMENT_BLOCKED` with retry required, not `LOCAL_REJECTED`; V002/HBH-09
+remains forbidden until V001 has a clear verdict.
+
+```text
+ADDR_BUILD=PASS; ADDR_CORRECTNESS=INCOMPLETE; ADDR_FORMAL_LOCAL=NOT_ELIGIBLE
+ADDR_V002=FORBIDDEN
+BRANCH_BUILD=PASS; BRANCH_CORRECTNESS=PASS; BRANCH_SAME_BINARY=BLOCKED_RETRY_2
+BRANCH_FORMAL_LOCAL=NOT_STARTED; BRANCH_LOCAL_SCORE=NONE
+BRANCH_VERDICT=MEASUREMENT_BLOCKED; BRANCH_V002=FORBIDDEN
+UB_CLASS=PARENT_INSTABILITY; UB_V002=FORBIDDEN
+FORMAL_PERFORMANCE_RUNS=0_AT_RECEIPT
+PUSH_STATE=PUSH_PENDING; GITHUB_PUSH_IS_LOCAL_STAGE_GATE=NO
+PROCESS_ACTIONS=NONE; existing VLLM/Ray/Python processes untouched
+```
