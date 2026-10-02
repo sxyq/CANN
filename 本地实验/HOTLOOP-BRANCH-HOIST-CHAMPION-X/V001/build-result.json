@@ -1,0 +1,42 @@
+{
+  "route": "HOTLOOP-BRANCH-HOIST-CHAMPION-X",
+  "revision": "V001",
+  "hypothesis": "HBH-10",
+  "stage": "BUILD",
+  "status": "PASS",
+  "build_mode": "local_harness_with_exact_parent_and_candidate_wrappers",
+  "host": "hwnput3",
+  "access_fact": "local npu-smi available; cann-server3 DNS unresolved from this runtime",
+  "toolkit": "/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002",
+  "soc": "Ascend910B3",
+  "npu_arch": "dav-2201",
+  "source_commit": "90dec40e84b4d60230cf8d4cc5c048fdd53dcf3a",
+  "parent_source_sha256": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "candidate_source_sha256": "4dc1973ef198cd67693610b6ffedad6883b59f52207b9804052975a13f4e032b",
+  "attempts": [
+    {
+      "id": "initial",
+      "status": "FAIL",
+      "reason": "Direct ASC compilation did not inject the Judge-predefined TensorInfo, TensorGroupInfo, and aclrtStream ABI types.",
+      "evidence": "support/build.log"
+    },
+    {
+      "id": "build-fix-001",
+      "status": "PASS",
+      "reason": "Harness-only ABI header and include wrappers supplied the predefined direct-invoke ABI; submitted source bytes were unchanged.",
+      "evidence": "support/build-fix-001.log"
+    }
+  ],
+  "artifacts": {
+    "parent": {
+      "path": "support/build/libhotloop_branch_v001_parent.so",
+      "sha256": "00187da7f33eef731055f47c7c285a049adeb98aa6b16d62537e5f9267fc46f9"
+    },
+    "candidate": {
+      "path": "support/build/libhotloop_branch_v001_candidate.so",
+      "sha256": "31bc1ab4a3e0f03e6a31bf5e274a631d834b4030c0c8f43a1f97f85ab427751a"
+    }
+  },
+  "correctness_gate": "NEXT_IMMEDIATELY",
+  "performance_gate": "NOT_STARTED"
+}
