@@ -199,15 +199,22 @@ Have each existing Route Agent prepare and commit its reproducible route-local b
 {
   "handoffs": "5/5",
   "selected": "4 implementation lanes; 1 qualification lane",
-  "activeAgents": 0,
-  "pendingAgents": 5,
-  "activeRevision": "Four V001 candidates; harness preparation",
-  "stage": "SOURCE_PUSHED",
-  "state": "Four reviewed Candidate branches are pushed and mirrored on server3; harnesses are being prepared before build/correctness",
-  "nextStep": "Commit route-local harnesses, then run exact-source build and correctness on devices 4, 5, 7, and 1",
-  "blocker": "Formal Online submission owner and cadence require Planning resolution",
+  "activeAgents": 4,
+  "pendingAgents": 1,
+  "activeRevision": "SYNC, STORE, EPI, SMALLMID V001",
+  "stage": "EVENT_DRIVEN_LOCAL_PIPELINE",
+  "state": "Four existing Route Agents are active on their own V001 lanes; each advances build, correctness, then formal local performance as soon as its own result is ready",
+  "nextStep": "Continue each lane independently; no wait for other Routes, campaign summary, dashboard refresh, or GitHub push",
+  "blocker": "A lane needs its own live device timing lease before formal performance; Online remains subject to the current Planning/Judge Owner process",
   "planningDecisionsChanged": 0,
-  "newRoutes": 0
+  "newRoutes": 0,
+  "lanes": [
+    {"route":"SYNC V001","instruction":"H2 low-precision parameter prefetch order","firstAction":"Build on device 4, then correctness","revisionState":"ACTIVE; fixed source SHA 27c853e1...a9117ec"},
+    {"route":"STORE V001","instruction":"H1 full-row Store issue point","firstAction":"Build on device 5, then correctness","revisionState":"ACTIVE; fixed source SHA 48b9428d...018f88"},
+    {"route":"EPI V001","instruction":"H3 group independent row arithmetic","firstAction":"Build on device 7, then correctness","revisionState":"ACTIVE; fixed source SHA 9a28f5cd...bfe4d59"},
+    {"route":"SMALLMID V001","instruction":"SMD-H6 reuse BF16 parameter conversion","firstAction":"Build on device 1, then correctness","revisionState":"ACTIVE; fixed source SHA a689e5ab...bdb340a"},
+    {"route":"SELECTIVE-FASTPATH","instruction":"BF16 D32768 donor qualification only","firstAction":"Resolve missing exact runtime M and paired evidence","revisionState":"QUALIFICATION_ONLY; no V001 created"}
+  ]
 }
 ```
 
@@ -254,4 +261,22 @@ The exact Candidate source, `submission.sha256`, server route-tree source, and s
 - Live server snapshot on 2026-10-02: `hwnput3`, free HBM d1/d4/d5/d7 = 5262/6346/5336/11446 MB; project disk available = 698 GB. No active scheduler lease was found on the four assigned devices. VLLM was present on d0-d6; d7 also showed Python/Ray processes. These processes remain untouched. No lane-specific build/correctness process was present.
 - `BUILD=NOT_STARTED`; `CORRECTNESS=NOT_STARTED`; `PERFORMANCE=NOT_RUN`; `ONLINE=NOT_RUN`.
 - Next action: each existing Route Agent repeats the device/resource snapshot immediately before its assigned exact-source build and correctness run. No timing or Online action is authorized in this stage.
+- `PLANNING_DECISIONS_CHANGED=0`; `NEW_ROUTES=0`.
+
+## MAIN1_EVENT_DRIVEN_EXECUTION (2026-10-02)
+
+- The four earlier Route Agent IDs returned `not_found` from the current runtime. No route process or lane output directory existed at the next server snapshot; no test stage was running then.
+- Replacement execution contexts use the same four existing local branches and worktrees. No source change, Revision declaration, route change, or Planning decision was made while replacing the unavailable contexts.
+
+| Route | Active Agent ID | Existing branch | Existing worktree | Candidate SHA256 | Stage |
+|---|---|---|---|---|---|
+| SYNC V001 | `01a0fcf7-fece-7570-958c-1720fc7bc486` | `w2/m1/sync-topology` | `worktrees/w2/m1/sync-topology` | `27c853e1cb0c47307899b874338c3aecb912ad5dc125c0d67f6afba76a9117ec` | STARTED; agent preparing own build |
+| STORE V001 | `01a0fcf7-ff78-7313-868d-a3d74ee616fc` | `w2/m1/store-epilogue` | `worktrees/w2/m1/store-epilogue` | `48b9428dc2fc97c7c9d95f03ad8cec8e758c88e1197aa2328b1b1edebc018f88` | STARTED; agent preparing own build |
+| EPI V001 | `01a0fcf7-ffe5-74a0-baa2-3cad636c6e80` | `w2/m1/epi-arith` | `worktrees/w2/m1/epi-arith` | `9a28f5cd8703dc4ff5c46fba09f59a537132594e5a879a50a17349086bfe4d59` | STARTED; agent preparing own build |
+| SMALLMID V001 | `01a0fcf8-0053-7800-a592-897178653e7d` | `w2/m1/smallmid-dataflow` | `worktrees/w2/m1/smallmid-dataflow` | `a689e5abc03d2770b277812d9a52ae0a1aaf910952b737525e1722f06bdb340a` | STARTED; agent preparing own build |
+
+- Server snapshot: free HBM d1/d4/d5/d7 = 1412/5121/1494/40757 MB; project disk available = 630 GB. Existing VLLM and Python work remains untouched. No lane-specific compile or runner process was present at this snapshot.
+- Per-route flow: fixed local source commit → build → correctness → immediate formal local performance, subject only to that route's own result and the existing per-device timing protocol. GitHub push and unrelated route progress are not prerequisites.
+- Each stage produces its own route-local evidence commit. Main updates the route summary, dashboard and Online Queue as each score arrives; no batch closeout is required to advance another lane.
+- Online submission remains governed by the current repository approval and unified Judge Owner process. The attachment's different Main-1 ownership/cadence instruction remains a recorded policy conflict.
 - `PLANNING_DECISIONS_CHANGED=0`; `NEW_ROUTES=0`.
