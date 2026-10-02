@@ -35,34 +35,53 @@ set(CMAKE_ASC_COMPILE_OBJECT
 
 set_source_files_properties(npu_correctness.asc PROPERTIES LANGUAGE ASC)
 add_executable(sync_topology_v001_correctness npu_correctness.asc)
+
 set(SYNC_HOST_CXX_INCLUDE_PATHS
     "/usr/include/c++/11:/usr/include/aarch64-linux-gnu/c++/11:/usr/include/c++/11/backward")
-set_property(TARGET sync_topology_v001_correctness PROPERTY RULE_LAUNCH_COMPILE
-    "${CMAKE_COMMAND} -E env CPATH=${SYNC_HOST_CXX_INCLUDE_PATHS}")
-target_include_directories(sync_topology_v001_correctness PRIVATE
-    "${CMAKE_CURRENT_LIST_DIR}"
-    "${CMAKE_CURRENT_LIST_DIR}/.."
-    "${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include"
-    "${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include"
-    "${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl"
-    "${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/include/basic_api"
-    "${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/include"
-    "${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux"
-    "${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc"
-    "${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/include/interface"
-    "${HCC_ROOT}/aarch64-target-linux-gnu/include"
-    "${HCC_ROOT}/aarch64-target-linux-gnu/include/c++/7.3.0"
-    "${HCC_ROOT}/aarch64-target-linux-gnu/include/c++/7.3.0/aarch64-target-linux-gnu"
-    "${HCC_ROOT}/aarch64-target-linux-gnu/include/c++/7.3.0/backward"
-    /usr/include/c++/11
-    /usr/include/aarch64-linux-gnu/c++/11
-    /usr/include/aarch64-linux-gnu)
-target_compile_options(sync_topology_v001_correctness PRIVATE
-    $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=dav-2201>)
-target_link_directories(sync_topology_v001_correctness PRIVATE
-    "${ASCEND_CANN_PACKAGE_PATH}/lib64"
-    "${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/lib64"
-    /usr/lib/gcc/aarch64-linux-gnu/11
-    /usr/lib/aarch64-linux-gnu)
-target_link_libraries(sync_topology_v001_correctness PRIVATE
-    ascendcl tiling_api register platform unified_dlog dl m graph_base)
+set(SYNC_V001_SUPPORT_DIR "${CMAKE_CURRENT_LIST_DIR}")
+function(configure_sync_v001_target target)
+    set_property(TARGET ${target} PROPERTY RULE_LAUNCH_COMPILE
+        "${CMAKE_COMMAND} -E env CPATH=${SYNC_HOST_CXX_INCLUDE_PATHS}")
+    target_include_directories(${target} PRIVATE
+        "${SYNC_V001_SUPPORT_DIR}"
+        "${SYNC_V001_SUPPORT_DIR}/.."
+        "${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include"
+        "${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include"
+        "${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl"
+        "${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/include/basic_api"
+        "${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/include"
+        "${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux"
+        "${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc"
+        "${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/include/interface"
+        "${HCC_ROOT}/aarch64-target-linux-gnu/include"
+        "${HCC_ROOT}/aarch64-target-linux-gnu/include/c++/7.3.0"
+        "${HCC_ROOT}/aarch64-target-linux-gnu/include/c++/7.3.0/aarch64-target-linux-gnu"
+        "${HCC_ROOT}/aarch64-target-linux-gnu/include/c++/7.3.0/backward"
+        /usr/include/c++/11
+        /usr/include/aarch64-linux-gnu/c++/11
+        /usr/include/aarch64-linux-gnu)
+    target_compile_options(${target} PRIVATE
+        $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=dav-2201>)
+    target_link_directories(${target} PRIVATE
+        "${ASCEND_CANN_PACKAGE_PATH}/lib64"
+        "${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/lib64"
+        /usr/lib/gcc/aarch64-linux-gnu/11
+        /usr/lib/aarch64-linux-gnu)
+    target_link_libraries(${target} PRIVATE
+        ascendcl tiling_api register platform unified_dlog dl m graph_base)
+endfunction()
+
+configure_sync_v001_target(sync_topology_v001_correctness)
+
+set(SYNC_PARENT_SOURCE
+    "${SYNC_V001_SUPPORT_DIR}/../../../../线上结果/R31B/V011/submission.asc"
+    CACHE FILEPATH "Exact Direct Parent source")
+if(NOT EXISTS "${SYNC_PARENT_SOURCE}")
+    message(FATAL_ERROR "SYNC_PARENT_SOURCE is missing: ${SYNC_PARENT_SOURCE}")
+endif()
+
+set_source_files_properties(timing_runner.asc PROPERTIES LANGUAGE ASC)
+add_executable(sync_topology_v001_timing timing_runner.asc)
+target_compile_definitions(sync_topology_v001_timing PRIVATE
+    SYNC_PARENT_SOURCE="${SYNC_PARENT_SOURCE}")
+configure_sync_v001_target(sync_topology_v001_timing)
