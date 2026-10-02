@@ -12,7 +12,7 @@
   "same_binary": "NOT_STARTED",
   "measurement": "NOT_STARTED",
   "local_verdict": "BUILD_FAILED",
-  "block_reason": "Build attempt 1 exited before emitting output; diagnosis in progress",
+  "block_reason": "Build attempt 3 reached CMake compile but the Correctness host runner pointer cast was rejected; support-only fix in progress",
   "build_attempts": [
     {
       "date_utc": "2026-10-02T14:32:43Z",
@@ -60,6 +60,29 @@
         "device_processes": "python PID 2305560; VLLMWorker_TP PID 91055; AICore 0%"
       },
       "diagnosis": "The manual CMake retry omitted export of ASCEND_HOME_PATH, so support/CMakeLists.txt stopped at its toolkit environment requirement. The committed Candidate was not involved."
+    },
+    {
+      "date_utc": "2026-10-02T14:55:18Z",
+      "source_commit": "9abea741d4d0b40efdc322da5255c463fede481b",
+      "worktree_head": "fefa4ea3321c065e307aae1bcedd8d5e1f5adec8",
+      "candidate_sha256": "a689e5abc03d2770b277812d9a52ae0a1aaf910952b737525e1722f06bdb340a",
+      "device": 1,
+      "command": "source CANN environment with errexit disabled; cmake -S support -B artifacts/build/attempt3 -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=artifacts/build -DCMAKE_MODULE_PATH=<toolkit>/aarch64-linux/tikcpp/ascendc_kernel_cmake/ASC_CMake;<toolkit>/aarch64-linux/tikcpp/ascendc_kernel_cmake -DCMAKE_PREFIX_PATH=<toolkit>/aarch64-linux/tikcpp/ascendc_kernel_cmake -DSOC_VERSION=Ascend910B3 -DNPU_ARCH=dav-2201; cmake --build artifacts/build/attempt3 --target smd_v001_correctness --parallel 192",
+      "configure_rc": 0,
+      "build_rc": 2,
+      "log_path": "/home/data4t2/lelinfeng/cann/local-experiments/SMALLMID-DATAFLOW-CHAMPION-X/V001/a689e5abc03d2770b277812d9a52ae0a1aaf910952b737525e1722f06bdb340a/artifacts/build-device1-attempt3.log",
+      "executable_path": null,
+      "executable_sha256": null,
+      "environment": {
+        "host": "hwnput3",
+        "toolkit_path": "/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002",
+        "driver": "npu-smi 25.0.rc1.1",
+        "soc": "Ascend910B3",
+        "free_hbm_before_mb": 4044,
+        "available_disk_before_gb": 629,
+        "device_processes": "python PID 2305560; VLLMWorker_TP PID 91055; AICore 0%"
+      },
+      "diagnosis": "CMake configured successfully. The compiler rejected reinterpret_cast<GM_ADDR> from aclrtMalloc void* at support/correctness_runner.inc:135; no executable was produced and the Candidate source was not changed."
     }
   ],
   "server_work_performed": true,
