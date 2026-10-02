@@ -197,19 +197,19 @@ Have each existing Route Agent prepare and commit its reproducible route-local b
 
 ```dashboard-json
 {
-  "handoffs": "CASE14, CASE47, FASTPATH, and TINY Track-B reviews recorded; SYNC V001 Build retry reports TensorGroupInfo unavailable to the ASC parser",
+  "handoffs": "CASE14, CASE47, FASTPATH, and TINY Track-B reviews recorded; SYNC V001 host argument routing still omits the required metadata and ACL declarations",
   "selected": "5 Planning-approved routes; 0/5 performance hypotheses MAIN_SELECTED",
   "activeAgents": 1,
   "pendingAgents": 0,
   "activeRevision": "SYNC V001 only",
   "stage": "EVENT_DRIVEN_SYNC_BUILD_FIX",
-  "state": "SYNC V001 Candidate and Parent identities match; Configure passes; latest Build/Link fails before executable production; no Correctness or timing run",
-  "nextStep": "Route Agent makes a support-only metadata type visibility change; Main reviews it, then retries Build/Link immediately and runs Correctness immediately on PASS",
-  "blocker": "Parent and Candidate ASC parsing both report TensorGroupInfo undeclared at submission.asc:3479; no new executable exists",
+  "state": "SYNC V001 Candidate and Parent identities match; Configure passes; latest Build/Link fails in host wrapper compilation; no Correctness or timing run",
+  "nextStep": "Route Agent fixes support-only CMake argument routing and documents it; Main reviews, retries Build/Link immediately, then runs Correctness immediately on PASS",
+  "blocker": "Latest compiler command places metadata include in the AICore segment and omits -include from the host segment; both sources still report undeclared types",
   "planningDecisionsChanged": 0,
   "newRoutes": 3,
   "lanes": [
-    {"route":"SYNC-TOPOLOGY-CHAMPION-X","instruction":"Continue approved V001 Local closure","firstAction":"Expose metadata structs to ASC parsing with a support-only change; Main review, Build/Link, then Correctness; lease only for timing","revisionState":"RUN_ID SYNC-TOPOLOGY-CHAMPION-X-V001-D4-BUILD-FIX-e2d3d8c3-20261002T220501Z; Configure PASS, Build/Link RC=2 at submission.asc:3479 for both sources (TensorGroupInfo undeclared); no new executable, Correctness, or timing"},
+    {"route":"SYNC-TOPOLOGY-CHAMPION-X","instruction":"Continue approved V001 Local closure","firstAction":"Fix host argument routing for metadata and ACL declarations with support-only changes; Main review, Build/Link, then Correctness; lease only for timing","revisionState":"RUN_ID SYNC-TOPOLOGY-CHAMPION-X-V001-D4-BUILD-FIX-7f73e93d-20261002T223305Z; Configure PASS, Build/Link RC=2 for both sources; metadata include is in the AICore segment and host segment omits -include; no new executable, Correctness, or timing"},
     {"route":"CASE47-SMALL-CLUSTER-CHAMPION-X","instruction":"Track-B Main review: NEEDS_MORE_EVIDENCE; no MAIN_SELECTED","firstAction":"Obtain Judge case4/case7 shape and dtype; revisit H1 only after evidence arrives","revisionState":"Commit 2404d4e4; H2/H5 DUPLICATE; H3 INFEASIBLE; H4 overlaps prior wide-tile work; no Revision"},
     {"route":"CASE14-INTRAROW-PARALLELISM-CHAMPION-X","instruction":"Track-B: case 14; Agent 01a0fe2e-7772-7e83-825d-e90811e0db2c","firstAction":"Obtain case metadata, raw profile, C001 source/TLE log and workspace ABI evidence","revisionState":"Track-B commit 5fda6e90; NEEDS_MORE_EVIDENCE; H1 overlaps R008/C001; H2-H4 duplicate; MAIN_SELECTED=NONE"},
     {"route":"SELECTIVE-FASTPATH-CHAMPION-X","instruction":"Track-B cycle complete: NEEDS_MORE_EVIDENCE; no MAIN_SELECTED","firstAction":"Obtain Judge input mapping; no implementation until Main selects a hypothesis","revisionState":"Commit 5f669c30; STORE V003 donor is precisely sourced; Official 44.38 vs V011 45.16; TINY mechanism review complete, case overlap unknown"},
@@ -423,4 +423,15 @@ The three new worktrees are sparse, approximately 7.5 MB each, and were created 
 - No new timing or correctness executable was produced; Correctness and timing were not run. A pre-existing Candidate shared library had timestamp `2026-10-02 21:14:19Z`, before this run, and is not accepted as this attempt's output.
 - Configure, Build/Link, identity, and before/after resource files remain under `/home/data4t2/lelinfeng/cann/w2/SYNC-TOPOLOGY-CHAMPION-X/V001/results/SYNC-TOPOLOGY-CHAMPION-X-V001-D4-BUILD-FIX-e2d3d8c3-20261002T220501Z/`.
 - Next: Route Agent submits a support-only type-visibility change. Main reviews it before another Build; Correctness follows immediately only if both targets Build/Link successfully. Timing still requires a fresh Main lease. No score or Online Queue entry was added.
+- `PLANNING_DECISIONS_CHANGED=0`; `NEW_ROUTES=0`; `PERFORMANCE_HYPOTHESES_MAIN_SELECTED=0`.
+
+## MAIN1_SYNC_TIMING_HARNESS_BUILD_ATTEMPT_4 (2026-10-03)
+
+- Harness/documentation HEAD at run start: `7f73e93d7232ab3bbcc2ac2974efa5f888ffdbf9`. Candidate source SHA remains `27c853e1cb0c47307899b874338c3aecb912ad5dc125c0d67f6afba76a9117ec`; Direct Parent R31B V011 SHA remains `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`.
+- RUN_ID: `SYNC-TOPOLOGY-CHAMPION-X-V001-D4-BUILD-FIX-7f73e93d-20261002T223305Z`. Candidate, sidecar, source metadata, Parent, and all eight support-file identities matched; remote sidecar verification passed.
+- Server: `hwnput3`, Ascend 910B3, CANN `8.5.0.alpha002`, `npu-smi 25.0.rc1.1`. Before and after Build, d4 HBM was `59190/65536 MB` used, AICore `0%`; VLLM EngineCore PID `2999855` remained unchanged. Project disk availability stayed at `616 GB`.
+- Configure: PASS. Build/Link: FAIL, return code `2`. Parent and Candidate still report `TensorGroupInfo`, `TensorInfo`, and `aclrtStream` undeclared. The logged command placed `local_tensor_metadata.h` inside the AICore option segment; the host segment contains the shim path without the `-include` option.
+- No new timing or correctness executable was produced; Correctness and timing were not run. The existing Candidate shared library still had the earlier timestamp `2026-10-02 21:14:19Z` and was not treated as output from this run.
+- Configure, Build/Link, identity, and before/after resource files remain under `/home/data4t2/lelinfeng/cann/w2/SYNC-TOPOLOGY-CHAMPION-X/V001/results/SYNC-TOPOLOGY-CHAMPION-X-V001-D4-BUILD-FIX-7f73e93d-20261002T223305Z/`.
+- Next: Route Agent fixes support-only compiler argument routing and updates its reproducibility notes. Main reviews the commits before another Build; Correctness follows immediately only if both targets Build/Link successfully. No score or Online Queue entry was added.
 - `PLANNING_DECISIONS_CHANGED=0`; `NEW_ROUTES=0`; `PERFORMANCE_HYPOTHESES_MAIN_SELECTED=0`.
