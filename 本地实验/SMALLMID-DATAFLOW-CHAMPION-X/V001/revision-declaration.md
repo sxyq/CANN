@@ -29,9 +29,9 @@
 只移动 BF16 gamma/bias 的两次 `ToFloat`，从逐行输出阶段移到现有参数 MTE2 等待之后、行循环之前；每行改读 FP32 参数缓冲。保持现有行分配、UB 总量、GM Load、DMA、事件同步、Store 和逐元素算术次序不变。不扩大 tile，不加入第二个性能机制。
 
 `BUILD`: `PASS` (RUN_ID `20261002T151744Z-device1`; record in `BUILD-RESULT.md`; exact candidate SHA verified; compile and link passed)
-`CORRECTNESS`: `NOT_STARTED`
+`CORRECTNESS`: `INCOMPLETE` (attempt 1 exited before main because CANN `aarch64-linux/lib64` was absent from `LD_LIBRARY_PATH`; no kernel case ran; recorded in `local-result.json`)
 `EXECUTABLE_IDENTITY`: `PASS` (`159532deffb1ddaf33792c0b7c296c3bcf7cf2f0cc2ea68fbc0e8de7b68e5208`)
-`LOCAL_VERDICT`: `NOT_COMPLETE` (Build passed; Correctness starts next)
+`LOCAL_VERDICT`: `NOT_COMPLETE` (Build passed; Correctness attempt 1 was INCOMPLETE before any case ran)
 `SOURCE_STATE`: `BUILT_NOT_VALIDATED`
 `SOURCE_SHA256`: `a689e5abc03d2770b277812d9a52ae0a1aaf910952b737525e1722f06bdb340a`
 `SOURCE_COMMIT`: `9abea741d4d0b40efdc322da5255c463fede481b`
