@@ -1,6 +1,7 @@
 #ifndef SYNC_TOPOLOGY_V001_LOCAL_ABI_SHIM_H
 #define SYNC_TOPOLOGY_V001_LOCAL_ABI_SHIM_H
 
+#include <acl/acl.h>
 #include <cstdint>
 
 struct TensorInfo {
