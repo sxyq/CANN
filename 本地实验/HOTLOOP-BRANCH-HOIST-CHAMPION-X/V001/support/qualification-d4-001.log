@@ -1,0 +1,442 @@
+QUALIFICATION_D4_START_UTC=2026-10-02T17:54:14Z
+hwnput3
+BRANCH=w2/m2/hotloop-branch
+COMMIT=5848a7ed8e5677887313c7b047c39ee06b70a4f7
+CANONICAL_D4_ACTIVE_LEASE_COUNT=0
+LOAD_SNAPSHOT=BEFORE
+	NPU ID                         : 4
+	Chip Count                     : 1
+
+	DDR Capacity(MB)               : 0
+	DDR Usage Rate(%)              : 0
+	DDR Hugepages Total(page)      : 0
+	DDR Hugepages Usage Rate(%)    : 0
+	HBM Capacity(MB)               : 65536
+	HBM Usage Rate(%)              : 93
+	Aicore Usage Rate(%)           : 1
+	Aivector Usage Rate(%)         : 3
+	Aicpu Usage Rate(%)            : 0
+	Ctrlcpu Usage Rate(%)          : 4
+	DDR Bandwidth Usage Rate(%)    : 0
+	HBM Bandwidth Usage Rate(%)    : 0
+	Chip ID                        : 0
+
++------------------------------------------------------------------------------------------------+
+| npu-smi 25.0.rc1.1               Version: 25.0.rc1.1                                           |
++---------------------------+---------------+----------------------------------------------------+
+| NPU   Name                | Health        | Power(W)    Temp(C)           Hugepages-Usage(page)|
+| Chip                      | Bus-Id        | AICore(%)   Memory-Usage(MB)  HBM-Usage(MB)        |
++===========================+===============+====================================================+
+| 0     910B3               | OK            | 143.3       39                0    / 0             |
+| 0                         | 0000:C1:00.0  | 32          0    / 0          60224/ 65536         |
++===========================+===============+====================================================+
+| 1     910B3               | OK            | 144.9       39                0    / 0             |
+| 0                         | 0000:C2:00.0  | 36          0    / 0          63079/ 65536         |
++===========================+===============+====================================================+
+| 2     910B3               | OK            | 132.8       40                0    / 0             |
+| 0                         | 0000:81:00.0  | 32          0    / 0          60216/ 65536         |
++===========================+===============+====================================================+
+| 3     910B3               | OK            | 143.1       39                0    / 0             |
+| 0                         | 0000:82:00.0  | 32          0    / 0          60218/ 65536         |
++===========================+===============+====================================================+
+| 4     910B3               | OK            | 98.0        37                0    / 0             |
+| 0                         | 0000:01:00.0  | 0           0    / 0          61226/ 65536         |
++===========================+===============+====================================================+
+| 5     910B3               | OK            | 101.3       35                0    / 0             |
+| 0                         | 0000:02:00.0  | 0           0    / 0          61443/ 65536         |
++===========================+===============+====================================================+
+| 6     910B3               | OK            | 106.1       38                0    / 0             |
+| 0                         | 0000:41:00.0  | 1           0    / 0          64051/ 65536         |
++===========================+===============+====================================================+
+| 7     910B3               | OK            | 130.1       39                0    / 0             |
+| 0                         | 0000:42:00.0  | 0           0    / 0          24790/ 65536         |
++===========================+===============+====================================================+
++---------------------------+---------------+----------------------------------------------------+
+| NPU     Chip              | Process id    | Process name             | Process memory(MB)      |
++===========================+===============+====================================================+
+| 0       0                 | 89395         | VLLMWorker_TP            | 56702                   |
++===========================+===============+====================================================+
+| 1       0                 | 2305560       | python                   | 2858                    |
+| 1       0                 | 91055         | VLLMWorker_TP            | 56702                   |
++===========================+===============+====================================================+
+| 2       0                 | 92813         | VLLMWorker_TP            | 56703                   |
++===========================+===============+====================================================+
+| 3       0                 | 94498         | VLLMWorker_TP            | 56703                   |
++===========================+===============+====================================================+
+| 4       0                 | 1819590       | python                   | 2088                    |
+| 4       0                 | 2999855       | VLLMEngineCor            | 55664                   |
++===========================+===============+====================================================+
+| 5       0                 | 89602         | VLLMWorker_TP            | 56678                   |
+| 5       0                 | 2771372       | python                   | 1294                    |
++===========================+===============+====================================================+
+| 6       0                 | 3492500       | python                   | 3904                    |
+| 6       0                 | 91228         | VLLMWorker_TP            | 56679                   |
++===========================+===============+====================================================+
+| 7       0                 | 439848        | python3                  | 21260                   |
++===========================+===============+====================================================+
+PROCESS_SNAPSHOT=BEFORE
+   5048 networkd-dispat /usr/bin/python3 /usr/bin/networkd-dispatcher --run-startup-triggers
+   5328 unattended-upgr /usr/bin/python3 /usr/share/unattended-upgrades/unattended-upgrade-shutdown --wait-for-signal
+  82397 vllm            /usr/local/python3.12.13/bin/python3 /usr/local/python3.12.13/bin/vllm serve /models/Qwen3.8-27B-w8a8 --host 0.0.0.0 --port 9001 --tensor-parallel-size 4 --quantization ascend --served-model-name qwen3.8 --max-model-len 256000 --max-num-seqs 8 --max-num-batched-tokens 8192 --gpu-memory-utilization 0.90 --enable-prefix-caching --trust-remote-code --reasoning-parser qwen3 --enable-auto-tool-choice --tool-call-parser qwen3_coder
+  83352 vllm            /usr/local/python3.12.13/bin/python3 /usr/local/python3.12.13/bin/vllm serve /models/Qwen3.8-27B-w8a8 --host 0.0.0.0 --port 9002 --tensor-parallel-size 2 --quantization ascend --served-model-name qwen3.8 --max-model-len 256000 --max-num-seqs 8 --max-num-batched-tokens 8192 --gpu-memory-utilization 0.90 --enable-prefix-caching --trust-remote-code --reasoning-parser qwen3 --enable-auto-tool-choice --tool-call-parser qwen3_coder
+  87335 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.resource_tracker import main;main(35)
+  87336 VLLM::EngineCor VLLM::EngineCore
+  87669 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.resource_tracker import main;main(35)
+  87670 VLLM::EngineCor VLLM::EngineCore
+  89395 VLLM::Worker_TP VLLM::Worker_TP0
+  89602 VLLM::Worker_TP VLLM::Worker_TP0
+  91055 VLLM::Worker_TP VLLM::Worker_TP1
+  91228 VLLM::Worker_TP VLLM::Worker_TP1
+  92813 VLLM::Worker_TP VLLM::Worker_TP2
+  94498 VLLM::Worker_TP VLLM::Worker_TP3
+  95970 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.spawn import spawn_main; spawn_main(tracker_fd=36, pipe_handle=88) --multiprocessing-fork
+  96143 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.spawn import spawn_main; spawn_main(tracker_fd=36, pipe_handle=77) --multiprocessing-fork
+  96830 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(85, 87, [], **{})
+  96848 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(85, 87, [], **{})
+  96849 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(85, 87, [], **{})
+  96850 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(85, 87, [], **{})
+  96851 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(85, 87, [], **{})
+  96853 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(85, 87, [], **{})
+  96854 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(85, 87, [], **{})
+  96855 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(85, 87, [], **{})
+  96856 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(85, 87, [], **{})
+  96857 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(85, 87, [], **{})
+  96891 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(85, 87, [], **{})
+  96892 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(85, 87, [], **{})
+  96893 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(85, 87, [], **{})
+  96894 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(85, 87, [], **{})
+  96895 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(85, 87, [], **{})
+  96896 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(85, 87, [], **{})
+  96897 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(85, 87, [], **{})
+  96898 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(85, 87, [], **{})
+  97110 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(74, 76, [], **{})
+  97116 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(74, 76, [], **{})
+  97118 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(74, 76, [], **{})
+  97120 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(74, 76, [], **{})
+  97121 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(74, 76, [], **{})
+  97122 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(74, 76, [], **{})
+  97123 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(74, 76, [], **{})
+  97124 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(74, 76, [], **{})
+  97125 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(74, 76, [], **{})
+  97126 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(74, 76, [], **{})
+  97157 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(74, 76, [], **{})
+  97158 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(74, 76, [], **{})
+  97159 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(74, 76, [], **{})
+  97160 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(74, 76, [], **{})
+  97161 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(74, 76, [], **{})
+  97163 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(74, 76, [], **{})
+  97166 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(74, 76, [], **{})
+  97169 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(74, 76, [], **{})
+ 100247 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.spawn import spawn_main; spawn_main(tracker_fd=36, pipe_handle=85) --multiprocessing-fork
+ 100272 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.spawn import spawn_main; spawn_main(tracker_fd=36, pipe_handle=102) --multiprocessing-fork
+ 100372 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.spawn import spawn_main; spawn_main(tracker_fd=36, pipe_handle=85) --multiprocessing-fork
+ 100434 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.spawn import spawn_main; spawn_main(tracker_fd=36, pipe_handle=85) --multiprocessing-fork
+ 101149 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101156 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101157 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101158 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101160 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101161 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101162 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101163 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101164 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101165 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101220 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(99, 101, [], **{})
+ 101222 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(99, 101, [], **{})
+ 101223 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(99, 101, [], **{})
+ 101224 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(99, 101, [], **{})
+ 101225 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(99, 101, [], **{})
+ 101226 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(99, 101, [], **{})
+ 101227 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(99, 101, [], **{})
+ 101228 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(99, 101, [], **{})
+ 101229 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(99, 101, [], **{})
+ 101230 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(99, 101, [], **{})
+ 101259 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101260 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101261 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101262 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101263 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101264 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101265 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101266 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101267 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(99, 101, [], **{})
+ 101268 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(99, 101, [], **{})
+ 101269 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(99, 101, [], **{})
+ 101270 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(99, 101, [], **{})
+ 101271 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(99, 101, [], **{})
+ 101272 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(99, 101, [], **{})
+ 101273 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(99, 101, [], **{})
+ 101274 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(99, 101, [], **{})
+ 101463 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101467 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101468 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101469 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101470 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101471 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101472 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101473 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101474 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101475 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101518 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101519 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101520 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101521 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101522 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101523 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101524 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101525 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 102072 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 102203 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 102204 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 102205 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 102206 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 102207 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 102208 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 102209 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 102210 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 102211 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+PARENT_SOURCE_SHA256=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
+CANDIDATE_SOURCE_SHA256=4dc1973ef198cd67693610b6ffedad6883b59f52207b9804052975a13f4e032b
+PERFORMANCE_EXECUTABLE_SHA256=dadafae6835854a799f4fc63ca1c5ae45c4495500ed18bfd9ac7f141c0ea9e61
+SHAPE_BEGIN dtype=fp16 width=16384
+RUN_COMMAND=本地实验/HOTLOOP-BRANCH-HOIST-CHAMPION-X/V001/support/build/hotloop_branch_v001_performance 4 16384 fp16 same 45 31 2 本地实验/HOTLOOP-BRANCH-HOIST-CHAMPION-X/V001/support/qualification-d4-001/fp16-d16384-same-raw.tsv
+PARENT_SOURCE_SHA256=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
+CANDIDATE_SOURCE_SHA256=4dc1973ef198cd67693610b6ffedad6883b59f52207b9804052975a13f4e032b
+QUALIFICATION mode=same side=parent device=4 width=16384 dtype=fp16 warmups=45 samples=31 blocks=2
+SUMMARY mode=same side=parent block=0 n=31 device_event_us_median=21.600001 mean=21.610323 stdev=10.768795 cv=0.498317 min=12.580000 max=71.500003 max_over_min=5.683625 mad=4.740000 mad_over_median=0.219444 p10=13.240000 p90=26.880000
+SUMMARY mode=same side=parent block=1 n=31 device_event_us_median=21.860000 mean=35.054193 stdev=38.150658 cv=1.088334 min=12.720000 max=196.400002 max_over_min=15.440252 mad=6.440001 mad_over_median=0.294602 p10=12.920000 p90=76.499999
+SAME_BINARY_QUAL width=16384 dtype=fp16 result=NEEDS_VALIDATION samples=62 median_us=21.760000 mad_over_median=0.235294 block_drift=0.011948
+PERFORMANCE_RUN_RESULT=FAIL
+RUN_RC=1
+RAW_SHA256=081098d0d7aed69960156c1fbf02aad3d071239731de77e93d2b8ae5b67bfdbe
+SHAPE_END dtype=fp16 width=16384
+SHAPE_BEGIN dtype=fp16 width=32768
+RUN_COMMAND=本地实验/HOTLOOP-BRANCH-HOIST-CHAMPION-X/V001/support/build/hotloop_branch_v001_performance 4 32768 fp16 same 45 31 2 本地实验/HOTLOOP-BRANCH-HOIST-CHAMPION-X/V001/support/qualification-d4-001/fp16-d32768-same-raw.tsv
+PARENT_SOURCE_SHA256=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
+CANDIDATE_SOURCE_SHA256=4dc1973ef198cd67693610b6ffedad6883b59f52207b9804052975a13f4e032b
+QUALIFICATION mode=same side=parent device=4 width=32768 dtype=fp16 warmups=45 samples=31 blocks=2
+SUMMARY mode=same side=parent block=0 n=31 device_event_us_median=27.360000 mean=33.548387 stdev=23.818140 cv=0.709964 min=20.540001 max=134.760007 max_over_min=6.560857 mad=4.640000 mad_over_median=0.169591 p10=21.460000 p90=44.280000
+SUMMARY mode=same side=parent block=1 n=31 device_event_us_median=26.020000 mean=33.712258 stdev=18.933369 cv=0.561617 min=19.819999 max=94.059996 max_over_min=4.745711 mad=4.360000 mad_over_median=0.167563 p10=20.840000 p90=60.839999
+SAME_BINARY_QUAL width=32768 dtype=fp16 result=NEEDS_VALIDATION samples=62 median_us=26.690000 mad_over_median=0.158486 block_drift=0.050206
+PERFORMANCE_RUN_RESULT=FAIL
+RUN_RC=1
+RAW_SHA256=800623fedc13152038f73c30cce3d3dade914dad9e92355c8a767c43eb5b240d
+SHAPE_END dtype=fp16 width=32768
+SHAPE_BEGIN dtype=bf16 width=32768
+RUN_COMMAND=本地实验/HOTLOOP-BRANCH-HOIST-CHAMPION-X/V001/support/build/hotloop_branch_v001_performance 4 32768 bf16 same 45 31 2 本地实验/HOTLOOP-BRANCH-HOIST-CHAMPION-X/V001/support/qualification-d4-001/bf16-d32768-same-raw.tsv
+PARENT_SOURCE_SHA256=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
+CANDIDATE_SOURCE_SHA256=4dc1973ef198cd67693610b6ffedad6883b59f52207b9804052975a13f4e032b
+QUALIFICATION mode=same side=parent device=4 width=32768 dtype=bf16 warmups=45 samples=31 blocks=2
+SUMMARY mode=same side=parent block=0 n=31 device_event_us_median=28.100001 mean=34.199355 stdev=28.435091 cv=0.831451 min=27.460000 max=189.319998 max_over_min=6.894392 mad=0.280000 mad_over_median=0.009964 p10=27.620001 p90=35.399999
+SUMMARY mode=same side=parent block=1 n=31 device_event_us_median=28.440000 mean=33.858709 stdev=16.803641 cv=0.496287 min=27.460000 max=115.599997 max_over_min=4.209760 mad=0.660000 mad_over_median=0.023207 p10=27.780000 p90=36.240000
+SAME_BINARY_QUAL width=32768 dtype=bf16 result=PASS samples=62 median_us=28.230000 mad_over_median=0.014524 block_drift=0.012044
+PERFORMANCE_RUN_RESULT=PASS
+RUN_RC=0
+RAW_SHA256=ede3f3481b15d6b654d8b5a0636137c4318a2431829259fc2a71b3a923d33295
+SHAPE_END dtype=bf16 width=32768
+SHAPE_BEGIN dtype=bf16 width=20000
+RUN_COMMAND=本地实验/HOTLOOP-BRANCH-HOIST-CHAMPION-X/V001/support/build/hotloop_branch_v001_performance 4 20000 bf16 same 45 31 2 本地实验/HOTLOOP-BRANCH-HOIST-CHAMPION-X/V001/support/qualification-d4-001/bf16-d20000-same-raw.tsv
+PARENT_SOURCE_SHA256=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
+CANDIDATE_SOURCE_SHA256=4dc1973ef198cd67693610b6ffedad6883b59f52207b9804052975a13f4e032b
+QUALIFICATION mode=same side=parent device=4 width=20000 dtype=bf16 warmups=45 samples=31 blocks=2
+SUMMARY mode=same side=parent block=0 n=31 device_event_us_median=19.400001 mean=24.801290 stdev=15.644629 cv=0.630799 min=17.300000 max=93.640000 max_over_min=5.412717 mad=2.100000 mad_over_median=0.108247 p10=17.640000 p90=27.680000
+SUMMARY mode=same side=parent block=1 n=31 device_event_us_median=27.540000 mean=39.292258 stdev=34.162360 cv=0.869443 min=17.180000 max=159.899995 max_over_min=9.307334 mad=6.320000 mad_over_median=0.229484 p10=20.059999 p90=73.480003
+SAME_BINARY_QUAL width=20000 dtype=bf16 result=MEASUREMENT_PROTOCOL_BLOCKED_FOR_SHAPE samples=62 median_us=22.200000 mad_over_median=0.186486 block_drift=0.366667
+PERFORMANCE_RUN_RESULT=FAIL
+RUN_RC=1
+RAW_SHA256=a43302329814fc94995e95477dfb566f926794c84f844f34c338a1d21c1f4dda
+SHAPE_END dtype=bf16 width=20000
+LOAD_SNAPSHOT=AFTER
+	NPU ID                         : 4
+	Chip Count                     : 1
+
+	DDR Capacity(MB)               : 0
+	DDR Usage Rate(%)              : 0
+	DDR Hugepages Total(page)      : 0
+	DDR Hugepages Usage Rate(%)    : 0
+	HBM Capacity(MB)               : 65536
+	HBM Usage Rate(%)              : 93
+	Aicore Usage Rate(%)           : 0
+	Aivector Usage Rate(%)         : 0
+	Aicpu Usage Rate(%)            : 0
+	Ctrlcpu Usage Rate(%)          : 5
+	DDR Bandwidth Usage Rate(%)    : 0
+	HBM Bandwidth Usage Rate(%)    : 0
+	Chip ID                        : 0
+
++------------------------------------------------------------------------------------------------+
+| npu-smi 25.0.rc1.1               Version: 25.0.rc1.1                                           |
++---------------------------+---------------+----------------------------------------------------+
+| NPU   Name                | Health        | Power(W)    Temp(C)           Hugepages-Usage(page)|
+| Chip                      | Bus-Id        | AICore(%)   Memory-Usage(MB)  HBM-Usage(MB)        |
++===========================+===============+====================================================+
+| 0     910B3               | OK            | 145.4       39                0    / 0             |
+| 0                         | 0000:C1:00.0  | 32          0    / 0          60224/ 65536         |
++===========================+===============+====================================================+
+| 1     910B3               | OK            | 144.9       39                0    / 0             |
+| 0                         | 0000:C2:00.0  | 37          0    / 0          63078/ 65536         |
++===========================+===============+====================================================+
+| 2     910B3               | OK            | 136.5       41                0    / 0             |
+| 0                         | 0000:81:00.0  | 33          0    / 0          60216/ 65536         |
++===========================+===============+====================================================+
+| 3     910B3               | OK            | 142.1       39                0    / 0             |
+| 0                         | 0000:82:00.0  | 31          0    / 0          60219/ 65536         |
++===========================+===============+====================================================+
+| 4     910B3               | OK            | 101.7       37                0    / 0             |
+| 0                         | 0000:01:00.0  | 1           0    / 0          61227/ 65536         |
++===========================+===============+====================================================+
+| 5     910B3               | OK            | 101.6       36                0    / 0             |
+| 0                         | 0000:02:00.0  | 0           0    / 0          61442/ 65536         |
++===========================+===============+====================================================+
+| 6     910B3               | OK            | 102.2       38                0    / 0             |
+| 0                         | 0000:41:00.0  | 0           0    / 0          64051/ 65536         |
++===========================+===============+====================================================+
+| 7     910B3               | OK            | 163.1       40                0    / 0             |
+| 0                         | 0000:42:00.0  | 10          0    / 0          24790/ 65536         |
++===========================+===============+====================================================+
++---------------------------+---------------+----------------------------------------------------+
+| NPU     Chip              | Process id    | Process name             | Process memory(MB)      |
++===========================+===============+====================================================+
+| 0       0                 | 89395         | VLLMWorker_TP            | 56702                   |
++===========================+===============+====================================================+
+| 1       0                 | 2305560       | python                   | 2858                    |
+| 1       0                 | 91055         | VLLMWorker_TP            | 56702                   |
++===========================+===============+====================================================+
+| 2       0                 | 92813         | VLLMWorker_TP            | 56703                   |
++===========================+===============+====================================================+
+| 3       0                 | 94498         | VLLMWorker_TP            | 56703                   |
++===========================+===============+====================================================+
+| 4       0                 | 1819590       | python                   | 2088                    |
+| 4       0                 | 2999855       | VLLMEngineCor            | 55664                   |
++===========================+===============+====================================================+
+| 5       0                 | 89602         | VLLMWorker_TP            | 56678                   |
+| 5       0                 | 2771372       | python                   | 1294                    |
++===========================+===============+====================================================+
+| 6       0                 | 3492500       | python                   | 3904                    |
+| 6       0                 | 91228         | VLLMWorker_TP            | 56679                   |
++===========================+===============+====================================================+
+| 7       0                 | 439848        | python3                  | 21260                   |
++===========================+===============+====================================================+
+PROCESS_SNAPSHOT=AFTER
+   5048 networkd-dispat /usr/bin/python3 /usr/bin/networkd-dispatcher --run-startup-triggers
+   5328 unattended-upgr /usr/bin/python3 /usr/share/unattended-upgrades/unattended-upgrade-shutdown --wait-for-signal
+  82397 vllm            /usr/local/python3.12.13/bin/python3 /usr/local/python3.12.13/bin/vllm serve /models/Qwen3.8-27B-w8a8 --host 0.0.0.0 --port 9001 --tensor-parallel-size 4 --quantization ascend --served-model-name qwen3.8 --max-model-len 256000 --max-num-seqs 8 --max-num-batched-tokens 8192 --gpu-memory-utilization 0.90 --enable-prefix-caching --trust-remote-code --reasoning-parser qwen3 --enable-auto-tool-choice --tool-call-parser qwen3_coder
+  83352 vllm            /usr/local/python3.12.13/bin/python3 /usr/local/python3.12.13/bin/vllm serve /models/Qwen3.8-27B-w8a8 --host 0.0.0.0 --port 9002 --tensor-parallel-size 2 --quantization ascend --served-model-name qwen3.8 --max-model-len 256000 --max-num-seqs 8 --max-num-batched-tokens 8192 --gpu-memory-utilization 0.90 --enable-prefix-caching --trust-remote-code --reasoning-parser qwen3 --enable-auto-tool-choice --tool-call-parser qwen3_coder
+  87335 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.resource_tracker import main;main(35)
+  87336 VLLM::EngineCor VLLM::EngineCore
+  87669 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.resource_tracker import main;main(35)
+  87670 VLLM::EngineCor VLLM::EngineCore
+  89395 VLLM::Worker_TP VLLM::Worker_TP0
+  89602 VLLM::Worker_TP VLLM::Worker_TP0
+  91055 VLLM::Worker_TP VLLM::Worker_TP1
+  91228 VLLM::Worker_TP VLLM::Worker_TP1
+  92813 VLLM::Worker_TP VLLM::Worker_TP2
+  94498 VLLM::Worker_TP VLLM::Worker_TP3
+  95970 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.spawn import spawn_main; spawn_main(tracker_fd=36, pipe_handle=88) --multiprocessing-fork
+  96143 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.spawn import spawn_main; spawn_main(tracker_fd=36, pipe_handle=77) --multiprocessing-fork
+  96830 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(85, 87, [], **{})
+  96848 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(85, 87, [], **{})
+  96849 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(85, 87, [], **{})
+  96850 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(85, 87, [], **{})
+  96851 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(85, 87, [], **{})
+  96853 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(85, 87, [], **{})
+  96854 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(85, 87, [], **{})
+  96855 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(85, 87, [], **{})
+  96856 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(85, 87, [], **{})
+  96857 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(85, 87, [], **{})
+  96891 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(85, 87, [], **{})
+  96892 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(85, 87, [], **{})
+  96893 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(85, 87, [], **{})
+  96894 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(85, 87, [], **{})
+  96895 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(85, 87, [], **{})
+  96896 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(85, 87, [], **{})
+  96897 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(85, 87, [], **{})
+  96898 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(85, 87, [], **{})
+  97110 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(74, 76, [], **{})
+  97116 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(74, 76, [], **{})
+  97118 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(74, 76, [], **{})
+  97120 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(74, 76, [], **{})
+  97121 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(74, 76, [], **{})
+  97122 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(74, 76, [], **{})
+  97123 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(74, 76, [], **{})
+  97124 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(74, 76, [], **{})
+  97125 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(74, 76, [], **{})
+  97126 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(74, 76, [], **{})
+  97157 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(74, 76, [], **{})
+  97158 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(74, 76, [], **{})
+  97159 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(74, 76, [], **{})
+  97160 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(74, 76, [], **{})
+  97161 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(74, 76, [], **{})
+  97163 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(74, 76, [], **{})
+  97166 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(74, 76, [], **{})
+  97169 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(74, 76, [], **{})
+ 100247 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.spawn import spawn_main; spawn_main(tracker_fd=36, pipe_handle=85) --multiprocessing-fork
+ 100272 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.spawn import spawn_main; spawn_main(tracker_fd=36, pipe_handle=102) --multiprocessing-fork
+ 100372 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.spawn import spawn_main; spawn_main(tracker_fd=36, pipe_handle=85) --multiprocessing-fork
+ 100434 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.spawn import spawn_main; spawn_main(tracker_fd=36, pipe_handle=85) --multiprocessing-fork
+ 101149 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101156 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101157 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101158 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101160 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101161 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101162 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101163 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101164 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101165 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101220 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(99, 101, [], **{})
+ 101222 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(99, 101, [], **{})
+ 101223 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(99, 101, [], **{})
+ 101224 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(99, 101, [], **{})
+ 101225 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(99, 101, [], **{})
+ 101226 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(99, 101, [], **{})
+ 101227 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(99, 101, [], **{})
+ 101228 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(99, 101, [], **{})
+ 101229 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(99, 101, [], **{})
+ 101230 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(99, 101, [], **{})
+ 101259 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101260 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101261 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101262 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101263 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101264 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101265 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101266 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101267 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(99, 101, [], **{})
+ 101268 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(99, 101, [], **{})
+ 101269 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(99, 101, [], **{})
+ 101270 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(99, 101, [], **{})
+ 101271 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(99, 101, [], **{})
+ 101272 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(99, 101, [], **{})
+ 101273 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(99, 101, [], **{})
+ 101274 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(99, 101, [], **{})
+ 101463 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101467 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101468 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101469 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101470 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101471 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101472 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101473 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101474 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101475 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101518 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101519 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101520 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101521 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101522 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101523 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101524 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 101525 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 102072 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 102203 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 102204 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 102205 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 102206 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 102207 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 102208 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 102209 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 102210 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+ 102211 python3         /usr/local/python3.12.13/bin/python3 -c from multiprocessing.forkserver import main; main(82, 84, [], **{})
+QUALIFICATION_D4_OVERALL=FAIL
+QUALIFICATION_D4_END_UTC=2026-10-02T17:54:45Z
