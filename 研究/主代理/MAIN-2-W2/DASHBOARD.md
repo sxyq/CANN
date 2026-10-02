@@ -219,3 +219,69 @@ KERNEL_FILES_CHANGED_BY_CURRENT_LONGRUN=0
 PERFORMANCE_RUNS=0
 FORCE_PUSH=0; RESET=0; CLEAN=0
 ```
+
+## Post-Track-B event-driven run (2026-10-02)
+
+This is the current control checkpoint for the Planning-approved lifecycle.
+The older route tables above are retained as historical evidence; this section
+is the active view for the current forensic/research run.
+
+```text
+CONTROL_HEAD=17425aeca0c34cc34f2f94183e0686416ad2037c
+CANONICAL_HEAD=02482b46c2ee1fdd5bab1f88a474c7e70426f661
+OVERALL_OFFICIAL_CHAMPION=R31B V011 / 45.16
+EVENT_DRIVEN_PIPELINE=ENABLED
+BATCH_GATE=DISABLED
+GITHUB_PUSH_IS_LOCAL_STAGE_GATE=NO
+MAIN_SELECTED_COUNT=0
+NEW_REVISION_COUNT=0
+ONLINE_QUEUE=EMPTY
+ONLINE_TICK=SKIPPED; REASON=NO_ELIGIBLE_CANDIDATE
+ONLINE_SUBMISSIONS=0
+PLANNING_DECISIONS_CHANGED=0
+```
+
+| Route | Planning lifecycle | Context / worktree | Current event |
+|---|---|---|---|
+| UB-LIFETIME-SAFE-CHAMPION-X | KEEP / DIAGNOSTIC | `01a0fa2f-2b44-7be0-b76c-8a2dadf07d08` / `/home/data4t2/lelinfeng/cann-w2-m2-ub` | forensic V001 diagnostic; no V002 |
+| HOTLOOP-ADDR-HOIST-CHAMPION-X | KEEP / RESEARCH | `01a0fa2f-2e7f-7461-85e0-0a1d446944c8` / `/home/data4t2/lelinfeng/cann/worktrees/w2/m2/hotloop-addr` | code-site + baseline-cost audit |
+| HOTLOOP-BRANCH-HOIST-CHAMPION-X | KEEP / RESEARCH | `01a0fa2f-3610-7d03-a158-a196219dcfff` / `/home/data4t2/lelinfeng/cann/worktrees/w2/m2/hotloop-branch` | parent-only branch/codegen audit |
+| TILECOUNT-STATIC-UNROLL-CHAMPION-X | PARK | no Agent | no hypothesis or Revision allowed |
+| REDUCE-FINALIZE-HANDOFF-CHAMPION-X | PARK | no Agent | no hypothesis or Revision allowed |
+
+```text
+UB_V001=CORRECTNESS_FAILED; no V002; no performance; no Online
+ADDR_MAIN_SELECTED=NONE; no Candidate; planning pack pending
+BRANCH_MAIN_SELECTED=NONE; no Candidate; planning pack pending
+TILECOUNT=PARKED; REDUCE=PARKED
+FORMAL_PERFORMANCE_RUNS=0
+KERNEL_FILES_CHANGED_BY_MAIN=0
+CANONICAL_SHARED_LEDGER_CHANGES=0
+```
+
+The event rule is: an eligible local commit starts its own Build immediately;
+Build PASS starts Correctness immediately; Correctness PASS starts the next
+authorized stage immediately. A route does not wait for sibling routes,
+aggregate push, or a complete Dashboard refresh. This run has no eligible
+Candidate for formal timing: UB V001 is correctness-failed and ADDR/BRANCH
+are research-only.
+
+## Current host snapshot for event scheduling
+
+```text
+SNAPSHOT_UTC=2026-10-02T01:17:18Z
+HOST=hwnput3
+SERVER3_ALIAS=cann-server3
+SERVER3_DNS=UNRESOLVED
+FREE_HBM_MB_BY_DEVICE=0:5312,1:5262,2:5319,3:5318,4:6346,5:5336,6:5337,7:11632
+AICORE_PERCENT_BY_DEVICE=0:32,1:33,2:32,3:32,4:0,5:0,6:0,7:32
+EXISTING_USERS=VLLM_WORKERS_ON_0_TO_6; VLLM/RAY/PYTHON_ON_7
+NEW_JOBS_STARTED_BY_MAIN=0
+FORMAL_LEASES=0
+HBM_BLOCKS=NONE_AT_SNAPSHOT
+PROCESS_ACTIONS=NONE
+```
+
+GitHub publication remains `PUSH_PENDING` because HTTPS remote access is
+unconfirmed; this does not gate the three local research contexts. No force
+push, reset, clean, alternate remote, or remote branch overwrite is allowed.
