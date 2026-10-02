@@ -46,15 +46,16 @@ scp 本地实验/SYNC-TOPOLOGY-CHAMPION-X/V001/submission.asc cann-server3:"$REM
 scp 本地实验/SYNC-TOPOLOGY-CHAMPION-X/V001/support/CMakeLists.txt cann-server3:"$REMOTE_ROOT/support/CMakeLists.txt"
 scp 本地实验/SYNC-TOPOLOGY-CHAMPION-X/V001/support/npu_correctness.asc cann-server3:"$REMOTE_ROOT/support/npu_correctness.asc"
 scp 本地实验/SYNC-TOPOLOGY-CHAMPION-X/V001/support/local_abi_shim.h cann-server3:"$REMOTE_ROOT/support/local_abi_shim.h"
+scp 本地实验/SYNC-TOPOLOGY-CHAMPION-X/V001/support/local_tensor_metadata.h cann-server3:"$REMOTE_ROOT/support/local_tensor_metadata.h"
 scp 本地实验/SYNC-TOPOLOGY-CHAMPION-X/V001/support/timing_runner.cpp cann-server3:"$REMOTE_ROOT/support/timing_runner.cpp"
 scp 本地实验/SYNC-TOPOLOGY-CHAMPION-X/V001/support/runner_main.inc cann-server3:"$REMOTE_ROOT/support/runner_main.inc"
 scp 本地实验/SYNC-TOPOLOGY-CHAMPION-X/V001/support/summarize_window.mjs cann-server3:"$REMOTE_ROOT/support/summarize_window.mjs"
 scp 本地实验/SYNC-TOPOLOGY-CHAMPION-X/V001/support/run_parent_window.sh cann-server3:"$REMOTE_ROOT/support/run_parent_window.sh"
 ```
 
-The exact Parent and Candidate `.asc` files are passed directly to separate `ascendc_library()` targets. Target-specific `ascendc_compile_definitions()` rename only the host `run_kernel` wrappers; the `__global__` `add_rms_norm_bias_custom` entry remains unchanged for ASCPLUGIN registration. `ascendc_compile_options()` force-includes `local_abi_shim.h` for each module's host compile. Both registered modules use `-Wl,-Bsymbolic`, and the C++ runner calls their host wrappers through the existing `runner_main.inc` implementation.
+The exact Parent and Candidate `.asc` files are passed directly to separate `ascendc_library()` targets. Target-specific `ascendc_compile_definitions()` rename only the host `run_kernel` wrappers; the `__global__` `add_rms_norm_bias_custom` entry remains unchanged for ASCPLUGIN registration. `local_tensor_metadata.h` provides `TensorInfo` and `TensorGroupInfo` to the ASC source parser through a direct force-include. `local_abi_shim.h` is force-included only for each module's host compile via `-forward-options-to-host-compiler`; its `<acl/acl.h>` include remains host-only. Both registered modules use `-Wl,-Bsymbolic`, and the C++ runner calls their host wrappers through the existing `runner_main.inc` implementation.
 
-Before copying, record `sha256sum` for `CMakeLists.txt`, `local_abi_shim.h`, `timing_runner.cpp`, `runner_main.inc`, `summarize_window.mjs`, and `run_parent_window.sh` from the route worktree. After copying, write the same server-side command output to `$RESULT_DIR/runner-source-identity.log` and compare every entry with the worktree output before configuring. Any mismatch means stop and do not build or measure.
+Before copying, record `sha256sum` for `CMakeLists.txt`, `local_abi_shim.h`, `local_tensor_metadata.h`, `timing_runner.cpp`, `runner_main.inc`, `summarize_window.mjs`, and `run_parent_window.sh` from the route worktree. After copying, write the same server-side command output to `$RESULT_DIR/runner-source-identity.log` and compare every entry with the worktree output before configuring. Any mismatch means stop and do not build or measure.
 
 ## Exact commands
 
