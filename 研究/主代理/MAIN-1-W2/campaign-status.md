@@ -203,16 +203,16 @@ Have each existing Route Agent prepare and commit its reproducible route-local b
   "pendingAgents": 1,
   "activeRevision": "SYNC, STORE, EPI, SMALLMID V001",
   "stage": "EVENT_DRIVEN_LOCAL_PIPELINE",
-  "state": "Four existing Route Agents are active on their own V001 lanes; each advances build, correctness, then formal local performance as soon as its own result is ready",
-  "nextStep": "Continue each lane independently; no wait for other Routes, campaign summary, dashboard refresh, or GitHub push",
-  "blocker": "A lane needs its own live device timing lease before formal performance; Online remains subject to the current Planning/Judge Owner process",
+  "state": "Four existing V001 lanes advance independently from each lane's own build and correctness result",
+  "nextStep": "Continue each lane from its current stage; GitHub push and unrelated Route progress do not delay local work",
+  "blocker": "Formal performance requires correctness PASS and a live device lease; Online follows the Planning/Judge Owner process",
   "planningDecisionsChanged": 0,
   "newRoutes": 0,
   "lanes": [
-    {"route":"SYNC V001","instruction":"H2 low-precision parameter prefetch order","firstAction":"Build on device 4, then correctness","revisionState":"ACTIVE; fixed source SHA 27c853e1...a9117ec"},
-    {"route":"STORE V001","instruction":"H1 full-row Store issue point","firstAction":"Build on device 5, then correctness","revisionState":"ACTIVE; fixed source SHA 48b9428d...018f88"},
-    {"route":"EPI V001","instruction":"H3 group independent row arithmetic","firstAction":"Build on device 7, then correctness","revisionState":"ACTIVE; fixed source SHA 9a28f5cd...bfe4d59"},
-    {"route":"SMALLMID V001","instruction":"SMD-H6 reuse BF16 parameter conversion","firstAction":"Build on device 1, then correctness","revisionState":"ACTIVE; fixed source SHA a689e5ab...bdb340a"},
+    {"route":"SYNC V001","instruction":"H2 low-precision parameter prefetch order","firstAction":"Build on device 4, then correctness","revisionState":"BUILD_FAILED; missing C++ vector include; harness retry active; Candidate SHA unchanged"},
+    {"route":"STORE V001","instruction":"H1 full-row Store issue point","firstAction":"Build on device 5, then correctness","revisionState":"BUILD_PASS; CORRECTNESS_INCOMPLETE; libgraph.so runtime path retry active; Candidate SHA unchanged"},
+    {"route":"EPI V001","instruction":"H3 group independent row arithmetic","firstAction":"Build on device 7, then correctness","revisionState":"BUILD_INCOMPLETE before CMake; df option compatibility retry active; Candidate SHA unchanged"},
+    {"route":"SMALLMID V001","instruction":"SMD-H6 reuse BF16 parameter conversion","firstAction":"Build on device 1, then correctness","revisionState":"BUILD_MISSING; prior server log empty and no executable found; replacement active; Candidate SHA unchanged"},
     {"route":"SELECTIVE-FASTPATH","instruction":"BF16 D32768 donor qualification only","firstAction":"Resolve missing exact runtime M and paired evidence","revisionState":"QUALIFICATION_ONLY; no V001 created"}
   ]
 }
@@ -268,7 +268,7 @@ The exact Candidate source, `submission.sha256`, server route-tree source, and s
 - The four earlier Route Agent IDs returned `not_found` from the current runtime. No route process or lane output directory existed at the next server snapshot; no test stage was running then.
 - Replacement execution contexts use the same four existing local branches and worktrees. No source change, Revision declaration, route change, or Planning decision was made while replacing the unavailable contexts.
 
-| Route | Active Agent ID | Existing branch | Existing worktree | Candidate SHA256 | Stage |
+| Route | Agent ID at dispatch | Existing branch | Existing worktree | Candidate SHA256 | Stage |
 |---|---|---|---|---|---|
 | SYNC V001 | `01a0fcf7-fece-7570-958c-1720fc7bc486` | `w2/m1/sync-topology` | `worktrees/w2/m1/sync-topology` | `27c853e1cb0c47307899b874338c3aecb912ad5dc125c0d67f6afba76a9117ec` | STARTED; agent preparing own build |
 | STORE V001 | `01a0fcf7-ff78-7313-868d-a3d74ee616fc` | `w2/m1/store-epilogue` | `worktrees/w2/m1/store-epilogue` | `48b9428dc2fc97c7c9d95f03ad8cec8e758c88e1197aa2328b1b1edebc018f88` | STARTED; agent preparing own build |
@@ -279,4 +279,17 @@ The exact Candidate source, `submission.sha256`, server route-tree source, and s
 - Per-route flow: fixed local source commit → build → correctness → immediate formal local performance, subject only to that route's own result and the existing per-device timing protocol. GitHub push and unrelated route progress are not prerequisites.
 - Each stage produces its own route-local evidence commit. Main updates the route summary, dashboard and Online Queue as each score arrives; no batch closeout is required to advance another lane.
 - Online submission remains governed by the current repository approval and unified Judge Owner process. The attachment's different Main-1 ownership/cadence instruction remains a recorded policy conflict.
+- `PLANNING_DECISIONS_CHANGED=0`; `NEW_ROUTES=0`.
+
+### Stage results (2026-10-02)
+
+| Route | Build | Correctness | Current action |
+|---|---|---|---|
+| SYNC V001 | FAILED; generated host code cannot find `<vector>` | NOT_RUN | Route Agent is resolving the C++ include path; Candidate SHA is unchanged |
+| STORE V001 | PASS | INCOMPLETE; parent and Candidate runners cannot load `libgraph.so` | Route Agent is setting the runtime library path; all 25 prior cases remain preserved |
+| EPI V001 | INCOMPLETE; disk probe stopped before CMake due incompatible `df` options | NOT_RUN | Route Agent is updating only the two run scripts; prior attempt remains preserved |
+| SMALLMID V001 | MISSING; prior server log is zero bytes and no executable was found at the queried output path | NOT_RUN | Replacement Agent is tracing the prior invocation and will use a new attempt path |
+
+- The former SMALLMID Agent ID returned `not_found`; replacement `01a0fd14-5474-7140-83fd-054dd4f35187` uses the same branch and worktree.
+- No lane has started performance measurement; Main will add a per-device lease only after that lane's correctness PASS.
 - `PLANNING_DECISIONS_CHANGED=0`; `NEW_ROUTES=0`.
