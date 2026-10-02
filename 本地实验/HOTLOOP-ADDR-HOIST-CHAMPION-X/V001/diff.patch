@@ -1,0 +1,71 @@
+diff --git "a/\347\272\277\344\270\212\347\273\223\346\236\234/R31B/V011/submission.asc" "b/\346\234\254\345\234\260\345\256\236\351\252\214/HOTLOOP-ADDR-HOIST-CHAMPION-X/V001/submission.asc"
+index 6adb6f58..459617c6 100644
+--- "a/\347\272\277\344\270\212\347\273\223\346\236\234/R31B/V011/submission.asc"
++++ "b/\346\234\254\345\234\260\345\256\236\351\252\214/HOTLOOP-ADDR-HOIST-CHAMPION-X/V001/submission.asc"
+@@ -3117,19 +3117,20 @@ private:
+             AscendC::LocalTensor<T> xBase = xBuf_.Get<T>();
+             AscendC::LocalTensor<T> rBase = residualBuf_.Get<T>();
+             AscendC::LocalTensor<float> valueFp32 = valueFp32Buf_.Get<float>();
+             AscendC::LocalTensor<float> xFp32 = xFp32Buf_.Get<float>();
+             AscendC::LocalTensor<float> residualFp32 = residualFp32Buf_.Get<float>();
+             const int32_t units = batchRows * tileCount;
+             bool relA = false;
+             bool relB = false;
++            int32_t batchRow = 0;
++            int32_t tile = 0;
+             for (int32_t u = 0; u < units; ++u) {
+-                const int32_t batchRow = u / tileCount;
+-                const int32_t tile = u - batchRow * tileCount;
++                const bool tileRollover = (tile + 1 == tileCount);
+                 const uint64_t col = static_cast<uint64_t>(tile) * tileWidth;
+                 const uint64_t rowOffset =
+                     (batchBegin + static_cast<uint64_t>(batchRow)) * rowWidth;
+                 const int32_t valid = static_cast<int32_t>(
+                     rowWidth - col < static_cast<uint64_t>(tileWidth)
+                         ? rowWidth - col : static_cast<uint64_t>(tileWidth));
+                 const bool useA = (u & 1) == 0;
+                 AscendC::LocalTensor<T> xLocal = useA ? xBase : xBase[tileWidth];
+@@ -3139,18 +3140,18 @@ private:
+                 const AscendC::TEventID rel = useA ? rel0 : rel1;
+                 if (u == 0) {
+                     Load(xLocal, xGm_, rowOffset + col, valid);
+                     Load(residualLocal, residualGm_, rowOffset + col, valid);
+                     AscendC::SetFlag<AscendC::HardEvent::MTE2_V>(rd);
+                 }
+                 AscendC::WaitFlag<AscendC::HardEvent::MTE2_V>(rd);
+                 if (u + 1 < units) {
+-                    const int32_t nRow = (u + 1) / tileCount;
+-                    const int32_t nTile = (u + 1) - nRow * tileCount;
++                    const int32_t nRow = batchRow + (tileRollover ? 1 : 0);
++                    const int32_t nTile = tileRollover ? 0 : tile + 1;
+                     const uint64_t nCol = static_cast<uint64_t>(nTile) * tileWidth;
+                     const uint64_t nRowOffset =
+                         (batchBegin + static_cast<uint64_t>(nRow)) * rowWidth;
+                     const int32_t nValid = static_cast<int32_t>(
+                         rowWidth - nCol < static_cast<uint64_t>(tileWidth)
+                             ? rowWidth - nCol : static_cast<uint64_t>(tileWidth));
+                     const bool nextA = !useA;
+                     AscendC::LocalTensor<T> xNext =
+@@ -3203,16 +3204,22 @@ private:
+                         xFp32, valid);
+                 }
+                 AscendC::SetFlag<AscendC::HardEvent::V_MTE2>(rel);
+                 if (useA) {
+                     relA = true;
+                 } else {
+                     relB = true;
+                 }
++                if (tileRollover) {
++                    tile = 0;
++                    ++batchRow;
++                } else {
++                    ++tile;
++                }
+             }
+             if (relA) {
+                 AscendC::WaitFlag<AscendC::HardEvent::V_MTE2>(rel0);
+             }
+             if (relB) {
+                 AscendC::WaitFlag<AscendC::HardEvent::V_MTE2>(rel1);
+             }
+             pipe_.ReleaseEventID<AscendC::HardEvent::MTE2_V>(rd0);
