@@ -8,6 +8,10 @@ endif()
 set(ASCENDC_CMAKE_DIR "${ASCEND_HOME_PATH}/aarch64-linux/tikcpp/ascendc_kernel_cmake")
 list(APPEND CMAKE_MODULE_PATH "${ASCENDC_CMAKE_DIR}")
 list(APPEND CMAKE_PREFIX_PATH "${ASCENDC_CMAKE_DIR}")
+set(CMAKE_ASC_COMPILER
+    "${ASCEND_HOME_PATH}/aarch64-linux/ccec_compiler/bin/bisheng"
+    CACHE FILEPATH "Ascend C compiler")
+set(ASCEND_PRODUCT_TYPE "ascend910b3" CACHE STRING "Ascend product type")
 find_package(ASC REQUIRED)
 project(hotloop_branch_v002 LANGUAGES ASC CXX)
 
