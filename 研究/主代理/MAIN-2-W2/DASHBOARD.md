@@ -395,7 +395,7 @@ V001. No formal Local score exists in this run, so the Online queue remains
 empty and no score commit is fabricated.
 
 ```text
-CONTROL_HEAD_AT_FINAL_RECEIPT=bf96bff5a235b59b698d35ba20e6768a90166537
+CONTROL_HEAD_AT_PLANNING_GATE=bf96bff5a235b59b698d35ba20e6768a90166537
 UB_ROUTE_HEAD=6d620289c2764e502ed4795f679caa5110896b3e
 ADDR_ROUTE_HEAD=cf148d5f8103c931cb253d2f36f0d7c59068fe23
 BRANCH_ROUTE_HEAD=7ffd28bcf01a0ea7420a283043bcfaea5af146d8
@@ -410,4 +410,5 @@ ORIGIN_MAIN_OBSERVED=15e7d8dc0a9269fdcdb09af0d1b9e4660c070778
 ORIGIN_MAIN_DELTA=MAIN-1 dashboard/index.html only; no source, score, or champion change
 CANONICAL_MAIN_MODIFIED=NO (the Planning directive forbids it)
 REMOTE_PUSH_STATE=UNCONFIRMED_TIMEOUT; newest control commits remain local/PUSH_PENDING
+CONTROL_HEAD_AFTER_FINAL_AUDIT=db176dca
 ```
