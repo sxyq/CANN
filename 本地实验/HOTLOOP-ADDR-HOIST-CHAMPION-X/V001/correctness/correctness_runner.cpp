@@ -146,11 +146,11 @@ void Launch(RunKernel kernel, void* output, const DeviceBuffers& buffers,
             const TensorGroupInfo& dataGroup, const TensorGroupInfo& paramGroup,
             aclrtStream stream)
 {
-    kernel(static_cast<GM_ADDR>(buffers.x), dataGroup,
-           static_cast<GM_ADDR>(buffers.residual), dataGroup,
-           static_cast<GM_ADDR>(buffers.gamma), paramGroup,
-           static_cast<GM_ADDR>(buffers.bias), paramGroup,
-           static_cast<GM_ADDR>(output), dataGroup, kCoreCount, stream, kEpsilon);
+    kernel((GM_ADDR)buffers.x, dataGroup,
+           (GM_ADDR)buffers.residual, dataGroup,
+           (GM_ADDR)buffers.gamma, paramGroup,
+           (GM_ADDR)buffers.bias, paramGroup,
+           (GM_ADDR)output, dataGroup, kCoreCount, stream, kEpsilon);
     CheckAcl(aclrtSynchronizeStream(stream), "kernel synchronize");
 }
 
