@@ -3,6 +3,8 @@
 
 #include <cstdint>
 
+using aclrtStream = void*;
+
 struct TensorInfo {
     const int64_t* shape;
     int64_t numDims;
