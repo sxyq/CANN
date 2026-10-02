@@ -468,3 +468,13 @@ LOCAL_SCORE=NONE
 The ADDR and BRANCH declarations are separate local commits and precede their
 Candidate source edits. UB-DIAG-2 currently has only route-local support files
 in its worktree; no diagnostic result or classification is claimed yet.
+
+```text
+PUSH_WINDOW_2026-10-02T15:27Z=TIMEOUT_20S
+PUSH_COMMAND=git push origin w2/main2/control
+PUSH_PENDING=YES
+REMOTE_SYNC=UNCONFIRMED
+FORCE_PUSH=0
+RETRY_LOOP=0
+LOCAL_EXPERIMENT_GATE=NO
+```
