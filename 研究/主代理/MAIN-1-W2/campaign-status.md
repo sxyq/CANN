@@ -197,19 +197,19 @@ Have each existing Route Agent prepare and commit its reproducible route-local b
 
 ```dashboard-json
 {
-  "handoffs": "CASE14, CASE47, FASTPATH, and TINY Track-B reviews recorded; SYNC direct-source harness build needs ACL host type in shim",
+  "handoffs": "CASE14, CASE47, FASTPATH, and TINY Track-B reviews recorded; SYNC V001 Build retry reports TensorGroupInfo unavailable to the ASC parser",
   "selected": "5 Planning-approved routes; 0/5 performance hypotheses MAIN_SELECTED",
   "activeAgents": 1,
   "pendingAgents": 0,
   "activeRevision": "SYNC V001 only",
-  "stage": "EVENT_DRIVEN_TRACK_B_AND_SYNC_BUILD_FIX",
-  "state": "Five approved lanes remain in the portfolio; four Track-B reviews are recorded; no new performance Revision exists",
-  "nextStep": "Add ACL type dependency to the SYNC harness shim; Main review, then Build/Link and immediate Correctness on PASS",
-  "blocker": "Official case-to-shape/dtype mapping is absent; latest SYNC attempt fails host compilation because aclrtStream is undeclared",
+  "stage": "EVENT_DRIVEN_SYNC_BUILD_FIX",
+  "state": "SYNC V001 Candidate and Parent identities match; Configure passes; latest Build/Link fails before executable production; no Correctness or timing run",
+  "nextStep": "Route Agent makes a support-only metadata type visibility change; Main reviews it, then retries Build/Link immediately and runs Correctness immediately on PASS",
+  "blocker": "Parent and Candidate ASC parsing both report TensorGroupInfo undeclared at submission.asc:3479; no new executable exists",
   "planningDecisionsChanged": 0,
   "newRoutes": 3,
   "lanes": [
-    {"route":"SYNC-TOPOLOGY-CHAMPION-X","instruction":"Continue approved V001 Local closure","firstAction":"Include ACL types in force-included shim; Main review, Build/Link, then Correctness; lease only for timing","revisionState":"Direct-source harness commit 84c9cd14 reviewed; RUN_ID 20261002T214024Z Configure PASS, both host compiles exit 2 on aclrtStream; no executable or new Correctness"},
+    {"route":"SYNC-TOPOLOGY-CHAMPION-X","instruction":"Continue approved V001 Local closure","firstAction":"Expose metadata structs to ASC parsing with a support-only change; Main review, Build/Link, then Correctness; lease only for timing","revisionState":"RUN_ID SYNC-TOPOLOGY-CHAMPION-X-V001-D4-BUILD-FIX-e2d3d8c3-20261002T220501Z; Configure PASS, Build/Link RC=2 at submission.asc:3479 for both sources (TensorGroupInfo undeclared); no new executable, Correctness, or timing"},
     {"route":"CASE47-SMALL-CLUSTER-CHAMPION-X","instruction":"Track-B Main review: NEEDS_MORE_EVIDENCE; no MAIN_SELECTED","firstAction":"Obtain Judge case4/case7 shape and dtype; revisit H1 only after evidence arrives","revisionState":"Commit 2404d4e4; H2/H5 DUPLICATE; H3 INFEASIBLE; H4 overlaps prior wide-tile work; no Revision"},
     {"route":"CASE14-INTRAROW-PARALLELISM-CHAMPION-X","instruction":"Track-B: case 14; Agent 01a0fe2e-7772-7e83-825d-e90811e0db2c","firstAction":"Obtain case metadata, raw profile, C001 source/TLE log and workspace ABI evidence","revisionState":"Track-B commit 5fda6e90; NEEDS_MORE_EVIDENCE; H1 overlaps R008/C001; H2-H4 duplicate; MAIN_SELECTED=NONE"},
     {"route":"SELECTIVE-FASTPATH-CHAMPION-X","instruction":"Track-B cycle complete: NEEDS_MORE_EVIDENCE; no MAIN_SELECTED","firstAction":"Obtain Judge input mapping; no implementation until Main selects a hypothesis","revisionState":"Commit 5f669c30; STORE V003 donor is precisely sourced; Official 44.38 vs V011 45.16; TINY mechanism review complete, case overlap unknown"},
@@ -413,3 +413,14 @@ The three new worktrees are sparse, approximately 7.5 MB each, and were created 
 - The first launch stopped before a test case because the executable could not load `libgraph.so`; the next run reached the first BF16 case and failed at D=2049 with matched ratio `0.56540386`, max abs `4.26492296`, RC=3. D=3073 and D=4095 were not run. This is `CORRECTNESS_FAILED`; no timing lease was added.
 - Evidence is committed at local HEAD `52a54ce6` on `w2/m1/smallmid-dataflow`. Both former owners report completion and are closed; no command is running and no follow-up implementation is authorized in this turn.
 - `PLANNING_DECISIONS_CHANGED=0`; `NEW_ROUTES=0`.
+
+## MAIN1_SYNC_TIMING_HARNESS_BUILD_ATTEMPT_3 (2026-10-03)
+
+- Route HEAD at the start of this run was `b7c93ec61771f782ce92478cfb967e0623102fad`; it adds only the prior attempt's numeric Build/Link return code. Candidate source SHA remains `27c853e1cb0c47307899b874338c3aecb912ad5dc125c0d67f6afba76a9117ec`; Direct Parent R31B V011 SHA remains `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`.
+- RUN_ID: `SYNC-TOPOLOGY-CHAMPION-X-V001-D4-BUILD-FIX-e2d3d8c3-20261002T220501Z`. Candidate, sidecar, source metadata, Parent, and all seven support-file identities matched. The remote sidecar verification passed.
+- Server: `hwnput3`, Ascend 910B3, `npu-smi 25.0.rc1.1`, CANN `8.5.0.alpha002`. Before and after Build, d4 HBM was `59190/65536 MB` used, AICore `0%`; VLLM EngineCore PID `2999855` remained unchanged. Project disk availability stayed at `616 GB`.
+- Configure: PASS. Build/Link: FAIL, return code `2`. Parent and Candidate ASC compilation both report `unknown type name 'TensorGroupInfo'` at `submission.asc:3479`. The prior `aclrtStream` error is cleared; the remaining type is not visible to the ASC source parser through the current host-only force-include options.
+- No new timing or correctness executable was produced; Correctness and timing were not run. A pre-existing Candidate shared library had timestamp `2026-10-02 21:14:19Z`, before this run, and is not accepted as this attempt's output.
+- Configure, Build/Link, identity, and before/after resource files remain under `/home/data4t2/lelinfeng/cann/w2/SYNC-TOPOLOGY-CHAMPION-X/V001/results/SYNC-TOPOLOGY-CHAMPION-X-V001-D4-BUILD-FIX-e2d3d8c3-20261002T220501Z/`.
+- Next: Route Agent submits a support-only type-visibility change. Main reviews it before another Build; Correctness follows immediately only if both targets Build/Link successfully. Timing still requires a fresh Main lease. No score or Online Queue entry was added.
+- `PLANNING_DECISIONS_CHANGED=0`; `NEW_ROUTES=0`; `PERFORMANCE_HYPOTHESES_MAIN_SELECTED=0`.
