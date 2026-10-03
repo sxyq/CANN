@@ -53,3 +53,27 @@ No PRECHECK, Candidate P/C, correctness rerun, core query, or other timing was p
 - d7 resident processes were VLLMEngineCor PID `2617616` (`13251 MB`) and python3 PID `439848` (`21260 MB`). Both were left untouched. The process query for `CASE47-SMALL-CLUSTER-CHAMPION-X`, `CASE47-V001-D7-PARENT-SAMEBIN`, `case47_timing_runner`, and `timing-build-20261003T134147Z` returned no matches; `npu-smi info` likewise listed no CASE47 runner on d7.
 - Project disk: `/dev/nvme1n1p1`, `3.5T` size, `2.7T` used, `582G` available (`83%`). The `du -sh` child-directory snapshot was: `AGENTS.md` 4.0K; `README.md` 4.0K; `STORE-EPILOGUE-W2-X` 4.8M; `local-experiments` 2.3M; `package-lock.json` 4.0K; `package.json` 4.0K; `server_runs` 32M; `w2` 16M; `worktrees` 417M; `工具` 56K; `归档` 52M; `技术路线` 348K; `本地实验` 39M; `研究` 1.7M; `线上结果` 7.3M; `调度` 216K; `项目结构.md` 4.0K; `项目规则` 72K.
 - Main's Support-B delegate appended the canonical lease's `RELEASED` row with end time `2026-10-03T17:16:19Z`. No process was changed, and no PRECHECK, Candidate P/C, correctness, or other timing was run.
+
+## Parent Same-Binary W60 Requalification
+
+DATE_UTC: `2026-10-03`
+RUN_ID: `CASE47-V001-D7-PARENT-SAMEBIN-W60-20261003T204103Z`
+LEASE_ID: `M1-CASE47-V001-D7-PARENT-W60-20261003T195527Z`
+RESULT: `MEASUREMENT_PROTOCOL_BLOCKED_FOR_SHAPE`
+QUALIFICATION_STATUS: `NOT_QUALIFIED`
+
+- One Parent-only attempt on synthetic `PROXY_D257_FP32_M2A`: device 7, rows `80` (`2*A`, `A=40`), width `257`, FP32. Runner PID `2240525`, RC `0`; 60 synchronized warmups, two 21-sample device-event blocks, 30-second gap. Analyzer RC `0`; raw file has 42 samples plus header. Runner stderr is empty.
+- Parent source SHA256: `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`.
+- Parent module SHA256: `3de95511fd6437956a8bd48fb2ece9a1f5d0f226f568ef18d129d57db1e77c24`.
+- Timing runner SHA256: `a49d44ab4fe1adcc2f6862e18d20ebbf45ad117c00f520bcb4b75ddaf1f142cb`; AArch64 Build ID `db92ef6212551f18c4f7ea8cfaba400808c9fe3d`.
+
+The stats file's rows 1 and 2 are the device-event blocks; rows 3 and 4 are their host-wall diagnostics; row 5 is the combined 42-sample device-event distribution. Block medians were `24.2400001734 us` and `25.9000007063 us`; combined median was `25.54000075905 us`. Combined MAD/median was `0.2611589963`, above the protocol's `0.25` measurement-block threshold; block-median drift / combined median was `0.0649961035`, within the `0.10` qualification limit. The ordinary same-binary qualification status is `NOT_QUALIFIED`; because MAD/median exceeds `0.25`, the more specific result is `MEASUREMENT_PROTOCOL_BLOCKED_FOR_SHAPE`. This is a measurement protocol/host result and does not establish a Candidate regression.
+
+- d7 pre-run snapshot: HBM `38889/65536 MB`, AICore `38%`; VLLMEngineCor PID `2617616` (`14009 MB`) and python3 PID `439848` (`21260 MB`).
+- d7 post-run snapshot: HBM `36370/65536 MB`, AICore `65%`; VLLMEngineCor PID `2213949` (`11490 MB`) and python3 PID `439848` (`21260 MB`). Processes were not changed by the Route. Post-run `ps -C case47_timing_runner` returned RC `1` with no runner process. Project disk available before and after was `582 GB`.
+- Postflight snapshot time: `2026-10-03T20:52:13Z`. Main reports the shared lease is now `RELEASED` by Support-B; the Route did not edit the shared schedule.
+- The pre-run grep query captured its own SSH `bash -c` line because the lease ID was present in its arguments; Main independently confirmed no CASE47 runner was active before launch. The saved process-query output is retained and not interpreted as a runner process.
+
+Remote evidence directory: `/home/data4t2/lelinfeng/cann/server_runs/CASE47-SMALL-CLUSTER-CHAMPION-X/V001/timing-runs/M1-CASE47-V001-D7-PARENT-W60-20261003T195527Z/CASE47-V001-D7-PARENT-SAMEBIN-W60-20261003T204103Z/`. It contains `runner.rc`, runner stdout/stderr, raw and stats TSVs, analyzer RC/output/classification, before/after NPU and disk snapshots, process queries, and executable identities. The analyzer used the existing V001 `analyze_timing.py` and `timing-matrix.tsv`; its warmup metadata was set to the actual value `60` for this classification.
+
+No PRECHECK-A/B, Candidate P/C, correctness, core query, or other timing followed. Candidate Local Score and Official result remain absent; the shared lease was not released by the Route.
