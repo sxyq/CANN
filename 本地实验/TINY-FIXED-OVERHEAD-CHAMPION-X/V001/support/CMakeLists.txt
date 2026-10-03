@@ -59,3 +59,57 @@ target_link_libraries(tiny_v001_proxy_correctness PRIVATE
     ascendcl tiling_api register platform unified_dlog
     /usr/lib/aarch64-linux-gnu/libstdc++.so.6
     dl m graph_base)
+
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/../submission.asc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/parent_submission.asc")
+file(READ "${CMAKE_CURRENT_SOURCE_DIR}/parent_submission.asc" TINY_PARENT_SOURCE_TEXT)
+string(REPLACE "AddRmsNormBiasKernel" "TinyParentAddRmsNormBiasKernel"
+    TINY_PARENT_SOURCE_TEXT "${TINY_PARENT_SOURCE_TEXT}")
+string(REPLACE "add_rms_norm_bias_custom" "tiny_parent_add_rms_norm_bias_custom"
+    TINY_PARENT_SOURCE_TEXT "${TINY_PARENT_SOURCE_TEXT}")
+string(REPLACE "run_kernel" "run_parent_kernel"
+    TINY_PARENT_SOURCE_TEXT "${TINY_PARENT_SOURCE_TEXT}")
+file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/parent_timing_submission.asc"
+    "${TINY_PARENT_SOURCE_TEXT}")
+
+file(READ "${CMAKE_CURRENT_SOURCE_DIR}/../submission.asc" TINY_CANDIDATE_SOURCE_TEXT)
+string(REPLACE "AddRmsNormBiasKernel" "TinyCandidateAddRmsNormBiasKernel"
+    TINY_CANDIDATE_SOURCE_TEXT "${TINY_CANDIDATE_SOURCE_TEXT}")
+string(REPLACE "add_rms_norm_bias_custom" "tiny_candidate_add_rms_norm_bias_custom"
+    TINY_CANDIDATE_SOURCE_TEXT "${TINY_CANDIDATE_SOURCE_TEXT}")
+string(REPLACE "run_kernel" "run_candidate_kernel"
+    TINY_CANDIDATE_SOURCE_TEXT "${TINY_CANDIDATE_SOURCE_TEXT}")
+file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/candidate_timing_submission.asc"
+    "${TINY_CANDIDATE_SOURCE_TEXT}")
+
+add_executable(tiny_v001_timing_harness runner_tiny_v001_timing.asc)
+target_include_directories(tiny_v001_timing_harness PRIVATE
+    ${ASCENDC_INCLUDES} "${CMAKE_CURRENT_BINARY_DIR}")
+target_compile_options(tiny_v001_timing_harness PRIVATE
+    $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=${SOC_ARCH}>)
+ascendc_compile_options(tiny_v001_timing_harness PRIVATE
+    -forward-options-to-host-compiler
+    -std=c++17
+    "-I${HCC_ROOT}/aarch64-target-linux-gnu/include"
+    "-I${HCC_ROOT}/aarch64-target-linux-gnu/include/c++/7.3.0"
+    "-I${HCC_ROOT}/aarch64-target-linux-gnu/include/c++/7.3.0/aarch64-target-linux-gnu"
+    "-I${HCC_ROOT}/aarch64-target-linux-gnu/include/c++/7.3.0/backward")
+set_target_properties(tiny_v001_timing_harness PROPERTIES POSITION_INDEPENDENT_CODE OFF)
+target_link_directories(tiny_v001_timing_harness BEFORE PRIVATE
+    "/usr/lib/aarch64-linux-gnu")
+target_link_directories(tiny_v001_timing_harness PRIVATE
+    "${ASCEND_CANN_PACKAGE_PATH}/runtime/lib64"
+    "${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/lib64"
+    "${HCC_ROOT}/aarch64-target-linux-gnu/lib64"
+    "${HCC_ROOT}/lib64")
+target_link_options(tiny_v001_timing_harness PRIVATE
+    "-Wl,-rpath,/usr/lib/aarch64-linux-gnu"
+    "-Wl,-rpath,${ASCEND_CANN_PACKAGE_PATH}/runtime/lib64"
+    "-Wl,-rpath,${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/lib64"
+    "-Wl,-rpath,${HCC_ROOT}/aarch64-target-linux-gnu/lib64"
+    "-Wl,-rpath,${HCC_ROOT}/lib64")
+target_link_libraries(tiny_v001_timing_harness PRIVATE
+    ascendcl tiling_api register platform unified_dlog
+    /usr/lib/aarch64-linux-gnu/libstdc++.so.6
+    dl m graph_base)
