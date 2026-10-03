@@ -13,9 +13,11 @@ namespace {
 
 using R31BRunKernel = decltype(&r31b_v011::run_kernel_v011);
 
-constexpr int kDevice = 4;
-// Support-only diagnostic: preserve the proven runner/reference and exercise
-// the ADDR V001 D40960 row geometry (8 planned rows plus one tail row).
+constexpr int kDevice = 7;
+// Support-only local-score runner: preserve the proven runner/reference and
+// exercise a legal ADDR V001 reduced-tile shape already covered by the exact
+// correctness runner.  D40960 remains separately recorded as a shared
+// runtime blocker and is not silently substituted by this shape.
 constexpr int kRows = 9;
 constexpr int kWarmup = 45;
 constexpr int kPairs = 21;
@@ -515,7 +517,7 @@ int main(int argc, char** argv)
     CheckAcl(aclrtCreateEvent(&events.stop), "create stop event");
 
     const CaseSpec cases[] = {
-        {"bf16-d40960-known-good-crosscheck", 2, 40960},
+        {"bf16-d32768-reduced-tail-local-score", 2, 32768},
     };
     for (const CaseSpec& spec : cases) {
         RunCase(spec, stream, events, mode);
@@ -524,7 +526,9 @@ int main(int argc, char** argv)
     CheckAcl(aclrtDestroyEvent(events.stop), "destroy stop event");
     CheckAcl(aclrtDestroyEvent(events.start), "destroy start event");
     CheckAcl(aclrtDestroyStream(stream), "destroy stream");
-    CheckAcl(aclrtResetDevice(kDevice), "reset device");
+    // Do not reset a shared NPU at process exit: d7 may host unrelated user
+    // work.  Stream/event destruction plus aclFinalize is sufficient for this
+    // support-only timing runner.
     CheckAcl(aclFinalize(), "aclFinalize");
     std::printf("RUNNER_COMPLETE mode=%s correctness=PASS cases=4 warmup_each=45 pairs_each=21 timing=DEVICE_EVENT_PRIMARY wall=DIAGNOSTIC\n",
                 mode == RunMode::kQualifyV011 ? "QUALIFY_V011" : "PAIRED");
