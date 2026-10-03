@@ -191,7 +191,7 @@ DIRECT_ONLINE_SUBMISSION=0
 | HOTLOOP-ADDR-HOIST-CHAMPION-X | V002 / H1 | +0.954352% | POOR / LOCAL_NEUTRAL; no V003 |
 | UB-LIVENESS-X | V001 | -20.878573% | POOR / engineering-reference only; no V002 |
 | HOTLOOP-BRANCH-HOIST-CHAMPION-X | V002 / HBH-09 | -0.048802% | POOR / Planning review; no V003 |
-| REDUCE-FINALIZE-HANDOFF-CHAMPION-X | V001 / RFH-1 | NOT SCORED YET | declaration committed; implementation/validation in progress |
+| REDUCE-FINALIZE-HANDOFF-CHAMPION-X | V001 / RFH-1 | NOT SCORED YET | BUILD PASS; CORRECTNESS PASS; formal Local Score pending |
 | TILECOUNT-STATIC-UNROLL-CHAMPION-X | none | NO SCORE | H1/H2/H3 final gate FAIL; MAIN_SELECTED=NONE |
 
 ### New events
@@ -199,8 +199,11 @@ DIRECT_ONLINE_SUBMISSION=0
 - REDUCE V001 exact R31B V011 sibling baseline and RFH-1 declaration:
   `w2/m2/reduce-finalize` commit `c7bad949`; parent/submission SHA is
   `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`.
-  Independent Route Agent owns the only allowed source change. Build,
-  correctness and score are not yet recorded here.
+  Candidate source `83d569d2…f78338df3` is commit `15803855`. Build PASS is
+  committed at `bc558fa3`; correctness PASS at `3052b573` (BF16 [1,32768],
+  FP16/BF16 [1,16384], BF16 [1,4096] control; all bad=0). Device-event runner
+  probes are built (`a875d789`). No performance data has been used yet; formal
+  d5 lease and the three interleaved Parent/Candidate runs are next.
 - TILECOUNT final gate is committed in `w2/m2/tilecount-unroll` at
   `e36220ed`. Exact Parent source and compile artifact identity were found,
   but the available HiIPU device binary could not be disassembled to verify
