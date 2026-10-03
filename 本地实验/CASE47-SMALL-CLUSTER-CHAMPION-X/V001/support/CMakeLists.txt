@@ -17,6 +17,8 @@ target_compile_options(${CASE47_KERNEL_TARGET} PRIVATE
     $<$<COMPILE_LANGUAGE:ASC>:${SERVER_AUDIT_ROOT}/judge_abi.h>
 )
 target_include_directories(${CASE47_KERNEL_TARGET} PRIVATE
+    # bisheng does not inherit the host C++ compiler's standard include paths.
+    ${CMAKE_CXX_IMPLICIT_INCLUDE_DIRECTORIES}
     "${SERVER_AUDIT_ROOT}/src"
     "${SERVER_AUDIT_ROOT}/inc"
     "${TOOLKIT}/include"
