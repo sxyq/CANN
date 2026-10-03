@@ -12,7 +12,7 @@ MAIN_SELECTED: H1 for V001 (current task assignment)
 
 ## SINGLE_HYPOTHESIS
 
-Only in the existing non-aligned `ProcessNarrowMidOverlap` path, process at most two rows per group when `localRows >= 2`. Keep one Level-2 `ReduceSum` per row. After both row reductions, group the two existing V-to-scalar reads and scalar-to-vector handoffs: read each row's square sum and compute its mean-square in the original order, restore each row's mean-square with `Duplicate` and `Sqrt`, then read each reciprocal RMS value through the second V/S round. Preserve the per-row scalar formula and output arithmetic order. A one-row remainder and `localRows == 1` retain the Parent sequence.
+Only when `localRows == 2` in the existing non-aligned `ProcessNarrowMidOverlap` path, group the two existing V-to-scalar reads and scalar-to-vector handoffs. Keep one Level-2 `ReduceSum` per row with count exactly `rowWidth`. After both row reductions, read each row's square sum and compute its mean-square in the original order, restore each row's mean-square with `Duplicate` and `Sqrt`, then read each reciprocal RMS value through the second V/S round. Preserve the per-row scalar formula and output arithmetic order. `localRows == 1` and `localRows > 2` retain the exact Parent path.
 
 Do not change block count or row ownership, input/MTE2 load order, tile or GM byte counts, epsilon, output addressing/stores, any arithmetic formula, or any path outside `ProcessNarrowMidOverlap`.
 
@@ -27,8 +27,10 @@ Do not change block count or row ownership, input/MTE2 load order, tile or GM by
 ## BUFFER_AND_DEPENDENCY_BASIS
 
 - The Parent allocates `kCacheElems=8192` FP32 values for `valueFp32Buf_` and `kTileElems=4096` FP32 values for `reduceFp32Buf_`.
-- For `D=257`, two value rows at an 8-FP32-element row stride occupy `2 * 264 = 528` values. The two row-reduction destinations use the existing `kSmallFp32ScalarStride=8` spacing at offsets 0 and 8, preserving the Level-2 ReduceSum destination alignment.
+- For `D=257`, `valueFp32Buf_` uses an 8-FP32-element padded row stride: row 0 starts at offset 0 and row 1 at offset 264. Their valid elements are `[0..256]` and `[264..520]`; the two-row span is 528 floats, within the existing 8192-float allocation. Each Level-2 `ReduceSum` count remains exactly 257. The two row-reduction destinations use the existing `kSmallFp32ScalarStride=8` spacing at offsets 0 and 8, 32 bytes apart.
+- Keep the two reciprocal RMS values in two existing local scalar slots through their respective output rows; they require no TBuf.
 - Existing x/residual work buffers remain single-row and are reused in row order after the existing input-release wait. Gamma/bias remain resident for `localRows > 1`. No UB allocation or GM transfer is added.
+- GM input and output offsets remain `row * rowWidth`; padding changes only the internal value-buffer row stride.
 - The grouping follows the existing aligned `ProcessSmallFp32Batched` V/S pattern. That prior path already groups scalar reads; V001 applies the boundary grouping only to the distinct non-aligned `ProcessNarrowMidOverlap` path.
 
 ## WHY_NOT_DUPLICATE
