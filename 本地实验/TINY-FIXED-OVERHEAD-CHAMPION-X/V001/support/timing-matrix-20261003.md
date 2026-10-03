@@ -116,4 +116,4 @@ build/tiny_v001_timing_harness 5 19 paired "$RESULT_DIR/cap19/paired"
 
 Capture the required before/after device, HBM, AICore, process, disk, and lease state around the eventual measurement session. This registration itself collected no timing samples and created no lease.
 
-The executable previously built at `timing-prep-20261003/build/tiny_v001_timing_harness` (SHA256 `c85ec6ec3a248b565cbc758b56cd98a616faa0fb78cda3b04272cd2c29027131`) contains the removed device-reset call and must not be run. The current support source has not been rebuilt after this protocol change.
+The executable previously built at `timing-prep-20261003/build/tiny_v001_timing_harness` (SHA256 `c85ec6ec3a248b565cbc758b56cd98a616faa0fb78cda3b04272cd2c29027131`) contains the removed device-reset call and must not be run. Reset-free Build/Link evidence for the current support source is in `timing-harness-build-20261003T132344Z.md`; its executable has not been run.
