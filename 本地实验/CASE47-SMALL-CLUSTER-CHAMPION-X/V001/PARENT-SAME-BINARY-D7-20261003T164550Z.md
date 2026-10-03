@@ -34,7 +34,7 @@ Combined MAD/median is `0.4707379286`; block drift is `1.0896945961`. Both excee
 - d7 before run: HBM `38131/65536 MB` (58.2% used), AICore `38%`; after run HBM remained `38131/65536 MB`, AICore was `23%`.
 - d7 process inventory showed VLLMEngineCor PID `2617616` and python3 PID `439848`; neither was changed. No CASE47 timing runner remained after the invocation.
 - Project disk available before and after: `582 GB`.
-- The active d7 lease row in canonical `调度/服务器设备使用.tsv` was the CASE47 row above, with no other active d7 lease. The Route did not edit the shared schedule; Main owns its release record.
+- At run time, the active d7 lease in canonical `调度/服务器设备使用.tsv` was the CASE47 row above, with no other active d7 lease. The Route did not edit the shared schedule.
 
 ## Remote Evidence
 
@@ -46,3 +46,10 @@ Directory: `/home/data4t2/lelinfeng/cann/server_runs/CASE47-SMALL-CLUSTER-CHAMPI
 - Resource/process snapshots: `npu-smi-final-pre-run.txt`, `npu-smi-post.txt`, `disk-final-pre-run.txt`, `disk-post.txt`, `project-usage-final-pre-run.txt`, `project-usage-post.txt`, `processes-pre.txt`, `runner-process-post.txt`.
 
 No PRECHECK, Candidate P/C, correctness rerun, core query, or other timing was performed.
+
+## Lease Release Verification
+
+- Main/Support-B live read on `hwnput3` completed at `2026-10-03T17:16:19Z`. d7 HBM was `38131/65536 MB`; AICore was `59%`.
+- d7 resident processes were VLLMEngineCor PID `2617616` (`13251 MB`) and python3 PID `439848` (`21260 MB`). Both were left untouched. The process query for `CASE47-SMALL-CLUSTER-CHAMPION-X`, `CASE47-V001-D7-PARENT-SAMEBIN`, `case47_timing_runner`, and `timing-build-20261003T134147Z` returned no matches; `npu-smi info` likewise listed no CASE47 runner on d7.
+- Project disk: `/dev/nvme1n1p1`, `3.5T` size, `2.7T` used, `582G` available (`83%`). The `du -sh` child-directory snapshot was: `AGENTS.md` 4.0K; `README.md` 4.0K; `STORE-EPILOGUE-W2-X` 4.8M; `local-experiments` 2.3M; `package-lock.json` 4.0K; `package.json` 4.0K; `server_runs` 32M; `w2` 16M; `worktrees` 417M; `工具` 56K; `归档` 52M; `技术路线` 348K; `本地实验` 39M; `研究` 1.7M; `线上结果` 7.3M; `调度` 216K; `项目结构.md` 4.0K; `项目规则` 72K.
+- Main's Support-B delegate appended the canonical lease's `RELEASED` row with end time `2026-10-03T17:16:19Z`. No process was changed, and no PRECHECK, Candidate P/C, correctness, or other timing was run.
