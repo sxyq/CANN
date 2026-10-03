@@ -9,6 +9,13 @@ set(TOOLKIT "$ENV{ASCEND_HOME_PATH}")
 set(CASE47_SOURCE_FILE "${CMAKE_CURRENT_SOURCE_DIR}/submission.asc" CACHE FILEPATH "")
 set(CASE47_KERNEL_TARGET "case47_kernel" CACHE STRING "")
 
+set(ASC_CXX_STDLIB_INCLUDE_DIRS)
+foreach(CXX_INCLUDE_DIR IN LISTS CMAKE_CXX_IMPLICIT_INCLUDE_DIRECTORIES)
+    if(CXX_INCLUDE_DIR MATCHES "/include/([^/]+-linux-gnu/)?c[+][+]/")
+        list(APPEND ASC_CXX_STDLIB_INCLUDE_DIRS "${CXX_INCLUDE_DIR}")
+    endif()
+endforeach()
+
 ascendc_library(${CASE47_KERNEL_TARGET} SHARED "${CASE47_SOURCE_FILE}")
 target_compile_options(${CASE47_KERNEL_TARGET} PRIVATE
     $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=dav-2201>
@@ -17,8 +24,8 @@ target_compile_options(${CASE47_KERNEL_TARGET} PRIVATE
     $<$<COMPILE_LANGUAGE:ASC>:${SERVER_AUDIT_ROOT}/judge_abi.h>
 )
 target_include_directories(${CASE47_KERNEL_TARGET} PRIVATE
-    # bisheng does not inherit the host C++ compiler's standard include paths.
-    ${CMAKE_CXX_IMPLICIT_INCLUDE_DIRECTORIES}
+    # bisheng does not inherit the host C++ standard-library include paths.
+    ${ASC_CXX_STDLIB_INCLUDE_DIRS}
     "${SERVER_AUDIT_ROOT}/src"
     "${SERVER_AUDIT_ROOT}/inc"
     "${TOOLKIT}/include"
