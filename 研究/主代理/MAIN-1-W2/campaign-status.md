@@ -487,6 +487,7 @@ The three new worktrees are sparse, approximately 7.5 MB each, and were created 
 
 ## MAIN1_SYNC_WARMUP60_AND_WINDOW_RETRY (2026-10-03)
 
+- `CONSOLIDATION_OWNER=CODEX_MAIN`; scope: this SYNC V001 stage summary and its canonical campaign/scheduling/ledger rows. Main-2 is not editing canonical records during this update.
 - The retry kept SYNC V001 source SHA `27c853e1cb0c47307899b874338c3aecb912ad5dc125c0d67f6afba76a9117ec` unchanged. The timing runner uses 60 synchronized warmups; its rebuilt executable SHA is `7815e6b6c49f1662b245c10e24ee6f0eca8724d455e81b8755c29d331494c6ca`, with runner SHA `ae8d573c62bc952a454ff59178ba9c666fdbc76bee6bfbd31d33ce2b7248912e`.
 - Parent same-binary on d4, shape `[2,12288]` FP16: 62 device-event samples, median `8.320000 us`, MAD/median `0.024038`, block drift `0.019231`; `PASS`. The source, Parent and Candidate modules, runner, and timing executable identities are recorded in lease `M1-SYNC-V001-D4-SAMEBINARY-W60-20261003T021619Z` and remote run `SYNC-TOPOLOGY-CHAMPION-X-V001-D4-WARMUP60-20261003T020523Z`.
 - The next Parent window lease `M1-SYNC-V001-D4-WINDOW-PC-W60-20261003T023748Z` was released after SSH timed out before the stage began. No Parent window or Candidate P/C samples were produced. A read-only SSH retry from this session also timed out; no remote process was started.
