@@ -207,24 +207,24 @@ MAIN-1 状态材料另记了 Pass1 63–73%、Pass2 26–38%、pipeline sum 1.23
 
 #### H7：invRms 用 Vector reciprocal 减少 V/S 往返
 
-- `MECHANISM`：保留 Parent partial sum、mean、epsilon 和 Sqrt 次序；尝试在 Vector 侧对 sqrt 结果取 reciprocal，去掉最终 `SyncVToS` / GetValue / `SyncSToV` 往返。
-- `BOTTLENECK`：case-bound timeline 显示每 row reduction 尾段的标量取回位于关键路径。
-- `EXPECTED_SHAPES`：需命中 Parent 的 wide reduction。精确 case14 未知。`PROXY` 为 SHAPE-TILING V002 FP32 wide shapes 与未绑定 testcaseId 的 535-task profile 摘要。
-- `WHY_IT_MAY_HELP`：少一次 Vector→Scalar→Vector 转换，直接把 Vector invRms 供后续 normalize 使用。
-- `WHY_IT_MAY_FAIL`：scalar 阶段可能很短；Vector reciprocal API 的精度或延迟未确认，可能改动宽 FP32 输出误差。
-- `ASCEND_FEASIBILITY`：目标 CANN API 的 reciprocal 语义尚未确认；必须与 Parent `1/sqrt` 做同输入误差比较。
-- `UB/CORE/DMA_IMPACT`：不新增 workspace 或 GM 流量；每 row 仅改变归约尾段运算。
-- `SYNC_IMPACT`：目标是移除 sqrt 后一次 V/S 往返；不改 MTE2/MTE3、row ownership 或 reduction tree。
-- `PRECISION_RISK`：中高；精确度、宽 FP32 已知波动和 Judge 容差需分开处理。
-- `DUPLICATE_CHECK`：与 REDUCE-HIER 的 sum-tree 和 EPI-ARITH 的后续 affine 次序不同，但与 invRms 算术相邻；获选前需按 exact source diff 核对。
-- `MINIMAL_OFAT_DIFF`：只改变 sqrt 后 reciprocal 的执行 pipe，不变更 partial、epsilon、sqrt、tile 或 store。
-- `FALSIFIABLE_TEST`：若绑定 case14 的 timeline 未显示该往返在关键路径，或 exact correctness 超出容差，则否定；同形状配对收益若落在噪声内也停止。
-- `EXPECTED_LOCAL_PROBES`：先取 source-bound V/S timeline 与精确输入；之后若 Main 选择，做 exact-shape correctness 和同设备 Parent 配对测量。
-- `MATURITY`：`NEEDS_MORE_EVIDENCE`；现有 profile 不绑定 case14，收益前提未证实。
+- `MECHANISM`：仅限 Parent FP32 wide branch。保留 partial sum、mean、epsilon、`Sqrt`，在 Vector 侧计算 `1/rms` 并保留为 LocalTensor；输出阶段将 `Muls(valueRow, ..., invRms)` 改为以该单值作广播源的 `Mul`。若把倒数重新 `GetValue` 到 scalar，末尾 V/S 往返仍在，假设不成立。
+- `BOTTLENECK`：绑定 testcaseId 的 timeline 须显示 sqrt 后 V→S 与 S→V 等待落在关键路径，且没有被后续工作隐藏。
+- `EXPECTED_SHAPES`：V011 仅在 `D>8192` 进入 wide branch；FP32 才调用 `ProcessWideFp32FullCacheRows`。case14 的 rows、D、dtype、dispatch 均未知。535-task profile 与 SHAPE-TILING V002 数据不绑定 testcaseId，仅作检索线索。
+- `WHY_IT_MAY_HELP`：每行可省去 sqrt 后的一次 V→S 事件同步、一次 `GetValue`、一次 scalar 除法及一次 S→V 事件同步；倒数留在 Vector 路径供输出缩放使用。
+- `WHY_IT_MAY_FAIL`：当前输出用 scalar `Muls`。改为广播 `Mul` 会新增/改变逐 tile 算术；Vector 倒数和广播开销可能超过移除的等待。
+- `ASCEND_FEASIBILITY`：本机 `/Users/sunyiyang/Desktop/Project/cann/asc-devkit` 的 9.2.0 文档列出 FP32 `Reciprocal` 与 `Div`；不带 config 的原型标为 A2/A3 支持、950 不支持。文档同时指出 `Reciprocal` 的 float 结果误差不满足“双万分之一”，建议高精度场景改用 `Div`。该文档版本不等于 Judge 工具链确认；本路线未编译或运行这些调用。
+- `UB/CORE/DMA_IMPACT`：不增加 GM/workspace；需保留一个倒数 LocalTensor，并让输出 tile 用单值广播乘法。
+- `SYNC_IMPACT`：最多移除 sqrt 后一组 `V_S` 和一组 `S_V` SetFlag/WaitFlag；归约值的前一组 `V_S` 与 scalar mean/epsilon 仍保留。
+- `PRECISION_RISK`：`Reciprocal` 文档给出的 float 精度警告使其不能直接视为合格实现。`Div` 是文档建议的高精度替代，但 A2/A3 的精度上界与此 Judge 容差仍需针对实际工具链和输入实测。另有 R31A V023 在 910B3 上 `Rsqrt` 约 `2^-10`、max_abs=`9.94e-4` 的既有记录；它不等同于 `Reciprocal` 或 `Div`，但否定了将 `Rsqrt` 当作无风险替换。
+- `DUPLICATE_CHECK`：R020 和 R31A V023 已触及 `Rsqrt`；VECTOR-MATH-X 覆盖通用向量数学，REDUCE-HIER 覆盖求和树。此假设仅在保留 Parent sqrt/reduction、并把倒数及输出 scale 全留在 Vector 路径时才构成独立变化；Main 选定前仍须按 exact source diff 去重。
+- `MINIMAL_OFAT_DIFF`：固定 V011 的 FP32 wide dispatch、partial、mean、epsilon、sqrt、tile 与 store；只替换 sqrt 后倒数及其逐 tile scale 消费方式。
+- `FALSIFIABLE_TEST`：若 case14 不是 FP32 且 `D>8192`、未走该 branch，或绑定 timeline 未显示末尾 V/S 等待在关键路径，停止此假设。获选后，若精度超限，或 exact-shape 交错 Parent/Candidate 收益未稳定超过该形状噪声，也停止。
+- `EXPECTED_LOCAL_PROBES`：先取得 case14 输入元数据与 testcaseId/source/executable 绑定的 Vector/Scalar 时间线；仅在 Main 选择后，以 V011 exact source 做精度与同形状配对测量。
+- `MATURITY`：`NEEDS_MORE_EVIDENCE`；接口形式已由本地文档确认，精度、目标工具链与 case14 关键路径未确认。
 
-### 本轮结论
+### H5-H7 初始结论（此前记录）
 
-新假设池为 H5–H7 三项：组内 RMS 尾段同步、每 lane y 的 UB/GM 取舍、invRms 的 V/S 往返。H5/H6 以获准的 D-slice 实现为前置，H7 不改变 row ownership；三者互不叠加。通用 row D-slice、tile 改动、MTE2/V/MTE3 overlap 和 multi-row DMA 维持历史去重结果，不作为本轮新方向。case14 仍缺 rows、D、dtype、availableCoreNum、dispatch 和 case-bound profile；维持 `NEEDS_MORE_EVIDENCE`、`MAIN_SELECTED=NONE`。
+此前假设池为 H5-H7 三项：组内 RMS 尾段同步、每 lane y 的 UB/GM 取舍、invRms 的 V/S 往返。H5/H6 需要 Main 先选择 D-slice 起点；本轮复核后只保留 H7 为一项带明确前提的待证假设。case14 仍缺 rows、D、dtype、availableCoreNum、dispatch 和绑定逐例时间线；维持 `NEEDS_MORE_EVIDENCE`、`MAIN_SELECTED=NONE`。通用 row D-slice、tile 改动、MTE2/V/MTE3 overlap 和 multi-row DMA 沿用历史去重结果。
 
 ### C2C 路线边界更新
 
@@ -237,3 +237,12 @@ Main 选择 CASE47 H1，仅覆盖非对齐 `ProcessNarrowMidOverlap` 路径的 `
 ### case14 时间说法来源更新（2026-10-03 C2C）
 
 Support-A 原始群聊复核发现，“case14 157us”紧邻超时讨论，且没有可关联的提交记录，故该说法标为无效，不作为测量或 profile 证据。R31B V011 的 Official result.json 仍记录 case14 `timeUs=16486.82`；此项只确认 Judge 记录的耗时，不提供 shape、dtype、dispatch 或 profile。case14 输入与 profile 对应关系仍缺失，H5–H7 继续仅为 PROXY 假设，`MAIN_SELECTED=NONE`。
+
+### 2026-10-03 Track-B API 与输入来源复核
+
+- Support-A 确认 testcaseId `6a9a9a99bf41025d6013ebbe` 对应 testcase14；匿名 testcase 接口返回 403，公开 problem 接口只给通用约束，没有逐例 shape、dtype 或 dispatch。该结果只确认 ID 映射，不提供输入元数据。
+- `线上结果/R31B/V011/result.json` 的 case14 只有 testcaseId、Pass、`timeUs=16486.82`、`bestTimeUs=3750.12`、`score=21.496`。`source-meta.json` 描述提交源码身份；`线上结果/R31B/V011/` 没有 Judge 输入包。仓内可读的结果副本都只含逐例状态/时间类字段，没有 testcase 输入 shape/dtype。
+- 本机 `提分技术讨论_原文.csv` 没有该 testcaseId。case14 的“157 微秒”消息未关联提交或可复核测量；另一条消息只是询问 shape。Support-A 转述的“探过 case7”没有数值、方法或可复核产物，不映射到 case14。
+- H5/H6 仍依赖先选定并证明正确的 D-slice 起点；C001、R31A V011、R31B V008 的历史 D-slice 记录不能确认 case14 命中对应输入或分支。本轮不据此提出新路线。
+- 当前最多保留 H7 一个可证伪假设：只有 case14 明确为 FP32、`D>8192` 并走 Parent FP32 wide branch，且绑定时间线证明末尾 V/S 等待位于关键路径，才值得申请 Main 选择。技术重复性边界为保留 Parent 的 reduction/mean/epsilon/sqrt，单改倒数留在 Vector 与输出 scale 的广播消费；精度失败或稳定配对收益未超过噪声即停止。
+- 继续前所需输入：Judge 授权导出的该 ID 输入描述（完整 shape、折叠 rows、D、dtype、stride/layout）；同一提交的实际 dispatch、available/active core；以及绑定 testcaseId、source 与 executable 的原始 timeline/profile。获得之前保持 `MAIN_SELECTED=NONE`，不创建 Revision、不改 Candidate、不编译、不运行设备或测时。
