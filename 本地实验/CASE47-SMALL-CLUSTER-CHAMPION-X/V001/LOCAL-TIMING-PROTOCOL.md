@@ -78,3 +78,32 @@ sha256sum candidate/submission.asc parent/submission.asc \
   build-parent/libcase47_parent_kernel.so \
   build-candidate/case47_timing_runner
 ```
+
+## Parent Same-Binary W60 Requalification
+
+- The prior 45-warmup Parent result for synthetic `PROXY_D257_FP32_M2A` remains `NOT_QUALIFIED` and is retained unchanged. Its two block medians were `54.0799982846 us` and `19.8199991137 us` (ratio `2.73`), exceeding the global protocol's `1.2` trigger for extending warmup to 50–60.
+- This addendum registers exactly one new Parent-only same-binary attempt for d7, rows `80`, width `257`, FP32 (`dtype=0`): one fresh process, 60 launches each followed by stream synchronization, then two 21-sample device-event blocks separated by 30 seconds. Keep the existing same-binary qualification thresholds. The prior 45-warmup result remains part of the record. Both results classify Parent measurement qualification only and do not establish a Candidate regression.
+- Main must provide an active d7 lease. Capture the required live device, process, and disk state before execution. Do not run PRECHECK-A/B or Candidate P/C automatically after this attempt; regardless of its result, stop and report for Main review. Official case4/case7 mapping remains unknown.
+- `run_registered_matrix.sh` remains unchanged and is not used for this one-shape attempt. From the new runner build directory, the exact d7 invocation is:
+
+```bash
+BUILD_ROOT="${CASE47_W60_BUILD_ROOT:?set to the unique runner build directory reported by the preparation}"
+REMOTE_ROOT="/home/data4t2/lelinfeng/cann/server_runs/CASE47-SMALL-CLUSTER-CHAMPION-X/V001/timing-results-w60-$(date -u +%Y%m%dT%H%M%SZ)"
+source /usr/local/Ascend/ascend-toolkit/latest/aarch64-linux/bin/setenv.bash
+export ASCEND_HOME_PATH=/usr/local/Ascend/ascend-toolkit/latest
+export LD_LIBRARY_PATH="$ASCEND_HOME_PATH/lib64:$ASCEND_HOME_PATH/aarch64-linux/lib64:${LD_LIBRARY_PATH:-}"
+RUN_ID="CASE47-V001-D7-PARENT-SAMEBIN-W60-$(date -u +%Y%m%dT%H%M%SZ)"
+RESULT_DIR="$REMOTE_ROOT/$RUN_ID"
+PARENT_MODULE=/home/data4t2/lelinfeng/cann/server_runs/CASE47-SMALL-CLUSTER-CHAMPION-X/V001/timing-build-20261003T134147Z/build-parent-retry-06-attempt-02/libcase47_parent_kernel.so
+mkdir "$REMOTE_ROOT"
+mkdir "$RESULT_DIR"
+if "$BUILD_ROOT/build-runner/case47_timing_runner" \
+    "$PARENT_MODULE" 7 80 257 0 "$RESULT_DIR/parent-same-binary-w60" \
+    SAME_BINARY 1 60 21 2 30 \
+    > "$RESULT_DIR/runner.stdout.txt" 2> "$RESULT_DIR/runner.stderr.txt"; then
+  rc=0
+else
+  rc=$?
+fi
+printf '%s\n' "$rc" > "$RESULT_DIR/runner.rc"
+```

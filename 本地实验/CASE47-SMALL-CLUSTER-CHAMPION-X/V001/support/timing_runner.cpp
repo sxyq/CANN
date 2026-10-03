@@ -176,7 +176,7 @@ int main(int argc, char** argv)
     const bool paired = stage == "PAIR-P" || stage == "PAIR-C";
     if (device < 0 || rows < 1 || width < 1 || dtype < 0 || dtype > 2 ||
         (!sameBinary && !precheck && !paired) || processRep < 1 ||
-        warmups != 45 || sampleCount != 21 ||
+        (warmups != 45 && warmups != 60) || sampleCount != 21 ||
         (sameBinary && (processRep != 1 || blockCount != 2 || gapSeconds != 30)) ||
         ((precheck || paired) && (blockCount != 1 || gapSeconds != 0)) ||
         (precheck && processRep > 6) || (paired && processRep > 4)) {
