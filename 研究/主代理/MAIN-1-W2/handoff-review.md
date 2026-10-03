@@ -43,7 +43,7 @@ No build, correctness run, performance run, profiling, server3 job or Online sub
 
 ## SYNC W60 Evidence Retrieval Follow-up (2026-10-03)
 
-- The existing W60 same-binary result remains PASS in the route record, but its raw and jitter files have not been copied from server3. The assigned read-only retrieval attempt and a separate read-only SSH attempt both timed out; no remote query or transfer ran.
+- The existing W60 same-binary result remains PASS in the route record, but its raw and jitter files have not been copied from server3. The assigned read-only retrieval attempt, a separate SSH-alias attempt, and a direct Mac connection to `10.11.32.3:22` all timed out; no remote query or transfer ran.
 - Remote evidence remains under `/home/data4t2/lelinfeng/cann/w2/SYNC-TOPOLOGY-CHAMPION-X/V001/results/SYNC-TOPOLOGY-CHAMPION-X-V001-D4-WARMUP60-20261003T020523Z/`. Required files are `SAME-BINARY-raw.tsv` and `SAME-BINARY-jitter.txt`; local SHA values are not available yet.
 - Parent window and Candidate P/C remain NOT_RUN. The earlier lease is RELEASED. After SSH access returns, retrieve the existing files first, then perform a live device read and record a new lease before any timing stage. No Candidate source or timing harness changed in this follow-up.
 
