@@ -1,8 +1,31 @@
 # MAIN-2 Local Control Dashboard
 
-UPDATED_UTC: 2026-10-03T07:19:44Z
+UPDATED_UTC: 2026-10-03T07:27:30Z
 SCOPE: MAIN-2 local control only
 CANONICAL_SHARED_LEDGER: UNMODIFIED
+
+## Event receipt — HBH-09 V002 Window E qualification result — 2026-10-03T07:27Z
+
+```text
+CONTROL_HEAD_BEFORE_RECEIPT=5f7b0979
+ROUTE_EVIDENCE_COMMIT=554fcd20
+CURRENT_STATE=WAITING_FOR_VALID_LOCAL_SCORE
+DEVICE=7; SHAPE=BF16_D6144_ROWS80
+PARENT_SHA256=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
+CANDIDATE_SHA256=1aa6d8ecaa1af058b039341f63c67f4f67403bb4a8e5c6bc57dd96914f42cb65
+RUNNER_SHA256=c4d7b89494ed771c5ce89444c7b5ad4f8fd321c087b1fdb80097ce7ba2c82fb7
+SAME_BINARY=NEEDS_VALIDATION; SAMPLES=62; MAD_MEDIAN=21.2568%; BLOCK_DRIFT=9.5238%
+QUALIFICATION_RC=1; PARENT_CANDIDATE_TIMING=NOT_RUN
+HBM_FREE_MB=ABOUT_40746; AICORE=0%; AIVECTOR=1-2%; RESIDENT_PROCESS=python3_PID439848
+SHARED_D7_LEASE=NONE; PROCESS_TOUCHED=NO
+LOCAL_SCORE=NONE; VALID_LOCAL_SCORE=NO
+NO_NEXT_PERFORMANCE_REVISION=YES; ONLINE_READY=NO
+```
+
+Window E did not pass same-binary qualification, so it is not Candidate
+performance evidence. Raw samples and pre/post snapshots are committed in the
+Route worktree. Next: refresh all-device/resource/lease state and try the exact
+V002 primary protocol on another admissible device or a later time window.
 
 ## Event receipt — HBH-09 V002 Window E protocol predeclaration — 2026-10-03T07:19Z
 
