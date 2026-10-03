@@ -22,6 +22,7 @@ Do not change block count or row ownership, input/MTE2 load order, tile or GM by
 - One-row fallback PROXY: FP32, `D=257`, `M=A`; each block owns one row and retains the Parent scalar path.
 - Aligned-width control: FP32, `D=256`, `M=2*A`; it must continue through the existing aligned small-row path, unchanged.
 - Case4/case7 input shape and dtype remain unknown in the retained Official records.
+- The Support-A raw-chat C2C claim that case4/7 share a cluster or help each other has no stated mechanism and no shape/dtype. Treat it only as a weak research lead, not as input-map evidence. Other chat items do not affect this Route's mechanism.
 
 ## BUFFER_AND_DEPENDENCY_BASIS
 
