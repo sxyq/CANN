@@ -27,11 +27,10 @@ set(ROUTE_WORKSPACE "${CMAKE_CURRENT_SOURCE_DIR}/..")
 add_executable(tiny_v001_proxy_correctness runner_tiny_proxy.asc)
 target_include_directories(tiny_v001_proxy_correctness PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}"
-    "${ROUTE_WORKSPACE}")
+    "${ROUTE_WORKSPACE}"
+    "${ASCEND_CANN_PACKAGE_PATH}/include")
 target_compile_options(tiny_v001_proxy_correctness PRIVATE
     $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=${SOC_ARCH}>)
-target_compile_definitions(tiny_v001_proxy_correctness PRIVATE
-    TINY_TOOLCHAIN_LABEL="CANN_8.5.0.alpha002_Ascend910B3_dav-2201")
 # System libstdc++ dir FIRST so GLIBCXX_3.4.29 resolves at runtime.
 target_link_directories(tiny_v001_proxy_correctness BEFORE PRIVATE
     "/usr/lib/aarch64-linux-gnu")
