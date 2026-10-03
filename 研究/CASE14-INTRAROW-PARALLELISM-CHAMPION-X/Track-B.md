@@ -1,6 +1,12 @@
 # CASE14-INTRAROW-PARALLELISM-CHAMPION-X Track-B
 
-状态：`NEEDS_MORE_EVIDENCE`。本记录没有选定实现方向，不创建 Revision；方向选择留给 Main。
+状态：`NEEDS_MORE_EVIDENCE`；`MAIN_SELECTED=NONE`。Track-B handoff 已结束，不创建 Revision；方向选择留给 Main。
+
+## 当前停止点
+
+- Support-A 的最新复核为：canonical 与本 Route worktree 均没有可追溯的 testcase ID → 实际 shape/dtype/dispatch 对照。现有 Official 逐 case 记录不足以确认 case14 是否为低 rowCount、超宽 D，或是否进入 D-slice 路径。
+- `线上结果/R31B/V011/result.json` 的 case14 记录提供 testcase ID、耗时、状态和得分字段，不含 rows、D、dtype 或 dispatch。canonical 的 `worktrees/m1/r31a/线上结果/R31A/V016/problem-full.json` 对应条目也只有 testcase ID 等标识字段。
+- 下一步阻塞是取得能与 case14 ID 直接对应的真实输入 shape/dtype 与 dispatch 证据。取得前保持 `MAIN_SELECTED=NONE`，不创建 Revision、不改 Candidate、不运行 build、correctness 或 performance。
 
 ## 证据边界
 
@@ -13,14 +19,14 @@
 
 ### Official case 与可执行条件
 
-- `线上结果/R31B/V011/result.json` 将 case14 标为 `6a9a9a99bf41025d6013ebbe`：`timeUs=16486.82`、`bestTimeUs=3750.12`、PASS。`线上结果/R31A/V011/result.json` 对同一 ID 给出 `16603.94us`，Official 总分 `42.18`，低于其父版 `44.09`。两个结果都没有 rows、D 或 dtype；`线上结果/R31A/V016/problem-full.json` 对该 ID 也只保留 ID/type，没有输入 shape。
-- 竞赛 wrapper `线上结果/R31A/V016/judge-main-template.asc` 以 `run_kernel(..., availableCoreNum, stream, epsilon)` 调用候选；父版 `线上结果/R31B/V011/submission.asc` 使用同一 host ABI，当前只发出一个 kernel launch，且没有从 wrapper 收到 workspace 指针。
+- `线上结果/R31B/V011/result.json` 将 case14 标为 `6a9a9a99bf41025d6013ebbe`：`timeUs=16486.82`、`bestTimeUs=3750.12`、PASS。`线上结果/R31A/V011/result.json` 对同一 ID 给出 `16603.94us`，Official 总分 `42.18`，低于其父版 `44.09`。两个结果都没有 rows、D 或 dtype；canonical 的 `worktrees/m1/r31a/线上结果/R31A/V016/problem-full.json` 对该 ID 也只保留 ID/type，没有输入 shape。
+- 竞赛 wrapper `worktrees/m1/r31a/线上结果/R31A/V016/judge-main-template.asc` 以 `run_kernel(..., availableCoreNum, stream, epsilon)` 调用候选；父版 `线上结果/R31B/V011/submission.asc` 使用同一 host ABI，当前只发出一个 kernel launch，且没有从 wrapper 收到 workspace 指针。
 - workspace 在该 ABI 内可由候选 host 侧分配：归档精确提交源 `归档/历史工作区/C001/kernel.txt` 中的 `run_kernel` 调用 `aclrtMalloc` 分配 tiling 与 workspace，再把 workspace 作为 kernel 参数传入；同一 stream 完成后同步并释放。多 kernel 也能从同一 `run_kernel` 向同一 stream 连续发出：精确提交源 `归档/历史工作区/R31B/R31B-V008-DSLICE-SMALL-R_kernel.asc` 发出四个有序 launch。两种写法都没有证明性能或正确性；V008 Official 为 0/15 Runtime Error。
 
 ### D-slice 历史证据的边界
 
 - R008 状态文件 `归档/phase3-before-reset-20260920/管理/路线状态/R008.json` 仍是 `PLANNED`。`FULL-R008-TILE-CROSS-CORE/V001` 的提交源 `归档/phase3-before-reset-20260920/实验/online/FULL-R008-TILE-CROSS-CORE/V001/6aae33a6b0477ec41ec3e2f1/kernel.txt` 明确每行由一个 core 完成，只按 row/tile task 排 core；它不是 D-slice。Official 15/15，case14 为 `118917.6us`。因此该结果说明这个完整实现很慢，不能当作 D-slice 失败证据。
-- C001 的 `线上结果/C001/result.json` 与归档 `kernel.txt` 对应同一上传源。Official TLE 只发生在 testcase 1；testcase 14 是 `Skipped`，没有 case14 耗时。仓内保留 C001 源码、编译记录和 Judge JSON，没有单独的运行时 TLE 控制台日志。因此 C001 是 D-slice 方案的负面 Official 结果，不是 case14 的失败样本。
+- canonical 中的 `线上结果/C001/result.json` 记录源码路径、359 行和 12798 字节；归档 `归档/历史工作区/C001/kernel.txt` 与该源码元数据所记 SHA256 一致。C001 源码、编译记录和 Judge JSON 不在当前 Route worktree。Judge JSON 只显示 testcase 1 为 `Time Limit Exceeded`、testcase 14 为 `Skipped`，没有 case14 耗时；仓内没有单独的运行时 TLE 控制台日志。因此 C001 是 D-slice 方案的负面 Official 记录，不是 case14 的失败样本。
 - R31A V011 源码 `归档/历史工作区/R31A/R31A-V011-submission.asc` 的 D-slice 分支条件为 FP32、`D>8192` 且 host 计算出每行至少两个 slice。其 testcase 14 的耗时高于 best，但 Official 数据没有 shape，不能确认 case14 是否进入该分支，也不能单靠全局退分归因。
 - R31B V008 的 exact source 已在 `归档/历史工作区/R31B/R31B-V008-DSLICE-SMALL-R_kernel.asc`，其 Official JSON 记 15/15 Runtime Error（包含 testcase 14）。这证明该四阶段写法未能通过 Official，但结果没有提供输入 shape 或具体 runtime 原因，不能据此判定低-row/超宽条件已被 case14 覆盖。
 
@@ -143,4 +149,4 @@ MAIN-1 状态材料另记了 Pass1 63–73%、Pass2 26–38%、pipeline sum 1.23
 
 建议先做机制证伪交接，再讨论实现：请 Main 获取 testcase14 的权威 rows、D、dtype 和设备可用 core 数，并将 per-case dispatch 与 profile 绑定到该 ID。若条件不满足 FP32、`D>8192`、rowCount 小于可用 core 的 D-slice 触发范围，则记录 H1 前提不成立，停止以低 rowCount/超宽解释 case14；若满足，再由 Main 决定是否安排 exact-shape correctness 与测量。现阶段继续保持 `NEEDS_MORE_EVIDENCE`，不创建 Candidate 或 Revision。
 
-本轮只读历史证据，未运行 Candidate、构建、正确性、设备实验、计时或线上提交。
+本轮仅更新本 Track-B 研究记录；历史证据核对未运行 Candidate、构建、正确性、设备实验、计时或线上提交。
