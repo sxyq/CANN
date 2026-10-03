@@ -1,0 +1,35 @@
+# HBH-09 V002 — Window J qualification result
+
+```text
+ROUTE=HOTLOOP-BRANCH-HOIST-CHAMPION-X
+REVISION=V002
+HYPOTHESIS=HBH-09
+UTC=2026-10-03T08:31Z
+DEVICE=7
+SHAPE=BF16_D6144_ROWS40
+REPEAT_BATCH_N=1
+RUNNER_SHA256=c4d7b89494ed771c5ce89444c7b5ad4f8fd321c087b1fdb80097ce7ba2c82fb7
+PARENT_SHA256=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
+CANDIDATE_SHA256=1aa6d8ecaa1af058b039341f63c67f4f67403bb4a8e5c6bc57dd96914f42cb65
+SAME_BINARY=NEEDS_VALIDATION
+SAMPLES=62 (2 blocks x 31)
+MEDIAN_US=20.950000
+MAD_OVER_MEDIAN=23.9141%
+BLOCK_DRIFT=8.7828%
+QUALIFICATION_RC=1
+PARENT_CANDIDATE_TIMING=NOT_RUN
+VALID_LOCAL_SCORE=NO
+LOCAL_SCORE=NONE
+```
+
+The d7 formal lock was acquired with adequate free HBM and no shared d7 lease;
+resident processes and AICore activity were recorded and not touched. The
+restored N=1 runner failed the exact-shape same-binary gate. No paired timing
+ran, so this is measurement evidence only and not a Candidate verdict.
+
+```text
+CURRENT_STATE=WAITING_FOR_VALID_LOCAL_SCORE
+NEXT_ACTION=MEASUREMENT_BLOCKER_REVIEW
+NO_NEXT_PERFORMANCE_REVISION=YES
+ONLINE_READY=NO
+```
