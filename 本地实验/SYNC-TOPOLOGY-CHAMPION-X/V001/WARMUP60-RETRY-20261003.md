@@ -30,7 +30,18 @@ sha256sum "$REMOTE_ROOT/build-timing/sync_topology_v001_timing" \
   > "$RESULT_DIR/timing-executable-identity.txt"
 ```
 
-Build outcome and executable SHA256: pending.
+## Build result
+
+- Result `RUN_ID`: `SYNC-TOPOLOGY-CHAMPION-X-V001-D4-WARMUP60-20261003T020523Z`.
+- Build: `PASS`, return code `0`, completed at `2026-10-03T02:08:14Z`.
+- Command: `cmake --build "$REMOTE_ROOT/build-timing" --target sync_topology_v001_timing --verbose -j2` after sourcing `/usr/local/Ascend/ascend-toolkit/set_env.sh`.
+- New timing executable SHA256: `7815e6b6c49f1662b245c10e24ee6f0eca8724d455e81b8755c29d331494c6ca`.
+- Runner source SHA256: `ae8d573c62bc952a454ff59178ba9c666fdbc76bee6bfbd31d33ce2b7248912e`.
+- Candidate source SHA256 remained `27c853e1cb0c47307899b874338c3aecb912ad5dc125c0d67f6afba76a9117ec`.
+- Parent and Candidate module SHA256 values remained `017ab02a4fe0da2c2692ba18c17c89ad27cd928ef66a14bf8035d2c4731ec4ec` and `1a7172946ceab8786920f0e386d2df11307d58e22d86a8f6da90d11cce3844f4`.
+- Server evidence directory: `/home/data4t2/lelinfeng/cann/w2/SYNC-TOPOLOGY-CHAMPION-X/V001/results/SYNC-TOPOLOGY-CHAMPION-X-V001-D4-WARMUP60-20261003T020523Z/`.
+- The evidence directory contains environment, build log/status, executable identity, and pre/post resource snapshots. No timing runner mode was invoked.
+- An initial environment-load invocation stopped before CMake because `set -u` rejected an unset `LD_LIBRARY_PATH`; CMake had not started. The build above was rerun without nounset and passed.
 
 ## Measurement order and admission
 
