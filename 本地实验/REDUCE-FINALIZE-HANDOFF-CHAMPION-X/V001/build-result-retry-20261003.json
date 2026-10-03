@@ -1,0 +1,84 @@
+{
+  "route": "REDUCE-FINALIZE-HANDOFF-CHAMPION-X",
+  "revision": "V001",
+  "stage": "BUILD",
+  "attempt_id": "RETRY_AFTER_SERVER_SHELL_CONFIRMATION",
+  "status": "PASS",
+  "source_commit": "1580385536c364e2870f05e243cee553675905af",
+  "source_path": "本地实验/REDUCE-FINALIZE-HANDOFF-CHAMPION-X/V001/submission.asc",
+  "source_sha256": "83d569d2968b3bcd932b87130a359ba763a0679cf9f94e96e152d16f78338df3",
+  "build_system": "ASC CMake exact-source host link probe",
+  "cmake_source": "本地实验/REDUCE-FINALIZE-HANDOFF-CHAMPION-X/V001/support/build/CMakeLists.txt",
+  "build_target": "rfh_v001_build_probe",
+  "build_directory": "/tmp/rfh-v001-build.H2xUDI",
+  "cmake_configure": {
+    "command": "cmake -S 本地实验/REDUCE-FINALIZE-HANDOFF-CHAMPION-X/V001/support/build -B /tmp/rfh-v001-build.H2xUDI -DCMAKE_MODULE_PATH=<ASCEND_HOME_PATH>/aarch64-linux/tikcpp/ascendc_kernel_cmake/ASC_CMake;<ASCEND_HOME_PATH>/aarch64-linux/tikcpp/ascendc_kernel_cmake -DASC_DIR=<ASCEND_HOME_PATH>/aarch64-linux/tikcpp/ascendc_kernel_cmake -DCMAKE_PREFIX_PATH=<ASCEND_HOME_PATH>/aarch64-linux/tikcpp/ascendc_kernel_cmake -DCMAKE_CXX_FLAGS=<HCC C++17 include paths> -DCMAKE_C_FLAGS=<HCC C include paths> -DSOC_VERSION=Ascend910B3 -DNPU_ARCH=dav-2201",
+    "rc": 0,
+    "log_path": "本地实验/REDUCE-FINALIZE-HANDOFF-CHAMPION-X/V001/support/logs/build-configure-20261003.log"
+  },
+  "build_attempts": [
+    {
+      "command": "cmake --build /tmp/rfh-v001-build.H2xUDI --target rfh_v001_build_probe -j2",
+      "rc": 2,
+      "log_path": "本地实验/REDUCE-FINALIZE-HANDOFF-CHAMPION-X/V001/support/logs/build-compile-20261003.log",
+      "diagnosis": "The separate build shell did not export the HCC CPLUS_INCLUDE_PATH/C_INCLUDE_PATH used by the established compile recipe; ASC plugin compilation could not find <vector>."
+    },
+    {
+      "command": "cmake --build /tmp/rfh-v001-build.H2xUDI --target rfh_v001_build_probe -j2",
+      "environment": "ASCEND_HOME_PATH=/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002; PATH includes toolkit bin and aarch64-linux/ccec_compiler/bin; CPLUS_INCLUDE_PATH and C_INCLUDE_PATH use HCC 7.3.0 include roots",
+      "rc": 0,
+      "log_path": "本地实验/REDUCE-FINALIZE-HANDOFF-CHAMPION-X/V001/support/logs/build-compile-retry-20261003.log"
+    }
+  ],
+  "executable": {
+    "kind": "NPU_HOST_LINK_SMOKE_PROBE",
+    "path": "/tmp/rfh-v001-build.H2xUDI/rfh_v001_build_probe",
+    "sha256": "b66f050528903762a4741cb65b92222424606ed5c72638f620a78ecdc36d0f64",
+    "bytes": 469552
+  },
+  "environment": {
+    "hostname": "hwnput3",
+    "cann_toolkit": "8.5.0.alpha002",
+    "asc_compiler": "/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/bin/bisheng",
+    "soc": "Ascend910B3",
+    "npu_arch": "dav-2201",
+    "filesystem_available": "582G",
+    "route_worktree_size_after_build": "100M"
+  },
+  "prebuild_resource_snapshot": {
+    "source_command": "npu-smi info",
+    "devices": [
+      {"device": 0, "hbm_used_mb": 60223, "hbm_total_mb": 65536, "aicore_pct": 35},
+      {"device": 1, "hbm_used_mb": 64115, "hbm_total_mb": 65536, "aicore_pct": 36},
+      {"device": 2, "hbm_used_mb": 60218, "hbm_total_mb": 65536, "aicore_pct": 31},
+      {"device": 3, "hbm_used_mb": 60219, "hbm_total_mb": 65536, "aicore_pct": 33},
+      {"device": 4, "hbm_used_mb": 59193, "hbm_total_mb": 65536, "aicore_pct": 64},
+      {"device": 5, "hbm_used_mb": 60202, "hbm_total_mb": 65536, "aicore_pct": 45},
+      {"device": 6, "hbm_used_mb": 60202, "hbm_total_mb": 65536, "aicore_pct": 45},
+      {"device": 7, "hbm_used_mb": 38131, "hbm_total_mb": 65536, "aicore_pct": 47}
+    ],
+    "resident_processes": "VLLM workers/engines were present; no process was stopped or modified.",
+    "disk_available": "582G"
+  },
+  "postbuild_resource_log_paths": [
+    "本地实验/REDUCE-FINALIZE-HANDOFF-CHAMPION-X/V001/support/logs/build-post-npu-smi-20261003.log",
+    "本地实验/REDUCE-FINALIZE-HANDOFF-CHAMPION-X/V001/support/logs/build-post-df-20261003.log",
+    "本地实验/REDUCE-FINALIZE-HANDOFF-CHAMPION-X/V001/support/logs/build-post-du-route-20261003.log"
+  ],
+  "additional_exact_source_correctness_probe_build": {
+    "purpose": "Build separate exact-parent and exact-candidate probe executables using the archived REDUCE-HIER-X correctness runner; no NPU timing was used.",
+    "work_directory": "/tmp/cann-rfh-v001-validation.hSuZMZ",
+    "commands": [
+      "cmake -S /tmp/cann-rfh-v001-validation.hSuZMZ -B /tmp/cann-rfh-v001-validation.hSuZMZ/build -DCMAKE_MODULE_PATH=<ASC_DIR>/ASC_CMake;<ASC_DIR> -DASC_DIR=<ASC_DIR> -DCMAKE_PREFIX_PATH=<ASC_DIR> -DCMAKE_CXX_FLAGS=<HCC includes> -DCMAKE_C_FLAGS=<HCC includes> -DSOC_VERSION=Ascend910B3 -DNPU_ARCH=dav-2201",
+      "cmake --build /tmp/cann-rfh-v001-validation.hSuZMZ/build --target rhx_parent_probe rhx_candidate_probe --parallel 2"
+    ],
+    "return_code": 0,
+    "parent_source_sha256": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+    "candidate_source_sha256": "83d569d2968b3bcd932b87130a359ba763a0679cf9f94e96e152d16f78338df3",
+    "parent_probe_executable_sha256": "079ee411530273f311db2181f3f0f660d7ca956e0527ba35835a3b78c4589012",
+    "candidate_probe_executable_sha256": "cb9e296d7d2b2c2cafdfe6f4bf87258a14a3e1024476065a7103384ea3abed6c",
+    "build_log_path": "本地实验/REDUCE-FINALIZE-HANDOFF-CHAMPION-X/V001/support/logs/build-direct-20261003.log"
+  },
+  "online": false,
+  "timing_performed": false
+}
