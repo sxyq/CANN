@@ -172,3 +172,43 @@ NEW_ROUTES_OUTSIDE_APPROVED_5 = 0
 ### STOP 条件
 
 五条 lane 全部 `等待 Planning`，wave-1 收口。等待 Planning 裁定生命周期、C2 取舍、UB-GAP、W3 划界、null-binary 授权与 case map。
+
+---
+
+## 9. Wave-2 Next Score Wave — 2026-10-03
+
+```text
+OFFICIAL_CHAMPION=R31B V011
+OFFICIAL_SCORE=45.16
+DIRECT_ONLINE_SUBMISSION=0
+```
+
+### Current local engineering scores
+
+| Route | Revision | Local score | Quality / state |
+|---|---|---:|---|
+| HOTLOOP-ADDR-HOIST-CHAMPION-X | V001 / H3 | -24.193320% | POOR |
+| HOTLOOP-ADDR-HOIST-CHAMPION-X | V002 / H1 | +0.954352% | POOR / LOCAL_NEUTRAL; no V003 |
+| UB-LIVENESS-X | V001 | -20.878573% | POOR / engineering-reference only; no V002 |
+| HOTLOOP-BRANCH-HOIST-CHAMPION-X | V002 / HBH-09 | -0.048802% | POOR / Planning review; no V003 |
+| REDUCE-FINALIZE-HANDOFF-CHAMPION-X | V001 / RFH-1 | NOT SCORED YET | declaration committed; implementation/validation in progress |
+| TILECOUNT-STATIC-UNROLL-CHAMPION-X | none | NO SCORE | H1/H2/H3 final gate FAIL; MAIN_SELECTED=NONE |
+
+### New events
+
+- REDUCE V001 exact R31B V011 sibling baseline and RFH-1 declaration:
+  `w2/m2/reduce-finalize` commit `c7bad949`; parent/submission SHA is
+  `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`.
+  Independent Route Agent owns the only allowed source change. Build,
+  correctness and score are not yet recorded here.
+- TILECOUNT final gate is committed in `w2/m2/tilecount-unroll` at
+  `e36220ed`. Exact Parent source and compile artifact identity were found,
+  but the available HiIPU device binary could not be disassembled to verify
+  loop backedges/index work. All three hypotheses fail the required codegen
+  gate; this is `UNVERIFIED`, not evidence that the compiler already unrolled
+  them. No V001 was created.
+
+```text
+PLANNING_DECISIONS_CHANGED=0
+NEW_ROUTES_OUTSIDE_APPROVED_5=0
+```
