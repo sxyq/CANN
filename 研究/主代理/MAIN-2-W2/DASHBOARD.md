@@ -1,8 +1,25 @@
 # MAIN-2 Local Control Dashboard
 
-UPDATED_UTC: 2026-10-03T08:20:00Z
+UPDATED_UTC: 2026-10-03T08:28:00Z
 SCOPE: MAIN-2 local control only
 CANONICAL_SHARED_LEDGER: UNMODIFIED
+
+## Event receipt — HBH-09 V002 N=1 runner restore and Window J predeclaration — 2026-10-03T08:28Z
+
+```text
+CONTROL_HEAD_BEFORE_RECEIPT=ce2dd8ec
+ROUTE_RESTORE_COMMIT=8ade847c
+ROUTE_PROTOCOL_COMMIT=f3a2c812
+CURRENT_STATE=WAITING_FOR_VALID_LOCAL_SCORE
+RUNNER_SOURCE_SHA256=86d6ad6df82ec7b2c6b414c2759a72a48567cf8f11a382a7fdcd003f45a955c0
+DEVICE=7; PRIMARY_SHAPE=BF16_D6144_ROWS40; REPEAT_BATCH_N=1
+PARENT_SHA256=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
+CANDIDATE_SHA256=1aa6d8ecaa1af058b039341f63c67f4f67403bb4a8e5c6bc57dd96914f42cb65
+LOCAL_SCORE=NONE; NO_NEXT_PERFORMANCE_REVISION=YES
+```
+
+The failed N=8 calibration was explicitly reverted. Window J is a fresh N=1
+primary-shape qualification; P/C remains conditional on qualification PASS.
 
 ## Event receipt — HBH-09 V002 Window I repeat-batch calibration result — 2026-10-03T08:20Z
 
