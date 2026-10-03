@@ -9,6 +9,33 @@
 - Support-A 交接结论：仓内缺少 Official case 与 shape/dtype 的映射。Support-B 交接结论：`PIPELINE_ONLY_EXPLANATION=INSUFFICIENT`；历史 2.16x 上限与 msprof 数值无法从仓内原始资料复算。本记录未从时间推测 shape，也未把这些历史数值当成重新测得的结果。
 - 旧文档 `研究/OFFICIAL-CASE-ANALYSIS.md` 以时间量级推测 case14 可能是宽行或多行。该推测没有输入元数据支撑，不作为本研究事实。
 
+## 本轮证据复核（2026-10-03）
+
+### Official case 与可执行条件
+
+- `线上结果/R31B/V011/result.json` 将 case14 标为 `6a9a9a99bf41025d6013ebbe`：`timeUs=16486.82`、`bestTimeUs=3750.12`、PASS。`线上结果/R31A/V011/result.json` 对同一 ID 给出 `16603.94us`，Official 总分 `42.18`，低于其父版 `44.09`。两个结果都没有 rows、D 或 dtype；`线上结果/R31A/V016/problem-full.json` 对该 ID 也只保留 ID/type，没有输入 shape。
+- 竞赛 wrapper `线上结果/R31A/V016/judge-main-template.asc` 以 `run_kernel(..., availableCoreNum, stream, epsilon)` 调用候选；父版 `线上结果/R31B/V011/submission.asc` 使用同一 host ABI，当前只发出一个 kernel launch，且没有从 wrapper 收到 workspace 指针。
+- workspace 在该 ABI 内可由候选 host 侧分配：归档精确提交源 `归档/历史工作区/C001/kernel.txt` 中的 `run_kernel` 调用 `aclrtMalloc` 分配 tiling 与 workspace，再把 workspace 作为 kernel 参数传入；同一 stream 完成后同步并释放。多 kernel 也能从同一 `run_kernel` 向同一 stream 连续发出：精确提交源 `归档/历史工作区/R31B/R31B-V008-DSLICE-SMALL-R_kernel.asc` 发出四个有序 launch。两种写法都没有证明性能或正确性；V008 Official 为 0/15 Runtime Error。
+
+### D-slice 历史证据的边界
+
+- R008 状态文件 `归档/phase3-before-reset-20260920/管理/路线状态/R008.json` 仍是 `PLANNED`。`FULL-R008-TILE-CROSS-CORE/V001` 的提交源 `归档/phase3-before-reset-20260920/实验/online/FULL-R008-TILE-CROSS-CORE/V001/6aae33a6b0477ec41ec3e2f1/kernel.txt` 明确每行由一个 core 完成，只按 row/tile task 排 core；它不是 D-slice。Official 15/15，case14 为 `118917.6us`。因此该结果说明这个完整实现很慢，不能当作 D-slice 失败证据。
+- C001 的 `线上结果/C001/result.json` 与归档 `kernel.txt` 对应同一上传源。Official TLE 只发生在 testcase 1；testcase 14 是 `Skipped`，没有 case14 耗时。仓内保留 C001 源码、编译记录和 Judge JSON，没有单独的运行时 TLE 控制台日志。因此 C001 是 D-slice 方案的负面 Official 结果，不是 case14 的失败样本。
+- R31A V011 源码 `归档/历史工作区/R31A/R31A-V011-submission.asc` 的 D-slice 分支条件为 FP32、`D>8192` 且 host 计算出每行至少两个 slice。其 testcase 14 的耗时高于 best，但 Official 数据没有 shape，不能确认 case14 是否进入该分支，也不能单靠全局退分归因。
+- R31B V008 的 exact source 已在 `归档/历史工作区/R31B/R31B-V008-DSLICE-SMALL-R_kernel.asc`，其 Official JSON 记 15/15 Runtime Error（包含 testcase 14）。这证明该四阶段写法未能通过 Official，但结果没有提供输入 shape 或具体 runtime 原因，不能据此判定低-row/超宽条件已被 case14 覆盖。
+
+### 成本与 profile 交叉核对
+
+- 未在仓内找到单独命名为 `SUPPORT-B` 的手交文件。已交叉核对 `worktrees/m1/shape-tiling/研究/SHAPE-TILING-CHAMPION-X/CASE14-BOTTLENECK-ATTRIBUTION.md` 与 `CASE14-SEGMENTED-TIMING.md`。其中 8.28us/row 与约 2000 rows 是用 Official 总耗时除以本地 D=32768 的每行成本得到的规模估计，不是输入元数据。
+- 分段数据来自本地 `2x/8x/16x32768 FP32` 和 `2x/8x16384 FP32`；这些行数和 D 未与 testcase 14 对上。`1.23/4` 来自按 kernel duration 分桶的 535 个 msprof task，`>=13us` 只是“与 case14 耗时量级相近”的桶。当前 shape-tiling V002 证据目录没有保留 `op_summary_*.csv` 等原始 profile 导出，故无法从仓内原始 profile 独立复算 `1.23/4` 或 2.16x 理想上限。它们只作为历史本地线索，不是 case14 profile 或本轮新测量。
+
+### MAIN-2 去重交叉核对
+
+- `worktrees/w2/m2/interpass/研究/INTERPASS-PIPELINE-CHAMPION-X/TRACK-B-HANDOFF.md` 将行内 Pass 边界、MTE2/V/MTE3 调度列为范围，并把五个具体 issue 时序与 ASYNC-OVERLAP、ASYNC-TRIPLE、COEFF-LOCALITY、R31A/R31B 记录逐项比对；结论是没有独立未覆盖方向。它同时说明若干 Wave-2 路线的原始包不在该 canonical tree，故这里引用的是已提交 handoff 与共享记录，不把缺失原始包算作本轮测量。
+- `worktrees/w2/m2/crossrow/研究/CROSSROW-PIPELINE-CHAMPION-X/TRACK-B-HANDOFF.md` 记录父版 Pass-1 已在 `(row,tile)` task 间双槽预取；相邻行的输入/计算组合可能自然出现。其三个跨行阶段方案均判重复。该路线不切同一 row 的 D，属于相邻去重证据，不可用来证明 case14 的 rowCount。
+
+结论：workspace 分配与同 stream 多 kernel 在 host ABI 层可实现；低-row/超宽 FP32 条件、活跃 core 数、case14 的 stage profile 都未获输入或逐 case trace 证实。现有 D-slice Official 结果为负，但没有一个能单独定位成 case14 的 D-slice 失败测量。
+
 ## Parent 执行结构
 
 `submission.asc` 将输入前导维折叠为 rowCount，将末维作为 D。宽行路径在 `D > 8192` 时启用；每行的 tile 数为 `ceil(D / selectedTileWidth)`。tile 宽起始为 4096，UB 预算不够时可递减到 2048。精确 case14 的 D 未知，因此 tiles/row 不能给出数值。
@@ -35,7 +62,7 @@ MAIN-1 状态材料另记了 Pass1 63–73%、Pass2 26–38%、pipeline sum 1.23
 - `MULTIROW-DMA-CHAMPION-X` 覆盖 stride 与 multi-row DMA。V001 退步；V002 的对齐 DataCopy 形式与控制组差异在噪声范围内。跨行合批或合并 DMA 属重复方向。
 - `SCHED-CHAMPION-X` 覆盖按 32B 对齐的行组所有权；该路线曾有局部收益，但现已只作调度参考。改变多行 row ownership 不等于跨 core 拆分一条 row。
 - `REDUCE-HIER-X` 的多种 row 内 reduction 变体未形成可信收益。只改变单 core 内 partial sum 的折叠方式也属于已覆盖方向。
-- 历史 `R008 Tile 跨核` 记有 D-slice 失败；`C001 协作 D-Slice 归约` 记录为 TLE。`R31A V011` 也记录为 few-row wide D-slice，Official 42.18 低于父版 44.09，但当时没有 per-case shape 映射，不能归因到 case14。
+- D-slice 负面证据来自 C001、R31A V011 和 R31B V008；R008 的完整 V001 是不切 D 的 row/tile core mapping。C001 的 TLE 在 testcase 1 且跳过 case14；R31A V011 的 testcase 14 虽变慢，shape 与分支执行状态缺失；R31B V008 的 testcase 14 Runtime Error 也无 shape 与具体原因。它们提高了重试风险，但不能作为 case14 已触发低-row/超宽分支的证据。
 - 因此，跨 core 拆分同一 row 已有概念重合与负面历史；另加一层 workspace/双 kernel 仍属相邻实现，不能仅凭 case14 的时间比重新立项。
 
 ## 候选假设
@@ -47,14 +74,15 @@ MAIN-1 状态材料另记了 Pass1 63–73%、Pass2 26–38%、pipeline sum 1.23
 - `EXPECTED_SHAPES`：少量 rows、很大 D；FP32 优先做精度原型，FP16/BF16 需沿用各 dtype 的 y 语义。具体范围待 Official 元数据给出。
 - `WHY_IT_MAY_HELP`：同一 row 的 tiles 可在多个 core 并行，增加向量计算与分布式 MTE 的总并行度。
 - `WHY_IT_MAY_FAIL`：多一次 launch；第一阶段读取 x/residual 并写 partials，第二阶段需再次读取 x/residual、gamma/bias 并写 output。若 rows 已足以占满 core，额外同步和流量只会增加时间。
-- `ASCEND_FEASIBILITY`：跨 kernel 的 stream 顺序可提供阶段边界；单 kernel 内没有可供全 grid 使用的安全 barrier。需确认 direct-invoke host ABI 可传 workspace，并确认 workspace 生命周期与第二次 launch 均受支持。
+- `ASCEND_FEASIBILITY`：wrapper 的 `run_kernel` 收到 `aclrtStream`；C001 源码证明可在 host 侧分配 workspace，R31B V008 源码证明可顺序发出多个 kernel。API 形态可行，正确性和性能仍未通过；单 kernel 内不可假设有全 grid barrier。
 - `UB/CORE/DMA_IMPACT`：每 row 的 workspace 约为 `4 * ceil(D/tileWidth)` bytes；第二阶段每个 core 还要读该 row 的 partials。core 并行度增加，GM 流量也增加。
 - `SYNC_IMPACT`：依靠两次有序 launch，不做跨 core 自旋等待。增加一次 launch 边界；partial sum 写入须在第一 kernel 完成后对第二 kernel 可见。
 - `PRECISION_RISK`：partial 与最终 sum 保持 FP32；归约顺序改变仍会带来舍入差。必须确认低精度 y 的舍入位置不变，并覆盖宽 FP32 中 Parent 已知的非确定误差现象。
-- `DUPLICATE_CHECK`：与 Main-2 interpass overlap、crossrow DMA、行组 ownership、单 core reduction 拓扑机制不同；但跨 core 同 row reduction 已被 R008/C001 覆盖，C001 有 TLE 记录。R31A V011 的全局 Official 回退也不能定位到 case14。当前判为重复；如要重开，须先取得旧 C001 的 exact source / TLE log，并证明 Official case 的 rows、D、dtype 及新两阶段调用机制提供旧结果没有验证的新条件。
+- `DUPLICATE_CHECK`：R008 V001 不切 D；同 row D-slice 已由 C001、R31A V011 与 R31B V008 覆盖，机制重复风险高。C001 exact source 与 TLE JSON 已齐，但没有运行时 TLE 日志且 testcase 14 被跳过；R31A V011 的 case14 shape 缺失；R31B V008 exact source 与全测 Runtime Error JSON 已齐但失败原因未知。两阶段调用的同步组织不同，尚不足以抵消同一 D-slice reduction 的重复性。
+- `FALSIFIABLE_TEST`：先取得 Official case14 的 rows、D、dtype 与可用 core 数。若不满足 FP32、`D>8192`、每行至少两个 slice，则“case14 因低 rowCount 使大部分 core 空闲”的 H1 前提不成立，应停止该机制方向；若满足，再由 Main 判断是否允许 exact-shape correctness 与测量。
 - `MINIMAL_OFAT_DIFF`：只变 row ownership 与两阶段 partial reduction；tile 算法、epsilon、归一化次序、dtype 算术和输出公式保持 Parent。
-- `EXPECTED_LOCAL_PROBES`：先拿到 case14 的 rows/D/dtype 与目标设备 core 数，再取得旧 C001 的 exact source 和 TLE log；静态确认 workspace/launch ABI。只有 Main 认为新条件足以重开后，才做 exact-shape correctness、Parent same-binary 与单变量配对测量。当前未做设备运行或测量。
-- `MATURITY`：`DUPLICATE`；case14 专项是否值得重开仍为 `NEEDS_MORE_EVIDENCE`。
+- `EXPECTED_LOCAL_PROBES`：先取 Official 输入元数据、目标设备 core 数与 exact testcase14 dispatch/profile；这些资料到位前不创建 Revision、不做设备运行或测量。C001 exact source/TLE JSON 已在仓内，缺的是它的运行时控制台日志。
+- `MATURITY`：`NEEDS_MORE_EVIDENCE`；实施机制与历史 D-slice 重复，case14 前提未证实。
 
 ### H2：扩大 tile 并调整 UB 驻留以减少逐 tile 周转
 
@@ -70,6 +98,7 @@ MAIN-1 状态材料另记了 Pass1 63–73%、Pass2 26–38%、pipeline sum 1.23
 - `DUPLICATE_CHECK`：与 Main-1 SHAPE-TILING 的 tile 轴相撞；目前不构成新假设。
 - `MINIMAL_OFAT_DIFF`：仅改 tile 宽度或驻留行数其中一个变量，不同时改流水。
 - `EXPECTED_LOCAL_PROBES`：取得 shape 后，在 Parent 上采集 per-stage 与 tile/barrier 计数；仅当瓶颈证据与旧探针覆盖不同，再申请单变量验证。
+- `FALSIFIABLE_TEST`：仅当官方 D 确认落入多 tile 路径才评估；若 exact-shape 的 tile 数下降而配对差值仍在该形状噪声范围内，则否定 tile 周转是该 case 的主因。V002 的本地 32768 探针已有 8→6 tile、方向不稳的微小差异，不能外推至未识别的 case14。
 - `MATURITY`：`DUPLICATE`。
 
 ### H3：同一 row 的 tile 流中加深 MTE2/V/MTE3 重叠
@@ -86,6 +115,7 @@ MAIN-1 状态材料另记了 Pass1 63–73%、Pass2 26–38%、pipeline sum 1.23
 - `DUPLICATE_CHECK`：与 Main-2 ASYNC-OVERLAP-CHAMPION-X 和 Main-1 的 pipeline 分析重复。
 - `MINIMAL_OFAT_DIFF`：只调整一个 stage 的事件/预取次序，保留 Parent 算术、tile 和 row ownership。
 - `EXPECTED_LOCAL_PROBES`：若未来重开，先取 case14 原始 timeline，量出 MTE2/V/MTE3 重叠区间与空隙，再和已有 V001–V004 覆盖核对。
+- `FALSIFIABLE_TEST`：需要绑定 testcase14 的原始 timeline；若关键路径没有可覆盖的 MTE2/V/MTE3 空档，或空档已被父版路径覆盖，则否定继续加深该 row 内流水。历史 `1.23/4` profile 不满足这个 case 绑定条件。
 - `MATURITY`：`DUPLICATE`。
 
 ### H4：多 row 连续搬运与 row-group 分配
@@ -102,10 +132,15 @@ MAIN-1 状态材料另记了 Pass1 63–73%、Pass2 26–38%、pipeline sum 1.23
 - `DUPLICATE_CHECK`：与 Main-2 MULTIROW-DMA-CHAMPION-X、SCHED-CHAMPION-X 重复；已有结果未支持继续沿同轴开发。
 - `MINIMAL_OFAT_DIFF`：只变连续搬运或 row group 大小中的一个，不同时改变 tile 和 reduction。
 - `EXPECTED_LOCAL_PROBES`：确认 rows 与内存对齐后，先以 trace 数出 DMA 命令及 burst 字节，再决定是否值得后续验证。
+- `FALSIFIABLE_TEST`：若 rows=1，则跨 row 合并机制不成立；若 rows>1，也需先证实 testcase14 的 DMA 描述符/带宽由行边界主导，并与已有 MULTIROW-DMA、CROSSROW 路线覆盖范围区分。
 - `MATURITY`：`DUPLICATE`。
 
 ## 结论与待补输入
 
-当前资料不能确认 case14 是单行、低 rowCount、宽 D 或任一 dtype；也不能给出活跃 core、tiles/row 与 Vector/MTE2/MTE3 利用率。H1 与 Main-2 的 interpass/crossrow 机制有区别，但和早期 D-slice 同 row 归约重合；H2–H4 也已有路线覆盖，暂没有可直接选中的新假设。
+四项假设针对不同机制：同 row D-slice、tile 粒度、row 内流水、跨 row 搬运/归属；当前都没有可直接创建 Revision 的假设。H1 还未证明目标前提，H2–H4 与既有路线相撞。
 
-Main 若要继续判断，先需 Official testcase 元数据映射（rows、D、dtype）、该 case 的 kernel/profile 原始文件和 profile 指标定义、旧 C001 exact source/TLE log，以及 direct-invoke workspace 与多 kernel 调用侧能力。缺少这些资料时，本 Route 停在 `NEEDS_MORE_EVIDENCE`；本轮没有 Candidate、设备运行、计时或线上操作。
+## Main 交接建议
+
+建议先做机制证伪交接，再讨论实现：请 Main 获取 testcase14 的权威 rows、D、dtype 和设备可用 core 数，并将 per-case dispatch 与 profile 绑定到该 ID。若条件不满足 FP32、`D>8192`、rowCount 小于可用 core 的 D-slice 触发范围，则记录 H1 前提不成立，停止以低 rowCount/超宽解释 case14；若满足，再由 Main 决定是否安排 exact-shape correctness 与测量。现阶段继续保持 `NEEDS_MORE_EVIDENCE`，不创建 Candidate 或 Revision。
+
+本轮只读历史证据，未运行 Candidate、构建、正确性、设备实验、计时或线上提交。
