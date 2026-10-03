@@ -47,4 +47,4 @@ The Parent already batches scalar reads and V/S boundaries in aligned small-row 
 
 ## STATUS
 
-Candidate source now implements the two-row `ProcessNarrowMidOverlap` scalar-handoff grouping. The rounded FP32 value-row stride is used for both rows; at D=257 it is 264 elements, and the existing value/reduction buffers are reused. Build and runtime behavior remain unverified.
+Candidate source now implements the two-row `ProcessNarrowMidOverlap` scalar-handoff grouping. The rounded FP32 value-row stride is used for both rows; at D=257 it is 264 elements, and the existing value/reduction buffers are reused. In the two-row path, no MTE3 store precedes the second input load, so its input preamble has no MTE3 wait; the wait before reusing the second output staging buffer and the function-exit wait remain. Build and runtime behavior remain unverified.
