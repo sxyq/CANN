@@ -32,3 +32,17 @@
 5. EPI has one distinct candidate after duplicate rejection; Planning should decide whether this pool is sufficient for further route research. Main makes no lifecycle decision.
 
 No build, correctness run, performance run, profiling, server3 job or Online submission was performed for this review.
+
+## Official Input-Mapping Follow-up (2026-10-03)
+
+- The read-only public Judge query returned the problem ID, 15 testcase IDs and current public `tbest` values. The submission-detail query for R31B V011 (`6ab2c10c0304f72a56a0c5cb`) returned HTTP 403. The public response contains no per-case input shape, dtype, `availableCoreNum`, dispatch, or core-ownership fields; testcase latency is not used to infer them.
+- R31B V011 source behavior is known, but no testcase can be assigned to a branch from the available Judge data. The entry point flattens leading dimensions into `rowCount`, takes the final dimension as `rowWidth`, clamps requested blocks to `rowCount`, and dispatches dtype IDs 0/1/2 to FP32/FP16/BF16. Widths above 8192 use the wide path; narrower inputs select among existing paths using dtype, width and per-core row count.
+- The retained C001 source confirms four vector cores cooperate across a row's D dimension. Its Official result records case 1 TLE and cases 2–15 skipped; it supplies no execution evidence for case 14 and no separate TLE diagnostic log. Case14 applicability therefore remains unproven.
+- CASE47 case4/case7, CASE14 case14, FASTPATH donor coverage, and TINY case1/3/5 remain unmapped. Keep all four at `MAIN_SELECTED=NONE`; no performance Revision, NPU run, or Online submission follows from this data.
+- Evidence references: `线上结果/R31B/V011/result.json`, `线上结果/R31B/V011/submission.asc`, `线上结果/R31B/V011/source-meta.json`, `线上结果/C001/result.json`, and `归档/历史工作区/C001/kernel.txt`.
+
+## SYNC W60 Evidence Retrieval Follow-up (2026-10-03)
+
+- The existing W60 same-binary result remains PASS in the route record, but its raw and jitter files have not been copied from server3. The assigned read-only retrieval attempt and a separate read-only SSH attempt both timed out; no remote query or transfer ran.
+- Remote evidence remains under `/home/data4t2/lelinfeng/cann/w2/SYNC-TOPOLOGY-CHAMPION-X/V001/results/SYNC-TOPOLOGY-CHAMPION-X-V001-D4-WARMUP60-20261003T020523Z/`. Required files are `SAME-BINARY-raw.tsv` and `SAME-BINARY-jitter.txt`; local SHA values are not available yet.
+- Parent window and Candidate P/C remain NOT_RUN. The earlier lease is RELEASED. After SSH access returns, retrieve the existing files first, then perform a live device read and record a new lease before any timing stage. No Candidate source or timing harness changed in this follow-up.
