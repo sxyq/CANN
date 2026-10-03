@@ -1,8 +1,28 @@
 # MAIN-2 Local Control Dashboard
 
-UPDATED_UTC: 2026-10-03T07:05:00Z
+UPDATED_UTC: 2026-10-03T07:10:16Z
 SCOPE: MAIN-2 local control only
 CANONICAL_SHARED_LEDGER: UNMODIFIED
+
+## Event receipt — HBH-09 V002 Window D protocol predeclaration — 2026-10-03T07:10Z
+
+```text
+CONTROL_HEAD_BEFORE_RECEIPT=ef55896c
+ROUTE_PROTOCOL_COMMIT=ef0618a0
+CURRENT_STATE=WAITING_FOR_VALID_LOCAL_SCORE
+DEVICE=4; PRIMARY_SHAPE=BF16_D6144_ROWS80
+PARENT_SHA256=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
+CANDIDATE_SHA256=1aa6d8ecaa1af058b039341f63c67f4f67403bb4a8e5c6bc57dd96914f42cb65
+RUNNER_SHA256=c4d7b89494ed771c5ce89444c7b5ad4f8fd321c087b1fdb80097ce7ba2c82fb7
+LOCAL_SCORE=NONE
+NO_NEXT_PERFORMANCE_REVISION=YES
+```
+
+Window D repeats the primary BF16 D6144 rows=80 on d4 after Window A's d3
+paired Parent jitter and mixed directions failed to support a score. The d4
+07:10 probe showed HBM usage 94%, AICore 0%, and no shared lease. Next:
+refresh all-device/process/lease snapshots; run same-binary first, with
+immediate 8-block paired P/C only if qualification passes.
 
 ## Event receipt — HBH-09 V002 Window C qualification result — 2026-10-03T07:05Z
 
