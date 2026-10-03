@@ -66,3 +66,9 @@ No build, correctness run, performance run, profiling, server3 job or Online sub
 - `ACTIVE_CORE_COUNT` is duplicate work against R016/FULL-R016, SCHED-ROWGROUP and CASE47-H2. The five remaining conditional mechanisms require a testcase-ID keyed input manifest and path replay before Main review; they do not authorize implementation. The Official timer boundary also remains unknown.
 - The current SELECTIVE-FASTPATH task identifies a full V017 donor qualification for BF16 D=32768. Exclude that exact donor case from TINY's V011 internal probe set if the future manifest matches; do not infer any other overlap from route names.
 - Keep `MAIN_SELECTED=NONE`. No Revision, build, device run, submission, or route lifecycle decision follows.
+
+## CASE14 API-Feasibility Follow-up (2026-10-03)
+
+- Route evidence commit: `3ed15bd4fb713b2c0273d8932e2936b84ee4d7d0`. C001 source compiles for the recorded CANN 8.5.0.alpha002 / DAV_C220 Vector target, allocates workspace inside its host wrapper, and uses a two-stage `GroupBarrier` design across four Vector Cores. This confirms source/API expressibility, not successful execution.
+- C001 Official result is TLE on case1; cases2-15, including case14, are skipped. No case14 rows, D, dtype, dispatch or core count is available. R31B V008's four-launch source has a 0/15 Runtime Error result with no diagnostic that identifies the cause.
+- Main review: keep D-slice applicability `UNKNOWN` and `MAIN_SELECTED=NONE`. Input metadata, V011 path replay, C001 TLE diagnostics and per-case profile remain missing. No Revision, Build, correctness run, device measurement or route lifecycle decision follows.
