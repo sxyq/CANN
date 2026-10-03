@@ -1,0 +1,123 @@
+--- a/submission.asc
++++ b/submission.asc
+@@ -517,0 +518,120 @@
++        }
++
++        if (localRows == 2) {
++            const int32_t valueRowStride =
++                ((valid + kSmallFp32ScalarStride - 1) / kSmallFp32ScalarStride) *
++                kSmallFp32ScalarStride;
++            float meanSquares[2];
++            float invRmsValues[2];
++
++            for (int32_t batchRow = 0; batchRow < 2; ++batchRow) {
++                if (batchRow != 0) {
++                    AscendC::WaitFlag<AscendC::HardEvent::V_MTE2>(inputRelease);
++                }
++                const uint64_t row = beginRow + static_cast<uint64_t>(batchRow);
++                const uint64_t rowOffset = row * rowWidth;
++                AscendC::LocalTensor<T> xLocal = xBuf_.Get<T>();
++                AscendC::LocalTensor<T> residualLocal = residualBuf_.Get<T>();
++                AscendC::LocalTensor<float> valueRow =
++                    valueFp32Buf_.Get<float>()[batchRow * valueRowStride];
++                AscendC::LocalTensor<float> xFp32 = xFp32Buf_.Get<float>();
++                AscendC::LocalTensor<float> residualFp32 = residualFp32Buf_.Get<float>();
++                AscendC::LocalTensor<float> reduceLocal = reduceFp32Buf_.Get<float>();
++
++                Load(xLocal, xGm_, rowOffset, valid);
++                Load(residualLocal, residualGm_, rowOffset, valid);
++                AscendC::SetFlag<AscendC::HardEvent::MTE2_V>(inputReady);
++                AscendC::WaitFlag<AscendC::HardEvent::MTE2_V>(inputReady);
++                if constexpr (AscendC::IsSameType<T, float>::value) {
++                    AscendC::Add(valueRow, xLocal, residualLocal, valid);
++                } else if constexpr (std::is_same<T, half>::value) {
++                    AscendC::Add(xLocal, xLocal, residualLocal, valid);
++                    AscendC::PipeBarrier<PIPE_V>();
++                    ToFloat(valueRow, xLocal, valid);
++                } else {
++                    ToFloat(xFp32, xLocal, valid);
++                    ToFloat(residualFp32, residualLocal, valid);
++                    AscendC::PipeBarrier<PIPE_V>();
++                    AscendC::Add(valueRow, xFp32, residualFp32, valid);
++                }
++                AscendC::PipeBarrier<PIPE_V>();
++                AscendC::Mul(xFp32, valueRow, valueRow, valid);
++                AscendC::PipeBarrier<PIPE_V>();
++                AscendC::ReduceSum(
++                    reduceLocal[batchRow * kSmallFp32ScalarStride], xFp32,
++                    residualFp32, valid);
++                AscendC::SetFlag<AscendC::HardEvent::V_MTE2>(inputRelease);
++            }
++
++            AscendC::LocalTensor<float> reduceLocal = reduceFp32Buf_.Get<float>();
++            SyncVToS();
++            for (int32_t batchRow = 0; batchRow < 2; ++batchRow) {
++                meanSquares[batchRow] =
++                    reduceLocal.GetValue(batchRow * kSmallFp32ScalarStride) * invRowWidth +
++                    epsilon;
++            }
++            SyncSToV();
++            for (int32_t batchRow = 0; batchRow < 2; ++batchRow) {
++                AscendC::LocalTensor<float> scalarSlot =
++                    reduceLocal[batchRow * kSmallFp32ScalarStride];
++                AscendC::Duplicate(scalarSlot, meanSquares[batchRow], 1);
++                AscendC::Sqrt(scalarSlot, scalarSlot, 1);
++                AscendC::PipeBarrier<PIPE_V>();
++            }
++            SyncVToS();
++            for (int32_t batchRow = 0; batchRow < 2; ++batchRow) {
++                invRmsValues[batchRow] =
++                    1.0f / reduceLocal.GetValue(batchRow * kSmallFp32ScalarStride);
++            }
++            SyncSToV();
++
++            for (int32_t batchRow = 0; batchRow < 2; ++batchRow) {
++                if (batchRow != 0) {
++                    SyncMTE3ToV();
++                }
++                const uint64_t row = beginRow + static_cast<uint64_t>(batchRow);
++                const uint64_t rowOffset = row * rowWidth;
++                AscendC::LocalTensor<float> valueRow =
++                    valueFp32Buf_.Get<float>()[batchRow * valueRowStride];
++                AscendC::Muls(valueRow, valueRow, invRmsValues[batchRow], valid);
++                AscendC::PipeBarrier<PIPE_V>();
++                if constexpr (AscendC::IsSameType<T, float>::value) {
++                    AscendC::Mul(valueRow, valueRow, gammaLocal, valid);
++                    AscendC::PipeBarrier<PIPE_V>();
++                    AscendC::Add(valueRow, valueRow, biasLocal, valid);
++                    AscendC::PipeBarrier<PIPE_V>();
++                    SyncVToMTE3();
++                    Store(outputGm_, rowOffset, valueRow, valid);
++                } else if constexpr (std::is_same<T, half>::value) {
++                    AscendC::LocalTensor<T> outputLocal = outputBuf_.Get<T>();
++                    FromFloat(outputLocal, valueRow, valid);
++                    AscendC::PipeBarrier<PIPE_V>();
++                    AscendC::Mul(outputLocal, outputLocal, gammaLocal, valid);
++                    AscendC::PipeBarrier<PIPE_V>();
++                    AscendC::Add(outputLocal, outputLocal, biasLocal, valid);
++                    AscendC::PipeBarrier<PIPE_V>();
++                    SyncVToMTE3();
++                    Store(outputGm_, rowOffset, outputLocal, valid);
++                } else {
++                    AscendC::LocalTensor<float> xFp32 = xFp32Buf_.Get<float>();
++                    AscendC::LocalTensor<float> residualFp32 = residualFp32Buf_.Get<float>();
++                    ToFloat(xFp32, gammaLocal, valid);
++                    ToFloat(residualFp32, biasLocal, valid);
++                    AscendC::PipeBarrier<PIPE_V>();
++                    AscendC::Mul(valueRow, valueRow, xFp32, valid);
++                    AscendC::PipeBarrier<PIPE_V>();
++                    AscendC::Add(valueRow, valueRow, residualFp32, valid);
++                    AscendC::PipeBarrier<PIPE_V>();
++                    AscendC::LocalTensor<T> outputLocal = xBuf_.Get<T>();
++                    FromFloat(outputLocal, valueRow, valid);
++                    AscendC::PipeBarrier<PIPE_V>();
++                    SyncVToMTE3();
++                    Store(outputGm_, rowOffset, outputLocal, valid);
++                }
++            }
++            AscendC::WaitFlag<AscendC::HardEvent::V_MTE2>(inputRelease);
++            SyncMTE3ToV();
++            pipe_.ReleaseEventID<AscendC::HardEvent::MTE2_V>(inputReady);
++            pipe_.ReleaseEventID<AscendC::HardEvent::MTE2_V>(paramReady);
++            pipe_.ReleaseEventID<AscendC::HardEvent::V_MTE2>(inputRelease);
++            return;

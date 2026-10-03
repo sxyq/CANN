@@ -47,4 +47,10 @@ The Parent already batches scalar reads and V/S boundaries in aligned small-row 
 
 ## STATUS
 
-Candidate source now implements the two-row `ProcessNarrowMidOverlap` scalar-handoff grouping. The rounded FP32 value-row stride is used for both rows; at D=257 it is 264 elements, and the existing value/reduction buffers are reused. In the two-row path, no MTE3 store precedes the second input load, so its input preamble has no MTE3 wait; the wait before reusing the second output staging buffer and the function-exit wait remain. Build and runtime behavior remain unverified.
+Candidate source implements the two-row `ProcessNarrowMidOverlap` scalar-handoff grouping. The rounded FP32 value-row stride is used for both rows; at D=257 it is 264 elements, and the existing value/reduction buffers are reused. No MTE3 store precedes the second input load, so its input preamble has no MTE3 wait; the wait before reusing the second output staging buffer and the function-exit wait remain.
+
+BUILD: PASS (RC=0), CANN 8.5.0.alpha002 / Ascend910B3 / dav-2201; exact-source log: `server3:/home/data4t2/lelinfeng/cann/server_runs/CASE47-SMALL-CLUSTER-CHAMPION-X-V001-D3-20261003T103449Z-CORR/V001/build-retry-02.log`.
+SOURCE_SHA256: `be313f80e5b088f1fe907f2f4221c61ab59ef720ce68cc9f9c941be20239c2db`.
+KERNEL_MODULE_SHA256: `6aa18a1af2ad6881658dcf697dc8b19b7e21f0dfc9d4bace69e64328f4f0c647`.
+CORRECTNESS: PASS (5/5), device 3, A=40; all five cases are PROXY inputs. D=257 FP32/FP16/BF16 with M=2*A, FP32 D=257 with M=A fallback, and FP32 D=256 aligned control all returned RC=0. Maximum absolute errors: FP32 `4.76837e-7`, FP16 `0.000976562`, BF16 `0`. Log: `server3:/home/data4t2/lelinfeng/cann/server_runs/CASE47-SMALL-CLUSTER-CHAMPION-X-V001-D3-20261003T103449Z-CORR/V001/correctness.log`.
+PERFORMANCE: NOT_RUN. OFFICIAL CASE4/CASE7 INPUT MAPPING: UNKNOWN. Online submission: NOT_PERFORMED.
