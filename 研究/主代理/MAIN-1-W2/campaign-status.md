@@ -197,23 +197,23 @@ Have each existing Route Agent prepare and commit its reproducible route-local b
 
 ```dashboard-json
 {
-  "handoffs": "CASE14, CASE47, FASTPATH, and TINY Track-B reviews recorded; SYNC V001 Build/Correctness pass and Parent stability blocks Local timing",
+  "handoffs": "CASE47, CASE14, FASTPATH, and TINY Track-B handoffs complete; no Official input map; SYNC V001 timing retry preparation active",
   "selected": "5 Planning-approved routes; 0/5 performance hypotheses MAIN_SELECTED",
   "activeAgents": 1,
   "pendingAgents": 0,
   "activeRevision": "SYNC V001 only",
-  "stage": "EVENT_DRIVEN_SYNC_LOCAL_MEASUREMENT_BLOCKED",
-  "state": "SYNC V001 Build/Link and both Correctness cases pass; Parent same-binary shows 29.29% block drift, so no Parent window or Candidate timing ran",
-  "nextStep": "Preserve raw evidence and review shape stability before any fresh lease; do not alter Candidate source or infer a performance verdict",
-  "blocker": "Parent same-binary block drift is 0.292906 (>0.25); Candidate P/C and Local score are unavailable",
+  "stage": "EVENT_DRIVEN_SYNC_PARENT_SAME_BINARY",
+  "state": "SYNC V001 60-warmup timing executable Build PASS; fresh Main d4 lease recorded; Parent same-binary is the only allowed timing stage under this lease. Recorded score champion R31B V011/45.16 lacks remote SHA; highest recorded exact triplet is EPI V002/44.96",
+  "nextStep": "Record Parent same-binary raw/jitter and release this lease; decide any later qualification stage from its result",
+  "blocker": "Official testcase input map unavailable; R31B V011 remote source identity absent; no Candidate timing or Local score",
   "planningDecisionsChanged": 0,
   "newRoutes": 3,
   "lanes": [
-    {"route":"SYNC-TOPOLOGY-CHAMPION-X","instruction":"Continue approved V001 Local closure","firstAction":"Review Parent same-binary drift evidence before any fresh measurement lease; preserve source and score state","revisionState":"RUN_ID SYNC-TOPOLOGY-CHAMPION-X-V001-D4-BUILD-FIX-6e650cf5-20261002T231909Z; Configure/Build PASS, Correctness PASS 2/2; Parent same-binary 62 samples, MAD/median 0.062929, block drift 0.292906 (>0.25); no Parent window, Candidate P/C, or Local score; lease released"},
-    {"route":"CASE47-SMALL-CLUSTER-CHAMPION-X","instruction":"Track-B Main review: NEEDS_MORE_EVIDENCE; no MAIN_SELECTED","firstAction":"Obtain Judge case4/case7 shape and dtype; revisit H1 only after evidence arrives","revisionState":"Commit 2404d4e4; H2/H5 DUPLICATE; H3 INFEASIBLE; H4 overlaps prior wide-tile work; no Revision"},
-    {"route":"CASE14-INTRAROW-PARALLELISM-CHAMPION-X","instruction":"Track-B: case 14; Agent 01a0fe2e-7772-7e83-825d-e90811e0db2c","firstAction":"Obtain case metadata, raw profile, C001 source/TLE log and workspace ABI evidence","revisionState":"Track-B commit 5fda6e90; NEEDS_MORE_EVIDENCE; H1 overlaps R008/C001; H2-H4 duplicate; MAIN_SELECTED=NONE"},
-    {"route":"SELECTIVE-FASTPATH-CHAMPION-X","instruction":"Track-B cycle complete: NEEDS_MORE_EVIDENCE; no MAIN_SELECTED","firstAction":"Obtain Judge input mapping; no implementation until Main selects a hypothesis","revisionState":"Commit 5f669c30; STORE V003 donor is precisely sourced; Official 44.38 vs V011 45.16; TINY mechanism review complete, case overlap unknown"},
-    {"route":"TINY-FIXED-OVERHEAD-CHAMPION-X","instruction":"Track-B Main review: NEEDS_MORE_EVIDENCE; no MAIN_SELECTED","firstAction":"Obtain Judge case1/3/5 metadata, dispatch facts, and Official timer boundary","revisionState":"Commit 990a6a37; five hypotheses reviewed; no Revision; shape/dtype mapping missing"}
+    {"route":"SYNC-TOPOLOGY-CHAMPION-X","instruction":"Continue approved V001 Local closure","firstAction":"Run Parent same-binary only under lease M1-SYNC-V001-D4-SAMEBINARY-W60-20261003T021619Z","revisionState":"60-warmup timing executable Build PASS; SHA 7815e6b6…494c6ca; Candidate SHA 27c853e1…a9117ec; new d4 lease active; no Parent window, Candidate P/C, or Local score yet"},
+    {"route":"CASE47-SMALL-CLUSTER-CHAMPION-X","instruction":"Track-B NEEDS_MORE_EVIDENCE; no MAIN_SELECTED","firstAction":"Obtain official input map for case4/case7","revisionState":"Research commit 8dfbc642; no Revision; shape/dtype and dispatch remain unknown"},
+    {"route":"CASE14-INTRAROW-PARALLELISM-CHAMPION-X","instruction":"Track-B NEEDS_MORE_EVIDENCE; no MAIN_SELECTED","firstAction":"Obtain official input map and source-bound case14 profile","revisionState":"Research commits d9dbd733, 17540c05; D-slice applicability unproven; no Revision"},
+    {"route":"SELECTIVE-FASTPATH-CHAMPION-X","instruction":"Research cycle complete; NEEDS_MORE_EVIDENCE; no MAIN_SELECTED","firstAction":"Obtain Official input mapping; no implementation until Main selects a hypothesis","revisionState":"Latest commit d0df90a7; branch ahead of remote by 2; donor local evidence does not prove V011 gain or Official coverage"},
+    {"route":"TINY-FIXED-OVERHEAD-CHAMPION-X","instruction":"Track-B NEEDS_MORE_EVIDENCE; no MAIN_SELECTED","firstAction":"Obtain Official input map for case1/3/5","revisionState":"Research commit 200cf036; no Revision; shape/dtype and dispatch remain unknown"}
   ]
 }
 ```
@@ -337,6 +337,33 @@ The three new worktrees are sparse, approximately 7.5 MB each, and were created 
 - The five mechanisms are separate at source level from FASTPATH's wide FP32 store donor, but Official case-to-path mapping is absent, so workload overlap cannot be ruled out. No Revision, Build, correctness run, device use, or performance measurement was started.
 
 - `PLANNING_DECISIONS_CHANGED=0`; `NEW_ROUTES=0`; `PERFORMANCE_HYPOTHESES_MAIN_SELECTED=0`.
+
+## MAIN1_CONTINUATION_RECEIPT (2026-10-03)
+
+### Official identity recomputation
+
+- `RECORDED_OVERALL_CHAMPION=R31B V011 / 45.16 / 15-of-15` remains the score recorded in the canonical route ledger.
+- Strict source audit requires the retained source bytes, `submission.sha256`, a recorded remote SHA, a matching `result.json` source SHA, a 15/15 result, and `formal_result_eligible=true` where that field exists. `CURRENT_VERIFIED_CHAMPION=EPILOGUE-ARITH-CHAMPION-X V002 / 44.96 / 15-of-15` is the highest result meeting those recorded conditions.
+- R31B V011 retained source, sidecar, and `result.json` source SHA agree, but its `source-meta.json` says the result digest came from the submit client, `judge_native_source_hash=MISSING`, and no remote SHA is recorded. Therefore `RECORDED_OVERALL_CHAMPION` and `CURRENT_VERIFIED_CHAMPION` remain separate until Judge-native or remote identity evidence is available.
+- The Planning-approved Direct Parent for the five Main-1 lanes remains the exact R31B V011 source. This audit does not change Parent selection, Official score history, or Planning decisions.
+- Read-only CANNJudge problem lookup returned the 15 testcase IDs and public timing references only. The submission lookup for R31B V011 returned HTTP 403. No retained source mapped testcase IDs to rows, D, dtype, dispatch, or core ownership.
+
+### Route handoffs and local execution
+
+| Route | Latest recorded state | Candidate / Revision | Next action |
+|---|---|---|---|
+| SYNC-TOPOLOGY-CHAMPION-X | V001 Build and Correctness PASS; prior Parent same-binary blocked at 0.292906 block drift; new 60-warmup timing executable Build PASS | V001; Candidate source SHA unchanged | Run Parent same-binary only under the newly recorded d4 lease, then release it and record the stage result |
+| CASE47-SMALL-CLUSTER-CHAMPION-X | Track-B `NEEDS_MORE_EVIDENCE`; no performance hypothesis selected | Research commit `8dfbc642`; no Revision | Obtain case4/case7 input and dispatch map; keep `MAIN_SELECTED=NONE` |
+| CASE14-INTRAROW-PARALLELISM-CHAMPION-X | Track-B `NEEDS_MORE_EVIDENCE`; D-slice applicability unproven | Research commits `d9dbd733`, `17540c05`; no Revision | Obtain case14 rows, D, dtype, dispatch, and a source-bound profile; keep `MAIN_SELECTED=NONE` |
+| SELECTIVE-FASTPATH-CHAMPION-X | One research cycle complete; mechanism differs from visible CASE47/TINY proposals, Official coverage unknown | Latest commit `d0df90a7`; branch ahead of remote by 2; no Revision | Await Official input mapping; no performance implementation |
+| TINY-FIXED-OVERHEAD-CHAMPION-X | Track-B `NEEDS_MORE_EVIDENCE`; no performance hypothesis selected | Research commit `200cf036`; no Revision | Obtain case1/3/5 input and dispatch map; keep `MAIN_SELECTED=NONE` |
+
+- CASE47, CASE14, FASTPATH, and TINY use their existing isolated Route worktrees and branches. No Candidate kernel was changed, no new Revision was opened, and no Official submission was started.
+- STORE-W2, EPI-W2, and SMALLMID worktrees remain closed. Their branches and all evidence remain present. Current-source restoration commits are STORE `53d9f04b`, EPI `d9c08342`, and SMALLMID `351be0cd`; classifications remain STORE/EPI `PARKED_BY_BASELINE_OR_ENVIRONMENT_BLOCK` and SMALLMID `CORRECTNESS_REJECTED`.
+- The three old evidence branches are ahead of their recorded remote refs by 1, 2, and 13 commits respectively. CASE47, CASE14, and TINY have no matching remote refs; FASTPATH is ahead by 2. SYNC support commits `c0b14f9b` and `32741065` were pushed, bringing its route branch to `origin`.
+- The canonical d4 lease was committed as `48baa17f` and pushed to `origin/main`. Latest preflight `2026-10-03T02:16:19Z`: d4 HBM `59190/65536 MB`, AICore `0%`, VLLM EngineCore PID `2999855`, project disk free `607G`; no SYNC runner or active d4 lease existed before this reservation.
+- New lease `M1-SYNC-V001-D4-SAMEBINARY-W60-20261003T021619Z` is active for Parent same-binary only. Candidate SHA, server source, local/remote runner source, and timing executable identity matched before the lease. Parent window and Candidate P/C have not run.
+- `PLANNING_DECISIONS_CHANGED=0`; `NEW_ROUTES_OUTSIDE_APPROVED_5=0`; `PERFORMANCE_HYPOTHESES_MAIN_SELECTED=0`.
 
 ## MAIN1_SYNC_TIMING_HARNESS_BUILD_ATTEMPT (2026-10-03)
 
