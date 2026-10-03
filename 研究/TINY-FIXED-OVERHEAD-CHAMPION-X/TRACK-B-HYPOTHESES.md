@@ -1,12 +1,12 @@
 # TINY-FIXED-OVERHEAD-CHAMPION-X — Track-B 假设研究
 
-STATUS: `TRACK_B_RESEARCH`; `REVISION=NONE`
+STATUS: `V001_SELECTED`; `REVISION=V001`
 WORKTREE: `/Users/sunyiyang/Desktop/Project/cann/worktrees/w2/m1/tiny-fixed-overhead`
 BRANCH: `w2/m1/tiny-fixed-overhead`
 DIRECT_PARENT: `线上结果/R31B/V011/submission.asc`
 PARENT_SOURCE_SHA256: `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`
 
-本记录只提出待审阅的 Track-B 假设，不选实现项。复审后，H1 `ACTIVE_CORE_COUNT` 与 R016/SCHED 的调度轴重复，保留为重复性记录，不再作为首选；H2 的机制边界清楚，可供 Main 审阅，但输入适用条件仍待证实。当前没有 `MAIN_SELECTED=YES`，不创建 Revision。
+本记录先前为 Track-B 研究。Main 已选择 H2 `ROW-OWNERSHIP-FASTFORM` 并批准 V001；Revision 声明已创建，Candidate 源码尚未改动。H1 `ACTIVE_CORE_COUNT` 与 R016/SCHED 的调度轴重复。固定成本补充保留另外三项研究和 SELECTIVE-FASTPATH H3 的机制交互。
 
 ## 范围与证据边界
 
@@ -24,12 +24,13 @@ PARENT_SOURCE_SHA256: `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c28
 | 假设 | 成熟度 | 关键缺证据 / 约束 |
 |---|---|---|
 | H1 ACTIVE_CORE_COUNT | `DUPLICATE` | 与 R016/SCHED 的 rows-per-task、active-core 调度同轴；case 输入映射仍未知。保留记录，不列入待选实现。 |
-| H2 ROW-OWNERSHIP-FASTFORM | `READY_FOR_MAIN_REVIEW`（机制审阅） | 仅在 `rowCount == blockCount` 生效；需确认目标输入条件及编译后除法/取余是否仍存在。未满足输入清单前不得据此选 Revision。 |
-| H3 GENERIC-SINGLE-TILE | `NEEDS_MORE_EVIDENCE` | 需确认目标输入命中通用路径、`tileCount=1`，并证明生成代码仍有循环控制。 |
-| H4 VALUE-BUFFER-FOOTPRINT | `NEEDS_MORE_EVIDENCE` | 需核实 UB 对齐/索引上界，并证明缩小配置会改变生成布局或资源占用。 |
-| H5 CONDITIONAL-PARAM-EVENT | `NEEDS_MORE_EVIDENCE` | 需确认目标输入命中窄中函数且 `localRows>1`，补齐 event API 生命周期约束和生成代码证据。 |
+| H2 ROW-OWNERSHIP-FASTFORM | `MAIN_SELECTED=YES` | V001 只在 `rowCount == blockCount` 使用直接映射；Official 命中条件未知。 |
+| H3 GENERIC-SINGLE-TILE | `NEEDS_MORE_EVIDENCE` | 需确认目标输入走通用路径、`tileCount=1`，且生成代码仍有循环控制。 |
+| H4 VALUE-BUFFER-FOOTPRINT | `SCREENED_OUT_FROM_CURRENT_SET` | 缩到 D 会与 small-batch 多行容量冲突；尚无资源报告说明该容量影响性能。 |
+| H5 CONDITIONAL-PARAM-EVENT | `NEEDS_MORE_EVIDENCE` | 仅 `ProcessNarrowMidOverlap` 且 `localRows>1` 时 `paramReady` 没有 Set/Wait；API 生命周期与生成物仍待确认。 |
+| H6 PROCESS-DISPATCH-SHORTCUT | `NEEDS_MORE_EVIDENCE` | 只针对 V011 `Process` 中编译后仍保留的设备侧运行时分支；dtype `if constexpr` 是编译期选择，不列入可省项。 |
 
-`READY_FOR_MAIN_REVIEW` 只表示 H2 的机制定义适合审阅，不代表输入命中已知、方向已选择或获准实现。所有假设共同受 case 1/3/5 输入清单缺失这一限制。
+当前四项为 H2、H3、H5、H6；仅 H2 获选为 V001。Official case 输入映射仍未知；PipeBarrier、V-S handoff 与 small-copy 的证据边界见固定成本补充。
 
 ## 源码路径与开销项
 
@@ -41,13 +42,13 @@ PARENT_SOURCE_SHA256: `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c28
 | Device entry / dispatch | `add_rms_norm_bias_custom` 对每个 block 建立 `op`，依次调用 `Init`、`Process`。`Process` 先分 wide path，再根据 dtype、宽度、对齐和 `localRows` 选择多个专用函数。 | L159、L3469 | 三个目标 case 各自命中的函数未知。 |
 | Block/core ownership | Host 取 `availableCoreNum`，限制到 `rowCount` 与 `UINT32_MAX` 后作为 `blockCount` 和 launch 数。非 wide path 以商、余数、`blockIdx` 算出 `beginRow/localRows`。 | L171-L176、L3534-L3548 | 目标 case 的 M、可用核数和实际 `blockCount` 未知。 |
 | InitBuffer | `D > kCacheElems(8192)` 走 wide 配置并返回；其余路径至少配置 `kTileElems(4096)` 的输入/工作 buffer，若干参数或 value buffer 配到 `kCacheElems`。BF16 另有 FP32 参数 buffer。 | L60-L155、L1241-L1288 | `InitBuffer` 对 Official kernel 时间、UB 占用和可驻留 block 数的贡献没有当前逐例资料或 ISA 证据。 |
-| Event | `ProcessNarrowMidOverlap` 分配 `inputReady`、`paramReady`、`inputRelease` 三个 event ID。`paramReady` 只在 `localRows==1` 的分支读写；多行时仍执行分配与释放调用。 | L499-L509、L513-L518、L537-L543、L576-L578、L617-L619 | 该路径是否覆盖目标 case未知；`AllocEventID` 的可见调用是否产生可观设备指令也未知。 |
+| Event | `ProcessNarrowMidOverlap` 分配 `inputReady`、`paramReady`、`inputRelease` 三个 event ID。`paramReady` 只在 `localRows==1` 时 Set/Wait；`localRows>1` 时参数先行加载，ID 仍被申请和释放。 | L499-L509、L513-L518、L537-L543、L576-L578、L617-L619 | 该路径是否覆盖目标 case未知；`AllocEventID` 的可见调用是否产生设备工作，以及条件化分配/释放是否符合目标 CANN 版本约束，仍未知。 |
 | Barrier / V-S handoff | 通用两遍路径和窄中路径存在多个 `PipeBarrier<PIPE_V>`；通用路径还通过 `SyncVToS` / `SyncSToV` 包围 scalar `GetValue`。这些边各自承载数据依赖。 | L299-L366、L407-L499、L3407-L3444 | 未取得目标 case 的实际路径及编译后指令；不先验删除同步。 |
 | Single-tile loop | 通用路径的 pass-1 与 pass-2 都按 `col += kTileElems` 循环；`tileCount` 由运行时 `rowWidth` 计算。只有通用路径且 `D <= 4096` 时，两段循环才必定各执行一次。 | L289-L300、L366-L373、L1242 | 目标 case 是否到达通用路径、是否满足 D 条件均未知；编译器是否已展开也未知。 |
 
 V011 中可见的主要非 wide 路径包括：FP32 小行批处理；FP16/BF16 对齐小行批处理；D=4096/8192 的多行专用处理；`128 < D <= 4096` 的窄中 overlap；以及回落到通用两遍 tile 路径。这里的 `Tiny` 是耗时分组，不是源码中唯一的函数名。
 
-单独按输入条件切换 Kernel 路径暂不列为假设：case 到 dispatch 的对应关系缺失，且 SELECTIVE-FASTPATH 正在研究按输入条件切换完整 V017 donor。待 shape/path 对照资料齐全后，再判断 V011 内部 dispatch 分支是否存在独立可测空间。
+V011 内部 `Process` 的运行时分派短路作为待证机制；dtype `if constexpr` 不列为候选。SELECTIVE-FASTPATH H3 使用精确 FP32 proxy allowlist 选择 STORE V003 donor，未命中则回退 V011。TINY 的 V011 内部机制只适用于回退分支；这不说明 case 1/3/5 命中哪一侧。
 
 ## 假设
 
@@ -73,7 +74,7 @@ EXPECTED_LOCAL_PROBES: 当前不安排探针。只有 Main 先确认存在独立
 ### H2 — 等行数分配的 ownership 快速式
 
 HYPOTHESIS_ID: `TINY-H2-ROW-OWNERSHIP-FASTFORM`
-STATUS: `READY_FOR_MAIN_REVIEW`
+STATUS: `MAIN_SELECTED_FOR_V001`
 TARGET_CASES: case 1、3、5；加例规则见范围段。
 TARGET_SHAPES_DTYPES: 要求 `rowCount == blockCount`；M、D、dtype 未知。
 MECHANISM: 保持 blockCount 不变，仅在 `rowCount == blockCount` 时将商余数 ownership 公式替换为 `beginRow=blockIdx`、`localRows=1`。其他输入仍走 V011 公式。
@@ -85,10 +86,10 @@ UB_CORE_DMA_IMPACT: 不变。
 SYNC_IMPACT: 不变。
 PRECISION_RISK: 低；行号必须与 Parent 完全一致，越界和逐行输出仍需 Correctness 覆盖。
 SOURCE: `Process` L171-L176；Host blockCount 规则 L3534-L3542。
-DUPLICATE_CHECK: SELECTIVE-FASTPATH 的公开 handoff 描述的是按 BF16 D=32768 选择完整 V017 donor；本项保留 V011 的 dtype/width dispatch，仅简化等行数 ownership 计算。机制不同，Official case 是否命中条件仍未知。
+DUPLICATE_CHECK: SELECTIVE-FASTPATH H3 在完整 STORE V003 donor 与 V011 fallback 间选择；V001 保持原有选择逻辑，只简化 V011 非 wide ownership 算式。donor 分支不适用本项，Official case 是否命中任一分支仍未知。
 MINIMAL_OFAT_DIFF: 只增加 `rowCount == blockCount` ownership 快速式；不改 ACTIVE_CORE_COUNT、dispatch 条件或函数主体。
-EXPECTED_LOCAL_PROBES: 至少需要一个经 workload metadata 确认 `rowCount == blockCount` 的目标输入。先比较 blockIdx 到 beginRow 的静态映射，再做 Correctness 和统一 Parent/Candidate 测量；加入一个 `rowCount != blockCount` 控制确认 fallback。
-REVIEW_SCOPE: 仅审阅“设备侧等行数时简化 ownership 算术”是否值得保留；不得把此状态理解为 case 命中已确认或实现获批。若编译器已消除除法/取余，假设应降为 `DUPLICATE` 或停止。
+EXPECTED_LOCAL_PROBES: 按已批准的 PROXY 使用 FP32 `[M,256]`，`A` 由 `ACL_DEV_ATTR_VECTOR_CORE_NUM` 实时读取，`M=max(2,floor(A/2))`，`B=M-1`。主组传 `availableCoreNum=A`，控制组传显式上限 B；两组共用同一组输入张量。前者应有 `rowCount==blockCount==M`，后者应有 `rowCount=M, blockCount=B` 并保留 Parent ownership 公式。记录运行时 A/M/B、工具链及两个分支条件；不将这组 Correctness 结果用于测时。
+REVIEW_SCOPE: Main 已批准 V001，只实现设备侧等行数时简化 ownership 算术。官方 case 命中关系仍未知；若父版目标产物已经给出同一直接映射，或 V001 未减少设备端整数指令，则报告证据，不扩展到其他机制。
 
 ### H3 — 通用单 tile 路径移除循环控制
 
@@ -112,10 +113,10 @@ EXPECTED_LOCAL_PROBES: 先用精确 testcase 输入确认函数路径和 `tileCo
 ### H4 — 缩小通用路径的单个 value buffer
 
 HYPOTHESIS_ID: `TINY-H4-VALUE-BUFFER-FOOTPRINT`
-STATUS: `NEEDS_MORE_EVIDENCE`
+STATUS: `SCREENED_OUT_FROM_CURRENT_SET`
 TARGET_CASES: case 1、3、5；仅纳入通用路径且使用 `valueFp32Buf_` 行缓存的 case。
 TARGET_SHAPES_DTYPES: 要求 `rowWidth <= 8192`、`cacheRow=true`；精确 D/dtype 未知。实际分派还受 dtype、M 和对齐影响。
-MECHANISM: 只把 `valueFp32Buf_` 容量从固定 8192 个 float 改成精确 D 所需且符合 UB 对齐的容量；其余 TBuf、tile 大小、路径与运算保持 V011 原样。
+MECHANISM: 历史草案为把 `valueFp32Buf_` 容量从固定 8192 个 float 改成精确 D 所需且符合 UB 对齐的容量；其余 TBuf、tile 大小、路径与运算保持 V011 原样。该方案暂不列入当前候选集。
 BOTTLENECK: 小 D 行仍为 `valueFp32Buf_` 配置完整 cache 容量。
 WHY_IT_MAY_HELP: 若 buffer 配置或较大 UB 占用影响每核准备成本/资源驻留，缩小这一处可减轻该成本。
 WHY_IT_MAY_FAIL: `InitBuffer` 可能只形成静态 UB 布局，大小变化不一定生成可测设备指令；其他固定 buffer 仍在；微小容量也受最小对齐约束。
@@ -126,7 +127,7 @@ PRECISION_RISK: 无算术变化；需验证各目标路径所有索引仍在容�
 SOURCE: 非 wide `InitBuffer` L116-L149；`valueTile` 取值与写入 L289-L342、L366-L410；`kCacheElems=8192` 位于 L1288。
 DUPLICATE_CHECK: SELECTIVE-FASTPATH 选择完整 V017 wide donor；本项限于 V011 非 wide 通用行缓存的一个 UB buffer，不改 V017 的 tile、store wait 或 donor 分派。Official case 到路径的映射仍待取得。
 MINIMAL_OFAT_DIFF: 仅改变 `valueFp32Buf_` 的容量公式；不同时缩小 gamma/bias、x/residual、reduce buffer，也不改 tile loop。
-EXPECTED_LOCAL_PROBES: 先核实目标路径对 buffer 最大索引、对齐和生成 UB 布局的要求；编译并做目标 Correctness。若生成代码/资源报告没有任何变化，停止此假设；有可见变化后再做 same-binary 与交错 P/C。
+EXPECTED_LOCAL_PROBES: 若后续重新审阅，先确认目标路径的最大索引、对齐与批处理行数；当前 FP32 small-batch 路径可在同一个 `valueFp32Buf_` 中存多行，简单缩到 D 会破坏既有批量容量。还需资源报告证明配置变化会影响目标资源布局，源码层面的 `InitBuffer` 调用不足以证明有每次 launch 成本。
 
 ### H5 — 多行窄中路径省去未使用的 paramReady event
 
@@ -147,6 +148,25 @@ DUPLICATE_CHECK: SELECTIVE-FASTPATH 公布的 V017 机制移动 wide BF16 pass-2
 MINIMAL_OFAT_DIFF: 先从 Ascend C API 资料确认条件式 event 生命周期合法；获准实现后仅条件化 paramReady 的申请/释放，不改任何 SetFlag/WaitFlag 或其他 event。
 EXPECTED_LOCAL_PROBES: 先取得命中该函数且 `localRows>1` 的精确输入；核对编译器产物中的 Alloc/Release 指令是否存在。只有确认存在且 API 生命周期合法，才编译、跑目标 Correctness、做 same-binary 和 Parent/Candidate 交错测量。加入 `localRows==1` 控制确认原 event 路径不变。
 
+### H6 — V011 Process 设备侧分派短路
+
+HYPOTHESIS_ID: `TINY-H6-PROCESS-DISPATCH-SHORTCUT`
+STATUS: `NEEDS_MORE_EVIDENCE`
+TARGET_CASES: case 1、3、5；仅讨论 SELECTIVE-FASTPATH 未选 donor、回退 V011 的输入。
+TARGET_SHAPES_DTYPES: 尚未知；可用 `1x100 FP32` 作已标注 proxy，不能视为 Official 输入。
+MECHANISM: 对一个经路径重放确认的 V011 fallback，只跳过 `Process` 中位于实际 helper 之前、且目标编译产物仍保留的互斥运行时宽度/对齐分支；所选 helper 与其计算、ownership、buffer、同步保持不变。Host `if (dtype==...)` 与设备端 `if constexpr` 不属于本项。
+BOTTLENECK: 每个 block 在进入已知函数体前仍执行多项运行时路径判断。
+WHY_IT_MAY_HELP: 若目标二进制保留多条无法命中的分支，直接进入同一 helper 可能少走少量设备侧控制指令。
+WHY_IT_MAY_FAIL: 分支可能已被编译器裁掉或代价低于 DMA/计算；增加专用入口可能带来额外入口或代码体积；Official `timeUs` 是否覆盖设备分派尚未知。
+ASCEND_FEASIBILITY: 先对目标 dtype 和合法 proxy 检查编译产物；只有存在可省指令且路径判据与 V011 helper 一致时，才可讨论独立改动。
+UB_CORE_DMA_IMPACT: 不变。
+SYNC_IMPACT: 不变。
+PRECISION_RISK: helper 和计算顺序不变时低；仍需目标 Correctness。
+SOURCE: `Process` L159-L249；Host dtype 入口 L3543-L3552。
+DUPLICATE_CHECK: SELECTIVE H3 在完整 STORE V003 donor 与 V011 fallback 之间选择；本项只研究 fallback 内部的 V011 分支链，机制层不同，但共享选择层。donor 命中时本项不适用，也不据此判断任何 Official case 是否命中。
+MINIMAL_OFAT_DIFF: 仅对一个已确认的 V011 helper 绕过前置设备分支；不改 helper 函数体、不改 SELECTIVE allowlist、不增加新 donor。
+EXPECTED_LOCAL_PROBES: 先确认 SELECTIVE 分支走 V011 fallback，再检查目标二进制仍有前置分支。没有保留的控制指令即否证，不构建、不计时。
+
 ## 跨路线机制与重复性核对
 
 依据限于公开研究记录、正式差异和实验摘要；未读取 SELECTIVE-FASTPATH 或 CASE47 的私有 Candidate 源码。
@@ -155,12 +175,12 @@ EXPECTED_LOCAL_PROBES: 先取得命中该函数且 `localRows>1` 的精确输入
 |---|---|---|
 | R016/FULL-R016：按 D 段设置 rows-per-task，block 数取可用 core 与 task 数的较小者。 | H1 active-core 上限；H2 device ownership fastform | H1 与 host 调度的核数/每核行数轴重复。H2 不改 block 数或 task 粒度，只在 `rowCount == blockCount` 时简化设备侧行号算术，机制不同；仍需确认编译器是否已做同样化简。 |
 | SCHED-ROWGROUP-X：继承 R016 调度段并加入 32B row-group ownership；SCHED-CHAMPION-X V002 对组切分增加 `totalGroups * 2 >= min(blockCount,rowCount)` 条件。 | H1；H2；H4 | H1 与 R016/SCHED 的调度和 active-core 轴重复。H2 只在等行数时简化公式，不改组边界。H4 是缩小单个 UB buffer，与 row-group ownership 不同；UB 布局收益尚无证据。CASE47 报告的 INTEGRATION-X 退化不能用来推断 case 输入或 H4 表现。 |
-| CASE47 H1：未对齐短行的 padded-UB 多行 epilogue；H2：active-core / rows-per-task；H3：D 维拆分归约；H4：wide tile 档；H5：MTE2 与标量尾部 issue 次序。 | H1-H5 | H1 与 CASE47 H2 同为重复调度轴。H4 与 CASE47 H1 同属 UB 资源设计但改动不同；H3 与 CASE47 H4 都涉及 tile 场景但一个删单 tile 循环控制、一个调 wide tile 宽度。H5 与 CASE47 H5 都在事件/issue 邻域，TINY 只拟条件化未被消费的 `paramReady` ID 申请/释放，不移动等待顺序。H2/H3 与 CASE47 其余机制无相同改动。均不能由耗时标签推定 case 是否命中。 |
-| SELECTIVE-FASTPATH H1：BF16 wide pass-2 的 MTE3_V 等待位置；当前 cycle H3：FP32 wide output 分成两个连续 chunk 写回，并保留 event ring。选择完整 donor，未命中时回退 V011。 | H1-H5 | 这些 donor 改写 wide store/event 路径，不调 block 数。TINY H5 涉及窄中路径 `paramReady` ID 的申请/释放，位置与动作不同；属于同步邻近项，需用函数命中和编译产物确认边界。H1-H4 不改 donor store 机制。SELECTIVE 的 H1 qualification 未完成；local 摘要不证明 Official case 覆盖。 |
+| CASE47 H1：non-aligned narrow-mid scalar-handoff grouping proxy；H2：active-core / rows-per-task；H3：D 维拆分归约；H4：wide tile 档；H5：MTE2 与标量尾部 issue 次序。 | TINY H2；其余 Track-B 项 | TINY H2 只在 `rowCount==blockCount` 时改 ownership 算术，数学行归属、block 数、标量操作与分组大小均保持 Parent 行为；非等式组直接走 Parent 公式。CASE47 H1 研究非对齐窄中行的 handoff 分组，作用点不同。两者可以落在相邻路径条件上，但当前无证据证明 proxy 或 Official case 重叠。 |
+| SELECTIVE-FASTPATH H3：按精确 FP32 proxy-shape allowlist 选 STORE V003 donor，未命中回退 V011。 | TINY H2；其余 Track-B 项 | TINY H2 不改选择逻辑；只有运行 V011 fallback 时才会执行。当前未验证 `[M,256]` 是否命中 allowlist，不据此判断 case1/3/5 的重叠。 |
 
 本节证据路径：`研究/SCHED-ROWGROUP-X/next-hypotheses.md`、`本地实验/SCHED-ROWGROUP-X/V001/diff.patch`、`本地实验/SCHED-CHAMPION-X/V002/diff.patch`、`本地实验/SCHED-CHAMPION-X/V002/source-meta.json`、`worktrees/w2/m1/case47-small-cluster/研究/CASE47-SMALL-CLUSTER-CHAMPION-X/track-b-case4-case7.md`、`worktrees/w2/m1/selective-fastpath/研究/SELECTIVE-FASTPATH-CHAMPION-X/TRACK-B-HANDOFF.md`。这些资料用于机制对照；路线各自的 Local 摘要不能替代 TINY 对 V011 的直接验证。
 
-H1 的 `DUPLICATE` 仅裁定本条假设的机制重复，不决定 TINY 路线生命周期。H2-H5 的 shape / dtype 仍未知；本表不据 Official 耗时标签推测它们与 SELECTIVE 或 CASE47 的探针重叠。
+H1 的 `DUPLICATE` 仅裁定本条假设的机制重复，不决定 TINY 路线生命周期。Official case1/3/5 的 shape / dtype 仍未知；本表不据 Official 耗时标签推测它们与 SELECTIVE 或 CASE47 的探针重叠。
 
 ## 尚需取得的资料与停止点
 
