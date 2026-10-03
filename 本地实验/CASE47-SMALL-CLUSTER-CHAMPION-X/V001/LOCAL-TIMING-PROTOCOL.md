@@ -107,3 +107,17 @@ else
 fi
 printf '%s\n' "$rc" > "$RESULT_DIR/runner.rc"
 ```
+
+## W60 Runner Build Evidence
+
+This was a non-timing host build only. The runner executable was not invoked. No NPU correctness, lease, PRECHECK-A/B, Candidate P/C, or timing was performed.
+
+- Source commit: `ddde23d6e29da5c3be23c46c5f1916d8e8cc0e61`. Candidate source SHA256: `be313f80e5b088f1fe907f2f4221c61ab59ef720ce68cc9f9c941be20239c2db` (read-only local verification). `timing_runner.cpp` SHA256: `11504652921d1d04cb9bb138f5a9a57e91b5a0f1688650b9fb4f60a3ccbf9e40`; CMake source SHA256: `aaa38d3ef0ca62f402b0d4b8bacf4f56f6563f43086d69dbe43ed0ead72307ba`.
+- The existing Parent module was read-only verified at `/home/data4t2/lelinfeng/cann/server_runs/CASE47-SMALL-CLUSTER-CHAMPION-X/V001/timing-build-20261003T134147Z/build-parent-retry-06-attempt-02/libcase47_parent_kernel.so`; SHA256: `3de95511fd6437956a8bd48fb2ece9a1f5d0f226f568ef18d129d57db1e77c24`.
+- CMake configure: RC `0`; log `logs/cmake-configure.log`, RC file `logs/cmake-configure.rc`, command `logs/cmake-configure-command.txt`.
+- Runner Build/Link: target `case47_timing_runner`, command `cmake --build build-runner --parallel 2 --target case47_timing_runner`, RC `0`; log `logs/build-runner.log`, RC file `logs/build-runner.rc`, command `logs/build-runner-command.txt`.
+- Runner executable: `/home/data4t2/lelinfeng/cann/server_runs/CASE47-SMALL-CLUSTER-CHAMPION-X/V001/timing-runner-w60-build-20261003T190011Z/build-runner/case47_timing_runner`; SHA256 `a49d44ab4fe1adcc2f6862e18d20ebbf45ad117c00f520bcb4b75ddaf1f142cb`; AArch64 ELF, Build ID `db92ef6212551f18c4f7ea8cfaba400808c9fe3d`. Runtime dependency listing showed no unresolved library.
+- Environment recorded at `2026-10-03T19:16:20Z`: host `hwnput3`, architecture `aarch64`, CANN/Toolkit `8.5.0.alpha002`, SoC `Ascend910B3`, CMake `3.22.1`, GNU C++ `11.4.0`. CANN version source: `logs/toolkit-version-pre.txt`; host/architecture: `logs/hostname-pre.txt`, `logs/architecture-pre.txt`; compiler and CMake: `logs/bisheng-version-pre.txt`, `logs/cmake-version-pre.txt`.
+- Build preflight: d3 HBM `60219/65536 MB` (`5317 MB` free), AICore `27%`, project disk available `582G`; the build-process query was empty. Evidence: `logs/npu-smi-build-pre.txt`, `logs/disk-build-pre.txt`, `logs/project-usage-build-pre.txt`, `logs/processes-build-pre.txt`, `logs/build-pre-time.txt`.
+- Toolkit initialization logged permission-denied messages for protected `opp/test-ops/script` paths; CMake configure and runner Build/Link nevertheless completed with RC `0`.
+- Remote build directory: `/home/data4t2/lelinfeng/cann/server_runs/CASE47-SMALL-CLUSTER-CHAMPION-X/V001/timing-runner-w60-build-20261003T190011Z/`. The W60 Parent same-binary attempt remains `NOT_RUN` pending Main's active lease and live preflight.
