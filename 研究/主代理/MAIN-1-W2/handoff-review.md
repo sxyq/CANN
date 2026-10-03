@@ -72,3 +72,9 @@ No build, correctness run, performance run, profiling, server3 job or Online sub
 - Route evidence commit: `3ed15bd4fb713b2c0273d8932e2936b84ee4d7d0`. C001 source compiles for the recorded CANN 8.5.0.alpha002 / DAV_C220 Vector target, allocates workspace inside its host wrapper, and uses a two-stage `GroupBarrier` design across four Vector Cores. This confirms source/API expressibility, not successful execution.
 - C001 Official result is TLE on case1; cases2-15, including case14, are skipped. No case14 rows, D, dtype, dispatch or core count is available. R31B V008's four-launch source has a 0/15 Runtime Error result with no diagnostic that identifies the cause.
 - Main review: keep D-slice applicability `UNKNOWN` and `MAIN_SELECTED=NONE`. Input metadata, V011 path replay, C001 TLE diagnostics and per-case profile remain missing. No Revision, Build, correctness run, device measurement or route lifecycle decision follows.
+
+## CASE14 Bottleneck Attribution Follow-up (2026-10-03)
+
+- Support-B conclusion: `PIPELINE_ONLY_EXPLANATION=INSUFFICIENT`. V011 case14 is `16486.82 / 3750.12 = 4.3963x`. The historical overlap ceiling `2.1598x` is arithmetic from a report value; its raw profiler exports were not found, so it is not a recomputed profile result and does not describe case14 utilization.
+- STORE V002 case14 was `16443.72 us`, about `0.261%` below V011 in a separate Judge run. Input mapping is absent, so this is not a controlled per-case comparison. Existing segmented timings, synchronization counts and core-scaling probes use local shapes not tied to case14; measured medians and per-sample differences also do not add linearly.
+- Actual case14 rows, D, dtype, layout, `availableCoreNum`, dispatch, active cores, timer boundaries and raw profile remain `UNKNOWN`. Keep `MAIN_SELECTED=NONE`; this report does not select a mechanism or authorize a Revision or device run.
