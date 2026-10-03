@@ -209,13 +209,22 @@ DIRECT_ONLINE_SUBMISSION=0
   LOCAL_NEUTRAL, engineering-score only; no Local Best advance. Raw/performance
   evidence commit `e9cc2dfb`, score commit `0c07dcd7`. d5 lease
   `M2-REDUCE-V001-D5-20261003T182337Z` was released (control commit
-  `e81b82b1`). No Online and no V002.
+  `e81b82b1`). Direct Online is disabled; no V002.
 - TILECOUNT final gate is committed in `w2/m2/tilecount-unroll` at
   `e36220ed`. Exact Parent source and compile artifact identity were found,
   but the available HiIPU device binary could not be disassembled to verify
   loop backedges/index work. All three hypotheses fail the required codegen
   gate; this is `UNVERIFIED`, not evidence that the compiler already unrolled
   them. No V001 was created.
+
+### Git delivery
+
+```text
+PUSH=PUSH_PENDING
+REASON=git ls-remote origin HEAD timed out (RC 124, 10s); no force push or retry.
+LOCAL_REDUCE_HEAD=0c07dcd7
+LOCAL_TILECOUNT_HEAD=e36220ed
+```
 
 ```text
 PLANNING_DECISIONS_CHANGED=0
