@@ -22,7 +22,7 @@ trap capture_postflight EXIT
 npu-smi info > "$SYNC_RESULT_DIR/precheck-a-device.txt" 2>&1
 df -h "$CANN_ROOT" > "$SYNC_RESULT_DIR/precheck-a-disk.txt" 2>&1
 du -sh "$CANN_ROOT"/* > "$SYNC_RESULT_DIR/precheck-a-project-usage.txt" 2>&1
-for rep in 1 2 3; do
+for rep in 1 2 3 4 5 6; do
   rep_id=$(printf '%02d' "$rep")
   "$SYNC_RUNNER" --precheck A "$rep" "$SYNC_RESULT_DIR/PRECHECK-A-$rep_id" \
     > "$SYNC_RESULT_DIR/PRECHECK-A-$rep_id-runner.log" 2>&1
@@ -32,7 +32,7 @@ npu-smi info > "$SYNC_RESULT_DIR/between-prechecks-device.txt" 2>&1
 df -h "$CANN_ROOT" > "$SYNC_RESULT_DIR/between-prechecks-disk.txt" 2>&1
 sleep 2
 
-for rep in 1 2 3; do
+for rep in 1 2 3 4 5 6; do
   rep_id=$(printf '%02d' "$rep")
   "$SYNC_RUNNER" --precheck B "$rep" "$SYNC_RESULT_DIR/PRECHECK-B-$rep_id" \
     > "$SYNC_RESULT_DIR/PRECHECK-B-$rep_id-runner.log" 2>&1

@@ -146,7 +146,7 @@ test "$correctness_rc" -eq 0
 
 Record a fresh `npu-smi info` snapshot and disk availability before the first qualification stage. The snapshot includes d4 HBM, AICore, and resident process IDs. Do not stop or alter any listed process.
 
-1. Run Parent same-binary shape qualification in one process. This performs 45 synchronized warmups followed by two blocks of 31 device-event samples, writes all samples and jitter, and checks output after timing. Both `MAD/median <= 0.10` and block drift `<= 0.10` must pass. Save stdout to `$RESULT_DIR/same-binary-runner.log`.
+1. Run Parent same-binary shape qualification in one process. This performs 60 synchronized warmups followed by two blocks of 31 device-event samples, writes all samples and jitter, and checks output after timing. Both `MAD/median <= 0.10` and block drift `<= 0.10` must pass. Save stdout to `$RESULT_DIR/same-binary-runner.log`.
 
 ```bash
 npu-smi info > "$RESULT_DIR/pre-same-binary-device.txt" 2>&1
@@ -158,7 +158,7 @@ du -sh /home/data4t2/lelinfeng/cann/* > "$RESULT_DIR/pre-same-binary-project-usa
 npu-smi info > "$RESULT_DIR/post-same-binary-device.txt" 2>&1
 ```
 
-2. Only after same-binary PASS, run the Parent-only window qualification. It uses three fresh processes in PRECHECK-A and three in PRECHECK-B; each process has 45 synchronized warmups and 21 device-event samples. The script records device snapshots before, between, and after the blocks. Summarize the six process medians with the bundled script. Both A and B must meet `CV <= 0.15` and `max/min <= 1.30`.
+2. Only after same-binary PASS, run the Parent-only window qualification. It uses six fresh processes in PRECHECK-A and six in PRECHECK-B; each process has 60 synchronized warmups and 21 device-event samples. The script records device snapshots before, between, and after the blocks. Summarize the six process medians in each block with the bundled script. Both A and B must meet `CV <= 0.15` and `max/min <= 1.30`.
 
 ```bash
 export SYNC_RUNNER="$REMOTE_ROOT/build-timing/sync_topology_v001_timing"
@@ -166,7 +166,7 @@ export SYNC_RESULT_DIR="$RESULT_DIR/window"
 bash "$REMOTE_ROOT/support/run_parent_window.sh"
 ```
 
-3. Only if the same-binary and both window blocks pass, and Main's new lease remains active, run adjacent interleaved Parent/Candidate pairs. The runner performs 45 alternating synchronized warmups for each binary, then four groups of 11 adjacent device-event pairs. Pair order alternates `P,C` / `C,P`; raw rows include both `device_us` and `wall_us`. Output/jitter paths are `$RESULT_DIR/PAIRED-raw.tsv` and `$RESULT_DIR/PAIRED-jitter.txt`.
+3. Only if the same-binary and both window blocks pass, and Main's new lease remains active, run adjacent interleaved Parent/Candidate pairs. The runner performs 60 alternating synchronized warmups for each binary, then four groups of 11 adjacent device-event pairs. Pair order alternates `P,C` / `C,P`; raw rows include both `device_us` and `wall_us`. Output/jitter paths are `$RESULT_DIR/PAIRED-raw.tsv` and `$RESULT_DIR/PAIRED-jitter.txt`.
 
 ```bash
 df -h /home/data4t2/lelinfeng/cann > "$RESULT_DIR/pre-paired-disk.txt" 2>&1

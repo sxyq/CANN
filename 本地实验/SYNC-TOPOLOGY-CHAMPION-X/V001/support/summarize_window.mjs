@@ -68,7 +68,7 @@ try {
   const blocks = {};
   for (const block of ["A", "B"]) {
     const repMedians = [];
-    for (let rep = 1; rep <= 3; rep += 1) repMedians.push(await readRep(block, rep));
+    for (let rep = 1; rep <= 6; rep += 1) repMedians.push(await readRep(block, rep));
     const stats = summarize(repMedians);
     stats.result = stats.cv <= 0.15 && stats.max_min <= 1.30 ? "PASS" : "FAIL";
     blocks[block] = stats;
@@ -82,7 +82,7 @@ try {
     device: 4,
     shape: [2, 12288],
     dtype: "FP16",
-    process_reps_per_block: 3,
+    process_reps_per_block: 6,
     samples_per_process: 21,
     thresholds: { cv_max: 0.15, max_min_max: 1.30 },
     blocks,

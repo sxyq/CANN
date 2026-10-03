@@ -48,7 +48,7 @@ sha256sum "$REMOTE_ROOT/build-timing/sync_topology_v001_timing" \
 Do not start timing until Main records a new d4 lease in the canonical lease log and grants the live preflight for this attempt. Immediately before timing, capture `npu-smi info`, disk availability, and process inventory. Do not stop or alter resident processes.
 
 1. Parent same-binary: one process, 60 synchronized warmups, then two blocks of 31 device-event samples. Require full-sample MAD/median <= 0.10 and block drift <= 0.10. Stop if it fails.
-2. Only after same-binary PASS, run Parent window qualification: PRECHECK-A and PRECHECK-B, three fresh processes per block, 60 synchronized warmups and 21 device-event samples per process. Require both blocks to meet CV <= 0.15 and max/min <= 1.30. Stop if either fails.
+2. Only after same-binary PASS, run Parent window qualification: PRECHECK-A and PRECHECK-B, six fresh processes per block, 60 synchronized warmups and 21 device-event samples per process. Require both blocks to meet CV <= 0.15 and max/min <= 1.30. Stop if either fails.
 3. Only after both qualifications pass and the lease remains active, run four groups of 11 adjacent Parent/Candidate pairs, alternating pair order and using 60 synchronized warmups for each binary.
 
 Retain every new raw sample, jitter summary, identity record, and pre/post load snapshot in this retry's fresh result directory. Never reuse or overwrite the prior result directory or historical raw/jitter files.

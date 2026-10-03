@@ -581,8 +581,8 @@ int main(int argc, char** argv)
     int precheckRep = 0;
     if (argc == 5 && std::strcmp(argv[1], "--precheck") == 0) {
         if ((std::strcmp(argv[2], "A") != 0 && std::strcmp(argv[2], "B") != 0) ||
-            std::atoi(argv[3]) < 1 || std::atoi(argv[3]) > 3) {
-            std::fprintf(stderr, "usage: %s --precheck A|B 1..3 output_prefix\n", argv[0]);
+            std::atoi(argv[3]) < 1 || std::atoi(argv[3]) > 6) {
+            std::fprintf(stderr, "usage: %s --precheck A|B 1..6 output_prefix\n", argv[0]);
             return 2;
         }
         mode = Mode::kPrecheck;
@@ -597,7 +597,7 @@ int main(int argc, char** argv)
         prefix = argv[2];
     } else {
         std::fprintf(stderr,
-            "usage: %s --precheck A|B 1..3 output_prefix | --same-binary output_prefix | --paired output_prefix\n",
+            "usage: %s --precheck A|B 1..6 output_prefix | --same-binary output_prefix | --paired output_prefix\n",
             argv[0]);
         return 2;
     }
