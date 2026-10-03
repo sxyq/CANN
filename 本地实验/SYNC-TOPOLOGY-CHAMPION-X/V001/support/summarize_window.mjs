@@ -1,7 +1,10 @@
 #!/usr/bin/env node
 
-import { readFile } from "node:fs/promises";
-import { join } from "node:path";
+import fs from "fs";
+import path from "path";
+
+const readFile = fs.promises.readFile;
+const join = path.join;
 
 const resultDir = process.argv[2];
 if (!resultDir) {
@@ -64,34 +67,40 @@ async function readRep(block, rep) {
   return median(samples);
 }
 
-try {
-  const blocks = {};
-  for (const block of ["A", "B"]) {
-    const repMedians = [];
-    for (let rep = 1; rep <= 6; rep += 1) repMedians.push(await readRep(block, rep));
-    const stats = summarize(repMedians);
-    stats.result = stats.cv <= 0.15 && stats.max_min <= 1.30 ? "PASS" : "FAIL";
-    blocks[block] = stats;
+async function main() {
+  try {
+    const blocks = {};
+    for (const block of ["A", "B"]) {
+      const repMedians = [];
+      for (let rep = 1; rep <= 6; rep += 1) {
+        repMedians.push(await readRep(block, rep));
+      }
+      const stats = summarize(repMedians);
+      stats.result = stats.cv <= 0.15 && stats.max_min <= 1.30 ? "PASS" : "FAIL";
+      blocks[block] = stats;
+    }
+    const qualified = blocks.A.result === "PASS" && blocks.B.result === "PASS";
+    const output = {
+      phase: "PARENT_WINDOW_QUALIFICATION",
+      route: "SYNC-TOPOLOGY-CHAMPION-X",
+      revision: "V001",
+      direct_parent: "R31B-V011",
+      device: 4,
+      shape: [2, 12288],
+      dtype: "FP16",
+      process_reps_per_block: 6,
+      samples_per_process: 21,
+      thresholds: { cv_max: 0.15, max_min_max: 1.30 },
+      blocks,
+      result: qualified ? "QUALIFIED" : "WINDOW_UNQUALIFIED",
+      candidate_timing_allowed: qualified,
+    };
+    console.log(JSON.stringify(output, null, 2));
+    process.exitCode = qualified ? 0 : 1;
+  } catch (error) {
+    console.error(`WINDOW_SUMMARY_ERROR ${error.message}`);
+    process.exitCode = 2;
   }
-  const qualified = blocks.A.result === "PASS" && blocks.B.result === "PASS";
-  const output = {
-    phase: "PARENT_WINDOW_QUALIFICATION",
-    route: "SYNC-TOPOLOGY-CHAMPION-X",
-    revision: "V001",
-    direct_parent: "R31B-V011",
-    device: 4,
-    shape: [2, 12288],
-    dtype: "FP16",
-    process_reps_per_block: 6,
-    samples_per_process: 21,
-    thresholds: { cv_max: 0.15, max_min_max: 1.30 },
-    blocks,
-    result: qualified ? "QUALIFIED" : "WINDOW_UNQUALIFIED",
-    candidate_timing_allowed: qualified,
-  };
-  console.log(JSON.stringify(output, null, 2));
-  process.exitCode = qualified ? 0 : 1;
-} catch (error) {
-  console.error(`WINDOW_SUMMARY_ERROR ${error.message}`);
-  process.exitCode = 2;
 }
+
+main();
