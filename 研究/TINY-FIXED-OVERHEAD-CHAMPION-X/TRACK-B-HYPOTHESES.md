@@ -6,7 +6,7 @@ BRANCH: `w2/m1/tiny-fixed-overhead`
 DIRECT_PARENT: `线上结果/R31B/V011/submission.asc`
 PARENT_SOURCE_SHA256: `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`
 
-本记录只提出待审阅的 Track-B 假设，不选实现项。ACTIVE_CORE_COUNT 按任务要求先列；最终由 Main / Planning 决定是否继续。
+本记录只提出待审阅的 Track-B 假设，不选实现项。复审后，H1 `ACTIVE_CORE_COUNT` 与 R016/SCHED 的调度轴重复，保留为重复性记录，不再作为首选；H2 的机制边界清楚，可供 Main 审阅，但输入适用条件仍待证实。当前没有 `MAIN_SELECTED=YES`，不创建 Revision。
 
 ## 范围与证据边界
 
@@ -18,6 +18,18 @@ PARENT_SOURCE_SHA256: `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c28
 - 现有共享记录尚无 TINY 路线行。本文件不创建或改动共享记录。
 
 在取得以 testcase ID 为键的 Official workload manifest 前，所有假设均把 shape / dtype 写作未知；不根据耗时猜测 M、D 或 dtype。
+
+## 本轮成熟度
+
+| 假设 | 成熟度 | 关键缺证据 / 约束 |
+|---|---|---|
+| H1 ACTIVE_CORE_COUNT | `DUPLICATE` | 与 R016/SCHED 的 rows-per-task、active-core 调度同轴；case 输入映射仍未知。保留记录，不列入待选实现。 |
+| H2 ROW-OWNERSHIP-FASTFORM | `READY_FOR_MAIN_REVIEW`（机制审阅） | 仅在 `rowCount == blockCount` 生效；需确认目标输入条件及编译后除法/取余是否仍存在。未满足输入清单前不得据此选 Revision。 |
+| H3 GENERIC-SINGLE-TILE | `NEEDS_MORE_EVIDENCE` | 需确认目标输入命中通用路径、`tileCount=1`，并证明生成代码仍有循环控制。 |
+| H4 VALUE-BUFFER-FOOTPRINT | `NEEDS_MORE_EVIDENCE` | 需核实 UB 对齐/索引上界，并证明缩小配置会改变生成布局或资源占用。 |
+| H5 CONDITIONAL-PARAM-EVENT | `NEEDS_MORE_EVIDENCE` | 需确认目标输入命中窄中函数且 `localRows>1`，补齐 event API 生命周期约束和生成代码证据。 |
+
+`READY_FOR_MAIN_REVIEW` 只表示 H2 的机制定义适合审阅，不代表输入命中已知、方向已选择或获准实现。所有假设共同受 case 1/3/5 输入清单缺失这一限制。
 
 ## 源码路径与开销项
 
@@ -42,7 +54,7 @@ V011 中可见的主要非 wide 路径包括：FP32 小行批处理；FP16/BF16 
 ### H1 — ACTIVE_CORE_COUNT 参数轴
 
 HYPOTHESIS_ID: `TINY-H1-ACTIVE-CORE-COUNT`
-STATUS: `NEEDS_MORE_EVIDENCE`
+STATUS: `DUPLICATE`
 TARGET_CASES: case 1、3、5；加例规则见范围段。
 TARGET_SHAPES_DTYPES: M、D、dtype 未知。参数有意义的前提是 `rowCount >= 2` 且当前实际 `blockCount > 1`；M=1 时现有 wrapper 已将 blockCount 限为 1。
 MECHANISM: 只改变 `ACTIVE_CORE_COUNT` 上限，保持 Direct Parent 的算术、buffer、路径条件与 DMA 不变。每个候选 Revision 只固定一个 count；单独观察 block 数减少后，单核行数、启动分布与每核固定准备成本如何变化。
@@ -54,14 +66,14 @@ UB_CORE_DMA_IMPACT: UB 配置不变；active block 数变化；逻辑 DMA 总量
 SYNC_IMPACT: 同步序列保持原样；各 core 的行数可能变化。
 PRECISION_RISK: 算术次序按既有函数路径保持；仍需逐目标形状做 Correctness。
 SOURCE: `run_kernel` L3534-L3548；`Process` L171-L176、L242-L249。
-DUPLICATE_CHECK: SELECTIVE-FASTPATH handoff 选择完整 V017 donor，目标条件为 BF16、D=32768；这里仅改变 core count，不移植 V017 的等待时序。两者没有相同的源码改动。由于目标 case 的 shape/dtype 缺失，目前不能证明输入集合不交；若映射命中 BF16 D=32768，须先与 Main 对齐范围。
-MINIMAL_OFAT_DIFF: 取得精确 M/D/dtype 与 `availableCoreNum` 后，仅给 V011 wrapper 增加一个固定 `ACTIVE_CORE_COUNT` 上限；不改 buffer、函数分派或 Kernel 运算。
-EXPECTED_LOCAL_PROBES: 对每个映射确认的目标形状，记录 Parent 实际 blockCount/localRows；挑一个有效 count 值构建单一候选，先做目标 Correctness，再按统一 same-binary 与交错 P/C 流程比较。若 M=1，记录该 case 不适用，不扩大范围。
+DUPLICATE_CHECK: 与 R016/FULL-R016 的 D 档 rows-per-task 和 block 数选择、SCHED-ROWGROUP-X 的任务/行组所有权，以及 SCHED-CHAMPION-X V002 的 active-core 保留条件属于同一调度轴。TINY H1 将 `blockCount` 再加固定上限，虽把探索方向放在减少并行 block 的一侧，仍未形成与已有调度机制独立的新轴；CASE47 的 H2 已将“按有效任务数调 active core / rows-per-task”判为 `DUPLICATE`。不作为首选，不新开该方向。SELECTIVE-FASTPATH 的 V017 等待点与 STORE V003 分块写回不是 core-count 改动；shape/path 映射仍未知，不据此推断 case 覆盖。
+MINIMAL_OFAT_DIFF: 仅作历史草案：若 Main 明确提出与 R016/SCHED 不同的研究问题，才考虑在 V011 wrapper 增加一个固定 `ACTIVE_CORE_COUNT` 上限；当前重复项状态下不实现。
+EXPECTED_LOCAL_PROBES: 当前不安排探针。只有 Main 先确认存在独立于 R016/SCHED 的机制问题并选定研究后，才记录映射输入的 Parent `blockCount/localRows`，再决定是否需要构建与统一 Parent/Candidate 测量。
 
 ### H2 — 等行数分配的 ownership 快速式
 
 HYPOTHESIS_ID: `TINY-H2-ROW-OWNERSHIP-FASTFORM`
-STATUS: `NEEDS_MORE_EVIDENCE`
+STATUS: `READY_FOR_MAIN_REVIEW`
 TARGET_CASES: case 1、3、5；加例规则见范围段。
 TARGET_SHAPES_DTYPES: 要求 `rowCount == blockCount`；M、D、dtype 未知。
 MECHANISM: 保持 blockCount 不变，仅在 `rowCount == blockCount` 时将商余数 ownership 公式替换为 `beginRow=blockIdx`、`localRows=1`。其他输入仍走 V011 公式。
@@ -76,6 +88,7 @@ SOURCE: `Process` L171-L176；Host blockCount 规则 L3534-L3542。
 DUPLICATE_CHECK: SELECTIVE-FASTPATH 的公开 handoff 描述的是按 BF16 D=32768 选择完整 V017 donor；本项保留 V011 的 dtype/width dispatch，仅简化等行数 ownership 计算。机制不同，Official case 是否命中条件仍未知。
 MINIMAL_OFAT_DIFF: 只增加 `rowCount == blockCount` ownership 快速式；不改 ACTIVE_CORE_COUNT、dispatch 条件或函数主体。
 EXPECTED_LOCAL_PROBES: 至少需要一个经 workload metadata 确认 `rowCount == blockCount` 的目标输入。先比较 blockIdx 到 beginRow 的静态映射，再做 Correctness 和统一 Parent/Candidate 测量；加入一个 `rowCount != blockCount` 控制确认 fallback。
+REVIEW_SCOPE: 仅审阅“设备侧等行数时简化 ownership 算术”是否值得保留；不得把此状态理解为 case 命中已确认或实现获批。若编译器已消除除法/取余，假设应降为 `DUPLICATE` 或停止。
 
 ### H3 — 通用单 tile 路径移除循环控制
 
@@ -134,23 +147,28 @@ DUPLICATE_CHECK: SELECTIVE-FASTPATH 公布的 V017 机制移动 wide BF16 pass-2
 MINIMAL_OFAT_DIFF: 先从 Ascend C API 资料确认条件式 event 生命周期合法；获准实现后仅条件化 paramReady 的申请/释放，不改任何 SetFlag/WaitFlag 或其他 event。
 EXPECTED_LOCAL_PROBES: 先取得命中该函数且 `localRows>1` 的精确输入；核对编译器产物中的 Alloc/Release 指令是否存在。只有确认存在且 API 生命周期合法，才编译、跑目标 Correctness、做 same-binary 和 Parent/Candidate 交错测量。加入 `localRows==1` 控制确认原 event 路径不变。
 
-## 与 SELECTIVE-FASTPATH 的机制重复核对
+## 跨路线机制与重复性核对
 
-依据只取其公开 handoff：`worktrees/w2/m1/selective-fastpath/研究/SELECTIVE-FASTPATH-CHAMPION-X/TRACK-B-HANDOFF.md`。未读取其 Candidate 源码。
+依据限于公开研究记录、正式差异和实验摘要；未读取 SELECTIVE-FASTPATH 或 CASE47 的私有 Candidate 源码。
 
-| SELECTIVE-FASTPATH 公开范围 | 本路线假设 | 当前判断 |
+| 对照路线 / 机制 | 对应 TINY 假设 | 当前判断 |
 |---|---|---|
-| 仅在 BF16、D=32768 条件下选完整 V017 donor，其他输入回到 V011；H1 qualification 尚未完成。 | H1 core count 上限 | 参数轴不同；shape 是否重叠无法由 Official testcase ID/耗时判断。拿到映射后再确认范围。 |
-| donor 携带 V016 的 tile 变化与 V017 的 wide pass-2 MTE3_V 等待变化。 | H2 ownership 算术、H3 单 tile loop、H4 非 wide value buffer | 当前机制位置不同；H3/H4 的适用 shape 尚待 metadata 与 V011 分支命中证据。 |
-| 分派完整 donor，避免抽取其局部代码或组合 donor。 | H5 非 wide path 中 paramReady ID 的申请/释放 | 目标事件边不同；本项不修改 MTE3_V 等待，也不移植 V017。 |
+| R016/FULL-R016：按 D 段设置 rows-per-task，block 数取可用 core 与 task 数的较小者。 | H1 active-core 上限；H2 device ownership fastform | H1 与 host 调度的核数/每核行数轴重复。H2 不改 block 数或 task 粒度，只在 `rowCount == blockCount` 时简化设备侧行号算术，机制不同；仍需确认编译器是否已做同样化简。 |
+| SCHED-ROWGROUP-X：继承 R016 调度段并加入 32B row-group ownership；SCHED-CHAMPION-X V002 对组切分增加 `totalGroups * 2 >= min(blockCount,rowCount)` 条件。 | H1；H2；H4 | H1 与 R016/SCHED 的调度和 active-core 轴重复。H2 只在等行数时简化公式，不改组边界。H4 是缩小单个 UB buffer，与 row-group ownership 不同；UB 布局收益尚无证据。CASE47 报告的 INTEGRATION-X 退化不能用来推断 case 输入或 H4 表现。 |
+| CASE47 H1：未对齐短行的 padded-UB 多行 epilogue；H2：active-core / rows-per-task；H3：D 维拆分归约；H4：wide tile 档；H5：MTE2 与标量尾部 issue 次序。 | H1-H5 | H1 与 CASE47 H2 同为重复调度轴。H4 与 CASE47 H1 同属 UB 资源设计但改动不同；H3 与 CASE47 H4 都涉及 tile 场景但一个删单 tile 循环控制、一个调 wide tile 宽度。H5 与 CASE47 H5 都在事件/issue 邻域，TINY 只拟条件化未被消费的 `paramReady` ID 申请/释放，不移动等待顺序。H2/H3 与 CASE47 其余机制无相同改动。均不能由耗时标签推定 case 是否命中。 |
+| SELECTIVE-FASTPATH H1：BF16 wide pass-2 的 MTE3_V 等待位置；当前 cycle H3：FP32 wide output 分成两个连续 chunk 写回，并保留 event ring。选择完整 donor，未命中时回退 V011。 | H1-H5 | 这些 donor 改写 wide store/event 路径，不调 block 数。TINY H5 涉及窄中路径 `paramReady` ID 的申请/释放，位置与动作不同；属于同步邻近项，需用函数命中和编译产物确认边界。H1-H4 不改 donor store 机制。SELECTIVE 的 H1 qualification 未完成；local 摘要不证明 Official case 覆盖。 |
 
-所有 H1-H5 都不得假设 case 1、3、5 与 BF16 D=32768 有或没有重叠。若 Official workload manifest 后续证明相同 case 命中 SELECTIVE 条件，应由 Main 明确两条研究的边界；本记录不自行合并或排除路线。
+本节证据路径：`研究/SCHED-ROWGROUP-X/next-hypotheses.md`、`本地实验/SCHED-ROWGROUP-X/V001/diff.patch`、`本地实验/SCHED-CHAMPION-X/V002/diff.patch`、`本地实验/SCHED-CHAMPION-X/V002/source-meta.json`、`worktrees/w2/m1/case47-small-cluster/研究/CASE47-SMALL-CLUSTER-CHAMPION-X/track-b-case4-case7.md`、`worktrees/w2/m1/selective-fastpath/研究/SELECTIVE-FASTPATH-CHAMPION-X/TRACK-B-HANDOFF.md`。这些资料用于机制对照；路线各自的 Local 摘要不能替代 TINY 对 V011 的直接验证。
+
+H1 的 `DUPLICATE` 仅裁定本条假设的机制重复，不决定 TINY 路线生命周期。H2-H5 的 shape / dtype 仍未知；本表不据 Official 耗时标签推测它们与 SELECTIVE 或 CASE47 的探针重叠。
 
 ## 尚需取得的资料与停止点
 
 1. 以 Official testcase ID 为键的 workload manifest：输入全 shape、dtype、epsilon 及数据布局。
 2. 能将 testcase 输入映射到 `run_kernel` 的 dispatch 结果：`rowCount`、`rowWidth`、dtype、`availableCoreNum`、`blockCount`、实际 `localRows` 与命中的函数。
 3. Official `timeUs` 的计时起止定义，以判断 Host wrapper、Kernel entry 与设备执行各自是否计入。
-4. `AllocEventID/ReleaseEventID` 的 Ascend C API 生命周期约束，以及目标路径编译产物中相关调用是否保留。
+4. H2 对应的目标编译产物，确认等行数 ownership 中除法/取余是否仍存在。
+5. H3 的通用单 tile 路径命中与循环控制生成物；H4 的 buffer 对齐、索引上界及 UB 布局/资源变化。
+6. H5 的 `AllocEventID/ReleaseEventID` Ascend C API 生命周期约束，以及目标路径编译产物中相关调用是否保留。
 
-缺少第 1、2 项时，不扩展目标 case、不填写形状、不提交某项供 Main 选择。收到资料后先更新本目录的 Track-B 事实，再等待 Main / Planning 决定；本轮不做 Candidate 修改、Revision、设备操作、构建、正确性运行、测量、Online 或 push。
+缺少第 1、2 项时，不扩展目标 case、不填写形状、不提交假设供 Main 做实现选择。H2 可审阅机制定义，但不可据此建立 Revision。收到资料后先更新本目录的 Track-B 事实，再等待 Main / Planning 决定；本轮不做 Candidate 修改、Revision、设备操作、构建、正确性运行、测量、Online 或 push。
