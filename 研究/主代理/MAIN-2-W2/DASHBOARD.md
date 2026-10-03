@@ -967,6 +967,30 @@ KERNEL_FILES_CHANGED_BY_MAIN=0
 CANONICAL_SHARED_LEDGER_CHANGES=0
 ```
 
+## MAIN-2 next revision wave — ADDR V002 / Planning handoffs
+
+```text
+OFFICIAL_ANCHOR=R31B V011 = 45.16
+ADDR_V001_REFERENCE_SCORE=-24.193320%; QUALITY=POOR
+ADDR_V002=DECLARED_SIBLING_FROM_R31B_V011
+ADDR_V002_HYPOTHESIS=ADDR-H1 pass-1 row-base state
+ADDR_V002_BASELINE_COMMIT=f6cd9ae8
+ADDR_V002_HANDOFF_COMMIT=fc2ee48b
+ADDR_V002_BUILD=NOT_RUN
+ADDR_V002_CORRECTNESS=NOT_RUN
+ADDR_V002_RUN1=NONE; ADDR_V002_RUN2=NONE; ADDR_V002_RUN3=NONE
+ADDR_V002_LOCAL_AVG=NONE; ADDR_V002_LOCAL_DELTA_PERCENT=NONE; QUALITY=NONE
+TILECOUNT_HANDOFF=READY; COMMIT=cdee126e; IMPLEMENTATION=NO
+REDUCE_FINALIZE_HANDOFF=READY; COMMIT=fd77f257; IMPLEMENTATION=NO
+DIRECT_ONLINE_SUBMISSION=0
+```
+
+ADDR V002 is a byte-identical sibling baseline from R31B V011; it does not
+inherit ADDR-H3 V001.  The next action is Route-Agent implementation of the
+single H1 row-base change, followed immediately by Build, Correctness, and
+2–3 valid Local Score runs.  No V003, UB V002, BRANCH V003, or Online action
+is authorized in this window.
+
 The event rule is: an eligible local commit starts its own Build immediately;
 Build PASS starts Correctness immediately; Correctness PASS starts the next
 authorized stage immediately. A route does not wait for sibling routes,
