@@ -1,8 +1,26 @@
 # MAIN-2 Local Control Dashboard
 
-UPDATED_UTC: 2026-10-03T07:48:00Z
+UPDATED_UTC: 2026-10-03T07:50:00Z
 SCOPE: MAIN-2 local control only
 CANONICAL_SHARED_LEDGER: UNMODIFIED
+
+## Event receipt — HBH-09 V002 Window G paired result — 2026-10-03T07:50Z
+
+```text
+CONTROL_HEAD_BEFORE_RECEIPT=64b7ed27
+ROUTE_EVIDENCE_COMMIT=ad784fb2
+CURRENT_STATE=WAITING_FOR_VALID_LOCAL_SCORE
+DEVICE=4; SHAPE=BF16_D6144_ROWS80
+SAME_BINARY=PASS; QUALIFICATION_SAMPLES=62; MAD_MEDIAN=4.0619%; BLOCK_DRIFT=1.1605%
+PAIRED=PASS_RUNNER_RC0; BLOCKS=8; RAW_PAIRED_SAMPLES=496
+BLOCK_DELTAS=+0.816,-7.649,+7.514,+1.492,-17.744,-6.952,+23.288,+11.446%
+VALID_LOCAL_SCORE=NO; LOCAL_SCORE=NONE
+NO_NEXT_PERFORMANCE_REVISION=YES; ONLINE_READY=NO
+```
+
+Window G passed qualification and completed paired timing, but deltas were
+direction-mixed with high block jitter. It remains measurement evidence only;
+no Candidate verdict or score was created.
 
 ## Event receipt — HBH-09 V002 Window G protocol predeclaration — 2026-10-03T07:48Z
 
