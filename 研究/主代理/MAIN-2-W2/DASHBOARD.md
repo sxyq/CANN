@@ -1,8 +1,41 @@
 # MAIN-2 Local Control Dashboard
 
-UPDATED_UTC: 2026-10-03T07:01:04Z
+UPDATED_UTC: 2026-10-03T07:05:00Z
 SCOPE: MAIN-2 local control only
 CANONICAL_SHARED_LEDGER: UNMODIFIED
+
+## Event receipt — HBH-09 V002 Window C qualification result — 2026-10-03T07:05Z
+
+```text
+CONTROL_HEAD_BEFORE_RECEIPT=2159ba25
+ROUTE_QUALIFICATION_COMMIT=ce582cd7
+CURRENT_STATE=WAITING_FOR_VALID_LOCAL_SCORE
+DEVICE=5; PRIMARY_SHAPE=BF16_D6144_ROWS40
+PARENT_SHA256=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
+CANDIDATE_SHA256=1aa6d8ecaa1af058b039341f63c67f4f67403bb4a8e5c6bc57dd96914f42cb65
+RUNNER_SHA256=c4d7b89494ed771c5ce89444c7b5ad4f8fd321c087b1fdb80097ce7ba2c82fb7
+LOCAL_FORMAL_LEASE=ACQUIRED
+SAME_BINARY=MEASUREMENT_PROTOCOL_BLOCKED_FOR_SHAPE
+MAD_MEDIAN=37.1654%; BLOCK_DRIFT=57.1654%; RAW_SAMPLES=62
+PARENT_CANDIDATE_TIMING=NOT_RUN
+VALID_LOCAL_SCORE=NO; LOCAL_SCORE=NONE
+ONLINE_READY=NO; DIRECT_ONLINE_SUBMISSION=0
+CANONICAL_SHARED_LEDGER_CHANGES=0
+```
+
+The d5 live snapshot showed about 1479 MB free HBM, AICore 5%, no active
+shared d5 lease, and high but recorded host/process load. The qualification
+failed its same-binary noise gate, so no paired timing ran. Its session log's
+final `LOCAL_FORMAL_LEASE=CONFLICT` line is an orchestration-wrapper
+misclassification: the same log first records lease acquisition, and the
+qualification log/raw file prove the runner executed. The original log is
+preserved; the correction is documented in the Route evidence.
+
+```text
+V002_NEXT=FRESH_TEMPORAL_WINDOW_RESOURCE_SCAN; TRY_ANOTHER_PRIMARY
+NO_NEXT_PERFORMANCE_REVISION=YES
+PUSH_STATE=PUSH_PENDING; PUSH_IS_NOT_AN_EXPERIMENT_GATE
+```
 
 ## Event receipt — HBH-09 V002 Window C protocol predeclaration — 2026-10-03T07:01Z
 
