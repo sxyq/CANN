@@ -46,3 +46,9 @@ No build, correctness run, performance run, profiling, server3 job or Online sub
 - The existing W60 same-binary result remains PASS in the route record, but its raw and jitter files have not been copied from server3. The assigned read-only retrieval attempt and a separate read-only SSH attempt both timed out; no remote query or transfer ran.
 - Remote evidence remains under `/home/data4t2/lelinfeng/cann/w2/SYNC-TOPOLOGY-CHAMPION-X/V001/results/SYNC-TOPOLOGY-CHAMPION-X-V001-D4-WARMUP60-20261003T020523Z/`. Required files are `SAME-BINARY-raw.tsv` and `SAME-BINARY-jitter.txt`; local SHA values are not available yet.
 - Parent window and Candidate P/C remain NOT_RUN. The earlier lease is RELEASED. After SSH access returns, retrieve the existing files first, then perform a live device read and record a new lease before any timing stage. No Candidate source or timing harness changed in this follow-up.
+
+## CASE47 Active-Core Follow-up (2026-10-03)
+
+- Route report commit: `d2af2ff29fddf9bb1384f38341a8dcba2b83bd99`. The case4/case7 input table still has UNKNOWN shape, dtype, M, D, runtime `availableCoreNum`, dispatch and ownership; Support-A's public data did not supply those fields.
+- Main review: H1's D-split is not implementable through the current call interface; H2–H4 duplicate existing R016/SCHED row-granularity, row-group, core-scaling or ownership work; H5 remains conditional on dispatch reachability. These classifications do not select an implementation.
+- Keep `MAIN_SELECTED=NONE`. No performance Revision, Build, correctness, device timing, or lifecycle decision follows. Exact testcase input metadata and a source-bound runtime core-count record remain missing.
