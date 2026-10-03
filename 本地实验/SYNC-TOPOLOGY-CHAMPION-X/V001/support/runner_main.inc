@@ -30,7 +30,7 @@ constexpr int kDevice = 4;
 constexpr int64_t kRows = 2;
 constexpr int64_t kWidth = 12288;
 constexpr int kFp16 = 1;
-constexpr int kWarmups = 45;
+constexpr int kWarmups = 60;
 constexpr int kPrecheckSamples = 21;
 constexpr int kQualificationSamples = 31;
 constexpr int kPairGroups = 4;
@@ -354,7 +354,8 @@ bool RunPrecheck(const char* block, int rep, const char* prefix,
     Warmup(sync_parent_run_kernel, buffers.parentOutput, buffers, dataInfo,
            paramInfo, stream, kWarmups, "R31B_V011");
     raw << "phase\tprecheck\trep\tsample\tvariant\tdevice_us\twall_us\n";
-    jitter << "phase=WINDOW_PRECHECK device=4 shape=2x12288 dtype=FP16 warmup=45 samples=21\n";
+    jitter << "phase=WINDOW_PRECHECK device=4 shape=2x12288 dtype=FP16 warmup="
+           << kWarmups << " samples=21\n";
     bool eventsRecorded = false;
     std::vector<double> device, wall;
     for (int sample = 0; sample < kPrecheckSamples; ++sample) {
@@ -404,7 +405,8 @@ bool RunSameBinary(const char* prefix, DeviceBuffers& buffers,
     Warmup(sync_parent_run_kernel, buffers.parentOutput, buffers, dataInfo,
            paramInfo, stream, kWarmups, "R31B_V011");
     raw << "phase\tblock\tsample\tvariant\tdevice_us\twall_us\n";
-    jitter << "phase=SAME_BINARY device=4 shape=2x12288 dtype=FP16 warmup=45 samples_per_block=31\n";
+    jitter << "phase=SAME_BINARY device=4 shape=2x12288 dtype=FP16 warmup="
+           << kWarmups << " samples_per_block=31\n";
     bool eventsRecorded = false;
     std::vector<double> allDevice, allWall;
     std::vector<double> blockMedians;
@@ -479,7 +481,8 @@ bool RunPaired(const char* prefix, DeviceBuffers& buffers,
     std::printf("WARMUP binary=R31B_V011+SYNC_V001 launches_each=%d synchronized=1\n", kWarmups);
 
     raw << "phase\tgroup\tpair\torder\tvariant\tdevice_us\twall_us\tpaired_delta_us\tpaired_delta_pct\n";
-    jitter << "phase=INTERLEAVED_PAIRS device=4 shape=2x12288 dtype=FP16 warmup_each=45 groups=4 pairs_per_group=11\n";
+    jitter << "phase=INTERLEAVED_PAIRS device=4 shape=2x12288 dtype=FP16 warmup_each="
+           << kWarmups << " groups=4 pairs_per_group=11\n";
     bool eventsRecorded = false;
     std::vector<double> allParentDevice, allCandidateDevice, allParentWall,
                         allCandidateWall, allDelta, allDeltaPct;
