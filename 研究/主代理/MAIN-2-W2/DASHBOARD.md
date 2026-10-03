@@ -1,8 +1,29 @@
 # MAIN-2 Local Control Dashboard
 
-UPDATED_UTC: 2026-10-03T06:54:59Z
+UPDATED_UTC: 2026-10-03T07:01:04Z
 SCOPE: MAIN-2 local control only
 CANONICAL_SHARED_LEDGER: UNMODIFIED
+
+## Event receipt — HBH-09 V002 Window C protocol predeclaration — 2026-10-03T07:01Z
+
+```text
+CONTROL_HEAD_BEFORE_RECEIPT=382fbf00
+ROUTE_PROTOCOL_COMMIT=10d6065e
+CURRENT_STATE=WAITING_FOR_VALID_LOCAL_SCORE
+DEVICE=5; PRIMARY_SHAPE=BF16_D6144_ROWS40
+PARENT_SHA256=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
+CANDIDATE_SHA256=1aa6d8ecaa1af058b039341f63c67f4f67403bb4a8e5c6bc57dd96914f42cb65
+RUNNER_SHA256=c4d7b89494ed771c5ce89444c7b5ad4f8fd321c087b1fdb80097ce7ba2c82fb7
+LOCAL_SCORE=NONE
+NO_NEXT_PERFORMANCE_REVISION=YES
+```
+
+Window C is predeclared from the primary d5 BF16 D6144 rows=40 target. Window
+A's Parent paired MAD/median was below 5% in all four blocks; its Candidate
+delta was still within the same-binary noise floor. The current d5 scan showed
+approximately 1479 MB free HBM, AICore 0%, and no active shared d5 lease.
+Next: refresh admission data, then same-binary qualification followed
+immediately by 8-block paired P/C only on PASS.
 
 ## Event receipt — HBH-09 V002 Window B measurement — 2026-10-03T06:54Z
 
