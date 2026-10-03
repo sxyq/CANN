@@ -1,0 +1,35 @@
+# HBH-09 V002 — Window F qualification result
+
+```text
+ROUTE=HOTLOOP-BRANCH-HOIST-CHAMPION-X
+REVISION=V002
+HYPOTHESIS=HBH-09
+UTC=2026-10-03T07:43Z
+DEVICE=5
+SHAPE=BF16_D6144_ROWS40
+PARENT_SHA256=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
+CANDIDATE_SHA256=1aa6d8ecaa1af058b039341f63c67f4f67403bb4a8e5c6bc57dd96914f42cb65
+RUNNER_SHA256=c4d7b89494ed771c5ce89444c7b5ad4f8fd321c087b1fdb80097ce7ba2c82fb7
+SAME_BINARY=MEASUREMENT_PROTOCOL_BLOCKED_FOR_SHAPE
+SAMPLES=62 (2 blocks x 31)
+MEDIAN_US=14.310000
+MAD_OVER_MEDIAN=31.9357%
+BLOCK_DRIFT=39.9720%
+QUALIFICATION_RC=1
+PARENT_CANDIDATE_TIMING=NOT_RUN
+VALID_LOCAL_SCORE=NO
+LOCAL_SCORE=NONE
+```
+
+The exact d5 formal lock was acquired and the CANN loader environment was
+recovered without changing the runner. All raw samples and resource snapshots
+are retained. Qualification block medians were 14.760 us and 9.040 us; the
+shape therefore failed before any Candidate timing. This is measurement
+evidence only, not a Candidate performance verdict.
+
+```text
+CURRENT_STATE=WAITING_FOR_VALID_LOCAL_SCORE
+NEXT_ACTION=NEW_RESOURCE_SCAN_AND_SAME_BINARY_QUALIFICATION_ON_ANOTHER_PRIMARY_COMBINATION
+NO_NEXT_PERFORMANCE_REVISION=YES
+ONLINE_READY=NO
+```
