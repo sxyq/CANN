@@ -105,3 +105,14 @@
 | 2026-09-29 | R31B V020 INFEASIBLE (UB overflow); cheap options exhausted on ProcessWideLowPrecision; recommend LANE_NEEDS_PLANNING_REVIEW |
 | 2026-09-29 | **STORE V003 LOCAL_ACCEPTED** multi-row -5.64% 6/0; cumulative 1x32768 ~-8.6%; ONLINE WORTHY (case14 primary) |
 | 2026-09-29 | **EPILOGUE-ARITH V002 Online closure**: submission `6abb8840694b590c3c9b6db3`, Pass 15/15, Official 44.96, delta -0.20 vs 45.16; `LOCAL_SHA=SIDECAR_SHA=REMOTE_SHA`; `LOCAL_ONLINE_FALSE_POSITIVE`; V002 remains Local/Official Best; no new Revision before Planning. |
+| 2026-09-29 | **R31B V017 Online closure**: submission `6abb80ba694b590c3c970983`, Pass 15/15, Official 44.68, delta -0.48 vs R31B V011 45.16; identity matches; retain V017 Local Best and V011 Official Best. |
+| 2026-09-29 | **R31A V028 Online closure**: submission `6abb7eb5694b590c3c95c879`, Pass 15/15, Official 44.07, delta -0.93 vs V016 45.00; identity matches; retain V028 Local Best and V016 Official Best. |
+| 2026-09-29 | **STORE-EPILOGUE-X V003 Online closure**: submission `6abb8182694b590c3c978d30`, Pass 15/15, Official 44.38, delta -0.69 vs V002 45.07; identity matches; retain V003 Local Best and V002 Official Best. |
+
+## MAIN-1 Wave-2 状态增补（2026-10-03）
+
+- SYNC-TOPOLOGY-CHAMPION-X V001 的 Candidate 源代码 SHA 为 `27c853e1cb0c47307899b874338c3aecb912ad5dc125c0d67f6afba76a9117ec`，Parent 为 R31B V011。Configure、Build/Link 与 `[2,12288]` FP16、`[2,8192]` FP16 Correctness 均 PASS。
+- d4 Parent same-binary 完成 45 次 warmup 与 62 个 device-event 样本；MAD/median=`0.062929`，两块中位数为 `10.98 us` 与 `8.42 us`，block drift=`0.292906`。该形状状态为 `MEASUREMENT_BLOCKED`；Parent window 与 Candidate P/C 均未运行，没有 Local 分数或 Online 结果。
+- 同步的 raw/jitter 文件已放入 V001 记录目录，并与 server3 原件 SHA-256 相同。路由分支提交 `1c9a86ec` 已推送；Candidate 源代码未改。
+- d4 lease `M1-SYNC-V001-D4-PERF-20261002T232615Z` 已释放；设备与进程记录将另行纳入 canonical 台账。下一次计时需要新的 Main lease，并先处理 Parent 稳定性问题。
+- `PLANNING_DECISIONS_CHANGED=0`; `NEW_ROUTES=0`。
