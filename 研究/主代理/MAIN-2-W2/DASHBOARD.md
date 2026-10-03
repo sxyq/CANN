@@ -1,8 +1,41 @@
 # MAIN-2 Local Control Dashboard
 
-UPDATED_UTC: 2026-10-03T06:22:47Z
+UPDATED_UTC: 2026-10-03T06:45:56Z
 SCOPE: MAIN-2 local control only
 CANONICAL_SHARED_LEDGER: UNMODIFIED
+
+## Event receipt — HBH-09 V002 Window B runner startup diagnostic — 2026-10-03T06:45Z
+
+```text
+CONTROL_HEAD_BEFORE_RECEIPT=294b931e
+ROUTE_PROTOCOL_COMMIT=80280eec
+ROUTE_DIAGNOSTIC_COMMIT=9d8e1e42
+CURRENT_STATE=WAITING_FOR_VALID_LOCAL_SCORE
+DEVICE=4; PRIMARY_SHAPE=FP32_D6144_ROWS80
+PARENT_SHA256=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
+CANDIDATE_SHA256=1aa6d8ecaa1af058b039341f63c67f4f67403bb4a8e5c6bc57dd96914f42cb65
+RUNNER_SHA256=c4d7b89494ed771c5ce89444c7b5ad4f8fd321c087b1fdb80097ce7ba2c82fb7
+LOCAL_FORMAL_LEASE=ACQUIRED_AND_RELEASED
+SAME_BINARY=NOT_STARTED; RUNNER_RC=127
+PARENT_CANDIDATE_TIMING=NOT_RUN
+LOCAL_SCORE=NONE
+ONLINE_READY=NO; DIRECT_ONLINE_SUBMISSION=0
+CANONICAL_SHARED_LEDGER_CHANGES=0
+```
+
+Window B admission found no active d4 shared lease. The pre-run snapshot had
+HBM `61977/65536 MB` (about 3559 MB free), AICore 1%, host load
+`61.80/62.66/63.35`, and resident user/VLLM processes; none was stopped or
+migrated. The exact existing performance executable then failed before
+entering its runner because `libruntime.so` was absent from this command's
+loader path. This is an invocation-environment startup failure, not a
+same-binary qualification result and not a performance measurement. The
+lease was released; no raw timing samples were produced.
+
+```text
+V002_NEXT=DIAGNOSE_CANN_RUNTIME_ENV; RETRY_EXACT_D4_FP32_D6144_ROWS80
+PUSH_STATE=PUSH_PENDING; PUSH_IS_NOT_AN_EXPERIMENT_GATE
+```
 
 ## Event receipt — HBH-09 V002 paired recovery, Window A — 2026-10-03T06:22Z
 
