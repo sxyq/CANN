@@ -1,8 +1,26 @@
 # MAIN-2 Local Control Dashboard
 
-UPDATED_UTC: 2026-10-03T07:27:30Z
+UPDATED_UTC: 2026-10-03T07:34:30Z
 SCOPE: MAIN-2 local control only
 CANONICAL_SHARED_LEDGER: UNMODIFIED
+
+## Event receipt — HBH-09 V002 Window F protocol predeclaration — 2026-10-03T07:34Z
+
+```text
+CONTROL_HEAD_BEFORE_RECEIPT=b94901c2
+ROUTE_PROTOCOL_COMMIT=81d7217e
+CURRENT_STATE=WAITING_FOR_VALID_LOCAL_SCORE
+DEVICE=5; PRIMARY_SHAPE=BF16_D6144_ROWS40
+PARENT_SHA256=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
+CANDIDATE_SHA256=1aa6d8ecaa1af058b039341f63c67f4f67403bb4a8e5c6bc57dd96914f42cb65
+RUNNER_SHA256=c4d7b89494ed771c5ce89444c7b5ad4f8fd321c087b1fdb80097ce7ba2c82fb7
+LOCAL_SCORE=NONE
+NO_NEXT_PERFORMANCE_REVISION=YES
+```
+
+Window F is predeclared only. Before any timing, refresh all-device HBM,
+AICore/process, host-load, and shared/local lease state. Run same-binary first;
+paired P/C is permitted only after exact-shape PASS under the same lease.
 
 ## Event receipt — HBH-09 V002 Window E qualification result — 2026-10-03T07:27Z
 
