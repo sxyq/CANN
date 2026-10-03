@@ -52,3 +52,10 @@ No build, correctness run, performance run, profiling, server3 job or Online sub
 - Route report commit: `d2af2ff29fddf9bb1384f38341a8dcba2b83bd99`. The case4/case7 input table still has UNKNOWN shape, dtype, M, D, runtime `availableCoreNum`, dispatch and ownership; Support-A's public data did not supply those fields.
 - Main review: H1's D-split is not implementable through the current call interface; H2–H4 duplicate existing R016/SCHED row-granularity, row-group, core-scaling or ownership work; H5 remains conditional on dispatch reachability. These classifications do not select an implementation.
 - Keep `MAIN_SELECTED=NONE`. No performance Revision, Build, correctness, device timing, or lifecycle decision follows. Exact testcase input metadata and a source-bound runtime core-count record remain missing.
+
+## SELECTIVE-FASTPATH Donor Follow-up (2026-10-03)
+
+- Route audit commit: `f8e28d86f268e07cc49de558fe7e51aa9a70c8d7`. STORE V003 source, its STORE V002 parent, the R31B V011 fallback, sidecar and saved Judge identity were matched in the route audit.
+- The audited mechanism is wide-FP32 output writeback split into two contiguous chunks, with the first chunk issued ahead. Recorded Local deltas compare STORE V003 with STORE V002; they do not measure V003 against R31B V011. Full-donor Official score is `44.38`, below V011 `45.16`; the reported case14 latency is about 0.76% slower and does not identify that case's input or dispatch.
+- CASE47 H4 tile-width and H2 active-core changes can interact with V003's tile count or block row grouping; TINY H1 can also affect row grouping if the input overlaps. The Official testcase-to-input and runtime path map remains unavailable, so donor reachability and selective-score benefit are unproven.
+- Main review remains `NEEDS_MORE_EVIDENCE`; keep `MAIN_SELECTED=NONE`. No performance Revision, Build, correctness, timing, submission, or route lifecycle change is authorized by this audit.
