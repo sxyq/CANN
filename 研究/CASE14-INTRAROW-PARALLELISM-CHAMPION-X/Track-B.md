@@ -229,3 +229,11 @@ MAIN-1 状态材料另记了 Pass1 63–73%、Pass2 26–38%、pipeline sum 1.23
 ### C2C 路线边界更新
 
 本轮 C2C 信息：Main 已选择 SELECTIVE-FASTPATH H3，研究对象是按 exact FP32 proxy-shape allowlist 选择已固定的 STORE V003 donor，其余输入回退到 V011。allowlist 标签为 `FP32-8x16384`、`FP32-1x32768`、`FP32-1x16384`。该方向改 output-store writeback；它不切分 row 的 D，也不提供 Official case14 的 shape/dtype 对照。此选择属于另一条 Route，不改变本 Route 的 `MAIN_SELECTED=NONE`，也不改变以上研究范围或 Candidate 状态。
+
+### CASE47 选择范围更新（2026-10-03 C2C）
+
+Main 选择 CASE47 H1，仅覆盖非对齐 `ProcessNarrowMidOverlap` 路径的 `PROXY`：FP32、D=257、每 block 两行。该机制合并 scalar handoff 边界，并保留各行独立的 Level-2 `ReduceSum` 与原有算术。它处理行间 handoff 分组，不将一行的 D 分给多个 core；与本路线宽行 D-slice 假设及 SELECTIVE-FASTPATH H3 的 output-store writeback 分属不同机制，也不提供 Official case14 输入对应关系。
+
+### case14 时间说法来源更新（2026-10-03 C2C）
+
+Support-A 原始群聊复核发现，“case14 157us”紧邻超时讨论，且没有可关联的提交记录，故该说法标为无效，不作为测量或 profile 证据。R31B V011 的 Official result.json 仍记录 case14 `timeUs=16486.82`；此项只确认 Judge 记录的耗时，不提供 shape、dtype、dispatch 或 profile。case14 输入与 profile 对应关系仍缺失，H5–H7 继续仅为 PROXY 假设，`MAIN_SELECTED=NONE`。
