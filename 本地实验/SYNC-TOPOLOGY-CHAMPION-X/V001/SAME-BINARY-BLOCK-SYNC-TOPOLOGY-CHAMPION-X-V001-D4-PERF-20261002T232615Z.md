@@ -8,7 +8,7 @@
 - Parent SHA256: `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`.
 - Device lease: `M1-SYNC-V001-D4-PERF-20261002T232615Z`.
 - Lease status: `RELEASED`, recorded by Main schedule commit `18dd2485`.
-- Main's handoff did not provide a separate timing results-directory `RUN_ID`; the runner output prefix was `SAME-BINARY-SETENV`.
+- No dedicated same-binary `RUN_ID` was allocated. The evidence is stored in the Build/Correctness results directory `SYNC-TOPOLOGY-CHAMPION-X-V001-D4-BUILD-FIX-6e650cf5-20261002T231909Z`, under `/home/data4t2/lelinfeng/cann/w2/SYNC-TOPOLOGY-CHAMPION-X/V001/results/`.
 
 ## Parent same-binary result
 
@@ -26,5 +26,5 @@
 - AICore before/after: `0%`.
 - `VLLMEngineCor` PID `2999855` remained unchanged; no SYNC process remained after the run.
 - Available disk before/after: `616 GB`.
-- Main reports raw samples, jitter, runner log, and pre/post snapshots retained in the lease result directory under `/home/data4t2/lelinfeng/cann/w2/SYNC-TOPOLOGY-CHAMPION-X/V001/results/`.
-- The report supplied the prefix `SAME-BINARY-SETENV` but omitted the distinct results-directory `RUN_ID`; the exact directory suffix is therefore not asserted here.
+- The raw samples, jitter summary, runner output/status, and snapshots are retained in the result directory above. The raw/jitter files are also copied into this Revision directory and their local SHA256 values match the server3 originals.
+- Exact result files: `SAME-BINARY-SETENV-raw.tsv`, `SAME-BINARY-SETENV-jitter.txt`, `same-binary-runner-setenv.log`, `same-binary-status-setenv.txt`, `pre-same-binary-setenv-device.txt`, `pre-same-binary-setenv-disk.txt`, `pre-same-binary-setenv-project-usage.txt`, `post-same-binary-setenv-device.txt`, `post-same-binary-setenv-disk.txt`, `post-same-binary-setenv-processes.txt`, and `post-same-binary-setenv-project-usage.txt`.
