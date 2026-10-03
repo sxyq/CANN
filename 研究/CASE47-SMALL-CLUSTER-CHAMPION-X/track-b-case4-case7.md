@@ -24,6 +24,10 @@ PARENT_SOURCE_SHA256: `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c28
 
 对 testcase ID 与时间的全仓搜索只命中 R31B-V011 与 SCHED-ROWGROUP-X V001 的 Official 结果文件；没有找到 testcase 输入元数据文件。`研究/CASE47-SMALL-CLUSTER-CHAMPION-X/` 在本轮前不存在，也没有既有路线记录或 Revision 目录。
 
+### SUPPORT-A case-family 映射协同
+
+当前分配 worktree 的研究、路线记录与 Official 结果中未找到 SUPPORT-A 的 case-family 映射。后续若收到该映射，按 `(index, testcaseId)` 与上表的 case4/case7 关联；只有映射同时给出可追溯的输入 shape、dtype 来源时，才补入逐案元数据。若映射只给 case family 标签，shape/dtype 仍记未知。此路线不等待 SUPPORT-A 的其他 lane 工作，也不把映射到手视为 Revision 批准。
+
 缺项逐案记录：
 
 | case | shape | dtype | rows M | D | dispatch | core ownership / active blocks | tile |
@@ -49,8 +53,8 @@ PARENT_SOURCE_SHA256: `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c28
 
 | 对照 | 已记录机制 / 结果 | 对本路线的约束 |
 |---|---|---|
-| R016 / FULL-R016 | 按 D 档设置 rows-per-task（16/8/4/2/1），block 数为可用 core 数与 task 数的较小者；记录见 `研究/SCHED-ROWGROUP-X/next-hypotheses.md`、`技术路线/全版本记录.tsv`。 | R31B-V011 已按 `min(availableCoreNum,M)` 启动 blocks。若新想法只调 rows-per-task 或 active core 数，和既有调度轴实质重叠。 |
-| SCHED-ROWGROUP-X / SCHED-CHAMPION-X | SCHED-ROWGROUP 加入 `rowGroup=32/gcd(rowBytes,32)`；SCHED-CHAMPION V002 还记录 `totalGroups*2 >= min(blockCount,rowCount)` 的 active-core 保留条件。INTEGRATION-X 将 SCHED V002 与 VECTOR-MATH 组合后，Official case4/6/7 时间分别退至 31.32/49.04/76.45 us，Official 总结果低于 Parent。 | `ACTIVE_CORE_COUNT` 不能作为当前首选：它和已有 rows/task、active-core 条件重叠，且直接 Parent 已把 block 数开到 M 或可用核数上限。INTEGRATION 的退化只说明组合不可照搬，不揭示 case 输入。 |
+| R016 / FULL-R016 | 按 D 档设置 rows-per-task（16/8/4/2/1），`taskCount=ceil(M/rowsPerTask)`，block 数取 `min(availableCoreNum,taskCount)`；未对齐行会退到 1 block，`D>16384` 另有 8-block 上限。证据：`归档/历史工作区/SCHED-ROWGROUP-X/PARENT-R016-COMPILEFIX-kernel.asc:435-469`、`技术路线/技术路线总表.md:34,72`。 | R31B-V011 改用规则分行，但仍按 `min(availableCoreNum,M)` 启动 blocks。按 M/D/core 数重算一般活动核数，或复述 rows-per-task，落在已有调度轴内。 |
+| SCHED-ROWGROUP-X / SCHED-CHAMPION-X | SCHED-ROWGROUP 在 R016 调度上加入 `rowGroup=32/gcd(rowBytes,32)` 并据此取整任务行数；SCHED-CHAMPION V002 记录 active-core 保留条件 `totalGroups*2 >= min(blockCount,rowCount)`。证据：`线上结果/SCHED-ROWGROUP-X/V001/submission.asc:433-485`、`技术路线/全版本记录.tsv:65-67`。INTEGRATION-X 将 SCHED V002 与 VECTOR-MATH 组合后，Official case4/6/7 时间分别退至 31.32/49.04/76.45 us；这些仍不是输入 shape/dtype 证据。 | 当前泛化的 `ACTIVE_CORE_COUNT` 提议若按行数、行组数或任务数选择活动核，判为重复；V011 的 block 数已经覆盖 `min(availableCoreNum,M)`。若另指“低于该上限主动减核”，方向不同，但现有记录没有对应瓶颈证据，需先有 case 映射和可区分机制后再单列研究。 |
 | ROW-OCCUPANCY | 在可检索的正式路线表、调度表、研究目录和历史工作区中，没有找到精确名为 `ROW-OCCUPANCY` 的路线或研究记录。最接近的正式机制是上列 R016/SCHED 的行任务与 active-core 设计。 | 不把未找到的标签当成路线事实；新增调度想法先与 R016/SCHED 的公式逐项比对。 |
 | reduction / math | REDUCE-HIER-X V004/V005 在宽行归约变体上有稳定退化记录；VECTOR-MATH-X 的 SEQ-FUSE-2 有单独研究记录。 | 仅改 `ReduceSum`/标量 V-S 序列没有新增机制证据，先按重复方向处理。 |
 | tile / UB | SHAPE-TILING-CHAMPION-X 的研究覆盖 shape-conditioned tile/UB；R31B V016 已有 FP16/BF16 wide tile 4096→8192 假设。 | 宽 tile 方向不能直接作为新路线主假设；要先证明探针 D/dtype 与现有范围不同。 |
@@ -74,20 +78,20 @@ PARENT_SOURCE_SHA256: `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c28
 - `EXPECTED_LOCAL_PROBES`：先取得 case4/7 的真实输入；用 Parent 对精确 case shape 建立 same-binary，再与同 dtype 最近的对齐宽度作 guard。源码边界优先看 `D=128/129`、`D=2048/2049` 以及 `%8`/`%16` 相邻宽度；只在本路线获 Main 批准后执行。
 - `CLASSIFICATION`：`NEEDS_MORE_EVIDENCE`。
 
-### H2：按有效任务数调 active core / rows-per-task
+### H2：按有效任务数重算 active core / rows-per-task（重复方向）
 
 - `MECHANISM`：从 M、D 与可用核数重算 block 数或每 block 行数。
-- `BOTTLENECK`：block 数偏少造成的核利用不足，或过多 block 的启动成本。
+- `BOTTLENECK`：假设 block 数偏少造成的核利用不足，或过多 block 的启动成本；目前 Direct Parent 证据不支持前一种情况。
 - `EXPECTED_SHAPES / DTYPES`：小 M 或小 D 的 Tiny/Medium，dtype 不构成限制；case4/7 是否满足条件未知。
-- `WHY_IT_MAY_HELP`：若某输入的活动 block 少于可用核数，缩短串行行段可能减少最长 block 的工作量。
-- `WHY_IT_MAY_FAIL`：Direct Parent 已取 `min(availableCoreNum,M)`；M 不超过可用核数时没有更多独立行可派。若减少 block 数，可能增加单核串行工作与初始化摊销。
+- `WHY_IT_MAY_HELP`：若新证据显示某个输入未达到现有 `min(availableCoreNum,M)` 上限，才可能有未利用并行度；当前未获得 case4/7 的 M 与运行时核数，不能确认这种情况。
+- `WHY_IT_MAY_FAIL`：V011 的 block 数已取 `min(availableCoreNum,M)`：当 M 小于可用核数时每行已有一个 block，当 M 不小于可用核数时可用核均已启动。改变 rows-per-task 又直接进入 R016/SCHED 的既有机制；主动减核则可能增加每核串行工作与启动摊销。
 - `ASCEND_FEASIBILITY`：Host 整数公式可实现，不需新增 Ascend C API。
 - `UB/CORE/DMA_IMPACT`：UB 与每行 DMA 不变；只改核数及每核行段长度。
 - `SYNC_IMPACT`：没有新增跨核同步。
 - `PRECISION_RISK`：行内运算顺序不变时低。
-- `DUPLICATE_CHECK`：与 R016 的 D 档 rows-per-task、SCHED-ROWGROUP 的 rowGroup ownership、SCHED-CHAMPION V002 的 active-core 保留条件重复。没有证据证明该机制与上述条目不同。
+- `DUPLICATE_CHECK`：当前泛化版本与 R016 的 D 档 rows-per-task / block 数公式、SCHED-ROWGROUP 的 rowGroup 任务取整、SCHED-CHAMPION V002 的活动核保留条件重叠。若意图改为低于 V011 上限的减核策略，需另行写明启动开销或并发争用这一具体瓶颈；当前没有 case 元数据或证据支持该变体。
 - `MINIMAL_OFAT_DIFF`：仅改 Host blockCount 或 task 粒度；在差异审阅前不改 Candidate。
-- `EXPECTED_LOCAL_PROBES`：若 Main 后续要求比较，需覆盖 `M` 位于 `availableCoreNum-1 / availableCoreNum / availableCoreNum+1` 的同 dtype guard，并按精确 case4/7 shape 单独核实；本轮不测。
+- `EXPECTED_LOCAL_PROBES`：本轮不建议探针。若未来提出与既有调度公式不同的明确减核假设，须先取得 case4/7 精确 shape/dtype 与运行时 available core，再由 Main 审阅后确定对照；本轮不测。
 - `CLASSIFICATION`：`DUPLICATE`；不得作为首选假设。
 
 ### H3：D 维跨核分段归约
