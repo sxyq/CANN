@@ -942,6 +942,8 @@ DIRECT_ONLINE_SUBMISSION=0
 LOCAL_SCORE_METHOD=three run-level arithmetic means of device-event P/C samples
 DEVICE=7 for all implemented routes
 MEASUREMENT_QUALITY=POOR for all three scores; unrelated Python load remained resident
+PUSH_STATE=PUSH_PENDING; GitHub connection timed out during the ADDR push attempt
+LOCAL_SCORE_COMMITS=604e3a65,14dd05d8,ef1fd9e4,0ff6b041; no Candidate source edits by Main
 ```
 
 | Route | Latest revision | Build | Correctness | Basic local score |
