@@ -81,5 +81,5 @@ target_link_options(case47_timing_runner PRIVATE
 )
 target_compile_options(case47_timing_runner PRIVATE -ffp-contract=off)
 set_target_properties(case47_timing_runner PROPERTIES
-    BUILD_RPATH "${TOOLKIT}/lib64;${TOOLKIT}/aarch64-linux/lib64"
+    BUILD_RPATH "${TOOLKIT}/lib64;${TOOLKIT}/aarch64-linux/lib64;/usr/local/Ascend/driver/lib64/driver;/usr/local/Ascend/driver/lib64/common"
 )
