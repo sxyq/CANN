@@ -30,9 +30,11 @@ Both blocks pass the existing limits: CV at most `0.15` and max/min at most `1.3
 | PRECHECK-A | 8.22, 8.42, 8.46, 8.46, 8.42, 8.40 | 8.42 | 0.010696 | 1.029197 | PASS |
 | PRECHECK-B | 8.58, 8.62, 8.36, 8.34, 8.50, 8.28 | 8.43 | 0.016518 | 1.041063 | PASS |
 
-`PARENT_WINDOW_QUALIFICATION=QUALIFIED`. The remote run's `final-status.txt` says `WINDOW_UNQUALIFIED` because it mapped the summary tool's exit code 1 to that value before noticing the Node syntax error. The corrected calculation above uses the unchanged raw files and is the valid block result.
+`PARENT_WINDOW_QUALIFICATION=QUALIFIED`. The remote run's `final-status.txt` says `WINDOW_UNQUALIFIED` because the previous Node 12.22.9 summarizer used `await` inside a non-async `try` block at line 71 and stopped with `SyntaxError: Unexpected reserved word`. Its wrapper treated that summary-tool exit as a failed window. Recalculation from the unchanged raw files qualifies both blocks. The Node 12-compatible summarizer in commit `c3a7719f` produced the same result under Node 12.22.9 and workstation Node 24.21.0; no sample or statistic changed.
 
-No same-binary mode or Parent/Candidate pair ran under this lease. No Candidate timing or Local verdict is claimed. The window ended at `2026-10-03T10:52:23Z`; no further device work is authorized here. The lease still requires Support-B to append its `RELEASED` row; this route worktree did not alter the shared lease table.
+No same-binary mode or Parent/Candidate pair ran under this lease. In particular, the prior same-binary PASS used executable SHA256 `7815e6b6c49f1662b245c10e24ee6f0eca8724d455e81b8755c29d331494c6ca`; it is not evidence for this window's timing executable SHA256 `99236e9e0e36c6c539cfc102bf149e84ba20a89b83bddf441cb00ba9bd9d4413`. Same-binary for the latter executable remains NOT_RUN. Candidate P/C timing was NOT_RUN and no Local performance verdict is claimed.
+
+The window ended and its lease was released at `2026-10-03T10:52:23Z`. The canonical lease ledger contains the RELEASED entry recorded by Support-B; this route worktree did not alter the shared lease table. No further device work is included in this result.
 
 ## Resource snapshots
 
