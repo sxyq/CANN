@@ -929,6 +929,37 @@ UB_V001=CORRECTNESS_FAILED; no V002; no performance; no Online
 ADDR_MAIN_SELECTED=NONE; no Candidate; planning pack committed
 BRANCH_MAIN_SELECTED=NONE; no Candidate; planning pack committed
 TILECOUNT=PARKED; REDUCE=PARKED
+
+## MAIN-2 latest local-score audit — 2026-10-03
+
+This section records the bounded three-run engineering score matrix required
+by the current audit control.  It does not replace the Official anchor or
+promote any Local Best.
+
+```text
+OFFICIAL_ANCHOR=R31B V011 = 45.16
+DIRECT_ONLINE_SUBMISSION=0
+LOCAL_SCORE_METHOD=three run-level arithmetic means of device-event P/C samples
+DEVICE=7 for all implemented routes
+MEASUREMENT_QUALITY=POOR for all three scores; unrelated Python load remained resident
+```
+
+| Route | Latest revision | Build | Correctness | Basic local score |
+|---|---|---|---|---:|
+| HOTLOOP-BRANCH-HOIST-CHAMPION-X | V002 / HBH-09 | PASS | PASS 8/8 | -0.048802% |
+| HOTLOOP-ADDR-HOIST-CHAMPION-X | V001 / ADDR-H3 | PASS (support) | D32768 PASS; D40960 shared 507035 blocker | -24.193320% |
+| UB-LIFETIME-SAFE-CHAMPION-X | V001 | PASS | FP16 D32768 PASS; FP32-wide-16384 failed | -20.878573% |
+| TILECOUNT-STATIC-UNROLL-CHAMPION-X | NONE | N/A | N/A | NONE |
+| REDUCE-FINALIZE-HANDOFF-CHAMPION-X | NONE | N/A | N/A | NONE |
+
+The three numeric scores are retained as basic screening numbers only.  None
+is `LOCAL_ACCEPTED`; no Candidate is eligible for Online from this audit.
+TILECOUNT and REDUCE-FINALIZE have no implemented performance Revision and no
+fabricated score.  Full fields and evidence paths are in
+`MAIN2-LATEST-LOCAL-SCORES.tsv`.
+
+AUDIT_STATUS=COMPLETE_FOR_CURRENT_IMPLEMENTED_REVISIONS
+NEXT_PERFORMANCE_REVISION=FORBIDDEN_UNTIL_PLANNING_REVIEW
 FORMAL_PERFORMANCE_RUNS=0
 KERNEL_FILES_CHANGED_BY_MAIN=0
 CANONICAL_SHARED_LEDGER_CHANGES=0
