@@ -150,3 +150,82 @@ MAIN-1 状态材料另记了 Pass1 63–73%、Pass2 26–38%、pipeline sum 1.23
 建议先做机制证伪交接，再讨论实现：请 Main 获取 testcase14 的权威 rows、D、dtype 和设备可用 core 数，并将 per-case dispatch 与 profile 绑定到该 ID。若条件不满足 FP32、`D>8192`、rowCount 小于可用 core 的 D-slice 触发范围，则记录 H1 前提不成立，停止以低 rowCount/超宽解释 case14；若满足，再由 Main 决定是否安排 exact-shape correctness 与测量。现阶段继续保持 `NEEDS_MORE_EVIDENCE`，不创建 Candidate 或 Revision。
 
 本轮仅更新本 Track-B 研究记录；历史证据核对未运行 Candidate、构建、正确性、设备实验、计时或线上提交。
+
+## 2026-10-03 复核补充：三个新机制假设
+
+本段依据 Route worktree 中的 handoff、canonical 的 Official/C001 记录、R31B-V011 exact source，以及 SHAPE-TILING V002 可读的研究和测时资料。case14 shape 与 dtype 仍未知；以下凡涉及输入形状的实验对象均显式标为 `PROXY`，不得映射成 Official case14。
+
+### 已核实输入与 Parent
+
+- R31B-V011 Official case14 为 testcaseId `6a9a9a99bf41025d6013ebbe`，PASS，`timeUs=16486.82`、`bestTimeUs=3750.12`；result.json 未给 rows、D、dtype、stride、availableCoreNum 或实际 dispatch。旧 Official case analysis 的宽行判断只来自时间量级，不作为输入事实。
+- Parent `线上结果/R31B/V011/submission.asc` 将前导维乘积作为 rows、末维作为 D，`blockCount=min(availableCoreNum, rowCount)`；每个 block 均衡取得完整 row。D 大于 8192 时进入 wide path。FP32 wide path 在 UB 留存 y，分 tile 求和后按 row 折叠 partial，再计算 invRms；当前 source 无 GM workspace 或跨 core reduction。FP32 Pass1 的 tile 输入与 Vector 操作按序发出；输出遍有两槽 MTE3 队列。低精度 wide Pass1 已有跨 `(row,tile)` 的 2-deep MTE2。
+- C001 exact source 与 result.json 的 source 元数据匹配。C001 编译记录为 DAV_C220 Vector 目标 PASS；Official index 1 TLE，index 2–15 Skipped，case14 也被跳过。仓内没有单独的 TLE stdout/stderr 或 device trace，TLE 原因未知。C001 不能证明 case14 触发过其 hot path。
+- 现存 profile 证据只有 SHAPE-TILING V002 的五组 `PROXY` 分段计时：2x/8x/16x32768 FP32、2x/8x16384 FP32；device 4、45 次 warmup、31 组交错样本。其 `segmented.log` 可见多次高离群时长，报告中的 median 只供这些代理形状参考。
+- msprof 文档汇总 535 个 task 的分桶中位数，`aiv_vec/aiv_scalar/aiv_mte2/aiv_mte3` 分量及 `1.23/4` 合计没有保存 `op_summary_*.csv` 原始导出，无法独立重算，也未绑定 testcaseId。`2.16x` 是该汇总下假设四条管线完全重叠的理论上限，明确不代表 case14 实测、预测或收益承诺。
+
+### 已有方向去重
+
+- 通用 row 内 D-slice 已见于 C001、R31A V011 和 R31B V008；本轮不把它重新列为新方向。R31A V011 每个 slice 复算 invRms 并用第二次 `SyncAll` 保护复用 output 尾部的 partial；C001 用 leader 写 RMS slot 再做第二轮 GroupBarrier；R31B V008 用四个 kernel stage，Official 0/15 Runtime Error。各自失败范围和输入 case 映射仍有限。
+- 通用 tile 扩大、MTE2/V/MTE3 overlap 和 multi-row DMA 分别与 SHAPE-TILING、ASYNC-OVERLAP/INTERPASS、MULTIROW-DMA/CROSSROW 已有方向重叠，不纳入本轮新假设池。V011 低精度 wide Pass1 已跨 `(row,tile)` 做 2-deep MTE2。
+- 这些历史实现的 Official case14 覆盖状态不明。`2.16x` 只属历史理想重叠上限；不作为 case14 的实测或本轮任一假设收益估计。
+
+### 新假设
+
+#### H5：分离 partial workspace 后，各 lane 独立完成 RMS 尾段
+
+- `MECHANISM`：只有 Main 日后选择固定 D-slice 分区与单 kernel group barrier 时才评估此变体。首轮 barrier 后，每 lane 以相同 FP32 顺序读取并累加 partial，自行得到 invRms；partial 放在不与 output 重叠的 workspace，因此不需要 RMS 广播和第二轮 barrier。
+- `BOTTLENECK`：只针对 rows 小于 availableCoreNum、宽 D、Parent row ownership 留有闲核的形状；组内 reduction/barrier 必须占有可见时间。
+- `EXPECTED_SHAPES`：精确 case14 条件未知。`PROXY` 为已有 2x/8x/16x32768 FP32 Parent 时长，但这些没有 D-slice 时长。
+- `WHY_IT_MAY_HELP`：相对 C001 的 leader + RMS slot + 两轮 barrier，减少一轮组同步和一次 RMS 写读；增加的工作只有每 lane 对少数 partial 的重复累加。
+- `WHY_IT_MAY_FAIL`：四个 partial 很小，C001 的第二轮 barrier 可能很便宜；D-slice 仍受活跃 row group 数限制，且 C001 归约后重读 x/residual。
+- `ASCEND_FEASIBILITY`：C001 已在记录的 CANN 8.5.0.alpha002 / DAV_C220 Vector 环境编译 GroupBarrier 与 workspace 参数传递；该方案的运行、正确性和目标 Judge 工具链状态未证实。
+- `UB/CORE/DMA_IMPACT`：C001 每 group 2208 bytes 中含 2048-byte barrier 区、128-byte partial slots 和 32-byte RMS slot；独立尾段可省 RMS slot，但保留独立 partials 和 barrier workspace。固定 16 MiB workspace 保留区不变。
+- `SYNC_IMPACT`：每 row 一轮 partial-ready barrier；workspace 不与 output 复用，避免第二轮保护 partial 槽。
+- `PRECISION_RISK`：各 lane 必须以相同顺序累加相同 partial，并保持 Parent 的 FP32 mean/epsilon/sqrt 算术。
+- `DUPLICATE_CHECK`：本次读到的 C001、R31A V011、R31B V008 都未呈现“独立 partial workspace + 每 lane 复算 + 单轮 barrier”的完整组合；底层 D-slice 仍属既有机制，须先有获准的 D-slice 起点。
+- `MINIMAL_OFAT_DIFF`：仅在已有获批且正确的 D-slice 起点上替换 RMS finalize/broadcast 与第二轮同步；不改 slice 数、tile、输入读取或输出算术。
+- `FALSIFIABLE_TEST`：exact-shape 若没有闲核，或同形状 trace 中第二轮 barrier/broadcast 低于测时噪声，即否定。获准后比较已通过 correctness 的 D-slice 起点与此变体的交错计时。
+- `EXPECTED_LOCAL_PROBES`：先取同 testcaseId 的 rows、D、dtype、availableCoreNum 和 Parent 活跃 core；实现前须由 Main 明确选择 D-slice 起点及此独立变体。
+- `MATURITY`：`NEEDS_MORE_EVIDENCE`；依赖 D-slice 方向先获选。
+
+#### H6：D-slice lane 在 UB 留住本地 y，跨过 row reduction
+
+- `MECHANISM`：每 lane 首次读取自己的 D 区间时生成 y 并留在 UB；组内完成 invRms 后直接消费 y，避免归约完成后再次读取 x/residual。
+- `BOTTLENECK`：跨核方案的第二遍源输入 GM 读取成为关键路径，且 lane-local y 可在目标 UB 预算内长期驻留。
+- `EXPECTED_SHAPES`：依赖 exact D、dtype、slice 数和 UB。`PROXY` 为 D=32768 FP32，当前只有单核 Parent 时长，没有 lane-local y 的计时。
+- `WHY_IT_MAY_HELP`：C001 归约后会重读 x/residual；若保留 y，可省去这次读取并沿用 Parent 宽 FP32 的中间值复用思路。
+- `WHY_IT_MAY_FAIL`：每 lane 持久占用约 `ceil(D/splits)*sizeof(y)` bytes，再加输入和 reduction 临时区，可能超过 UB 或降低驻留度；每 lane slice 太宽时不能成立。
+- `ASCEND_FEASIBILITY`：同 kernel 的 local tensor 可跨组 barrier 保留； exact compile resource 与 group 行为尚无本方案证据。跨 kernel 的 V008 无法跨 launch 保留 UB。
+- `UB/CORE/DMA_IMPACT`：增加每 lane 的 UB 常驻量；可减少每 row 第二遍 x/residual GM 读。FP16/BF16 必须沿用 Parent y dtype 与取整位置。
+- `SYNC_IMPACT`：不增加 barrier 轮数；每 lane 在等待 RMS 时占住 y 所需 UB。
+- `PRECISION_RISK`：y 暂存格式与 Parent 的 Add 舍入必须一致，尤其低精度路径。
+- `DUPLICATE_CHECK`：Parent 单 core 已缓存整 row y；C001 与 V008 D-slice 路径未跨 reduction 保留每 lane 的 y。该假设只针对跨核分片带来的 UB/GM 取舍。
+- `MINIMAL_OFAT_DIFF`：固定同一个获准的 D-slice 与 finalize 方式，只改变输出阶段使用 UB y 或再次读取源。
+- `FALSIFIABLE_TEST`：exact dtype 下的 UB 资源若不能容纳 y slice、reduction 和必需输入缓冲，或节省的 GM 读小于驻留损失，则否定。
+- `EXPECTED_LOCAL_PROBES`：取得 exact D/dtype 与 UB 报告后先算每 lane 空间；Main 选择前不实现、不构建、不运行设备。
+- `MATURITY`：`NEEDS_MORE_EVIDENCE`；依赖 D-slice 获选。
+
+#### H7：invRms 用 Vector reciprocal 减少 V/S 往返
+
+- `MECHANISM`：保留 Parent partial sum、mean、epsilon 和 Sqrt 次序；尝试在 Vector 侧对 sqrt 结果取 reciprocal，去掉最终 `SyncVToS` / GetValue / `SyncSToV` 往返。
+- `BOTTLENECK`：case-bound timeline 显示每 row reduction 尾段的标量取回位于关键路径。
+- `EXPECTED_SHAPES`：需命中 Parent 的 wide reduction。精确 case14 未知。`PROXY` 为 SHAPE-TILING V002 FP32 wide shapes 与未绑定 testcaseId 的 535-task profile 摘要。
+- `WHY_IT_MAY_HELP`：少一次 Vector→Scalar→Vector 转换，直接把 Vector invRms 供后续 normalize 使用。
+- `WHY_IT_MAY_FAIL`：scalar 阶段可能很短；Vector reciprocal API 的精度或延迟未确认，可能改动宽 FP32 输出误差。
+- `ASCEND_FEASIBILITY`：目标 CANN API 的 reciprocal 语义尚未确认；必须与 Parent `1/sqrt` 做同输入误差比较。
+- `UB/CORE/DMA_IMPACT`：不新增 workspace 或 GM 流量；每 row 仅改变归约尾段运算。
+- `SYNC_IMPACT`：目标是移除 sqrt 后一次 V/S 往返；不改 MTE2/MTE3、row ownership 或 reduction tree。
+- `PRECISION_RISK`：中高；精确度、宽 FP32 已知波动和 Judge 容差需分开处理。
+- `DUPLICATE_CHECK`：与 REDUCE-HIER 的 sum-tree 和 EPI-ARITH 的后续 affine 次序不同，但与 invRms 算术相邻；获选前需按 exact source diff 核对。
+- `MINIMAL_OFAT_DIFF`：只改变 sqrt 后 reciprocal 的执行 pipe，不变更 partial、epsilon、sqrt、tile 或 store。
+- `FALSIFIABLE_TEST`：若绑定 case14 的 timeline 未显示该往返在关键路径，或 exact correctness 超出容差，则否定；同形状配对收益若落在噪声内也停止。
+- `EXPECTED_LOCAL_PROBES`：先取 source-bound V/S timeline 与精确输入；之后若 Main 选择，做 exact-shape correctness 和同设备 Parent 配对测量。
+- `MATURITY`：`NEEDS_MORE_EVIDENCE`；现有 profile 不绑定 case14，收益前提未证实。
+
+### 本轮结论
+
+新假设池为 H5–H7 三项：组内 RMS 尾段同步、每 lane y 的 UB/GM 取舍、invRms 的 V/S 往返。H5/H6 以获准的 D-slice 实现为前置，H7 不改变 row ownership；三者互不叠加。通用 row D-slice、tile 改动、MTE2/V/MTE3 overlap 和 multi-row DMA 维持历史去重结果，不作为本轮新方向。case14 仍缺 rows、D、dtype、availableCoreNum、dispatch 和 case-bound profile；维持 `NEEDS_MORE_EVIDENCE`、`MAIN_SELECTED=NONE`。
+
+### C2C 路线边界更新
+
+本轮 C2C 信息：Main 已选择 SELECTIVE-FASTPATH H3，研究对象是按 exact FP32 proxy-shape allowlist 选择已固定的 STORE V003 donor，其余输入回退到 V011。allowlist 标签为 `FP32-8x16384`、`FP32-1x32768`、`FP32-1x16384`。该方向改 output-store writeback；它不切分 row 的 D，也不提供 Official case14 的 shape/dtype 对照。此选择属于另一条 Route，不改变本 Route 的 `MAIN_SELECTED=NONE`，也不改变以上研究范围或 Candidate 状态。
