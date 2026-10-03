@@ -8,7 +8,7 @@ PARENT_SOURCE_SHA: `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b
 PARENT_SOURCE_COMMIT: `43a1049a1e08e518c88e354a754fdebb85a96f99`
 PARENT_SCORE: 45.16 (Official)
 CONTEXT_CLASS: GUIDED_FRESH
-MAIN_SELECTED: H1 for V001 (current task assignment)
+MAIN_SELECTED: YES (H1 for V001; approved 2026-10-03)
 
 ## SINGLE_HYPOTHESIS
 
@@ -47,4 +47,4 @@ The Parent already batches scalar reads and V/S boundaries in aligned small-row 
 
 ## STATUS
 
-Declaration recorded before Candidate source creation. Static source review found existing buffers sufficient for the two-row PROXY and no new API or cross-core dependency. Build and runtime behavior remain unverified.
+Candidate source now implements the two-row `ProcessNarrowMidOverlap` scalar-handoff grouping. The rounded FP32 value-row stride is used for both rows; at D=257 it is 264 elements, and the existing value/reduction buffers are reused. Build and runtime behavior remain unverified.
