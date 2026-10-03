@@ -17,5 +17,12 @@ both wrapper translations. No executable was used for measurement. The full
 log is `build-005.log`; the failed build directory is retained and is not
 cleaned.
 
-The retry changes only the build environment to pin both CMake and the loader
-to `/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002`.
+The first retry (`build-005b.log`) pinned both CMake and the loader to
+`/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002`, but retained the same
+`<cstdint>` failure. The second retry (`build-005c.log`) added the full GCC
+target include directory and failed with incompatible `arm_neon.h` types. Both
+failed build directories are retained and were not used for measurement.
+
+The successful build used only the three standard C++ include directories in
+`CPLUS_INCLUDE_PATH`, without the GCC target include directory; its evidence is
+recorded separately in `BUILD-REPEAT-BATCH-005D-PASS.md`.
