@@ -1,8 +1,29 @@
 # MAIN-2 Local Control Dashboard
 
-UPDATED_UTC: 2026-10-03T07:14:12Z
+UPDATED_UTC: 2026-10-03T07:19:44Z
 SCOPE: MAIN-2 local control only
 CANONICAL_SHARED_LEDGER: UNMODIFIED
+
+## Event receipt — HBH-09 V002 Window E protocol predeclaration — 2026-10-03T07:19Z
+
+```text
+CONTROL_HEAD_BEFORE_RECEIPT=1ef879dd
+ROUTE_PROTOCOL_COMMIT=b6fef7b9
+CURRENT_STATE=WAITING_FOR_VALID_LOCAL_SCORE
+DEVICE=7; PRIMARY_SHAPE=BF16_D6144_ROWS80
+PARENT_SHA256=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
+CANDIDATE_SHA256=1aa6d8ecaa1af058b039341f63c67f4f67403bb4a8e5c6bc57dd96914f42cb65
+RUNNER_SHA256=c4d7b89494ed771c5ce89444c7b5ad4f8fd321c087b1fdb80097ce7ba2c82fb7
+LOCAL_SCORE=NONE
+NO_NEXT_PERFORMANCE_REVISION=YES
+```
+
+Window E retries d7 BF16 D6144 rows=80 in a later time window. The current
+probe shows about 40.7 GB free HBM and no shared d7 lease; AICore/AIVector are
+46%/35% with a resident user process. These loads are recorded, not independent
+blockers, and no process will be touched. Next: refresh admission snapshots,
+then same-binary qualification followed immediately by paired P/C only on
+PASS.
 
 ## Event receipt — HBH-09 V002 Window D measurement — 2026-10-03T07:14Z
 
