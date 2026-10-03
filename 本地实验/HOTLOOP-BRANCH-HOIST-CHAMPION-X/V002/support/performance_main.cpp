@@ -65,16 +65,6 @@ int32_t ParseDType(const char* text)
     return 0;
 }
 
-int ParseRepeatBatch()
-{
-    const char* text = std::getenv("HOTLOOP_REPEAT_BATCH");
-    if (text == nullptr || *text == '\0') return 1;
-    char* end = nullptr;
-    const long value = std::strtol(text, &end, 10);
-    if (end == text || *end != '\0' || value < 1 || value > 64) return 1;
-    return static_cast<int>(value);
-}
-
 size_t ElementSize(int32_t dtype)
 {
     return dtype == kFp32 ? sizeof(float) : sizeof(uint16_t);
@@ -173,14 +163,12 @@ void MakeGroups(int32_t dtype, int64_t rows, int64_t width,
 
 bool Warmup(const Kernel& kernel, const DeviceBuffers& buffers,
             const TensorGroupInfo& inputGroup, const TensorGroupInfo& vectorGroup,
-            aclrtStream stream, int count, int repeatBatch)
+            aclrtStream stream, int count)
 {
     for (int i = 0; i < count; ++i) {
-        for (int repeat = 0; repeat < repeatBatch; ++repeat) {
-            kernel.call(buffers.x, inputGroup, buffers.residual, inputGroup,
-                        buffers.gamma, vectorGroup, buffers.bias, vectorGroup,
-                        buffers.output, inputGroup, kAvailableCores, stream, kEpsilon);
-        }
+        kernel.call(buffers.x, inputGroup, buffers.residual, inputGroup,
+                    buffers.gamma, vectorGroup, buffers.bias, vectorGroup,
+                    buffers.output, inputGroup, kAvailableCores, stream, kEpsilon);
         if (!Check(aclrtSynchronizeStream(stream), "warmup synchronize")) return false;
     }
     return true;
@@ -189,7 +177,7 @@ bool Warmup(const Kernel& kernel, const DeviceBuffers& buffers,
 bool Measure(const Kernel& kernel, const DeviceBuffers& buffers,
              const TensorGroupInfo& inputGroup, const TensorGroupInfo& vectorGroup,
              aclrtStream stream, aclrtEvent start, aclrtEvent stop,
-             bool& eventsRecorded, int repeatBatch, double& deviceUs, double& wallUs)
+             bool& eventsRecorded, double& deviceUs, double& wallUs)
 {
     if (eventsRecorded) {
         if (!Check(aclrtResetEvent(start, stream), "reset start event") ||
@@ -197,20 +185,17 @@ bool Measure(const Kernel& kernel, const DeviceBuffers& buffers,
     }
     const auto wallStart = std::chrono::steady_clock::now();
     if (!Check(aclrtRecordEvent(start, stream), "record start")) return false;
-    for (int repeat = 0; repeat < repeatBatch; ++repeat) {
-        kernel.call(buffers.x, inputGroup, buffers.residual, inputGroup,
-                    buffers.gamma, vectorGroup, buffers.bias, vectorGroup,
-                    buffers.output, inputGroup, kAvailableCores, stream, kEpsilon);
-    }
+    kernel.call(buffers.x, inputGroup, buffers.residual, inputGroup,
+                buffers.gamma, vectorGroup, buffers.bias, vectorGroup,
+                buffers.output, inputGroup, kAvailableCores, stream, kEpsilon);
     if (!Check(aclrtRecordEvent(stop, stream), "record stop") ||
         !Check(aclrtSynchronizeEvent(stop), "synchronize stop")) return false;
     const auto wallStop = std::chrono::steady_clock::now();
     float elapsedMs = 0.0f;
     if (!Check(aclrtEventElapsedTime(&elapsedMs, start, stop), "event elapsed")) return false;
     eventsRecorded = true;
-    deviceUs = static_cast<double>(elapsedMs) * 1000.0 / static_cast<double>(repeatBatch);
-    wallUs = static_cast<double>(std::chrono::duration_cast<std::chrono::nanoseconds>(wallStop - wallStart).count()) /
-             1000.0 / static_cast<double>(repeatBatch);
+    deviceUs = static_cast<double>(elapsedMs) * 1000.0;
+    wallUs = static_cast<double>(std::chrono::duration_cast<std::chrono::nanoseconds>(wallStop - wallStart).count()) / 1000.0;
     return true;
 }
 
@@ -235,7 +220,7 @@ void PrintSummary(const char* mode, const Kernel& kernel, int block,
 }
 
 bool RunSame(const Kernel& parent, int device, int32_t dtype, int64_t rows, int64_t width,
-             int warmups, int samples, int blocks, int repeatBatch, const char* outputPath)
+             int warmups, int samples, int blocks, const char* outputPath)
 {
     FILE* output = std::fopen(outputPath, "wx");
     if (output == nullptr) {
@@ -256,10 +241,10 @@ bool RunSame(const Kernel& parent, int device, int32_t dtype, int64_t rows, int6
                   Check(aclrtCreateEvent(&stop), "create stop event");
     if (passed) MakeGroups(dtype, rows, width, inputShape, vectorShape,
                            inputInfo, vectorInfo, inputGroup, vectorGroup);
-    if (passed) passed = Warmup(parent, buffers, inputGroup, vectorGroup, stream, warmups, repeatBatch);
-    std::printf("QUALIFICATION mode=same side=parent device=%d rows=%lld width=%lld dtype=%s warmups=%d samples=%d blocks=%d repeat_batch=%d\n",
+    if (passed) passed = Warmup(parent, buffers, inputGroup, vectorGroup, stream, warmups);
+    std::printf("QUALIFICATION mode=same side=parent device=%d rows=%lld width=%lld dtype=%s warmups=%d samples=%d blocks=%d\n",
                 device, static_cast<long long>(rows), static_cast<long long>(width),
-                DTypeName(dtype), warmups, samples, blocks, repeatBatch);
+                DTypeName(dtype), warmups, samples, blocks);
     bool eventsRecorded = false;
     std::vector<double> allDeviceSamples;
     std::vector<double> blockMedians;
@@ -271,7 +256,7 @@ bool RunSame(const Kernel& parent, int device, int32_t dtype, int64_t rows, int6
         for (int sample = 0; sample < samples; ++sample) {
             double deviceUs = 0.0, wallUs = 0.0;
             passed = Measure(parent, buffers, inputGroup, vectorGroup, stream, start, stop,
-                             eventsRecorded, repeatBatch, deviceUs, wallUs);
+                             eventsRecorded, deviceUs, wallUs);
             if (passed && !WriteSample(output, block, sample, "P", parent, device, dtype,
                                        rows, width, deviceUs, wallUs)) passed = false;
             if (passed) deviceSamples.push_back(deviceUs);
@@ -307,7 +292,7 @@ bool RunSame(const Kernel& parent, int device, int32_t dtype, int64_t rows, int6
 
 bool RunPaired(const Kernel& parent, const Kernel& candidate, int device, int32_t dtype,
                int64_t rows, int64_t width, int warmups, int samples, int blocks,
-               int repeatBatch, const char* outputPath)
+               const char* outputPath)
 {
     FILE* output = std::fopen(outputPath, "wx");
     if (output == nullptr) {
@@ -328,11 +313,11 @@ bool RunPaired(const Kernel& parent, const Kernel& candidate, int device, int32_
                   Check(aclrtCreateEvent(&stop), "create stop event");
     if (passed) MakeGroups(dtype, rows, width, inputShape, vectorShape,
                            inputInfo, vectorInfo, inputGroup, vectorGroup);
-    if (passed) passed = Warmup(parent, buffers, inputGroup, vectorGroup, stream, warmups, repeatBatch);
-    if (passed) passed = Warmup(candidate, buffers, inputGroup, vectorGroup, stream, warmups, repeatBatch);
-    std::printf("PAIRING mode=paired device=%d rows=%lld width=%lld dtype=%s warmups_per_side=%d samples=%d blocks=%d repeat_batch=%d\n",
+    if (passed) passed = Warmup(parent, buffers, inputGroup, vectorGroup, stream, warmups);
+    if (passed) passed = Warmup(candidate, buffers, inputGroup, vectorGroup, stream, warmups);
+    std::printf("PAIRING mode=paired device=%d rows=%lld width=%lld dtype=%s warmups_per_side=%d samples=%d blocks=%d\n",
                 device, static_cast<long long>(rows), static_cast<long long>(width),
-                DTypeName(dtype), warmups, samples, blocks, repeatBatch);
+                DTypeName(dtype), warmups, samples, blocks);
     bool eventsRecorded = false;
     for (int block = 0; passed && block < blocks; ++block) {
         const bool parentFirst = (block % 2) == 0;
@@ -347,7 +332,7 @@ bool RunPaired(const Kernel& parent, const Kernel& candidate, int device, int32_
             for (const Kernel* kernel : {first, second}) {
                 double deviceUs = 0.0, wallUs = 0.0;
                 passed = Measure(*kernel, buffers, inputGroup, vectorGroup, stream, start, stop,
-                                 eventsRecorded, repeatBatch, deviceUs, wallUs);
+                                 eventsRecorded, deviceUs, wallUs);
                 if (passed && !WriteSample(output, block, sample, order, *kernel, device,
                                            dtype, rows, width, deviceUs, wallUs)) passed = false;
                 if (passed) {
@@ -419,7 +404,6 @@ int main(int argc, char** argv)
     const int samples = std::atoi(argv[7]);
     const int blocks = std::atoi(argv[8]);
     const char* rawPath = argv[9];
-    const int repeatBatch = ParseRepeatBatch();
     if (device < 0 || (rows != 40 && rows != 80) || width < 4097 || width > 8192 ||
         dtype < kFp32 || dtype > kBf16 || warmups < kRequiredWarmups || samples < 11 ||
         (mode != "same" && mode != "paired") || (mode == "same" && blocks < 2) ||
@@ -432,12 +416,11 @@ int main(int argc, char** argv)
     const Kernel candidate{"candidate", kCandidateSourceSha256, run_kernel_candidate};
     std::printf("PARENT_SOURCE_SHA256=%s\nCANDIDATE_SOURCE_SHA256=%s\n",
                 parent.sourceSha256, candidate.sourceSha256);
-    std::printf("REPEAT_BATCH_N=%d\n", repeatBatch);
     bool passed = false;
     if (mode == "same") passed = RunSame(parent, device, dtype, rows, width,
-                                          warmups, samples, blocks, repeatBatch, rawPath);
+                                          warmups, samples, blocks, rawPath);
     else passed = RunPaired(parent, candidate, device, dtype, rows, width,
-                            warmups, samples, blocks, repeatBatch, rawPath);
+                            warmups, samples, blocks, rawPath);
     if (!Check(aclFinalize(), "aclFinalize")) passed = false;
     std::printf("PERFORMANCE_RUN_RESULT=%s\n", passed ? "PASS" : "FAIL");
     return passed ? 0 : 1;
