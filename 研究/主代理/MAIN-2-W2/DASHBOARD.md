@@ -399,6 +399,7 @@ CANDIDATE_SHA256=1aa6d8ecaa1af058b039341f63c67f4f67403bb4a8e5c6bc57dd96914f42cb6
 RUNNER_SHA256=c4d7b89494ed771c5ce89444c7b5ad4f8fd321c087b1fdb80097ce7ba2c82fb7
 LDD_RC=0; UNRESOLVED_LIBRARY_COUNT=0
 DIRECT_ONLINE_SUBMISSION=0
+PUSH_STATE=PUSH_PENDING; bounded 25s normal push timed out for ADDR/TILECOUNT/REDUCE/BRANCH/UB/MAIN2 control; no retry
 ```
 
 The support-only per-command CANN loader-path correction is recorded and
