@@ -191,7 +191,7 @@ DIRECT_ONLINE_SUBMISSION=0
 | HOTLOOP-ADDR-HOIST-CHAMPION-X | V002 / H1 | +0.954352% | POOR / LOCAL_NEUTRAL; no V003 |
 | UB-LIVENESS-X | V001 | -20.878573% | POOR / engineering-reference only; no V002 |
 | HOTLOOP-BRANCH-HOIST-CHAMPION-X | V002 / HBH-09 | -0.048802% | POOR / Planning review; no V003 |
-| REDUCE-FINALIZE-HANDOFF-CHAMPION-X | V001 / RFH-1 | NOT SCORED YET | BUILD PASS; CORRECTNESS PASS; formal Local Score pending |
+| REDUCE-FINALIZE-HANDOFF-CHAMPION-X | V001 / RFH-1 | +0.553205% | POOR / LOCAL_NEUTRAL; no V002 |
 | TILECOUNT-STATIC-UNROLL-CHAMPION-X | none | NO SCORE | H1/H2/H3 final gate FAIL; MAIN_SELECTED=NONE |
 
 ### New events
@@ -202,8 +202,14 @@ DIRECT_ONLINE_SUBMISSION=0
   Candidate source `83d569d2…f78338df3` is commit `15803855`. Build PASS is
   committed at `bc558fa3`; correctness PASS at `3052b573` (BF16 [1,32768],
   FP16/BF16 [1,16384], BF16 [1,4096] control; all bad=0). Device-event runner
-  probes are built (`a875d789`). No performance data has been used yet; formal
-  d5 lease and the three interleaved Parent/Candidate runs are next.
+  probes are built (`a875d789`). Three interleaved BF16 [1,32768] device-event
+  pairs produced Parent average 20.486667 us and Candidate average 20.600000
+  us (+0.553205%, Candidate slower); pair directions were mixed. Parent
+  same-binary MAD/median=18.56%, so quality is POOR and verdict is
+  LOCAL_NEUTRAL, engineering-score only; no Local Best advance. Raw/performance
+  evidence commit `e9cc2dfb`, score commit `0c07dcd7`. d5 lease
+  `M2-REDUCE-V001-D5-20261003T182337Z` was released (control commit
+  `e81b82b1`). No Online and no V002.
 - TILECOUNT final gate is committed in `w2/m2/tilecount-unroll` at
   `e36220ed`. Exact Parent source and compile artifact identity were found,
   but the available HiIPU device binary could not be disassembled to verify
