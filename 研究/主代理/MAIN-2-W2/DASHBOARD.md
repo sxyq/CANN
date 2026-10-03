@@ -1,8 +1,41 @@
 # MAIN-2 Local Control Dashboard
 
-UPDATED_UTC: 2026-10-03T06:51:46Z
+UPDATED_UTC: 2026-10-03T06:54:59Z
 SCOPE: MAIN-2 local control only
 CANONICAL_SHARED_LEDGER: UNMODIFIED
+
+## Event receipt — HBH-09 V002 Window B measurement — 2026-10-03T06:54Z
+
+```text
+CONTROL_HEAD_BEFORE_RECEIPT=314afd8f
+ROUTE_MEASUREMENT_COMMIT=a53c5a98
+CURRENT_REVISION=HOTLOOP-BRANCH-HOIST-CHAMPION-X / HBH-09 V002
+CURRENT_STATE=WAITING_FOR_VALID_LOCAL_SCORE
+OFFICIAL_CHAMPION=R31B V011 / 45.16
+DEVICE=4; SHAPE=FP32_D6144_ROWS80
+PARENT_SHA256=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
+CANDIDATE_SHA256=1aa6d8ecaa1af058b039341f63c67f4f67403bb4a8e5c6bc57dd96914f42cb65
+RUNNER_SHA256=c4d7b89494ed771c5ce89444c7b5ad4f8fd321c087b1fdb80097ce7ba2c82fb7
+BUILD=PASS; CORRECTNESS=PASS_12_OF_12
+SAME_BINARY=PASS; MAD_MEDIAN=4.0715%; BLOCK_DRIFT=0.1986%
+PAIRED=PASS_RUNNER_RC0; BLOCKS=8; RAW_PAIRED_SAMPLES=496
+VALID_LOCAL_SCORE=NO; LOCAL_SCORE=NONE
+ONLINE_READY=NO; DIRECT_ONLINE_SUBMISSION=0
+CANONICAL_SHARED_LEDGER_CHANGES=0
+```
+
+The Parent same-binary qualification passed, and paired P/C ran immediately on
+the same card under one lease. However, Parent paired MAD/median exceeded 10%
+in 7/8 blocks; paired block directions and latency levels varied materially.
+All 558 same-binary/paired raw samples and pre/post resource snapshots are
+committed. No sample was removed. This is not a valid score and does not close
+V002 or authorize a next performance Revision.
+
+```text
+V002_NEXT=NEW_TEMPORAL_WINDOW_RESOURCE_SCAN; SAME_SOURCE_AND_RUNNER
+NO_NEXT_PERFORMANCE_REVISION=YES
+PUSH_STATE=PUSH_PENDING; PUSH_IS_NOT_AN_EXPERIMENT_GATE
+```
 
 ## Event receipt — HBH-09 V002 runtime loader support recovery — 2026-10-03T06:51Z
 
