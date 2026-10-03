@@ -15,8 +15,12 @@ foreach(CXX_INCLUDE_DIR IN LISTS CMAKE_CXX_IMPLICIT_INCLUDE_DIRECTORIES)
         list(APPEND ASC_CXX_STDLIB_INCLUDE_DIRS "${CXX_INCLUDE_DIR}")
     endif()
 endforeach()
+string(REPLACE ";" ":" CASE47_HOST_CXX_INCLUDE_PATHS
+    "${ASC_CXX_STDLIB_INCLUDE_DIRS}")
 
 ascendc_library(${CASE47_KERNEL_TARGET} SHARED "${CASE47_SOURCE_FILE}")
+set_property(TARGET ${CASE47_KERNEL_TARGET} PROPERTY RULE_LAUNCH_COMPILE
+    "${CMAKE_COMMAND} -E env CPATH=${CASE47_HOST_CXX_INCLUDE_PATHS}")
 target_compile_options(${CASE47_KERNEL_TARGET} PRIVATE
     $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=dav-2201>
     $<$<COMPILE_LANGUAGE:ASC>:--npu-soc=Ascend910B3>
@@ -72,6 +76,9 @@ target_link_directories(case47_timing_runner PRIVATE
     "${TOOLKIT}/aarch64-linux/lib64"
 )
 target_link_libraries(case47_timing_runner PRIVATE ascendcl dl m)
+target_link_options(case47_timing_runner PRIVATE
+    -Wl,-rpath-link,/usr/local/Ascend/driver/lib64/driver
+)
 target_compile_options(case47_timing_runner PRIVATE -ffp-contract=off)
 set_target_properties(case47_timing_runner PROPERTIES
     BUILD_RPATH "${TOOLKIT}/lib64;${TOOLKIT}/aarch64-linux/lib64"
