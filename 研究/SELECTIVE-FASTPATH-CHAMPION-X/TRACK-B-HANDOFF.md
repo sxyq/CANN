@@ -12,7 +12,7 @@ FORBIDDEN_CHANGES: Kernel/Candidate、Revision、共享台账、技术路线记�
 
 ## Replacement Track-B cycle: 2026-10-03
 
-CYCLE_RESULT: `NEEDS_MORE_EVIDENCE`
+CYCLE_RESULT: `READY_FOR_MAIN_REVIEW`
 CYCLE_SCOPE: one donor mechanism; research only
 CHILD_RECOMMENDATION: `NONE`
 MAIN_SELECTED: `WAITING`
@@ -25,9 +25,12 @@ DONOR_SOURCE: `线上结果/STORE-EPILOGUE-X/V003/submission.asc`
 DONOR_SOURCE_SHA256: `0cdef265459d4683a1813593a881a5cf25ae75246aab49279d121896b71184ca`
 DONOR_SIDECAR: `线上结果/STORE-EPILOGUE-X/V003/submission.sha256` (content matches the source SHA above)
 DONOR_DIRECT_PARENT: `STORE-EPILOGUE-X/V002`, source SHA `59fb8eada4da0b2b83cccffa4fb89fb97b7503ba3dcb08d5e0fe348e3caeb839`
+DONOR_SOURCE_COMMIT: `1d2e2117a1f8d073bf84ddf5ab961a5cbb1cbfae`
+DONOR_PACKAGE_COMMIT: `cac29e8b6caa323d47f8841922ddb032ebff5854`
+DONOR_IDENTITY: source blob SHA, sidecar, source-meta local/remote SHA, and Judge result source SHA all match
 V011_FALLBACK_SOURCE: `线上结果/R31B/V011/submission.asc`, SHA256 `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`
 
-The V011-to-donor source diff is confined to `ProcessWideFp32FullCacheRows`; it changes the wide FP32 store layout and leaves arithmetic unchanged. The donor branch condition is `tileCount >= 4 && rowWidth % 8 == 0`, with `mergeChunkSplit = tileCount / 2`.
+The exact V003 package was read from the committed Git object because this worktree's sparse checkout omits that path. The V011-to-donor diff is confined to `ProcessWideFp32FullCacheRows`: it enables merged writeback, splits it into K=2 tile-aligned chunks, and issues each store as its chunk finishes. Arithmetic order and the two-entry event-ring structure remain; store issue timing changes. The source branch condition is `tileCount >= 4 && rowWidth % 8 == 0`, with `mergeChunkSplit = tileCount / 2`.
 
 | Flattened row count | D | dtype | selected tile width | tile count | donor condition |
 |---:|---:|---|---:|---:|---|
@@ -35,30 +38,35 @@ The V011-to-donor source diff is confined to `ProcessWideFp32FullCacheRows`; it 
 | 1 | 32768 | FP32 | 4096 | 8 | true |
 | 1 | 16384 | FP32 | 4096 | 4 | true |
 
-These are the donor's local probe shapes. No Official case index can currently be assigned to them. In V011, the host flattens leading dimensions into `rowCount`; dtype code `0` selects FP32, and `rowWidth > kCacheElems` (`8192`) enters `widePath_` -> `ProcessWideFp32` -> `ProcessWideFp32FullCacheRows`. For the three shapes above, `ChooseWideFullYRows` keeps tile width 4096, so the donor predicate is reachable. A proposed selective dispatch must also match FP32 and the exact `(rowCount, rowWidth)` pair, with every other input returning to V011.
+These three local probe shapes show clean directional gains in the donor's V002-relative measurements. The source condition also matched `2x16384 FP32` and `2x32768 FP32`; those measurements were mixed and within noise, so they are not proposed selective targets. In V011, the host flattens leading dimensions into `rowCount`; dtype code `0` selects FP32, and `rowWidth > kCacheElems` (`8192`) enters `widePath_` -> `ProcessWideFp32` -> `ProcessWideFp32FullCacheRows`. The verified probes use tile width 4096, making `tileCount` 4 or 8 and satisfying the donor condition. A proposed selective dispatch must match FP32 and the exact `(rowCount, rowWidth)` pair, with every other input returning to V011.
 
 ### Official case evidence
 
-`线上结果/R31B/V011/result.json` has 15 testcase IDs, times, per-case scores, and status, without input shape or dtype. `线上结果/R31A/V016/submission-json-probe.json` contains the same testcase IDs; each `problem.body.testcases` item has only `testcase_id` with `type` and internal `ID`, while the result items contain timing/status fields. This response does not expose input dimensions or dtype.
+`技术路线/冠军/champions.tsv` identifies R31B V011 as `OVERALL_CHAMPION`, 15/15, score 45.16, with source and Judge-payload SHA `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`. Its `线上结果/R31B/V011/result.json` agrees on 15/15 and 45.16; testcase records have no shape or dtype fields. The champion source sidecar matches the source SHA.
 
-Both CASE47 and TINY worktrees contain the same `研究/OFFICIAL-CASE-ANALYSIS.md` (SHA256 `619d387b4a2f2000745e4f9052ef0c04a50394588b5be12b0dd97ded952088c3`). Its Tiny/Small/Wide labels group cases by observed time magnitude. Those labels do not establish case-to-shape/dtype mapping. The `case 14` target statement in the STORE V003 Main recommendation has no shape-map evidence and is not used here.
+The Official result for donor V003 is 15/15, score 44.38. This is 0.69 below its own V002 Official anchor (45.07) and 0.78 below the current V011 champion (45.16). The three local gains compare V003 with V002, not V011. Neither result metadata nor the shared `研究/OFFICIAL-CASE-ANALYSIS.md` maps testcase IDs to input shape/dtype; time-based Tiny/Small/Wide labels are not used as shape evidence. The STORE V003 Main recommendation's “case 14” statement is likewise excluded because it has no shape-map evidence.
 
 ### CASE47 and TINY duplicate audit
 
-The readable research inventory in each worktree has no route-specific CASE47 or TINY Track-B document. The visible `SCHED-ROWGROUP-X` notes cover host row/task scheduling and row-group ownership; those mechanisms differ from chunked output writeback. This only clears duplication against the visible SCHED mechanism. CASE47/TINY mechanism details and exact shape coverage remain unavailable, so route-level duplicate status stays `NEEDS_MORE_EVIDENCE`.
+The audit used only the published Track-B records on refs `w2/m1/case47-small-cluster` (`研究/CASE47-SMALL-CLUSTER-CHAMPION-X/track-b-case4-case7.md`, commit `2404d4e4d964e9b0f699ef117423f8b0d20e33e9`) and `w2/m1/tiny-fixed-overhead` (`研究/TINY-FIXED-OVERHEAD-CHAMPION-X/TRACK-B-HYPOTHESES.md`, commit `990a6a3796b1ba4978716e1cb496ba1fe7f2849b`); no Candidate source or private worktree content was read.
+
+- CASE47 documents padded-UB short-row epilogue, active-core/rows-per-task, D-split reduction, tile-width selection, and narrow-mid MTE2 issue order. Its epilogue proposal explicitly excludes a new multi-row burst DMA. None changes wide-FP32 output store chunk size or the MTE3 store issue point.
+- TINY documents core-count limits, equal-row ownership arithmetic, generic single-tile loop control, non-wide value-buffer size, and an unused MTE2 `paramReady` event. Its single-tile hypothesis preserves existing stores; none changes wide-FP32 MTE3 writeback.
+
+`DUPLICATE_STATUS: DISTINCT_MECHANISM_CONFIRMED_AGAINST_PUBLISHED_CASE47_AND_TINY_HYPOTHESES`. CASE47 case4/7 and TINY case1/3/5 still lack Official shape/dtype mappings, so workload overlap and target-case coverage remain unknown. This stage confirms mechanism distinction only; it does not establish Official benefit or authorize implementation.
 
 ### Official benefit and risks
 
-The Judge score is the mean of 15 per-case scores. If an Official input exactly matches one of these FP32 shapes, and the two-chunk store lowers its latency without affecting correctness, a selective branch could raise that case's contribution while leaving other inputs on V011. The repository has no evidence that any Official case matches these shapes. The full STORE V003 submission scored `44.38`, below V011's `45.16`; its reported local gains (`8x16384: -5.64%`, `1x32768: -3.15%`, `1x16384: -2.90%`) compare against STORE V002, not V011. No positive Official gain is established.
+The Judge score averages 15 per-case scores. A selective branch could preserve V011 outside the three exact FP32 probe pairs, but no Official input is proven to match them. The full donor's 44.38 score is below the current champion; no positive Official gain for a selective variant is established. Local measurements and Official scores use different comparisons and cannot be combined as a V011-versus-selective result.
 
-Risks: Official case coverage is unknown; the full donor scored below V011; local deltas do not compare this mechanism against V011; the write spans rely on 32-byte row alignment and correct tile-boundary lengths; CASE47/TINY route-level overlap remains unverified.
+Risks: Official case coverage is unknown; the full donor scored below V011; local deltas do not compare this mechanism against V011; the write spans rely on 32-byte row alignment and correct tile-boundary lengths; CASE47/TINY shape overlap remains unknown.
 
 ### Minimum next validation
 
-1. Obtain a Judge-backed `testcase_id -> input shape/dtype` map or an equivalent tracked input manifest; do not assign case IDs from timings.
-2. Obtain the CASE47 and TINY route owners' published mechanism and shape bounds, then finish the route-level duplicate audit.
-3. Only after Main/Planning selects this hypothesis: run exact-source correctness on the three target shapes and V011 fallback controls; record actual tile width, tile count, branch hit, chunk addresses, and alignment.
-4. For each eligible shape, establish same-binary qualification and run interleaved V011/candidate measurement under the project protocol. No device work is authorized in this research cycle.
+1. Obtain a Judge-backed `testcase_id -> input shape/dtype` map or equivalent tracked input manifest to determine whether any Official case matches a probe pair; do not infer shape from timing.
+2. Main reviews the distinct mechanism, the V002-relative local evidence, and the negative full-donor Official result before selecting or declining it.
+3. Only after Main/Planning selects this hypothesis: run exact-source correctness on the three target pairs and V011 fallback controls; record tile width/count, branch hits, chunk addresses, and alignment.
+4. For eligible shapes, establish same-binary qualification and run interleaved V011/candidate measurement under the project protocol. This research cycle authorizes no device work.
 
 ## 对照口径
 
