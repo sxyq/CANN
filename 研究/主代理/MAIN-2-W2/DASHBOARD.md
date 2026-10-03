@@ -1,8 +1,32 @@
 # MAIN-2 Local Control Dashboard
 
-UPDATED_UTC: 2026-10-03T08:33:00Z
+UPDATED_UTC: 2026-10-03T08:36:00Z
 SCOPE: MAIN-2 local control only
 CANONICAL_SHARED_LEDGER: UNMODIFIED
+
+## Event receipt — HBH-09 V002 system measurement blocker — 2026-10-03T08:36Z
+
+```text
+CONTROL_HEAD_BEFORE_RECEIPT=90482912
+ROUTE_CLOSURE_COMMIT=c17920e3
+CURRENT_STATE=SYSTEM_MEASUREMENT_BLOCKER
+OFFICIAL_CHAMPION=R31B V011 / 45.16
+CURRENT_REVISION=HOTLOOP-BRANCH-HOIST-CHAMPION-X / V002
+PARENT_SHA256=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
+CANDIDATE_SHA256=1aa6d8ecaa1af058b039341f63c67f4f67403bb4a8e5c6bc57dd96914f42cb65
+VALID_LOCAL_SCORE=NO; HBH09_V002_LOCAL_SCORE=UNAVAILABLE
+SYSTEM_MEASUREMENT_BLOCKER=YES
+MAIN2_PERFORMANCE_EXPLORATION=PAUSED_PENDING_PLANNING_OR_USER
+NO_NEXT_PERFORMANCE_REVISION=YES
+ONLINE_READY=NO; DIRECT_ONLINE_SUBMISSION=0
+CANONICAL_SHARED_LEDGER_CHANGES=0
+```
+
+Across d0/d1/d3/d4/d5/d7, multiple independent temporal windows and all
+admissible primary combinations failed to yield a valid score. d6 remained
+under another Main's lease. The N=8 support calibration worsened noise and was
+explicitly reverted; no Candidate source changed. This is a measurement
+environment blocker, not Candidate rejection or Route lifecycle closure.
 
 ## Event receipt — HBH-09 V002 Window J qualification result — 2026-10-03T08:33Z
 
