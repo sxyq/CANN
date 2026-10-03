@@ -976,20 +976,25 @@ ADDR_V002=DECLARED_SIBLING_FROM_R31B_V011
 ADDR_V002_HYPOTHESIS=ADDR-H1 pass-1 row-base state
 ADDR_V002_BASELINE_COMMIT=f6cd9ae8
 ADDR_V002_HANDOFF_COMMIT=fc2ee48b
-ADDR_V002_BUILD=NOT_RUN
-ADDR_V002_CORRECTNESS=NOT_RUN
-ADDR_V002_RUN1=NONE; ADDR_V002_RUN2=NONE; ADDR_V002_RUN3=NONE
-ADDR_V002_LOCAL_AVG=NONE; ADDR_V002_LOCAL_DELTA_PERCENT=NONE; QUALITY=NONE
+ADDR_V002_BUILD=PASS
+ADDR_V002_CORRECTNESS=PASS_ON_BF16_D32768_REDUCED_TAIL
+ADDR_V002_RUN1=40.160/46.149 us P/C; RUN2=52.845/49.488 us; RUN3=35.040/33.630 us
+ADDR_V002_LOCAL_AVG=42.681667/43.089000 us P/C
+ADDR_V002_LOCAL_DELTA=+0.407333 us; ADDR_V002_LOCAL_DELTA_PERCENT=+0.954352%; QUALITY=POOR
+ADDR_V002_LOCAL_CLASSIFICATION=LOCAL_NEGATIVE; SCORE_COMMIT=32e7644f
 TILECOUNT_HANDOFF=READY; COMMIT=cdee126e; IMPLEMENTATION=NO
 REDUCE_FINALIZE_HANDOFF=READY; COMMIT=fd77f257; IMPLEMENTATION=NO
+BRANCH_LANE=PLANNING_REVIEW; V002_SCORE=-0.048802%; NO_V003
+UB_V001_SCORE=-20.878573%; ENGINEERING_REFERENCE_ONLY; NO_V002
 DIRECT_ONLINE_SUBMISSION=0
 ```
 
-ADDR V002 is a byte-identical sibling baseline from R31B V011; it does not
-inherit ADDR-H3 V001.  The next action is Route-Agent implementation of the
-single H1 row-base change, followed immediately by Build, Correctness, and
-2–3 valid Local Score runs.  No V003, UB V002, BRANCH V003, or Online action
-is authorized in this window.
+ADDR V002 was created as a byte-identical R31B V011 sibling, not from ADDR-H3
+V001. Its single H1 row-base change completed Build, target correctness, and
+three Local runs. The engineering score is negative and POOR quality; it does
+not advance Local Best or imply an Official change. TILECOUNT and
+REDUCE-FINALIZE planning handoffs are ready. No V003, UB V002, BRANCH V003,
+new route, or Direct Online action is authorized in this window.
 
 The event rule is: an eligible local commit starts its own Build immediately;
 Build PASS starts Correctness immediately; Correctness PASS starts the next
