@@ -1,8 +1,47 @@
 # MAIN-2 Local Control Dashboard
 
-UPDATED_UTC: 2026-10-03T06:17:20Z
+UPDATED_UTC: 2026-10-03T06:22:47Z
 SCOPE: MAIN-2 local control only
 CANONICAL_SHARED_LEDGER: UNMODIFIED
+
+## Event receipt — HBH-09 V002 paired recovery, Window A — 2026-10-03T06:22Z
+
+```text
+CONTROL_HEAD_BEFORE_RECEIPT=7de98c71
+ROUTE_PAIRED_COMMIT=c6d6c34e
+OVERALL_OFFICIAL_CHAMPION=R31B V011 / 45.16
+CURRENT_REVISION=HOTLOOP-BRANCH-HOIST-CHAMPION-X / HBH-09 V002
+CURRENT_STATE=WAITING_FOR_VALID_LOCAL_SCORE
+PARENT_SHA256=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
+CANDIDATE_SHA256=1aa6d8ecaa1af058b039341f63c67f4f67403bb4a8e5c6bc57dd96914f42cb65
+ROUTE_BRANCH_HEAD=c6d6c34e
+BUILD=PASS; CORRECTNESS=PASS_12_OF_12
+EVENT_DRIVEN_PIPELINE=ENABLED
+PLANNING_DECISIONS_CHANGED=0
+CANONICAL_SHARED_LEDGER_CHANGES=0
+DIRECT_ONLINE_SUBMISSION=0
+ONLINE_READY=NO
+```
+
+The three primary-shape same-binary PASS probes from Window A immediately
+entered paired Parent/Candidate timing on their qualified devices. All raw
+samples are retained. None establishes a valid Local score: paired direction
+is mixed, and the paired Parent jitter is substantially above the earlier
+same-binary noise estimate.
+
+| Device / primary shape | Parent median us | Candidate median us | Delta | Same-binary noise | Block directions |
+|---|---:|---:|---:|---:|---|
+| d0 FP32 D6144 rows=40 | 17.650 | 17.560 | -0.510% | 6.123% | mixed; paired Parent MAD/median 10.71% |
+| d3 BF16 D6144 rows=80 | 20.290 | 19.720 | -2.809% | 2.037% | mixed; paired Parent MAD/median 8.43% |
+| d5 BF16 D6144 rows=40 | 8.830 | 8.880 | +0.566% | 2.945% | mixed |
+
+```text
+V002_WINDOW_A_PAIRED_PROTOCOL=45_WARMUPS;31_DEVICE_EVENT_SAMPLES;4_ALTERNATING_BLOCKS
+V002_LOCAL_SCORE=NONE
+V002_VERDICT=NOT_COMPLETE; NO_ACCEPTED_OR_REJECTED_SCORE_VERDICT
+V002_NEXT=NEW_RESOURCE_SCAN_AND_TEMPORALLY_DISTINCT_PRIMARY_QUALIFICATION
+PUSH_STATE=PUSH_PENDING; PUSH_IS_NOT_AN_EXPERIMENT_GATE
+```
 
 ## Event receipt — HBH-09 V002 multi-device qualification recovery, Window A — 2026-10-03T06:17Z
 
