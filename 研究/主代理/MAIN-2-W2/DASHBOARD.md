@@ -1,8 +1,54 @@
 # MAIN-2 Local Control Dashboard
 
-UPDATED_UTC: 2026-10-02T20:54:13Z
+UPDATED_UTC: 2026-10-03T06:17:20Z
 SCOPE: MAIN-2 local control only
 CANONICAL_SHARED_LEDGER: UNMODIFIED
+
+## Event receipt — HBH-09 V002 multi-device qualification recovery, Window A — 2026-10-03T06:17Z
+
+```text
+CONTROL_HEAD_BEFORE_RECEIPT=85e49000
+ROUTE_QUALIFICATION_COMMIT=c0dd0e9a
+OVERALL_OFFICIAL_CHAMPION=R31B V011 / 45.16
+CURRENT_STATE=WAITING_FOR_VALID_LOCAL_SCORE
+EVENT_DRIVEN_PIPELINE=ENABLED
+PLANNING_DECISIONS_CHANGED=0
+CANONICAL_SHARED_LEDGER_CHANGES=0
+DIRECT_ONLINE_SUBMISSION=0
+ONLINE_READY=NO
+```
+
+The Oct-03 resource scan covered d0–d7. All eight cards had >100 MB free HBM
+and there was no shared active lease at scan time; host load was
+`33.52/52.21/56.72` with 34 logged-in users. Existing processes were not
+stopped or migrated. A d6 shared lease appeared before admission, so that
+comparison was skipped. Seven exact-source same-binary comparisons ran on
+separate devices in one short global window:
+
+| Device | Primary probe | Qualification | MAD/median | Block drift |
+|---:|---|---|---:|---:|
+| d0 | FP32 D6144 rows=40 | PASS | 0.061225 | 0.002268 |
+| d1 | BF16 D6144 rows=40 | BLOCKED_FOR_SHAPE | 0.296791 | 0.030749 |
+| d2 | FP32 D6144 rows=80 | BLOCKED_FOR_SHAPE | 0.351852 | 0.000000 |
+| d3 | BF16 D6144 rows=80 | PASS | 0.020370 | 0.001852 |
+| d4 | FP32 D6144 rows=40 | NEEDS_VALIDATION | 0.170940 | 0.170940 |
+| d5 | BF16 D6144 rows=40 | PASS | 0.029446 | 0.030624 |
+| d6 | FP32 D6144 rows=80 | NOT_RUN — SHARED_LEASE_CONFLICT | — | — |
+| d7 | BF16 D6144 rows=80 | BLOCKED_FOR_SHAPE | 0.410798 | 0.458920 |
+
+The three primary PASS pairs (d0 FP32 rows=40, d3 BF16 rows=80, d5 BF16
+rows=40) immediately enter interleaved Parent/Candidate timing on those same
+devices. No Local score is claimed yet; no control dtype substitutes for a
+primary shape.
+
+```text
+V002_PARENT_SHA256=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
+V002_CANDIDATE_SHA256=1aa6d8ecaa1af058b039341f63c67f4f67403bb4a8e5c6bc57dd96914f42cb65
+V002_QUALIFICATION_WINDOW_A=7_RUNS;3_PRIMARY_PASS;1_LEASE_SKIPPED
+V002_NEXT=d0_FP32_R40+d3_BF16_R80+d5_BF16_R40_PAIRED_FORMAL
+V002_LOCAL_SCORE=NONE_PENDING_PAIRED_WINDOWS
+PUSH_STATE=PUSH_PENDING
+```
 
 ## Event receipt — HBH-09 V002 final Local closure — 2026-10-02T20:54Z
 
