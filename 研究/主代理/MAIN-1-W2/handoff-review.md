@@ -59,3 +59,10 @@ No build, correctness run, performance run, profiling, server3 job or Online sub
 - The audited mechanism is wide-FP32 output writeback split into two contiguous chunks, with the first chunk issued ahead. Recorded Local deltas compare STORE V003 with STORE V002; they do not measure V003 against R31B V011. Full-donor Official score is `44.38`, below V011 `45.16`; the reported case14 latency is about 0.76% slower and does not identify that case's input or dispatch.
 - CASE47 H4 tile-width and H2 active-core changes can interact with V003's tile count or block row grouping; TINY H1 can also affect row grouping if the input overlaps. The Official testcase-to-input and runtime path map remains unavailable, so donor reachability and selective-score benefit are unproven.
 - Main review remains `NEEDS_MORE_EVIDENCE`; keep `MAIN_SELECTED=NONE`. No performance Revision, Build, correctness, timing, submission, or route lifecycle change is authorized by this audit.
+
+## TINY Fixed-Cost Follow-up (2026-10-03)
+
+- Route supplement commit: `f39f0fb309eed9a4d8a17447f4ebe9ee834e252f`. V011 case1/3/5 share the Host entry, dtype dispatch statements and Kernel template entry; the report does not establish a shared dtype specialization, `Process` path, wide subpath, block count or row ownership.
+- `ACTIVE_CORE_COUNT` is duplicate work against R016/FULL-R016, SCHED-ROWGROUP and CASE47-H2. The five remaining conditional mechanisms require a testcase-ID keyed input manifest and path replay before Main review; they do not authorize implementation. The Official timer boundary also remains unknown.
+- The current SELECTIVE-FASTPATH task identifies a full V017 donor qualification for BF16 D=32768. Exclude that exact donor case from TINY's V011 internal probe set if the future manifest matches; do not infer any other overlap from route names.
+- Keep `MAIN_SELECTED=NONE`. No Revision, build, device run, submission, or route lifecycle decision follows.
