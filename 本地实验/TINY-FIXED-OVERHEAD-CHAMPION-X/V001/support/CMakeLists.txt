@@ -18,6 +18,7 @@ set(ASCENDC_INCLUDES
     "${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux"
     "${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc"
     "${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/include/interface"
+    "${CMAKE_CURRENT_SOURCE_DIR}/.."
     "${HCC_ROOT}/aarch64-target-linux-gnu/include"
     "${HCC_ROOT}/aarch64-target-linux-gnu/include/c++/7.3.0"
     "${HCC_ROOT}/aarch64-target-linux-gnu/include/c++/7.3.0/aarch64-target-linux-gnu"
