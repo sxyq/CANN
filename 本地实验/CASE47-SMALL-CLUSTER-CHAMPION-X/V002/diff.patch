@@ -1,15 +1,14 @@
 diff --git "a/\347\272\277\344\270\212\347\273\223\346\236\234/R31B/V011/submission.asc" "b/\346\234\254\345\234\260\345\256\236\351\252\214/CASE47-SMALL-CLUSTER-CHAMPION-X/V002/submission.asc"
-index 6adb6f58..73fec0d0 100644
+index 6adb6f58..08c71552 100644
 --- "a/\347\272\277\344\270\212\347\273\223\346\236\234/R31B/V011/submission.asc"
 +++ "b/\346\234\254\345\234\260\345\256\236\351\252\214/CASE47-SMALL-CLUSTER-CHAMPION-X/V002/submission.asc"
-@@ -517,6 +517,87 @@ public:
+@@ -517,6 +517,86 @@ public:
              SyncMTE2ToV();
          }
  
 +        if constexpr (AscendC::IsSameType<T, float>::value) {
 +            if (rowWidth == 257 && localRows == 2) {
 +                constexpr int32_t paddedWidth = 264;
-+                constexpr int32_t padElems = paddedWidth - 257;
 +                const uint32_t reduceShape[2] = {2, paddedWidth};
 +                AscendC::LocalTensor<float> valueBase = valueFp32Buf_.Get<float>();
 +                AscendC::LocalTensor<float> squareBase = xFp32Buf_.Get<float>();
@@ -33,12 +32,12 @@ index 6adb6f58..73fec0d0 100644
 +                    Load(residualLocal, residualGm_, rowOffset, valid);
 +                    AscendC::SetFlag<AscendC::HardEvent::MTE2_V>(inputReady);
 +                    AscendC::WaitFlag<AscendC::HardEvent::MTE2_V>(inputReady);
++                    AscendC::Duplicate(valueRow, 0.0f, paddedWidth);
++                    AscendC::Duplicate(squareRow, 0.0f, paddedWidth);
++                    AscendC::PipeBarrier<PIPE_V>();
 +                    AscendC::Add(valueRow, xLocal, residualLocal, valid);
 +                    AscendC::PipeBarrier<PIPE_V>();
 +                    AscendC::Mul(squareRow, valueRow, valueRow, valid);
-+                    AscendC::PipeBarrier<PIPE_V>();
-+                    AscendC::Duplicate(valueRow[valid], 0.0f, padElems);
-+                    AscendC::Duplicate(squareRow[valid], 0.0f, padElems);
 +                    AscendC::PipeBarrier<PIPE_V>();
 +                    AscendC::SetFlag<AscendC::HardEvent::V_MTE2>(inputRelease);
 +                    needInputRelease = true;
