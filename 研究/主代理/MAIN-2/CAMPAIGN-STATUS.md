@@ -392,3 +392,51 @@ FORCE_PUSH/RESET/REBASE/CLEAN=NOT_USED
 Main-2 local work continues; retry only in the next bounded 30–60-minute
 connectivity window. For UB, fetch and inspect the exact branch after the
 network recovers, then leave merge/cherry-pick/new-branch choice to Planning.
+
+## 15. Local-to-Online Calibration V2 — 2026-10-04
+
+This section is the current calibration status. Earlier sections remain historical
+campaign snapshots and are not overwritten.
+
+```
+MAIN2_HEAD=d924518c505e900ebbb9d1fd2ba3af87aaddbd97
+REMOTE_HEAD=d924518c505e900ebbb9d1fd2ba3af87aaddbd97
+PUSH_PENDING=NO
+OFFICIAL_CHAMPION=R31B V011
+OFFICIAL_SCORE=45.16
+LOCAL_JUDGE_MODE=CALIBRATED_SURROGATE
+ONLINE_CASE_REPRODUCIBILITY=PARTIAL
+DIRECT_ONLINE_SUBMISSION=0
+NEW_PERFORMANCE_REVISION=0
+```
+
+Calibration set:
+
+- 13 manifest versions: 12 historical Official-tested candidates plus fresh R31B V011 anchor.
+- 12 historical candidates were locally runnable and benchmarked through the same 16-case suite.
+- Fresh V011 anchor has 15 valid cases; C15 is excluded because Parent and Candidate share the FP32-wide correctness failure.
+- V2 retained only C13 (`128x16384 FP16`, wide multi-row pipeline path); this is insufficient as a final multi-case judge.
+- Completed evidence roots used by the scorer are `calibration-v2/runs/20261004-v2-v011` and `calibration-v2/runs/20261004-v2-candidates-blocks`. The interrupted `20261004-v2-candidates` root is not used.
+
+Validation:
+
+- MAE `7.106473`; RMSE `9.283397`.
+- Predicted-score Spearman `0.321678`; Kendall `0.121212`.
+- Raw local-ratio Spearman `-0.482517`; Kendall `-0.272727`.
+- Champion threshold decision accuracy `11/12`; false positives `1`; false negatives `0`.
+- The false positive is `VECTOR-MATH-X/V001` (predicted `49.995841`, Official `44.22`).
+- ADDR H3 predicted `44.917735`, Official `42.72`; it is below the 45.16 anchor, but the margin is not a validated safety margin.
+
+Current gate:
+
+```
+LOCAL_JUDGE_READY=NO
+ONLINE_ELIGIBLE=NO
+PLANNING_DECISIONS_CHANGED=0
+NEW_ROUTES_OUTSIDE_APPROVED_5=0
+```
+
+Readiness blockers are: one retained case, non-nested exploratory case
+selection, one false positive, and high median jitter in most candidate cases.
+Performance revisions and Online submissions remain frozen pending Planning /
+Review calibration follow-up.
