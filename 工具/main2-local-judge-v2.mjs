@@ -357,26 +357,27 @@ function surrogateScore(ratio, anchorTimes, bestTimes) {
   return base === null || scaled === null ? null : ANCHOR_SCORE + scaled - base;
 }
 
-function modelPredictions(rows, anchorTimes, bestTimes) {
-  const candidates = rows.filter((row) => !(row.route === ANCHOR_ROUTE && row.revision === ANCHOR_REVISION)
-    && row.officialScore !== null && row.logRatio !== null && row.validCases >= 4);
+function modelPredictions(rows, anchorTimes, bestTimes, modelCaseIds) {
+  const featuredRows = rows.map((row) => ({ ...row, ...modelFeatures(row, modelCaseIds) }));
+  const candidates = featuredRows.filter((row) => !(row.route === ANCHOR_ROUTE && row.revision === ANCHOR_REVISION)
+    && row.officialScore !== null && row.modelLogRatio !== null && row.validCases >= 4);
   const output = [];
-  for (const row of rows) {
+  for (const row of featuredRows) {
     const isAnchor = row.route === ANCHOR_ROUTE && row.revision === ANCHOR_REVISION;
     if (isAnchor) {
       output.push({ ...row, predictedFormulaGeo: ANCHOR_SCORE, predictedFormulaMean: ANCHOR_SCORE, predictedLinear: ANCHOR_SCORE, predictedNearest: ANCHOR_SCORE, predictedMonotonic: ANCHOR_SCORE, trainingN: 0, primary: ANCHOR_SCORE });
       continue;
     }
     const train = candidates.filter((candidate) => !(candidate.route === row.route && candidate.revision === row.revision));
-    const xs = train.map((candidate) => candidate.logRatio);
+    const xs = train.map((candidate) => candidate.modelLogRatio);
     const ys = train.map((candidate) => candidate.officialScore);
     const linear = fitLinear(xs, ys, false);
     const monotonic = fitLinear(xs, ys, true);
-    const formulaGeo = surrogateScore(row.geoRatio, anchorTimes, bestTimes);
-    const formulaMean = surrogateScore(row.meanRatio, anchorTimes, bestTimes);
-    const nearest = fitNearest(row.logRatio, xs, ys);
-    const monoPrediction = monotonic ? monotonic.intercept + monotonic.slope * row.logRatio : null;
-    const linearPrediction = linear ? linear.intercept + linear.slope * row.logRatio : null;
+    const formulaGeo = surrogateScore(row.modelGeoRatio, anchorTimes, bestTimes);
+    const formulaMean = surrogateScore(row.modelMeanRatio, anchorTimes, bestTimes);
+    const nearest = fitNearest(row.modelLogRatio, xs, ys);
+    const monoPrediction = monotonic && row.modelLogRatio !== null ? monotonic.intercept + monotonic.slope * row.modelLogRatio : null;
+    const linearPrediction = linear && row.modelLogRatio !== null ? linear.intercept + linear.slope * row.modelLogRatio : null;
     const primary = linearPrediction !== null ? linearPrediction : formulaGeo;
     output.push({
       ...row,
@@ -408,15 +409,72 @@ function validationRows(predictedRows) {
     && row.officialScore !== null && row.primary !== null);
 }
 
-function buildValidationDoc({ root, rows, cvRows, caseRows, anchor, h3, ready }) {
-  const actual = cvRows.map((row) => row.actual);
-  const predicted = cvRows.map((row) => row.primary);
+function buildCasePredictability(rows, suite) {
+  return suite.map((testCase) => {
+    const values = rows.filter((row) => !(row.route === ANCHOR_ROUTE && row.revision === ANCHOR_REVISION)
+      && row.officialScore !== null).map((row) => row.cases[testCase.CASE_ID]);
+    const scores = rows.filter((row) => !(row.route === ANCHOR_ROUTE && row.revision === ANCHOR_REVISION)
+      && row.officialScore !== null).map((row) => row.officialScore);
+    const pairs = values.map((value, index) => ({ value, score: scores[index] }))
+      .filter(({ value }) => value.ratio !== null);
+    const corr = correlation(
+      pairs.map(({ value }) => Math.log(value.ratio)),
+      pairs.map(({ score }) => score)
+    );
+    const stability = median(pairs.map(({ value }) => value.candidate.median_cv));
+    const keep = pairs.length >= 5 && corr !== null && Math.abs(corr) >= 0.25
+      && (stability === null || stability <= 0.5);
+    let reason = "REVIEW_CORRELATION_OR_JITTER";
+    if (pairs.length < 5) reason = "INSUFFICIENT_VERSION_COVERAGE";
+    else if (keep) reason = "STABLE_CORRELATED_CASE";
+    else if (stability !== null && stability > 0.5) reason = "HIGH_MEDIAN_JITTER";
+    else if (corr === null || Math.abs(corr) < 0.25) reason = "WEAK_CORRELATION";
+    return {
+      CASE_ID: testCase.CASE_ID,
+      SHAPE: String(testCase.ROWS) + "x" + String(testCase.WIDTH),
+      DTYPE: testCase.DTYPE,
+      PATH: testCase.EXPECTED_PATH,
+      VALID_VERSION_COUNT: pairs.length,
+      CORRELATION_WITH_OFFICIAL: corr,
+      STABILITY_MEDIAN_CV: stability,
+      KEEP_DROP: keep ? "KEEP" : "DROP_OR_REVIEW",
+      REASON: reason
+    };
+  });
+}
+
+function selectedRatios(row, modelCaseIds) {
+  return modelCaseIds.map((caseId) => row.cases[caseId]?.ratio)
+    .filter((value) => num(value) !== null)
+    .map(Number);
+}
+
+function modelFeatures(row, modelCaseIds) {
+  const ratios = selectedRatios(row, modelCaseIds);
+  const geoRatio = geometricMean(ratios);
+  return {
+    modelCaseIds: modelCaseIds.join(","),
+    modelMeanRatio: mean(ratios),
+    modelGeoRatio: geoRatio,
+    modelLogRatio: geoRatio ? Math.log(geoRatio) : null
+  };
+}
+
+function buildValidationDoc({ root, rows, cvRows, caseRows, modelCaseIds, anchor, h3, ready }) {
   const absErrors = cvRows.map((row) => Math.abs(row.error)).filter((value) => Number.isFinite(value));
   const squared = cvRows.map((row) => row.error ** 2).filter((value) => Number.isFinite(value));
   const fp = cvRows.filter((row) => row.primary > ANCHOR_SCORE && row.actual < ANCHOR_SCORE);
   const fn = cvRows.filter((row) => row.primary <= ANCHOR_SCORE && row.actual > ANCHOR_SCORE);
-  const actualRank = rows.filter((row) => row.officialScore !== null && row.logRatio !== null).map((row) => row.officialScore);
-  const localRank = rows.filter((row) => row.officialScore !== null && row.logRatio !== null).map((row) => row.logRatio);
+  const rankRows = cvRows.filter((row) => row.modelLogRatio !== null);
+  const actualRank = rankRows.map((row) => row.actual);
+  const localRank = rankRows.map((row) => row.modelLogRatio);
+  const predictedRankRows = cvRows.filter((row) => row.primary !== null);
+  const predictedRank = predictedRankRows.map((row) => row.primary);
+  const predictedActual = predictedRankRows.map((row) => row.actual);
+  const decisions = cvRows.filter((row) => row.primary !== null);
+  const decisionAccuracy = decisions.length
+    ? decisions.filter((row) => (row.primary > ANCHOR_SCORE) === (row.actual > ANCHOR_SCORE)).length / decisions.length
+    : null;
   const lines = [
     "# Main-2 Local Judge V2 Validation",
     "",
@@ -441,10 +499,14 @@ function buildValidationDoc({ root, rows, cvRows, caseRows, anchor, h3, ready })
     `- Samples with primary prediction: ${cvRows.length}`,
     `- MAE: ${fixed(metric(absErrors), 6)}`,
     `- RMSE: ${squared.length ? fixed(Math.sqrt(metric(squared)), 6) : "NA"}`,
-    `- Spearman (local log-ratio vs Official score): ${fixed(spearman(localRank, actualRank), 6)}`,
-    `- Kendall (local log-ratio vs Official score): ${fixed(kendall(localRank, actualRank), 6)}`,
-    `- False positives (predicted > 45.16, actual < 45.16): ${fp.length}`,
-    `- False negatives (predicted <= 45.16, actual > 45.16): ${fn.length}`,
+    `- Model case IDs: ${modelCaseIds.length ? modelCaseIds.join(",") : "NONE"}`,
+    `- Raw local log-ratio Spearman (lower ratio should mean higher Official score): ${fixed(spearman(localRank, actualRank), 6)}`,
+    `- Raw local log-ratio Kendall: ${fixed(kendall(localRank, actualRank), 6)}`,
+    `- Predicted-score Spearman: ${fixed(spearman(predictedRank, predictedActual), 6)}`,
+    `- Predicted-score Kendall: ${fixed(kendall(predictedRank, predictedActual), 6)}`,
+    `- Champion decision accuracy (threshold ${ANCHOR_SCORE}): ${decisions.length ? `${decisions.filter((row) => (row.primary > ANCHOR_SCORE) === (row.actual > ANCHOR_SCORE)).length}/${decisions.length} (${fixed(decisionAccuracy * 100, 3)}%)` : "NA"}`,
+   `- False positives (predicted > 45.16, actual < 45.16): ${fp.length}`,
+   `- False negatives (predicted <= 45.16, actual > 45.16): ${fn.length}`,
     "",
     "## ADDR H3 Held-Out Check",
     "",
@@ -455,11 +517,13 @@ function buildValidationDoc({ root, rows, cvRows, caseRows, anchor, h3, ready })
     "",
     "## Case Predictiveness",
     "",
-    "Per-case correlation, coverage, and jitter are in `LOCAL-CASE-PREDICTIVENESS.tsv`. A case is not retained solely because it produced a local win.",
-    "",
+   "Per-case correlation, coverage, and jitter are in `LOCAL-CASE-PREDICTIVENESS.tsv`. A case is not retained solely because it produced a local win.",
+    `- V2 model selection is exploratory over the current ${rows.length}-version calibration set; it is not a nested held-out selection.`,
+   "",
     "## Gate",
     "",
     `- LOCAL_JUDGE_READY=${ready ? "YES" : "NO"}`,
+    "- Readiness blockers: retained case count " + String(modelCaseIds.length) + " (<2), case selection is exploratory rather than nested, and false-positive count is " + String(fp.length) + ".",
     "- ONLINE_ELIGIBLE=NO until Planning/Review accepts the calibrated error and the external Judge owner approves a submission.",
     "- A single-shape percentage cannot enter the Online gate.",
     "",
@@ -488,14 +552,17 @@ function run(args) {
   const anchorTimes = officialTimes(anchorOfficial);
   const anchorStats = anchorCaseStats(manifest, suite, measurements, args.baselineRoots);
   const featureRows = manifest.map((row) => caseFeatures(row, suite, measurements, anchorStats, ANCHOR_ROUTE, ANCHOR_REVISION));
-  const predictedRows = modelPredictions(featureRows, anchorTimes, bestTimes);
+  const casePredictability = buildCasePredictability(featureRows, suite);
+  const modelCaseIds = casePredictability.filter((row) => row.KEEP_DROP === "KEEP").map((row) => row.CASE_ID);
+  const predictedRows = modelPredictions(featureRows, anchorTimes, bestTimes, modelCaseIds);
   const byKey = new Map(predictedRows.map((row) => [`${row.route}/${row.revision}`, row]));
 
   const datasetHeaders = [
     "ROUTE", "REVISION", "SOURCE_SHA", "OFFICIAL_SCORE", "LOCAL_RUNNABLE", "CORRECTNESS_VALID",
     "VALID_CASE_COUNT", "LOCAL_QUALITY", "OUTLIER_CASE_COUNT", "LOCAL_MEAN_RATIO", "LOCAL_GEOMEAN_RATIO",
     "LOCAL_MEDIAN_RATIO", "LOCAL_LOG_RATIO_MEAN", "PREDICTED_OFFICIAL_SCORE", "PREDICTION_QUALITY",
-    "CALIBRATION_ROLE"
+    "CALIBRATION_ROLE", "MODEL_CASE_IDS", "MODEL_LOCAL_MEAN_RATIO", "MODEL_LOCAL_GEOMEAN_RATIO",
+    "MODEL_LOCAL_LOG_RATIO"
   ];
   for (const testCase of suite) {
     datasetHeaders.push(`LOCAL_${testCase.CASE_ID}_PARENT_US`, `LOCAL_${testCase.CASE_ID}_CANDIDATE_US`,
@@ -522,7 +589,11 @@ function run(args) {
       LOCAL_MEDIAN_RATIO: row.medianRatio,
       LOCAL_LOG_RATIO_MEAN: row.logRatio,
       PREDICTED_OFFICIAL_SCORE: row.primary,
-      PREDICTION_QUALITY: row.trainingN >= 3 && row.validCases >= 4 ? "LOO_CALIBRATED" : "INSUFFICIENT_TRAINING",
+      PREDICTION_QUALITY: row.trainingN >= 3 && row.validCases >= 4 ? "LOO_CALIBRATED_EXPLORATORY" : "INSUFFICIENT_TRAINING",
+      MODEL_CASE_IDS: row.modelCaseIds,
+      MODEL_LOCAL_MEAN_RATIO: row.modelMeanRatio,
+      MODEL_LOCAL_GEOMEAN_RATIO: row.modelGeoRatio,
+      MODEL_LOCAL_LOG_RATIO: row.modelLogRatio,
       CALIBRATION_ROLE: key === `${ANCHOR_ROUTE}/${ANCHOR_REVISION}` ? "FRESH_BASELINE_ANCHOR" : "HELD_OUT_CANDIDATE"
     };
     for (const testCase of suite) {
@@ -559,38 +630,22 @@ function run(args) {
     PREDICTED_SCORE: row.primary,
     SCORE_ERROR: row.primary === null ? null : row.primary - row.officialScore,
     ABS_ERROR: row.primary === null ? null : Math.abs(row.primary - row.officialScore),
-    LOCAL_LOG_RATIO: row.logRatio,
+    LOCAL_LOG_RATIO: row.modelLogRatio,
     VALID_CASE_COUNT: row.validCases,
     QUALITY: row.quality,
-    MODEL_TRAINING_N: row.trainingN
+    MODEL_TRAINING_N: row.trainingN,
+    MODEL_CASE_IDS: row.modelCaseIds,
+    PREDICTED_ABOVE_ANCHOR: row.primary === null ? "NA" : row.primary > ANCHOR_SCORE ? "YES" : "NO",
+    ACTUAL_ABOVE_ANCHOR: row.officialScore > ANCHOR_SCORE ? "YES" : "NO",
+    DECISION_CORRECT: row.primary === null ? "NA" : ((row.primary > ANCHOR_SCORE) === (row.officialScore > ANCHOR_SCORE) ? "YES" : "NO"),
+    FALSE_POSITIVE: row.primary !== null && row.primary > ANCHOR_SCORE && row.officialScore < ANCHOR_SCORE ? "YES" : "NO",
+    FALSE_NEGATIVE: row.primary !== null && row.primary <= ANCHOR_SCORE && row.officialScore > ANCHOR_SCORE ? "YES" : "NO"
   }));
   writeTsv(path.join(out, "LOCAL-JUDGE-CROSS-VALIDATION.tsv"), Object.keys(cvRows[0] || {
     ROUTE: "NA", REVISION: "NA"
   }), cvRows);
 
-  const casePredictability = suite.map((testCase) => {
-    const values = predictedRows.filter((row) => !(row.route === ANCHOR_ROUTE && row.revision === ANCHOR_REVISION)
-      && row.officialScore !== null).map((row) => row.cases[testCase.CASE_ID]);
-    const ratios = values.map((value) => value.ratio);
-    const scores = predictedRows.filter((row) => !(row.route === ANCHOR_ROUTE && row.revision === ANCHOR_REVISION)
-      && row.officialScore !== null).map((row) => row.officialScore);
-    const valid = values.filter((value) => value.ratio !== null);
-    const corr = correlation(valid.map((value) => Math.log(value.ratio)), scores.filter((_, index) => values[index].ratio !== null));
-    const stability = median(valid.map((value) => value.candidate.median_cv));
-    const keep = valid.length >= 5 && corr !== null && Math.abs(corr) >= 0.25 && (stability === null || stability <= 0.5);
-    return {
-      CASE_ID: testCase.CASE_ID,
-      SHAPE: `${testCase.ROWS}x${testCase.WIDTH}`,
-      DTYPE: testCase.DTYPE,
-      PATH: testCase.EXPECTED_PATH,
-      VALID_VERSION_COUNT: valid.length,
-      CORRELATION_WITH_OFFICIAL: corr,
-      STABILITY_MEDIAN_CV: stability,
-      KEEP_DROP: keep ? "KEEP" : "DROP_OR_REVIEW",
-      REASON: valid.length < 5 ? "INSUFFICIENT_VERSION_COVERAGE" : (corr === null ? "NO_CORRELATION" : "REVIEW_CORRELATION_OR_JITTER")
-    };
-  });
-  writeTsv(path.join(out, "LOCAL-CASE-PREDICTIVENESS.tsv"), Object.keys(casePredictability[0]), casePredictability);
+ writeTsv(path.join(out, "LOCAL-CASE-PREDICTIVENESS.tsv"), Object.keys(casePredictability[0]), casePredictability);
 
   const anchor = byKey.get(`${ANCHOR_ROUTE}/${ANCHOR_REVISION}`);
   const h3 = byKey.get("HOTLOOP-ADDR-HOIST-CHAMPION-X/V001");
@@ -599,17 +654,19 @@ function run(args) {
     primary: row.primary,
     error: row.primary - row.officialScore,
     route: row.route,
-    revision: row.revision
+    revision: row.revision,
+    modelLogRatio: row.modelLogRatio
   }));
   const falsePositives = cvForMetrics.filter((row) => row.primary > ANCHOR_SCORE && row.actual < ANCHOR_SCORE);
   const falseNegatives = cvForMetrics.filter((row) => row.primary <= ANCHOR_SCORE && row.actual > ANCHOR_SCORE);
-  const ready = cvForMetrics.length >= 5 && anchor?.validCases >= Math.ceil(suite.length * 0.75)
+  const ready = modelCaseIds.length >= 2 && cvForMetrics.length >= 5 && anchor?.validCases >= Math.ceil(suite.length * 0.75)
     && h3?.primary !== null && h3?.primary <= ANCHOR_SCORE && falsePositives.length === 0;
   writeText(path.join(out, "LOCAL-JUDGE-VALIDATION-V2.md"), buildValidationDoc({
     root,
     rows: predictedRows,
     cvRows: cvForMetrics,
     caseRows: casePredictability,
+    modelCaseIds,
     anchor,
     h3,
     ready
@@ -646,18 +703,36 @@ function run(args) {
   const metricSquared = cvForMetrics.map((row) => row.error ** 2);
   const metricX = cvForMetrics.map((row) => row.primary);
   const metricY = cvForMetrics.map((row) => row.actual);
+  const rawRankRows = cvForMetrics.filter((row) => row.modelLogRatio !== null);
+  const rawRankX = rawRankRows.map((row) => row.modelLogRatio);
+  const rawRankY = rawRankRows.map((row) => row.actual);
+  const decisionRows = cvForMetrics.filter((row) => row.primary !== null);
+  const decisionCorrect = decisionRows.filter((row) => (row.primary > ANCHOR_SCORE) === (row.actual > ANCHOR_SCORE)).length;
   const summary = {
     calibration_versions_total: manifest.length,
     locally_runnable: Math.max(0, predictedRows.filter((row) => row.validCases >= 4).length - 1),
     successfully_benchmarked: Math.max(0, predictedRows.filter((row) => row.validCases >= 4).length - 1),
     suite_cases_v1: suite.length,
-    suite_cases_retained: suiteV2Rows.filter((row) => row.KEEP_STATUS === "KEEP").length,
+    suite_cases_retained: modelCaseIds.length,
+    model_case_ids: modelCaseIds,
+    model_case_selection: "EXPLORATORY_FULL_DATASET",
     mae: metric(metricErrors),
     rmse: metricSquared.length ? Math.sqrt(metric(metricSquared)) : null,
     spearman: spearman(metricX, metricY),
     kendall: kendall(metricX, metricY),
+    raw_local_log_ratio_spearman: spearman(rawRankX, rawRankY),
+    raw_local_log_ratio_kendall: kendall(rawRankX, rawRankY),
+    champion_decision_accuracy: decisionRows.length ? decisionCorrect / decisionRows.length : null,
+    champion_decision_correct: decisionRows.length ? decisionCorrect : null,
+    champion_decision_total: decisionRows.length,
     false_positives: falsePositives.length,
     false_negatives: falseNegatives.length,
+    readiness_blockers: [
+      ...(modelCaseIds.length < 2 ? ["RETAINED_CASE_COUNT_LT_2"] : []),
+      "CASE_SELECTION_NOT_NESTED",
+      ...(falsePositives.length ? ["FALSE_POSITIVE_PRESENT"] : []),
+      ...(casePredictability.filter((row) => row.REASON === "HIGH_MEDIAN_JITTER").length ? ["HIGH_MEDIAN_JITTER_CASES"] : [])
+    ],
     addr_h3_predicted: h3?.primary ?? null,
     addr_h3_actual: 42.72,
     addr_h3_correctly_rejected: h3?.primary !== null && h3.primary <= ANCHOR_SCORE,
@@ -683,11 +758,15 @@ function run(args) {
     "",
     "## Input Contract",
     "",
+    "- Model case IDs: " + (modelCaseIds.length ? modelCaseIds.join(",") : "NONE"),
+    "- Raw local log-ratio Spearman: " + fixed(summary.raw_local_log_ratio_spearman, 6) + "; Kendall: " + fixed(summary.raw_local_log_ratio_kendall, 6),
+    "- Champion decision accuracy: " + (summary.champion_decision_total ? String(summary.champion_decision_correct) + "/" + String(summary.champion_decision_total) : "NA"),
     "The scorer consumes the same suite, device-event protocol, warmup, sample policy, source identity, correctness status, and load evidence for every version. It aggregates the median of three independent run medians and never uses a best-of-run sample.",
     "",
     "## Surrogate Model",
     "",
-    "Per-version features are local candidate/anchor ratios. The primary LOO prediction is a simple linear mapping from mean log local ratio to Official score, trained without the held-out version. Formula-scaled, nearest-neighbor, and monotonic alternatives are retained in the cross-validation table.",
+    "Per-version features are local candidate/anchor ratios from the retained V2 case set. The primary LOO prediction is a simple linear mapping from the retained-case mean log ratio to Official score, trained without the held-out version. Formula-scaled, nearest-neighbor, and monotonic alternatives are retained in the cross-validation table.",
+    "The V2 case selection is exploratory over the full historical calibration set; it is not nested inside each held-out fold. This prevents claiming final predictive readiness from this small sample.",
     "",
     `The exact Official formula remains: ${FORMULA}`,
     "",
@@ -698,7 +777,7 @@ function run(args) {
     "",
     "## Failure Handling",
     "",
-    "A failed build, correctness-invalid case, missing run, source mismatch, or high-jitter case is recorded as NA/invalid. No old Parent timing is copied into a fresh feature vector.",
+    "A failed build, correctness-invalid case, missing run, or source mismatch is recorded as NA/invalid. High jitter remains an explicit quality flag and is excluded from the retained-case decision when its historical median CV is too high; no old Parent timing is copied into a fresh feature vector.",
     ""
   ].join("\n"));
 
