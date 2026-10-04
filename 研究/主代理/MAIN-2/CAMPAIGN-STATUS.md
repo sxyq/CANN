@@ -241,14 +241,14 @@ This table is the pre-refresh snapshot; the MAIN-2 control HEAD shown is the par
 
 | Lane | Local HEAD | Target branch | Remote HEAD | Ahead / behind target | Push state |
 |---|---|---|---|---|---|
-| ADDR | `fdaf5b3815f12484d0c8b7341782746f1a669c72` | `w2/m2/hotloop-addr` | unknown; last verified absent | N/A | `PUSH_PENDING_AUTH` |
-| BRANCH | `70735a73605f3cabb41a6c0953ee0d05a1bef592` | `w2/m2/hotloop-branch` | unknown; last verified absent | N/A | `PUSH_PENDING_AUTH` |
-| UB | `b34f94b2c214574c0237f1b677b066b484f98ec7` | `w2/m2/ub-lifetime-safe` | `a9c9affcb49e8591f803ab409aafa6192a34caca` (last verified) | local +27 / remote +2 at last verification | `PUSH_PENDING_DIVERGED; no force/merge` |
-| REDUCE | `52bd18a86872bdbc4f1d79b71ed65240e9977234` | `w2/m2/reduce-finalize` | unknown; last verified absent | N/A | `PUSH_PENDING_AUTH` |
-| TILECOUNT | `38ff22e593730f041e134357c6087bcce981c229` | `w2/m2/tilecount-unroll` | unknown; last verified absent | N/A | `PUSH_PENDING_AUTH` |
-| MAIN-2 control | `048f944a57c980c9c02dd03eb035ecb28131a2f2` | `w2/main2/control` | unknown; last verified absent | N/A | `PUSH_PENDING_AUTH` |
+| ADDR | `fdaf5b3815f12484d0c8b7341782746f1a669c72` | `w2/m2/hotloop-addr` | absent | N/A | `PUSH_PENDING_AUTH (rc=128)` |
+| BRANCH | `70735a73605f3cabb41a6c0953ee0d05a1bef592` | `w2/m2/hotloop-branch` | absent | N/A | `PUSH_PENDING_AUTH (rc=128)` |
+| UB | `b34f94b2c214574c0237f1b677b066b484f98ec7` | `w2/m2/ub-lifetime-safe` | `a9c9affcb49e8591f803ab409aafa6192a34caca` | local +28 / remote +2 | `PUSH_PENDING_DIVERGED; no force/merge` |
+| REDUCE | `52bd18a86872bdbc4f1d79b71ed65240e9977234` | `w2/m2/reduce-finalize` | absent | N/A | `PUSH_PENDING_AUTH (rc=128)` |
+| TILECOUNT | `38ff22e593730f041e134357c6087bcce981c229` | `w2/m2/tilecount-unroll` | absent | N/A | `PUSH_PENDING_AUTH (rc=128)` |
+| MAIN-2 control | `02bf83c134420b364f125419ca07f57ab1b845b1` | `w2/main2/control` | absent | N/A | `PUSH_PENDING_AUTH (rc=128)` |
 
-Five ordinary explicit push attempts timed out. A bounded explicit retry then returned `fatal: could not read Username for 'https://github.com'`. No Git credential helper or `gh` CLI is available. SSH fallback did not pass host-key verification, and no SSH trust/configuration was changed. The last successful anonymous `ls-remote` showed the five route/control refs absent and UB at `a9c9affc`; the post-handoff verification timed out (RC 124), so those are last-verified values, not a claim about a fresh remote snapshot. This is an authentication/divergence blocker, not evidence of successful sync. Do not infer ahead/behind against `origin/main` as route synchronization.
+After the research commits, one bounded non-interactive normal-push window was attempted for the five absent target branches; all returned `fatal: could not read Username for 'https://github.com': terminal prompts disabled` (RC 128). A successful follow-up `ls-remote` reconfirmed those refs are absent and UB remains at `a9c9affc`. No Git credential helper or `gh` CLI is available. SSH fallback did not pass host-key verification, and no SSH trust/configuration was changed. `PUSHED_HEAD=NONE`; no `LOCAL_HEAD == REMOTE_HEAD` claim is made. UB is not pushed because it is non-fast-forward (28 local-only / 2 remote-only); no force push or merge was attempted. Do not infer ahead/behind against `origin/main` as route synchronization.
 
 ### Current independent work
 
