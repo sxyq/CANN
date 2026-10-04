@@ -5,9 +5,10 @@
 新用户 / 新 Agent 先读：
 
 1. **`AGENTS.md`** — 第一入口与职责分工
-2. **`.agents/skills/cann-mainline/SKILL.md`** — 项目工作方式
-3. **`项目规则/`** — 当前有效规则
-4. **`技术路线/`** — 路线总表、路线图、成绩表、全版本记录
+2. **`.agents/skills/cann-mainline/SKILL.md`** — 角色路由
+3. **`.agents/skills/cann-*/SKILL.md`** — 当前角色工作方式
+4. **`项目规则/`** — 当前主题规则
+5. **`技术路线/`** — 路线总表、路线图、成绩表、全版本记录
 
 ```
 cann/
@@ -21,7 +22,7 @@ cann/
 ├── 研究/              <ROUTE>/ 轨道研究
 ├── 工具/              CANNJudge 提交脚本
 ├── 归档/              重构前项目 / 历史阶段 / 历史控制 / 历史工作区
-└── .agents/skills/cann-mainline/  项目级 Skill
+└── .agents/skills/cann-*/      角色 Skill 与兼容路由
 ```
 
 比赛：2026 CANN 挑战赛·西南赛区，题目 `AddRmsNormBias`。

@@ -1,75 +1,51 @@
 # Git 工作流程
 
-本文件是当前有效规则；与归档旧规则冲突时以本文件为准。
+本文件是实验 Git 顺序和安全边界的唯一说明。
 
-本文件规定本仓库的提交粒度、暂存范围与推送纪律。它细化 `实验总则.md` 第 G/H 节与 `执行约定.md` 第 A/J 节，不改变路线治理与证据留存要求。
-
-## 迁移后目标路径
+## 实验版本顺序
 
 ```text
-项目规则/       规则文档（本目录）
-技术路线/       路线总表、成绩表、全版本记录
-调度/           共享状态：当前任务.tsv、线上候选.tsv、本地线上校准.tsv、服务器设备使用.tsv
-本地实验/       逐 Revision 本地证据
-线上结果/       逐 Revision 正式提交证据
-研究/           路线内假设研究
-归档/           历史材料，只读，不为美化改写
+EDIT
+→ COMPILE
+→ CORRECTNESS
+→ LOCAL
+→ COMMIT RESULT
 ```
 
-Canonical 集成仓库：`/Users/sunyiyang/Desktop/Project/cann`。实验分支以实际 Git 状态为准。
+不要求 Compile 前建立 checkpoint commit。每个实验/版本至少一个独立 commit；编译、Correctness、Local 的事实可随该实验结果一起提交，失败和负结果同样提交并保留。
 
-## 1. 提交粒度：一个独立事实 = 一次提交
-
-- 一个独立事实（一次源码修改、一份测量证据、一条调度更新、一次规则修订）→ 一次 `git add <明确路径>` → `commit` → `push`。
-- 禁止大包提交：一次提交里混入多条路线、多个无关事实或“顺手”的其他改动。
-- Candidate 源码、测量证据与共享控制文件**分开**提交。
-- Route 分支推送与共享控制（`调度/`）提交分开进行。
-
-## 2. 暂存范围：显式路径
-
-- **禁止 `git add .`**、`git add -A`、`git add --all` 等全量暂存。
-- 暂存前先运行 `git status` 与该路线的 `git diff`，核对单变量范围与实际改动文件。
-- 只暂存该 Route 的源码或证据文件；共享状态只暂存被改动的具体 `.tsv` 文件。
-- Route 分支只提交该 Route 的文件；共享控制只做最小行级改动，且只能更新本 Main 所有路线的行。
-- 修改共享状态前重新读取最新 HEAD 与文件内容，不整体重新生成共享文件。
-
-## 3. 每次代码修改后的 checkpoint
+Local 改善时：
 
 ```text
-git status + git diff（该 Route）
-→ 核对单变量范围（SINGLE_CHANGE_AUDIT）
-→ 计算源码 SHA
-→ git add <明确路径>
-→ commit
-→ push
-→ fetch 后确认本地 HEAD 与该路线远端分支 HEAD 一致
+COMMIT RESULT → PUSH PROMPTLY → CURRENT_LOCAL_BEST
 ```
 
-提交后必须核对身份：本地 SHA = server3 收到的 SHA；线上还要求 `LOCAL_SHA == SIDECAR_SHA == REMOTE_SHA`（见 `执行约定.md` 第 J 节）。
+Local 未改善时：
 
-## 4. 禁止操作
+```text
+COMMIT NEGATIVE RESULT → KEEP HISTORY → LATER PUSH OR HANDOFF PUSH
+```
 
-- 禁止 force push。
-- 禁止盲目 `git reset`、`git checkout` 覆盖、`git clean` 清理，尤其不得用它们删除或覆盖脏的 Candidate、已有证据或 Git 历史。
-- 禁止覆盖已有证据目录：每个 Revision 目录只写一次。
-- 禁止凭记忆改写分数、Parent、Official Score：此类改动必须带对应证据文件。
-- 未获授权不删除源码、凭据、SQLite、Keychain、LaunchAgent、运行缓存与用户数据。
-- 清理必须保留 Git 历史与用户数据。
+下一次小变化从当前 `CURRENT_LOCAL_BEST` 继续，不把多个独立变化压进一个 Revision。
 
-## 5. 分支与 worktree
+## 暂存范围
 
-- 每条 Route 一个 branch、一个可写 worktree、一个 context（见 `执行约定.md` 第 A 节）。
-- 不与其他 Agent 共用可写 Candidate 工作树；不修改其他 Route 的源码。
-- Route 内连续 Revision 沿用原分支与原 worktree；路线生命周期决定权在规划层，不通过删分支、改分支名自行处置。
+- 只使用 `git add <specific paths>`；
+- 禁止 `git add .`、`git add -A`、`git add --all`；
+- Route 分支只提交自己的 Route 文件；共享记录由 Record Owner 单独提交；
+- 规则迁移、Candidate、实验证据和共享记录分开组织；
+- 一个提交不混入无关路线、无关文件或未授权的用户改动。
 
-## 6. 提交信息
+## Route 隔离
 
-- 中文或项目既有风格均可，写清“改了哪个事实”。
-- 不在提交信息里写凭据、Token、Cookie、授权头。
-- 规则文档改动用 `docs:` 前缀，证据记录用对应路线的既有前缀，与仓库历史保持一致。
+```text
+1 Route = 1 Agent = 1 Context = 1 Branch = 1 Worktree
+```
 
-## 7. 外部推送边界
+Route Agent 不提交其他 Route；Main 不运行 Git；Record Owner 只提交自己负责的共享记录；Online Owner 不改共享成绩记录。
 
-- GitHub push 属于外部操作：准备与本地核对完成后先汇报，未获明确确认不执行非本任务要求的推送。
-- 本任务的推送目标分支以任务指令为准（当前为 `exp/independent-breadth`）。
-- CANNJudge 提交不是 Git 操作，见 `线上提交规范.md`。
+## 禁止操作
+
+禁止 force push、reset、clean、历史改写、覆盖已有证据和删除失败版本。不得因整理文档删除源码、凭据、SQLite、Keychain、LaunchAgent、运行缓存或用户需要的数据。外部 push 需按用户授权执行；本次规则迁移不自动 push。
+
+未经用户明确要求，不创建 automation、scheduled task、cron、crontab、at、systemd timer、launchd timer、watchdog 或 detached sleep loop。
