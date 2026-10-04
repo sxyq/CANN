@@ -47,3 +47,42 @@ All local route evidence and untracked build outputs were preserved. The
 canonical `main` worktree was not modified; its existing untracked user data
 remains untouched. Remote write synchronization remains blocked on usable
 GitHub authentication / verified SSH host trust.
+
+## Post-authenticated retry — 2026-10-04
+
+This addendum supersedes the earlier `PUSH_PENDING_AUTH` diagnosis for the
+current retry; the earlier rows above remain a historical snapshot.
+
+```text
+GH_ACCOUNT=sxyq
+GH_REPO_PERMISSION=available; token scope includes repo
+GH_AUTH_SETUP_GIT=COMPLETED
+AUTH_STATUS=VALID
+GIT_FETCH=one successful fetch (origin/main advanced)
+GIT_SMART_HTTPS=NETWORK_TIMEOUT
+PUSH_STATUS=BLOCKED_BY_GITHUB_SMART_HTTPS_NETWORK (not AUTH_BLOCKED)
+```
+
+After authentication, an exact-branch `git ls-remote` stalled and was
+interrupted only after its connection timeout; a bounded ordinary push of the
+clean control branch (`w2/main2/control`) timed out at 45 seconds with RC 124.
+An exact read-only curl probe of
+`/sxyq/CANN.git/info/refs?service=git-upload-pack` also failed to establish a
+connection to `github.com:443` (HTTP 000). Authenticated GitHub API requests
+remain responsive and confirmed these intended target refs are absent:
+`w2/main2/control`, `w2/m2/hotloop-addr`, `w2/m2/hotloop-branch`,
+`w2/m2/reduce-finalize`, and `w2/m2/tilecount-unroll`. UB exists at
+`a9c9affcb49e8591f803ab409aafa6192a34caca`, while its local tip is
+`b34f94b2c214574c0237f1b677b066b484f98ec7`; it remains diverged by 28 local
+and 2 remote commits. No push succeeded and no remote SHA equality is claimed.
+
+No proxy variables or Git proxy setting were present in the inspected user
+environment; no proxy endpoint was supplied, so none was invented or set.
+`FORCE_PUSH/RESET/REBASE/CLEAN=NOT_USED`. Retry is deferred to the next
+30–60-minute bounded connectivity window; local Main-2 research continues.
+
+The ADDR V001 official-result evidence was subsequently committed locally as
+`a71b7142` on `w2/m2/hotloop-addr`; this did not contact GitHub. At the time
+this addendum was prepared, the Main-2 control tip was `001161c3` before this
+sync-status record commit. Both target refs remain confirmed absent by API;
+the UB tip comparison and remote-only evidence are unchanged.
