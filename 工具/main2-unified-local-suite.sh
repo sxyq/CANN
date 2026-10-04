@@ -71,44 +71,43 @@ read_summary() {
 }
 
 run_one_side() {
-  local route="$1" rev="$2" source_sha="$3" stage="$4" case_id="$5" rows="$6" width="$7" dtype="$8" run="$9" side="${10}" order="${11}"
+  local route="$1" rev="$2" source_sha="$3" stage="$4" case_id="$5" rows="$6" width="$7" dtype="$8" side="$9" order="${10}"
   local binary prefix raw_file stats_file rc
   if [[ "$side" == "parent" ]]; then
     binary="$stage/build/clx_ref_parent_probe"
   else
     binary="$stage/build/clx_ref_candidate_probe"
   fi
-  local actual_sha
-  actual_sha="$(sha256sum "$source" | awk '{print $1}')"
-  if [[ "$actual_sha" != "$source_sha" ]]; then
-    printf '%s\t%s\t%s\t%s\t%s\tNOT_RUN\tNOT_RUN\t0\t%s\tSOURCE_SHA_MISMATCH_%s\n' \
-      "$route" "$rev" "$source_sha" "$official" "$source" "$evidence" "$actual_sha" >> "$META"
-    return 0
-  fi
-  prefix="$stage/evidence/${case_id}/run${run}-${order}-${side}"
+  prefix="$stage/evidence/${case_id}/${order}-${side}"
   mkdir -p "$(dirname "$prefix")"
   if [[ ! -x "$binary" ]]; then
-    printf '%s\t%s\t%s\t%s\t%s\tNA\tNA\tNA\tNA\tNA\tNA\t127\t%s\n' \
-      "$route" "$rev" "$case_id" "$run" "$side" "$DEVICE" >> "$MEASUREMENTS"
+    local missing_block
+    for missing_block in $(seq 1 "$RUNS"); do
+      printf '%s\t%s\t%s\t%s\t%s\tNA\tNA\tNA\tNA\tNA\tNA\t127\t%s\n' \
+        "$route" "$rev" "$case_id" "$missing_block" "$side" "$DEVICE" >> "$MEASUREMENTS"
+    done
     return 127
   fi
-  "$binary" "$DEVICE" "$rows" "$width" "$dtype" "$prefix" "$WARMUP" "$SAMPLES" 1 0 \
+  "$binary" "$DEVICE" "$rows" "$width" "$dtype" "$prefix" "$WARMUP" "$SAMPLES" "$RUNS" 0 \
     > "$prefix.stdout.log" 2>&1
   rc=$?
   raw_file="$prefix-raw.tsv"
   stats_file="$prefix-stats.txt"
   if [[ -f "$raw_file" ]]; then
-    awk -F '\t' -v r="$route" -v v="$rev" -v s="$source_sha" -v c="$case_id" -v n="$run" -v z="$side" -v d="$DEVICE" \
-      'NR > 1 && NF >= 4 { print r "\t" v "\t" s "\t" c "\t" n "\t" z "\t" $3 "\t" $4 "\t" d }' "$raw_file" >> "$RAW"
+    awk -F '\t' -v r="$route" -v v="$rev" -v s="$source_sha" -v c="$case_id" -v z="$side" -v d="$DEVICE" \
+      'NR > 1 && NF >= 4 { print r "\t" v "\t" s "\t" c "\t" $1 "\t" z "\t" $3 "\t" $4 "\t" d }' "$raw_file" >> "$RAW"
   fi
-  printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
-    "$route" "$rev" "$case_id" "$run" "$side" \
-    "$(read_stat "$stats_file" B1_DEVICE median_us)" \
-    "$(read_stat "$stats_file" B1_DEVICE mean_us)" \
-    "$(read_stat "$stats_file" B1_DEVICE MAD_us)" \
-    "$(read_stat "$stats_file" B1_DEVICE CV)" \
-    "$(read_stat "$stats_file" B1_WALL median_us)" \
-    "$(read_summary "$stats_file" bad)" "$rc" "$DEVICE" >> "$MEASUREMENTS"
+  local block
+  for block in $(seq 1 "$RUNS"); do
+    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+      "$route" "$rev" "$case_id" "$block" "$side" \
+      "$(read_stat "$stats_file" "B${block}_DEVICE" median_us)" \
+      "$(read_stat "$stats_file" "B${block}_DEVICE" mean_us)" \
+      "$(read_stat "$stats_file" "B${block}_DEVICE" MAD_us)" \
+      "$(read_stat "$stats_file" "B${block}_DEVICE" CV)" \
+      "$(read_stat "$stats_file" "B${block}_WALL" median_us)" \
+      "$(read_summary "$stats_file" bad)" "$rc" "$DEVICE" >> "$MEASUREMENTS"
+  done
   return "$rc"
 }
 
@@ -116,11 +115,18 @@ run_version() {
   local route="$1" rev="$2" source_sha="$3" official="$4" source="$5"
   local id="${route}__${rev}" stage="$RUN_ROOT/stages/${route}__${rev}" evidence="$RUN_ROOT/evidence/${route}__${rev}"
   local build_status=PASS correctness_status=PASS attempted=0 reason=OK
-  local case_id rows width dtype dtype_code path source_note index=0 run side order rc
+  local case_id rows width dtype dtype_code path source_note index=0 side order rc
   echo "=== VERSION $route $rev ==="
   if [[ ! -f "$source" ]]; then
     printf '%s\t%s\t%s\t%s\t%s\tBUILD_NOT_RUN\tNOT_RUN\t0\t%s\tSOURCE_MISSING\n' \
       "$route" "$rev" "$source_sha" "$official" "$source" "$evidence" >> "$META"
+    return 0
+  fi
+  local actual_sha
+  actual_sha="$(sha256sum "$source" | awk '{print $1}')"
+  if [[ "$actual_sha" != "$source_sha" ]]; then
+    printf '%s\t%s\t%s\t%s\t%s\tNOT_RUN\tNOT_RUN\t0\t%s\tSOURCE_SHA_MISMATCH_%s\n' \
+      "$route" "$rev" "$source_sha" "$official" "$source" "$evidence" "$actual_sha" >> "$META"
     return 0
   fi
   mkdir -p "$evidence"
@@ -153,21 +159,19 @@ run_version() {
     while IFS=$'\t' read -r case_id rows width dtype dtype_code path source_note; do
       [[ "$case_id" == CASE_ID || -z "$case_id" ]] && continue
       index=$((index + 1))
-      for run in $(seq 1 "$RUNS"); do
-        if (( (index + run) % 2 == 0 )); then
-          order=PC
-          run_one_side "$route" "$rev" "$source_sha" "$stage" "$case_id" "$rows" "$width" "$dtype_code" "$run" parent "$order"; rc=$?
-          [[ "$rc" -ne 0 ]] && correctness_status=FAIL
-          run_one_side "$route" "$rev" "$source_sha" "$stage" "$case_id" "$rows" "$width" "$dtype_code" "$run" candidate "$order"; rc=$?
-        else
-          order=CP
-          run_one_side "$route" "$rev" "$source_sha" "$stage" "$case_id" "$rows" "$width" "$dtype_code" "$run" candidate "$order"; rc=$?
-          [[ "$rc" -ne 0 ]] && correctness_status=FAIL
-          run_one_side "$route" "$rev" "$source_sha" "$stage" "$case_id" "$rows" "$width" "$dtype_code" "$run" parent "$order"; rc=$?
-        fi
+      if (( index % 2 == 1 )); then
+        order=PC
+        run_one_side "$route" "$rev" "$source_sha" "$stage" "$case_id" "$rows" "$width" "$dtype_code" parent "$order"; rc=$?
         [[ "$rc" -ne 0 ]] && correctness_status=FAIL
-        attempted=$((attempted + 1))
-      done
+        run_one_side "$route" "$rev" "$source_sha" "$stage" "$case_id" "$rows" "$width" "$dtype_code" candidate "$order"; rc=$?
+      else
+        order=CP
+        run_one_side "$route" "$rev" "$source_sha" "$stage" "$case_id" "$rows" "$width" "$dtype_code" candidate "$order"; rc=$?
+        [[ "$rc" -ne 0 ]] && correctness_status=FAIL
+        run_one_side "$route" "$rev" "$source_sha" "$stage" "$case_id" "$rows" "$width" "$dtype_code" parent "$order"; rc=$?
+      fi
+      [[ "$rc" -ne 0 ]] && correctness_status=FAIL
+      attempted=$((attempted + 2 * RUNS))
     done < "$SUITE"
   fi
   npu-smi info > "$evidence/npu-smi-post.txt" 2>&1
