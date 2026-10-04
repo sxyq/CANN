@@ -269,3 +269,42 @@ DIRECT_ONLINE_SUBMISSION=0
 PLANNING_DECISIONS_CHANGED=0
 NEW_ROUTES_OUTSIDE_APPROVED_5=0
 ```
+
+## 11. Baseline Calibration + Next Planning Gate — 2026-10-04
+
+### Champion baseline and normalized score audit
+
+- V011 local identity is verified against source and sidecar SHA `a8c19a19…879b15e3`; official correctness remains 15/15, Official 45.16.
+- No canonical local shape suite/composite score was found. The baseline TSV therefore records route-specific shapes and exact runners, using the V011 Parent side from each existing three-run interleaved P/C score (2026-10-03); these matched historical runs are more comparable than a new isolated window. `FRESH_NPU_TIMING_RUNS_THIS_TURN=0`.
+- The normalized table recomputes latency and reciprocal invocation-throughput deltas from each route's own same-shape Parent/Candidate averages. `CROSS_ROUTE_SCORE_NOT_DIRECTLY_COMPARABLE=YES`; no Local % is translated into Official score.
+- All five scored contexts are `POOR`. ADDR V001's average throughput ratio is +31.91%, but only 1/3 runs is faster and the third Parent run is a severe load tail; required D40960 correctness is still shared-blocked at 507035. `ADDR_V001_ONLINE_ELIGIBLE=NO`; all other current Candidates are also not Online eligible.
+- Historical resource audit: HBM/AICore/process snapshots are retained. Host load and AIVector were not recorded. The shared device-use ledger has a released formal lease for REDUCE V001 only; no matching lease was found for ADDR V001/V002, UB V001, or BRANCH V002. These evidence gaps remain visible and contribute to POOR quality; no fresh NPU job or new lease was created.
+
+Artifacts (local commits):
+
+- Baseline + method: `615b5cb0` — `R31B-V011-LOCAL-BASELINE.tsv`, `MAIN2-BASELINE-CALIBRATION-20261004.md`.
+- Normalized scores: `340d9b36` — `MAIN2-BASELINE-NORMALIZED-SCORES.tsv`.
+- New Track-B pack: `7a358714` — `MAIN2-NEXT-TRACK-B-PLANNING-PACK.md`; three unselected hypotheses, all gated on codegen/novelty review.
+
+```text
+TOTAL_IMPLEMENTED_REVISIONS=6
+TILECOUNT_IMPLEMENTED_REVISION=NONE
+MAIN_SELECTED=NONE
+ONLINE_READY_CANDIDATE=NONE
+DIRECT_ONLINE_SUBMISSION=0
+PLANNING_DECISIONS_CHANGED=0
+NEW_ROUTES_OUTSIDE_APPROVED_5=0
+```
+
+### Latest Git state before this dashboard commit
+
+| Lane | Local HEAD | Upstream | Ahead/behind upstream | Intended remote | Remote HEAD | Push |
+|---|---|---|---:|---|---|---|
+| ADDR | `fdaf5b38` | `origin/main` | +45 / -47 | `w2/m2/hotloop-addr` | absent | blocked: no GitHub username |
+| BRANCH | `70735a73` | `origin/main` | +73 / -47 | `w2/m2/hotloop-branch` | absent | blocked: no GitHub username |
+| UB | `b34f94b2` | `origin/main` | +28 / -47 | `w2/m2/ub-lifetime-safe` | `a9c9affc` | divergent: local +28 / remote +2; no force/merge |
+| REDUCE | `52bd18a8` | `origin/main` | +14 / -47 | `w2/m2/reduce-finalize` | absent | blocked: no GitHub username |
+| TILECOUNT | `38ff22e5` | `origin/main` | +6 / -47 | `w2/m2/tilecount-unroll` | absent | blocked: no GitHub username |
+| MAIN-2 control | `245b468b` | `origin/main` | +85 / -47 | `w2/main2/control` | absent (last successful query) | blocked: no GitHub username |
+
+`git fetch origin` timed out (RC 124). Explicit non-interactive `git push -u` was attempted once for all six branches; each failed with `could not read Username for 'https://github.com'` (RC 128). The successful remote query returned only UB's remote ref. No branch is reported synced. `origin/main` is the configured upstream on every local branch, so these counts are not route-target ahead/behind counts.
