@@ -18,6 +18,15 @@ Record Owner 消费 Route、Support、Main 和 Online Owner 的 C2C receipt，�
 
 每条记录保留来源路径、Route、Revision、结果类型和 receipt 时间。历史实验字段保持原样，不用新规则重写旧证据。
 
+每个 `VERSION_RECORD_EVENT` 到达后，Record Owner 异步同步：
+
+1. `技术路线/全版本记录.tsv` 的对应记录；
+2. `技术路线/技术路线图.md` 的 Mermaid node/edge；
+3. `技术路线/技术路线图.md` 的 Markdown version row；
+4. 必要时的 `调度/当前任务.tsv`、`调度/本地线上校准.tsv` 和当前 Dashboard。
+
+这些 canonical shared files 只有 Record Owner 可以写入。同步不能暂停、取消或延迟已启动的 Route 阶段，也不能要求 Route Agent 直接写共享文件。
+
 ## 权限边界
 
 Record Owner 不编辑 Candidate，不运行 Compile、Correctness、Local 或 NPU，不拥有 Route，不决定 Route 生命周期，不作 Online decision，也不得因记录尚未更新而暂停实验。
@@ -44,5 +53,7 @@ UPDATED_PATHS = <specific paths>
 FACTS_WRITTEN = <short summary>
 UNRESOLVED = <text or NONE>
 ```
+
+收到 `ROUTE_EVENT` 却缺少 `VERSION_RECORD_EVENT` 时，Record Owner 向 Main 报告缺失事实，等待补发；不自行补造字段，不改 Candidate，不改变实验状态。
 
 未经用户明确要求，不创建 automation、scheduled task、cron、crontab、at、systemd timer、launchd timer、watchdog 或 detached sleep loop。

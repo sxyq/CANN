@@ -12,7 +12,7 @@ EDIT
 → COMMIT RESULT
 ```
 
-不要求 Compile 前建立 checkpoint commit。每个实验/版本至少一个独立 commit；编译、Correctness、Local 的事实可随该实验结果一起提交，失败和负结果同样提交并保留。
+Compile 之前不建立提交边界。每个实验/版本至少一个独立 commit；编译、Correctness、Local 的事实可随该实验结果一起提交，失败和负结果同样提交并保留。
 
 Local 改善时：
 
@@ -27,6 +27,8 @@ COMMIT NEGATIVE RESULT → KEEP HISTORY → LATER PUSH OR HANDOFF PUSH
 ```
 
 下一次小变化从当前 `CURRENT_LOCAL_BEST` 继续，不把多个独立变化压进一个 Revision。
+
+实验结果的 Git 提交完成后发送 `ROUTE_EVENT + VERSION_RECORD_EVENT`；版本字段和共享文件同步由 `.agents/skills/cann-record-owner/SKILL.md` 统一说明。
 
 ## 暂存范围
 

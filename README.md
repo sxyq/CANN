@@ -27,3 +27,5 @@ cann/
 
 比赛：2026 CANN 挑战赛·西南赛区，题目 `AddRmsNormBias`。
 当前 Overall Champion 见 `技术路线/路线成绩表.tsv`。
+
+版本事实只有两处入口：`技术路线/技术路线图.md` 是唯一人类可读版本树和 Markdown 表；`技术路线/全版本记录.tsv` 是唯一结构化账本。Route Agent 发送 `VERSION_RECORD_EVENT`，Record Owner 异步同步；Main 不读写这两份文件。Dashboard 只展示状态，不决定状态，也不控制执行。

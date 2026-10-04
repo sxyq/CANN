@@ -67,6 +67,20 @@ EDIT → COMPILE → CORRECTNESS → LOCAL
 
 Main 不打开文件来执行这项判断，只依据 C2C 报告。
 
+## 版本记录事件
+
+Main 只根据 C2C receipt 监控版本记录。一个正常结束的 Route 结果必须同时收到 `ROUTE_EVENT` 和 `VERSION_RECORD_EVENT`。
+
+若收到 `ROUTE_EVENT` 但缺少 `VERSION_RECORD_EVENT`，Main 立即发送：
+
+```text
+PROCESS_DEVIATION
+MISSING_VERSION_RECORD_EVENT
+SEND VERSION_RECORD_EVENT TO RECORD OWNER
+```
+
+这条提醒不得取消、暂停或阻塞已经启动的 Compile、Correctness、Local 或提交阶段。Main 不打开文件补录，也不替 Record Owner 写共享文件。
+
 ## 自主任务禁令
 
 未经用户明确要求，Main、Child 和 Support 不得创建 ChatGPT automation、scheduled task、cron、crontab、at、systemd timer、launchd timer、watchdog 或 detached sleep loop。

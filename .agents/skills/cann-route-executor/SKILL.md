@@ -68,6 +68,48 @@ BLOCKER = <text or NONE>
 EDIT → COMPILE → CORRECTNESS → LOCAL
 ```
 
+## VERSION_RECORD_EVENT
+
+每次 `RESULT → COMMIT` 完成后，Route Agent 必须同时向 Main 发送 `ROUTE_EVENT + VERSION_RECORD_EVENT`。记录动作只能发生在 RESULT 之后，不能插入 `EDIT → COMPILE` 之间。
+
+```text
+VERSION_RECORD_EVENT
+ROUTE = <route>
+REVISION = <revision>
+DIRECT_PARENT = <recorded parent or UNKNOWN>
+SINGLE_CHANGE = <one small change>
+FOCUS_AXIS = <recorded axis or UNKNOWN>
+FOCUS_VALUE = <recorded value or UNKNOWN>
+COMPILE = <PASS|FAIL|NOT_RUN>
+CORRECTNESS = <PASS|FAIL|NOT_RUN>
+LOCAL_SCORE = <value|NONE>
+LOCAL_DELTA = <value|NONE>
+LOCAL_BEST = <revision|NONE>
+OFFICIAL_SCORE = <value|NONE>
+ONLINE_STATE = <state|NONE>
+GIT_COMMIT = <commit or NONE>
+PUSH = <YES|NO|PENDING>
+BRANCH = <branch or UNKNOWN>
+STATUS = <status>
+EVIDENCE_NOTE = <path and short note>
+```
+
+改进结果的顺序：
+
+```text
+RESULT → COMMIT → ROUTE_EVENT + VERSION_RECORD_EVENT
+→ PUSH → follow-up ROUTE_EVENT + VERSION_RECORD_EVENT with PUSH=YES and LOCAL_BEST
+```
+
+负结果的顺序：
+
+```text
+RESULT → COMMIT → ROUTE_EVENT + VERSION_RECORD_EVENT with LOCAL_BEST unchanged
+→ NEXT ONE CHANGE from CURRENT_LOCAL_BEST
+```
+
+`VERSION_RECORD_EVENT` 不包含来源或对象身份字段。Record Owner 负责异步落盘，Route Agent 不直接写共享账本、路线图或 Dashboard。
+
 ## 结果边界
 
 Local 是本地测量结果，不代表 Official Score。Online timing 由 Main 协调，Online decision 由 Planning / Review Layer 作出，正式提交由 Online Owner 完成。
