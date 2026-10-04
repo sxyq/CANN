@@ -54,6 +54,21 @@ cleaner score. In particular, ADDR V001 and UB V001 each have a single very
 large faster run amid slower runs, which dominates their average. These values
 are engineering comparisons, not Official scores.
 
+## Historical resource/lease completeness
+
+| Context | HBM/AICore/process snapshot | AIVector | Host load | Formal shared lease |
+|---|---|---|---|---|
+| ADDR V001 | pre/post snapshots retained | not recorded | not recorded | no matching ledger row found |
+| ADDR V002 | pre/post snapshots retained; VLLM/Python noted | not recorded | not recorded | no matching ledger row found |
+| UB V001 | pre/post snapshots retained | not recorded | not recorded | no matching ledger row found |
+| BRANCH V002 | pre/post snapshots retained; Python noted | not recorded | not recorded | no matching ledger row found |
+| REDUCE V001 | pre/post snapshots retained; VLLM noted | not recorded | not recorded | `M2-REDUCE-V001-D5-20261003T182337Z`, released |
+
+Consequently, all five historical score contexts remain `QUALITY=POOR`; the
+four missing lease entries and missing host/AIVector telemetry are preserved
+as evidence gaps, not inferred from the current device snapshot. This task
+started no fresh NPU timing, so it created no new device lease or load record.
+
 Branch V001 is included in the normalized score audit as a historical
 `LOCAL_REJECTED` revision but has no three-run scalar Local Score. Its two
 formal windows had mixed paired directions; the normalized table leaves its
