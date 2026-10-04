@@ -175,9 +175,20 @@ run_version() {
     "$route" "$rev" "$source_sha" "$official" "$source" "$build_status" "$correctness_status" "$attempted" "$evidence" "$reason" >> "$META"
 }
 
+should_run() {
+  local requested="$1"
+  [[ "$ONLY" == ALL ]] && return 0
+  local item
+  IFS=',' read -r -a requested_items <<< "$ONLY"
+  for item in "${requested_items[@]}"; do
+    [[ "$item" == "$requested" ]] && return 0
+  done
+  return 1
+}
+
 while IFS=$'\t' read -r route rev source_sha official source recoverable local_runnable correctness_valid status_reason; do
   [[ "$route" == ROUTE || -z "$route" ]] && continue
-  if [[ "$ONLY" != ALL && "$ONLY" != "$route/$rev" ]]; then continue; fi
+  should_run "$route/$rev" || continue
   run_version "$route" "$rev" "$source_sha" "$official" "$source"
 done < "$MANIFEST"
 

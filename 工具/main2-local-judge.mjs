@@ -12,6 +12,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 
 const ANCHOR_SCORE = 45.16;
 const ANCHOR_ROUTE = "R31B";
@@ -1246,6 +1247,11 @@ function parseArgs(argv) {
 
 function main() {
   const args = parseArgs(process.argv.slice(2));
+  if (args.command === "calibrate-v2") {
+    const v2 = path.join(path.dirname(fileURLToPath(import.meta.url)), "main2-local-judge-v2.mjs");
+    execFileSync(process.execPath, [v2, ...process.argv.slice(2)], { stdio: "inherit" });
+    return;
+  }
   if (args.command === "score") {
     if (!args.input) throw new Error("score requires --input <json>");
     scoreCommand(path.resolve(args.input), args.bestTimes ? path.resolve(args.bestTimes) : null);
