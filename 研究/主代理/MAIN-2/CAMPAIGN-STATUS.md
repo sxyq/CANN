@@ -308,3 +308,41 @@ NEW_ROUTES_OUTSIDE_APPROVED_5=0
 | MAIN-2 control | `245b468b` | `origin/main` | +85 / -47 | `w2/main2/control` | absent (last successful query) | blocked: no GitHub username |
 
 `git fetch origin` timed out (RC 124). Explicit non-interactive `git push -u` was attempted once for all six branches; each failed with `could not read Username for 'https://github.com'` (RC 128). The successful remote query returned only UB's remote ref. No branch is reported synced. `origin/main` is the configured upstream on every local branch, so these counts are not route-target ahead/behind counts.
+
+## 12 Fresh V011 Baseline Closure — 2026-10-04
+
+The preceding calibration text above is historical and explicitly reused
+Parent samples from old Candidate paired runs. It is superseded for freshness
+by the independently executed evidence under
+`研究/主代理/MAIN-2/fresh-v011-baseline-20261004/`.
+
+```text
+FRESH_NPU_RUN_COUNT=12
+FRESH_TARGETS=ADDR,UB,BRANCH,REDUCE (3 Parent-only processes each)
+DEVICE=7
+RUN_PROTOCOL=45 warmups; 2x31 device-event samples; pre/post npu-smi
+OFFICIAL_CHAMPION=R31B V011 / 45.16
+ONLINE_ELIGIBLE=NONE
+DIRECT_ONLINE_SUBMISSION=0
+MAIN_SELECTED=NONE
+```
+
+Fresh route aggregates are ADDR BF16 [9,32768] `32.133 us`, UB FP16
+[1,32768] `32.515 us`, BRANCH FP16 [80,6144] `20.596 us`, and REDUCE BF16
+[1,32768] `16.287 us` (REDUCE uses the existing per-run median metric).
+All four Parent correctness probes passed, but the same-binary floor was
+POOR: ADDR and BRANCH qualified only one of three runs; UB and REDUCE had no
+qualified run. These are calibration anchors only, not new Candidate verdicts.
+
+`R31B-V011-FRESH-LOCAL-BASELINE.tsv`,
+`MAIN2-FRESH-NORMALIZED-SCORES.tsv`,
+`MAIN2-FRESH-BASELINE-CALIBRATION-20261004.md`, and the ADDR Online gate are
+committed independently. ADDR V001 remains `ONLINE_ELIGIBLE=NO`: historical
+Candidate direction was faster only 1/3, fresh calibration is POOR, and the
+shared D40960 `507035` correctness blocker remains.
+
+Exact-route upstreams were corrected locally. The five absent target refs are
+still `PUSH_PENDING_AUTH` after bounded normal pushes; UB is
+`DIVERGED_REMOTE` with two remote-only evidence commits and is documented in
+`UB_REMOTE_RECONCILIATION.md`. No force push, merge, rebase, reset, clean, or
+history rewrite was used.
