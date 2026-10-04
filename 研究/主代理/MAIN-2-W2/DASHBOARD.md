@@ -1500,3 +1500,39 @@ FORMAL_PERFORMANCE_RUNS=0_AT_RECEIPT
 PUSH_STATE=PUSH_PENDING; GITHUB_PUSH_IS_LOCAL_STAGE_GATE=NO
 PROCESS_ACTIONS=NONE; existing VLLM/Ray/Python processes untouched
 ```
+
+## Official result receipt — ADDR V001 / H3 — 2026-10-04
+
+```text
+OVERALL_OFFICIAL_CHAMPION=R31B V011 / 45.16 (unchanged)
+ADDR_V001_H3_SUBMISSION=6ac20c90694b590c3cb66f2b
+ADDR_V001_H3_OFFICIAL=42.72; CALCULATED_SCORE=42.718; PASS=15/15; MAX_ERROR=0.000%
+ADDR_V001_H3_SOURCE_SHA256=26aa65a2e1313e0681ca7ad29f85ca20f667d33ede1a4d2d9e7e1557d6192602
+IDENTITY=LOCAL_SHA_EQ_SIDECAR_SHA_EQ_REMOTE_SHA; formalResultEligible=true (remote identity/result eligibility supplied by external Judge record)
+OFFICIAL_DELTA_VS_CHAMPION=-2.44 points
+CLASSIFICATION=ONLINE_REJECTED; LOCAL_ONLINE_FALSE_POSITIVE
+LOCAL_ENGINEERING_DELTA=-24.193320%; LOCAL_QUALITY=POOR; historical faster direction=1/3
+LOCAL_SCORE_NOT_RELABELED_AS_OFFICIAL=YES
+DIRECT_ONLINE_SUBMISSION=0; ONLINE_QUEUE=EMPTY
+```
+
+Official result evidence is retained at
+`线上结果/HOTLOOP-ADDR-HOIST-CHAMPION-X/V001/`. Only aggregate Judge fields
+were supplied; no per-testcase timing rows were synthesized. The earlier local
+D40960 `507035` shared-runtime classification remains historical local-runner
+evidence and is not overwritten by the Official 15/15 result.
+
+Permanent Online screening correction: `QUALITY=POOR` on a single shape is
+not sufficient for an Online recommendation. Require clean correctness, a
+valid same-shape Champion baseline, at least 2/3 faster valid runs, average
+latency and throughput improvement in the same direction, and no single
+extreme sample dominating the mean. This is a gate, not a numeric evaluator
+change.
+
+```text
+TRACK_B_FINAL_AUDIT=研究/主代理/MAIN-2/MAIN2-NEXT-TRACK-B-PLANNING-PACK-V3.md
+TOP1=H1 FP16 D8192 parameter DMA coalescing (novelty/codegen gates remain)
+TOP2=H3 unused paramReady allocation (codegen/path/correctness gates remain)
+TOP3=H2 wide UB-fit selector (cost not evidenced)
+MAIN_SELECTED=NONE; IMPLEMENTATION_AUTHORIZED=NO
+```

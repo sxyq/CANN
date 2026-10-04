@@ -346,3 +346,33 @@ still `PUSH_PENDING_AUTH` after bounded normal pushes; UB is
 `DIVERGED_REMOTE` with two remote-only evidence commits and is documented in
 `UB_REMOTE_RECONCILIATION.md`. No force push, merge, rebase, reset, clean, or
 history rewrite was used.
+
+## 13. ADDR V001/H3 Official closure + final Track-B audit — 2026-10-04
+
+External Judge result supplied by the user and recorded route-locally at
+`线上结果/HOTLOOP-ADDR-HOIST-CHAMPION-X/V001/`:
+
+```text
+SUBMISSION_ID=6ac20c90694b590c3cb66f2b
+SOURCE_SHA256=26aa65a2e1313e0681ca7ad29f85ca20f667d33ede1a4d2d9e7e1557d6192602
+IDENTITY=LOCAL_SHA_EQ_REMOTE_SHA; formalResultEligible=true (as supplied); local sidecar/source hash independently verified
+RESULT=PASS_15_OF_15; MAX_OUTPUT_ERROR=0.000%
+CALCULATED_SCORE=42.718; OFFICIAL_SCORE=42.72
+OFFICIAL_ANCHOR=R31B V011 / 45.16; OFFICIAL_DELTA=-2.44 points
+CLASSIFICATION=ONLINE_REJECTED; LOCAL_ONLINE_FALSE_POSITIVE
+LOCAL_ENGINEERING_DELTA=-24.193320%; QUALITY=POOR; faster direction=1/3
+```
+
+The Official score is not the Local latency score; the latter remains an
+engineering-only `POOR` historical signal. The local D40960 shared `507035`
+diagnostic is retained, not rewritten. Calibration is added to
+`调度/本地线上校准.tsv` and `本地评分器校准.md`; the permanent Online gate
+now requires clean correctness, valid same-shape Champion baseline, at least
+2/3 faster valid runs, average latency and throughput improving together, and
+no single-run domination. This gate does not change the scoring formula.
+
+The final three-hypothesis exact-source audit is
+`MAIN2-NEXT-TRACK-B-PLANNING-PACK-V3.md`: H1 ranks first conditionally on
+novelty/codegen review, H3 second, H2 third. `MAIN_SELECTED=NONE`, no Revision
+or Kernel change, and no Planning decision changed. Total implemented Main-2
+revisions remains 6; TILECOUNT remains without an implemented Revision.
