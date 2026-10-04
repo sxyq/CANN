@@ -4,8 +4,13 @@ At the last successful `git fetch origin --prune`, the five non-UB exact route
 targets were absent. Their local upstreams had incorrectly pointed at
 `origin/main`; those branch configs are now set to their exact route target
 refs. Current `git branch -vv` shows the five target refs as `gone`, not synced.
+The Local SHA column below is the tip during the last push window. The
+dashboard and reconciliation records were committed afterward; they remain
+local-only because the authentication blocker persisted. Read the current
+control tip from Git at handoff rather than treating the captured SHA as its
+latest value.
 
-| Route | Worktree | Local branch / SHA | Upstream / target remote | Remote SHA | Relation | Status |
+| Route | Worktree | Local branch / SHA at last push window | Upstream / target remote | Remote SHA | Relation | Status |
 |---|---|---|---|---|---|---|
 | ADDR | `/home/data4t2/lelinfeng/cann/worktrees/w2/m2/hotloop-addr` | `w2/m2/hotloop-addr` / `fdaf5b3815f12484d0c8b7341782746f1a669c72` | `origin/w2/m2/hotloop-addr` | No tracking ref at last fetch; live SHA unverified | Target absent at last fetch | `PUSH_PENDING_AUTH` |
 | BRANCH | `/home/data4t2/lelinfeng/cann/worktrees/w2/m2/hotloop-branch` | `w2/m2/hotloop-branch` / `70735a73605f3cabb41a6c0953ee0d05a1bef592` | `origin/w2/m2/hotloop-branch` | No tracking ref at last fetch; live SHA unverified | Target absent at last fetch | `PUSH_PENDING_AUTH` |
