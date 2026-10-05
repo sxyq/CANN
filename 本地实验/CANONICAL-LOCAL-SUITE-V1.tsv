@@ -1,0 +1,8 @@
+SUITE_VERSION	CASE_ID	CASE_ROLE	ROWS	WIDTH	DTYPE	DTYPE_CODE	EXPECTED_PATH	SOURCE_OF_CASE	WHY_INCLUDED
+CANONICAL_LOCAL_SUITE_V1	C12	CORE	8	8192	BF16	2	Process generic cached-row; localRows=1	MAIN2-UNIFIED-LOCAL-SUITE-V1/V2; V011 Process dispatch	D=8192 cache boundary control; existing three-run raw; non-wide path
+CANONICAL_LOCAL_SUITE_V1	C13	CORE	128	16384	FP16	1	ProcessWideLowPrecision; multiple rows/core	MAIN2-UNIFIED-LOCAL-SUITE-V1/V2; V011 Process dispatch	FP16 wide multibatch path; comparatively stable existing measurements
+CANONICAL_LOCAL_SUITE_V1	C14	CORE	128	16384	BF16	2	ProcessWideLowPrecision; multiple rows/core	MAIN2-UNIFIED-LOCAL-SUITE-V1/V2; V011 Process dispatch	BF16 wide multibatch control; different conversion path from FP16
+CANONICAL_LOCAL_SUITE_V1	C16	CORE	9	32768	BF16	2	ProcessWideLowPrecision; one row/core; reduced resident-row group	MAIN2-UNIFIED-LOCAL-SUITE-V1/V2; V011 run_kernel clamps blocks to rows	Wide single-row-per-core path; NOT a non-aligned D tail; counters/branch scope
+CANONICAL_LOCAL_SUITE_V1	C01	DIAGNOSTIC	1	128	FP16	1	Process generic small cached-row	MAIN2-UNIFIED-LOCAL-SUITE-V1/V2	Small-D sentinel; historical high relative measurement noise; never scores
+CANONICAL_LOCAL_SUITE_V1	C08	DIAGNOSTIC	8	2048	BF16	2	ProcessNarrowMidOverlap; one row/core	MAIN2-UNIFIED-LOCAL-SUITE-V1/V2	Mid-D and input/parameter overlap sentinel; never scores
+CANONICAL_LOCAL_SUITE_V1	C11	DIAGNOSTIC	1	8192	FP32	0	Process generic cached-row; NOT ProcessWideFp32FullCacheRows	MAIN2-UNIFIED-LOCAL-SUITE-V1/V2; V011 kCacheElems=8192	FP32 boundary sentinel; no FP32-wide claim; never scores
