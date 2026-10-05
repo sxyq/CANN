@@ -91,3 +91,54 @@ LAST_VERIFIED_STATUS_HEAD=bdd23bffb235347873d171c64fb747035799dd5
 FOLLOWUP_STATUS_COMMITS=PUSH_PENDING_NETWORK
 READY_FOR_PLANNING_REVIEW=YES
 ```
+
+## Engineering calibration vector completion
+
+```text
+CALIBRATION_TIMING_MODE=ENGINEERING_3RUN
+ENGINEERING_VECTOR_COMPLETE=5/5
+CORE_CELLS_COMPLETE=20/20
+DIAGNOSTIC_CELLS_COMPLETE=15/15
+RUNS=105/105_VALID
+DEVICE_PRIMARY=4
+DEVICE_FALLBACK=7_NOT_USED
+FORMAL_QUALIFICATION_IS_GATE=NO
+```
+
+All five candidates used the same V011 parent, runner, Suite V2, warmup 45,
+31 device-event samples per run, and interleaved order `P-C/C-P/P-C`. Every
+cell has three valid runs. The old formal qualification results remain in the
+old evidence files and are retained as quality context; they did not block
+these engineering vectors.
+
+| Quality | Cells |
+|---|---:|
+| GOOD | 12 |
+| FAIR | 8 |
+| POOR | 15 |
+| INVALID | 0 |
+
+Engineering vectors are calibration inputs, not Formal Local Scores and not
+`LOCAL_ACCEPTED`. The 15 POOR cells remain in the dataset; no fastest-run or
+directional sample was removed. Throughput is recorded for diagnosis and is
+not inserted into the Official formula.
+
+## Information-gain label recommendations
+
+These are recommendations for Planning to decide whether to acquire new
+Official labels. Main-2 did not submit anything Online.
+
+| Priority | Version | Predicted score signal | Model spread | Feature distance | Quality |
+|---:|---|---:|---:|---:|---|
+| 1 | HOTLOOP-BRANCH-HOIST-CHAMPION-X/V001 | 35.686 | 1.258 | 1.821 | 3 GOOD / 1 FAIR / 3 POOR |
+| 2 | REDUCE-FINALIZE-HANDOFF-CHAMPION-X/V001 | 39.333 | 1.129 | 1.572 | 2 GOOD / 1 FAIR / 4 POOR |
+| 3 | HOTLOOP-ADDR-HOIST-CHAMPION-X/V002 | 42.853 | 0.330 | 1.143 | 3 GOOD / 1 FAIR / 3 POOR |
+
+The displayed predictions are `LEVEL_1_RANKING_SIGNAL_NOT_OFFICIAL_SCORE`.
+The fixed historical V4 uncertainty is 15.101 points; none of these rows is
+an automatic Online gate or Champion claim. SCHED and STORE are complete but
+outside the information-gain TOP-3 under the current route/diversity ranking.
+
+Evidence: `CALIBRATION-CANDIDATES-VECTORS-V2.tsv`,
+`ONLINE-CALIBRATION-CANDIDATES-V2.tsv`, and
+`calibration-v4/runs/20261005-v4-engineering/`.

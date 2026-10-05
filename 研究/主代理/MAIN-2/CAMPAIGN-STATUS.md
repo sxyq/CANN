@@ -193,6 +193,24 @@ NEW_ROUTES_OUTSIDE_APPROVED_5 = 0
 | remote status head | `bdd23bffb235347873d171c64fb747035799dd5`；已验证 |
 | later status-only updates | 上述验证后新增；GitHub 443 超时，PUSH_PENDING_NETWORK |
 
+### Engineering calibration vector completion — 2026-10-05
+
+| 项 | 值 |
+|---|---|
+| mode | `ENGINEERING_3RUN`；formal qualification 不作为 timing gate |
+| vectors | 5/5 candidates；20/20 core cells；15/15 diagnostic cells |
+| runs | 105/105 valid Parent/Candidate runs；P-C/C-P/P-C |
+| quality | GOOD 12；FAIR 8；POOR 15；INVALID 0 |
+| primary/fallback | d4 used for all；d7 未使用 |
+| TOP-1 | HOTLOOP-BRANCH-HOIST-CHAMPION-X/V001 |
+| TOP-2 | REDUCE-FINALIZE-HANDOFF-CHAMPION-X/V001 |
+| TOP-3 | HOTLOOP-ADDR-HOIST-CHAMPION-X/V002 |
+| Online | 0；仅建议 Planning 获取 calibration labels |
+| Judge | Level 1；prediction 不是 Official Score |
+
+工程 vectors 补齐了 calibration 输入，但不改变 formal Local verdict，
+不推进 LOCAL_BEST，不解除 `MAIN_SELECTED=NONE`，不创建新 Kernel Revision。
+
 正式测时被 Parent noise-floor qualification 阻断，未生成任何候选 Local
 Score；不得据此给五个候选排序或进入 Online。详见
 `PERFORMANCE-NEXT-WAVE-GATE.md`。
