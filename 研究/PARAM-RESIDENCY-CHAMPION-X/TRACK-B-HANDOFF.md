@@ -74,6 +74,28 @@ EXPECTED_LOCAL_PROBES=Exact source/UB/lifetime audit; deterministic FP32 correct
 CHILD_RECOMMENDED_HYPOTHESIS=NONE
 OPEN_QUESTIONS=Does the exact FP32 wide path reload gamma per row, and can an existing slot retain it through the second consumer without a tile shrink or additional fence?
 
+## LATEST MAIN-2 GATE CLOSURE
+
+AUDIT_DATE=2026-10-05
+MAIN_SELECTED=PARAM-RESIDENCY/H1-GAMMA-TWO-ROW-LIFETIME
+SOURCE_AUDIT=研究/PARAM-RESIDENCY-CHAMPION-X/PARAM-H1-SOURCE-AUDIT.md
+DUPLICATE_AUDIT=研究/PARAM-RESIDENCY-CHAMPION-X/PARAM-H1-DUPLICATE-AUDIT.md
+PARAM_H1_GATE=FAIL_DUPLICATE
+PARAM_H1_EXISTENCE_GATE=FAIL_NO_RUNTIME_MECHANISM
+IMPLEMENTATION_AUTHORIZED=NO
+REVISION_CREATED=NO
+BUILD=NOT_RUN
+CORRECTNESS=NOT_RUN
+PERFORMANCE=NOT_RUN
+ONLINE=FORBIDDEN
+NEXT_ACTION=RETURN_TO_PLANNING_FOR_A_DIFFERENT_NON-DUPLICATE_HYPOTHESIS
+
+The exact V011 FP32 wide path already loads one gamma tile and consumes it
+across the two-row full-y batch at D=16384. D=32768 cannot retain two rows
+under the fixed parent UB budget without changing the batch/tile/UB
+mechanism. D=8192 already reuses preloaded parameters on the regular cached
+path. No Param-Residency V001 was created.
+
 ### H2
 
 HYPOTHESIS_ID=H2-BIAS-TWO-ROW-LIFETIME
