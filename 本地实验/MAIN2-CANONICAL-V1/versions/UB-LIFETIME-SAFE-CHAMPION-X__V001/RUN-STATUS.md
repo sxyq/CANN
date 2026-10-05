@@ -1,0 +1,9 @@
+# UB-LIFETIME-SAFE-CHAMPION-X/V001 — canonical local measurement
+
+SCORER_VERSION=MAIN2-CANONICAL-V1
+SUITE_VERSION=CANONICAL_LOCAL_SUITE_V1
+SOURCE_SHA=9b73bb5626b5e98be53faeb91eba024b2589bf0b8b5b46e36c48ec18e009f989
+CANONICAL_LOCAL_SCORE=UNSCORED
+STATUS=UNSCORED_CORRECTNESS_BLOCKED
+REASON=Known unresolved global correctness failure
+Kernel unchanged; historical Local/Official verdicts unchanged; no next Revision; MAIN_SELECTED=NONE.
