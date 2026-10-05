@@ -488,3 +488,6 @@ so prediction range/model disagreement are NA and none is Online-ready.
 MORE_OFFICIAL_CALIBRATION_LABELS_NEEDED=YES
 READY_FOR_PERFORMANCE_WAVE=NO
 ONLINE_RECOMMENDATION=NONE
+PUSH_PENDING=YES (normal push timed out after 25s)
+REMOTE_SHA=UNVERIFIED (bounded ls-remote timed out)
+FORCE_PUSH/RESET/REBASE/CLEAN=NOT_USED
