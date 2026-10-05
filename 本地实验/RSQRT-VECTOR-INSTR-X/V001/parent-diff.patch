@@ -1,0 +1,325 @@
+--- a/R31B/V010/submission.asc
++++ b/R31B/V011/submission.asc
+@@ -2,7 +2,7 @@
+ #include <cstdint>
+ #include "kernel_operator.h"
+ /*
+- * R31B-V010-N-MID-OVERLAP
++ * R31B-V011-LP-ROW-PIPELINE
+  *
+  * V010 is the V006 champion plus one mid-size single-tile bucket
+  * (independent reimplementation of the R31A-V010 N-MID-OVERLAP idea).
+@@ -11,9 +11,9 @@
+  * MTE2 groups so the param DMA overlaps pass-1 compute and the V/S tail.
+  * Math order is unchanged.  Wide paths and tiny-D generic stay V006.
+  *
+- * Purpose: T07 is mid-size N-GENERIC single-tile (unaligned D or
+- * localRows==1).  R31A-V010 moved T07 61→52.8 with this bucket.  The same
+- * bucket also probes T14 if T14 is unaligned mid-D with a large row count.
++ * Purpose: T14 resisted every FP32-wide and narrow change.  Wide FP16/BF16
++ * large-R row pipeline is the remaining untested T14 path family.  Mid-overlap
++ * is kept for T07.
+  */
+ 
+ /*
+@@ -80,11 +80,11 @@
+                                  wideFullYRows_ * reduceStride * sizeof(float));
+             } else if constexpr (std::is_same<T, half>::value) {
+                 wideFullYRows_ = ChooseWideFullYRows(rowWidth, sizeof(half),
+-                                                     3, sizeof(half), 3, tileElems);
++                                                     4, sizeof(half), 3, tileElems);
+                 wideFullYTileElems_ = tileElems;
+                 const int32_t reduceStride = kWideFullYReduceStride;
+-                pipe_.InitBuffer(xBuf_, tileElems * sizeof(half));
+-                pipe_.InitBuffer(residualBuf_, tileElems * sizeof(half));
++                pipe_.InitBuffer(xBuf_, 2 * tileElems * sizeof(half));
++                pipe_.InitBuffer(residualBuf_, 2 * tileElems * sizeof(half));
+                 pipe_.InitBuffer(outputBuf_, tileElems * sizeof(half));
+                 // gammaBuf_ holds the complete half y rows during pass one.
+                 // Pass two loads gamma/bias into xBuf_/residualBuf_.
+@@ -97,11 +97,11 @@
+                                  wideFullYRows_ * reduceStride * sizeof(float));
+             } else {
+                 wideFullYRows_ = ChooseWideFullYRows(rowWidth, sizeof(float),
+-                                                     3, sizeof(T), 2, tileElems);
++                                                     4, sizeof(T), 2, tileElems);
+                 wideFullYTileElems_ = tileElems;
+                 const int32_t reduceStride = kWideFullYReduceStride;
+-                pipe_.InitBuffer(xBuf_, tileElems * sizeof(T));
+-                pipe_.InitBuffer(residualBuf_, tileElems * sizeof(T));
++                pipe_.InitBuffer(xBuf_, 2 * tileElems * sizeof(T));
++                pipe_.InitBuffer(residualBuf_, 2 * tileElems * sizeof(T));
+                 pipe_.InitBuffer(outputBuf_, tileElems * sizeof(T));
+                 pipe_.InitBuffer(valueFp32Buf_,
+                                  yElemsPerRow * wideFullYRows_ * sizeof(float));
+@@ -3103,59 +3103,123 @@
+             AscendC::LocalTensor<float> reduceLocal = reduceFp32Buf_.Get<float>();
+ 
+             // Pass 1: y = x + residual, retain y, accumulate sum(y^2).
+-            for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
++            // V011: 2-deep MTE2 across the (row, tile) stream so Load of the
++            // next unit overlaps V of the current one (large-R row pipeline).
++            {
++            const AscendC::TEventID rd0 =
++                pipe_.AllocEventID<AscendC::HardEvent::MTE2_V>();
++            const AscendC::TEventID rd1 =
++                pipe_.AllocEventID<AscendC::HardEvent::MTE2_V>();
++            const AscendC::TEventID rel0 =
++                pipe_.AllocEventID<AscendC::HardEvent::V_MTE2>();
++            const AscendC::TEventID rel1 =
++                pipe_.AllocEventID<AscendC::HardEvent::V_MTE2>();
++            AscendC::LocalTensor<T> xBase = xBuf_.Get<T>();
++            AscendC::LocalTensor<T> rBase = residualBuf_.Get<T>();
++            AscendC::LocalTensor<float> valueFp32 = valueFp32Buf_.Get<float>();
++            AscendC::LocalTensor<float> xFp32 = xFp32Buf_.Get<float>();
++            AscendC::LocalTensor<float> residualFp32 = residualFp32Buf_.Get<float>();
++            const int32_t units = batchRows * tileCount;
++            bool relA = false;
++            bool relB = false;
++            for (int32_t u = 0; u < units; ++u) {
++                const int32_t batchRow = u / tileCount;
++                const int32_t tile = u - batchRow * tileCount;
++                const uint64_t col = static_cast<uint64_t>(tile) * tileWidth;
+                 const uint64_t rowOffset =
+                     (batchBegin + static_cast<uint64_t>(batchRow)) * rowWidth;
+-                for (int32_t tile = 0; tile < tileCount; ++tile) {
+-                    const uint64_t col = static_cast<uint64_t>(tile) * tileWidth;
+-                    const int32_t valid = static_cast<int32_t>(
+-                        rowWidth - col < static_cast<uint64_t>(tileWidth)
+-                            ? rowWidth - col : static_cast<uint64_t>(tileWidth));
+-                    AscendC::LocalTensor<T> xLocal = xBuf_.Get<T>();
+-                    AscendC::LocalTensor<T> residualLocal = residualBuf_.Get<T>();
+-                    AscendC::LocalTensor<float> valueFp32 = valueFp32Buf_.Get<float>();
+-                    AscendC::LocalTensor<float> xFp32 = xFp32Buf_.Get<float>();
+-                    AscendC::LocalTensor<float> residualFp32 = residualFp32Buf_.Get<float>();
++                const int32_t valid = static_cast<int32_t>(
++                    rowWidth - col < static_cast<uint64_t>(tileWidth)
++                        ? rowWidth - col : static_cast<uint64_t>(tileWidth));
++                const bool useA = (u & 1) == 0;
++                AscendC::LocalTensor<T> xLocal = useA ? xBase : xBase[tileWidth];
++                AscendC::LocalTensor<T> residualLocal =
++                    useA ? rBase : rBase[tileWidth];
++                const AscendC::TEventID rd = useA ? rd0 : rd1;
++                const AscendC::TEventID rel = useA ? rel0 : rel1;
++                if (u == 0) {
+                     Load(xLocal, xGm_, rowOffset + col, valid);
+                     Load(residualLocal, residualGm_, rowOffset + col, valid);
+-                    SyncMTE2ToV();
+-                    if constexpr (std::is_same<T, half>::value) {
+-                        AscendC::LocalTensor<half> yStore = gammaBuf_.Get<half>();
+-                        AscendC::LocalTensor<half> yTile =
+-                            yStore[batchRow * rowWidth + col];
+-                        AscendC::Add(xLocal, xLocal, residualLocal, valid);
+-                        AscendC::PipeBarrier<PIPE_V>();
+-                        // Exact half -> float widening of the native add.
+-                        AscendC::Muls(yTile, xLocal, half(1.0f), valid);
+-                        AscendC::PipeBarrier<PIPE_V>();
+-                        ToFloat(valueFp32, xLocal, valid);
++                    AscendC::SetFlag<AscendC::HardEvent::MTE2_V>(rd);
++                }
++                AscendC::WaitFlag<AscendC::HardEvent::MTE2_V>(rd);
++                if (u + 1 < units) {
++                    const int32_t nRow = (u + 1) / tileCount;
++                    const int32_t nTile = (u + 1) - nRow * tileCount;
++                    const uint64_t nCol = static_cast<uint64_t>(nTile) * tileWidth;
++                    const uint64_t nRowOffset =
++                        (batchBegin + static_cast<uint64_t>(nRow)) * rowWidth;
++                    const int32_t nValid = static_cast<int32_t>(
++                        rowWidth - nCol < static_cast<uint64_t>(tileWidth)
++                            ? rowWidth - nCol : static_cast<uint64_t>(tileWidth));
++                    const bool nextA = !useA;
++                    AscendC::LocalTensor<T> xNext =
++                        nextA ? xBase : xBase[tileWidth];
++                    AscendC::LocalTensor<T> rNext =
++                        nextA ? rBase : rBase[tileWidth];
++                    const AscendC::TEventID nrd = nextA ? rd0 : rd1;
++                    if (nextA) {
++                        if (relA) {
++                            AscendC::WaitFlag<AscendC::HardEvent::V_MTE2>(rel0);
++                            relA = false;
++                        }
+                     } else {
+-                        AscendC::LocalTensor<float> valueTile =
+-                            valueFp32[batchRow * rowWidth + col];
+-                        ToFloat(xFp32, xLocal, valid);
+-                        ToFloat(residualFp32, residualLocal, valid);
+-                        AscendC::PipeBarrier<PIPE_V>();
+-                        AscendC::Add(valueTile, xFp32, residualFp32, valid);
+-                        AscendC::PipeBarrier<PIPE_V>();
+-                        AscendC::Mul(residualFp32, valueTile, valueTile, valid);
++                        if (relB) {
++                            AscendC::WaitFlag<AscendC::HardEvent::V_MTE2>(rel1);
++                            relB = false;
++                        }
+                     }
++                    Load(xNext, xGm_, nRowOffset + nCol, nValid);
++                    Load(rNext, residualGm_, nRowOffset + nCol, nValid);
++                    AscendC::SetFlag<AscendC::HardEvent::MTE2_V>(nrd);
++                }
++                if constexpr (std::is_same<T, half>::value) {
++                    AscendC::LocalTensor<half> yStore = gammaBuf_.Get<half>();
++                    AscendC::LocalTensor<half> yTile =
++                        yStore[batchRow * rowWidth + col];
++                    AscendC::Add(xLocal, xLocal, residualLocal, valid);
+                     AscendC::PipeBarrier<PIPE_V>();
+-                    if constexpr (std::is_same<T, half>::value) {
+-                        AscendC::Mul(xFp32, valueFp32, valueFp32, valid);
+-                    }
++                    AscendC::Muls(yTile, xLocal, half(1.0f), valid);
+                     AscendC::PipeBarrier<PIPE_V>();
+-                    if constexpr (std::is_same<T, half>::value) {
+-                        AscendC::ReduceSum(
+-                            reduceLocal[batchRow * reduceStride + tile], xFp32,
+-                            residualFp32, valid);
+-                    } else {
+-                        AscendC::ReduceSum(
+-                            reduceLocal[batchRow * reduceStride + tile], residualFp32,
+-                            xFp32, valid);
+-                    }
+-                    SyncVToMTE2();
++                    ToFloat(valueFp32, xLocal, valid);
++                    AscendC::PipeBarrier<PIPE_V>();
++                    AscendC::Mul(xFp32, valueFp32, valueFp32, valid);
++                    AscendC::PipeBarrier<PIPE_V>();
++                    AscendC::ReduceSum(
++                        reduceLocal[batchRow * reduceStride + tile], xFp32,
++                        residualFp32, valid);
++                } else {
++                    AscendC::LocalTensor<float> valueTile =
++                        valueFp32[batchRow * rowWidth + col];
++                    ToFloat(xFp32, xLocal, valid);
++                    ToFloat(residualFp32, residualLocal, valid);
++                    AscendC::PipeBarrier<PIPE_V>();
++                    AscendC::Add(valueTile, xFp32, residualFp32, valid);
++                    AscendC::PipeBarrier<PIPE_V>();
++                    AscendC::Mul(residualFp32, valueTile, valueTile, valid);
++                    AscendC::PipeBarrier<PIPE_V>();
++                    AscendC::ReduceSum(
++                        reduceLocal[batchRow * reduceStride + tile], residualFp32,
++                        xFp32, valid);
+                 }
++                AscendC::SetFlag<AscendC::HardEvent::V_MTE2>(rel);
++                if (useA) {
++                    relA = true;
++                } else {
++                    relB = true;
++                }
+             }
++            if (relA) {
++                AscendC::WaitFlag<AscendC::HardEvent::V_MTE2>(rel0);
++            }
++            if (relB) {
++                AscendC::WaitFlag<AscendC::HardEvent::V_MTE2>(rel1);
++            }
++            pipe_.ReleaseEventID<AscendC::HardEvent::MTE2_V>(rd0);
++            pipe_.ReleaseEventID<AscendC::HardEvent::MTE2_V>(rd1);
++            pipe_.ReleaseEventID<AscendC::HardEvent::V_MTE2>(rel0);
++            pipe_.ReleaseEventID<AscendC::HardEvent::V_MTE2>(rel1);
++            }
+ 
+             for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
+                 AscendC::LocalTensor<float> xFp32 = xFp32Buf_.Get<float>();
+@@ -3179,25 +3243,73 @@
+             SyncVToMTE2();
+ 
+             // Pass 2: one gamma/bias tile serves the whole retained batch.
++            // V011: 2-deep param MTE2 (next tile loads during this tile's apply).
++            {
++            const AscendC::TEventID prd0 =
++                pipe_.AllocEventID<AscendC::HardEvent::MTE2_V>();
++            const AscendC::TEventID prd1 =
++                pipe_.AllocEventID<AscendC::HardEvent::MTE2_V>();
++            const AscendC::TEventID prel0 =
++                pipe_.AllocEventID<AscendC::HardEvent::V_MTE2>();
++            const AscendC::TEventID prel1 =
++                pipe_.AllocEventID<AscendC::HardEvent::V_MTE2>();
++            AscendC::LocalTensor<T> gBase = xBuf_.Get<T>();
++            AscendC::LocalTensor<T> bBase = residualBuf_.Get<T>();
++            bool pRelA = false;
++            bool pRelB = false;
++            if (tileCount > 0) {
++                Load(gBase, gammaGm_, 0, tileWidth < static_cast<int32_t>(rowWidth)
++                    ? tileWidth : static_cast<int32_t>(rowWidth));
++                Load(bBase, biasGm_, 0, tileWidth < static_cast<int32_t>(rowWidth)
++                    ? tileWidth : static_cast<int32_t>(rowWidth));
++                AscendC::SetFlag<AscendC::HardEvent::MTE2_V>(prd0);
++            }
+             for (int32_t tile = 0; tile < tileCount; ++tile) {
+                 const uint64_t col = static_cast<uint64_t>(tile) * tileWidth;
+                 const int32_t valid = static_cast<int32_t>(
+                     rowWidth - col < static_cast<uint64_t>(tileWidth)
+                         ? rowWidth - col : static_cast<uint64_t>(tileWidth));
+-                AscendC::LocalTensor<T> gammaLocal = xBuf_.Get<T>();
+-                AscendC::LocalTensor<T> biasLocal = residualBuf_.Get<T>();
++                const bool useA = (tile & 1) == 0;
++                AscendC::LocalTensor<T> gammaLocal = useA ? gBase : gBase[tileWidth];
++                AscendC::LocalTensor<T> biasLocal = useA ? bBase : bBase[tileWidth];
++                const AscendC::TEventID prd = useA ? prd0 : prd1;
++                const AscendC::TEventID prel = useA ? prel0 : prel1;
++                AscendC::WaitFlag<AscendC::HardEvent::MTE2_V>(prd);
++                if (tile + 1 < tileCount) {
++                    const bool nextA = !useA;
++                    if (nextA) {
++                        if (pRelA) {
++                            AscendC::WaitFlag<AscendC::HardEvent::V_MTE2>(prel0);
++                            pRelA = false;
++                        }
++                    } else {
++                        if (pRelB) {
++                            AscendC::WaitFlag<AscendC::HardEvent::V_MTE2>(prel1);
++                            pRelB = false;
++                        }
++                    }
++                    const uint64_t nCol = col + static_cast<uint64_t>(tileWidth);
++                    const int32_t nValid = static_cast<int32_t>(
++                        rowWidth - nCol < static_cast<uint64_t>(tileWidth)
++                            ? rowWidth - nCol : static_cast<uint64_t>(tileWidth));
++                    Load(nextA ? gBase : gBase[tileWidth], gammaGm_, nCol, nValid);
++                    Load(nextA ? bBase : bBase[tileWidth], biasGm_, nCol, nValid);
++                    AscendC::SetFlag<AscendC::HardEvent::MTE2_V>(nextA ? prd0 : prd1);
++                }
+                 AscendC::LocalTensor<T> outputLocal = outputBuf_.Get<T>();
+                 AscendC::LocalTensor<float> valueFp32 = valueFp32Buf_.Get<float>();
+                 AscendC::LocalTensor<float> xFp32 = xFp32Buf_.Get<float>();
+                 AscendC::LocalTensor<float> residualFp32 = residualFp32Buf_.Get<float>();
+-                Load(gammaLocal, gammaGm_, col, valid);
+-                Load(biasLocal, biasGm_, col, valid);
+-                SyncMTE2ToV();
+                 if constexpr (!std::is_same<T, half>::value) {
+                     ToFloat(xFp32, gammaLocal, valid);
+                     ToFloat(residualFp32, biasLocal, valid);
+                     AscendC::PipeBarrier<PIPE_V>();
+                 }
++                if constexpr (!std::is_same<T, half>::value) {
++                    ToFloat(xFp32, gammaLocal, valid);
++                    ToFloat(residualFp32, biasLocal, valid);
++                    AscendC::PipeBarrier<PIPE_V>();
++                }
+                 for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
+                     if constexpr (std::is_same<T, half>::value) {
+                         AscendC::LocalTensor<half> yStore = gammaBuf_.Get<half>();
+@@ -3231,7 +3343,23 @@
+                           outputLocal, valid);
+                     SyncMTE3ToV();
+                 }
+-                SyncVToMTE2();
++                AscendC::SetFlag<AscendC::HardEvent::V_MTE2>(prel);
++                if (useA) {
++                    pRelA = true;
++                } else {
++                    pRelB = true;
++                }
++            }
++            if (pRelA) {
++                AscendC::WaitFlag<AscendC::HardEvent::V_MTE2>(prel0);
++            }
++            if (pRelB) {
++                AscendC::WaitFlag<AscendC::HardEvent::V_MTE2>(prel1);
++            }
++            pipe_.ReleaseEventID<AscendC::HardEvent::MTE2_V>(prd0);
++            pipe_.ReleaseEventID<AscendC::HardEvent::MTE2_V>(prd1);
++            pipe_.ReleaseEventID<AscendC::HardEvent::V_MTE2>(prel0);
++            pipe_.ReleaseEventID<AscendC::HardEvent::V_MTE2>(prel1);
+             }
+         }
+     }
