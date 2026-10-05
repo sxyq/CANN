@@ -191,7 +191,7 @@ NEW_ROUTES_OUTSIDE_APPROVED_5 = 0
 | Online | NONE；no submission |
 | remote evidence head | `baade9a48cc0aacded17043492f2fb8d21c4f0b0`；已验证 |
 | remote status head | `bdd23bffb235347873d171c64fb747035799dd5`；已验证 |
-| current local status | `216d531d`；后续 push 因 GitHub 443 超时待同步 |
+| later status-only updates | 上述验证后新增；GitHub 443 超时，PUSH_PENDING_NETWORK |
 
 正式测时被 Parent noise-floor qualification 阻断，未生成任何候选 Local
 Score；不得据此给五个候选排序或进入 Online。详见
