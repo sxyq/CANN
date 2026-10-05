@@ -10,19 +10,19 @@
 
 MIN_FREE_HBM_MB=100
 
-# 读取单卡空闲 HBM（MB）。取不到时返回非 0。
+# 读取单卡空闲 HBM（MB）。
+# server3 的 `npu-smi info -t usages` 只给出 HBM Capacity 与 Usage Rate，
+# 空闲量按 capacity * (100 - usage_rate) 推算。
+# 取不到时返回非 0。
 free_hbm_mb() {
     local device_id="$1"
-    local raw
-    raw="$(npu-smi info -t usages -i "${device_id}" 2>/dev/null || true)"
-    printf '%s\n' "${raw}" | awk '
-        /HBM/ && /[0-9]+(\.[0-9]+)?[[:space:]]*MiB/ {
-            value = $NF
-            unit = $(NF - 1)
-            if (unit == "GiB") { printf "%d\n", value * 1024; found = 1; exit }
-            if (unit == "MiB") { printf "%d\n", value; found = 1; exit }
+    npu-smi info -t usages -i "${device_id}" 2>/dev/null | awk '
+        /HBM Capacity\(MB\)/ { capacity = $NF }
+        /^[[:space:]]*HBM Usage Rate\(%\)/ { rate = $NF }
+        END {
+            if (capacity == "" || rate == "") exit 1
+            printf "%d\n", capacity * (100 - rate) / 100
         }
-        END { if (!found) exit 1 }
     '
 }
 
