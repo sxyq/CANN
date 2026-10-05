@@ -1,0 +1,9 @@
+# REDUCE-INVSCALE-X/V001 — canonical local measurement
+
+SCORER_VERSION=MAIN2-CANONICAL-V1
+SUITE_VERSION=CANONICAL_LOCAL_SUITE_V1
+SOURCE_SHA=f017935d840bea5a81268d9fe137f1567df0982f4f71718f65f4672ad8da8023
+CANONICAL_LOCAL_SCORE=UNSCORED
+STATUS=UNSCORED_CORRECTNESS_BLOCKED
+REASON=Known unresolved global correctness failure
+Kernel unchanged; historical Local/Official verdicts unchanged; no next Revision; MAIN_SELECTED=NONE.
