@@ -1,0 +1,74 @@
+--- 线上结果/R31B/V011/submission.asc	2026-10-05 18:05:33.601241201 +0000
++++ 本地实验/WRITEBACK-TRANSACTION-X/V001/submission.asc	2026-10-05 18:22:14.431370400 +0000
+@@ -2094,9 +2094,18 @@
+         // V003 adaptive batch: tile and row count come from Init.
+         const int32_t tileWidth = wideFullYTileElems_;
+         const int32_t batchLimit = wideFullYRows_;
+-        const int32_t tileCount = static_cast<int32_t>(
+-            (rowWidth + static_cast<uint64_t>(tileWidth) - 1) /
+-            static_cast<uint64_t>(tileWidth));
++            const int32_t tileCount = static_cast<int32_t>(
++                (rowWidth + static_cast<uint64_t>(tileWidth) - 1) /
++                static_cast<uint64_t>(tileWidth));
++            // V001: one aligned full-row writeback transaction for the
++            // bounded multi-tile FP32 row.  Larger rows retain the parent's
++            // per-tile stores because a single descriptor would exceed the
++            // first burst-size probe boundary.
++            constexpr int32_t kWritebackBurstMaxElems = 16384;
++            const bool mergeAlignedRowWriteback =
++                tileCount > 1 &&
++                rowWidth <= static_cast<uint64_t>(kWritebackBurstMaxElems) &&
++                (rowWidth % 8) == 0;
+ 
+         for (uint64_t batchBegin = beginRow; batchBegin < beginRow + localRows;
+              batchBegin += batchLimit) {
+@@ -2205,6 +2214,37 @@
+                     AscendC::Add(valueRow, valueRow, biasLocal, valid);
+                     AscendC::PipeBarrier<PIPE_V>();
+                 }
++                if (!mergeAlignedRowWriteback) {
++                    for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
++                        const bool useFirst = (batchRow & 1) == 0;
++                        const AscendC::TEventID storeReady =
++                            useFirst ? storeReady0 : storeReady1;
++                        const AscendC::TEventID storeRelease =
++                            useFirst ? storeRelease0 : storeRelease1;
++                        if (useFirst ? storeOutstanding0 : storeOutstanding1) {
++                            AscendC::WaitFlag<AscendC::HardEvent::MTE3_V>(storeRelease);
++                            if (useFirst) {
++                                storeOutstanding0 = false;
++                            } else {
++                                storeOutstanding1 = false;
++                            }
++                        }
++                        AscendC::SetFlag<AscendC::HardEvent::V_MTE3>(storeReady);
++                        AscendC::WaitFlag<AscendC::HardEvent::V_MTE3>(storeReady);
++                        Store(outputGm_,
++                              (batchBegin + static_cast<uint64_t>(batchRow)) * rowWidth + col,
++                              valueLocal[batchRow * rowWidth + col], valid);
++                        AscendC::SetFlag<AscendC::HardEvent::MTE3_V>(storeRelease);
++                        if (useFirst) {
++                            storeOutstanding0 = true;
++                        } else {
++                            storeOutstanding1 = true;
++                        }
++                    }
++                }
++            }
++
++            if (mergeAlignedRowWriteback) {
+                 for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
+                     const bool useFirst = (batchRow & 1) == 0;
+                     const AscendC::TEventID storeReady =
+@@ -2222,8 +2262,9 @@
+                     AscendC::SetFlag<AscendC::HardEvent::V_MTE3>(storeReady);
+                     AscendC::WaitFlag<AscendC::HardEvent::V_MTE3>(storeReady);
+                     Store(outputGm_,
+-                          (batchBegin + static_cast<uint64_t>(batchRow)) * rowWidth + col,
+-                          valueLocal[batchRow * rowWidth + col], valid);
++                          (batchBegin + static_cast<uint64_t>(batchRow)) * rowWidth,
++                          valueLocal[batchRow * rowWidth],
++                          static_cast<int32_t>(rowWidth));
+                     AscendC::SetFlag<AscendC::HardEvent::MTE3_V>(storeRelease);
+                     if (useFirst) {
+                         storeOutstanding0 = true;
