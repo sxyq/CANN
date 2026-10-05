@@ -1,0 +1,5 @@
+set(CMAKE_ASC_COMPILER "/usr/local/Ascend/ascend-toolkit/latest/compiler/ccec_compiler/bin/bisheng")
+set(CMAKE_ASC_COMPILER_LOADED 1)
+set(CMAKE_ASC_SOURCE_FILE_EXTENSIONS asc)
+set(CMAKE_ASC_OUTPUT_EXTENSION )
+set(CMAKE_ASC_COMPILER_ENV_VAR "ASC")

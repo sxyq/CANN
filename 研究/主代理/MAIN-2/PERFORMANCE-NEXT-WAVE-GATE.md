@@ -1,0 +1,89 @@
+# Main-2 Judge V4 and Performance Restart Gate
+
+Date: 2026-10-05
+
+```text
+DIRECT_PARENT=R31B V011
+PARENT_SOURCE_SHA256=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
+PARENT_OFFICIAL_SCORE=45.16
+KERNEL_SOURCE_CHANGED=NO
+ONLINE_SUBMISSIONS=0
+PLANNING_DECISIONS_CHANGED=0
+MAIN_SELECTED=NONE
+```
+
+## Candidate calibration execution
+
+The five information candidates were built from exact source identities and
+the same V011 parent. All five builds passed, and all five candidates passed
+the seven-case unified correctness suite (C13, C14, C16, C12 plus diagnostic
+C01, C11, C08). No candidate source was edited.
+
+| Candidate | Build | Correctness | Formal local vector | Status |
+|---|---|---|---|---|
+| HOTLOOP-ADDR-HOIST-CHAMPION-X/V002 | PASS | 7/7 PASS | 0/4 core cases | measurement blocked |
+| HOTLOOP-BRANCH-HOIST-CHAMPION-X/V001 | PASS | 7/7 PASS | 0/4 core cases | measurement blocked |
+| REDUCE-FINALIZE-HANDOFF-CHAMPION-X/V001 | PASS | 7/7 PASS | 0/4 core cases | measurement blocked |
+| SCHED-CHAMPION-X/V001 | PASS | 7/7 PASS | 0/4 core cases | measurement blocked |
+| STORE-EPILOGUE-X/V001 | PASS | 7/7 PASS | 0/4 core cases | measurement blocked |
+
+The formal Parent same-binary qualification failed its bounded two-attempt
+window on d4 for all seven ADDR cases. One safe-device retry on d5 also failed
+the same qualification. No Parent/Candidate timing pair was accepted, so no
+candidate receives a Local score or information-gain rank. This is an honest
+apparatus/protocol block, not a performance rejection.
+
+## Judge V4 historical validation
+
+V4 uses fixed core features C13/C14/C16/C12. Diagnostic cases never enter the
+models. Historical labels are the 12 Official-tested revisions; R31B/V011 is
+the 45.16 anchor and is not fit as a candidate label.
+
+| Split | MAE | RMSE | Spearman | Kendall | Pairwise | TOP-3 recall | Near-Champion pairwise |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Nested version LOO | 6.462037 | 8.837852 | 0.678322 | 0.454545 | 0.727273 (66) | 0.666667 | 0.333333 (3) |
+| Leave-one-Route-out | 5.281435 | 7.198079 | 0.734266 | 0.545455 | 0.772727 (66) | 0.666667 | 0.333333 (3) |
+
+The historical data supports a limited broad ranking signal, but the
+near-Champion sample is too small and too inaccurate for reliable screening
+near 45.16. The appropriate current assessment is `JUDGE_LEVEL=1`: useful for
+rejecting obviously poor candidates and research prioritization only. It is
+not an Online gate and not a near-Champion selector.
+
+## Performance restart gate
+
+Planning may consider at most two new OFAT revisions after an explicit
+selection. Main-2 has not selected either revision. The current ranking for
+Planning review is conditional:
+
+1. `H1 MAIN2-TB-PARAM-DMA-COALESCE-D8192-FP16` remains TOP-1. It reduces the
+   FP16 full-row parameter load calls from four to two without changing bytes,
+   but is adjacent to COEFF-LOCALITY/R014 and needs a novelty decision plus
+   exact codegen evidence.
+2. `H3 MAIN2-TB-NARROWMID-UNUSED-PARAM-EVENT` remains TOP-2. The API audit
+   confirms real event-pool allocation/release bookkeeping, but reachability,
+   lifecycle proof, and generated codegen remain required.
+
+H2 remains below them because its selector runs only during initialization and
+has no demonstrated emitted cost. `MAIN_SELECTED=NONE` and
+`IMPLEMENTATION_AUTHORIZED=NO` remain in force. No V001 or new performance
+revision was created in this window.
+
+## Server and Git
+
+Formal timing used one device at a time. d4 and d5 were admitted because free
+HBM was above the 100 MB hard threshold; no external process was stopped or
+migrated. All leases were released. The initial build environment and runner
+compatibility issues were corrected only in the V4 tool: host C++ include
+paths and Ascend runtime library initialization. Candidate source bytes were
+unchanged.
+
+Remote synchronization remains unresolved: the bounded push and remote SHA
+verification timed out before this window. This evidence is therefore
+`PUSH_PENDING_NETWORK` until a later normal retry verifies the remote SHA.
+
+```text
+PERFORMANCE_WAVE_READY=NO
+ONLINE_READY=NONE
+READY_FOR_PLANNING_REVIEW=YES
+```
