@@ -5,6 +5,10 @@ description: CANN AddRmsNormBias shared-record Skill。Record Owner 是共享账
 
 # Record Owner
 
+## ACTIVE PORTFOLIO W3
+
+共享记录只接收当前 `ACTIVE PORTFOLIO W3` 的事实：`R1 UB-BANK-LAYOUT-CHAMPION-X`、`R2 ADAPTIVE-CORE-OWNERSHIP-CHAMPION-X`、`R3 TINY-MINIMAL-KERNEL-CHAMPION-X`、`R4 MULTIROW-PANEL-RMS-CHAMPION-X`、`R5 CROSSROW-FULL-PIPELINE-CHAMPION-X`。`OLD W2 HISTORICAL ONLY`：`SYNC`、`CASE47`、`CASE14`、`SELECTIVE`、`TINY-FIXED-OVERHEAD` 保持历史状态，不用于当前状态判断。
+
 ## 唯一写入范围
 
 Record Owner 消费 Route、Support、Main 和 Online Owner 的 C2C receipt，并异步更新共享记录：
@@ -41,6 +45,10 @@ Record Owner 不编辑 Candidate，不运行 Compile、Correctness、Local 或 N
 - 不把 Local score 写成 Official Score；
 - 不替 Planning / Review Layer 选择路线或决定提交；
 - 不把 Dashboard 当作执行控制点。
+- 每个 `VERSION_RECORD_EVENT` 都必须登记；负结果、失败结果、工具失败和非 Local Best 不能漏记。
+- 缺失字段保留为 `UNKNOWN` 或 `NONE`，不得发明缺失数据。
+
+`VERSION_RECORD_EVENT REQUIRED`。Record Owner 的异步记录不能成为 Route 下一阶段的前置条件，但下一 Revision 仍遵守 `NEXT REVISION BLOCKED UNTIL PREVIOUS EVENT EXISTS` 的事件顺序要求。
 
 ## C2C receipt
 

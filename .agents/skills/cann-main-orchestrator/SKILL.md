@@ -5,9 +5,15 @@ description: CANN AddRmsNormBias Main 协调 Skill。只通过 Child C2C 收集�
 
 # Main Orchestrator
 
+## ACTIVE PORTFOLIO W3
+
+Main 只协调当前 `ACTIVE PORTFOLIO W3`：`R1 UB-BANK-LAYOUT-CHAMPION-X`、`R2 ADAPTIVE-CORE-OWNERSHIP-CHAMPION-X`、`R3 TINY-MINIMAL-KERNEL-CHAMPION-X`、`R4 MULTIROW-PANEL-RMS-CHAMPION-X`、`R5 CROSSROW-FULL-PIPELINE-CHAMPION-X`。`OLD W2 HISTORICAL ONLY`：`SYNC`、`CASE47`、`CASE14`、`SELECTIVE`、`TINY-FIXED-OVERHEAD` 不能用于当前状态。
+
 ## 权限边界
 
-Main 只协调，不直接打开或读取项目文件，不编辑项目文件、Candidate、共享记录或 Dashboard，不运行 Git、Compile、Correctness、Local、NPU，也不计算任何身份信息。项目状态只来自 Child 的 C2C receipt、Record Owner receipt、Online Owner receipt 和 Planning 指令。
+Main 只协调。每次用户状态、执行或 Planning 回复前，必须执行 `RULE REFRESH REQUIRED` 和 `STATE REFRESH REQUIRED`，只读刷新权威规则与共享状态：至少刷新 `技术路线/全版本记录.tsv`、`调度/当前任务.tsv`、`技术路线/路线成绩表.tsv`，必要时读取 `技术路线/技术路线图.md`，并优先最新 Child receipt / Record receipt。冲突必须报告 `STATE_SYNC_GAP`。
+
+Main 不读取 Candidate、Route 私有 worktree、实验目录或归档材料，不编辑项目文件、Candidate、共享记录或 Dashboard，不运行 Git、Compile、Correctness、Local、NPU，也不计算身份信息。项目状态只来自 Child 的 C2C receipt、Record Owner receipt、Online Owner receipt、权威共享状态和 Planning 指令。
 
 Main 可以：
 
@@ -27,6 +33,8 @@ Main 不决定 Route 生命周期，不正式提交 Online，不创建任何自�
 ```
 
 Route Agent 不读取其他 Route worktree。Main 只依据 receipt 判断 ownership 和状态，不通过打开工作树自行确认。
+
+已批准 Route 内普通下一 Revision 为 `NO MAIN APPROVAL REQUIRED`。Route 长期复用同一 owner、context、branch 和 worktree；`Main MUST NOT MANUALLY MICRO-MANAGE EVERY REVISION`。
 
 ## C2C Route event
 
@@ -54,7 +62,7 @@ BLOCKER =
 正常状态转移：
 
 ```text
-EDIT → COMPILE → CORRECTNESS → LOCAL → RESULT → COMMIT → PUSH or NEXT_EDIT
+ONE CHANGE → COMPILE → CORRECTNESS → LOCAL → RESULT → COMMIT → VERSION_RECORD_EVENT → NEXT CHANGE
 ```
 
 若 receipt 报告 `EDIT → HASH`、`EDIT → DOCUMENTATION`、`EDIT → EXTRA_RESEARCH`、`EDIT → DASHBOARD` 或 `EDIT → SECOND_PERFORMANCE_CHANGE`，Main 立即返回：
@@ -120,6 +128,8 @@ SEND VERSION_RECORD_EVENT TO RECORD OWNER
 ```
 
 这条提醒不得取消、暂停或阻塞已经启动的 Compile、Correctness、Local 或提交阶段。Main 不打开文件补录，也不替 Record Owner 写共享文件。
+
+正常 Route 完成的 receipt 必须包含 numeric Local score/delta、Parent/Candidate raw samples 与 medians、shape/dtype、device、free HBM、load note 和 current best，并满足 `LOCAL SCORE REQUIRED`。Compile 或 Correctness 失败也要保留证据、commit/status 和 `VERSION_RECORD_EVENT REQUIRED`。`NEXT REVISION BLOCKED UNTIL PREVIOUS EVENT EXISTS`；Main 只传达该状态，不替 Route 微管理实验。
 
 ## 自主任务禁令
 

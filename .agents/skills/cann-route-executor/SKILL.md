@@ -5,6 +5,10 @@ description: CANN AddRmsNormBias Route Agent 执行 Skill。负责单 Route 的�
 
 # Route Executor
 
+## ACTIVE PORTFOLIO W3
+
+Route Agent 只执行当前 `ACTIVE PORTFOLIO W3` 中已批准的路线：`R1 UB-BANK-LAYOUT-CHAMPION-X`、`R2 ADAPTIVE-CORE-OWNERSHIP-CHAMPION-X`、`R3 TINY-MINIMAL-KERNEL-CHAMPION-X`、`R4 MULTIROW-PANEL-RMS-CHAMPION-X`、`R5 CROSSROW-FULL-PIPELINE-CHAMPION-X`。`OLD W2 HISTORICAL ONLY`：`SYNC`、`CASE47`、`CASE14`、`SELECTIVE`、`TINY-FIXED-OVERHEAD` 不得作为当前路线状态或新变化来源。
+
 ## Route ownership
 
 ```text
@@ -12,6 +16,10 @@ description: CANN AddRmsNormBias Route Agent 执行 Skill。负责单 Route 的�
 ```
 
 只读写自己的 Route worktree，不读取其他 Route worktree，不改共享调度、共享成绩或 Dashboard，不决定 Route 生命周期，不正式提交 Online。
+
+## RULE REFRESH REQUIRED
+
+每个新 Revision、resume、reconnect、context restore 或 long interruption 后，Candidate edit 前必须重新读取 `AGENTS.md`、本 Skill、`项目规则/实验总则.md`、`项目规则/执行约定.md`、`项目规则/服务器实验规范.md`、`项目规则/本地性能测试规范.md`，然后先发送 `RULE_REFRESH_RECEIPT`。receipt 至少说明 Route、Revision、触发原因、读取的规则入口和当前执行主链。无 `RULE_REFRESH_RECEIPT` 不得 edit。
 
 ## Authoritative loop
 
@@ -26,6 +34,7 @@ ONE CHANGE
 → LOCAL
 → RESULT
 → COMMIT
+→ VERSION_RECORD_EVENT
 → NEXT CHANGE
 ```
 
@@ -36,8 +45,13 @@ ONE CHANGE
 5. Correctness 通过后再次确认 `FREE_HBM >= 100 MB`，满足即立即执行 Local Performance。
 6. 报告 Local score、delta、samples、raw latency、jitter、`FREE_HBM`、device load、repeatability 和结果解释。
 7. 提交本轮实验结果的 Git commit。失败版本、负结果和工具失败都保留。
-8. Local 改善时及时 push，并把该 Revision 标为 `CURRENT_LOCAL_BEST`；下一轮可从它继续。
-9. Local 未改善时保留负结果，不提升为 Local Best；下一轮回到当前 `CURRENT_LOCAL_BEST`。
+8. 发送 `VERSION_RECORD_EVENT`，并等待该事件存在后才能开始下一 Revision。
+9. Local 改善时及时 push，并把该 Revision 标为 `CURRENT_LOCAL_BEST`；下一轮可从它继续。
+10. Local 未改善时保留负结果，不提升为 Local Best；下一轮回到当前 `CURRENT_LOCAL_BEST`。
+
+## LOCAL SCORE REQUIRED
+
+正常完成必须报告 numeric Local score 和 numeric Local delta，以及 Parent/Candidate raw samples、Parent/Candidate medians、shape/dtype、device、free HBM、load note、current best。Compile 或 Correctness 失败时保留失败证据、Git commit/status，并发送 `VERSION_RECORD_EVENT`，其中未执行 Local 的字段使用 `NONE`，不得补造数值。`VERSION_RECORD_EVENT REQUIRED`；`NEXT REVISION BLOCKED UNTIL PREVIOUS EVENT EXISTS`。
 
 Local accumulation 只能由一连串完整的小变化循环组成，不能把多个独立变化折叠进一个 Revision。
 
@@ -131,6 +145,8 @@ RESULT → COMMIT → ROUTE_EVENT + VERSION_RECORD_EVENT with LOCAL_BEST unchang
 ```
 
 `VERSION_RECORD_EVENT` 不包含来源或对象身份字段。Record Owner 负责异步落盘，Route Agent 不直接写共享账本、路线图或 Dashboard。
+
+已批准 Route 内的普通下一 Revision 为 `NO MAIN APPROVAL REQUIRED`。Route Agent 长期复用同一 owner、context、branch 和 worktree；`Main MUST NOT MANUALLY MICRO-MANAGE EVERY REVISION`。
 
 ## 结果边界
 
