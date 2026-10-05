@@ -45,7 +45,7 @@ constexpr int kMinimumWarmups = 45;
 constexpr int kMinimumSamples = 21;
 constexpr int kMinimumSameBlocks = 2;
 constexpr int kMinimumPairedBlocks = 4;
-constexpr char kInputGeneratorId[] = "R4_MULTIROW_PROXY_128X12288_SEED0";
+constexpr char kInputGeneratorId[] = "R4_MULTIROW_PROXY_128XWIDTH_SEED0";
 
 struct Kernel {
     const char* name;
@@ -286,7 +286,6 @@ int main(int argc, char** argv)
     const Kernel* sameKernel = std::strcmp(argv[5], "parent") == 0 ? &kParent :
                                std::strcmp(argv[5], "candidate") == 0 ? &kCandidate : nullptr;
     if ((dtype < 0) || (!paired && !same && !correctnessOnly) ||
-        widthArg != 12288 ||
         (paired && std::strcmp(argv[5], "-") != 0) || ((same || correctnessOnly) && sameKernel == nullptr) ||
         (correctnessOnly && (warmupsArg != 0 || samplesArg != 0 || blocksArg != 1)) ||
         (same && blocksArg < kMinimumSameBlocks) || (paired && blocksArg < kMinimumPairedBlocks)) {
