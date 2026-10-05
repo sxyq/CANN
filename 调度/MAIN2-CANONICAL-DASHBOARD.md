@@ -9,8 +9,8 @@
 | R31B V011 Local Anchor | 100.000000 — fresh ENGINEERING_3RUN |
 | Current Active Route | NONE — performance development frozen |
 | Current Active Revision | NONE — existing assets only |
-| Current Local Score | 98.089048 (STORE-EPILOGUE-X/V001) |
-| Delta vs Local Champion | -1.910952 |
+| Current Local Score | 95.142486 (REDUCE-FINALIZE-HANDOFF-CHAMPION-X/V001) |
+| Delta vs Local Champion | -4.857514 |
 | Next Planning Gate | Canonical asset census, scoreboard and route advice; MAIN_SELECTED=NONE |
 | PUSH_STATUS | PUSH_PENDING_NETWORK; last verified remote 1825d393 |
 
