@@ -78,13 +78,15 @@ compatibility issues were corrected only in the V4 tool: host C++ include
 paths and Ascend runtime library initialization. Candidate source bytes were
 unchanged.
 
-Remote synchronization completed after the bounded retry. The verified remote
-branch head is `baade9a48cc0aacded17043492f2fb8d21c4f0b0`, matching the local
-branch head for this evidence window.
+Remote synchronization completed after the bounded retry. The calibration
+evidence head `baade9a48cc0aacded17043492f2fb8d21c4f0b0` was verified, and the
+follow-up status head `bdd23bffb235347873d171c64fb747035799dd5` was also pushed
+and verified.
 
 ```text
 PERFORMANCE_WAVE_READY=NO
 ONLINE_READY=NONE
 REMOTE_SHA_VERIFIED=YES
+LAST_VERIFIED_STATUS_HEAD=bdd23bffb235347873d171c64fb747035799dd5
 READY_FOR_PLANNING_REVIEW=YES
 ```
