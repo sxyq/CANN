@@ -13,12 +13,13 @@ DEVICE="$2"
 MIN_FREE_HBM_MB=100
 check_free_hbm() {
     npu-smi info -t usages -i "$1" 2>/dev/null | awk -v min="${MIN_FREE_HBM_MB}" '
-        /HBM/ && /[0-9]+(\.[0-9]+)?[[:space:]]*(MiB|GiB)/ {
-            value = $NF; unit = $(NF - 1)
-            mb = (unit == "GiB") ? value * 1024 : value
-            if (mb >= min) { found = 1 }
+        /HBM Capacity\(MB\)/ { capacity = $NF }
+        /^[[:space:]]*HBM Usage Rate\(%\)/ { rate = $NF }
+        END {
+            if (capacity == "" || rate == "") exit 1
+            if (capacity * (100 - rate) / 100 >= min) exit 0
+            exit 1
         }
-        END { exit(found ? 0 : 1) }
     '
 }
 if ! check_free_hbm "${DEVICE}"; then
