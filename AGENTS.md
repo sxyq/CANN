@@ -84,6 +84,12 @@ Route Agent 和 Codex Main **都不得**自行决定：
 
 `.agents/skills/cann-mainline/SKILL.md`
 
+Route Agent 每个 Revision 开始 EDIT 前还必须进入 canonical 规则：
+
+`项目规则/快速迭代规范.md`
+
+并按该文件要求重新读取规则、输出逐条 `RULE_RECALL`，以及遵守 Local Result 到下一次 Candidate EDIT 的 120 秒目标。
+
 Codex/MiMoCode 通过 `.agents/skills/**/SKILL.md` 发现。
 Skill 说明工作方式，**不复制会变的成绩**；成绩看正式记录文件。
 
