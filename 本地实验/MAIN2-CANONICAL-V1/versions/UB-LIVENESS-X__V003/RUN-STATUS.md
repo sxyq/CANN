@@ -1,0 +1,9 @@
+# UB-LIVENESS-X/V003 — canonical local measurement
+
+SCORER_VERSION=MAIN2-CANONICAL-V1
+SUITE_VERSION=CANONICAL_LOCAL_SUITE_V1
+SOURCE_SHA=2eb9b5d087267a54fb84f8734847ecb68cf94b967102693c0d150fd57d6da7cd
+CANONICAL_LOCAL_SCORE=UNSCORED
+STATUS=UNSCORED_CORRECTNESS_BLOCKED
+REASON=Known unresolved global correctness failure
+Kernel unchanged; historical Local/Official verdicts unchanged; no next Revision; MAIN_SELECTED=NONE.
