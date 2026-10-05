@@ -175,6 +175,28 @@ NEW_ROUTES_OUTSIDE_APPROVED_5 = 0
 
 ---
 
+## Judge V4 / performance restart gate — 2026-10-05
+
+| 项 | 值 |
+|---|---|
+| direct parent | R31B V011 (`a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`) |
+| Official Champion | 45.16 |
+| calibration candidates | 5/5 Build PASS；5/5 unified Suite V2 correctness 7/7 PASS |
+| formal local vectors | 0/5；d4 bounded qualification failed，d5 safe retry also failed |
+| V4 nested LOO | MAE 6.462037；Spearman 0.678322；Kendall 0.454545；pairwise 0.727273 |
+| V4 Route-out | MAE 5.281435；Spearman 0.734266；Kendall 0.545455；pairwise 0.772727 |
+| near-Champion pairwise | 0.333333 (3 pairs) |
+| Judge level | LEVEL 1；broad rejection/research prioritization only |
+| H1/H3 | conditional TOP-1/TOP-2 for Planning；`MAIN_SELECTED=NONE` |
+| Online | NONE；no submission |
+| remote | PUSH_PENDING_NETWORK；未验证 remote SHA |
+
+正式测时被 Parent noise-floor qualification 阻断，未生成任何候选 Local
+Score；不得据此给五个候选排序或进入 Online。详见
+`PERFORMANCE-NEXT-WAVE-GATE.md`。
+
+---
+
 ## 9. Wave-2 Next Score Wave — 2026-10-03
 
 ```text
