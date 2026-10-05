@@ -107,7 +107,7 @@ export function anchorVector() {
   return runs;
 }
 
-export function scoreboard() {
+export function scoreboard({quiet=false}={}) {
   const anchorRuns=anchorVector(), registry=readTsv(REGISTRY).filter(r=>r.IMPLEMENTED==='YES');
   const anchorQuality=readTsv(path.join(ROOT,'本地实验/R31B-V011-CANONICAL-LOCAL-VECTOR.tsv')).filter(r=>r.CASE_ROLE==='CORE');
   const rows=[{LOCAL_RANK:'',ROUTE:'R31B',REVISION:'V011',HYPOTHESIS:'FRESH_CANONICAL_ANCHOR',DIRECT_PARENT:'R31B/V010',SOURCE_SHA:BASE_SHA,
@@ -160,7 +160,7 @@ export function scoreboard() {
   if(scored[0])scored[0].STATUS='LOCAL_CHAMPION';
   writeTsv(path.join(ROOT,'本地实验/MAIN2-CANONICAL-LOCAL-SCOREBOARD.tsv'),[...scored,...rows.filter(r=>r.CANONICAL_LOCAL_SCORE==='UNSCORED')]);
   writeTsv(path.join(DATA,'all-case-metrics.tsv'),allCells);
-  console.log(JSON.stringify({implemented:registry.length,scored:scored.length-1,unscored:rows.filter(r=>r.CANONICAL_LOCAL_SCORE==='UNSCORED').length,
+  if(!quiet) console.log(JSON.stringify({implemented:registry.length,scored:scored.length-1,unscored:rows.filter(r=>r.CANONICAL_LOCAL_SCORE==='UNSCORED').length,
     champion:scored[0],top10:scored.slice(0,10).map(r=>({version:key(r),score:r.CANONICAL_LOCAL_SCORE,fragile:r.LOCAL_GAIN_FRAGILE}))},null,2));
   return rows;
 }
