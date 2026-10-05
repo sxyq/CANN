@@ -24,12 +24,13 @@ MIN_FREE_HBM_MB=100
 free_hbm_ok() {
     ssh -o BatchMode=yes -o ConnectTimeout=10 cann-server3 \
         "npu-smi info -t usages -i '${DEVICE}'" 2>/dev/null | awk -v min="${MIN_FREE_HBM_MB}" '
-        /HBM/ && /[0-9]+(\.[0-9]+)?[[:space:]]*(MiB|GiB)/ {
-            value = $NF; unit = $(NF - 1)
-            mb = (unit == "GiB") ? value * 1024 : value
-            if (mb >= min) { found = 1 }
+        /HBM Capacity\(MB\)/ { capacity = $NF }
+        /^[[:space:]]*HBM Usage Rate\(%\)/ { rate = $NF }
+        END {
+            if (capacity == "" || rate == "") exit 1
+            if (capacity * (100 - rate) / 100 >= min) exit 0
+            exit 1
         }
-        END { exit(found ? 0 : 1) }
     '
 }
 if ! free_hbm_ok; then
