@@ -41,6 +41,8 @@ NEXT_ACTION =
 CHANGE =
 COMPILE =
 CORRECTNESS =
+FREE_HBM_MB =
+DEVICE_ID =
 LOCAL_SCORE =
 LOCAL_DELTA =
 CURRENT_LOCAL_BEST =
@@ -66,6 +68,44 @@ EDIT → COMPILE → CORRECTNESS → LOCAL
 ```
 
 Main 不打开文件来执行这项判断，只依据 C2C 报告。
+
+## 资源准入协调
+
+server3 的唯一设备准入是目标 NPU `FREE_HBM >= 100 MB`，对 Compile、Correctness、Local、Profile 一致适用。
+
+Main 收到 Child 报告 `FREE_HBM >= 100 MB` 时，协调该 Child 继续当前的 Correctness / Local / Profile，不得要求等待独占时段、设备完全空闲或资源负责人批准。
+
+Main 不得把以下事实转换成 ROUTE BLOCKER：
+
+- 设备非空闲；
+- AICore utilization 非零；
+- VLLM 驻留；
+- 其他用户进程存在；
+- 旧 lease 或未知 lease owner；
+- 缺少 exclusive lease；
+- 缺少 exclusive authorization。
+
+lease 只是协调元数据，不是执行权限。Main 不要求释放、删除或改写他人的 lease 来推进实验。
+
+若 Child 报告：
+
+```text
+BLOCKER = NO_EXCLUSIVE_DEVICE
+BLOCKER = ACTIVE_LEASE
+BLOCKER = HIGH_LOAD_ONLY
+```
+
+Main 立即返回：
+
+```text
+PROCESS_DEVIATION
+RESOURCE_GATE_INVALID
+FREE_HBM >= 100 MB is sufficient.
+Continue the current execution stage.
+Record load as context only.
+```
+
+同理，若 Main 自身把设备非空闲、AICore 非零、VLLM、其他进程、旧 lease 或缺少独占授权当作并发协调的阻塞理由，也按上述规则纠正，改由 Child 继续当前阶段。
 
 ## 版本记录事件
 
