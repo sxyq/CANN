@@ -191,7 +191,7 @@ NEW_ROUTES_OUTSIDE_APPROVED_5 = 0
 | Online | NONE；no submission |
 | remote evidence head | `baade9a48cc0aacded17043492f2fb8d21c4f0b0`；已验证 |
 | remote status head | `bdd23bffb235347873d171c64fb747035799dd5`；已验证 |
-| later status-only updates | 上述验证后新增；GitHub 443 超时，PUSH_PENDING_NETWORK |
+| later status-only updates | 本轮 engineering evidence 与 gate 已 push；remote head `1825d393` |
 
 ### Engineering calibration vector completion — 2026-10-05
 
