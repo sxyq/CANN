@@ -42,4 +42,4 @@ echo "LOAD_NOTE=load, lease, AICore and VLLM are measurement context only"
 
 shift 2
 ssh -o BatchMode=yes -o ConnectTimeout=10 cann-server3 \
-    "source /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/set_env.sh >/dev/null 2>&1 && cd '${REMOTE_DIR}' && ./build-server3-v001/adaptive_probe --mode '${MODE}' --device '${DEVICE}' ${1:+--output '$1'}"
+    "source /usr/local/Ascend/ascend-toolkit/set_env.sh >/dev/null 2>&1 && cd '${REMOTE_DIR}' && ./build-server3-v001/adaptive_probe --mode '${MODE}' --device '${DEVICE}' ${1:+--output '$1'}"
