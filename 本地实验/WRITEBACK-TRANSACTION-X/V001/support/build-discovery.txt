@@ -1,0 +1,18 @@
+DATE=2026-10-05
+ROUTE=WRITEBACK-TRANSACTION-X
+REVISION=V001
+
+SERVER3_DISCOVERY_COMMAND=ssh cann-server3 'hostname; df -h /home/data4t2; find /home/data4t2/lelinfeng -maxdepth 5 -type f ( -name compile.sh -o -name build.sh -o -name CMakeLists.txt -o -name run_correctness.sh ) -print'
+SERVER3_DISCOVERY_RESULT=FAIL
+SERVER3_DISCOVERY_ERROR=ssh: Could not resolve hostname cann-server3: Temporary failure in name resolution
+
+LOCAL_BUILD_SEARCH=rg --files . | rg -i '(compile|build|cmake|runner|direct-invoke)'
+LOCAL_BUILD_SEARCH_RESULT=NO_ROUTE_BUILD_ENTRY
+
+BUILD_CONTRACT_SOURCE=归档/历史整理记录/shared/COMPILE_CONTRACT.md
+TOOLKIT_EXPECTED=/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002
+COMPILER_EXPECTED=bisheng
+SOC_VERSION=Ascend910B3
+NPU_ARCH=dav-2201
+
+NEXT_ACTION=probe the expected local toolkit with a Route-local CMake build; no shared files changed.
