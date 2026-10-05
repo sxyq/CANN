@@ -78,12 +78,13 @@ compatibility issues were corrected only in the V4 tool: host C++ include
 paths and Ascend runtime library initialization. Candidate source bytes were
 unchanged.
 
-Remote synchronization remains unresolved: the bounded push and remote SHA
-verification timed out before this window. This evidence is therefore
-`PUSH_PENDING_NETWORK` until a later normal retry verifies the remote SHA.
+Remote synchronization completed after the bounded retry. The verified remote
+branch head is `baade9a48cc0aacded17043492f2fb8d21c4f0b0`, matching the local
+branch head for this evidence window.
 
 ```text
 PERFORMANCE_WAVE_READY=NO
 ONLINE_READY=NONE
+REMOTE_SHA_VERIFIED=YES
 READY_FOR_PLANNING_REVIEW=YES
 ```
