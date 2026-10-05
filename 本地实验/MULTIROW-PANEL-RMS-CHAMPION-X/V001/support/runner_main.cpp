@@ -361,7 +361,6 @@ int main(int argc, char** argv)
         if (deviceBias != nullptr) release(aclrtFree(deviceBias), "aclrtFree(bias)");
         if (deviceOutput != nullptr) release(aclrtFree(deviceOutput), "aclrtFree(output)");
         if (stream != nullptr) release(aclrtDestroyStream(stream), "aclrtDestroyStream");
-        if (deviceSelected) release(aclrtResetDevice(device), "aclrtResetDevice");
         if (runtimeInitialized) release(aclFinalize(), "aclFinalize");
     };
 
