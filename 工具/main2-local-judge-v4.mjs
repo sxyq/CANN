@@ -8,12 +8,14 @@ import { spawnSync } from "node:child_process";
 const CHAMPION = 45.16;
 const PARENT_SHA = "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3";
 const RUN_REL = "calibration-v4/runs/20261005-v4-candidates";
+const ENGINEERING_RUN_REL = "calibration-v4/runs/20261005-v4-engineering";
 const CASES = ["C13", "C14", "C16", "C12", "C01", "C11", "C08"];
 const CORE_CASES = ["C13", "C14", "C16", "C12"];
 const MAX_ATTEMPTS = 5;
 const TARGET_PAIRS = 4;
 const WARMUP = 45;
 const SAMPLES = 31;
+const ENGINEERING_RUNS = 3;
 const QUALIFICATION_ATTEMPTS = 2;
 const TIMING_DEADLINE_MS = 180000;
 const BUILD_DEADLINE_MS = 300000;
@@ -86,17 +88,19 @@ function appendTsv(file, headers, row) {
   fs.appendFileSync(file, headers.map(h => cell(row[h])).join("\t") + "\n");
 }
 function parseArgs(argv) {
-  const a = { command: argv[0] || "validate", root: process.cwd(), version: null, caseId: null, device: null, input: null, judgeLevel: "NOT_ASSESSED" };
+  const a = { command: argv[0] || "validate", root: process.cwd(), version: null, caseId: null, device: null, fallbackDevice: null, input: null, judgeLevel: "NOT_ASSESSED" };
   for (let i = 1; i < argv.length; i++) {
     if (argv[i] === "--root") a.root = path.resolve(argv[++i]);
     else if (argv[i] === "--version") a.version = argv[++i];
     else if (argv[i] === "--case") a.caseId = argv[++i];
     else if (argv[i] === "--device") a.device = Number(argv[++i]);
+    else if (argv[i] === "--fallback-device") a.fallbackDevice = Number(argv[++i]);
     else if (argv[i] === "--input") a.input = path.resolve(argv[++i]);
     else if (argv[i] === "--judge-level") a.judgeLevel = argv[++i];
   }
   a.mainDir = path.join(a.root, "研究/主代理/MAIN-2");
   a.runDir = path.join(a.mainDir, RUN_REL);
+  a.engineeringRunDir = path.join(a.mainDir, ENGINEERING_RUN_REL);
   return a;
 }
 function loadData(mainDir) {
@@ -437,12 +441,36 @@ function liveNpu(device) {
   if (!parsed) throw new Error("Could not parse HBM for NPU " + device);
   return { text: r.stdout, ...parsed };
 }
+function liveUsage(device) {
+  const r = spawnSync("npu-smi", ["info", "-t", "usages", "-i", String(device)], {
+    encoding: "utf8", timeout: 15000, maxBuffer: 2 * 1024 * 1024
+  });
+  const text = (r.stdout || "") + (r.stderr || "");
+  if (r.status !== 0) return { text, aicore: null, aivector: null };
+  const value = name => {
+    const m = text.match(new RegExp(name + "(?:\\s*\\(\\%\\))?\\s*:\\s*(\\d+)", "i"));
+    return m ? Number(m[1]) : null;
+  };
+  return { text, aicore: value("Aicore Usage Rate"), aivector: value("Aivector Usage Rate") };
+}
+function processesForDevice(text, device) {
+  const lines = text.split(/\r?\n/);
+  const found = [];
+  let inProcesses = false;
+  for (const line of lines) {
+    if (/NPU\s+Chip\s+Process id\s+Process name/i.test(line)) { inProcesses = true; continue; }
+    if (!inProcesses || !line.includes("|")) continue;
+    const m = line.match(/^\|\s*(\d+)\s+\d+\s*\|\s*(\d+)\s*\|\s*([^|]+)\|\s*([^|]+)\|/);
+    if (m && Number(m[1]) === device) found.push({ pid: Number(m[2]), name: m[3].trim(), memoryMb: m[4].trim() });
+  }
+  return found;
+}
 function activeLeases(file) {
   const rows = readTsv(file), last = new Map();
   for (const row of rows) last.set(row.lease_id, row);
   return [...last.values()].filter(r => r.status === "LEASED");
 }
-function acquireLease(args, candidate, device) {
+function acquireLease(args, candidate, device, note = "Local Judge V4 calibration-only; exact historical source; device-event suite; no Kernel edit or Online submission.") {
   const leasesFile = path.join(args.root, "调度/服务器设备使用.tsv");
   const live = liveNpu(device);
   if (live.free < 100) throw new Error("HBM_BLOCKED_FREE_LT_100MB device=" + device + " free=" + live.free);
@@ -453,7 +481,7 @@ function acquireLease(args, candidate, device) {
   const row = {
     device, owner: "MAIN-2", route: candidate.route, lease_id: id, status: "LEASED",
     start_time: new Date().toISOString(), end_time: "-",
-    note: "Local Judge V4 calibration-only; exact historical source; device-event suite; no Kernel edit or Online submission."
+    note
   };
   appendTsv(leasesFile, ["device", "owner", "route", "lease_id", "status", "start_time", "end_time", "note"], row);
   return { id, file: leasesFile };
@@ -659,6 +687,203 @@ function runCandidateSuite(args, candidate, device) {
   }
   return results;
 }
+
+function engineeringRunFile(args) {
+  return path.join(args.engineeringRunDir, "engineering-runs.tsv");
+}
+
+function engineeringBatchFile(args) {
+  return path.join(args.engineeringRunDir, "batch-resource.tsv");
+}
+
+function hostSnapshot(root) {
+  const r = runShell("uptime; free -h", root, 10000);
+  return (r.stdout || "") + (r.stderr || "");
+}
+
+function engineeringLoadNote(device, live, batchResource) {
+  return "ENGINEERING_3RUN; formal_qualification_not_a_gate; HBM_USED_MB=" + live.used +
+    ";FREE_HBM_MB=" + live.free + ";external_processes_observed=YES;see=" + batchResource;
+}
+
+function engineeringResourceRow(candidate, device, batchId, before, beforeUsage, processes, hostBefore, batchDir, after = null, afterUsage = null, hostAfter = null) {
+  return {
+    BATCH_ID: batchId, ROUTE: candidate.route, REVISION: candidate.revision, SOURCE_SHA: candidate.sha, DEVICE: device,
+    HBM_USED_MB_BEFORE: before.used, FREE_HBM_MB_BEFORE: before.free,
+    HBM_USED_MB_AFTER: after?.used, FREE_HBM_MB_AFTER: after?.free,
+    AICORE_PERCENT_BEFORE: beforeUsage.aicore, AIVECTOR_PERCENT_BEFORE: beforeUsage.aivector,
+    AICORE_PERCENT_AFTER: afterUsage?.aicore, AIVECTOR_PERCENT_AFTER: afterUsage?.aivector,
+    HOST_LOAD_BEFORE: hostBefore.replace(/\s+/g, " ").trim(), HOST_LOAD_AFTER: hostAfter?.replace(/\s+/g, " ").trim(),
+    EXISTING_PROCESSES: processes.length ? JSON.stringify(processes) : "SEE_NPU_SMI_SNAPSHOT",
+    NPU_SMI_BEFORE: path.join(batchDir, "npu-before.txt"), NPU_SMI_AFTER: path.join(batchDir, "npu-after.txt"),
+    USAGE_BEFORE: path.join(batchDir, "usage-before.txt"), USAGE_AFTER: path.join(batchDir, "usage-after.txt"),
+    LOAD_NOTE: "ENGINEERING_3RUN; external load/processes recorded only; not used as timing hard gate."
+  };
+}
+
+function chooseEngineeringDevice(args, candidate) {
+  const devices = [...new Set([args.device, args.fallbackDevice].filter(Number.isInteger))];
+  if (!devices.length) throw new Error("engineering-measure requires --device N [--fallback-device N]");
+  const failures = [];
+  for (const device of devices) {
+    try {
+      const lease = acquireLease(args, candidate, device,
+        "CALIBRATION_TIMING_MODE=ENGINEERING_3RUN; primary/fallback bounded device; 3 interleaved P/C runs; no formal qualification gate; no Kernel edit or Online submission.");
+      return { device, lease };
+    } catch (error) {
+      failures.push("d" + device + ":" + error.message);
+    }
+  }
+  throw new Error("NO_ENGINEERING_DEVICE_AVAILABLE " + failures.join(" | "));
+}
+
+function engineeringRowsFor(rows, candidate, caseId) {
+  return rows.filter(r => r.ROUTE === candidate.route && r.REVISION === candidate.revision && r.CASE_ID === caseId);
+}
+
+function engineeringMeasureCandidate(args, candidate) {
+  const build = buildStatus(args, candidate);
+  if (!build || build.BUILD_STATUS !== "PASS") throw new Error("BUILD_PASS_REQUIRED: " + key(candidate));
+  const correctness = readTsv(path.join(args.runDir, "correctness-status.tsv"));
+  const cases = readTsv(path.join(args.mainDir, "MAIN2-UNIFIED-LOCAL-SUITE-V2.tsv")).filter(r => CASES.includes(r.CASE_ID));
+  if (cases.length !== CASES.length) throw new Error("Suite V2 did not resolve all seven cases.");
+  for (const c of cases) {
+    const row = correctness.find(r => r.ROUTE === candidate.route && r.REVISION === candidate.revision && r.CASE_ID === c.CASE_ID);
+    if (!row || row.CORRECTNESS_STATUS !== "PASS") throw new Error("CORRECTNESS_PASS_REQUIRED " + key(candidate) + " " + c.CASE_ID);
+  }
+  fs.mkdirSync(args.engineeringRunDir, { recursive: true });
+  writeTsv(path.join(args.engineeringRunDir, "run-config.tsv"),
+    ["CALIBRATION_TIMING_MODE", "RUNS_PER_SIDE", "ORDER", "WARMUP", "SAMPLES_PER_RUN", "PARENT_SHA", "SUITE", "FORMAL_QUALIFICATION_IS_GATE"],
+    [{ CALIBRATION_TIMING_MODE: "ENGINEERING_3RUN", RUNS_PER_SIDE: ENGINEERING_RUNS, ORDER: "P-C/C-P/P-C",
+      WARMUP, SAMPLES_PER_RUN: SAMPLES, PARENT_SHA, SUITE: "MAIN2-UNIFIED-LOCAL-SUITE-V2", FORMAL_QUALIFICATION_IS_GATE: "NO" }]);
+  const runFile = engineeringRunFile(args);
+  const resourceFile = engineeringBatchFile(args);
+  const { device, lease } = chooseEngineeringDevice(args, candidate);
+  const stage = stagePath(args, candidate);
+  const batchDir = path.join(args.engineeringRunDir, "batches", safeName(candidate));
+  fs.mkdirSync(batchDir, { recursive: true });
+  const batchId = "M2-V4-ENG-" + candidate.revision + "-D" + device + "-" + Date.now();
+  let note = "engineering 3-run suite completed";
+  try {
+    const before = liveNpu(device);
+    const beforeUsage = liveUsage(device);
+    const processes = processesForDevice(before.text, device);
+    const hostBefore = hostSnapshot(args.root);
+    writeText(path.join(batchDir, "npu-before.txt"), before.text);
+    writeText(path.join(batchDir, "usage-before.txt"), beforeUsage.text);
+    writeText(path.join(batchDir, "host-before.txt"), hostBefore);
+    const resourceHeaders = ["BATCH_ID", "ROUTE", "REVISION", "SOURCE_SHA", "DEVICE", "HBM_USED_MB_BEFORE", "FREE_HBM_MB_BEFORE",
+      "HBM_USED_MB_AFTER", "FREE_HBM_MB_AFTER", "AICORE_PERCENT_BEFORE", "AIVECTOR_PERCENT_BEFORE", "AICORE_PERCENT_AFTER",
+      "AIVECTOR_PERCENT_AFTER", "HOST_LOAD_BEFORE", "HOST_LOAD_AFTER", "EXISTING_PROCESSES", "FORMAL_LEASE",
+      "NPU_SMI_BEFORE", "NPU_SMI_AFTER", "USAGE_BEFORE", "USAGE_AFTER", "LOAD_NOTE"];
+    for (const c of cases) {
+      const prior = engineeringRowsFor(readTsv(runFile), candidate, c.CASE_ID);
+      const haveRun = new Set(prior.map(r => Number(r.RUN)));
+      if ([1, 2, 3].every(run => haveRun.has(run))) continue;
+      const cellDir = path.join(batchDir, c.CASE_ID);
+      fs.mkdirSync(cellDir, { recursive: true });
+      for (let run = 1; run <= ENGINEERING_RUNS; run++) {
+        if (haveRun.has(run)) continue;
+        const first = run % 2 === 1 ? "parent" : "candidate";
+        const second = first === "parent" ? "candidate" : "parent";
+        const runBefore = liveNpu(device);
+        writeText(path.join(cellDir, "run-" + run + "-npu-before.txt"), runBefore.text);
+        const p1 = path.join(cellDir, "run-" + String(run).padStart(2, "0") + "-" + first);
+        const p2 = path.join(cellDir, "run-" + String(run).padStart(2, "0") + "-" + second);
+        const r1 = invokeRunner(stage, first, device, c, p1, WARMUP, SAMPLES, 1, 0);
+        const r2 = invokeRunner(stage, second, device, c, p2, WARMUP, SAMPLES, 1, 0);
+        const runAfter = liveNpu(device);
+        writeText(path.join(cellDir, "run-" + run + "-npu-after.txt"), runAfter.text);
+        const p = first === "parent" ? r1 : r2;
+        const q = first === "candidate" ? r1 : r2;
+        const pStats = p.stats || {}, qStats = q.stats || {};
+        const pUs = pStats.ALL_DEVICE_median_us, qUs = qStats.ALL_DEVICE_median_us;
+        const valid = p.rc === 0 && q.rc === 0 && pStats.ALL_DEVICE_bad === 0 && qStats.ALL_DEVICE_bad === 0 && pUs > 0 && qUs > 0;
+        appendTsv(runFile,
+          ["ROUTE", "REVISION", "SOURCE_SHA", "CASE_ID", "RUN", "ORDER", "DEVICE", "PARENT_RC", "CANDIDATE_RC", "PARENT_BAD", "CANDIDATE_BAD", "PARENT_US", "CANDIDATE_US", "PARENT_MEAN_US", "CANDIDATE_MEAN_US", "PARENT_MAD_US", "CANDIDATE_MAD_US", "PARENT_MIN_US", "CANDIDATE_MIN_US", "PARENT_MAX_US", "CANDIDATE_MAX_US", "VALID_RUN", "PARENT_PREFIX", "CANDIDATE_PREFIX", "RUN_LOAD_NOTE"],
+          {
+            ROUTE: candidate.route, REVISION: candidate.revision, SOURCE_SHA: candidate.sha, CASE_ID: c.CASE_ID,
+            RUN: run, ORDER: first + "->" + second, DEVICE: device, PARENT_RC: p.rc, CANDIDATE_RC: q.rc,
+            PARENT_BAD: pStats.ALL_DEVICE_bad, CANDIDATE_BAD: qStats.ALL_DEVICE_bad, PARENT_US: pUs, CANDIDATE_US: qUs,
+            PARENT_MEAN_US: pStats.ALL_DEVICE_mean_us, CANDIDATE_MEAN_US: qStats.ALL_DEVICE_mean_us,
+            PARENT_MAD_US: pStats.ALL_DEVICE_MAD_us, CANDIDATE_MAD_US: qStats.ALL_DEVICE_MAD_us,
+            PARENT_MIN_US: pStats.ALL_DEVICE_min_us, CANDIDATE_MIN_US: qStats.ALL_DEVICE_min_us,
+            PARENT_MAX_US: pStats.ALL_DEVICE_max_us, CANDIDATE_MAX_US: qStats.ALL_DEVICE_max_us,
+            VALID_RUN: valid ? "YES" : "NO", PARENT_PREFIX: first === "parent" ? p1 : p2,
+            CANDIDATE_PREFIX: first === "candidate" ? p1 : p2,
+            RUN_LOAD_NOTE: engineeringLoadNote(device, runBefore, resourceFile)
+          });
+        console.log(key(candidate) + " " + c.CASE_ID + " engineering run=" + run + "/" + ENGINEERING_RUNS +
+          " valid=" + (valid ? "YES" : "NO") + " device=" + device + " P/C=" + pUs + "/" + qUs);
+      }
+    }
+    const after = liveNpu(device);
+    const afterUsage = liveUsage(device);
+    const hostAfter = hostSnapshot(args.root);
+    writeText(path.join(batchDir, "npu-after.txt"), after.text);
+    writeText(path.join(batchDir, "usage-after.txt"), afterUsage.text);
+    writeText(path.join(batchDir, "host-after.txt"), hostAfter);
+    appendTsv(resourceFile, resourceHeaders,
+      engineeringResourceRow(candidate, device, batchId, before, beforeUsage, processes, hostBefore, batchDir, after, afterUsage, hostAfter));
+  } catch (error) {
+    note = "engineering suite stopped: " + error.message;
+    throw error;
+  } finally {
+    releaseLease(lease, candidate, device, note);
+  }
+}
+
+function engineeringQuality(parentUs, candidateUs) {
+  const spread = values => {
+    const avg = mean(values);
+    return avg > 0 ? (Math.max(...values) - Math.min(...values)) / avg : Infinity;
+  };
+  const maxSpread = Math.max(spread(parentUs), spread(candidateUs));
+  return maxSpread <= 0.10 ? "GOOD" : (maxSpread <= 0.25 ? "FAIR" : "POOR");
+}
+
+function engineeringVectorize(args) {
+  const runRows = readTsv(engineeringRunFile(args));
+  const resourceRows = readTsv(engineeringBatchFile(args));
+  const correctness = readTsv(path.join(args.runDir, "correctness-status.tsv"));
+  const suite = readTsv(path.join(args.mainDir, "MAIN2-UNIFIED-LOCAL-SUITE-V2.tsv"));
+  const data = [];
+  for (const candidate of candidateManifest(args.mainDir)) {
+    const resource = resourceRows.filter(r => r.ROUTE === candidate.route && r.REVISION === candidate.revision).at(-1);
+    for (const c of suite.filter(r => CASES.includes(r.CASE_ID))) {
+      const rows = engineeringRowsFor(runRows, candidate, c.CASE_ID).slice(-ENGINEERING_RUNS);
+      const valid = rows.length === ENGINEERING_RUNS && rows.every(r => r.VALID_RUN === "YES");
+      const p = rows.map(r => num(r.PARENT_US)).filter(x => x > 0), q = rows.map(r => num(r.CANDIDATE_US)).filter(x => x > 0);
+      const pAvg = valid ? mean(p) : null, qAvg = valid ? mean(q) : null;
+      const ratio = pAvg > 0 && qAvg > 0 ? qAvg / pAvg : null;
+      const pThroughput = pAvg > 0 ? Number(c.ROWS) * Number(c.WIDTH) * 1e6 / pAvg : null;
+      const qThroughput = qAvg > 0 ? Number(c.ROWS) * Number(c.WIDTH) * 1e6 / qAvg : null;
+      const corr = correctness.find(r => r.ROUTE === candidate.route && r.REVISION === candidate.revision && r.CASE_ID === c.CASE_ID);
+      const quality = valid ? engineeringQuality(p, q) : "INVALID_CELL";
+      data.push({
+        VERSION: key(candidate), ROUTE: candidate.route, REVISION: candidate.revision, SOURCE_SHA: candidate.sha,
+        CASE_ID: c.CASE_ID, CASE_ROLE: c.KEEP_FOR_V2, DTYPE: c.DTYPE, ROWS: c.ROWS, WIDTH: c.WIDTH,
+        P1_US: rows[0]?.PARENT_US, C1_US: rows[0]?.CANDIDATE_US, P2_US: rows[1]?.PARENT_US, C2_US: rows[1]?.CANDIDATE_US,
+        P3_US: rows[2]?.PARENT_US, C3_US: rows[2]?.CANDIDATE_US, PARENT_AVG: pAvg, CANDIDATE_AVG: qAvg,
+        PARENT_MEDIAN: valid ? median(p) : null, CANDIDATE_MEDIAN: valid ? median(q) : null,
+        PARENT_MIN: valid ? Math.min(...p) : null, CANDIDATE_MIN: valid ? Math.min(...q) : null,
+        PARENT_MAX: valid ? Math.max(...p) : null, CANDIDATE_MAX: valid ? Math.max(...q) : null,
+        LATENCY_RATIO: ratio, LATENCY_DELTA_PERCENT: ratio === null ? null : (ratio - 1) * 100,
+        PARENT_THROUGHPUT: pThroughput, CANDIDATE_THROUGHPUT: qThroughput,
+        THROUGHPUT_DELTA_PERCENT: pThroughput > 0 && qThroughput > 0 ? (qThroughput / pThroughput - 1) * 100 : null,
+        QUALITY: quality, ENGINEERING_VECTOR_STATUS: valid ? "VALID" : "INVALID_CELL",
+        FORMAL_QUALIFICATION_STATUS: readTsv(path.join(args.runDir, "qualification-status.tsv"))
+          .filter(r => r.ROUTE === candidate.route && r.REVISION === candidate.revision && r.CASE_ID === c.CASE_ID).at(-1)?.RESULT || "NOT_RUN",
+        CORRECTNESS_STATUS: corr?.CORRECTNESS_STATUS || "NOT_RUN", DEVICE: resource?.DEVICE || rows.at(-1)?.DEVICE || "NA",
+        LOAD_NOTE: resource?.LOAD_NOTE || "NO_BATCH_RESOURCE_RECORD", SOURCE_IDENTITY: sha256(candidate.source) === candidate.sha ? "PASS" : "FAIL"
+      });
+    }
+  }
+  const headers = Object.keys(data[0] || {});
+  const out = data.map(r => Object.fromEntries(headers.map(h => [h, typeof r[h] === "number" ? fmt(r[h]) : r[h]])));
+  writeTsv(path.join(args.mainDir, "CALIBRATION-CANDIDATES-VECTORS-V2.tsv"), headers, out);
+  return data;
+}
 function sampleMadRatio(values) {
   const m = median(values);
   return m > 0 ? median(values.map(x => Math.abs(x - m))) / m : null;
@@ -719,7 +944,9 @@ function candidateFeatureMap(rows) {
   for (const r of rows) {
     if (!m.has(r.VERSION)) m.set(r.VERSION, { route: r.ROUTE, revision: r.REVISION, sha: r.SOURCE_SHA, ratios: {}, cells: [] });
     const v = m.get(r.VERSION);
-    v.ratios[r.CASE_ID] = r.QUALITY === "MEASUREMENT_STABLE" ? num(r.LATENCY_RATIO) : null;
+    const engineeringValid = r.ENGINEERING_VECTOR_STATUS === "VALID";
+    const formalStable = r.QUALITY === "MEASUREMENT_STABLE";
+    v.ratios[r.CASE_ID] = engineeringValid || formalStable ? num(r.LATENCY_RATIO) : null;
     v.cells.push(r);
   }
   return [...m.values()];
@@ -735,7 +962,9 @@ function distanceToTraining(candidate, records) {
   return distances.length ? Math.min(...distances) : null;
 }
 function rankCandidates(args, data, cv) {
-  const vectorRows = readTsv(path.join(args.mainDir, "CALIBRATION-CANDIDATES-VECTORS.tsv"));
+  const engineeringFile = path.join(args.mainDir, "CALIBRATION-CANDIDATES-VECTORS-V2.tsv");
+  const engineeringRows = readTsv(engineeringFile);
+  const vectorRows = engineeringRows.length ? engineeringRows : readTsv(path.join(args.mainDir, "CALIBRATION-CANDIDATES-VECTORS.tsv"));
   const candidates = candidateFeatureMap(vectorRows);
   const oofResiduals = cv.loo.map(r => Math.abs(r.ENSEMBLE - r.actual)).filter(Number.isFinite);
   const uncertainty = quantile(oofResiduals, 0.90);
@@ -744,7 +973,10 @@ function rankCandidates(args, data, cv) {
     const allCells = candidate.cells;
     const coreCells = allCells.filter(r => r.CASE_ROLE === "PROVISIONAL_CORE_FEATURE");
     const diagCells = allCells.filter(r => r.CASE_ROLE === "DIAGNOSTIC_COVERAGE_ONLY");
-    const coreComplete = coreCells.length === CORE_CASES.length && coreCells.every(r => r.QUALITY === "MEASUREMENT_STABLE");
+    const cellComplete = (cells => cells.length === CASES.length && cells.every(r =>
+      r.ENGINEERING_VECTOR_STATUS === "VALID" || r.QUALITY === "MEASUREMENT_STABLE"))(allCells);
+    const coreComplete = coreCells.length === CORE_CASES.length && coreCells.every(r =>
+      r.ENGINEERING_VECTOR_STATUS === "VALID" || r.QUALITY === "MEASUREMENT_STABLE");
     const correctnessComplete = allCells.length === CASES.length && allCells.every(r => r.CORRECTNESS_STATUS === "PASS");
     const sourceExact = CANDIDATES.some(c => c.route === candidate.route && c.revision === candidate.revision && c.sha === candidate.sha &&
       exists(c.source) && sha256(c.source) === c.sha);
@@ -753,15 +985,20 @@ function rankCandidates(args, data, cv) {
     const pred = model.ENSEMBLE;
     const nearestOfficialScore = pred === null ? null : Math.min(...data.dataset.map(r => Math.abs(pred - r.score)));
     const knownRoutes = new Set(data.dataset.map(r => r.route));
+    const qualityCounts = Object.fromEntries(["GOOD", "FAIR", "POOR", "INVALID_CELL"].map(q =>
+      [q, allCells.filter(r => r.QUALITY === q).length]));
     return {
       VERSION: key(candidate), ROUTE: candidate.route, REVISION: candidate.revision, SOURCE_SHA: candidate.sha,
       SOURCE_RECOVERABLE: bool(sourceExact), LOCAL_RUNNABLE: localRunnable ? "YES" : "NO",
-      LOCAL_VECTOR_STATUS: coreComplete ? "CORE_VECTOR_COMPLETE" : "MEASUREMENT_BLOCKED_OR_INCOMPLETE",
-      CORE_VALID_CASES: coreCells.filter(r => r.QUALITY === "MEASUREMENT_STABLE").map(r => r.CASE_ID).join(","),
-      DIAGNOSTIC_VALID_CASES: diagCells.filter(r => r.QUALITY === "MEASUREMENT_STABLE").map(r => r.CASE_ID).join(","),
+      LOCAL_VECTOR_STATUS: cellComplete ? "ENGINEERING_VECTOR_COMPLETE" : "VECTOR_INCOMPLETE",
+      ENGINEERING_VECTOR_COMPLETE: bool(cellComplete),
+      CORE_VALID_CASES: coreCells.filter(r => r.ENGINEERING_VECTOR_STATUS === "VALID" || r.QUALITY === "MEASUREMENT_STABLE").map(r => r.CASE_ID).join(","),
+      DIAGNOSTIC_VALID_CASES: diagCells.filter(r => r.ENGINEERING_VECTOR_STATUS === "VALID" || r.QUALITY === "MEASUREMENT_STABLE").map(r => r.CASE_ID).join(","),
+      QUALITY_SUMMARY: "GOOD=" + qualityCounts.GOOD + ";FAIR=" + qualityCounts.FAIR + ";POOR=" + qualityCounts.POOR + ";INVALID=" + qualityCounts.INVALID_CELL,
       MODEL_A_PRED: model.MODEL_A_MEAN_RATIO, MODEL_B_PRED: model.MODEL_B_GEOMEAN_RATIO,
       MODEL_C_PRED: model.MODEL_C_BASELINE_STABILITY_WEIGHTED, RAW_PREDICTED_SCORE: pred,
-      PREDICTION_SPREAD: model.MODEL_SPREAD, UNCERTAINTY_OOF_Q90_ABS_ERROR: uncertainty,
+      PREDICTION_SPREAD: model.MODEL_SPREAD, MODEL_DISAGREEMENT: model.MODEL_SPREAD,
+      UNCERTAINTY_OOF_Q90_ABS_ERROR: uncertainty,
       PREDICTION_LOW: pred === null || uncertainty === null ? null : Math.max(0, pred - uncertainty),
       PREDICTION_HIGH: pred === null || uncertainty === null ? null : Math.min(100, pred + uncertainty),
       LOCAL_FEATURE_DISTANCE: distanceToTraining(candidate, data.dataset),
@@ -770,37 +1007,46 @@ function rankCandidates(args, data, cv) {
       WHY_INFORMATIONAL: readTsv(path.join(args.mainDir, "ONLINE-CALIBRATION-CANDIDATES.tsv")).find(r => r.ROUTE === candidate.route && r.REVISION === candidate.revision)?.WHY_INFORMATIONAL || "Calibration candidate",
       BUILD_STATUS: build?.BUILD_STATUS || "NOT_RECORDED",
       CORRECTNESS_STATUS: correctnessComplete ? "PASS_7_OF_7" : "INCOMPLETE",
-      EXACT_SOURCE_IDENTITY: bool(sourceExact)
+      EXACT_SOURCE_IDENTITY: bool(sourceExact),
+      PREDICTED_SCORE_ROLE: "LEVEL_1_RANKING_SIGNAL_NOT_OFFICIAL_SCORE"
     };
   });
-  const rankable = predictions.filter(r => r.LOCAL_RUNNABLE === "YES" && r.LOCAL_VECTOR_STATUS === "CORE_VECTOR_COMPLETE" &&
+  const rankable = predictions.filter(r => r.LOCAL_RUNNABLE === "YES" && r.LOCAL_VECTOR_STATUS === "ENGINEERING_VECTOR_COMPLETE" &&
     Number.isFinite(r.RAW_PREDICTED_SCORE) && Number.isFinite(r.LOCAL_FEATURE_DISTANCE) && Number.isFinite(r.PREDICTION_SPREAD));
-  const scoreMetrics = ["LOCAL_FEATURE_DISTANCE", "PREDICTION_SPREAD"];
+  const scoreMetrics = ["LOCAL_FEATURE_DISTANCE", "MODEL_DISAGREEMENT"];
   const rankMaps = scoreMetrics.map(field => {
     const sorted = [...rankable].sort((a, b) => b[field] - a[field]);
     return new Map(sorted.map((r, i) => [r.VERSION, i + 1]));
   });
-  const routeNovel = new Map([...rankable].sort((a, b) => (a.ROUTE_NOVELTY === "YES" ? -1 : 1) - (b.ROUTE_NOVELTY === "YES" ? -1 : 1))
+  const predCenters = rankable.map(r => r.RAW_PREDICTED_SCORE);
+  const center = median(predCenters);
+  for (const r of predictions) r.PREDICTED_RANGE_DIVERSITY = Number.isFinite(r.RAW_PREDICTED_SCORE) && center !== null ? Math.abs(r.RAW_PREDICTED_SCORE - center) : null;
+  const rangeSorted = [...rankable].sort((a, b) => b.PREDICTED_RANGE_DIVERSITY - a.PREDICTED_RANGE_DIVERSITY);
+  const rangeRank = new Map(rangeSorted.map((r, i) => [r.VERSION, i + 1]));
+  const routeNovel = new Map([...rankable].sort((a, b) => (a.ROUTE_NOVELTY === "YES" ? 0 : 1) - (b.ROUTE_NOVELTY === "YES" ? 0 : 1))
     .map((r, i) => [r.VERSION, i + 1]));
   for (const r of predictions) {
     const canRank = rankable.includes(r) && r.EXACT_SOURCE_IDENTITY === "YES";
-    const ranks = [...rankMaps.map(m => m.get(r.VERSION)), routeNovel.get(r.VERSION)];
+    const ranks = [...rankMaps.map(m => m.get(r.VERSION)), rangeRank.get(r.VERSION), routeNovel.get(r.VERSION)];
     r.INFORMATION_GAIN_SCORE = canRank ? mean(ranks) : null;
-    r.INFORMATION_GAIN_STATUS = canRank ? "RANKABLE_INFORMATIONAL_ONLY" : "NOT_RANKABLE_MEASUREMENT_INCOMPLETE";
+    r.INFORMATION_GAIN_STATUS = canRank ? "ENGINEERING_VECTOR_RANKABLE_INFORMATIONAL_ONLY" : "NOT_RANKABLE_MEASUREMENT_INCOMPLETE";
   }
-  const sorted = predictions.filter(r => r.INFORMATION_GAIN_STATUS === "RANKABLE_INFORMATIONAL_ONLY")
+  const sorted = predictions.filter(r => r.INFORMATION_GAIN_STATUS === "ENGINEERING_VECTOR_RANKABLE_INFORMATIONAL_ONLY")
     .sort((a, b) => a.INFORMATION_GAIN_SCORE - b.INFORMATION_GAIN_SCORE || a.VERSION.localeCompare(b.VERSION));
   sorted.forEach((r, i) => { r.INFORMATION_PRIORITY = i + 1; });
   const rankMap = new Map(sorted.map(r => [r.VERSION, r.INFORMATION_PRIORITY]));
   for (const r of predictions) r.TOP3_LABEL_PRIORITY = (rankMap.get(r.VERSION) || 999) <= 3 ? "YES" : "NO";
+  for (const r of predictions) r.WHY_TOP3 = (rankMap.get(r.VERSION) || 999) <= 3 ?
+    "selected for information gain: feature distance/model disagreement/prediction-range diversity/route coverage; labels requested for calibration only" : "outside information-gain TOP-3";
   const headers = [
     "INFORMATION_PRIORITY", "TOP3_LABEL_PRIORITY", "VERSION", "ROUTE", "REVISION", "SOURCE_SHA",
-    "RAW_PREDICTED_SCORE", "MODEL_A_PRED", "MODEL_B_PRED", "MODEL_C_PRED", "PREDICTION_SPREAD",
+    "ENGINEERING_VECTOR_COMPLETE", "QUALITY_SUMMARY", "RAW_PREDICTED_SCORE", "PREDICTED_SCORE_ROLE",
+    "MODEL_A_PRED", "MODEL_B_PRED", "MODEL_C_PRED", "MODEL_DISAGREEMENT", "PREDICTION_SPREAD", "PREDICTED_RANGE_DIVERSITY",
     "UNCERTAINTY_OOF_Q90_ABS_ERROR", "PREDICTION_LOW", "PREDICTION_HIGH",
     "LOCAL_FEATURE_DISTANCE", "DISTANCE_FROM_EXISTING_LABELS", "ROUTE_NOVELTY",
     "CORE_VALID_CASES", "DIAGNOSTIC_VALID_CASES", "SOURCE_RECOVERABLE", "LOCAL_RUNNABLE",
     "LOCAL_VECTOR_STATUS", "BUILD_STATUS", "CORRECTNESS_STATUS", "EXACT_SOURCE_IDENTITY",
-    "INFORMATION_GAIN_SCORE", "INFORMATION_GAIN_STATUS", "WHY_INFORMATIONAL"
+    "INFORMATION_GAIN_SCORE", "INFORMATION_GAIN_STATUS", "WHY_INFORMATIONAL", "WHY_TOP3"
   ];
   const output = predictions.map(r => Object.fromEntries(headers.map(h => [h, typeof r[h] === "number" ? fmt(r[h]) : r[h]])));
   writeTsv(path.join(args.mainDir, "ONLINE-CALIBRATION-CANDIDATES-V2.tsv"), headers, output);
@@ -841,6 +1087,13 @@ function main() {
     console.log(JSON.stringify({ version: key(candidate), results: result }, null, 2));
     return;
   }
+  if (args.command === "engineering-measure") {
+    const candidate = selectCandidate(args.version);
+    if (!Number.isInteger(args.device)) throw new Error("engineering-measure requires --device N");
+    engineeringMeasureCandidate(args, candidate);
+    console.log(JSON.stringify({ mode: "ENGINEERING_3RUN", version: key(candidate), run_file: engineeringRunFile(args), device: args.device }, null, 2));
+    return;
+  }
   if (args.command === "correctness") {
     const candidate = selectCandidate(args.version);
     if (!Number.isInteger(args.device)) throw new Error("correctness requires --device N");
@@ -860,11 +1113,28 @@ function main() {
     console.log(JSON.stringify({ rows: vectorize(args), file: path.join(args.mainDir, "CALIBRATION-CANDIDATES-VECTORS.tsv") }, null, 2));
     return;
   }
+  if (args.command === "engineering-vectorize") {
+    const rows = engineeringVectorize(args);
+    console.log(JSON.stringify({ mode: "ENGINEERING_3RUN", cells: rows.length,
+      complete_cells: rows.filter(r => r.ENGINEERING_VECTOR_STATUS === "VALID").length,
+      file: path.join(args.mainDir, "CALIBRATION-CANDIDATES-VECTORS-V2.tsv") }, null, 2));
+    return;
+  }
   if (args.command === "rank") {
     const cv = writeValidation(args, data);
-    const vectors = vectorize(args);
+    const vectors = exists(engineeringRunFile(args)) ? engineeringVectorize(args) : vectorize(args);
     const ranked = rankCandidates(args, data, cv);
     console.log(JSON.stringify({ measured_cells: vectors.filter(r => r.QUALITY === "MEASUREMENT_STABLE").length, candidates: ranked }, null, 2));
+    return;
+  }
+  if (args.command === "engineering-rank") {
+    const cv = writeValidation(args, data);
+    const vectors = engineeringVectorize(args);
+    const ranked = rankCandidates(args, data, cv);
+    const top3 = [...ranked].filter(r => r.TOP3_LABEL_PRIORITY === "YES")
+      .sort((a, b) => Number(a.INFORMATION_PRIORITY) - Number(b.INFORMATION_PRIORITY));
+    console.log(JSON.stringify({ mode: "ENGINEERING_3RUN", complete_cells: vectors.filter(r => r.ENGINEERING_VECTOR_STATUS === "VALID").length,
+      top3, candidates: ranked }, null, 2));
     return;
   }
   if (args.command === "validate-and-rank") {
