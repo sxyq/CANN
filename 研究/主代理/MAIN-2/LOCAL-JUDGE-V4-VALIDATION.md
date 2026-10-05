@@ -22,7 +22,7 @@ Mode: CALIBRATED_SURROGATE. Models A/B/C use only core Suite V2 cases C13/C14/C1
 
 ## Ranking-level assessment
 
-- Judge level assessment=LEVEL_1_LIMITED_RANKING_SIGNAL. The evaluator does not automatically assign a level; Main must weigh overall, route-held-out, TOP-K, and near-Champion evidence.
+- Judge level assessment=LEVEL_1. Engineering vectors make candidate ranking operational, but Planning has not promoted the Judge level. The evaluator does not automatically assign a level; Main must weigh overall, route-held-out, TOP-K, and near-Champion evidence.
 - Level 2 authorizes only limited local exploration, not automatic Online submission. Level 3 requires reliable near-Champion ordering; inspect its pair count and accuracy rather than overall rank alone.
 - No actual candidate label exceeds 45.16, so positive-class sensitivity remains unknown. Conservative V3 margins are not used as ranking scores.
 
@@ -34,3 +34,15 @@ Mode: CALIBRATED_SURROGATE. Models A/B/C use only core Suite V2 cases C13/C14/C1
 - MODEL_C_BASELINE_STABILITY_WEIGHTED Route-out: MAE=5.319687, Spearman=0.734266, pairwise=0.772727, near=0.333333, TOP3 recall=0.666667.
 - ENSEMBLE LOO: MAE=6.462037, Spearman=0.678322, pairwise=0.727273, near=0.333333, TOP3 recall=0.666667.
 - ENSEMBLE Route-out: MAE=5.281435, Spearman=0.734266, pairwise=0.772727, near=0.333333, TOP3 recall=0.666667.
+
+## Engineering vector completion
+
+The historical metrics above are unchanged. The current five calibration
+candidates were measured separately in `ENGINEERING_3RUN` mode: 3 interleaved
+Parent/Candidate runs per case, order `P-C/C-P/P-C`, warmup 45, and 31 device
+event samples per run. All 35 cells are valid. Quality is GOOD=12, FAIR=8,
+POOR=15, INVALID=0. POOR cells remain in
+`CALIBRATION-CANDIDATES-VECTORS-V2.tsv`; they are not removed or converted into
+formal Local Scores. Diagnostic cases C01/C08/C11 remain outside model
+features. Predicted scores are Level-1 ranking signals only and are not
+Official scores.
