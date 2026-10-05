@@ -1,0 +1,20 @@
+diff --git "a/\347\272\277\344\270\212\347\273\223\346\236\234/R31B/V011/submission.asc" "b/\346\234\254\345\234\260\345\256\236\351\252\214/ROW-OCCUPANCY-CHAMPION-X/V001/submission.asc"
+index 6adb6f58..e0efb8cf 100644
+--- "a/\347\272\277\344\270\212\347\273\223\346\236\234/R31B/V011/submission.asc"
++++ "b/\346\234\254\345\234\260\345\256\236\351\252\214/ROW-OCCUPANCY-CHAMPION-X/V001/submission.asc"
+@@ -3529,7 +3529,14 @@ extern "C" void run_kernel(GM_ADDR x, const TensorGroupInfo& info_x, GM_ADDR res
+         return;
+     }
+ 
+-    uint64_t requestedBlocks = availableCoreNum > 0 ? static_cast<uint64_t>(availableCoreNum) : 1;
++    const uint64_t launchCoreCount = availableCoreNum > 0
++        ? static_cast<uint64_t>(availableCoreNum) : 1;
++    uint64_t requestedBlocks = launchCoreCount;
++    // ROW-OCC-H1: expose a bounded second logical work wave without changing
++    // the device-side contiguous row ownership or any compute path.
++    if (requestedBlocks < rowCount && requestedBlocks <= UINT64_MAX / 2) {
++        requestedBlocks *= 2;
++    }
+     if (requestedBlocks > rowCount) {
+         requestedBlocks = rowCount;
+     }

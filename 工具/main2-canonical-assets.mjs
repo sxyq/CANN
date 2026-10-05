@@ -148,6 +148,10 @@ function buildInventory() {
   const official=readTsv(path.join(ROOT,'研究/主代理/MAIN-2/ALL-OFFICIAL-RESULTS.tsv'));
   // The old census is only an additional pointer; every source is rehashed below.
   const old=readTsv(path.join(ROOT,'研究/主代理/MAIN-2/MAIN2-ALL-LOCAL-REVISIONS.tsv'));
+  // SCORE_EVENT_CLOSED is a control fact, not a source-inventory fact. Preserve
+  // it while rebuilding identities so a census cannot reopen completed scores.
+  const previousRegistry=readTsv(REGISTRY);
+  const previousClosed=new Map(previousRegistry.map(r=>[key(r),r.SCORE_EVENT_CLOSED||'NO']));
   for(const r of old) if(scope.has(r.ROUTE) && /^V\d{3}$/.test(r.REVISION)) add(r);
   const rows=[];
   for(const item of [...items.values()].sort((a,b)=>key(a).localeCompare(key(b)))) {
@@ -210,7 +214,8 @@ function buildInventory() {
       SOURCE_PATH:source?.file||'NA',CANONICAL_SOURCE_PATH:snapshot||'NA',SOURCE_GIT_OBJECT:object||'NA',
       SOURCE_REF:sourceWt?(sourceWt.branch+'@'+sourceWt.head):(source?.ref||'NA'),SOURCE_RELATIVE_PATH:sourceRel||source?.relative||'NA',
       METADATA_PATH:item.meta[0]?.file||'NA',EVIDENCE_PATH:[...new Set([item.meta[0]?.file,item.local[0]?.file,source?.file,noBudget,ledger._file].filter(Boolean))].join(';'),
-      SOURCE_CANDIDATES:available.map(r=>r.sha+'@'+r.file).join(';')||'NA',SCOPE_EVIDENCE:[...scope.get(item.ROUTE)].join(';')
+      SOURCE_CANDIDATES:available.map(r=>r.sha+'@'+r.file).join(';')||'NA',SCOPE_EVIDENCE:[...scope.get(item.ROUTE)].join(';'),
+      SCORE_EVENT_CLOSED:previousClosed.get(key(item))||'NO'
     });
   }
   // A source SHA outranks stale text that incorrectly says FROZEN for a sibling.
@@ -230,7 +235,7 @@ function buildInventory() {
     Object.assign(row,{ROUTE_ID:route,ROUTE_NAME:route,ROUTE:route,ROUTE_CLASS:'RESEARCH_ONLY',REVISION:'NONE',
       HYPOTHESIS_ID:'SEE_COMMITTED_ROUTE_RESEARCH',IMPLEMENTED:'NO',SOURCE_RECOVERABLE:'NO',BUILDABLE:'NO',CORRECTNESS_KNOWN:'NO',
       CORRECTNESS_VALID:'NO',KNOWN_UNRESOLVED_CORRECTNESS_FAILURE:'NO',CURRENT_STATUS:'RESEARCH_ONLY_NO_IMPLEMENTATION',
-      SCOPE_EVIDENCE:[...scope.get(route)].join(';'),EVIDENCE_PATH:[...scope.get(route)].join(';')}); rows.push(row);
+      SCOPE_EVIDENCE:[...scope.get(route)].join(';'),EVIDENCE_PATH:[...scope.get(route)].join(';'),SCORE_EVENT_CLOSED:'NO'}); rows.push(row);
   }
   return {rows,anomalies,wts,scope,files,sources};
 }
