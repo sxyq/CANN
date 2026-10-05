@@ -48,6 +48,20 @@ ONE CHANGE → COMPILE → CORRECTNESS → LOCAL → RESULT → COMMIT → NEXT 
 
 单 Revision 只表达一个小变化。失败和负结果保留。记录异步写入，不能成为实验前置条件。
 
+## server3 资源准入
+
+对 Compile、Correctness、Local、Profile 使用同一个准入条件：
+
+```text
+目标 NPU FREE_HBM >= 100 MB → 允许立即执行
+```
+
+以下都不是执行 Gate，只记录不阻塞：AICore utilization 非零、Vector/Core busy、VLLM 驻留、其他用户进程、device 非 idle、load 较高、没有 exclusive lease、没有 exclusive authorization、旧 lease、未知 lease owner、不存在 clean window。
+
+lease 只是 coordination / bookkeeping metadata，不是执行权限；不得为了运行实验删除、覆盖、伪造或重写他人的 lease。不得因上述事实要求等待、暂停 Route、拒绝 Correctness/Local、要求独占 NPU 或要求资源负责人批准。
+
+唯一有效的设备资源停止条件：所有可用 NPU FREE_HBM < 100 MB；真实执行出现 OOM / allocation failure / runtime resource failure；启动自己的任务会实际破坏或终止其他用户任务；server3 不可连接。
+
 ## 绝对安全规则
 
 - 禁止 force push、reset、clean、历史改写和删除失败证据；
