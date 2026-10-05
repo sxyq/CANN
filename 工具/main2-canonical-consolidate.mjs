@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
-import {ROOT,DATA,REGISTRY,BASE_SHA,SCORER,SUITE,readTsv,writeTsv,writeJson,write,json,exists,sha,key,versionDir,git} from './main2-canonical-assets.mjs';
+import {ROOT,DATA,REGISTRY,BASE_SHA,SCORER,SUITE,readTsv,writeTsv,writeJson,write,json,text,exists,sha,key,versionDir,git} from './main2-canonical-assets.mjs';
 import {median,fmt,scoreOne} from './main2-canonical-scorer.mjs';
 
 const SCOREBOARD=path.join(ROOT,'本地实验/MAIN2-CANONICAL-LOCAL-SCOREBOARD.tsv');
@@ -14,6 +14,11 @@ const MAIN='研究/主代理/MAIN-2';
 const MANIFEST=path.join(ROOT,'归档/MAIN2-LOCAL-ASSET-CLEANUP-MANIFEST.tsv');
 const finite=v=>v!==''&&v!=='NA'&&v!=null&&Number.isFinite(Number(v));
 const rel=f=>path.relative(ROOT,path.resolve(f));
+const planningStatus=()=>{
+  const scheduler=text(path.join(ROOT,'调度/当前任务.tsv'));
+  const m=scheduler.match(/^ROW-OCCUPANCY-CHAMPION-X\t[^\n]*?MAIN_SELECTED=([^;\t]+)/m);
+  return m ? `PLANNING_SELECTED=${m[1]}` : 'MAIN_SELECTED=NONE';
+};
 
 export function direction(row) {
   if(!row || row.CANONICAL_LOCAL_SCORE==='UNSCORED')return 'UNSCORED';
@@ -66,7 +71,10 @@ export function summary() {
       ROUTE_TREND:trend(rows),TREND_BASIS:'Quality-qualified results only; POOR is not proof of plateau/regression',
       NUMERIC_SEQUENCE:rows.map(r=>r.REVISION+'='+r.CANONICAL_LOCAL_SCORE).join(';')||'RESEARCH_ONLY',
       REAL_PARENT_GROUPS:[...sameParent].map(([parent,revs])=>parent+':'+revs.join(',')).join(';')||'NONE',
-      SCORER_VERSION:SCORER,SUITE_VERSION:SUITE,ROUTE_DECISION:'UNCHANGED;MAIN_SELECTED=NONE',
+      SCORER_VERSION:SCORER,SUITE_VERSION:SUITE,
+      ROUTE_DECISION:route==='ROW-OCCUPANCY-CHAMPION-X'
+        ? `${planningStatus()};V001_LOCAL_REJECTED;H2_DIRECT_V011_SIBLING_UNDER_REVIEW`
+        : 'UNCHANGED;MAIN_SELECTED=NONE',
       EVIDENCE_PATH:'本地实验/MAIN2-CANONICAL-LOCAL-SCOREBOARD.tsv;技术路线/MAIN2-CANONICAL-ROUTE-REGISTRY.tsv'};
   });
   writeTsv(SUMMARY,out);
@@ -102,7 +110,8 @@ export function audit({save=false}={}) {
     IMPLEMENTED:implemented.length,SCORED:coverage.filter(r=>finite(r.SCORE)).length,
     UNSCORED:coverage.filter(r=>!finite(r.SCORE)).length,ANCHOR_SOURCE_SHA:BASE_SHA,
     ANCHOR_FRESH:anchor.length===21&&anchor.every(r=>r.FRESH_NPU_RUN==='YES'),ISSUES:issues,
-    KERNEL_PERFORMANCE_REVISIONS_CREATED:0,DIRECT_ONLINE_SUBMISSIONS:0,MAIN_SELECTED:'NONE'};
+    KERNEL_PERFORMANCE_REVISIONS_CREATED:0,DIRECT_ONLINE_SUBMISSIONS:0,
+    MAIN_SELECTED:planningStatus().replace(/^PLANNING_SELECTED=/,'')};
   if(save) {writeTsv(path.join(DATA,'coverage-audit.tsv'),coverage);writeJson(path.join(DATA,'coverage-audit.json'),result);}
   return result;
 }
