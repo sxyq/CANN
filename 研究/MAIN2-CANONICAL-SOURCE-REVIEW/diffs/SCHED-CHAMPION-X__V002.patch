@@ -1,0 +1,102 @@
+diff --git a/home/data4t2/lelinfeng/cann-w2-main2-control/本地实验/MAIN2-CANONICAL-V1/sources/a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3.asc b/home/data4t2/lelinfeng/cann-w2-main2-control/本地实验/MAIN2-CANONICAL-V1/sources/de1e93c74338802e646258ada08a8cac1031496a9985e585a5a89015b81bc990.asc
+index 6adb6f58..1b97001c 100644
+--- a/home/data4t2/lelinfeng/cann-w2-main2-control/本地实验/MAIN2-CANONICAL-V1/sources/a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3.asc
++++ b/home/data4t2/lelinfeng/cann-w2-main2-control/本地实验/MAIN2-CANONICAL-V1/sources/de1e93c74338802e646258ada08a8cac1031496a9985e585a5a89015b81bc990.asc
+@@ -163,22 +163,51 @@ public:
+         if (widePath_) {
+             if constexpr (AscendC::IsSameType<T, float>::value) {
+                 ProcessWideFp32(rowCount, rowWidth, blockCount, invRowWidth, epsilon);
+             } else {
+                 ProcessWideLowPrecision(rowCount, rowWidth, blockCount, invRowWidth, epsilon);
+             }
+             return;
+         }
++        // Whole-group ownership gated on core parallelism: apply only when
++        // groups keep at least half of useful row-parallelism.
+         const uint64_t blockIdx = static_cast<uint64_t>(AscendC::GetBlockIdx());
+-        const uint64_t baseRows = rowCount / blockCount;
+-        const uint64_t extraRows = rowCount % blockCount;
+-        const uint64_t beginRow = blockIdx * baseRows +
+-                                  (blockIdx < extraRows ? blockIdx : extraRows);
+-        const uint64_t localRows = baseRows + (blockIdx < extraRows ? 1 : 0);
++        const uint64_t rowBytes = rowWidth * static_cast<uint64_t>(sizeof(T));
++        uint64_t gcdVal = rowBytes;
++        uint64_t gcdTmp = 32;
++        while (gcdTmp != 0) {
++            const uint64_t gcdNext = gcdVal % gcdTmp;
++            gcdVal = gcdTmp;
++            gcdTmp = gcdNext;
++        }
++        const uint64_t rowGroup = 32 / gcdVal;
++        const uint64_t totalGroups = (rowCount + rowGroup - 1) / rowGroup;
++        const uint64_t activeRowUnits = (blockCount < rowCount) ? blockCount : rowCount;
++        const bool useGroupSplit = (totalGroups * 2ULL) >= activeRowUnits;
++        uint64_t beginRow;
++        uint64_t localRows;
++        if (useGroupSplit) {
++            const uint64_t baseGroups = totalGroups / blockCount;
++            const uint64_t extraGroups = totalGroups % blockCount;
++            const uint64_t beginGroup = blockIdx * baseGroups +
++                                        (blockIdx < extraGroups ? blockIdx : extraGroups);
++            const uint64_t localGroups = baseGroups + (blockIdx < extraGroups ? 1 : 0);
++            beginRow = beginGroup * rowGroup;
++            const uint64_t groupSpan = localGroups * rowGroup;
++            const uint64_t remainingRows =
++                beginRow < rowCount ? (rowCount - beginRow) : 0;
++            localRows = groupSpan < remainingRows ? groupSpan : remainingRows;
++        } else {
++            const uint64_t baseRows = rowCount / blockCount;
++            const uint64_t extraRows = rowCount % blockCount;
++            beginRow = blockIdx * baseRows +
++                       (blockIdx < extraRows ? blockIdx : extraRows);
++            localRows = baseRows + (blockIdx < extraRows ? 1 : 0);
++        }
+         if constexpr (AscendC::IsSameType<T, float>::value) {
+             if (rowWidth == static_cast<uint64_t>(kCacheElems) && localRows > 1) {
+                 ProcessFp32FullRowOutputPipelined(beginRow, localRows, invRowWidth, epsilon);
+                 return;
+             }
+             // For aligned small rows, x/residual for a short row group are
+             // contiguous in GM.  One batch DMA and vector add/square remove
+             // most of the per-row launch overhead before the independent
+@@ -553,18 +582,16 @@ public:
+                 ToFloat(residualFp32, residualLocal, valid);
+                 AscendC::PipeBarrier<PIPE_V>();
+                 AscendC::Add(valueLocal, xFp32, residualFp32, valid);
+             }
+             AscendC::PipeBarrier<PIPE_V>();
+             AscendC::Mul(xFp32, valueLocal, valueLocal, valid);
+             AscendC::PipeBarrier<PIPE_V>();
+             AscendC::ReduceSum(reduceLocal, xFp32, residualFp32, valid);
+-            AscendC::SetFlag<AscendC::HardEvent::V_MTE2>(inputRelease);
+-            needInputRelease = true;
+ 
+             // Param MTE2 overlaps this scalar tail (single-row case).
+             SyncVToS();
+             const float squareSum = reduceLocal.GetValue(0);
+             const float meanSquare = squareSum * invRowWidth + epsilon;
+             SyncSToV();
+             AscendC::Duplicate(xFp32, meanSquare, 1);
+             AscendC::Sqrt(xFp32, xFp32, 1);
+@@ -604,16 +631,21 @@ public:
+                 AscendC::Add(valueLocal, valueLocal, residualFp32, valid);
+                 AscendC::PipeBarrier<PIPE_V>();
+                 AscendC::LocalTensor<T> outputLocal = xBuf_.Get<T>();
+                 FromFloat(outputLocal, valueLocal, valid);
+                 AscendC::PipeBarrier<PIPE_V>();
+                 SyncVToMTE3();
+                 Store(outputGm_, rowOffset, outputLocal, valid);
+             }
++            // BF16 output reuses xBuf_ as the MTE3 source. Wait for the store
++            // to drain before releasing xBuf_ to MTE2.
++            SyncMTE3ToV();
++            AscendC::SetFlag<AscendC::HardEvent::V_MTE2>(inputRelease);
++            needInputRelease = true;
+         }
+         if (needInputRelease) {
+             AscendC::WaitFlag<AscendC::HardEvent::V_MTE2>(inputRelease);
+         }
+         SyncMTE3ToV();
+         pipe_.ReleaseEventID<AscendC::HardEvent::MTE2_V>(inputReady);
+         pipe_.ReleaseEventID<AscendC::HardEvent::MTE2_V>(paramReady);
+         pipe_.ReleaseEventID<AscendC::HardEvent::V_MTE2>(inputRelease);

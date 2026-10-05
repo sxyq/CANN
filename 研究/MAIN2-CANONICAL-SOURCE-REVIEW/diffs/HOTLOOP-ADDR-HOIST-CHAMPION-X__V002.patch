@@ -1,0 +1,68 @@
+diff --git a/home/data4t2/lelinfeng/cann-w2-main2-control/本地实验/MAIN2-CANONICAL-V1/sources/a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3.asc b/home/data4t2/lelinfeng/cann-w2-main2-control/本地实验/MAIN2-CANONICAL-V1/sources/40b1548eb0862691e92b10f242e3f98ccf4d232596a2704ddbc25eab7b3aa3f3.asc
+index 6adb6f58..b788817d 100644
+--- a/home/data4t2/lelinfeng/cann-w2-main2-control/本地实验/MAIN2-CANONICAL-V1/sources/a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3.asc
++++ b/home/data4t2/lelinfeng/cann-w2-main2-control/本地实验/MAIN2-CANONICAL-V1/sources/40b1548eb0862691e92b10f242e3f98ccf4d232596a2704ddbc25eab7b3aa3f3.asc
+@@ -3117,22 +3117,22 @@ private:
+             AscendC::LocalTensor<T> xBase = xBuf_.Get<T>();
+             AscendC::LocalTensor<T> rBase = residualBuf_.Get<T>();
+             AscendC::LocalTensor<float> valueFp32 = valueFp32Buf_.Get<float>();
+             AscendC::LocalTensor<float> xFp32 = xFp32Buf_.Get<float>();
+             AscendC::LocalTensor<float> residualFp32 = residualFp32Buf_.Get<float>();
+             const int32_t units = batchRows * tileCount;
+             bool relA = false;
+             bool relB = false;
++            uint64_t rowBase = batchBegin * rowWidth;
+             for (int32_t u = 0; u < units; ++u) {
+                 const int32_t batchRow = u / tileCount;
+                 const int32_t tile = u - batchRow * tileCount;
+                 const uint64_t col = static_cast<uint64_t>(tile) * tileWidth;
+-                const uint64_t rowOffset =
+-                    (batchBegin + static_cast<uint64_t>(batchRow)) * rowWidth;
++                const uint64_t rowOffset = rowBase;
+                 const int32_t valid = static_cast<int32_t>(
+                     rowWidth - col < static_cast<uint64_t>(tileWidth)
+                         ? rowWidth - col : static_cast<uint64_t>(tileWidth));
+                 const bool useA = (u & 1) == 0;
+                 AscendC::LocalTensor<T> xLocal = useA ? xBase : xBase[tileWidth];
+                 AscendC::LocalTensor<T> residualLocal =
+                     useA ? rBase : rBase[tileWidth];
+                 const AscendC::TEventID rd = useA ? rd0 : rd1;
+@@ -3143,17 +3143,17 @@ private:
+                     AscendC::SetFlag<AscendC::HardEvent::MTE2_V>(rd);
+                 }
+                 AscendC::WaitFlag<AscendC::HardEvent::MTE2_V>(rd);
+                 if (u + 1 < units) {
+                     const int32_t nRow = (u + 1) / tileCount;
+                     const int32_t nTile = (u + 1) - nRow * tileCount;
+                     const uint64_t nCol = static_cast<uint64_t>(nTile) * tileWidth;
+                     const uint64_t nRowOffset =
+-                        (batchBegin + static_cast<uint64_t>(nRow)) * rowWidth;
++                        (nRow == batchRow ? rowBase : rowBase + rowWidth);
+                     const int32_t nValid = static_cast<int32_t>(
+                         rowWidth - nCol < static_cast<uint64_t>(tileWidth)
+                             ? rowWidth - nCol : static_cast<uint64_t>(tileWidth));
+                     const bool nextA = !useA;
+                     AscendC::LocalTensor<T> xNext =
+                         nextA ? xBase : xBase[tileWidth];
+                     AscendC::LocalTensor<T> rNext =
+                         nextA ? rBase : rBase[tileWidth];
+@@ -3203,16 +3203,19 @@ private:
+                         xFp32, valid);
+                 }
+                 AscendC::SetFlag<AscendC::HardEvent::V_MTE2>(rel);
+                 if (useA) {
+                     relA = true;
+                 } else {
+                     relB = true;
+                 }
++                if (tile + 1 == tileCount) {
++                    rowBase += rowWidth;
++                }
+             }
+             if (relA) {
+                 AscendC::WaitFlag<AscendC::HardEvent::V_MTE2>(rel0);
+             }
+             if (relB) {
+                 AscendC::WaitFlag<AscendC::HardEvent::V_MTE2>(rel1);
+             }
+             pipe_.ReleaseEventID<AscendC::HardEvent::MTE2_V>(rd0);

@@ -1,0 +1,88 @@
+diff --git a/home/data4t2/lelinfeng/cann-w2-main2-control/本地实验/MAIN2-CANONICAL-V1/sources/a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3.asc b/home/data4t2/lelinfeng/cann-w2-main2-control/本地实验/MAIN2-CANONICAL-V1/sources/0fc71e8e62e39ed3b894b7e8fb8cabb6372f802c0a4c342eeb246629f8e4efe4.asc
+index 6adb6f58..8a49756b 100644
+--- a/home/data4t2/lelinfeng/cann-w2-main2-control/本地实验/MAIN2-CANONICAL-V1/sources/a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3.asc
++++ b/home/data4t2/lelinfeng/cann-w2-main2-control/本地实验/MAIN2-CANONICAL-V1/sources/0fc71e8e62e39ed3b894b7e8fb8cabb6372f802c0a4c342eeb246629f8e4efe4.asc
+@@ -3216,16 +3216,40 @@ private:
+                 AscendC::WaitFlag<AscendC::HardEvent::V_MTE2>(rel1);
+             }
+             pipe_.ReleaseEventID<AscendC::HardEvent::MTE2_V>(rd0);
+             pipe_.ReleaseEventID<AscendC::HardEvent::MTE2_V>(rd1);
+             pipe_.ReleaseEventID<AscendC::HardEvent::V_MTE2>(rel0);
+             pipe_.ReleaseEventID<AscendC::HardEvent::V_MTE2>(rel1);
+             }
+ 
++            // V001 H1: issue pass-2 tile-0 gamma/bias MTE2 BEFORE the invRms
++            // scalar loop so parameter DMA overlaps that loop. xBuf_/residualBuf_
++            // are free after pass-1 rel0/rel1 above; invRms uses only
++            // xFp32Buf_/residualFp32Buf_/reduceFp32Buf_.
++            const AscendC::TEventID prd0 =
++                pipe_.AllocEventID<AscendC::HardEvent::MTE2_V>();
++            const AscendC::TEventID prd1 =
++                pipe_.AllocEventID<AscendC::HardEvent::MTE2_V>();
++            const AscendC::TEventID prel0 =
++                pipe_.AllocEventID<AscendC::HardEvent::V_MTE2>();
++            const AscendC::TEventID prel1 =
++                pipe_.AllocEventID<AscendC::HardEvent::V_MTE2>();
++            AscendC::LocalTensor<T> gBase = xBuf_.Get<T>();
++            AscendC::LocalTensor<T> bBase = residualBuf_.Get<T>();
++            bool pRelA = false;
++            bool pRelB = false;
++            if (tileCount > 0) {
++                Load(gBase, gammaGm_, 0, tileWidth < static_cast<int32_t>(rowWidth)
++                    ? tileWidth : static_cast<int32_t>(rowWidth));
++                Load(bBase, biasGm_, 0, tileWidth < static_cast<int32_t>(rowWidth)
++                    ? tileWidth : static_cast<int32_t>(rowWidth));
++                AscendC::SetFlag<AscendC::HardEvent::MTE2_V>(prd0);
++            }
++
+             for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
+                 AscendC::LocalTensor<float> xFp32 = xFp32Buf_.Get<float>();
+                 AscendC::LocalTensor<float> residualFp32 = residualFp32Buf_.Get<float>();
+                 AscendC::LocalTensor<float> reduceLocal2 = reduceFp32Buf_.Get<float>();
+                 AscendC::ReduceSum(
+                     residualFp32,
+                     reduceLocal2[batchRow * reduceStride],
+                     xFp32, tileCount);
+@@ -3235,40 +3259,22 @@ private:
+                 SyncSToV();
+                 AscendC::Duplicate(xFp32, meanSquare, 1);
+                 AscendC::Sqrt(xFp32, xFp32, 1);
+                 AscendC::PipeBarrier<PIPE_V>();
+                 SyncVToS();
+                 invRmsValues[batchRow] = 1.0f / xFp32.GetValue(0);
+                 SyncSToV();
+             }
+-            SyncVToMTE2();
++            // V001 H1: former SyncVToMTE2() dropped; tile-0 param Load is
++            // already in flight and ordered by pass-1 rel0/rel1 only.
+ 
+             // Pass 2: one gamma/bias tile serves the whole retained batch.
+             // V011: 2-deep param MTE2 (next tile loads during this tile's apply).
+             {
+-            const AscendC::TEventID prd0 =
+-                pipe_.AllocEventID<AscendC::HardEvent::MTE2_V>();
+-            const AscendC::TEventID prd1 =
+-                pipe_.AllocEventID<AscendC::HardEvent::MTE2_V>();
+-            const AscendC::TEventID prel0 =
+-                pipe_.AllocEventID<AscendC::HardEvent::V_MTE2>();
+-            const AscendC::TEventID prel1 =
+-                pipe_.AllocEventID<AscendC::HardEvent::V_MTE2>();
+-            AscendC::LocalTensor<T> gBase = xBuf_.Get<T>();
+-            AscendC::LocalTensor<T> bBase = residualBuf_.Get<T>();
+-            bool pRelA = false;
+-            bool pRelB = false;
+-            if (tileCount > 0) {
+-                Load(gBase, gammaGm_, 0, tileWidth < static_cast<int32_t>(rowWidth)
+-                    ? tileWidth : static_cast<int32_t>(rowWidth));
+-                Load(bBase, biasGm_, 0, tileWidth < static_cast<int32_t>(rowWidth)
+-                    ? tileWidth : static_cast<int32_t>(rowWidth));
+-                AscendC::SetFlag<AscendC::HardEvent::MTE2_V>(prd0);
+-            }
+             for (int32_t tile = 0; tile < tileCount; ++tile) {
+                 const uint64_t col = static_cast<uint64_t>(tile) * tileWidth;
+                 const int32_t valid = static_cast<int32_t>(
+                     rowWidth - col < static_cast<uint64_t>(tileWidth)
+                         ? rowWidth - col : static_cast<uint64_t>(tileWidth));
+                 const bool useA = (tile & 1) == 0;
+                 AscendC::LocalTensor<T> gammaLocal = useA ? gBase : gBase[tileWidth];
+                 AscendC::LocalTensor<T> biasLocal = useA ? bBase : bBase[tileWidth];

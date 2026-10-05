@@ -1,0 +1,33 @@
+diff --git a/home/data4t2/lelinfeng/cann-w2-main2-control/本地实验/MAIN2-CANONICAL-V1/sources/a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3.asc b/home/data4t2/lelinfeng/cann-w2-main2-control/本地实验/MAIN2-CANONICAL-V1/sources/d23593ce88fd7011a604f50cfba3948904f4f97f66641346626143dd16af3548.asc
+index 6adb6f58..3b99fc07 100644
+--- a/home/data4t2/lelinfeng/cann-w2-main2-control/本地实验/MAIN2-CANONICAL-V1/sources/a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3.asc
++++ b/home/data4t2/lelinfeng/cann-w2-main2-control/本地实验/MAIN2-CANONICAL-V1/sources/d23593ce88fd7011a604f50cfba3948904f4f97f66641346626143dd16af3548.asc
+@@ -557,25 +557,22 @@ public:
+             AscendC::PipeBarrier<PIPE_V>();
+             AscendC::Mul(xFp32, valueLocal, valueLocal, valid);
+             AscendC::PipeBarrier<PIPE_V>();
+             AscendC::ReduceSum(reduceLocal, xFp32, residualFp32, valid);
+             AscendC::SetFlag<AscendC::HardEvent::V_MTE2>(inputRelease);
+             needInputRelease = true;
+ 
+             // Param MTE2 overlaps this scalar tail (single-row case).
++            // V003 W4: collapse the two V-S round-trips into one. Same formula
++            // (squareSum * invRowWidth + epsilon, then 1/sqrt) on the scalar side.
+             SyncVToS();
+             const float squareSum = reduceLocal.GetValue(0);
+             const float meanSquare = squareSum * invRowWidth + epsilon;
+-            SyncSToV();
+-            AscendC::Duplicate(xFp32, meanSquare, 1);
+-            AscendC::Sqrt(xFp32, xFp32, 1);
+-            AscendC::PipeBarrier<PIPE_V>();
+-            SyncVToS();
+-            const float invRms = 1.0f / xFp32.GetValue(0);
++            const float invRms = 1.0f / std::sqrt(meanSquare);
+             SyncSToV();
+ 
+             if (!residentParams) {
+                 AscendC::WaitFlag<AscendC::HardEvent::MTE2_V>(paramReady);
+             }
+             AscendC::Muls(valueLocal, valueLocal, invRms, valid);
+             AscendC::PipeBarrier<PIPE_V>();
+             if constexpr (AscendC::IsSameType<T, float>::value) {

@@ -9,10 +9,10 @@
 | R31B V011 Local Anchor | 100.000000 — fresh ENGINEERING_3RUN |
 | Current Active Route | NONE — performance development frozen |
 | Current Active Revision | NONE — existing assets only |
-| Current Local Score | UNSCORED (UB-LIVENESS-X/V003) |
-| Delta vs Local Champion | N/A |
-| Next Planning Gate | Canonical asset census, scoreboard and route advice; MAIN_SELECTED=NONE |
+| Current Local Score | 100.725142 (ASYNC-OVERLAP-CHAMPION-X/V001; numerical only) |
+| Delta vs Local Champion | 0.000000 |
+| Next Planning Gate | Planning route decision from canonical scoreboard and route pack; MAIN_SELECTED=NONE |
 | PUSH_STATUS | PUSH_PENDING_NETWORK; last verified remote 1825d393 |
 
-Truth: [scoreboard](../本地实验/MAIN2-CANONICAL-LOCAL-SCOREBOARD.tsv) · [registry](../技术路线/MAIN2-CANONICAL-ROUTE-REGISTRY.tsv).
+Truth: [scoreboard](../本地实验/MAIN2-CANONICAL-LOCAL-SCOREBOARD.tsv) · [registry](../技术路线/MAIN2-CANONICAL-ROUTE-REGISTRY.tsv) · [planning pack](MAIN2-NEXT-ROUTE-PLANNING-PACK.md).
 Local score is not an Official score or a prediction. Predictor history is not a gate.
