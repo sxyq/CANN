@@ -440,3 +440,51 @@ Readiness blockers are: one retained case, non-nested exploratory case
 selection, one false positive, and high median jitter in most candidate cases.
 Performance revisions and Online submissions remain frozen pending Planning /
 Review calibration follow-up.
+
+## 16. Local-to-Online Calibration V3 — 2026-10-05
+
+This section supersedes the V2 readiness/validation figures in section 15;
+section 15 is retained as the historical V2 snapshot.
+
+V2_FEATURE_SELECTION_LEAKAGE=YES
+V2_C13_SELECTION=USED_ALL_12_OFFICIAL_CANDIDATE_LABELS
+V2_METRICS_STATUS=OPTIMISTIC_NON_NESTED
+CALIBRATION_CANDIDATES=12 / 11 ROUTES
+FRESH_R31B_V011_ANCHOR=AVAILABLE; OFFICIAL=45.16; LOCAL_VECTOR=15_OF_16
+OUTER_VALIDATION=VERSION_LOO + LEAVE_ONE_ROUTE_OUT
+KERNEL_CHANGE=0
+NPU_RERUN=0
+DIRECT_ONLINE_SUBMISSION=0
+LOCAL_JUDGE_READY=NO
+PERFORMANCE_REVISION_FREEZE=ACTIVE
+PLANNING_DECISIONS_CHANGED=0
+
+Strict nested results (score-error metrics use raw predicted scores; champion
+decisions use the conservative score):
+
+- Version-level nested LOOCV: MAE 6.826865, RMSE 10.376418, Spearman 0.545455, Kendall 0.333333.
+- Leave-one-Route-out: MAE 6.792421, RMSE 10.372084, Spearman 0.545455, Kendall 0.333333.
+- Raw-score and conservative-gate false positives: 0 in both validations; every prediction is below Champion, so this is reject-all behavior.
+- All 12 candidate Official labels are below 45.16, so false-negative sensitivity and winner detection remain untestable. The displayed 100% conservative decision accuracy is vacuous specificity, not evidence of useful ranking.
+- The nested empirical safety margin spans 16.55–24.606842 Official-score points in held-out folds. It rejects every candidate conservatively and is not a useful screening margin.
+
+Hard held-out examples:
+
+- ADDR H3: predicted 44.510, Official 42.72; conservative score 20.040; correctly rejected.
+- VECTOR-MATH-X V001: predicted 43.579, Official 44.22; conservative score below Champion; correctly rejected.
+- Four other historical false positives have no common 16-case vector and remain NOT_COMPUTABLE; old single-shape local results were not substituted.
+
+MAIN2-UNIFIED-LOCAL-SUITE-V2.tsv proposes 7 cases: 4 core-provisional cases
+(C13, C14, C16, C12) and 3 diagnostic-only diversity sentinels
+(C01, C11, C08). Diagnostic-only cases failed the stability screen and must
+not be model features. C15 remains missing/invalid. See C13-FORENSIC.md,
+LOCAL-CASE-STABILITY.tsv, LOCAL-CASE-NESTED-PREDICTIVENESS.tsv, and
+LOCAL-JUDGE-MODEL-COMPARISON.tsv.
+
+Five calibration-information candidates are listed in
+ONLINE-CALIBRATION-CANDIDATES.tsv; each lacks a common-suite feature vector,
+so prediction range/model disagreement are NA and none is Online-ready.
+
+MORE_OFFICIAL_CALIBRATION_LABELS_NEEDED=YES
+READY_FOR_PERFORMANCE_WAVE=NO
+ONLINE_RECOMMENDATION=NONE
