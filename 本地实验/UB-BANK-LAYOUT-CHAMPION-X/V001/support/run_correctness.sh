@@ -48,6 +48,8 @@ DEVICE="$2"
 CANN_ROOT=/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002
 source "${CANN_ROOT}/aarch64-linux/script/set_env.sh"
 export ASCEND_HOME_PATH="${CANN_ROOT}"
+# Prefer the server's newer host libstdc++ over the CANN compiler runtime.
+export LD_LIBRARY_PATH="/usr/lib/aarch64-linux-gnu:/lib/aarch64-linux-gnu:${LD_LIBRARY_PATH:-}"
 printf 'REMOTE_HOST=%s\n' "$(hostname)"
 date -Is
 printf 'LOAD_BEFORE\n'
