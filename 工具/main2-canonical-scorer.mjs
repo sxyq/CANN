@@ -125,6 +125,7 @@ export function scoreboard({quiet=false}={}) {
     else if(r.KNOWN_UNRESOLVED_CORRECTNESS_FAILURE==='YES'||!corr||corr.CORRECTNESS_STATUS!=='PASS'||corr.SOURCE_SHA!==r.SOURCE_SHA)
       status='UNSCORED_CORRECTNESS_BLOCKED',reason=r.KNOWN_UNRESOLVED_CORRECTNESS_FAILURE==='YES'?'Known unresolved global correctness failure':(corr?.REASON||'Unified correctness incomplete');
     let scored=null;
+    if(!status && r.SCORE_EVENT_CLOSED!=='YES')status='UNSCORED_MEASUREMENT_INVALID',reason='AWAITING_THIS_VERSION_EVENT_CLOSURE';
     if(!status) {scored=scoreOne(r,anchorRuns);if(scored.errors.length)status='UNSCORED_MEASUREMENT_INVALID',reason=scored.errors.join(';');}
     const cells=scored?.cells||[],core=cells.filter(r=>r.c.CASE_ROLE==='CORE');
     const result={LOCAL_RANK:'',ROUTE:r.ROUTE,REVISION:r.REVISION,HYPOTHESIS:r.HYPOTHESIS_ID,DIRECT_PARENT:r.DIRECT_PARENT,SOURCE_SHA:r.SOURCE_SHA,

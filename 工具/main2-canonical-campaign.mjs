@@ -16,6 +16,8 @@ const registry=readTsv(REGISTRY).filter(r=>r.IMPLEMENTED==='YES').sort((a,b)=>{
   return priority(a)-priority(b)||key(a).localeCompare(key(b));
 });
 let commitQueue=Promise.resolve();
+let scoreQueue=Promise.resolve();
+const devices=[0,1,2,3,4,5,7];
 function filesBelow(dir) {
   if(!exists(dir))return [];
   return fs.readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.isDirectory()?filesBelow(path.join(dir,e.name)):[path.join(dir,e.name)]);
@@ -35,9 +37,9 @@ function event(r,stage,result) {
   const all=readTsv(events);all.push({AT:new Date().toISOString(),VERSION:key(r),SOURCE_SHA:r.SOURCE_SHA,STAGE:stage,RESULT:result});
   writeTsv(events,all);
 }
-function run(action,r,stream=true) {
+function run(action,r,stream=true,device=4) {
   return new Promise((resolve,reject)=>{
-    const p=spawn(process.execPath,[bench,action,key(r),'4'],{cwd:ROOT,stdio:['ignore','pipe','pipe']});
+    const p=spawn(process.execPath,[bench,action,key(r),String(device)],{cwd:ROOT,stdio:['ignore','pipe','pipe']});
     let out='',err='';
     p.stdout.on('data',b=>{out+=b;if(stream)process.stdout.write(b);});p.stderr.on('data',b=>{err+=b;process.stderr.write(b);});
     p.on('error',reject);p.on('close',code=>resolve({code,out,err}));
@@ -53,6 +55,7 @@ async function buildOne(r) {
 }
 function refreshRegistry(r,b,corr) {
   const all=readTsv(REGISTRY),row=all.find(v=>key(v)===key(r));
+  for(const v of all)v.SCORE_EVENT_CLOSED=v.SCORE_EVENT_CLOSED||'NO';
   if(row) {
     row.BUILD_STATUS=b?.BUILD_STATUS||row.BUILD_STATUS;row.BUILDABLE=b?.BUILD_STATUS==='PASS'?'YES':'NO';
     if(corr) {
@@ -60,6 +63,7 @@ function refreshRegistry(r,b,corr) {
       row.CORRECTNESS_VALID=corr.CORRECTNESS_STATUS==='PASS'&&row.KNOWN_UNRESOLVED_CORRECTNESS_FAILURE!=='YES'?'YES':'NO';
     }
     row.EVIDENCE_PATH+=';'+path.relative(ROOT,versionDir(r));
+    row.SCORE_EVENT_CLOSED='YES';
   }
   writeTsv(REGISTRY,all);
 }
@@ -92,13 +96,19 @@ async function buildWorker() {
 
 async function main() {
   if(!exists(path.join(ROOT,'本地实验/R31B-V011-CANONICAL-LOCAL-VECTOR.tsv')))throw new Error('FRESH_ANCHOR_REQUIRED');
+  const plan=registry.map((r,i)=>({VERSION:key(r),SOURCE_SHA:r.SOURCE_SHA,DEVICE:devices[i%devices.length],
+    ROLE:knownReuse.has(key(r))?'CORRECTNESS_AND_RAW_REUSE':'BUILD_CORRECTNESS_TIMING',
+    DEVICE_CLASS:'Ascend910B3',MAX_JOBS_ON_CARD:1,ASSIGNMENT:'STATIC_BEFORE_CANDIDATE_SCORE;NO_OUTCOME_BASED_DEVICE_SELECTION'}));
+  writeTsv(path.join(DATA,'execution-plan.tsv'),plan);
+  await commit('docs(local-score): freeze source-to-device execution assignment',[path.join(DATA,'execution-plan.tsv')]);
   const workers=[buildWorker(),buildWorker()];
-  for(const r of registry) {
+  const npuWorkers=devices.map(async device=>{
+   for(const r of registry.filter(r=>plan.find(p=>p.VERSION===key(r)).DEVICE===device)) {
     const ready=await waiter.get(key(r)).promise;if(ready.error)throw new Error(ready.error);
     const b=ready.b;
     let corr;
     if(b?.BUILD_STATUS==='PASS') {
-      const c=await run('correctness',r,false);corr=json(path.join(versionDir(r),'correctness.json'));
+      const c=await run('correctness',r,false,device);corr=json(path.join(versionDir(r),'correctness.json'));
       if(c.code!==0&&!corr)throw new Error('Correctness infrastructure error '+key(r));
       event(r,'CORRECTNESS',corr?.CORRECTNESS_STATUS||'INCOMPLETE');
       await commit('evidence(canonical-correctness): '+key(r)+' '+corr?.CORRECTNESS_STATUS,
@@ -108,7 +118,7 @@ async function main() {
         const reused=await run('reuse',r,false);
         if(reused.code!==0)throw new Error('Reuse audit failed '+key(r));
         if(!exists(path.join(versionDir(r),'measurements.tsv'))) {
-          const timed=await run('measure',r);
+          const timed=await run('measure',r,true,device);
           if(timed.code!==0) {
             writeJson(path.join(versionDir(r),'measurement-blocker.json'),{VERSION:key(r),ERROR:timed.err,RC:timed.code});
           }
@@ -119,6 +129,7 @@ async function main() {
           path.join(versionDir(r),'measurement-blocker.json'),...filesBelow(path.join(versionDir(r),'measurement')),events]);
       }
     }
+    const finishScore=async()=>{
     refreshRegistry(r,b,corr);
     const rows=scoreboard({quiet:true}),current=rows.find(v=>key(v)===key(r));
     event(r,'SCORE',current?.CANONICAL_LOCAL_SCORE||'UNSCORED');dashboard(rows,current);
@@ -131,8 +142,11 @@ async function main() {
       path.join(ROOT,'本地实验/MAIN2-CANONICAL-LOCAL-SCOREBOARD.tsv'),path.join(DATA,'all-case-metrics.tsv'),
       path.join(versionDir(r),'canonical-vector.tsv'),path.join(versionDir(r),'canonical-score.json'),statusFile,REGISTRY,dash,events]);
     console.log('SCORE_READY '+key(r)+' '+current?.CANONICAL_LOCAL_SCORE+' '+current?.STATUS);
-  }
-  await Promise.all(workers);await commitQueue;
+    };
+    scoreQueue=scoreQueue.then(finishScore);await scoreQueue;
+   }
+  });
+  await Promise.all([...workers,...npuWorkers]);await commitQueue;
   console.log('CANONICAL_CAMPAIGN_COMPLETE; no route decision made');
 }
 main().catch(e=>{console.error(e);process.exitCode=1;});

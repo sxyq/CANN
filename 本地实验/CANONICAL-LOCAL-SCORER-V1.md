@@ -35,9 +35,15 @@ Reuse the proven `runner_ref.inc` device-event harness, byte-for-byte. Retain it
 source hash and its existing golden reference; do not alter input generation,
 math reference, Kernel, launch policy or timing boundary.
 
-- Same server3 Ascend 910B3 device class; d4 preferred, one predeclared safe d7
-  fallback only if necessary. Check leases across current worktrees before each
-  batch and hold one exclusive timing lease per device.
+- Same server3 Ascend 910B3 device class; the fresh anchor is on d4. The execution
+  plan statically assigns historical versions across d0/d1/d2/d3/d4/d5/d7 before
+  any Candidate is scored (up to seven parallel device lanes, one comparison per
+  card). This scheduling extension uses the standing 8-card permission and does
+  not change the suite, formula or timing protocol. d6's legacy STORE lease stays
+  untouched. Check leases across current worktrees before each batch; no dynamic
+  device choice based on measured Candidate benefit and no unbounded retries.
+  The frozen d4 anchor remains the score denominator; same-card paired V011
+  measurements expose cross-device/window drift in the empirical uncertainty.
 - Build and full seven-case preflight correctness must PASS before Candidate
   timing. Known unresolved correctness failures remain blocked, not negative.
 - Fresh R31B/V011: three independent processes per case; this is not reconstructed

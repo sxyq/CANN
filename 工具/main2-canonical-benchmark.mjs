@@ -41,7 +41,7 @@ export function bootstrap() {
   if(!exists(dest)){fs.mkdirSync(path.dirname(dest),{recursive:true});fs.copyFileSync(src,dest);}
   writeJson(path.join(DATA,'protocol.json'),{SCORER_VERSION:SCORER,SUITE_VERSION:SUITE,TIMING_MODE:'ENGINEERING_3RUN',
     WARMUP:45,SAMPLES:31,BLOCKS:1,BATCH_N:1,GAP:0,VALID_RUNS:3,MAX_ATTEMPTS:5,ORDER:'P-C/C-P/P-C',
-    PRIMARY_DEVICE:4,FALLBACK_DEVICE:7,FORMAL_QUALIFICATION_GATE:false,HARNESS_SHA:sha(path.join(HARNESS,'runner_ref.inc')),
+    ANCHOR_DEVICE:4,EXECUTION_DEVICES:[0,1,2,3,4,5,7],MAX_TIMING_JOBS_PER_DEVICE:1,FORMAL_QUALIFICATION_GATE:false,HARNESS_SHA:sha(path.join(HARNESS,'runner_ref.inc')),
     CORE_CASES:['C12','C13','C14','C16'],DIAGNOSTIC_CASES:['C01','C08','C11'],BASE_SHA,
     FROZEN_SUITE_SHA:sha(path.join(ROOT,'本地实验/CANONICAL-LOCAL-SUITE-V1.tsv'))});
   return rows;
@@ -203,7 +203,7 @@ function normalized(r,c,side,run,attempt,b,res,prefix,rc,s,fresh='YES') {
     LOAD_NOTE:'FREE_HBM_LOWER_BOUND_MB='+res.FREE_HBM_LOWER_BOUND_MB+';AICORE='+res.AICORE+';HOST='+res.HOST_LOAD,
     RESOURCE_EVIDENCE:res.RESOURCE_EVIDENCE||'SEE_BATCH_RESOURCE',LEASE:res.LEASE||'HISTORICAL_REUSE'};
 }
-export function measure(r,device=4,fallback=7) {
+export function measure(r,device=4,fallback=null) {
   const corr=json(path.join(versionDir(r),'correctness.json'));
   if(corr?.CORRECTNESS_STATUS!=='PASS')throw new Error('CORRECTNESS_PASS_REQUIRED');
   const b=json(path.join(versionDir(r),'build.json')),a=json(path.join(versionDir({ROUTE:'R31B',REVISION:'V011'}),'build.json'));
@@ -284,14 +284,14 @@ export function reuseEngineering(r) {
 
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)) {
   const cmd=process.argv[2],version=process.argv[3],device=Number(process.argv[4]||4);
-  if(!Number.isInteger(device)||![4,7].includes(device))throw new Error('Only predeclared d4/d7 in this campaign');
+  if(!Number.isInteger(device)||![0,1,2,3,4,5,7].includes(device))throw new Error('Device outside static execution plan; d6 lease protected');
   if(cmd==='bootstrap')console.log(JSON.stringify(bootstrap(),null,2));
   else if(cmd==='resource')console.log(JSON.stringify(resource(device),null,2));
   else {
     const r=select(version);
     if(cmd==='build')console.log(JSON.stringify(build(r),null,2));
     else if(cmd==='correctness')console.log(JSON.stringify(correctness(r,device),null,2));
-    else if(cmd==='measure')measure(r,device,device===4?7:null);
+    else if(cmd==='measure')measure(r,device,null);
     else if(cmd==='reuse')console.log(JSON.stringify(reuseEngineering(r),null,2));
     else {console.error('Usage: bootstrap|build|correctness|measure|reuse VERSION [DEVICE]');process.exitCode=2;}
   }
