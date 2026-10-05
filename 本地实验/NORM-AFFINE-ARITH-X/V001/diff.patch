@@ -1,0 +1,16 @@
+--- 线上结果/R31B/V011/submission.asc	2026-10-05 18:07:32.733962733 +0000
++++ 本地实验/NORM-AFFINE-ARITH-X/V001/submission.asc	2026-10-05 18:21:16.318393267 +0000
+@@ -576,11 +576,11 @@
+             if (!residentParams) {
+                 AscendC::WaitFlag<AscendC::HardEvent::MTE2_V>(paramReady);
+             }
+-            AscendC::Muls(valueLocal, valueLocal, invRms, valid);
+-            AscendC::PipeBarrier<PIPE_V>();
+             if constexpr (AscendC::IsSameType<T, float>::value) {
+                 AscendC::Mul(valueLocal, valueLocal, gammaLocal, valid);
+                 AscendC::PipeBarrier<PIPE_V>();
++                AscendC::Muls(valueLocal, valueLocal, invRms, valid);
++                AscendC::PipeBarrier<PIPE_V>();
+                 AscendC::Add(valueLocal, valueLocal, biasLocal, valid);
+                 AscendC::PipeBarrier<PIPE_V>();
+                 SyncVToMTE3();
