@@ -1,0 +1,9 @@
+# STORE-EPILOGUE-X/V002 — canonical local measurement
+
+SCORER_VERSION=MAIN2-CANONICAL-V1
+SUITE_VERSION=CANONICAL_LOCAL_SUITE_V1
+SOURCE_SHA=59fb8eada4da0b2b83cccffa4fb89fb97b7503ba3dcb08d5e0fe348e3caeb839
+CANONICAL_LOCAL_SCORE=57.022977
+STATUS=LOCAL_NEUTRAL
+REASON=NA
+Kernel unchanged; historical Local/Official verdicts unchanged; no next Revision; MAIN_SELECTED=NONE.
