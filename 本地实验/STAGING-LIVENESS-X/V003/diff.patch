@@ -1,0 +1,33 @@
+--- a/本地实验/STAGING-LIVENESS-X/V002/submission.asc
++++ b/本地实验/STAGING-LIVENESS-X/V003/submission.asc
+@@ -2048,15 +2048,6 @@ private:
+                 secondNeedsRelease = true;
+             }
+         }
+-
+-        // The following parameter/output pass reuses both staging pairs.
+-        // Drain only flags still outstanding; a refilled pair has already
+-        // consumed its prior release flag above.
+-        if (firstNeedsRelease) {
+-            AscendC::WaitFlag<AscendC::HardEvent::V_MTE2>(releaseFirst);
+-        }
+-        if (secondNeedsRelease) {
+-            AscendC::WaitFlag<AscendC::HardEvent::V_MTE2>(releaseSecond);
+-        }
+ 
+         AscendC::LocalTensor<float> xLocal = xBuf_.Get<float>();
+         AscendC::ReduceSum(residualLocal, reduceLocal, xLocal, tileCount);
+@@ -2067,6 +2058,14 @@ private:
+         const float invRms = 1.0f / xLocal.GetValue(0);
+         SyncSToV();
+ 
++        // Drain outstanding staging releases after the independent reduction
++        // tail, but before these buffers are reused by the next pass.
++        if (firstNeedsRelease) {
++            AscendC::WaitFlag<AscendC::HardEvent::V_MTE2>(releaseFirst);
++        }
++        if (secondNeedsRelease) {
++            AscendC::WaitFlag<AscendC::HardEvent::V_MTE2>(releaseSecond);
++        }
++
+         pipe_.ReleaseEventID<AscendC::HardEvent::MTE2_V>(readyFirst);
