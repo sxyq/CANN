@@ -1,0 +1,22 @@
+# MODE-DISPATCH-CUTOFF-X V028 result closure
+
+- ROUTE: MODE-DISPATCH-CUTOFF-X / R-W4-4
+- REVISION: V028
+- DIRECT_PARENT: V027
+- PARENT_SOURCE_SHA256: `f0ab43545e13d943e4c5bb5ff22400426e18f560ab313c1c6856b39fa904f033`
+- CANDIDATE_SOURCE_SHA256: `06384465fe0e3831048fc15903807ec3aeae55cdcb1852f5d85d60fbb9154ffb`
+- SINGLE_CHANGE: `kSmallFp32BatchMaxWidth` 512 -> 256
+- COMPILE: PASS, observed `2026-10-06T21:15:56.504022693Z`
+- CORRECTNESS: FAIL, completed `2026-10-06T21:37:02Z`
+- CORRECTNESS_VERDICT: `REJECTED_CORRECTNESS`
+- BLOCKER: `PARENT_SHARED_FAILURE`
+- FAILURE: C15 FP32 shape `[1,32768]`; Parent bad=28636, Candidate bad=28649, both `max_abs=1.2031`, both return code 3.
+- CAUSALITY: V028 changes only the small-FP32 cutoff; C15 is dispatched through the shared wide FP32 path, and the exact Direct Parent fails the same case. No minimal direct V028 correctness fix is justified by this evidence.
+- LOCAL_SCORE: NONE
+- LOCAL_DELTA: NONE
+- LOCAL: NOT RUN; correctness failure blocks performance measurement.
+- LOCAL_DEVICE: 2 assigned, unused because the correctness gate failed.
+- CORRECTNESS_DEVICE: 7; pre/post HBM `24792/65536 MB`, Python process present, AICore observed nonzero. Load is retained in the evidence and is not treated as the failure cause.
+- ONLINE: FORBIDDEN
+- EVIDENCE: `canonical-correctness/version-status.tsv`, `canonical-correctness/run-config.tsv`, `canonical-correctness/measurements.tsv`, `canonical-correctness/raw-samples.tsv`, and `canonical-correctness/stages/MODE-DISPATCH-CUTOFF-X__V028/evidence/C15/`
+- RESULT: Preserve V028 as `CORRECTNESS_FAILED / PARENT_SHARED_FAILURE`; do not start a performance revision from V028 and await Planning/Record Owner disposition.
