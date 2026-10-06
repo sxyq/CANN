@@ -1,0 +1,24 @@
+ROUTE=ROW-SCALE-HOIST-X
+REVISION=V007
+DIRECT_PARENT=V006
+PARENT_COMMIT=d33d9a68b8b9c814073fff68f9d547385492c711
+SINGLE_HYPOTHESIS=In the wide BF16 cached-row epilogue, move the existing FP32 row-scale Muls from before gamma Mul to after gamma Mul and before bias Add.
+FOCUS=ProcessWideBf16CachedRows only
+WHY_NOT_DUPLICATE=V006 moved row-scale only in the separate FP16 cached-row path; V007 tests the BF16 cached-row path with the same bounded placement change.
+V007_EDIT_TIMESTAMP=2026-10-06T19:42:29.951910812Z
+ELAPSED_FROM_V006_COMPILE_PASS_SECONDS=455.952 (SLA_EXCEEDED)
+CHILD_SLA_FAIL=YES
+COMPILE=ACTIVE
+COMPILE_START_UTC=2026-10-06T19:43:13Z
+COMPILE_COMMAND=cmake -S 本地实验/ROW-SCALE-HOIST-X/V007/compile -B /tmp/cann-row-scale-hoist-x-v007-20261006T194230Z; cmake --build /tmp/cann-row-scale-hoist-x-v007-20261006T194230Z --target device submission -j2
+DEVICE_TARGET=PASS
+SUBMISSION_TARGET=ACTIVE
+COMPILE_LOG=compile-device-submission.log
+CORRECTNESS=NOT_RUN
+LOCAL=NOT_RUN
+ONLINE=NOT_RUN
+
+NEXT_A=FP16 cached-row: place row-scale after output cast but before gamma (intermediate order, not V006's after-gamma placement).
+NEXT_B=FP16 full-Y epilogue: compare row-scale in widened FP32 before output cast against the existing post-gamma placement.
+NEXT_C=FP32 cached-row epilogue: probe row-scale after gamma before bias, isolated to that path.
+NEXT_D=BF16 full-Y epilogue: probe row-scale after gamma before bias, isolated from cached-row processing.
