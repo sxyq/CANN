@@ -1,0 +1,58 @@
+{
+  "route": "SYNC-BARRIER-ELISION-X",
+  "revision": "V003",
+  "record_type": "local_revision",
+  "direct_parent": {
+    "route": "R31B",
+    "revision": "V011",
+    "source_path": "线上结果/R31B/V011/submission.asc",
+    "source_sha256": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+    "official_score": 45.16
+  },
+  "candidate_source_path": "本地实验/SYNC-BARRIER-ELISION-X/V003/submission.asc",
+  "candidate_source_sha256": "e2e9ed435e36855f493010aaa2d6ae10b8108922e631d36ee3acf3df604506b7",
+  "parent_copy_path": "本地实验/SYNC-BARRIER-ELISION-X/V003/parent.asc",
+  "parent_copy_matches_canonical": true,
+  "single_hypothesis": "Remove one FP16 PIPE_V barrier between FromFloat output staging and the output Mul in ProcessNarrowMidOverlap.",
+  "single_change_boundary": "One synchronization-operation deletion from the unchanged current Local Best; no V001 or V002 deletion inherited.",
+  "source_diff_path": "本地实验/SYNC-BARRIER-ELISION-X/V003/diff.patch",
+  "canonical_route_skill_commit": "d8c3b380276df5549f057dee19031e04fdd874a9",
+  "compile": {
+    "host": "hwnput3",
+    "toolchain": "CANN 8.5.0.alpha002",
+    "final_status": "PASS",
+    "evidence": ["logs/server3-compile.log"]
+  },
+  "correctness": {
+    "status": "PASS",
+    "device": 3,
+    "dtype": "fp16",
+    "cases": 5,
+    "shapes": ["8x128", "8x256", "8x1024", "8x2048", "8x4096"],
+    "parent_candidate_bit_mismatch": 0,
+    "evidence": ["logs/correctness-device3.log"]
+  },
+  "local": {
+    "status": "LOCAL_REJECTED",
+    "device": 3,
+    "shape": "8x2048",
+    "dtype": "fp16",
+    "sample_pairs_per_run": 31,
+    "total_paired_samples": 62,
+    "local_score_percent": -3.242694369,
+    "local_delta_percent": -3.242694369,
+    "local_score_type": "ROUTE_LOCAL_GEOMEAN_PAIRED_DEVICE_SPEEDUP_PERCENT",
+    "local_score_comparable_to_official": false,
+    "load_quality": "NOISY",
+    "aggregation": "Geometric mean of parent_device_us / candidate_device_us over all 62 pairs; no outliers removed.",
+    "diagnostic_scores_percent": [0.800006, -2.840911],
+    "pooled_geomean_parent_over_candidate": 0.967573056306,
+    "pooled_geomean_speedup_percent": -3.242694369,
+    "interpretation": "Numeric route-local score includes every sample, including large outliers. LOAD_QUALITY=NOISY; score is explicitly non-comparable to Official. V003 is LOCAL_REJECTED and does not replace R31B-V011.",
+    "evidence": [
+      "logs/local-device3-run1-full.log",
+      "logs/local-device3-repeat-full.log"
+    ]
+  },
+  "online": "NOT_RUN"
+}
