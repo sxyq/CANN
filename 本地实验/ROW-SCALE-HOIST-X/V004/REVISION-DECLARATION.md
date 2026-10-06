@@ -1,0 +1,15 @@
+ROUTE=ROW-SCALE-HOIST-X
+REVISION=V004
+DIRECT_PARENT=V003
+PARENT_COMMIT=309d9d66
+PARENT_SCORE=NONE_COMPILE_ONLY
+SINGLE_HYPOTHESIS=In the wide low-precision FP32 epilogue, move the existing per-tile row-scale Muls from immediately before gamma Mul to immediately after gamma Mul and before bias Add.
+CONTEXT_CLASS=ROW_SCALE_HOIST_TILE_EPILOGUE_ORDER
+WHY_NOT_DUPLICATE=V003 scales each retained tile before gamma multiplication; V004 changes only the scale instruction placement within that tile epilogue.
+NEXT_EDIT_TIMESTAMP=2026-10-06T19:09:15.616416896Z
+CHILD_SLA_FAIL=YES
+COMPILE=PASS
+HOST_FULL_LINK=BLOCKED (local linker rejects elf64-littleaarch64 object)
+CORRECTNESS=NOT_RUN (NOT_AUTHORIZED)
+LOCAL=NOT_RUN (NOT_AUTHORIZED)
+ONLINE=NOT_RUN
