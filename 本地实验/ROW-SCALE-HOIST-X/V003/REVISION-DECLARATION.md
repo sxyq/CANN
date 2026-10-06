@@ -1,0 +1,16 @@
+ROUTE=ROW-SCALE-HOIST-X
+REVISION=V003
+DIRECT_PARENT=V002
+PARENT_SOURCE_SHA=4a2067a041cdf9b2ab35f4e2a055691fad31025ac2412063ea787c7b5b26ae3d
+PARENT_COMMIT=fbcedd12
+PARENT_SCORE=NONE_COMPILE_ONLY
+SINGLE_HYPOTHESIS=Apply the existing per-row RMS scale per retained tile immediately before the pass-2 parameter epilogue instead of scaling the whole retained row before the tile loop.
+CONTEXT_CLASS=ROW_SCALE_HOIST_TILE_PLACEMENT
+WHY_NOT_DUPLICATE=V002 moved the whole-row scale after the first parameter prefetch; V003 changes only the scale granularity and placement to the pass-2 tile epilogue.
+NEXT_EDIT_TIMESTAMP=2026-10-06T18:44:16Z
+ELAPSED_FROM_V002_COMPILE_PASS_SECONDS=562
+CHILD_SLA_FAIL=YES
+COMPILE=NOT_RUN
+CORRECTNESS=NOT_RUN
+LOCAL=NOT_RUN
+ONLINE=NOT_RUN
