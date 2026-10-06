@@ -1,0 +1,19 @@
+ROUTE=ROW-SCALE-HOIST-X
+REVISION=V005
+DIRECT_PARENT=V004
+PARENT_COMMIT=b97805b4
+PARENT_SCORE=NONE_COMPILE_ONLY
+SINGLE_HYPOTHESIS=In the wide FP16 tile epilogue, move the existing row-scale Muls from before half conversion and gamma Mul to after gamma Mul and before bias Add.
+CONTEXT_CLASS=ROW_SCALE_HOIST_FP16_EPILOGUE_ORDER
+WHY_NOT_DUPLICATE=V004 changed the row-scale placement only in the non-half wide epilogue; V005 applies the same single placement probe to the FP16 branch.
+V005_EDIT_TIMESTAMP=2026-10-06T19:18:39.763Z
+ELAPSED_FROM_V004_COMPILE_PASS_SECONDS=565 (SLA_EXCEEDED; actual elapsed, user requested <=180s)
+CHILD_SLA_FAIL=YES
+INITIAL_COMPILE=FAIL (half destination required half scalar; build fix applied)
+COMPILE=PASS
+COMPILE_PASS_TIMESTAMP=2026-10-06T19:20:58.687Z
+COMPILE_COMMAND=cmake --build /tmp/cann-row-scale-hoist-x-v005-20261006 --target device submission -j2
+COMPILE_TARGETS=device PASS; submission PASS
+CORRECTNESS=NOT_RUN (NOT_AUTHORIZED)
+LOCAL=NOT_RUN (NOT_AUTHORIZED)
+ONLINE=NOT_RUN
