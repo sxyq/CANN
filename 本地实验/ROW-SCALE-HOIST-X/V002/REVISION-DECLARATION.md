@@ -1,0 +1,14 @@
+ROUTE=ROW-SCALE-HOIST-X
+REVISION=V002
+DIRECT_PARENT=V001
+PARENT_SOURCE_SHA=bf5225208877f638af1c55674961b0a7d80b5f0135c56148d46f0a8c1169568e
+PARENT_COMMIT=c5687d631290319c2b62b5d616825edf0890c111
+SINGLE_HYPOTHESIS=Move the existing whole-row row-scale Muls block from before pass-2 parameter staging to after the first gamma/bias tile prefetch and before the pass-2 tile loop.
+CONTEXT_CLASS=ROW_SCALE_HOIST_PLACEMENT
+WHY_NOT_DUPLICATE=Same row-scale operation and same tile-loop hoist axis; only its placement relative to the first parameter prefetch changes.
+NEXT_EDIT_TIMESTAMP=2026-10-06T18:33:00Z
+COMPILE_TO_NEXT_EDIT_SECONDS=752
+CHILD_SLA_FAIL=YES
+CORRECTNESS=NOT_RUN
+LOCAL=NOT_RUN
+ONLINE=NOT_RUN
