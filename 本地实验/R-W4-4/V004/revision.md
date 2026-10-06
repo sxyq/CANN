@@ -1,0 +1,25 @@
+# R-W4-4 V004 declaration
+
+- ROUTE: R-W4-4 / MODE-DISPATCH-CUTOFF-X
+- REVISION: V004
+- DIRECT_PARENT: R-W4-4 V003
+- PARENT_SOURCE_SHA: a81b6acd2c7fd213ef418c4b3e7a994051768bf48baa1ddb58395d81fa951514
+- PARENT_SCORE: 45.16 (Official anchor; no local measurement)
+- SINGLE_HYPOTHESIS: Lower only the existing low-precision contiguous-dispatch width cap from 256 to 128. For eligible low-precision rows with width in (128, 256], dispatch then falls through to the already-existing mid-row path; all kernel implementations and ownership remain unchanged.
+- CONTEXT_CLASS: W4_COMPILE_SWEEP
+- WHY_NOT_DUPLICATE: This is the next authorized cutoff probe on the same existing MODE-DISPATCH axis; it changes no architecture or ownership mechanism.
+- CHANGE: `kSmallLowPrecisionContiguousMaxWidth`, 256 -> 128 (one width cutoff only)
+- INHERITED: CHILD_SLA_FAIL=YES
+- EDIT_START_TIMESTAMP: 2026-10-06T19:25:28Z
+- NEXT_EDIT_TIMESTAMP: 2026-10-06T19:25:28Z
+- ELAPSED_FROM_V003_COMPILE_PASS_SECONDS: 284
+- CHILD_SLA_FAIL: YES (V004 edit started 104 seconds after the 180-second deadline)
+- COMPILE: PASS
+- COMPILE_TIMESTAMP: 2026-10-06T19:26:50Z
+- COMPILE_COMMAND: `cmake -S '本地实验/R-W4-4/V004' -B '本地实验/R-W4-4/V004/build-cmake' && cmake --build '本地实验/R-W4-4/V004/build-cmake' --target device submission --parallel 2`
+- COMPILE_RESULT: `device` and `submission` targets built successfully; exit code 0
+- HOST_FULL_LINK: NOT_RUN (optional AArch64 host link omitted)
+- NEXT_EDIT_SLA: start the next single-factor edit no later than 180 seconds after Compile PASS
+- NEXT_EDIT_DEADLINE: 2026-10-06T19:29:50Z
+- GATES: compile required; local gate suspended for W4; online forbidden
+- OWNERSHIP: `/home/data4t2/lelinfeng/cann-r-w4-4` only
