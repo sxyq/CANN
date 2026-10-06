@@ -1,0 +1,31 @@
+--- a/本地实验/STAGING-LIVENESS-X/V003/submission.asc
++++ b/本地实验/STAGING-LIVENESS-X/V004/submission.asc
+@@ -2207,16 +2207,6 @@ private:
+                 const int32_t valid = static_cast<int32_t>(
+                     rowWidth - col < static_cast<uint64_t>(tileWidth)
+                         ? rowWidth - col : static_cast<uint64_t>(tileWidth));
+                 AscendC::LocalTensor<float> gammaLocal = xBuf_.Get<float>();
+                 AscendC::LocalTensor<float> biasLocal = residualBuf_.Get<float>();
+-                // xBuf_/residualBuf_ become gamma/bias here; drain any store
+-                // still referencing the previous tile's staging pair first.
+-                if (storeOutstanding0) {
+-                    AscendC::WaitFlag<AscendC::HardEvent::MTE3_V>(storeRelease0);
+-                    storeOutstanding0 = false;
+-                }
+-                if (storeOutstanding1) {
+-                    AscendC::WaitFlag<AscendC::HardEvent::MTE3_V>(storeRelease1);
+-                    storeOutstanding1 = false;
+-                }
+                 Load(gammaLocal, gammaGm_, col, valid);
+                 Load(biasLocal, biasGm_, col, valid);
+                 SyncMTE2ToV();
++                // Delay the output-staging release drain until parameter
++                // prefetch completes, immediately before value reuse.
++                if (storeOutstanding0) {
++                    AscendC::WaitFlag<AscendC::HardEvent::MTE3_V>(storeRelease0);
++                    storeOutstanding0 = false;
++                }
++                if (storeOutstanding1) {
++                    AscendC::WaitFlag<AscendC::HardEvent::MTE3_V>(storeRelease1);
++                    storeOutstanding1 = false;
++                }
