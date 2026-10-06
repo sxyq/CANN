@@ -4,13 +4,16 @@ DIRECT_PARENT=R31B V011
 BUILD=PASS
 CORRECTNESS=INCOMPLETE
 LOCAL=NOT_RUN
-DATE_UTC=2026-10-05
-DEVICE_SNAPSHOT=npu-smi reports 8 devices locally
-SERVER3=BLOCKED
-COMMAND_1=`ssh -o ConnectTimeout=8 -o BatchMode=yes cann-server3 'npu-smi info -l'`
-COMMAND_1_RESULT=Temporary failure in name resolution
-COMMAND_2=`ssh -o ConnectTimeout=8 -o BatchMode=yes -p 13203 lelinfeng@121.48.170.1 'npu-smi info -l'`
-COMMAND_2_RESULT=Host key verification failed
-REASON=This Route-local revision has a compile adapter but no correctness runner; server3 is unreachable for the established NPU runner. No correctness result is inferred from compile success.
+DATE_UTC=2026-10-06
+HOST=hwnput3
+TOOLCHAIN=/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002
+DEVICE=1
+FREE_HBM_MB=5261
+DEVICE_SNAPSHOT=npu-smi reports 8 local 910B3 devices; device 1 HBM 60275/65536 MB, AICore 0%, VLLMWorker_TP resident
+SERVER3=NOT_USED_PER_REQUEST
+COMMAND_1=`source /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/bin/setenv.bash; ASCEND_VISIBLE_DEVICES=1 本地实验/NORM-AFFINE-ARITH-X/V001/support/build/norm_affine_arith_x_v001`
+COMMAND_1_RESULT=No correctness result; exact build is an empty-main compile adapter
+REASON=This Route-local revision has a compile adapter but no correctness runner, input/golden data path, or kernel-launch test harness. Compile success is not correctness evidence. One minimal current-environment executable confirmation was performed and did not change this status.
+ENV_REGRESSION_EVENT=NONE; this is a route-local evidence/tooling gap, not an RSQRT or toolchain technical conclusion.
 PERFORMANCE_GATE=NOT_ENTERED
 ONLINE=PROHIBITED
