@@ -2,7 +2,7 @@ ROUTE=NORM-AFFINE-ARITH-X
 REVISION=V001
 DIRECT_PARENT=R31B V011
 BUILD=PASS
-CORRECTNESS=INCOMPLETE
+CORRECTNESS=FAIL
 LOCAL=NOT_RUN
 DATE_UTC=2026-10-06
 HOST=hwnput3
@@ -11,9 +11,11 @@ DEVICE=1
 FREE_HBM_MB=5261
 DEVICE_SNAPSHOT=npu-smi reports 8 local 910B3 devices; device 1 HBM 60275/65536 MB, AICore 0%, VLLMWorker_TP resident
 SERVER3=NOT_USED_PER_REQUEST
-COMMAND_1=`source /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/bin/setenv.bash; ASCEND_VISIBLE_DEVICES=1 本地实验/NORM-AFFINE-ARITH-X/V001/support/build/norm_affine_arith_x_v001`
-COMMAND_1_RESULT=No correctness result; exact build is an empty-main compile adapter
-REASON=This Route-local revision has a compile adapter but no correctness runner, input/golden data path, or kernel-launch test harness. Compile success is not correctness evidence. One minimal current-environment executable confirmation was performed and did not change this status.
-ENV_REGRESSION_EVENT=NONE; this is a route-local evidence/tooling gap, not an RSQRT or toolchain technical conclusion.
+COMMAND_1=`source /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/bin/setenv.bash; ASCEND_VISIBLE_DEVICES=1 support/correctness-runner/build/norm_affine_parent_correctness ...`
+COMMAND_2=`source /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/bin/setenv.bash; ASCEND_VISIBLE_DEVICES=1 support/correctness-runner/build/norm_affine_v001_correctness ...`
+COMMAND_1_RESULT=Parent 18/18 cases PASS, bad=0
+COMMAND_2_RESULT=V001 FP32 6/6 PASS; V001 FP16/BF16 fail at widths 129,256,1024,2048,4096; width64 PASS
+REASON=Formal existing ACL/golden runner executed exact Parent and exact V001. V001 low-precision outputs mismatch golden (for example FP16 width129 bad=256, FP16 width4096 bad=8153, BF16 width4096 bad=7366). This is CORRECTNESS_FAILED, not a missing-runner or compile-adapter blocker.
+ENV_REGRESSION_EVENT=NONE; failure is a real low-precision NPU golden mismatch.
 PERFORMANCE_GATE=NOT_ENTERED
 ONLINE=PROHIBITED
