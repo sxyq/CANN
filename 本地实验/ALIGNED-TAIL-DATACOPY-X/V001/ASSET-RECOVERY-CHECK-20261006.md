@@ -1,6 +1,6 @@
 # ALIGNED-TAIL-DATACOPY-X V001 - Replacement Asset Recovery Check
 
-- Checked at: `2026-10-06T22:08:16Z`
+- Evidence file written at: `2026-10-06T22:12:24Z`
 - Worktree: `/home/data4t2/lelinfeng/cann-r-w4-5-aligned-tail`
 - Branch / HEAD: `route/r-w4-5-aligned-tail-datacopy-x` / `52b54316a0d55e9cd17ef996f019be454bf9d781`
 - Canonical route skill: `origin/main:.agents/skills/cann-route-executor/SKILL.md`
