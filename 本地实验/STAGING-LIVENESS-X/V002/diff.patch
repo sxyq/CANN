@@ -1,0 +1,18 @@
+--- a/本地实验/STAGING-LIVENESS-X/V001/submission.asc
++++ b/本地实验/STAGING-LIVENESS-X/V002/submission.asc
+@@ -2009,7 +2009,6 @@ private:
+                 useFirst ? firstResidual : secondResidual;
+             const AscendC::TEventID readyEvent = useFirst ? readyFirst : readySecond;
+             const AscendC::TEventID releaseEvent = useFirst ? releaseFirst : releaseSecond;
+ 
+-            AscendC::WaitFlag<AscendC::HardEvent::MTE2_V>(readyEvent);
+             if (tileIndex + 1 < tileCount) {
+                 const bool refillFirst = !useFirst;
+                 const uint64_t nextCol = col + kWideFp32BatchTileElems;
+@@ -2035,6 +2034,7 @@ private:
+                     AscendC::SetFlag<AscendC::HardEvent::MTE2_V>(readySecond);
+                 }
+             }
+ 
++            AscendC::WaitFlag<AscendC::HardEvent::MTE2_V>(readyEvent);
+             AscendC::Add(valueLocal, xLocal, residualLocal, valid);
