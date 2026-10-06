@@ -26,8 +26,19 @@ CORRECTNESS_ABI=run_kernel(GM_ADDR x, const TensorGroupInfo& info_x, GM_ADDR res
 CORRECTNESS_MISSING_ARTIFACT=v028_correctness executable; no V028 correctness result
 CORRECTNESS_BLOCKER=/tmp/asc_plugin_binary_register_code-82f1a8.c:3:10: fatal error: 'vector' file not found during generated plugin registration compile; CMake configure and ASC object compile reached plugin link, but no executable was produced
 CORRECTNESS_BLOCKER_CLASS=WORKSPACE_TOOLCHAIN_PLUGIN_REGISTRATION_MISSING_STANDARD_CPP_HEADER
+ROUTE_LOCAL_REUSE_ATTEMPT=YES; exactly one reuse of the proven V027 correctness CMake entry; no generic Support runner and no new runner authored
+ROUTE_LOCAL_REUSE_START_UTC=2026-10-06T23:19:09.418138683Z
+ROUTE_LOCAL_REUSE_END_UTC=2026-10-06T23:19:27.782716012Z
+ROUTE_LOCAL_REUSE_COMMAND=cmake -S /tmp/cann-row-scale-hoist-x-v028-reuse-v027-entry-20261006T2320Z/correctness -B /tmp/cann-row-scale-hoist-x-v028-reuse-v027-entry-20261006T2320Z/build -DCMAKE_PREFIX_PATH=/usr/local/Ascend/ascend-toolkit/latest/aarch64-linux/tikcpp/ascendc_kernel_cmake && cmake --build /tmp/cann-row-scale-hoist-x-v028-reuse-v027-entry-20261006T2320Z/build --target v027_correctness -j2
+ROUTE_LOCAL_REUSE_BINDING=V027 correctness/CMakeLists.txt; V028 correctness_runner.asc SHA256=a9b8156242ab1768e0dfe2b06f2889d9fdd6027a31ada04faa0b3565c628d3ee; V028 compile/src/submission.asc SHA256=f5795992b3d309502534553bd80d9dccc486316d3467711c5584ea7b0f82dd59
+ROUTE_LOCAL_REUSE_KNOWN_BINARY_SHA256=5a63dd41be8bdbb8750cf43ef1c8c40af5b553d080bc0aed3b9ff22fd40934d6; binary itself was not reused as it is compiled against V027 source and cannot test V028
+ROUTE_LOCAL_REUSE_RC=2
+ROUTE_LOCAL_REUSE_MISSING_ARTIFACT=/tmp/cann-row-scale-hoist-x-v028-reuse-v027-entry-20261006T2320Z/build/v027_correctness
+ROUTE_LOCAL_REUSE_BLOCKER=/tmp/asc_plugin_binary_register_code-f044b9.c:3:10: fatal error: 'vector' file not found
+ROUTE_LOCAL_REUSE_LOG=correctness-reuse-v027-entry-20261006T2320Z.log
 LOCAL=NOT_RUN
 LOCAL_SCORE=NONE
 LOCAL_DELTA=NONE
 ONLINE=FORBIDDEN_NOT_RUN
-EVIDENCE=compile-result.json; correctness-result.json; correctness-build-blocker.txt; submission.asc; compile/src/submission.asc
+V028_STATE=STOPPED_TOOLING_BLOCKED; NO_V029
+EVIDENCE=compile-result.json; correctness-result.json; correctness-build-blocker.txt; correctness-reuse-v027-entry-20261006T2320Z.log; submission.asc; compile/src/submission.asc

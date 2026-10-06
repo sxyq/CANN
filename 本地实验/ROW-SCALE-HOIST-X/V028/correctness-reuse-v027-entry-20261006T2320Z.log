@@ -1,0 +1,182 @@
+REUSE_START_UTC=2026-10-06T23:19:09.418138683Z
+REUSE_ENTRY=V027_correctness_CMakeLists_target_v027_correctness
+RUNNER_SOURCE=V028/correctness/correctness_runner.asc
+CANDIDATE_SOURCE=V028/compile/src/submission.asc
+f5795992b3d309502534553bd80d9dccc486316d3467711c5584ea7b0f82dd59  /home/data4t2/lelinfeng/cann-row-scale-hoist-x-w4/本地实验/ROW-SCALE-HOIST-X/V028/compile/src/submission.asc
++------------------------------------------------------------------------------------------------+
+| npu-smi 25.0.rc1.1               Version: 25.0.rc1.1                                           |
++---------------------------+---------------+----------------------------------------------------+
+| NPU   Name                | Health        | Power(W)    Temp(C)           Hugepages-Usage(page)|
+| Chip                      | Bus-Id        | AICore(%)   Memory-Usage(MB)  HBM-Usage(MB)        |
++===========================+===============+====================================================+
+| 0     910B3               | OK            | 91.4        28                0    / 0             |
+| 0                         | 0000:C1:00.0  | 0           0    / 0          60222/ 65536         |
++===========================+===============+====================================================+
+| 1     910B3               | OK            | 88.5        28                0    / 0             |
+| 0                         | 0000:C2:00.0  | 0           0    / 0          60275/ 65536         |
++===========================+===============+====================================================+
+| 2     910B3               | OK            | 86.6        30                0    / 0             |
+| 0                         | 0000:81:00.0  | 0           0    / 0          60215/ 65536         |
++===========================+===============+====================================================+
+| 3     910B3               | OK            | 90.3        30                0    / 0             |
+| 0                         | 0000:82:00.0  | 0           0    / 0          60219/ 65536         |
++===========================+===============+====================================================+
+| 4     910B3               | OK            | 203.5       56                0    / 0             |
+| 0                         | 0000:01:00.0  | 65          0    / 0          59192/ 65536         |
++===========================+===============+====================================================+
+| 5     910B3               | OK            | 92.2        32                0    / 0             |
+| 0                         | 0000:02:00.0  | 0           0    / 0          60223/ 65536         |
++===========================+===============+====================================================+
+| 6     910B3               | OK            | 93.7        34                0    / 0             |
+| 0                         | 0000:41:00.0  | 0           0    / 0          60222/ 65536         |
++===========================+===============+====================================================+
+| 7     910B3               | OK            | 104.5       37                0    / 0             |
+| 0                         | 0000:42:00.0  | 0           0    / 0          24790/ 65536         |
++===========================+===============+====================================================+
++---------------------------+---------------+----------------------------------------------------+
+| NPU     Chip              | Process id    | Process name             | Process memory(MB)      |
++===========================+===============+====================================================+
+| 0       0                 | 89395         | VLLMWorker_TP            | 56702                   |
++===========================+===============+====================================================+
+| 1       0                 | 91055         | VLLMWorker_TP            | 56702                   |
++===========================+===============+====================================================+
+| 2       0                 | 92813         | VLLMWorker_TP            | 56703                   |
++===========================+===============+====================================================+
+| 3       0                 | 94498         | VLLMWorker_TP            | 56703                   |
++===========================+===============+====================================================+
+| 4       0                 | 2999855       | VLLMEngineCor            | 55666                   |
++===========================+===============+====================================================+
+| 5       0                 | 89602         | VLLMWorker_TP            | 56700                   |
++===========================+===============+====================================================+
+| 6       0                 | 91228         | VLLMWorker_TP            | 56701                   |
++===========================+===============+====================================================+
+| 7       0                 | 439848        | python3                  | 21260                   |
++===========================+===============+====================================================+
+-- CMAKE_ASC_COMPILER: /usr/local/Ascend/ascend-toolkit/latest/compiler/ccec_compiler/bin/bisheng
+CMake Warning at /usr/local/Ascend/ascend-toolkit/latest/aarch64-linux/tikcpp/ascendc_kernel_cmake/ASC_CMake/CMakeDetermineASCCompiler.cmake:57 (message):
+  CMAKE_INSTALL_PREFIX is not set.  Set to default value
+  /tmp/cann-row-scale-hoist-x-v028-reuse-v027-entry-20261006T2320Z/correctness/out.
+Call Stack (most recent call first):
+  CMakeLists.txt:4 (project)
+
+
+-- CMAKE_BUILD_TYPE: Release
+-- CMAKE_INSTALL_PREFIX: /tmp/cann-row-scale-hoist-x-v028-reuse-v027-entry-20261006T2320Z/correctness/out
+-- ASCEND_CANN_PACKAGE_PATH: /usr/local/Ascend/ascend-toolkit/latest
+-- CMAKE_ASC_LLD_LINKER: /usr/local/Ascend/ascend-toolkit/latest/tools/ccec_compiler/bin/ld.lld
+-- The CXX compiler identification is GNU 11.4.0
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /tmp/cann-row-scale-hoist-x-v028-reuse-v027-entry-20261006T2320Z/build
+[ 50%] Building ASC object CMakeFiles/v027_correctness.dir/correctness_runner.asc.o
+/tmp/cann-row-scale-hoist-x-v028-reuse-v027-entry-20261006T2320Z/correctness/correctness_runner.asc:118:17: warning: 'cce_global' attribute ignored when parsing type [-Wignored-attributes]
+    run_kernel((GM_ADDR)xDevice, xGroup,
+                ^~~~~~~
+/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/compiler/tikcpp/tikcfw/impl/utils/kernel_utils_macros.h:18:17: note: expanded from macro 'GM_ADDR'
+#define GM_ADDR __gm__ uint8_t*
+                ^~~~~~
+/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/lib/clang/15.0.5/include/__clang_cce_defines.h:47:31: note: expanded from macro '__gm__'
+#define __gm__ __attribute__((cce_global))
+                              ^~~~~~~~~~
+/tmp/cann-row-scale-hoist-x-v028-reuse-v027-entry-20261006T2320Z/correctness/correctness_runner.asc:119:17: warning: 'cce_global' attribute ignored when parsing type [-Wignored-attributes]
+               (GM_ADDR)residualDevice, residualGroup,
+                ^~~~~~~
+/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/compiler/tikcpp/tikcfw/impl/utils/kernel_utils_macros.h:18:17: note: expanded from macro 'GM_ADDR'
+#define GM_ADDR __gm__ uint8_t*
+                ^~~~~~
+/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/lib/clang/15.0.5/include/__clang_cce_defines.h:47:31: note: expanded from macro '__gm__'
+#define __gm__ __attribute__((cce_global))
+                              ^~~~~~~~~~
+/tmp/cann-row-scale-hoist-x-v028-reuse-v027-entry-20261006T2320Z/correctness/correctness_runner.asc:120:17: warning: 'cce_global' attribute ignored when parsing type [-Wignored-attributes]
+               (GM_ADDR)gammaDevice, gammaGroup,
+                ^~~~~~~
+/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/compiler/tikcpp/tikcfw/impl/utils/kernel_utils_macros.h:18:17: note: expanded from macro 'GM_ADDR'
+#define GM_ADDR __gm__ uint8_t*
+                ^~~~~~
+/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/lib/clang/15.0.5/include/__clang_cce_defines.h:47:31: note: expanded from macro '__gm__'
+#define __gm__ __attribute__((cce_global))
+                              ^~~~~~~~~~
+/tmp/cann-row-scale-hoist-x-v028-reuse-v027-entry-20261006T2320Z/correctness/correctness_runner.asc:121:17: warning: 'cce_global' attribute ignored when parsing type [-Wignored-attributes]
+               (GM_ADDR)biasDevice, biasGroup,
+                ^~~~~~~
+/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/compiler/tikcpp/tikcfw/impl/utils/kernel_utils_macros.h:18:17: note: expanded from macro 'GM_ADDR'
+#define GM_ADDR __gm__ uint8_t*
+                ^~~~~~
+/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/lib/clang/15.0.5/include/__clang_cce_defines.h:47:31: note: expanded from macro '__gm__'
+#define __gm__ __attribute__((cce_global))
+                              ^~~~~~~~~~
+/tmp/cann-row-scale-hoist-x-v028-reuse-v027-entry-20261006T2320Z/correctness/correctness_runner.asc:122:17: warning: 'cce_global' attribute ignored when parsing type [-Wignored-attributes]
+               (GM_ADDR)outputDevice, outputGroup,
+                ^~~~~~~
+/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/compiler/tikcpp/tikcfw/impl/utils/kernel_utils_macros.h:18:17: note: expanded from macro 'GM_ADDR'
+#define GM_ADDR __gm__ uint8_t*
+                ^~~~~~
+/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/lib/clang/15.0.5/include/__clang_cce_defines.h:47:31: note: expanded from macro '__gm__'
+#define __gm__ __attribute__((cce_global))
+                              ^~~~~~~~~~
+5 warnings generated.
+/tmp/cann-row-scale-hoist-x-v028-reuse-v027-entry-20261006T2320Z/correctness/correctness_runner.asc:118:17: warning: 'cce_global' attribute ignored when parsing type [-Wignored-attributes]
+/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/compiler/tikcpp/tikcfw/impl/utils/kernel_utils_macros.h:18:17: note: expanded from macro 'GM_ADDR'
+/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/lib/clang/15.0.5/include/__clang_cce_defines.h:47:31: note: expanded from macro '__gm__'
+/tmp/cann-row-scale-hoist-x-v028-reuse-v027-entry-20261006T2320Z/correctness/correctness_runner.asc:119:17: warning: 'cce_global' attribute ignored when parsing type [-Wignored-attributes]
+/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/compiler/tikcpp/tikcfw/impl/utils/kernel_utils_macros.h:18:17: note: expanded from macro 'GM_ADDR'
+/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/lib/clang/15.0.5/include/__clang_cce_defines.h:47:31: note: expanded from macro '__gm__'
+/tmp/cann-row-scale-hoist-x-v028-reuse-v027-entry-20261006T2320Z/correctness/correctness_runner.asc:120:17: warning: 'cce_global' attribute ignored when parsing type [-Wignored-attributes]
+/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/compiler/tikcpp/tikcfw/impl/utils/kernel_utils_macros.h:18:17: note: expanded from macro 'GM_ADDR'
+/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/lib/clang/15.0.5/include/__clang_cce_defines.h:47:31: note: expanded from macro '__gm__'
+/tmp/cann-row-scale-hoist-x-v028-reuse-v027-entry-20261006T2320Z/correctness/correctness_runner.asc:121:17: warning: 'cce_global' attribute ignored when parsing type [-Wignored-attributes]
+/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/compiler/tikcpp/tikcfw/impl/utils/kernel_utils_macros.h:18:17: note: expanded from macro 'GM_ADDR'
+/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/lib/clang/15.0.5/include/__clang_cce_defines.h:47:31: note: expanded from macro '__gm__'
+/tmp/cann-row-scale-hoist-x-v028-reuse-v027-entry-20261006T2320Z/correctness/correctness_runner.asc:122:17: warning: 'cce_global' attribute ignored when parsing type [-Wignored-attributes]
+/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/compiler/tikcpp/tikcfw/impl/utils/kernel_utils_macros.h:18:17: note: expanded from macro 'GM_ADDR'
+/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/lib/clang/15.0.5/include/__clang_cce_defines.h:47:31: note: expanded from macro '__gm__'
+5 warnings generated.
+Warning: please refer to the above warning message. 
+Warning: please refer to the above warning message. 
+Warning: please refer to the above warning message. 
+Warning: please refer to the above warning message. 
+Warning: please refer to the above warning message. 
+Warning: please refer to the above warning message. 
+Warning: please refer to the above warning message. 
+Warning: please refer to the above warning message. 
+Warning: please refer to the above warning message. 
+Warning: please refer to the above warning message. 
+Warning: please refer to the above warning message. 
+Warning: please refer to the above warning message. 
+Warning: please refer to the above warning message. 
+Warning: please refer to the above warning message. 
+Warning: please refer to the above warning message. 
+/tmp/asc_plugin_binary_register_code-f044b9.c:3:10: fatal error: 'vector' file not found
+#include <vector>
+         ^~~~~~~~
+1 error generated.
+cceld: ccec ReturnCode: 1
+cceld: ExecutionFailed: 0
+cceld: ErrMsg: 
+/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/bin/llvm-objcopy: error: '/tmp/cce_all_link-8ba3ab.o': No such file or directory
+cceld: ccec ReturnCode: 1
+cceld: ObjcopyExecutionFailed: 0
+cceld: ObjcopyErrMsg: 
+ld.lld: error: cannot open /tmp/cce_all_link-8ba3ab.o: No such file or directory
+cceld: ccec ReturnCode: 1
+cceld: RelocatedLinkedExecutionFailed: 0
+cceld: RelocatedLinkedObjcopyErrMsg: 
+/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/bin/llvm-objcopy: error: '/tmp/cce_relocated_linked_static_object-4522ac.o': The file was not recognized as a valid object file
+cceld: ccec ReturnCode: 1
+cceld: LocalFixedExecutionFailed: 0
+cceld: LocalFixedErrMsg: 
+ld.lld: error: target emulation unknown: -m or at least one .o file required
+cceld: Linker ReturnCode: 1
+cceld: ExecutionFailed: 0
+cceld: ErrMsg: 
+bisheng: error: linker command failed with exit code 1 (use -v to see invocation)
+gmake[3]: *** [CMakeFiles/v027_correctness.dir/build.make:76: CMakeFiles/v027_correctness.dir/correctness_runner.asc.o] Error 1
+gmake[2]: *** [CMakeFiles/Makefile2:83: CMakeFiles/v027_correctness.dir/all] Error 2
+gmake[1]: *** [CMakeFiles/Makefile2:90: CMakeFiles/v027_correctness.dir/rule] Error 2
+gmake: *** [Makefile:124: v027_correctness] Error 2
+REUSE_RC=2
