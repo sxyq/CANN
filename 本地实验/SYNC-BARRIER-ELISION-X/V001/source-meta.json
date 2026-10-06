@@ -1,0 +1,89 @@
+{
+  "route": "SYNC-BARRIER-ELISION-X",
+  "revision": "V001",
+  "record_type": "local_revision",
+  "direct_parent": {
+    "route": "R31B",
+    "revision": "V011",
+    "source_path": "线上结果/R31B/V011/submission.asc",
+    "source_sha256": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+    "official_score": 45.16
+  },
+  "candidate_source_path": "本地实验/SYNC-BARRIER-ELISION-X/V001/submission.asc",
+  "candidate_source_sha256": "ba3eec48d4a4f2b845367219f130829d16e9d6e6fd64de5165d9936cbb35ad86",
+  "parent_copy_path": "本地实验/SYNC-BARRIER-ELISION-X/V001/parent.asc",
+  "parent_copy_matches_canonical": true,
+  "single_hypothesis": "Remove one non-load-bearing FP16 V-pipe barrier before the existing V-to-MTE3 synchronization in ProcessNarrowMidOverlap.",
+  "single_change_boundary": "One synchronization-operation deletion; no whole-pipeline rewrite.",
+  "source_diff_path": "本地实验/SYNC-BARRIER-ELISION-X/V001/diff.patch",
+  "canonical_route_skill_commit": "d8c3b380276df5549f057dee19031e04fdd874a9",
+  "compile": {
+    "host": "hwnput3",
+    "toolchain": "CANN 8.5.0.alpha002",
+    "final_status": "PASS",
+    "evidence": [
+      "logs/server3-compile-initial-failed.log",
+      "logs/server3-compile-initial-diagnostic.log",
+      "logs/server3-compile-retry1-failed.log",
+      "logs/server3-compile-retry2-pass.log"
+    ]
+  },
+  "correctness": {
+    "status": "PASS",
+    "device": 3,
+    "dtype": "fp16",
+    "cases": 5,
+    "shapes": ["8x128", "8x256", "8x1024", "8x2048", "8x4096"],
+    "parent_candidate_bit_mismatch": 0,
+    "evidence": [
+      "logs/correctness-build-initial-failed.log",
+      "logs/correctness-build-retry1-failed.log",
+      "logs/correctness-build-retry2-pass.log",
+      "logs/correctness-device3-pass.log"
+    ]
+  },
+  "local": {
+    "status": "MEASUREMENT_BLOCKED",
+    "device": 3,
+    "shape": "8x2048",
+    "dtype": "fp16",
+    "sample_pairs_per_run": 31,
+    "diagnostic_local_score_percent_latest": 2.000006,
+    "diagnostic_scores_percent": [0.446432, 2.000006],
+    "runs": [
+      {
+        "id": "run1",
+        "utc_start": "2026-10-06T22:39:01Z",
+        "parent_median_us": 8.96,
+        "candidate_median_us": 11.4,
+        "paired_median_delta_us": -0.04,
+        "diagnostic_score_percent": 0.446432,
+        "parent_mad_us": 4.1,
+        "candidate_mad_us": 6.16,
+        "paired_p10_us": -46.32,
+        "paired_p90_us": 76.9,
+        "evidence": "logs/local-device3-run1-full.log"
+      },
+      {
+        "id": "repeat",
+        "utc_start": "2026-10-06T22:41:32Z",
+        "parent_median_us": 5.0,
+        "candidate_median_us": 5.16,
+        "paired_median_delta_us": -0.1,
+        "diagnostic_score_percent": 2.000006,
+        "parent_mad_us": 0.76,
+        "candidate_mad_us": 0.34,
+        "paired_p10_us": -1.82,
+        "paired_p90_us": 1.34,
+        "evidence": "logs/local-device3-repeat-full.log"
+      }
+    ],
+    "interpretation": "Large device-time outliers and run-to-run median drift prevent a qualified performance claim. Keep both numeric diagnostics, but do not promote V001 to Local Best.",
+    "evidence": [
+      "logs/local-build-pass.log",
+      "logs/local-device3-run1-full.log",
+      "logs/local-device3-repeat-full.log"
+    ]
+  },
+  "online": "NOT_RUN"
+}
