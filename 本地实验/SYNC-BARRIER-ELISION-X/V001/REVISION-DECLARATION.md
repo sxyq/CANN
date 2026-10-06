@@ -20,7 +20,7 @@ Delete the FP16 `AscendC::PipeBarrier<PIPE_V>()` immediately after the resident-
 
 - Compile: PASS on `hwnput3`, CANN `8.5.0.alpha002`, final retry retained in `logs/server3-compile-retry2-pass.log`.
 - Correctness: PASS on device `3`, FP16 shapes `8x128`, `8x256`, `8x1024`, `8x2048`, `8x4096`; parent/candidate bit mismatch count `0` for all five cases.
-- Local: two 31-pair runs on device `3`, FP16 `8x2048`; numeric diagnostics are `+0.446432%` and `+2.000006%` candidate score, with paired median deltas `-0.0400 us` and `-0.1000 us` respectively. High outliers and jitter make the result `MEASUREMENT_BLOCKED`; no Local Best promotion.
+- Local: two 31-pair runs on device `3`, FP16 `8x2048`; runner-reported run diagnostics are `+0.446432%` and `+2.000006%`, with paired median deltas `-0.0400 us` and `-0.1000 us`. The declared route-local aggregate is the geometric mean of `parent_device_us / candidate_device_us` over all 62 pairs: `0.902471005533x`, or `LOCAL_SCORE=-9.752899447%` and `LOCAL_DELTA=-9.752899447%`. `LOCAL_SCORE_TYPE=ROUTE_LOCAL_GEOMEAN_PAIRED_DEVICE_SPEEDUP_PERCENT`; `LOCAL_SCORE_COMPARABLE_TO_OFFICIAL=NO`; `LOAD_QUALITY=LOW/NOISY`. No samples or outliers were removed. Verdict: `LOCAL_REJECTED`; no Local Best promotion.
 
 ## Evidence boundary
 

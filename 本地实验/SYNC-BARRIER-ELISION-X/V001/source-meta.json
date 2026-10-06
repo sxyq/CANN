@@ -43,12 +43,18 @@
     ]
   },
   "local": {
-    "status": "MEASUREMENT_BLOCKED",
+    "status": "LOCAL_REJECTED",
     "device": 3,
     "shape": "8x2048",
     "dtype": "fp16",
     "sample_pairs_per_run": 31,
-    "diagnostic_local_score_percent_latest": 2.000006,
+    "total_paired_samples": 62,
+    "local_score_percent": -9.752899447,
+    "local_delta_percent": -9.752899447,
+    "local_score_type": "ROUTE_LOCAL_GEOMEAN_PAIRED_DEVICE_SPEEDUP_PERCENT",
+    "local_score_comparable_to_official": false,
+    "load_quality": "LOW/NOISY",
+    "aggregation": "Geometric mean of parent_device_us / candidate_device_us over all 62 paired samples; no outliers removed.",
     "diagnostic_scores_percent": [0.446432, 2.000006],
     "runs": [
       {
@@ -57,7 +63,9 @@
         "parent_median_us": 8.96,
         "candidate_median_us": 11.4,
         "paired_median_delta_us": -0.04,
-        "diagnostic_score_percent": 0.446432,
+        "runner_reported_diagnostic_score_percent": 0.446432,
+        "route_local_geomean_parent_over_candidate": 0.824761275729,
+        "route_local_geomean_speedup_percent": -17.523872427,
         "parent_mad_us": 4.1,
         "candidate_mad_us": 6.16,
         "paired_p10_us": -46.32,
@@ -70,7 +78,9 @@
         "parent_median_us": 5.0,
         "candidate_median_us": 5.16,
         "paired_median_delta_us": -0.1,
-        "diagnostic_score_percent": 2.000006,
+        "runner_reported_diagnostic_score_percent": 2.000006,
+        "route_local_geomean_parent_over_candidate": 0.987502614145,
+        "route_local_geomean_speedup_percent": -1.249738585,
         "parent_mad_us": 0.76,
         "candidate_mad_us": 0.34,
         "paired_p10_us": -1.82,
@@ -78,7 +88,9 @@
         "evidence": "logs/local-device3-repeat-full.log"
       }
     ],
-    "interpretation": "Large device-time outliers and run-to-run median drift prevent a qualified performance claim. Keep both numeric diagnostics, but do not promote V001 to Local Best.",
+    "pooled_geomean_parent_over_candidate": 0.902471005533,
+    "pooled_geomean_speedup_percent": -9.752899447,
+    "interpretation": "Numeric route-local score includes all samples, including large outliers. LOAD_QUALITY=LOW/NOISY; score is explicitly non-comparable to Official. V001 is LOCAL_REJECTED and not a Local Best.",
     "evidence": [
       "logs/local-build-pass.log",
       "logs/local-device3-run1-full.log",
