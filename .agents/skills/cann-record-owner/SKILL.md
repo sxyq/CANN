@@ -37,6 +37,8 @@ Record Owner 不编辑 Candidate，不运行 Compile、Correctness、Local 或 N
 
 记录工作是异步 bookkeeping，永远不是实验开始、Compile、Correctness、Local 或 Online 的前置条件。
 
+Record Owner 负责把用户转交的规则回执与服务器不可达事实写入共享记录；规则文件只规定处理语义，不复制动态分数或连接状态。收到 `R4 RESUME_BEFORE_V014` 回执时，只记录已提供的 receipt、`CURRENT_PARENT` 工作快照、`LATEST_COMPLETED`、Local Best、最后动作、精确下一动作和 `SERVER3_UNAVAILABLE`；不得把工作快照当作正式 `DIRECT_PARENT`，不得把旧 SSH 超时回执写成新的连通测试，不得补造 V014、版本事件或技术结果。
+
 ## 事实处理
 
 - 只登记已经由 Child receipt 或正式结果支持的事实；
@@ -48,7 +50,7 @@ Record Owner 不编辑 Candidate，不运行 Compile、Correctness、Local 或 N
 - 每个 `VERSION_RECORD_EVENT` 都必须登记；负结果、失败结果、工具失败和非 Local Best 不能漏记。
 - 缺失字段保留为 `UNKNOWN` 或 `NONE`，不得发明缺失数据。
 
-`VERSION_RECORD_EVENT REQUIRED`。Record Owner 的异步记录不能成为 Route 下一阶段的前置条件，但下一 Revision 仍遵守 `NEXT REVISION BLOCKED UNTIL PREVIOUS EVENT EXISTS` 的事件顺序要求。
+`VERSION_RECORD_EVENT REQUIRED`。Record Owner 的异步写入不能延误已经在途的 Compile、Correctness、Local 或 commit；下一普通 Revision 仍遵守 `NEXT REVISION BLOCKED UNTIL PREVIOUS EVENT EXISTS` 的事件顺序要求。
 
 ## C2C receipt
 

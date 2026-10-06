@@ -12,7 +12,7 @@ Support Agent 可以跨 Route 阅读项目证据、QQ 社区记录、公开文�
 社区情报必须经过：
 
 ```text
-claim → project evidence → falsifiable hypothesis → experiment proposal
+claim → evidence → hypothesis → experiment
 ```
 
 聊天关键词本身不构成实现依据。研究结论应说明来源、已知事实、可证伪假设、预期观测和失败条件。

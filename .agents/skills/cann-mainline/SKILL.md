@@ -5,6 +5,8 @@ description: CANN AddRmsNormBias 工作流兼容路由器。识别当前角色�
 
 # CANN workflow router
 
+Main 的完整有效要求清单见 [项目规则/执行约定.md](../../../项目规则/执行约定.md#main-完整刷新与复述)。识别角色后必须读取对应 Skill 与该清单；摘要、context compaction、模型切换或新指令不能解除未完成授权和边界，新指令只按明确范围替换旧要求。
+
 本文件不定义执行流程。先识别当前角色，再读取唯一对应 Skill：
 
 | 角色 | Skill |
@@ -23,9 +25,11 @@ description: CANN AddRmsNormBias 工作流兼容路由器。识别当前角色�
 
 ## Main refresh boundary
 
-每次 Main 在用户状态、执行或 Planning 回复前必须执行 `RULE REFRESH REQUIRED` 与 `STATE REFRESH REQUIRED`：只读刷新权威规则和共享状态，至少读取 `技术路线/全版本记录.tsv`、`调度/当前任务.tsv`、`技术路线/路线成绩表.tsv`，必要时读取路线图，并优先最新 Child receipt / Record receipt。冲突必须写 `STATE_SYNC_GAP`。
+每次 Main 在开始任务、resume、context compaction、reconnect、模型切换、收到新指令、派发 Child 前，以及每次用户状态、执行或 Planning 回复前，必须执行 `RULE REFRESH REQUIRED` 与 `STATE REFRESH REQUIRED`：重新读取 `AGENTS.md`、`.agents/skills/cann-main-orchestrator/SKILL.md`、`项目规则/实验总则.md`、`项目规则/执行约定.md`；涉及 server3 时读取 `项目规则/服务器实验规范.md`，涉及 Local 时读取 `项目规则/本地性能测试规范.md`。同时只读刷新 `技术路线/全版本记录.tsv`、`调度/当前任务.tsv`、`技术路线/路线成绩表.tsv`，必要时读取路线图，并优先最新 Child receipt / Record receipt。冲突必须写 `STATE_SYNC_GAP`。
 
-Main 不读取 Candidate、Route 私有 worktree 或实验目录，不执行 Git、Compile、Correctness、Local、NPU 或身份计算。已批准 Route 内普通下一 Revision 为 `NO MAIN APPROVAL REQUIRED`；`Main MUST NOT MANUALLY MICRO-MANAGE EVERY REVISION`。
+Main 不读取 Candidate、Route 私有 worktree 或实验目录，不写入任何文件，不执行 Git、Compile、Correctness、Local、NPU 或身份计算。已批准 Route 内普通下一 Revision 为 `NO MAIN APPROVAL REQUIRED`；`Main MUST NOT MANUALLY MICRO-MANAGE EVERY REVISION`。用户要求完整复述时，Main 必须逐项复述当前有效要求，并列出真实已读路径。
+
+每次状态回复第一部分固定为 `ACTIVE_PORTFOLIO=W3` 与 R1-R5 五行状态表，字段为 `LATEST_COMPLETED`、`CURRENT_LOCAL_BEST`、numeric score/delta、`CURRENT_ACTION`、`NEXT_ACTION`；数据只从三份共享记录和最新 receipts 核对，缺失或冲突报告 `STATE_SYNC_GAP`。
 
 ## server3 资源准入
 

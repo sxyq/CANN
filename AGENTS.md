@@ -38,7 +38,7 @@
 | 角色 | 负责 | 不负责 |
 |---|---|---|
 | Planning / Review Layer | Route 生命周期、路线组合、是否 Online | — |
-| Main | C2C 协调、并发协调、状态汇总、向 Planning 报告 | 读写 Candidate、Route 私有 worktree、实验目录、Dashboard、共享记录；运行 Git、Compile、Correctness、Local、NPU 或身份计算 |
+| Main | C2C 协调、并发协调、状态汇总、向 Planning 报告；按窄范围只读共享状态 | 写入 Candidate、Route 私有 worktree、实验目录、Dashboard、共享记录；运行 Git、Compile、Correctness、Local、NPU 或身份计算 |
 | Route Agent | 一个 Route 的 Candidate、Compile、Correctness、Local、实验 Git | 其他 Route、共享记录、Route 生命周期、正式 Online |
 | Support Agent | 跨 Route 研究、群聊和公开资料取证、硬件/API 分析 | Candidate、Route ownership、共享记录、正式 Online |
 | Record Owner | 共享 TSV、路线记录和 Dashboard 的唯一写入 | Candidate、实验、Route 决策、执行控制 |
@@ -46,11 +46,15 @@
 
 Main 的项目状态只能来自 Child C2C receipt、Record Owner receipt、Online Owner receipt、权威共享状态和 Planning 指令。
 
+Online 当前为 `PAUSED`；Main 与 Route Agent 不得擅自恢复，只有 Planning 改变决策后由指定 Online Owner 正式提交。
+
+完整有效要求清单唯一入口为 `项目规则/执行约定.md` 的“Main 完整刷新与复述”及其相邻章节；Main 在规则指定的所有触发点读取该清单，摘要、context compaction、模型切换或新指令不能解除未完成授权和边界，新指令只按明确范围替换旧要求。
+
 ## RULE REFRESH REQUIRED / STATE REFRESH REQUIRED
 
-每次 Main 在用户状态、执行或 Planning 回复前，必须只读刷新权威规则和共享状态。权威规则至少包括本文件、对应角色 Skill、`项目规则/` 下相关文件；共享状态至少刷新 `技术路线/全版本记录.tsv`、`调度/当前任务.tsv`、`技术路线/路线成绩表.tsv`，必要时读取 `技术路线/技术路线图.md`。Main 优先采用最新 Child receipt 与 Record receipt；来源冲突时必须报告 `STATE_SYNC_GAP`，不得自行猜测或写入共享记录。
+每次 Main 在开始任务、resume、context compaction、reconnect、模型切换、收到新指令、派发 Child 前，以及用户状态、执行或 Planning 回复前，必须只读刷新权威规则和共享状态。权威规则至少包括本文件、对应角色 Skill、`项目规则/实验总则.md`、`项目规则/执行约定.md`；涉及 server3 或 Local 时读取对应规范。共享状态至少刷新 `技术路线/全版本记录.tsv`、`调度/当前任务.tsv`、`技术路线/路线成绩表.tsv`，必要时读取 `技术路线/技术路线图.md`。Main 优先采用最新 Route receipt、Record receipt 和正式记录；来源冲突时必须报告 `STATE_SYNC_GAP`，不得自行猜测或写入共享记录。
 
-Main 只读上述权威规则和共享状态，不读取 Candidate、Route 私有 worktree、实验目录或归档材料，不执行 Git、Compile、Correctness、Local、NPU 或身份计算。
+Main 只读上述权威规则和允许的共享状态，不读取 Candidate、Route 私有 worktree、实验目录或归档材料，不执行 Git、Compile、Correctness、Local、NPU 或身份计算。共享状态只允许窄范围只读刷新，不允许 Main 写入。
 
 已批准 Route 内的普通下一 Revision 标记为 `NO MAIN APPROVAL REQUIRED`。Route 应长期复用同一 owner、context、branch 和 worktree；`Main MUST NOT MANUALLY MICRO-MANAGE EVERY REVISION`。
 
@@ -77,7 +81,7 @@ Route Agent 不读取其他 Route worktree；同一 Route 只有一个 Candidate
 ## 执行主链
 
 ```text
-ONE CHANGE → COMPILE → CORRECTNESS → LOCAL → RESULT → COMMIT → NEXT CHANGE
+ONE CHANGE → COMPILE → CORRECTNESS → LOCAL → RESULT → COMMIT → VERSION_RECORD_EVENT → NEXT CHANGE
 ```
 
 单 Revision 只表达一个小变化。失败和负结果保留。记录异步写入，不能成为实验前置条件。
@@ -113,6 +117,6 @@ lease 只是 coordination / bookkeeping metadata，不是执行权限；不得�
 - 当前调度：`调度/当前任务.tsv`；
 - Local ↔ Official：`调度/本地线上校准.tsv`。
 
-版本记录：人类可读版本树和 Markdown 表唯一位于 `技术路线/技术路线图.md`；结构化账本唯一位于 `技术路线/全版本记录.tsv`。Route Agent → `VERSION_RECORD_EVENT` → Record Owner 异步同步；Main 不读写这两份 shared files。
+版本记录：人类可读版本树和 Markdown 表唯一位于 `技术路线/技术路线图.md`；结构化账本唯一位于 `技术路线/全版本记录.tsv`。Route Agent → `VERSION_RECORD_EVENT` → Record Owner 异步同步；Main 只读允许的共享状态，不写入这两份 shared files。
 
 历史证据、旧字段和归档控制文件保持原样；它们不重新成为当前规则入口。群聊提取细节只在 `工具/提取/README.md` 维护，本文不重复操作说明。

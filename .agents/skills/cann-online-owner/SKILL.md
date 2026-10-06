@@ -5,6 +5,10 @@ description: CANN AddRmsNormBias Online Owner Skill。Planning 批准后由唯�
 
 # Online Owner
 
+## 当前状态
+
+Online 当前为 `PAUSED`。Online Owner 在收到 Planning / Review Layer 的新批准前不得提交；Main 与 Route Agent 不能恢复 Online。恢复后仍由本 Skill 规定唯一正式提交和 receipt。
+
 ## 角色链
 
 ```text
@@ -30,7 +34,7 @@ Main 向 Planning / Review Layer 报告：
 
 没有固定百分比、固定 Revision 数、每次正向结果必提或固定时间间隔的提交要求。积累的每个版本仍只改变一件事。
 
-Planning 批准后，Online Owner 使用现有正式提交工具完成一次提交，保留 Judge 返回的正式结果，并向 Main 和 Record Owner 发送 receipt。Online Owner 不改 Candidate，不决定 Route 生命周期，不修改共享成绩记录。
+只有 Planning / Review Layer 将 Online 从 `PAUSED` 改为批准状态后，Online Owner 才能使用现有正式提交工具完成一次提交，保留 Judge 返回的正式结果，并向 Main 和 Record Owner 发送 receipt。Online Owner 不改 Candidate，不决定 Route 生命周期，不修改共享成绩记录。
 
 正式提交不依赖旧版来源字段、对象字段或额外资格流程。工具内部若仍产生旧摘要元数据，属于 `TOOLING_REMAINDER`；工作流不读取、不计算、不以它作为提交依据。
 

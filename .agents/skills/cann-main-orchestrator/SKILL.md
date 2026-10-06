@@ -5,15 +5,19 @@ description: CANN AddRmsNormBias Main 协调 Skill。只通过 Child C2C 收集�
 
 # Main Orchestrator
 
+完整有效要求清单唯一入口为 [项目规则/执行约定.md](../../../项目规则/执行约定.md#main-完整刷新与复述)。本 Skill 规定 Main 的协调边界；每次刷新、派发和答复都必须同时按该清单逐项执行。摘要、context compaction、模型切换或新指令不能解除未完成授权、读写边界和安全要求；新指令只按明确范围替换旧要求。
+
 ## ACTIVE PORTFOLIO W3
 
 Main 只协调当前 `ACTIVE PORTFOLIO W3`：`R1 UB-BANK-LAYOUT-CHAMPION-X`、`R2 ADAPTIVE-CORE-OWNERSHIP-CHAMPION-X`、`R3 TINY-MINIMAL-KERNEL-CHAMPION-X`、`R4 MULTIROW-PANEL-RMS-CHAMPION-X`、`R5 CROSSROW-FULL-PIPELINE-CHAMPION-X`。`OLD W2 HISTORICAL ONLY`：`SYNC`、`CASE47`、`CASE14`、`SELECTIVE`、`TINY-FIXED-OVERHEAD` 不能用于当前状态。
 
 ## 权限边界
 
-Main 只协调。每次用户状态、执行或 Planning 回复前，必须执行 `RULE REFRESH REQUIRED` 和 `STATE REFRESH REQUIRED`，只读刷新权威规则与共享状态：至少刷新 `技术路线/全版本记录.tsv`、`调度/当前任务.tsv`、`技术路线/路线成绩表.tsv`，必要时读取 `技术路线/技术路线图.md`，并优先最新 Child receipt / Record receipt。冲突必须报告 `STATE_SYNC_GAP`。
+Main 只协调。每次开始任务、resume、context compaction、reconnect、模型切换、收到新指令、派发 Child 前，以及每次用户状态、执行或 Planning 回复前，必须执行 `RULE REFRESH REQUIRED` 和 `STATE REFRESH REQUIRED`：重新读取 `AGENTS.md`、本 Skill、`项目规则/实验总则.md`、`项目规则/执行约定.md`；涉及 server3 时读取 `项目规则/服务器实验规范.md`，涉及 Local 时读取 `项目规则/本地性能测试规范.md`。同时窄范围只读刷新 `技术路线/全版本记录.tsv`、`调度/当前任务.tsv`、`技术路线/路线成绩表.tsv`，必要时读取 `技术路线/技术路线图.md`，并优先最新 Child receipt / Record receipt。冲突必须报告 `STATE_SYNC_GAP`。
 
-Main 不读取 Candidate、Route 私有 worktree、实验目录或归档材料，不编辑项目文件、Candidate、共享记录或 Dashboard，不运行 Git、Compile、Correctness、Local、NPU，也不计算身份信息。项目状态只来自 Child 的 C2C receipt、Record Owner receipt、Online Owner receipt、权威共享状态和 Planning 指令。
+Main 不读取 Candidate、Route 私有 worktree、实验目录或归档材料，不写入任何文件，不运行 Git、Compile、Correctness、Local、NPU，也不计算身份信息。项目状态只来自 Child 的 C2C receipt、Record Owner receipt、Online Owner receipt、权威共享状态和 Planning 指令。用户要求完整复述时，Main 必须逐项复述当前有效要求并列出真实已读路径。
+
+每次状态答复第一部分固定输出 `ACTIVE_PORTFOLIO=W3` 和五行 R1-R5 状态表，字段为 `LATEST_COMPLETED`、`CURRENT_LOCAL_BEST`、numeric score/delta、`CURRENT_ACTION`、`NEXT_ACTION`。该表只从三份共享记录与最新 receipts 读取；缺失或冲突报告 `STATE_SYNC_GAP`。
 
 Main 可以：
 
@@ -25,6 +29,8 @@ Main 可以：
 - 识别流程偏离，并向 Route Agent 返回即时恢复指令。
 
 Main 不决定 Route 生命周期，不正式提交 Online，不创建任何自主任务。
+
+Online 当前为 `PAUSED`。Main 只能向 Planning / Review Layer 报告事实和建议，不能恢复 Online；Route Agent 不能正式提交 Online，只有 Planning 改变决策后由指定 Online Owner 提交。
 
 ## Route ownership
 
@@ -130,6 +136,8 @@ SEND VERSION_RECORD_EVENT TO RECORD OWNER
 这条提醒不得取消、暂停或阻塞已经启动的 Compile、Correctness、Local 或提交阶段。Main 不打开文件补录，也不替 Record Owner 写共享文件。
 
 正常 Route 完成的 receipt 必须包含 numeric Local score/delta、Parent/Candidate raw samples 与 medians、shape/dtype、device、free HBM、load note 和 current best，并满足 `LOCAL SCORE REQUIRED`。Compile 或 Correctness 失败也要保留证据、commit/status 和 `VERSION_RECORD_EVENT REQUIRED`。`NEXT REVISION BLOCKED UNTIL PREVIOUS EVENT EXISTS`；Main 只传达该状态，不替 Route 微管理实验。
+
+R4 收到 `RESUME_BEFORE_V014` 的旧 `RULE_REFRESH_RECEIPT` 时，只把它当作回执生成时已读规则的证明。若 server3 不可达，保持 `BLOCKER=SERVER3_UNAVAILABLE`，不编辑 Candidate、不启动 V014、不虚构 Revision 或版本事件。连接恢复后，Route Agent 必须重新完整读取六项规则入口并发送新的 receipt；`CURRENT_PARENT=V013` 是工作快照，不强制 Direct Parent，正式 Parent 由 Route 按单因素规则选择并声明，`CURRENT_LOCAL_BEST=V009` 保留。
 
 ## 自主任务禁令
 

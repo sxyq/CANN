@@ -19,7 +19,7 @@ Route Agent 只执行当前 `ACTIVE PORTFOLIO W3` 中已批准的路线：`R1 UB
 
 ## RULE REFRESH REQUIRED
 
-每个新 Revision、resume、reconnect、context restore 或 long interruption 后，Candidate edit 前必须重新读取 `AGENTS.md`、本 Skill、`项目规则/实验总则.md`、`项目规则/执行约定.md`、`项目规则/服务器实验规范.md`、`项目规则/本地性能测试规范.md`，然后先发送 `RULE_REFRESH_RECEIPT`。receipt 至少说明 Route、Revision、触发原因、读取的规则入口和当前执行主链。无 `RULE_REFRESH_RECEIPT` 不得 edit。
+每个新 Revision、resume、reconnect、context restore 或 long interruption 后，Candidate edit 前必须重新读取 `AGENTS.md`、本 Skill、`项目规则/实验总则.md`、`项目规则/执行约定.md`、`项目规则/服务器实验规范.md`、`项目规则/本地性能测试规范.md`，然后先发送新的 `RULE_REFRESH_RECEIPT`。同版 Compile/Correctness direct fix 前先重读 `AGENTS.md`、本 Skill、`项目规则/执行约定.md`，再发送注明读取范围的 receipt，然后只做直接修复，编辑后下一实验动作必须是 `COMPILE`；中间不插入阅读。无对应 receipt 不得 edit。
 
 ## Authoritative loop
 
@@ -45,7 +45,7 @@ ONE CHANGE
 5. Correctness 通过后再次确认 `FREE_HBM >= 100 MB`，满足即立即执行 Local Performance。
 6. 报告 Local score、delta、samples、raw latency、jitter、`FREE_HBM`、device load、repeatability 和结果解释。
 7. 提交本轮实验结果的 Git commit。失败版本、负结果和工具失败都保留。
-8. 发送 `VERSION_RECORD_EVENT`，并等待该事件存在后才能开始下一 Revision。
+8. 发送 `VERSION_RECORD_EVENT`，并等待该事件存在后才能开始下一普通 Revision；Record Owner 异步写入不得延误已经在途的 Compile、Correctness、Local 或 commit。
 9. Local 改善时及时 push，并把该 Revision 标为 `CURRENT_LOCAL_BEST`；下一轮可从它继续。
 10. Local 未改善时保留负结果，不提升为 Local Best；下一轮回到当前 `CURRENT_LOCAL_BEST`。
 
@@ -145,6 +145,8 @@ RESULT → COMMIT → ROUTE_EVENT + VERSION_RECORD_EVENT with LOCAL_BEST unchang
 ```
 
 `VERSION_RECORD_EVENT` 不包含来源或对象身份字段。Record Owner 负责异步落盘，Route Agent 不直接写共享账本、路线图或 Dashboard。
+
+恢复本身不产生 `VERSION_RECORD_EVENT`，也不虚构 Revision。server3 不可达时保留最后完成动作、精确 `NEXT_ACTION` 和 `BLOCKER=SERVER3_UNAVAILABLE`；不得编辑 Candidate 或启动下一 Revision。连接恢复必须由新的正式记录确认，不能把用户转交的旧超时回执当作本轮新连通测试。
 
 已批准 Route 内的普通下一 Revision 为 `NO MAIN APPROVAL REQUIRED`。Route Agent 长期复用同一 owner、context、branch 和 worktree；`Main MUST NOT MANUALLY MICRO-MANAGE EVERY REVISION`。
 
