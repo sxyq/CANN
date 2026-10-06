@@ -1,0 +1,60 @@
+{
+  "route": "SYNC-BARRIER-ELISION-X",
+  "revision": "V004",
+  "record_type": "local_revision",
+  "direct_parent": {
+    "route": "R31B",
+    "revision": "V011",
+    "source_sha256": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3"
+  },
+  "candidate_source_path": "本地实验/SYNC-BARRIER-ELISION-X/V004/submission.asc",
+  "candidate_source_sha256": "179c85f15163c1e41d1d87d3d61d96485b10183f6cc33036c34ee922cf8358bb",
+  "single_hypothesis": "Remove one FP16 PIPE_V barrier between input Add and ToFloat in ProcessNarrowMidOverlap.",
+  "single_change_boundary": "One synchronization-operation deletion only.",
+  "diff_path": "本地实验/SYNC-BARRIER-ELISION-X/V004/diff.patch",
+  "compile": {
+    "status": "PASS",
+    "toolchain": "CANN 8.5.0.alpha002",
+    "executable_sha256": "db79236f011bfcff8786d48503a6bab38b9acb2c1d615793b94e6efc64b752ec",
+    "evidence": "本地实验/SYNC-BARRIER-ELISION-X/V004/logs/server3-compile.log"
+  },
+  "correctness": {
+    "status": "PASS",
+    "device": 3,
+    "dtype": "fp16",
+    "shapes": ["8x128", "8x256", "8x1024", "8x2048", "8x4096"],
+    "parent_candidate_bit_mismatch": 0,
+    "executable_sha256": "fa0dcc66b235104ace41e9afe47c39d7978195eb0eb4e5804fd82ab07ec384ae",
+    "evidence": "本地实验/SYNC-BARRIER-ELISION-X/V004/logs/correctness-device3.log"
+  },
+  "local": {
+    "status": "LOCAL_REJECTED",
+    "device": 3,
+    "shape": "8x2048",
+    "dtype": "fp16",
+    "sample_pairs_per_run": 31,
+    "total_paired_samples": 62,
+    "local_score_percent": -28.911198756,
+    "local_delta_percent": -28.911198756,
+    "local_score_type": "ROUTE_LOCAL_GEOMEAN_PAIRED_DEVICE_SPEEDUP_PERCENT",
+    "local_score_comparable_to_official": false,
+    "load_quality": "LOW/NOISY",
+    "aggregation": "Geometric mean of parent_device_us / candidate_device_us over all 62 paired samples; no outliers removed.",
+    "parent_median_us": 4.98,
+    "candidate_median_us": 5.81,
+    "paired_median_delta_us": 0.56,
+    "throughput": "Derived effective elements/s from pooled median device latency; runner emitted latency only.",
+    "evidence": [
+      "本地实验/SYNC-BARRIER-ELISION-X/V004/local-result.json",
+      "本地实验/SYNC-BARRIER-ELISION-X/V004/logs/local-device3-run1-full.log",
+      "本地实验/SYNC-BARRIER-ELISION-X/V004/logs/local-device3-run2-full.log"
+    ],
+    "timestamps": {
+      "run1_start": "2026-10-06T23:39:24Z",
+      "run1_end": "2026-10-06T23:39:33Z",
+      "run2_start": "2026-10-06T23:40:50Z",
+      "run2_end": "2026-10-06T23:40:58Z"
+    }
+  },
+  "online": "NOT_RUN"
+}
