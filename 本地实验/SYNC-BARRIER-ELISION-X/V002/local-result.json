@@ -1,0 +1,79 @@
+{
+  "route": "SYNC-BARRIER-ELISION-X",
+  "revision": "V002",
+  "direct_parent": "R31B-V011",
+  "status": "LOCAL_REJECTED",
+  "device": 3,
+  "shape": "8x2048",
+  "dtype": "fp16",
+  "sample_pairs_per_run": 31,
+  "total_paired_samples": 62,
+  "LOCAL_SCORE_TYPE": "ROUTE_LOCAL_GEOMEAN_PAIRED_DEVICE_SPEEDUP_PERCENT",
+  "LOCAL_SCORE_COMPARABLE_TO_OFFICIAL": "NO",
+  "LOAD_QUALITY": "NOISY",
+  "local_score_percent": -7.502737539,
+  "local_delta_percent": -7.502737539,
+  "local_score": -7.502737539,
+  "local_delta": -7.502737539,
+  "local_score_unit": "percent",
+  "local_score_type": "ROUTE_LOCAL_GEOMEAN_PAIRED_DEVICE_SPEEDUP_PERCENT",
+  "local_score_comparable_to_official": false,
+  "load_quality": "NOISY",
+  "local_score_method": "Geometric mean across every paired sample of parent_device_us / candidate_device_us; score percent=(geomean_ratio-1)*100. All 62 corrected one-change pairs retained, including outliers.",
+  "local_score_note": "Numeric route-local aggregate, not comparable to the Official score formula. Noise is reported as load quality and does not suppress the numeric result.",
+  "runs": [
+    {
+      "run": "2026-10-06T23:16:28Z",
+      "sample_pairs": 31,
+      "parent_median_us": 5.4,
+      "candidate_median_us": 5.3,
+      "paired_median_delta_us": -0.7,
+      "runner_reported_diagnostic_score_percent": 12.962958,
+      "route_local_geomean_parent_over_candidate": 1.091916255493,
+      "route_local_geomean_speedup_percent": 9.191625549,
+      "parent_mad_us": 1.04,
+      "candidate_mad_us": 1.1,
+      "paired_p10_us": -59.9,
+      "paired_p90_us": 68.64,
+      "evidence": "logs/local-device3-run1-full.log"
+    },
+    {
+      "run": "2026-10-06T23:17:15Z",
+      "sample_pairs": 31,
+      "parent_median_us": 5.16,
+      "candidate_median_us": 5.3,
+      "paired_median_delta_us": 0.14,
+      "runner_reported_diagnostic_score_percent": -2.713181,
+      "route_local_geomean_parent_over_candidate": 0.783553090246,
+      "route_local_geomean_speedup_percent": -21.644690975,
+      "parent_mad_us": 0.86,
+      "candidate_mad_us": 0.92,
+      "paired_p10_us": -5.08,
+      "paired_p90_us": 142.54,
+      "evidence": "logs/local-device3-repeat-full.log"
+    }
+  ],
+  "pooled": {
+    "paired_samples": 62,
+    "geomean_parent_over_candidate": 0.924972624611,
+    "speedup_percent": -7.502737539,
+    "paired_device_delta_mean_us": 7.530967742,
+    "raw_pairwise_delta_min_us": -218.02,
+    "raw_pairwise_delta_max_us": 187.44,
+    "paired_device_delta_median_run1_us": -0.7,
+    "paired_device_delta_median_repeat_us": 0.14
+  },
+  "device_load": "HBM 91%; AICore 0%; existing processes observed and left untouched.",
+  "repeatability": "LOW/NOISY: preserve all corrected samples; run medians changed direction and raw device-time outliers remain present.",
+  "local_best": "R31B-V011",
+  "promotion": false,
+  "online": "NOT_RUN",
+  "superseded_probe": {
+    "status": "EXCLUDED",
+    "reason": "Earlier V002 timing used a copied V001 candidate with two deletions; both raw logs are retained but not included in the 62-pair aggregate.",
+    "evidence": [
+      "logs/local-device3-superseded-two-change-run1.log",
+      "logs/local-device3-superseded-two-change-repeat.log"
+    ]
+  }
+}

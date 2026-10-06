@@ -1,0 +1,67 @@
+{
+  "route": "SYNC-BARRIER-ELISION-X",
+  "revision": "V002",
+  "record_type": "local_revision",
+  "direct_parent": {
+    "route": "R31B",
+    "revision": "V011",
+    "source_path": "线上结果/R31B/V011/submission.asc",
+    "source_sha256": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+    "official_score": 45.16
+  },
+  "candidate_source_path": "本地实验/SYNC-BARRIER-ELISION-X/V002/submission.asc",
+  "candidate_source_sha256": "262b4693bf7f24f6a470760ac74c56d443a590a5200ce3a13755d514cd54e37d",
+  "parent_copy_path": "本地实验/SYNC-BARRIER-ELISION-X/V002/parent.asc",
+  "parent_copy_matches_canonical": true,
+  "single_hypothesis": "Remove one FP16 PIPE_V barrier between the resident-row output Mul and Add in ProcessNarrowMidOverlap.",
+  "single_change_boundary": "One synchronization-operation deletion from the unchanged current Local Best; V001's deletion is not inherited.",
+  "source_diff_path": "本地实验/SYNC-BARRIER-ELISION-X/V002/diff.patch",
+  "canonical_route_skill_commit": "d8c3b380276df5549f057dee19031e04fdd874a9",
+  "compile": {
+    "host": "hwnput3",
+    "toolchain": "CANN 8.5.0.alpha002",
+    "final_status": "PASS",
+    "evidence": [
+      "logs/server3-compile-rerun.log"
+    ],
+    "superseded_probe_compile": "logs/server3-compile-retry1.log"
+  },
+  "correctness": {
+    "status": "PASS",
+    "device": 3,
+    "dtype": "fp16",
+    "cases": 5,
+    "shapes": ["8x128", "8x256", "8x1024", "8x2048", "8x4096"],
+    "parent_candidate_bit_mismatch": 0,
+    "evidence": [
+      "logs/correctness-device3-rerun.log"
+    ]
+  },
+  "local": {
+    "status": "LOCAL_REJECTED",
+    "device": 3,
+    "shape": "8x2048",
+    "dtype": "fp16",
+    "sample_pairs_per_run": 31,
+    "total_paired_samples": 62,
+    "local_score_percent": -7.502737539,
+    "local_delta_percent": -7.502737539,
+    "local_score_type": "ROUTE_LOCAL_GEOMEAN_PAIRED_DEVICE_SPEEDUP_PERCENT",
+    "local_score_comparable_to_official": false,
+    "load_quality": "NOISY",
+    "aggregation": "Geometric mean of parent_device_us / candidate_device_us over all 62 corrected one-change pairs; no outliers removed.",
+    "diagnostic_scores_percent": [12.962958, -2.713181],
+    "pooled_geomean_parent_over_candidate": 0.924972624611,
+    "pooled_geomean_speedup_percent": -7.502737539,
+    "interpretation": "Numeric route-local score includes every corrected sample, including large outliers. LOAD_QUALITY=NOISY; score is explicitly non-comparable to Official. V002 is LOCAL_REJECTED and does not replace R31B-V011.",
+    "evidence": [
+      "logs/local-device3-run1-full.log",
+      "logs/local-device3-repeat-full.log"
+    ],
+    "superseded_probe_evidence": [
+      "logs/local-device3-superseded-two-change-run1.log",
+      "logs/local-device3-superseded-two-change-repeat.log"
+    ]
+  },
+  "online": "NOT_RUN"
+}
