@@ -1,0 +1,17 @@
+ROUTE=ROW-SCALE-HOIST-X
+REVISION=V020
+DIRECT_PARENT=V019
+PARENT_COMMIT=98bfff5a
+PARENT_SCORE=NONE_COMPILE_ONLY
+SINGLE_HYPOTHESIS=In the ProcessNarrowMidOverlap FP32 row epilogue, move row-scale from before gamma multiplication to after gamma multiplication and before bias.
+FOCUS=ProcessNarrowMidOverlap FP32 branch only
+WHY_NOT_DUPLICATE=V019 changed only the generic FP16 branch; V020 changes only the narrow mid-overlap FP32 branch and preserves half/BF16 order.
+V020_EDIT_TIMESTAMP=2026-10-06T20:40:52Z
+ELAPSED_FROM_V019_COMPILE_PASS_SECONDS=157
+INHERITED_FROM=V019
+CHILD_SLA_FAIL=YES
+COMPILE=NOT_RUN
+CORRECTNESS=NOT_RUN (USER_PROHIBITED)
+LOCAL=NOT_RUN (USER_PROHIBITED)
+ONLINE=NOT_RUN (USER_PROHIBITED)
+
