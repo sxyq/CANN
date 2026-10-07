@@ -16,6 +16,174 @@
   "load_quality": "LOW/NOISY",
   "local_score_method": "Geometric mean across every paired sample of parent_device_us / candidate_device_us; score percent=(geomean_ratio-1)*100. All 62 pairs retained, including outliers.",
   "local_score_note": "Numeric route-local aggregate, not comparable to the Official score formula. Noise is reported as load quality and does not suppress the numeric result.",
+  "local_score_formula": {
+    "ratio": "r_i = parent_device_us_i / candidate_device_us_i",
+    "aggregate": "G = exp((1/N) * sum(i=1..N, ln(r_i)))",
+    "score_percent": "(G - 1) * 100",
+    "paired_delta": "candidate_device_us_i - parent_device_us_i",
+    "sample_domain": "All LOCAL_SAMPLE rows from both retained raw logs; N=62, with pair ids 1..31 in each run.",
+    "statistics": "Median, MAD, p10 and p90 use retained raw values; stdev is sample stdev with N-1 denominator; p10/p90 use linear interpolation over sorted values.",
+    "outlier_policy": "No samples or outliers were removed, trimmed, winsorized, reweighted, or suppressed."
+  },
+  "raw_sample_audit": {
+    "parsed_source": "LOCAL_SAMPLE rows, not runner summary lines",
+    "all_samples_retained": true,
+    "total_parsed_pairs": 62,
+    "logs": [
+      {
+        "run": "run1",
+        "path": "logs/local-device3-run1-full.log",
+        "sha256": "e965c428011d4e3a659d810174c9b90fb1cb8cdf823f0d47e4d5947414ce690b",
+        "parsed_pairs": 31,
+        "pair_ids": "1..31"
+      },
+      {
+        "run": "repeat",
+        "path": "logs/local-device3-repeat-full.log",
+        "sha256": "0f32f0c1c81136abaa1308a8c2b4cfd09d82df0c09395c134d0b13dad632d691",
+        "parsed_pairs": 31,
+        "pair_ids": "1..31"
+      }
+    ],
+    "recomputed_pooled_geomean_parent_over_candidate": 0.902471005533199,
+    "recomputed_pooled_speedup_percent": -9.752899446680097
+  },
+  "per_case_detail": [
+    {
+      "run": "run1",
+      "case": "fp16-8x2048",
+      "sample_pairs": 31,
+      "route_local": {
+        "geomean_parent_over_candidate": 0.824761275728749,
+        "speedup_percent": -17.52387242712513,
+        "runner_diagnostic_percent": 0.446432,
+        "runner_candidate_minus_parent_percent": -0.446432
+      },
+      "device_latency_us": {
+        "parent": {"median": 8.96, "mean": 27.6, "sample_stdev": 41.8277, "cv": 1.515495, "min": 3.76, "max": 198.46, "mad": 4.1, "p10": 4.34, "p90": 71.86},
+        "candidate": {"median": 11.4, "mean": 36.5716, "sample_stdev": 61.6524, "cv": 1.685801, "min": 3.82, "max": 238.52, "mad": 6.16, "p10": 4.5, "p90": 80.66},
+        "candidate_minus_parent": {"median": -0.04, "mean": 8.9716, "sample_stdev": 61.098, "cv": 6.810149, "min": -120.66, "max": 176.8, "mad": 4.98, "p10": -46.32, "p90": 76.9}
+      },
+      "wall_latency_us": {
+        "parent": {"median": 179.086, "mean": 191.2439, "sample_stdev": 85.7601, "cv": 0.448433, "min": 87.108, "max": 504.749, "mad": 44.719, "p10": 96.288, "p90": 275.145},
+        "candidate": {"median": 214.525, "mean": 261.2911, "sample_stdev": 311.0, "cv": 1.190243, "min": 88.858, "max": 1862.26, "mad": 45.649, "p10": 101.078, "p90": 400.231}
+      },
+      "throughput": {
+        "definition": "16384 elements divided by median device latency; this is diagnostic and is not the aggregate score.",
+        "elements_per_sample": 16384,
+        "parent_effective_elements_per_second": 1828571428.571429,
+        "candidate_effective_elements_per_second": 1437192982.45614,
+        "parent_effective_giga_elements_per_second": 1.828571429,
+        "candidate_effective_giga_elements_per_second": 1.437192982
+      },
+      "load": {
+        "device": 3,
+        "preflight_hbm_usage_percent": 91,
+        "postflight_hbm_usage_percent": 91,
+        "preflight_aicore_usage_percent": 0,
+        "postflight_aicore_usage_percent": 0,
+        "preflight_hbm_bandwidth_usage_percent": 0,
+        "postflight_hbm_bandwidth_usage_percent": 0,
+        "existing_processes": "Observed and left untouched."
+      },
+      "jitter": {
+        "parent_device_cv": 1.515495,
+        "candidate_device_cv": 1.685801,
+        "paired_delta_cv": 6.810149,
+        "paired_delta_p10_to_p90_us": [-46.32, 76.9],
+        "parent_wall_cv": 0.448433,
+        "candidate_wall_cv": 1.190243
+      },
+      "evidence": "logs/local-device3-run1-full.log"
+    },
+    {
+      "run": "repeat",
+      "case": "fp16-8x2048",
+      "sample_pairs": 31,
+      "route_local": {
+        "geomean_parent_over_candidate": 0.987502614145484,
+        "speedup_percent": -1.249738585451654,
+        "runner_diagnostic_percent": 2.000006,
+        "runner_candidate_minus_parent_percent": -2.000006
+      },
+      "device_latency_us": {
+        "parent": {"median": 5.0, "mean": 12.3865, "sample_stdev": 35.7152, "cv": 2.883409, "min": 3.74, "max": 204.0, "mad": 0.76, "p10": 4.16, "p90": 7.8},
+        "candidate": {"median": 5.16, "mean": 15.8948, "sample_stdev": 42.1456, "cv": 2.651527, "min": 3.72, "max": 186.46, "mad": 0.34, "p10": 4.2, "p90": 6.38},
+        "candidate_minus_parent": {"median": -0.1, "mean": 3.5084, "sample_stdev": 54.967, "cv": 15.667307, "min": -199.12, "max": 165.52, "mad": 1.02, "p10": -1.82, "p90": 1.34}
+      },
+      "wall_latency_us": {
+        "parent": {"median": 257.766, "mean": 228.1257, "sample_stdev": 89.0595, "cv": 0.390397, "min": 65.179, "max": 377.954, "mad": 65.529, "p10": 87.909, "p90": 323.295},
+        "candidate": {"median": 223.137, "mean": 222.3752, "sample_stdev": 88.308, "cv": 0.397113, "min": 80.469, "max": 468.523, "mad": 70.368, "p10": 115.849, "p90": 314.875}
+      },
+      "throughput": {
+        "definition": "16384 elements divided by median device latency; this is diagnostic and is not the aggregate score.",
+        "elements_per_sample": 16384,
+        "parent_effective_elements_per_second": 3276800000.0,
+        "candidate_effective_elements_per_second": 3175193798.449612,
+        "parent_effective_giga_elements_per_second": 3.2768,
+        "candidate_effective_giga_elements_per_second": 3.175193798
+      },
+      "load": {
+        "device": 3,
+        "preflight_hbm_usage_percent": 91,
+        "postflight_hbm_usage_percent": 91,
+        "preflight_aicore_usage_percent": 0,
+        "postflight_aicore_usage_percent": 0,
+        "preflight_hbm_bandwidth_usage_percent": 0,
+        "postflight_hbm_bandwidth_usage_percent": 0,
+        "existing_processes": "Observed and left untouched."
+      },
+      "jitter": {
+        "parent_device_cv": 2.883409,
+        "candidate_device_cv": 2.651527,
+        "paired_delta_cv": 15.667307,
+        "paired_delta_p10_to_p90_us": [-1.82, 1.34],
+        "parent_wall_cv": 0.390397,
+        "candidate_wall_cv": 0.397113
+      },
+      "evidence": "logs/local-device3-repeat-full.log"
+    }
+  ],
+  "pooled_detail": {
+    "case": "fp16-8x2048",
+    "paired_samples": 62,
+    "device_latency_us": {
+      "parent": {"median": 5.58, "mean": 19.9932, "sample_stdev": 39.3266, "cv": 1.966996, "min": 3.74, "max": 204.0, "mad": 1.34, "p10": 4.24, "p90": 62.098},
+      "candidate": {"median": 5.5, "mean": 26.2332, "sample_stdev": 53.4, "cv": 2.035585, "min": 3.72, "max": 238.52, "mad": 1.24, "p10": 4.32, "p90": 76.276},
+      "candidate_minus_parent": {"median": -0.07, "mean": 6.24, "sample_stdev": 57.7009, "cv": 9.246932, "min": -199.12, "max": 176.8, "mad": 1.49, "p10": -16.774, "p90": 45.552}
+    },
+    "wall_latency_us": {
+      "parent": {"median": 204.1065, "mean": 209.6848, "sample_stdev": 88.6766, "cv": 0.422904, "min": 65.179, "max": 504.749, "mad": 68.9845, "p10": 94.767, "p90": 315.3651},
+      "candidate": {"median": 218.29, "mean": 241.8331, "sample_stdev": 227.5691, "cv": 0.941017, "min": 80.469, "max": 1862.26, "mad": 65.383, "p10": 110.8711, "p90": 322.1569}
+    },
+    "throughput": {
+      "definition": "16384 elements divided by pooled median device latency; diagnostic only.",
+      "elements_per_sample": 16384,
+      "parent_effective_elements_per_second": 2936200716.845878,
+      "candidate_effective_elements_per_second": 2978909090.909091,
+      "parent_effective_giga_elements_per_second": 2.936200717,
+      "candidate_effective_giga_elements_per_second": 2.978909091
+    },
+    "load": {
+      "device": 3,
+      "preflight_hbm_usage_percent": 91,
+      "postflight_hbm_usage_percent": 91,
+      "preflight_aicore_usage_percent": 0,
+      "postflight_aicore_usage_percent": 0,
+      "preflight_hbm_bandwidth_usage_percent": 0,
+      "postflight_hbm_bandwidth_usage_percent": 0,
+      "existing_processes": "Observed and left untouched in both runs."
+    },
+    "jitter": {
+      "parent_device_cv": 1.966996,
+      "candidate_device_cv": 2.035585,
+      "paired_delta_cv": 9.246932,
+      "paired_delta_p10_to_p90_us": [-16.774, 45.552],
+      "parent_wall_cv": 0.422904,
+      "candidate_wall_cv": 0.941017,
+      "interpretation": "LOW/NOISY; large device-time outliers remain in the retained raw samples."
+    }
+  },
   "runs": [
     {
       "run": "2026-10-06T22:39:01Z",
