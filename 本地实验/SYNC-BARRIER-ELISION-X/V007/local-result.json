@@ -1,0 +1,89 @@
+{
+  "route": "SYNC-BARRIER-ELISION-X",
+  "revision": "V007",
+  "direct_parent": "R31B-V011",
+  "status": "LOCAL_REJECTED_NOISY",
+  "host": "hwnput3",
+  "soc": "910B3",
+  "device": 3,
+  "shape": "8x2048",
+  "dtype": "fp16",
+  "method": "60 warmups per run; two runs of 31 interleaved Parent/Candidate pairs; alternating P,C and C,P order; ACL device-event latency with wall-clock diagnostics; all samples retained.",
+  "local_started_at": "2026-10-07T06:20:03Z",
+  "local_completed_at": "2026-10-07T06:20:19Z",
+  "sample_pairs_per_run": 31,
+  "total_paired_samples": 62,
+  "local_score": 24.056344648,
+  "local_delta": 24.056344648,
+  "local_score_unit": "percent",
+  "local_score_type": "ROUTE_LOCAL_GEOMEAN_PAIRED_DEVICE_SPEEDUP_PERCENT",
+  "local_score_comparable_to_official": false,
+  "local_score_method": "Geometric mean of all 62 parent_device_us / candidate_device_us ratios; score percent=(geomean ratio-1)*100.",
+  "pooled": {
+    "geomean_parent_over_candidate": 1.240563446,
+    "parent_median_us_by_run": [9.96, 7.82],
+    "candidate_median_us_by_run": [9.10, 6.74],
+    "paired_median_delta_us_by_run": [0.0, -0.80],
+    "per_run_geomean_speedup_percent": [47.378786336, 4.424639598],
+    "effective_elements_per_second_at_median_by_run": {
+      "parent": [1644979919.679, 2095140664.962],
+      "candidate": [1800439560.440, 2430860534.125],
+      "definition": "16384 output elements divided by device-event median latency; not a bandwidth estimate."
+    }
+  },
+  "runs": [
+    {
+      "run": 1,
+      "sample_pairs": 31,
+      "parent_device_us": { "median": 9.96, "mean": 61.2348, "stdev": 75.5711, "cv": 1.23412, "min": 5.36, "max": 194.72, "mad": 4.26, "p10": 5.70, "p90": 182.18 },
+      "candidate_device_us": { "median": 9.10, "mean": 32.9897, "stdev": 48.9456, "cv": 1.48366, "min": 5.56, "max": 175.32, "mad": 3.02, "p10": 6.08, "p90": 112.62 },
+      "parent_wall_us": { "median": 201.441, "mean": 205.9330, "stdev": 82.1640, "cv": 0.39898, "min": 87.720, "max": 485.612, "mad": 54.801, "p10": 112.921, "p90": 307.411 },
+      "candidate_wall_us": { "median": 179.751, "mean": 175.2389, "stdev": 79.5254, "cv": 0.45381, "min": 87.310, "max": 373.032, "mad": 55.400, "p10": 92.060, "p90": 284.461 },
+      "paired_delta_us": { "median": 0.0, "mean": -28.2452, "stdev": 84.1041, "cv": -2.97765, "min": -187.94, "max": 169.62, "mad": 10.38, "p10": -165.26, "p90": 31.62 }
+    },
+    {
+      "run": 2,
+      "sample_pairs": 31,
+      "parent_device_us": { "median": 7.82, "mean": 25.1871, "stdev": 46.4826, "cv": 1.84549, "min": 5.48, "max": 202.94, "mad": 1.54, "p10": 6.20, "p90": 73.80 },
+      "candidate_device_us": { "median": 6.74, "mean": 24.6000, "stdev": 39.2709, "cv": 1.59638, "min": 5.40, "max": 151.06, "mad": 1.04, "p10": 5.70, "p90": 85.80 },
+      "parent_wall_us": { "median": 157.350, "mean": 170.7115, "stdev": 63.9634, "cv": 0.37469, "min": 77.340, "max": 291.751, "mad": 44.909, "p10": 97.030, "p90": 263.421 },
+      "candidate_wall_us": { "median": 172.001, "mean": 178.0825, "stdev": 66.6718, "cv": 0.37439, "min": 81.600, "max": 307.881, "mad": 66.370, "p10": 98.321, "p90": 256.971 },
+      "paired_delta_us": { "median": -0.80, "mean": -0.5871, "stdev": 65.8958, "cv": -112.24013, "min": -194.12, "max": 145.02, "mad": 2.10, "p10": -64.88, "p90": 76.30 }
+    }
+  ],
+  "device_load": {
+    "quality": "HIGH_LOAD_NOISY",
+    "load_average_start": [35.55, 38.78, 37.65],
+    "load_average_end": [44.24, 40.63, 38.29],
+    "device_3_aicore_percent_preflight": 40,
+    "device_3_aicore_percent_postflight": 40,
+    "device_3_hbm_mb_preflight": 60219,
+    "device_3_hbm_mb_postflight": 60221,
+    "device_3_process": "VLLMWorker_TP PID 94498, 56703 MB; left untouched.",
+    "other_shared_vllm_processes": "Present on the host and other devices; process snapshots are in the raw log."
+  },
+  "quality_assessment": {
+    "verdict": "REJECTED_NOISY",
+    "reasons": [
+      "Device 3 had 40% AICore activity before and after sampling and a resident shared VLLM process.",
+      "Device-event CV ranged from 1.23412 to 1.84549 for Parent and 1.48366 to 1.59638 for Candidate.",
+      "Per-run geometric speedup estimates differed materially: +47.378786336% versus +4.424639598%."
+    ],
+    "current_local_best": "R31B-V011",
+    "online_candidate": "NO",
+    "official_score": null,
+    "official_score_comparison": "This single-shape route-local metric is not comparable to Official 45.16."
+  },
+  "evidence_log": "logs/local-device3-20261007T062003Z.log",
+  "raw_samples": "62 LOCAL_SAMPLE records in evidence_log; every device and wall-clock sample retained.",
+  "runner_label_note": "The existing runner prints inherited V006 labels. The invocation embedded V007 Candidate source with SHA256 184d4c1b01850ef7477e1efdd9e5f5c10ca1937103c2933b9c627d90e698e1de; no V007 source was changed.",
+  "sla": {
+    "compile_to_successful_correctness_seconds": 1133,
+    "compile_to_correctness_target_seconds": 180,
+    "compile_to_correctness_status": "MISS",
+    "correctness_run_start_to_local_start_seconds": 52,
+    "correctness_end_to_local_start_seconds": 44,
+    "local_end_to_next_edit_deadline": "2026-10-07T06:23:19Z",
+    "local_end_to_next_edit_status": "MISS: result processing exceeded the 180-second window."
+  }
+}
