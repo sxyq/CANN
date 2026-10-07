@@ -60,7 +60,7 @@ Main 完整有效要求清单见 `项目规则/执行约定.md` 的“Main 完�
 
 每次 Main 在开始任务、resume、context compaction、reconnect、模型切换、收到新指令、派发 Child 前，以及用户状态、执行或 Planning 回复前，必须只读刷新权威规则和共享状态。权威规则至少包括本文件、对应角色 Skill、`项目规则/W4持续探索控制契约.md`、`项目规则/实验总则.md`、`项目规则/执行约定.md`；涉及 server3 或 Local 时读取对应规范。共享状态至少刷新 `技术路线/全版本记录.tsv`、`调度/当前任务.tsv`、`技术路线/路线成绩表.tsv`，必要时读取 `技术路线/技术路线图.md`。Main 优先采用最新 Route receipt、Record receipt 和正式记录；来源冲突时必须报告 `STATE_SYNC_GAP`，不得自行猜测或写入共享记录。
 
-完整重读也由 `MODEL_CHANGE`、`CONTEXT_COMPACTION`、`MAIN_RESUME`、`MAIN_RESTART`、状态回复后的新对话轮次、`USER_CONTROL_UPDATE`、`RULE_FILE_CHANGE`、`HANDOFF`、`CHILD_POOL_RECONSTRUCTION` 和主要 Git 状态重新核对触发。Planning/User 改变 Child 数量、路线分配、Revision 要求、资源规则、Main 行为、worktree、记录、Online、路线组合或生命周期时，Main 先发 `USER_DIRECTIVE_RECEIPT`；若需改规则，在安全边界更新 W4 控制文件及受影响入口。正在运行的原子性能命令可以完成，规则维护不要求其他有效路线整体暂停。
+完整重读也由 `MODEL_CHANGE`、`CONTEXT_COMPACTION`、`MAIN_RESUME`、`MAIN_RESTART`、`CHILD_RESUME`、状态回复后的新对话轮次、`USER_CONTROL_UPDATE`、`RULE_FILE_CHANGE`、`RULE_UPDATE`、`HANDOFF`、`CHILD_POOL_RECONSTRUCTION` 和主要 Git 状态重新核对触发。Planning/User 改变 Child 数量、路线分配、Revision 要求、资源规则、Main 行为、worktree、记录、Online、路线组合或生命周期时，Main 先发 `USER_DIRECTIVE_RECEIPT`；若需改规则，在安全边界更新 W4 控制文件及受影响入口。正在运行的原子性能命令可以完成，规则维护不要求其他有效路线整体暂停。
 
 Main 只读上述权威规则和允许的共享状态，不读取 Candidate、Route 私有 worktree、实验目录或归档材料，不执行 Git、Compile、Correctness、Local、NPU 或身份计算。共享状态只允许窄范围只读刷新，不允许 Main 写入。
 
@@ -78,7 +78,14 @@ ONE CHANGE → COMPILE → CORRECTNESS → LOCAL → RESULT → COMMIT → VERSI
 
 Route Agent 在每个新 Revision、resume、Route switch、Child restart、reconnect、context restore 或 long interruption 后，必须在 Candidate edit 前重新读取本文件、对应 Skill、`项目规则/W4持续探索控制契约.md`、`项目规则/实验总则.md`、`项目规则/执行约定.md`、`项目规则/服务器实验规范.md`、`项目规则/本地性能测试规范.md`，先发送 `RULE_REFRESH_RECEIPT`；无 receipt 不得 edit。
 
-用户可见状态回复只是 `CHECKPOINT_ONLY`。只要仍有活动 Child、可执行路线、待研究、待重新取得资格或待指纹任务，Main 必须继续轮转、处理事件并发送下一动作，不能把一次状态回复当作任务结束。
+### MAIN_CONTINUATION_RULES
+
+- `MAIN_FINAL_GATE`：状态记录、状态回复或一次监测周期不代表 W4 完成。只要仍有 Child、下一动作、证据收集、研究、重新取得测量资格、记录同步或路线组合复核未完，不得报告 W4 已完成。
+- `MAIN_NEXT_ACTION_REQUIREMENT`：每个 Child 事件都必须形成明确的下一步判断；仍有工作时，Main 向对应 Child 发出后续指令，不能只确认收到或汇总。
+- `MAIN_CONTEXT_RELOAD`：收到用户更新、规则更新、Main/Child 恢复、handoff、context compaction 或模型变化后，重新读取当前权威规则和共享状态，再继续执行。
+- `MAIN_SELF_DRIVING_CAMPAIGN`：Main 可在既有授权和宿主工具能力范围内继续 W4 工作，不要求用户重复授权。若平台要求让出本轮，输出 `CHECKPOINT_ONLY`，保存精确路线、动作、阶段、回执和待办，并在下一轮从该状态继续。不得创建 timer、automation、cron 或后台循环，也不得宣称宿主能无限运行。
+
+一次状态回复只是 `CHECKPOINT_ONLY`。只要仍有活动 Child、可执行路线、待研究、待重新取得资格、待指纹、待记录或待路线组合复核，Main 必须继续轮转、处理事件并发送下一动作，不能把一次状态回复当作任务结束。
 
 ## Route ownership
 

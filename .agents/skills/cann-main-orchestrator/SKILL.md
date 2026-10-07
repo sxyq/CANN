@@ -17,11 +17,20 @@ Main 当前协调 `ACTIVE PORTFOLIO W4` 的 15 条授权路线和 5 个持久 Ch
 
 Main 只协调。每次开始任务、resume、context compaction、reconnect、模型切换、收到新指令、派发 Child 前，以及每次用户状态、执行或 Planning 回复前，必须执行 `RULE REFRESH REQUIRED` 和 `STATE REFRESH REQUIRED`：重新读取 `AGENTS.md`、本 Skill、`项目规则/W4持续探索控制契约.md`、`项目规则/实验总则.md`、`项目规则/执行约定.md`；涉及 server3 时读取 `项目规则/服务器实验规范.md`，涉及 Local 时读取 `项目规则/本地性能测试规范.md`。同时窄范围只读刷新 `技术路线/全版本记录.tsv`、`调度/当前任务.tsv`、`技术路线/路线成绩表.tsv`，必要时读取 `技术路线/技术路线图.md`，并优先最新 Child receipt / Record receipt。冲突必须报告 `STATE_SYNC_GAP`。
 
-下列事件同样触发完整重读：`MODEL_CHANGE`、`CONTEXT_COMPACTION`、`MAIN_RESUME`、`MAIN_RESTART`、状态回复后的新对话轮次、`USER_CONTROL_UPDATE`、`RULE_FILE_CHANGE`、`HANDOFF`、`CHILD_POOL_RECONSTRUCTION` 和主要 Git 状态重新核对。Planning/User 改变 Child 数量、路线分配、Revision 要求、资源规则、Main 行为、worktree、记录、Online、路线组合或生命周期时，先发送 `USER_DIRECTIVE_RECEIPT`；规则需要更新时在安全边界落地。
+下列事件同样触发完整重读：`MODEL_CHANGE`、`CONTEXT_COMPACTION`、`MAIN_RESUME`、`MAIN_RESTART`、`CHILD_RESUME`、状态回复后的新对话轮次、`USER_CONTROL_UPDATE`、`RULE_FILE_CHANGE`、`RULE_UPDATE`、`HANDOFF`、`CHILD_POOL_RECONSTRUCTION` 和主要 Git 状态重新核对。Planning/User 改变 Child 数量、路线分配、Revision 要求、资源规则、Main 行为、worktree、记录、Online、路线组合或生命周期时，先发送 `USER_DIRECTIVE_RECEIPT`；规则需要更新时在安全边界落地。
 
 Main 不读取 Candidate、Route 私有 worktree、实验目录或归档材料，不写入任何文件，不运行 Git、Compile、Correctness、Local、NPU，也不计算身份信息。项目状态只来自 Child 的 C2C receipt、Record Owner receipt、Online Owner receipt、权威共享状态和 Planning 指令。用户要求完整复述时，Main 必须逐项复述当前有效要求并列出真实已读路径。
 
 每次状态答复第一部分固定输出 `ACTIVE_PORTFOLIO=W4` 和 15 条路线状态；字段为 `LATEST_COMPLETED`、`CURRENT_LOCAL_BEST`、numeric score/delta、`CURRENT_ACTION`、`NEXT_ACTION`。状态只从正式记录与最新 receipts 读取；缺失或冲突报告 `STATE_SYNC_GAP`。状态答复标记为 `CHECKPOINT_ONLY`，不是任务完成信号。
+
+## MAIN CONTINUATION
+
+- `MAIN_FINAL_GATE`：状态记录、状态回复和一次监测周期都不能作为 W4 完成依据。Child、可执行动作、证据、研究、测量资格、记录同步或路线组合复核仍有待办时，不报告 W4 已完成。
+- `MAIN_NEXT_ACTION_REQUIREMENT`：每个 Child 事件都必须形成下一步判断；仍有任务时立即向该 Child 发后续指令，或在其当前路线无可行动作时安排下一条获准路线。
+- `MAIN_SELF_DRIVING_CAMPAIGN`：在既有授权及宿主能力范围内继续执行，不要求用户重复发送消息。若本轮必须让出，标为 `CHECKPOINT_ONLY`，保存精确状态与下一动作，并在恢复后继续；不得声称能无限运行或创建定时器、automation、cron、后台循环。
+- `MAIN_CONTEXT_RELOAD`：用户更新、规则更新、Main/Child resume、handoff、context compaction 或模型变化后，先读取当前权威规则和共享状态再行动。
+
+`MAIN_PROCESS_DEVIATION`: 曾在五个持久 Child 仍有可执行工作时，只发阶段状态并结束本轮。预防措施：应用以上四项规则；每个 Child 事件记录下一步判断，必要时以精确状态记录让出并恢复。
 
 Main 可以：
 
