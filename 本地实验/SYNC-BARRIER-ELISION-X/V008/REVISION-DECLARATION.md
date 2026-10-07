@@ -1,0 +1,22 @@
+# SYNC-BARRIER-ELISION-X V008
+
+- ROUTE: SYNC-BARRIER-ELISION-X
+- REVISION: V008
+- DIRECT_PARENT: R31B-V011
+- PARENT_SOURCE_SHA256: `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`
+- EDIT_START_AT: `2026-10-07T06:35:28Z`
+- SINGLE_HYPOTHESIS: In the FP16 path of `ProcessNarrowMidOverlap`, remove the single `PIPE_V` barrier between `Add(xLocal, ...)` and `ToFloat(valueLocal, xLocal, ...)`.
+- SINGLE_CHANGE_BOUNDARY: One synchronization-operation deletion only; source is copied from the R31B-V011 Parent.
+- DISTINCTION: This is not V006's barrier after `Muls` or V007's barrier between square `Mul` and `ReduceSum`.
+- PREVIOUS_LOCAL_END: `2026-10-07T06:20:19Z`
+- LOCAL_RESULT_TO_EDIT_SECONDS: `909` (MISS against the 180-second SLA)
+- COMPILE: PASS (`2026-10-07T06:40:19Z` to `2026-10-07T06:40:34Z`)
+- CORRECTNESS: PASS (device 3, five fp16 widths, zero bit mismatches; run started `2026-10-07T06:41:32Z`)
+- LOCAL: `-1.166551926%` pooled paired event-time geomean; `LOCAL_REJECTED_NOISY`, device 3, fp16 8x2048, 62 pairs; no Local Best promotion.
+- CURRENT_LOCAL_BEST: R31B-V011
+- ONLINE_CANDIDATE: NO
+- EDIT_TO_COMPILE_SECONDS: `291` (Compile was the next experiment action; wall-clock gap is recorded.)
+- COMPILE_TO_CORRECTNESS_RUN_SECONDS: `58` (within 180 seconds)
+- CORRECTNESS_END_TO_LOCAL_START_SECONDS: `98` (within 180 seconds)
+- EVIDENCE: `compile-result.json`, `correctness-result.json`, `local-result.json`, and `logs/`
+- ONLINE_CANDIDATE: NO
