@@ -1,0 +1,16 @@
+--- a/submission.asc
++++ b/submission.asc
+index 99c9143e..5d8c3149 100644
+@@ -2208,10 +2208,10 @@
+                 SyncMTE2ToV();
+                 for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
+                     AscendC::LocalTensor<float> valueRow =
+                         valueLocal[batchRow * rowWidth + col];
+-                    AscendC::Mul(valueRow, valueRow, gammaLocal, valid);
+-                    AscendC::PipeBarrier<PIPE_V>();
+                     AscendC::Muls(valueRow, valueRow, invRmsValues[batchRow], valid);
+                     AscendC::PipeBarrier<PIPE_V>();
++                    AscendC::Mul(valueRow, valueRow, gammaLocal, valid);
++                    AscendC::PipeBarrier<PIPE_V>();
+                     AscendC::Add(valueRow, valueRow, biasLocal, valid);
+                     AscendC::PipeBarrier<PIPE_V>();

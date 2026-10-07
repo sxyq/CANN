@@ -1,0 +1,77 @@
+{
+  "route": "ROW-SCALE-HOIST-X",
+  "revision": "V041",
+  "direct_parent": "V026",
+  "stage": "CORRECTNESS",
+  "status": "FAIL",
+  "gate": "PARENT_INVALID_UNRESOLVED",
+  "interpretation": "Parent and Candidate both fail the same wide full-cache shape. This is not classified as a Candidate regression; no Local run was made.",
+  "host": "hwnput3",
+  "device": 0,
+  "soc": "Ascend910B3",
+  "architecture": "dav-2201",
+  "dtype": "fp32",
+  "primary_shape": [128, 16384],
+  "branch": "ProcessWideFp32FullCacheRows",
+  "vector_cores": 40,
+  "metadata_contract_check": {
+    "x_residual_output_shape": [128, 16384],
+    "gamma_bias_shape": [16384],
+    "all_dtypes": "fp32 (dtype 0)",
+    "available_core_count": 40,
+    "run_kernel_flattens_leading_dimensions": true,
+    "dispatch_predicate": "rowWidth > 8192 selects widePath_; FP32 widePath_ calls ProcessWideFp32FullCacheRows"
+  },
+  "tolerance": {
+    "atol": 1.52587891e-05,
+    "rtol": 0.0009765625,
+    "max_abs_error_limit": 0.00999999978
+  },
+  "primary_attempts": {
+    "parent": {
+      "status": "FAIL",
+      "matched_ratio": 0.237092972,
+      "max_abs_error": 4.10239983,
+      "candidate_source_delta_executed": false
+    },
+    "candidate_capture_attempt_1": {
+      "status": "FAIL",
+      "matched_ratio": 0.189493656,
+      "max_abs_error": 4.00334167,
+      "candidate_source_delta_executed": true,
+      "capture_note": "Console output retained in correctness-candidate-capture-note.md; tee target had a path typo."
+    },
+    "candidate_capture_retry": {
+      "status": "FAIL",
+      "matched_ratio": 0.202261448,
+      "max_abs_error": 3.87787485,
+      "candidate_source_delta_executed": true
+    }
+  },
+  "nearby_shape_diagnostic": {
+    "shape": [128, 12288],
+    "branch": "ProcessWideFp32FullCacheRows",
+    "status": "FAIL_PARENT_AND_CANDIDATE",
+    "parent": {
+      "matched_ratio": 0.188144048,
+      "max_abs_error": 4.60562992,
+      "candidate_source_delta_executed": false
+    },
+    "candidate": {
+      "matched_ratio": 0.184501648,
+      "max_abs_error": 5.46456909,
+      "candidate_source_delta_executed": true
+    },
+    "evidence_log": "correctness-nearby-20261007T232900Z.log"
+  },
+  "parent_gate": "INVALID_UNRESOLVED",
+  "local": "NOT_RUN_CORRECTNESS_GATE_FAILED",
+  "official_score": null,
+  "online": "NOT_RUN",
+  "evidence": {
+    "compile": "compile-local-20261007T232337Z.log",
+    "primary_correctness": "correctness-local-20261007T232414Z.log",
+    "first_candidate_capture_note": "correctness-candidate-capture-note.md",
+    "nearby_correctness": "correctness-nearby-20261007T232900Z.log"
+  }
+}
