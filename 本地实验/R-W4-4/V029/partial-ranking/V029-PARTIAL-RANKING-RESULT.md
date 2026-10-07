@@ -31,6 +31,21 @@ The exact Parent and V029 Candidate each passed the six route-local FP32 shapes 
 
 Raw correctness outputs, stats, stdout, and invocation order are in the shape-specific `*-r*-w*-fp32` files, `extended-cutoff-correctness.log`, and the initial `parent-r128-w128-fp32*` / `candidate-r128-w128-fp32*` and `parent-r128-w256-fp32*` / `candidate-r128-w256-fp32*` files. C15 was excluded from every V029 command.
 
+## Per-shape Parent-valid review
+
+The exact V028 Parent and V029 Candidate both passed all six listed FP32 cases (`rc=0`, `bad=0`); these are the complete Parent-valid shape set used for this partial ranking. Delta is Candidate minus Parent, so negative favors Candidate. Timing configurations are kept separate because batching changed the observed spread.
+
+| Shape | Parent/Candidate correctness max_abs | Local measurements and direction | Noise classification |
+|---|---:|---|---|
+| `128x128` | `7.15256e-07 / 7.15256e-07` | `batch_n=1`, 4 pairs: median delta `+0.445 us`, range `-1.370 .. +25.280 us`; Candidate faster/slower `1/3` | Parent same-binary CV `135.2%`, max `129.7 us`; severe outliers, not rankable |
+| `128x256` | `1.19209e-06 / 1.19209e-06` | `batch_n=1`, 4 pairs: median `-8.300 us`, range `-43.900 .. +7.850` (`3/1` faster/slower); `batch_n=16`, 2 pairs: `+1.714 us`, range `-2.847 .. +6.276` (`1/1`); `batch_n=64`, 6 pairs: `-0.211 us`, range `-0.886 .. +0.808` (`4/2`) | Parent same-binary CV `191.97%` (`n=1`) and `36.0%` (`batch_n=16`); batch64 CV `10.39%`; direction depends on batch regime, inconclusive |
+| `32x136` | `9.53674e-07 / 9.53674e-07` | `batch_n=16`, 3 pairs: median delta `+0.308 us`, range `-2.730 .. +2.741`; faster/slower `1/2` | Parent same-binary CV `61.64%`; pair spread dominates, noisy |
+| `64x136` | `9.53674e-07 / 9.53674e-07` | `batch_n=16`, 3 pairs: median `+0.969 us`, range `-0.970 .. +4.979`; faster/slower `1/2` | Parent same-binary CV `40.04%`; pair spread dominates, noisy |
+| `128x136` | `9.53674e-07 / 9.53674e-07` | `batch_n=16`, initial 3: median `-6.256 us`, range `-14.514 .. -5.174` (`3/0`); confirmation 2: median `+3.871 us`, range `+2.865 .. +4.878` (`0/2`); `batch_n=64`, 6: median `+0.083 us`, range `-1.598 .. +1.364` (`3/3`) | Parent same-binary CV `40.4%–57.8%` at batch16 and `12.90%` at batch64; direction reverses across runs, inconclusive |
+| `128x248` | `1.19209e-06 / 1.19209e-06` | `batch_n=16`, initial 3: median `+4.955 us`, range `-12.193 .. +6.134` (`1/2`); confirmation 2: median `-2.268 us`, range `-3.592 .. -0.944` (`2/0`); `batch_n=64`, 6: median `+0.116 us`, range `-0.187 .. +0.448` (`2/4`) | Parent same-binary CV `27.5%–39.6%` at batch16 and `9.06%` at batch64; mixed direction and noisy |
+
+Every raw sample remains in the shape-specific `*-raw.tsv`; no outlier was removed. No shape establishes a repeatable Candidate advantage. The per-pair batch64 values are in the batch64 summary TSVs below.
+
 ## Partial local ranking
 
 Device-event measurements used identical Parent/Candidate runners, warmup, shape, dtype, device, and alternating P/C order. Raw `*-raw.tsv` files, per-run stats, and command-order logs are retained. `paired-summary.tsv` records the first four `batch_n=1` pairs; `width-confirm-summary.tsv` records supplemental `batch_n=16` pairs. The completed `batch_n=64` six-pair results are in `batch64-paired-summary.tsv`, `batch64-w248-paired-summary.tsv`, and `batch64-w256-paired-summary.tsv`.
@@ -53,7 +68,8 @@ Device 4 pre/post snapshots show 90% HBM usage (conservative FREE_HBM lower boun
 - CORRECTNESS: `PASS` on six jointly tested partial shapes; `PARTIAL_CORRECTNESS=YES` because the known exact-Parent C15 baseline remains failing and was not rerun.
 - LOCAL_SCORE: `NONE`
 - LOCAL_DELTA: `NONE`
-- LOCAL_VERDICT: `INCONCLUSIVE` (completed six-pair ranking for the tested partial shape set; mixed direction and noisy Parent same-binary distribution).
+- LOCAL_VERDICT: `NEEDS_ONE_MORE_LOCAL` (current interpretation is inconclusive: mixed direction and noisy Parent same-binary distributions).
+- CURRENT_LOCAL_BEST: `NONE`; the route evidence contains no verified `LOCAL_ACCEPTED` revision. V029 is not a Local Best.
 - LOCAL_SCORE_COMPARABLE_TO_OFFICIAL: `NO`; this is not an Official candidate.
-- RANKING_GATE: `COMPLETE_FOR_TESTED_PARTIAL_SET`; this does not establish full correctness or an Official-comparable score.
-- NEXT_ACTION: after committing this V029 result, run one threshold-only OFAT revision from the exact V029 Candidate baseline; refresh route rules before editing. Keep C15 excluded, do not use the repaired Parent, retain partial-correctness and non-comparability flags, and do not write shared records, push, or submit Online.
+- RANKING_GATE: `COMPLETE_FOR_SIX_TESTED_PARENT-VALID_SHAPES`; the result remains inconclusive and does not establish full correctness or an Official-comparable score.
+- NEXT_ACTION: V030 has been started as the single threshold OFAT `128 -> 192`, with the exact V029 source as its direct Parent. Do not promote V029 automatically. For any later Parent selection, use only a verified Local Best; current value is `NONE`. Keep C15 excluded and retain partial-correctness/non-comparability flags.
