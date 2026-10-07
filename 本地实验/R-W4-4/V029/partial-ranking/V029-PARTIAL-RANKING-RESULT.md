@@ -33,11 +33,19 @@ Raw correctness outputs, stats, stdout, and invocation order are in the shape-sp
 
 ## Partial local ranking
 
-Device-event measurements used identical Parent/Candidate runners, warmup, shape, dtype, device, and alternating P/C order. Raw `*-raw.tsv` files and per-run stats are retained. `paired-summary.tsv` records the first four pairs at `128x128` and `128x256` (`batch_n=1`); `width-confirm-summary.tsv` records two supplemental pairs at `128x136`, `128x248`, and `128x256` (`batch_n=16`). `interleaved-extended-local-batch16.log` and `interleaved-width-confirm-batch16.log` preserve exact command order and return codes.
+Device-event measurements used identical Parent/Candidate runners, warmup, shape, dtype, device, and alternating P/C order. Raw `*-raw.tsv` files, per-run stats, and command-order logs are retained. `paired-summary.tsv` records the first four `batch_n=1` pairs; `width-confirm-summary.tsv` records supplemental `batch_n=16` pairs. The completed `batch_n=64` six-pair results are in `batch64-paired-summary.tsv`, `batch64-w248-paired-summary.tsv`, and `batch64-w256-paired-summary.tsv`.
 
-The direction is not repeatable. At `128x136`, three initial batch-16 pairs favored Candidate by `5.17`, `6.26`, and `14.51 us`, while the two supplemental pairs favored Parent by `2.87` and `4.88 us`. At `128x248`, initial and supplemental pairs are mixed. At `128x256`, batch-16 confirmation also changes direction across two pairs. The unbatched `128x128` and `128x256` pairs contain large latency outliers. Parent same-binary block medians and spread are preserved in `parent-samebinary-*`; rechecks did not establish a consistently quiet distribution. No samples were removed or trimmed.
+For the completed batch64 set, each invocation used warmup 45 and 31 measured samples; every Parent and Candidate invocation returned `rc=0`, `bad=0`. Pair deltas below are Candidate minus Parent, so a negative value favors Candidate.
 
-Device 4 snapshots show 90% HBM usage (conservative FREE_HBM lower bound `5898 MB`), AICore `0%`, AIVector `0%`, and existing VLLM PID `2999855`; that process was untouched. Before/after device snapshots and all run logs are preserved. The broad pre-correctness process dump had unrelated VS Code `--connection-token` command-line values redacted before commit; the NPU process table is retained. The mixed deltas and unstable Parent distribution do not support a numeric Local score or delta.
+| Shape | Parent same-binary median / MAD / CV | Candidate faster / slower pairs | Median paired delta | Delta range | Classification |
+|---|---:|---:|---:|---:|---|
+| `128x136` | `8.54766 us / 0.754687 us / 12.895%` | `3 / 3` | `+0.082970 us` | `-1.597500 .. +1.364060 us` | Mixed; one pair exceeds the P/C MAD sum by `0.1053 us`; no stable direction |
+| `128x248` | `9.17469 us / 0.556251 us / 9.056%` | `2 / 4` | `+0.116255 us` | `-0.186560 .. +0.448440 us` | Mixed; all pair deltas are within the P/C MAD sum |
+| `128x256` | `8.02766 us / 0.510469 us / 10.388%` | `4 / 2` | `-0.211410 us` | `-0.886250 .. +0.807510 us` | Mixed; all pair deltas are within the P/C MAD sum |
+
+Exact per-pair parent/candidate medians, deltas, MADs, and p90 values are in those TSVs. Same-binary controls show substantial spread (CV `9.1%` to `12.9%`); the small median deltas change sign by shape and do not establish a repeatable ranking. Earlier batch-16/individual samples are retained and untrimmed; no sample was removed or reclassified.
+
+Device 4 pre/post snapshots show 90% HBM usage (conservative FREE_HBM lower bound `5898 MB`), AICore `0%`, AIVector `0%`, and the existing VLLM PID `2999855`; that process was untouched. The post-128x256 snapshot at `2026-10-07T12:09:09.066985104Z` also shows no route probe process. The broad pre-correctness process dump had unrelated VS Code `--connection-token` command-line values redacted before commit; the NPU process table is retained. These measurements do not support a numeric Local score or delta and are not Official-comparable.
 
 ## Result and next action
 
@@ -45,7 +53,7 @@ Device 4 snapshots show 90% HBM usage (conservative FREE_HBM lower bound `5898 M
 - CORRECTNESS: `PASS` on six jointly tested partial shapes; `PARTIAL_CORRECTNESS=YES` because the known exact-Parent C15 baseline remains failing and was not rerun.
 - LOCAL_SCORE: `NONE`
 - LOCAL_DELTA: `NONE`
-- LOCAL_VERDICT: `NEEDS_ONE_MORE_LOCAL` (direction mixed and Parent same-binary distribution noisy).
+- LOCAL_VERDICT: `INCONCLUSIVE` (completed six-pair ranking for the tested partial shape set; mixed direction and noisy Parent same-binary distribution).
 - LOCAL_SCORE_COMPARABLE_TO_OFFICIAL: `NO`; this is not an Official candidate.
-- V030: `BLOCKED` until V029 has a comparable, repeatable local ranking; keep the current Parent/Candidate and evidence unchanged.
-- NEXT_ACTION: same-Candidate Parent requalification and interleaved local sampling on the jointly passing cutoff shapes, with every raw sample retained. Do not rerun C15, use the repaired Parent, edit Candidate/source, write shared records, push, or submit Online.
+- RANKING_GATE: `COMPLETE_FOR_TESTED_PARTIAL_SET`; this does not establish full correctness or an Official-comparable score.
+- NEXT_ACTION: after committing this V029 result, run one threshold-only OFAT revision from the exact V029 Candidate baseline; refresh route rules before editing. Keep C15 excluded, do not use the repaired Parent, retain partial-correctness and non-comparability flags, and do not write shared records, push, or submit Online.
