@@ -83,3 +83,24 @@
 - A separate diagnostic copy SHA `c3007e431d75f3123b8f9d45cbbabaf6440b23596bd26b665a79d12f6ce5dde8` differs only by one inserted `SyncVToMTE2()` call (plus explanatory comments). Its 19-case matrix passed with all `rc=0` and `bad=0`; raw output is in `PARENT-REPAIR-SYNC-20261007T021547Z/`.
 - The first standalone launch of that diagnostic copy returned `127` because `libgraph.so` was not on the loader path; after loading the CANN environment, the C15 retry returned `0`. The launch failure is not counted as a kernel correctness result.
 - The repaired copy is not the exact Parent, not an official artifact, and does not clear `PARENT_SHARED_FAILURE`. No Local, Online, V029 performance edit, or shared-record edit is authorized by this result.
+
+## Replacement-owner refresh — 2026-10-07T06:03:40Z
+
+- ROLE: replacement sole owner for the existing route, explicitly assigned by the user; no new branch or worktree.
+- WORKTREE / BRANCH: `/home/data4t2/lelinfeng/cann-r-w4-4` / `routes/r-w4-4-mode-dispatch-cutoff-x`.
+- HEAD_BEFORE_RUN: `4515b5c8bb5016c54730e0b6cd413df4da0787b9` (prior owner's exact Parent C15 diagnostic).
+- RULES_REREAD: `AGENTS.md`; `.agents/skills/cann-mainline/SKILL.md`; canonical `.agents/skills/cann-route-executor/SKILL.md` from `origin/main`; `项目规则/实验总则.md`; `执行约定.md`; `服务器实验规范.md`; `本地性能测试规范.md`; `线上提交规范.md`; `Git工作流程.md`; technical route tables/map and scheduler tables. Canonical Route Executor SHA256 was `da53e318fbef98813e638ae8a5aa7b2a367f18bde84dd284e5b6d717ee17f666`; its active-portfolio text conflicts with this user's explicit replacement assignment, which is followed without widening scope.
+- ROUTE_FACTS: V028 single change remains `kSmallFp32BatchMaxWidth 512 -> 256`; exact V027 Parent SHA256 remains `f0ab43545e13d943e4c5bb5ff22400426e18f560ab313c1c6856b39fa904f033`; prior exact C15 attempts failed. Repaired Parent SHA is forbidden and was not used.
+- HOST_TARGET: current local host `hwnput3`, as clarified by the user. After that clarification, no SSH/external host query was used. A local read-only 8-device snapshot was captured.
+- NEXT_ACTION / RESULT: one exact Parent-only C15 FP32 `1x32768` probe on local device 4; `FREE_HBM` conservative lower bound `5898 MB` from 65536 MB capacity and reported 90% usage (+1 percentage-point safety allowance); AICore `0%`, AIVector `0%`, existing process PID `2999855` unchanged. Result: `rc=3`, `bad=28174`, `max_abs=1.2031`.
+- EVIDENCE: `PARENT-C15-RETRY-20261007T055757Z/` contains exact source/runner/wrapper/executable hashes, command, runtime environment, raw sample/stats/stdout/stderr, launch and post HBM/load/process snapshots, full per-device pre snapshots, process tables, timestamps and disk snapshots.
+- DISPOSITION: genuine exact-Parent correctness-baseline blocker. Stop this V028 experiment loop. No Candidate correctness, Local performance, repaired Parent, V029, Online, Candidate edit, or shared-record write. Existing untracked V029/build outputs were preserved.
+
+## Planning control refresh — 2026-10-07
+
+- CONTROL: latest Planning instruction supersedes the inherited 180-second CHILD_SLA termination rule. Keep this same Route owner, context, branch, and worktree; do not spawn a duplicate writer. Never close the owner due to elapsed time, heartbeat/network delay, long commands, result documentation, or a Git commit.
+- ROLE / SCOPE: Route-local work only. Main is coordination-only and performs no edits, Git, compile, correctness, Local, NPU, or shared-record actions. Online is paused. Use the current local host only; no SSH, DNS, or host-key work.
+- KNOWN BASELINE: `PARENT_KNOWN_CORRECTNESS_FAILURE=YES` for exact V027 Parent SHA `f0ab43545e13d943e4c5bb5ff22400426e18f560ab313c1c6856b39fa904f033`, C15 FP32 `1x32768`. Do not repeat that probe; classify it as a Parent defect, not a Candidate regression.
+- RESULT BOUNDARY: `PARTIAL_CORRECTNESS=YES`; `LOCAL_SCORE_COMPARABLE_TO_OFFICIAL=NO`. Any route-local ranking is restricted to cases where the exact direct Parent and Candidate both pass. A partial result is never an Official candidate.
+- IN-FLIGHT REVISION: existing V029 is preserved, not duplicated or overwritten. Its recorded single factor is `kSmallFp32BatchMaxWidth 256 -> 128`, Parent SHA is the original V028 `06384465fe0e3831048fc15903807ec3aeae55cdcb1852f5d85d60fbb9154ffb`, Compile is PASS, and Correctness/Local are not run. The current repaired V028 Candidate has a different SHA; V029 identity and parent binding must be respected during any route-local continuation.
+- NEXT ACTION: inspect existing route-local case identity and Parent/Candidate pass evidence, then continue only eligible width/rows/dtype/shape cutoff ranking. Preserve current Candidate, V029, and every failed/noisy result. No shared records, Online, push, or lifecycle decision.
