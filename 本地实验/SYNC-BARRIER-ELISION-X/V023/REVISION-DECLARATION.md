@@ -15,9 +15,9 @@
 
 - CANDIDATE_SOURCE_SHA256: `768c52fcc7ab5f86bb6a4fecabd32f8d63ebdca505f9287d5833311e50b3aa7f`
 - COMPILE: PASS on `hwnput3`, CANN `8.5.0.alpha002`, `dav-2201`; configure and build return codes were 0.
-- CORRECTNESS: `CORRECTNESS_HANG_PENDING_PROCESS_EXIT`. Runner build passed (return code 0). Process PID `2277907` was still active at `2026-10-07T14:21:58Z`, blocked in `trs_logic_cq_recv`; no correctness case result or runner return code was present. Preserve the live runner and original log.
-- LOCAL: NOT_RUN; `LOCAL_SCORE=NONE` until Correctness passes.
+- CORRECTNESS: FAIL. FP16 rows=8 width=128 passed exact bitwise comparison; the next candidate case (width=256, based on runner order) ended with ACL status `507034` / vector-core timeout (`retCode=0x30`). Runner returned 2 at `2026-10-07T14:25:40Z`.
+- LOCAL: NOT_RUN; `LOCAL_SCORE=NONE` because Correctness did not pass.
 - CURRENT_LOCAL_BEST: `R31B-V011` (unchanged); V023 is not promoted.
 - ONLINE: NOT_SUBMITTED.
 
-Evidence: `compile-result.json`, `correctness-result.json`, `local-result.json`, `source-meta.json`, `submission.sha256`, `diff.patch`, and raw logs under `logs/`. `correctness-result.json` is a timestamped pending-process observation, not a final runner result.
+Evidence: `compile-result.json`, `correctness-result.json`, `local-result.json`, `source-meta.json`, `submission.sha256`, `diff.patch`, and raw runner/plog logs under `logs/`. The original correctness log was retained and naturally completed; its interim pending observation remains recorded in `correctness-result.json`.
