@@ -1,0 +1,23 @@
+diff --git a/submission.asc b/submission.asc
+index 99c9143e..bd4bdb18 100644
+--- a/submission.asc
++++ b/submission.asc
+@@ -1083,10 +1083,13 @@ public:
+             AscendC::PipeBarrier<PIPE_V>();
+             SyncVToS();
+             const float invRms = 1.0f / xFp32.GetValue(0);
+             SyncSToV();
+ 
++            AscendC::Muls(valueLocal, valueLocal, invRms, kCacheElems);
++            AscendC::PipeBarrier<PIPE_V>();
++
+             for (int32_t col = 0; col < kCacheElems; col += kTileElems) {
+                 const bool useFirst = col == 0;
+@@ -1103,8 +1106,6 @@ public:
+                 AscendC::PipeBarrier<PIPE_V>();
+                 AscendC::Mul(outputTile, outputTile, gammaLocal[col], kTileElems);
+                 AscendC::PipeBarrier<PIPE_V>();
+-                AscendC::Muls(outputTile, outputTile, half(invRms), kTileElems);
+-                AscendC::PipeBarrier<PIPE_V>();
+                 AscendC::Add(outputTile, outputTile, biasLocal[col], kTileElems);
+                 AscendC::PipeBarrier<PIPE_V>();

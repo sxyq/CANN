@@ -1,0 +1,26 @@
+RULE_REFRESH_RECEIPT
+ROUTE=ROW-SCALE-HOIST-X
+REVISION=V032
+TIMESTAMP_UTC=2026-10-07T06:56:34Z
+WORKTREE=/home/data4t2/lelinfeng/cann-row-scale-hoist-x-w4
+HOST=hwnput3
+BRANCH=exp/row-scale-hoist-x-w4
+ROLE=Route Agent; sole writer for this Route/worktree
+READ=AGENTS.md; .agents/skills/cann-mainline/SKILL.md; .agents/skills/cann-route-executor/SKILL.md; 项目规则/实验总则.md; 项目规则/执行约定.md; 项目规则/本地性能测试规范.md; 项目规则/服务器实验规范.md; 项目规则/线上提交规范.md; 项目规则/Git工作流程.md; 技术路线/技术路线总表.md; 技术路线/技术路线图.md; 技术路线/路线成绩表.tsv; 技术路线/全版本记录.tsv; ROW-SCALE-HOIST-X V026 declaration/source/compile evidence; V031 declaration/source/result/raw local, correctness, compile and invalid-attempt evidence
+CANONICAL_ROUTE_SKILL=.agents/skills/cann-route-executor/SKILL.md
+RULES_CONFIRMED=one mechanism edit; immediately server3 Compile; then Correctness; then Local; preserve failures and negative results; commit result separately; no Online; no shared-record writes; no other worktree access; no force/reset/clean
+CURRENT_FACTS=V031 result commit 51ee7f96ac119930d92fe1bd83db8a2914bbe383 at 2026-10-07T06:26:44Z; Compile PASS; Correctness PASS on executed FP16 [128,8192] branch; Local score 87.5820079663, +14.1787021354% slower; Parent/Candidate pooled medians 18.6900005/21.34 us; Candidate slower in 3/3 paired blocks; high jitter/shared load; V026 remains CURRENT_LOCAL_BEST; [128,2048] wrong-dispatch attempt retained and excluded
+V032_DIRECT_PARENT=V026
+V032_SINGLE_CHANGE=In ProcessFp16FullRowOutputPipelined, replace two 4096-element native-half row-scale Muls after gamma with one 8192-element FP32 Muls on resident valueLocal before output conversion and the output loop; gamma, bias, reduction, dispatch and all other paths unchanged
+TARGET=FP16 [128,8192]; ProcessFp16FullRowOutputPipelined; device 0
+SLA_V031_RESULT_TO_NEXT_EDIT=MISSED (per user instruction)
+LATEST_COMMITTED_EVENT_UTC=2026-10-07T06:26:44Z
+V032_EDIT_TIMESTAMP=NOT_YET_AT_RECEIPT; edit-to-Compile follows immediately
+V032_EDIT_TO_COMPILE_SLA=will be reported using actual edit and Compile start timestamps
+V032_RESULT_TO_NEXT_EDIT_SLA=not started
+SLA_DEADLINE_POLICY=not specified in the read rules; no deadline invented
+OFFICIAL_SCORE=NONE
+ONLINE=FORBIDDEN_NOT_RUN
+SHARED_RECORDS=NOT_MODIFIED
+OTHER_WORKTREE=NOT_ACCESSED
+PUSH=NOT_RUN
