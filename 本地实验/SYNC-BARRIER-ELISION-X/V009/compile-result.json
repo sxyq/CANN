@@ -1,0 +1,76 @@
+{
+  "route": "SYNC-BARRIER-ELISION-X",
+  "revision": "V009",
+  "direct_parent": "R31B-V011",
+  "status": "PASS",
+  "host": "hwnput3",
+  "soc": "910B3",
+  "npu_arch": "dav-2201",
+  "cann_package": "/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002",
+  "compiler": "/usr/local/Ascend/ascend-toolkit/latest/compiler/ccec_compiler/bin/bisheng",
+  "target": "sync_barrier_elision_v009",
+  "build_directory": "/tmp/sync-barrier-elision-v009.hMd2Z6",
+  "candidate_source_sha256": "e2e9ed435e36855f493010aaa2d6ae10b8108922e631d36ee3acf3df604506b7",
+  "compile_started_at": "2026-10-07T07:16:46Z",
+  "completed_at": "2026-10-07T07:17:01Z",
+  "command": "cmake --build /tmp/sync-barrier-elision-v009.hMd2Z6 --target sync_barrier_elision_v009 -j2",
+  "pipeline_compile_evidence": "logs/compile-formatfix-local-20261007T071646Z.log",
+  "environment_fix": "CPLUS_INCLUDE_PATH=/usr/include/c++/11:/usr/include/aarch64-linux-gnu/c++/11:/usr/include/c++/11/backward",
+  "attempts": [
+    {
+      "started_at": "2026-10-07T07:04:53Z",
+      "status": "FAIL",
+      "stage": "CMake configure",
+      "reason": "Copied CMakeLists.txt retained a V008 target_link_libraries reference.",
+      "evidence": "logs/compile-local-20261007T070453Z.log"
+    },
+    {
+      "started_at": "2026-10-07T07:06:10Z",
+      "completed_at": "2026-10-07T07:06:26Z",
+      "status": "FAIL",
+      "stage": "ASC link",
+      "reason": "Generated registration C source could not find <vector>; CPLUS_INCLUDE_PATH was missing.",
+      "evidence": "logs/compile-retry-local-20261007T070610Z.log"
+    },
+    {
+      "started_at": "2026-10-07T07:06:57Z",
+      "completed_at": "2026-10-07T07:07:14Z",
+      "status": "PASS",
+      "source_sha256": "214afec5339a3ecd9af57a2fe0f1b361a0c4119c05fac235966a95f59107b98d",
+      "stage": "ASC build",
+      "evidence": "logs/compile-envfix-local-20261007T070657Z.log"
+    },
+    {
+      "started_at": "2026-10-07T07:16:46Z",
+      "completed_at": "2026-10-07T07:17:01Z",
+      "status": "PASS",
+      "source_sha256": "e2e9ed435e36855f493010aaa2d6ae10b8108922e631d36ee3acf3df604506b7",
+      "stage": "ASC rebuild after formatting-only source normalization",
+      "evidence": "logs/compile-formatfix-local-20261007T071646Z.log"
+    },
+    {
+      "started_at": "2026-10-07T07:35:35Z",
+      "completed_at": "2026-10-07T07:35:51Z",
+      "status": "FAIL",
+      "source_sha256": "e2e9ed435e36855f493010aaa2d6ae10b8108922e631d36ee3acf3df604506b7",
+      "reason": "Receipt-time rebuild omitted CPLUS_INCLUDE_PATH; generated registration C source could not find <vector>.",
+      "evidence": "logs/compile-exact-source-receipt-20261007T073535Z.log"
+    },
+    {
+      "started_at": "2026-10-07T07:36:12Z",
+      "completed_at": "2026-10-07T07:36:29Z",
+      "status": "PASS",
+      "source_sha256": "e2e9ed435e36855f493010aaa2d6ae10b8108922e631d36ee3acf3df604506b7",
+      "stage": "ASC rebuild with CPLUS_INCLUDE_PATH restored",
+      "evidence": "logs/compile-exact-source-envfix-20261007T073612Z.log"
+    }
+  ],
+  "final_source_sha256_verified_after_compile": true,
+  "post_local_source_rebuild": {
+    "started_at": "2026-10-07T07:36:12Z",
+    "completed_at": "2026-10-07T07:36:29Z",
+    "status": "PASS",
+    "source_sha256": "e2e9ed435e36855f493010aaa2d6ae10b8108922e631d36ee3acf3df604506b7",
+    "evidence": "logs/compile-exact-source-envfix-20261007T073612Z.log"
+  }
+}

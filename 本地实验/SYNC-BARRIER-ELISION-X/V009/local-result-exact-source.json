@@ -1,0 +1,78 @@
+{
+  "route": "SYNC-BARRIER-ELISION-X",
+  "revision": "V009",
+  "direct_parent": "R31B-V011",
+  "status": "LOCAL_REJECTED_NOISY",
+  "host": "hwnput3",
+  "soc": "910B3",
+  "npu_arch": "dav-2201",
+  "device": 3,
+  "shape": "8x2048",
+  "dtype": "fp16",
+  "candidate_source_sha256": "e2e9ed435e36855f493010aaa2d6ae10b8108922e631d36ee3acf3df604506b7",
+  "parent_source_sha256": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "started_at": "2026-10-07T07:32:36Z",
+  "completed_at": "2026-10-07T07:32:52Z",
+  "method": "60 warmups per run; two runs of 31 interleaved Parent/Candidate pairs; alternating P,C and C,P order; ACL device-event latency plus wall-clock diagnostics.",
+  "sample_pairs_per_run": 31,
+  "total_paired_samples": 62,
+  "local_score": 22.234668,
+  "local_delta": 22.234668,
+  "local_score_unit": "percent",
+  "local_score_type": "ROUTE_LOCAL_GEOMEAN_PAIRED_DEVICE_SPEEDUP_PERCENT",
+  "local_score_comparable_to_official": false,
+  "local_score_method": "Geometric mean of all 62 parent_device_us / candidate_device_us ratios; score percent=(geomean ratio-1)*100. This pooled statistic is retained descriptively but rejected for promotion because samples are severely noisy.",
+  "pooled": {
+    "geomean_parent_over_candidate": 1.222346681,
+    "per_run_geomean_parent_over_candidate": [1.059652082, 1.410020737],
+    "per_run_score_percent": [5.965208, 41.002074],
+    "parent_median_device_us_by_run": [7.34, 6.92],
+    "candidate_median_device_us_by_run": [8.92, 6.16],
+    "paired_median_delta_us_by_run": [0.02, -1.40]
+  },
+  "runs": [
+    {
+      "run": 1,
+      "sample_pairs": 31,
+      "parent_device_us": {"median": 7.34, "mean": 43.9277, "stdev": 86.0126, "cv": 1.95805, "min": 5.66, "max": 382.92, "mad": 1.38, "p10": 6.08, "p90": 161.14},
+      "candidate_device_us": {"median": 8.92, "mean": 32.3994, "stdev": 59.3237, "cv": 1.83102, "min": 5.50, "max": 246.96, "mad": 3.24, "p10": 5.68, "p90": 100.24},
+      "parent_wall_us": {"median": 217.042, "mean": 215.3095, "stdev": 82.5307, "cv": 0.38331, "min": 69.681, "max": 431.883, "mad": 47.870, "p10": 100.701, "p90": 290.673},
+      "candidate_wall_us": {"median": 215.711, "mean": 201.7555, "stdev": 84.2315, "cv": 0.41749, "min": 61.900, "max": 430.774, "mad": 51.610, "p10": 93.371, "p90": 304.323},
+      "paired_delta_us": {"median": 0.02, "mean": -11.5284, "stdev": 112.7133, "min": -374.78, "max": 240.82, "mad": 7.04, "p10": -152.22, "p90": 86.98}
+    },
+    {
+      "run": 2,
+      "sample_pairs": 31,
+      "parent_device_us": {"median": 6.92, "mean": 34.6239, "stdev": 50.3064, "cv": 1.45294, "min": 3.96, "max": 207.26, "mad": 2.96, "p10": 4.48, "p90": 76.42},
+      "candidate_device_us": {"median": 6.16, "mean": 27.1903, "stdev": 48.5768, "cv": 1.78655, "min": 3.66, "max": 208.64, "mad": 1.76, "p10": 4.34, "p90": 55.60},
+      "parent_wall_us": {"median": 107.751, "mean": 154.1725, "stdev": 147.2158, "cv": 0.95488, "min": 60.300, "max": 854.727, "mad": 37.141, "p10": 66.710, "p90": 277.582},
+      "candidate_wall_us": {"median": 97.821, "mean": 138.8193, "stdev": 97.5456, "cv": 0.70268, "min": 65.231, "max": 511.985, "mad": 29.501, "p10": 68.320, "p90": 256.292},
+      "paired_delta_us": {"median": -1.40, "mean": -7.4335, "stdev": 58.4562, "min": -177.58, "max": 145.92, "mad": 23.78, "p10": -58.32, "p90": 47.96}
+    }
+  ],
+  "device_load": {
+    "load_average_start": [24.17, 26.59, 30.05],
+    "load_average_end": [29.10, 27.44, 30.25],
+    "device_3_aicore_percent_preflight": 37,
+    "device_3_aicore_percent_postflight": 42,
+    "device_3_hbm_mb_preflight": 60219,
+    "device_3_hbm_mb_postflight": 60222,
+    "shared_vllm_processes": "Present and left untouched; process snapshots are retained in the raw log."
+  },
+  "quality_assessment": {
+    "verdict": "REJECTED_NOISY",
+    "reasons": [
+      "Device-event CV was 1.45-1.96 for Parent and 1.79-1.83 for Candidate across the two runs.",
+      "Device-event maxima reached 382.92 us for Parent and 246.96 us for Candidate against medians of 6.16-8.92 us.",
+      "Run medians disagree in direction: Candidate was slower in run 1 (8.92 vs 7.34 us) and faster in run 2 (6.16 vs 6.92 us).",
+      "Pooled and per-run geomean scores are dominated by large event outliers; no Local Best promotion is supported."
+    ],
+    "current_local_best": "R31B-V011",
+    "online_candidate": "NO",
+    "official_score_context": 45.16,
+    "official_score_comparison": "The single-shape route-local metric is not comparable to Official 45.16."
+  },
+  "evidence_log": "logs/local-exact-source-device3-20261007T073236Z.log",
+  "raw_samples": "62 LOCAL_SAMPLE records in evidence_log; all device-event and wall-clock samples retained.",
+  "runner_label_note": "The runner summary prints stale CANDIDATE_V008/CANDIDATE_V006 labels; the compiled executable and log source SHA identify the V009 candidate exactly."
+}

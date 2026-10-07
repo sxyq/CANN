@@ -1,0 +1,10 @@
+--- a/parent.asc
++++ b/submission.asc
+@@ -588,7 +588,6 @@
+             } else if constexpr (std::is_same<T, half>::value) {
+                 AscendC::LocalTensor<T> outputLocal = outputBuf_.Get<T>();
+                 FromFloat(outputLocal, valueLocal, valid);
+-                AscendC::PipeBarrier<PIPE_V>();
+                 AscendC::Mul(outputLocal, outputLocal, gammaLocal, valid);
+                 AscendC::PipeBarrier<PIPE_V>();
+                 AscendC::Add(outputLocal, outputLocal, biasLocal, valid);

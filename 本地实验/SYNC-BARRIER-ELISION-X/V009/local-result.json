@@ -1,0 +1,85 @@
+{
+  "route": "SYNC-BARRIER-ELISION-X",
+  "revision": "V009",
+  "direct_parent": "R31B-V011",
+  "status": "LOCAL_REJECTED_NOISY",
+  "host": "hwnput3",
+  "soc": "910B3",
+  "npu_arch": "dav-2201",
+  "cann_package": "/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002",
+  "device": 3,
+  "shape": "8x2048",
+  "dtype": "fp16",
+  "started_at": "2026-10-07T07:08:57Z",
+  "completed_at": "2026-10-07T07:09:13Z",
+  "method": "60 warmups per run; two runs of 31 interleaved Parent/Candidate pairs; alternating P,C and C,P order; ACL device-event latency plus wall-clock diagnostics.",
+  "sample_pairs_per_run": 31,
+  "total_paired_samples": 62,
+  "local_score": 27.541645774,
+  "local_delta": 27.541645774,
+  "local_score_unit": "percent",
+  "local_score_type": "ROUTE_LOCAL_GEOMEAN_PAIRED_DEVICE_SPEEDUP_PERCENT",
+  "local_score_comparable_to_official": false,
+  "local_score_method": "Geometric mean of all 62 parent_device_us / candidate_device_us ratios; score percent=(geomean ratio-1)*100.",
+  "pooled": {
+    "geomean_parent_over_candidate": 1.275416458,
+    "per_run_geomean_speedup_percent": [29.046800664, 26.054046463],
+    "parent_median_us_by_run": [5.34, 4.68],
+    "candidate_median_us_by_run": [5.08, 4.70],
+    "paired_median_delta_us_by_run": [-0.28, -0.42],
+    "runner_paired_median_score_percent_by_run": [5.243451, 8.974358],
+    "effective_elements_per_second_at_median_by_run": {
+      "parent": [3068164794.007, 3500854700.855],
+      "candidate": [3225196850.394, 3485957446.809],
+      "definition": "16384 output elements divided by device-event median latency; not a bandwidth estimate."
+    }
+  },
+  "runs": [
+    {
+      "run": 1,
+      "sample_pairs": 31,
+      "parent_device_us": { "median": 5.34, "mean": 34.7097, "stdev": 69.2791, "cv": 1.99596, "min": 3.96, "max": 210.0, "mad": 0.56, "p10": 4.24, "p90": 199.08 },
+      "candidate_device_us": { "median": 5.08, "mean": 21.6477, "stdev": 50.0802, "cv": 2.31341, "min": 3.92, "max": 188.54, "mad": 0.56, "p10": 4.10, "p90": 29.42 },
+      "parent_wall_us": { "median": 251.368, "mean": 231.0445, "stdev": 49.8829, "cv": 0.21590, "min": 119.179, "max": 335.828, "mad": 17.400, "p10": 166.300, "p90": 268.768 },
+      "candidate_wall_us": { "median": 244.489, "mean": 225.2043, "stdev": 51.0212, "cv": 0.22655, "min": 83.700, "max": 279.909, "mad": 13.171, "p10": 137.839, "p90": 262.949 },
+      "paired_delta_us": { "median": -0.28, "mean": -13.0619, "stdev": 57.2427, "min": -205.04, "max": 120.66, "mad": 0.90, "p10": -15.38, "p90": 0.68 }
+    },
+    {
+      "run": 2,
+      "sample_pairs": 31,
+      "parent_device_us": { "median": 4.68, "mean": 20.3355, "stdev": 57.6222, "cv": 2.83358, "min": 3.92, "max": 282.28, "mad": 0.54, "p10": 4.02, "p90": 10.18 },
+      "candidate_device_us": { "median": 4.70, "mean": 6.1710, "stdev": 3.8738, "cv": 0.62775, "min": 3.76, "max": 23.62, "mad": 0.48, "p10": 3.98, "p90": 9.52 },
+      "parent_wall_us": { "median": 280.478, "mean": 251.4875, "stdev": 63.7803, "cv": 0.25361, "min": 99.629, "max": 349.978, "mad": 28.400, "p10": 162.969, "p90": 308.878 },
+      "candidate_wall_us": { "median": 234.319, "mean": 210.2445, "stdev": 77.0547, "cv": 0.36650, "min": 76.160, "max": 315.639, "mad": 51.060, "p10": 93.060, "p90": 286.749 },
+      "paired_delta_us": { "median": -0.42, "mean": -14.1645, "stdev": 58.1433, "min": -277.58, "max": 13.64, "mad": 3.50, "p10": -5.30, "p90": 5.02 }
+    }
+  ],
+  "device_load": {
+    "quality": "NOISY",
+    "load_average_start": [40.16, 38.28, 39.89],
+    "load_average_end": [34.05, 37.02, 39.46],
+    "device_3_aicore_percent_preflight": 0,
+    "device_3_aicore_percent_postflight": 0,
+    "device_3_hbm_mb_preflight": 60219,
+    "device_3_hbm_mb_postflight": 60221,
+    "device_3_process": "VLLMWorker_TP PID 94498, approximately 56703 MB; left untouched.",
+    "other_shared_vllm_processes": "Present on host and other devices; process snapshots retained in raw log."
+  },
+  "quality_assessment": {
+    "verdict": "REJECTED_NOISY",
+    "reasons": [
+      "Device-event CV reached 2.83358 for Parent and 2.31341 for Candidate; event maxima reached 282.28 us and 188.54 us against ~5 us medians.",
+      "The +27.541645774% pooled geomean is dominated by large device-event outliers and is not a reliable promotion signal under this load."
+    ],
+    "current_local_best": "R31B-V011",
+    "online_candidate": "NO",
+    "official_score": null,
+    "official_score_comparison": "This single-shape route-local metric is not comparable to Official 45.16."
+  },
+  "evidence_log": "logs/local-device3-20261007T070857Z.log",
+  "raw_samples": "62 LOCAL_SAMPLE records in evidence_log; all device-event and wall-clock samples retained.",
+  "runner_label_note": "The copied harness prints CANDIDATE_V008 and CANDIDATE_V006 summary labels. The executable included V009/submission.asc; candidate SHA-256 is recorded above.",
+  "source_identity_status": "SUPERSEDED_SOURCE_SHA",
+  "superseded_by": "local-result-exact-source.json",
+  "superseded_note": "This result is retained unchanged in substance for candidate SHA 214afec5339a3ecd9af57a2fe0f1b361a0c4119c05fac235966a95f59107b98d; final-source numeric Local evidence is in local-result-exact-source.json."
+}
