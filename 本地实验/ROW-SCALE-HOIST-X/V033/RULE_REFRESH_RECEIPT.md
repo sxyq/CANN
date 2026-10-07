@@ -1,0 +1,22 @@
+RULE_REFRESH_RECEIPT
+ROUTE=ROW-SCALE-HOIST-X
+REVISION=V033
+TIMESTAMP_UTC=2026-10-07T10:56:36Z
+WORKTREE=/home/data4t2/lelinfeng/cann-row-scale-hoist-x-w4
+HOST=hwnput3
+BRANCH=exp/row-scale-hoist-x-w4
+ROLE=Route Agent; sole owner for this Route/worktree
+READ=AGENTS.md; .agents/skills/cann-mainline/SKILL.md; .agents/skills/cann-route-executor/SKILL.md; 项目规则/实验总则.md; 项目规则/执行约定.md; 项目规则/本地性能测试规范.md; 项目规则/服务器实验规范.md; 项目规则/线上提交规范.md; 项目规则/Git工作流程.md; 技术路线/技术路线总表.md; 技术路线/技术路线图.md; 技术路线/路线成绩表.tsv; 技术路线/全版本记录.tsv; V026 declaration/source; V032 declaration/source/results/evidence
+CANONICAL_ROUTE_SKILL=.agents/skills/cann-route-executor/SKILL.md
+PLANNING_SCOPE_SOURCE=Latest approved Planning instruction in this owner context; no route-specific Planning file or ROW-SCALE-HOIST-X entry exists in this worktree's research/formal route tables
+V032_PRESERVED=commit c5f075bda02c81526f186a65517e690cd53bdae5; evidence unchanged
+CURRENT_FACTS=V032 Compile PASS; FP16 [128,8192] Correctness PASS; Local NEEDS_ONE_MORE_LOCAL; score 95.6210267214; candidate 4.5795087427% slower; HIGH_JITTER_SHARED_DEVICE_AND_HOST_ACTIVITY; V026 remains CURRENT_LOCAL_BEST
+V033_DIRECT_PARENT=V026
+V033_SINGLE_CHANGE=In ProcessFp16FullRowOutputPipelined, move the existing native-half row-scale Muls before the existing native-half gamma Mul, after FromFloat; preserve bias placement and all other operations/order
+SCOPE=Row-scale placement/consumption ordering only; no Rsqrt/math redesign, reduction, dtype, or scheduling change
+OFFICIAL_SCORE=NONE
+ONLINE=PAUSED_NOT_RUN
+SHARED_RECORDS=NOT_MODIFIED
+OTHER_WORKTREE=NOT_ACCESSED
+PUSH=NOT_AUTHORIZED_OR_RUN
+NEXT=Scaffold from V026; apply exactly the declared source-order swap; immediately run local-host Compile, then Correctness, numeric interleaved Local, evidence, and a route-local commit

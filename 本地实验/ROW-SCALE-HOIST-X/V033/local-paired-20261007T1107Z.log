@@ -1,0 +1,134 @@
+ROUTE=ROW-SCALE-HOIST-X
+REVISION=V033
+DIRECT_PARENT=V026
+HOST=hwnput3
+DEVICE=0
+SOC=910B3
+DTYPE=FP16
+SHAPE=[128,8192]
+ORDER=P-C-P-C-P-C
+WARMUPS_PER_PROCESS=20
+SAMPLES_PER_PROCESS=32
+PARENT_BINARY=/tmp/cann-row-scale-hoist-x-v033-local-20261007T1104Z/v033_local_parent
+CANDIDATE_BINARY=/tmp/cann-row-scale-hoist-x-v033-local-20261007T1104Z/v033_local_candidate
+START_UTC=2026-10-07T11:07:44Z
+
+DEVICE_BEFORE
+	NPU ID                         : 0
+	Chip Count                     : 1
+
+	DDR Capacity(MB)               : 0
+	DDR Usage Rate(%)              : 0
+	DDR Hugepages Total(page)      : 0
+	DDR Hugepages Usage Rate(%)    : 0
+	HBM Capacity(MB)               : 65536
+	HBM Usage Rate(%)              : 91
+	Aicore Usage Rate(%)           : 0
+	Aivector Usage Rate(%)         : 0
+	Aicpu Usage Rate(%)            : 0
+	Ctrlcpu Usage Rate(%)          : 6
+	DDR Bandwidth Usage Rate(%)    : 0
+	HBM Bandwidth Usage Rate(%)    : 0
+	Chip ID                        : 0
+
+
+HOST_BEFORE
+ 11:07:44 up 241 days, 22:43, 34 users,  load average: 35.68, 37.35, 34.70
+USER         PID %CPU COMMAND
+zhouxin+  439848 1613 python3
+zhouxin+  478095  364 python3
+wangjie+  486955  153 MainThread
+root       89395  121 VLLM::Worker_TP
+wangjie+ 2901437 83.7 Lingma
+root       92813 66.0 VLLM::Worker_TP
+root       94498 63.8 VLLM::Worker_TP
+root       91055 62.4 VLLM::Worker_TP
+root       87336 55.4 VLLM::EngineCor
+lelinfe+  488214 51.4 clx_ref_parent_
+root      477052 45.7 kworker/u393:3-aicore_info_wq
+root      477054 45.2 kworker/u393:4-dev7_sq_send_wq
+root      477050 40.0 kworker/u393:1-dev7_sq_send_wq
+root      477055 40.0 kworker/u384:4-dev7_sq_fair_wq
+root      477520 37.2 kworker/u393:5-dev7_sq_send_wq
+
+BLOCK_P1_START_UTC=2026-10-07T11:07:45Z
+DISPATCH_AUDIT={"label":"PARENT","dtype":"fp16","shape":[128,8192],"vector_cores":40,"launch_blocks":40,"local_rows_min":3,"local_rows_max":4,"selected_branch":"ProcessFp16FullRowOutputPipelined","candidate_source_delta_executed":false}
+VERIFY label=PARENT status=PASS matched_ratio=1.000000000 max_abs_error=0.00390625
+RUNNER_RESULT={"label":"PARENT","device":0,"dtype":"fp16","shape":[128,8192],"vector_cores":40,"warmups":20,"samples":32,"full_logical_io_bytes":12648448,"raw_device_us":[12.360000,12.419999,12.179999,13.179999,12.900001,12.840000,15.120000,12.780001,14.560000,12.860001,13.000000,13.059999,15.780000,12.679999,14.540000,13.140000,13.400000,12.460000,12.640000,12.780001,14.960000,11.680000,12.900001,12.100000,13.580000,12.920000,12.700000,12.220000,12.520000,12.520000,13.700000,12.540000],"median_device_us":12.850000,"mean_device_us":13.094375,"sample_stdev_device_us":0.944597,"cv":0.072138,"mad_device_us":0.630625,"p10_device_us":12.234000,"p90_device_us":14.558001,"min_device_us":11.680000,"max_device_us":15.780000}
+BLOCK_P1_RC=0
+BLOCK_P1_END_UTC=2026-10-07T11:07:50Z
+
+BLOCK_C1_START_UTC=2026-10-07T11:07:50Z
+DISPATCH_AUDIT={"label":"CANDIDATE","dtype":"fp16","shape":[128,8192],"vector_cores":40,"launch_blocks":40,"local_rows_min":3,"local_rows_max":4,"selected_branch":"ProcessFp16FullRowOutputPipelined","candidate_source_delta_executed":true}
+VERIFY label=CANDIDATE status=PASS matched_ratio=1.000000000 max_abs_error=0.00390625
+RUNNER_RESULT={"label":"CANDIDATE","device":0,"dtype":"fp16","shape":[128,8192],"vector_cores":40,"warmups":20,"samples":32,"full_logical_io_bytes":12648448,"raw_device_us":[14.420000,12.840000,13.740001,13.300000,13.780000,16.440001,14.100000,12.920000,15.700000,12.860001,13.860001,12.600000,14.259999,13.660000,13.480000,14.920000,12.600000,13.960000,12.200000,14.020000,12.720000,13.559999,13.900000,13.260000,30.120001,12.500000,283.479980,205.779999,13.240000,12.700000,13.600000,12.340000],"median_device_us":13.630000,"mean_device_us":28.526875,"sample_stdev_device_us":57.624390,"cv":2.020004,"mad_device_us":15.606874,"p10_device_us":12.600000,"p90_device_us":16.366001,"min_device_us":12.200000,"max_device_us":283.479980}
+BLOCK_C1_RC=0
+BLOCK_C1_END_UTC=2026-10-07T11:07:54Z
+
+BLOCK_P2_START_UTC=2026-10-07T11:07:54Z
+DISPATCH_AUDIT={"label":"PARENT","dtype":"fp16","shape":[128,8192],"vector_cores":40,"launch_blocks":40,"local_rows_min":3,"local_rows_max":4,"selected_branch":"ProcessFp16FullRowOutputPipelined","candidate_source_delta_executed":false}
+VERIFY label=PARENT status=PASS matched_ratio=1.000000000 max_abs_error=0.00390625
+RUNNER_RESULT={"label":"PARENT","device":0,"dtype":"fp16","shape":[128,8192],"vector_cores":40,"warmups":20,"samples":32,"full_logical_io_bytes":12648448,"raw_device_us":[12.740000,37.099998,10.900001,11.460000,11.140000,11.500000,11.820000,12.320000,11.080000,12.400001,12.580000,12.640000,12.760000,13.100000,12.799999,13.100000,13.160000,12.400001,13.040000,13.040000,16.340000,12.160001,12.380000,12.500000,12.600000,12.419999,12.360000,12.419999,12.320000,12.440000,16.799999,31.959999],"median_device_us":12.469999,"mean_device_us":13.993126,"sample_stdev_device_us":5.556038,"cv":0.397055,"mad_device_us":2.023125,"p10_device_us":11.464000,"p90_device_us":16.021999,"min_device_us":10.900001,"max_device_us":37.099998}
+BLOCK_P2_RC=0
+BLOCK_P2_END_UTC=2026-10-07T11:07:58Z
+
+BLOCK_C2_START_UTC=2026-10-07T11:07:58Z
+DISPATCH_AUDIT={"label":"CANDIDATE","dtype":"fp16","shape":[128,8192],"vector_cores":40,"launch_blocks":40,"local_rows_min":3,"local_rows_max":4,"selected_branch":"ProcessFp16FullRowOutputPipelined","candidate_source_delta_executed":true}
+VERIFY label=CANDIDATE status=PASS matched_ratio=1.000000000 max_abs_error=0.00390625
+RUNNER_RESULT={"label":"CANDIDATE","device":0,"dtype":"fp16","shape":[128,8192],"vector_cores":40,"warmups":20,"samples":32,"full_logical_io_bytes":12648448,"raw_device_us":[13.400000,191.639999,165.720001,11.660000,33.700001,15.920000,13.800000,13.360001,13.260000,11.040000,13.840000,136.979996,12.920000,11.040000,13.220000,11.200000,13.140000,14.639999,11.200000,34.500000,10.820001,13.059999,11.420000,13.840000,15.240000,12.860001,13.040000,14.600000,13.080000,294.279999,11.260000,14.040000],"median_device_us":13.310000,"mean_device_us":37.303749,"sample_stdev_device_us":65.195236,"cv":1.747686,"mad_device_us":25.164995,"p10_device_us":11.200000,"p90_device_us":126.731956,"min_device_us":10.820001,"max_device_us":294.279999}
+BLOCK_C2_RC=0
+BLOCK_C2_END_UTC=2026-10-07T11:08:03Z
+
+BLOCK_P3_START_UTC=2026-10-07T11:08:03Z
+DISPATCH_AUDIT={"label":"PARENT","dtype":"fp16","shape":[128,8192],"vector_cores":40,"launch_blocks":40,"local_rows_min":3,"local_rows_max":4,"selected_branch":"ProcessFp16FullRowOutputPipelined","candidate_source_delta_executed":false}
+VERIFY label=PARENT status=PASS matched_ratio=1.000000000 max_abs_error=0.00390625
+RUNNER_RESULT={"label":"PARENT","device":0,"dtype":"fp16","shape":[128,8192],"vector_cores":40,"warmups":20,"samples":32,"full_logical_io_bytes":12648448,"raw_device_us":[188.759995,11.400001,15.340000,11.920000,11.460000,11.740000,11.320000,11.880000,11.180000,11.640000,11.020000,13.140000,13.900000,11.680000,11.460000,11.380000,11.380000,11.260000,11.380000,11.280001,13.140000,13.559999,11.160000,11.700000,11.800000,11.900001,11.540000,11.900001,13.840000,11.520000,14.860001,13.000000],"median_device_us":11.690001,"mean_device_us":17.638752,"sample_stdev_device_us":31.246099,"cv":1.771446,"mad_device_us":6.259998,"p10_device_us":11.262000,"p90_device_us":13.894000,"min_device_us":11.020000,"max_device_us":188.759995}
+BLOCK_P3_RC=0
+BLOCK_P3_END_UTC=2026-10-07T11:08:08Z
+
+BLOCK_C3_START_UTC=2026-10-07T11:08:08Z
+DISPATCH_AUDIT={"label":"CANDIDATE","dtype":"fp16","shape":[128,8192],"vector_cores":40,"launch_blocks":40,"local_rows_min":3,"local_rows_max":4,"selected_branch":"ProcessFp16FullRowOutputPipelined","candidate_source_delta_executed":true}
+VERIFY label=CANDIDATE status=PASS matched_ratio=1.000000000 max_abs_error=0.00390625
+RUNNER_RESULT={"label":"CANDIDATE","device":0,"dtype":"fp16","shape":[128,8192],"vector_cores":40,"warmups":20,"samples":32,"full_logical_io_bytes":12648448,"raw_device_us":[12.520000,12.760000,12.080000,11.559999,12.280001,11.140000,12.280001,11.920000,12.620000,11.660000,11.740000,11.500000,11.480000,11.720000,39.220001,41.620003,43.680000,54.180000,11.360000,18.719999,11.380000,31.219999,12.299999,11.780001,11.820000,11.460000,12.179999,10.940001,24.119999,10.839999,11.599999,98.300003],"median_device_us":12.000000,"mean_device_us":19.811874,"sample_stdev_device_us":18.372860,"cv":0.927366,"mad_device_us":8.318125,"p10_device_us":11.362000,"p90_device_us":41.380001,"min_device_us":10.839999,"max_device_us":98.300003}
+BLOCK_C3_RC=0
+BLOCK_C3_END_UTC=2026-10-07T11:08:12Z
+
+DEVICE_AFTER
+	NPU ID                         : 0
+	Chip Count                     : 1
+
+	DDR Capacity(MB)               : 0
+	DDR Usage Rate(%)              : 0
+	DDR Hugepages Total(page)      : 0
+	DDR Hugepages Usage Rate(%)    : 0
+	HBM Capacity(MB)               : 65536
+	HBM Usage Rate(%)              : 91
+	Aicore Usage Rate(%)           : 0
+	Aivector Usage Rate(%)         : 0
+	Aicpu Usage Rate(%)            : 0
+	Ctrlcpu Usage Rate(%)          : 8
+	DDR Bandwidth Usage Rate(%)    : 0
+	HBM Bandwidth Usage Rate(%)    : 0
+	Chip ID                        : 0
+
+
+HOST_AFTER
+ 11:08:13 up 241 days, 22:44, 34 users,  load average: 27.69, 35.25, 34.08
+USER         PID %CPU COMMAND
+zhouxin+  439848 1613 python3
+zhouxin+  478095  299 python3
+lelinfe+  492575  152 bisheng
+wangjie+  486955  151 MainThread
+root       89395  121 VLLM::Worker_TP
+wangjie+ 2901437 83.7 Lingma
+root       92813 66.0 VLLM::Worker_TP
+root       94498 63.8 VLLM::Worker_TP
+root       91055 62.4 VLLM::Worker_TP
+lelinfe+  492335 61.6 clx_ref_parent_
+root       87336 55.4 VLLM::EngineCor
+root      477052 35.4 kworker/u393:3-aicore_info_wq
+root      477054 35.0 kworker/u393:4-dev7_sq_send_wq
+root      477055 31.1 kworker/u384:4-dev7_sq_fair_wq
+root      477050 31.0 kworker/u393:1-dev7_sq_send_wq
+LOCAL_GATE_PROCESS_EXIT_CODE=0
+END_UTC=2026-10-07T11:08:13Z

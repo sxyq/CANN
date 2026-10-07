@@ -1,0 +1,81 @@
+ROUTE=ROW-SCALE-HOIST-X
+REVISION=V033
+STAGE=PARENT_SAME_BINARY_STABILITY
+HOST=hwnput3
+DEVICE=0
+SHAPE=FP16[128,8192]
+PARENT_BINARY=/tmp/cann-row-scale-hoist-x-v033-local-20261007T1104Z/v033_local_parent
+START_UTC=2026-10-07T11:06:03Z
+
+DEVICE_BEFORE
+	NPU ID                         : 0
+	Chip Count                     : 1
+
+	DDR Capacity(MB)               : 0
+	DDR Usage Rate(%)              : 0
+	DDR Hugepages Total(page)      : 0
+	DDR Hugepages Usage Rate(%)    : 0
+	HBM Capacity(MB)               : 65536
+	HBM Usage Rate(%)              : 91
+	Aicore Usage Rate(%)           : 0
+	Aivector Usage Rate(%)         : 0
+	Aicpu Usage Rate(%)            : 0
+	Ctrlcpu Usage Rate(%)          : 3
+	DDR Bandwidth Usage Rate(%)    : 0
+	HBM Bandwidth Usage Rate(%)    : 0
+	Chip ID                        : 0
+
+
+HOST_BEFORE
+ 11:06:04 up 241 days, 22:42, 34 users,  load average: 52.25, 39.57, 35.05
+USER         PID %CPU COMMAND
+zhouxin+  439848 1613 python3
+wangjie+  473988  151 MainThread
+zhouxin+  417040  149 python3
+root       89395  121 VLLM::Worker_TP
+wangjie+ 2901437 83.7 Lingma
+root       92813 66.0 VLLM::Worker_TP
+root       94498 63.8 VLLM::Worker_TP
+root       91055 62.4 VLLM::Worker_TP
+root       87336 55.4 VLLM::EngineCor
+root       89602 25.6 VLLM::Worker_TP
+root       91228 16.7 VLLM::Worker_TP
+zhangka+ 2999855 15.8 VLLM::EngineCor
+root       82397 14.1 vllm
+root     3975060 13.2 kworker/u393:0-dev7_sq_send_wq
+root     3975062 12.4 kworker/u393:2-dev7_sq_send_wq
+
+PARENT_STABILITY_RUN=1 START_UTC=2026-10-07T11:06:04Z
+DISPATCH_AUDIT={"label":"PARENT","dtype":"fp16","shape":[128,8192],"vector_cores":40,"launch_blocks":40,"local_rows_min":3,"local_rows_max":4,"selected_branch":"ProcessFp16FullRowOutputPipelined","candidate_source_delta_executed":false}
+VERIFY label=PARENT status=PASS matched_ratio=1.000000000 max_abs_error=0.00390625
+RUNNER_RESULT={"label":"PARENT","device":0,"dtype":"fp16","shape":[128,8192],"vector_cores":40,"warmups":20,"samples":32,"full_logical_io_bytes":12648448,"raw_device_us":[12.760000,11.420000,13.360001,24.620001,13.780000,12.280001,13.620000,12.980000,13.380000,12.419999,13.400000,11.900001,13.580000,11.960000,12.960000,13.280000,221.020004,221.460007,11.140000,12.480000,159.160004,11.620000,13.340000,118.279999,11.960000,12.120000,13.040000,11.840000,241.880005,207.000000,12.360000,12.620000],"median_device_us":13.010000,"mean_device_us":47.156876,"sample_stdev_device_us":74.490639,"cv":1.579635,"mad_device_us":34.980629,"p10_device_us":11.846001,"p90_device_us":202.215988,"min_device_us":11.140000,"max_device_us":241.880005}
+PARENT_STABILITY_RUN=1 EXIT_CODE=0 END_UTC=2026-10-07T11:06:09Z
+
+PARENT_STABILITY_RUN=2 START_UTC=2026-10-07T11:06:09Z
+DISPATCH_AUDIT={"label":"PARENT","dtype":"fp16","shape":[128,8192],"vector_cores":40,"launch_blocks":40,"local_rows_min":3,"local_rows_max":4,"selected_branch":"ProcessFp16FullRowOutputPipelined","candidate_source_delta_executed":false}
+VERIFY label=PARENT status=PASS matched_ratio=1.000000000 max_abs_error=0.00390625
+RUNNER_RESULT={"label":"PARENT","device":0,"dtype":"fp16","shape":[128,8192],"vector_cores":40,"warmups":20,"samples":32,"full_logical_io_bytes":12648448,"raw_device_us":[20.400002,267.699982,47.520000,24.599998,18.840000,20.120001,149.299988,17.060001,29.600000,21.500000,20.660000,339.160004,22.879999,22.620001,22.600000,21.320000,333.940002,23.840000,19.460001,17.200001,22.560001,25.920000,112.139999,93.659996,25.580000,23.199999,18.760000,17.540001,104.659996,21.100000,24.420000,28.600000],"median_device_us":23.039999,"mean_device_us":61.826870,"sample_stdev_device_us":88.847420,"cv":1.437036,"mad_device_us":41.538124,"p10_device_us":18.768000,"p90_device_us":145.583969,"min_device_us":17.060001,"max_device_us":339.160004}
+PARENT_STABILITY_RUN=2 EXIT_CODE=0 END_UTC=2026-10-07T11:06:14Z
+
+DEVICE_AFTER
+	NPU ID                         : 0
+	Chip Count                     : 1
+
+	DDR Capacity(MB)               : 0
+	DDR Usage Rate(%)              : 0
+	DDR Hugepages Total(page)      : 0
+	DDR Hugepages Usage Rate(%)    : 0
+	HBM Capacity(MB)               : 65536
+	HBM Usage Rate(%)              : 91
+	Aicore Usage Rate(%)           : 40
+	Aivector Usage Rate(%)         : 30
+	Aicpu Usage Rate(%)            : 0
+	Ctrlcpu Usage Rate(%)          : 8
+	DDR Bandwidth Usage Rate(%)    : 0
+	HBM Bandwidth Usage Rate(%)    : 35
+	Chip ID                        : 0
+
+
+HOST_AFTER
+ 11:06:14 up 241 days, 22:42, 34 users,  load average: 47.17, 38.89, 34.87
+END_UTC=2026-10-07T11:06:14Z
