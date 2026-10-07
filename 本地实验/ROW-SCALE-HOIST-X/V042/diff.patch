@@ -3,7 +3,7 @@
 @@ -583,14 +583,16 @@
              const float invRms = 1.0f / xFp32.GetValue(0);
              SyncSToV();
- 
+
 +            if constexpr (AscendC::IsSameType<T, float>::value) {
 +                AscendC::Muls(valueLocal, valueLocal, invRms, valid);
 +                AscendC::PipeBarrier<PIPE_V>();
