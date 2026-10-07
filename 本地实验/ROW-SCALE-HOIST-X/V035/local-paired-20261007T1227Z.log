@@ -1,0 +1,134 @@
+ROUTE=ROW-SCALE-HOIST-X
+REVISION=V035
+DIRECT_PARENT=V026
+STAGE=LOCAL_PAIRED_INTERLEAVED
+HOST=hwnput3
+DEVICE=0
+SOC=910B3
+DTYPE=FP16
+SHAPE=[128,3072]
+ORDER=P-C-P-C-P-C
+WARMUPS_PER_PROCESS=20
+SAMPLES_PER_PROCESS=32
+PARENT_BINARY=/tmp/cann-row-scale-hoist-x-v035-local-20261007T1223Z/v035_local_parent
+CANDIDATE_BINARY=/tmp/cann-row-scale-hoist-x-v035-local-20261007T1223Z/v035_local_candidate
+START_UTC=2026-10-07T12:26:53Z
+
+DEVICE_BEFORE
+	NPU ID                         : 0
+	Chip Count                     : 1
+
+	DDR Capacity(MB)               : 0
+	DDR Usage Rate(%)              : 0
+	DDR Hugepages Total(page)      : 0
+	DDR Hugepages Usage Rate(%)    : 0
+	HBM Capacity(MB)               : 65536
+	HBM Usage Rate(%)              : 91
+	Aicore Usage Rate(%)           : 21
+	Aivector Usage Rate(%)         : 11
+	Aicpu Usage Rate(%)            : 0
+	Ctrlcpu Usage Rate(%)          : 5
+	DDR Bandwidth Usage Rate(%)    : 0
+	HBM Bandwidth Usage Rate(%)    : 30
+	Chip ID                        : 0
+
+
+HOST_BEFORE
+ 12:26:53 up 242 days, 3 min, 34 users,  load average: 51.93, 48.36, 45.08
+top - 12:26:54 up 242 days, 3 min, 34 users,  load average: 51.93, 48.36, 45.08
+Tasks: 2675 total,  11 running, 2663 sleeping,   1 stopped,   0 zombie
+%Cpu(s):  7.9 us,  4.9 sy,  0.0 ni, 87.2 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st
+MiB Mem : 1029735.+total, 231368.3 free, 130148.8 used, 668218.3 buff/cache
+MiB Swap:   8192.0 total,      0.0 free,   8192.0 used. 842196.1 avail Mem 
+
+    PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND
+ 439848 zhouxin+  20   0 8241.9g   7.5g 721560 R 470.8   0.7 138599:24 python3
+1107571 wangjie+  20   0   13.7g   4.1g  46632 R 450.0   0.4   2:10.40 MainThr+
+  89395 root      20   0 8226.4g   4.7g 896900 S 237.5   0.5  26656:54 VLLM::W+
+  92813 root      20   0 8226.3g   4.7g 896436 S 125.0   0.5  14472:29 VLLM::W+
+  94498 root      20   0 8226.8g   4.7g 896296 S 125.0   0.5  14006:36 VLLM::W+
+  91055 root      20   0 8226.6g   4.7g 896300 S 120.8   0.5  13682:43 VLLM::W+
+  87336 root      20   0 7739652   2.5g 486220 R 100.0   0.2  12146:58 VLLM::E+
+ 807449 root       0 -20       0      0      0 R  70.8   0.0  15:27.71 kworker+
+1086449 root       0 -20       0      0      0 I  70.8   0.0   0:38.28 kworker+
+
+BLOCK_P_START_UTC=2026-10-07T12:26:54Z
+DISPATCH_AUDIT={"label":"PARENT","dtype":"fp16","shape":[128,3072],"vector_cores":40,"launch_blocks":40,"local_rows_min":3,"local_rows_max":4,"selected_branch":"ProcessNarrowMidOverlap_FP16","candidate_source_delta_executed":false}
+VERIFY label=PARENT status=PASS matched_ratio=1.000000000 max_abs_error=0.00390625
+RUNNER_RESULT={"label":"PARENT","device":0,"dtype":"fp16","shape":[128,3072],"vector_cores":40,"warmups":20,"samples":32,"full_logical_io_bytes":4743168,"raw_device_us":[22.639999,20.940001,17.720001,209.839996,17.519999,20.859999,20.900000,19.740000,16.080000,17.780001,17.920000,239.919998,17.600000,18.619999,18.900000,16.600000,17.740000,16.300001,34.500000,20.840000,15.820001,23.500000,16.420000,20.139999,170.839996,21.679998,20.820000,20.559999,21.600000,20.220001,16.680000,90.340004],"median_device_us":20.180000,"mean_device_us":39.424374,"sample_stdev_device_us":56.905769,"cv":1.443416,"mad_device_us":21.825623,"p10_device_us":16.438000,"p90_device_us":84.755981,"min_device_us":15.820001,"max_device_us":239.919998}
+BLOCK_P_RC=0
+BLOCK_P_END_UTC=2026-10-07T12:26:58Z
+
+BLOCK_C_START_UTC=2026-10-07T12:26:58Z
+DISPATCH_AUDIT={"label":"CANDIDATE","dtype":"fp16","shape":[128,3072],"vector_cores":40,"launch_blocks":40,"local_rows_min":3,"local_rows_max":4,"selected_branch":"ProcessNarrowMidOverlap_FP16","candidate_source_delta_executed":true}
+VERIFY label=CANDIDATE status=PASS matched_ratio=1.000000000 max_abs_error=0.00390625
+RUNNER_RESULT={"label":"CANDIDATE","device":0,"dtype":"fp16","shape":[128,3072],"vector_cores":40,"warmups":20,"samples":32,"full_logical_io_bytes":4743168,"raw_device_us":[189.880005,18.020000,15.139999,17.699999,15.500000,17.260000,19.460001,171.139999,196.020004,17.920000,16.500000,15.500000,17.020000,17.720001,24.180000,17.139999,24.980000,18.340000,15.900001,14.480000,16.939999,18.080000,187.020004,190.380005,28.540001,16.100000,13.980000,14.360001,17.940001,15.860001,15.940000,18.540001],"median_device_us":17.709999,"mean_device_us":44.171249,"sample_stdev_device_us":62.562511,"cv":1.416363,"mad_device_us":28.213749,"p10_device_us":15.176000,"p90_device_us":185.431992,"min_device_us":13.980000,"max_device_us":196.020004}
+BLOCK_C_RC=0
+BLOCK_C_END_UTC=2026-10-07T12:27:03Z
+
+BLOCK_P_START_UTC=2026-10-07T12:27:03Z
+DISPATCH_AUDIT={"label":"PARENT","dtype":"fp16","shape":[128,3072],"vector_cores":40,"launch_blocks":40,"local_rows_min":3,"local_rows_max":4,"selected_branch":"ProcessNarrowMidOverlap_FP16","candidate_source_delta_executed":false}
+VERIFY label=PARENT status=PASS matched_ratio=1.000000000 max_abs_error=0.00390625
+RUNNER_RESULT={"label":"PARENT","device":0,"dtype":"fp16","shape":[128,3072],"vector_cores":40,"warmups":20,"samples":32,"full_logical_io_bytes":4743168,"raw_device_us":[20.919998,196.880005,164.660004,175.080002,26.040001,17.840000,18.420000,167.220001,28.620001,16.620001,16.960001,21.940001,13.300000,10.640000,17.680000,172.460007,190.119995,16.920000,32.980000,16.240002,9.760000,18.540001,13.120000,20.460001,16.879999,216.380005,17.340000,20.859999,14.960000,17.379999,23.480000,21.379999],"median_device_us":19.500000,"mean_device_us":54.752499,"sample_stdev_device_us":69.730019,"cv":1.273550,"mad_device_us":38.965000,"p10_device_us":13.466001,"p90_device_us":174.818008,"min_device_us":9.760000,"max_device_us":216.380005}
+BLOCK_P_RC=0
+BLOCK_P_END_UTC=2026-10-07T12:27:08Z
+
+BLOCK_C_START_UTC=2026-10-07T12:27:08Z
+DISPATCH_AUDIT={"label":"CANDIDATE","dtype":"fp16","shape":[128,3072],"vector_cores":40,"launch_blocks":40,"local_rows_min":3,"local_rows_max":4,"selected_branch":"ProcessNarrowMidOverlap_FP16","candidate_source_delta_executed":true}
+VERIFY label=CANDIDATE status=PASS matched_ratio=1.000000000 max_abs_error=0.00390625
+RUNNER_RESULT={"label":"CANDIDATE","device":0,"dtype":"fp16","shape":[128,3072],"vector_cores":40,"warmups":20,"samples":32,"full_logical_io_bytes":4743168,"raw_device_us":[15.799999,78.239998,13.660000,19.799999,14.280000,14.860001,17.219999,15.480000,15.540000,16.420000,19.559999,14.720000,58.340000,183.259995,15.400000,11.760000,14.700000,169.899994,19.680000,17.540001,12.740000,14.940001,13.860001,63.959999,14.780000,19.180000,241.419998,24.760000,17.859999,24.500000,15.920000,14.680000],"median_device_us":16.170000,"mean_device_us":38.273754,"sample_stdev_device_us":55.307014,"cv":1.445038,"mad_device_us":23.703753,"p10_device_us":13.902000,"p90_device_us":76.811989,"min_device_us":11.760000,"max_device_us":241.419998}
+BLOCK_C_RC=0
+BLOCK_C_END_UTC=2026-10-07T12:27:13Z
+
+BLOCK_P_START_UTC=2026-10-07T12:27:13Z
+DISPATCH_AUDIT={"label":"PARENT","dtype":"fp16","shape":[128,3072],"vector_cores":40,"launch_blocks":40,"local_rows_min":3,"local_rows_max":4,"selected_branch":"ProcessNarrowMidOverlap_FP16","candidate_source_delta_executed":false}
+VERIFY label=PARENT status=PASS matched_ratio=1.000000000 max_abs_error=0.00390625
+RUNNER_RESULT={"label":"PARENT","device":0,"dtype":"fp16","shape":[128,3072],"vector_cores":40,"warmups":20,"samples":32,"full_logical_io_bytes":4743168,"raw_device_us":[17.580000,15.960000,16.279999,17.180000,15.220000,9.780000,15.480000,15.020000,16.660000,19.420000,15.260000,222.760010,22.779999,16.680000,15.680000,22.980001,16.939999,13.460000,30.219999,18.880001,21.220001,19.660000,15.400000,15.659999,14.900000,14.520000,17.039999,19.920000,15.680000,13.660000,14.320000,16.840000],"median_device_us":16.469999,"mean_device_us":23.532497,"sample_stdev_device_us":36.532974,"cv":1.552448,"mad_device_us":8.765001,"p10_device_us":14.340000,"p90_device_us":22.623999,"min_device_us":9.780000,"max_device_us":222.760010}
+BLOCK_P_RC=0
+BLOCK_P_END_UTC=2026-10-07T12:27:17Z
+
+BLOCK_C_START_UTC=2026-10-07T12:27:17Z
+DISPATCH_AUDIT={"label":"CANDIDATE","dtype":"fp16","shape":[128,3072],"vector_cores":40,"launch_blocks":40,"local_rows_min":3,"local_rows_max":4,"selected_branch":"ProcessNarrowMidOverlap_FP16","candidate_source_delta_executed":true}
+VERIFY label=CANDIDATE status=PASS matched_ratio=1.000000000 max_abs_error=0.00390625
+RUNNER_RESULT={"label":"CANDIDATE","device":0,"dtype":"fp16","shape":[128,3072],"vector_cores":40,"warmups":20,"samples":32,"full_logical_io_bytes":4743168,"raw_device_us":[22.840000,16.500000,28.500000,17.680000,18.780001,16.660000,23.900000,27.639999,17.540001,15.680000,20.139999,15.420000,16.600000,14.020000,19.719999,17.799999,21.120001,36.799999,182.520004,189.919998,17.379999,14.400000,16.860001,13.759999,13.179999,16.519999,18.000000,16.140001,118.779999,16.900000,14.320000,20.360001],"median_device_us":17.610001,"mean_device_us":32.386875,"sample_stdev_device_us":44.324787,"cv":1.368603,"mad_device_us":16.644375,"p10_device_us":14.328000,"p90_device_us":35.969997,"min_device_us":13.179999,"max_device_us":189.919998}
+BLOCK_C_RC=0
+BLOCK_C_END_UTC=2026-10-07T12:27:21Z
+
+DEVICE_AFTER
+	NPU ID                         : 0
+	Chip Count                     : 1
+
+	DDR Capacity(MB)               : 0
+	DDR Usage Rate(%)              : 0
+	DDR Hugepages Total(page)      : 0
+	DDR Hugepages Usage Rate(%)    : 0
+	HBM Capacity(MB)               : 65536
+	HBM Usage Rate(%)              : 91
+	Aicore Usage Rate(%)           : 33
+	Aivector Usage Rate(%)         : 21
+	Aicpu Usage Rate(%)            : 0
+	Ctrlcpu Usage Rate(%)          : 7
+	DDR Bandwidth Usage Rate(%)    : 0
+	HBM Bandwidth Usage Rate(%)    : 30
+	Chip ID                        : 0
+
+
+HOST_AFTER
+ 12:27:22 up 242 days, 3 min, 34 users,  load average: 66.94, 52.58, 46.60
+top - 12:27:22 up 242 days, 3 min, 34 users,  load average: 66.94, 52.58, 46.60
+Tasks: 2687 total,  15 running, 2671 sleeping,   1 stopped,   0 zombie
+%Cpu(s):  6.0 us,  5.8 sy,  0.0 ni, 88.2 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st
+MiB Mem : 1029735.+total, 234902.8 free, 126820.5 used, 668012.0 buff/cache
+MiB Swap:   8192.0 total,      0.0 free,   8192.0 used. 845260.3 avail Mem 
+
+    PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND
+1120119 wangjie+  20   0   10.2g 648408  46556 R 441.7   0.1   0:11.55 MainThr+
+  89395 root      20   0 8226.4g   4.7g 896880 R 241.7   0.5  26657:59 VLLM::W+
+ 439848 zhouxin+  20   0 8241.8g   7.5g 721552 R 133.3   0.7 138606:22 python3
+  94498 root      20   0 8226.8g   4.7g 896276 R 129.2   0.5  14007:10 VLLM::W+
+  91055 root      20   0 8226.6g   4.7g 896280 R 125.0   0.5  13683:16 VLLM::W+
+  92813 root      20   0 8226.3g   4.7g 896416 R 125.0   0.5  14473:02 VLLM::W+
+  87336 root      20   0 7739652   2.5g 486200 R 108.3   0.2  12147:28 VLLM::E+
+1121167 lelinfe+  20   0  417068 256488 111244 R 104.2   0.0   0:00.67 clx_ref+
+ 660902 root       0 -20       0      0      0 I  75.0   0.0  15:13.30 kworker+
+END_UTC=2026-10-07T12:27:22Z

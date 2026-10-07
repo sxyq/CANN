@@ -1,0 +1,116 @@
+{
+  "route": "ROW-SCALE-HOIST-X",
+  "revision": "V035",
+  "direct_parent": "V026",
+  "stage": "LOCAL_PAIRED_INTERLEAVED",
+  "run_id": "20261007T122653Z",
+  "verdict": "MEASUREMENT_BLOCKED",
+  "measurement_quality": "HIGH_JITTER_SHARED_DEVICE_AND_HOST_ACTIVITY",
+  "validity": "VALID_DISPATCH_EXECUTED_DESCRIPTIVE_ONLY",
+  "local_score": 102.4054982818,
+  "local_score_type": "descriptive single-shape route-local speedup index",
+  "local_score_comparable_to_official": false,
+  "local_delta_percent_candidate_vs_parent_positive_is_slower": -2.3489932886,
+  "local_delta_interpretation": "Candidate pooled median was faster, but paired blocks were mixed and measurement quality does not support qualification",
+  "host": "hwnput3",
+  "toolkit_version_dir": "8.5.0.alpha002",
+  "device": 0,
+  "soc": "Ascend910B3",
+  "architecture": "dav-2201",
+  "dtype": "fp16",
+  "shape": [128, 3072],
+  "warmups_per_process": 20,
+  "samples_per_process": 32,
+  "sample_count_per_arm": 96,
+  "order": "P-C-P-C-P-C",
+  "process_return_codes": {
+    "P1": 0,
+    "C1": 0,
+    "P2": 0,
+    "C2": 0,
+    "P3": 0,
+    "C3": 0
+  },
+  "candidate_source_sha256": "5fec0fca251f2a1cd166e2b750fea93a489f098141184413ec62c2f8c6eda3ba",
+  "parent_source_sha256": "7c2569d9e3830c845f2b5dc4587a73a05a0bdf041168614cd55ad84204e063f9",
+  "start_utc": "2026-10-07T12:26:53Z",
+  "end_utc": "2026-10-07T12:27:22Z",
+  "raw_output_file": "local-paired-20261007T1227Z.log",
+  "all_primary_window_samples_included": true,
+  "sample_exclusion": "NONE",
+  "parent_stability_gate": {
+    "status": "FAIL_HIGH_JITTER",
+    "samples_per_window": 32,
+    "window_median_device_us": [9.4200005, 9.4000005],
+    "window_cv": [1.4965910446, 1.9466159716],
+    "window_max_device_us": [118.120003, 211.0],
+    "evidence_file": "local-parent-stability-20261007T1225Z.log"
+  },
+  "parent": {
+    "pooled": {
+      "n": 96,
+      "median_device_us": 17.88,
+      "mean_device_us": 39.2364585521,
+      "sample_stdev_device_us": 56.9476184081,
+      "cv": 1.4513954753,
+      "median_absolute_deviation_device_us": 2.64,
+      "p10_device_us": 14.93,
+      "p90_device_us": 165.9400025,
+      "min_device_us": 9.76,
+      "max_device_us": 239.919998
+    }
+  },
+  "candidate": {
+    "pooled": {
+      "n": 96,
+      "median_device_us": 17.46,
+      "mean_device_us": 38.2772916875,
+      "sample_stdev_device_us": 54.2206222579,
+      "cv": 1.4165219081,
+      "median_absolute_deviation_device_us": 2.29,
+      "p10_device_us": 14.3400005,
+      "p90_device_us": 144.3399965,
+      "min_device_us": 11.76,
+      "max_device_us": 241.419998
+    }
+  },
+  "paired_blocks": {
+    "parent_medians_us": [20.18, 19.500001, 16.4699995],
+    "candidate_medians_us": [17.71, 16.17, 17.6100005],
+    "candidate_vs_parent_delta_percent": [-12.2398414272, -17.0769273294, 6.9216820559],
+    "candidate_slower_blocks": 1,
+    "candidate_faster_blocks": 2
+  },
+  "dispatch_audit": {
+    "branch": "ProcessNarrowMidOverlap_FP16",
+    "observed_on_every_candidate_process": true,
+    "vector_cores": 40,
+    "launch_blocks": 40,
+    "local_rows_min": 3,
+    "local_rows_max": 4,
+    "candidate_source_delta_executed": true
+  },
+  "device_load": {
+    "hbm_capacity_mb": 65536,
+    "hbm_used_rate_before_after_percent": [91, 91],
+    "aicore_usage_before_after_percent": [21, 33],
+    "aivector_usage_before_after_percent": [11, 21],
+    "hbm_bandwidth_usage_before_after_percent": [30, 30],
+    "shared_workload_observed": true,
+    "other_processes_modified": false
+  },
+  "host_load": {
+    "load_average_before": "51.93, 48.36, 45.08",
+    "load_average_after": "66.94, 52.58, 46.60",
+    "high_cpu_process_and_device_worker_activity_observed": true
+  },
+  "repeatability": "Candidate pooled median was 2.35% faster; paired direction was mixed (2/3 faster), parent same-binary windows had very high CV and latency outliers, both pooled arms had CV above 1.4, and shared host/device activity persisted. Score and direction are descriptive only.",
+  "current_local_best": "V026",
+  "evidence": {
+    "compile": "compile-local-20261007T121751Z.log",
+    "correctness": "correctness-local-20261007T1219Z.log",
+    "local_runner_build": "local-build-20261007T1223Z.log",
+    "parent_stability": "local-parent-stability-20261007T1225Z.log",
+    "paired_raw": "local-paired-20261007T1227Z.log"
+  }
+}
