@@ -19,9 +19,11 @@
 - Online：`.agents/skills/cann-online-owner/SKILL.md`
 - 兼容路由：`.agents/skills/cann-mainline/SKILL.md`
 
-## ACTIVE PORTFOLIO W3
+## ACTIVE PORTFOLIO W4
 
-当前正式路线池为 `ACTIVE PORTFOLIO W3`，仅包含以下五条路线：
+当前 Planning 控制范围为 `ACTIVE PORTFOLIO W4`，包含 15 条授权路线与 5 个持久 Child 的分配；完整分配、轮转、回执和停止条件见 `项目规则/W4持续探索控制契约.md`。共享账本尚未完成 W4 登记时，必须标记 `STATE_SYNC_GAP`，不得从控制要求补造版本、分数或路线状态。
+
+`ACTIVE PORTFOLIO W3` 保留为历史记录来源，仅包含以下五条路线：
 
 - `R1 UB-BANK-LAYOUT-CHAMPION-X`
 - `R2 ADAPTIVE-CORE-OWNERSHIP-CHAMPION-X`
@@ -31,7 +33,11 @@
 
 `OLD W2 HISTORICAL ONLY`：`SYNC`、`CASE47`、`CASE14`、`SELECTIVE`、`TINY-FIXED-OVERHEAD` 只属于历史 W2，不能用于当前状态、路线选择或执行判断。
 
-当前已知 W3 事实为 Local facts only，不能写成 Official：R1 `V001-V010` 无稳定 Local Best；R2 至 `V016`，Best `V015`，target `-18.0207%`，control `-19.7413%`；R3 `V001-V010` 无稳定 Best；R4 至 `V013`，Best `V009`，FP16 `128x12288`，`-0.4954%`；R5 至 `V016`，Best `V012`，`10.040 us`，`-2.994%`。
+历史 W3 事实仍为 Local facts only，不能写成 Official：R1 `V001-V010` 无稳定 Local Best；R2 至 `V016`，Best `V015`，target `-18.0207%`，control `-19.7413%`；R3 `V001-V010` 无稳定 Best；R4 至 `V013`，Best `V009`，FP16 `128x12288`，`-0.4954%`；R5 至 `V016`，Best `V012`，`10.040 us`，`-2.994%`。
+
+## W4 DURABLE CONTROL
+
+`项目规则/W4持续探索控制契约.md` 是当前 W4 持续探索的强制执行入口。Main、Route、Record Owner 在控制重读、Child 恢复、路线切换、规则文件变化和主要 Git 状态重新核对后，按该文件及本文件、对应 Skill、实验总则、执行约定、服务器规范、本地性能规范重新读取并发送相应 receipt。W4 使用 5 个持久 Child；Main 不计入 5 个，Online 保持 `PAUSED`。
 
 ## 角色表
 
@@ -48,11 +54,13 @@ Main 的项目状态只能来自 Child C2C receipt、Record Owner receipt、Onli
 
 Online 当前为 `PAUSED`；Main 与 Route Agent 不得擅自恢复，只有 Planning 改变决策后由指定 Online Owner 正式提交。
 
-完整有效要求清单唯一入口为 `项目规则/执行约定.md` 的“Main 完整刷新与复述”及其相邻章节；Main 在规则指定的所有触发点读取该清单，摘要、context compaction、模型切换或新指令不能解除未完成授权和边界，新指令只按明确范围替换旧要求。
+Main 完整有效要求清单见 `项目规则/执行约定.md` 的“Main 完整刷新与复述”及相邻章节；W4 路线控制细则以 `项目规则/W4持续探索控制契约.md` 为强制补充。Main 在规则指定的触发点读取全部适用入口；摘要、context compaction、模型切换或新指令不能解除未完成授权和边界，新指令只按明确范围替换旧要求。
 
 ## RULE REFRESH REQUIRED / STATE REFRESH REQUIRED
 
-每次 Main 在开始任务、resume、context compaction、reconnect、模型切换、收到新指令、派发 Child 前，以及用户状态、执行或 Planning 回复前，必须只读刷新权威规则和共享状态。权威规则至少包括本文件、对应角色 Skill、`项目规则/实验总则.md`、`项目规则/执行约定.md`；涉及 server3 或 Local 时读取对应规范。共享状态至少刷新 `技术路线/全版本记录.tsv`、`调度/当前任务.tsv`、`技术路线/路线成绩表.tsv`，必要时读取 `技术路线/技术路线图.md`。Main 优先采用最新 Route receipt、Record receipt 和正式记录；来源冲突时必须报告 `STATE_SYNC_GAP`，不得自行猜测或写入共享记录。
+每次 Main 在开始任务、resume、context compaction、reconnect、模型切换、收到新指令、派发 Child 前，以及用户状态、执行或 Planning 回复前，必须只读刷新权威规则和共享状态。权威规则至少包括本文件、对应角色 Skill、`项目规则/W4持续探索控制契约.md`、`项目规则/实验总则.md`、`项目规则/执行约定.md`；涉及 server3 或 Local 时读取对应规范。共享状态至少刷新 `技术路线/全版本记录.tsv`、`调度/当前任务.tsv`、`技术路线/路线成绩表.tsv`，必要时读取 `技术路线/技术路线图.md`。Main 优先采用最新 Route receipt、Record receipt 和正式记录；来源冲突时必须报告 `STATE_SYNC_GAP`，不得自行猜测或写入共享记录。
+
+完整重读也由 `MODEL_CHANGE`、`CONTEXT_COMPACTION`、`MAIN_RESUME`、`MAIN_RESTART`、状态回复后的新对话轮次、`USER_CONTROL_UPDATE`、`RULE_FILE_CHANGE`、`HANDOFF`、`CHILD_POOL_RECONSTRUCTION` 和主要 Git 状态重新核对触发。Planning/User 改变 Child 数量、路线分配、Revision 要求、资源规则、Main 行为、worktree、记录、Online、路线组合或生命周期时，Main 先发 `USER_DIRECTIVE_RECEIPT`；若需改规则，在安全边界更新 W4 控制文件及受影响入口。正在运行的原子性能命令可以完成，规则维护不要求其他有效路线整体暂停。
 
 Main 只读上述权威规则和允许的共享状态，不读取 Candidate、Route 私有 worktree、实验目录或归档材料，不执行 Git、Compile、Correctness、Local、NPU 或身份计算。共享状态只允许窄范围只读刷新，不允许 Main 写入。
 
@@ -68,7 +76,9 @@ ONE CHANGE → COMPILE → CORRECTNESS → LOCAL → RESULT → COMMIT → VERSI
 
 正常完成必须满足 `LOCAL SCORE REQUIRED`，并报告 numeric Local score/delta、Parent/Candidate raw samples 与 medians、shape/dtype、device、free HBM、load note 和 current best。Compile 或 Correctness 失败也必须保留证据、Git commit/status，并发送 `VERSION_RECORD_EVENT REQUIRED`。`NEXT REVISION BLOCKED UNTIL PREVIOUS EVENT EXISTS`。Record Owner 必须记录每个 `VERSION_RECORD_EVENT`，包括负结果、失败结果和非 Local Best，不得发明缺失数据。
 
-Route Agent 在每个新 Revision 以及 resume、reconnect、context restore 或 long interruption 后，必须在 Candidate edit 前重新读取本文件、对应 Skill、`项目规则/实验总则.md`、`项目规则/执行约定.md`、`项目规则/服务器实验规范.md`、`项目规则/本地性能测试规范.md`，先发送 `RULE_REFRESH_RECEIPT`；无 receipt 不得 edit。
+Route Agent 在每个新 Revision、resume、Route switch、Child restart、reconnect、context restore 或 long interruption 后，必须在 Candidate edit 前重新读取本文件、对应 Skill、`项目规则/W4持续探索控制契约.md`、`项目规则/实验总则.md`、`项目规则/执行约定.md`、`项目规则/服务器实验规范.md`、`项目规则/本地性能测试规范.md`，先发送 `RULE_REFRESH_RECEIPT`；无 receipt 不得 edit。
+
+用户可见状态回复只是 `CHECKPOINT_ONLY`。只要仍有活动 Child、可执行路线、待研究、待重新取得资格或待指纹任务，Main 必须继续轮转、处理事件并发送下一动作，不能把一次状态回复当作任务结束。
 
 ## Route ownership
 

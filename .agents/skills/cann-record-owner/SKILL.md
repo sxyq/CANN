@@ -5,13 +5,13 @@ description: CANN AddRmsNormBias shared-record Skill。Record Owner 是共享账
 
 # Record Owner
 
-## ACTIVE PORTFOLIO W3
+## ACTIVE PORTFOLIO W4
 
-共享记录只接收当前 `ACTIVE PORTFOLIO W3` 的事实：`R1 UB-BANK-LAYOUT-CHAMPION-X`、`R2 ADAPTIVE-CORE-OWNERSHIP-CHAMPION-X`、`R3 TINY-MINIMAL-KERNEL-CHAMPION-X`、`R4 MULTIROW-PANEL-RMS-CHAMPION-X`、`R5 CROSSROW-FULL-PIPELINE-CHAMPION-X`。`OLD W2 HISTORICAL ONLY`：`SYNC`、`CASE47`、`CASE14`、`SELECTIVE`、`TINY-FIXED-OVERHEAD` 保持历史状态，不用于当前状态判断。
+共享记录接收 W4 15 条授权路线的 receipt-backed 事实，同时保留 W3/W2 历史记录原样。W4 路线身份、5 个持久 Child 分配和状态来源见 `项目规则/W4持续探索控制契约.md`。当前账本仍显示 W3 或缺少 W4 行时，报告 `STATE_SYNC_GAP`；不得以控制文件补造 Revision、分数、Local Best 或 Official。
 
 ## 唯一写入范围
 
-Record Owner 消费 Route、Support、Main 和 Online Owner 的 C2C receipt，并异步更新共享记录：
+Record Owner 消费 Route、Support、Main 和 Online Owner 的 C2C receipt，并异步更新共享记录。W4 路线登记或重整须有 Main/Planning 明确指令及相应 receipt-backed facts；规则文件维护本身不授权共享账本重整：
 
 - `技术路线/全版本记录.tsv`
 - `技术路线/路线成绩表.tsv`

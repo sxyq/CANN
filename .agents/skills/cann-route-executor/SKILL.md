@@ -5,9 +5,9 @@ description: CANN AddRmsNormBias Route Agent 执行 Skill。负责单 Route 的�
 
 # Route Executor
 
-## ACTIVE PORTFOLIO W3
+## ACTIVE PORTFOLIO W4
 
-Route Agent 只执行当前 `ACTIVE PORTFOLIO W3` 中已批准的路线：`R1 UB-BANK-LAYOUT-CHAMPION-X`、`R2 ADAPTIVE-CORE-OWNERSHIP-CHAMPION-X`、`R3 TINY-MINIMAL-KERNEL-CHAMPION-X`、`R4 MULTIROW-PANEL-RMS-CHAMPION-X`、`R5 CROSSROW-FULL-PIPELINE-CHAMPION-X`。`OLD W2 HISTORICAL ONLY`：`SYNC`、`CASE47`、`CASE14`、`SELECTIVE`、`TINY-FIXED-OVERHEAD` 不得作为当前路线状态或新变化来源。
+Route Agent 只执行 W4 控制文件列出的授权路线，并在同一持久 Child 内按固定顺序轮转；一条 Route 同时只能有一个 Candidate 写入者。W3 与 W2 材料只作为历史来源，不能替代 W4 路线状态。完整路线池、5 个 Child 分配、轮转和初始处置见 `项目规则/W4持续探索控制契约.md`。
 
 ## Route ownership
 
@@ -15,11 +15,11 @@ Route Agent 只执行当前 `ACTIVE PORTFOLIO W3` 中已批准的路线：`R1 UB
 1 Route = 1 Agent = 1 Context = 1 Branch = 1 Worktree
 ```
 
-只读写自己的 Route worktree，不读取其他 Route worktree，不改共享调度、共享成绩或 Dashboard，不决定 Route 生命周期，不正式提交 Online。
+只读写自己的 Route worktree，不读取其他 Route worktree，不改共享调度、共享成绩或 Dashboard，不决定 Route 生命周期，不正式提交 Online。切换 Route 前发送 `ROUTE_SWITCH_RECEIPT`，确认当前设备操作已结束，并列明来源工作树/branch/head/dirty、上一版本事件、目标工作树/branch、下一 Revision 和 `NEXT_ACTION=RULE_REFRESH`。
 
 ## RULE REFRESH REQUIRED
 
-每个新 Revision、resume、reconnect、context restore 或 long interruption 后，Candidate edit 前必须重新读取 `AGENTS.md`、本 Skill、`项目规则/实验总则.md`、`项目规则/执行约定.md`、`项目规则/服务器实验规范.md`、`项目规则/本地性能测试规范.md`，然后先发送新的 `RULE_REFRESH_RECEIPT`。同版 Compile/Correctness direct fix 前先重读 `AGENTS.md`、本 Skill、`项目规则/执行约定.md`，再发送注明读取范围的 receipt，然后只做直接修复，编辑后下一实验动作必须是 `COMPILE`；中间不插入阅读。无对应 receipt 不得 edit。
+每个新 Revision、resume、Route switch、Child restart、reconnect、context restore 或 long interruption 后，Candidate edit 前必须重新读取 `AGENTS.md`、本 Skill、`项目规则/W4持续探索控制契约.md`、`项目规则/实验总则.md`、`项目规则/执行约定.md`、`项目规则/服务器实验规范.md`、`项目规则/本地性能测试规范.md`，然后先发送新的 `RULE_REFRESH_RECEIPT`。同版 Compile/Correctness direct fix 前先重读 `AGENTS.md`、本 Skill、`项目规则/执行约定.md`，再发送注明读取范围的 receipt，然后只做直接修复，编辑后下一实验动作必须是 `COMPILE`；中间不插入阅读。无对应 receipt 不得 edit。
 
 ## Authoritative loop
 
