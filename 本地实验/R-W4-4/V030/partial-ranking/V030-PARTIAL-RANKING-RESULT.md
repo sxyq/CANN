@@ -38,15 +38,33 @@ Measurements ran on local host `hwnput3`, device 4, using device events, warmup 
 
 Per-pair medians, percentages, MADs and p90 values are in `batch64-w136-paired-summary.tsv`, `batch64-w192-paired-summary.tsv`, and `batch64-w200-paired-summary.tsv`. Every raw sample remains; no outlier was removed. V029's six-shape numeric/noise review is in `../V029/partial-ranking/V029-PARTIAL-RANKING-RESULT.md`.
 
+### Numeric partial route-local receipt
+
+The score is recomputed from the retained raw `device_us` samples, not from rounded table values. Each paired Parent and Candidate raw file has 62 samples (2 blocks x 31). For each pair, take the median of its 62 Parent samples and Candidate samples, then `pair_speedup = Parent_median / Candidate_median`. For each shape, take the arithmetic mean of its six paired speedups. The partial route-local score is the equal-weight geometric mean of the three shape aggregates; `delta_pct = (score - 1) * 100`.
+
+| Shape | Mean of six paired speedups | Shape delta |
+|---|---:|---:|
+| `128x136` | `1.0035155266x` | `+0.351553%` |
+| `128x192` | `0.9905325864x` | `-0.946741%` |
+| `128x200` | `0.9854798739x` | `-1.452013%` |
+
+- PARTIAL_ROUTE_LOCAL_SCORE: `0.993147013644x`.
+- PARTIAL_ROUTE_LOCAL_DELTA: `-0.68529864%`.
+- LOAD_QUALITY: `NOISY`.
+- MEASUREMENT_QUALITY: `NOISY`.
+- NEEDS_ONE_MORE_LOCAL: `YES`.
+- The numeric receipt includes all six pairs for each shape; no sample or unfavorable direction was excluded. This is only a partial local ranking, not an Official-comparable score.
+
 Device 4 pre/post snapshots show HBM usage 90% (conservative FREE_HBM lower bound 5898 MB), AICore 0%, AIVector 0%. Existing VLLM PID `2999855` was left untouched, and no route probe remained after the run. The device-4 snapshot does not support interpreting noise on other devices as a load change on device 4.
 
 ## Result
 
 - COMPILE: `PASS`.
 - CORRECTNESS: `PASS` on three jointly tested partial FP32 shapes; `PARTIAL_CORRECTNESS=YES` because the known exact-Parent C15 baseline still fails and was not repeated.
-- LOCAL_SCORE: `NONE`.
-- LOCAL_DELTA: `NONE`.
-- LOCAL_VERDICT: `NEEDS_ONE_MORE_LOCAL` (all paired deltas are within measured MAD envelopes; direction is mixed).
+- LOCAL_SCORE: `0.993147013644x` (partial route-local speedup geomean; not Official-comparable).
+- LOCAL_DELTA: `-0.68529864%`.
+- LOCAL_SCORE_COMPARABLE_TO_OFFICIAL: `NO`.
+- LOCAL_VERDICT: `NEEDS_ONE_MORE_LOCAL`; `LOAD_QUALITY=NOISY`, `MEASUREMENT_QUALITY=NOISY` (all paired deltas are within measured MAD envelopes; direction is mixed).
 - CURRENT_LOCAL_BEST: `NONE`; no verified `LOCAL_ACCEPTED` revision exists in the current route evidence. Neither V029 nor V030 is promoted.
-- NEXT_PARENT: only select a verified Local Best. Until one is established, do not create a follow-on threshold revision using V029 or V030 as an assumed Local Best.
+- NEXT_PARENT: use the exact R31B-V011 sibling baseline, source SHA256 `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3` (`线上结果/R31B/V011/submission.asc`), not V029 or V030. The retained V011 sidecar and champion record match this source SHA.
 - OFFICIAL_COMPARISON: `NO`; this partial ranking is not an Official candidate or score.
