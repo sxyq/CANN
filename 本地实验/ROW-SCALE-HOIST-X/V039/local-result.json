@@ -1,0 +1,155 @@
+{
+  "route": "ROW-SCALE-HOIST-X",
+  "revision": "V039",
+  "direct_parent": "V026",
+  "stage": "LOCAL_PAIRED_INTERLEAVED",
+  "run_id": "20261007T2250Z",
+  "verdict": "MEASUREMENT_BLOCKED",
+  "measurement_quality": "HIGH_HOST_LOAD_PARENT_WINDOW_DRIFT",
+  "validity": "VALID_DISPATCH_EXECUTED_DESCRIPTIVE_ONLY",
+  "local_score": 90.2999979850,
+  "local_score_type": "descriptive single-shape route-local speedup index",
+  "local_score_formula": "100 * parent_pooled_median_device_us / candidate_pooled_median_device_us",
+  "local_score_comparable_to_official": false,
+  "local_delta_percent_candidate_vs_parent_positive_is_slower": 10.7419736782,
+  "local_delta_interpretation": "Candidate pooled median was 10.7419736782% slower. Candidate was slower in two of three blocks; Parent stability windows drifted and shared host/device activity was present.",
+  "host": "hwnput3",
+  "toolkit_version_dir": "8.5.0.alpha002",
+  "device": 0,
+  "soc": "Ascend910B3",
+  "architecture": "dav-2201",
+  "dtype": "fp32",
+  "shape": [128, 8192],
+  "branch": "ProcessFp32FullRowOutputPipelined",
+  "vector_cores": 40,
+  "launch_blocks": 40,
+  "local_rows_min": 3,
+  "local_rows_max": 4,
+  "warmups_per_process": 20,
+  "samples_per_process": 32,
+  "sample_count_per_arm": 96,
+  "order": "P-C-P-C-P-C",
+  "process_return_codes": {
+    "PARENT_STABILITY_1": 0,
+    "PARENT_STABILITY_2": 0,
+    "P1": 0,
+    "C1": 0,
+    "P2": 0,
+    "C2": 0,
+    "P3": 0,
+    "C3": 0
+  },
+  "all_primary_window_samples_included": true,
+  "sample_exclusion": "NONE",
+  "candidate_source_sha256": "821f3455dc1d3dc4830b3f39bfd4a5fc3004ec0af5c6e017c69c600f2258a41f",
+  "parent_source_sha256": "7c2569d9e3830c845f2b5dc4587a73a05a0bdf041168614cd55ad84204e063f9",
+  "parent_stability_gate": {
+    "status": "DRIFT_OBSERVED",
+    "samples_per_window": 32,
+    "window_median_device_us": [23.110001, 19.56],
+    "window_cv": [0.2275237982, 0.4012665746],
+    "window_max_device_us": [38.18, 59.279999],
+    "evidence_file": "local-parent-stability-20261007T2250Z.log"
+  },
+  "parent": {
+    "pooled": {
+      "n": 96,
+      "median_device_us": 18.0600005,
+      "mean_device_us": 18.7599999792,
+      "sample_stdev_device_us": 5.9949023693,
+      "cv": 0.3195576959,
+      "median_absolute_deviation_device_us": 4.6799995,
+      "mean_absolute_deviation_from_median_device_us": 4.8966666667,
+      "p10_device_us": 12.98,
+      "p90_device_us": 26.379999,
+      "min_device_us": 12.12,
+      "max_device_us": 38.059998
+    }
+  },
+  "candidate": {
+    "pooled": {
+      "n": 96,
+      "median_device_us": 20.000001,
+      "mean_device_us": 20.5741665625,
+      "sample_stdev_device_us": 4.9046924377,
+      "cv": 0.23839082,
+      "median_absolute_deviation_device_us": 3.6500005,
+      "mean_absolute_deviation_from_median_device_us": 4.0199999375,
+      "p10_device_us": 13.75,
+      "p90_device_us": 25.9799995,
+      "min_device_us": 12.679999,
+      "max_device_us": 37.98
+    }
+  },
+  "paired_blocks": {
+    "parent_medians_us": [13.81, 22.8, 13.99],
+    "candidate_medians_us": [20.380001, 18.5199995, 21.6599995],
+    "candidate_vs_parent_delta_percent": [47.5742288197, -18.7719320175, 54.8248713367],
+    "candidate_slower_blocks": 2,
+    "candidate_faster_blocks": 1,
+    "block_summaries": [
+      {
+        "block": "P1/C1",
+        "parent_median_us": 13.81,
+        "candidate_median_us": 20.380001,
+        "parent_mean_us": 16.04375,
+        "candidate_mean_us": 21.1381250625,
+        "parent_cv": 0.2408823916,
+        "candidate_cv": 0.1866387573,
+        "delta_percent_candidate_vs_parent": 47.5742288197
+      },
+      {
+        "block": "P2/C2",
+        "parent_median_us": 22.8,
+        "candidate_median_us": 18.5199995,
+        "parent_mean_us": 22.6793751563,
+        "candidate_mean_us": 18.8568748438,
+        "parent_cv": 0.2624760011,
+        "candidate_cv": 0.2401443059,
+        "delta_percent_candidate_vs_parent": -18.7719320175
+      },
+      {
+        "block": "P3/C3",
+        "parent_median_us": 13.99,
+        "candidate_median_us": 21.6599995,
+        "parent_mean_us": 17.5568747813,
+        "candidate_mean_us": 21.7274997813,
+        "parent_cv": 0.3359862252,
+        "candidate_cv": 0.2640053219,
+        "delta_percent_candidate_vs_parent": 54.8248713367
+      }
+    ]
+  },
+  "device_load": {
+    "device0_health": "OK",
+    "device0_aicore_usage_before_after_percent": [0, 0],
+    "device0_hbm_used_mb_before_after": [3432, 3432],
+    "device0_hbm_capacity_mb": 65536,
+    "other_device_activity_observed": true,
+    "shared_host_activity_observed": true,
+    "other_processes_modified": false,
+    "load_before_stability_evidence": "local-load-before-20261007T2240Z.log",
+    "load_before_paired_evidence": "local-load-before-paired-20261007T2250Z.log",
+    "load_after_evidence": "local-load-after-20261007T2250Z.log"
+  },
+  "host_load": {
+    "before_stability_load_average": "65.17, 60.58, 56.52",
+    "before_paired_load_average": "63.16, 59.87, 56.50",
+    "after_load_average": "38.41, 52.98, 54.36",
+    "high_shared_host_activity_observed": true
+  },
+  "repeatability": "All 96 raw samples per arm and both Parent stability windows were retained. Candidate was slower in two of three paired blocks; pooled CV was 0.319558 Parent and 0.238391 Candidate. Parent stability medians were 23.110001 and 19.56 us; host load was high and shared activity on other devices was observed. Numeric result is unqualified.",
+  "current_local_best": "V026",
+  "official_score": null,
+  "online": "NOT_RUN",
+  "evidence": {
+    "compile": "compile-local-20261007T2240Z.log",
+    "correctness": "correctness-local-20261007T2240Z.log",
+    "local_runner_build": "local-build-local-20261007T2240Z.log",
+    "parent_stability": "local-parent-stability-20261007T2250Z.log",
+    "paired_raw": "local-paired-interleaved-20261007T2250Z.log",
+    "device_host_before_stability": "local-load-before-20261007T2240Z.log",
+    "device_host_before_paired": "local-load-before-paired-20261007T2250Z.log",
+    "device_host_after": "local-load-after-20261007T2250Z.log"
+  }
+}
