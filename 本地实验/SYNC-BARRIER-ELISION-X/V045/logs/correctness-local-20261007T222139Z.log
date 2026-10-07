@@ -1,0 +1,171 @@
+ROUTE=SYNC-BARRIER-ELISION-X
+REVISION=V045
+DIRECT_PARENT=R31B-V011
+DEVICE=3
+DTYPE=fp16
+CASES=8x128,8x256,8x1024,8x2048,8x4096,16x2064
+HOST=hwnput3
+PARENT_SOURCE_SHA256=
+a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3  本地实验/SYNC-BARRIER-ELISION-X/V045/parent.asc
+CANDIDATE_SOURCE_SHA256=
+501b0855cf362d400dd47fa3bf2f93e14c7996e1cf537ec950b560380d7c971e  本地实验/SYNC-BARRIER-ELISION-X/V045/submission.asc
+BUILD_DIR=/tmp/sync-barrier-elision-v045.6EwtrN
+CORRECTNESS_START=2026-10-07T22:21:39Z
+
+===== PRIOR PID CHECK =====
+
+===== PRE-CORRECTNESS DEVICE SNAPSHOT =====
++------------------------------------------------------------------------------------------------+
+| npu-smi 25.0.rc1.1               Version: 25.0.rc1.1                                           |
++---------------------------+---------------+----------------------------------------------------+
+| NPU   Name                | Health        | Power(W)    Temp(C)           Hugepages-Usage(page)|
+| Chip                      | Bus-Id        | AICore(%)   Memory-Usage(MB)  HBM-Usage(MB)        |
++===========================+===============+====================================================+
+| 0     910B3               | OK            | 92.3        29                0    / 0             |
+| 0                         | 0000:C1:00.0  | 0           0    / 0          3431 / 65536         |
++===========================+===============+====================================================+
+| 1     910B3               | OK            | 98.6        31                0    / 0             |
+| 0                         | 0000:C2:00.0  | 0           0    / 0          9175 / 65536         |
++===========================+===============+====================================================+
+| 2     910B3               | OK            | 102.0       33                0    / 0             |
+| 0                         | 0000:81:00.0  | 0           0    / 0          7455 / 65536         |
++===========================+===============+====================================================+
+| 3     910B3               | OK            | 89.7        30                0    / 0             |
+| 0                         | 0000:82:00.0  | 0           0    / 0          3425 / 65536         |
++===========================+===============+====================================================+
+| 4     910B3               | OK            | 200.3       55                0    / 0             |
+| 0                         | 0000:01:00.0  | 60          0    / 0          59193/ 65536         |
++===========================+===============+====================================================+
+| 5     910B3               | OK            | 170.3       50                0    / 0             |
+| 0                         | 0000:02:00.0  | 44          0    / 0          60222/ 65536         |
++===========================+===============+====================================================+
+| 6     910B3               | OK            | 164.7       47                0    / 0             |
+| 0                         | 0000:41:00.0  | 43          0    / 0          60222/ 65536         |
++===========================+===============+====================================================+
+| 7     910B3               | OK            | 169.9       42                0    / 0             |
+| 0                         | 0000:42:00.0  | 0           0    / 0          24790/ 65536         |
++===========================+===============+====================================================+
++---------------------------+---------------+----------------------------------------------------+
+| NPU     Chip              | Process id    | Process name             | Process memory(MB)      |
++===========================+===============+====================================================+
+| No running processes found in NPU 0                                                            |
++===========================+===============+====================================================+
+| 1       0                 | 3150467       | python                   | 5746                    |
++===========================+===============+====================================================+
+| 2       0                 | 1935458       | python                   | 4088                    |
++===========================+===============+====================================================+
+| No running processes found in NPU 3                                                            |
++===========================+===============+====================================================+
+| 4       0                 | 2999855       | VLLMEngineCor            | 55666                   |
++===========================+===============+====================================================+
+| 5       0                 | 89602         | VLLMWorker_TP            | 56700                   |
++===========================+===============+====================================================+
+| 6       0                 | 91228         | VLLMWorker_TP            | 56701                   |
++===========================+===============+====================================================+
+| 7       0                 | 439848        | python3                  | 21260                   |
++===========================+===============+====================================================+
+
+===== CORRECTNESS RUNNER BUILD =====
+/bin/bash: line 15: /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/set_env.sh: No such file or directory
+[ 50%] Building ASC object CMakeFiles/sync_barrier_elision_correctness.dir/support/correctness_runner.asc.o
+PlugIn Err: can not find ASCEND_HOME_PATH.
+PlugIn Err: can not find ASCEND_HOME_PATH.
+In file included from /home/data4t2/lelinfeng/cann-route-w4-3-sync-barrier-elision/本地实验/SYNC-BARRIER-ELISION-X/V045/support/correctness_runner.asc:11:
+/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/asc/include/kernel_operator.h:18:10: fatal error: 'kernel_tpipe_impl.h' file not found
+#include "kernel_tpipe_impl.h"
+         ^~~~~~~~~~~~~~~~~~~~~
+PLEASE submit a bug report to https://github.com/llvm/llvm-project/issues/ and include the crash backtrace, preprocessed source, and associated run script.
+Stack dump:
+0.	Program arguments: /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/bin/bisheng -I /home/data4t2/lelinfeng/cann-route-w4-3-sync-barrier-elision/\346\234\254\345\234\260\345\256\236\351\252\214/SYNC-BARRIER-ELISION-X/V045/support -I /home/data4t2/lelinfeng/cann-route-w4-3-sync-barrier-elision/\346\234\254\345\234\260\345\256\236\351\252\214/SYNC-BARRIER-ELISION-X/V045 -I /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/include -I /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/asc/include -I /usr/include/c++/11 -I /usr/include/aarch64-linux-gnu/c++/11 --cce-aicore-arch=dav-c220 -I /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0 -I /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0/aarch64-target-linux-gnu -I /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0/backward -I /usr/include/c++/11 -I /usr/include/aarch64-linux-gnu/c++/11 -I /usr/include/c++/11/backward -Xaicore-start -O3 -std=c++17 -Xaicore-end -Xhost-start -I /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0 -I /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0/aarch64-target-linux-gnu -I /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0/backward -I /usr/include/c++/11 -I /usr/include/aarch64-linux-gnu/c++/11 -I /usr/include/c++/11/backward -fPIC -O2 -Xhost-end --npu-arch=dav-2201 -std=c++17 -MD -MT CMakeFiles/sync_barrier_elision_correctness.dir/support/correctness_runner.asc.o -MF CMakeFiles/sync_barrier_elision_correctness.dir/support/correctness_runner.asc.o.d -x asc --cce-aicore-arch=dav-c220 "-DBS_PLUGIN_DRIVER_ARGS_MACRO=\"-I/home/data4t2/lelinfeng/cann-route-w4-3-sync-barrier-elision/\346\234\254\345\234\260\345\256\236\351\252\214/SYNC-BARRIER-ELISION-X/V045/support -I/home/data4t2/lelinfeng/cann-route-w4-3-sync-barrier-elision/\346\234\254\345\234\260\345\256\236\351\252\214/SYNC-BARRIER-ELISION-X/V045 -I/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/include -I/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/asc/include -I/usr/include/c++/11 -I/usr/include/aarch64-linux-gnu/c++/11 --cce-aicore-arch=dav-c220 -I/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0 -I/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0/aarch64-target-linux-gnu -I/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0/backward -I/usr/include/c++/11 -I/usr/include/aarch64-linux-gnu/c++/11 -I/usr/include/c++/11/backward -Xaicore-start -O3 -std=c++17 -Xaicore-end -Xhost-start -I/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0 -I/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0/aarch64-target-linux-gnu -I/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0/backward -I/usr/include/c++/11 -I/usr/include/aarch64-linux-gnu/c++/11 -I/usr/include/c++/11/backward -fPIC -O2 -Xhost-end --npu-arch=dav-2201 -std=c++17 -MD -MT CMakeFiles/sync_barrier_elision_correctness.dir/support/correctness_runner.asc.o -MF CMakeFiles/sync_barrier_elision_correctness.dir/support/correctness_runner.asc.o.d -o CMakeFiles/sync_barrier_elision_correctness.dir/support/correctness_runner.asc.o -c -x asc /home/data4t2/lelinfeng/cann-route-w4-3-sync-barrier-elision/\346\234\254\345\234\260\345\256\236\351\252\214/SYNC-BARRIER-ELISION-X/V045/support/correctness_runner.asc \"" -run-bisheng-plugin -o /tmp/bisheng-plugin-output-249c8f.json /home/data4t2/lelinfeng/cann-route-w4-3-sync-barrier-elision/\346\234\254\345\234\260\345\256\236\351\252\214/SYNC-BARRIER-ELISION-X/V045/support/correctness_runner.asc
+1.	<eof> parser at end of file
+2.	Per-file LLVM IR generation
+Stack dump without symbol names (ensure you have llvm-symbolizer in your PATH or set the environment var `LLVM_SYMBOLIZER_PATH` to point to it):
+/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/bin/bisheng(+0x2c6eb9c)[0xaaaad149eb9c]
+/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/bin/bisheng(_ZN4llvm3sys15CleanupOnSignalEm+0x1a8)[0xaaaad149cbe8]
+/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/bin/bisheng(+0x2bb3f18)[0xaaaad13e3f18]
+linux-vdso.so.1(__kernel_rt_sigreturn+0x0)[0xffffa08b47dc]
+/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/bin/bisheng(_ZNK5clang14bisheng_plugin11PluginProxy10PreCompileEv+0x24)[0xaaaad467e64c]
+/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/bin/bisheng(_ZN5clang14bisheng_plugin23getKernelPluginStubJsonERN4llvm4json6ObjectE+0x1fc)[0xaaaad410abdc]
+/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/bin/bisheng(+0x3bf1360)[0xaaaad2421360]
+/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/bin/bisheng(_ZN5clang8ParseASTERNS_4SemaEbb+0xb2c)[0xaaaad313d1fc]
+/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/bin/bisheng(_ZN5clang13CodeGenAction13ExecuteActionEv+0x5f4)[0xaaaad2420dcc]
+/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/bin/bisheng(_ZN5clang14FrontendAction7ExecuteEv+0xd4)[0xaaaad1e76bcc]
+/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/bin/bisheng(_ZN5clang16CompilerInstance13ExecuteActionERNS_14FrontendActionE+0x24c)[0xaaaad1e1db64]
+/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/bin/bisheng(_ZN5clang25ExecuteCompilerInvocationEPNS_16CompilerInstanceE+0x3f4)[0xaaaad1f45a0c]
+/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/bin/bisheng(_Z8cc1_mainN4llvm8ArrayRefIPKcEES2_Pv+0x1180)[0xaaaacf98d9c0]
+/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/bin/bisheng(+0x1155ca0)[0xaaaacf985ca0]
+/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/bin/bisheng(+0x346ba68)[0xaaaad1c9ba68]
+/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/bin/bisheng(_ZN4llvm20CrashRecoveryContext9RunSafelyENS_12function_refIFvvEEE+0x40)[0xaaaad13e47d0]
+/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/bin/bisheng(_ZNK5clang6driver10CC1Command7ExecuteEN4llvm8ArrayRefINS2_8OptionalINS2_9StringRefEEEEEPSsPb+0x1d8)[0xaaaad1c9e250]
+/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/bin/bisheng(_ZNK5clang6driver11Compilation14ExecuteCommandERKNS0_7CommandERPS3_b+0x24c)[0xaaaad1c6b05c]
+/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/bin/bisheng(_ZNK5clang6driver11Compilation11ExecuteJobsERKNS0_7JobListERN4llvm15SmallVectorImplISt4pairIiPKNS0_7CommandEEEEb+0xc4)[0xaaaad1c6b894]
+/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/bin/bisheng(_ZN5clang6driver6Driver18ExecuteCompilationERNS0_11CompilationERN4llvm15SmallVectorImplISt4pairIiPKNS0_7CommandEEEE+0x334)[0xaaaad1c9a84c]
+/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/bin/bisheng(_Z10clang_mainiPPc+0x26c4)[0xaaaacf98b26c]
+/lib/aarch64-linux-gnu/libc.so.6(+0x27400)[0xffffa0357400]
+/lib/aarch64-linux-gnu/libc.so.6(__libc_start_main+0x98)[0xffffa03574d8]
+/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/bin/bisheng(+0x1155a40)[0xaaaacf985a40]
+bisheng: error: clang frontend command failed with exit code 139 (use -v to see invocation)
+2025-11-27T21:34:53+08:00 clang version 15.0.5 (clang-5c68a1cb1231 flang-5c68a1cb1231)
+Target: aarch64-unknown-linux-gnu
+Thread model: posix
+InstalledDir: /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/bin
+gmake[3]: *** [CMakeFiles/sync_barrier_elision_correctness.dir/build.make:76: CMakeFiles/sync_barrier_elision_correctness.dir/support/correctness_runner.asc.o] Error 1
+gmake[2]: *** [CMakeFiles/Makefile2:111: CMakeFiles/sync_barrier_elision_correctness.dir/all] Error 2
+gmake[1]: *** [CMakeFiles/Makefile2:118: CMakeFiles/sync_barrier_elision_correctness.dir/rule] Error 2
+gmake: *** [Makefile:137: sync_barrier_elision_correctness] Error 2
+CORRECTNESS_RUNNER_BUILD_RC=2
+
+===== POST-CORRECTNESS DEVICE SNAPSHOT =====
++------------------------------------------------------------------------------------------------+
+| npu-smi 25.0.rc1.1               Version: 25.0.rc1.1                                           |
++---------------------------+---------------+----------------------------------------------------+
+| NPU   Name                | Health        | Power(W)    Temp(C)           Hugepages-Usage(page)|
+| Chip                      | Bus-Id        | AICore(%)   Memory-Usage(MB)  HBM-Usage(MB)        |
++===========================+===============+====================================================+
+| 0     910B3               | OK            | 91.0        29                0    / 0             |
+| 0                         | 0000:C1:00.0  | 0           0    / 0          3431 / 65536         |
++===========================+===============+====================================================+
+| 1     910B3               | OK            | 125.0       31                0    / 0             |
+| 0                         | 0000:C2:00.0  | 17          0    / 0          9174 / 65536         |
++===========================+===============+====================================================+
+| 2     910B3               | OK            | 100.3       33                0    / 0             |
+| 0                         | 0000:81:00.0  | 2           0    / 0          7456 / 65536         |
++===========================+===============+====================================================+
+| 3     910B3               | OK            | 90.0        30                0    / 0             |
+| 0                         | 0000:82:00.0  | 0           0    / 0          3425 / 65536         |
++===========================+===============+====================================================+
+| 4     910B3               | OK            | 200.6       56                0    / 0             |
+| 0                         | 0000:01:00.0  | 58          0    / 0          59192/ 65536         |
++===========================+===============+====================================================+
+| 5     910B3               | OK            | 164.7       49                0    / 0             |
+| 0                         | 0000:02:00.0  | 44          0    / 0          60222/ 65536         |
++===========================+===============+====================================================+
+| 6     910B3               | OK            | 166.8       47                0    / 0             |
+| 0                         | 0000:41:00.0  | 44          0    / 0          60221/ 65536         |
++===========================+===============+====================================================+
+| 7     910B3               | OK            | 171.1       42                0    / 0             |
+| 0                         | 0000:42:00.0  | 0           0    / 0          24790/ 65536         |
++===========================+===============+====================================================+
++---------------------------+---------------+----------------------------------------------------+
+| NPU     Chip              | Process id    | Process name             | Process memory(MB)      |
++===========================+===============+====================================================+
+| No running processes found in NPU 0                                                            |
++===========================+===============+====================================================+
+| 1       0                 | 3150467       | python                   | 5746                    |
++===========================+===============+====================================================+
+| 2       0                 | 1935458       | python                   | 4088                    |
++===========================+===============+====================================================+
+| No running processes found in NPU 3                                                            |
++===========================+===============+====================================================+
+| 4       0                 | 2999855       | VLLMEngineCor            | 55666                   |
++===========================+===============+====================================================+
+| 5       0                 | 89602         | VLLMWorker_TP            | 56700                   |
++===========================+===============+====================================================+
+| 6       0                 | 91228         | VLLMWorker_TP            | 56701                   |
++===========================+===============+====================================================+
+| 7       0                 | 439848        | python3                  | 21260                   |
++===========================+===============+====================================================+
+
+===== PRIOR PID CHECK AFTER RUN =====
+CORRECTNESS_END=2026-10-07T22:21:43Z
+RESULT_RC=2

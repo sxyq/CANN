@@ -1,0 +1,124 @@
+{
+  "route": "SYNC-BARRIER-ELISION-X",
+  "revision": "V045",
+  "direct_parent": "R31B-V011",
+  "status": "LOCAL_REJECTED_NOISY",
+  "host": "hwnput3",
+  "soc": "Ascend910B3",
+  "npu_arch": "dav-2201",
+  "device": 3,
+  "shape": "16x2064",
+  "dtype": "fp16",
+  "candidate_source_sha256": "501b0855cf362d400dd47fa3bf2f93e14c7996e1cf537ec950b560380d7c971e",
+  "parent_source_sha256": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "started_at": "2026-10-07T22:30:43Z",
+  "completed_at": "2026-10-07T22:31:34Z",
+  "method": "60 warmups per invocation; two 31-pair Parent-vs-Parent same-binary qualification blocks; two 31-pair Candidate-vs-Candidate same-binary qualification blocks; then two 31-pair interleaved Parent/Candidate blocks alternating P,C and C,P. ACL device-event latency is primary, wall time diagnostic, and every sample is retained without outlier filtering.",
+  "same_binary_qualification": {
+    "parent": [
+      {"block": 1, "sample_pairs": 31, "first_mad_over_median": 0.305725, "second_mad_over_median": 0.256250, "median_drift_fraction": 0.878177},
+      {"block": 2, "sample_pairs": 31, "first_mad_over_median": 0.186839, "second_mad_over_median": 0.511082, "median_drift_fraction": 0.103832}
+    ],
+    "candidate": [
+      {"block": 1, "sample_pairs": 31, "first_mad_over_median": 0.455446, "second_mad_over_median": 0.372312, "median_drift_fraction": 0.082474},
+      {"block": 2, "sample_pairs": 31, "first_mad_over_median": 0.216828, "second_mad_over_median": 0.136691, "median_drift_fraction": 0.105622}
+    ],
+    "interpretation": "High same-binary event jitter, including a 0.878177 Parent median-drift fraction in block 1. Per Main instruction, measurement proceeded under the exclusive device assignment; the qualification results are retained as a noise diagnostic."
+  },
+  "sample_pairs_per_run": 31,
+  "total_paired_samples": 62,
+  "local_score": -5.148496818,
+  "local_delta": -5.148496818,
+  "local_score_unit": "percent",
+  "local_score_type": "ROUTE_LOCAL_GEOMEAN_PAIRED_DEVICE_SPEEDUP_PERCENT",
+  "local_score_comparable_to_official": false,
+  "local_score_method": "Geometric mean of all 62 raw parent_device_us / candidate_device_us ratios; score percent=(geomean ratio-1)*100.",
+  "pooled": {
+    "geomean_parent_over_candidate": 0.948515031818,
+    "device_latency_us": {
+      "parent": {"median": 15.9400, "mean": 12.6110, "stdev": 6.8148, "cv": 0.54039, "min": 4.3800, "max": 25.0600, "mad": 5.9900, "p10": 4.7820, "p90": 19.7180},
+      "candidate": {"median": 15.3600, "mean": 13.6065, "stdev": 9.5115, "cv": 0.69904, "min": 4.5000, "max": 66.7000, "mad": 5.1100, "p10": 5.0420, "p90": 20.2580}
+    },
+    "wall_latency_us": {
+      "parent": {"median": 71.8710, "mean": 76.8903, "stdev": 21.1607, "cv": 0.27521, "min": 62.4310, "max": 183.7040, "mad": 7.9605, "p10": 63.4030, "p90": 89.7001},
+      "candidate": {"median": 71.4460, "mean": 81.9891, "stdev": 43.3296, "cv": 0.52848, "min": 56.0010, "max": 351.7960, "mad": 7.5195, "p10": 62.8290, "p90": 91.5579}
+    },
+    "paired_delta_candidate_minus_parent_us": {"median": 0.1700, "mean": 0.9955, "stdev": 11.9355, "min": -19.0200, "max": 61.3800, "mad": 3.9000, "p10": -12.7780, "p90": 13.6200},
+    "parent_median_derived_throughput_g_elements_s": 2.071769134,
+    "candidate_median_derived_throughput_g_elements_s": 2.150000000,
+    "throughput_definition": "33024 elements divided by pooled median device-event latency; diagnostic only, not the aggregate score."
+  },
+  "runs": [
+    {
+      "run": 1,
+      "sample_pairs": 31,
+      "started_at": "2026-10-07T22:31:17Z",
+      "completed_at": "2026-10-07T22:31:24Z",
+      "geomean_parent_over_candidate": 0.908419801358,
+      "geomean_score_percent": -9.158019864,
+      "runner_local_score_percent_diagnostic": -0.849515,
+      "parent_device": {"median_us": 16.4800, "mean_us": 14.2574, "stdev_us": 6.0379, "cv": 0.42349, "min_us": 4.6200, "max_us": 25.0600, "mad_us": 1.6800, "p10_us": 5.3800, "p90_us": 19.1600},
+      "candidate_device": {"median_us": 16.3800, "mean_us": 15.1019, "stdev_us": 5.2113, "cv": 0.34507, "min_us": 5.0600, "max_us": 25.6800, "mad_us": 1.5400, "p10_us": 5.7600, "p90_us": 19.3400},
+      "parent_wall": {"median_us": 64.4710, "mean_us": 68.8612, "stdev_us": 19.6279, "cv": 0.28504, "min_us": 62.4310, "max_us": 173.4530, "mad_us": 1.1500, "p10_us": 62.8910, "p90_us": 72.4710},
+      "candidate_wall": {"median_us": 64.5610, "mean_us": 66.9707, "stdev_us": 7.9813, "cv": 0.11918, "min_us": 56.0010, "max_us": 97.1810, "mad_us": 1.8900, "p10_us": 62.3310, "p90_us": 76.9410},
+      "parent_median_derived_throughput_g_elements_s": 2.003883,
+      "candidate_median_derived_throughput_g_elements_s": 2.016117,
+      "device3_aicore_pre_post_percent": [0, 0],
+      "device3_hbm_pre_post_mb": [3426, 3428],
+      "other_device_activity_observed": true,
+      "runner_return_code": 0
+    },
+    {
+      "run": 2,
+      "sample_pairs": 31,
+      "started_at": "2026-10-07T22:31:25Z",
+      "completed_at": "2026-10-07T22:31:32Z",
+      "geomean_parent_over_candidate": 0.990379958958,
+      "geomean_score_percent": -0.962004104,
+      "runner_local_score_percent_diagnostic": -3.496506,
+      "parent_device": {"median_us": 5.7200, "mean_us": 10.9645, "stdev_us": 7.2370, "cv": 0.66003, "min_us": 4.3800, "max_us": 24.2200, "mad_us": 1.1000, "p10_us": 4.6800, "p90_us": 20.7000},
+      "candidate_device": {"median_us": 5.6400, "mean_us": 12.1110, "stdev_us": 12.3359, "cv": 1.01857, "min_us": 4.5000, "max_us": 66.7000, "mad_us": 1.0400, "p10_us": 4.6200, "p90_us": 20.6600},
+      "parent_wall": {"median_us": 81.6010, "mean_us": 84.9195, "stdev_us": 19.7987, "cv": 0.23315, "min_us": 69.4220, "max_us": 183.7040, "mad_us": 5.5700, "p10_us": 71.2710, "p90_us": 93.2210},
+      "candidate_wall": {"median_us": 78.8710, "mean_us": 97.0074, "stdev_us": 57.3381, "cv": 0.59107, "min_us": 65.0810, "max_us": 351.7960, "mad_us": 7.6300, "p10_us": 70.7710, "p90_us": 112.3120},
+      "parent_median_derived_throughput_g_elements_s": 5.773427,
+      "candidate_median_derived_throughput_g_elements_s": 5.855319,
+      "device3_aicore_pre_post_percent": [0, 0],
+      "device3_hbm_pre_post_mb": [3428, 3428],
+      "other_device_activity_observed": true,
+      "runner_return_code": 0
+    }
+  ],
+  "device_load": {
+    "host_load_average_start": [60.50, 49.41, 49.62],
+    "host_load_average_end": [59.81, 51.13, 50.21],
+    "device3_aicore_percent_preflight": 0,
+    "device3_aicore_percent_postflight": 0,
+    "device3_hbm_mb_preflight": 3426,
+    "device3_hbm_mb_postflight": 3428,
+    "device3_process_reported_preflight": false,
+    "device3_process_reported_postflight": false,
+    "other_device_aicore_activity": "Observed throughout in npu-smi snapshots; no process was changed.",
+    "c2c_allocation": {
+      "authority": "Main device assignment directive",
+      "status": "ALLOCATED_EXCLUSIVE",
+      "route": "SYNC-BARRIER-ELISION-X",
+      "revision": "V045",
+      "device": 3,
+      "lease_id": null,
+      "shared_tsv_modified_by_route": false,
+      "assignment_note": "Main reported the canonical device-3 lease log's last lease RELEASED and no other active Route timing on device 3."
+    }
+  },
+  "repeatability": "Rejected as noisy. Same-binary qualification showed elevated MAD/median and Parent block-1 median drift of 0.878177. Interleaved Local geomean scores were -9.158019864% and -0.962004104%; the second block also contained a 66.70 us candidate device-event outlier and 351.796 us wall-time outlier.",
+  "interpretation": "LOCAL_REJECTED_NOISY; CURRENT_LOCAL_BEST remains R31B-V011. Numeric single-shape Local is not comparable to Official 45.16.",
+  "current_local_best": "R31B-V011",
+  "official_score": null,
+  "online_state": "NOT_SUBMITTED",
+  "evidence": {
+    "raw_same_binary_and_local_samples": "local-sequence-20261007T223043Z.log",
+    "compile": "logs/compile-local-20261007T221601Z.log",
+    "correctness_initial_tool_failure": "logs/correctness-local-20261007T222139Z.log",
+    "correctness_pass": "logs/correctness-local-20261007T222248Z-retry1.log",
+    "local_runner_build": "logs/local-runner-build-20261007T222911Z.log"
+  }
+}
