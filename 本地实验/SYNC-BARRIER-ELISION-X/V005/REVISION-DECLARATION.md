@@ -11,16 +11,16 @@
 Remove the FP16-path `AscendC::PipeBarrier<PIPE_V>()` after `ToFloat(valueLocal, xLocal, valid)` and before `Mul(xFp32, valueLocal, valueLocal, valid)` in `ProcessNarrowMidOverlap`. No other kernel operation or pipeline behavior is changed.
 
 - Candidate: `submission.asc`.
-- Candidate SHA-256: not computed.
+- Candidate SHA-256: `92afad39c7bcfe3331150f5627ff996d81645f2d1230d6cb1a612660ee91e12e`.
 - Exact source diff: compare `parent.asc` with `submission.asc`; the verified diff is one `PIPE_V` barrier deletion before `Mul(xFp32, valueLocal, valueLocal, valid)`.
 
 ## Gate status
 
-- Compile: not started after the CMake include propagation fix. A bounded DNS check of the configured `cann-server3` endpoint at `2026-10-07T04:09:44Z` returned no address (exit 2), so no SSH or remote command was started. See `logs/server3-dns-check-20261007T040944Z.log`; the earlier SSH failure remains in `logs/server3-access-retry-20261007T031307Z.log`.
-- Correctness: not run; Compile has not passed.
-- Local: not run; `LOCAL_SCORE=NONE`. No timing, throughput, or Official-comparability claim exists.
+- Compile: `PASS` on local host `hwnput3` at `2026-10-07T04:52:15Z`, using CANN `8.5.T8.0.B060` / compiler package `8.5.0.alpha002`, `dav-2201`. The generated registration compiler needed `CPLUS_INCLUDE_PATH=/usr/include/c++/11:/usr/include/aarch64-linux-gnu/c++/11:/usr/include/c++/11/backward`; the direct CMake host include propagation edit is retained. See `logs/compile-local-20261007T043221Z.log`, `logs/compile-local-fix-20261007T044036Z.log`, and `logs/compile-local-env-fix-20261007T045158Z.log`.
+- Correctness: `PASS`, device 3, five FP16 cases at widths 128, 256, 1024, 2048, and 4096; zero parent/candidate bit mismatches. See `logs/correctness-local-fixed-label-20261007T050230Z.log`.
+- Local: numeric result `-15.233141%` from all 62 interleaved parent/candidate pairs, device 3, FP16 8x2048. Verdict `LOCAL_REJECTED`, load quality `LOW/NOISY`; run directions disagree and no Local Best promotion is made. See `local-result.json` and `logs/local-device3-fixed-label-20261007T050415Z.log`.
 - Online: `NOT_RUN`.
 
 ## Evidence boundary
 
-All V005 artifacts remain under this route directory. No shared records, other Route worktrees, or Online state are in scope.
+V005 result is complete and committed. `CURRENT_LOCAL_BEST` remains `R31B-V011`. All V005 artifacts remain under this route directory. No shared records, other Route worktrees, or Online state are in scope.

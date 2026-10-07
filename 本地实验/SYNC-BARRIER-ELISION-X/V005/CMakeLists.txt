@@ -24,7 +24,10 @@ string(JOIN " " ASC_KERNEL_OPTIONS_STR ${ASC_KERNEL_OPTIONS})
 set(ASC_HOST_OPTIONS
     "-I${HCC_ROOT}/aarch64-target-linux-gnu/include/c++/7.3.0"
     "-I${HCC_ROOT}/aarch64-target-linux-gnu/include/c++/7.3.0/aarch64-target-linux-gnu"
-    "-I${HCC_ROOT}/aarch64-target-linux-gnu/include/c++/7.3.0/backward")
+    "-I${HCC_ROOT}/aarch64-target-linux-gnu/include/c++/7.3.0/backward"
+    "-I/usr/include/c++/11"
+    "-I/usr/include/aarch64-linux-gnu/c++/11"
+    "-I/usr/include/c++/11/backward")
 string(JOIN " " ASC_HOST_OPTIONS_STR ${ASC_HOST_OPTIONS})
 set(CMAKE_ASC_COMPILE_OBJECT
     "<CMAKE_ASC_COMPILER> ${CMAKE_COMPILE_AS_ASC_FLAG} <DEFINES> <INCLUDES> ${ASC_KERNEL_OPTIONS_STR} -Xaicore-start -O3 -std=c++17 -Xaicore-end -Xhost-start ${ASC_HOST_OPTIONS_STR} -fPIC -O2 -Xhost-end <FLAGS> -o <OBJECT> -c -x asc <SOURCE>")

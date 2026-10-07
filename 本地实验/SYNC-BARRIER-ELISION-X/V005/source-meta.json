@@ -8,14 +8,32 @@
     "source_sha256": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3"
   },
   "candidate_source_path": "本地实验/SYNC-BARRIER-ELISION-X/V005/submission.asc",
+  "candidate_source_sha256": "92afad39c7bcfe3331150f5627ff996d81645f2d1230d6cb1a612660ee91e12e",
   "single_hypothesis": "Remove one PIPE_V barrier after ToFloat(valueLocal, xLocal, valid) and before Mul(xFp32, valueLocal, valueLocal, valid) in ProcessNarrowMidOverlap.",
   "single_change_boundary": "One synchronization-operation deletion only.",
   "compile": {
-    "status": "NOT_STARTED_EXTERNAL_BLOCKER",
-    "blocker": "Bounded DNS lookup for configured cann-server3 returned no address (exit 2); no SSH or remote command was started.",
-    "evidence": "logs/server3-dns-check-20261007T040944Z.log"
+    "status": "PASS",
+    "host": "hwnput3",
+    "cann_version": "8.5.T8.0.B060",
+    "soc": "910B3",
+    "npu_arch": "dav-2201",
+    "build_target": "sync_barrier_elision_v005",
+    "compile_artifact_sha256": "f83151a07bfc5ef1c82afcb69f3c64fd3062a1c4f82fc2358cc8a1957b7b3547",
+    "include_fix": "Added GCC 11 standard-library paths to ASC_HOST_OPTIONS and exported CPLUS_INCLUDE_PATH for the generated registration compiler.",
+    "evidence": "logs/compile-local-env-fix-20261007T045158Z.log"
   },
-  "correctness": {"status": "NOT_RUN_COMPILE_NOT_PASSED"},
-  "local": {"status": "NOT_RUN", "score": "NONE"},
+  "correctness": {
+    "status": "PASS",
+    "device": 3,
+    "cases": 5,
+    "evidence": "logs/correctness-local-fixed-label-20261007T050230Z.log"
+  },
+  "local": {
+    "status": "LOCAL_REJECTED",
+    "score": -15.23314115996,
+    "score_unit": "percent",
+    "load_quality": "LOW/NOISY",
+    "evidence": "local-result.json"
+  },
   "online": "NOT_RUN"
 }
