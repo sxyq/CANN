@@ -24,3 +24,16 @@ ONLINE=FORBIDDEN_NOT_RUN
 SHARED_RECORDS=NOT_MODIFIED
 OTHER_WORKTREE=NOT_ACCESSED
 PUSH=NOT_RUN
+
+RESUME_RULE_REFRESH_RECEIPT
+TIMESTAMP_UTC=2026-10-07T16:34:13Z
+READ_AGAIN=AGENTS.md; .agents/skills/cann-mainline/SKILL.md; .agents/skills/cann-route-executor/SKILL.md; 项目规则/实验总则.md; 项目规则/执行约定.md; 项目规则/本地性能测试规范.md; 项目规则/服务器实验规范.md; 项目规则/线上提交规范.md; 项目规则/Git工作流程.md; 技术路线/技术路线总表.md; 技术路线/技术路线图.md; 技术路线/路线成绩表.tsv; 技术路线/全版本记录.tsv; V026 declaration/source; V032 declaration/source/compile/correctness/local evidence
+RULES_RECONFIRMED=Continue V032 from V026; one row-scale placement/extent change; after Correctness PASS run Local; preserve all failed attempts, negative results and raw measurements; no Online; no shared-record writes; no other worktree access; no destructive Git operations
+CURRENT_GATE=Fresh Correctness build configured with ASC_DIR and CMAKE_PREFIX_PATH; Parent/Candidate PASS on FP16 [128,8192]; then additional interleaved Local window
+CORRECTNESS_RESUME_EVIDENCE=correctness-resume-20261007T163413Z.log; correctness-result-resume-20261007T163413Z.json
+LOCAL_RESUME_EVIDENCE=local-resume-20261007T164426Z.log; local-result-resume-20261007T164426Z.json
+CURRENT_LOCAL_BEST=V026
+OFFICIAL_SCORE=NONE
+ONLINE=NOT_RUN
+SHARED_RECORDS=NOT_MODIFIED
+OTHER_WORKTREE=NOT_ACCESSED

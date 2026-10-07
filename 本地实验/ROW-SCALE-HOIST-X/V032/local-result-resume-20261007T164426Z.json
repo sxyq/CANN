@@ -1,0 +1,137 @@
+{
+  "route": "ROW-SCALE-HOIST-X",
+  "revision": "V032",
+  "direct_parent": "V026",
+  "stage": "LOCAL_PAIRED_INTERLEAVED_RESUME",
+  "run_id": "20261007T164426Z",
+  "status": "NEEDS_ONE_MORE_LOCAL",
+  "measurement_quality": "HIGH_HOST_LOAD_AND_BLOCK_DRIFT",
+  "validity": "VALID_DISPATCH_EXECUTED",
+  "local_score_type": "single-shape local metric",
+  "local_score_comparable_to_official": "NO",
+  "host": "hwnput3",
+  "branch": "exp/row-scale-hoist-x-w4",
+  "worktree": "/home/data4t2/lelinfeng/cann-row-scale-hoist-x-w4",
+  "cann_version": "8.5.T8.0.B060",
+  "device": 0,
+  "soc": "910B3",
+  "dtype": "fp16",
+  "shape": [
+    128,
+    8192
+  ],
+  "warmups_per_process": 20,
+  "samples_per_process": 32,
+  "sample_count_per_arm": 96,
+  "order": "P-C-P-C-P-C",
+  "start_utc": "2026-10-07T16:45:20Z",
+  "end_utc": "2026-10-07T16:45:51Z",
+  "process_return_codes": {
+    "P1": 0,
+    "C1": 0,
+    "P2": 0,
+    "C2": 0,
+    "P3": 0,
+    "C3": 0
+  },
+  "candidate_source_sha256": "cfa69463ee9b2e208634e7ab6baee281751dbaad7f74df976f890a85a1791c20",
+  "parent_source_sha256": "7c2569d9e3830c845f2b5dc4587a73a05a0bdf041168614cd55ad84204e063f9",
+  "raw_output_file": "local-resume-20261007T164426Z.log",
+  "all_samples_included": true,
+  "sample_exclusion": "NONE",
+  "logical_io_bytes": 6324224,
+  "runner_reported_logical_io_bytes": 12648448,
+  "logical_io_note": "Runner constant is twice the actual FP16 logical traffic. Derived throughput below uses 6,324,224 bytes: 3 * 128 * 8192 * 2 bytes for x/residual/output plus 2 * 8192 * 2 bytes for gamma/bias.",
+  "parent": {
+    "block_median_device_us": [
+      13.960001,
+      21.74,
+      18.630001
+    ],
+    "pooled": {
+      "n": 96,
+      "median_device_us": 18.389999,
+      "mean_device_us": 18.5085415417,
+      "sample_stdev_device_us": 6.15376214709,
+      "cv": 0.332482283017,
+      "median_absolute_deviation_device_us": 4.9199995,
+      "p10_device_us": 11.74,
+      "p90_device_us": 26.38,
+      "min_device_us": 11.3,
+      "max_device_us": 39.760002,
+      "derived_logical_throughput_gb_s": 343.894744094
+    }
+  },
+  "candidate": {
+    "block_median_device_us": [
+      23.200001,
+      19.779999,
+      18.780001
+    ],
+    "pooled": {
+      "n": 96,
+      "median_device_us": 20.360001,
+      "mean_device_us": 20.0183333542,
+      "sample_stdev_device_us": 5.36872706997,
+      "cv": 0.268190511917,
+      "median_absolute_deviation_device_us": 3.7699995,
+      "p10_device_us": 12.359999,
+      "p90_device_us": 26.51,
+      "min_device_us": 11.2,
+      "max_device_us": 35.799999,
+      "derived_logical_throughput_gb_s": 310.620024036
+    }
+  },
+  "comparison": {
+    "local_delta_percent_candidate_vs_parent_positive_is_slower": 10.712355123,
+    "local_score": 90.3241556815,
+    "local_score_formula": "100 * parent_pooled_median / candidate_pooled_median",
+    "candidate_slower_blocks": 2,
+    "candidate_faster_blocks": 1,
+    "current_local_best": "V026"
+  },
+  "dispatch_audit": {
+    "candidate_delta_observed_on_all_three_candidate_processes": true,
+    "branch": "ProcessFp16FullRowOutputPipelined",
+    "shape": [
+      128,
+      8192
+    ],
+    "vector_cores": 40,
+    "launch_blocks": 40,
+    "local_rows_min": 3,
+    "local_rows_max": 4,
+    "parent_and_candidate_output_verification": "PASS for all six processes"
+  },
+  "device_load": {
+    "npu0_hbm_used_before_mb": 9122,
+    "npu0_hbm_used_after_mb": 9125,
+    "npu0_process_before": "python PID 2973510, 5748 MB",
+    "npu0_process_after": "python PID 2973510, 5748 MB",
+    "other_active_devices_and_residents": "NPU 4: 59194 MB with VLLMEngineCor; NPU 5: 61586 MB with VLLMWorker_TP; NPU 6: 60222 MB with VLLMWorker_TP; NPU 7: 24790 MB with python3"
+  },
+  "host_load": {
+    "load_average_before": "45.74, 51.91, 51.95",
+    "load_average_after": "38.82, 49.65, 51.19",
+    "high_cpu_processes_present": true
+  },
+  "jitter": {
+    "classification": "HIGH",
+    "parent_cv": 0.332482283017,
+    "candidate_cv": 0.268190511917,
+    "parent_block_median_us": [
+      13.960001,
+      21.74,
+      18.630001
+    ],
+    "candidate_block_median_us": [
+      23.200001,
+      19.779999,
+      18.780001
+    ],
+    "sample_shape_note": "Pooled latency dispersion and cross-block median drift under very high shared host load; all samples retained.",
+    "raw_log_marker_note": "The shell logger emitted repeated P1/C1 block labels. The six RUNNER_RESULT records remain in exact execution order P-C-P-C-P-C and are the basis for block grouping and statistics."
+  },
+  "interpretation": "Candidate is slower by pooled median; result is numerically valid but noisy under substantial shared host/device activity. Do not promote V032; CURRENT_LOCAL_BEST remains V026.",
+  "online": "NOT_RUN"
+}

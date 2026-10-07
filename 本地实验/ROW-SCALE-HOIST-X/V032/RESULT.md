@@ -19,3 +19,13 @@
 - Candidate SHA256 and Parent SHA256 are recorded in `submission.sha256`, `source-meta.json` and the machine-readable results.
 - OFAT source delta: `diff.patch`.
 - Earlier failed and misconfigured attempts remain in their original logs; they are not used as final gate results.
+
+## Resume Gate and Additional Local Window (2026-10-07)
+
+- Correctness resume: after configuring both `ASC_DIR` and `CMAKE_PREFIX_PATH`, the fresh runner build completed and Parent/Candidate both passed FP16 `[128,8192]`; matched ratio was 1.0, with max absolute errors `0.00390625` and `0.001953125`. Evidence: `correctness-resume-20261007T163413Z.log` and `correctness-result-resume-20261007T163413Z.json`. The earlier CMake configuration failure remains preserved.
+- Additional Local window: P-C-P-C-P-C, 20 warmups and 32 samples per process; all 96 samples per arm retained, all six output checks passed, and dispatch audit selected `ProcessFp16FullRowOutputPipelined` for each arm.
+- Pooled medians: Parent `18.389999 us`, Candidate `20.360001 us`; `LOCAL_SCORE=90.3241556815`; `LOCAL_DELTA=+10.7123551230%` (Candidate slower). Candidate was slower in 2/3 blocks.
+- Quality: `HIGH_HOST_LOAD_AND_BLOCK_DRIFT`. Parent/Candidate pooled CV were `0.332482`/`0.268191`; block medians were Parent `[13.960001,21.740000,18.630001] us`, Candidate `[23.200001,19.779999,18.780001] us`. Host load averages changed from `45.74,51.91,51.95` to `38.82,49.65,51.19`; several other NPU devices had large resident workloads. No samples were excluded.
+- The runner's reported logical-I/O byte count is twice the FP16 count. Corrected FP16 logical traffic is `6,324,224` bytes; derived throughput is `343.895 GB/s` Parent and `310.620 GB/s` Candidate. The raw runner output is unmodified and retains its reported constant.
+- The log contains repeated P1/C1 block markers due to a logging label bug. The six `RUNNER_RESULT` records are in the executed P-C-P-C-P-C order and were grouped by that order; raw data is preserved in `local-resume-20261007T164426Z.log` and summarized in `local-result-resume-20261007T164426Z.json`.
+- Do not promote: `CURRENT_LOCAL_BEST=V026`. This single-shape Local metric is not comparable to Official `45.16`; Online was not run.
