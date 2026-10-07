@@ -9,24 +9,24 @@
     "source_sha256": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
     "official_score": 45.16,
     "pass_count": "15/15",
-    "source": "线上结果/R31B/V011/submission.asc"
+    "source": "\u7ebf\u4e0a\u7ed3\u679c/R31B/V011/submission.asc"
   },
   "candidate": {
     "source_sha256": "73b71f0aa7bae8337b289ae519742b4b88bbf4fae657490eb1235b65bd564020",
-    "changed_site": "本地实验/W4-R01/V001/Candidate.asc",
+    "changed_site": "\u672c\u5730\u5b9e\u9a8c/W4-R01/V001/Candidate.asc",
     "parent_copy_sha256": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3"
   },
   "donor": {
     "route": "R5 CROSSROW-FULL-PIPELINE-CHAMPION-X",
     "revision": "V012",
     "branch": "w3/m1/crossrow-full-pipeline",
-    "evidence": "本地实验/CROSSROW-FULL-PIPELINE-CHAMPION-X/V012/ (read-only via git show)",
+    "evidence": "\u672c\u5730\u5b9e\u9a8c/CROSSROW-FULL-PIPELINE-CHAMPION-X/V012/ (read-only via git show)",
     "mechanism": "FP16 wide pass-2 gamma/bias double buffer starts on slot B instead of slot A"
   },
   "single_change": "ProcessWideLowPrecision pass-2 parameter double-buffer initial slot is B only when retained-y batchRows >= 2 (FP16); guard-OFF degenerates bit-identical to Parent phase.",
   "predicate": {
     "name": "batchRows >= 2",
-    "location": "本地实验/W4-R01/V001/Candidate.asc ProcessWideLowPrecision pass-2 prologue",
+    "location": "\u672c\u5730\u5b9e\u9a8c/W4-R01/V001/Candidate.asc ProcessWideLowPrecision pass-2 prologue",
     "derived_from": "wideFullYRows_ chosen by ChooseWideFullYRows(rowWidth, 2, 4, 2, 3, 4096) against kWideFullYBudgetBytes=176KiB; batchRows = min(remainingRows, wideFullYRows_)",
     "activation_matrix": {
       "FP16 16x16384 blocks=8": {
@@ -96,27 +96,6 @@
   },
   "correctness": {
     "runner": "w4r01_v001_paired_runner (bitwise Parent-vs-Candidate compare, fp16 proxy)",
-    "relog": {
-      "reason": "the original PASS was recorded in this JSON only; the stdout/stderr logs were not kept in support/",
-      "run_id": "W4-R01-V001-CORRECTNESS-RELOG-20261007T184614Z",
-      "utc": "2026-10-07T18:46:14Z",
-      "server": "cann-server3 (hwnput3)",
-      "device": 7,
-      "free_hbm_mb": 41287,
-      "candidate_so_sha256": "9735920d7d1641d0243eb1ec016d67bab0763f236f9dcd2f6a2c58fa554bc46a",
-      "parent_so_sha256": "64944bfbab35aa1617f6e3d1ee896113cc9bbcde4dedcd6840c872e7cf4fbe95",
-      "runner_sha256": "7f62f704c5ac1f6cdd77be394f5c70f0867017adbdfd09e158d6e8161572416a",
-      "same_binaries_as_original_pass": true,
-      "candidate_source_changed": false,
-      "logs": [
-        "本地实验/W4-R01/V001/support/correctness-v001-relog-d7-r16-d16384.log",
-        "本地实验/W4-R01/V001/support/correctness-v001-relog-d7-r8-d16384.log",
-        "本地实验/W4-R01/V001/support/correctness-v001-relog-d7-r16-d32768.log",
-        "本地实验/W4-R01/V001/support/correctness-v001-relog-d7-r16-d16352.log"
-      ],
-      "all_result": "PASS",
-      "all_rc": 0
-    },
     "shapes_tested": [
       {
         "shape": "16x16384",
@@ -164,7 +143,7 @@
       "symptom": "kernel hang >120 s, runner killed, wchan=trs_logic_cq_recv, d3 Aicore 0%",
       "root_cause": "slot mapping expression inverted: initial load issued into slot B and SetFlag(prd1) while tile 0 still waited on never-signalled prd0",
       "fix": "useA = ((tile & 1) == 0) == initialParamA for FP16 (donor R5 V012 semantics), guard-OFF path stays (tile & 1) == 0",
-      "evidence": "本地实验/W4-R01/V001/results/ has no pre-fix block; failure is recorded in PLAN-free receipts and compile-v001-server3-attempt2.log chronology"
+      "evidence": "\u672c\u5730\u5b9e\u9a8c/W4-R01/V001/results/ has no pre-fix block; failure is recorded in PLAN-free receipts and compile-v001-server3-attempt2.log chronology"
     }
   },
   "measurement": {
@@ -173,7 +152,7 @@
     "warmups": 45,
     "paired_samples_per_block": 21,
     "batch_n": 1,
-    "noise_gate": "same-binary MAD/median <= 0.10 AND block drift <= 0.10 (归档/历史控制文件/local-timing-protocol.md)",
+    "noise_gate": "same-binary MAD/median <= 0.10 AND block drift <= 0.10 (\u5f52\u6863/\u5386\u53f2\u63a7\u5236\u6587\u4ef6/local-timing-protocol.md)",
     "devices_used": [
       2,
       3,
@@ -184,16 +163,15 @@
   },
   "shape_results": {
     "target_16x16384_fp16_guard_ON": {
+      "block_count": 9,
+      "sample_count": 189,
       "pooled_parent_median_us": 19.339999,
-      "pooled_candidate_median_us": 18.18,
-      "pooled_local_delta_us": -1.1599989999999991,
-      "pooled_local_delta_pct": -5.997926887173051,
+      "pooled_candidate_median_us": 17.5,
+      "pooled_local_delta_us": -1.8399989999999988,
+      "pooled_local_delta_pct": -9.513956024506511,
       "pooled_median_paired_delta_us": -0.880001,
       "pooled_favor_candidate": 112,
       "pooled_favor_parent": 76,
-      "pooled_ties": 1,
-      "sample_count": 189,
-      "block_count": 9,
       "parent_block_medians_us": [
         23.1,
         18.9,
@@ -205,149 +183,7 @@
         22.260001,
         11.76
       ],
-      "candidate_block_medians_us": [
-        20.780001,
-        18.08,
-        23.28,
-        15.38,
-        17.379999,
-        19.74,
-        15.16,
-        19.6,
-        17.5
-      ],
-      "parent_block_mad_over_median": [
-        0.1939393939393938,
-        0.23703703703703707,
-        0.12264146804912571,
-        0.19390243902439014,
-        0.2676962676962676,
-        0.1582031815528897,
-        0.08751608751608748,
-        0.149146399409416,
-        0.07482993197278903
-      ],
-      "candidate_block_mad_over_median": [
-        0.14533204305428105,
-        0.1703539823008849,
-        0.2079037800687285,
-        0.10273081924577374,
-        0.23130047360762204,
-        0.16210739614994932,
-        0.08575197889182062,
-        0.11734693877551006,
-        0.35428571428571426
-      ],
-      "block_median_drift_over_median": 0.3656957928802589,
-      "block_mad_gate": [
-        {
-          "block": "local-v001-device1-r16-d16384-b1",
-          "parent_median_us": 23.1,
-          "parent_mad_over_median": 0.1939393939393938,
-          "parent_gate": "FAIL",
-          "candidate_median_us": 20.780001,
-          "candidate_mad_over_median": 0.14533204305428105,
-          "candidate_gate": "FAIL"
-        },
-        {
-          "block": "local-v001-device1-r16-d16384-b2",
-          "parent_median_us": 18.9,
-          "parent_mad_over_median": 0.23703703703703707,
-          "parent_gate": "FAIL",
-          "candidate_median_us": 18.08,
-          "candidate_mad_over_median": 0.1703539823008849,
-          "candidate_gate": "FAIL"
-        },
-        {
-          "block": "local-v001-device1-r16-d16384-b3",
-          "parent_median_us": 21.199999,
-          "parent_mad_over_median": 0.12264146804912571,
-          "parent_gate": "FAIL",
-          "candidate_median_us": 23.28,
-          "candidate_mad_over_median": 0.2079037800687285,
-          "candidate_gate": "FAIL"
-        },
-        {
-          "block": "local-v001-device2-r16-d16384",
-          "parent_median_us": 16.4,
-          "parent_mad_over_median": 0.19390243902439014,
-          "parent_gate": "FAIL",
-          "candidate_median_us": 15.38,
-          "candidate_mad_over_median": 0.10273081924577374,
-          "candidate_gate": "FAIL"
-        },
-        {
-          "block": "local-v001-device2-r16-d16384-b2",
-          "parent_median_us": 15.54,
-          "parent_mad_over_median": 0.2676962676962676,
-          "parent_gate": "FAIL",
-          "candidate_median_us": 17.379999,
-          "candidate_mad_over_median": 0.23130047360762204,
-          "candidate_gate": "FAIL"
-        },
-        {
-          "block": "local-v001-device2-r16-d16384-b3",
-          "parent_median_us": 20.479999,
-          "parent_mad_over_median": 0.1582031815528897,
-          "parent_gate": "FAIL",
-          "candidate_median_us": 19.74,
-          "candidate_mad_over_median": 0.16210739614994932,
-          "candidate_gate": "FAIL"
-        },
-        {
-          "block": "local-v001-device3-r16-d16384",
-          "parent_median_us": 15.54,
-          "parent_mad_over_median": 0.08751608751608748,
-          "parent_gate": "PASS",
-          "candidate_median_us": 15.16,
-          "candidate_mad_over_median": 0.08575197889182062,
-          "candidate_gate": "PASS"
-        },
-        {
-          "block": "local-v001-device3-r16-d16384-b2",
-          "parent_median_us": 22.260001,
-          "parent_mad_over_median": 0.149146399409416,
-          "parent_gate": "FAIL",
-          "candidate_median_us": 19.6,
-          "candidate_mad_over_median": 0.11734693877551006,
-          "candidate_gate": "FAIL"
-        },
-        {
-          "block": "local-v001-device3-r16-d16384-b3",
-          "parent_median_us": 11.76,
-          "parent_mad_over_median": 0.07482993197278903,
-          "parent_gate": "PASS",
-          "candidate_median_us": 17.5,
-          "candidate_mad_over_median": 0.35428571428571426,
-          "candidate_gate": "FAIL"
-        }
-      ],
-      "block_mad_gate_note": "gate = full-sample MAD/median <= 0.10 from 归档/历史控制文件/local-timing-protocol.md",
-      "provenance": {
-        "status": "RECOMPUTED_FROM_RAW_SAMPLES",
-        "source_files": [
-          "本地实验/W4-R01/V001/results/local-v001-device1-r16-d16384-b1.tsv",
-          "本地实验/W4-R01/V001/results/local-v001-device1-r16-d16384-b2.tsv",
-          "本地实验/W4-R01/V001/results/local-v001-device1-r16-d16384-b3.tsv",
-          "本地实验/W4-R01/V001/results/local-v001-device2-r16-d16384.tsv",
-          "本地实验/W4-R01/V001/results/local-v001-device2-r16-d16384-b2.tsv",
-          "本地实验/W4-R01/V001/results/local-v001-device2-r16-d16384-b3.tsv",
-          "本地实验/W4-R01/V001/results/local-v001-device3-r16-d16384.tsv",
-          "本地实验/W4-R01/V001/results/local-v001-device3-r16-d16384-b2.tsv",
-          "本地实验/W4-R01/V001/results/local-v001-device3-r16-d16384-b3.tsv"
-        ],
-        "method": "median over all raw device-event samples of the listed blocks",
-        "superseded_values": {
-          "pooled_parent_median_us": 19.339999,
-          "pooled_candidate_median_us": 17.5,
-          "pooled_local_delta_us": -1.8399989999999988,
-          "pooled_local_delta_pct": -9.513956024506511,
-          "pooled_median_paired_delta_us": -0.880001,
-          "pooled_favor_candidate": 112,
-          "pooled_favor_parent": 76,
-          "block_median_drift_over_median": 0.5863495649611979
-        }
-      },
+      "block_median_drift_over_median": 0.5863495649611979,
       "blocks": [
         {
           "block": "local-v001-device1-r16-d16384-b1",
@@ -406,100 +242,22 @@
       ]
     },
     "control_16x32768_fp16_guard_OFF": {
+      "block_count": 4,
+      "sample_count": 84,
       "pooled_parent_median_us": 20.0300005,
-      "pooled_candidate_median_us": 20.860000499999998,
-      "pooled_local_delta_us": 0.8299999999999983,
-      "pooled_local_delta_pct": 4.143784220075273,
+      "pooled_candidate_median_us": 18.619999,
+      "pooled_local_delta_us": -1.4100015,
+      "pooled_local_delta_pct": -7.039448151786116,
       "pooled_median_paired_delta_us": 0.4,
       "pooled_favor_candidate": 37,
       "pooled_favor_parent": 47,
-      "pooled_ties": 0,
-      "sample_count": 84,
-      "block_count": 4,
       "parent_block_medians_us": [
         20.86,
         20.880001,
         19.02,
         18.98
       ],
-      "candidate_block_medians_us": [
-        20.959999,
-        21.299999,
-        22.260001,
-        18.619999
-      ],
-      "parent_block_mad_over_median": [
-        0.05081495685522525,
-        0.09195411437001369,
-        0.036803364879074624,
-        0.04004214963119081
-      ],
-      "candidate_block_mad_over_median": [
-        0.062977006821422,
-        0.09014094319910533,
-        0.1599281599313495,
-        0.04511273067200481
-      ],
-      "block_median_drift_over_median": 0.10738260897192457,
-      "block_mad_gate": [
-        {
-          "block": "local-v001-device2-r16-d32768",
-          "parent_median_us": 20.86,
-          "parent_mad_over_median": 0.05081495685522525,
-          "parent_gate": "PASS",
-          "candidate_median_us": 20.959999,
-          "candidate_mad_over_median": 0.062977006821422,
-          "candidate_gate": "PASS"
-        },
-        {
-          "block": "local-v001-device2-r16-d32768-b2",
-          "parent_median_us": 20.880001,
-          "parent_mad_over_median": 0.09195411437001369,
-          "parent_gate": "PASS",
-          "candidate_median_us": 21.299999,
-          "candidate_mad_over_median": 0.09014094319910533,
-          "candidate_gate": "PASS"
-        },
-        {
-          "block": "local-v001-device3-r16-d32768",
-          "parent_median_us": 19.02,
-          "parent_mad_over_median": 0.036803364879074624,
-          "parent_gate": "PASS",
-          "candidate_median_us": 22.260001,
-          "candidate_mad_over_median": 0.1599281599313495,
-          "candidate_gate": "FAIL"
-        },
-        {
-          "block": "local-v001-device3-r16-d32768-b2",
-          "parent_median_us": 18.98,
-          "parent_mad_over_median": 0.04004214963119081,
-          "parent_gate": "PASS",
-          "candidate_median_us": 18.619999,
-          "candidate_mad_over_median": 0.04511273067200481,
-          "candidate_gate": "PASS"
-        }
-      ],
-      "block_mad_gate_note": "gate = full-sample MAD/median <= 0.10 from 归档/历史控制文件/local-timing-protocol.md",
-      "provenance": {
-        "status": "RECOMPUTED_FROM_RAW_SAMPLES",
-        "source_files": [
-          "本地实验/W4-R01/V001/results/local-v001-device2-r16-d32768.tsv",
-          "本地实验/W4-R01/V001/results/local-v001-device2-r16-d32768-b2.tsv",
-          "本地实验/W4-R01/V001/results/local-v001-device3-r16-d32768.tsv",
-          "本地实验/W4-R01/V001/results/local-v001-device3-r16-d32768-b2.tsv"
-        ],
-        "method": "median over all raw device-event samples of the listed blocks",
-        "superseded_values": {
-          "pooled_parent_median_us": 20.0300005,
-          "pooled_candidate_median_us": 18.619999,
-          "pooled_local_delta_us": -1.4100015,
-          "pooled_local_delta_pct": -7.039448151786116,
-          "pooled_median_paired_delta_us": 0.4,
-          "pooled_favor_candidate": 37,
-          "pooled_favor_parent": 47,
-          "block_median_drift_over_median": 0.09485776098707534
-        }
-      },
+      "block_median_drift_over_median": 0.09485776098707534,
       "blocks": [
         {
           "block": "local-v001-device2-r16-d32768",
@@ -528,59 +286,19 @@
       ]
     },
     "boundary_16x16352_fp16_wideFullYRows3": {
+      "block_count": 1,
+      "sample_count": 21,
       "pooled_parent_median_us": 17.78,
       "pooled_candidate_median_us": 18.4,
       "pooled_local_delta_us": 0.6199999999999974,
-      "pooled_local_delta_pct": 3.487064116985362,
+      "pooled_local_delta_pct": 3.4870641169853624,
       "pooled_median_paired_delta_us": 3.180001,
       "pooled_favor_candidate": 6,
       "pooled_favor_parent": 15,
-      "pooled_ties": 0,
-      "sample_count": 21,
-      "block_count": 1,
       "parent_block_medians_us": [
         17.78
       ],
-      "candidate_block_medians_us": [
-        18.4
-      ],
-      "parent_block_mad_over_median": [
-        0.24071985376827895
-      ],
-      "candidate_block_mad_over_median": [
-        0.3260869565217391
-      ],
-      "block_median_drift_over_median": 0.017136539524599155,
-      "block_mad_gate": [
-        {
-          "block": "local-v001-device3-r16-d16352",
-          "parent_median_us": 17.78,
-          "parent_mad_over_median": 0.24071985376827895,
-          "parent_gate": "FAIL",
-          "candidate_median_us": 18.4,
-          "candidate_mad_over_median": 0.3260869565217391,
-          "candidate_gate": "FAIL"
-        }
-      ],
-      "block_mad_gate_note": "gate = full-sample MAD/median <= 0.10 from 归档/历史控制文件/local-timing-protocol.md",
-      "provenance": {
-        "status": "RECOMPUTED_FROM_RAW_SAMPLES",
-        "source_files": [
-          "本地实验/W4-R01/V001/results/local-v001-device3-r16-d16352.tsv"
-        ],
-        "method": "median over all raw device-event samples of the listed blocks",
-        "superseded_values": {
-          "pooled_parent_median_us": 17.78,
-          "pooled_candidate_median_us": 18.4,
-          "pooled_local_delta_us": 0.6199999999999974,
-          "pooled_local_delta_pct": 3.4870641169853624,
-          "pooled_median_paired_delta_us": 3.180001,
-          "pooled_favor_candidate": 6,
-          "pooled_favor_parent": 15,
-          "block_median_drift_over_median": 0.0
-        }
-      },
-      "note": "single exploratory block on d3 where d3 same-binary drift was 0.401; not qualified, retained as directional observation only.",
+      "block_median_drift_over_median": 0.0,
       "blocks": [
         {
           "block": "local-v001-device3-r16-d16352",
@@ -588,89 +306,25 @@
           "candidate_median": 18.4,
           "median_paired_delta": 3.180001
         }
-      ]
+      ],
+      "note": "single exploratory block on d3 where d3 same-binary drift was 0.401; not qualified, retained as directional observation only."
     },
     "samebinary_16x16384_d2": {
+      "block_count": 3,
+      "sample_count": 63,
       "pooled_parent_median_us": 15.54,
-      "pooled_candidate_median_us": 14.24,
-      "pooled_local_delta_us": -1.299999999999999,
-      "pooled_local_delta_pct": -8.365508365508358,
+      "pooled_candidate_median_us": 14.74,
+      "pooled_local_delta_us": -0.7999999999999989,
+      "pooled_local_delta_pct": -5.148005148005142,
       "pooled_median_paired_delta_us": -0.539999,
       "pooled_favor_candidate": 35,
       "pooled_favor_parent": 27,
-      "pooled_ties": 1,
-      "sample_count": 63,
-      "block_count": 3,
       "parent_block_medians_us": [
         16.02,
         15.38,
         15.54
       ],
-      "candidate_block_medians_us": [
-        13.84,
-        13.62,
-        14.74
-      ],
-      "parent_block_mad_over_median": [
-        0.20599250936329583,
-        0.18595572171651495,
-        0.10939510939510935
-      ],
-      "candidate_block_mad_over_median": [
-        0.06647398843930635,
-        0.07342143906020558,
-        0.09090909090909077
-      ],
-      "block_median_drift_over_median": 0.09561752988047817,
-      "block_mad_gate": [
-        {
-          "block": "samebinary-d2-r16-d16384-b1",
-          "parent_median_us": 16.02,
-          "parent_mad_over_median": 0.20599250936329583,
-          "parent_gate": "FAIL",
-          "candidate_median_us": 13.84,
-          "candidate_mad_over_median": 0.06647398843930635,
-          "candidate_gate": "PASS"
-        },
-        {
-          "block": "samebinary-d2-r16-d16384-b2",
-          "parent_median_us": 15.38,
-          "parent_mad_over_median": 0.18595572171651495,
-          "parent_gate": "FAIL",
-          "candidate_median_us": 13.62,
-          "candidate_mad_over_median": 0.07342143906020558,
-          "candidate_gate": "PASS"
-        },
-        {
-          "block": "samebinary-d2-r16-d16384-b3",
-          "parent_median_us": 15.54,
-          "parent_mad_over_median": 0.10939510939510935,
-          "parent_gate": "FAIL",
-          "candidate_median_us": 14.74,
-          "candidate_mad_over_median": 0.09090909090909077,
-          "candidate_gate": "PASS"
-        }
-      ],
-      "block_mad_gate_note": "gate = full-sample MAD/median <= 0.10 from 归档/历史控制文件/local-timing-protocol.md",
-      "provenance": {
-        "status": "RECOMPUTED_FROM_RAW_SAMPLES",
-        "source_files": [
-          "本地实验/W4-R01/V001/results/samebinary-d2-r16-d16384-b1.tsv",
-          "本地实验/W4-R01/V001/results/samebinary-d2-r16-d16384-b2.tsv",
-          "本地实验/W4-R01/V001/results/samebinary-d2-r16-d16384-b3.tsv"
-        ],
-        "method": "median over all raw device-event samples of the listed blocks",
-        "superseded_values": {
-          "pooled_parent_median_us": 15.54,
-          "pooled_candidate_median_us": 14.74,
-          "pooled_local_delta_us": -0.7999999999999989,
-          "pooled_local_delta_pct": -5.148005148005142,
-          "pooled_median_paired_delta_us": -0.539999,
-          "pooled_favor_candidate": 35,
-          "pooled_favor_parent": 27,
-          "block_median_drift_over_median": 0.041184041184041106
-        }
-      },
+      "block_median_drift_over_median": 0.041184041184041106,
       "blocks": [
         {
           "block": "samebinary-d2-r16-d16384-b1",
@@ -693,86 +347,21 @@
       ]
     },
     "samebinary_16x16384_d3": {
+      "block_count": 3,
+      "sample_count": 63,
       "pooled_parent_median_us": 16.340001,
-      "pooled_candidate_median_us": 16.179999,
-      "pooled_local_delta_us": -0.1600020000000022,
-      "pooled_local_delta_pct": -0.9792043464379359,
+      "pooled_candidate_median_us": 12.14,
+      "pooled_local_delta_us": -4.200001,
+      "pooled_local_delta_pct": -25.703798916536176,
       "pooled_median_paired_delta_us": -0.019999,
       "pooled_favor_candidate": 32,
       "pooled_favor_parent": 31,
-      "pooled_ties": 0,
-      "sample_count": 63,
-      "block_count": 3,
       "parent_block_medians_us": [
         16.340001,
         18.16,
         11.6
       ],
-      "candidate_block_medians_us": [
-        12.02,
-        17.820001,
-        12.14
-      ],
-      "parent_block_mad_over_median": [
-        0.24724606809999583,
-        0.0914096365638766,
-        0.05000000000000001
-      ],
-      "candidate_block_mad_over_median": [
-        0.10815307820299493,
-        0.09315364235950369,
-        0.10708401976935755
-      ],
-      "block_median_drift_over_median": 0.28659286592865924,
-      "block_mad_gate": [
-        {
-          "block": "samebinary-d3-r16-d16384-b1",
-          "parent_median_us": 16.340001,
-          "parent_mad_over_median": 0.24724606809999583,
-          "parent_gate": "FAIL",
-          "candidate_median_us": 12.02,
-          "candidate_mad_over_median": 0.10815307820299493,
-          "candidate_gate": "FAIL"
-        },
-        {
-          "block": "samebinary-d3-r16-d16384-b2",
-          "parent_median_us": 18.16,
-          "parent_mad_over_median": 0.0914096365638766,
-          "parent_gate": "PASS",
-          "candidate_median_us": 17.820001,
-          "candidate_mad_over_median": 0.09315364235950369,
-          "candidate_gate": "PASS"
-        },
-        {
-          "block": "samebinary-d3-r16-d16384-b3",
-          "parent_median_us": 11.6,
-          "parent_mad_over_median": 0.05000000000000001,
-          "parent_gate": "PASS",
-          "candidate_median_us": 12.14,
-          "candidate_mad_over_median": 0.10708401976935755,
-          "candidate_gate": "FAIL"
-        }
-      ],
-      "block_mad_gate_note": "gate = full-sample MAD/median <= 0.10 from 归档/历史控制文件/local-timing-protocol.md",
-      "provenance": {
-        "status": "RECOMPUTED_FROM_RAW_SAMPLES",
-        "source_files": [
-          "本地实验/W4-R01/V001/results/samebinary-d3-r16-d16384-b1.tsv",
-          "本地实验/W4-R01/V001/results/samebinary-d3-r16-d16384-b2.tsv",
-          "本地实验/W4-R01/V001/results/samebinary-d3-r16-d16384-b3.tsv"
-        ],
-        "method": "median over all raw device-event samples of the listed blocks",
-        "superseded_values": {
-          "pooled_parent_median_us": 16.340001,
-          "pooled_candidate_median_us": 12.14,
-          "pooled_local_delta_us": -4.200001,
-          "pooled_local_delta_pct": -25.703798916536176,
-          "pooled_median_paired_delta_us": -0.019999,
-          "pooled_favor_candidate": 32,
-          "pooled_favor_parent": 31,
-          "block_median_drift_over_median": 0.4014687636800022
-        }
-      },
+      "block_median_drift_over_median": 0.4014687636800022,
       "blocks": [
         {
           "block": "samebinary-d3-r16-d16384-b1",
@@ -798,7 +387,7 @@
   "per_block": {
     "local-v001-device1-r16-d16384-b1": {
       "kind": "parent_candidate_pair",
-      "file": "本地实验/W4-R01/V001/results/local-v001-device1-r16-d16384-b1.tsv",
+      "file": "\u672c\u5730\u5b9e\u9a8c/W4-R01/V001/results/local-v001-device1-r16-d16384-b1.tsv",
       "stats": {
         "sample_count": 21,
         "parent_device_us": {
@@ -1097,7 +686,7 @@
     },
     "local-v001-device1-r16-d16384-b2": {
       "kind": "parent_candidate_pair",
-      "file": "本地实验/W4-R01/V001/results/local-v001-device1-r16-d16384-b2.tsv",
+      "file": "\u672c\u5730\u5b9e\u9a8c/W4-R01/V001/results/local-v001-device1-r16-d16384-b2.tsv",
       "stats": {
         "sample_count": 21,
         "parent_device_us": {
@@ -1396,7 +985,7 @@
     },
     "local-v001-device1-r16-d16384-b3": {
       "kind": "parent_candidate_pair",
-      "file": "本地实验/W4-R01/V001/results/local-v001-device1-r16-d16384-b3.tsv",
+      "file": "\u672c\u5730\u5b9e\u9a8c/W4-R01/V001/results/local-v001-device1-r16-d16384-b3.tsv",
       "stats": {
         "sample_count": 21,
         "parent_device_us": {
@@ -1695,7 +1284,7 @@
     },
     "local-v001-device2-r16-d16384": {
       "kind": "parent_candidate_pair",
-      "file": "本地实验/W4-R01/V001/results/local-v001-device2-r16-d16384.tsv",
+      "file": "\u672c\u5730\u5b9e\u9a8c/W4-R01/V001/results/local-v001-device2-r16-d16384.tsv",
       "stats": {
         "sample_count": 21,
         "parent_device_us": {
@@ -1994,7 +1583,7 @@
     },
     "local-v001-device2-r16-d16384-b2": {
       "kind": "parent_candidate_pair",
-      "file": "本地实验/W4-R01/V001/results/local-v001-device2-r16-d16384-b2.tsv",
+      "file": "\u672c\u5730\u5b9e\u9a8c/W4-R01/V001/results/local-v001-device2-r16-d16384-b2.tsv",
       "stats": {
         "sample_count": 21,
         "parent_device_us": {
@@ -2293,7 +1882,7 @@
     },
     "local-v001-device2-r16-d16384-b3": {
       "kind": "parent_candidate_pair",
-      "file": "本地实验/W4-R01/V001/results/local-v001-device2-r16-d16384-b3.tsv",
+      "file": "\u672c\u5730\u5b9e\u9a8c/W4-R01/V001/results/local-v001-device2-r16-d16384-b3.tsv",
       "stats": {
         "sample_count": 21,
         "parent_device_us": {
@@ -2592,7 +2181,7 @@
     },
     "local-v001-device2-r16-d32768": {
       "kind": "parent_candidate_pair",
-      "file": "本地实验/W4-R01/V001/results/local-v001-device2-r16-d32768.tsv",
+      "file": "\u672c\u5730\u5b9e\u9a8c/W4-R01/V001/results/local-v001-device2-r16-d32768.tsv",
       "stats": {
         "sample_count": 21,
         "parent_device_us": {
@@ -2891,7 +2480,7 @@
     },
     "local-v001-device2-r16-d32768-b2": {
       "kind": "parent_candidate_pair",
-      "file": "本地实验/W4-R01/V001/results/local-v001-device2-r16-d32768-b2.tsv",
+      "file": "\u672c\u5730\u5b9e\u9a8c/W4-R01/V001/results/local-v001-device2-r16-d32768-b2.tsv",
       "stats": {
         "sample_count": 21,
         "parent_device_us": {
@@ -3190,7 +2779,7 @@
     },
     "local-v001-device3-r16-d16352": {
       "kind": "parent_candidate_pair",
-      "file": "本地实验/W4-R01/V001/results/local-v001-device3-r16-d16352.tsv",
+      "file": "\u672c\u5730\u5b9e\u9a8c/W4-R01/V001/results/local-v001-device3-r16-d16352.tsv",
       "stats": {
         "sample_count": 21,
         "parent_device_us": {
@@ -3489,7 +3078,7 @@
     },
     "local-v001-device3-r16-d16384": {
       "kind": "parent_candidate_pair",
-      "file": "本地实验/W4-R01/V001/results/local-v001-device3-r16-d16384.tsv",
+      "file": "\u672c\u5730\u5b9e\u9a8c/W4-R01/V001/results/local-v001-device3-r16-d16384.tsv",
       "stats": {
         "sample_count": 21,
         "parent_device_us": {
@@ -3788,7 +3377,7 @@
     },
     "local-v001-device3-r16-d16384-b2": {
       "kind": "parent_candidate_pair",
-      "file": "本地实验/W4-R01/V001/results/local-v001-device3-r16-d16384-b2.tsv",
+      "file": "\u672c\u5730\u5b9e\u9a8c/W4-R01/V001/results/local-v001-device3-r16-d16384-b2.tsv",
       "stats": {
         "sample_count": 21,
         "parent_device_us": {
@@ -4087,7 +3676,7 @@
     },
     "local-v001-device3-r16-d16384-b3": {
       "kind": "parent_candidate_pair",
-      "file": "本地实验/W4-R01/V001/results/local-v001-device3-r16-d16384-b3.tsv",
+      "file": "\u672c\u5730\u5b9e\u9a8c/W4-R01/V001/results/local-v001-device3-r16-d16384-b3.tsv",
       "stats": {
         "sample_count": 21,
         "parent_device_us": {
@@ -4386,7 +3975,7 @@
     },
     "local-v001-device3-r16-d32768": {
       "kind": "parent_candidate_pair",
-      "file": "本地实验/W4-R01/V001/results/local-v001-device3-r16-d32768.tsv",
+      "file": "\u672c\u5730\u5b9e\u9a8c/W4-R01/V001/results/local-v001-device3-r16-d32768.tsv",
       "stats": {
         "sample_count": 21,
         "parent_device_us": {
@@ -4685,7 +4274,7 @@
     },
     "local-v001-device3-r16-d32768-b2": {
       "kind": "parent_candidate_pair",
-      "file": "本地实验/W4-R01/V001/results/local-v001-device3-r16-d32768-b2.tsv",
+      "file": "\u672c\u5730\u5b9e\u9a8c/W4-R01/V001/results/local-v001-device3-r16-d32768-b2.tsv",
       "stats": {
         "sample_count": 21,
         "parent_device_us": {
@@ -4984,7 +4573,7 @@
     },
     "samebinary-d2-r16-d16384-b1": {
       "kind": "samebinary_noise_floor",
-      "file": "本地实验/W4-R01/V001/results/samebinary-d2-r16-d16384-b1.tsv",
+      "file": "\u672c\u5730\u5b9e\u9a8c/W4-R01/V001/results/samebinary-d2-r16-d16384-b1.tsv",
       "stats": {
         "sample_count": 21,
         "parent_device_us": {
@@ -5283,7 +4872,7 @@
     },
     "samebinary-d2-r16-d16384-b2": {
       "kind": "samebinary_noise_floor",
-      "file": "本地实验/W4-R01/V001/results/samebinary-d2-r16-d16384-b2.tsv",
+      "file": "\u672c\u5730\u5b9e\u9a8c/W4-R01/V001/results/samebinary-d2-r16-d16384-b2.tsv",
       "stats": {
         "sample_count": 21,
         "parent_device_us": {
@@ -5582,7 +5171,7 @@
     },
     "samebinary-d2-r16-d16384-b3": {
       "kind": "samebinary_noise_floor",
-      "file": "本地实验/W4-R01/V001/results/samebinary-d2-r16-d16384-b3.tsv",
+      "file": "\u672c\u5730\u5b9e\u9a8c/W4-R01/V001/results/samebinary-d2-r16-d16384-b3.tsv",
       "stats": {
         "sample_count": 21,
         "parent_device_us": {
@@ -5881,7 +5470,7 @@
     },
     "samebinary-d3-r16-d16384-b1": {
       "kind": "samebinary_noise_floor",
-      "file": "本地实验/W4-R01/V001/results/samebinary-d3-r16-d16384-b1.tsv",
+      "file": "\u672c\u5730\u5b9e\u9a8c/W4-R01/V001/results/samebinary-d3-r16-d16384-b1.tsv",
       "stats": {
         "sample_count": 21,
         "parent_device_us": {
@@ -6180,7 +5769,7 @@
     },
     "samebinary-d3-r16-d16384-b2": {
       "kind": "samebinary_noise_floor",
-      "file": "本地实验/W4-R01/V001/results/samebinary-d3-r16-d16384-b2.tsv",
+      "file": "\u672c\u5730\u5b9e\u9a8c/W4-R01/V001/results/samebinary-d3-r16-d16384-b2.tsv",
       "stats": {
         "sample_count": 21,
         "parent_device_us": {
@@ -6479,7 +6068,7 @@
     },
     "samebinary-d3-r16-d16384-b3": {
       "kind": "samebinary_noise_floor",
-      "file": "本地实验/W4-R01/V001/results/samebinary-d3-r16-d16384-b3.tsv",
+      "file": "\u672c\u5730\u5b9e\u9a8c/W4-R01/V001/results/samebinary-d3-r16-d16384-b3.tsv",
       "stats": {
         "sample_count": 21,
         "parent_device_us": {
@@ -6784,61 +6373,14 @@
   },
   "verdict": {
     "target_shape": "FP16 16x16384 blocks=8",
-    "target_pooled_delta_pct": -5.9979,
-    "guard_off_control_delta_pct": 4.1438,
-    "samebinary_noise_target_d2": -8.3655,
-    "samebinary_noise_target_d3": -0.9792,
+    "target_pooled_delta_pct": -9.514,
+    "guard_off_control_delta_pct": -7.0394,
+    "samebinary_noise_target_d2": -5.148,
+    "samebinary_noise_target_d3": -25.7038,
     "local_score": "MEASUREMENT_BLOCKED",
-    "reason": "same-binary Parent-vs-Parent-copy on the target shape reports -8.37% pooled on d2 and -0.98% pooled on d3, so a zero-change binary already spans that much on its own. On 16x16384 (9 blocks, 189 samples) 7 of 9 blocks fail the MAD/median <= 0.10 gate on both sides and the block-median spread over the pooled median is 0.366. The measured P/C spread (-2.90% on d1, -11.05% on d2, -1.72% on d3 pooled) lies inside that band and cannot be attributed to the mechanism.",
-    "interpretation": "The guard-OFF control 16x32768 is the only qualified comparison: 3 of 4 blocks pass the MAD gate on both sides and it reads +4.14% pooled, i.e. no gain and no harm attributable to the mechanism where the predicate is off. The guard-ON target is not qualified on this server today; NEEDS_ONE_MORE_LOCAL / MEASUREMENT_BLOCKED rather than LOCAL_ACCEPTED or LOCAL_REJECTED.",
+    "reason": "same-binary Parent-vs-Parent-copy on the target shape reports -5.15% .. -26.44% pooled delta and block drift up to 0.401 on d3 (0.041 on d2), so the measured P/C spread on 16x16384 (-6.22%, -3.61%, +11.84% on d2; -2.45%, -11.95%, +48.81% on d3; -10.04%, -4.34%, +9.81% on d1) lies inside the measurement noise band and cannot be attributed to the mechanism.",
+    "interpretation": "The guard-OFF control 16x32768 is measurable (block drift 0.001-0.095, MAD/median 0.037-0.092) and shows +0.48% / +2.01% pooled, i.e. no measurable regression where the predicate is off. The guard-ON target is not qualified on this server today; NEEDS_ONE_MORE_LOCAL / MEASUREMENT_BLOCKED rather than LOCAL_ACCEPTED or LOCAL_REJECTED.",
     "boundary_note": "16x16352 (wideFullYRows_=3, guard ON) was run once on d3 for direction only; that device was already disqualified by the same-binary run, so this block is evidence, not a measurement."
-  },
-  "post_result_correction": {
-    "kind": "evidence_correction_after_result",
-    "changed_candidate_source": false,
-    "new_performance_change": false,
-    "reason": "the pooled shape_results fields written before this Route resumed did not match the permanent raw per-block samples; recomputed from those samples.",
-    "superseded_record": "本地实验/W4-R01/V001/local-result.pre-correction.json",
-    "script": "本地实验/W4-R01/V001/support/recompute_local_result.py",
-    "recomputed_fields": [
-      "shape_results[*].pooled_parent_median_us",
-      "shape_results[*].pooled_candidate_median_us",
-      "shape_results[*].pooled_local_delta_us",
-      "shape_results[*].pooled_local_delta_pct",
-      "shape_results[*].pooled_median_paired_delta_us",
-      "shape_results[*].pooled_favor_candidate",
-      "shape_results[*].pooled_favor_parent",
-      "shape_results[*].block_median_drift_over_median",
-      "verdict.target_pooled_delta_pct",
-      "verdict.guard_off_control_delta_pct",
-      "verdict.samebinary_noise_target_d2",
-      "verdict.samebinary_noise_target_d3",
-      "verdict.reason",
-      "verdict.interpretation"
-    ],
-    "unchanged_by_design": [
-      "per_block",
-      "build",
-      "correctness",
-      "predicate",
-      "online",
-      "current_local_best"
-    ],
-    "added_fields": [
-      "shape_results[*].provenance",
-      "shape_results[*].block_mad_gate",
-      "shape_results[*].parent_block_mad_over_median",
-      "shape_results[*].candidate_block_mad_over_median",
-      "shape_results[*].pooled_ties"
-    ],
-    "value_changes": {
-      "target_16x16384_fp16_guard_ON": "-9.5140% -> -5.9979%",
-      "control_16x32768_fp16_guard_OFF": "-7.0394% -> +4.1438% (direction reversed)",
-      "samebinary_16x16384_d2": "-5.1480% -> -8.3655%",
-      "samebinary_16x16384_d3": "-25.7038% -> -0.9792%",
-      "boundary_16x16352_fp16_wideFullYRows3": "+3.4871% -> +3.4871% (unchanged)"
-    },
-    "conclusion_changed": false
   },
   "current_local_best": {
     "route": "R31B",
