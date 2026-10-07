@@ -1,0 +1,13 @@
+--- V026/submission.asc
++++ V038/submission.asc
+@@ -1212,10 +1212,10 @@
+                 const AscendC::TEventID outputRelease =
+                     useFirst ? outputReleaseFirst : outputReleaseSecond;
+-                AscendC::Muls(valueTile, valueTile, invRms, kTileElems);
+-                AscendC::PipeBarrier<PIPE_V>();
+                 AscendC::Mul(valueTile, valueTile, gammaLocal[col], kTileElems);
+                 AscendC::PipeBarrier<PIPE_V>();
++                AscendC::Muls(valueTile, valueTile, invRms, kTileElems);
++                AscendC::PipeBarrier<PIPE_V>();
+                 AscendC::Add(valueTile, valueTile, biasLocal[col], kTileElems);
+                 AscendC::PipeBarrier<PIPE_V>();

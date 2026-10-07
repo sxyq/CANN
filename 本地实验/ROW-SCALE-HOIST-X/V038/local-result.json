@@ -1,0 +1,126 @@
+{
+  "route": "ROW-SCALE-HOIST-X",
+  "revision": "V038",
+  "direct_parent": "V026",
+  "stage": "LOCAL_PAIRED_INTERLEAVED",
+  "run_id": "20261007T2230Z",
+  "verdict": "MEASUREMENT_BLOCKED",
+  "measurement_quality": "HIGH_JITTER_PARENT_WINDOW_DRIFT_SHARED_SYSTEM_ACTIVITY",
+  "validity": "VALID_DISPATCH_EXECUTED_DESCRIPTIVE_ONLY",
+  "local_score": 101.3937282230,
+  "local_score_type": "descriptive single-shape route-local speedup index",
+  "local_score_formula": "100 * parent_pooled_median_device_us / candidate_pooled_median_device_us",
+  "local_score_comparable_to_official": false,
+  "local_delta_percent_candidate_vs_parent_positive_is_slower": -1.3745704467,
+  "local_delta_interpretation": "Candidate pooled median was 1.3745704467% faster, but Parent stability windows drifted materially and Candidate was slower in two of three paired blocks; do not qualify or promote this result.",
+  "host": "hwnput3",
+  "toolkit_version_dir": "8.5.0.alpha002",
+  "device": 0,
+  "soc": "Ascend910B3",
+  "architecture": "dav-2201",
+  "dtype": "fp32",
+  "shape": [128, 8192],
+  "branch": "ProcessFp32FullRowOutputPipelined",
+  "vector_cores": 40,
+  "launch_blocks": 40,
+  "local_rows_min": 3,
+  "local_rows_max": 4,
+  "warmups_per_process": 20,
+  "samples_per_process": 32,
+  "sample_count_per_arm": 96,
+  "order": "P-C-P-C-P-C",
+  "process_return_codes": {
+    "P1": 0,
+    "C1": 0,
+    "P2": 0,
+    "C2": 0,
+    "P3": 0,
+    "C3": 0
+  },
+  "all_primary_window_samples_included": true,
+  "sample_exclusion": "NONE",
+  "candidate_source_sha256": "4458e4bbf6aeb1dde41c46ed700d3caffcba5a947db43b2edfce061158e41bc4",
+  "parent_source_sha256": "7c2569d9e3830c845f2b5dc4587a73a05a0bdf041168614cd55ad84204e063f9",
+  "parent_stability_gate": {
+    "status": "FAIL_WINDOW_DRIFT",
+    "samples_per_window": 32,
+    "window_median_device_us": [20.5100005, 25.6100005],
+    "window_cv": [0.1896813103, 0.2416048475],
+    "window_max_device_us": [30.099998, 32.239998],
+    "evidence_file": "local-parent-stability-retry-env-20261007T2230Z.log"
+  },
+  "parent": {
+    "pooled": {
+      "n": 96,
+      "median_device_us": 20.37,
+      "mean_device_us": 21.4304166354,
+      "sample_stdev_device_us": 10.3922917271,
+      "cv": 0.4849318566,
+      "median_absolute_deviation_device_us": 4.6199995,
+      "mean_absolute_deviation_from_median_device_us": 6.1770832813,
+      "p10_device_us": 13.059999,
+      "p90_device_us": 27.9399995,
+      "min_device_us": 12.48,
+      "max_device_us": 85.620003
+    }
+  },
+  "candidate": {
+    "pooled": {
+      "n": 96,
+      "median_device_us": 20.09,
+      "mean_device_us": 22.53,
+      "sample_stdev_device_us": 10.8298126977,
+      "cv": 0.4806840967,
+      "median_absolute_deviation_device_us": 4.2700005,
+      "mean_absolute_deviation_from_median_device_us": 6.2841665833,
+      "p10_device_us": 13.7800005,
+      "p90_device_us": 30.9800005,
+      "min_device_us": 12.179999,
+      "max_device_us": 82.279999
+    }
+  },
+  "paired_blocks": {
+    "parent_medians_us": [17.450001, 22.58, 19.789999],
+    "candidate_medians_us": [27.150002, 18.719999, 20.419998],
+    "candidate_vs_parent_delta_percent": [55.587391, -17.094775, 3.183426],
+    "candidate_slower_blocks": 2,
+    "candidate_faster_blocks": 1
+  },
+  "device_load": {
+    "device0_health": "OK",
+    "device0_aicore_usage_before_after_percent": [0, 0],
+    "device0_hbm_used_mb_before_after": [3431, 3431],
+    "device0_hbm_capacity_mb": 65536,
+    "shared_activity_on_other_devices_observed": true,
+    "shared_processes_observed": true,
+    "other_processes_modified": false,
+    "before_evidence": "local-load-before-paired-20261007T2230Z.log",
+    "after_evidence": "local-load-after-20261007T2230Z.log"
+  },
+  "host_load": {
+    "load_average_before": "63.59, 49.82, 49.75",
+    "load_average_after": "50.28, 49.59, 49.73",
+    "high_shared_host_activity_observed": true
+  },
+  "runner_environment_retry": {
+    "initial_attempt": "FAILED_TO_LOAD_LIBMSPROFILER",
+    "initial_evidence": "local-parent-stability-20261007T2222Z.log",
+    "retry": "PASS_WITH_EXISTING_ASCEND_SET_ENV",
+    "retry_evidence": "local-parent-stability-retry-env-20261007T2230Z.log",
+    "effect_on_candidate_result": "NONE; initial failure was Parent runner setup only and is retained"
+  },
+  "repeatability": "All raw samples were retained. Parent stability medians shifted from 20.51 to 25.61 us. Pooled CV was about 0.485 for Parent and 0.481 for Candidate; paired block direction was mixed, with Candidate slower in two of three blocks. Shared host/device activity was present. The pooled score is descriptive only.",
+  "current_local_best": "V026",
+  "official_score": null,
+  "online": "NOT_RUN",
+  "evidence": {
+    "compile": "compile-local-20261007T2222Z.log",
+    "correctness": "correctness-local-20261007T2222Z.log",
+    "local_runner_build": "local-build-local-20261007T2222Z.log",
+    "parent_stability_initial_failure": "local-parent-stability-20261007T2222Z.log",
+    "parent_stability_retry": "local-parent-stability-retry-env-20261007T2230Z.log",
+    "paired_raw": "local-paired-interleaved-20261007T2230Z.log",
+    "device_host_before": "local-load-before-paired-20261007T2230Z.log",
+    "device_host_after": "local-load-after-20261007T2230Z.log"
+  }
+}
