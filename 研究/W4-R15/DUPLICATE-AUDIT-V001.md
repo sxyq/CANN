@@ -92,11 +92,25 @@ BRANCH: w4/r15-safe-multirow-dma-x
 | A. 相邻两行在 GM 连续，合并为一条 flat 多行 burst | ProcessNarrowMidOverlap、ProcessSmallFp32Batched 的逐行输入 | 与 MODE-X-R015C r1/r2 同机制（相邻行一次 2-D/多 burst 传输） | 旧失败机制相同。r1 在每行超过 256 个 32B 块后输出错误，一个变体还触发 MTE 写地址越界 507035；r2 三个形状全错。不得实施 |
 | B. 同一 tile 列窗跨两行，用 nBursts=2 + 非零 srcStride | LP wide pass-1 输入（ProcessWideLowPrecision） | 与 MULTIROW-DMA-CHAMPION-X V001 同机制，V001 实现本身就是 `kStrideChunkRows=2` 按两行一组发 | 旧失败机制相同。V001 已在同一父版本上 LOCAL_REJECTED，主形状 4/4 退步、中位 +8.4% |
 
-读法 A 若限定在「相邻行且一次传输」，其每行载荷必须满足
-`rowWidth * sizeof(T) <= 4096 B`，否则两行合计超过实测的 8192 B / 256 块边界。
-该窗口内的形状全部已被父版本 flat CONTIG 批路径覆盖
-（FP32 D<=2048 且 %8==0；FP16/BF16 D<=2048 且 %16==0，两者一次可搬最多 8 行），
-因此可辩护的新形状集合为空。
+读法 A 若限定在「相邻行一次事务」，需要同时满足三条约束，而它们的交集已被父版本覆盖：
+
+1. UB 约束：NarrowMid 与 generic 路径的输入缓冲是 `xBuf_`，容量 `kTileElems = 4096` 元素。
+   两行必须落进同一个缓冲（`dstStride=0`），即 `2 * rowWidth <= 4096`，`rowWidth <= 2048`。
+2. DMA 字节约束：MODE-X-R015C r1 的实测边界是「每个 burst <= 256 个 32B 块」= 8192 B。
+   对应 `blockLen = rowWidth * sizeof(T) <= 8192`，FP32 与 FP16/BF16 都给出 `rowWidth <= 2048`
+   （FP16/BF16 元素更小，字节约束在 `rowWidth <= 4096` 处才生效，被 UB 约束更紧地压住）。
+3. 对齐约束：非 Pad `DataCopy` 要求 `blockLen` 为 32B 整数倍。
+   `rowWidth <= 2048` 且对齐的形状，正好落在父版本两条 CONTIG 分支的门槛上
+   （FP32 `D % 8 == 0`；FP16/BF16 `D % 16 == 0`），两条分支一次 flat burst 最多搬 8 行，
+   命令数严格少于两行一次的形式。
+
+不满足对齐门槛的形状（FP32 `D % 8 != 0`、FP16/BF16 `D % 16 != 0`）才进 NarrowMid 或 generic，
+它们的 `rowWidth * sizeof(T)` 不是 32B 整数倍。此时只有两种 API 形式可用：
+非 Pad 形式被对齐门槛挡住；Pad 形式会在同一缓冲里写入补齐元素，
+与相邻行数据重叠，无法得到 correctness-safe 边界。因此该窗口内不存在可辩护的两行事务。
+
+`rowWidth > 2048` 的部分：generic 多 tile 路径（4096 < D <= 8192）与 wide full-y 路径
+的输入不是「相邻两行整行连续」，只能按 tile 列窗跨行，走的就是读法 B。
 
 读法 B 的两个已知形态（命令数减半、指令 Pad/非 Pad 形态）都已实测为非主导成本；
 剩余结构选项 C2 需要改 UB 计入并越出本 V001 的允许范围，且等 Planning 裁定。
@@ -105,8 +119,10 @@ BRANCH: w4/r15-safe-multirow-dma-x
 
 MEASUREMENT_DESIGN_BLOCKED = YES。
 不是缺少 shape 记录，而是可辩护的 shape 集合为空：
-满足 correctness-safe 字节边界的形状全部已由父版本 CONTIG 路径以更宽形态（<=8 行一次）承接；
-超出该边界的形状按观测证据不可用，缺少可信的每传输行块数上限指纹。
+满足 UB 容量与 32B 对齐的形状全部已由父版本 CONTIG 路径以更宽形态（<=8 行一次）承接；
+不满足对齐的形状无法用非 Pad 形式，Pad 形式会与相邻行数据重叠；
+超出 `rowWidth <= 2048` 的形状只能按 tile 列窗跨行，即读法 B，已 LOCAL_REJECTED。
+若要在观测到的 256 块边界之上继续，缺少可信的每传输行块数上限指纹。
 
 ## 7. 判定
 
