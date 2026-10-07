@@ -7,6 +7,10 @@ set(CMAKE_CXX_STANDARD 17)
 set(ACL_INCLUDE_DIR "$ENV{ASCEND_HOME_PATH}/aarch64-linux/include")
 set(ACL_LIB_DIR "$ENV{ASCEND_HOME_PATH}/lib64")
 set(HCC_TOOLCHAIN "$ENV{ASCEND_HOME_PATH}/toolkit/toolchain/hcc")
+set(HCC_STANDARD_INCLUDE_PATH
+    "${HCC_TOOLCHAIN}/aarch64-target-linux-gnu/include:${HCC_TOOLCHAIN}/aarch64-target-linux-gnu/include/c++/7.3.0:${HCC_TOOLCHAIN}/aarch64-target-linux-gnu/include/c++/7.3.0/aarch64-target-linux-gnu:${HCC_TOOLCHAIN}/aarch64-target-linux-gnu/include/c++/7.3.0/backward")
+set(CMAKE_ASC_COMPILE_OBJECT
+    "cmake -E env CPLUS_INCLUDE_PATH=${HCC_STANDARD_INCLUDE_PATH} C_INCLUDE_PATH=${HCC_STANDARD_INCLUDE_PATH} ${CMAKE_ASC_COMPILE_OBJECT}")
 
 add_executable(v028_correctness correctness_runner.asc)
 target_include_directories(v028_correctness PRIVATE
