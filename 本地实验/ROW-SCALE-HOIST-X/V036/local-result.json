@@ -75,10 +75,12 @@
     }
   },
   "logical_throughput": {
-    "metric": "runner full_logical_io_bytes divided by pooled median device latency; descriptive effective logical bandwidth, not measured physical HBM bandwidth",
-    "full_logical_io_bytes_per_invocation": 12648448,
-    "parent_gb_per_second": 627.0920859151,
-    "candidate_gb_per_second": 597.4703826169
+    "metric": "FP16 logical tensor bytes per invocation divided by pooled median device latency; descriptive effective logical bandwidth, not measured physical HBM bandwidth",
+    "runner_reported_logical_io_bytes_per_invocation": 12648448,
+    "corrected_logical_io_bytes_per_invocation": 6324224,
+    "correction_note": "The V036 runner reported the FP32 byte count. For this FP16 invocation, traffic is X + residual + output (3 * 128 * 8192 * 2 bytes) plus gamma + bias (2 * 8192 * 2 bytes). Raw runner logs are unchanged.",
+    "parent_gb_per_second": 313.5460429576,
+    "candidate_gb_per_second": 298.7351913085
   },
   "paired_blocks": {
     "parent_medians_us": [20.54, 20.92, 19.1999995],
