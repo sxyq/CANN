@@ -29,6 +29,15 @@ For each pair, the Parent and Candidate medians are computed from their 62 raw `
 - `PARTIAL_ROUTE_LOCAL_SCORE=0.999641978447x`; `PARTIAL_ROUTE_LOCAL_DELTA=-0.0358021553%` (one unchanged control shape only).
 - Candidate was faster in 3/6 pairs and slower in 3/6. All six paired deltas are within the corresponding Parent+Candidate MAD sum.
 - Pooled raw CV: Parent `14.8296768%`, Candidate `14.2805125%`; `LOAD_QUALITY=NOISY`, `MEASUREMENT_QUALITY=NOISY`, `NEEDS_ONE_MORE_LOCAL=YES`.
+- Pooled jitter detail from all 372 raw `device_us` samples per side (MAD is the unscaled median absolute deviation around the pooled median; P10/P90 use nearest-rank quantiles; CV is population standard deviation / mean):
+
+  | Metric (`device_us`) | Parent | Candidate |
+  |---|---:|---:|
+  | Median | `20.378450` | `20.394200` |
+  | MAD | `1.630150` | `1.461400` |
+  | P10 | `17.685900` | `17.747200` |
+  | P90 | `23.990300` | `24.084100` |
+  | CV | `14.8296768%` | `14.2805125%` |
 - Device 4 snapshot: AICore `57% -> 58%`; HBM `59193 -> 59195 MB`. Existing PID `2999855` (`VLLMEngineCor`, `55666 MB`) remained untouched.
 - `CURRENT_LOCAL_BEST=NONE`. This control-only partial score does not promote V061; use exact R31B-V011 as the next threshold OFAT baseline.
 
