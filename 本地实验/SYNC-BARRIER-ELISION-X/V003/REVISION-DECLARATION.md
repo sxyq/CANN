@@ -23,3 +23,9 @@ Delete the FP16 `AscendC::PipeBarrier<PIPE_V>()` between `FromFloat(outputLocal,
 ## Evidence boundary
 
 All V003 evidence is under this route directory. No shared records were modified, no other worktree was accessed, and no Online action was taken.
+
+## Owner continuation validation
+
+The unchanged V003 candidate was recompiled and revalidated on `hwnput3` on 2026-10-07. The continuation Compile passed for candidate SHA-256 `e2e9ed435e36855f493010aaa2d6ae10b8108922e631d36ee3acf3df604506b7`; the built correctness runner then passed all five FP16 cases with zero bit mismatches. An earlier attempt to launch the runner before its build completed returned 127 (`No such file or directory`) and is preserved in `logs/correctness-continuation-20261007T003551Z.log`.
+
+Two additional 31-pair Local runs retained all 62 raw samples. Their pooled route-local geomean is `1.196779282475x`, `LOCAL_SCORE=+19.677928247%`, and `LOCAL_DELTA=+19.677928247%`; pooled Parent/Candidate device medians are `5.32/5.18 us`, with effective throughput `3.079699/3.162934 G elements/s`. Parent/Candidate device CV is `1.854951/2.134669`, paired-delta p10..p90 is `-57.490..+11.496 us`, HBM remained `91%`, AICore and HBM bandwidth were `0%`, and three resident vLLM processes were observed and left untouched. `LOCAL_SCORE_TYPE=ROUTE_LOCAL_GEOMEAN_PAIRED_DEVICE_SPEEDUP_PERCENT`; `LOCAL_SCORE_COMPARABLE_TO_OFFICIAL=NO`; `LOAD_QUALITY=LOW/NOISY`. The positive aggregate is numeric route-local evidence only and does not promote V003; Local Best remains `R31B-V011`. Full samples and snapshots are in the two `logs/local-continuation-20261007T0038Z-*.log` files.

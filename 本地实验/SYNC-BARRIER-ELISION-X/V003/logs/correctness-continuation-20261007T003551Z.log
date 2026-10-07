@@ -1,0 +1,62 @@
+ROUTE=SYNC-BARRIER-ELISION-X
+REVISION=V003
+PARENT=R31B-V011
+CANDIDATE_SHA256=e2e9ed435e36855f493010aaa2d6ae10b8108922e631d36ee3acf3df604506b7
+DEVICE=3
+DTYPE=fp16
+HOST=hwnput3
+UTC_START=2026-10-07T00:35:51Z
+	NPU ID                         : 3
+	Chip Count                     : 1
+
+	DDR Capacity(MB)               : 0
+	DDR Usage Rate(%)              : 0
+	DDR Hugepages Total(page)      : 0
+	DDR Hugepages Usage Rate(%)    : 0
+	HBM Capacity(MB)               : 65536
+	HBM Usage Rate(%)              : 91
+	Aicore Usage Rate(%)           : 0
+	Aivector Usage Rate(%)         : 0
+	Aicpu Usage Rate(%)            : 0
+	Ctrlcpu Usage Rate(%)          : 5
+	DDR Bandwidth Usage Rate(%)    : 0
+	HBM Bandwidth Usage Rate(%)    : 0
+	Chip ID                        : 0
+
+--- process snapshot ---
+  82397 root     vllm            /usr/local/python3.12.13/bin/python3 /usr/local/python3.12.13/bin/vllm serve /models/Qwen3.8-27B-w8a8 --host 0.0.0.0 --port 9001 --tensor-parallel-size 4 --quantization ascend --served-model-name qwen3.8 --max-model-len 256000 --max-num-seqs 8 --max-num-batched-tokens 8192 --gpu-memory-utilization 0.90 --enable-prefix-caching --trust-remote-code --reasoning-parser qwen3 --enable-auto-tool-choice --tool-call-parser qwen3_coder
+  83352 root     vllm            /usr/local/python3.12.13/bin/python3 /usr/local/python3.12.13/bin/vllm serve /models/Qwen3.8-27B-w8a8 --host 0.0.0.0 --port 9002 --tensor-parallel-size 2 --quantization ascend --served-model-name qwen3.8 --max-model-len 256000 --max-num-seqs 8 --max-num-batched-tokens 8192 --gpu-memory-utilization 0.90 --enable-prefix-caching --trust-remote-code --reasoning-parser qwen3 --enable-auto-tool-choice --tool-call-parser qwen3_coder
+2992910 zhangka+ vllm            /home/data4t1/zhangkaijie/conda/envs/qwen38_a2/bin/python3.12 /home/data4t1/zhangkaijie/conda/envs/qwen38_a2/bin/vllm serve /home/data4t2/models/Qwen3.8-27B-w8a8 --host 0.0.0.0 --port 9000 --tensor-parallel-size 1 --max-model-len 200000 --max-num-seqs 8 --max-num-batched-tokens 16384 --enable-prefix-caching --trust-remote-code --speculative-config {"method":"mtp","num_speculative_tokens":4} --enable-auto-tool-choice --tool-call-parser qwen3_coder --gpu-memory-utilization 0.85
+3542469 lelinfe+ bash            /bin/bash -lc set -o pipefail build="/home/data4t2/lelinfeng/server_runs/SYNC-BARRIER-ELISION-X/V003/compile-continuation-20261007T003453Z" route_log="本地实验/SYNC-BARRIER-ELISION-X/V003/logs/correctness-continuation-20261007T$(date -u +%H%M%S)Z.log" {   printf 'ROUTE=SYNC-BARRIER-ELISION-X\nREVISION=V003\nPARENT=R31B-V011\nCANDIDATE_SHA256=e2e9ed435e36855f493010aaa2d6ae10b8108922e631d36ee3acf3df604506b7\nDEVICE=3\nDTYPE=fp16\nHOST=%s\nUTC_START=%s\n' "$(hostname)" "$(date -u +%Y-%m-%dT%H:%M:%SZ)"   export CPLUS_INCLUDE_PATH=/usr/include/c++/11:/usr/include/aarch64-linux-gnu/c++/11:/usr/include   export C_INCLUDE_PATH=/usr/include   source /usr/local/Ascend/ascend-toolkit/set_env.sh   npu-smi info -t usages -i 3   printf '%s\n' '--- process snapshot ---'   ps -eo pid,user,comm,args | rg 'vllm|sync_barrier|correctness' || true   "$build/sync_barrier_elision_correctness" 3   rc=$?   printf 'RUNNER_RC=%s\nUTC_END=%s\n' "$rc" "$(date -u +%Y-%m-%dT%H:%M:%SZ)"   printf '%s\n' '--- post usages ---'   npu-smi info -t usages -i 3   printf '%s\n' '--- post process snapshot ---'   ps -eo pid,user,comm,args | rg 'vllm|sync_barrier|correctness' || true   exit "$rc" } 2>&1 | tee "$route_log"
+3542474 lelinfe+ bash            /bin/bash -lc set -o pipefail build="/home/data4t2/lelinfeng/server_runs/SYNC-BARRIER-ELISION-X/V003/compile-continuation-20261007T003453Z" route_log="本地实验/SYNC-BARRIER-ELISION-X/V003/logs/correctness-continuation-20261007T$(date -u +%H%M%S)Z.log" {   printf 'ROUTE=SYNC-BARRIER-ELISION-X\nREVISION=V003\nPARENT=R31B-V011\nCANDIDATE_SHA256=e2e9ed435e36855f493010aaa2d6ae10b8108922e631d36ee3acf3df604506b7\nDEVICE=3\nDTYPE=fp16\nHOST=%s\nUTC_START=%s\n' "$(hostname)" "$(date -u +%Y-%m-%dT%H:%M:%SZ)"   export CPLUS_INCLUDE_PATH=/usr/include/c++/11:/usr/include/aarch64-linux-gnu/c++/11:/usr/include   export C_INCLUDE_PATH=/usr/include   source /usr/local/Ascend/ascend-toolkit/set_env.sh   npu-smi info -t usages -i 3   printf '%s\n' '--- process snapshot ---'   ps -eo pid,user,comm,args | rg 'vllm|sync_barrier|correctness' || true   "$build/sync_barrier_elision_correctness" 3   rc=$?   printf 'RUNNER_RC=%s\nUTC_END=%s\n' "$rc" "$(date -u +%Y-%m-%dT%H:%M:%SZ)"   printf '%s\n' '--- post usages ---'   npu-smi info -t usages -i 3   printf '%s\n' '--- post process snapshot ---'   ps -eo pid,user,comm,args | rg 'vllm|sync_barrier|correctness' || true   exit "$rc" } 2>&1 | tee "$route_log"
+3542475 lelinfe+ tee             tee 本地实验/SYNC-BARRIER-ELISION-X/V003/logs/correctness-continuation-20261007T003551Z.log
+3542607 lelinfe+ rg              rg vllm|sync_barrier|correctness
+/bin/bash: line 12: /home/data4t2/lelinfeng/server_runs/SYNC-BARRIER-ELISION-X/V003/compile-continuation-20261007T003453Z/sync_barrier_elision_correctness: No such file or directory
+RUNNER_RC=127
+UTC_END=2026-10-07T00:35:52Z
+--- post usages ---
+	NPU ID                         : 3
+	Chip Count                     : 1
+
+	DDR Capacity(MB)               : 0
+	DDR Usage Rate(%)              : 0
+	DDR Hugepages Total(page)      : 0
+	DDR Hugepages Usage Rate(%)    : 0
+	HBM Capacity(MB)               : 65536
+	HBM Usage Rate(%)              : 91
+	Aicore Usage Rate(%)           : 0
+	Aivector Usage Rate(%)         : 0
+	Aicpu Usage Rate(%)            : 0
+	Ctrlcpu Usage Rate(%)          : 5
+	DDR Bandwidth Usage Rate(%)    : 0
+	HBM Bandwidth Usage Rate(%)    : 0
+	Chip ID                        : 0
+
+--- post process snapshot ---
+  82397 root     vllm            /usr/local/python3.12.13/bin/python3 /usr/local/python3.12.13/bin/vllm serve /models/Qwen3.8-27B-w8a8 --host 0.0.0.0 --port 9001 --tensor-parallel-size 4 --quantization ascend --served-model-name qwen3.8 --max-model-len 256000 --max-num-seqs 8 --max-num-batched-tokens 8192 --gpu-memory-utilization 0.90 --enable-prefix-caching --trust-remote-code --reasoning-parser qwen3 --enable-auto-tool-choice --tool-call-parser qwen3_coder
+  83352 root     vllm            /usr/local/python3.12.13/bin/python3 /usr/local/python3.12.13/bin/vllm serve /models/Qwen3.8-27B-w8a8 --host 0.0.0.0 --port 9002 --tensor-parallel-size 2 --quantization ascend --served-model-name qwen3.8 --max-model-len 256000 --max-num-seqs 8 --max-num-batched-tokens 8192 --gpu-memory-utilization 0.90 --enable-prefix-caching --trust-remote-code --reasoning-parser qwen3 --enable-auto-tool-choice --tool-call-parser qwen3_coder
+2992910 zhangka+ vllm            /home/data4t1/zhangkaijie/conda/envs/qwen38_a2/bin/python3.12 /home/data4t1/zhangkaijie/conda/envs/qwen38_a2/bin/vllm serve /home/data4t2/models/Qwen3.8-27B-w8a8 --host 0.0.0.0 --port 9000 --tensor-parallel-size 1 --max-model-len 200000 --max-num-seqs 8 --max-num-batched-tokens 16384 --enable-prefix-caching --trust-remote-code --speculative-config {"method":"mtp","num_speculative_tokens":4} --enable-auto-tool-choice --tool-call-parser qwen3_coder --gpu-memory-utilization 0.85
+3542469 lelinfe+ bash            /bin/bash -lc set -o pipefail build="/home/data4t2/lelinfeng/server_runs/SYNC-BARRIER-ELISION-X/V003/compile-continuation-20261007T003453Z" route_log="本地实验/SYNC-BARRIER-ELISION-X/V003/logs/correctness-continuation-20261007T$(date -u +%H%M%S)Z.log" {   printf 'ROUTE=SYNC-BARRIER-ELISION-X\nREVISION=V003\nPARENT=R31B-V011\nCANDIDATE_SHA256=e2e9ed435e36855f493010aaa2d6ae10b8108922e631d36ee3acf3df604506b7\nDEVICE=3\nDTYPE=fp16\nHOST=%s\nUTC_START=%s\n' "$(hostname)" "$(date -u +%Y-%m-%dT%H:%M:%SZ)"   export CPLUS_INCLUDE_PATH=/usr/include/c++/11:/usr/include/aarch64-linux-gnu/c++/11:/usr/include   export C_INCLUDE_PATH=/usr/include   source /usr/local/Ascend/ascend-toolkit/set_env.sh   npu-smi info -t usages -i 3   printf '%s\n' '--- process snapshot ---'   ps -eo pid,user,comm,args | rg 'vllm|sync_barrier|correctness' || true   "$build/sync_barrier_elision_correctness" 3   rc=$?   printf 'RUNNER_RC=%s\nUTC_END=%s\n' "$rc" "$(date -u +%Y-%m-%dT%H:%M:%SZ)"   printf '%s\n' '--- post usages ---'   npu-smi info -t usages -i 3   printf '%s\n' '--- post process snapshot ---'   ps -eo pid,user,comm,args | rg 'vllm|sync_barrier|correctness' || true   exit "$rc" } 2>&1 | tee "$route_log"
+3542474 lelinfe+ bash            /bin/bash -lc set -o pipefail build="/home/data4t2/lelinfeng/server_runs/SYNC-BARRIER-ELISION-X/V003/compile-continuation-20261007T003453Z" route_log="本地实验/SYNC-BARRIER-ELISION-X/V003/logs/correctness-continuation-20261007T$(date -u +%H%M%S)Z.log" {   printf 'ROUTE=SYNC-BARRIER-ELISION-X\nREVISION=V003\nPARENT=R31B-V011\nCANDIDATE_SHA256=e2e9ed435e36855f493010aaa2d6ae10b8108922e631d36ee3acf3df604506b7\nDEVICE=3\nDTYPE=fp16\nHOST=%s\nUTC_START=%s\n' "$(hostname)" "$(date -u +%Y-%m-%dT%H:%M:%SZ)"   export CPLUS_INCLUDE_PATH=/usr/include/c++/11:/usr/include/aarch64-linux-gnu/c++/11:/usr/include   export C_INCLUDE_PATH=/usr/include   source /usr/local/Ascend/ascend-toolkit/set_env.sh   npu-smi info -t usages -i 3   printf '%s\n' '--- process snapshot ---'   ps -eo pid,user,comm,args | rg 'vllm|sync_barrier|correctness' || true   "$build/sync_barrier_elision_correctness" 3   rc=$?   printf 'RUNNER_RC=%s\nUTC_END=%s\n' "$rc" "$(date -u +%Y-%m-%dT%H:%M:%SZ)"   printf '%s\n' '--- post usages ---'   npu-smi info -t usages -i 3   printf '%s\n' '--- post process snapshot ---'   ps -eo pid,user,comm,args | rg 'vllm|sync_barrier|correctness' || true   exit "$rc" } 2>&1 | tee "$route_log"
+3542475 lelinfe+ tee             tee 本地实验/SYNC-BARRIER-ELISION-X/V003/logs/correctness-continuation-20261007T003551Z.log
+3542680 lelinfe+ rg              rg vllm|sync_barrier|correctness

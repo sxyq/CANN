@@ -1,0 +1,99 @@
+ROUTE=SYNC-BARRIER-ELISION-X
+REVISION=V003
+PARENT=R31B-V011
+CANDIDATE_SHA256=e2e9ed435e36855f493010aaa2d6ae10b8108922e631d36ee3acf3df604506b7
+DEVICE=3
+SHAPE=8x2048
+DTYPE=fp16
+RUN=repeat
+HOST=hwnput3
+UTC_START=2026-10-07T00:37:54Z
+	NPU ID                         : 3
+	Chip Count                     : 1
+
+	DDR Capacity(MB)               : 0
+	DDR Usage Rate(%)              : 0
+	DDR Hugepages Total(page)      : 0
+	DDR Hugepages Usage Rate(%)    : 0
+	HBM Capacity(MB)               : 65536
+	HBM Usage Rate(%)              : 91
+	Aicore Usage Rate(%)           : 0
+	Aivector Usage Rate(%)         : 0
+	Aicpu Usage Rate(%)            : 0
+	Ctrlcpu Usage Rate(%)          : 13
+	DDR Bandwidth Usage Rate(%)    : 0
+	HBM Bandwidth Usage Rate(%)    : 0
+	Chip ID                        : 0
+
+--- process snapshot ---
+  82397 root     vllm            /usr/local/python3.12.13/bin/python3 /usr/local/python3.12.13/bin/vllm serve /models/Qwen3.8-27B-w8a8 --host 0.0.0.0 --port 9001 --tensor-parallel-size 4 --quantization ascend --served-model-name qwen3.8 --max-model-len 256000 --max-num-seqs 8 --max-num-batched-tokens 8192 --gpu-memory-utilization 0.90 --enable-prefix-caching --trust-remote-code --reasoning-parser qwen3 --enable-auto-tool-choice --tool-call-parser qwen3_coder
+  83352 root     vllm            /usr/local/python3.12.13/bin/python3 /usr/local/python3.12.13/bin/vllm serve /models/Qwen3.8-27B-w8a8 --host 0.0.0.0 --port 9002 --tensor-parallel-size 2 --quantization ascend --served-model-name qwen3.8 --max-model-len 256000 --max-num-seqs 8 --max-num-batched-tokens 8192 --gpu-memory-utilization 0.90 --enable-prefix-caching --trust-remote-code --reasoning-parser qwen3 --enable-auto-tool-choice --tool-call-parser qwen3_coder
+2992910 zhangka+ vllm            /home/data4t1/zhangkaijie/conda/envs/qwen38_a2/bin/python3.12 /home/data4t1/zhangkaijie/conda/envs/qwen38_a2/bin/vllm serve /home/data4t2/models/Qwen3.8-27B-w8a8 --host 0.0.0.0 --port 9000 --tensor-parallel-size 1 --max-model-len 200000 --max-num-seqs 8 --max-num-batched-tokens 16384 --enable-prefix-caching --trust-remote-code --speculative-config {"method":"mtp","num_speculative_tokens":4} --enable-auto-tool-choice --tool-call-parser qwen3_coder --gpu-memory-utilization 0.85
+3562961 lelinfe+ bash            /bin/bash -lc set -o pipefail build="/home/data4t2/lelinfeng/server_runs/SYNC-BARRIER-ELISION-X/V003/compile-continuation-20261007T003453Z" run_local() {   label="$1"   route_log="$2"   {     printf 'ROUTE=SYNC-BARRIER-ELISION-X\nREVISION=V003\nPARENT=R31B-V011\nCANDIDATE_SHA256=e2e9ed435e36855f493010aaa2d6ae10b8108922e631d36ee3acf3df604506b7\nDEVICE=3\nSHAPE=8x2048\nDTYPE=fp16\nRUN=%s\nHOST=%s\nUTC_START=%s\n' "$label" "$(hostname)" "$(date -u +%Y-%m-%dT%H:%M:%SZ)"     export CPLUS_INCLUDE_PATH=/usr/include/c++/11:/usr/include/aarch64-linux-gnu/c++/11:/usr/include     export C_INCLUDE_PATH=/usr/include     source /usr/local/Ascend/ascend-toolkit/set_env.sh     npu-smi info -t usages -i 3     printf '%s\n' '--- process snapshot ---'     ps -eo pid,user,comm,args | rg 'vllm|sync_barrier' || true     "$build/sync_barrier_elision_correctness" 3 --local     rc=$?     printf 'RUNNER_RC=%s\nUTC_END=%s\n' "$rc" "$(date -u +%Y-%m-%dT%H:%M:%SZ)"     printf '%s\n' '--- post usages ---'     npu-smi info -t usages -i 3     printf '%s\n' '--- post process snapshot ---'     ps -eo pid,user,comm,args | rg 'vllm|sync_barrier' || true     exit "$rc"   } 2>&1 | tee "$route_log" } run_local run1 本地实验/SYNC-BARRIER-ELISION-X/V003/logs/local-continuation-20261007T0038Z-run1.log rc1=$? run_local repeat 本地实验/SYNC-BARRIER-ELISION-X/V003/logs/local-continuation-20261007T0038Z-repeat.log rc2=$? printf 'LOCAL_RUN1_RC=%s\nLOCAL_REPEAT_RC=%s\n' "$rc1" "$rc2" [ "$rc1" -eq 0 ] && [ "$rc2" -eq 0 ]
+3565215 lelinfe+ bash            /bin/bash -lc set -o pipefail build="/home/data4t2/lelinfeng/server_runs/SYNC-BARRIER-ELISION-X/V003/compile-continuation-20261007T003453Z" run_local() {   label="$1"   route_log="$2"   {     printf 'ROUTE=SYNC-BARRIER-ELISION-X\nREVISION=V003\nPARENT=R31B-V011\nCANDIDATE_SHA256=e2e9ed435e36855f493010aaa2d6ae10b8108922e631d36ee3acf3df604506b7\nDEVICE=3\nSHAPE=8x2048\nDTYPE=fp16\nRUN=%s\nHOST=%s\nUTC_START=%s\n' "$label" "$(hostname)" "$(date -u +%Y-%m-%dT%H:%M:%SZ)"     export CPLUS_INCLUDE_PATH=/usr/include/c++/11:/usr/include/aarch64-linux-gnu/c++/11:/usr/include     export C_INCLUDE_PATH=/usr/include     source /usr/local/Ascend/ascend-toolkit/set_env.sh     npu-smi info -t usages -i 3     printf '%s\n' '--- process snapshot ---'     ps -eo pid,user,comm,args | rg 'vllm|sync_barrier' || true     "$build/sync_barrier_elision_correctness" 3 --local     rc=$?     printf 'RUNNER_RC=%s\nUTC_END=%s\n' "$rc" "$(date -u +%Y-%m-%dT%H:%M:%SZ)"     printf '%s\n' '--- post usages ---'     npu-smi info -t usages -i 3     printf '%s\n' '--- post process snapshot ---'     ps -eo pid,user,comm,args | rg 'vllm|sync_barrier' || true     exit "$rc"   } 2>&1 | tee "$route_log" } run_local run1 本地实验/SYNC-BARRIER-ELISION-X/V003/logs/local-continuation-20261007T0038Z-run1.log rc1=$? run_local repeat 本地实验/SYNC-BARRIER-ELISION-X/V003/logs/local-continuation-20261007T0038Z-repeat.log rc2=$? printf 'LOCAL_RUN1_RC=%s\nLOCAL_REPEAT_RC=%s\n' "$rc1" "$rc2" [ "$rc1" -eq 0 ] && [ "$rc2" -eq 0 ]
+3565309 lelinfe+ rg              rg vllm|sync_barrier
+LOCAL_SAMPLE case=fp16-8x2048 pair=01 order=P,C parent_device_us=63.2200 candidate_device_us=6.3600 parent_wall_us=164.1120 candidate_wall_us=126.7610 paired_delta_us=-56.8600
+LOCAL_SAMPLE case=fp16-8x2048 pair=02 order=C,P parent_device_us=55.0400 candidate_device_us=5.1200 parent_wall_us=110.9610 candidate_wall_us=108.3720 paired_delta_us=-49.9200
+LOCAL_SAMPLE case=fp16-8x2048 pair=03 order=P,C parent_device_us=5.0600 candidate_device_us=5.0800 parent_wall_us=87.2010 candidate_wall_us=175.1830 paired_delta_us=0.0200
+LOCAL_SAMPLE case=fp16-8x2048 pair=04 order=C,P parent_device_us=14.6600 candidate_device_us=4.0400 parent_wall_us=98.3510 candidate_wall_us=115.6810 paired_delta_us=-10.6200
+LOCAL_SAMPLE case=fp16-8x2048 pair=05 order=P,C parent_device_us=4.0200 candidate_device_us=4.5600 parent_wall_us=146.8720 candidate_wall_us=145.7930 paired_delta_us=0.5400
+LOCAL_SAMPLE case=fp16-8x2048 pair=06 order=C,P parent_device_us=5.0600 candidate_device_us=4.0400 parent_wall_us=149.5820 candidate_wall_us=142.2020 paired_delta_us=-1.0200
+LOCAL_SAMPLE case=fp16-8x2048 pair=07 order=P,C parent_device_us=4.2400 candidate_device_us=4.7800 parent_wall_us=146.1120 candidate_wall_us=150.4320 paired_delta_us=0.5400
+LOCAL_SAMPLE case=fp16-8x2048 pair=08 order=C,P parent_device_us=95.8400 candidate_device_us=4.2600 parent_wall_us=176.7530 candidate_wall_us=143.1920 paired_delta_us=-91.5800
+LOCAL_SAMPLE case=fp16-8x2048 pair=09 order=P,C parent_device_us=12.1600 candidate_device_us=12.8200 parent_wall_us=106.4010 candidate_wall_us=98.0720 paired_delta_us=0.6600
+LOCAL_SAMPLE case=fp16-8x2048 pair=10 order=C,P parent_device_us=11.9200 candidate_device_us=64.7600 parent_wall_us=93.4910 candidate_wall_us=120.7120 paired_delta_us=52.8400
+LOCAL_SAMPLE case=fp16-8x2048 pair=11 order=P,C parent_device_us=11.6200 candidate_device_us=101.0600 parent_wall_us=209.2020 candidate_wall_us=161.1320 paired_delta_us=89.4400
+LOCAL_SAMPLE case=fp16-8x2048 pair=12 order=C,P parent_device_us=103.5000 candidate_device_us=108.1200 parent_wall_us=169.8720 candidate_wall_us=174.2530 paired_delta_us=4.6200
+LOCAL_SAMPLE case=fp16-8x2048 pair=13 order=P,C parent_device_us=5.7600 candidate_device_us=5.4400 parent_wall_us=238.3040 candidate_wall_us=193.9230 paired_delta_us=-0.3200
+LOCAL_SAMPLE case=fp16-8x2048 pair=14 order=C,P parent_device_us=5.4200 candidate_device_us=5.8400 parent_wall_us=191.0320 candidate_wall_us=183.5820 paired_delta_us=0.4200
+LOCAL_SAMPLE case=fp16-8x2048 pair=15 order=P,C parent_device_us=4.5200 candidate_device_us=6.0600 parent_wall_us=190.3220 candidate_wall_us=174.5830 paired_delta_us=1.5400
+LOCAL_SAMPLE case=fp16-8x2048 pair=16 order=C,P parent_device_us=4.2400 candidate_device_us=5.0400 parent_wall_us=188.5220 candidate_wall_us=179.3230 paired_delta_us=0.8000
+LOCAL_SAMPLE case=fp16-8x2048 pair=17 order=P,C parent_device_us=5.0800 candidate_device_us=5.6200 parent_wall_us=186.9620 candidate_wall_us=188.2930 paired_delta_us=0.5400
+LOCAL_SAMPLE case=fp16-8x2048 pair=18 order=C,P parent_device_us=5.1000 candidate_device_us=5.6000 parent_wall_us=108.2620 candidate_wall_us=182.5130 paired_delta_us=0.5000
+LOCAL_SAMPLE case=fp16-8x2048 pair=19 order=P,C parent_device_us=7.8000 candidate_device_us=6.5000 parent_wall_us=268.7540 candidate_wall_us=187.3520 paired_delta_us=-1.3000
+LOCAL_SAMPLE case=fp16-8x2048 pair=20 order=C,P parent_device_us=5.3200 candidate_device_us=7.3000 parent_wall_us=125.7020 candidate_wall_us=112.0010 paired_delta_us=1.9800
+LOCAL_SAMPLE case=fp16-8x2048 pair=21 order=P,C parent_device_us=6.8600 candidate_device_us=6.3400 parent_wall_us=372.3960 candidate_wall_us=300.6240 paired_delta_us=-0.5200
+LOCAL_SAMPLE case=fp16-8x2048 pair=22 order=C,P parent_device_us=4.5400 candidate_device_us=6.0200 parent_wall_us=181.5730 candidate_wall_us=297.5840 paired_delta_us=1.4800
+LOCAL_SAMPLE case=fp16-8x2048 pair=23 order=P,C parent_device_us=3.8600 candidate_device_us=5.0800 parent_wall_us=209.1430 candidate_wall_us=94.2120 paired_delta_us=1.2200
+LOCAL_SAMPLE case=fp16-8x2048 pair=24 order=C,P parent_device_us=6.1400 candidate_device_us=5.7800 parent_wall_us=217.0330 candidate_wall_us=81.8110 paired_delta_us=-0.3600
+LOCAL_SAMPLE case=fp16-8x2048 pair=25 order=P,C parent_device_us=181.8400 candidate_device_us=4.9800 parent_wall_us=241.1530 candidate_wall_us=178.3530 paired_delta_us=-176.8600
+LOCAL_SAMPLE case=fp16-8x2048 pair=26 order=C,P parent_device_us=5.0600 candidate_device_us=6.3000 parent_wall_us=192.6830 candidate_wall_us=104.0410 paired_delta_us=1.2400
+LOCAL_SAMPLE case=fp16-8x2048 pair=27 order=P,C parent_device_us=6.4800 candidate_device_us=5.1200 parent_wall_us=97.6920 candidate_wall_us=203.8230 paired_delta_us=-1.3600
+LOCAL_SAMPLE case=fp16-8x2048 pair=28 order=C,P parent_device_us=4.9800 candidate_device_us=6.4400 parent_wall_us=220.3230 candidate_wall_us=86.0710 paired_delta_us=1.4600
+LOCAL_SAMPLE case=fp16-8x2048 pair=29 order=P,C parent_device_us=62.1400 candidate_device_us=4.5800 parent_wall_us=341.7550 candidate_wall_us=144.2220 paired_delta_us=-57.5600
+LOCAL_SAMPLE case=fp16-8x2048 pair=30 order=C,P parent_device_us=5.0200 candidate_device_us=6.2800 parent_wall_us=149.6820 candidate_wall_us=249.0230 paired_delta_us=1.2600
+LOCAL_SAMPLE case=fp16-8x2048 pair=31 order=P,C parent_device_us=7.4000 candidate_device_us=4.4800 parent_wall_us=329.4350 candidate_wall_us=196.2430 paired_delta_us=-2.9200
+LOCAL_STATS case=fp16-8x2048 metric=device_us binary=PARENT_R31B_V011 n=31 median=5.7600 mean=23.3516 stdev=40.0859 cv=1.71662 min=3.8600 max=181.8400 mad=1.5200 p10=4.2400 p90=63.2200
+LOCAL_STATS case=fp16-8x2048 metric=device_us binary=CANDIDATE_V003 n=31 median=5.6200 mean=13.9935 stdev=26.4641 cv=1.89116 min=4.0400 max=108.1200 mad=0.7200 p10=4.4800 p90=12.8200
+LOCAL_STATS case=fp16-8x2048 metric=wall_us binary=PARENT_R31B_V011 n=31 median=181.5730 mean=184.1819 stdev=72.4496 cv=0.39336 min=87.2010 max=372.3960 mad=35.4610 p10=98.3510 p90=268.7540
+LOCAL_STATS case=fp16-8x2048 metric=wall_us binary=CANDIDATE_V003 n=31 median=161.1320 mean=161.2697 stdev=54.3234 cv=0.33685 min=81.8110 max=300.6240 mad=32.7910 p10=98.0720 p90=203.8230
+LOCAL_STATS case=fp16-8x2048 metric=paired_delta_us binary=CANDIDATE_MINUS_PARENT n=31 median=0.5000 mean=-9.3581 stdev=43.5686 cv=-4.65573 min=-176.8600 max=89.4400 mad=1.0200 p10=-56.8600 p90=1.9800
+LOCAL_RESULT route=SYNC-BARRIER-ELISION-X revision=V003 device=3 shape=8x2048 dtype=fp16 samples=31 parent_median_us=5.7600 candidate_median_us=5.6200 local_delta_us=0.5000 local_score_percent=-8.680549 candidate_minus_parent_percent=8.680549
+CORRECTNESS_SUMMARY result=PASS cases=5
+RUNNER_RC=0
+UTC_END=2026-10-07T00:38:01Z
+--- post usages ---
+	NPU ID                         : 3
+	Chip Count                     : 1
+
+	DDR Capacity(MB)               : 0
+	DDR Usage Rate(%)              : 0
+	DDR Hugepages Total(page)      : 0
+	DDR Hugepages Usage Rate(%)    : 0
+	HBM Capacity(MB)               : 65536
+	HBM Usage Rate(%)              : 91
+	Aicore Usage Rate(%)           : 0
+	Aivector Usage Rate(%)         : 0
+	Aicpu Usage Rate(%)            : 0
+	Ctrlcpu Usage Rate(%)          : 15
+	DDR Bandwidth Usage Rate(%)    : 0
+	HBM Bandwidth Usage Rate(%)    : 0
+	Chip ID                        : 0
+
+--- post process snapshot ---
+  82397 root     vllm            /usr/local/python3.12.13/bin/python3 /usr/local/python3.12.13/bin/vllm serve /models/Qwen3.8-27B-w8a8 --host 0.0.0.0 --port 9001 --tensor-parallel-size 4 --quantization ascend --served-model-name qwen3.8 --max-model-len 256000 --max-num-seqs 8 --max-num-batched-tokens 8192 --gpu-memory-utilization 0.90 --enable-prefix-caching --trust-remote-code --reasoning-parser qwen3 --enable-auto-tool-choice --tool-call-parser qwen3_coder
+  83352 root     vllm            /usr/local/python3.12.13/bin/python3 /usr/local/python3.12.13/bin/vllm serve /models/Qwen3.8-27B-w8a8 --host 0.0.0.0 --port 9002 --tensor-parallel-size 2 --quantization ascend --served-model-name qwen3.8 --max-model-len 256000 --max-num-seqs 8 --max-num-batched-tokens 8192 --gpu-memory-utilization 0.90 --enable-prefix-caching --trust-remote-code --reasoning-parser qwen3 --enable-auto-tool-choice --tool-call-parser qwen3_coder
+2992910 zhangka+ vllm            /home/data4t1/zhangkaijie/conda/envs/qwen38_a2/bin/python3.12 /home/data4t1/zhangkaijie/conda/envs/qwen38_a2/bin/vllm serve /home/data4t2/models/Qwen3.8-27B-w8a8 --host 0.0.0.0 --port 9000 --tensor-parallel-size 1 --max-model-len 200000 --max-num-seqs 8 --max-num-batched-tokens 16384 --enable-prefix-caching --trust-remote-code --speculative-config {"method":"mtp","num_speculative_tokens":4} --enable-auto-tool-choice --tool-call-parser qwen3_coder --gpu-memory-utilization 0.85
+3562961 lelinfe+ bash            /bin/bash -lc set -o pipefail build="/home/data4t2/lelinfeng/server_runs/SYNC-BARRIER-ELISION-X/V003/compile-continuation-20261007T003453Z" run_local() {   label="$1"   route_log="$2"   {     printf 'ROUTE=SYNC-BARRIER-ELISION-X\nREVISION=V003\nPARENT=R31B-V011\nCANDIDATE_SHA256=e2e9ed435e36855f493010aaa2d6ae10b8108922e631d36ee3acf3df604506b7\nDEVICE=3\nSHAPE=8x2048\nDTYPE=fp16\nRUN=%s\nHOST=%s\nUTC_START=%s\n' "$label" "$(hostname)" "$(date -u +%Y-%m-%dT%H:%M:%SZ)"     export CPLUS_INCLUDE_PATH=/usr/include/c++/11:/usr/include/aarch64-linux-gnu/c++/11:/usr/include     export C_INCLUDE_PATH=/usr/include     source /usr/local/Ascend/ascend-toolkit/set_env.sh     npu-smi info -t usages -i 3     printf '%s\n' '--- process snapshot ---'     ps -eo pid,user,comm,args | rg 'vllm|sync_barrier' || true     "$build/sync_barrier_elision_correctness" 3 --local     rc=$?     printf 'RUNNER_RC=%s\nUTC_END=%s\n' "$rc" "$(date -u +%Y-%m-%dT%H:%M:%SZ)"     printf '%s\n' '--- post usages ---'     npu-smi info -t usages -i 3     printf '%s\n' '--- post process snapshot ---'     ps -eo pid,user,comm,args | rg 'vllm|sync_barrier' || true     exit "$rc"   } 2>&1 | tee "$route_log" } run_local run1 本地实验/SYNC-BARRIER-ELISION-X/V003/logs/local-continuation-20261007T0038Z-run1.log rc1=$? run_local repeat 本地实验/SYNC-BARRIER-ELISION-X/V003/logs/local-continuation-20261007T0038Z-repeat.log rc2=$? printf 'LOCAL_RUN1_RC=%s\nLOCAL_REPEAT_RC=%s\n' "$rc1" "$rc2" [ "$rc1" -eq 0 ] && [ "$rc2" -eq 0 ]
+3565215 lelinfe+ bash            /bin/bash -lc set -o pipefail build="/home/data4t2/lelinfeng/server_runs/SYNC-BARRIER-ELISION-X/V003/compile-continuation-20261007T003453Z" run_local() {   label="$1"   route_log="$2"   {     printf 'ROUTE=SYNC-BARRIER-ELISION-X\nREVISION=V003\nPARENT=R31B-V011\nCANDIDATE_SHA256=e2e9ed435e36855f493010aaa2d6ae10b8108922e631d36ee3acf3df604506b7\nDEVICE=3\nSHAPE=8x2048\nDTYPE=fp16\nRUN=%s\nHOST=%s\nUTC_START=%s\n' "$label" "$(hostname)" "$(date -u +%Y-%m-%dT%H:%M:%SZ)"     export CPLUS_INCLUDE_PATH=/usr/include/c++/11:/usr/include/aarch64-linux-gnu/c++/11:/usr/include     export C_INCLUDE_PATH=/usr/include     source /usr/local/Ascend/ascend-toolkit/set_env.sh     npu-smi info -t usages -i 3     printf '%s\n' '--- process snapshot ---'     ps -eo pid,user,comm,args | rg 'vllm|sync_barrier' || true     "$build/sync_barrier_elision_correctness" 3 --local     rc=$?     printf 'RUNNER_RC=%s\nUTC_END=%s\n' "$rc" "$(date -u +%Y-%m-%dT%H:%M:%SZ)"     printf '%s\n' '--- post usages ---'     npu-smi info -t usages -i 3     printf '%s\n' '--- post process snapshot ---'     ps -eo pid,user,comm,args | rg 'vllm|sync_barrier' || true     exit "$rc"   } 2>&1 | tee "$route_log" } run_local run1 本地实验/SYNC-BARRIER-ELISION-X/V003/logs/local-continuation-20261007T0038Z-run1.log rc1=$? run_local repeat 本地实验/SYNC-BARRIER-ELISION-X/V003/logs/local-continuation-20261007T0038Z-repeat.log rc2=$? printf 'LOCAL_RUN1_RC=%s\nLOCAL_REPEAT_RC=%s\n' "$rc1" "$rc2" [ "$rc1" -eq 0 ] && [ "$rc2" -eq 0 ]
+3567250 lelinfe+ rg              rg vllm|sync_barrier
