@@ -16,7 +16,7 @@ Remove the FP16-path `AscendC::PipeBarrier<PIPE_V>()` after `ToFloat(valueLocal,
 
 ## Gate status
 
-- Compile: not started after the CMake include propagation fix; the configured `cann-server3` access retry failed before the remote command started with DNS resolution error (exit 255). See `logs/server3-access-retry-20261007T031307Z.log`.
+- Compile: not started after the CMake include propagation fix. A bounded DNS check of the configured `cann-server3` endpoint at `2026-10-07T04:09:44Z` returned no address (exit 2), so no SSH or remote command was started. See `logs/server3-dns-check-20261007T040944Z.log`; the earlier SSH failure remains in `logs/server3-access-retry-20261007T031307Z.log`.
 - Correctness: not run; Compile has not passed.
 - Local: not run; `LOCAL_SCORE=NONE`. No timing, throughput, or Official-comparability claim exists.
 - Online: `NOT_RUN`.
