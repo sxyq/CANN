@@ -1,0 +1,16 @@
+--- a/submission.asc
++++ b/submission.asc
+index 99c9143e..78ea2385 100644
+@@ -1556,10 +1556,10 @@ private:
+                     useFirst ? outputReadyFirst : outputReadySecond;
+                 const AscendC::TEventID outputRelease =
+                     useFirst ? outputReleaseFirst : outputReleaseSecond;
+-                AscendC::Muls(valueRow, valueRow, invRmsValues[batchRow], width);
+-                AscendC::PipeBarrier<PIPE_V>();
+                 AscendC::Mul(valueRow, valueRow, gammaLocal, width);
+                 AscendC::PipeBarrier<PIPE_V>();
++                AscendC::Muls(valueRow, valueRow, invRmsValues[batchRow], width);
++                AscendC::PipeBarrier<PIPE_V>();
+                 AscendC::Add(valueRow, valueRow, biasLocal, width);
+                 AscendC::PipeBarrier<PIPE_V>();
+                 AscendC::SetFlag<AscendC::HardEvent::V_MTE3>(outputReady);
