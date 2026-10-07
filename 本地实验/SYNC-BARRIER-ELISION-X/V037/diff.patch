@@ -1,0 +1,11 @@
+--- parent.asc
++++ submission.asc
+@@ -363,9 +363,8 @@
+             AscendC::Sqrt(xFp32, xFp32, 1);
+             AscendC::PipeBarrier<PIPE_V>();
+             SyncVToS();
+             const float invRms = 1.0f / xFp32.GetValue(0);
+-            SyncSToV();
+
+             // Second pass: y * inv_rms * gamma + bias.
+             for (uint64_t col = 0; col < rowWidth; col += kTileElems) {
