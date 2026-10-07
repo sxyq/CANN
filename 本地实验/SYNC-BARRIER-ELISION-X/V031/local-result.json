@@ -1,0 +1,56 @@
+{
+  "route": "SYNC-BARRIER-ELISION-X",
+  "revision": "V031",
+  "direct_parent": "R31B-V011",
+  "status": "LOCAL_REJECTED_NOISY",
+  "host": "hwnput3",
+  "soc": "Ascend910B3",
+  "npu_arch": "dav-2201",
+  "device": 3,
+  "shape": "8x2048",
+  "dtype": "fp16",
+  "candidate_source_sha256": "a7e5114500be64690f1ba77066784f98613a6da0920ed88bbc2005b2c83b4b01",
+  "parent_source_sha256": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "started_at": "2026-10-07T18:51:53Z",
+  "completed_at": "2026-10-07T18:52:50Z",
+  "method": "60 warmups per invocation; two runs of 31 interleaved Parent/Candidate pairs; alternating P,C and C,P order; ACL device-event latency plus wall-clock diagnostics; all samples retained without outlier filtering.",
+  "sample_pairs_per_run": 31,
+  "total_paired_samples": 62,
+  "local_score": 29.143349859354,
+  "local_delta": 29.143349859354,
+  "local_score_unit": "percent",
+  "local_score_type": "ROUTE_LOCAL_GEOMEAN_PAIRED_DEVICE_SPEEDUP_PERCENT",
+  "local_score_comparable_to_official": false,
+  "local_score_method": "Geometric mean of all 62 raw parent_device_us / candidate_device_us ratios; score percent=(geomean ratio-1)*100.",
+  "pooled": {
+    "geomean_parent_over_candidate": 1.291433498594,
+    "parent_median_derived_throughput_g_elements_s": 0.964899882,
+    "candidate_median_derived_throughput_g_elements_s": 1.948156956,
+    "device_latency_us": {
+      "parent": {"median": 16.98, "mean": 15.186774, "stdev": 7.647711, "cv": 0.503577, "min": 4, "max": 41.82, "mad": 4.7, "p10": 4.868, "p90": 23.322},
+      "candidate": {"median": 8.41, "mean": 12.324516, "stdev": 7.844479, "cv": 0.636494, "min": 4.2, "max": 33.9, "mad": 3.88, "p10": 4.664, "p90": 23.398}
+    },
+    "wall_latency_us": {
+      "parent": {"median": 75.1855, "mean": 79.085306, "stdev": 17.573022, "cv": 0.222203, "min": 68.75, "max": 177.18, "mad": 2.5205, "p10": 71.877, "p90": 83.861},
+      "candidate": {"median": 76.065, "mean": 77.432726, "stdev": 6.663932, "cv": 0.086061, "min": 65.99, "max": 101.38, "mad": 3.34, "p10": 70.677, "p90": 86.805}
+    },
+    "paired_delta_candidate_minus_parent_us": {"median": -0.55, "mean": -2.862258, "stdev": 9.67835, "min": -33.66, "max": 23.72, "mad": 3.39, "p10": -14.584, "p90": 5.308},
+    "runner_median_delta_score_percent": 3.239105,
+    "throughput_definition": "16384 elements divided by pooled median device-event latency; diagnostic only, not the aggregate score."
+  },
+  "runs": [
+    {"run": 1, "sample_pairs": 31, "geomean_parent_over_candidate": 1.12960135907, "geomean_score_percent": 12.960135907, "runner_median_delta_score_percent": 0.474496, "parent_device_median_us": 16.86, "candidate_device_median_us": 16.14, "parent_device_cv": 0.427011, "candidate_device_cv": 0.533113, "parent_device_max_us": 23.72, "candidate_device_max_us": 28.1, "device3_aicore_pre_post_percent": [0, 0], "device3_hbm_pre_post_mb": [3427, 3428], "other_device_aicore_pre_by_device_0_to_7": [0, 12, 1, 0, 0, 45, 44, 0], "other_device_aicore_post_by_device_0_to_7": [0, 1, 1, 0, 0, 44, 44, 0], "other_route_device3_process_observed": false},
+    {"run": 2, "sample_pairs": 31, "geomean_parent_over_candidate": 1.476450491049, "geomean_score_percent": 47.645049105, "runner_median_delta_score_percent": 10.461192, "parent_device_median_us": 17.78, "candidate_device_median_us": 7.64, "parent_device_cv": 0.567652, "candidate_device_cv": 0.752831, "parent_device_max_us": 41.82, "candidate_device_max_us": 33.9, "device3_aicore_pre_post_percent": [0, 0], "device3_hbm_pre_post_mb": [3426, 3428], "other_device_aicore_pre_by_device_0_to_7": [0, 1, 0, 0, 0, 0, 0, 0], "other_device_aicore_post_by_device_0_to_7": [0, 2, 1, 0, 0, 0, 0, 0], "other_route_device3_process_observed": false}
+  ],
+  "repeatability": "Both run scores are positive (+12.96%, +47.65%), but run 2 device-event CV is high (0.568 Parent / 0.753 Candidate), raw event samples span 4.00-41.82/4.20-33.90 us, and run candidate medians differ materially (16.14 vs 7.64 us). No samples removed; treat as noisy and do not promote.",
+  "interpretation": "LOCAL_REJECTED_NOISY; CURRENT_LOCAL_BEST remains R31B-V011. Numeric single-shape Local is not comparable to Official 45.16.",
+  "current_local_best": "R31B-V011",
+  "official_score": null,
+  "online_state": "NOT_SUBMITTED",
+  "evidence": {
+    "raw_samples_run_1": "logs/local-device3-20261007T185153Z-run1.log",
+    "raw_samples_run_2": "logs/local-device3-20261007T185241Z-run2.log",
+    "compile": "logs/compile-local-20261007T184903Z.log",
+    "correctness": "logs/correctness-local-20261007T185026Z.log"
+  }
+}
