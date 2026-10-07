@@ -1,0 +1,21 @@
+# R-W4-4 V037
+
+- ROUTE: `R-W4-4 / MODE-DISPATCH-CUTOFF-X`.
+- REVISION: `V037`.
+- DIRECT_PARENT: exact sibling `R31B-V011`, source SHA256 `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`.
+- CANDIDATE_SOURCE_SHA256: `b165a8d60e03ad620dc8129b97b433a2a18970b03ca43b539a0b19c2cb5e9f3c`.
+- SINGLE_HYPOTHESIS: change only `kSmallFp32BatchMaxWidth`, `4096 -> 2048`.
+- CONTEXT: FP32, 128 rows, widths `128x2040`, `128x2048`, `128x2056`.
+- PARENT_KNOWN_CORRECTNESS_FAILURE: exact Parent C15 FP32 `1x32768` remains known to fail; do not rerun or attribute it to this Candidate.
+- PARTIAL_CORRECTNESS: `YES` until a separately validated baseline covers C15.
+- PARENT_SELECTION: use exact `R31B-V011`; V036 was noisy/negative and is not promoted to Local Best.
+- LOCAL_POLICY: retain numeric Local for every correctness-passing shape; same-binary CV/jitter are quality context, not admission gates.
+- COMPILE: `PASS` for `device`, `submission`, and isolated Parent/Candidate ref probe targets. Initial stale-cache and wrong-target build failures are retained.
+- CORRECTNESS: `PASS` for Parent and Candidate on all three listed shapes; each call `rc=0`, `bad=0`.
+- LOCAL_SCORE: `1.001281683334x` partial route-local score; `LOCAL_DELTA=+0.128168333%`.
+- LOAD_QUALITY: `NOISY`.
+- MEASUREMENT_QUALITY: `NOISY`.
+- NEEDS_ONE_MORE_LOCAL: `YES`.
+- CURRENT_LOCAL_BEST: unchanged; V037 is not promoted.
+- LOCAL_SCORE_COMPARABLE_TO_OFFICIAL: `NO`.
+- EVIDENCE: `partial-ranking/V037-PARTIAL-RANKING-RESULT.md` and retained raw files.
