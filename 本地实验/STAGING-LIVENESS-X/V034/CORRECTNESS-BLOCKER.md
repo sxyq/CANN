@@ -19,3 +19,13 @@ ONLINE: FORBIDDEN
 ## Disposition
 
 Correctness was not executed; this is not a correctness pass or failure. Local measurement is consequently not run and no numeric Local score is claimed. Preserve V034 unchanged. Resume at Correctness when an executable runner bound to this exact candidate source SHA (or route-local runner source and build instructions) is available; then proceed directly to Local on assigned device 1 and record load/HBM. Do not wait for device idleness and do not inspect other Routes for runner provenance.
+
+## Bounded route-owned direct-entry recheck (2026-10-07)
+
+V034 candidate source remains frozen at SHA-256 `75131108d32bc587c3c289d53ded04a15c5224417c675cb37a46df032e104d33`. The bounded checks and exact outputs were:
+
+- `rg --files 本地实验/STAGING-LIVENESS-X/V034 -g '*.sh' -g '*.py' -g '*runner*' -g '*correct*'` — exit 1; no matching route-owned runner/correctness source or script.
+- `find 本地实验/STAGING-LIVENESS-X/V034/build -maxdepth 3 -type f -executable -printf '%P\n'` — exit 0; only `CMakeFiles/3.22.1/CMakeDetermineCompilerABI_CXX.bin` was executable.
+- `rg -n 'int main|run_kernel|add_executable|full_link' 本地实验/STAGING-LIVENESS-X/V034/CMakeLists.txt 本地实验/STAGING-LIVENESS-X/V034/src/adapter.cpp 本地实验/STAGING-LIVENESS-X/V034/src/submission.asc` — found `src/adapter.cpp:17:int main(){return 0;}`, `CMakeLists.txt:39:add_executable(full_link src/adapter.cpp)`, and the `run_kernel` declaration/ABI documentation in `src/submission.asc`; no correctness invocation or result comparison exists.
+
+Exact blocker: V034 has a compile-only `full_link` target whose host `main` is a no-op, but no executable correctness runner. Do not treat `full_link` or the CMake compiler-ABI probe as correctness evidence. Correctness remains `NOT_RUN`; Local remains `NONE`; Official score is not claimed; V034 stays frozen and no V035 is created. Next action is to resume Correctness only when a route-owned executable runner/build entry bound to the frozen V034 source is supplied.
