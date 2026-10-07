@@ -63,3 +63,23 @@
 ## Disposition
 
 `PARENT_SHARED_FAILURE` remains an active hard blocker. The route-specific harness is usable for correctness-only diagnosis, but its Parent result is still failing; therefore Local, V029, performance edits, shared-record edits, and Online remain prohibited.
+
+## Refresh receipt — 2026-10-07T02:41:11Z
+
+- ROUTE: `R-W4-4 / MODE-DISPATCH-CUTOFF-X`
+- WORKTREE: `/home/data4t2/lelinfeng/cann-r-w4-4`
+- BRANCH: `routes/r-w4-4-mode-dispatch-cutoff-x`
+- HEAD_AT_REFRESH: `6508cbdf` (`docs(R-W4-4): close V028 parent failure diagnosis`)
+- CANONICAL_ROUTE_SKILL: `.agents/skills/cann-route-executor/SKILL.md` read from `origin/main` at `d8c3b380276df5549f057dee19031e04fdd874a9`; local and canonical SHA256 both `dada5ac4d536ef31f5593949876b4eabf180b381dec5f089515c6dfe3a27c3b8`.
+- REQUIRED_RULES_READ: `AGENTS.md`; `项目规则/实验总则.md`; `项目规则/执行约定.md`; `项目规则/本地性能测试规范.md`; `项目规则/服务器实验规范.md`; `项目规则/线上提交规范.md`; `项目规则/Git工作流程.md`; `技术路线/技术路线总表.md`; `技术路线/技术路线图.md`; `技术路线/路线成绩表.tsv`; `技术路线/全版本记录.tsv`.
+- ROUTE_LOOKUP: no matching Route row in `调度/当前任务.tsv`; route-specific research lookup returned no record under `研究/`.
+- CURRENT_STAGE: route-local V028 correctness diagnostic evidence, pre-commit.
+- ACTIVE_COMMAND: `NONE`.
+- NEXT_ACTION: commit only the V028 route-local correctness diagnostics and this receipt; then continue exact canonical Parent correctness reproducibility.
+
+### Control-copy finding, not a gate change
+
+- The canonical V027 Parent SHA `f0ab43545e13d943e4c5bb5ff22400426e18f560ab313c1c6856b39fa904f033` still fails C15 on the route-bound device-2 probe (`rc=3`, `bad=30306`, `max_abs=1.2031`).
+- A separate diagnostic copy SHA `c3007e431d75f3123b8f9d45cbbabaf6440b23596bd26b665a79d12f6ce5dde8` differs only by one inserted `SyncVToMTE2()` call (plus explanatory comments). Its 19-case matrix passed with all `rc=0` and `bad=0`; raw output is in `PARENT-REPAIR-SYNC-20261007T021547Z/`.
+- The first standalone launch of that diagnostic copy returned `127` because `libgraph.so` was not on the loader path; after loading the CANN environment, the C15 retry returned `0`. The launch failure is not counted as a kernel correctness result.
+- The repaired copy is not the exact Parent, not an official artifact, and does not clear `PARENT_SHARED_FAILURE`. No Local, Online, V029 performance edit, or shared-record edit is authorized by this result.
