@@ -1,0 +1,17 @@
+ROUTE=ROW-SCALE-HOIST-X
+REVISION=V029
+DIRECT_PARENT=V026
+SINGLE_HYPOTHESIS=Move the per-row inverse-RMS multiply ahead of gamma multiplication in the output paths changed by this revision.
+FOCUS=Row-scale instruction ordering; no tiling, buffer, dispatch, or synchronization change intended.
+PARENT_SOURCE=本地实验/ROW-SCALE-HOIST-X/V029/compile/src/parent_submission.asc
+PARENT_SOURCE_SHA256=7c2569d9e3830c845f2b5dc4587a73a05a0bdf041168614cd55ad84204e063f9
+CANDIDATE_SOURCE=本地实验/ROW-SCALE-HOIST-X/V029/compile/src/submission.asc
+CANDIDATE_SOURCE_SHA256=bf5225208877f638af1c55674961b0a7d80b5f0135c56148d46f0a8c1169568e
+COMPILE=PASS
+CORRECTNESS=PASS
+LOCAL=COMPLETE; primary window 2026-10-07T03:14:11Z..2026-10-07T03:14:42Z
+LOCAL_SCORE=96.979171875 route-local speedup index; not Official-comparable
+LOCAL_DELTA=+3.114924645% candidate slower by pooled device-event median
+CURRENT_LOCAL_BEST=V026
+ONLINE=NOT_RUN
+SHARED_RECORDS=NOT_MODIFIED
