@@ -1,0 +1,117 @@
+{
+  "route": "SYNC-BARRIER-ELISION-X",
+  "revision": "V002",
+  "direct_parent": "R31B-V011",
+  "candidate_sha256": "262b4693bf7f24f6a470760ac74c56d443a590a5200ce3a13755d514cd54e37d",
+  "single_change": "Delete one FP16 PIPE_V barrier between the resident-row output Mul and Add in ProcessNarrowMidOverlap.",
+  "compile": {
+    "status": "PASS",
+    "host": "hwnput3",
+    "toolchain": "CANN 8.5.0.alpha002",
+    "utc_start": "2026-10-07T00:17:07Z",
+    "utc_end": "2026-10-07T00:17:25Z",
+    "build_rc": 0,
+    "target": "sync_barrier_elision_v002",
+    "build_dir": "/home/data4t2/lelinfeng/server_runs/SYNC-BARRIER-ELISION-X/V002/compile-owner-20261007T001500Z/build",
+    "executable_sha256": "db79236f011bfcff8786d48503a6bab38b9acb2c1d615793b94e6efc64b752ec",
+    "evidence": "logs/server3-compile-owner-20261007T001500Z.log"
+  },
+  "correctness": {
+    "status": "PASS",
+    "host": "hwnput3",
+    "device": 3,
+    "dtype": "fp16",
+    "cases": ["8x128", "8x256", "8x1024", "8x2048", "8x4096"],
+    "parent_candidate_bit_mismatch": 0,
+    "build_rc": 0,
+    "runner_rc": 0,
+    "executable_sha256": "7836fae8a0370b1a2965f4a37eb0de6cff24670799b2086f2da07fe890b0775a",
+    "utc_start": "2026-10-07T00:18:20Z",
+    "utc_end": "2026-10-07T00:18:52Z",
+    "evidence": "logs/correctness-owner-20261007T001500Z.log"
+  },
+  "local": {
+    "status": "LOCAL_REJECTED",
+    "promotion": false,
+    "local_best": "R31B-V011",
+    "device": 3,
+    "shape": "8x2048",
+    "dtype": "fp16",
+    "sample_pairs_per_run": 31,
+    "total_paired_samples": 62,
+    "raw_sample_policy": "All 62 LOCAL_SAMPLE pairs retained; no samples or outliers removed.",
+    "raw_sample_evidence": [
+      "logs/local-owner-20261007T002000Z-run1.log",
+      "logs/local-owner-20261007T002000Z-repeat.log"
+    ],
+    "LOCAL_SCORE_TYPE": "ROUTE_LOCAL_GEOMEAN_PAIRED_DEVICE_SPEEDUP_PERCENT",
+    "LOCAL_SCORE_COMPARABLE_TO_OFFICIAL": "NO",
+    "LOAD_QUALITY": "LOW/NOISY",
+    "local_score_percent": 40.31703949448613,
+    "local_delta_percent": 40.31703949448613,
+    "geomean_parent_over_candidate": 1.4031703949448613,
+    "runner_diagnostic_scores_percent": [9.688583, 4.545454],
+    "runs": [
+      {
+        "name": "run1",
+        "utc_start": "2026-10-07T00:19:56Z",
+        "utc_end": "2026-10-07T00:20:05Z",
+        "sample_pairs": 31,
+        "geomean_parent_over_candidate": 1.7034355453803827,
+        "local_score_percent": 70.34355453803826,
+        "parent_device": {"median_us": 5.78, "mean_us": 36.99612903225807, "sample_stdev_us": 76.33227756230953, "cv": 2.0632503875135977, "min_us": 4.48, "max_us": 264.44, "mad_us": 0.98, "p10_us": 4.8, "p90_us": 200.46},
+        "candidate_device": {"median_us": 5.76, "mean_us": 6.233548387096776, "sample_stdev_us": 2.4797547572116843, "cv": 0.3978078941914831, "min_us": 4.08, "max_us": 18.2, "mad_us": 0.86, "p10_us": 4.68, "p90_us": 7.4},
+        "paired_delta": {"median_us": -0.56, "mean_us": -30.76258064516129, "sample_stdev_us": 76.31212935341023, "cv": -2.480680351029442, "min_us": -256.98, "max_us": 9.2, "mad_us": 1.1, "p10_us": -194.16, "p90_us": 2.44},
+        "device_load": {"preflight_hbm_usage_percent": 91, "postflight_hbm_usage_percent": 91, "preflight_aicore_usage_percent": 0, "postflight_aicore_usage_percent": 0, "preflight_hbm_bandwidth_usage_percent": 0, "postflight_hbm_bandwidth_usage_percent": 0},
+        "evidence": "logs/local-owner-20261007T002000Z-run1.log"
+      },
+      {
+        "name": "repeat",
+        "utc_start": "2026-10-07T00:20:05Z",
+        "utc_end": "2026-10-07T00:20:13Z",
+        "sample_pairs": 31,
+        "geomean_parent_over_candidate": 1.1558330824956804,
+        "local_score_percent": 15.58330824956804,
+        "parent_device": {"median_us": 5.28, "mean_us": 13.918709677419356, "sample_stdev_us": 37.53714602381091, "cv": 2.6968840426859604, "min_us": 3.72, "max_us": 209.3, "mad_us": 0.8, "p10_us": 4.36, "p90_us": 7.74},
+        "candidate_device": {"median_us": 4.98, "mean_us": 11.103870967741935, "sample_stdev_us": 33.383764285195014, "cv": 3.0064978584656483, "min_us": 4.04, "max_us": 190.94, "mad_us": 0.46, "p10_us": 4.4, "p90_us": 6.44},
+        "paired_delta": {"median_us": -0.24, "mean_us": -2.814838709677421, "sample_stdev_us": 51.37630659301801, "cv": -18.25195398101716, "min_us": -204.86, "max_us": 185.42, "mad_us": 0.88, "p10_us": -2.16, "p90_us": 1.1},
+        "device_load": {"preflight_hbm_usage_percent": 91, "postflight_hbm_usage_percent": 91, "preflight_aicore_usage_percent": 0, "postflight_aicore_usage_percent": 0, "preflight_hbm_bandwidth_usage_percent": 0, "postflight_hbm_bandwidth_usage_percent": 0},
+        "evidence": "logs/local-owner-20261007T002000Z-repeat.log"
+      }
+    ],
+    "pooled": {
+      "parent_device": {"median_us": 5.5, "mean_us": 25.457419354838706, "sample_stdev_us": 60.77699235556554, "cv": 2.3873980118889633, "min_us": 3.72, "max_us": 264.44, "mad_us": 0.76, "p10_us": 4.48, "p90_us": 54.204},
+      "candidate_device": {"median_us": 5.22, "mean_us": 8.668709677419356, "sample_stdev_us": 23.60411456795789, "cv": 2.722909803917294, "min_us": 4.04, "max_us": 190.94, "mad_us": 0.64, "p10_us": 4.444, "p90_us": 7.172},
+      "paired_delta": {"median_us": -0.37, "mean_us": -16.78870967741935, "sample_stdev_us": 66.03509515212647, "cv": -3.933303775032993, "min_us": -256.98, "max_us": 185.42, "mad_us": 0.93, "p10_us": -49.894, "p90_us": 1.514},
+      "parent_wall": {"median_us": 280.003, "mean_us": 240.38346774193548, "sample_stdev_us": 83.12795818647922, "cv": 0.3458139570385162, "min_us": 68.612, "max_us": 342.06, "mad_us": 27.93, "p10_us": 85.226, "p90_us": 310.9289},
+      "candidate_wall": {"median_us": 263.1225, "mean_us": 232.63448387096773, "sample_stdev_us": 87.65846143399476, "cv": 0.3768076854960811, "min_us": 71.382, "max_us": 350.67, "mad_us": 41.5915, "p10_us": 84.378, "p90_us": 316.9941}
+    },
+    "throughput": {
+      "elements_per_sample": 16384,
+      "parent_effective_elements_per_second_from_pooled_median": 2978909090.909091,
+      "candidate_effective_elements_per_second_from_pooled_median": 3138697318.007663,
+      "parent_effective_giga_elements_per_second": 2.978909090909091,
+      "candidate_effective_giga_elements_per_second": 3.138697318007663
+    },
+    "device_load": {
+      "device": 3,
+      "hbm_capacity_mb": 65536,
+      "preflight_hbm_usage_percent": 91,
+      "postflight_hbm_usage_percent": 91,
+      "preflight_aicore_usage_percent": 0,
+      "postflight_aicore_usage_percent": 0,
+      "preflight_hbm_bandwidth_usage_percent": 0,
+      "postflight_hbm_bandwidth_usage_percent": 0,
+      "existing_processes": "Observed and left untouched; vLLM processes remained resident."
+    },
+    "jitter": {
+      "parent_device_cv": 2.3873980118889633,
+      "candidate_device_cv": 2.722909803917294,
+      "paired_delta_cv": -3.933303775032993,
+      "paired_delta_p10_to_p90_us": [-49.894, 1.514],
+      "interpretation": "LOW/NOISY; retained raw device-time outliers dominate the geometric aggregate and the two runs are not a stable qualification window."
+    },
+    "interpretation": "Numeric route-local result only. The positive aggregate is not comparable to Official and does not promote the Candidate because the measurement is LOW/NOISY; current Local Best remains R31B-V011.",
+    "online": "NOT_RUN"
+  }
+}

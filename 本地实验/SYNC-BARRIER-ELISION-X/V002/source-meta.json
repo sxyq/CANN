@@ -22,9 +22,11 @@
     "toolchain": "CANN 8.5.0.alpha002",
     "final_status": "PASS",
     "evidence": [
-      "logs/server3-compile-rerun.log"
+      "logs/server3-compile-owner-20261007T001500Z.log"
     ],
-    "superseded_probe_compile": "logs/server3-compile-retry1.log"
+    "superseded_probe_compile": "logs/server3-compile-retry1.log",
+    "previous_evidence": "logs/server3-compile-rerun.log",
+    "executable_sha256": "db79236f011bfcff8786d48503a6bab38b9acb2c1d615793b94e6efc64b752ec"
   },
   "correctness": {
     "status": "PASS",
@@ -34,8 +36,10 @@
     "shapes": ["8x128", "8x256", "8x1024", "8x2048", "8x4096"],
     "parent_candidate_bit_mismatch": 0,
     "evidence": [
-      "logs/correctness-device3-rerun.log"
-    ]
+      "logs/correctness-owner-20261007T001500Z.log"
+    ],
+    "previous_evidence": "logs/correctness-device3-rerun.log",
+    "executable_sha256": "7836fae8a0370b1a2965f4a37eb0de6cff24670799b2086f2da07fe890b0775a"
   },
   "local": {
     "status": "LOCAL_REJECTED",
@@ -44,20 +48,26 @@
     "dtype": "fp16",
     "sample_pairs_per_run": 31,
     "total_paired_samples": 62,
-    "local_score_percent": -7.502737539,
-    "local_delta_percent": -7.502737539,
+    "local_score_percent": 40.31703949448613,
+    "local_delta_percent": 40.31703949448613,
     "local_score_type": "ROUTE_LOCAL_GEOMEAN_PAIRED_DEVICE_SPEEDUP_PERCENT",
     "local_score_comparable_to_official": false,
-    "load_quality": "NOISY",
-    "aggregation": "Geometric mean of parent_device_us / candidate_device_us over all 62 corrected one-change pairs; no outliers removed.",
-    "diagnostic_scores_percent": [12.962958, -2.713181],
-    "pooled_geomean_parent_over_candidate": 0.924972624611,
-    "pooled_geomean_speedup_percent": -7.502737539,
-    "interpretation": "Numeric route-local score includes every corrected sample, including large outliers. LOAD_QUALITY=NOISY; score is explicitly non-comparable to Official. V002 is LOCAL_REJECTED and does not replace R31B-V011.",
+    "load_quality": "LOW/NOISY",
+    "aggregation": "Geometric mean of parent_device_us / candidate_device_us over all 62 corrected one-change pairs; score percent=(geomean_ratio-1)*100; no outliers removed.",
+    "diagnostic_scores_percent": [9.688583, 4.545454],
+    "pooled_geomean_parent_over_candidate": 1.4031703949448613,
+    "pooled_geomean_speedup_percent": 40.31703949448613,
+    "pooled_medians_us": {"parent_device": 5.5, "candidate_device": 5.22, "paired_delta": -0.37},
+    "throughput_giga_elements_per_second": {"parent": 2.978909090909091, "candidate": 3.138697318007663},
+    "device_load": {"hbm_percent": "91 -> 91", "aicore_percent": "0 -> 0", "hbm_bandwidth_percent": "0 -> 0", "device": 3},
+    "jitter": {"parent_device_cv": 2.3873980118889633, "candidate_device_cv": 2.722909803917294, "paired_delta_cv": -3.933303775032993, "paired_delta_p10_to_p90_us": [-49.894, 1.514]},
+    "interpretation": "Numeric route-local score includes every corrected sample, including large outliers. LOAD_QUALITY=LOW/NOISY; score is explicitly non-comparable to Official. V002 is LOCAL_REJECTED and does not replace R31B-V011.",
     "evidence": [
-      "logs/local-device3-run1-full.log",
-      "logs/local-device3-repeat-full.log"
+      "logs/local-owner-20261007T002000Z-run1.log",
+      "logs/local-owner-20261007T002000Z-repeat.log"
     ],
+    "previous_evidence": ["logs/local-device3-run1-full.log", "logs/local-device3-repeat-full.log"],
+    "timestamps": {"start": "2026-10-07T00:19:56Z", "end": "2026-10-07T00:20:13Z"},
     "superseded_probe_evidence": [
       "logs/local-device3-superseded-two-change-run1.log",
       "logs/local-device3-superseded-two-change-repeat.log"
