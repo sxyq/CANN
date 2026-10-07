@@ -1,0 +1,160 @@
+ROUTE=SYNC-BARRIER-ELISION-X
+REVISION=V036
+PARENT=R31B-V011
+DEVICE=3
+SHAPE=fp16-8x128
+WARMUPS=60
+PAIRS=31
+ORDER=alternating P,C then C,P
+METHOD=ACL device event latency plus wall-clock diagnostics
+HOST=hwnput3
+USER=lelinfeng
+START_UTC=2026-10-07T20:29:35Z
+COMMAND=/tmp/sync-barrier-elision-v036.auaLxH/sync_barrier_elision_correctness 3 --local
+LOG=本地实验/SYNC-BARRIER-ELISION-X/V036/logs/local-device3-20261007T202918Z-run2.log
+CPLUS_INCLUDE_PATH=/usr/include/c++/11:/usr/include/aarch64-linux-gnu/c++/11:/usr/include/c++/11/backward
+
+===== PRE-RUN DEVICE SNAPSHOT =====
++------------------------------------------------------------------------------------------------+
+| npu-smi 25.0.rc1.1               Version: 25.0.rc1.1                                           |
++---------------------------+---------------+----------------------------------------------------+
+| NPU   Name                | Health        | Power(W)    Temp(C)           Hugepages-Usage(page)|
+| Chip                      | Bus-Id        | AICore(%)   Memory-Usage(MB)  HBM-Usage(MB)        |
++===========================+===============+====================================================+
+| 0     910B3               | OK            | 91.3        29                0    / 0             |
+| 0                         | 0000:C1:00.0  | 0           0    / 0          3427 / 65536         |
++===========================+===============+====================================================+
+| 1     910B3               | OK            | 96.0        30                0    / 0             |
+| 0                         | 0000:C2:00.0  | 0           0    / 0          9174 / 65536         |
++===========================+===============+====================================================+
+| 2     910B3               | OK            | 100.2       32                0    / 0             |
+| 0                         | 0000:81:00.0  | 1           0    / 0          7456 / 65536         |
++===========================+===============+====================================================+
+| 3     910B3               | OK            | 89.5        29                0    / 0             |
+| 0                         | 0000:82:00.0  | 0           0    / 0          3426 / 65536         |
++===========================+===============+====================================================+
+| 4     910B3               | OK            | 204.3       55                0    / 0             |
+| 0                         | 0000:01:00.0  | 63          0    / 0          59192/ 65536         |
++===========================+===============+====================================================+
+| 5     910B3               | OK            | 167.2       49                0    / 0             |
+| 0                         | 0000:02:00.0  | 44          0    / 0          60222/ 65536         |
++===========================+===============+====================================================+
+| 6     910B3               | OK            | 167.5       47                0    / 0             |
+| 0                         | 0000:41:00.0  | 44          0    / 0          60222/ 65536         |
++===========================+===============+====================================================+
+| 7     910B3               | OK            | 126.2       36                0    / 0             |
+| 0                         | 0000:42:00.0  | 10          0    / 0          24791/ 65536         |
++===========================+===============+====================================================+
++---------------------------+---------------+----------------------------------------------------+
+| NPU     Chip              | Process id    | Process name             | Process memory(MB)      |
++===========================+===============+====================================================+
+| No running processes found in NPU 0                                                            |
++===========================+===============+====================================================+
+| 1       0                 | 3150467       | python                   | 5746                    |
++===========================+===============+====================================================+
+| 2       0                 | 1935458       | python                   | 4088                    |
++===========================+===============+====================================================+
+| No running processes found in NPU 3                                                            |
++===========================+===============+====================================================+
+| 4       0                 | 2999855       | VLLMEngineCor            | 55666                   |
++===========================+===============+====================================================+
+| 5       0                 | 89602         | VLLMWorker_TP            | 56700                   |
++===========================+===============+====================================================+
+| 6       0                 | 91228         | VLLMWorker_TP            | 56701                   |
++===========================+===============+====================================================+
+| 7       0                 | 439848        | python3                  | 21260                   |
++===========================+===============+====================================================+
+PREFLIGHT=PASS_DEVICE3_NO_PROCESS_AICORE_0
+LOCAL_SAMPLE case=fp16-8x128 pair=01 order=P,C parent_device_us=27.8400 candidate_device_us=24.7800 parent_wall_us=179.0010 candidate_wall_us=88.6610 paired_delta_us=-3.0600
+LOCAL_SAMPLE case=fp16-8x128 pair=02 order=C,P parent_device_us=16.9400 candidate_device_us=18.8200 parent_wall_us=67.1900 candidate_wall_us=76.2710 paired_delta_us=1.8800
+LOCAL_SAMPLE case=fp16-8x128 pair=03 order=P,C parent_device_us=17.0200 candidate_device_us=23.9800 parent_wall_us=68.1510 candidate_wall_us=67.1300 paired_delta_us=6.9600
+LOCAL_SAMPLE case=fp16-8x128 pair=04 order=C,P parent_device_us=20.9600 candidate_device_us=4.2400 parent_wall_us=66.2100 candidate_wall_us=70.0010 paired_delta_us=-16.7200
+LOCAL_SAMPLE case=fp16-8x128 pair=05 order=P,C parent_device_us=3.7800 candidate_device_us=20.7200 parent_wall_us=69.2310 candidate_wall_us=67.0400 paired_delta_us=16.9400
+LOCAL_SAMPLE case=fp16-8x128 pair=06 order=C,P parent_device_us=17.5000 candidate_device_us=18.0200 parent_wall_us=65.1700 candidate_wall_us=65.9010 paired_delta_us=0.5200
+LOCAL_SAMPLE case=fp16-8x128 pair=07 order=P,C parent_device_us=17.0000 candidate_device_us=4.5200 parent_wall_us=67.3700 candidate_wall_us=68.6500 paired_delta_us=-12.4800
+LOCAL_SAMPLE case=fp16-8x128 pair=08 order=C,P parent_device_us=17.0400 candidate_device_us=5.2600 parent_wall_us=73.7410 candidate_wall_us=58.5500 paired_delta_us=-11.7800
+LOCAL_SAMPLE case=fp16-8x128 pair=09 order=P,C parent_device_us=16.0200 candidate_device_us=18.4600 parent_wall_us=66.6400 candidate_wall_us=65.0310 paired_delta_us=2.4400
+LOCAL_SAMPLE case=fp16-8x128 pair=10 order=C,P parent_device_us=16.6200 candidate_device_us=16.7800 parent_wall_us=65.0310 candidate_wall_us=66.0700 paired_delta_us=0.1600
+LOCAL_SAMPLE case=fp16-8x128 pair=11 order=P,C parent_device_us=14.6000 candidate_device_us=18.7400 parent_wall_us=65.5200 candidate_wall_us=64.5410 paired_delta_us=4.1400
+LOCAL_SAMPLE case=fp16-8x128 pair=12 order=C,P parent_device_us=4.3200 candidate_device_us=16.5400 parent_wall_us=65.5710 candidate_wall_us=65.5000 paired_delta_us=12.2200
+LOCAL_SAMPLE case=fp16-8x128 pair=13 order=P,C parent_device_us=16.8800 candidate_device_us=18.0800 parent_wall_us=64.0700 candidate_wall_us=64.4110 paired_delta_us=1.2000
+LOCAL_SAMPLE case=fp16-8x128 pair=14 order=C,P parent_device_us=19.1600 candidate_device_us=17.0200 parent_wall_us=63.9510 candidate_wall_us=65.2200 paired_delta_us=-2.1400
+LOCAL_SAMPLE case=fp16-8x128 pair=15 order=P,C parent_device_us=17.5200 candidate_device_us=4.6400 parent_wall_us=65.9000 candidate_wall_us=67.3510 paired_delta_us=-12.8800
+LOCAL_SAMPLE case=fp16-8x128 pair=16 order=C,P parent_device_us=4.2600 candidate_device_us=4.2800 parent_wall_us=67.0210 candidate_wall_us=66.2500 paired_delta_us=0.0200
+LOCAL_SAMPLE case=fp16-8x128 pair=17 order=P,C parent_device_us=4.4000 candidate_device_us=20.9800 parent_wall_us=71.5300 candidate_wall_us=100.3310 paired_delta_us=16.5800
+LOCAL_SAMPLE case=fp16-8x128 pair=18 order=C,P parent_device_us=4.6000 candidate_device_us=5.7200 parent_wall_us=69.5010 candidate_wall_us=68.5500 paired_delta_us=1.1200
+LOCAL_SAMPLE case=fp16-8x128 pair=19 order=P,C parent_device_us=17.3200 candidate_device_us=4.9200 parent_wall_us=66.9300 candidate_wall_us=66.5310 paired_delta_us=-12.4000
+LOCAL_SAMPLE case=fp16-8x128 pair=20 order=C,P parent_device_us=17.3400 candidate_device_us=4.2600 parent_wall_us=65.5310 candidate_wall_us=66.8200 paired_delta_us=-13.0800
+LOCAL_SAMPLE case=fp16-8x128 pair=21 order=P,C parent_device_us=25.5000 candidate_device_us=15.5000 parent_wall_us=66.9000 candidate_wall_us=65.6010 paired_delta_us=-10.0000
+LOCAL_SAMPLE case=fp16-8x128 pair=22 order=C,P parent_device_us=12.8200 candidate_device_us=13.5800 parent_wall_us=66.1510 candidate_wall_us=65.7200 paired_delta_us=0.7600
+LOCAL_SAMPLE case=fp16-8x128 pair=23 order=P,C parent_device_us=18.5000 candidate_device_us=13.0000 parent_wall_us=78.4600 candidate_wall_us=66.7410 paired_delta_us=-5.5000
+LOCAL_SAMPLE case=fp16-8x128 pair=24 order=C,P parent_device_us=17.0200 candidate_device_us=14.8200 parent_wall_us=65.2710 candidate_wall_us=64.7900 paired_delta_us=-2.2000
+LOCAL_SAMPLE case=fp16-8x128 pair=25 order=P,C parent_device_us=16.1000 candidate_device_us=14.5600 parent_wall_us=68.3300 candidate_wall_us=64.3710 paired_delta_us=-1.5400
+LOCAL_SAMPLE case=fp16-8x128 pair=26 order=C,P parent_device_us=15.8200 candidate_device_us=16.4800 parent_wall_us=65.6810 candidate_wall_us=68.7900 paired_delta_us=0.6600
+LOCAL_SAMPLE case=fp16-8x128 pair=27 order=P,C parent_device_us=17.7000 candidate_device_us=5.3400 parent_wall_us=65.7600 candidate_wall_us=66.2710 paired_delta_us=-12.3600
+LOCAL_SAMPLE case=fp16-8x128 pair=28 order=C,P parent_device_us=13.9000 candidate_device_us=12.8400 parent_wall_us=64.2210 candidate_wall_us=65.7400 paired_delta_us=-1.0600
+LOCAL_SAMPLE case=fp16-8x128 pair=29 order=P,C parent_device_us=14.0000 candidate_device_us=17.9600 parent_wall_us=65.2700 candidate_wall_us=67.4400 paired_delta_us=3.9600
+LOCAL_SAMPLE case=fp16-8x128 pair=30 order=C,P parent_device_us=18.7400 candidate_device_us=3.6400 parent_wall_us=65.2500 candidate_wall_us=66.8400 paired_delta_us=-15.1000
+LOCAL_SAMPLE case=fp16-8x128 pair=31 order=P,C parent_device_us=15.3000 candidate_device_us=14.1200 parent_wall_us=65.3800 candidate_wall_us=64.6500 paired_delta_us=-1.1800
+LOCAL_STATS case=fp16-8x128 metric=device_us binary=PARENT_R31B_V011 n=31 median=16.9400 mean=15.3716 stdev=5.7528 cv=0.37425 min=3.7800 max=27.8400 mad=1.5600 p10=4.4000 p90=19.1600
+LOCAL_STATS case=fp16-8x128 metric=device_us binary=CANDIDATE_V036 n=31 median=14.8200 mean=13.3097 stdev=6.6232 cv=0.49763 min=3.6400 max=24.7800 mad=3.9200 p10=4.2800 p90=20.7200
+LOCAL_STATS case=fp16-8x128 metric=wall_us binary=PARENT_R31B_V011 n=31 median=66.1510 mean=70.6430 stdev=20.3318 cv=0.28781 min=63.9510 max=179.0010 mad=0.9010 p10=65.0310 p90=71.5300
+LOCAL_STATS case=fp16-8x128 metric=wall_us binary=CANDIDATE_V036 n=31 median=66.2710 mean=68.2505 stdev=7.6480 cv=0.11206 min=58.5500 max=100.3310 mad=1.0800 p10=64.5410 p90=70.0010
+LOCAL_STATS case=fp16-8x128 metric=paired_delta_us binary=CANDIDATE_MINUS_PARENT n=31 median=-1.0600 mean=-2.0619 stdev=8.7057 cv=-4.22209 min=-16.7200 max=16.9400 mad=4.4400 p10=-12.8800 p90=6.9600
+LOCAL_RESULT route=SYNC-BARRIER-ELISION-X revision=V036 device=3 shape=8x128 dtype=fp16 samples=31 parent_median_us=16.9400 candidate_median_us=14.8200 local_delta_us=-1.0600 local_score_percent=6.257377 candidate_minus_parent_percent=-6.257377
+CORRECTNESS_SUMMARY result=PASS cases=5
+RUNNER_RC=0
+RUN_START_EPOCH=1791404977.166824620
+RUN_END_EPOCH=1791404983.720915183
+
+===== POST-RUN DEVICE SNAPSHOT =====
++------------------------------------------------------------------------------------------------+
+| npu-smi 25.0.rc1.1               Version: 25.0.rc1.1                                           |
++---------------------------+---------------+----------------------------------------------------+
+| NPU   Name                | Health        | Power(W)    Temp(C)           Hugepages-Usage(page)|
+| Chip                      | Bus-Id        | AICore(%)   Memory-Usage(MB)  HBM-Usage(MB)        |
++===========================+===============+====================================================+
+| 0     910B3               | OK            | 91.9        29                0    / 0             |
+| 0                         | 0000:C1:00.0  | 0           0    / 0          3429 / 65536         |
++===========================+===============+====================================================+
+| 1     910B3               | OK            | 96.5        30                0    / 0             |
+| 0                         | 0000:C2:00.0  | 0           0    / 0          9174 / 65536         |
++===========================+===============+====================================================+
+| 2     910B3               | OK            | 110.9       32                0    / 0             |
+| 0                         | 0000:81:00.0  | 6           0    / 0          7456 / 65536         |
++===========================+===============+====================================================+
+| 3     910B3               | OK            | 89.8        29                0    / 0             |
+| 0                         | 0000:82:00.0  | 0           0    / 0          3427 / 65536         |
++===========================+===============+====================================================+
+| 4     910B3               | OK            | 288.2       49                0    / 0             |
+| 0                         | 0000:01:00.0  | 67          0    / 0          59192/ 65536         |
++===========================+===============+====================================================+
+| 5     910B3               | OK            | 168.4       48                0    / 0             |
+| 0                         | 0000:02:00.0  | 43          0    / 0          60221/ 65536         |
++===========================+===============+====================================================+
+| 6     910B3               | OK            | 164.8       47                0    / 0             |
+| 0                         | 0000:41:00.0  | 43          0    / 0          60222/ 65536         |
++===========================+===============+====================================================+
+| 7     910B3               | OK            | 128.1       36                0    / 0             |
+| 0                         | 0000:42:00.0  | 4           0    / 0          24791/ 65536         |
++===========================+===============+====================================================+
++---------------------------+---------------+----------------------------------------------------+
+| NPU     Chip              | Process id    | Process name             | Process memory(MB)      |
++===========================+===============+====================================================+
+| No running processes found in NPU 0                                                            |
++===========================+===============+====================================================+
+| 1       0                 | 3150467       | python                   | 5746                    |
++===========================+===============+====================================================+
+| 2       0                 | 1935458       | python                   | 4088                    |
++===========================+===============+====================================================+
+| No running processes found in NPU 3                                                            |
++===========================+===============+====================================================+
+| 4       0                 | 2999855       | VLLMEngineCor            | 55666                   |
++===========================+===============+====================================================+
+| 5       0                 | 89602         | VLLMWorker_TP            | 56700                   |
++===========================+===============+====================================================+
+| 6       0                 | 91228         | VLLMWorker_TP            | 56701                   |
++===========================+===============+====================================================+
+| 7       0                 | 439848        | python3                  | 21260                   |
++===========================+===============+====================================================+
+END_UTC=2026-10-07T20:29:45Z
