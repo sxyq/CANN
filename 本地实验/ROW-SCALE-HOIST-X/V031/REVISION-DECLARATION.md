@@ -1,0 +1,24 @@
+ROUTE=ROW-SCALE-HOIST-X
+REVISION=V031
+DIRECT_PARENT=V026
+PARENT_SOURCE=本地实验/ROW-SCALE-HOIST-X/V031/compile/src/parent_submission.asc
+PARENT_SOURCE_SHA256=7c2569d9e3830c845f2b5dc4587a73a05a0bdf041168614cd55ad84204e063f9
+CANDIDATE_SOURCE=本地实验/ROW-SCALE-HOIST-X/V031/compile/src/submission.asc
+CANDIDATE_SOURCE_SHA256=32f8cc7803ad6e6e18aaf4429866ada26eead9f398d9f6ab1e17c3174fe78979
+SINGLE_HYPOTHESIS=In ProcessFp16FullRowOutputPipelined, keep gamma-before-row-scale order but widen the FP16 gamma product to FP32 for multiplication by FP32 invRms, then convert back to FP16 before bias.
+FOCUS=FP16 row-scale arithmetic precision only
+TARGET_BRANCH=ProcessFp16FullRowOutputPipelined
+TARGET_SHAPE=FP16 [128,8192]
+DISPATCH_PROOF=local-paired-final-20261007T061605Z.log; dispatch audit reports 40 blocks, localRows 3..4, Candidate source delta executed=true
+INVALID_ATTEMPT=local-paired-20261007T054220Z.log; INVALID_WRONG_DISPATCH; [128,2048] selects ProcessNarrowMidOverlap; excluded from V031 result
+COMPILE=PASS; compile-retry-20261007T054819Z.log
+CORRECTNESS=PASS; FP16 [128,8192], Parent and Candidate; correctness-8192-20261007T060832Z.log
+LOCAL=NEEDS_ONE_MORE_LOCAL; 96 samples per arm; high jitter and shared host/device load
+LOCAL_SCORE=87.5820079663
+LOCAL_DELTA=+14.1787021354% candidate slower
+LOCAL_SCORE_TYPE=single-shape/local metric
+LOCAL_SCORE_COMPARABLE_TO_OFFICIAL=NO
+CURRENT_LOCAL_BEST=V026
+OFFICIAL_SCORE=NONE
+ONLINE=NOT_RUN
+RESULT_TIMESTAMP_UTC=2026-10-07T06:16:35.033548895Z

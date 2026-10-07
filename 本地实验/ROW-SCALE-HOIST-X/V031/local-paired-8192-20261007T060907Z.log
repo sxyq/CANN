@@ -1,0 +1,101 @@
+ROUTE=ROW-SCALE-HOIST-X
+REVISION=V031
+RUN_ID=20261007T060907Z
+HOST=hwnput3
+CANN=/usr/local/Ascend/ascend-toolkit/latest
+DEVICE=0
+SOC=910B3
+DTYPE=FP16
+SHAPE=[128,8192]
+ORDER=P-C-P-C-P-C
+WARMUPS_PER_PROCESS=20
+SAMPLES_PER_PROCESS=32
+PARENT_BINARY=/tmp/cann-row-scale-hoist-x-v031-local-8192-20261007T060720Z/v031_local_parent
+CANDIDATE_BINARY=/tmp/cann-row-scale-hoist-x-v031-local-8192-20261007T060720Z/v031_local_candidate
+DISPATCH_PROOF: FP16; kCacheElems=8192; rowWidth=8192; rows=128; vector core count printed by runner; blockCount=min(availableCoreNum,128), so localRows>1; Process() returns through ProcessFp16FullRowOutputPipelined before ProcessNarrowMidOverlap. The sole Candidate-vs-Parent kernel source delta (ToFloat/Muls(float)/FromFloat replacing Muls(half(invRms))) lies in this invoked function.
+START_UTC=2026-10-07T06:09:07,105417398+00:00
+DEVICE_BEFORE
+	NPU ID                         : 0
+	Chip Count                     : 1
+
+	DDR Capacity(MB)               : 0
+	DDR Usage Rate(%)              : 0
+	DDR Hugepages Total(page)      : 0
+	DDR Hugepages Usage Rate(%)    : 0
+	HBM Capacity(MB)               : 65536
+	HBM Usage Rate(%)              : 91
+	Aicore Usage Rate(%)           : 0
+	Aivector Usage Rate(%)         : 0
+	Aicpu Usage Rate(%)            : 0
+	Ctrlcpu Usage Rate(%)          : 5
+	DDR Bandwidth Usage Rate(%)    : 0
+	HBM Bandwidth Usage Rate(%)    : 0
+	Chip ID                        : 0
+
+HOST_BEFORE
+ 06:09:07 up 241 days, 17:45, 36 users,  load average: 43.51, 40.53, 37.71
+USER         PID COMMAND         %CPU
+zhouxin+  439848 python3         1620
+zhouxin+ 2242907 python3          160
+wangjie+ 2294793 MainThread       143
+root       89395 VLLM::Worker_TP  122
+wangjie+ 2901437 Lingma          83.9
+root       92813 VLLM::Worker_TP 66.5
+root       94498 VLLM::Worker_TP 64.3
+root       91055 VLLM::Worker_TP 62.9
+root       87336 VLLM::EngineCor 55.9
+root     2197832 kworker/u384:1+ 37.6
+root     2197831 kworker/u393:2+ 34.5
+BLOCK_P1
+VERIFY label=PARENT status=PASS matched_ratio=1.000000000 max_abs_error=0.00390625
+RUNNER_RESULT={"label":"PARENT","device":0,"dtype":"fp16","shape":[128,8192],"vector_cores":40,"warmups":20,"samples":32,"full_logical_io_bytes":6307840,"raw_device_us":[21.820000,13.160000,12.660000,12.120000,12.940000,11.760000,12.179999,11.980000,12.660000,11.920000,12.660000,11.740000,12.260000,12.080000,11.740000,11.760000,12.299999,11.920000,13.140000,11.559999,12.600000,11.940000,12.480000,11.960000,11.940000,11.840000,12.120000,11.860000,11.940000,11.940000,96.639999,11.880000],"median_device_us":12.030000,"mean_device_us":15.109375,"sample_stdev_device_us":14.980808,"cv":0.991491,"mad_device_us":3.254375,"p10_device_us":11.760000,"p90_device_us":13.120000,"min_device_us":11.559999,"max_device_us":96.639999}
+BLOCK_C1
+VERIFY label=CANDIDATE status=PASS matched_ratio=1.000000000 max_abs_error=0.00390625
+RUNNER_RESULT={"label":"CANDIDATE","device":0,"dtype":"fp16","shape":[128,8192],"vector_cores":40,"warmups":20,"samples":32,"full_logical_io_bytes":6307840,"raw_device_us":[241.880005,12.440000,223.779999,12.440000,11.900001,14.340000,11.980000,13.740001,12.480000,13.820000,17.480001,14.700000,12.059999,12.660000,14.220000,11.980000,12.220000,13.860001,11.820000,13.740001,11.960000,12.220000,12.460000,12.299999,14.420000,12.380000,13.200000,12.559999,14.280000,313.959991,12.280001,14.200000],"median_device_us":12.610000,"mean_device_us":36.242496,"sample_stdev_device_us":74.085602,"cv":2.044164,"mad_device_us":24.025002,"p10_device_us":11.980000,"p90_device_us":17.202000,"min_device_us":11.820000,"max_device_us":313.959991}
+BLOCK_P2
+VERIFY label=PARENT status=PASS matched_ratio=1.000000000 max_abs_error=0.00390625
+RUNNER_RESULT={"label":"PARENT","device":0,"dtype":"fp16","shape":[128,8192],"vector_cores":40,"warmups":20,"samples":32,"full_logical_io_bytes":6307840,"raw_device_us":[125.339996,97.900002,102.519997,106.239998,11.680000,11.240000,11.300000,11.620000,11.340000,11.280001,12.299999,11.320000,103.200005,108.159996,11.580000,10.860000,10.960000,11.780001,10.240000,10.940001,10.240000,11.280001,11.080000,106.180000,11.380000,11.080000,10.820001,11.060000,11.080000,144.839996,198.019989,10.339999],"median_device_us":11.330000,"mean_device_us":42.162502,"sample_stdev_device_us":52.943111,"cv":1.255692,"mad_device_us":31.217501,"p10_device_us":10.824000,"p90_device_us":107.967995,"min_device_us":10.240000,"max_device_us":198.019989}
+BLOCK_C2
+VERIFY label=CANDIDATE status=PASS matched_ratio=1.000000000 max_abs_error=0.00390625
+RUNNER_RESULT={"label":"CANDIDATE","device":0,"dtype":"fp16","shape":[128,8192],"vector_cores":40,"warmups":20,"samples":32,"full_logical_io_bytes":6307840,"raw_device_us":[13.059999,12.100000,12.320000,12.500000,12.160001,12.500000,12.500000,12.460000,12.620000,13.160000,12.620000,12.040000,12.540000,12.080000,12.280001,12.460000,12.200000,12.340000,12.000000,12.160001,12.679999,20.020000,13.559999,12.580000,12.620000,249.300003,12.640000,12.380000,12.660000,13.059999,11.820000,12.360000],"median_device_us":12.500000,"mean_device_us":20.118124,"sample_stdev_device_us":41.843674,"cv":2.079899,"mad_device_us":7.889375,"p10_device_us":12.082000,"p90_device_us":13.150000,"min_device_us":11.820000,"max_device_us":249.300003}
+BLOCK_P3
+VERIFY label=PARENT status=PASS matched_ratio=1.000000000 max_abs_error=0.00390625
+RUNNER_RESULT={"label":"PARENT","device":0,"dtype":"fp16","shape":[128,8192],"vector_cores":40,"warmups":20,"samples":32,"full_logical_io_bytes":6307840,"raw_device_us":[12.440000,12.600000,12.059999,12.440000,12.660000,11.960000,11.760000,11.599999,12.160001,13.020000,12.280001,12.000000,12.299999,11.860000,12.179999,11.580000,11.960000,11.660000,12.120000,11.740000,13.059999,12.260000,215.739990,12.059999,12.960000,11.700000,12.419999,12.040000,24.320002,12.860001,219.880005,156.160004],"median_device_us":12.219999,"mean_device_us":29.932499,"sample_stdev_device_us":55.466866,"cv":1.853065,"mad_device_us":18.030001,"p10_device_us":11.704000,"p90_device_us":23.193996,"min_device_us":11.580000,"max_device_us":219.880005}
+BLOCK_C3
+VERIFY label=CANDIDATE status=PASS matched_ratio=1.000000000 max_abs_error=0.00390625
+RUNNER_RESULT={"label":"CANDIDATE","device":0,"dtype":"fp16","shape":[128,8192],"vector_cores":40,"warmups":20,"samples":32,"full_logical_io_bytes":6307840,"raw_device_us":[13.340000,14.080000,13.380000,13.660000,13.639999,13.040000,12.799999,13.480000,14.120001,13.880000,12.820000,13.500000,15.000000,15.540000,17.639999,14.300000,14.340000,14.420000,14.240001,14.940001,13.080000,14.680000,14.139999,14.340000,13.440000,14.320000,14.080000,14.360001,14.560000,18.200001,33.059998,14.259999],"median_device_us":14.190001,"mean_device_us":14.833750,"sample_stdev_device_us":3.521251,"cv":0.237381,"mad_device_us":1.303750,"p10_device_us":13.106000,"p90_device_us":15.486000,"min_device_us":12.799999,"max_device_us":33.059998}
+RETURN_CODES=P1:0,C1:0,P2:0,C2:0,P3:0,C3:0
+DEVICE_AFTER
+	NPU ID                         : 0
+	Chip Count                     : 1
+
+	DDR Capacity(MB)               : 0
+	DDR Usage Rate(%)              : 0
+	DDR Hugepages Total(page)      : 0
+	DDR Hugepages Usage Rate(%)    : 0
+	HBM Capacity(MB)               : 65536
+	HBM Usage Rate(%)              : 91
+	Aicore Usage Rate(%)           : 0
+	Aivector Usage Rate(%)         : 0
+	Aicpu Usage Rate(%)            : 0
+	Ctrlcpu Usage Rate(%)          : 5
+	DDR Bandwidth Usage Rate(%)    : 0
+	HBM Bandwidth Usage Rate(%)    : 0
+	Chip ID                        : 0
+
+HOST_AFTER
+ 06:09:37 up 241 days, 17:45, 36 users,  load average: 34.73, 38.70, 37.18
+USER         PID COMMAND         %CPU
+zhouxin+  439848 python3         1620
+zhouxin+ 2242907 python3          155
+wangjie+ 2294793 MainThread       139
+root       89395 VLLM::Worker_TP  122
+wangjie+ 2901437 Lingma          83.9
+root       92813 VLLM::Worker_TP 66.5
+root       94498 VLLM::Worker_TP 64.3
+root       91055 VLLM::Worker_TP 62.9
+root       87336 VLLM::EngineCor 55.9
+root     2197832 kworker/u384:1- 36.9
+root     2197831 kworker/u393:2+ 34.1
+END_UTC=2026-10-07T06:09:38,142799960+00:00
+RUN_ID=20261007T060907Z

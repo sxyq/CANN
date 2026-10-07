@@ -1,0 +1,116 @@
+{
+  "route": "ROW-SCALE-HOIST-X",
+  "revision": "V031",
+  "direct_parent": "V026",
+  "stage": "LOCAL_PAIRED_INTERLEAVED",
+  "run_id": "20261007T061605Z",
+  "status": "NEEDS_ONE_MORE_LOCAL",
+  "measurement_quality": "HIGH_JITTER_SHARED_DEVICE_AND_HOST_ACTIVITY",
+  "validity": "VALID_DISPATCH_EXECUTED",
+  "LOCAL_SCORE_TYPE": "single-shape/local metric",
+  "LOCAL_SCORE_COMPARABLE_TO_OFFICIAL": "NO",
+  "start_utc": "2026-10-07T06:16:05.328680819Z",
+  "end_utc": "2026-10-07T06:16:35.033548895Z",
+  "host": "hwnput3",
+  "cann_version": "8.5.T8.0.B060",
+  "device": 0,
+  "soc": "910B3",
+  "architecture": "dav-2201",
+  "dtype": "fp16",
+  "shape": [128, 8192],
+  "vector_cores": 40,
+  "warmups_per_process": 20,
+  "samples_per_process": 32,
+  "order": "P-C-P-C-P-C",
+  "process_return_codes": {"P1": 0, "C1": 0, "P2": 0, "C2": 0, "P3": 0, "C3": 0},
+  "candidate_source_sha256": "32f8cc7803ad6e6e18aaf4429866ada26eead9f398d9f6ab1e17c3174fe78979",
+  "parent_source_sha256": "7c2569d9e3830c845f2b5dc4587a73a05a0bdf041168614cd55ad84204e063f9",
+  "raw_output_file": "local-paired-final-20261007T061605Z.log",
+  "all_primary_window_samples_included": true,
+  "sample_exclusion": "NONE",
+  "logical_io_model": "3 * rows * width * sizeof(float) + 2 * width * sizeof(float); estimated logical throughput only, not measured HBM bandwidth",
+  "full_logical_io_bytes": 12648448,
+  "PARENT": {
+    "run_median_device_us": [18.639999, 11.94, 19.959999],
+    "pooled": {
+      "n": 96,
+      "median_device_us": 18.6900005,
+      "mean_device_us": 29.6447917604,
+      "sample_stdev_device_us": 34.4173672429,
+      "cv": 1.16099203938,
+      "mean_absolute_deviation_from_median_us": 14.9964584063,
+      "p10_device_us": 11.7300005,
+      "p90_device_us": 58.539999,
+      "min_device_us": 11.0,
+      "max_device_us": 180.360001,
+      "estimated_logical_throughput_gb_per_s": 676.749474
+    }
+  },
+  "CANDIDATE": {
+    "run_median_device_us": [20.17, 22.130001, 21.52],
+    "pooled": {
+      "n": 96,
+      "median_device_us": 21.34,
+      "mean_device_us": 27.3129165625,
+      "sample_stdev_device_us": 24.8874088297,
+      "cv": 0.911195579306,
+      "mean_absolute_deviation_from_median_us": 9.03791670833,
+      "p10_device_us": 16.5,
+      "p90_device_us": 28.4300005,
+      "min_device_us": 12.299999,
+      "max_device_us": 158.419998,
+      "estimated_logical_throughput_gb_per_s": 592.710778
+    }
+  },
+  "comparison": {
+    "local_delta_percent_candidate_vs_parent_positive_is_slower": 14.1787021354,
+    "local_score": 87.5820079663,
+    "local_score_formula": "100 * parent_pooled_median / candidate_pooled_median",
+    "paired_block_parent_medians_us": [18.639999, 11.94, 19.959999],
+    "paired_block_candidate_medians_us": [20.17, 22.130001, 21.52],
+    "paired_block_delta_percent_candidate_vs_parent": [8.208160312, 85.34339196, 7.815636664],
+    "paired_block_outcome": "candidate slower in 3/3 blocks"
+  },
+  "dispatch_audit": {
+    "branch": "ProcessFp16FullRowOutputPipelined",
+    "observed_on_every_candidate_process": true,
+    "shape": [128, 8192],
+    "vector_cores": 40,
+    "launch_blocks": 40,
+    "local_rows_min": 3,
+    "local_rows_max": 4,
+    "candidate_source_delta_executed": true,
+    "source_delta": "ToFloat -> Muls with FP32 invRms -> FromFloat replaces Muls with half(invRms) in target branch"
+  },
+  "device_load": {
+    "before": {"hbm_used_percent": 91, "aicore_percent": 35, "aivector_percent": 24, "hbm_bandwidth_percent": 6},
+    "after": {"hbm_used_percent": 91, "aicore_percent": 0, "aivector_percent": 0, "hbm_bandwidth_percent": 0},
+    "resident_device0_process_snapshot_utc": "2026-10-07T06:18:54Z",
+    "resident_device0_process": "VLLMWorker_TP using 56702 MB"
+  },
+  "host_load": {
+    "load_average_before": "37.83, 37.39, 36.65",
+    "load_average_after": "57.77, 42.22, 38.28",
+    "high_cpu_processes": "Python process about 1621% CPU; VLLM workers active"
+  },
+  "jitter": {
+    "classification": "HIGH",
+    "parent_cv": 1.16099203938,
+    "candidate_cv": 0.911195579306,
+    "parent_pooled_min_max_us": [11.0, 180.360001],
+    "candidate_pooled_min_max_us": [12.299999, 158.419998],
+    "all_samples_retained": true,
+    "repeatability": "candidate slower in all three paired blocks, but shared host/device activity and long tails prevent acceptance"
+  },
+  "current_local_best": "V026",
+  "online": "NOT_RUN",
+  "invalid_attempt": {
+    "run_id": "20261007T054220Z",
+    "status": "INVALID_WRONG_DISPATCH",
+    "raw_output_file": "local-paired-20261007T054220Z.log",
+    "invalid_shape": [128, 2048],
+    "actual_branch": "ProcessNarrowMidOverlap",
+    "excluded_from_v031_score": true,
+    "record_file": "invalid-attempt-20261007T054220Z.json"
+  }
+}
