@@ -1,0 +1,34 @@
+{
+  "route": "ROW-SCALE-HOIST-X",
+  "revision": "V036",
+  "direct_parent": "V026",
+  "stage": "COMPILE",
+  "status": "PASS_AFTER_COMPILE_FIX",
+  "host": "hwnput3",
+  "soc": "Ascend910B3",
+  "architecture": "dav-2201",
+  "toolkit_version_dir": "8.5.0.alpha002",
+  "first_attempt": {
+    "status": "FAIL",
+    "exit_code": 2,
+    "start_utc": "2026-10-07T12:54:49Z",
+    "build_dir": "/tmp/cann-row-scale-hoist-x-v036-compile-20261007T1252Z",
+    "error": "invRmsHalf was declared in the BF16 sibling instead of ProcessFp16FullRowOutputPipelined; FP16 submission compilation reported use of undeclared identifier",
+    "evidence_log": "compile-local-20261007T1252Z.log"
+  },
+  "compile_fix": "Move the existing scalar declaration into the intended FP16 full-row function only; no change to the declared performance mechanism.",
+  "retry": {
+    "status": "PASS",
+    "exit_code": 0,
+    "start_utc": "2026-10-07T12:58:17Z",
+    "build_dir": "/tmp/cann-row-scale-hoist-x-v036-compile-retry-20261007T1255Z",
+    "command": "source /usr/local/Ascend/ascend-toolkit/set_env.sh && cmake -S 本地实验/ROW-SCALE-HOIST-X/V036/compile -B /tmp/cann-row-scale-hoist-x-v036-compile-retry-20261007T1255Z && cmake --build /tmp/cann-row-scale-hoist-x-v036-compile-retry-20261007T1255Z --target device submission -j2",
+    "targets": {
+      "device": "PASS",
+      "submission": "PASS"
+    },
+    "evidence_log": "compile-retry-local-20261007T1255Z.log"
+  },
+  "candidate_source_sha256": "e62977578b85365278f62730470bc26d58d2799f57138636a64125f7fe6189f8",
+  "parent_source_sha256": "7c2569d9e3830c845f2b5dc4587a73a05a0bdf041168614cd55ad84204e063f9"
+}

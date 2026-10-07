@@ -1,0 +1,122 @@
+{
+  "route": "ROW-SCALE-HOIST-X",
+  "revision": "V036",
+  "direct_parent": "V026",
+  "stage": "LOCAL_PAIRED_INTERLEAVED",
+  "run_id": "20261007T1305Z",
+  "verdict": "MEASUREMENT_BLOCKED",
+  "measurement_quality": "HIGH_JITTER_SHARED_DEVICE_AND_HOST_ACTIVITY",
+  "validity": "VALID_DISPATCH_EXECUTED_DESCRIPTIVE_ONLY",
+  "local_score": 95.2763391592,
+  "local_score_type": "descriptive single-shape route-local speedup index",
+  "local_score_comparable_to_official": false,
+  "local_delta_percent_candidate_vs_parent_positive_is_slower": 4.9578530016,
+  "local_delta_interpretation": "Candidate pooled median was slower and all three paired blocks were slower; severe parent and pooled jitter prevents qualification.",
+  "host": "hwnput3",
+  "toolkit_version_dir": "8.5.0.alpha002",
+  "device": 0,
+  "soc": "Ascend910B3",
+  "architecture": "dav-2201",
+  "dtype": "fp16",
+  "shape": [128, 8192],
+  "warmups_per_process": 20,
+  "samples_per_process": 32,
+  "sample_count_per_arm": 96,
+  "order": "P-C-P-C-P-C",
+  "process_return_codes": {
+    "P1": 0,
+    "C1": 0,
+    "P2": 0,
+    "C2": 0,
+    "P3": 0,
+    "C3": 0
+  },
+  "candidate_source_sha256": "e62977578b85365278f62730470bc26d58d2799f57138636a64125f7fe6189f8",
+  "parent_source_sha256": "7c2569d9e3830c845f2b5dc4587a73a05a0bdf041168614cd55ad84204e063f9",
+  "all_primary_window_samples_included": true,
+  "sample_exclusion": "NONE",
+  "parent_stability_gate": {
+    "status": "FAIL_HIGH_JITTER",
+    "samples_per_window": 32,
+    "window_median_device_us": [13.0999995, 21.910001],
+    "window_cv": [1.6691619235, 1.0173821916],
+    "window_max_device_us": [283.100006, 198.180008],
+    "evidence_files": [
+      "local-parent-stability-1-20261007T1303Z.log",
+      "local-parent-stability-2-20261007T1304Z.log"
+    ]
+  },
+  "parent": {
+    "pooled": {
+      "n": 96,
+      "median_device_us": 20.170001,
+      "mean_device_us": 36.6004166146,
+      "sample_stdev_device_us": 45.8446189776,
+      "cv": 1.2525709601,
+      "median_absolute_deviation_device_us": 3.3599995,
+      "p10_device_us": 16.2699995,
+      "p90_device_us": 83.119999,
+      "min_device_us": 14.32,
+      "max_device_us": 225.87999
+    }
+  },
+  "candidate": {
+    "pooled": {
+      "n": 96,
+      "median_device_us": 21.17,
+      "mean_device_us": 42.6516662813,
+      "sample_stdev_device_us": 56.5361843628,
+      "cv": 1.3255328406,
+      "median_absolute_deviation_device_us": 2.13,
+      "p10_device_us": 18.3199995,
+      "p90_device_us": 94.0600015,
+      "min_device_us": 12.98,
+      "max_device_us": 305.839996
+    }
+  },
+  "paired_blocks": {
+    "parent_medians_us": [20.54, 20.92, 19.1999995],
+    "candidate_medians_us": [21.22, 21.0299995, 21.7400005],
+    "candidate_vs_parent_delta_percent": [3.3106134372, 0.5258102294, 13.2291722195],
+    "candidate_slower_blocks": 3,
+    "candidate_faster_blocks": 0
+  },
+  "dispatch_audit": {
+    "branch": "ProcessFp16FullRowOutputPipelined",
+    "observed_on_every_candidate_process": true,
+    "vector_cores": 40,
+    "launch_blocks": 40,
+    "local_rows_min": 3,
+    "local_rows_max": 4,
+    "candidate_source_delta_executed": true
+  },
+  "device_load": {
+    "hbm_used_rate_before_after_percent": [91, 91],
+    "aicore_usage_before_after_percent": [33, 32],
+    "aivector_usage_before_after_percent": [28, 27],
+    "hbm_bandwidth_usage_before_after_percent": [20, 29],
+    "shared_workload_observed": true,
+    "other_processes_modified": false,
+    "before_evidence": "local-load-before-20261007T1303Z.log",
+    "after_evidence": "local-load-after-20261007T1306Z.log"
+  },
+  "host_load": {
+    "load_average_before": "55.31, 54.60, 53.14",
+    "load_average_after": "61.52, 58.94, 55.22",
+    "high_cpu_process_activity_observed": true
+  },
+  "repeatability": "Candidate was slower in all three paired blocks. Parent stability windows and pooled arms had CV above 1.0 with large latency excursions. All raw samples are retained and none excluded; Local score and direction are descriptive only.",
+  "current_local_best": "V026",
+  "official_score": null,
+  "online": "NOT_RUN",
+  "evidence": {
+    "local_runner_build": "local-build-local-20261007T1302Z.log",
+    "parent_stability": [
+      "local-parent-stability-1-20261007T1303Z.log",
+      "local-parent-stability-2-20261007T1304Z.log"
+    ],
+    "paired_raw": "local-paired-20261007T1305Z.log",
+    "device_host_before": "local-load-before-20261007T1303Z.log",
+    "device_host_after": "local-load-after-20261007T1306Z.log"
+  }
+}
