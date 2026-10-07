@@ -1,0 +1,81 @@
+{
+  "route": "SYNC-BARRIER-ELISION-X",
+  "revision": "V014",
+  "direct_parent": "R31B-V011",
+  "status": "LOCAL_REJECTED_NOISY",
+  "host": "hwnput3",
+  "soc": "910B3",
+  "npu_arch": "dav-2201",
+  "device": 3,
+  "shape": "8x2048",
+  "dtype": "fp16",
+  "candidate_source_sha256": "e93a15346ec3ff3af3b13550ba44bfdef3eb28a6ed990da72f6b96abbf0e0bb6",
+  "parent_source_sha256": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "started_at": "2026-10-07T12:26:59Z",
+  "completed_at": "2026-10-07T12:27:16Z",
+  "method": "60 warmups per invocation; two runs of 31 interleaved Parent/Candidate pairs; alternating P,C and C,P order; ACL device-event latency plus wall-clock diagnostics; no outlier filtering.",
+  "sample_pairs_per_run": 31,
+  "total_paired_samples": 62,
+  "local_score": -19.992359431,
+  "local_delta": -19.992359431,
+  "local_score_unit": "percent",
+  "local_score_type": "ROUTE_LOCAL_GEOMEAN_PAIRED_DEVICE_SPEEDUP_PERCENT",
+  "local_score_comparable_to_official": false,
+  "local_score_method": "Geometric mean of all raw parent_device_us / candidate_device_us ratios; score percent=(geomean ratio-1)*100.",
+  "pooled": {
+    "geomean_parent_over_candidate": 0.80007640569,
+    "per_run_geomean_parent_over_candidate": [0.84462765549, 0.75787508352],
+    "per_run_score_percent": [-15.537234451, -24.212491648],
+    "parent_median_device_us": 6.84,
+    "candidate_median_device_us": 7.92,
+    "parent_median_derived_throughput_g_elements_s": 2.395321637,
+    "candidate_median_derived_throughput_g_elements_s": 2.068686869,
+    "parent_device_us": {"median": 6.84, "mean": 16.060645, "stdev": 23.155832, "cv": 1.441775, "min": 5.24, "max": 96.82, "mad": 1.23, "p10": 5.62, "p90": 49.34},
+    "candidate_device_us": {"median": 7.92, "mean": 23.257097, "stdev": 34.717693, "cv": 1.492778, "min": 5.44, "max": 208.90, "mad": 2.12, "p10": 5.74, "p90": 70.26},
+    "paired_delta_us": {"median": 0.33, "mean": 7.196452, "stdev": 40.539592, "min": -88.06, "max": 200.06, "mad": 2.40, "p10": -7.28, "p90": 56.56},
+    "parent_wall_us": {"median": 132.4715, "mean": 137.818613, "stdev": 46.141097, "cv": 0.334796, "min": 73.491, "max": 321.904, "mad": 23.690, "p10": 89.241, "p90": 175.092},
+    "candidate_wall_us": {"median": 141.2415, "mean": 142.641387, "stdev": 39.454324, "cv": 0.276598, "min": 64.961, "max": 277.553, "mad": 28.411, "p10": 96.471, "p90": 191.922}
+  },
+  "runs": [
+    {
+      "run": 1,
+      "sample_pairs": 31,
+      "geomean_score_percent": -15.537234451,
+      "parent_device_us": {"median": 6.58, "mean": 14.970323, "stdev": 20.927095, "cv": 1.397905, "min": 5.24, "max": 96.82, "mad": 1.10, "p10": 5.56, "p90": 31.74},
+      "candidate_device_us": {"median": 8.00, "mean": 18.668387, "stdev": 24.032927, "cv": 1.287360, "min": 5.48, "max": 90.10, "mad": 2.16, "p10": 5.76, "p90": 59.86},
+      "paired_delta_us": {"median": 0.60, "mean": 3.698065, "stdev": 22.810142, "min": -77.08, "max": 68.68, "mad": 1.96, "p10": -2.20, "p90": 17.14}
+    },
+    {
+      "run": 2,
+      "sample_pairs": 31,
+      "geomean_score_percent": -24.212491648,
+      "parent_device_us": {"median": 6.86, "mean": 17.150968, "stdev": 25.492314, "cv": 1.486348, "min": 5.88, "max": 94.34, "mad": 0.94, "p10": 6.08, "p90": 59.90},
+      "candidate_device_us": {"median": 7.36, "mean": 27.845806, "stdev": 42.775177, "cv": 1.536144, "min": 5.44, "max": 208.90, "mad": 1.78, "p10": 5.58, "p90": 73.40},
+      "paired_delta_us": {"median": 0.12, "mean": 10.694839, "stdev": 52.878190, "min": -88.06, "max": 200.06, "mad": 3.22, "p10": -38.60, "p90": 66.62}
+    }
+  ],
+  "device_load": {
+    "load_average_start": [50.10, 48.04, 44.99],
+    "load_average_end": [74.08, 53.43, 46.80],
+    "device_3_aicore_percent_preflight": 13,
+    "device_3_aicore_percent_postflight": 27,
+    "device_3_hbm_mb_preflight": 60219,
+    "device_3_hbm_mb_postflight": 60221,
+    "other_shared_processes": "VLLM processes remained resident; another local pairing process was visible on device 0 postflight. All unrelated processes were left untouched."
+  },
+  "quality_assessment": {
+    "verdict": "REJECTED_NOISY",
+    "reasons": [
+      "Both run-level raw-pair geomean scores are negative (-15.537234451%, -24.212491648%).",
+      "Both run medians are slower for Candidate (6.58/8.00 us and 6.86/7.36 us Parent/Candidate).",
+      "Device-event CV ranges from 1.287360 to 1.536144; Candidate maximum is 208.90 us against a 7.92 us pooled median.",
+      "Device 3 AICore utilization increased from 13% to 27%, and host load increased during measurement; all raw samples were retained without filtering."
+    ],
+    "current_local_best": "R31B-V011",
+    "online_candidate": "NO",
+    "official_score": null,
+    "official_score_comparison": "This single-shape route-local metric is not comparable to an Official score."
+  },
+  "evidence_log": "logs/local-device3-20261007T122659Z.log",
+  "raw_samples": "62 LOCAL_SAMPLE records; every device-event and wall-clock sample is retained."
+}

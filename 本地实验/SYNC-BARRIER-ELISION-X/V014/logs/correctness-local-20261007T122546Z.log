@@ -1,0 +1,142 @@
+ROUTE=SYNC-BARRIER-ELISION-X
+REVISION=V014
+DIRECT_PARENT=R31B-V011
+HOST=hwnput3
+DEVICE=3
+DTYPE=fp16
+CANDIDATE_SOURCE_SHA256=e93a15346ec3ff3af3b13550ba44bfdef3eb28a6ed990da72f6b96abbf0e0bb6
+COMPILE_STATUS=PASS
+COMPILE_END=2026-10-07T12:25:00Z
+CORRECTNESS_START=2026-10-07T12:25:46Z
+ 12:25:46 up 242 days, 1 min, 34 users,  load average: 45.64, 46.62, 44.31
++------------------------------------------------------------------------------------------------+
+| npu-smi 25.0.rc1.1               Version: 25.0.rc1.1                                           |
++---------------------------+---------------+----------------------------------------------------+
+| NPU   Name                | Health        | Power(W)    Temp(C)           Hugepages-Usage(page)|
+| Chip                      | Bus-Id        | AICore(%)   Memory-Usage(MB)  HBM-Usage(MB)        |
++===========================+===============+====================================================+
+| 0     910B3               | OK            | 91.9        31                0    / 0             |
+| 0                         | 0000:C1:00.0  | 0           0    / 0          60223/ 65536         |
++===========================+===============+====================================================+
+| 1     910B3               | OK            | 90.1        30                0    / 0             |
+| 0                         | 0000:C2:00.0  | 0           0    / 0          60274/ 65536         |
++===========================+===============+====================================================+
+| 2     910B3               | OK            | 86.9        32                0    / 0             |
+| 0                         | 0000:81:00.0  | 0           0    / 0          60214/ 65536         |
++===========================+===============+====================================================+
+| 3     910B3               | OK            | 91.4        33                0    / 0             |
+| 0                         | 0000:82:00.0  | 0           0    / 0          60219/ 65536         |
++===========================+===============+====================================================+
+| 4     910B3               | OK            | 90.8        37                0    / 0             |
+| 0                         | 0000:01:00.0  | 0           0    / 0          59192/ 65536         |
++===========================+===============+====================================================+
+| 5     910B3               | OK            | 169.0       52                0    / 0             |
+| 0                         | 0000:02:00.0  | 45          0    / 0          60222/ 65536         |
++===========================+===============+====================================================+
+| 6     910B3               | OK            | 170.9       49                0    / 0             |
+| 0                         | 0000:41:00.0  | 45          0    / 0          60222/ 65536         |
++===========================+===============+====================================================+
+| 7     910B3               | OK            | 167.7       42                0    / 0             |
+| 0                         | 0000:42:00.0  | 42          0    / 0          24792/ 65536         |
++===========================+===============+====================================================+
++---------------------------+---------------+----------------------------------------------------+
+| NPU     Chip              | Process id    | Process name             | Process memory(MB)      |
++===========================+===============+====================================================+
+| 0       0                 | 89395         | VLLMWorker_TP            | 56702                   |
++===========================+===============+====================================================+
+| 1       0                 | 91055         | VLLMWorker_TP            | 56702                   |
++===========================+===============+====================================================+
+| 2       0                 | 92813         | VLLMWorker_TP            | 56703                   |
++===========================+===============+====================================================+
+| 3       0                 | 94498         | VLLMWorker_TP            | 56703                   |
++===========================+===============+====================================================+
+| 4       0                 | 2999855       | VLLMEngineCor            | 55666                   |
++===========================+===============+====================================================+
+| 5       0                 | 89602         | VLLMWorker_TP            | 56700                   |
++===========================+===============+====================================================+
+| 6       0                 | 91228         | VLLMWorker_TP            | 56701                   |
++===========================+===============+====================================================+
+| 7       0                 | 439848        | python3                  | 21260                   |
++===========================+===============+====================================================+
+--- process snapshot ---
+    PID USER     COMMAND           RSS COMMAND
+  82397 root     vllm            5495548 /usr/local/python3.12.13/bin/python3 /usr/local/python3.12.13/bin/vllm serve /models/Qwen3.8-27B-w8a8 --host 0.0.0.0 --port 9001 --tensor-parallel-size 4 --quantization ascend --served-model-name qwen3.8 --max-model-len 256000 --max-num-seqs 8 --max-num-batched-tokens 8192 --gpu-memory-utilization 0.90 --enable-prefix-caching --trust-remote-code --reasoning-parser qwen3 --enable-auto-tool-choice --tool-call-parser qwen3_coder
+  83352 root     vllm            5601252 /usr/local/python3.12.13/bin/python3 /usr/local/python3.12.13/bin/vllm serve /models/Qwen3.8-27B-w8a8 --host 0.0.0.0 --port 9002 --tensor-parallel-size 2 --quantization ascend --served-model-name qwen3.8 --max-model-len 256000 --max-num-seqs 8 --max-num-batched-tokens 8192 --gpu-memory-utilization 0.90 --enable-prefix-caching --trust-remote-code --reasoning-parser qwen3 --enable-auto-tool-choice --tool-call-parser qwen3_coder
+  87336 root     VLLM::EngineCor 2619084 VLLM::EngineCore
+  87670 root     VLLM::EngineCor 2440840 VLLM::EngineCore
+  89395 root     VLLM::Worker_TP 4921656 VLLM::Worker_TP0
+  89602 root     VLLM::Worker_TP 4732256 VLLM::Worker_TP0
+  91055 root     VLLM::Worker_TP 4923828 VLLM::Worker_TP1
+  91228 root     VLLM::Worker_TP 4734416 VLLM::Worker_TP1
+  92813 root     VLLM::Worker_TP 4925484 VLLM::Worker_TP2
+  94498 root     VLLM::Worker_TP 4913552 VLLM::Worker_TP3
+1111269 lelinfe+ bash             3024 /bin/bash -lc set -o pipefail REV_DIR='本地实验/SYNC-BARRIER-ELISION-X/V014' BUILD_DIR='/tmp/sync-barrier-elision-v014.ybyrUa' RESULT_LOG="$REV_DIR/logs/correctness-local-$(date -u +%Y%m%dT%H%M%SZ).log" {   printf 'ROUTE=SYNC-BARRIER-ELISION-X\nREVISION=V014\nDIRECT_PARENT=R31B-V011\nHOST=%s\nDEVICE=3\nDTYPE=fp16\n' "$(hostname)"   printf 'CANDIDATE_SOURCE_SHA256='   sha256sum "$REV_DIR/submission.asc" | awk '{print $1}'   printf 'COMPILE_STATUS=PASS\nCOMPILE_END=2026-10-07T12:25:00Z\nCORRECTNESS_START=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"   uptime   npu-smi info   printf '%s\n' '--- process snapshot ---'   ps -eo pid,user,comm,rss,args | rg 'PID|vllm|VLLM|sync_barrier|correctness'   source /usr/local/Ascend/ascend-toolkit/set_env.sh   export CPLUS_INCLUDE_PATH='/usr/include/c++/11:/usr/include/aarch64-linux-gnu/c++/11:/usr/include/c++/11/backward'   cmake --build "$BUILD_DIR" --target sync_barrier_elision_correctness -j2   RUNNER_BUILD_RC=$?   printf 'RUNNER_BUILD_RC=%s\n' "$RUNNER_BUILD_RC"   if [ "$RUNNER_BUILD_RC" -eq 0 ]; then     printf 'CORRECTNESS_RUN_START=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"     "$BUILD_DIR/sync_barrier_elision_correctness" 3     RUN_RC=$?   else     RUN_RC=125     printf '%s\n' 'CORRECTNESS_RUN_SKIPPED=RUNNER_BUILD_FAILED'   fi   printf 'CORRECTNESS_RUN_RC=%s\n' "$RUN_RC"   npu-smi info   uptime   printf 'CORRECTNESS_END=%s\nRESULT_RC=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$RUN_RC"   exit "$RUN_RC" } 2>&1 | tee "$RESULT_LOG" PIPE_RC=${PIPESTATUS[0]} printf 'EVIDENCE_LOG=%s\n' "$RESULT_LOG" exit "$PIPE_RC"
+1111390 lelinfe+ bash             2036 /bin/bash -lc set -o pipefail REV_DIR='本地实验/SYNC-BARRIER-ELISION-X/V014' BUILD_DIR='/tmp/sync-barrier-elision-v014.ybyrUa' RESULT_LOG="$REV_DIR/logs/correctness-local-$(date -u +%Y%m%dT%H%M%SZ).log" {   printf 'ROUTE=SYNC-BARRIER-ELISION-X\nREVISION=V014\nDIRECT_PARENT=R31B-V011\nHOST=%s\nDEVICE=3\nDTYPE=fp16\n' "$(hostname)"   printf 'CANDIDATE_SOURCE_SHA256='   sha256sum "$REV_DIR/submission.asc" | awk '{print $1}'   printf 'COMPILE_STATUS=PASS\nCOMPILE_END=2026-10-07T12:25:00Z\nCORRECTNESS_START=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"   uptime   npu-smi info   printf '%s\n' '--- process snapshot ---'   ps -eo pid,user,comm,rss,args | rg 'PID|vllm|VLLM|sync_barrier|correctness'   source /usr/local/Ascend/ascend-toolkit/set_env.sh   export CPLUS_INCLUDE_PATH='/usr/include/c++/11:/usr/include/aarch64-linux-gnu/c++/11:/usr/include/c++/11/backward'   cmake --build "$BUILD_DIR" --target sync_barrier_elision_correctness -j2   RUNNER_BUILD_RC=$?   printf 'RUNNER_BUILD_RC=%s\n' "$RUNNER_BUILD_RC"   if [ "$RUNNER_BUILD_RC" -eq 0 ]; then     printf 'CORRECTNESS_RUN_START=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"     "$BUILD_DIR/sync_barrier_elision_correctness" 3     RUN_RC=$?   else     RUN_RC=125     printf '%s\n' 'CORRECTNESS_RUN_SKIPPED=RUNNER_BUILD_FAILED'   fi   printf 'CORRECTNESS_RUN_RC=%s\n' "$RUN_RC"   npu-smi info   uptime   printf 'CORRECTNESS_END=%s\nRESULT_RC=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$RUN_RC"   exit "$RUN_RC" } 2>&1 | tee "$RESULT_LOG" PIPE_RC=${PIPESTATUS[0]} printf 'EVIDENCE_LOG=%s\n' "$RESULT_LOG" exit "$PIPE_RC"
+1111395 lelinfe+ tee               792 tee 本地实验/SYNC-BARRIER-ELISION-X/V014/logs/correctness-local-20261007T122546Z.log
+1111790 lelinfe+ rg               3528 rg PID|vllm|VLLM|sync_barrier|correctness
+2992910 zhangka+ vllm            2827432 /home/data4t1/zhangkaijie/conda/envs/qwen38_a2/bin/python3.12 /home/data4t1/zhangkaijie/conda/envs/qwen38_a2/bin/vllm serve /home/data4t2/models/Qwen3.8-27B-w8a8 --host 0.0.0.0 --port 9000 --tensor-parallel-size 1 --max-model-len 200000 --max-num-seqs 8 --max-num-batched-tokens 16384 --enable-prefix-caching --trust-remote-code --speculative-config {"method":"mtp","num_speculative_tokens":4} --enable-auto-tool-choice --tool-call-parser qwen3_coder --gpu-memory-utilization 0.85
+2999855 zhangka+ VLLM::EngineCor 4192320 VLLM::EngineCore
+[ 50%] Building ASC object CMakeFiles/sync_barrier_elision_correctness.dir/support/correctness_runner.asc.o
+[100%] Linking ASC executable sync_barrier_elision_correctness
+[100%] Built target sync_barrier_elision_correctness
+RUNNER_BUILD_RC=0
+CORRECTNESS_RUN_START=2026-10-07T12:26:12Z
+CORRECTNESS device=3 dtype=fp16 rows=8 width=128 parent_candidate_bit_mismatch=0 result=PASS
+CORRECTNESS device=3 dtype=fp16 rows=8 width=256 parent_candidate_bit_mismatch=0 result=PASS
+CORRECTNESS device=3 dtype=fp16 rows=8 width=1024 parent_candidate_bit_mismatch=0 result=PASS
+CORRECTNESS device=3 dtype=fp16 rows=8 width=2048 parent_candidate_bit_mismatch=0 result=PASS
+CORRECTNESS device=3 dtype=fp16 rows=8 width=4096 parent_candidate_bit_mismatch=0 result=PASS
+CORRECTNESS_SUMMARY result=PASS cases=5
+CORRECTNESS_RUN_RC=0
++------------------------------------------------------------------------------------------------+
+| npu-smi 25.0.rc1.1               Version: 25.0.rc1.1                                           |
++---------------------------+---------------+----------------------------------------------------+
+| NPU   Name                | Health        | Power(W)    Temp(C)           Hugepages-Usage(page)|
+| Chip                      | Bus-Id        | AICore(%)   Memory-Usage(MB)  HBM-Usage(MB)        |
++===========================+===============+====================================================+
+| 0     910B3               | OK            | 92.0        30                0    / 0             |
+| 0                         | 0000:C1:00.0  | 0           0    / 0          60224/ 65536         |
++===========================+===============+====================================================+
+| 1     910B3               | OK            | 88.9        30                0    / 0             |
+| 0                         | 0000:C2:00.0  | 0           0    / 0          60275/ 65536         |
++===========================+===============+====================================================+
+| 2     910B3               | OK            | 86.6        32                0    / 0             |
+| 0                         | 0000:81:00.0  | 0           0    / 0          60215/ 65536         |
++===========================+===============+====================================================+
+| 3     910B3               | OK            | 90.7        32                0    / 0             |
+| 0                         | 0000:82:00.0  | 0           0    / 0          60221/ 65536         |
++===========================+===============+====================================================+
+| 4     910B3               | OK            | 90.7        37                0    / 0             |
+| 0                         | 0000:01:00.0  | 0           0    / 0          59192/ 65536         |
++===========================+===============+====================================================+
+| 5     910B3               | OK            | 160.9       49                0    / 0             |
+| 0                         | 0000:02:00.0  | 33          0    / 0          60223/ 65536         |
++===========================+===============+====================================================+
+| 6     910B3               | OK            | 165.6       49                0    / 0             |
+| 0                         | 0000:41:00.0  | 44          0    / 0          60222/ 65536         |
++===========================+===============+====================================================+
+| 7     910B3               | OK            | 107.8       40                0    / 0             |
+| 0                         | 0000:42:00.0  | 0           0    / 0          24792/ 65536         |
++===========================+===============+====================================================+
++---------------------------+---------------+----------------------------------------------------+
+| NPU     Chip              | Process id    | Process name             | Process memory(MB)      |
++===========================+===============+====================================================+
+| 0       0                 | 89395         | VLLMWorker_TP            | 56702                   |
++===========================+===============+====================================================+
+| 1       0                 | 91055         | VLLMWorker_TP            | 56702                   |
++===========================+===============+====================================================+
+| 2       0                 | 92813         | VLLMWorker_TP            | 56703                   |
++===========================+===============+====================================================+
+| 3       0                 | 94498         | VLLMWorker_TP            | 56703                   |
++===========================+===============+====================================================+
+| 4       0                 | 2999855       | VLLMEngineCor            | 55666                   |
++===========================+===============+====================================================+
+| 5       0                 | 89602         | VLLMWorker_TP            | 56700                   |
++===========================+===============+====================================================+
+| 6       0                 | 91228         | VLLMWorker_TP            | 56701                   |
++===========================+===============+====================================================+
+| 7       0                 | 439848        | python3                  | 21260                   |
++===========================+===============+====================================================+
+ 12:26:21 up 242 days, 2 min, 34 users,  load average: 49.05, 47.66, 44.75
+CORRECTNESS_END=2026-10-07T12:26:21Z
+RESULT_RC=0
