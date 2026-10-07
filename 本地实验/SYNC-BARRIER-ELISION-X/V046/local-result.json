@@ -1,0 +1,83 @@
+{
+  "route": "SYNC-BARRIER-ELISION-X",
+  "revision": "V046",
+  "direct_parent": "R31B-V011",
+  "status": "LOCAL_REJECTED_NOISY",
+  "host": "hwnput3",
+  "soc": "Ascend910B3",
+  "npu_arch": "dav-2201",
+  "device": 3,
+  "shape": "128x128",
+  "dtype": "fp16",
+  "parent_source_sha256": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "candidate_source_sha256": "dafe51fc1ea4582c3605222e282f3e68da556c8388ba3ca697fd00185e1f05f4",
+  "runner_source_sha256": "225ab7feb16a15a433ecab6756eda27c227b15f3e850364fef6ad24255ce8255",
+  "runner_executable_sha256": "156f0ac996d3fd1ca2574568e8f95305d44b3d6f35e9a1bc9219a66258fc2478",
+  "candidate_executable_sha256": "bf3a048cf731aa3251d121d2a4487c618676271df093b45001810296f10c0b7a",
+  "runner_candidate_label": "CANDIDATE_V046",
+  "runner_stale_candidate_v045_label_present": false,
+  "method": "60 warmups per invocation; two 31-pair Parent same-binary runs; two 31-pair Candidate same-binary runs; then two 31-pair interleaved Parent/Candidate blocks alternating P,C and C,P. ACL device-event latency is primary, wall latency is diagnostic. No raw samples were filtered.",
+  "qualification_status": "COMPLETED_HIGH_JITTER",
+  "same_binary_qualification": {
+    "parent": [
+      {"run": 1, "first_median_us": 7.08, "second_median_us": 6.72, "first_mad_over_median": 0.132768, "second_mad_over_median": 0.089286, "median_drift_fraction": 0.052174},
+      {"run": 2, "first_median_us": 15.22, "second_median_us": 14.44, "first_mad_over_median": 0.148489, "second_mad_over_median": 0.124654, "median_drift_fraction": 0.052596}
+    ],
+    "candidate": [
+      {"run": 1, "first_median_us": 7.78, "second_median_us": 8.96, "first_mad_over_median": 0.172236, "second_mad_over_median": 0.310268, "median_drift_fraction": 0.140980},
+      {"run": 2, "first_median_us": 10.48, "second_median_us": 9.60, "first_mad_over_median": 0.339695, "second_mad_over_median": 0.325000, "median_drift_fraction": 0.087649}
+    ],
+    "interpretation": "Large spread across qualification runs and elevated same-binary MAD/median; retained as a noise diagnostic, not a gate to wait for a clean-load window."
+  },
+  "sample_pairs_per_block": 31,
+  "total_paired_samples": 62,
+  "local_score": -4.676489,
+  "local_score_unit": "percent",
+  "local_score_type": "ROUTE_LOCAL_MEDIAN_PAIRED_DEVICE_SPEEDUP_PERCENT",
+  "local_score_method": "-100 * median(candidate_device_us - parent_device_us across all 62 pairs) / median(parent_device_us across all 62 pairs); no outlier filtering.",
+  "local_delta_candidate_minus_parent_us": 0.730000,
+  "local_score_comparable_to_official": false,
+  "pooled": {
+    "parent_device_us": {"median": 15.610000, "mean": 15.265161, "stdev_sample": 3.575463, "cv": 0.234224, "min": 6.020000, "max": 26.100000, "mad": 1.280000, "p10": 12.286000, "p90": 18.446000, "median_throughput_g_elements_s": 1.049898},
+    "candidate_device_us": {"median": 16.070000, "mean": 19.191290, "stdev_sample": 26.692265, "cv": 1.390853, "min": 6.000000, "max": 221.880000, "mad": 2.070000, "p10": 7.020000, "p90": 20.824000, "median_throughput_g_elements_s": 1.019540},
+    "paired_delta_candidate_minus_parent_us": {"median": 0.730000, "mean": 3.926129, "stdev_sample": 26.638080, "cv": 6.784820, "min": -11.680000, "max": 205.940000, "mad": 2.310000, "p10": -5.978000, "p90": 7.502000},
+    "parent_wall_us": {"median": 67.119000, "mean": 73.067355, "stdev_sample": 35.220165, "cv": 0.482023, "min": 57.578000, "max": 291.404000, "mad": 5.925000, "p10": 58.898000, "p90": 78.393100},
+    "candidate_wall_us": {"median": 68.413000, "mean": 70.966806, "stdev_sample": 29.421722, "cv": 0.414584, "min": 57.939000, "max": 289.944000, "mad": 5.384500, "p10": 58.944000, "p90": 76.175900}
+  },
+  "blocks": [
+    {"block": 1, "sample_pairs": 31, "runner_score_percent": -3.984063, "parent_median_device_us": 15.0600, "candidate_median_device_us": 15.9800, "median_paired_delta_us": 0.6000, "paired_delta_mad_us": 1.5800, "candidate_device_cv": 0.37486},
+    {"block": 2, "sample_pairs": 31, "runner_score_percent": -5.651109, "parent_median_device_us": 16.2800, "candidate_median_device_us": 16.0800, "median_paired_delta_us": 0.9200, "paired_delta_mad_us": 2.5000, "candidate_device_cv": 1.61472, "candidate_device_max_us": 221.8800}
+  ],
+  "device_load": {
+    "assignment": "Main renewed exclusive device-3 assignment through V046 Local measurement/result closeout; no shared TSV write by this Route.",
+    "device3_aicore_percent_pre_between_post": [0, 0, 0],
+    "device3_hbm_mb_pre_between_post": [3426, 3428, 3428],
+    "device3_process_reported_pre_between_post": [false, false, false],
+    "host_load_average_pre": [48.17, 42.55, 46.66],
+    "host_load_average_between_blocks": [61.30, 45.44, 47.55],
+    "host_load_average_post": [59.51, 45.34, 47.50],
+    "other_device_activity_observed": true,
+    "notes": "Device and host snapshots were retained before, between, and after the Local blocks. The assigned device showed no other reported process; activity on other devices was left untouched. No low-load threshold was applied."
+  },
+  "repeatability": "Noisy and negative. Candidate pooled device-time CV is 1.390853, paired-delta maximum is 205.94 us, and block 2 includes a 221.88 us Candidate event. Same-binary qualifications also show high spread. Numeric score is preserved; no promotion.",
+  "interpretation": "LOCAL_REJECTED_NOISY; CURRENT_LOCAL_BEST remains R31B-V011. Numeric single-shape Local is not comparable to Official 45.16.",
+  "current_local_best": "R31B-V011",
+  "official_score": null,
+  "online_state": "NOT_SUBMITTED",
+  "runner_build_history": {
+    "pre_fix_runner_not_used_for_qualification_or_local": "logs/correctness-runner-build-20261007T224614Z.log",
+    "failed_build_missing_ascend_home_path": "logs/runner-rebuild-label-v046-20261007T225805Z.log",
+    "failed_build_missing_host_vector_include": "logs/runner-rebuild-label-v046-envfix-20261007T225909Z.log",
+    "successful_label_corrected_build": "logs/runner-rebuild-label-v046-hostincludes-20261007T230037Z.log",
+    "failed_identity_wrapper_exit_141_no_device_run": "logs/qualification-parent-v046-20261007T230448Z.log",
+    "verified_parent_qualification_and_identity": "logs/qualification-parent-v046-verified-20261007T230518Z.log"
+  },
+  "evidence": {
+    "parent_same_binary_raw_samples": "logs/qualification-parent-v046-verified-20261007T230518Z.log",
+    "candidate_same_binary_raw_samples": "logs/qualification-candidate-v046-20261007T230600Z.log",
+    "raw_interleaved_samples_and_load": "logs/local-interleaved-v046-20261007T230645Z.log",
+    "compile": "logs/compile-local-20261007T224439Z.log",
+    "correctness": "logs/correctness-local-20261007T224735Z.log",
+    "runner_rebuild": "logs/runner-rebuild-label-v046-hostincludes-20261007T230037Z.log"
+  }
+}
