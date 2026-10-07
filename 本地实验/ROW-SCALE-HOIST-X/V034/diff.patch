@@ -1,0 +1,21 @@
+diff --git "a/\346\234\254\345\234\260\345\256\236\351\252\214/ROW-SCALE-HOIST-X/V026/submission.asc" "b/\346\234\254\345\234\260\345\256\236\351\252\214/ROW-SCALE-HOIST-X/V034/submission.asc"
+index 99c9143e..1f6baf01 100644
+--- "a/\346\234\254\345\234\260\345\256\236\351\252\214/ROW-SCALE-HOIST-X/V026/submission.asc"
++++ "b/\346\234\254\345\234\260\345\256\236\351\252\214/ROW-SCALE-HOIST-X/V034/submission.asc"
+@@ -854,14 +854,14 @@ public:
+                 }
+                 AscendC::LocalTensor<float> valueRow = valueLocal[batchRow * width];
+                 AscendC::LocalTensor<T> outputRow = outputBuf_.Get<T>()[batchRow * width];
+                 FromFloat(outputRow, valueRow, width);
+                 AscendC::PipeBarrier<PIPE_V>();
+-                AscendC::Mul(outputRow, outputRow, gammaLocal, width);
+-                AscendC::PipeBarrier<PIPE_V>();
+                 AscendC::Muls(outputRow, outputRow, half(invRmsValues[batchRow]), width);
+                 AscendC::PipeBarrier<PIPE_V>();
++                AscendC::Mul(outputRow, outputRow, gammaLocal, width);
++                AscendC::PipeBarrier<PIPE_V>();
+                 AscendC::Add(outputRow, outputRow, biasLocal, width);
+                 AscendC::PipeBarrier<PIPE_V>();
+                 AscendC::SetFlag<AscendC::HardEvent::V_MTE3>(outputReady);
+                 AscendC::WaitFlag<AscendC::HardEvent::V_MTE3>(outputReady);
+                 Store(outputGm_, (batchBegin + static_cast<uint64_t>(batchRow)) * width,
