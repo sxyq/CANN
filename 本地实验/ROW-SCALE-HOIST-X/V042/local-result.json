@@ -1,0 +1,183 @@
+{
+  "route": "ROW-SCALE-HOIST-X",
+  "revision": "V042",
+  "direct_parent": "V026",
+  "stage": "LOCAL_PAIRED_INTERLEAVED",
+  "run_id": "20261007T234658Z",
+  "verdict": "MEASUREMENT_BLOCKED",
+  "measurement_quality": "HIGH_JITTER_PARENT_STABILITY_DRIFT_SHARED_HOST_AND_DEVICE_ACTIVITY_MIXED_PAIRED_DIRECTION",
+  "validity": "VALID_DISPATCH_EXECUTED_DESCRIPTIVE_ONLY",
+  "local_score": 112.7739480276,
+  "local_score_type": "descriptive single-shape route-local speedup index",
+  "local_score_formula": "100 * parent_pooled_median_device_us / candidate_pooled_median_device_us",
+  "local_score_comparable_to_official": false,
+  "local_delta_percent_candidate_vs_parent_positive_is_slower": -11.3270380713,
+  "local_delta_interpretation": "The pooled median suggests the Candidate is 11.3270380713% faster, but Parent stability drift, high within-window jitter, shared host/device activity, and mixed paired-block direction make the gain unreliable. Do not promote this result.",
+  "host": "hwnput3",
+  "toolkit_version_dir": "8.5.0.alpha002",
+  "device": 0,
+  "soc": "Ascend910B3",
+  "architecture": "dav-2201",
+  "dtype": "fp32",
+  "shape": [40, 2050],
+  "branch": "ProcessNarrowMidOverlap",
+  "vector_cores": 40,
+  "launch_blocks": 40,
+  "local_rows_min": 1,
+  "local_rows_max": 1,
+  "warmups_per_process": 20,
+  "samples_per_process": 32,
+  "sample_count_per_arm": 96,
+  "order": "P1-C1-C2-P2-P3-C3",
+  "process_return_codes": {
+    "PARENT_STABILITY_INITIAL_1_MISSING_LIBMSPROFILER": 127,
+    "PARENT_STABILITY_INITIAL_2_MISSING_LIBMSPROFILER": 127,
+    "PARENT_STABILITY_RETRY_1": 0,
+    "PARENT_STABILITY_RETRY_2": 0,
+    "PARENT_BLOCK1": 0,
+    "CANDIDATE_BLOCK1": 0,
+    "CANDIDATE_BLOCK2": 0,
+    "PARENT_BLOCK2": 0,
+    "PARENT_BLOCK3": 0,
+    "CANDIDATE_BLOCK3": 0
+  },
+  "all_primary_window_samples_included": true,
+  "sample_exclusion": "NONE for the 96 primary samples per arm. The two initial Parent stability launches failed before sampling because libmsprofiler.so was not in the shell environment; their exit-127 logs are retained, and successful environment-sourced retries are retained separately.",
+  "diagnostic_command_failures": [
+    {
+      "command": "npu-smi info -t process -i 0",
+      "exit_code": 215,
+      "interpretation": "Unsupported npu-smi type; exact usage output retained in local-load-before-paired-resume.log. A subsequent npu-smi info snapshot succeeded."
+    }
+  ],
+  "candidate_source_sha256": "230fc92deab938bfbb658a26682e52577e6ad1c5d18adf5a6fca116ee4431432",
+  "parent_source_sha256": "7c2569d9e3830c845f2b5dc4587a73a05a0bdf041168614cd55ad84204e063f9",
+  "parent_stability_gate": {
+    "status": "DRIFT_OBSERVED",
+    "samples_per_window": 32,
+    "window_median_device_us": [18.7799995, 7.85],
+    "window_cv": [0.3333027057, 0.452270686],
+    "window_max_device_us": [34.600002, 21.48],
+    "median_difference_us": 10.9299995,
+    "evidence_file_initial_failed_attempts": "local-parent-stability-20261007T234309Z.log",
+    "evidence_file_successful_retries": "local-parent-stability-retry-env-20261007T234330Z.log"
+  },
+  "parent": {
+    "pooled": {
+      "n": 96,
+      "median_device_us": 18.0099995,
+      "mean_device_us": 17.2210416875,
+      "sample_stdev_device_us": 6.8711792259,
+      "cv": 0.3989990472,
+      "median_absolute_deviation_device_us": 4.010001,
+      "p10_device_us": 7.74,
+      "p90_device_us": 25.2200005,
+      "min_device_us": 7.34,
+      "max_device_us": 37.859997
+    }
+  },
+  "candidate": {
+    "pooled": {
+      "n": 96,
+      "median_device_us": 15.97,
+      "mean_device_us": 14.9164583438,
+      "sample_stdev_device_us": 6.7976088404,
+      "cv": 0.455711985,
+      "median_absolute_deviation_device_us": 5.7699995,
+      "p10_device_us": 7.76,
+      "p90_device_us": 21.7399995,
+      "min_device_us": 6.82,
+      "max_device_us": 39.540001
+    }
+  },
+  "paired_blocks": {
+    "parent_medians_us": [20.1, 17.790001, 16.23],
+    "candidate_medians_us": [9.66, 17.279999, 17.49],
+    "candidate_vs_parent_delta_percent": [-51.9402960199, -2.8667818999, 7.7633947085],
+    "candidate_faster_blocks": 2,
+    "candidate_slower_blocks": 1,
+    "block_summaries": [
+      {
+        "block": "PARENT_BLOCK1/CANDIDATE_BLOCK1",
+        "samples_per_arm": 32,
+        "parent_median_us": 20.1,
+        "candidate_median_us": 9.6600005,
+        "parent_mean_us": 18.8824998438,
+        "candidate_mean_us": 13.1118749688,
+        "parent_cv": 0.4604517185,
+        "candidate_cv": 0.5007139317,
+        "parent_min_us": 7.34,
+        "parent_max_us": 37.859997,
+        "candidate_min_us": 7.22,
+        "candidate_max_us": 29.98,
+        "delta_percent_candidate_vs_parent": -51.9402960199
+      },
+      {
+        "block": "CANDIDATE_BLOCK2/PARENT_BLOCK2",
+        "samples_per_arm": 32,
+        "parent_median_us": 17.790001,
+        "candidate_median_us": 17.279999,
+        "parent_mean_us": 16.7543750938,
+        "candidate_mean_us": 14.11875,
+        "parent_cv": 0.3316728451,
+        "candidate_cv": 0.4277595002,
+        "parent_min_us": 7.5,
+        "parent_max_us": 27.059999,
+        "candidate_min_us": 7.38,
+        "candidate_max_us": 22.639999,
+        "delta_percent_candidate_vs_parent": -2.8667818999
+      },
+      {
+        "block": "PARENT_BLOCK3/CANDIDATE_BLOCK3",
+        "samples_per_arm": 32,
+        "parent_median_us": 16.2300005,
+        "candidate_median_us": 17.4899995,
+        "parent_mean_us": 16.026250125,
+        "candidate_mean_us": 17.5187500625,
+        "parent_cv": 0.3620328819,
+        "candidate_cv": 0.4077125035,
+        "parent_min_us": 7.4,
+        "parent_max_us": 27.68,
+        "candidate_min_us": 6.82,
+        "candidate_max_us": 39.540001,
+        "delta_percent_candidate_vs_parent": 7.7633947085
+      }
+    ]
+  },
+  "device_load": {
+    "device0_health": "OK",
+    "device0_aicore_usage_before_after_percent": [0, 0],
+    "device0_hbm_used_mb_before_after": [3432, 3432],
+    "device0_hbm_capacity_mb": 65536,
+    "device0_processes_before_after": "none observed",
+    "shared_activity_on_other_devices_observed": true,
+    "shared_processes_observed": true,
+    "other_processes_modified": false,
+    "before_evidence": "local-load-before-paired-resume.log",
+    "after_evidence": "local-load-after-paired-resume.log"
+  },
+  "host_load": {
+    "before_stability_load_average": "40.56, 47.87, 49.37",
+    "before_paired_load_average": "37.85, 46.34, 48.71",
+    "after_load_average": "62.84, 52.15, 50.52",
+    "shared_host_activity_observed": true
+  },
+  "repeatability": "All 96 primary raw samples per arm, both successful 32-sample Parent stability windows, the two initial exit-127 Parent launch failures, and all return codes are retained. Pooled medians favor Candidate, but Parent stability medians shifted from 18.78 to 7.85 us, paired block deltas were mixed (-51.940296%, -2.866782%, +7.763395%), and pooled CV was 0.398999 Parent / 0.455712 Candidate. High host load rose during sampling while other NPU processes were active. The pooled signal is not separable from the observed drift and jitter.",
+  "current_local_best": "V026",
+  "official_score": null,
+  "online": "NOT_RUN",
+  "evidence": {
+    "revision_declaration": "REVISION-DECLARATION.md",
+    "compile": "compile-local-20261007T233939Z.log",
+    "compile_result": "compile-result.json",
+    "correctness": "correctness-local-20261007T234015Z.log",
+    "correctness_result": "correctness-result.json",
+    "local_runner_build": "local-build-20261007T234128Z.log",
+    "parent_stability_initial_failed_attempts": "local-parent-stability-20261007T234309Z.log",
+    "parent_stability_successful_retries": "local-parent-stability-retry-env-20261007T234330Z.log",
+    "paired_raw": "local-interleaved-resume.log",
+    "device_host_before_stability": "local-load-before-stability-20261007T234229Z.log",
+    "device_host_before_paired": "local-load-before-paired-resume.log",
+    "device_host_after": "local-load-after-paired-resume.log"
+  }
+}

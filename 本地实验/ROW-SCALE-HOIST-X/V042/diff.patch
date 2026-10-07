@@ -1,0 +1,21 @@
+--- a/submission.asc
++++ b/submission.asc
+@@ -583,14 +583,16 @@
+             const float invRms = 1.0f / xFp32.GetValue(0);
+             SyncSToV();
+ 
++            if constexpr (AscendC::IsSameType<T, float>::value) {
++                AscendC::Muls(valueLocal, valueLocal, invRms, valid);
++                AscendC::PipeBarrier<PIPE_V>();
++            }
+             if (!residentParams) {
+                 AscendC::WaitFlag<AscendC::HardEvent::MTE2_V>(paramReady);
+             }
+             if constexpr (AscendC::IsSameType<T, float>::value) {
+                 AscendC::Mul(valueLocal, valueLocal, gammaLocal, valid);
+                 AscendC::PipeBarrier<PIPE_V>();
+-                AscendC::Muls(valueLocal, valueLocal, invRms, valid);
+-                AscendC::PipeBarrier<PIPE_V>();
+                 AscendC::Add(valueLocal, valueLocal, biasLocal, valid);
+                 AscendC::PipeBarrier<PIPE_V>();
+                 SyncVToMTE3();
