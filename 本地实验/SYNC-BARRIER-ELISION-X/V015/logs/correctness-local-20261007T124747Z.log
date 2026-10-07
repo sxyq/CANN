@@ -1,0 +1,105 @@
+ROUTE=SYNC-BARRIER-ELISION-X
+REVISION=V015
+DIRECT_PARENT=R31B-V011
+HOST=hwnput3
+DEVICE=3
+CANDIDATE_SOURCE_SHA256=930056f67d6694820e4e454f573a5892f9377a53046238c81da996147be38892
+PARENT_SOURCE_SHA256=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
+COMPILE=PASS
+CORRECTNESS_START=2026-10-07T12:47:47Z
++------------------------------------------------------------------------------------------------+
+| npu-smi 25.0.rc1.1               Version: 25.0.rc1.1                                           |
++---------------------------+---------------+----------------------------------------------------+
+| NPU   Name                | Health        | Power(W)    Temp(C)           Hugepages-Usage(page)|
+| Chip                      | Bus-Id        | AICore(%)   Memory-Usage(MB)  HBM-Usage(MB)        |
++===========================+===============+====================================================+
+| 0     910B3               | OK            | 147.2       47                0    / 0             |
+| 0                         | 0000:C1:00.0  | 32          0    / 0          60221/ 65536         |
++===========================+===============+====================================================+
+| 1     910B3               | OK            | 141.7       46                0    / 0             |
+| 0                         | 0000:C2:00.0  | 32          0    / 0          60275/ 65536         |
++===========================+===============+====================================================+
+| 2     910B3               | OK            | 132.3       48                0    / 0             |
+| 0                         | 0000:81:00.0  | 21          0    / 0          60214/ 65536         |
++===========================+===============+====================================================+
+| 3     910B3               | OK            | 135.6       46                0    / 0             |
+| 0                         | 0000:82:00.0  | 22          0    / 0          60219/ 65536         |
++===========================+===============+====================================================+
+| 4     910B3               | OK            | 92.4        44                0    / 0             |
+| 0                         | 0000:01:00.0  | 0           0    / 0          59192/ 65536         |
++===========================+===============+====================================================+
+| 5     910B3               | OK            | 132.9       50                0    / 0             |
+| 0                         | 0000:02:00.0  | 7           0    / 0          60222/ 65536         |
++===========================+===============+====================================================+
+| 6     910B3               | OK            | 136.4       52                0    / 0             |
+| 0                         | 0000:41:00.0  | 7           0    / 0          60222/ 65536         |
++===========================+===============+====================================================+
+| 7     910B3               | OK            | 114.9       48                0    / 0             |
+| 0                         | 0000:42:00.0  | 1           0    / 0          24791/ 65536         |
++===========================+===============+====================================================+
++---------------------------+---------------+----------------------------------------------------+
+| NPU     Chip              | Process id    | Process name             | Process memory(MB)      |
++===========================+===============+====================================================+
+| 0       0                 | 89395         | VLLMWorker_TP            | 56702                   |
++===========================+===============+====================================================+
+| 1       0                 | 91055         | VLLMWorker_TP            | 56702                   |
++===========================+===============+====================================================+
+| 2       0                 | 92813         | VLLMWorker_TP            | 56703                   |
++===========================+===============+====================================================+
+| 3       0                 | 94498         | VLLMWorker_TP            | 56703                   |
++===========================+===============+====================================================+
+| 4       0                 | 2999855       | VLLMEngineCor            | 55666                   |
++===========================+===============+====================================================+
+| 5       0                 | 89602         | VLLMWorker_TP            | 56700                   |
++===========================+===============+====================================================+
+| 6       0                 | 91228         | VLLMWorker_TP            | 56701                   |
++===========================+===============+====================================================+
+| 7       0                 | 439848        | python3                  | 21260                   |
++===========================+===============+====================================================+
+    PID USER     COMMAND           RSS COMMAND
+  82397 root     vllm            5495484 /usr/local/python3.12.13/bin/python3 /usr/local/python3.12.13/bin/vllm serve /models/Qwen3.8-27B-w8a8 --host 0.0.0.0 --port 9001 --tensor-parallel-size 4 --quantization ascend --served-model-name qwen3.8 --max-model-len 256000 --max-num-seqs 8 --max-num-batched-tokens 8192 --gpu-memory-utilization 0.90 --enable-prefix-caching --trust-remote-code --reasoning-parser qwen3 --enable-auto-tool-choice --tool-call-parser qwen3_coder
+  83352 root     vllm            5601188 /usr/local/python3.12.13/bin/python3 /usr/local/python3.12.13/bin/vllm serve /models/Qwen3.8-27B-w8a8 --host 0.0.0.0 --port 9002 --tensor-parallel-size 2 --quantization ascend --served-model-name qwen3.8 --max-model-len 256000 --max-num-seqs 8 --max-num-batched-tokens 8192 --gpu-memory-utilization 0.90 --enable-prefix-caching --trust-remote-code --reasoning-parser qwen3 --enable-auto-tool-choice --tool-call-parser qwen3_coder
+  87336 root     VLLM::EngineCor 2619020 VLLM::EngineCore
+  87670 root     VLLM::EngineCor 2440776 VLLM::EngineCore
+  89395 root     VLLM::Worker_TP 4921744 VLLM::Worker_TP0
+  89602 root     VLLM::Worker_TP 4732412 VLLM::Worker_TP0
+  91055 root     VLLM::Worker_TP 4923896 VLLM::Worker_TP1
+  91228 root     VLLM::Worker_TP 4734560 VLLM::Worker_TP1
+  92813 root     VLLM::Worker_TP 4925608 VLLM::Worker_TP2
+  94498 root     VLLM::Worker_TP 4913632 VLLM::Worker_TP3
+1505501 lelinfe+ bash             3024 /bin/bash -lc set -o pipefail REV_DIR='本地实验/SYNC-BARRIER-ELISION-X/V015' BUILD_DIR='/tmp/sync-barrier-elision-v015.2Ngbt3' RESULT_LOG="$REV_DIR/logs/correctness-local-$(date -u +%Y%m%dT%H%M%SZ).log" {   printf 'ROUTE=SYNC-BARRIER-ELISION-X\nREVISION=V015\nDIRECT_PARENT=R31B-V011\nHOST=%s\nDEVICE=3\n' "$(hostname)"   printf 'CANDIDATE_SOURCE_SHA256='   sha256sum "$REV_DIR/submission.asc" | awk '{print $1}'   printf 'PARENT_SOURCE_SHA256='   sha256sum "$REV_DIR/parent.asc" | awk '{print $1}'   printf 'COMPILE=PASS\nCORRECTNESS_START=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"   npu-smi info   ps -eo pid,user,comm,rss,args | rg 'PID|vllm|VLLM|sync_barrier|correctness'   source /usr/local/Ascend/ascend-toolkit/set_env.sh   cmake --build "$BUILD_DIR" --target sync_barrier_elision_correctness -j2   BUILD_RC=$?   printf 'CORRECTNESS_RUNNER_BUILD_RC=%s\n' "$BUILD_RC"   if [ "$BUILD_RC" -ne 0 ]; then exit "$BUILD_RC"; fi   "$BUILD_DIR/sync_barrier_elision_correctness" 3   RUN_RC=$?   printf 'CORRECTNESS_RUN_RC=%s\n' "$RUN_RC"   npu-smi info   uptime   printf 'CORRECTNESS_END=%s\nRESULT_RC=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$RUN_RC"   exit "$RUN_RC" } 2>&1 | tee "$RESULT_LOG" PIPE_RC=${PIPESTATUS[0]} printf 'EVIDENCE_LOG=%s\nRESULT_RC=%s\n' "$RESULT_LOG" "$PIPE_RC" exit "$PIPE_RC"
+1505506 lelinfe+ bash             1972 /bin/bash -lc set -o pipefail REV_DIR='本地实验/SYNC-BARRIER-ELISION-X/V015' BUILD_DIR='/tmp/sync-barrier-elision-v015.2Ngbt3' RESULT_LOG="$REV_DIR/logs/correctness-local-$(date -u +%Y%m%dT%H%M%SZ).log" {   printf 'ROUTE=SYNC-BARRIER-ELISION-X\nREVISION=V015\nDIRECT_PARENT=R31B-V011\nHOST=%s\nDEVICE=3\n' "$(hostname)"   printf 'CANDIDATE_SOURCE_SHA256='   sha256sum "$REV_DIR/submission.asc" | awk '{print $1}'   printf 'PARENT_SOURCE_SHA256='   sha256sum "$REV_DIR/parent.asc" | awk '{print $1}'   printf 'COMPILE=PASS\nCORRECTNESS_START=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"   npu-smi info   ps -eo pid,user,comm,rss,args | rg 'PID|vllm|VLLM|sync_barrier|correctness'   source /usr/local/Ascend/ascend-toolkit/set_env.sh   cmake --build "$BUILD_DIR" --target sync_barrier_elision_correctness -j2   BUILD_RC=$?   printf 'CORRECTNESS_RUNNER_BUILD_RC=%s\n' "$BUILD_RC"   if [ "$BUILD_RC" -ne 0 ]; then exit "$BUILD_RC"; fi   "$BUILD_DIR/sync_barrier_elision_correctness" 3   RUN_RC=$?   printf 'CORRECTNESS_RUN_RC=%s\n' "$RUN_RC"   npu-smi info   uptime   printf 'CORRECTNESS_END=%s\nRESULT_RC=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$RUN_RC"   exit "$RUN_RC" } 2>&1 | tee "$RESULT_LOG" PIPE_RC=${PIPESTATUS[0]} printf 'EVIDENCE_LOG=%s\nRESULT_RC=%s\n' "$RESULT_LOG" "$PIPE_RC" exit "$PIPE_RC"
+1505507 lelinfe+ tee               792 tee 本地实验/SYNC-BARRIER-ELISION-X/V015/logs/correctness-local-20261007T124747Z.log
+1505673 lelinfe+ rg               3548 rg PID|vllm|VLLM|sync_barrier|correctness
+2992910 zhangka+ vllm            2827432 /home/data4t1/zhangkaijie/conda/envs/qwen38_a2/bin/python3.12 /home/data4t1/zhangkaijie/conda/envs/qwen38_a2/bin/vllm serve /home/data4t2/models/Qwen3.8-27B-w8a8 --host 0.0.0.0 --port 9000 --tensor-parallel-size 1 --max-model-len 200000 --max-num-seqs 8 --max-num-batched-tokens 16384 --enable-prefix-caching --trust-remote-code --speculative-config {"method":"mtp","num_speculative_tokens":4} --enable-auto-tool-choice --tool-call-parser qwen3_coder --gpu-memory-utilization 0.85
+2999855 zhangka+ VLLM::EngineCor 4192320 VLLM::EngineCore
+[ 50%] Building ASC object CMakeFiles/sync_barrier_elision_correctness.dir/support/correctness_runner.asc.o
+/tmp/asc_plugin_binary_register_code-e3fc87.c:3:10: fatal error: 'vector' file not found
+#include <vector>
+         ^~~~~~~~
+1 error generated.
+cceld: ccec ReturnCode: 1
+cceld: ExecutionFailed: 0
+cceld: ErrMsg: 
+/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/bin/llvm-objcopy: error: '/tmp/cce_all_link-34d951.o': No such file or directory
+cceld: ccec ReturnCode: 1
+cceld: ObjcopyExecutionFailed: 0
+cceld: ObjcopyErrMsg: 
+ld.lld: error: cannot open /tmp/cce_all_link-34d951.o: No such file or directory
+cceld: ccec ReturnCode: 1
+cceld: RelocatedLinkedExecutionFailed: 0
+cceld: RelocatedLinkedObjcopyErrMsg: 
+/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/bin/llvm-objcopy: error: '/tmp/cce_relocated_linked_static_object-fa1c86.o': The file was not recognized as a valid object file
+cceld: ccec ReturnCode: 1
+cceld: LocalFixedExecutionFailed: 0
+cceld: LocalFixedErrMsg: 
+ld.lld: error: target emulation unknown: -m or at least one .o file required
+cceld: Linker ReturnCode: 1
+cceld: ExecutionFailed: 0
+cceld: ErrMsg: 
+bisheng: error: linker command failed with exit code 1 (use -v to see invocation)
+gmake[3]: *** [CMakeFiles/sync_barrier_elision_correctness.dir/build.make:76: CMakeFiles/sync_barrier_elision_correctness.dir/support/correctness_runner.asc.o] Error 1
+gmake[2]: *** [CMakeFiles/Makefile2:111: CMakeFiles/sync_barrier_elision_correctness.dir/all] Error 2
+gmake[1]: *** [CMakeFiles/Makefile2:118: CMakeFiles/sync_barrier_elision_correctness.dir/rule] Error 2
+gmake: *** [Makefile:137: sync_barrier_elision_correctness] Error 2
+CORRECTNESS_RUNNER_BUILD_RC=2
