@@ -1,5 +1,8 @@
 # W4-R03：host 行数与分派条件的来源绑定
 
+本文前半保留 `712e4723` 的 host 研究。2026-10-08 本次接手的 Init／InitBuffer
+消费者结果见末节；当前没有新增性能版本，原 occupancy trace 不重跑。
+
 ## 结论
 
 设备 3 的 `ACL_DEV_ATTR_VECTOR_CORE_NUM` 实测为 40。以该值执行从
@@ -175,3 +178,206 @@ NEXT_ACTION=Main/Planning 复核；后续 R03 先研究单行核参数初始化�
 ```
 
 上述文件属于同一个研究结果提交，具体 commit、最终 HEAD/dirty 随交接回执给出。
+
+## 2026-10-08 续：Init 与 InitBuffer 的消费者
+
+本次已完成限定范围的源码和 SDK 研究，没有确认可在设备上省去的独立初始化开销，
+因此没有创建 Candidate 或 V001。源码中有五处可省默认赋值；部分路径也有不使用的
+数据区，但直接省掉相应 InitBuffer 会改变分配容量、后续地址或对象管理状态。
+`NEW_PERFORMANCE_REVISIONS=0`，`CURRENT_LOCAL_BEST=NONE`；R31B-V011 仅为继承参考。
+
+### 本次范围与证据等级
+
+唯一工作树和分支沿用本文前半的 R03 对象，接手 HEAD 为
+`712e47230287182bc65ab433a3ce714e6fdafd9f`，接手 dirty 为 NONE。
+本次为 SLOT-2，分配设备 1，实际未运行 NPU 命令；原设备 3 的核数、
+9 inputs／144 blocks／256 rows 和 64x8192 的 24 个双行块、16 个单行块全部复用。
+没有把这些旧结果写成设备 1 的新观测。
+
+已完整读取本树 AGENTS／Route Skill，以及 `9f918955` 的九项指定规则，先发出
+RULE_REFRESH_RECEIPT。通用 AscendC Skill 不在本分支；本次读取安装版的 API
+最佳实践、文档检索 Skill、Buffer 说明和 API 索引，不读取主工作树中的技能文件。
+
+共享事实另从本树 `git show main:<path>` 读取三份 TSV；当时 main 为
+`07662d7b96e9beaaa0f56d97c9cf346b86081eb3`。R03 已登记、真实性能版数为 0；
+表内 QUEUED 阶段早于本次用户接手指令。本次事件等待 Record，前半旧文中的
+“规则对象内无短 ID”不代表当前共享状态。
+
+下文 L 行号均指本树未修改的 `线上结果/R31B/V011/submission.asc`。
+完整语法索引、SDK 摘录及历史搜索输出在 `init-consumer-evidence.log`；
+实际命令、返回码和失败原输出在 `init-consumer-commands.log`。
+
+| 等级 | 本次结论 | 限制 |
+|---|---|---|
+| 源码可省 | L57、L70 的无读取字段赋值；L58、L59、L68 的使用前必被覆盖默认值 | 只证明删除这些赋值的源码语义；没有实施删除 |
+| 已确认编译器消去 | NONE | 没有可读的目标设备指令或最终优化 IR，不能用常见优化经验替代实际证据 |
+| 实际设备执行未知 | 上述五处赋值、InitBuffer 的描述符写入及相关管理循环 | SDK 源码和函数尺寸都不能直接说明设备执行次数或耗时 |
+
+`if constexpr` 排除的 dtype 分支属于语言层面的路径选择，单列处理；
+不把它当作已取得动态默认赋值消除的设备证据。
+
+### 可达路径与缓冲用途
+
+只读文本调用索引识别 45 个本类方法，从 Init／Process 可连到 29 个；其余 16 个
+没有从当前入口到达的调用链，包括旧 WideFp32CachedRows、PanelResident、Batched
+等路径。该索引保留条件分支的全部可能边，具体 dtype／行数判断以源码为准，
+没有模拟编译器或设备。Init 中共有 34 处 InitBuffer 调用位置。
+
+| 当前路径 | 本路径 InitBuffer 调用数，源码计数 | 数据消费者与生命周期 |
+|---|---:|---|
+| 窄 FP32，NarrowMid／generic／8192 多行 | 8 | x/residual 搬入；xFp32 平方与标量尾部；residualFp32 归约工作区；valueFp32 保存 y 并原位输出；reduceFp32 保存部分和；gamma/bias 用于最终 Mul/Add |
+| 窄 FP32，小行批处理 | 8 | 实际数据使用 x/residual、gamma/bias、valueFp32、reduceFp32 六块；xFp32/residualFp32 的数据区在这三条小行批处理路径中不使用，原分配仍存在 |
+| 窄 FP16 | 9 | gamma/bias 为 half 参数；outputBuf 为独立 half 输出；两个 FP32 工作区承担平方、归约和标量尾部；多行输出事件保护下一次覆盖 |
+| 窄 BF16 | 10 | gamma/bias 为原类型 staging；FP32 参数缓存仅在部分多行路径消费；generic 单行和 NarrowMid 用 xFp32/residualFp32 转换参数，输出使用已消费完的 xBuf |
+| 宽 FP32 | 4 | 仅 xBuf、residualBuf、valueFp32、reduceFp32；前两块在输入、平方／归约、参数阶段复用；valueFp32 的整批 y 保留到写出完成 |
+| 宽 FP16 | 8 | gammaBuf 保存整批 half y；参数复用 xBuf/residualBuf 的双槽；独立 outputBuf 每次写出后等待；valueFp32、两个 FP32 工作区及 reduceFp32 均有实际算术消费者 |
+| 宽 BF16 | 7 | valueFp32 保存整批 FP32 y；参数原类型复用 x/residual，参数转换复用 xFp32/residualFp32；outputBuf 和 reduceFp32 均有消费者 |
+
+这几条路径共用 L3474–3475 的 Init → Process 入口。宽 FP32 在
+L1847–1853 固定转入 FullCacheRows；旧函数内出现某个 Get 不能让它变成当前消费者。
+本次没有改变 availableCoreNum、blockCount、beginRow/localRows 算式或任何数值路径。
+
+### 逐项删减判断
+
+| 拟省项 | 可达条件与消费者证据 | 生命周期与决定 |
+|---|---|---|
+| `wideFp32FullYPath_` 两次赋值，L57/L70 | 全类只有两次赋值和 L3463 声明，没有读取；窄行走 L57，宽 FP32 还走 L70 | 普通 bool 无独立析构；仅删赋值可以保持成员、ABI 与全部分配原样。源码可省，设备开销未知，不建性能版 |
+| `wideFullYRows_=1`，L58 | 窄行无读取；每个宽 dtype 在 L71/L82/L99 调用 ChooseWideFullYRows 后，才用于分配和 L2096/L3090 的批大小 | 后续真正计算值必须保留；仅默认值可省，设备开销未知 |
+| `wideFullYTileElems_=kWideFullYTileElems`，L59 | 窄行无读取；宽行 L73/L84/L101 先赋 helper 输出，消费者为 L2095/L3089 | 字段和后续赋值保留，源码默认值可省；设备开销未知 |
+| 局部 `tileElems=kWideFullYTileElems`，L68 | 宽行三条 dtype 路径都先调用 helper；helper 的 L1297 在任何读取前写入同一常量 | 传引用时不读取旧 int 值；可以只保留声明，尚无设备生成代码依据 |
+| 单行 gammaBuf／biasBuf 的 InitBuffer | generic L374–392 获取并 Load，L429–448 的 FP32／FP16 affine 消费；NarrowMid L511–512、L539–540、L582–602 同样消费 | `cacheParams=false` 只改变何时加载，不取消参数存储。不可删除 |
+| 窄 BF16 的 gammaFp32Buf／biasFp32Buf，L154–155 | generic 单行不走 L269–270／L452–453；NarrowMid 完整函数没有这两个 Get；BF16 特定多行路径在 L631–632、L885–886、L1682–1683 消费 | 在无数据消费者路径删去尾部分配，会让总预留从 176 KiB 变为 112 KiB，并少两个管理项，违反本次容量不变要求；不采用 |
+| 小行 FP32 的 xFp32Buf／residualFp32Buf，L141–142 | L1372、L1458、L1576 三个小行批处理函数用 xBuf/residualBuf 自身作平方／归约；它们及调用的算术 helper 不获取这两个 FP32 TBuf | 原分配位于 valueFp32/reduceFp32 之前；删去会减少 32 KiB，并改变后两块位置。与本次范围不符 |
+| 宽 FP16 gammaBuf，L91 | L3177–3183 写入 half y，L3315–3318 在 pass2 读取；真实 gamma 参数来自 L3256 的 xBuf | 名字不表示当前保存 gamma。整批 y 有跨阶段消费者，不可删除 |
+| 五个 SetGlobalBuffer，L50–54 | x/residual 供 Load；gamma/bias 供参数 Load；output 供 Store；宽行参数复用 UB 不影响这五个 GM 来源 | SDK 对应重载设置 GM 地址，没有在这里搬入参数；删除会使后续 Load/Store 缺少正确地址 |
+| TPipe 整体初始化或析构 | AllocEventID 使用 eventPool；InitBuffer/Get 使用分配和地址状态；析构读取管理项并执行最终 PIPE_ALL | 不能用本类没有显式 Destroy 调用，推导自动析构无作用；保持原状 |
+
+两组无数据消费者缓冲的 KiB 数字来自原 Init 的长度表达式与 SDK 分配算法，
+属于源码容量推导，没有新的地址探针或 NPU 测量。不能用占位分配、参数重排或
+手工构造 TBuf 来规避“总容量、地址和布局不变”的要求。
+
+`Init` 的 rowCount／blockCount 参数在函数体中未读取；本次仍保留签名和调用。
+这不构成删除传参、改核数或重排参数的授权。
+
+### SDK 中的真实管理消费者
+
+本次只读访问 `cann-server3`，远端命令工作目录为原 R03
+`/home/data4t2/lelinfeng/cann/server_runs/W4-R03/research/host-occupancy-20261008/`。
+未新增远端文件、未编译或重链接、未查询设备 HBM，也未运行旧 host_probe。
+读取对象来自 CANN `8.5.0.alpha002/aarch64-linux/tikcpp/tikcfw`：
+
+- `impl/kernel_tpipe_impl.h:289` 的 TBuf 重载先对齐长度，设置 bufStart/bufLen/offset，
+  再登记 FREE、无效事件 ID、address、dataLen、usertag，最后推进 maxAddr 和 curBufSize。
+  此重载没有对数据区执行清零或参数 DMA；CPU 调试专用调用不能当作设备初始化搬运。
+- `impl/kernel_tbuf_impl.h:22`／`:66` 的 Get 用 bufLen 求长度，读取 bufStart/address，
+  更新 dataLen 并构造 LocalTensor。即使忽略数值容量，随意跳过 InitBuffer 也无法保证
+  Get 获取正确地址。
+- `impl/kernel_tpipe_impl.h:55` 自动调用 Destroy；`:491` 遍历 curBufSize，读取
+  freeBufEvtID/state 决定是否等待，随后在正常独立 kernel 路径执行 PIPE_ALL。
+  本类不调用 TBuf 的 EnQue/DeQue/FreeTensor；无效事件 ID 的初值仍是源码上
+  避免误等待的依据，编译器能否折叠这段读取尚未确认。
+- `impl/kernel_tpipe_impl.h:920` 重设分配游标、事件占用和共享池初值；
+  `:126` 将 TPipe 指针登记到当前架构的全局指针，`:137` 设置 isDestroy=false。
+  不能只观察本类直接字段使用，忽略库函数和自动析构。
+- `impl/kernel_tensor_impl.h:1121` 是本 kernel 使用的单参数 SetGlobalBuffer；
+  2201 分支设置 address/oriAddress。它不等同于初始化 UB 参数内容。
+- `impl/kernel_utils.h:81` 的 InitSocStateImpl 在 2201 Vector 分支调用
+  set_atomic_none、set_mask_norm 和 set_vector_mask。这些是有名称的设备状态操作，
+  本次未证明首个算术消费者前存在等价覆盖，不能删除。
+
+首次 SDK 查询因本地命令引号错误失败，未改文件；改用标准输入后只读查询成功。
+远端没有 rg，保留返回 127 的原输出后用 Python 读取相同已知文件。
+没有重试 R12/R09/R05 已失败的设备解码或编译导出参数，没有调用 objcopy。
+
+### 历史对应与事实边界
+
+| 来源 | 本次使用方式与结论 |
+|---|---|
+| W3 R2 `6321ad44` 至 V040、R4 `ce6c6dc5` 至 V031、R5 `1efa0863` 至 V028 | 本轮核对 ref，复用 R12 `e697ddf3` 和 R05 `1a31a3b5` 的完整 Init 对照：R2/R5 相同，R4 只有 V001 宽 FP16 行数上限变化；不重扫已经完成的 99 版对照 |
+| R31/R31A/R31B、MIX、STORE／EPILOGUE | 本树指定历史目录共 64 份包含 kernel 类的源码，25 份仍有该无读取字段；R31B V003 已如此。另读两个历史分支的机制列，没有发现同项删赋值实验；源码份数不当作版本数 |
+| 相关 W4 | 复用 R03 `712e4723`、R05 `1a31a3b5`、R12 `e697ddf3`、R09 `ec24f3ac` 的已提交研究及它们明确引用的 R01/R02/R08/R10/R11 Init 对照；不读取其他实际工作树 |
+| R05 地址结果 | 只引用已测的窄 FP32 x=0、residual=0x4000、gamma=0x8000、value=0x20000 及其原输入范围；不外推宽 FP16。本次不调整子视图起点 |
+| R12／R09 设备代码能力 | 复用无法读出目标助记符和既有编译导出失败的事实；没有新支持来源，不重复旧参数。符号大小或内嵌设备段相同都不能证明默认赋值已消失，更不能推出整库相同 |
+
+部分旧 EPILOGUE-FUSE 只有机制记录，缺少本次可读的完整源码；历史搜索结论仅覆盖上表。
+无读取字段的“源码已经存在”与“删除它的性能实验已经执行”分开记录。
+本次没有发现可直接实施的非重复设备开销，不宣称整个 Route 已耗尽。
+
+另有一项与消费者判断有关的来源细节：R05 runner 的 `resident-80x2056` 使用实测核数，
+通过 run_kernel 传入原 Parent。按其记录的 40 核，localRows=2、2056%8=0，
+L197–203 会先进入 ProcessSmallFp32Batched，无法到达 NarrowMid 的 residentParams。
+因此该用例的既有 reference PASS 保留，但不能用其“resident”标签证明 NarrowMid
+多行参数 Load 已被验证。这里是源码条件推导，未添加新的 occupancy trace 或计时；
+没有改 R05 文件或共享成绩。
+
+```text
+DUPLICATE_AUDIT
+MECHANISM=省去无读取字段或必被覆盖的默认赋值；所有分配、ABI、核心数与行归属不变
+SEARCHED_HISTORY=上述 R03/W3/R31/R31A/R31B/MIX/STORE/EPILOGUE/W4 已提交来源
+MATCH_FOUND=NO_IDENTICAL_REMOVAL_IN_READ_SCOPE
+WHY_NEW_OR_DUPLICATE=不同于 R05 子视图位置和 R12 tiny 专用入口；只有源码可省依据，设备工作量未知
+NEW_PERFORMANCE_REVISIONS=0
+```
+
+### 研究事件、停止位置与下一动作
+
+```text
+ROUTE_RESEARCH_EVENT
+EVENT_ID=W4-R03-INIT-CONSUMERS-20261008
+ROUTE=W4-R03
+SLOT=2
+REVISION=NONE
+DIRECT_PARENT=R31B-V011
+SOURCE_COMMIT=712e47230287182bc65ab433a3ce714e6fdafd9f
+EVENT_CLASS=SOURCE_AND_SDK_CONSUMER_RESEARCH
+STATUS=SOURCE_ONLY_REMOVALS_DEVICE_WORK_UNPROVEN
+SOURCE_ASSERTIONS=PASS
+INITBUFFER_SOURCE_SITES=34
+METHOD_COUNT=45
+SYNTACTICALLY_REACHABLE_METHODS=29
+UNREACHABLE_METHODS_FROM_CURRENT_ENTRY=16
+REMOVABLE_SOURCE_ASSIGNMENTS=5
+COMPILER_ELIMINATION_CONFIRMED=NONE
+PERFORMANCE_CANDIDATE=NONE
+COMPILE=NOT_RUN
+CORRECTNESS=NOT_RUN
+LOCAL_SCORE=NONE
+LOCAL_DELTA=NONE
+CURRENT_LOCAL_BEST=NONE
+INHERITED_REFERENCE=R31B-V011
+LAST_KNOWN_REVISION=NONE; old V001 label was research only
+NEW_PERFORMANCE_REVISIONS=0
+VALID_LOCAL_RESULTS=0
+CONSECUTIVE_NO_GAIN=0
+VERSION_RECORD_EVENT=NONE
+OFFICIAL_SCORE=NONE
+ONLINE_STATE=PAUSED
+PUSH=NO
+DEVICE_ASSIGNED=1
+DEVICE_USED=NONE
+FREE_HBM_MB=NOT_QUERIED
+RESOURCE_BLOCKER=NONE
+STATE_SYNC_GAP=THIS_RESEARCH_AND_FRESH_ASSIGNMENT_PENDING_RECORD
+RUNNING_COMMANDS=NONE
+DEVICE_OPERATION=NONE
+RUNNING_DEVICE_OPERATION=NONE
+ROUTE_LIFECYCLE_CHANGED=NO
+```
+
+本次没有性能源码变化，因此不产生 VERSION_RECORD_EVENT、不计 STAGNATION_3。
+源码位置断言通过；它们不替代 Compile、独立 reference Correctness 或 Local。
+所有前台命令已返回，失败命令原输出保留；没有后台进程或持续调度任务。
+实际文件修改仅为本文追加说明，以及两份 init-consumer 日志。Parent、已有 host trace、
+研究生成器、历史失败证据、规则、共享 TSV、Dashboard 和其他工作树均保持原样。
+
+剩余独立问题是 TPipe 的设备状态默认值是否被非 tiny 路径的首个算术 API 等价覆盖。
+下一动作限定为：以 `impl/kernel_utils.h:81` 的 2201 Vector 状态设置和
+Parent NarrowMid 的首个 Add 及最终 Store 为输入，逐项追踪 mask／atomic 的第一次使用与覆盖；
+同时取得当前工具链正式支持的可选择初始化接口。只有接口允许保持 TPipe 分配、
+自动析构、ABI 和 UB 地址／总容量不变，且证明仍有可省设备工作，才考虑一个新概念。
+当前只看到 TPipe 默认构造入口，不手写替代分配器或修改公共 SDK。
+此动作与本次默认字段、缓冲消费者研究分开，不重跑 occupancy、旧 P/P、原精度用例，
+也不重复失败的设备代码导出参数。若这些条件不能成立，向 Main/Planning 保留研究结论。
+
+提交号、最终 HEAD/dirty 与槽位交接随提交后的回执给出；Main 决定释放当前 Agent，
+本 Agent 不切换路线，不自行关闭、合并或替换 Route。
