@@ -1,0 +1,16 @@
+# RULE_REFRESH_RECEIPT — SYNC-BARRIER-ELISION-X V055
+
+- Date: 2026-10-08 UTC; refreshed after the V054 result commit and before the V055 Candidate edit.
+- Owner/context: same sole SYNC-BARRIER-ELISION-X Route owner/context. No duplicate Owner or worktree.
+- Worktree: `/home/data4t2/lelinfeng/cann-route-w4-3-sync-barrier-elision`.
+- Branch: `exp/w4-compile-sweep/r-w4-3-sync-barrier-elision-x`.
+- HEAD before V055: `30314ec1`, committed V054 noisy result. V054 remains `LOCAL_REJECTED_NOISY`; Local Best remains exact R31B-V011.
+- Read current rules in this worktree: `AGENTS.md`; `.agents/skills/cann-mainline/SKILL.md`; canonical `.agents/skills/cann-route-executor/SKILL.md`; `项目规则/实验总则.md`; `项目规则/执行约定.md`; `项目规则/本地性能测试规范.md`; `项目规则/服务器实验规范.md`; `项目规则/Git工作流程.md`; and `项目规则/线上提交规范.md`.
+- Route-local duplication audit: inspected V001-V054 declarations and actual `diff.patch` hunks. No prior diff deletes the `AscendC::PipeBarrier<PIPE_V>()` immediately after the per-row `Sqrt(scalarSlot, scalarSlot, 1)` loop and before `SyncVToS()` in `ProcessSmallLowPrecisionContiguousBatched`. V010/V018 target post-Sqrt barriers in other functions; V053 removes the later S-to-V handoff after `invRmsValues`; V054 removes the adjacent earlier S-to-V handoff before `Duplicate`.
+- Baseline: V055 `parent.asc` and pre-edit `submission.asc` are copied from the frozen V054 Parent snapshot, SHA256 `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`, exact R31B-V011. No rejected candidate is inherited.
+- Single factor: delete only the `PIPE_V` barrier after the `Sqrt` loop and before `SyncVToS()` in `ProcessSmallLowPrecisionContiguousBatched`. Preserve `Duplicate`, `Sqrt`, `SyncVToS`, scalar extraction, all other barriers/events, and all other paths.
+- Required order: apply this one Candidate edit, then Compile immediately. After Compile PASS, Correctness may run without a performance-window lease only on a device shown safe by a fresh resource/process snapshot and without interfering with another active device operation. Local follows only after Correctness PASS and requires a fresh exclusive assignment; preserve all raw timing, throughput, latency, jitter, and load records.
+- Device assignment: V054's device-3 assignment was explicitly released after its post-capture snapshot. No V055 Local assignment is active; request and receive a fresh exclusive allocation before V055 Local. Before Correctness, take a fresh snapshot and use only a safe, eligible device/context; leave device 3 and its Python process untouched unless separately assigned.
+- Local method: retain the route-local FP16 128x128 same-binary qualification and two 31-pair interleaved device-event blocks, with wall latency, throughput, jitter, and load snapshots. Numeric single-shape Local is not comparable to Official `45.16`.
+- Environment/scope: existing local host `hwnput3`, Ascend910B3 / `dav-2201`, CANN `8.5.0.alpha002`. No SSH, Online, push, shared ledger/dashboard/device-TSV writes, other-Route access, new branch/worktree, reset, clean, rebase, or history rewrite.
+- Stage at receipt: V055 scaffolded as a fresh R31B-V011 sibling; the one-line Candidate edit has not yet been applied. Compile is the immediate next experimental action after that edit.
