@@ -1,0 +1,80 @@
+SNAPSHOT_UTC=2026-10-08T02:40:49Z
+
+=== device 0 load before Local ===
+	NPU ID                         : 0
+	Chip Count                     : 1
+
+	DDR Capacity(MB)               : 0
+	DDR Usage Rate(%)              : 0
+	DDR Hugepages Total(page)      : 0
+	DDR Hugepages Usage Rate(%)    : 0
+	HBM Capacity(MB)               : 65536
+	HBM Usage Rate(%)              : 5
+	Aicore Usage Rate(%)           : 0
+	Aivector Usage Rate(%)         : 0
+	Aicpu Usage Rate(%)            : 0
+	Ctrlcpu Usage Rate(%)          : 5
+	DDR Bandwidth Usage Rate(%)    : 0
+	HBM Bandwidth Usage Rate(%)    : 0
+	Chip ID                        : 0
+
+
+=== all NPU devices and process table ===
++------------------------------------------------------------------------------------------------+
+| npu-smi 25.0.rc1.1               Version: 25.0.rc1.1                                           |
++---------------------------+---------------+----------------------------------------------------+
+| NPU   Name                | Health        | Power(W)    Temp(C)           Hugepages-Usage(page)|
+| Chip                      | Bus-Id        | AICore(%)   Memory-Usage(MB)  HBM-Usage(MB)        |
++===========================+===============+====================================================+
+| 0     910B3               | OK            | 95.5        38                0    / 0             |
+| 0                         | 0000:C1:00.0  | 0           0    / 0          3432 / 65536         |
++===========================+===============+====================================================+
+| 1     910B3               | OK            | 126.5       40                0    / 0             |
+| 0                         | 0000:C2:00.0  | 13          0    / 0          9174 / 65536         |
++===========================+===============+====================================================+
+| 2     910B3               | OK            | 88.9        40                0    / 0             |
+| 0                         | 0000:81:00.0  | 0           0    / 0          3421 / 65536         |
++===========================+===============+====================================================+
+| 3     910B3               | OK            | 104.7       41                0    / 0             |
+| 0                         | 0000:82:00.0  | 0           0    / 0          7214 / 65536         |
++===========================+===============+====================================================+
+| 4     910B3               | OK            | 303.3       48                0    / 0             |
+| 0                         | 0000:01:00.0  | 72          0    / 0          59193/ 65536         |
++===========================+===============+====================================================+
+| 5     910B3               | OK            | 139.6       44                0    / 0             |
+| 0                         | 0000:02:00.0  | 15          0    / 0          60222/ 65536         |
++===========================+===============+====================================================+
+| 6     910B3               | OK            | 157.7       48                0    / 0             |
+| 0                         | 0000:41:00.0  | 44          0    / 0          60222/ 65536         |
++===========================+===============+====================================================+
+| 7     910B3               | OK            | 111.6       48                0    / 0             |
+| 0                         | 0000:42:00.0  | 0           0    / 0          24790/ 65536         |
++===========================+===============+====================================================+
++---------------------------+---------------+----------------------------------------------------+
+| NPU     Chip              | Process id    | Process name             | Process memory(MB)      |
++===========================+===============+====================================================+
+| No running processes found in NPU 0                                                            |
++===========================+===============+====================================================+
+| 1       0                 | 3150467       | python                   | 5746                    |
++===========================+===============+====================================================+
+| No running processes found in NPU 2                                                            |
++===========================+===============+====================================================+
+| 3       0                 | 281978        | python                   | 3841                    |
++===========================+===============+====================================================+
+| 4       0                 | 2999855       | VLLMEngineCor            | 55666                   |
++===========================+===============+====================================================+
+| 5       0                 | 89602         | VLLMWorker_TP            | 56700                   |
++===========================+===============+====================================================+
+| 6       0                 | 91228         | VLLMWorker_TP            | 56701                   |
++===========================+===============+====================================================+
+| 7       0                 | 439848        | python3                  | 21260                   |
++===========================+===============+====================================================+
+
+=== host load ===
+ 02:40:51 up 242 days, 14:16, 33 users,  load average: 24.40, 38.06, 43.41
+
+=== matching V048/runner host processes ===
+ 610434 lelinfe+ bash            /bin/bash -lc set -o pipefail {   printf 'SNAPSHOT_UTC='; date -u +%Y-%m-%dT%H:%M:%SZ   printf '\n=== device 0 load before Local ===\n'; npu-smi info -t usages -i 0   printf '\n=== all NPU devices and process table ===\n'; npu-smi info   printf '\n=== host load ===\n'; uptime   printf '\n=== matching V048/runner host processes ===\n'; ps -eo pid,user,comm,args | rg -i 'v048|row.scale.hoist|cann-row-scale|correctness_runner|local_runner' || true } 2>&1 | tee '本地实验/ROW-SCALE-HOIST-X/V048/local-load-before.log'
+ 610444 lelinfe+ bash            /bin/bash -lc set -o pipefail {   printf 'SNAPSHOT_UTC='; date -u +%Y-%m-%dT%H:%M:%SZ   printf '\n=== device 0 load before Local ===\n'; npu-smi info -t usages -i 0   printf '\n=== all NPU devices and process table ===\n'; npu-smi info   printf '\n=== host load ===\n'; uptime   printf '\n=== matching V048/runner host processes ===\n'; ps -eo pid,user,comm,args | rg -i 'v048|row.scale.hoist|cann-row-scale|correctness_runner|local_runner' || true } 2>&1 | tee '本地实验/ROW-SCALE-HOIST-X/V048/local-load-before.log'
+ 610445 lelinfe+ tee             tee 本地实验/ROW-SCALE-HOIST-X/V048/local-load-before.log
+ 610681 lelinfe+ rg              rg -i v048|row.scale.hoist|cann-row-scale|correctness_runner|local_runner
