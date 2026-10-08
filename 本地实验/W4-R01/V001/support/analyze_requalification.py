@@ -167,8 +167,8 @@ def task_scope(pairs, mapped, field):
     }
 
 
-def task_host_trace(root, calls):
-    paths = list(root.glob("pp-profile/**/msprof_*.json"))
+def task_host_trace(root, calls, profile_prefix="comparison"):
+    paths = list(root.glob(f"{profile_prefix}-profile/**/msprof_*.json"))
     assert len(paths) == 1
     trace = json.loads(paths[0].read_text(), parse_float=Decimal)
     hardware = {(str(row["args"]["Physic Stream Id"]), str(row["args"]["Task Id"])): row
@@ -180,7 +180,7 @@ def task_host_trace(root, calls):
     synchronizations = sorted((row for row in trace if row.get("name") == "AscendCL@aclrtSynchronizeEvent"
                               and row.get("ph") == "X"), key=lambda row: Decimal(row["ts"]))
     assert len(synchronizations) == len(calls)
-    for index, call in enumerate(calls):
+    for call in calls:
         kernel = hardware[(call["stream_id"], call["task_id"])]
         start = hardware[(call["stream_id"], call["start_record_task_id"])]
         stop = hardware[(call["stream_id"], call["stop_record_task_id"])]
@@ -198,7 +198,10 @@ def task_host_trace(root, calls):
                 left <= Decimal(row["ts"]) and Decimal(row["ts"]) + row["dur"] <= right]
         assert len(alloc) == len(free) == 1
         assert left <= Decimal(node["ts"]) <= Decimal(node["ts"]) + node["dur"] <= right
-        sync = synchronizations[index]
+        sync_candidates = [row for row in synchronizations if row["tid"] == int(call["pid"])
+                           and Decimal(row["ts"]) >= Decimal(stop_api["ts"]) + stop_api["dur"]]
+        assert sync_candidates
+        sync = min(sync_candidates, key=lambda row: Decimal(row["ts"]))
         assert sync["tid"] == int(call["pid"])
         assert right + stop_api["dur"] <= Decimal(sync["ts"])
         call.update({
@@ -213,7 +216,7 @@ def task_host_trace(root, calls):
             "host_event_sync_start_us": sync["ts"], "host_event_sync_us": float(sync["dur"]),
             "host_allocation_count_between_records": 1, "host_free_count_between_records": 1,
         })
-    fields = ("host_start_record_us", "host_stop_record_us", "host_allocation_us", "host_free_us",
+        fields = ("host_start_record_us", "host_stop_record_us", "host_allocation_us", "host_free_us",
               "host_node_launch_us", "host_event_sync_us")
     return {
         "source": str(paths[0].relative_to(root)), "trace_event_count": len(trace),
@@ -221,9 +224,313 @@ def task_host_trace(root, calls):
         "frees_between_host_records": len(calls),
         "allocation_bytes": "UNKNOWN", "allocation_object": "UNKNOWN",
         "interpretation": "Calls are inside the host RecordEvent interval. Nested and overlapping host/device durations are not added together.",
-        "by_width": {str(width): {field: task_stats([row[field] for row in calls if row["width"] == width])
-                                 for field in fields} for width in (16384, 32768)},
+        "by_width": {str(width): {field: task_stats([row[field] for row in calls if int(row["width"]) == width])
+                                 for field in fields if any(int(row["width"]) == width for row in calls)}
+                     for width in (16384, 32768)},
     }
+
+
+def bootstrap_paired(values, seed=20261008, rounds=5000):
+    import random
+    randomizer = random.Random(seed)
+    by_group = {}
+    for row in values:
+        by_group.setdefault(row["group"], {}).setdefault(row["cycle"], []).append(row)
+    result = []
+    groups = sorted(by_group)
+    for _ in range(rounds):
+        sampled_groups = [randomizer.choice(groups) for _ in groups]
+        sample = []
+        for group in sampled_groups:
+            cycles = sorted(by_group[group])
+            for cycle in (randomizer.choice(cycles) for _ in cycles):
+                sample.extend(by_group[group][cycle])
+        result.append(statistics.median(row["delta_us"] for row in sample))
+    return {"low95_us": task_percentile(result, .025), "high95_us": task_percentile(result, .975),
+            "seed": seed, "rounds": rounds}
+
+
+def paired_summary(rows):
+    values = [row["delta_us"] for row in rows]
+    return {"count": len(rows), "median_delta_us": statistics.median(values),
+            "median_delta_percent": statistics.median(row["delta_percent"] for row in rows),
+            "interval95": bootstrap_paired(rows)}
+
+
+def analyze_task_comparison(root):
+    def read_rows(path, delimiter=","):
+        with path.open() as handle:
+            return list(csv.DictReader((line for line in handle if not line.startswith("#")), delimiter=delimiter))
+
+    op_paths = list(root.glob("comparison-profile/**/op_summary_*.csv"))
+    task_paths = list(root.glob("comparison-profile/**/task_time_*.csv"))
+    assert len(op_paths) == len(task_paths) == 1
+    operators = read_rows(op_paths[0])
+    operators.sort(key=lambda row: Decimal(row["Task Start Time(us)"].strip()))
+    tasks_rows = read_rows(task_paths[0])
+    tasks = {(row["Device_id"], row["stream_id"], row["task_id"]): row for row in tasks_rows}
+    assert len(tasks) == len(tasks_rows) and len(operators) == 2600
+    assert {row["Device_id"] for row in operators} == {"0"}
+    assert {row["Task Type"] for row in operators} == {"AI_VECTOR_CORE"}
+    assert {row["Block Dim"] for row in operators} == {"8"}
+    for op in operators:
+        task = tasks[(op["Device_id"], op["Stream ID"], op["Task ID"])]
+        assert Decimal(op["Task Start Time(us)"].strip()) == Decimal(task["task_start(us)"].strip())
+        assert Decimal(op["Task Duration(us)"]) == Decimal(task["task_time(us)"])
+        assert op["Op Name"] == task["kernel_name"]
+
+    log = (root / "comparison-profile.log").read_text()
+    session = None
+    contexts, refs, correctness = {}, [], []
+    moment = "UNKNOWN"
+    for line in log.splitlines():
+        fields = dict(re.findall(r"(\w+)=([^\s]+)", line))
+        if line.startswith("STUDY_SESSION "):
+            session = fields
+            assert fields["candidate_dispatched"] == "1"
+        elif line.startswith("TIMING_CONTEXT "):
+            assert fields["pid"] == session["pid"]
+            assert fields["parent_function"] != fields["second_function"]
+            assert fields["output_P"] != fields["output_C"]
+            contexts[int(fields["width"])] = fields
+        elif line.startswith("REFERENCE_PHASE="):
+            moment = fields["REFERENCE_PHASE"]
+        elif line.startswith("REFERENCE "):
+            fields["phase"] = moment
+            assert fields["result"] == "PASS" and fields["nonfinite"] == "0"
+            assert fields["strict_all_elements"] == "FAIL"
+            assert int(fields["tolerance_failures"]) == (1 if fields["width"] == "16384" else 3)
+            refs.append(fields)
+        elif line.startswith("CORRECTNESS "):
+            fields["phase"] = moment
+            assert fields["result"] == "PASS" and fields["bit_differences"] == "0"
+            correctness.append(fields)
+    assert len(refs) == 8 and len(correctness) == 4 and set(contexts) == {16384, 32768}
+
+    metadata = {}
+    for width in (16384, 32768):
+        path = root / f"pcstudy-r16-d{width}-calls.tsv"
+        rows = read_rows(path, "\t")
+        assert len(rows) == 1300 and {row["pid"] for row in rows} == {session["pid"]}
+        metadata[width] = rows
+    assert all(row["x"] == metadata[int(row["width"])][0]["x"] and
+               row["residual"] == metadata[int(row["width"])][0]["residual"] and
+               row["gamma"] == metadata[int(row["width"])][0]["gamma"] and
+               row["bias"] == metadata[int(row["width"])][0]["bias"] for width in metadata for row in metadata[width])
+    for width_rows in metadata.values():
+      for index, call in enumerate(width_rows):
+        if index == 0:
+            assert call["previous_function_address"] in ("0", "0x0")
+            assert call["previous_output_address"] in ("0", "0x0")
+            assert call["previous_slot"] == "?"
+        else:
+            previous = width_rows[index - 1]
+            assert call["previous_function_address"] == previous["function_address"]
+            assert call["previous_output_address"] == previous["output_address"]
+            assert call["previous_slot"] == previous["slot"]
+
+    pp_rows, pc_rows, all_calls, raw_by_stage = [], [], [], {}
+    for width in (16384, 32768):
+        case_index = 0 if width == 16384 else 1
+        ops = operators[case_index * 1300:(case_index + 1) * 1300]
+        calls = metadata[width]
+        assert len(ops) == len(calls)
+        timed_by_phase = {}
+        for index, (op, call) in enumerate(zip(ops, calls)):
+            key = (op["Device_id"], op["Stream ID"], op["Task ID"])
+            task = tasks[key]
+            assert int(call["ordinal"]) == index + 1
+            function = call["function_address"]
+            expected_function = contexts[width]["parent_function"] if call["slot"] == "P" or call["comparison"] == "PP" else contexts[width]["second_function"]
+            assert function == expected_function
+            output_slot = call["slot"]
+            if call["swapped"] == "1":
+                output_slot = "C" if output_slot == "P" else "P"
+            expected_output = contexts[width]["output_" + output_slot]
+            assert call["output_address"] == expected_output
+            assert op["Op Name"] == task["kernel_name"]
+            row = {**call, "kernel_us": float(task["task_time(us)"]), "task_id": key[2],
+                   "stream_id": key[1], "kernel_start_us": task["task_start(us)"],
+                   "kernel_stop_us": task["task_stop(us)"], "kernel_name": task["kernel_name"]}
+            if call["phase"] == "timed":
+                task_id = int(key[2])
+                start, stop = tasks[(key[0], key[1], str(task_id - 1))], tasks[(key[0], key[1], str(task_id + 1))]
+                assert start["kernel_type"] == stop["kernel_type"] == "EVENT_RECORD"
+                begin, end = Decimal(start["task_start(us)"].strip()), Decimal(stop["task_start(us)"].strip())
+                kbegin, kend = Decimal(task["task_start(us)"].strip()), Decimal(task["task_stop(us)"].strip())
+                assert begin <= kbegin <= kend <= end
+                event = float(end - begin)
+                row.update({"start_record_task_id": str(task_id - 1), "stop_record_task_id": str(task_id + 1),
+                            "event_start_us": str(begin), "event_stop_us": str(end),
+                            "event_us": event, "trace_event_start_us": str(begin), "trace_event_stop_us": str(end),
+                            "trace_event_interval_us": event, "event_minus_task_us": event - row["kernel_us"]})
+                raw = root / f"pcstudy-r16-d{width}-g{call['group']}-{call['comparison'].lower()}.tsv"
+                rawrows = raw_by_stage.setdefault(str(raw), read_rows(raw, "\t"))
+                sample = rawrows[int(call["pair"]) % 32]
+                side = "parent" if call["slot"] == "P" else "candidate"
+                row["event_us"] = float(sample[side + "_device_us"])
+                row["wall_us"] = float(sample[side + "_wall_us"])
+                timed_by_phase.setdefault((int(call["group"]), call["comparison"], int(call["pair"])), {})[call["slot"]] = row
+            all_calls.append(row)
+        for (group, comparison, pair), sides in timed_by_phase.items():
+            assert set(sides) == {"P", "C"}
+            pairrow = {"width": width, "group": group, "pair": pair, "comparison": comparison,
+                       "cycle": int(sides["P"]["cycle"]), "previous_slot": sides["P"]["previous_slot"],
+                       "position": int(sides["P"]["position"]), "swapped": sides["P"]["swapped"] == "1",
+                       "P_task_us": sides["P"]["kernel_us"], "C_task_us": sides["C"]["kernel_us"],
+                       "P_event_us": sides["P"]["event_us"], "C_event_us": sides["C"]["event_us"],
+                       "P_wall_us": sides["P"]["wall_us"], "C_wall_us": sides["C"]["wall_us"]}
+            pairrow["delta_us"] = pairrow["C_task_us"] - pairrow["P_task_us"]
+            pairrow["delta_percent"] = 100 * pairrow["delta_us"] / pairrow["P_task_us"]
+            (pp_rows if comparison == "PP" else pc_rows).append(pairrow)
+
+    assert len(all_calls) == 2600 and sum(row["phase"] == "timed" for row in all_calls) == 1024
+    transitions = {}
+    for row in metadata[16384]:
+        if row["phase"] == "timed":
+            key = f"{row['comparison']}:{row['previous_slot']}{row['slot']}:pos{row['position']}:map{'AB' if row['swapped']=='0' else 'BA'}"
+            transitions[key] = transitions.get(key, 0) + 1
+    for comparison in ("PP", "PC"):
+        for previous in "PC":
+            for slot in "PC":
+                for position in (1, 2):
+                    for mapping in ("AB", "BA"):
+                        key = f"{comparison}:{previous}{slot}:pos{position}:map{mapping}"
+                        assert transitions.get(key, 0) == 16, (key, transitions.get(key))
+
+    host_trace = task_host_trace(root, [row for row in all_calls if row["phase"] == "timed"], "comparison")
+    with (root / "all-calls.tsv").open("w", newline="") as handle:
+        columns = list(dict.fromkeys(k for row in all_calls for k in row))
+        writer = csv.DictWriter(handle, fieldnames=columns, delimiter="\t")
+        writer.writeheader()
+        writer.writerows(all_calls)
+    by_width = {}
+    for width in (16384, 32768):
+        pps = [row for row in pp_rows if row["width"] == width]
+        pcs = [row for row in pc_rows if row["width"] == width]
+        adjusted = []
+        pc_index = {(row["group"], row["cycle"], row["previous_slot"], row["position"]): row for row in pcs}
+        pp_index = {(row["group"], row["cycle"], row["previous_slot"], row["position"]): row for row in pps}
+        for key in sorted(pc_index):
+            pc, pp = pc_index[key], pp_index[key]
+            adj = dict(pc)
+            adj["delta_us"] = pc["delta_us"] - pp["delta_us"]
+            adj["delta_percent"] = 100 * adj["delta_us"] / pp["P_task_us"]
+            adjusted.append(adj)
+        def side_stats(rows, field):
+            vals = [row[field] for row in rows]
+            median = statistics.median(vals)
+            group_medians = {str(g): statistics.median(row[field] for row in rows if row["group"] == g)
+                             for g in sorted({row["group"] for row in rows})}
+            return {**task_stats(vals), "group_medians": group_medians,
+                    "group_drift_ratio": max(abs(value-median) for value in group_medians.values())/median}
+        def stability_pass(rows):
+            return all(side_stats(rows, field)["group_drift_ratio"] <= .10 for field in ("P_task_us", "C_task_us"))
+        def mad_groups_pass(rows):
+            return all(task_stats([row[field] for row in rows if row["group"] == group])["mad_over_median"] <= .10
+                       for group in sorted({row["group"] for row in rows})
+                       for field in ("P_task_us", "C_task_us"))
+        ppd = [{**row, "delta_us": row["C_task_us"]-row["P_task_us"],
+                "delta_percent": 100*(row["C_task_us"]-row["P_task_us"])/row["P_task_us"]} for row in pps]
+        pcd = [{**row, "delta_us": row["C_task_us"]-row["P_task_us"],
+                "delta_percent": 100*(row["C_task_us"]-row["P_task_us"])/row["P_task_us"]} for row in pcs]
+        by_width[str(width)] = {
+            "shape": [16,width], "dtype": "fp16", "comparison_samples_per_side": {"PP": len(pps), "PC": len(pcs)},
+            "PP": {"P": side_stats(pps,"P_task_us"), "C": side_stats(pps,"C_task_us"),
+                   "side_median_delta_us": statistics.median([r["C_task_us"] for r in pps])-statistics.median([r["P_task_us"] for r in pps]),
+                   "side_median_delta_percent": 100*(statistics.median([r["C_task_us"] for r in pps])/statistics.median([r["P_task_us"] for r in pps])-1),
+                   "paired_delta": paired_summary(ppd), "stability_pass": stability_pass(pps)},
+            "PC": {"P": side_stats(pcs,"P_task_us"), "C": side_stats(pcs,"C_task_us"),
+                   "side_median_delta_us": statistics.median([r["C_task_us"] for r in pcs])-statistics.median([r["P_task_us"] for r in pcs]),
+                   "side_median_delta_percent": 100*(statistics.median([r["C_task_us"] for r in pcs])/statistics.median([r["P_task_us"] for r in pcs])-1),
+                   "paired_delta": paired_summary(pcd), "stability_pass": stability_pass(pcs)},
+            "PP_device_event": {"P": task_stats([row["P_event_us"] for row in pps]),
+                                "C": task_stats([row["C_event_us"] for row in pps]),
+                                "paired_delta": paired_summary([{**row, "delta_us": row["C_event_us"]-row["P_event_us"],
+                                    "delta_percent": 100*(row["C_event_us"]-row["P_event_us"])/row["P_event_us"]} for row in pps])},
+            "PC_device_event": {"P": task_stats([row["P_event_us"] for row in pcs]),
+                                "C": task_stats([row["C_event_us"] for row in pcs]),
+                                "paired_delta": paired_summary([{**row, "delta_us": row["C_event_us"]-row["P_event_us"],
+                                    "delta_percent": 100*(row["C_event_us"]-row["P_event_us"])/row["P_event_us"]} for row in pcs])},
+            "PP_wall": {"P": task_stats([row["P_wall_us"] for row in pps]),
+                        "C": task_stats([row["C_wall_us"] for row in pps]),
+                        "paired_delta": paired_summary([{**row, "delta_us": row["C_wall_us"]-row["P_wall_us"],
+                            "delta_percent": 100*(row["C_wall_us"]-row["P_wall_us"])/row["P_wall_us"]} for row in pps])},
+            "PC_wall": {"P": task_stats([row["P_wall_us"] for row in pcs]),
+                        "C": task_stats([row["C_wall_us"] for row in pcs]),
+                        "paired_delta": paired_summary([{**row, "delta_us": row["C_wall_us"]-row["P_wall_us"],
+                            "delta_percent": 100*(row["C_wall_us"]-row["P_wall_us"])/row["P_wall_us"]} for row in pcs])},
+            "adjusted_PC_minus_PP": paired_summary(adjusted),
+            "adjusted_by_stratum": {
+                f"prev{prev}_pos{pos}_map{mapping}_stage{stage}": statistics.median(
+                    r["delta_us"] for r in adjusted if r["previous_slot"] == prev and r["position"] == pos
+                    and ("BA" if r["swapped"] else "AB") == mapping and
+                    ((r["group"] in (1,4)) == (stage == "PP_first")))
+                for prev in "PC" for pos in (1,2) for mapping in ("AB","BA")
+                for stage in ("PP_first","PC_first")},
+            "PC_by_group": {str(g): paired_summary([r for r in pcd if r["group"] == g]) for g in range(1,5)},
+            "PC_by_stage_order": {"PP_first": paired_summary([r for r in pcd if r["group"] in (1,4)]), "PC_first": paired_summary([r for r in pcd if r["group"] in (2,3)])},
+            "PC_by_mapping": {"AB": paired_summary([r for r in pcd if not r["swapped"]]), "BA": paired_summary([r for r in pcd if r["swapped"]])},
+            "PC_by_first_cycle": {"cycle0": paired_summary([r for r in pcd if r["cycle"] == 0]),
+                                  "cycles1to7": paired_summary([r for r in pcd if r["cycle"] != 0])},
+            "parent_group_paired_shift_PC_minus_PP_us": {
+                str(g): statistics.median(r["P_task_us"] for r in pcs if r["group"] == g)
+                       - statistics.median(r["P_task_us"] for r in pps if r["group"] == g)
+                for g in (1,2,3,4)},
+            "PP_MAD_limit_pass": mad_groups_pass(pps) and stability_pass(pps),
+            "PC_MAD_limit_pass": mad_groups_pass(pcs) and stability_pass(pcs),
+            "PP_PC_interval_contains_zero": (lambda ci: ci["low95_us"] <= 0 <= ci["high95_us"])(bootstrap_paired(ppd)),
+            "PC_raw_interval_contains_zero": (lambda ci: ci["low95_us"] <= 0 <= ci["high95_us"])(bootstrap_paired(pcd)),
+            "PC_adjusted_interval_contains_zero": (lambda ci: ci["low95_us"] <= 0 <= ci["high95_us"])(bootstrap_paired(adjusted)),
+        }
+    resources = {}
+    for prefix in ("compile-pre", "comparison-pre", "comparison-post"):
+        lines = (root / f"{prefix}.context.txt").read_text().splitlines()
+        usage = (root / f"{prefix}.usages.txt").read_text()
+        resources[prefix] = {"utc":lines[0],"host":lines[1],"loadavg":lines[2],"free_hbm_mb":int(lines[3].split("=")[1]),
+            "aicore_percent":int(re.search(r"Aicore Usage Rate\(%\)\s*:\s*(\d+)",usage)[1]),
+            "aivector_percent":int(re.search(r"Aivector Usage Rate\(%\)\s*:\s*(\d+)",usage)[1])}
+    for case in by_width.values():
+        pp_ok = case["PP_MAD_limit_pass"] and case["PP_PC_interval_contains_zero"]
+        pc_ok = case["PC_MAD_limit_pass"]
+        raw_ci = case["PC_raw_interval_contains_zero"]
+        adjusted_ci = case["PC_adjusted_interval_contains_zero"]
+        raw_direction = case["PC"]["paired_delta"]["median_delta_us"]
+        adjusted_direction = case["adjusted_PC_minus_PP"]["median_delta_us"]
+        strata = list(case["adjusted_by_stratum"].values())
+        case["PP_qualification"] = pp_ok
+        case["PC_measurement_qualification"] = pc_ok
+        case["effective_local_direction"] = bool(
+            pp_ok and pc_ok and not raw_ci and not adjusted_ci and raw_direction < 0
+            and adjusted_direction < 0 and all(value < 0 for value in strata))
+    result = {"route":"W4-R01","revision":"V001","event_kind":"SAME_REVISION_PP_PC_TASK_STUDY",
+        "source_commit":"7f8a335f451d5d7226c38add93d17e5a9b6ad15e","direct_parent":"R31B/V011",
+        "branch":"w4/r01-selective-param-pipeline-x",
+        "worktree":"/Users/sunyiyang/Desktop/Project/cann/worktrees/w4/R01-selective-param-pipeline-x",
+        "rule_source_commit":"9f91895506023d917637f707bb3f61cd9d9f8765",
+        "shared_state_source_commit":"07662d7b96e9beaaa0f56d97c9cf346b86081eb3",
+        "candidate_source_changed":False,"parent_source_changed":False,"device":0,"blocks":8,
+        "compile":"HOST_PASS_EXISTING_KERNEL_LIBRARIES_REUSED","correctness":"PASS_TEMPLATE_REFERENCE; STRICT_DIFFERENCES_RETAINED",
+        "reference_results":refs,"paired_correctness":correctness,"profile_counts":{"kernel_rows":len(operators),"task_rows":len(tasks_rows),"mapped_calls":len(all_calls),"timed_calls":1024},
+        "transitions":transitions,"resources":resources,"host_api_trace":host_trace,"cases":by_width,
+        "local_score":None,"local_delta":None,"local_best":"NONE","official_score":None,"online_state":"PAUSED","push":"NO",
+        "status":"MEASUREMENT_BLOCKED","valid_local":0,"new_performance_revisions":0,
+        "local_score":None,"local_delta":None,"current_local_best":"NONE",
+        "official_score":None,"online_state":"PAUSED","push":"NO",
+        "duplicate_audit":{"mechanism":"V001 FP16 batchRows>=2 pass2 parameter start slot B; no kernel edit",
+            "searched_history":"R31/R31A/R31B; MIX; STORE/EPILOGUE; W3 R2/V040, R4/V031, R5/V028; R01 old call order; R07 bca492a3 timing method",
+            "match_found":"V001 exists; same-process task-range real Candidate comparison was not in earlier R01 capture",
+            "why_new_or_duplicate":"same-revision measurement supplement; no new performance mechanism"},
+        "limitations":["P/P and P/C phases are sequential, not simultaneous; stage order is balanced by group.","Profiler changes timing conditions.","Event and wall values are diagnostic and are not added to nested host API durations.","One planned collection; no follow-up sampling after observing the result."],
+        "raw_files":[p.name for p in root.glob("pcstudy-r16-d*-g*-*.tsv")],"all_calls_file":"all-calls.tsv"}
+    with (root/"result.json").open("w") as f: json.dump(result,f,ensure_ascii=False,indent=2,allow_nan=False); f.write("\n")
+    print(json.dumps({"status":result["status"],"profile_counts":result["profile_counts"],"cases":{
+        w:{"PP_parent_median":v["PP"]["P"]["median_us"],"PP_second_median":v["PP"]["C"]["median_us"],
+           "PC_parent_median":v["PC"]["P"]["median_us"],"PC_candidate_median":v["PC"]["C"]["median_us"],
+           "PP_delta":v["PP"]["paired_delta"],"PC_delta":v["PC"]["paired_delta"],
+           "adjusted":v["adjusted_PC_minus_PP"],"PP_qualified":v["PP_qualification"],
+           "PC_qualified":v["PC_measurement_qualification"],"effective_local_direction":v["effective_local_direction"]}
+        for w,v in by_width.items()}},ensure_ascii=False,indent=2))
 
 
 def analyze_task_study(root):
@@ -502,7 +809,9 @@ def main():
 
 
 if __name__ == "__main__":
-    if len(sys.argv) == 3 and sys.argv[1] == "--task-study":
+    if len(sys.argv) == 3 and sys.argv[1] == "--task-compare":
+        analyze_task_comparison(Path(sys.argv[2]))
+    elif len(sys.argv) == 3 and sys.argv[1] == "--task-study":
         analyze_task_study(Path(sys.argv[2]))
     else:
         main()

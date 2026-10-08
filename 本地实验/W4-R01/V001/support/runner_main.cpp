@@ -84,6 +84,10 @@ struct Runtime {
 
 struct Sample {
     char order[3]{};
+    char previousSlot = '?';
+    int cycle = -1;
+    int position = 0;
+    bool swapped = false;
     double parentDeviceUs = std::numeric_limits<double>::quiet_NaN();
     double candidateDeviceUs = std::numeric_limits<double>::quiet_NaN();
     double parentWallUs = std::numeric_limits<double>::quiet_NaN();
@@ -99,6 +103,100 @@ struct TensorGroups {
     TensorGroupInfo bias;
     TensorGroupInfo output;
 };
+
+struct CallMetadata {
+    const char* phase = "reference";
+    const char* comparison = "PC";
+    int phaseIndex = 0;
+    int group = 0;
+    int cycle = -1;
+    int pair = -1;
+    int sequenceIndex = -1;
+    int position = 0;
+    char slot = '?';
+    bool swapped = false;
+};
+
+struct ActualCall {
+    CallMetadata metadata;
+    KernelCall function;
+    KernelCall previousFunction;
+    void* output;
+    void* previousOutput;
+    void* x;
+    void* residual;
+    void* gamma;
+    void* bias;
+    char previousSlot;
+};
+
+struct CallTrace;
+CallTrace* activeTrace = nullptr;
+
+struct CallTrace {
+    Options options;
+    std::vector<ActualCall> calls;
+    CallMetadata current;
+    bool enabled;
+    bool saved = false;
+
+    explicit CallTrace(const Options& source) : options(source), enabled(source.mode == "task-compare")
+    {
+        if (enabled) {
+            calls.reserve(1300);
+            activeTrace = this;
+        }
+    }
+
+    bool Save()
+    {
+        if (!enabled || saved) return true;
+        const std::string path = options.output + "-r16-d" + std::to_string(options.width) + "-calls.tsv";
+        std::ofstream out(path);
+        out << "ordinal\tpid\trows\twidth\tdevice\tphase\tcomparison\tphase_index\tgroup\tcycle\tpair"
+               "\tsequence_index\tposition\tslot\tprevious_slot\tswapped\tfunction_address"
+               "\tprevious_function_address\toutput_address\tprevious_output_address\tx\tresidual\tgamma\tbias\n";
+        for (size_t i = 0; i < calls.size(); ++i) {
+            const ActualCall& call = calls[i];
+            const CallMetadata& meta = call.metadata;
+            out << i + 1 << '\t' << getpid() << '\t' << options.rows << '\t' << options.width
+                << '\t' << options.device << '\t' << meta.phase << '\t' << meta.comparison
+                << '\t' << meta.phaseIndex << '\t' << meta.group << '\t' << meta.cycle << '\t' << meta.pair
+                << '\t' << meta.sequenceIndex << '\t' << meta.position << '\t' << meta.slot
+                << '\t' << call.previousSlot << '\t' << meta.swapped
+                << '\t' << reinterpret_cast<void*>(call.function)
+                << '\t' << reinterpret_cast<void*>(call.previousFunction) << '\t' << call.output
+                << '\t' << call.previousOutput << '\t' << call.x << '\t' << call.residual
+                << '\t' << call.gamma << '\t' << call.bias << '\n';
+        }
+        out.flush();
+        saved = static_cast<bool>(out);
+        std::printf("CALL_TRACE rows=%lld width=%lld calls=%zu file=%s result=%s\n",
+                    static_cast<long long>(options.rows), static_cast<long long>(options.width),
+                    calls.size(), path.c_str(), saved ? "PASS" : "FAIL");
+        return saved;
+    }
+
+    ~CallTrace()
+    {
+        if (enabled) {
+            Save();
+            activeTrace = nullptr;
+        }
+    }
+};
+
+void RecordCall(KernelCall kernel, const Runtime& runtime, void* output)
+{
+    if (activeTrace == nullptr) return;
+    CallMetadata metadata = activeTrace->current;
+    if (metadata.slot == '?') metadata.slot = output == runtime.parentOutput ? 'P' : 'C';
+    const ActualCall* previous = activeTrace->calls.empty() ? nullptr : &activeTrace->calls.back();
+    activeTrace->calls.push_back({metadata, kernel, previous == nullptr ? nullptr : previous->function,
+        output, previous == nullptr ? nullptr : previous->output,
+        runtime.x, runtime.residual, runtime.gamma, runtime.bias,
+        previous == nullptr ? '?' : previous->metadata.slot});
+}
 
 KernelCall SecondKernel(const Options& options)
 {
@@ -129,7 +227,7 @@ bool ParseInt64(const char* text, int64_t minimum, int64_t maximum, int64_t& val
 
 void PrintUsage(const char* program)
 {
-    std::printf("Usage: %s --mode correctness|local|parent-diagnostic|task-study --device ID --rows M --width D --blocks N --dtype fp16 [options]\n",
+    std::printf("Usage: %s --mode correctness|local|parent-diagnostic|task-study|task-compare --device ID --rows M --width D --blocks N --dtype fp16 [options]\n",
                 program);
     std::printf("Required dimensions are explicit local-proxy inputs; width must select the wide path (D > 8192).\n");
     std::printf("Options: --warmups N (default 5), --repeats N (default 21), --output FILE\n");
@@ -137,6 +235,7 @@ void PrintUsage(const char* program)
     std::printf("parent-diagnostic requires parent-parent and records reference failures without timing Candidate.\n");
     std::printf("task-study uses Parent only: 16x16384 then 16x32768, blocks=8, warmups=45, repeats=42, three groups each, one process.\n");
     std::printf("task-study requires an output prefix and preserves both output addresses within each input.\n");
+    std::printf("task-compare uses the declared device0 PP/PC design: two inputs, four groups, 45 warmup pairs, 32 matched pairs per phase.\n");
     std::printf("Correctness compares both outputs with an independent CPU reference before Local,\n");
     std::printf("using atol=rtol=1e-3 and the existing template's 0.1%% mismatch allowance; strict counts remain visible.\n");
     std::printf("then alternates Parent/Candidate order and reports raw device-event and wall-time samples.\n");
@@ -180,6 +279,7 @@ bool ParseOptions(int argc, char** argv, Options& options)
     if (options.mode == "parent-diagnostic" || options.mode == "task-study") {
         return options.comparison == "parent-parent";
     }
+    if (options.mode == "task-compare") return options.comparison == "parent-candidate";
     return (options.mode == "correctness" || options.mode == "local") &&
            (options.comparison == "parent-candidate" || options.comparison == "parent-parent");
 }
@@ -273,6 +373,7 @@ void CallKernel(KernelCall kernel, const Runtime& runtime,
 bool SynchronizeKernel(KernelCall kernel, const Runtime& runtime,
                        const TensorGroups& groups, const Options& options, void* output)
 {
+    RecordCall(kernel, runtime, output);
     CallKernel(kernel, runtime, groups, options, output);
     return CheckAcl(aclrtSynchronizeStream(runtime.stream), "aclrtSynchronizeStream");
 }
@@ -335,6 +436,7 @@ bool Measure(KernelCall kernel, const Runtime& runtime,
              const TensorGroups& groups, const Options& options, void* output,
              double& deviceUs, double& wallUs)
 {
+    RecordCall(kernel, runtime, output);
     const auto wallStart = std::chrono::steady_clock::now();
     if (!CheckAcl(aclrtRecordEvent(runtime.startEvent, runtime.stream), "record start event")) return false;
     CallKernel(kernel, runtime, groups, options, output);
@@ -364,11 +466,98 @@ double Median(std::vector<double> values)
     return values.size() % 2 == 0 ? (values[middle - 1] + values[middle]) / 2.0 : values[middle];
 }
 
+bool RunBalancedCalls(const Runtime& runtime, const Options& options,
+                      const TensorGroups& groups, std::vector<Sample>& samples)
+{
+    auto kernelFor = [&](char slot) { return slot == 'P' ? run_kernel_parent : SecondKernel(options); };
+    auto outputFor = [&](char slot, bool swapped) {
+        return ((slot == 'P') != swapped) ? runtime.parentOutput : runtime.candidateOutput;
+    };
+    CallMetadata& meta = activeTrace->current;
+    for (int i = 0; i < options.warmups; ++i) {
+        const char* order = (i & 1) == 0 ? "PC" : "CP";
+        for (int position = 0; position < 2; ++position) {
+            meta.phase = "warmup";
+            meta.pair = i;
+            meta.cycle = -1;
+            meta.sequenceIndex = i * 2 + position;
+            meta.position = position + 1;
+            meta.slot = order[position];
+            meta.swapped = false;
+            if (!SynchronizeKernel(kernelFor(meta.slot), runtime, groups, options, outputFor(meta.slot, false))) {
+                samples.clear();
+                return false;
+            }
+        }
+    }
+    for (int cycle = 0; cycle < 8; ++cycle) {
+        const char* sequence = (cycle & 1) == 0 ? "PPPCCPCC" : "CCCPPCPP";
+        const bool swapped = ((cycle / 2) & 1) != 0;
+        meta.phase = "prime";
+        meta.cycle = cycle;
+        meta.pair = -1;
+        meta.sequenceIndex = -1;
+        meta.position = 0;
+        meta.slot = sequence[7];
+        meta.swapped = swapped;
+        const KernelCall previousCycleKernel = kernelFor(meta.slot);
+        void* previousCycleOutput = outputFor(meta.slot, swapped);
+        if (!SynchronizeKernel(kernelFor(meta.slot), runtime, groups, options, outputFor(meta.slot, swapped))) {
+            samples.resize(static_cast<size_t>(cycle * 4));
+            return false;
+        }
+        for (int index = 0; index < 8; ++index) {
+            const char slot = sequence[index];
+            const char previousSlot = sequence[(index + 7) % 8];
+            const int position = index % 2 + 1;
+            const int pair = cycle * 4 + (previousSlot == 'P' ? 0 : 2) + position - 1;
+            Sample& sample = samples[static_cast<size_t>(pair)];
+            if (!sample.parentCompleted && !sample.candidateCompleted) {
+                std::strcpy(sample.order, previousSlot == 'P' ? "P" : "C");
+                sample.previousSlot = previousSlot;
+                sample.cycle = cycle;
+                sample.position = position;
+                sample.swapped = swapped;
+            }
+            meta.phase = "timed";
+            meta.pair = pair;
+            meta.sequenceIndex = index;
+            meta.position = position;
+            meta.slot = slot;
+            meta.comparison = options.comparison == "parent-parent" ? "PP" : "PC";
+            double& deviceUs = slot == 'P' ? sample.parentDeviceUs : sample.candidateDeviceUs;
+            double& wallUs = slot == 'P' ? sample.parentWallUs : sample.candidateWallUs;
+            bool& completed = slot == 'P' ? sample.parentCompleted : sample.candidateCompleted;
+            const KernelCall currentKernel = kernelFor(slot);
+            void* currentOutput = outputFor(slot, swapped);
+            completed = Measure(currentKernel, runtime, groups, options, currentOutput, deviceUs, wallUs);
+            if (activeTrace != nullptr && !activeTrace->calls.empty()) {
+                ActualCall& record = activeTrace->calls.back();
+                record.metadata.phaseIndex = activeTrace->current.phaseIndex;
+                record.metadata.comparison = meta.comparison;
+                record.previousFunction = index == 0 ? previousCycleKernel : kernelFor(previousSlot);
+                record.previousOutput = index == 0 ? previousCycleOutput : outputFor(previousSlot, swapped);
+                record.previousSlot = previousSlot;
+                record.metadata.cycle = cycle;
+                record.metadata.group = activeTrace->current.group;
+            }
+            if (!completed) {
+                samples.resize(static_cast<size_t>((cycle + 1) * 4));
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
 bool RunLocal(const Runtime& runtime, const Options& options,
               const TensorGroups& groups)
 {
     std::vector<Sample> samples(static_cast<size_t>(options.repeats));
     bool completed = true;
+    if (options.mode == "task-compare") {
+        completed = RunBalancedCalls(runtime, options, groups, samples);
+    } else {
     for (int i = 0; i < options.warmups; ++i) {
         const bool parentFirst = (i & 1) == 0;
         const KernelCall first = parentFirst ? run_kernel_parent : SecondKernel(options);
@@ -406,6 +595,7 @@ bool RunLocal(const Runtime& runtime, const Options& options,
             break;
         }
     }
+    }
 
     std::ofstream file;
     std::ostream* output = &std::cout;
@@ -419,13 +609,21 @@ bool RunLocal(const Runtime& runtime, const Options& options,
     }
     *output << "# LOCAL_PROXY_ONLY parent=R31B_V011 candidate=" << SecondLabel(options)
             << " comparison=" << options.comparison << " input=deterministic_fp16_pattern_v1"
-            << " epsilon=" << kEpsilon << " order=alternating_PC_CP device_load=EXTERNAL_NOT_CAPTURED device=" << options.device
+            << " epsilon=" << kEpsilon << " order="
+            << (options.mode == "task-compare" ? "matched_previous_and_position" : "alternating_PC_CP")
+            << " device_load=EXTERNAL_NOT_CAPTURED device=" << options.device
             << " rows=" << options.rows << " width=" << options.width << " dtype=fp16"
             << " requested_blocks=" << options.blocks << " effective_blocks="
             << std::min<uint64_t>(options.blocks, static_cast<uint64_t>(options.rows))
             << " warmups=" << options.warmups << " paired_samples=" << options.repeats << '\n';
-    *output << "sample\torder\tparent_device_us\tcandidate_device_us\tdelta_device_us"
-               "\tparent_wall_us\tcandidate_wall_us\tdelta_wall_us\tparent_completed\tcandidate_completed\n";
+    if (options.mode == "task-compare") {
+        *output << "sample\tprevious_slot\tcycle\tposition\tswapped\tparent_device_us"
+                   "\tcandidate_device_us\tdelta_device_us\tparent_wall_us\tcandidate_wall_us"
+                   "\tdelta_wall_us\tparent_completed\tcandidate_completed\n";
+    } else {
+        *output << "sample\torder\tparent_device_us\tcandidate_device_us\tdelta_device_us"
+                   "\tparent_wall_us\tcandidate_wall_us\tdelta_wall_us\tparent_completed\tcandidate_completed\n";
+    }
     *output << std::fixed << std::setprecision(6);
 
     std::vector<double> parentDevice, candidateDevice, deltaDevice;
@@ -441,8 +639,14 @@ bool RunLocal(const Runtime& runtime, const Options& options,
         const Sample& sample = samples[i];
         const double deviceDelta = sample.candidateDeviceUs - sample.parentDeviceUs;
         const double wallDelta = sample.candidateWallUs - sample.parentWallUs;
-        *output << i << '\t' << sample.order << '\t' << sample.parentDeviceUs << '\t'
-                << sample.candidateDeviceUs << '\t' << deviceDelta << '\t'
+        *output << i << '\t';
+        if (options.mode == "task-compare") {
+            *output << sample.previousSlot << '\t' << sample.cycle << '\t' << sample.position
+                    << '\t' << sample.swapped << '\t';
+        } else {
+            *output << sample.order << '\t';
+        }
+        *output << sample.parentDeviceUs << '\t' << sample.candidateDeviceUs << '\t' << deviceDelta << '\t'
                 << sample.parentWallUs << '\t' << sample.candidateWallUs << '\t' << wallDelta << '\t'
                 << sample.parentCompleted << '\t' << sample.candidateCompleted << '\n';
         parentDevice.push_back(sample.parentDeviceUs);
@@ -466,8 +670,9 @@ bool RunLocal(const Runtime& runtime, const Options& options,
     }
 
     const uint64_t effectiveBlocks = std::min<uint64_t>(options.blocks, static_cast<uint64_t>(options.rows));
-    std::printf("LOCAL_PROXY_ONLY parent=R31B_V011 candidate=%s comparison=%s input=deterministic_fp16_pattern_v1 epsilon=%.8g order=alternating_PC_CP device_load=EXTERNAL_NOT_CAPTURED device=%d rows=%lld width=%lld dtype=fp16 requested_blocks=%u effective_blocks=%llu min_rows_per_block=%lld max_rows_per_block=%lld warmups=%d paired_samples=%d\n",
+    std::printf("LOCAL_PROXY_ONLY parent=R31B_V011 candidate=%s comparison=%s input=deterministic_fp16_pattern_v1 epsilon=%.8g order=%s device_load=EXTERNAL_NOT_CAPTURED device=%d rows=%lld width=%lld dtype=fp16 requested_blocks=%u effective_blocks=%llu min_rows_per_block=%lld max_rows_per_block=%lld warmups=%d paired_samples=%d\n",
                 SecondLabel(options), options.comparison.c_str(), kEpsilon,
+                options.mode == "task-compare" ? "matched_previous_and_position" : "alternating_PC_CP",
                 options.device, static_cast<long long>(options.rows),
                 static_cast<long long>(options.width), options.blocks,
                 static_cast<unsigned long long>(effectiveBlocks),
@@ -492,6 +697,25 @@ bool RunLocal(const Runtime& runtime, const Options& options,
                 wallP05Parent, wallP95Parent, wallP95Parent - wallP05Parent,
                 wallP05Candidate, wallP95Candidate, wallP95Candidate - wallP05Candidate);
     return true;
+}
+
+bool StudyMemory(const Options& options, const char* stage)
+{
+    FILE* pipe = popen("npu-smi info -t usages -i 0", "r");
+    if (pipe == nullptr) return false;
+    char line[512];
+    int capacity = -1;
+    int used = -1;
+    while (std::fgets(line, sizeof(line), pipe) != nullptr) {
+        std::fputs(line, stdout);
+        if (std::strstr(line, "HBM Capacity(MB)") != nullptr) std::sscanf(std::strchr(line, ':') + 1, "%d", &capacity);
+        if (std::strstr(line, "HBM Usage Rate(%)") != nullptr) std::sscanf(std::strchr(line, ':') + 1, "%d", &used);
+    }
+    const int status = pclose(pipe);
+    const int freeMb = capacity >= 0 && used >= 0 ? capacity * (100 - used) / 100 : -1;
+    std::printf("RESOURCE_BEFORE_%s rows=%lld width=%lld device=0 FREE_HBM_MB=%d command_status=%d\n",
+                stage, static_cast<long long>(options.rows), static_cast<long long>(options.width), freeMb, status);
+    return status == 0 && freeMb >= 100;
 }
 
 }  // namespace
@@ -561,7 +785,8 @@ int RunCase(const Options& options)
         {xInfo, 1}, {residualInfo, 1}, {gammaInfo, 1}, {biasInfo, 1}, {outputInfo, 1}
     };
 
-    if (options.mode == "task-study") {
+    CallTrace trace(options);
+    if (options.mode == "task-study" || options.mode == "task-compare") {
         std::printf("TIMING_CONTEXT pid=%ld rows=%lld width=%lld device=%d blocks=%u comparison=%s x=%p residual=%p gamma=%p bias=%p output_P=%p output_C=%p stream=%p start_event=%p stop_event=%p parent_function=%p second_function=%p\n",
                     static_cast<long>(getpid()), static_cast<long long>(options.rows),
                     static_cast<long long>(options.width), options.device, options.blocks,
@@ -571,6 +796,11 @@ int RunCase(const Options& options)
                     reinterpret_cast<void*>(SecondKernel(options)));
         std::printf("REFERENCE_PHASE=PRE rows=%lld width=%lld\n",
                     static_cast<long long>(options.rows), static_cast<long long>(options.width));
+    }
+    if (options.mode == "task-compare" && !StudyMemory(options, "CORRECTNESS")) return 1;
+    if (options.mode == "task-compare") {
+        trace.current.phase = "correctness";
+        trace.current.comparison = "CORRECTNESS";
     }
     const bool correctnessOk = RunCorrectness(
         runtime, options, groups, dataBytes,
@@ -586,8 +816,31 @@ int RunCase(const Options& options)
         return 3;
     }
     if (options.mode == "correctness") return 0;
-    const int groupCount = options.mode == "task-study" ? 3 : 1;
+    if (options.mode == "task-compare") {
+        trace.current.phase = "timed";
+        trace.current.comparison = "PC";
+    }
+    if (options.mode == "task-compare" && !StudyMemory(options, "LOCAL")) return 1;
+    const int groupCount = options.mode == "task-compare" ? 4 : (options.mode == "task-study" ? 3 : 1);
     for (int group = 1; group <= groupCount; ++group) {
+        if (options.mode == "task-compare") {
+            for (int phase = 0; phase < 2; ++phase) {
+                Options phaseOptions = options;
+                const bool ppFirst = group == 1 || group == 4;
+                const bool pp = (phase == 0) == ppFirst;
+                phaseOptions.comparison = pp ? "parent-parent" : "parent-candidate";
+                phaseOptions.output += "-r16-d" + std::to_string(options.width) + "-g" +
+                                       std::to_string(group) + (pp ? "-pp.tsv" : "-pc.tsv");
+                trace.current.group = group;
+                trace.current.phaseIndex = (group - 1) * 2 + phase + 1;
+                trace.current.comparison = pp ? "PP" : "PC";
+                std::printf("TIMING_GROUP rows=16 width=%lld group=%d phase_index=%d comparison=%s warmup_calls=90 priming_calls=8 timed_calls=64 output=%s\n",
+                            static_cast<long long>(options.width), group, trace.current.phaseIndex,
+                            trace.current.comparison, phaseOptions.output.c_str());
+                if (!RunLocal(runtime, phaseOptions, groups)) return 1;
+            }
+            continue;
+        }
         Options sampleOptions = options;
         if (options.mode == "task-study") {
             sampleOptions.output += "-r" + std::to_string(options.rows) + "-d" +
@@ -598,16 +851,25 @@ int RunCase(const Options& options)
         }
         if (!RunLocal(runtime, sampleOptions, groups)) return 1;
     }
-    if (options.mode == "task-study") {
+    if (options.mode == "task-study" || options.mode == "task-compare") {
         std::printf("REFERENCE_PHASE=POST rows=%lld width=%lld additional_launches=0\n",
                     static_cast<long long>(options.rows), static_cast<long long>(options.width));
-        if (!CopyOutputs(runtime, dataBytes, parentOutput, candidateOutput)) return 1;
+        if (options.mode == "task-compare") {
+            if (!CheckAcl(aclrtMemcpy(parentOutput.data(), dataBytes, runtime.candidateOutput, dataBytes,
+                                      ACL_MEMCPY_DEVICE_TO_HOST), "copy mapped Parent output") ||
+                !CheckAcl(aclrtMemcpy(candidateOutput.data(), dataBytes, runtime.parentOutput, dataBytes,
+                                      ACL_MEMCPY_DEVICE_TO_HOST), "copy mapped Candidate output")) return 1;
+            std::printf("POST_OUTPUT_MAPPING parent_address=%p candidate_address=%p\n",
+                        runtime.candidateOutput, runtime.parentOutput);
+        } else if (!CopyOutputs(runtime, dataBytes, parentOutput, candidateOutput)) {
+            return 1;
+        }
         const bool pairOk = CompareOutputs(runtime, options, parentOutput, candidateOutput);
         const bool firstOk = CompareReference("R31B_V011", options, parentOutput, reference);
         const bool secondOk = CompareReference(SecondLabel(options), options, candidateOutput, reference);
         if (!pairOk || !firstOk || !secondOk) return 3;
     }
-    return 0;
+    return trace.Save() ? 0 : 1;
 }
 
 int main(int argc, char** argv)
@@ -630,15 +892,22 @@ int main(int argc, char** argv)
         std::fprintf(stderr, "task-study requires the declared R01 dimensions, counts and output prefix\n");
         return 2;
     }
+    if (options.mode == "task-compare" &&
+        (options.device != 0 || options.rows != 16 || options.width != 16384 || options.blocks != 8 ||
+         options.warmups != 45 || options.repeats != 32 || options.output.empty())) {
+        std::fprintf(stderr, "task-compare requires the declared device, dimensions, counts and output prefix\n");
+        return 2;
+    }
     Runtime session;
     if (!CheckAcl(aclInit(nullptr), "aclInit")) return 1;
     session.initialized = true;
-    if (options.mode == "task-study") {
+    if (options.mode == "task-study" || options.mode == "task-compare") {
         Dl_info parentInfo{}, candidateInfo{};
         dladdr(reinterpret_cast<void*>(run_kernel_parent), &parentInfo);
         dladdr(reinterpret_cast<void*>(run_kernel_candidate), &candidateInfo);
-        std::printf("STUDY_SESSION pid=%ld parent_library=%s candidate_library=%s candidate_dispatched=0\n",
-                    static_cast<long>(getpid()), parentInfo.dli_fname, candidateInfo.dli_fname);
+        std::printf("STUDY_SESSION pid=%ld parent_library=%s candidate_library=%s candidate_dispatched=%d\n",
+                    static_cast<long>(getpid()), parentInfo.dli_fname, candidateInfo.dli_fname,
+                    options.mode == "task-compare" ? 1 : 0);
         std::ifstream maps("/proc/self/maps");
         std::string line;
         while (std::getline(maps, line)) {
@@ -648,7 +917,7 @@ int main(int argc, char** argv)
         }
     }
     const int firstStatus = RunCase(options);
-    if (firstStatus != 0 || options.mode != "task-study") return firstStatus;
+    if (firstStatus != 0 || (options.mode != "task-study" && options.mode != "task-compare")) return firstStatus;
     options.width = 32768;
     return RunCase(options);
 }

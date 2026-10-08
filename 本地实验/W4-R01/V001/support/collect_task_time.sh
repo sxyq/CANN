@@ -2,7 +2,25 @@
 set -eo pipefail
 
 route_root=/home/data4t2/lelinfeng/cann/w4/W4-R01/V001
-study_root=$route_root/task-time-device0-20261008
+case "${2:-parent-only}" in
+    parent-only)
+        study_root=$route_root/task-time-device0-20261008
+        profile_prefix=pp
+        run_mode=task-study
+        comparison=parent-parent
+        repeats=42
+        raw_prefix=pp
+        ;;
+    paired)
+        study_root=$route_root/task-compare-device0-20261008
+        profile_prefix=comparison
+        run_mode=task-compare
+        comparison=parent-candidate
+        repeats=32
+        raw_prefix=pcstudy
+        ;;
+    *) exit 2 ;;
+esac
 cd "$route_root"
 umask 027
 mkdir -p "$study_root"
@@ -47,31 +65,31 @@ case "${1:-}" in
         exit "$status"
         ;;
     collect)
-        if [ -e "$study_root/pp-profile" ]; then
+        if [ -e "$study_root/$profile_prefix-profile" ]; then
             printf 'Existing capture retained; refusing another collection at this path.\n' >&2
             exit 2
         fi
-        context pp-pre
-        application="$route_root/support/build/w4r01_v001_paired_runner --mode task-study --comparison parent-parent --device 0 --rows 16 --width 16384 --blocks 8 --dtype fp16 --warmups 45 --repeats 42 --output $study_root/pp"
+        context "$profile_prefix-pre"
+        application="$route_root/support/build/w4r01_v001_paired_runner --mode $run_mode --comparison $comparison --device 0 --rows 16 --width 16384 --blocks 8 --dtype fp16 --warmups 45 --repeats $repeats --output $study_root/$raw_prefix"
         command=(msprof --ai-core=off --aic-mode=task-based --task-time=on --ascendcl=on
-            --runtime-api=on --aicpu=off "--output=$study_root/pp-profile" "--application=$application")
+            --runtime-api=on --aicpu=off "--output=$study_root/$profile_prefix-profile" "--application=$application")
         printf '%q ' "${command[@]}" > "$study_root/collect-command.txt"
         printf '\n' >> "$study_root/collect-command.txt"
         date -u +%Y-%m-%dT%H:%M:%SZ > "$study_root/collect-session.log"
         set +e
-        "${command[@]}" > "$study_root/pp-profile.log" 2>&1
+        "${command[@]}" > "$study_root/$profile_prefix-profile.log" 2>&1
         status=$?
         set -e
         printf 'RETURN_CODE=%d\n' "$status" >> "$study_root/collect-session.log"
         date -u +%Y-%m-%dT%H:%M:%SZ >> "$study_root/collect-session.log"
-        context pp-post
+        context "$profile_prefix-post"
         stat -c '%y %s %n' support/build/libw4r01_v001_parent.so support/build/libw4r01_v001_candidate.so \
             > "$study_root/libraries-after.txt"
         cat "$study_root/collect-session.log"
         exit "$status"
         ;;
     *)
-        printf 'Usage: bash support/collect_task_time.sh compile|collect\n' >&2
+        printf 'Usage: bash support/collect_task_time.sh compile|collect [parent-only|paired]\n' >&2
         exit 2
         ;;
 esac
