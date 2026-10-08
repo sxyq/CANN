@@ -197,3 +197,189 @@ R4 到 V031、R5 到 V028 及 R31/R31A/R31B、MIX、STORE/EPILOGUE 与相关 W4 
 原二进制复测、两次 profiler、导出和传输命令均已结束；最终远端进程记录见
 `logs/requal-device1-20261008-final-state.log`。没有修改共享 TSV、规则、Dashboard、
 其他工作树或主目录，没有创建子代理、线程或持续定时任务。
+
+## 2026-10-08：RunLocal 双地址 P/P 有限诊断
+
+### 当前需求与状态
+
+本次指定诊断已完成，结果为 `MEASUREMENT_BLOCKED`。仅运行一次同协议 P/P，
+两个 FP32 输入合计 176 个计时调用；没有本轮 P/C 采样，没有新增 V003 或性能版。
+`CURRENT_LOCAL_BEST=NONE`，`LOCAL_SCORE=NONE`，`LOCAL_DELTA=NONE`。
+下文数值是相同 Parent 函数在两个输出槽位的差异，不能解释为 Candidate 收益。
+Online=PAUSED，PUSH=NO；本次任务结束不改变 Route 生命周期。
+
+### 本轮实际完成
+
+沿用 4243f4e9 的 V002、两份 kernel 库、原 reference 与已有结果。
+给原 `RunLocal` 增加 `local-pp` 模式：第二槽位调用 Parent；45 对预热、4x11
+交错对、两个输出地址、P-C/C-P 槽位次序、事件重用及原 raw 写入位置均保留。
+`Measure` 中的首样本打印和 start/stop/reset/synchronize 未改。每个输入在计时
+前后都读回两个实际输出，与既有 CPU FP32 reference 比较。新增地址打印位于
+该输入开始处，计时区间内未增加 task ID 查询。
+
+只构建必要的 host 可执行文件，原 host 使用的 `-std=gnu++17` 与链接库保持一致，
+未增加编译优化参数。2026-10-08 05:43:36–05:43:38 UTC 构建通过；05:44:30–05:44:37
+完成一次 msprof 采集与导出。原 runner、两份 kernel 库保留，未重建或替换。
+本地传输后的 probe.cpp 与远端文件逐字节比较一致。
+
+第一次构建入口返回 1，编译器未启动：版本目录下没有 set_env.sh。随后改用原有
+`/usr/local/Ascend/ascend-toolkit/set_env.sh`，加载返回 0 后构建通过。
+第一次空输出、路径诊断及成功构建日志均保留；没有借此改变测量协议。
+
+### 修改或操作对象
+
+所有本地文件均位于本 Route 工作树：
+
+```text
+/Users/sunyiyang/Desktop/Project/cann/worktrees/w4/R11-row-remainder-balance-x/
+```
+
+- `本地实验/W4-R11/V002/support/probe.cpp`：P/P 模式、地址记录与前后 reference 比较。
+- `本地实验/W4-R11/V002/support/host_diagnostic.sh`：仅 host 构建和有限采集命令。
+- `本地实验/W4-R11/V002/support/summarize_requalification.py`：扩展既有统计代码，逐调用对应 task、事件、地址与位置。
+- `本地实验/W4-R11/V002/results/local-protocol-20261008/`：本次完整 event 样本、profiler 导出、统计、环境及失败日志。
+- `研究/W4-R11/LOCAL-PROTOCOL-DIAGNOSTIC-20261008.md`：采样前的固定次数、比较指标及范围声明。
+- 本文件：追加 V002 同版结果，旧正文与旧证据保持原样。
+
+远端仅操作既有 R11 V002 目录下的 support、build-server3-v002 与 results：
+
+```text
+/home/data4t2/lelinfeng/cann/w4/R11-row-remainder-balance-x/V002/
+```
+
+新增可执行文件为 `build-server3-v002/adaptive_probe_local_pp`。完整原始采集保留在
+`results/local-protocol-20261008/pp-profile/PROF_000001_20261008054430699_EJKIQARPAEQLRDNB/`。
+其必要导出已取回本地。未写规则、共享 TSV、Dashboard、主目录或其他工作树。
+Parent、Candidate 和两个 entry.asc 未改，未删除文件，未创建子代理、线程或定时任务。
+
+### 验证结果
+
+#### reference 与真实地址
+
+本次设备 1 报告 40 个 vector cores；两输入的实际 Block Dim 为 40/12。
+沿用原随机输入和逐元素容差 `2e-5 + 1e-4 * abs(reference)`，两个槽位在采样前后
+failures 均为 0。下面的 P/C 表示原输出槽位，本次两侧实际函数都是 Parent。
+Candidate 的既有 reference 结果来源仍为 4243f4e9，本轮没有重新执行 Candidate。
+
+| FP32 输入 | P 槽位真实地址 | C 槽位真实地址 | 两侧最大绝对误差 |
+|---|---|---|---:|
+| 64x8192 | 0x12c041a00000 | 0x12c041e00000 | 4.76837e-06 |
+| 12x8192 | 0x12c0c00e7000 | 0x12c0c0148000 | 3.09944e-06 |
+
+#### 全部 P/P 样本
+
+每行有 88 个计时调用，P/C 槽位各 44 个；全部保留。MAD 与组间相对范围分别按
+全样本计算；每个地址的独立统计也保存在 pp-summary.json。原 10% 要求在整体和
+两地址均适用。两个输入在 event 与 kernel-task 范围都未满足本次事先声明。
+
+| FP32 输入 / 计时范围 | 整体中位 us | P 槽位中位 us | C 槽位中位 us | 整体 MAD/中位 | 四组中位数相对范围 |
+|---|---:|---:|---:|---:|---:|
+| 64x8192 / event | 28.73 | 28.93 | 27.81 | 15.697877% | 12.948138% |
+| 64x8192 / kernel task | 11.50 | 9.50 | 12.17 | 33.391304% | 30.347826% |
+| 12x8192 / event | 28.38 | 26.89 | 30.10 | 14.763918% | 19.062720% |
+| 12x8192 / kernel task | 6.55 | 6.64 | 6.46 | 13.587786% | 4.274809% |
+
+| FP32 输入 / 计时范围 | 逐对槽位差中位 % | 总体中位比差 % | 四组中位数 us |
+|---|---:|---:|---|
+| 64x8192 / event | -2.749031 | -3.871414 | 28.87 / 25.73 / 28.33 / 29.45 |
+| 64x8192 / kernel task | +2.505470 | +28.105263 | 12.11 / 11.53 / 11.50 / 8.62 |
+| 12x8192 / event | +10.364586 | +11.937523 | 28.95 / 31.57 / 26.16 / 27.74 |
+| 12x8192 / kernel task | -0.516796 | -2.710843 | 6.53 / 6.56 / 6.66 / 6.38 |
+
+逐对差为 `(C槽位/P槽位-1)*100` 的中位数；总体中位比为两个槽位各自中位数的比。
+它们是两个不同统计量。例：target task 的 +28.105263% 与 +2.505470% 同时存在，
+不能挑其中一个作为性能结论。control 的 P 槽位 task 两项中心指标单独满足要求，
+其 C 槽位与整体仍不满足；没有把单个子集当作整次资格。
+
+#### 调用位置与地址
+
+各槽位在第一/第二位置均有 22 个样本。以下为对应中位数；后两列是指定次序内
+`C槽位-P槽位` 配对差的中位数。
+
+| FP32 输入 / 范围 | P 第一 / 第二 us | C 第一 / 第二 us | P-C 次序差 us | C-P 次序差 us |
+|---|---|---|---:|---:|
+| 64x8192 / event | 28.99 / 27.39 | 27.61 / 28.40 | -1.72 | -0.07 |
+| 64x8192 / kernel task | 9.90 / 9.23 | 9.07 / 15.18 | +3.57 | -0.20 |
+| 12x8192 / event | 24.73 / 28.54 | 32.12 / 27.74 | +2.07 | +2.85 |
+| 12x8192 / kernel task | 6.74 / 6.27 | 6.71 / 6.43 | -0.23 | +0.19 |
+
+忽略槽位只按位置汇总时，target task 第一/第二中位为 9.22/12.65 us，
+control 为 6.74/6.35 us。按每一对计算的第二次减第一次中位分别为 +2.34/-0.23 us。
+target 的较长中心集中在 C 地址的第二位置；P 地址没有同样的变化。这一组数据
+包含位置与地址的交互，不能据此认定一个固定地址或第二次调用总会更慢。
+P/P 已可出现 task 次序差反向，旧 P/C 的相似现象不能直接归给 Candidate。
+
+#### task 对应、首样本与长尾
+
+360 个 kernel 调用全部与 task_time 的 device/stream/task ID、开始时间和时长一致。
+其中 4 个为采样前 reference，180 个为预热，176 个为计时；采样后 reference 只读回
+已有输出。全部计时调用均位于同 stream 的两条 EVENT_RECORD 之间。
+ACL elapsed 与两事件开始时间差的最大绝对偏差为 0.024 us。
+原始 task_time 有 1072 条记录，所有记录和 360 条 op_summary 均保留。
+
+| 输入 / 位置 | stream / task ID | 计时序号 | event us | kernel task us |
+|---|---|---:|---:|---:|
+| target 首样本，P 地址第一位置 | 42 / 93 | 1 | 111.42 | 92.284 |
+| target 非首样本，C 地址第二位置 | 42 / 481 | 78 | 92.82 | 78.824 |
+| control 非首样本，C 地址第一位置 | 42 / 697 | 103 | 231.28 | 229.144 |
+| control 非首样本，C 地址第一位置 | 42 / 819 | 127 | 147.22 | 131.704 |
+| control 非首样本，C 地址第二位置 | 42 / 956 | 154 | 84.68 | 74.760 |
+
+首样本与所有长尾均进入完整统计。target 四组各自 task MAD/中位数均超过 10%。
+明显长尾也出现在没有首样本诊断打印的调用中，且主要位于对应 kernel-task 区间。
+所以首样本打印无法独自解释本次波动；这也没有证明打印完全无影响。
+control 的三个最大 task 样本都写 C 地址，但同时覆盖两种位置；仅一次分配与一个
+进程的数据不足以确定地址是原因。
+
+同次调用的 event-task 差中位数为 target 16.72 us、control 19.54 us。
+start-event 到 kernel 开始的间隔中位为 14.09/13.01 us，kernel 结束到 stop-event
+的间隔中位为 2.18/9.29 us。各项中位数不能直接相加；这些间隔没有被指定为某个
+单一 host API 的耗时。逐调用数值、事件 ID 与真实地址见 `pp-task-map.tsv`。
+
+#### 资源与证据
+
+server3 为 hwnput3，SSH 入口 cann-server3，用户 lelinfeng，Ascend 910B3 / dav-2201，
+CANN 8.5.0.alpha002，host compiler GCC 11.4.0。构建和采集前后 HBM 容量为 65536 MB、
+使用率为 22%，按项目方法推算空闲 51118 MB。P/P 前后 AICore 为 2%/4%，
+host load1 为 47.70/62.58；其他进程继续运行，`BLOCKER=NONE`。
+
+本次所有证据位于 `results/local-protocol-20261008/`：
+
+- `pp-event.raw.tsv`、`pp-profile.log`：原事件采样和前后 reference 输出。
+- `pp-profile/`：原 op_summary、task_time、timeline 与辅助导出。
+- `pp-task-map.tsv`：176 个计时调用的地址、位置、序号、task ID 和事件范围。
+- `pp-summary.json`：完整数值、分组统计、首样本、最大值及资格结论。
+- `compile-session.log`、`compile-entry-diagnosis.log`、`environment-path.log`、`compile.log`：首次入口失败与成功构建来源。
+- `compile-pre.*.txt`、`pp-pre.*.txt`、`pp-post.*.txt`：设备与负载上下文。
+- `final-state.log`：2026-10-08 05:49:32 UTC 无 R11 运行进程，原 runner/两库时间与大小保持不变。
+
+Python 语法与本次完整数据分析通过；采样、导出、传输、离线统计均返回 0。
+实际 task 对应与前后 reference 通过，Local 资格未通过；没有用旧 same、R10 或旧
+P/C 数据替代本轮资格。所有新结果只补充同一 V002。
+
+### 剩余工作与风险
+
+```text
+NEW_PERFORMANCE_REVISIONS=0
+VALID_LOCAL_RESULTS=0
+CONSECUTIVE_NO_IMPROVEMENT_CONTRIBUTION=0
+STAGNATION_3=NO
+CURRENT_LOCAL_BEST=NONE
+LOCAL_SCORE=NONE
+LOCAL_DELTA=NONE
+OFFICIAL_SCORE=NONE
+ONLINE_STATE=PAUSED
+PUSH=NO
+RUNNING_DEVICE_OPERATION=NONE
+```
+
+本次未追加第二项实验。剩余测量方向为“真实输出地址与逻辑槽位的交叉映射”，
+用以区分地址相关现象与调用槽位/次序；新数据支持该方向，尚不能据此宣布因果。
+若 Main 再次安排本 Route，精确下一动作是在同一个进程和同一组地址中事先声明
+映射正常/互换的有限交错设计，保持其他 host 时序和 kernel 不变，先做 P/P，
+分别报告两个物理地址在两种槽位及位置的结果；不无变化重采本次命令，不先开 V003。
+宽行内部余行归属仍在本次范围之外，未研究、未修改，不能称为已具备证据的新性能轴。
+
+本次 ROUTE_RESEARCH_EVENT、ROUTE_EVENT 与 VERSION_RECORD_EVENT 在提交后由回执
+提供实际提交号。共享记录由 Record 异步同步，本 Agent 不写入。当前构建、采集、
+传输及分析任务均已结束；可由 Main 按本次任务交接流程释放槽位。

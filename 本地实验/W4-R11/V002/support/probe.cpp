@@ -182,17 +182,17 @@ void CopyFromDevice(std::vector<float>& output, const void* device, const char* 
     CheckAcl(aclrtMemcpy(output.data(), bytes, device, bytes, ACL_MEMCPY_DEVICE_TO_HOST), operation);
 }
 
-ErrorSummary RunCorrectness(const CaseSpec& spec, Buffers& data,
-                           int64_t availableCoreNum, aclrtStream stream)
+ErrorSummary ValidateOutputs(const CaseSpec& spec, Buffers& data,
+                             Kernel secondKernel, const char* phase)
 {
-    Launch(adaptive_parent_run_kernel, data.dOutputParent, data, availableCoreNum, stream);
-    Launch(adaptive_candidate_run_kernel, data.dOutputCandidate, data, availableCoreNum, stream);
-    CheckAcl(aclrtSynchronizeStream(stream), "synchronize correctness");
     CopyFromDevice(data.parentOutput, data.dOutputParent, "copy parent output");
     CopyFromDevice(data.candidateOutput, data.dOutputCandidate, "copy candidate output");
     const ErrorSummary parent = Compare(data.parentOutput, data.reference);
     const ErrorSummary candidate = Compare(data.candidateOutput, data.reference);
     std::cout << "CORRECTNESS case=" << spec.name
+              << " phase=" << phase
+              << " reference=CPU_FP32"
+              << " second_kernel=" << (secondKernel == adaptive_parent_run_kernel ? "PARENT" : "CANDIDATE")
               << " parent_failures=" << parent.failures
               << " parent_max_abs=" << parent.maxAbs
               << " candidate_failures=" << candidate.failures
@@ -201,6 +201,16 @@ ErrorSummary RunCorrectness(const CaseSpec& spec, Buffers& data,
         throw std::runtime_error("parent or candidate failed the FP32 reference comparison");
     }
     return candidate;
+}
+
+ErrorSummary RunCorrectness(const CaseSpec& spec, Buffers& data,
+                           int64_t availableCoreNum, aclrtStream stream,
+                           Kernel secondKernel = adaptive_candidate_run_kernel)
+{
+    Launch(adaptive_parent_run_kernel, data.dOutputParent, data, availableCoreNum, stream);
+    Launch(secondKernel, data.dOutputCandidate, data, availableCoreNum, stream);
+    CheckAcl(aclrtSynchronizeStream(stream), "synchronize correctness");
+    return ValidateOutputs(spec, data, secondKernel, "before_measure");
 }
 
 double Median(std::vector<double> values)
@@ -263,11 +273,12 @@ double Measure(Kernel kernel, void* output, const Buffers& data,
 }
 
 void RunLocal(const CaseSpec& spec, const Buffers& data,
-              int64_t availableCoreNum, aclrtStream stream, std::ofstream& raw)
+              int64_t availableCoreNum, aclrtStream stream, std::ofstream& raw,
+              Kernel secondKernel)
 {
     for (int i = 0; i < kWarmupCount; ++i) {
         Launch(adaptive_parent_run_kernel, data.dOutputParent, data, availableCoreNum, stream);
-        Launch(adaptive_candidate_run_kernel, data.dOutputCandidate, data, availableCoreNum, stream);
+        Launch(secondKernel, data.dOutputCandidate, data, availableCoreNum, stream);
     }
     CheckAcl(aclrtSynchronizeStream(stream), "synchronize warmup");
 
@@ -289,10 +300,10 @@ void RunLocal(const CaseSpec& spec, const Buffers& data,
             if (parentFirst) {
                 parentUs = Measure(adaptive_parent_run_kernel, data.dOutputParent,
                                    data, availableCoreNum, stream, events);
-                candidateUs = Measure(adaptive_candidate_run_kernel, data.dOutputCandidate,
+                candidateUs = Measure(secondKernel, data.dOutputCandidate,
                                       data, availableCoreNum, stream, events);
             } else {
-                candidateUs = Measure(adaptive_candidate_run_kernel, data.dOutputCandidate,
+                candidateUs = Measure(secondKernel, data.dOutputCandidate,
                                       data, availableCoreNum, stream, events);
                 parentUs = Measure(adaptive_parent_run_kernel, data.dOutputParent,
                                    data, availableCoreNum, stream, events);
@@ -382,8 +393,21 @@ void RunCase(const CaseSpec& spec, const std::string& mode,
     Buffers data(spec);
     InitializeInputs(data, spec);
     CopyToDevice(data);
-    RunCorrectness(spec, data, availableCoreNum, stream);
-    if (mode == "local") RunLocal(spec, data, availableCoreNum, stream, *raw);
+    const Kernel secondKernel = mode == "local-pp"
+        ? adaptive_parent_run_kernel : adaptive_candidate_run_kernel;
+    std::cout << "OUTPUT_SLOTS case=" << spec.name
+              << " slot_P_address=" << data.dOutputParent
+              << " slot_C_address=" << data.dOutputCandidate
+              << " slot_P_kernel=PARENT"
+              << " slot_C_kernel=" << (secondKernel == adaptive_parent_run_kernel ? "PARENT" : "CANDIDATE")
+              << " warmup_pairs=" << kWarmupCount
+              << " pair_blocks=" << kPairBlocks
+              << " pairs_per_block=" << kPairsPerBlock << '\n';
+    RunCorrectness(spec, data, availableCoreNum, stream, secondKernel);
+    if (mode == "local" || mode == "local-pp") {
+        RunLocal(spec, data, availableCoreNum, stream, *raw, secondKernel);
+        ValidateOutputs(spec, data, secondKernel, "after_measure");
+    }
     if (mode == "same") RunSameBinary(spec, data, availableCoreNum, stream, *raw);
 }
 
@@ -405,14 +429,14 @@ int main(int argc, char** argv)
             return 2;
         }
     }
-    if ((mode != "correctness" && mode != "local" && mode != "same") || deviceId < 0 ||
-        ((mode == "local" || mode == "same") && outputPath.empty())) {
-        std::cerr << "usage: adaptive_probe --mode <correctness|same|local> --device <id> [--output <new-path>]\n";
+    if ((mode != "correctness" && mode != "local" && mode != "local-pp" && mode != "same") || deviceId < 0 ||
+        ((mode == "local" || mode == "local-pp" || mode == "same") && outputPath.empty())) {
+        std::cerr << "usage: adaptive_probe --mode <correctness|same|local|local-pp> --device <id> [--output <new-path>]\n";
         return 2;
     }
 
     std::ofstream raw;
-    if (mode == "local" || mode == "same") {
+    if (mode == "local" || mode == "local-pp" || mode == "same") {
         if (std::filesystem::exists(outputPath)) {
             std::cerr << "output path already exists; refusing to replace evidence\n";
             return 2;
@@ -449,9 +473,9 @@ int main(int argc, char** argv)
         };
         for (const CaseSpec& spec : cases) {
             RunCase(spec, mode, availableCoreNum, stream,
-                    (mode == "local" || mode == "same") ? &raw : nullptr);
+                    (mode == "local" || mode == "local-pp" || mode == "same") ? &raw : nullptr);
         }
-        if (mode == "local") raw.flush();
+        if (mode == "local" || mode == "local-pp") raw.flush();
         CheckAcl(aclrtDestroyStream(stream), "destroy stream");
         stream = nullptr;
         CheckAcl(aclrtResetDevice(deviceId), "reset device");
