@@ -1,0 +1,19 @@
+--- a/本地实验/ROW-SCALE-HOIST-X/V026/submission.asc
++++ b/本地实验/ROW-SCALE-HOIST-X/V065/submission.asc
+@@ -1452,12 +1452,14 @@
+             }
+             SyncSToV();
+ 
++            AscendC::LocalTensor<float> gammaScaledLocal = xBuf_.Get<float>();
+             for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
+                 AscendC::LocalTensor<float> valueRow = valueLocal[batchRow * rowWidth];
+-                AscendC::Muls(valueRow, valueRow, invRmsValues[batchRow],
++                AscendC::Muls(gammaScaledLocal, gammaLocal, invRmsValues[batchRow],
+                               static_cast<int32_t>(rowWidth));
+                 AscendC::PipeBarrier<PIPE_V>();
+-                AscendC::Mul(valueRow, valueRow, gammaLocal, static_cast<int32_t>(rowWidth));
++                AscendC::Mul(valueRow, valueRow, gammaScaledLocal,
++                             static_cast<int32_t>(rowWidth));
+                 AscendC::PipeBarrier<PIPE_V>();
+                 AscendC::Add(valueRow, valueRow, biasLocal, static_cast<int32_t>(rowWidth));
+                 AscendC::PipeBarrier<PIPE_V>();
