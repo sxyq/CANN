@@ -1,0 +1,10 @@
+--- a/parent.asc
++++ b/submission.asc
+@@ -1753,7 +1753,6 @@
+                     const uint64_t valueOffset = static_cast<uint64_t>(batchRow) * rowWidth;
+                     AscendC::LocalTensor<float> valueRow = valueLocal[valueOffset];
+                     AscendC::Muls(valueRow, valueRow, invRmsValues[batchRow], width);
+-                    AscendC::PipeBarrier<PIPE_V>();
+                 }
+                 FromFloat(outputLocal, valueLocal, totalElems);
+                 AscendC::PipeBarrier<PIPE_V>();
