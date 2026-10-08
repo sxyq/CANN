@@ -15,6 +15,8 @@
 #include <vector>
 
 #include <fcntl.h>
+#include <dlfcn.h>
+#include <sched.h>
 #include <unistd.h>
 
 
@@ -51,6 +53,8 @@ struct Kernel {
 
 const Kernel kParent{"parent", "R31B-V011", run_kernel_parent};
 const Kernel kCandidate{"candidate", "W4-R07-V002", run_kernel_candidate};
+const Kernel kParentPeer{"parent_peer", "R31B-V011", run_kernel_parent};
+constexpr bool kStudyCandidateBlocks[] = {false, true, true, false, true, false, false, true};
 
 bool CheckAcl(aclError status, const char* operation)
 {
@@ -197,11 +201,15 @@ bool ParseInteger(const char* text, long long minimum, long long maximum, long l
 
 bool WriteSample(FILE* output, const Kernel& kernel, int block, int sample,
                  const char* order, int device, int32_t dtype, int64_t width,
-                 double deviceUs, double wallUs)
+                 double deviceUs, double wallUs, const char* studyMode = nullptr,
+                 int position = 0, int kernelSequence = 0)
 {
-    return std::fprintf(output, "%d\t%d\t%s\t%s\t%s\t%d\t%lld\t%d\t%.6f\t%.3f\n",
-                        block, sample, order, kernel.name, kernel.sourceLabel,
-                        device, static_cast<long long>(width), dtype, deviceUs, wallUs) >= 0;
+    if (std::fprintf(output, "%d\t%d\t%s\t%s\t%s\t%d\t%lld\t%d\t%.6f\t%.3f",
+                     block, sample, order, kernel.name, kernel.sourceLabel,
+                     device, static_cast<long long>(width), dtype, deviceUs, wallUs) < 0) return false;
+    if (studyMode != nullptr &&
+        std::fprintf(output, "\t%s\t%d\t%d\t%d", studyMode, position, kernelSequence, sched_getcpu()) < 0) return false;
+    return std::fprintf(output, "\n") >= 0;
 }
 
 bool LaunchAndMeasure(const Kernel& kernel, void* deviceX, void* deviceResidual,
@@ -243,9 +251,10 @@ bool Warmup(const Kernel& kernel, int count, void* deviceX, void* deviceResidual
 void PrintUsage(const char* program)
 {
     std::printf("Usage: %s DEVICE WIDTH DTYPE MODE SIDE WARMUPS SAMPLES BLOCKS OUTPUT.tsv\n", program);
-    std::printf("DTYPE: fp32 | fp16 | bf16; MODE: correctness-only | same | paired; SIDE: parent | candidate | -\n");
+    std::printf("DTYPE: fp32 | fp16 | bf16; MODE: correctness-only | same | paired | attribution; SIDE: parent | candidate | -\n");
     std::printf("correctness-only requires SIDE parent/candidate and WARMUPS=0 SAMPLES=0 BLOCKS=1; no events or timing.\n");
     std::printf("same requires >=45 warmups, >=21 samples, >=2 blocks; paired requires >=4 blocks.\n");
+    std::printf("attribution is fixed to device2, width12288, fp16, side-, 45 warmups, 8 pairs, 8 blocks.\n");
 }
 
 }  // namespace
@@ -262,11 +271,12 @@ int main(int argc, char** argv)
     }
 
     const bool correctnessOnly = std::strcmp(argv[4], "correctness-only") == 0;
+    const bool attribution = std::strcmp(argv[4], "attribution") == 0;
     long long deviceArg = 0, widthArg = 0, warmupsArg = 0, samplesArg = 0, blocksArg = 0;
     if (!ParseInteger(argv[1], 0, 7, deviceArg) ||
         !ParseInteger(argv[2], 1, 32768, widthArg) ||
         !ParseInteger(argv[6], correctnessOnly ? 0 : kMinimumWarmups, 100000, warmupsArg) ||
-        !ParseInteger(argv[7], correctnessOnly ? 0 : kMinimumSamples, 100000, samplesArg) ||
+        !ParseInteger(argv[7], correctnessOnly ? 0 : (attribution ? 8 : kMinimumSamples), 100000, samplesArg) ||
         !ParseInteger(argv[8], 1, 100000, blocksArg)) {
         std::fprintf(stderr, "invalid numeric argument or below protocol minimum\n");
         return 2;
@@ -279,11 +289,16 @@ int main(int argc, char** argv)
     const bool same = std::strcmp(argv[4], "same") == 0;
     const Kernel* sameKernel = std::strcmp(argv[5], "parent") == 0 ? &kParent :
                                std::strcmp(argv[5], "candidate") == 0 ? &kCandidate : nullptr;
-    if ((dtype < 0) || (!paired && !same && !correctnessOnly) ||
-        (paired && std::strcmp(argv[5], "-") != 0) || ((same || correctnessOnly) && sameKernel == nullptr) ||
+    if ((dtype < 0) || (!paired && !same && !correctnessOnly && !attribution) ||
+        ((paired || attribution) && std::strcmp(argv[5], "-") != 0) || ((same || correctnessOnly) && sameKernel == nullptr) ||
         (correctnessOnly && (warmupsArg != 0 || samplesArg != 0 || blocksArg != 1)) ||
         (same && blocksArg < kMinimumSameBlocks) || (paired && blocksArg < kMinimumPairedBlocks)) {
         std::fprintf(stderr, "unsupported dtype, mode, side, width, or block count\n");
+        return 2;
+    }
+    if (attribution && (deviceArg != 2 || widthArg != 12288 || dtype != kFp16 ||
+                        warmupsArg != 45 || samplesArg != 8 || blocksArg != 8)) {
+        std::fprintf(stderr, "attribution arguments must match the fixed study design\n");
         return 2;
     }
 
@@ -317,6 +332,17 @@ int main(int argc, char** argv)
         std::fprintf(stderr, "fdopen failed: %s\n", std::strerror(errno));
         close(outputFd);
         return 1;
+    }
+    FILE* referenceOutput = nullptr;
+    if (attribution) {
+        const std::string referencePath = std::string(argv[9]) + ".reference.tsv";
+        referenceOutput = std::fopen(referencePath.c_str(), "wx");
+        if (referenceOutput == nullptr) {
+            std::fprintf(stderr, "cannot create reference output: %s\n", std::strerror(errno));
+            std::fclose(output);
+            return 1;
+        }
+        std::fprintf(referenceOutput, "side\tsource\tdevice\trows\twidth\tdtype\tmax_abs_error\tatol\tmismatches\tnonfinite\tstatus\n");
     }
 
     const bool runtimeInitialized = CheckAcl(aclInit(nullptr), "aclInit");
@@ -376,6 +402,20 @@ int main(int argc, char** argv)
     const TensorInfo vectorInfo{vectorShape, 1, dtype};
     const TensorGroupInfo inputGroup{&inputInfo, 1};
     const TensorGroupInfo vectorGroup{&vectorInfo, 1};
+    int kernelSequence = 0;
+    const auto studyReference = [&](const char* phase, const Kernel& kernel) {
+        std::printf("REFERENCE_PHASE=%s SIDE=%s KERNEL_SEQUENCE=%d\n", phase, kernel.name, ++kernelSequence);
+        std::fprintf(referenceOutput, "# PHASE=%s KERNEL_SEQUENCE=%d\n", phase, kernelSequence);
+        std::vector<uint8_t> actual(inputBytes);
+        if (!CheckAcl(aclrtMemset(deviceOutput, inputBytes, 0xff, inputBytes), "initialize study output")) return false;
+        kernel.call(deviceX, inputGroup, deviceResidual, inputGroup, deviceGamma, vectorGroup,
+                    deviceBias, vectorGroup, deviceOutput, inputGroup, kAvailableCores, stream, kEpsilon);
+        return CheckAcl(aclrtSynchronizeStream(stream), "study reference sync") &&
+               CheckAcl(aclrtMemcpy(actual.data(), inputBytes, deviceOutput, inputBytes,
+                                   ACL_MEMCPY_DEVICE_TO_HOST), "study reference copy") &&
+               CompareOutput(referenceOutput, kernel, device, dtype, width, x, residual, gamma, bias, actual) &&
+               std::fflush(referenceOutput) == 0;
+    };
 
     if (passed) {
         std::fprintf(output, "# ROUTE=W4-R07\n");
@@ -387,11 +427,24 @@ int main(int argc, char** argv)
         std::fprintf(output, "# DEVICE=%d MODE=%s WARMUPS=%d SAMPLES_PER_BLOCK=%d BLOCKS=%d\n",
                      device, argv[4], warmups, samples, blocks);
         std::fprintf(output, "# AVAILABLE_CORES=%lld EPSILON=%.9g\n", static_cast<long long>(kAvailableCores), kEpsilon);
+        if (attribution) {
+            std::fprintf(output, "# STUDY=TIMING_ATTRIBUTION_20261008 PID=%d OUTPUT_ADDRESS=%p STREAM=%p\n",
+                         static_cast<int>(getpid()), deviceOutput, stream);
+            std::fprintf(output, "# BLOCK_MODES=PP,PC,PC,PP,PC,PP,PP,PC; per-pair order alternates; 45P+45C warmups once\n");
+            for (const Kernel* kernel : {&kParent, &kCandidate, &kParentPeer}) {
+                Dl_info info{};
+                const bool resolved = dladdr(reinterpret_cast<void*>(kernel->call), &info) != 0;
+                std::fprintf(output, "# LIBRARY side=%s function=%p object=%s\n", kernel->name,
+                             reinterpret_cast<void*>(kernel->call), resolved ? info.dli_fname : "UNKNOWN");
+            }
+        }
         if (correctnessOnly) {
             std::fprintf(output, "# VALIDATION=ROUTE_DIAGNOSTIC_ABS_TOLERANCE; rtol=0; no Official result\n");
             std::fprintf(output, "side\tsource\tdevice\trows\twidth\tdtype\tmax_abs_error\tatol\tmismatches\tnonfinite\tstatus\n");
         } else {
-            std::fprintf(output, "block\tsample\torder\tside\tsource\tdevice\twidth\tdtype_id\tdevice_event_us\twall_us\n");
+            std::fprintf(output, "block\tsample\torder\tside\tsource\tdevice\twidth\tdtype_id\tdevice_event_us\twall_us");
+            if (attribution) std::fprintf(output, "\tstudy_mode\tposition\tkernel_sequence\tcpu_after");
+            std::fprintf(output, "\n");
         }
         passed = std::fflush(output) == 0;
     }
@@ -410,8 +463,10 @@ int main(int argc, char** argv)
         if (passed) passed = CompareOutput(output, *sameKernel, device, dtype, width, x, residual, gamma, bias, actual);
     }
 
+    if (passed && attribution) passed = studyReference("before", kParent) && studyReference("before", kCandidate);
+
     if (passed && !correctnessOnly) {
-        if (paired) {
+        if (paired || attribution) {
             passed = Warmup(kParent, warmups, deviceX, deviceResidual, deviceGamma,
                             deviceBias, deviceOutput, inputGroup, vectorGroup, stream) &&
                      Warmup(kCandidate, warmups, deviceX, deviceResidual, deviceGamma,
@@ -420,27 +475,32 @@ int main(int argc, char** argv)
             passed = Warmup(*sameKernel, warmups, deviceX, deviceResidual, deviceGamma,
                             deviceBias, deviceOutput, inputGroup, vectorGroup, stream);
         }
+        if (passed && attribution) kernelSequence += 2 * warmups;
     }
 
     for (int block = 0; passed && !correctnessOnly && block < blocks; ++block) {
         for (int sample = 0; passed && sample < samples; ++sample) {
-            if (paired) {
+            if (paired || attribution) {
+                const bool useCandidate = !attribution || kStudyCandidateBlocks[block];
+                const Kernel& peer = useCandidate ? kCandidate : kParentPeer;
                 const bool candidateFirst = ((block + sample) % 2) != 0;
-                const Kernel& first = candidateFirst ? kCandidate : kParent;
-                const Kernel& second = candidateFirst ? kParent : kCandidate;
-                const char* firstOrder = candidateFirst ? "CP" : "PC";
+                const Kernel& first = candidateFirst ? peer : kParent;
+                const Kernel& second = candidateFirst ? kParent : peer;
+                const char* firstOrder = useCandidate ? (candidateFirst ? "CP" : "PC") :
+                                                       (candidateFirst ? "P2P1" : "P1P2");
+                const char* studyMode = attribution ? (useCandidate ? "PC" : "PP") : nullptr;
                 double deviceUs = 0.0, wallUs = 0.0;
                 passed = LaunchAndMeasure(first, deviceX, deviceResidual, deviceGamma, deviceBias,
                                           deviceOutput, inputGroup, vectorGroup, device,
                                           stream, startEvent, stopEvent, deviceUs, wallUs) &&
                          WriteSample(output, first, block + 1, sample + 1, firstOrder, device,
-                                     dtype, width, deviceUs, wallUs);
+                                     dtype, width, deviceUs, wallUs, studyMode, 1, ++kernelSequence);
                 if (passed) {
                     passed = LaunchAndMeasure(second, deviceX, deviceResidual, deviceGamma, deviceBias,
                                               deviceOutput, inputGroup, vectorGroup, device,
                                               stream, startEvent, stopEvent, deviceUs, wallUs) &&
                              WriteSample(output, second, block + 1, sample + 1, firstOrder, device,
-                                         dtype, width, deviceUs, wallUs);
+                                         dtype, width, deviceUs, wallUs, studyMode, 2, ++kernelSequence);
                 }
             } else {
                 double deviceUs = 0.0, wallUs = 0.0;
@@ -454,8 +514,12 @@ int main(int argc, char** argv)
         if (passed) passed = std::fflush(output) == 0;
     }
 
+    if (passed && attribution) passed = studyReference("after", kParent) && studyReference("after", kCandidate);
+    if (attribution) std::printf("STUDY_KERNEL_CALLS=%d TIMED_EXPECTED=128 CANDIDATE_EXECUTED=YES\n", kernelSequence);
+
     if (!passed && exitCode == 0) exitCode = 1;
     cleanup();
+    if (referenceOutput != nullptr && std::fclose(referenceOutput) != 0) passed = false;
     if (std::fclose(output) != 0) passed = false;
     if (!passed && exitCode == 0) exitCode = 1;
     return exitCode;
