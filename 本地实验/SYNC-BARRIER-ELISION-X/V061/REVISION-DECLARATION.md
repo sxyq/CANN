@@ -16,4 +16,5 @@
 - CURRENT_LOCAL_BEST: exact `R31B-V011`; V060 remains rejected/noisy and is not inherited.
 - COMPILE: PASS; see `logs/compile-v061-support-fix.md`.
 - CORRECTNESS: PASS, 7/7 FP16 cases bitwise equal.
-- LOCAL: `LOCAL_REJECTED_NOISY`, pooled paired-median score +4.912068%, 62 pairs; see `RESULT.md`.
+- LOCAL: `LOCAL_REJECTED_UNEXERCISED_CHANGE_NOISY`, paired-median score +4.912068%, separate median-latency ratio +4.548211%, 62 pairs; see `RESULT.md`.
+- POST_RUN_PATH_AUDIT: the actual deletion is in `ProcessWideFp16BatchedOutputPipelined`, which has no call site in the current source. The measured 128x128 shape dispatches to `ProcessSmallLowPrecisionContiguousBatched`; see `RESULT.md`. Both score definitions and raw samples remain preserved but do not evaluate the deletion.
