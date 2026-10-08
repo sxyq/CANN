@@ -1,0 +1,29 @@
+# MODE-DISPATCH-CUTOFF-X V090 declaration
+
+- ROUTE: MODE-DISPATCH-CUTOFF-X (R-W4-4)
+- REVISION: V090
+- DIRECT_PARENT: exact R31B-V011
+- PARENT_SOURCE_SHA256: a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
+- PARENT_SCORE: 45.16 (Official reference only; no Official comparison in this route result)
+- SINGLE_HYPOTHESIS: lower only `kSmallFp32BatchMaxWidth` from the exact Parent's 4096 to 1032, narrowing the small-batch FP32 width cutoff by one adjacent step.
+- CONTEXT_CLASS: FP32_SMALL_BATCH_CUTOFF_OFAT
+- WHY_NOT_DUPLICATE: V086-V089 tested 1152, 1088, 1056, and 1040 respectively; 1032 is the next lower threshold in the same narrowing sequence and was not previously tested as the cutoff.
+- SELECTED_CASES: FP32 128x1024, 128x1032, 128x1040
+- CURRENT_LOCAL_BEST: NONE; use exact R31B-V011 as Parent.
+- PARENT_KNOWN_CORRECTNESS_FAILURE: YES for excluded C15 FP32 1x32768; not a Candidate regression.
+- PARTIAL_CORRECTNESS: YES
+- LOCAL_SCORE_COMPARABLE_TO_OFFICIAL: NO
+- DEVICE: 4 assigned; do not use before Compile PASS.
+- ONLINE: NOT_AUTHORIZED
+- CANDIDATE_SOURCE_SHA256: 57de1e6e90ccbb0627f98200b7bc3ca7b29f4bd6a206f9a614c7969210b0ddba
+- SOURCE_BASE_COMMIT: 6ed98f7d2ff27c92d5b5b7465792377d4f5e4e58 (V090 source and evidence are recorded in the scoped result commit)
+- SINGLE_CHANGE_AUDIT: PASS; only the FP32 small-batch width cutoff changed in the candidate source.
+- ROUTE_COMPILE: PASS; configure and `device`/`submission` targets returned 0.
+- PROBE_BUILD: PASS; exact Parent and Candidate correctness probe targets linked; existing harness warnings retained.
+- CORRECTNESS: PASS on FP32 128x1024/1032/1040 for both Parent and Candidate; all `rc=0`, `bad=0`; max_abs by width was 1.66893e-06, 1.43051e-06, and 1.43051e-06 respectively.
+- LOCAL_CAPTURE: 18 Parent same-binary context invocations plus 36 interleaved P/C invocations; each returned `rc=0`, `bad=0`; all raw samples retained.
+- LOCAL_RESULT_UTC: 2026-10-08T12:20:08.216139406Z (last interleaved invocation end; raw capture completion)
+- LOCAL_SCORE: 0.979930246590x; `LOCAL_DELTA=-2.006975341%` (partial route-local only; no Official comparison).
+- LOCAL_QUALITY: `LOAD_QUALITY=NOISY`; `MEASUREMENT_QUALITY=NOISY`; all 18 paired median shifts were within combined MAD and direction was mixed (6/18 Candidate-faster).
+- LOCAL_VERDICT: NEEDS_ONE_MORE_LOCAL; `LOCAL_BEST=R31B-V011` unchanged; V090 is not promoted.
+- DEVICE_RELEASED_UTC: 2026-10-08T12:25:05.809056739Z; existing inference PID 3838590 was untouched.
