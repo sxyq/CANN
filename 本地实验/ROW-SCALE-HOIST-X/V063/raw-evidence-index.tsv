@@ -1,0 +1,37 @@
+KIND	PATH	STATUS	NOTE
+rule	RULE_REFRESH_RECEIPT.md	PASS	V063 rule refresh; canonical route-skill path gap verified; V026 parent; Online forbidden
+source	submission.asc	PASS	Candidate source; SHA recorded in source-meta.json and submission.sha256
+source	submission.sha256	PASS	Candidate source checksum
+source	source-meta.json	PASS	Parent/candidate identity and one-change scope
+source	diff.patch	PASS	V026 to V063 narrow FP32 row-scale placement diff
+compile	compile/configure.log	PASS	Compile configure
+compile	compile/build.log	DIAGNOSTIC_FAIL	Full-link host/aarch64 incompatibility retained
+compile	compile/build-targets-retry.log	PASS	Device and submission targets
+compile	compile/build-targets-retry-result.txt	PASS	Target-scoped compile exit 0
+compile	compile-result.json	PASS_WITH_DIAGNOSTIC	Compile evidence summary
+correctness	correctness/build.log	PASS	Correctness runner build
+correctness	correctness/environment-export.log	PASS	ASCEND_HOME_PATH and ASC_DIR export
+correctness	correctness/invocation.txt	PASS	Environment-fixed Parent/Candidate invocation
+correctness	correctness/parent.log	PASS	Exact V026 Parent FP32 [128,128]
+correctness	correctness/candidate.log	PASS	V063 Candidate FP32 [128,128]
+correctness	correctness-result.json	PASS	Parent and Candidate matched ratio 1.0
+environment	correctness/parent-missing-env.log	FAIL_BEFORE_RUN	Missing libmsprofiler environment attempt retained
+environment	correctness/candidate-missing-env.log	FAIL_BEFORE_RUN	Missing libmsprofiler environment attempt retained
+timing	local/parent-stability.log	PASS	Parent stability raw 32 samples
+timing	local/parent-block1.log	PASS	Parent block 1 raw 32 samples
+timing	local/candidate-block1.log	PASS	Candidate block 1 raw 32 samples
+timing	local/parent-block2.log	PASS	Parent block 2 raw 32 samples
+timing	local/candidate-block2.log	PASS	Candidate block 2 raw 32 samples
+timing	local/parent-block3.log	PASS	Parent block 3 raw 32 samples
+timing	local/candidate-block3.log	PASS	Candidate block 3 raw 32 samples
+timing	local/parent-block4.log	PASS	Parent block 4 raw 32 samples
+timing	local/candidate-block4.log	PASS	Candidate block 4 raw 32 samples
+timing	local/invocation-status.tsv	PASS	All nine fixed-environment invocations exit 0
+timing	local/local-result.json	MEASUREMENT_BLOCKED	Numeric descriptive aggregate and quality context
+load	local/device-snapshot-before-local.log	CAPTURED	HBM/AICore/process context before timing
+load	local/device-snapshot-after-local.log	CAPTURED	HBM/AICore/process context after timing
+load	local/process-snapshot-before-local.log	CAPTURED	Process context before timing
+load	local/process-snapshot-after-local.log	CAPTURED	Process context after timing
+environment	local/failed-attempt-missing-build-dir-20261008T193745Z/	FAIL_BEFORE_RUN	Initial Local attempt retained
+result	RESULT.md	MEASUREMENT_BLOCKED	Numeric score retained; V026 remains Local Best
+result	VERSION_RECORD_EVENT	PENDING_COMMIT	Route event for scoped V063 commit
