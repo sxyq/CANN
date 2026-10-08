@@ -1,0 +1,77 @@
+{
+  "route": "SYNC-BARRIER-ELISION-X",
+  "revision": "V050",
+  "status": "LOCAL_REJECTED_NOISY",
+  "direct_parent": "R31B-V011",
+  "host": "hwnput3",
+  "soc": "Ascend910B3",
+  "npu_arch": "dav-2201",
+  "device": 3,
+  "shape": "128x128",
+  "dtype": "fp16",
+  "parent_source_sha256": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "candidate_source_sha256": "a8c12738f9937f1f6c2d9a08ad7f84fd182ecf1ed08065d196c787b3d270573c",
+  "runner_source_sha256": "4e31ae6977846dd4f80eff5d0c7359b1851be000e49e24b3b7dd405c210b67fd",
+  "runner_executable_sha256": "159a9b00a60ff1713e89b7d7c51bf4fa0238ab35fd1e2a51cf08c47bf2364bae",
+  "method": "60 warmups per invocation; two 31-pair same-binary qualification runs for Parent and Candidate; then two interleaved 31-pair Parent/Candidate device-event blocks in P,C and C,P order. Device event is primary; wall time and per-sample throughput retained. No samples filtered.",
+  "qualification_status": "COMPLETED_HIGH_VARIABILITY",
+  "same_binary_qualification": {
+    "parent": [
+      {"run": 1, "samples": 31, "first_mad_over_median": 0.065060, "second_mad_over_median": 0.129630, "median_drift_fraction": 0.024390},
+      {"run": 2, "samples": 31, "first_mad_over_median": 0.115151, "second_mad_over_median": 0.070769, "median_drift_fraction": 0.015267}
+    ],
+    "candidate": [
+      {"run": 1, "samples": 31, "first_mad_over_median": 0.446269, "second_mad_over_median": 0.482143, "median_drift_fraction": 0.002981},
+      {"run": 2, "samples": 31, "first_mad_over_median": 0.662047, "second_mad_over_median": 0.670030, "median_drift_fraction": 0.054951}
+    ],
+    "interpretation": "Candidate same-binary samples show large within-run MAD/median despite modest run-median drift; all 124 raw qualification samples are retained."
+  },
+  "sample_pairs_per_block": 31,
+  "total_paired_samples": 62,
+  "local_score": 1.866978,
+  "local_score_unit": "percent",
+  "local_score_type": "ROUTE_LOCAL_MEDIAN_PAIRED_DEVICE_SPEEDUP_PERCENT",
+  "local_score_method": "-100 * median(candidate_device_us - parent_device_us across all 62 raw pairs) / median(parent_device_us); no filtering.",
+  "local_delta_candidate_minus_parent_us": -0.16,
+  "pooled": {
+    "parent_device_us": {"median": 8.57, "mean": 12.825806, "stdev_sample": 7.155243, "cv": 0.557879, "min": 5.86, "max": 32.96, "mad": 2.11, "p10": 6.444, "p90": 22.644},
+    "candidate_device_us": {"median": 8.72, "mean": 11.584516, "stdev_sample": 5.806489, "cv": 0.501228, "min": 5.74, "max": 23.84, "mad": 2.26, "p10": 6.264, "p90": 20.116},
+    "paired_delta_candidate_minus_parent_us": {"median": -0.16, "mean": -1.241290, "stdev_sample": 7.581440, "min": -19.70, "max": 13.30, "mad": 1.25, "p10": -13.416, "p90": 9.972},
+    "parent_throughput_g_elements_s": {"median": 1.911809, "mean": 1.665047, "stdev_sample": 0.742479, "cv": 0.445921, "min": 0.497087, "max": 2.795904, "mad": 0.624439, "p10": 0.723550, "p90": 2.542529},
+    "candidate_throughput_g_elements_s": {"median": 1.879146, "mean": 1.751588, "stdev_sample": 0.709059, "cv": 0.404809, "min": 0.687248, "max": 2.854355, "mad": 0.657101, "p10": 0.814511, "p90": 2.615590},
+    "parent_wall_us": {"median": 69.8255, "mean": 73.900177, "stdev_sample": 19.852395, "cv": 0.268638, "min": 62.141, "max": 186.451, "mad": 3.37, "p10": 65.6341, "p90": 77.6111},
+    "candidate_wall_us": {"median": 68.7205, "mean": 72.335903, "stdev_sample": 12.047338, "cv": 0.166547, "min": 64.181, "max": 130.000, "mad": 2.9355, "p10": 65.0661, "p90": 80.561}
+  },
+  "blocks": [
+    {"block": 1, "sample_pairs": 31, "local_score_percent": -4.096383, "parent_median_device_us": 8.30, "candidate_median_device_us": 8.62, "median_paired_delta_us": 0.34, "parent_device_cv": 0.497911, "candidate_device_cv": 0.418583},
+    {"block": 2, "sample_pairs": 31, "local_score_percent": 2.748413, "parent_median_device_us": 18.92, "candidate_median_device_us": 16.52, "median_paired_delta_us": -0.52, "parent_device_cv": 0.483877, "candidate_device_cv": 0.510973}
+  ],
+  "device_load": {
+    "assignment": "Main allocated device 3 exclusively to V050 through qualification, paired timing, and result capture. Released at 2026-10-08T00:47:12Z after valid result capture.",
+    "device3_aicore_percent_snapshots": [0, 0, 0, 0, 0, 0, 0],
+    "device3_hbm_mb_snapshots": [3426, 3428, 3428, 3428, 3428, 3428, 3428],
+    "host_load_average_1m_5m_15m": [[48.38, 43.29, 43.00], [46.19, 42.92, 42.88], [42.91, 42.33, 42.68], [40.08, 41.75, 42.49], [38.96, 41.48, 42.40], [36.58, 40.89, 42.20], [35.89, 40.68, 42.12]],
+    "other_device_activity_observed": true,
+    "notes": "All npu-smi, host-load and process snapshots are retained in the raw log. Device 3 had no reported process; other-device activity was left untouched. No load threshold or sample filtering was applied."
+  },
+  "repeatability": "Noisy: the two interleaved blocks reverse direction (-4.096383%, +2.748413%). Pooled Parent/Candidate device-event CVs are 0.557879/0.501228, and paired deltas span -19.70 to +13.30 us. Candidate same-binary qualification has high within-run dispersion. The pooled positive paired score is not promoted.",
+  "interpretation": "LOCAL_REJECTED_NOISY; CURRENT_LOCAL_BEST remains R31B-V011. Numeric single-shape Local is not comparable to Official 45.16.",
+  "current_local_best": "R31B-V011",
+  "official_score": null,
+  "online_state": "NOT_SUBMITTED",
+  "invalid_wrong_branch_evidence": {
+    "candidate_source": "submission-v050-wrong-branch-invalid.asc",
+    "candidate_source_sha256": "d48ef8b0cfe9633e06fca4abb36839add0ff00b4b7b5a489df6da53a0babb590",
+    "local_result": "local-result-wrong-branch-invalid.json",
+    "note": "The earlier local score was produced by a deletion in the FP32 else branch and is invalid for the declared FP16 change."
+  },
+  "evidence": {
+    "qualification_and_interleaved_raw_samples_load_and_jitter": "logs/local-v050-correct-fp16-env-20261008T003726Z.log",
+    "loader_failure_attempt_preserved_not_counted": "logs/local-v050-correct-fp16-20261008T003323Z.log",
+    "valid_compile": "logs/compile-v050-correct-fp16-20261008T003200Z.log",
+    "correctness": "logs/correctness-v050-correct-fp16-20261008T003227Z.log",
+    "runner_build": "logs/correctness-v050-correct-fp16-20261008T003227Z.log",
+    "invalid_scaffold_compile": "logs/compile-v050-20261008T000745Z.log",
+    "invalid_scaffold_correctness": "logs/correctness-v050-20261008T000949Z.log"
+  }
+}

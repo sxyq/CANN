@@ -1,0 +1,72 @@
+{
+  "route": "SYNC-BARRIER-ELISION-X",
+  "revision": "V050",
+  "status": "LOCAL_REJECTED_NOISY",
+  "direct_parent": "R31B-V011",
+  "host": "hwnput3",
+  "soc": "Ascend910B3",
+  "npu_arch": "dav-2201",
+  "device": 3,
+  "shape": "128x128",
+  "dtype": "fp16",
+  "parent_source_sha256": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "candidate_source_sha256": "d48ef8b0cfe9633e06fca4abb36839add0ff00b4b7b5a489df6da53a0babb590",
+  "runner_source_sha256": "4e31ae6977846dd4f80eff5d0c7359b1851be000e49e24b3b7dd405c210b67fd",
+  "runner_executable_sha256": "7da30c5d8fe6ec9bdea1bf92e136b3f9cbc9bb50a5c2e6056d0d9dd5d3e9fd84",
+  "runner_candidate_label": "CANDIDATE_V050",
+  "method": "60 warmups per invocation; two Parent and two Candidate same-binary qualification runs with 31 pairs each; then two interleaved device-event Parent/Candidate blocks of 31 pairs each, alternating P,C and C,P. Device-event latency is primary; wall latency and per-sample throughput are retained. No samples were filtered.",
+  "qualification_status": "COMPLETED_HIGH_VARIABILITY",
+  "same_binary_qualification": {
+    "parent": [
+      {"run": 1, "first_median_us": 16.24, "second_median_us": 15.30, "first_mad_over_median": 0.289409, "second_mad_over_median": 0.232680, "median_drift_fraction": 0.059607},
+      {"run": 2, "first_median_us": 14.64, "second_median_us": 13.12, "first_mad_over_median": 0.513661, "second_mad_over_median": 0.474085, "median_drift_fraction": 0.109510}
+    ],
+    "candidate": [
+      {"run": 1, "first_median_us": 6.96, "second_median_us": 6.96, "first_mad_over_median": 0.120690, "second_mad_over_median": 0.114943, "median_drift_fraction": 0.000000},
+      {"run": 2, "first_median_us": 15.42, "second_median_us": 13.70, "first_mad_over_median": 0.391699, "second_mad_over_median": 0.451095, "median_drift_fraction": 0.118132}
+    ],
+    "interpretation": "High within-run event spread and Candidate median movement between qualification runs. All qualification raw events and snapshots are retained."
+  },
+  "sample_pairs_per_block": 31,
+  "total_paired_samples": 62,
+  "local_score": 0.694444,
+  "local_score_unit": "percent",
+  "local_score_type": "ROUTE_LOCAL_MEDIAN_PAIRED_DEVICE_SPEEDUP_PERCENT",
+  "local_score_method": "-100 * median(candidate_device_us - parent_device_us across all 62 printed raw pairs) / median(parent_device_us across all 62 printed raw pairs); no outlier filtering.",
+  "local_delta_candidate_minus_parent_us": -0.15,
+  "local_score_comparable_to_official": false,
+  "pooled": {
+    "parent_device_us": {"median": 21.6, "mean": 20.839677, "stdev_sample": 10.044005, "cv": 0.481965, "min": 6.04, "max": 50.08, "mad": 7.54, "p10": 6.414, "p90": 30.77, "median_per_sample_throughput_g_elements_s": 0.759029},
+    "candidate_device_us": {"median": 21.24, "mean": 20.549032, "stdev_sample": 10.843878, "cv": 0.527708, "min": 5.78, "max": 40.86, "mad": 8.98, "p10": 6.22, "p90": 33.64, "median_per_sample_throughput_g_elements_s": 0.771622},
+    "paired_delta_candidate_minus_parent_us": {"median": -0.15, "mean": -0.290645, "stdev_sample": 10.692574, "min": -26.52, "max": 27.78, "mad": 2.16, "p10": -12.658, "p90": 10.098},
+    "parent_wall_us": {"median": 81.116, "mean": 85.182032, "stdev_sample": 19.443122, "cv": 0.228254, "min": 69.66, "max": 198.951, "mad": 5.1495, "p10": 73.716, "p90": 90.614},
+    "candidate_wall_us": {"median": 84.4755, "mean": 85.403613, "stdev_sample": 12.660619, "cv": 0.148245, "min": 71.241, "max": 136.351, "mad": 6.885, "p10": 73.2271, "p90": 96.35}
+  },
+  "blocks": [
+    {"block": 1, "sample_pairs": 31, "runner_score_percent": -0.274162, "raw_printed_score_percent": -0.274160, "parent_median_device_us": 29.18, "candidate_median_device_us": 29.36, "median_paired_delta_us": 0.08, "paired_delta_mad_us": 3.48, "parent_device_cv": 0.381661, "candidate_device_cv": 0.290394},
+    {"block": 2, "sample_pairs": 31, "runner_score_percent": 1.559021, "raw_printed_score_percent": 1.559020, "parent_median_device_us": 17.96, "candidate_median_device_us": 7.54, "median_paired_delta_us": -0.28, "paired_delta_mad_us": 1.46, "parent_device_cv": 0.427044, "candidate_device_cv": 0.621592}
+  ],
+  "device_load": {
+    "assignment": "Main assigned device 3 exclusively to V050 from Correctness through Local result capture; no other Route used device 3. The assignment was released after result commit.",
+    "device3_aicore_percent_pre_between_post": [0, 0, 0],
+    "device3_hbm_mb_pre_between_post": [3426, 3427, 3428],
+    "device3_process_reported_pre_between_post": [false, false, false],
+    "host_load_average_pre_between_post": [[31.77, 42.62, 47.50], [30.99, 42.09, 47.27], [46.61, 45.14, 48.23]],
+    "other_device_activity_observed": true,
+    "notes": "Full npu-smi/process snapshots are in the raw Local log. Other-device activity was left untouched. No low-load threshold or sample filtering was applied."
+  },
+  "repeatability": "Noisy and directionally inconsistent: block scores reverse sign (-0.274162% and +1.559021%). Pooled event CV is 0.481965 for Parent and 0.527708 for Candidate; paired deltas range from -26.52 to +27.78 us. Candidate same-binary qualification medians move from 6.96 us in run 1 to 15.42 us in run 2. The small pooled paired score does not support promotion.",
+  "interpretation": "LOCAL_REJECTED_NOISY; CURRENT_LOCAL_BEST remains R31B-V011. Numeric single-shape Local is not comparable to Official 45.16.",
+  "current_local_best": "R31B-V011",
+  "official_score": null,
+  "online_state": "NOT_SUBMITTED",
+  "evidence": {
+    "qualification_raw_samples_and_load": "logs/qualification-v050-valid-20261008T001649Z.log",
+    "raw_interleaved_samples_and_load": "logs/local-interleaved-v050-20261008T001757Z.log",
+    "valid_compile": "logs/compile-v050-sibling-fix-20261008T001335Z.log",
+    "correctness": "logs/correctness-v050-valid-20261008T001445Z.log",
+    "runner_build": "logs/correctness-runner-build-v050-sibling-fix-20261008T001406Z.log",
+    "invalid_scaffold_compile": "logs/compile-v050-20261008T000745Z.log",
+    "invalid_scaffold_correctness": "logs/correctness-v050-20261008T000949Z.log"
+  }
+}
