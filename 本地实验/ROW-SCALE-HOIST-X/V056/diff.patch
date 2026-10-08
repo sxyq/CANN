@@ -1,0 +1,15 @@
+--- a/本地实验/ROW-SCALE-HOIST-X/V026/compile/src/submission.asc
++++ b/本地实验/ROW-SCALE-HOIST-X/V056/compile/src/submission.asc
+@@ -732,9 +732,10 @@
+                 }
+                 AscendC::LocalTensor<float> valueRow = valueLocal[batchRow * width];
+                 AscendC::LocalTensor<T> outputRow = useFirst ? gammaStage : biasStage;
+-                AscendC::Mul(valueRow, valueRow, gammaFp32, width);
++                AscendC::LocalTensor<float> scaledGamma = xFp32Buf_.Get<float>();
++                AscendC::Muls(scaledGamma, gammaFp32, invRmsValues[batchRow], width);
+                 AscendC::PipeBarrier<PIPE_V>();
+-                AscendC::Muls(valueRow, valueRow, invRmsValues[batchRow], width);
++                AscendC::Mul(valueRow, valueRow, scaledGamma, width);
+                 AscendC::PipeBarrier<PIPE_V>();
+                 AscendC::Add(valueRow, valueRow, biasFp32, width);
+                 AscendC::PipeBarrier<PIPE_V>();
