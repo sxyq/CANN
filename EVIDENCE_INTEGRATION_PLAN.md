@@ -1,6 +1,6 @@
 # Evidence Integration Plan
 
-盘点基准：integration worktree 初始快照 `edcbaab4c506e05ed369830245e60aeb711ca714`；本次状态更新日期 2026-10-09。Main 当前回执为 `566e329e31f0b971e0c66bebeb60f73e467ee7b7`，相对缓存 `origin/main` ahead 15 / behind 2；`git ls-remote` 回执确认远端 `1ea9677ba8e7307a73f13041c7b639ab6a96425c`。primary main dirty 17，保持原样；未进入该工作树。
+盘点基准：integration worktree 初始快照 `edcbaab4c506e05ed369830245e60aeb711ca714`；本次状态更新日期 2026-10-09。Main 当前回执为 `566e329e31f0b971e0c66bebeb60f73e467ee7b7`，相对缓存 `origin/main` ahead 15 / behind 2；`git ls-remote` 回执确认远端 `1ea9677ba8e7307a73f13041c7b639ab6a96425c`。primary main dirty 17，保持原样；未进入该工作树。integration 已先合 local main，再合指定 origin/main；当前集成提交为 `075a5931a55dbe549bd2292c30b450f74861e111`。
 
 本轮报告更新后，只在 integration branch 依次合入 local `main` 与上述已核实 `origin/main`。不合入任何 Candidate，不运行 Compile、Correctness、Local、NPU 或 Online。A/B/C 是证据处置分类，不构成新的 Route 生命周期决定。主工作树 17 项 dirty 保持不动。
 
@@ -116,6 +116,31 @@ a7d3f04ca2a47669d3eb3111d1ba47a21d72a8a5 docs: sync eleven W4 events and latest 
 调度/当前任务.tsv
 ```
 
+### Merge completion receipt
+
+```text
+LOCAL_MAIN_MERGE=540484b8eeaee702de219b9092d4f3a168788f40
+LOCAL_MAIN_PARENT=566e329e31f0b971e0c66bebeb60f73e467ee7b7
+ORIGIN_MAIN_MERGE=075a5931a55dbe549bd2292c30b450f74861e111
+ORIGIN_MAIN_PARENT=1ea9677ba8e7307a73f13041c7b639ab6a96425c
+INTEGRATION_HEAD_AFTER_MERGE=075a5931a55dbe549bd2292c30b450f74861e111
+MERGE_STATUS=CLEAN before this report refresh
+MAIN_DIRTY_STATE_PRESERVED=YES
+PUSH=NO
+```
+
+三处 canonical 冲突均已在 integration branch 处理，没有整文件选边覆盖：保留 local-main 与 origin-main 的不同记录行。版本账本保留 W4 行和 origin 的 W3 行；`W4-R11/V002` 的原始性能记录与 Parent-only 补充是两个不同事件，均保留。路线成绩表保留 15 条 W4 行和 5 条 W3 行；历史 `H001` 两个不同阶段行也各自保留。当前任务表保留 W4 当前调度行及 origin 的 W3 R1-R5 状态行。文件内原有的历史字段数差异与空行来自共同祖先记录，未在本次合并中改写。
+
+origin merge 同时带入其正式提交内容；这些文件并非本轮手工路径拷贝：
+
+| Route | 来源 commit | 随 origin 合并的文件 |
+|---|---|---|
+| W3 R2 / Adaptive Core Ownership V015 | `1ea9677ba8e7307a73f13041c7b639ab6a96425c` | `线上结果/ADAPTIVE-CORE-OWNERSHIP-CHAMPION-X/V015/official-result.json`, `submit.stderr.log`, `submit.stdout.log` |
+| W3 R5 / Crossrow Full Pipeline V012 | `1ea9677ba8e7307a73f13041c7b639ab6a96425c` | `线上结果/CROSSROW-FULL-PIPELINE-CHAMPION-X/V012/official-result.json`, `submit.stderr.log`, `submit.stdout.log` |
+| W3 R4 / Multirow Panel RMS V020 | `1ea9677ba8e7307a73f13041c7b639ab6a96425c` | `线上结果/MULTIROW-PANEL-RMS-CHAMPION-X/V020/official-result.json`, `submit.stderr.log`, `submit.stdout.log` |
+
+检查 merge 变更路径时没有发现 Candidate 源码或性能路径。主工作树 17 项 dirty 没有进入 integration。W4 的路径级 evidence copy 仍按用户要求暂停。
+
 ### Required incoming rule commit and authorization
 
 ```text
@@ -125,18 +150,15 @@ POLICY_FOLLOWUP=566e329e31f0b971e0c66bebeb60f73e467ee7b7; one wording-only Onlin
 W4_OFFICIAL_AUTHORIZATION=W4_BEST_OF_ROUTE_VALIDATED_CANDIDATES_ONLY
 MAX_SUBMISSIONS_PER_ROUTE=1
 QUALIFICATIONS=Build/Compile PASS; Correctness PASS; valid Local with numeric score/delta, raw samples and medians, shape/dtype, device, free HBM, load note, current best; route-internal comparable best; submitted source exactly matches validated Candidate commit; route quota/Judge quota/current Judge rules confirmed
-MAIN_MERGE_BLOCKED=YES until integration branch completes path-level canonical conflict resolution
-BLOCK_REASON=main/origin/main has 15/2 directional commits and three canonical-record content conflicts; primary main remains dirty 17 and is not entered.
+MAIN_MERGE_BLOCKED=NO
+BLOCK_REASON=NONE_FOR_MERGE; three canonical paths were reconciled in integration. Evidence copy remains paused by user; primary main remains dirty 17 and was not entered.
 INTEGRATION_OWNER_ONLINE_PERMISSION=NO
 SERVER3_TRANSIENT_PROCESS_UNATTRIBUTED=clx_ref_parent_; remote RUNNING_COMMAND globally UNKNOWN
-NEXT_ACTION=merge local main then verified origin/main in integration only; resolve three canonical paths line by line; retain Candidate branches and select evidence paths only.
+NEXT_ACTION=wait for user's precise next evidence path list; do not copy Route evidence before it arrives.
 ```
 
-两个 policy commit 已通过 Git 对象核对；只在 integration branch 合入，primary main 的 17 项 dirty 不带入。六项资格全部满足前，Route 标记为 `NO_ELIGIBLE_SUBMISSION`，本 Integration Owner 不执行 Online。
+两个 policy commit 已随 local main merge 进入 integration；primary main 的 17 项 dirty 未带入。六项资格全部满足前，Route 标记为 `NO_ELIGIBLE_SUBMISSION`，本 Integration Owner 不执行 Online。
 
-### Merge and evidence-selection execution
+### Evidence-selection status
 
-1. 在本 integration branch 先合入 local `main=566e329e31f0b971e0c66bebeb60f73e467ee7b7`，再合入已核实的 `origin/main=1ea9677ba8e7307a73f13041c7b639ab6a96425c`。
-2. 对 `技术路线/全版本记录.tsv`、`技术路线/路线成绩表.tsv`、`调度/当前任务.tsv` 逐行保留双方有来源的 W3/W4 记录；无法安全调和时停止，保留冲突，不使用整文件覆盖。
-3. W4-R01 至 W4-R15 优先按已提交研究报告、Local/Correctness/raw/profiler 路径及正式记录引用来源做路径级选择。纯 evidence commit 在文件清单确认后可整体应用；混有 Candidate 的 commit 仅取 evidence 路径。每个纳入路径记录原始 commit；Candidate 源码、性能改动和未验证结果不纳入。
-4. 路径级全量 evidence copy 当前按用户要求暂停；本轮不复制 Route evidence。待用户只读审阅报告与 main/origin merge 后，再按其下一批精确清单恢复。后续每批只提交已明确纯 evidence 路径，未决来源、运行状态、远端命令和 creator identity 保留 UNKNOWN，保持 `PUSH=NO`。
+`PATH_LEVEL_EVIDENCE_COPY=PAUSED_BY_USER`。本轮未从 W4 Route branches 手工复制 evidence；origin merge 中的 9 个 W3 Official result files 按来源 commit `1ea9677...` 随指定 ref 一并进入。W4-R01 至 W4-R15 的研究报告、Local/Correctness/raw/profiler 路径尚未逐条选取。收到用户下一批精确路径清单后，再按来源 commit 分批选择并记录原始 commit；Candidate 源码、性能改动和未验证结果保持不纳入，`PUSH=NO`。
