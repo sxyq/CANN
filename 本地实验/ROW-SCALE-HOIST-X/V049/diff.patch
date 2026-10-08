@@ -1,0 +1,39 @@
+diff --git "a/\346\234\254\345\234\260\345\256\236\351\252\214/ROW-SCALE-HOIST-X/V026/submission.asc" "b/\346\234\254\345\234\260\345\256\236\351\252\214/ROW-SCALE-HOIST-X/V049/submission.asc"
+index 99c9143e..4786e39e 100644
+--- "a/\346\234\254\345\234\260\345\256\236\351\252\214/ROW-SCALE-HOIST-X/V026/submission.asc"
++++ "b/\346\234\254\345\234\260\345\256\236\351\252\214/ROW-SCALE-HOIST-X/V049/submission.asc"
+@@ -581,10 +581,17 @@ public:
+             AscendC::PipeBarrier<PIPE_V>();
+             SyncVToS();
+             const float invRms = 1.0f / xFp32.GetValue(0);
+             SyncSToV();
+
++            if constexpr (!AscendC::IsSameType<T, float>::value &&
++                          !std::is_same<T, half>::value) {
++                if (!residentParams) {
++                    AscendC::Muls(valueLocal, valueLocal, invRms, valid);
++                    AscendC::PipeBarrier<PIPE_V>();
++                }
++            }
+             if (!residentParams) {
+                 AscendC::WaitFlag<AscendC::HardEvent::MTE2_V>(paramReady);
+             }
+             if constexpr (AscendC::IsSameType<T, float>::value) {
+                 AscendC::Mul(valueLocal, valueLocal, gammaLocal, valid);
+@@ -611,12 +618,14 @@ public:
+                 ToFloat(xFp32, gammaLocal, valid);
+                 ToFloat(residualFp32, biasLocal, valid);
+                 AscendC::PipeBarrier<PIPE_V>();
+                 AscendC::Mul(valueLocal, valueLocal, xFp32, valid);
+                 AscendC::PipeBarrier<PIPE_V>();
+-                AscendC::Muls(valueLocal, valueLocal, invRms, valid);
+-                AscendC::PipeBarrier<PIPE_V>();
++                if (residentParams) {
++                    AscendC::Muls(valueLocal, valueLocal, invRms, valid);
++                    AscendC::PipeBarrier<PIPE_V>();
++                }
+                 AscendC::Add(valueLocal, valueLocal, residualFp32, valid);
+                 AscendC::PipeBarrier<PIPE_V>();
+                 AscendC::LocalTensor<T> outputLocal = xBuf_.Get<T>();
+                 FromFloat(outputLocal, valueLocal, valid);
+                 AscendC::PipeBarrier<PIPE_V>();

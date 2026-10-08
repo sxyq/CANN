@@ -1,0 +1,87 @@
+{
+  "route": "ROW-SCALE-HOIST-X",
+  "revision": "V049",
+  "direct_parent": "V026",
+  "parent_source_sha256": "7c2569d9e3830c845f2b5dc4587a73a05a0bdf041168614cd55ad84204e063f9",
+  "candidate_source_sha256": "6c952259f62da6812385310366869152a746dc15a1635a386cd3ad04323e9890",
+  "stage": "LOCAL_RESULT",
+  "status": "MEASUREMENT_BLOCKED",
+  "shape": [40, 3072],
+  "dtype": "bf16",
+  "dispatch": "ProcessNarrowMidOverlap",
+  "vector_cores": 40,
+  "launch_blocks": 40,
+  "local_rows_per_core": 1,
+  "resident_params": false,
+  "candidate_source_delta_executed": true,
+  "method": {
+    "timer": "ACL device events",
+    "warmups_per_process": 20,
+    "samples_per_process": 32,
+    "blocks_per_arm": 4,
+    "sample_count_per_arm": 128,
+    "block_order": [
+      "PARENT_1",
+      "CANDIDATE_1",
+      "CANDIDATE_2",
+      "PARENT_2",
+      "PARENT_3",
+      "CANDIDATE_3",
+      "PARENT_4",
+      "CANDIDATE_4"
+    ],
+    "all_process_exit_codes_zero": true,
+    "raw_samples": "local-*-block*.log"
+  },
+  "parent_pooled": {
+    "median_us": 17.5700005,
+    "mean_us": 16.5929687891,
+    "stdev_population_us": 7.7263869123,
+    "cv_population": 0.4656422254,
+    "mad_us": 5.23,
+    "min_us": 6.54,
+    "max_us": 54.140003
+  },
+  "candidate_pooled": {
+    "median_us": 18.83,
+    "mean_us": 17.6092188125,
+    "stdev_population_us": 6.9967371201,
+    "cv_population": 0.3973337599,
+    "mad_us": 4.8500005,
+    "min_us": 6.84,
+    "max_us": 35.16
+  },
+  "ratio_of_medians_score": 93.3085528412,
+  "delta_percent_candidate_slower_positive": 7.1713116912,
+  "paired_block_median_delta_percent_candidate_slower_positive": [
+    4.6623849052,
+    28.7436611675,
+    -4.3179540882,
+    0.547645126
+  ],
+  "parent_block_medians_us": [18.6599995, 15.76, 10.1899995, 18.26],
+  "candidate_block_medians_us": [19.5300005, 20.290001, 9.75, 18.36],
+  "per_block": {
+    "parent_1": {"median_us": 18.6599995, "mean_us": 18.0500002187, "stdev_population_us": 6.8285137555, "cv_population": 0.3783110068, "mad_us": 3.8700005, "min_us": 7.38, "max_us": 32.779999},
+    "candidate_1": {"median_us": 19.5300005, "mean_us": 18.4693750313, "stdev_population_us": 6.9024505398, "cv_population": 0.3737240988, "mad_us": 4.6899995, "min_us": 8.0, "max_us": 32.639999},
+    "candidate_2": {"median_us": 20.290001, "mean_us": 21.1312501875, "stdev_population_us": 6.2956668806, "cv_population": 0.2979315859, "mad_us": 2.710001, "min_us": 7.74, "max_us": 35.16},
+    "parent_2": {"median_us": 15.76, "mean_us": 15.281875, "stdev_population_us": 6.6093744187, "cv_population": 0.4324976103, "mad_us": 5.25, "min_us": 7.18, "max_us": 31.539999},
+    "parent_3": {"median_us": 10.1899995, "mean_us": 14.1250000312, "stdev_population_us": 7.6793765784, "cv_population": 0.5436726769, "mad_us": 3.5099995, "min_us": 6.54, "max_us": 28.0},
+    "candidate_3": {"median_us": 9.75, "mean_us": 12.8400000938, "stdev_population_us": 6.0114787207, "cv_population": 0.4681836976, "mad_us": 2.7, "min_us": 6.84, "max_us": 24.059999},
+    "parent_4": {"median_us": 18.26, "mean_us": 18.9149999063, "stdev_population_us": 8.6126858828, "cv_population": 0.4553362900, "mad_us": 2.4699995, "min_us": 7.28, "max_us": 54.140003},
+    "candidate_4": {"median_us": 18.36, "mean_us": 17.9962499375, "stdev_population_us": 6.0299573770, "cv_population": 0.3350674389, "mad_us": 4.63, "min_us": 8.02, "max_us": 29.4}
+  },
+  "classification_reason": "Parent block medians drift broadly and non-monotonically from 18.66 to 10.19 to 18.26 us; paired block direction is mixed. Pooled median and mean both indicate the Candidate is slower, but timing stability is insufficient for reliable acceptance/rejection.",
+  "current_local_best": "V026",
+  "device_release": {
+    "status": "RELEASED",
+    "timestamp_utc": "2026-10-08T03:49:06Z",
+    "evidence": "device-release.log",
+    "post_capture_hbm_used_mb": 9129,
+    "post_capture_hbm_capacity_mb": 65536,
+    "post_capture_aicore_usage_percent": 0,
+    "v049_runner_processes_remaining": false
+  },
+  "official_score": null,
+  "online": "NOT_RUN"
+}
