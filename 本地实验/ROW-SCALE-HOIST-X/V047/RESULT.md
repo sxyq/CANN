@@ -7,7 +7,7 @@
 - Local: 128 ACL device-event samples per arm, 20 warmups per process, four interleaved Parent/Candidate blocks. Pooled medians: Parent `19.440001 us`, Candidate `17.17 us`; ratio-of-medians score `113.2207396622`, delta `-11.6769592759%` (Candidate faster descriptively).
 - Pooled means: Parent `19.0918750937 us`, Candidate `16.5720311484 us`. Pooled CV: Parent `0.3276786689`, Candidate `0.3580004637`.
 - Paired median deltas, positive is slower: `-28.8888910837%`, `-20.9640809240%`, `-8.1226465842%`, `-13.9810450237%`. Candidate median was lower in all four pairs.
-- Local verdict: `MEASUREMENT_BLOCKED`, not reliable acceptance/rejection or promotion. Both arms show broad, high-variance/bimodal timings; Parent block medians vary from `16.20` to `21.99 us`. Preserve the descriptive positive score but keep Local Best at V026.
+- Local verdict: `MEASUREMENT_BLOCKED`, not reliable acceptance/rejection or promotion. Both arms show broad, high-variance timings; Parent block medians vary from `16.20` to `21.99 us`. Preserve the descriptive positive score but keep Local Best at V026.
 - Load before Local: device 0 healthy, AICore `0%`, HBM `3432/65536 MB` (`62104 MB` free), no process observed on NPU 0. Host load average `30.92, 39.57, 41.11`.
 - The initial correctness launch attempt exited 127 because `LD_LIBRARY_PATH` was empty and failed to load `libmsprofiler.so` before program entry. The unchanged binaries passed both Parent and Candidate correctness after setting the proven toolkit/driver library path; initial and retry logs are preserved.
 - Device 0 remained exclusively reserved for V047 through numeric result capture. Final release snapshot/receipt follows. Official score absent; Online not run.
