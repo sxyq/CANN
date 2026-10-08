@@ -1,0 +1,106 @@
+{
+  "route": "ROW-SCALE-HOIST-X",
+  "revision": "V046",
+  "direct_parent": "V026",
+  "stage": "LOCAL_PAIRED_INTERLEAVED",
+  "run_id": "20261008T0143Z-0145Z",
+  "verdict": "MEASUREMENT_BLOCKED",
+  "measurement_quality": "HIGH_BLOCK_VARIANCE_MIXED_PAIRED_DIRECTION",
+  "validity": "VALID_DISPATCH_EXECUTED_DESCRIPTIVE_ONLY",
+  "local_score": 95.0260266050,
+  "local_score_type": "descriptive single-shape route-local speedup index",
+  "local_score_formula": "100 * parent pooled median device_us / candidate pooled median device_us",
+  "local_score_comparable_to_official": false,
+  "local_delta_percent_candidate_vs_parent_positive_is_slower": 5.2343274498,
+  "sample_count_per_arm": 96,
+  "all_primary_window_samples_included": true,
+  "sample_exclusion": "NONE",
+  "shape_dtype": {
+    "dtype": "fp32",
+    "shape": [128, 2050],
+    "branch": "ProcessNarrowMidOverlap",
+    "vector_cores": 40,
+    "launch_blocks": 40,
+    "local_rows_min": 3,
+    "local_rows_max": 4
+  },
+  "method": {
+    "device": 0,
+    "warmups_per_process": 20,
+    "samples_per_process": 32,
+    "timer": "ACL device events",
+    "order": ["PARENT_BLOCK1", "CANDIDATE_BLOCK1", "CANDIDATE_BLOCK2", "PARENT_BLOCK2", "PARENT_BLOCK3", "CANDIDATE_BLOCK3"],
+    "runner_build_dir": "/tmp/cann-row-scale-hoist-x-v046-local-20261008T0140Z"
+  },
+  "parent": {
+    "n": 96,
+    "median_device_us": 16.43,
+    "mean_device_us": 16.79520825,
+    "sample_stdev_device_us": 5.6828167613,
+    "cv": 0.3383594104,
+    "median_absolute_deviation_device_us": 3.39,
+    "p10_device_us": 9.0,
+    "p90_device_us": 24.42,
+    "min_device_us": 8.240001,
+    "max_device_us": 36.380001,
+    "block_medians_us": [16.8099995, 15.01, 12.46]
+  },
+  "candidate": {
+    "n": 96,
+    "median_device_us": 17.29,
+    "mean_device_us": 17.5277083021,
+    "sample_stdev_device_us": 5.068992048,
+    "cv": 0.2891987909,
+    "median_absolute_deviation_device_us": 2.9800005,
+    "p10_device_us": 10.02,
+    "p90_device_us": 23.800001,
+    "min_device_us": 8.240001,
+    "max_device_us": 33.84,
+    "block_medians_us": [15.7500005, 16.0099995, 19.53]
+  },
+  "paired_blocks": {
+    "candidate_vs_parent_delta_percent_positive_is_slower": [-6.3057646135, 6.6622218521, 56.7415730337],
+    "candidate_faster_blocks": 1,
+    "candidate_slower_blocks": 2
+  },
+  "interpretation": "Pooled medians descriptively show Candidate 5.2343274498% slower. Parent medians drifted downward across blocks while Candidate medians rose in the last block; paired direction is mixed and the final pair differs by 56.74%. Classify as MEASUREMENT_BLOCKED, not a reliable performance rejection or promotion.",
+  "device_load_before": {
+    "health": "OK",
+    "aicore_percent": 0,
+    "hbm_used_mb": 3432,
+    "hbm_capacity_mb": 65536,
+    "hbm_free_mb": 62104,
+    "npu0_processes": "none observed",
+    "evidence_log": "local-load-before-20261008T0142Z.log"
+  },
+  "host_load_before": {
+    "load_average": "48.45, 43.91, 44.62",
+    "evidence_log": "local-host-load-before-20261008T0142Z.log"
+  },
+  "device_load_after": {
+    "health": "OK",
+    "aicore_percent": 0,
+    "hbm_used_mb": 3432,
+    "hbm_capacity_mb": 65536,
+    "hbm_free_mb": 62104,
+    "npu0_processes": "none observed",
+    "evidence_log": "local-load-after-20261008T0150Z.log"
+  },
+  "host_load_after": {
+    "load_average": "30.58, 39.07, 42.53",
+    "evidence_log": "local-host-load-after-20261008T0150Z.log"
+  },
+  "raw_logs": {
+    "parent_block1": "local-parent-block1-20261008T0143Z.log",
+    "candidate_block1": "local-candidate-block1-20261008T0143Z.log",
+    "candidate_block2": "local-candidate-block2-20261008T0144Z.log",
+    "parent_block2": "local-parent-block2-20261008T0144Z.log",
+    "parent_block3": "local-parent-block3-20261008T0145Z.log",
+    "candidate_block3": "local-candidate-block3-20261008T0145Z.log"
+  },
+  "capture_note": "Candidate block 1 runner returned 0 and emitted all raw samples; the initial tee destination had a script typo. Its exact stdout is preserved at the canonical raw-log path with the capture error stated, and all 32 samples are included.",
+  "device_release_receipt": "device-release-20261008T0151Z.log",
+  "current_local_best": "V026",
+  "official_score": null,
+  "online": "NOT_RUN"
+}

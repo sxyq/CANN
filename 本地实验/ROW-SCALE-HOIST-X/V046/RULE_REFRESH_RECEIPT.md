@@ -1,0 +1,15 @@
+ROUTE=ROW-SCALE-HOIST-X
+REVISION=V046
+WORKTREE=/home/data4t2/lelinfeng/cann-row-scale-hoist-x-w4
+BRANCH=exp/row-scale-hoist-x-w4
+PRE_REVISION_HEAD=bca456614634f4fa7b27cc2b7cf972ef8d7bd6f4
+RULES_READ=AGENTS.md; 项目规则/实验总则.md; 项目规则/执行约定.md; 项目规则/本地性能测试规范.md; 项目规则/服务器实验规范.md; 项目规则/线上提交规范.md; 项目规则/Git工作流程.md; 技术路线/技术路线总表.md; 技术路线/技术路线图.md; 技术路线/路线成绩表.tsv; 技术路线/全版本记录.tsv; 调度/当前任务.tsv; 调度/本地线上校准.tsv; .agents/skills/cann-mainline/SKILL.md; .agents/skills/cann-route-executor/SKILL.md
+ROUTE_STATE=V045 committed at bca45661; V026 remains CURRENT_LOCAL_BEST; V045 Local is MEASUREMENT_BLOCKED and retained
+REVISION_INVENTORY=V001-V045 directories exist; V046 was unused. V020/V029 test value-operand order; V039 is a different FP32 full-row consumer; V042 moves the wait; V043 is narrow-mid BF16; V044 is narrow-mid FP16 one-row; V045 is narrow-mid FP32 one-row. No prior FP32 resident multi-row gamma-operand scale placement found.
+AUTHORIZATION=One OFAT sibling from exact V026 inside existing row-scale placement/order axis; no Online or shared-record edits
+PARENT_SOURCE=本地实验/ROW-SCALE-HOIST-X/V026/submission.asc
+PARENT_SOURCE_SHA256=7c2569d9e3830c845f2b5dc4587a73a05a0bdf041168614cd55ad84204e063f9
+TARGET=FP32 [128,2050], ProcessNarrowMidOverlap, 40 vector cores, 3-4 rows/core
+DEVICE=0 assigned exclusively for V046 correctness and, only if Parent/Candidate pass, Local through numeric result capture; capture a fresh free-HBM/process snapshot before runtime and release after capture
+EXECUTION=ONE CHANGE -> COMPILE -> CORRECTNESS -> LOCAL -> RESULT -> COMMIT
+PRESERVE=All prior route evidence and untracked V001/V002 build scratch

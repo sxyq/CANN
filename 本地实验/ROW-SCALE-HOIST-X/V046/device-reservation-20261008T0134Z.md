@@ -1,0 +1,9 @@
+ROUTE=ROW-SCALE-HOIST-X
+REVISION=V046
+DEVICE=0
+RESERVATION=Exclusive for V046 Parent/Candidate correctness and, only if both pass, Local through numeric result capture
+SNAPSHOT=本地实验/ROW-SCALE-HOIST-X/V046/device-reservation-snapshot-20261008T0134Z.log
+SNAPSHOT_STATUS=PASS; NPU0 health OK; HBM 3433/65536 MB used (62103 MB free); AICore 0%; no running process on NPU0
+RUNTIME_LIBRARY_AUDIT=LD_LIBRARY_PATH includes /usr/local/Ascend/ascend-toolkit/latest/lib64 and /usr/local/Ascend/driver/lib64/driver; all Parent runner dependencies resolve
+USE_START=Correctness only; Local remains gated on both Parent and Candidate correctness PASS
+RELEASE=After numeric Local result capture, record final device/process snapshot and release receipt
