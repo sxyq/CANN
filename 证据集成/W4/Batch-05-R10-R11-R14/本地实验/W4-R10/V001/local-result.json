@@ -1,0 +1,198 @@
+{
+  "route": "W4-R10",
+  "route_name": "ACTIVE-CORE-D-AWARE-X",
+  "revision": "V001",
+  "direct_parent": "R31B V011",
+  "parent_source_sha256": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "candidate_source_sha256": "3e4db7caf68333ed7c6eebad0c9061900cc4add5fcd9f31512550bfc45104b9c",
+  "parent_official_score": 45.16,
+  "single_change": "Host-side D-dependent cap on the active-core count: when rowWidth > kCacheElems (8192) and the parent launch is already core-saturated (blockCount < rowCount), cap blockCount at rowCount / residentRows, where residentRows mirrors ChooseWideFullYRows() on the host. Cap is a pure upper bound; never raises blockCount above the parent value, never drops below 1, introduces no row grouping, and leaves row ownership order and per-row kernel math byte-identical.",
+  "focus_axis": "active_core_count_block_count",
+  "focus_value": "blockCount = min(availableCoreNum=40, rowCount, rowCount/residentRows) for rowWidth>8192",
+  "compile": {
+    "status": "PASS",
+    "host": "hwnput3",
+    "user": "lelinfeng",
+    "started_utc": "2026-10-07T17:39:44Z",
+    "finished_utc": "2026-10-07T17:40:31Z",
+    "cmake_rc": 0,
+    "parent_build_rc": 0,
+    "candidate_build_rc": 0,
+    "soc": "Ascend910B3",
+    "npu_arch": "dav-2201",
+    "parent_exe_sha256": "becc2b47226f09eec25e20980ce84e3e3d9b37f97f456de985e08a1065bfa713",
+    "candidate_exe_sha256": "acaf0fd7b77a5652fd28bf6c041f1ecbde86d2a505f722012ab2ea8df48d3eba",
+    "first_attempt_failed": true,
+    "first_attempt_reason": "CMakeLists.txt referenced runner_parent.asc / runner_candidate.asc which do not exist in this workspace. Build-harness only; submission.asc was not touched. Fixed by listing only the two real runner sources, then re-ran Compile.",
+    "evidence": "本地实验/W4-R10/V001/compile-evidence.txt"
+  },
+  "correctness": {
+    "status": "PASS_VS_PARENT",
+    "device": 1,
+    "available_core_num": 40,
+    "method": "runner_ref.inc probe, warmup=2 samples=2 blocks=2, D2H golden compare on host",
+    "shapes_parent_vs_candidate": [
+      {"shape": "48x16384", "dtype": "fp16", "cand_bad": 8, "parent_bad": 8, "cand_max_abs": 0.00390625, "parent_max_abs": 0.00390625, "note": "identical"},
+      {"shape": "48x12288", "dtype": "bf16", "cand_bad": 0, "parent_bad": 0, "cand_max_abs": 0.0078125, "parent_max_abs": 0.0078125, "note": "identical"},
+      {"shape": "48x12288", "dtype": "fp16", "cand_bad": 11, "parent_bad": 11, "cand_max_abs": 0.00390625, "parent_max_abs": 0.00390625, "note": "identical"},
+      {"shape": "41x16384", "dtype": "fp16", "cand_bad": 4, "parent_bad": 4, "cand_max_abs": 0.00390625, "parent_max_abs": 0.00390625, "note": "identical, rowCount not divisible by residentRows"},
+      {"shape": "40x16384", "dtype": "fp16", "cand_bad": 4, "parent_bad": 4, "cand_max_abs": 0.00390625, "parent_max_abs": 0.00390625, "note": "identical"},
+      {"shape": "64x12288", "dtype": "fp16", "cand_bad": 15, "parent_bad": 15, "cand_max_abs": 0.00390625, "parent_max_abs": 0.00390625, "note": "identical"},
+      {"shape": "12x8192", "dtype": "fp32", "cand_bad": 0, "parent_bad": 0, "cand_max_abs": 2.86102e-06, "parent_max_abs": 2.86102e-06, "note": "identical, cap inactive"},
+      {"shape": "2x8192", "dtype": "fp32", "cand_bad": 0, "parent_bad": 0, "cand_max_abs": 1.90735e-06, "parent_max_abs": 1.90735e-06, "note": "identical, cap inactive"},
+      {"shape": "64x8192", "dtype": "fp32", "cand_bad": 0, "parent_bad": 0, "cand_max_abs": 2.86102e-06, "parent_max_abs": 2.86102e-06, "note": "identical, cap inactive"},
+      {"shape": "2x12288", "dtype": "fp16", "cand_bad": 0, "parent_bad": 0, "cand_max_abs": 0.00195312, "parent_max_abs": 0.00195312, "note": "identical, cap inactive (blockCount==rowCount)"},
+      {"shape": "1x32768", "dtype": "bf16", "cand_bad": 0, "parent_bad": 0, "cand_max_abs": 0.015625, "parent_max_abs": 0.015625, "note": "identical"},
+      {"shape": "48x32768", "dtype": "fp32", "cand_bad": 1422781, "parent_bad": 1413682, "cand_max_abs": 6.07869, "parent_max_abs": 6.07869, "note": "FP32 wide-D failure present on BOTH; non-deterministic on both"},
+      {"shape": "16x32768", "dtype": "fp32", "cand_bad": 322670, "parent_bad": 403712, "cand_max_abs": 1.31027, "parent_max_abs": 1.2994, "note": "FP32 wide-D failure present on BOTH"},
+      {"shape": "48x16384", "dtype": "fp32", "cand_bad": 493086, "parent_bad": 520325, "cand_max_abs": 1.29968, "parent_max_abs": 1.29968, "note": "FP32 wide-D failure present on BOTH"},
+      {"shape": "3x24576", "dtype": "fp32", "cand_bad": 55885, "parent_bad": 56960, "cand_max_abs": 1.24817, "parent_max_abs": 1.24817, "note": "FP32 wide-D failure present on BOTH"}
+    ],
+    "determinism_recheck": {
+      "shapes": ["48x12288 bf16", "48x16384 fp16", "48x32768 fp32"],
+      "runs": 2,
+      "result": "48x12288 bf16 and 48x16384 fp16 reproduce exactly the same bad count on Parent and Candidate. 48x32768 fp32 varies run to run on BOTH binaries (Parent 1291049 / 1326961, Candidate 1386143 / 1396605), so that shape is non-deterministic in the frozen baseline itself."
+    },
+    "fp32_wide_d_classification": "BASELINE_OR_REFERENCE_RUNNER_LIMITATION, not a Candidate regression. ProcessWideFp32FullCacheRows is byte-identical between Parent and Candidate; the same failure reproduces on the frozen 45.16 Online champion parent. Precedent: R31B V016 recorded the same FP32 D16384 parent+candidate failure and excluded that shape. FP32 with D>8192 is excluded from this Route's performance conclusions.",
+    "evidence": "本地实验/W4-R10/V001/{cand,parent}_r*-stats.txt"
+  },
+  "local": {
+    "device": 1,
+    "soc": "Ascend910B3",
+    "free_hbm_mb": 60948,
+    "free_hbm_threshold_mb": 100,
+    "aicore_usage_pct": 9,
+    "aivector_usage_pct": 11,
+    "other_timing_process_on_device": "NONE",
+    "host_load_average": "50.99 / 51.56 / 50.66 at start, 57.17 / 59.16 / 56.09 at end",
+    "load_note": "Host load 50-66 throughout from other tenants; device 1 itself had no competing timing process. Concurrent routes observed on device 3 (SYNC-BARRIER-ELISION-X V028, W4-R01 V001). Load recorded as measurement context only and did not gate any stage.",
+    "method": "unified reference harness runner_ref.inc; DEVICE_EVENT_US primary, HOST_WALL_US secondary; batch N=1; warmup 45/60/90; 31 or 41 samples per block; 2 blocks for same-binary; interleaved P C C P x2 for paired runs",
+    "noise_floor_rule": "same-binary PASS iff full-sample MAD/median <= 0.10 AND block drift <= 0.10; max 2-3 attempts per shape",
+    "same_binary": [
+      {"shape": "48x12288", "dtype": "bf16", "attempts": [
+        {"warmup": 45, "samples": 31, "blocks": 2, "b1_median_us": 13.68, "b2_median_us": 18.90, "all_median_us": 16.69, "mad_us": 3.87, "mad_over_median": 0.232, "block_drift": 0.313, "verdict": "MEASUREMENT_PROTOCOL_BLOCKED"},
+        {"warmup": 60, "samples": 41, "blocks": 2, "b1_median_us": 13.08, "b2_median_us": 14.22, "all_median_us": 13.48, "mad_us": 0.77, "mad_over_median": 0.057, "block_drift": 0.085, "verdict": "PASS"},
+        {"warmup": 90, "samples": 41, "blocks": 2, "b1_median_us": 24.50, "b2_median_us": 21.56, "all_median_us": 23.32, "mad_us": 3.76, "mad_over_median": 0.161, "block_drift": 0.126, "verdict": "NEEDS_VALIDATION"}
+      ], "noise_floor_used": 0.057, "qualified": true},
+      {"shape": "48x16384", "dtype": "fp16", "attempts": [
+        {"warmup": 45, "samples": 31, "blocks": 2, "b1_median_us": 19.76, "b2_median_us": 26.14, "all_median_us": 23.35, "mad_us": 5.94, "mad_over_median": 0.254, "block_drift": 0.273, "verdict": "MEASUREMENT_PROTOCOL_BLOCKED"},
+        {"warmup": 60, "samples": 41, "blocks": 2, "b1_median_us": 20.22, "b2_median_us": 19.44, "all_median_us": 19.74, "mad_us": 3.63, "mad_over_median": 0.184, "block_drift": 0.040, "verdict": "NEEDS_VALIDATION"},
+        {"warmup": 90, "samples": 41, "blocks": 2, "b1_median_us": 17.24, "b2_median_us": 23.58, "all_median_us": 19.42, "mad_us": 5.32, "mad_over_median": 0.274, "block_drift": 0.326, "verdict": "MEASUREMENT_PROTOCOL_BLOCKED"}
+      ], "noise_floor_used": 0.213, "qualified": false},
+      {"shape": "12x8192", "dtype": "fp32", "attempts": [
+        {"warmup": 45, "samples": 31, "blocks": 2, "b1_median_us": 17.56, "b2_median_us": 13.14, "all_median_us": 16.15, "mad_us": 5.69, "mad_over_median": 0.352, "block_drift": 0.274, "verdict": "MEASUREMENT_PROTOCOL_BLOCKED"},
+        {"warmup": 60, "samples": 41, "blocks": 2, "b1_median_us": 16.32, "b2_median_us": 14.60, "all_median_us": 15.93, "mad_us": 5.00, "mad_over_median": 0.314, "block_drift": 0.108, "verdict": "MEASUREMENT_PROTOCOL_BLOCKED"},
+        {"warmup": 90, "samples": 41, "blocks": 2, "b1_median_us": 21.24, "b2_median_us": 20.76, "all_median_us": 21.16, "mad_us": 3.07, "mad_over_median": 0.145, "block_drift": 0.023, "verdict": "NEEDS_VALIDATION"}
+      ], "noise_floor_used": 0.314, "qualified": false}
+    ],
+    "paired": [
+      {
+        "shape": "48x12288", "dtype": "bf16", "role": "long-D target, cap ACTIVE 40->24",
+        "same_binary_qualified": true, "noise_floor": 0.057,
+        "warmup": 60, "samples_per_cell": 41, "blocks_per_cell": 1, "order": "P C C P x2",
+        "pairs": [
+          {"pair": 1, "order": "PC", "parent_median_us": 19.580, "candidate_median_us": 23.380, "delta_pct": 19.41, "parent_bad": 0, "candidate_bad": 0},
+          {"pair": 2, "order": "CP", "parent_median_us": 19.240, "candidate_median_us": 19.760, "delta_pct": 2.70, "parent_bad": 0, "candidate_bad": 0},
+          {"pair": 3, "order": "PC", "parent_median_us": 17.340, "candidate_median_us": 23.420, "delta_pct": 35.06, "parent_bad": 0, "candidate_bad": 0},
+          {"pair": 4, "order": "CP", "parent_median_us": 19.800, "candidate_median_us": 19.180, "delta_pct": -3.13, "parent_bad": 0, "candidate_bad": 0}
+        ],
+        "median_delta_pct": 11.055,
+        "favor_candidate": 1,
+        "favor_parent": 3,
+        "block1_delta_pct": 11.055,
+        "block2_delta_pct": 15.966,
+        "beyond_noise_floor": "NO - both blocks exceed the 0.057 floor in the PARENT's favour",
+        "caveat": "P/C cell MAD/median was 0.15-0.32, far above the 0.057 same-binary floor obtained minutes earlier, so per-cell stability was poor even though the aggregate block-level delta is consistent."
+      },
+      {
+        "shape": "48x16384", "dtype": "fp16", "role": "long-D target, cap ACTIVE 40->24",
+        "same_binary_qualified": false, "noise_floor": 0.213,
+        "warmup": 60, "samples_per_cell": 41, "blocks_per_cell": 1, "order": "P C C P x2",
+        "pairs": [
+          {"pair": 1, "order": "PC", "parent_median_us": 20.360, "candidate_median_us": 18.360, "delta_pct": -9.82, "parent_bad": 8, "candidate_bad": 8},
+          {"pair": 2, "order": "CP", "parent_median_us": 21.740, "candidate_median_us": 14.080, "delta_pct": -35.23, "parent_bad": 8, "candidate_bad": 8},
+          {"pair": 3, "order": "PC", "parent_median_us": 19.760, "candidate_median_us": 21.860, "delta_pct": 10.63, "parent_bad": 8, "candidate_bad": 8},
+          {"pair": 4, "order": "CP", "parent_median_us": 21.740, "candidate_median_us": 16.920, "delta_pct": -22.17, "parent_bad": 8, "candidate_bad": 8}
+        ],
+        "median_delta_pct": -15.997,
+        "favor_candidate": 3,
+        "favor_parent": 1,
+        "block1_delta_pct": -22.529,
+        "block2_delta_pct": -5.772,
+        "beyond_noise_floor": "NOT ESTABLISHED - block2 delta 5.8% is far inside the 0.213 floor, and this shape never reached same-binary PASS",
+        "caveat": "bad=8 on BOTH Parent and Candidate at this shape, identical to the frozen baseline. Direction favours the Candidate but cannot be separated from noise."
+      },
+      {
+        "shape": "48x12288", "dtype": "fp16", "role": "long-D target, cap ACTIVE 40->16",
+        "same_binary_qualified": false, "noise_floor": 0.554,
+        "warmup": 60, "samples_per_cell": 41, "blocks_per_cell": 1, "order": "P C C P x2",
+        "pairs": [
+          {"pair": 1, "order": "PC", "parent_median_us": 16.320, "candidate_median_us": 23.700, "delta_pct": 45.22, "parent_bad": 11, "candidate_bad": 11},
+          {"pair": 2, "order": "CP", "parent_median_us": 21.200, "candidate_median_us": 18.060, "delta_pct": -14.81, "parent_bad": 11, "candidate_bad": 11},
+          {"pair": 3, "order": "PC", "parent_median_us": 23.800, "candidate_median_us": 19.720, "delta_pct": -17.14, "parent_bad": 11, "candidate_bad": 11},
+          {"pair": 4, "order": "CP", "parent_median_us": 13.400, "candidate_median_us": 21.520, "delta_pct": 60.60, "parent_bad": 11, "candidate_bad": 11}
+        ],
+        "median_delta_pct": 15.205,
+        "favor_candidate": 2,
+        "favor_parent": 2,
+        "block1_delta_pct": 15.205,
+        "block2_delta_pct": 21.727,
+        "beyond_noise_floor": "UNRELIABLE - same-binary was MEASUREMENT_PROTOCOL_BLOCKED at 0.554; spread 45% to -17% shows the window was not stable",
+        "caveat": "bad=11 on BOTH Parent and Candidate. residentRows=3 here, so the cap removes 24 of 40 cores; note rows=4 misses the 176 KiB budget by 256 B, so this resident count sits on a knife edge."
+      },
+      {
+        "shape": "12x8192", "dtype": "fp32", "role": "short-D control, cap INACTIVE (D = kCacheElems, not > kCacheElems)",
+        "same_binary_qualified": false, "noise_floor": 0.314,
+        "warmup": 60, "samples_per_cell": 41, "blocks_per_cell": 1, "order": "P C C P x2",
+        "pairs": [
+          {"pair": 1, "order": "PC", "parent_median_us": 17.760, "candidate_median_us": 16.860, "delta_pct": -5.07, "parent_bad": 0, "candidate_bad": 0},
+          {"pair": 2, "order": "CP", "parent_median_us": 21.540, "candidate_median_us": 20.600, "delta_pct": -4.36, "parent_bad": 0, "candidate_bad": 0},
+          {"pair": 3, "order": "PC", "parent_median_us": 18.660, "candidate_median_us": 16.960, "delta_pct": -9.11, "parent_bad": 0, "candidate_bad": 0},
+          {"pair": 4, "order": "CP", "parent_median_us": 17.620, "candidate_median_us": 33.800, "delta_pct": 91.83, "parent_bad": 0, "candidate_bad": 0}
+        ],
+        "median_delta_pct": -4.716,
+        "favor_candidate": 3,
+        "favor_parent": 1,
+        "block1_delta_pct": -4.716,
+        "block2_delta_pct": 41.359,
+        "beyond_noise_floor": "CONTROL CONFIRMS CAP INACTIVE",
+        "caveat": "On this shape blockCount is 12 in both binaries and the executed code is identical, so every delta here is pure measurement noise. The -4.7% median and the +91.8% outlier bound the window's noise at roughly this scale, which is larger than most of the cap-active deltas."
+      }
+    ],
+    "observable_parameters": {
+      "M": "rows (48 on cap-active targets, 12 on the short-D control)",
+      "D": "rowWidth (16384, 12288, 8192)",
+      "dtype": "fp16 / bf16 / fp32",
+      "dispatch": "wide full-y path (rowWidth > kCacheElems=8192) for every cap-active shape; standard per-row path for the D=8192 control",
+      "activeCoreCount": "Parent 40 (device vector cores); Candidate 24 on 48x16384 fp16 and 48x12288 bf16, 16 on 48x12288 fp16, unchanged 40 on 48x32768 fp32 (residentRows=1) and unchanged 12/2/40 on the D<=8192 shapes",
+      "blockCount_parent": "min(availableCoreNum=40, rowCount)",
+      "blockCount_candidate": "min(40, rowCount, rowCount/residentRows) when rowWidth>8192 and 40<rowCount, else identical to parent",
+      "localRows": "rowCount/blockCount base+extra split; rises from 2 to 3 (48x16384 fp16, 48x12288 bf16) or from 2 to 4 (48x12288 fp16) under the cap",
+      "rowsPerBlock": "same as localRows",
+      "tileWidth": "4096 (kWideFullYTileElems), unchanged",
+      "tileCount": "ceil(rowWidth/4096): 4 at D=16384, 3 at D=12288, unchanged",
+      "residentRows": "2 at D=16384, 3 at D=12288 fp16, 2 at D=12288 bf16, 1 at D=32768 (host mirror of ChooseWideFullYRows, see capcalc.txt)",
+      "ownership_mapping": "unchanged contiguous base/extra row split; only the divisor changed",
+      "MTE2_MTE3_transaction_count": "unchanged in total (2 input loads + 1 store per row per tile, every row still processed once); only the distribution across cores changes",
+      "event_barrier": "unchanged, no new sync added",
+      "param_residency": "unchanged (gamma/bias still re-read per tile in the output pass)"
+    },
+    "local_score_pct": 11.055,
+    "local_delta_pct": 11.055,
+    "local_score_shape": "48x12288 bf16",
+    "local_score_definition": "median paired delta vs R31B V011 on the only shape that reached same-binary PASS; positive means the Candidate is slower",
+    "local_verdict": "LOCAL_REJECTED",
+    "local_best_after_revision": "R31B V011 (unchanged)",
+    "interpretation": "The mechanism has no consistent direction. The one shape with a qualified same-binary floor (48x12288 bf16, floor 0.057) shows the Candidate 11.1% SLOWER at the median, 3 of 4 pairs favouring the Parent, and both blocks beyond the floor in the Parent's favour. The two shapes that appear to favour the Candidate (48x16384 fp16 at -16.0%, 48x12288 fp16 at +15.2% mixed) never reached same-binary PASS, and their deltas sit at or inside their own much larger floors. The short-D control confirms the cap is inactive at D=8192 and simultaneously shows this window's noise is roughly +-5% with occasional +90% outliers, larger than most cap-active deltas. Mechanistically the cap cannot reduce total work - every row is still processed once and total MTE2/MTE3 transactions are unchanged - it only removes concurrent readers, so on a bandwidth-bound wide path it is expected to be neutral at best. The data agrees.",
+    "residual_risk": "Only one of four shapes ever produced a qualified noise floor, and its own P/C cells were far less stable than the floor run. The negative result is directionally consistent but rests on a single qualified shape; it is enough to reject V001, not enough to declare the whole D-aware blockCount family exhausted."
+  },
+  "measurement_design": {
+    "long_d_target": ["48x16384 fp16 (MULTIROW-DMA-CHAMPION-X V001 primary probe)", "48x16384 fp32", "48x12288 fp16", "48x12288 bf16", "16x32768 fp32 (campaign-status.md local probe)"],
+    "short_d_control": ["12x8192 fp32 (DTYPE-SPECIAL-X timing pairs)", "2x8192 fp32 (REDUCE-HIER-X / STORE-EPILOGUE-X sb PASS)", "64x8192 fp32"],
+    "boundary": ["2x12288 fp16 (SYNC-TOPOLOGY-CHAMPION-X V001 correctness shape; blockCount==rowCount so cap is exactly inert)", "41x16384 fp16 (rowCount not divisible by residentRows)", "40x16384 fp16", "64x12288 fp16", "48x32768 fp32 (residentRows=1, cap never binds)"],
+    "shapes_guessed": false
+  },
+  "official_score": "NONE",
+  "online_state": "PAUSED",
+  "current_local_best": "R31B V011"
+}
