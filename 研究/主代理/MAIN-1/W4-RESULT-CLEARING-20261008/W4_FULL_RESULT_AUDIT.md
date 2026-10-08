@@ -1,6 +1,6 @@
 # W4 全量结果清算
 
-清算日期：2026-10-08。数据范围为仓库 `线上结果/` 中可读取的官方 `result.json`、相邻 source metadata、当前主树 W4 共享账本与调度表、可由主树 Git 对象读取的证据，以及本对话中 Main/Route 明确转交的 receipt。未访问任何 Route 工作树的未提交文件；未修改四份共享记录。
+清算日期：2026-10-08。数据范围为仓库 `线上结果/` 中可读取的官方 `result.json`、相邻 source metadata、当前主树 W4 共享账本与调度表、可由主树 Git 对象读取的证据，以及本对话中 Main/Route 明确转交的 receipt。未访问任何 Route 工作树的未提交文件。四份共享记录已由独立提交 `e7208c7ff2d9ec3dde8e419a57e4fd8cc2d426a2` 同步；本报告补充另行提交。
 
 ## 官方提交结果
 
@@ -51,31 +51,31 @@ R31B/V011 的官方结果为45.16、15/15；source SHA 为 `a8c19a1972207acc67e3
 
 ## W4 Local 与路线概览
 
-当前主树全版本账本包含28条 W4 身份：9条 `REAL_EXECUTED_REVISION`、19条 `ROUTE_RESEARCH_EVENT`。9个已登记性能版均为阻塞测量或未接受状态；表内候选时间和 delta 保留原字段及观察标签，不据此认定 Local Best。R09 的当前 Local Best 保留 `UNKNOWN`。本报告没有新建 Official 结果。
+当前主树全版本账本包含32条 W4 身份：10条 `REAL_EXECUTED_REVISION`、22条 `ROUTE_RESEARCH_EVENT`。10个已登记性能版均未产生有效 Local；表内候选时间和 delta 保留原字段及观察标签，不据此认定 Local Best。R09 的当前 Local Best 保留 `UNKNOWN`。R05 V002使本轮真实性能版数增加1；R01/V001与R04/V002同版补证不增加性能版。Online 保持 `PAUSED`，`PUSH=NO`。
 
-Local 清算表含37条：账本28条、Main 最新指出的5个待分类事件，以及此前收到的 R03、R07 两项 receipt 和 R04 Agent receipt 共4条独立来源行。新增 receipt 行不等于共享表已同步。`LOCAL_RESULTS_AUDIT.tsv` 将观察值、接受值、研究项、同版补充和身份缺口分列。
+Local 清算表含38条数据：32条 W4 账本身份行，以及6条补充或独立 receipt 审计行，包含 R01、R03、R04、R07 与 R11 的同版补充来源。`LOCAL_RESULTS_AUDIT.tsv` 将观察值、接受值、研究项、同版补充和身份缺口分列；全文件39行（含表头）。
 
 | Route | 当前可确认结论 | 测量置信标记 | 主要未确认项 |
 |---|---|---|---|
-| W4-R01 | V001 `MEASUREMENT_BLOCKED`；本次 Parent task 中心稳定，事件计时与小信号条件未满足 | 观察值未接受 | task/event 配对信号、严格失配数保留；本轮同版对照 receipt 的来源身份待补 |
+| W4-R01 | V001同版 task 对照 `MEASUREMENT_BLOCKED`；P/P调整差−0.04 us，95% CI [−0.24,0.06]跨0；P/C配对95% CI [−0.16,0.036]跨0，漂移10.63%/16.05%超限 | 观察值未接受；Local score/delta/best均为 `NONE` | side ratio −6.2105%仅观察；模板 reference PASS与严格差异分开：目标每侧1个、对照每侧3个，最大绝对误差0.00390625；来源 `4b9dcade629bd7e0fdbe3194c740bd1c7824d107`，Event ID `UNKNOWN`；R01原三项dirty文件已随该提交纳入，worktree clean，device operation NONE |
 | W4-R02 | V002 `MEASUREMENT_BLOCKED` | 观察值未接受 | task 与 event 范围、调用次序及槽位漂移仍需区分 |
 | W4-R03 | occupancy/InitBuffer 研究；最新 receipt 只支持源码层面候选移除 | 无 Local | 编译消除及设备工作量未证实；新 receipt 与账本同步状态 UNKNOWN |
-| W4-R04 | V002 `MEASUREMENT_BLOCKED`；新 receipt 报768样本、双方 reference 通过、输出逐位一致 | 观察值未接受 | task 波动大；新 receipt 的提交、submission ID 与精确分数均 UNKNOWN |
-| W4-R05 | V002 `MEASUREMENT_BLOCKED`；仅 NarrowMid FP32 gamma 子视图 +64 | 观察值未接受 | 4.54 us / −5.8091% 与另一输入4.41 us / −8.8843%均为观察；完整库一致性及设备指令冲突未证实 |
+| W4-R04 | V002 `MEASUREMENT_BLOCKED`；新 receipt 报768样本、双方 reference 通过、输出逐位一致；event、kernel task与host call逐条对应 | 观察值未接受；有效Local仍为0 | task波动大；receipt的source commit与submission ID为 `UNKNOWN`；已有0.992171392044 / +0.789037863747%仍为观察值；本轮receipt不新增性能版 |
+| W4-R05 | V002性能版与地址研究均已登记；性能测量 `MEASUREMENT_BLOCKED`，账本共3条记录 | 观察值未接受；Local Best=`NONE` | 4.54 us / −5.8091%与另一输入4.41 us / −8.8843%均为观察；完整库一致性及设备指令冲突未证实；resident标签不证明residentParams执行 |
 | W4-R06 | UB/GM结构模型完成；无 Candidate 或 NPU验证 | 无 Local | 60项UB与10项GM模型只验证等式和反例；合法共同GM源视图未证实 |
 | W4-R07 | V002 `MEASUREMENT_BLOCKED`；task 14.84/14.84 us 与0%为观察 | 观察值未接受 | predecessor transition、调用位置及event差异影响未分离 |
 | W4-R08 | V001 `MEASUREMENT_BLOCKED`；parent-only时序研究 | 观察值未接受 | event内核外中位50.162 us；底层 launch wrapper 来源未识别 |
 | W4-R09 | V001 `MEASUREMENT_BLOCKED`；FP16函数13792→13728 bytes，FP32/BF16函数体字节相同 | 无新Local | 无设备助记符/基本块映射，不据字节差估算指令或收益 |
 | W4-R10 | V001旧失败保留；V002 `MEASUREMENT_BLOCKED` | 观察值未接受 | task 顺序与长尾归因未完成；不升级候选观察值 |
-| W4-R11 | V002同版补充是 Parent-only；未执行 Candidate | 观察值未接受 | target/control 的 task MAD 比例高；物理输出地址与逻辑槽位影响待测 |
-| W4-R12 | 入口代码研究 `CODEGEN_EVIDENCE_UNAVAILABLE` | 无 Local | host 反汇编可读，设备助记符不可用；未证明可减少设备工作 |
+| W4-R11 | 三条账本记录：V001研究、V002性能版及V002研究；同版补充为Parent-only，未执行Candidate | 观察值未接受；Local Best=`NONE` | task MAD比例target/control=0.33391304/0.13587786；研究Event ID=`UNKNOWN`；保留原性能来源commit `4243f4e9e90a56cc12cf4adcbd7282149238b8f3` |
+| W4-R12 | 两条研究记录；入口代码研究 `CODEGEN_EVIDENCE_UNAVAILABLE`，无Candidate或性能版 | 无 Local | host反汇编可读，设备助记符不可用；未证明可减少设备工作；本批无待同步事件 |
 | W4-R13 | 参数复用诊断研究已记录 | 无 Local | 跨 batch 顺序与 D40000 容量未验证；未形成性能版 |
 | W4-R14 | `MEASUREMENT_BLOCKED`；参数专属时间 UNKNOWN | 观察值未接受 | 旧代理跨设备限制、输入与参数重叠歧义仍在 |
 | W4-R15 | `ROUTE_REVIEW_REQUIRED` | 无 Local | 等待 Planning 复核；代理关闭不表示 Route 关闭 |
 
 R05 的 `80x2056` resident 标记需要按 R03 receipt 限定：40 cores 对应每核两行并走 `SmallFp32Batched`；既有 reference PASS 仍有效，但不能由该标签推断 `NarrowMid residentParams` 实际执行。
 
-## 五项待分类事件
+## 五项已同步事件
 
 以下按 source commit 与路径逐项登记。未知事件 ID 保持 `UNKNOWN`，不从相邻记录生成 ID。
 
@@ -87,24 +87,25 @@ R05 的 `80x2056` resident 标记需要按 R03 receipt 限定：40 cores 对应�
 | R11 / V002 | `1b528176…`；`本地实验/W4-R11/V002/RESULT.md` | `VERSION_RECORD_EVENT` 同版补充 | 更新既有V002证据；不新增性能版；保留原性能来源 commit `4243f4e9…` |
 | R12 / NONE | `e697ddf3…`；`研究/W4-R12/TINY-ENTRY-CODEGEN-STUDY.md` | `ROUTE_RESEARCH_EVENT` | 设备生成代码不可读；无Candidate、Correctness或Local执行 |
 
-上表五项中，来源支持1个新增性能版、3个研究身份、1项既有版本补充。四份共享记录本次保持原样；其同步状态仍为 `STATE_SYNC_GAP`。
+上表五项中，来源支持1个新增性能版、3个新增研究身份、1项既有版本补充。五项均已写入四份共享记录，提交为 `e7208c7ff2d9ec3dde8e419a57e4fd8cc2d426a2`；本批已知待同步数为0，`STATE_SYNC_GAP=NONE_FOR_THIS_BATCH`。R11研究 Event ID 保留 `UNKNOWN`；未知身份字段不作为待同步事件。
 
 ## R04 新增 receipt
 
-R04 Agent receipt 报告768样本；Parent 与 Candidate 各自 reference 通过且输出逐位一致；event、kernel task 与 host call 逐条对应，但 task 波动较大，结论为 `MEASUREMENT_BLOCKED`。该 receipt 未给出 source commit、submission ID 或可接受的数值 Local；三者均记 `UNKNOWN`。本次性能版新增数为0，receipt 不提升 Local Best。共享调度表中既有 `0.992171392044` 与 `+0.789037863747%` 仍标为观察值，不能替代本次缺失的来源身份。
+R04 Agent receipt 报告768样本；Parent 与 Candidate 各自 reference 通过且输出逐位一致；event、kernel task 与 host call 逐条对应，但 task 波动较大，结论为 `MEASUREMENT_BLOCKED`。该 receipt 未给出 source commit、submission ID 或可接受的数值 Local；身份字段保留 `UNKNOWN`。该补证已并入共享提交 `e7208c7ff2d9ec3dde8e419a57e4fd8cc2d426a2`，本次性能版新增数为0，receipt 不提升 Local Best。共享调度表中既有 `0.992171392044` 与 `+0.789037863747%` 仍标为观察值。
 
 ## 缺口与边界
 
-- R01 Route 工作树有3项未提交文件，此信息来自 Main 转交。R04 最新 receipt 确认计时分析、原始采集/profiler 数据、研究稿和两份派发日志仍在 Route 工作树；精确文件数 UNKNOWN（较早快照曾报4项）。没有读取、归档、修改或提交这些文件。R04 Agent 报告本轮已停止且无设备任务。
+- R01 原三项未提交文件已包含在来源提交 `4b9dcade629bd7e0fdbe3194c740bd1c7824d107`；receipt 报告提交后 worktree clean，device operation NONE。R04 receipt相关计时分析、原始采集/profiler数据、研究稿与派发日志仍留在 Route 工作树；本轮没有读取这些文件，精确文件数保持 `UNKNOWN`。
 - 主树原有17项未提交状态保持不动：9项已跟踪文件修改、8项未跟踪对象。四份共享表的既有差异也未纳入本报告提交。
-- 共享账本当前可读到28条W4身份；Main 指出的R05、R11、R12五项来源尚未写入共享记录。此前收到的R03、R07 receipts 与本次R04 receipt列入Local来源清单，其共享同步状态保留 UNKNOWN。
+- 共享账本当前可读到32条W4身份（10条性能、22条研究）；R05、R11、R12五项来源均已登记，本批待同步数为0。R01补证 Event ID=`UNKNOWN`，R11研究 Event ID=`UNKNOWN`，R04 receipt source commit与submission ID=`UNKNOWN`；这些未知值继续保留，不影响已完成的本批同步状态。
+- 本批以外仍有两组来源对应未确认：R03 receipt `W4-R03-INIT-CONSUMERS-20261008`（`5e95f9bc9d9c44fab03aecf9c84c29c0b947614b:研究/W4-R03/HOST-OCCUPANCY-STUDY.md`）与现存 R03 账本行 `R03-HOST-OCCUPANCY-20261008`（commit `712e47230287182bc65ab433a3ce714e6fdafd9f`）的关系未知；R07 timing attribution receipt（commit `bca492a32476d579f44b60516f8aeaac6e36b6d5`，`研究/W4-R07/TIMING-ATTRIBUTION-20261008.md`）的研究及同版补充是否已完整并入共享行尚未确认，当前 R07 V002性能行来源仍为 `addff7d657da4f3fee46e3b882fb80556d916da8`。这两组来源不属于本次五项待同步范围。
 - `source-meta` 总量为24；其中1份无同目录结果JSON。未由文件时间补写 Official 日期；没有来源的 source commit/date 均保留 UNKNOWN。
 - 报告只归纳现有仓库结果和明确 receipt。未从缺失原始采样、Route 未提交目录、shape 名称或 Official case ID推造数据。
 
 ## 生成文件
 
 - `OFFICIAL_RESULTS_AUDIT.tsv`：116条官方结果，包含完整 case JSON。
-- `LOCAL_RESULTS_AUDIT.tsv`：37条账本与 receipt 来源行。
+- `LOCAL_RESULTS_AUDIT.tsv`：38条数据行，39行含表头。
 - `W4_ROUTE_RESULT_MATRIX.tsv`：15条授权路线，每 Route 一行。
 - `W4_FULL_RESULT_AUDIT.md`：本报告。
 - `W4_RESULT_REVIEW_HANDOFF.md`：新会话接手摘要。
