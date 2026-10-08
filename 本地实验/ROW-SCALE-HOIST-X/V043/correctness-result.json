@@ -1,0 +1,76 @@
+{
+  "route": "ROW-SCALE-HOIST-X",
+  "revision": "V043",
+  "direct_parent": "V026",
+  "stage": "CORRECTNESS",
+  "status": "FAIL",
+  "gate": "PARENT_INVALID_UNRESOLVED",
+  "interpretation": "Parent and Candidate both fail the BF16 ProcessNarrowMidOverlap case. This is not classified as a Candidate regression; no Local run was made. The Parent/path failure remains unresolved.",
+  "host": "hwnput3",
+  "device": 0,
+  "soc": "Ascend910B3",
+  "architecture": "dav-2201",
+  "dtype": "bf16",
+  "shape": [128, 3072],
+  "branch": "ProcessNarrowMidOverlap",
+  "vector_cores": 40,
+  "launch_blocks": 40,
+  "local_rows_min": 3,
+  "local_rows_max": 4,
+  "resident_params": true,
+  "metadata_contract_check": {
+    "x_residual_output_shape": [128, 3072],
+    "gamma_bias_shape": [3072],
+    "dtype": "bf16",
+    "epsilon": 1e-6,
+    "golden_expression": "(x + residual) * gamma * invRms + bias",
+    "dispatch_audit": "Both runs selected ProcessNarrowMidOverlap; Parent candidate_source_delta_executed=false, Candidate=true"
+  },
+  "tolerance": {
+    "atol": 0.015625,
+    "rtol": 0.015625,
+    "required_matched_ratio": 0.99,
+    "max_abs_error_limit": 1.0
+  },
+  "parent": {
+    "status": "FAIL",
+    "matched_ratio": 0.227254232,
+    "max_abs_error": 5.68677521,
+    "candidate_source_delta_executed": false,
+    "runner_exit_code": 2
+  },
+  "candidate": {
+    "status": "FAIL",
+    "matched_ratio": 0.206255595,
+    "max_abs_error": 6.26680183,
+    "candidate_source_delta_executed": true,
+    "runner_exit_code": 2
+  },
+  "harness_attempts": [
+    {
+      "run_id": "20261008T001147Z",
+      "command": "cmake -S 本地实验/ROW-SCALE-HOIST-X/V043/correctness -B /tmp/cann-row-scale-hoist-x-v043-correctness-20261008T001147Z; cmake --build /tmp/cann-row-scale-hoist-x-v043-correctness-20261008T001147Z --target v043_correctness_parent v043_correctness_candidate -j2",
+      "status": "CONFIGURE_FAILED_ENVIRONMENT",
+      "exit_code": 1,
+      "note": "ASC package was not in CMAKE_PREFIX_PATH; retained log records the exact missing FindASC.cmake/package-config error."
+    },
+    {
+      "run_id": "20261008T001454Z",
+      "status": "BUILD_PASS_PARENT_AND_CANDIDATE_FAIL",
+      "cmake_configure_exit_code": 0,
+      "correctness_exit_code": 1,
+      "build_dir": "/tmp/cann-row-scale-hoist-x-v043-correctness-resume-20261008T001454Z"
+    }
+  ],
+  "local": "NOT_RUN_CORRECTNESS_GATE_FAILED",
+  "local_score": null,
+  "local_delta": null,
+  "current_local_best": "V026",
+  "official_score": null,
+  "online": "NOT_RUN",
+  "evidence": {
+    "initial_configure_attempt": "correctness-local-20261008T001147Z.log",
+    "parent_and_candidate_results": "correctness-resume-20261008T001454Z.log",
+    "compile": "compile-local-20261008T001109Z.log"
+  }
+}

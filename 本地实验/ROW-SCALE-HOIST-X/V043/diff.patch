@@ -1,0 +1,18 @@
+--- a/submission.asc
++++ b/submission.asc
+@@ -609,13 +609,13 @@ public:
+                 Store(outputGm_, rowOffset, outputLocal, valid);
+             } else {
+                 ToFloat(xFp32, gammaLocal, valid);
+                 ToFloat(residualFp32, biasLocal, valid);
+                 AscendC::PipeBarrier<PIPE_V>();
+-                AscendC::Mul(valueLocal, valueLocal, xFp32, valid);
++                AscendC::Muls(xFp32, xFp32, invRms, valid);
+                 AscendC::PipeBarrier<PIPE_V>();
+-                AscendC::Muls(valueLocal, valueLocal, invRms, valid);
++                AscendC::Mul(valueLocal, valueLocal, xFp32, valid);
+                 AscendC::PipeBarrier<PIPE_V>();
+                 AscendC::Add(valueLocal, valueLocal, residualFp32, valid);
+                 AscendC::PipeBarrier<PIPE_V>();
+                 AscendC::LocalTensor<T> outputLocal = xBuf_.Get<T>();
+                 FromFloat(outputLocal, valueLocal, valid);
