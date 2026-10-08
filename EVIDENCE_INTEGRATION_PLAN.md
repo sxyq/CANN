@@ -152,8 +152,11 @@ POLICY_FOLLOWUP=566e329e31f0b971e0c66bebeb60f73e467ee7b7; one wording-only Onlin
 W4_OFFICIAL_AUTHORIZATION=W4_BEST_OF_ROUTE_VALIDATED_CANDIDATES_ONLY
 MAX_SUBMISSIONS_PER_ROUTE=1
 QUALIFICATIONS=Build/Compile PASS; Correctness PASS; valid Local with numeric score/delta, raw samples and medians, shape/dtype, device, free HBM, load note, current best; route-internal comparable best; submitted source exactly matches validated Candidate commit; route quota/Judge quota/current Judge rules confirmed
-MAIN_MERGE_BLOCKED=NO
-BLOCK_REASON=NONE_FOR_MERGE; three canonical paths were reconciled in integration. Evidence-only selection is now authorized; primary main remains dirty 9 tracked + 8 untracked and was not entered.
+INTEGRATION_BRANCH_RECONCILED=YES
+PRIMARY_MAIN_UPDATED=NO
+PRIMARY_MAIN_UPDATE=DEFERRED_DIRTY_17_AND_PENDING_EVIDENCE_REVIEW
+MAIN_MERGE_BLOCKED=NO (integration-branch-only; this does not mean primary main was updated)
+BLOCK_REASON=PRIMARY_MAIN_UPDATE_DEFERRED; three canonical paths were reconciled in integration. Evidence-only selection is active; primary main remains dirty 9 tracked + 8 untracked and was not entered.
 INTEGRATION_OWNER_ONLINE_PERMISSION=NO
 SERVER3_TRANSIENT_PROCESS_UNATTRIBUTED=clx_ref_parent_; remote RUNNING_COMMAND globally UNKNOWN
 NEXT_ACTION=commit these two report updates, then start W4 evidence-only integration in route batches; exclude Candidate production paths.
@@ -164,3 +167,9 @@ NEXT_ACTION=commit these two report updates, then start W4 evidence-only integra
 ### Evidence-selection status
 
 `PATH_LEVEL_EVIDENCE_COPY=AUTHORIZED_ACTIVE_AFTER_REPORT_COMMIT`。当前 inventory/plan 更新已获准，提交这两份报告后立即从 W4-R01 至 W4-R15 的已提交 Route commits 做 evidence-only selection，优先研究报告、result/日志/raw/profiler、正确性失败证据和必要的 Candidate SHA/source metadata。每条纳入路径记录原始 Route commit SHA、Route、Revision、Candidate SHA、Result 分类；完整 committed Candidate 快照只作可追溯历史证据，生产 kernel 路径和 Candidate 改动不进入当前生产树。W4-R02/R08/R09/R14 的 ACTIVE_AGENT、current stage 或 running operation 按来源保持 UNKNOWN，SAFE_TO_RETIRE=NO。Ignored evidence 也维持：R01 71 个 profiler 文件、W3 crossrow 531 个 Chromium profile 文件、M2 vector 78 个结果文件，均不因 clean 状态退役。W2/W3 独有 Candidate/证据另行列出，不做整批复制，`PUSH=NO`。
+
+### Batch 01 Evidence Receipt
+
+`BATCH_01_SCOPE=W4-R03,W4-R06,W4-R12,W4-R13,W4-R15`。归档根目录为 `证据集成/W4/Batch-01-Research/`，来源路径保持 Route 原相对路径；`SOURCE_PATH_MANIFEST.tsv` 逐文件记录 Route、事件/Revision、结果分类、来源 commit、Git blob、源路径和归档路径。已纳入 139 个 evidence 文件；另有 25 个分析脚本、探针源码或构建/执行支持源码明确列为 `EXCLUDE_SOURCE_SUPPORT`，未进入归档。纳入内容包含研究报告、Parent-only result、日志、raw/profile、反汇编和诊断输出；`CANDIDATE_PRODUCTION_PATHS_INCLUDED=0`，不改变生产 kernel 或 Candidate。
+
+`BATCH_01_SOURCE_COMMITS=R03:712e47230287182bc65ab433a3ce714e6fdafd9f,5e95f9bc9d9c44fab03aecf9c84c29c0b947614b; R06:bd825c5fd59c74c283478026e8b32702ba331eb5,b40c09e62adcd85f51258ed1cef3723b80b010c8; R12:a018f702f3e6beb91569299fe903f59826961840,e697ddf35d4c42e735236e597338a148bfb437f2; R13:91e891a2a266ecb2b870afead3c3aa0fd94b67ac,a10cf2a1e5c8f25aa256ce9dbfb79cd3347d12b4,f417e4361ddac6b626ced1e62cfb75de8e3695ee; R15:4213e6f19502875b8efbc70cda1c1cf16d8e0ca5,d13e51e90ab81451ab86e46034db3ddfde4b05d2,744f3ad313f7586c8368a0765021ba3cac8c138e`。
