@@ -53,9 +53,9 @@ R31B/V011 的官方结果为45.16、15/15；source SHA 为 `a8c19a1972207acc67e3
 
 当前主树全版本账本包含32条 W4 身份：10条 `REAL_EXECUTED_REVISION`、22条 `ROUTE_RESEARCH_EVENT`。10个已登记性能版均未产生有效 Local；表内候选时间和 delta 保留原字段及观察标签，不据此认定 Local Best。R09 的当前 Local Best 保留 `UNKNOWN`。R05 V002使本轮真实性能版数增加1；R01/V001与R04/V002同版补证不增加性能版。Online 保持 `PAUSED`，`PUSH=NO`。
 
-Local 清算表含38条数据：32条 W4 账本身份行，以及6条补充或独立 receipt 审计行，包含 R01、R03、R04、R07 与 R11 的同版补充来源。`LOCAL_RESULTS_AUDIT.tsv` 将观察值、接受值、研究项、同版补充和身份缺口分列；全文件39行（含表头）。
+Local 清算表含38条数据：32条 W4 账本身份行，以及6条补充或独立 receipt 审计行。互斥的 `REVISION_CLASSIFICATION` 分布为10条真实性能版、24条研究事件、3条同版补充、1条同版结果 receipt。`AUDIT_FLAGS` 为多标签：`OBSERVATION_ONLY` 12条、`MEASUREMENT_BLOCKED` 13条、`NOT_MEASURED` 25条、`CORRECTNESS_FAILED` 1条、`BUILD_FAILED` 0条、`VALID_ACCEPTED` 0条、`VALID_REJECTED` 0条；12条观察记录同时计入阻塞测量，R10 V001的最终精度失败另与观察/阻塞标签重叠。38条来源身份无重复，全文件39行（含表头）。
 
-| Route | 当前可确认结论 | 测量置信标记 | 主要未确认项 |
+| Route | 当前可确认结论 | 结果状态 | 主要未确认项 |
 |---|---|---|---|
 | W4-R01 | V001同版 task 对照 `MEASUREMENT_BLOCKED`；P/P调整差−0.04 us，95% CI [−0.24,0.06]跨0；P/C配对95% CI [−0.16,0.036]跨0，漂移10.63%/16.05%超限 | 观察值未接受；Local score/delta/best均为 `NONE` | side ratio −6.2105%仅观察；模板 reference PASS与严格差异分开：目标每侧1个、对照每侧3个，最大绝对误差0.00390625；来源 `4b9dcade629bd7e0fdbe3194c740bd1c7824d107`，Event ID `UNKNOWN`；R01原三项dirty文件已随该提交纳入，worktree clean，device operation NONE |
 | W4-R02 | V002 `MEASUREMENT_BLOCKED` | 观察值未接受 | task 与 event 范围、调用次序及槽位漂移仍需区分 |
@@ -74,6 +74,48 @@ Local 清算表含38条数据：32条 W4 账本身份行，以及6条补充或�
 | W4-R15 | `ROUTE_REVIEW_REQUIRED` | 无 Local | 等待 Planning 复核；代理关闭不表示 Route 关闭 |
 
 R05 的 `80x2056` resident 标记需要按 R03 receipt 限定：40 cores 对应每核两行并走 `SmallFp32Batched`；既有 reference PASS 仍有效，但不能由该标签推断 `NarrowMid residentParams` 实际执行。
+
+### 路线置信度与结论类别
+
+矩阵按固定枚举记录每 Route 一项。置信度计数：`HIGH=0`、`MEDIUM=0`、`LOW=0`、`INVALID=9`、`NOT_MEASURED=6`。结论类别计数：`PROVEN_LOCAL_GAIN=0`、`VALID_NO_GAIN=0`、`CORRECTNESS_PROGRESS=1`、`MEASUREMENT_UNRESOLVED=9`、`RESEARCH_ONLY=4`、`DUPLICATE_OR_EXHAUSTION_RISK=1`、`INSUFFICIENT_EVIDENCE=0`。
+
+| Route | MEASUREMENT_CONFIDENCE | CONCLUSION_CLASS |
+|---|---|---|
+| W4-R01 | INVALID | MEASUREMENT_UNRESOLVED |
+| W4-R02 | INVALID | MEASUREMENT_UNRESOLVED |
+| W4-R03 | NOT_MEASURED | RESEARCH_ONLY |
+| W4-R04 | INVALID | MEASUREMENT_UNRESOLVED |
+| W4-R05 | INVALID | MEASUREMENT_UNRESOLVED |
+| W4-R06 | NOT_MEASURED | RESEARCH_ONLY |
+| W4-R07 | INVALID | MEASUREMENT_UNRESOLVED |
+| W4-R08 | INVALID | MEASUREMENT_UNRESOLVED |
+| W4-R09 | INVALID | MEASUREMENT_UNRESOLVED |
+| W4-R10 | INVALID | MEASUREMENT_UNRESOLVED |
+| W4-R11 | INVALID | MEASUREMENT_UNRESOLVED |
+| W4-R12 | NOT_MEASURED | RESEARCH_ONLY |
+| W4-R13 | NOT_MEASURED | CORRECTNESS_PROGRESS |
+| W4-R14 | NOT_MEASURED | RESEARCH_ONLY |
+| W4-R15 | NOT_MEASURED | DUPLICATE_OR_EXHAUSTION_RISK |
+
+`MEASUREMENT_CONFIDENCE` 只取上述五级；`CONCLUSION_CLASS` 只取上述七类。路线表未将观察数值升级为 Local；本报告不比较路线排序或建议路线替换。
+
+## Local measurement reliability
+
+| 轴 | 路线与证据 | 已知界限 |
+|---|---|---|
+| event 与 kernel-task 时间 | R01 `4b9dcade…:本地实验/W4-R01/V001/task-compare-device0-20261008/RESULT.md`；R02 `e100b5d9…:研究/W4-R02/traversal-coverage.md`；R04 用户 receipt（commit UNKNOWN）；R07 `bca492a3…:研究/W4-R07/TIMING-ATTRIBUTION-20261008.md`；R08 `1bc84959…:本地实验/W4-R08/V001/RETEST-20261008.md`；R11 `1b528176…:研究/W4-R11/LOCAL-PROTOCOL-DIAGNOSTIC-20261008.md` | timer范围并不相同。R04报告event/kernel-task/host-call逐条对应，同时task波动大；不可据此把不同采集的数值直接相减。 |
+| task 波动 | R01报告Parent/Candidate drift 10.63%/16.05%；R02 event MAD/median 20.565636%、task 10.110436%且slot drift约19.60%/24.64%；R04波动幅度数值UNKNOWN；R11 target/control task MAD ratio 0.33391304/0.13587786；证据路径同上 | R02/R11未形成可接受 Local；R04 receipt未给稳定性阈值数字。 |
+| PC/CP 执行次序 | R02 `研究/W4-R02/traversal-coverage.md`；R07 `研究/W4-R07/TIMING-ATTRIBUTION-20261008.md`；R10 `本地实验/W4-R10/V002/RESULT.md` | R07旧采样第二位置总伴随库切换；R10 task-map/runtime次序与长尾仍待区分。缺少统一次序条件的路线填 `UNKNOWN`。 |
+| 输出地址与slot | R05 `本地实验/W4-R05/gamma-view-20261008/RESULT.md`；R07 `研究/W4-R07/TIMING-ATTRIBUTION-20261008.md`；R08 `本地实验/W4-R08/V001/RETEST-20261008.md`；R11 `研究/W4-R11/LOCAL-PROTOCOL-DIAGNOSTIC-20261008.md` | R07使用共享输出；R08记录同一输出地址；R11计划的物理地址/逻辑slot交叉尚未执行。R05双库驻留与输出地址完全一致的对照未完成。 |
+| wrapper allocation/free | R05 `本地实验/W4-R05/gamma-view-20261008/RESULT.md`；R07 `研究/W4-R07/TIMING-ATTRIBUTION-20261008.md`；R08 `本地实验/W4-R08/V001/RETEST-20261008.md` | R05 PP/PC间Parent ELF大小变化40 bytes；R07 Parent stub静态请求8B，实际分配粒度及Candidate请求UNKNOWN；R08每个timed call的event内含DevMalloc与aclrtFree，底层wrapper来源UNKNOWN。 |
+| 同二进制与P/P资格 | R01 `本地实验/W4-R01/V001/task-compare-device0-20261008/RESULT.md`；R05 `本地实验/W4-R05/gamma-view-20261008/RESULT.md`；R07 `研究/W4-R07/TIMING-ATTRIBUTION-20261008.md`；R11 `研究/W4-R11/LOCAL-PROTOCOL-DIAGNOSTIC-20261008.md` | R01调整P/P区间跨0；R05整库身份未证实；R07同Parent无切换任务仍能到27.02us；R11本次仅Parent，未执行Candidate。 |
+| 跨Route可比性 | 15条Route的来源与设备字段列于 `W4_ROUTE_RESULT_MATRIX.tsv`；原始证据路径随Route行保留 | shape、dtype、设备、计时边界和测量状态不同；全W4有效Local为0。可接受的跨Route数值比较为 `UNKNOWN`。 |
+
+## 实验与研究重复分布
+
+计数单位为 `LOCAL_RESULTS_AUDIT.tsv` 的38个唯一来源行身份（Route、Revision、Event Type、Source Commit、Evidence Path）；同版补充各自独立计行，但不另计性能版。互斥分布为10条性能记录、24条研究事件、3条同版补充、1条同版结果 receipt。研究事件中6条标为 `DUPLICATE_RESEARCH_ONLY`：R02 1、R06 1、R09 2、R10 1、R15 1；没有重复来源身份键。
+
+与32条账本身份（10条性能、22条研究）对照，Local清算表另列6条补充来源：R03与R07各1条研究receipt、R01/R07/R11各1条同版补充、R04 1条同版结果receipt。R01、R07、R11同版补充均不新增性能版；本轮新性能版仅R05 V002一条。R03/R07来源与当前共享行的具体对应仍列作待确认项。
 
 ## 五项已同步事件
 
