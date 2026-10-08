@@ -1,0 +1,77 @@
+{
+  "route": "SYNC-BARRIER-ELISION-X",
+  "revision": "V053",
+  "parent": "R31B-V011",
+  "status": "LOCAL_REJECTED_NOISY",
+  "device": 3,
+  "shape": "128x128",
+  "dtype": "fp16",
+  "warmup_per_binary": 60,
+  "qualification_pairs_per_binary_per_run": 31,
+  "qualification_runs_per_binary": 2,
+  "interleaved_pairs": 62,
+  "pair_order": "alternating Parent/Candidate and Candidate/Parent within each 31-pair block",
+  "primary_score_formula": "100 * (median(Parent device_us) / median(Candidate device_us) - 1); positive means Candidate lower latency",
+  "primary_score_percent": -2.212389,
+  "candidate_over_parent_median_latency_ratio": 1.022624,
+  "pooled": {
+    "parent_device_us": {"median": 15.47, "mean": 15.296129, "stdev": 5.326489, "cv": 0.348225, "min": 5.94, "max": 31.86, "mad": 2.39, "p10": 6.732, "p90": 20.098},
+    "candidate_device_us": {"median": 15.82, "mean": 14.652581, "stdev": 4.533445, "cv": 0.309396, "min": 5.96, "max": 20.76, "mad": 1.92, "p10": 6.472, "p90": 19.168},
+    "parent_wall_us": {"median": 69.034, "mean": 72.892742, "stdev": 20.818409, "cv": 0.285603, "min": 58.629, "max": 177.278, "mad": 6.72, "p10": 60.5341, "p90": 80.449},
+    "candidate_wall_us": {"median": 69.7145, "mean": 70.081371, "stdev": 11.585234, "cv": 0.165311, "min": 59.119, "max": 122.089, "mad": 6.74, "p10": 60.597, "p90": 79.4559},
+    "paired_candidate_minus_parent_us": {"median": 0.65, "mean": -0.643548, "stdev": 7.483133, "min": -16.12, "max": 14.6, "p10": -12.216, "p90": 8.93},
+    "parent_throughput_gelem_s": {"median": 1.059104, "mean": 1.251118, "stdev": 0.588386, "cv": 0.470288, "min": 0.51425, "max": 2.758249, "mad": 0.156521, "p10": 0.815238, "p90": 2.433818},
+    "candidate_throughput_gelem_s": {"median": 1.035678, "mean": 1.303034, "stdev": 0.628057, "cv": 0.481996, "min": 0.78921, "max": 2.748993, "mad": 0.126201, "p10": 0.85478, "p90": 2.531598}
+  },
+  "score_reconciliation": {
+    "ratio_of_means_score_percent": 4.392048,
+    "median_paired_delta_us": 0.65,
+    "runner_style_score_percent": -4.201681,
+    "candidate_faster_pairs": 29,
+    "total_pairs": 62,
+    "block1": {"parent_median_us": 15.26, "candidate_median_us": 16.9, "parent_mean_us": 15.3071, "candidate_mean_us": 15.3142, "median_paired_delta_us": 0.88, "ratio_of_medians_score_percent": -9.704142, "ratio_of_means_score_percent": -0.046341},
+    "block2": {"parent_median_us": 15.54, "candidate_median_us": 15.12, "parent_mean_us": 15.2852, "candidate_mean_us": 13.991, "median_paired_delta_us": 0.38, "ratio_of_medians_score_percent": 2.777778, "ratio_of_means_score_percent": 9.250208},
+    "block1_ratio_of_medians_score_percent": -9.704142,
+    "block1_ratio_of_means_score_percent": -0.046341,
+    "block2_ratio_of_medians_score_percent": 2.777778,
+    "block2_ratio_of_means_score_percent": 9.250208,
+    "interpretation": "Pooled medians, pooled means, and paired-delta score disagree; the two blocks reverse direction and qualification medians also drift sharply across runs. Keep numeric score but reject as noisy; do not promote."
+  },
+  "calculation_attempts": {
+    "initial_parser": "Retained in logs/local-score-reconciliation-v053-20261008.log; invalid because a lexical array name shadowed Perl numeric sort variables. Do not use its reported statistics.",
+    "corrected_parser": "logs/local-score-reconciliation-corrected-v053-20261008.log and logs/local-full-statistics-v053-20261008.log; derived from all raw rows without filtering."
+  },
+  "qualification": {
+    "parent_run1": {"first_median_us": 16.38, "second_median_us": 16.6, "first_mad_over_median": 0.091575, "second_mad_over_median": 0.144578, "median_drift_fraction": 0.013341},
+    "parent_run2": {"first_median_us": 7.12, "second_median_us": 7.12, "first_mad_over_median": 0.103933, "second_mad_over_median": 0.11236, "median_drift_fraction": 0.0},
+    "candidate_run1": {"first_median_us": 6.56, "second_median_us": 6.46, "first_mad_over_median": 0.045732, "second_mad_over_median": 0.04644, "median_drift_fraction": 0.015361},
+    "candidate_run2": {"first_median_us": 17.76, "second_median_us": 16.98, "first_mad_over_median": 0.101351, "second_mad_over_median": 0.186101, "median_drift_fraction": 0.044905}
+  },
+  "load_context": {
+    "host": "hwnput3",
+    "pre_use_snapshot": "logs/device3-postcompile-presnapshot-20261008.log",
+    "pre_local_snapshot": "logs/device3-prelocal-snapshot-v053-20261008.log",
+    "mid_qualification_snapshot": "logs/device3-midqualification-snapshot-v053-20261008.log",
+    "pre_interleaved_snapshot": "logs/device3-preinterleaved-snapshot-v053-20261008.log",
+    "between_blocks_snapshot": "logs/device3-between-local-blocks-v053-20261008.log",
+    "post_capture_snapshot": "logs/device3-postcapture-release-snapshot-v053-20261008.log",
+    "device3_pre_local": "3426 MB HBM, 0% AICore, no listed process",
+    "device3_post_capture": "4703 MB HBM, 2% AICore, Python PID 281978 at 1329 MB; process left untouched",
+    "other_device_load": "Snapshots show active processes/load on other devices; no device-3 process was listed before Local. No clean-load wait or sample filtering was used."
+  },
+  "raw_logs": [
+    "logs/qualification-parent-v053-20261008.log",
+    "logs/qualification-parent-v053-run2-20261008.log",
+    "logs/qualification-candidate-v053-20261008.log",
+    "logs/qualification-candidate-v053-run2-20261008.log",
+    "logs/local-interleaved-v053-block1-20261008.log",
+    "logs/local-interleaved-v053-block2-20261008.log",
+    "logs/local-score-reconciliation-v053-20261008.log",
+    "logs/local-score-reconciliation-corrected-v053-20261008.log",
+    "logs/local-score-node-crosscheck-v053-20261008.log",
+    "logs/local-full-statistics-v053-20261008.log"
+  ],
+  "local_best": "R31B-V011",
+  "official_comparability": "Single-shape Local is not comparable to Official score 45.16.",
+  "online": "NOT_SUBMITTED"
+}
