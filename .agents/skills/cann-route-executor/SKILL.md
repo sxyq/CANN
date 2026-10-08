@@ -7,7 +7,7 @@ description: CANN AddRmsNormBias Route Agent 执行 Skill。负责单 Route 的�
 
 ## ACTIVE PORTFOLIO W4
 
-Route Agent 只执行 W4 控制文件列出的授权路线，并在同一持久 Child 内按固定顺序轮转；一条 Route 同时只能有一个 Candidate 写入者。W3 与 W2 材料只作为历史来源，不能替代 W4 路线状态。完整路线池、5 个 Child 分配、轮转和初始处置见 `项目规则/W4持续探索控制契约.md`。
+每个 Route Agent/Context 只执行一条 W4 授权路线，禁止换 Route；一条 Route 同时只有一个 Candidate 写入者。W3/W2 只作历史来源。最多 5 个 active Child 包含 Record Owner；队列、fresh context、版本额度和交接见 `项目规则/W4持续探索控制契约.md`。
 
 ## Route ownership
 
@@ -15,7 +15,9 @@ Route Agent 只执行 W4 控制文件列出的授权路线，并在同一持久 
 1 Route = 1 Agent = 1 Context = 1 Branch = 1 Worktree
 ```
 
-只读写自己的 Route worktree，不读取其他 Route worktree，不改共享调度、共享成绩或 Dashboard，不决定 Route 生命周期，不正式提交 Online。切换 Route 前发送 `ROUTE_SWITCH_RECEIPT`，确认当前设备操作已结束，并列明来源工作树/branch/head/dirty、上一版本事件、目标工作树/branch、下一 Revision 和 `NEXT_ACTION=RULE_REFRESH`。
+所有命令 workdir 固定在自己的 Route worktree；不进入其他实际工作树、不写主目录或共享记录，不改 Dashboard，不决定 Route 生命周期，不正式提交 Online。需要跨 Route 已提交证据时，从本工作树使用 `git show`；工作树元数据用 `git worktree list`，不读取其他工作树未提交文件。规则落后于 main 时，用 `git show main:<规则路径>` 读取当前入口。
+
+本次任务结束当前安全闭环后发送交接回执，列出 agent_id、Route、worktree/branch/HEAD/dirty、最后版本/研究事件、未完动作及 `RUNNING_DEVICE_OPERATION=NONE`。Main 关闭旧 Agent 并确认后，用空槽创建 fresh context 接手下一 Route；本 Agent 不切换路线、不创建 Child。
 
 ## RULE REFRESH REQUIRED
 
@@ -46,14 +48,14 @@ ONE CHANGE
 6. 报告 Local score、delta、samples、raw latency、jitter、`FREE_HBM`、device load、repeatability 和结果解释。
 7. 提交本轮实验结果的 Git commit。失败版本、负结果和工具失败都保留。
 8. 发送 `VERSION_RECORD_EVENT`，并等待该事件存在后才能开始下一普通 Revision；Record Owner 异步写入不得延误已经在途的 Compile、Correctness、Local 或 commit。
-9. Local 改善时及时 push，并把该 Revision 标为 `CURRENT_LOCAL_BEST`；下一轮可从它继续。
+9. 有效 Local 改善时把该 Revision 标为 `CURRENT_LOCAL_BEST`；下一轮可从它继续。本轮 `PUSH=NO`。
 10. Local 未改善时保留负结果，不提升为 Local Best；下一轮回到当前 `CURRENT_LOCAL_BEST`。
 
 ## LOCAL SCORE REQUIRED
 
 正常完成必须报告 numeric Local score 和 numeric Local delta，以及 Parent/Candidate raw samples、Parent/Candidate medians、shape/dtype、device、free HBM、load note、current best。Compile 或 Correctness 失败时保留失败证据、Git commit/status，并发送 `VERSION_RECORD_EVENT`，其中未执行 Local 的字段使用 `NONE`，不得补造数值。`VERSION_RECORD_EVENT REQUIRED`；`NEXT REVISION BLOCKED UNTIL PREVIOUS EVENT EXISTS`。
 
-Local accumulation 只能由一连串完整的小变化循环组成，不能把多个独立变化折叠进一个 Revision。
+Local accumulation 由完整的小变化循环组成，不能把多个独立变化折叠进一个 Revision。每 Route 本轮新增性能版上限 10，不要求跑满；连续 3 个有效 numeric Local 无改善报告 `STAGNATION_3`。研究、重复和旧结果恢复不新增性能版；无效测量与 Compile/Correctness 失败不计入有效 Local 或连续次数，有效改善清零连续次数。新建真实性能版与有效 Local 分开计数；真实失败版仍须发事件。达到上限或报告后完成安全交接，交 Main/Planning 安排后续，不自行宣布 Route 关闭。
 
 ## 资源准入
 
@@ -63,13 +65,13 @@ server3 的 Compile、Correctness、Local、Profile 共用同一个准入条件�
 目标 NPU FREE_HBM >= 100 MB → 该阶段允许立即执行
 ```
 
-以下事实都不是执行 Gate，只记录不阻塞：AICore utilization 非零、Vector/Core busy、VLLM 驻留、其他用户进程、device 非 idle、系统 load 高、没有 exclusive lease、没有 exclusive authorization、旧 lease、未知 lease owner、不存在 clean window。
+以下事实只记录为负载上下文，不影响执行：AICore utilization 非零、Vector/Core busy、VLLM 驻留、其他用户进程、device 非 idle、系统 load 高、没有 exclusive lease、没有 exclusive authorization、旧 lease、未知 lease owner、不存在 clean window。
 
-禁止因为 other process、load、lease 或缺少 exclusive permission 停止。lease 只是协调元数据，不是执行权限；忽略它的准入语义，也不得删除、覆盖、伪造或重写他人的 lease。
+禁止因为 other process、load、lease 或缺少 exclusive permission 停止。lease 只用于协调记账；忽略它的准入语义，也不得删除、覆盖、伪造或重写他人的 lease。
 
 Profile 与 Local 同样适用该准入条件。
 
-Local 必须在负载较高时照常执行并记录负载上下文，不允许 `LOAD_HIGH → SKIP_LOCAL`。`FREE_HBM`、`DEVICE_LOAD`、`AICORE_LOAD`、`OTHER_PROCESS_PRESENT`、`LOAD_NOTE` 是测量上下文，不是测量 Gate。
+Local 必须在负载较高时照常执行并记录负载上下文，不允许 `LOAD_HIGH → SKIP_LOCAL`。`FREE_HBM`、`DEVICE_LOAD`、`AICORE_LOAD`、`OTHER_PROCESS_PRESENT`、`LOAD_NOTE` 只用于解释测量。
 
 只有以下情况可以因设备资源停止：所有可用 NPU `FREE_HBM < 100 MB`；真实执行出现 OOM / allocation failure / runtime resource failure；启动自己的任务会实际破坏其他用户任务；server3 不可连接。设备选择可用 `工具/server3-resource-policy.sh` 的 `choose_eligible_device`。
 
@@ -92,7 +94,7 @@ LOCAL_SCORE = <value|NONE>
 LOCAL_DELTA = <value|NONE>
 CURRENT_LOCAL_BEST = <revision|NONE>
 GIT_COMMIT = <commit or NONE>
-PUSH = <YES|NO|PENDING>
+PUSH = NO
 BLOCKER = <text or NONE>
 ```
 
@@ -124,7 +126,7 @@ LOCAL_BEST = <revision|NONE>
 OFFICIAL_SCORE = <value|NONE>
 ONLINE_STATE = <state|NONE>
 GIT_COMMIT = <commit or NONE>
-PUSH = <YES|NO|PENDING>
+PUSH = NO
 BRANCH = <branch or UNKNOWN>
 STATUS = <status>
 EVIDENCE_NOTE = <path and short note>
@@ -134,7 +136,7 @@ EVIDENCE_NOTE = <path and short note>
 
 ```text
 RESULT → COMMIT → ROUTE_EVENT + VERSION_RECORD_EVENT
-→ PUSH → follow-up ROUTE_EVENT + VERSION_RECORD_EVENT with PUSH=YES and LOCAL_BEST
+→ retain local commit with PUSH=NO and LOCAL_BEST
 ```
 
 负结果的顺序：
@@ -144,11 +146,11 @@ RESULT → COMMIT → ROUTE_EVENT + VERSION_RECORD_EVENT with LOCAL_BEST unchang
 → NEXT ONE CHANGE from CURRENT_LOCAL_BEST
 ```
 
-`VERSION_RECORD_EVENT` 不包含来源或对象身份字段。Record Owner 负责异步落盘，Route Agent 不直接写共享账本、路线图或 Dashboard。
+`VERSION_RECORD_EVENT` 保留来源提交、证据路径和已有事件 ID；没有事件 ID 时以 Route/Revision 引用，不能制造上游 ID。Record Owner 异步同步，Route 不写共享账本、路线图或 Dashboard。编辑前研究与 Parent-only 探测发 `ROUTE_RESEARCH_EVENT`；目录中的 V001 不等于真实性能版。旧结果恢复不新增版本，缺失实验日期用 `UNKNOWN`。
 
 恢复本身不产生 `VERSION_RECORD_EVENT`，也不虚构 Revision。server3 不可达时保留最后完成动作、精确 `NEXT_ACTION` 和 `BLOCKER=SERVER3_UNAVAILABLE`；不得编辑 Candidate 或启动下一 Revision。连接恢复必须由新的正式记录确认，不能把用户转交的旧超时回执当作本轮新连通测试。
 
-已批准 Route 内的普通下一 Revision 为 `NO MAIN APPROVAL REQUIRED`。Route Agent 长期复用同一 owner、context、branch 和 worktree；`Main MUST NOT MANUALLY MICRO-MANAGE EVERY REVISION`。
+已批准 Route 内的普通下一 Revision 为 `NO MAIN APPROVAL REQUIRED`。同 Route 普通版本复用当前 owner/context/branch/worktree；任务结束安全交接后关闭 Agent，下一 Route 使用 fresh context；`Main MUST NOT MANUALLY MICRO-MANAGE EVERY REVISION`。
 
 ## 结果边界
 
