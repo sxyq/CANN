@@ -40,6 +40,7 @@ All 18 pair median shifts are within the corresponding combined MAD; direction i
 ## Device and Verdict
 
 - Pre-Local snapshot `2026-10-08T08:39:35.208951888Z`: device 4 HBM 59,192/65,536 MB used; conservative free HBM 6,344 MB; AICore 49%, AIVector 37%, HBM bandwidth 60%. PID 2999855 (`VLLMEngineCor`, 55,666 MB) was present and left untouched.
+- Correctness pre-use snapshot was `2026-10-08T08:13:02.574400145Z`; first correctness started `2026-10-08T08:35:25.437435846Z`, 22m22.863s later. The snapshot showed 6,344 MB free and no active probe. This freshness gap is retained as a procedural limitation; the later pre-Local snapshot again showed 6,344 MB free and no probe.
 - Post-Local snapshot `2026-10-08T08:51:15.428426870Z`: HBM 59,192/65,536 MB used; AICore 60%, AIVector 35%, HBM bandwidth 61%; the same existing PID remained. No MODE reference probe remained active.
 - Raw capture ended `2026-10-08T08:48:19.563953244Z`; device 4 was explicitly released `2026-10-08T08:51:17.642477853Z`.
 - `LOCAL_SCORE=0.999614094624x` (partial route-local only); `LOCAL_DELTA=-0.038591%`.
