@@ -1,0 +1,25 @@
+# SYNC-BARRIER-ELISION-X V059
+
+- ROUTE: `SYNC-BARRIER-ELISION-X`
+- REVISION: `V059`
+- DIRECT_PARENT: `R31B-V011`
+- PARENT_SOURCE_SHA256: `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`
+- CANDIDATE_SOURCE_SHA256: `f605ee1765eef7818485101d3d6621ed2d4ff35ae3758cf033bee8d7dcfe1030`
+- SINGLE_HYPOTHESIS: In `ProcessSmallLowPrecisionContiguousBatched`, remove only the common `PIPE_V` barrier after the dtype-specific input-combine branch and before `Mul(xFp32, valueLocal, valueLocal, totalElems)` consumes the FP16 `ToFloat` result.
+- SINGLE_CHANGE_BOUNDARY: Delete one vector-pipeline barrier only. Preserve input combine, conversion, square `Mul`, following barrier and reductions, every other synchronization, and all other source behavior.
+- DUPLICATION_AUDIT: The V001-V058 Route-local actual deletion diffs and declarations contain no deletion at this exact site. Distinct nearby sites include V025 in `ProcessNarrowMidOverlap`, V040 in generic `Process()`, V048 after batched square `Mul`, and V056 between batched FP16 input `Add` and `ToFloat`. Full audit is in `RULE_REFRESH_RECEIPT.md`.
+- FOCUS_AXIS: FP16 batched input-conversion-to-square synchronization.
+- FOCUS_VALUE: Remove the common barrier after `ToFloat(valueLocal, xLocal, totalElems)` and before the batched square `Mul`.
+- COMPILE_TARGET: `sync_barrier_elision_v059`
+- CORRECTNESS_CASES: Seven FP16 Parent/Candidate bitwise cases.
+- LOCAL_CASE: FP16 128x128, device-event timing, two 31-pair interleaved blocks; retain raw samples, throughput, wall latency, jitter, and load snapshots without outlier filtering.
+- CURRENT_LOCAL_BEST: `R31B-V011`
+- OFFICIAL / ONLINE: none; `NOT_SUBMITTED`.
+- DEVICE_ASSIGNMENT: Main assigned device 3 exclusively to V059 Parent/Candidate Correctness and Local through raw-result capture. Take a fresh post-Compile HBM/process snapshot, proceed at `FREE_HBM >= 100 MB`, leave all processes untouched, and explicitly release after capture.
+- COMPILE: PASS; target `sync_barrier_elision_v059`; toolkit `8.5.0.alpha002`; build log `logs/compile-v059.log`; candidate executable SHA256 `db79236f011bfcff8786d48503a6bab38b9acb2c1d615793b94e6efc64b752ec`; correctness runner SHA256 `70dafa6794a5301f9ca1239b26fd47cd7139cd53284f10717a6b64880b06c9c9`.
+- CORRECTNESS: PASS_BITWISE; seven FP16 Parent/Candidate cases, zero mismatches; `logs/correctness-v059-device3.log`.
+- SAME-BINARY QUALIFICATION: Parent and Candidate each completed 31 alternating samples; Parent median drift 21.6931%, Candidate 0.5181%; high event jitter retained in qualification logs.
+- LOCAL: `LOCAL_REJECTED_NOISY`; 62 raw interleaved pairs across two 31-pair blocks; paired-median-delta score `+1.792574%` with pooled median paired delta `-0.2800 us`. Block scores are `+1.082544%` and `+5.000000%`; pooled estimators disagree materially. Full raw-derived summary is in `RESULT.md` and `local-result.json`.
+- CURRENT_LOCAL_BEST: `R31B-V011` (unchanged).
+- DEVICE_RELEASE: device 3 explicitly released after raw capture and post-capture snapshot at `2026-10-08T07:55:01Z`; see `DEVICE_RELEASE_RECEIPT.md`.
+- STAGE: Result captured and committed; no Online or shared-record action.

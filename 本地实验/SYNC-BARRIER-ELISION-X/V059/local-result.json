@@ -1,0 +1,81 @@
+{
+  "route": "SYNC-BARRIER-ELISION-X",
+  "revision": "V059",
+  "direct_parent": "R31B-V011",
+  "shape": "fp16-128x128",
+  "device": 3,
+  "method": "60 warmups per runner invocation; two 31-pair interleaved Parent/Candidate blocks; alternating P,C and C,P order; ACL device-event latency primary with wall-clock diagnostics; all raw samples retained and no outlier filtering.",
+  "sample_pairs_per_block": 31,
+  "total_paired_samples": 62,
+  "score_formula": "-100 * median(candidate_device_us - parent_device_us) / median(parent_device_us)",
+  "local_score_percent": 1.792573624,
+  "local_delta_us": -0.28,
+  "score_type": "ROUTE_LOCAL_PAIRED_MEDIAN_DELTA_SPEEDUP_PERCENT",
+  "score_comparable_to_official": false,
+  "block_scores_percent": [1.082544, 5.0],
+  "alternate_estimators_percent": {
+    "pooled_ratio_of_independent_medians": 16.916168,
+    "pooled_ratio_of_means": 5.028652,
+    "pooled_geometric_mean_parent_over_candidate": 7.502902,
+    "block_geometric_mean_parent_over_candidate": [-3.011824, 19.157557]
+  },
+  "pooled_device_us": {
+    "parent": {"median": 15.62, "mean": 13.420968, "stdev": 5.622928, "cv": 0.418966, "min": 5.94, "max": 26.06, "mad": 3.46, "p10": 6.284, "p90": 19.266},
+    "candidate": {"median": 13.36, "mean": 12.778387, "stdev": 6.374657, "cv": 0.498862, "min": 5.84, "max": 32.26, "mad": 6.18, "p10": 6.18, "p90": 19.424},
+    "candidate_minus_parent": {"median": -0.28, "mean": -0.642581, "stdev": 8.167674, "min": -17.02, "max": 14.06, "mad": 7.07, "p10": -10.904, "p90": 11.21}
+  },
+  "pooled_wall_us": {
+    "parent": {"median": 62.461, "mean": 66.666403, "stdev": 18.327991, "cv": 0.274921, "min": 57.851, "max": 164.562, "mad": 1.905, "p10": 59.707, "p90": 69.034},
+    "candidate": {"median": 63.1355, "mean": 64.176935, "stdev": 5.771271, "cv": 0.089929, "min": 53.991, "max": 81.841, "mad": 2.73, "p10": 59.4051, "p90": 72.19}
+  },
+  "pooled_throughput_gelem_s": {
+    "parent": {"median": 1.048913, "mean": 1.526759, "stdev": 0.76772, "cv": 0.502843, "min": 0.628703, "max": 2.758249, "mad": 0.192602, "p10": 0.850415, "p90": 2.607266},
+    "candidate": {"median": 1.230761, "mean": 1.65364, "stdev": 0.801393, "cv": 0.484623, "min": 0.507874, "max": 2.805479, "mad": 0.503059, "p10": 0.843519, "p90": 2.651133}
+  },
+  "blocks": [
+    {"pairs": 31, "parent_device_median_us": 14.78, "candidate_device_median_us": 14.16, "paired_delta_median_us": -0.16, "paired_score_percent": 1.082544, "parent_device_cv": 0.478351, "candidate_device_cv": 0.536686, "parent_device_range_us": [5.96, 26.06], "candidate_device_range_us": [5.84, 32.26], "parent_wall_median_mean_us": [64.231, 67.785419], "candidate_wall_median_mean_us": [63.961, 65.845323], "parent_throughput_median_mean_gelem_s": [1.108525, 1.666818], "candidate_throughput_median_mean_gelem_s": [1.157062, 1.629917]},
+    {"pairs": 31, "parent_device_median_us": 16.0, "candidate_device_median_us": 12.4, "paired_delta_median_us": -0.8, "paired_score_percent": 5.0, "parent_device_cv": 0.362361, "candidate_device_cv": 0.456362, "parent_device_range_us": [5.94, 22.98], "candidate_device_range_us": [5.96, 20.16], "parent_wall_median_mean_us": [61.371, 65.547387], "candidate_wall_median_mean_us": [60.731, 62.508548], "parent_throughput_median_mean_gelem_s": [1.024, 1.386699], "candidate_throughput_median_mean_gelem_s": [1.32129, 1.677363]}
+  ],
+  "same_binary_qualification": {
+    "parent_samples": 31,
+    "parent_first_second_device_medians_us": [13.48, 16.76],
+    "parent_first_second_device_cv": [0.52515, 0.53259],
+    "parent_median_drift_fraction": 0.216931,
+    "candidate_samples": 31,
+    "candidate_first_second_device_medians_us": [15.4, 15.48],
+    "candidate_first_second_device_cv": [0.58653, 0.48635],
+    "candidate_median_drift_fraction": 0.005181,
+    "logs": ["logs/qualification-parent-v059-device3.log", "logs/qualification-candidate-v059-device3.log"]
+  },
+  "device_load": {
+    "pre_correctness_snapshot": "logs/device3-postcompile-precorrectness-snapshot.log",
+    "pre_qualification_snapshot": "logs/device3-postcorrectness-prequalification-snapshot.log",
+    "pre_local_snapshot": "logs/device3-prelocal-snapshot.log",
+    "between_blocks_snapshot": "logs/device3-between-local-blocks-snapshot.log",
+    "post_capture_and_release_snapshot": "logs/device3-postcapture-release.log",
+    "device_3_hbm_mb_used_total": [3428, 65536],
+    "device_3_free_hbm_mb": 62108,
+    "device_3_aicore_percent": 0,
+    "device_3_processes": "No running processes found in NPU 3 at captured snapshots.",
+    "host_load_average_1_5_15": [[61.88, 62.60, 61.26], [58.74, 63.49, 61.84], [53.83, 60.89, 61.10], [49.67, 56.33, 59.32]],
+    "other_processes": "Other NPU/host activity is visible in retained snapshots and was left untouched."
+  },
+  "quality_assessment": {
+    "verdict": "LOCAL_REJECTED_NOISY",
+    "reasons": [
+      "The two block paired-median scores are positive but differ in magnitude (+1.082544% and +5.000000%).",
+      "The pooled paired-median estimate is +1.792574%, while ratio-of-independent-medians is +16.916168% and the pooled paired geometric mean is +7.502902%.",
+      "Pooled device-event CV is 41.90% Parent and 49.89% Candidate; the paired-delta range is -17.02 to +14.06 us around a -0.28 us median.",
+      "Parent same-binary qualification median drift is 21.6931%; the host load averages were high throughout capture."
+    ],
+    "current_local_best": "R31B-V011",
+    "official": "NONE",
+    "online_candidate": "NO",
+    "score_interpretation": "Numeric route-local single-shape result only; no Official comparison or promotion is made."
+  },
+  "raw_samples": [
+    "logs/local-interleaved-v059-block1-device3.log",
+    "logs/local-interleaved-v059-block2-device3.log"
+  ],
+  "raw_sample_integrity": "62 LOCAL_SAMPLE records retained; every logged paired_delta_us was verified as candidate_device_us minus parent_device_us within displayed precision; no sample removed."
+}
