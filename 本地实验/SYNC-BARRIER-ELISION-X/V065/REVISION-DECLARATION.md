@@ -1,0 +1,21 @@
+# SYNC-BARRIER-ELISION-X V065
+
+- ROUTE: `SYNC-BARRIER-ELISION-X`
+- REVISION: `V065`
+- DIRECT_PARENT: exact `R31B-V011`
+- PARENT_SOURCE_SHA256: `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`
+- CANDIDATE_SOURCE_SHA256: `7bd83702d84f8cfbaf6aa2fb2ebf909c3d9959b06f91b94a0d89adbfe4839f34`.
+- SINGLE_HYPOTHESIS: test whether the vector-pipeline handoff between per-row FP16 gamma multiplication and bias addition is required in the small-contiguous batched fallback.
+- SINGLE_CHANGE_BOUNDARY: delete only the `PIPE_V` barrier between `Mul(outputRow, outputRow, gammaLocal, width)` and `Add(outputRow, outputRow, biasLocal, width)` in the `width > kFp16RepeatMaxWidth` branch of `ProcessSmallLowPrecisionContiguousBatched`. Preserve the Mul, Add, following barrier, all other synchronization, and all other paths.
+- DUPLICATION_AUDIT: no exact match in this Route's V001-V064 declarations or available diff patches. V002/V015/V043 target other functions/branches; V057 targets the separate `ApplyFp16GammaBiasBatch` helper. See `RULE_REFRESH_RECEIPT.md` for the bounded audit.
+- FOCUS_AXIS: FP16 batched fallback gamma-to-bias vector dependency.
+- FOCUS_VALUE: one `PIPE_V` barrier between row-wise gamma Mul and bias Add when width exceeds 192.
+- CASE: FP16 `128x256`, selected to exercise this fallback site.
+- CURRENT_LOCAL_BEST: exact `R31B-V011`; no rejected Candidate is inherited.
+- DEVICE: device 3 was assigned to V065 Correctness/Local; pre-run snapshot had 5% HBM use, 0% AICore, and no device process. Assignment explicitly released at `2026-10-08T15:36:43.762995519Z` after the post-capture snapshot.
+- COMPILE: PASS for both targets; see `logs/compile-v065.log`.
+- CORRECTNESS: PASS, 8/8 FP16 cases bitwise identical, runner exit 0. The runner printed stale `cases=7` in its summary despite eight PASS records; see `logs/correctness-v065.log`.
+- SAME-BINARY QUALIFICATION: Parent and Candidate each completed 31 samples; high jitter retained as diagnostic evidence.
+- LOCAL: 62 interleaved Parent/Candidate pairs across two 31-pair blocks. Paired-median score `-0.306905%`; pooled median-latency score `-2.557545%`; block disagreement and high jitter. `LOCAL_REJECTED_NOISY`.
+- CURRENT_LOCAL_BEST: remains exact `R31B-V011`; V065 is not promoted.
+- OFFICIAL / ONLINE: none; `NOT_SUBMITTED`.
