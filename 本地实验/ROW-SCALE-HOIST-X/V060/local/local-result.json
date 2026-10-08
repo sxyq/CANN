@@ -1,0 +1,123 @@
+{
+  "route": "ROW-SCALE-HOIST-X",
+  "revision": "V060",
+  "stage": "LOCAL",
+  "direct_parent": "V026",
+  "current_local_best": "V026",
+  "shape": [128, 256],
+  "dtype": "fp16",
+  "dispatch": "ProcessSmallLowPrecisionContiguousBatched_FP16 wide subcase",
+  "device": {
+    "id": 3,
+    "soc": "Ascend910B3",
+    "hbm_total_mb": 65536,
+    "hbm_used_mb_before": 9133,
+    "hbm_used_mb_after": 9135,
+    "free_hbm_mb_before": 56403,
+    "free_hbm_mb_after": 56401,
+    "aicore_pct_before": 5,
+    "aicore_pct_after": 14,
+    "other_process_present": true,
+    "external_process": "python PID 2055830, 5756 MB, left untouched",
+    "before_snapshot": "local/device-snapshot-before-local.log",
+    "after_snapshot": "local/device-snapshot-after-local.log"
+  },
+  "protocol": {
+    "warmups_per_invocation": 45,
+    "samples_per_invocation": 32,
+    "parent_stability_invocations": 1,
+    "paired_blocks": 4,
+    "invocations_per_arm": 4,
+    "successful_invocations": 9,
+    "timing": "device event",
+    "sampling": "interleaved Parent/Candidate blocks",
+    "raw_samples_preserved": true
+  },
+  "source_sha256": {
+    "parent": "7c2569d9e3830c845f2b5dc4587a73a05a0bdf041168614cd55ad84204e063f9",
+    "candidate": "144e93799f98ee8595c52c7bbbae1323ab46a4139c89f2712f22253ef18c2df8"
+  },
+  "score": {
+    "local_score": 103.0031612223,
+    "local_delta_pct": -2.9156010230,
+    "formula": "100 * pooled Parent median us / pooled Candidate median us",
+    "parent_pooled_median_us": 19.55,
+    "candidate_pooled_median_us": 18.98,
+    "parent_pooled_mean_us": 21.2782812031,
+    "candidate_pooled_mean_us": 19.9748437734,
+    "parent_median_throughput_elements_per_s": 1676112531.969,
+    "candidate_median_throughput_elements_per_s": 1726448893.572,
+    "throughput_delta_pct": 2.9156010230,
+    "local_score_type": "descriptive median speed index",
+    "local_score_comparable_to_official": false
+  },
+  "pooled_statistics": {
+    "parent": {
+      "sample_count": 128,
+      "median_us": 19.55,
+      "mean_us": 21.2782812031,
+      "stdev_us": 15.6122949791,
+      "cv": 0.7337197413,
+      "min_us": 7.06,
+      "max_us": 138.0,
+      "mad_us": 8.10,
+      "p10_us": 7.5,
+      "p90_us": 33.879997
+    },
+    "candidate": {
+      "sample_count": 128,
+      "median_us": 18.98,
+      "mean_us": 19.9748437734,
+      "stdev_us": 16.5231191256,
+      "cv": 0.8271964133,
+      "min_us": 6.68,
+      "max_us": 150.699997,
+      "mad_us": 5.41,
+      "p10_us": 7.4,
+      "p90_us": 27.32
+    },
+    "parent_stability": {
+      "sample_count": 32,
+      "median_us": 19.5700005,
+      "mean_us": 21.60812525,
+      "stdev_us": 8.5008747712,
+      "cv": 0.3934110282,
+      "min_us": 7.66,
+      "max_us": 51.720001
+    }
+  },
+  "paired_blocks": [
+    {"block": 1, "parent_median_us": 21.3600005, "candidate_median_us": 19.3800005, "candidate_delta_pct": -9.2696627044, "parent_log": "local/parent-block1.log", "candidate_log": "local/candidate-block1.log"},
+    {"block": 2, "parent_median_us": 10.78, "candidate_median_us": 16.9300005, "candidate_delta_pct": 57.0500974026, "parent_log": "local/parent-block2.log", "candidate_log": "local/candidate-block2.log"},
+    {"block": 3, "parent_median_us": 23.0500005, "candidate_median_us": 20.1800005, "candidate_delta_pct": -12.4511927885, "parent_log": "local/parent-block3.log", "candidate_log": "local/candidate-block3.log"},
+    {"block": 4, "parent_median_us": 15.74, "candidate_median_us": 12.4699995, "candidate_delta_pct": -20.7750984752, "parent_log": "local/parent-block4.log", "candidate_log": "local/candidate-block4.log"}
+  ],
+  "paired_direction": "3/4 candidate-faster",
+  "quality_verdict": "MEASUREMENT_BLOCKED",
+  "quality_reasons": [
+    "Paired block medians are mixed despite a 3/4 favorable direction.",
+    "Concurrent external Python process remained on device 3; no process was disturbed.",
+    "Raw timing outliers and all successful invocations are retained."
+  ],
+  "promotion": "NOT_PROMOTED; numeric result is descriptive only; Local Best remains V026",
+  "raw_timing_files": [
+    "local/parent-stability.log",
+    "local/parent-block1.log",
+    "local/candidate-block1.log",
+    "local/parent-block2.log",
+    "local/candidate-block2.log",
+    "local/parent-block3.log",
+    "local/candidate-block3.log",
+    "local/parent-block4.log",
+    "local/candidate-block4.log"
+  ],
+  "timestamps": {
+    "correctness_start_utc": "2026-10-08T17:58:39Z",
+    "local_start_utc": "2026-10-08T18:00:45Z",
+    "local_last_invocation_utc": "2026-10-08T18:01:25Z",
+    "compile_timestamp": "NOT_CAPTURED_IN_PRIOR_RECEIPT",
+    "next_edit_timestamp": "NOT_CAPTURED_IN_PRIOR_RECEIPT",
+    "sla": "NOT_ASSESSED_FROM_PRIOR_RECEIPT"
+  }
+}
+

@@ -1,0 +1,38 @@
+--- 本地实验/ROW-SCALE-HOIST-X/V026/submission.asc	2026-10-06 21:15:17.803774521 +0000
++++ 本地实验/ROW-SCALE-HOIST-X/V060/submission.asc	2026-10-08 17:56:20.042692481 +0000
+@@ -1763,22 +1763,27 @@
+ 
+             if constexpr (std::is_same<T, half>::value) {
+                 AscendC::LocalTensor<T> outputLocal = outputBuf_.Get<T>();
+-                for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
+-                    const uint64_t valueOffset = static_cast<uint64_t>(batchRow) * rowWidth;
+-                    AscendC::LocalTensor<float> valueRow = valueLocal[valueOffset];
+-                    AscendC::Muls(valueRow, valueRow, invRmsValues[batchRow], width);
+-                    AscendC::PipeBarrier<PIPE_V>();
+-                }
+-                FromFloat(outputLocal, valueLocal, totalElems);
+-                AscendC::PipeBarrier<PIPE_V>();
+                 if (width <= kFp16RepeatMaxWidth) {
++                    for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
++                        const uint64_t valueOffset = static_cast<uint64_t>(batchRow) * rowWidth;
++                        AscendC::LocalTensor<float> valueRow = valueLocal[valueOffset];
++                        AscendC::Muls(valueRow, valueRow, invRmsValues[batchRow], width);
++                        AscendC::PipeBarrier<PIPE_V>();
++                    }
++                    FromFloat(outputLocal, valueLocal, totalElems);
++                    AscendC::PipeBarrier<PIPE_V>();
+                     ApplyFp16GammaBiasBatch(outputLocal, gammaLocal, biasLocal, width, batchRows);
+                 } else {
++                    FromFloat(outputLocal, valueLocal, totalElems);
++                    AscendC::PipeBarrier<PIPE_V>();
+                     for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
+                         const uint64_t valueOffset = static_cast<uint64_t>(batchRow) * rowWidth;
+                         AscendC::LocalTensor<T> outputRow = outputLocal[valueOffset];
+                         AscendC::Mul(outputRow, outputRow, gammaLocal, width);
+                         AscendC::PipeBarrier<PIPE_V>();
++                        AscendC::Muls(outputRow, outputRow,
++                                      half(invRmsValues[batchRow]), width);
++                        AscendC::PipeBarrier<PIPE_V>();
+                         AscendC::Add(outputRow, outputRow, biasLocal, width);
+                         AscendC::PipeBarrier<PIPE_V>();
+                     }
