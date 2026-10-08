@@ -1,0 +1,64 @@
+{
+  "route": "SYNC-BARRIER-ELISION-X",
+  "revision": "V054",
+  "parent": "R31B-V011",
+  "status": "LOCAL_REJECTED_NOISY",
+  "device": 3,
+  "shape": "128x128",
+  "dtype": "fp16",
+  "warmup_per_binary": 60,
+  "qualification_pairs_per_binary_per_run": 31,
+  "qualification_runs_per_binary": 2,
+  "interleaved_pairs": 62,
+  "primary_score_formula": "100 * (median(Parent device_us) / median(Candidate device_us) - 1); positive means Candidate lower latency",
+  "primary_score_percent": 28.320527,
+  "candidate_over_parent_median_latency_ratio": 0.779299,
+  "pooled": {
+    "parent_device_us": {"median": 11.69, "mean": 16.035484, "stdev": 10.508087, "cv": 0.655302, "min": 5.96, "max": 44.16, "mad": 5.37, "p10": 6.33, "p90": 31.022},
+    "candidate_device_us": {"median": 9.11, "mean": 14.004839, "stdev": 8.220408, "cv": 0.586969, "min": 6.28, "max": 34.08, "mad": 2.58, "p10": 6.56, "p90": 26.016},
+    "paired_candidate_minus_parent_us": {"median": -0.56, "mean": -2.030645, "stdev": 12.512695, "min": -36.1, "max": 19.76, "p10": -19.516, "p90": 15.76},
+    "parent_wall_us": {"median": 72.896, "mean": 77.316935, "stdev": 11.39595, "cv": 0.147393, "min": 67.431, "max": 125.632, "mad": 3.685, "p10": 68.984, "p90": 85.263},
+    "candidate_wall_us": {"median": 72.481, "mean": 75.149565, "stdev": 9.872951, "cv": 0.131378, "min": 58.781, "max": 113.162, "mad": 4.185, "p10": 67.707, "p90": 84.135},
+    "parent_throughput_gelem_s": {"median": 1.40159, "mean": 1.495864, "stdev": 0.817395, "cv": 0.546436, "min": 0.371014, "max": 2.748993, "mad": 0.78565, "p10": 0.528148, "p90": 2.588367},
+    "candidate_throughput_gelem_s": {"median": 1.798465, "mean": 1.568343, "stdev": 0.731287, "cv": 0.46628, "min": 0.480751, "max": 2.608917, "mad": 0.679892, "p10": 0.629766, "p90": 2.497561}
+  },
+  "score_reconciliation": {
+    "ratio_of_means_score_percent": 14.499597,
+    "runner_style_score_formula": "-100 * median(Candidate device_us - Parent device_us) / median(Parent device_us)",
+    "runner_style_score_percent": 4.790419,
+    "candidate_faster_pairs": 36,
+    "total_pairs": 62,
+    "block1": {"parent_median_us": 6.84, "candidate_median_us": 9.1, "parent_mean_us": 11.721935, "candidate_mean_us": 12.641935, "ratio_of_medians_score_percent": -24.835165, "ratio_of_means_score_percent": -7.277367, "median_paired_delta_us": 0.2, "runner_style_score_percent": -2.923977, "candidate_faster_pairs": 13},
+    "block2": {"parent_median_us": 19.1, "candidate_median_us": 9.12, "parent_mean_us": 20.349032, "candidate_mean_us": 15.367742, "ratio_of_medians_score_percent": 109.429825, "ratio_of_means_score_percent": 32.413938, "median_paired_delta_us": -1.84, "runner_style_score_percent": 9.633508, "candidate_faster_pairs": 23},
+    "interpretation": "Block medians reverse sharply and all pooled device-event CVs exceed 0.58; pooled ratio-of-medians, ratio-of-means, and paired-delta scores differ materially. Preserve numeric score, reject as noisy, and do not promote."
+  },
+  "qualification": {
+    "parent_run1": {"first_median_us": 15.2, "second_median_us": 10.14, "first_mad_over_median": 0.386842, "second_mad_over_median": 0.153846, "median_drift_fraction": 0.399369},
+    "parent_run2": {"first_median_us": 15.94, "second_median_us": 18.38, "first_mad_over_median": 0.348808, "second_mad_over_median": 0.177367, "median_drift_fraction": 0.142191},
+    "candidate_run1": {"first_median_us": 11.56, "second_median_us": 10.58, "first_mad_over_median": 0.365052, "second_mad_over_median": 0.334594, "median_drift_fraction": 0.088528},
+    "candidate_run2": {"first_median_us": 20.72, "second_median_us": 20.48, "first_mad_over_median": 0.072394, "second_mad_over_median": 0.091797, "median_drift_fraction": 0.01165}
+  },
+  "load_context": {
+    "host": "hwnput3",
+    "pre_use_snapshot": "logs/device3-preuse-snapshot-v054-20261008.log",
+    "pre_local_snapshot": "logs/device3-prelocal-snapshot-v054-20261008.log",
+    "pre_interleaved_snapshot": "logs/device3-preinterleaved-snapshot-v054-20261008.log",
+    "between_blocks_snapshot": "logs/device3-between-local-blocks-v054-20261008.log",
+    "post_capture_snapshot": "logs/device3-postcapture-snapshot-v054-20261008.log",
+    "device3_pre_local": "7215 MB HBM, 7% AICore, Python PID 281978 using 3841 MB",
+    "device3_post_capture": "7215 MB HBM, 0% AICore, Python PID 281978 using 3841 MB; process left untouched",
+    "no_clean_load_wait_or_sample_filtering": true
+  },
+  "raw_logs": [
+    "logs/qualification-parent-v054-20261008.log",
+    "logs/qualification-parent-v054-run2-20261008.log",
+    "logs/qualification-candidate-v054-20261008.log",
+    "logs/qualification-candidate-v054-run2-20261008.log",
+    "logs/local-interleaved-v054-block1-20261008.log",
+    "logs/local-interleaved-v054-block2-20261008.log",
+    "logs/local-score-reconciliation-v054-20261008.log"
+  ],
+  "local_best": "R31B-V011",
+  "official_comparability": "Single-shape Local is not comparable to Official score 45.16.",
+  "online": "NOT_SUBMITTED"
+}

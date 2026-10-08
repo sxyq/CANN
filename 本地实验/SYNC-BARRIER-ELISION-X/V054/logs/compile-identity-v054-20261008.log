@@ -1,0 +1,17 @@
+CANDIDATE_SOURCE=530d256eaac8b89a08e2fb94efe94710c14061be0469a94038bd83ba02276a26  本地实验/SYNC-BARRIER-ELISION-X/V054/submission.asc
+PARENT_SOURCE=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3  本地实验/SYNC-BARRIER-ELISION-X/V054/parent.asc
+CANDIDATE_EXECUTABLE=6b6d7df8a6b37b96248fa356e3723bd58960a1694e09b6c9efa1a3f538f2a958  /tmp/sync-barrier-elision-v054/sync_barrier_elision_v054
+CORRECTNESS_RUNNER=d1e3565603b913a5d2d96b99fd504cd1256678a986554b0f2b60689449f22208  /tmp/sync-barrier-elision-v054/sync_barrier_elision_correctness
+CANDIDATE_V054
+LOCAL_RESULT route=SYNC-BARRIER-ELISION-X revision=V054 device=%d shape=128x128 dtype=fp16 samples=%d parent_median_us=%.4f candidate_median_us=%.4f parent_median_gelem_s=%.6f candidate_median_gelem_s=%.6f local_delta_us=%.4f local_score_percent=%.6f candidate_minus_parent_percent=%.6f
+PARENT_R31B_V011
+--- a/parent.asc
++++ b/submission.asc
+@@ -687,7 +687,6 @@
+                 meanSquares[batchRow] =
+                     reduceLocal.GetValue(batchRow * kSmallFp32ScalarStride) * invRowWidth + epsilon;
+             }
+-            SyncSToV();
+             for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
+                 AscendC::LocalTensor<float> scalarSlot =
+                     reduceLocal[batchRow * kSmallFp32ScalarStride];
