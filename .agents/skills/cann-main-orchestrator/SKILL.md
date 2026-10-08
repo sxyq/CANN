@@ -46,7 +46,7 @@ Main 不决定 Route 生命周期，不正式提交 Online，不创建任何自�
 
 收到 `ROUTE_EVENT`、`VERSION_RECORD_EVENT`、`RULE_REFRESH_RECEIPT`、测量结果、Compile 结果、Correctness 结果或状态回复后，Main 必须判断 Child 是否空闲以及是否有可执行下一动作；有动作则立即发送下一 C2C 指令。同 Route 有动作时继续；当前任务完成或暂时无动作时，等待本 Agent 的原子命令结束，保存证据与事件，关闭旧 Agent后用空槽安排下一 Route。旧 Agent 不换 Route；Agent 关闭不改变 Route 生命周期。
 
-Online 当前为 `PAUSED`。Main 只能向 Planning / Review Layer 报告事实和建议，不能恢复 Online；Route Agent 不能正式提交 Online，只有 Planning 改变决策后由指定 Online Owner 提交。
+当前授权范围为 `ONLINE_AUTHORIZATION_SCOPE=W4_BEST_OF_ROUTE_VALIDATED_CANDIDATES_ONLY`：每条现有 W4 Route 最多提交一个符合全部资格的路线内最佳 Candidate，无需另等逐 Route Planning 批准。Main 可向 Online Owner 提供带来源的 Route 结果与资格材料，但不得正式提交；Route Agent 同样不得提交。每 Route 资格、源码/提交对应关系、Judge 规则与额度要求见 `项目规则/线上提交规范.md`。不得用不同 shape 的跨 Route Local 百分比排序，也不得在规则中预列具体合格 Route；不合格 Route 标为 `NO_ELIGIBLE_SUBMISSION`。授权范围外事项须另获明确授权。
 
 ## Route ownership
 
@@ -155,7 +155,7 @@ SEND VERSION_RECORD_EVENT TO RECORD OWNER
 
 R4 收到 `RESUME_BEFORE_V014` 的旧 `RULE_REFRESH_RECEIPT` 时，只把它当作回执生成时已读规则的证明。若 server3 不可达，保持 `BLOCKER=SERVER3_UNAVAILABLE`，不编辑 Candidate、不启动 V014、不虚构 Revision 或版本事件。连接恢复后，Route Agent 必须重新完整读取六项规则入口并发送新的 receipt；`CURRENT_PARENT=V013` 是工作快照，不强制 Direct Parent，正式 Parent 由 Route 按单因素规则选择并声明，`CURRENT_LOCAL_BEST=V009` 保留。
 
-每 Route 本轮新增性能版上限 10，连续 3 个有效 numeric Local 无改善报告 `STAGNATION_3`。研究、重复和旧结果恢复不新增性能版；无效测量及构建/精度失败不计入有效 Local 或连续无改善次数，真实失败版本仍须记录。达到上限或报告后完成安全交接，再安排 fresh context；不自行关闭 Route。Online 保持 `PAUSED`，本轮 `PUSH=NO`。
+每 Route 本轮新增性能版上限 10，连续 3 个有效 numeric Local 无改善报告 `STAGNATION_3`。研究、重复和旧结果恢复不新增性能版；无效测量及构建/精度失败不计入有效 Local 或连续无改善次数，真实失败版本仍须记录。达到上限或报告后完成安全交接，再安排 fresh context；不自行关闭 Route。W4 线上提交仅按当前授权范围及资格规则执行，本轮 `PUSH=NO`。
 
 ## 自主任务禁令
 

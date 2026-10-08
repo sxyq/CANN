@@ -37,22 +37,22 @@
 
 ## W4 DURABLE CONTROL
 
-`项目规则/W4持续探索控制契约.md` 是当前 W4 持续探索的强制执行入口。Main、Route、Record Owner 在控制重读、Child 恢复、路线切换、规则文件变化和主要 Git 状态重新核对后，按该文件及本文件、对应 Skill、实验总则、执行约定、服务器规范、本地性能规范重新读取并发送相应 receipt。每个 Route 任务结束当前安全闭环后关闭旧 Agent，确认关闭后用空槽开 fresh context 接手下一 Route，禁止同 Agent 换 Route。Record Owner 占 SLOT-3，全部 Child 合计最多 5 个；Main 不计入，Online 保持 `PAUSED`。本轮每 Route 新增性能版上限 10，连续 3 个有效 numeric Local 无改善报告 `STAGNATION_3`；研究、旧结果恢复和重复不新增性能版；无效测量及构建/精度失败不计入有效 Local 或连续无改善次数。
+`项目规则/W4持续探索控制契约.md` 是当前 W4 持续探索的强制执行入口。Main、Route、Record Owner 在控制重读、Child 恢复、路线切换、规则文件变化和主要 Git 状态重新核对后，按该文件及本文件、对应 Skill、实验总则、执行约定、服务器规范、本地性能规范重新读取并发送相应 receipt。每个 Route 任务结束当前安全闭环后关闭旧 Agent，确认关闭后用空槽开 fresh context 接手下一 Route，禁止同 Agent 换 Route。Record Owner 占 SLOT-3，全部 Child 合计最多 5 个；Main 不计入。当前线上授权范围为 `ONLINE_AUTHORIZATION_SCOPE=W4_BEST_OF_ROUTE_VALIDATED_CANDIDATES_ONLY`：每条现有 W4 Route 最多提交一个已验证的路线内最佳 Candidate；资格与提交限制见 `项目规则/线上提交规范.md`。本轮每 Route 新增性能版上限 10，连续 3 个有效 numeric Local 无改善报告 `STAGNATION_3`；研究、旧结果恢复和重复不新增性能版；无效测量及构建/精度失败不计入有效 Local 或连续无改善次数。
 
 ## 角色表
 
 | 角色 | 负责 | 不负责 |
 |---|---|---|
-| Planning / Review Layer | Route 生命周期、路线组合、是否 Online | — |
+| Planning / Review Layer | Route 生命周期、路线组合、当前授权范围之外的 Online 决策 | — |
 | Main | C2C 协调、Child 管理、状态汇总；本地只读 Git、源码和实验证据审计 | 写入任何文件；运行 Compile、Correctness、Local、NPU、Online 或身份计算 |
 | Route Agent | 一个 Route 的 Candidate、Compile、Correctness、Local、实验 Git | 其他 Route、共享记录、Route 生命周期、正式 Online |
 | Support Agent | 跨 Route 研究、群聊和公开资料取证、硬件/API 分析 | Candidate、Route ownership、共享记录、正式 Online |
 | Record Owner | SLOT-3；主工作树内获准的规则及四份共享记录 | Candidate、实验、Route ownership/决策、Dashboard、归档及其他工作树 |
-| Online Owner | Planning 批准后的唯一正式 Judge submitter | Candidate、Route 决策、共享成绩写入 |
+| Online Owner | 当前授权范围内唯一正式 Judge submitter，并核对提交资格 | Candidate、Route 决策、共享成绩写入 |
 
-Main 的项目状态来自 Child/Record/Online receipt、权威共享状态及获准的本地只读审计；Planning 指令规定授权，测量数字仍须真实结果支持。
+Main 的项目状态来自 Child/Record/Online receipt、权威共享状态及获准的本地只读审计；用户明确授权或 Planning 指令规定范围，测量数字仍须真实结果支持。
 
-Online 当前为 `PAUSED`；Main 与 Route Agent 不得擅自恢复，只有 Planning 改变决策后由指定 Online Owner 正式提交。
+当前用户已授权 `ONLINE_AUTHORIZATION_SCOPE=W4_BEST_OF_ROUTE_VALIDATED_CANDIDATES_ONLY`。在此范围内，每条现有 W4 Route 至多提交一个满足全部资格的路线内最佳 Candidate，无需另等逐 Route Planning 批准；不合格时标记 `NO_ELIGIBLE_SUBMISSION`。Main 与 Route Agent 不提交，指定 Online Owner 是唯一正式提交者。跨 Route、不同 shape 的 Local 百分比不得混排；具体合格 Route 只依据届时证据确认，不写入规则正文。范围外提交须先取得明确授权。
 
 Main 完整有效要求清单见 `项目规则/执行约定.md` 的“Main 完整刷新与复述”及相邻章节；W4 路线控制细则以 `项目规则/W4持续探索控制契约.md` 为强制补充。Main 在规则指定的触发点读取全部适用入口；摘要、context compaction、模型切换或新指令不能解除未完成授权和边界，新指令只按明确范围替换旧要求。
 
