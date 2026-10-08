@@ -1,0 +1,41 @@
+{
+  "route": "ROW-SCALE-HOIST-X",
+  "revision": "V052",
+  "stage": "CORRECTNESS",
+  "status": "PASS",
+  "device": 0,
+  "shape": [128, 128],
+  "dtype": "bf16",
+  "launch_blocks": 40,
+  "local_rows_per_block": [3, 4],
+  "dispatch": "ProcessSmallLowPrecisionContiguousBatched",
+  "narrow_subcase": "width <= kFp32RepeatMaxWidth (192)",
+  "resident_params": true,
+  "candidate_source_delta_executed": true,
+  "tolerance": {
+    "atol": 0.015625,
+    "rtol": 0.015625,
+    "max_abs_error_limit": 1.0,
+    "required_matched_ratio": 0.99
+  },
+  "parent": {
+    "exit_code": 0,
+    "status": "PASS",
+    "matched_ratio": 1.0,
+    "max_abs_error": 0.00390625
+  },
+  "candidate": {
+    "exit_code": 0,
+    "status": "PASS",
+    "matched_ratio": 1.0,
+    "max_abs_error": 0.00390625
+  },
+  "snapshot": "device-snapshot-before-correctness.log",
+  "free_hbm_before_mb": 60724,
+  "runner_build_identity": "correctness-build-identity.txt",
+  "runner_logs": {
+    "parent": "correctness-parent.log",
+    "candidate": "correctness-candidate.log",
+    "invocation": "correctness-invocation.txt"
+  }
+}
