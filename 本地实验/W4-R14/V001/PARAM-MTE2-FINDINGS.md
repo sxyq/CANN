@@ -1,5 +1,189 @@
 # W4-R14 Parent 参数 MTE2 指纹
 
+## 2026-10-08 续接：kernel-task 与设备事件逐调用对应
+
+本次限定研究已完成。`SIGNAL_ABOVE_NOISE=NO_PROXY_BELOW_FLOOR`，
+`STATUS=MEASUREMENT_BLOCKED`；未编辑 Candidate，未创建 V002。
+当前参数 DMA 节省估计仍低于本路线实测噪声，不能声明性能提升。
+
+复用 `fcbd1814764337b89bc3b9fb6950d37241feab5a` 的 Parent runner、现有二进制、
+504 个 P/P 原始样本与两组参数 profile。内核和 host runner 均未改动、未重建。
+新增 shell 仅在同一次应用进程外启用 task-based profiler；新增 Python 只读取采集结果。
+原始命令、stdout/stderr、设备状态、全部 profiler 原始数据及导出表均保留。
+
+### 指标与直接结论
+
+以下时间单位均为 us。参数计数及时间代理沿用前次 device 0 证据；
+kernel-task、设备事件与噪声来自本次 device 3，不能把旧代理写成本次参数实测值。
+
+| 字段 | 80x8192 FP32 | 120x6144 FP32 |
+|---|---:|---:|
+| PARAM_MTE2_COMMAND_COUNT，源码归因，每核 / launch | 4 / 160 | 4 / 160 |
+| PARAM_MTE2_TIME_OR_PROXY，旧字节占比代理 | 1.223342600 | 0.961718744 |
+| 参数专属实测时间 | UNKNOWN | UNKNOWN |
+| TOTAL_KERNEL_TIME，本次 84 次 timed 中位数 | 8.320000 | 9.430000 |
+| P1 / P2 kernel-task 中位数 | 8.320000 / 8.320000 | 8.940000 / 9.940000 |
+| EXPECTED_SAVING，旧乐观代理 | 0.611671300 | 0.480859372 |
+| 实测 Candidate 节省 | NONE | NONE |
+| MEASUREMENT_FLOOR，kernel-task | 8.028400 | 17.442000 |
+| MEASUREMENT_FLOOR，设备事件 | 15.020000 | 13.298000 |
+| 设备事件中位数 | 27.890000 | 27.050001 |
+| 逐调用 event 减 kernel 中位数 | 17.310000 | 15.869999 |
+| SIGNAL_ABOVE_NOISE | NO_PROXY_BELOW_FLOOR | NO_PROXY_BELOW_FLOOR |
+
+旧节省代理仅为本次 kernel-task 噪声幅度的 7.62% / 2.76%。它按参数字节占全部
+GM-to-UB 字节的比例分配旧 MTE2 活跃时间，再乘命令数减半的比例；实际字节量不变，
+参数 issue/wait 与流水重叠尚未分离。该代理既非已测收益，也非严格上界。
+
+80x8192 的 kernel-task MAD/median 为 1.3221%，block 中位数漂移 0.7212%，
+通过既有的这两项中心稳定性条件；但完整配对分布仍给出 8.0284 us 的绝对噪声。
+120x6144 的 MAD/median 为 8.3563%，block 漂移为 12.3012%，后一项超过 10%。
+两组设备事件的 MAD/median 分别为 14.2345% / 10.6839%。所有尾部样本均参与统计。
+
+长尾确实包含在 kernel-task 内。例如 80x8192 的 block 1、pair 13、P1 为
+`stream=6, task=387`，kernel 为 170.064 us，设备事件为 174.740001559 us。
+120x6144 的 block 1、pair 20、P1 为 `stream=9, task=463`，分别为
+43.400 us 与 55.619999766 us。现有证据没有说明这些长尾的内核内部原因，
+不能全部归因于 host 发射间隔，也不能将其删除后重新宣布低噪声。
+
+### 有限采集声明与对应验证
+
+采集前已在对话中声明：device 3，先 80x8192，再 120x6144；每组只运行一次进程，
+主指标 kernel-task，保留设备事件、wall 时间、event 减 kernel 和前后事件区间。
+每组固定 1 correctness、45 warmup、2 个 block、每 block 21 对 P/P，共 130 次调用。
+P1/P2 为同一二进制、同一份输入、同一 stream，次序沿用 `(block + pair) % 2`。
+没有按结果方向重跑，也没有增加或删除测量点。
+
+```text
+MEASUREMENT_FLOOR = max(p90(abs(P2-P1)), range(block medians))
+CORRECTNESS_CALL = ordinal 1
+WARMUP_CALLS = ordinal 2..46
+TIMED_CALLS = ordinal 47..130
+```
+
+两次应用 PID 分别为 4055608 / 4057074，来源为各自 profiler 的 `host/info.json`。
+`op_summary` 和 `task_time` 按 device、stream、task 编号逐项对应；全部 260 次
+kernel 的开始时间和持续时间一致。单 stream 时间顺序结合原 runner 的固定次序，
+把每次调用标为 correctness、warmup 或 timed。
+
+全部 168 个 timed 调用均找到紧邻的两个 `EVENT_RECORD`，并满足
+`start event <= kernel start <= kernel stop <= stop event`。
+两个事件时间戳之差与 ACL elapsed time 的最大差异分别为
+0.024000875 / 0.024000857 us；差值原样保留，未要求两个计时接口逐位相等。
+对应程序首次执行通过，全部原始样本保留在 `profile.log`，原表提取为 `event.raw.tsv`。
+每组 `all-calls.tsv` 保存全部 130 次调用和 84 次事件对应关系。
+
+方法来源为 R11 `4243f4e9` 的调用序列对应，以及 R12 `a018f702`、R10 `1441fc72`
+的 task 编号与前后事件对应方法。只复用方法，未移用这些 Route 的测量资格。
+本次使用 `--task-time=on --aic-mode=task-based --ai-core=off --ascendcl=on
+--runtime-api=on --aicpu=off`，没有重采前次 MTE2 计数或地址资料。
+
+### 精度与资源
+
+80x8192 / 120x6144 的原 Parent 对 CPU FP64 reference 均为 0 个超差元素，
+最大绝对误差分别为 `7.6549910899e-7` / `6.98246055642e-7`。
+输入种子仍为 322351 / 320303；容差仍为 `2e-5 + 1e-4 * abs(reference)`。
+没有修改输入生成、reference、epsilon、分派、核数或计算次序。
+两组各自在本次进程中先通过 reference，再预热和计时。
+
+前次 1x32768 FP32 的 26234 个超差元素及最大绝对误差 1.87199266423 继续保留；
+本次未执行该失败输入。R13 `a10cf2a1` 只证明其 1x9216 / 1x10240 的 tile>0
+参数复用时序诊断结果，未覆盖本 Route 的 1x32768 或多批；未将其变化叠加到 Parent。
+本次两个尺寸为 Local 代理，没有推断 Official 输入或分数。
+
+实际设备为 `hwnput3` 的 device 3，物理与可用 Vector core 数均为 40，blockCount=40。
+两组前后 FREE_HBM 均为 58327 MB；开测 load1 为 68.01 / 63.09，结束为
+63.09 / 59.31。开测 AICore 使用率为 1% / 7%，AIVector 均为 4%。
+已有 PID 3836347 的 python 任务仍驻留，设备内存为 3906 MB；未对其执行任何操作。
+完整前后状态在本次结果目录内，负载只用于解释采样。
+
+### 范围、历史核对与实际文件
+
+本次开始 HEAD 为 `fcbd1814764337b89bc3b9fb6950d37241feab5a`，分支与工作树保持
+`w4/r14-param-dma-granularity-x`、
+`/Users/sunyiyang/Desktop/Project/cann/worktrees/w4/R14-param-dma-granularity-x`。
+最新共享提交 `4959725e` 已登记本次 SLOT-4、device 3 接手，
+`agent_id=01a11a12-4527-71a3-97d4-69dc9720e841`；本次新结果尚待 Record 同步。
+工作树 AGENTS 与 Route Skill 已读；另从自己的 Git 对象完整读取 `9f918955` 的
+AGENTS、Route Skill、W4 控制文件、实验总则、执行约定、服务器规范、本地性能规范、
+Git 工作流程和资源脚本，并在任何写入前发送 `RULE_REFRESH_RECEIPT`。
+缺少工作树性能 Skill 时，完整读取已安装的同名 Skill 与 msprof 使用说明。
+
+```text
+DUPLICATE_AUDIT
+MECHANISM=unchanged Parent per-call kernel-task/event timing attribution
+SEARCHED_HISTORY=复用 fcbd1814 对 R14、R31/R31A/R31B、MIX、STORE/EPILOGUE、
+  W4 相关历史的既有审计；本轮核对 W3 R2 V040/6321ad44、R4 V031/ce6c6dc5、
+  R5 V028/1efa0863 端点，追加 R11/4243f4e9、R12/a018f702、R10/1441fc72、R13/a10cf2a1
+MATCH_FOUND=跨 Route 已有 task/event 对应方法；本 Route 原先只有分离采集的统计
+WHY_NEW_OR_DUPLICATE=首次为这两个 R14 输入取得同次进程的逐调用对应；不重复参数计数，
+  不重新实施已有性能机制，不增加性能版本
+```
+
+本轮实际修改本文件；新增 `parent-probe/collect_task_time.sh`、
+`parent-probe/analyze_task_time.py` 与 `parent-probe/task-time-20261008/`。
+后者保留分析 JSON、全部调用表、原始事件表、原始 profiler 数据、导出表与负载记录。
+原 7 个未跟踪 support 文件、Parent、旧 504 个样本和两个旧 profile 均保持原样，
+旧 support 不暂存。共享 TSV、规则、Dashboard、其他工作树和服务均未修改。
+
+远端只新增 R14 原专用目录下的 `parent-probe/collect_task_time.sh` 与
+`parent-probe/task-time-20261008/`，未使用 R04 目录：
+
+```text
+/home/data4t2/lelinfeng/server_runs/W4-R14/param-mte2-fingerprint-20261008/parent-probe/
+```
+
+采集、传输和分析均已结束。远端 `final-state.txt` 在 06:00:36 UTC 记录
+runner 查询返回 1、`RUNNING_DEVICE_OPERATION=NONE`。没有创建定时或后台循环。
+
+### 研究事件与下一动作
+
+```text
+ROUTE_RESEARCH_EVENT
+EVENT_ID=W4-R14-KERNEL-TASK-20261008
+PARENT_EVENT_ID=W4-R14-PARAM-MTE2-20261008
+ROUTE=W4-R14
+REVISION=NONE
+SOURCE_DIRECTORY_LABEL=V001_RESEARCH
+DIRECT_PARENT=R31B V011
+AGENT_ID=01a11a12-4527-71a3-97d4-69dc9720e841
+SLOT=4
+SINGLE_CHANGE=NONE; Parent-only observation
+COMPILE=REUSED_PASS; fcbd1814 existing Parent executable
+CORRECTNESS=PASS_2_OF_2_THIS_CAPTURE; PREVIOUS_1x32768_FAILURE_RETAINED
+LOCAL_SCORE=NONE
+LOCAL_DELTA=NONE
+CURRENT_LOCAL_BEST=NONE
+NEW_PERFORMANCE_REVISIONS=0
+VALID_LOCAL=0
+STAGNATION_3_CONTRIBUTION=0
+VERSION_RECORD_EVENT=NONE; no performance revision
+OFFICIAL_SCORE=NONE
+ONLINE_STATE=PAUSED
+PUSH=NO
+STATUS=MEASUREMENT_BLOCKED
+SIGNAL_ABOVE_NOISE=NO_PROXY_BELOW_FLOOR
+RUNNING_DEVICE_OPERATION=NONE
+GIT_COMMIT=see final receipt for this document's commit
+BRANCH=w4/r14-param-dma-granularity-x
+```
+
+下一研究动作：先核实当前 DAV-2201 SDK 的 kernel cycle 计时能力，能否对原 Parent
+`ProcessFp32FullRowOutputPipelined` 的参数预载段（原 1130–1131 行）及 generic
+预载段（原 254–255 行）记录 issue 到参数就绪的时间；须明确计时插入本身的影响，
+并与输入 MTE2 分开。来源为现有 Parent、对应 `SyncMTE2ToV` 调用与 SDK 计时 API。
+现有就绪等待还覆盖随后发出的输入搬运，不能把该等待区间直接归为参数专属时间。
+该能力尚未验证，本轮没有实施插入式诊断。没有新的分段计时依据时，继续保留参数
+专属时间 UNKNOWN，不无变化重跑这两组 P/P，也不据旧代理开性能版。
+
+同张量连续片段 4→2 仍是未完成的独立性能轴；FP16 预载粒度与参数搬运指令形式
+仍未测。它们没有因本次研究被判为耗尽。后续安排和槽位释放交 Main/Planning，
+本 Agent 不接手第二条 Route。本次新事件待 Record 同步。
+
+---
+
+## 前次记录：fcbd1814，原文保留
+
 2026-10-08。完成本次占槽的主要研究结论；未创建 Candidate，未创建 V002。
 
 ## 结论
