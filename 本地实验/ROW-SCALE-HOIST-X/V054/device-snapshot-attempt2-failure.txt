@@ -1,0 +1,5 @@
+Attempt 2 did not query or use device 0.
+
+The wrapper read `runners-build-dir-retry.txt` as if it contained `BUILD_DIR=<path>`, but the file contains the raw directory path. This left `runner_build_dir` empty and the executable hash checks attempted `/v054_correctness_parent`, `/v054_correctness_candidate`, `/v054_local_parent`, and `/v054_local_candidate`.
+Exact output: `sha256sum: /v054_correctness_parent: No such file or directory` (and the same error for the other three names).
+Exit code: 1. The successful runner build and its executable hashes remain preserved; no device query/call occurred.
