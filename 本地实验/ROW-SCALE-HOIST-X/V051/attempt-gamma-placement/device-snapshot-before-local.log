@@ -1,0 +1,88 @@
+SNAPSHOT_UTC=2026-10-08T05:36:59Z
+
+=== host ===
+hwnput3
+
+=== all NPU HBM and process snapshot ===
++------------------------------------------------------------------------------------------------+
+| npu-smi 25.0.rc1.1               Version: 25.0.rc1.1                                           |
++---------------------------+---------------+----------------------------------------------------+
+| NPU   Name                | Health        | Power(W)    Temp(C)           Hugepages-Usage(page)|
+| Chip                      | Bus-Id        | AICore(%)   Memory-Usage(MB)  HBM-Usage(MB)        |
++===========================+===============+====================================================+
+| 0     910B3               | OK            | 152.6       32                0    / 0             |
+| 0                         | 0000:C1:00.0  | 22          0    / 0          12367/ 65536         |
++===========================+===============+====================================================+
+| 1     910B3               | OK            | 105.3       31                0    / 0             |
+| 0                         | 0000:C2:00.0  | 4           0    / 0          14878/ 65536         |
++===========================+===============+====================================================+
+| 2     910B3               | OK            | 99.6        32                0    / 0             |
+| 0                         | 0000:81:00.0  | 1           0    / 0          6434 / 65536         |
++===========================+===============+====================================================+
+| 3     910B3               | OK            | 131.0       33                0    / 0             |
+| 0                         | 0000:82:00.0  | 11          0    / 0          9131 / 65536         |
++===========================+===============+====================================================+
+| 4     910B3               | OK            | 206.7       58                0    / 0             |
+| 0                         | 0000:01:00.0  | 61          0    / 0          59193/ 65536         |
++===========================+===============+====================================================+
+| 5     910B3               | OK            | 166.7       50                0    / 0             |
+| 0                         | 0000:02:00.0  | 43          0    / 0          60222/ 65536         |
++===========================+===============+====================================================+
+| 6     910B3               | OK            | 170.5       48                0    / 0             |
+| 0                         | 0000:41:00.0  | 43          0    / 0          60222/ 65536         |
++===========================+===============+====================================================+
+| 7     910B3               | OK            | 160.1       40                0    / 0             |
+| 0                         | 0000:42:00.0  | 12          0    / 0          28832/ 65536         |
++===========================+===============+====================================================+
++---------------------------+---------------+----------------------------------------------------+
+| NPU     Chip              | Process id    | Process name             | Process memory(MB)      |
++===========================+===============+====================================================+
+| 0       0                 | 3167028       | python                   | 8988                    |
++===========================+===============+====================================================+
+| 1       0                 | 3150467       | python                   | 5748                    |
+| 1       0                 | 3639580       | python                   | 5751                    |
++===========================+===============+====================================================+
+| 2       0                 | 2532306       | python                   | 3064                    |
++===========================+===============+====================================================+
+| 3       0                 | 2532307       | python                   | 5758                    |
++===========================+===============+====================================================+
+| 4       0                 | 2999855       | VLLMEngineCor            | 55666                   |
++===========================+===============+====================================================+
+| 5       0                 | 89602         | VLLMWorker_TP            | 56700                   |
++===========================+===============+====================================================+
+| 6       0                 | 91228         | VLLMWorker_TP            | 56701                   |
++===========================+===============+====================================================+
+| 7       0                 | 439848        | python3                  | 21260                   |
+| 7       0                 | 2532308       | python                   | 4094                    |
++===========================+===============+====================================================+
+
+=== device 0 detailed usages ===
+	NPU ID                         : 0
+	Chip Count                     : 1
+
+	DDR Capacity(MB)               : 0
+	DDR Usage Rate(%)              : 0
+	DDR Hugepages Total(page)      : 0
+	DDR Hugepages Usage Rate(%)    : 0
+	HBM Capacity(MB)               : 65536
+	HBM Usage Rate(%)              : 18
+	Aicore Usage Rate(%)           : 0
+	Aivector Usage Rate(%)         : 2
+	Aicpu Usage Rate(%)            : 0
+	Ctrlcpu Usage Rate(%)          : 4
+	DDR Bandwidth Usage Rate(%)    : 0
+	HBM Bandwidth Usage Rate(%)    : 1
+	Chip ID                        : 0
+
+
+=== host load ===
+ 05:37:01 up 242 days, 17:13, 33 users,  load average: 66.64, 67.90, 63.41
+
+=== V051 runner process snapshot ===
+3815644 lelinfe+ bash            /bin/bash -lc set -eo pipefail attempt='本地实验/ROW-SCALE-HOIST-X/V051/attempt-gamma-placement' runners_build="$(sed -n 's/^BUILD_DIR=//p' "$attempt/runners-build-dir-retry.txt")" parent_sha='7c2569d9e3830c845f2b5dc4587a73a05a0bdf041168614cd55ad84204e063f9' candidate_sha='5aad6db8fb2be25d65cd39c42c6a5ce72b75fd6e485b4495905c0c1d46f25bba' rg -F '"status":"PASS"' "$attempt/correctness-parent.log" >/dev/null rg -F '"status":"PASS"' "$attempt/correctness-candidate.log" >/dev/null test "$(sha256sum "$attempt/compile/src/submission.asc" | cut -d ' ' -f1)" = "$candidate_sha" cmp '本地实验/ROW-SCALE-HOIST-X/V051/submission.asc' "$attempt/compile/src/submission.asc" test "$(sha256sum "$runners_build/v051_local_parent" | cut -d ' ' -f1)" = '285c94d6d17871d9e424301d4a70fc7c136aac179c0efa504e410c5fd3576bd8' test "$(sha256sum "$runners_build/v051_local_candidate" | cut -d ' ' -f1)" = '4ee792dcbfa355075e065eb2be3df2a7b53694464ca62d3d0851b4f7ddaecdb0' strings "$runners_build/v051_local_parent" | rg -F "$parent_sha" >/dev/null strings "$runners_build/v051_local_candidate" | rg -F "$candidate_sha" >/dev/null for block in 1 2 3 4; do for arm in parent candidate; do ! test -e "$attempt/local-${arm}-block${block}.log"; done; done ! test -e "$attempt/device-snapshot-before-local.log" export LD_LIBRARY_PATH="${LD_LIBRARY_PATH:-}" export PYTHONPATH="${PYTHONPATH:-}" source /usr/local/Ascend/ascend-toolkit/set_env.sh snapshot="$attempt/device-snapshot-before-local.log" {   date -u '+SNAPSHOT_UTC=%Y-%m-%dT%H:%M:%SZ'   printf '\n=== host ===\n'   hostname -f   printf '\n=== all NPU HBM and process snapshot ===\n'   npu-smi info   printf '\n=== device 0 detailed usages ===\n'   npu-smi info -t usages -i 0   printf '\n=== host load ===\n'   uptime   printf '\n=== V051 runner process snapshot ===\n'   ps -eo pid,user,comm,args | rg -i 'v051|row.scale.hoist|cann-row-scale' || true } 2>&1 | tee "$snapshot" read -r hbm_used hbm_total < <(awk '/0000:C1:00.0/ {line=$0; sub(/^.*0000:C1:00.0[[:space:]]*\|[[:space:]]*/, "", line); gsub(/\|/, "", line); if (match(line, /[0-9]+[[:space:]]*\/[[:space:]]*[0-9]+[[:space:]]*$/)) {pair=substr(line, RSTART, RLENGTH); split(pair, a, "/"); gsub(/[[:space:]]/, "", a[1]); gsub(/[[:space:]]/, "", a[2]); print a[1], a[2]; exit}}' "$snapshot") test -n "$hbm_used" && test -n "$hbm_total" free_hbm=$((hbm_total - hbm_used)) printf 'DEVICE_0_HBM_USED_MB=%s\nDEVICE_0_HBM_TOTAL_MB=%s\nDEVICE_0_FREE_HBM_MB=%s\n' "$hbm_used" "$hbm_total" "$free_hbm" | tee -a "$snapshot" test "$free_hbm" -ge 100 run_failed=0 set +e for block in 1 2 3 4; do   for arm in parent candidate; do     exe="$runners_build/v051_local_${arm}"     log="$attempt/local-${arm}-block${block}.log"     printf 'LOCAL_START block=%s arm=%s utc=%s exe_sha256=%s\n' "$block" "$arm" "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" "$(sha256sum "$exe" | cut -d ' ' -f1)"     "$exe" > "$log" 2>&1     rc=$?     printf 'LOCAL_END block=%s arm=%s exit=%s utc=%s log=%s\n' "$block" "$arm" "$rc" "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" "$log"     if [ "$rc" -ne 0 ]; then run_failed=1; break 2; fi   done done set -e printf 'LOCAL_RUN_FAILED=%s\n' "$run_failed" for block in 1 2 3 4; do   for arm in parent candidate; do     log="$attempt/local-${arm}-block${block}.log"     if test -f "$log"; then printf '\n===== %s =====\n' "$log"; cat "$log"; fi   done done exit "$run_failed"
+3815695 lelinfe+ bash            /bin/bash -lc set -eo pipefail attempt='本地实验/ROW-SCALE-HOIST-X/V051/attempt-gamma-placement' runners_build="$(sed -n 's/^BUILD_DIR=//p' "$attempt/runners-build-dir-retry.txt")" parent_sha='7c2569d9e3830c845f2b5dc4587a73a05a0bdf041168614cd55ad84204e063f9' candidate_sha='5aad6db8fb2be25d65cd39c42c6a5ce72b75fd6e485b4495905c0c1d46f25bba' rg -F '"status":"PASS"' "$attempt/correctness-parent.log" >/dev/null rg -F '"status":"PASS"' "$attempt/correctness-candidate.log" >/dev/null test "$(sha256sum "$attempt/compile/src/submission.asc" | cut -d ' ' -f1)" = "$candidate_sha" cmp '本地实验/ROW-SCALE-HOIST-X/V051/submission.asc' "$attempt/compile/src/submission.asc" test "$(sha256sum "$runners_build/v051_local_parent" | cut -d ' ' -f1)" = '285c94d6d17871d9e424301d4a70fc7c136aac179c0efa504e410c5fd3576bd8' test "$(sha256sum "$runners_build/v051_local_candidate" | cut -d ' ' -f1)" = '4ee792dcbfa355075e065eb2be3df2a7b53694464ca62d3d0851b4f7ddaecdb0' strings "$runners_build/v051_local_parent" | rg -F "$parent_sha" >/dev/null strings "$runners_build/v051_local_candidate" | rg -F "$candidate_sha" >/dev/null for block in 1 2 3 4; do for arm in parent candidate; do ! test -e "$attempt/local-${arm}-block${block}.log"; done; done ! test -e "$attempt/device-snapshot-before-local.log" export LD_LIBRARY_PATH="${LD_LIBRARY_PATH:-}" export PYTHONPATH="${PYTHONPATH:-}" source /usr/local/Ascend/ascend-toolkit/set_env.sh snapshot="$attempt/device-snapshot-before-local.log" {   date -u '+SNAPSHOT_UTC=%Y-%m-%dT%H:%M:%SZ'   printf '\n=== host ===\n'   hostname -f   printf '\n=== all NPU HBM and process snapshot ===\n'   npu-smi info   printf '\n=== device 0 detailed usages ===\n'   npu-smi info -t usages -i 0   printf '\n=== host load ===\n'   uptime   printf '\n=== V051 runner process snapshot ===\n'   ps -eo pid,user,comm,args | rg -i 'v051|row.scale.hoist|cann-row-scale' || true } 2>&1 | tee "$snapshot" read -r hbm_used hbm_total < <(awk '/0000:C1:00.0/ {line=$0; sub(/^.*0000:C1:00.0[[:space:]]*\|[[:space:]]*/, "", line); gsub(/\|/, "", line); if (match(line, /[0-9]+[[:space:]]*\/[[:space:]]*[0-9]+[[:space:]]*$/)) {pair=substr(line, RSTART, RLENGTH); split(pair, a, "/"); gsub(/[[:space:]]/, "", a[1]); gsub(/[[:space:]]/, "", a[2]); print a[1], a[2]; exit}}' "$snapshot") test -n "$hbm_used" && test -n "$hbm_total" free_hbm=$((hbm_total - hbm_used)) printf 'DEVICE_0_HBM_USED_MB=%s\nDEVICE_0_HBM_TOTAL_MB=%s\nDEVICE_0_FREE_HBM_MB=%s\n' "$hbm_used" "$hbm_total" "$free_hbm" | tee -a "$snapshot" test "$free_hbm" -ge 100 run_failed=0 set +e for block in 1 2 3 4; do   for arm in parent candidate; do     exe="$runners_build/v051_local_${arm}"     log="$attempt/local-${arm}-block${block}.log"     printf 'LOCAL_START block=%s arm=%s utc=%s exe_sha256=%s\n' "$block" "$arm" "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" "$(sha256sum "$exe" | cut -d ' ' -f1)"     "$exe" > "$log" 2>&1     rc=$?     printf 'LOCAL_END block=%s arm=%s exit=%s utc=%s log=%s\n' "$block" "$arm" "$rc" "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" "$log"     if [ "$rc" -ne 0 ]; then run_failed=1; break 2; fi   done done set -e printf 'LOCAL_RUN_FAILED=%s\n' "$run_failed" for block in 1 2 3 4; do   for arm in parent candidate; do     log="$attempt/local-${arm}-block${block}.log"     if test -f "$log"; then printf '\n===== %s =====\n' "$log"; cat "$log"; fi   done done exit "$run_failed"
+3815696 lelinfe+ tee             tee 本地实验/ROW-SCALE-HOIST-X/V051/attempt-gamma-placement/device-snapshot-before-local.log
+3816382 lelinfe+ rg              rg -i v051|row.scale.hoist|cann-row-scale
+DEVICE_0_HBM_USED_MB=12367
+DEVICE_0_HBM_TOTAL_MB=65536
+DEVICE_0_FREE_HBM_MB=53169

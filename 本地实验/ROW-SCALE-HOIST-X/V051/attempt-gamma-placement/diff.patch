@@ -1,0 +1,29 @@
+--- parent_submission.asc
++++ submission.asc
+@@ -1652,7 +1651,0 @@
+-            for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
+-                AscendC::LocalTensor<float> valueRow =
+-                    valueLocal[static_cast<uint64_t>(batchRow) * rowWidth];
+-                AscendC::Muls(valueRow, valueRow, invRmsValues[batchRow],
+-                              static_cast<int32_t>(rowWidth));
+-                AscendC::PipeBarrier<PIPE_V>();
+-            }
+@@ -1660,2 +1653,12 @@
+-                ApplyFp32GammaBiasBatch(valueLocal, gammaLocal, biasLocal,
+-                                        static_cast<int32_t>(rowWidth), batchRows);
++                const int32_t width = static_cast<int32_t>(rowWidth);
++                for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
++                    const uint64_t rowOffset = static_cast<uint64_t>(batchRow) * rowWidth;
++                    AscendC::LocalTensor<float> valueRow = valueLocal[rowOffset];
++                    AscendC::LocalTensor<float> gammaRow = xLocal[rowOffset];
++                    AscendC::Muls(gammaRow, gammaLocal, invRmsValues[batchRow], width);
++                    AscendC::PipeBarrier<PIPE_V>();
++                    AscendC::Mul(valueRow, valueRow, gammaRow, width);
++                    AscendC::PipeBarrier<PIPE_V>();
++                    AscendC::Add(valueRow, valueRow, biasLocal, width);
++                    AscendC::PipeBarrier<PIPE_V>();
++                }
+@@ -1665,0 +1669,3 @@
++                    AscendC::Muls(valueRow, valueRow, invRmsValues[batchRow],
++                                  static_cast<int32_t>(rowWidth));
++                    AscendC::PipeBarrier<PIPE_V>();
