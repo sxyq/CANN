@@ -1,0 +1,56 @@
+{
+  "route": "SYNC-BARRIER-ELISION-X",
+  "revision": "V058",
+  "direct_parent": "R31B-V011",
+  "parent_source_sha256": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "candidate_source_sha256": "2af2676bd1d076403e1bad7c4e8bcfaa7fdf5f20da1440e61d89ea5a2dadd72d",
+  "single_change": "Delete only the PIPE_V barrier immediately after batched FP16 bias Add in ApplyFp16GammaBiasBatch.",
+  "compile": "PASS; logs/compile-v058-configure-retry-env.log; logs/compile-v058-build-retry-env.log",
+  "correctness": "PASS; 7/7 FP16 bitwise cases, zero mismatches; logs/correctness-v058-device3-20261008T061925Z.log",
+  "shape": "fp16-128x128",
+  "method": "Device-event latency primary, wall latency diagnostic, 60 warmups per invocation, two alternating 31-pair blocks, 62 total; no samples filtered.",
+  "sample_count": 62,
+  "score_formula": "-100 * median(candidate_device_us - parent_device_us) / median(parent_device_us)",
+  "local_score_percent": 4.654011,
+  "paired_delta_candidate_minus_parent_us": {
+    "median": -0.76,
+    "mean": -2.699355,
+    "stdev": 12.139665,
+    "min": -51.06,
+    "max": 29.68
+  },
+  "parent_device_us": {"median": 16.33, "mean": 16.331290, "stdev": 9.501345, "cv": 0.581788, "min": 7.38, "max": 59.0, "p10": 7.924, "p90": 26.408},
+  "candidate_device_us": {"median": 8.58, "mean": 13.631935, "stdev": 8.475369, "cv": 0.621729, "min": 6.76, "max": 51.54, "p10": 7.62, "p90": 21.666},
+  "alternate_ratio_of_independent_medians_percent": 47.458665,
+  "ratio_of_means_percent": 16.528730,
+  "blocks": [
+    {"name": "block1", "pairs": 31, "parent_median_us": 19.16, "candidate_median_us": 8.26, "paired_delta_median_us": -0.98, "paired_score_percent": 5.114823, "ratio_of_medians_percent": 56.889353, "parent_cv": 0.600065, "candidate_cv": 0.680076},
+    {"name": "block2", "pairs": 31, "parent_median_us": 9.0, "candidate_median_us": 8.62, "paired_delta_median_us": -0.48, "paired_score_percent": 5.333333, "ratio_of_medians_percent": 4.222222, "parent_cv": 0.490782, "candidate_cv": 0.506115}
+  ],
+  "same_binary_qualification": {
+    "parent_pairs": 31,
+    "parent_first_cv": 0.44774,
+    "parent_second_cv": 0.80930,
+    "parent_median_drift_fraction": 0.486719,
+    "candidate_pairs": 31,
+    "candidate_first_cv": 0.47932,
+    "candidate_second_cv": 0.40198,
+    "candidate_median_drift_fraction": 0.031485
+  },
+  "device": 3,
+  "pre_npu_hbm_used_mb": 7284,
+  "post_capture_hbm_used_mb": 7289,
+  "hbm_total_mb": 65536,
+  "load_process_context": "PID 3836347 python, about 3908-3914 MB; not disturbed. AICore 0% before Local and between blocks, 4% post-capture.",
+  "device_assignment_release_utc": "2026-10-08T07:03:12Z",
+  "verdict": "LOCAL_REJECTED_NOISY",
+  "local_best": "R31B-V011",
+  "official": "NONE",
+  "online": "NOT_SUBMITTED",
+  "evidence": {
+    "local_block1": "logs/local-block1-v058-device3-20261008T062605Z.log",
+    "local_block2": "logs/local-block2-v058-device3-20261008T062848Z.log",
+    "parent_qualification": "logs/same-binary-parent-v058-device3-20261008T062100Z.log",
+    "candidate_qualification": "logs/same-binary-candidate-v058-device3-20261008T062232Z.log"
+  }
+}

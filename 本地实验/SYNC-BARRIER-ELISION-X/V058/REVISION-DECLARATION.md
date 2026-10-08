@@ -1,0 +1,22 @@
+# SYNC-BARRIER-ELISION-X V058
+
+- ROUTE: `SYNC-BARRIER-ELISION-X`
+- REVISION: `V058`
+- DIRECT_PARENT: `R31B-V011`
+- PARENT_SOURCE_SHA256: `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`
+- SINGLE_HYPOTHESIS: In `ApplyFp16GammaBiasBatch`, remove only the `PIPE_V` barrier immediately after the batched FP16 bias `Add(outputLocal[col], outputLocal[col], biasLocal[col], ...)`.
+- SINGLE_CHANGE_BOUNDARY: Delete this one post-Add vector-pipeline barrier only. Preserve the batched Mul, the barrier between Mul and Add, and every other operation/barrier/event.
+- DUPLICATION_AUDIT: All 57 Route-local Parent/Candidate pairs were compared; none deletes the exact post-bias-Add barrier in `ApplyFp16GammaBiasBatch`. See `RULE_REFRESH_RECEIPT.md`.
+- FOCUS_AXIS: FP16 batched epilogue post-bias vector-pipeline synchronization.
+- FOCUS_VALUE: Remove the barrier after batched bias Add and before advancing the batch epilogue loop.
+- COMPILE_TARGET: `sync_barrier_elision_v058`
+- CORRECTNESS_CASES: Seven FP16 Parent/Candidate bitwise cases.
+- LOCAL_CASE: FP16 `128x128`, device-event timing, same-binary qualification, then two 31-pair interleaved Parent/Candidate blocks; retain every sample, throughput, wall latency, jitter, and load snapshot.
+- CURRENT_LOCAL_BEST: `R31B-V011`
+- OFFICIAL / ONLINE: none; `NOT_SUBMITTED`.
+- COMPILE: PASS; target `sync_barrier_elision_v058`, toolkit setup retry then CMake configure/build PASS; logs under `logs/compile-v058-*-retry-env.log`. Candidate executable SHA256 `68d57871ed0ed9e3e41450dbba77bea9a6400a434f8e4736249a4d4a3b2de74c`.
+- CORRECTNESS: PASS; 7/7 FP16 Parent/Candidate bitwise cases, zero mismatches; `logs/correctness-v058-device3-20261008T061925Z.log`.
+- LOCAL: 62 raw interleaved device-event pairs, two completed 31-pair blocks. Paired-median-delta score `+4.654011%` (`median(C-P)=-0.7600 us`); `LOCAL_REJECTED_NOISY`. Full reconciliation in `RESULT.md`.
+- CURRENT_LOCAL_BEST: `R31B-V011` (unchanged).
+- DEVICE_RELEASE: device 3 explicitly released after post-capture snapshot at `2026-10-08T07:03:12Z`; see `logs/device3-release-20261008T070312Z.log`.
+- STAGE: Result captured and ready for scoped commit; no new Revision has been started.

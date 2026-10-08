@@ -1,0 +1,18 @@
+# RULE_REFRESH_RECEIPT — SYNC-BARRIER-ELISION-X V058
+
+- Date: 2026-10-08 UTC; refreshed after V057 commit `d7997212` and before the V058 Candidate performance edit.
+- Owner/context: same sole SYNC-BARRIER-ELISION-X Route owner/context; no replacement Owner or duplicate writer.
+- Worktree: `/home/data4t2/lelinfeng/cann-route-w4-3-sync-barrier-elision`.
+- Branch: `exp/w4-compile-sweep/r-w4-3-sync-barrier-elision-x`.
+- HEAD before V058: `d7997212`, V057 `LOCAL_REJECTED_NOISY`; exact `R31B-V011` remains Local Best.
+- V057 closeout: Correctness PASS 7/7 bitwise FP16 cases; 62 Local pairs; pooled ratio-of-medians `+10.164512%`, but high same-binary drift/jitter; rejected-noisy and not promoted. Device 3 was explicitly released after V057 capture.
+- Read current instructions: `AGENTS.md`; `.agents/skills/cann-mainline/SKILL.md`; `.agents/skills/cann-route-executor/SKILL.md`; `项目规则/实验总则.md`; `项目规则/执行约定.md`; `项目规则/本地性能测试规范.md`; `项目规则/服务器实验规范.md`; `项目规则/Git工作流程.md`; `项目规则/线上提交规范.md`.
+- Read Route-local context: V057 `RULE_REFRESH_RECEIPT.md`, `REVISION-DECLARATION.md`, `RESULT.md`, `source-meta.json`, build configuration and measurement runner; V011 declaration/metadata and exact baseline source. No shared files or other Route worktrees were read or modified for this audit.
+- Duplication audit: mechanically compared all 57 available Route-local `parent.asc`/`submission.asc` pairs using read-only `diff -U6` inspection. No Candidate deletes the `PIPE_V` barrier immediately after `Add(outputLocal[col], outputLocal[col], biasLocal[col], valid, ...)` in `ApplyFp16GammaBiasBatch`. Prior nearby edits are distinct: V001/V017 are generic-path post-epilogue barriers; V043 is generic cached Mul-to-Add; V057 is the batched Mul-to-Add barrier before bias Add. The V058 target is the separate post-bias-Add barrier before the batch loop advances.
+- Baseline: V058 `parent.asc` and unedited `submission.asc` are copied from V011 `parent.asc`, exact R31B-V011 SHA256 `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`; no rejected Candidate is inherited.
+- Single factor: delete only the `PIPE_V` barrier immediately after the batched FP16 bias `Add` in `ApplyFp16GammaBiasBatch`. Preserve the Add, preceding Mul-to-Add barrier, every other barrier/event, and all other source behavior.
+- Exercised path: FP16 `128x128` satisfies the small-low-precision contiguous batched dispatch; width 128 selects `ApplyFp16GammaBiasBatch` (`width <= kFp16RepeatMaxWidth`, 192). The post-Add barrier is reached once per batch/launch before the caller's `SyncVToMTE3` and output Store.
+- Required order: apply the single Candidate deletion, then Compile as the immediate next experimental action. After Compile PASS, take a fresh device-3 HBM/process snapshot before correctness/NPU work. Main assigned device 3 exclusively to V058 correctness and, only on PASS, same-binary qualification and interleaved Local through raw-result capture; proceed at FREE_HBM >=100 MB without disturbing processes. Retain all raw samples, latency, throughput, jitter, and load snapshots; explicitly release device 3 after capture.
+- Local method: FP16 `128x128`; same-binary qualification and two 31-pair interleaved device-event blocks; numeric route-local result is not comparable to Official `45.16`.
+- Scope: local host `hwnput3`, Ascend910B3 / `dav-2201`, CANN `8.5.0.alpha002`; no Online, shared ledger/dashboard/device-TSV writes, other-Route access, new branch/worktree, reset, clean, rebase, history rewrite, or push. Preserve all existing evidence.
+- Revision identifier: V058 did not exist before this scaffold; no revision number is reused.
