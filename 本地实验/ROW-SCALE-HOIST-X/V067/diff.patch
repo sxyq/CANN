@@ -1,0 +1,21 @@
+diff --git "a/\346\234\254\345\234\260\345\256\236\351\252\214/ROW-SCALE-HOIST-X/V026/submission.asc" "b/\346\234\254\345\234\260\345\256\236\351\252\214/ROW-SCALE-HOIST-X/V067/submission.asc"
+index 99c9143e..537cfa37 100644
+--- "a/\346\234\254\345\234\260\345\256\236\351\252\214/ROW-SCALE-HOIST-X/V026/submission.asc"
++++ "b/\346\234\254\345\234\260\345\256\236\351\252\214/ROW-SCALE-HOIST-X/V067/submission.asc"
+@@ -1454,13 +1454,13 @@ private:
+
+             for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
+                 AscendC::LocalTensor<float> valueRow = valueLocal[batchRow * rowWidth];
+-                AscendC::Muls(valueRow, valueRow, invRmsValues[batchRow],
+-                              static_cast<int32_t>(rowWidth));
+-                AscendC::PipeBarrier<PIPE_V>();
+                 AscendC::Mul(valueRow, valueRow, gammaLocal, static_cast<int32_t>(rowWidth));
+                 AscendC::PipeBarrier<PIPE_V>();
+                 AscendC::Add(valueRow, valueRow, biasLocal, static_cast<int32_t>(rowWidth));
+                 AscendC::PipeBarrier<PIPE_V>();
++                AscendC::Muls(valueRow, valueRow, invRmsValues[batchRow],
++                              static_cast<int32_t>(rowWidth));
++                AscendC::PipeBarrier<PIPE_V>();
+             }
+             SyncVToMTE3();
+             Store(outputGm_, batchBegin * rowWidth, valueLocal,
