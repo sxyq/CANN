@@ -1,0 +1,52 @@
+{
+  "route": "ROW-SCALE-HOIST-X",
+  "revision": "V047",
+  "direct_parent": "V026",
+  "stage": "CORRECTNESS",
+  "status": "PASS",
+  "device": 0,
+  "shape_dtype": {
+    "shape": [128, 2050],
+    "dtype": "fp16",
+    "vector_cores": 40,
+    "launch_blocks": 40,
+    "local_rows_min": 3,
+    "local_rows_max": 4,
+    "branch": "ProcessNarrowMidOverlap_FP16",
+    "resident_params": true
+  },
+  "parent": {
+    "status": "PASS",
+    "matched_ratio": 1.0,
+    "max_abs_error": 0.00390625,
+    "max_abs_error_limit": 0.100000001
+  },
+  "candidate": {
+    "status": "PASS",
+    "matched_ratio": 1.0,
+    "max_abs_error": 0.00390625,
+    "max_abs_error_limit": 0.100000001,
+    "candidate_source_delta_executed": true
+  },
+  "tolerance": {
+    "atol": 0.001953125,
+    "rtol": 0.001953125
+  },
+  "initial_launch_attempt": {
+    "parent_exit": 127,
+    "candidate_exit": 127,
+    "cause": "Missing LD_LIBRARY_PATH caused the dynamic loader to report libmsprofiler.so missing before program entry",
+    "outcomes": "No correctness kernel was entered; outputs preserved in initial runner logs"
+  },
+  "retry": {
+    "runtime_library_path": "/usr/local/Ascend/ascend-toolkit/latest/lib64:/usr/local/Ascend/driver/lib64/driver",
+    "parent_exit": 0,
+    "candidate_exit": 0,
+    "evidence": [
+      "correctness-parent-retry.log",
+      "correctness-candidate-retry.log",
+      "correctness-ldd.log"
+    ]
+  },
+  "compile_gate_snapshot": "device-snapshot-before-correctness.log"
+}

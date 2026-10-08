@@ -1,0 +1,111 @@
+{
+  "route": "ROW-SCALE-HOIST-X",
+  "revision": "V047",
+  "direct_parent": "V026",
+  "stage": "LOCAL_PAIRED_INTERLEAVED",
+  "run_id": "20261008T0159Z-0207Z",
+  "verdict": "MEASUREMENT_BLOCKED",
+  "measurement_quality": "HIGH_SAMPLE_VARIANCE_AND_PARENT_BLOCK_DRIFT",
+  "validity": "VALID_DISPATCH_EXECUTED_DESCRIPTIVE_ONLY",
+  "local_score": 113.2207396622,
+  "local_score_type": "descriptive single-shape route-local speedup index",
+  "local_score_formula": "100 * parent pooled median device_us / candidate pooled median device_us",
+  "local_score_comparable_to_official": false,
+  "local_delta_percent_candidate_vs_parent_positive_is_slower": -11.6769592759,
+  "sample_count_per_arm": 128,
+  "all_primary_window_samples_included": true,
+  "sample_exclusion": "NONE",
+  "shape_dtype": {
+    "dtype": "fp16",
+    "shape": [128, 2050],
+    "branch": "ProcessNarrowMidOverlap_FP16",
+    "resident_params": true,
+    "vector_cores": 40,
+    "launch_blocks": 40,
+    "local_rows_min": 3,
+    "local_rows_max": 4
+  },
+  "method": {
+    "device": 0,
+    "warmups_per_process": 20,
+    "samples_per_process": 32,
+    "timer": "ACL device events",
+    "block_order": [
+      "PARENT_BLOCK1",
+      "CANDIDATE_BLOCK1",
+      "CANDIDATE_BLOCK2",
+      "PARENT_BLOCK2",
+      "PARENT_BLOCK3",
+      "CANDIDATE_BLOCK3",
+      "PARENT_BLOCK4",
+      "CANDIDATE_BLOCK4"
+    ],
+    "runner_build_dir": "/tmp/cann-row-scale-hoist-x-v047-local.1fH882"
+  },
+  "parent": {
+    "n": 128,
+    "median_device_us": 19.440001,
+    "mean_device_us": 19.0918750937,
+    "sample_stdev_device_us": 6.2560002179,
+    "cv": 0.3276786689,
+    "mad_device_us": 3.3700015,
+    "p10_device_us": 9.3340003,
+    "p90_device_us": 27.5379993,
+    "min_device_us": 8.639999,
+    "max_device_us": 43.699997,
+    "block_medians_us": [16.2000005, 21.9900005, 18.59, 21.1],
+    "block_means_us": [16.0712500313, 22.3237500625, 17.0037502813, 20.96875]
+  },
+  "candidate": {
+    "n": 128,
+    "median_device_us": 17.17,
+    "mean_device_us": 16.5720311484,
+    "sample_stdev_device_us": 5.9327948351,
+    "cv": 0.3580004637,
+    "mad_device_us": 4.66,
+    "p10_device_us": 9.58,
+    "p90_device_us": 25.8400004,
+    "min_device_us": 8.72,
+    "max_device_us": 30.92,
+    "block_medians_us": [11.52, 17.379999, 17.08, 18.1499995],
+    "block_means_us": [16.3224999063, 16.62749975, 16.4637499375, 16.874375]
+  },
+  "paired_blocks": {
+    "candidate_vs_parent_delta_percent_positive_is_slower": [-28.8888910837, -20.964080924, -8.1226465842, -13.9810450237],
+    "candidate_faster_median_blocks": 4,
+    "candidate_slower_median_blocks": 0,
+    "parent_medians_us": [16.2000005, 21.9900005, 18.59, 21.1],
+    "candidate_medians_us": [11.52, 17.379999, 17.08, 18.1499995]
+  },
+  "interpretation": "Pooled medians descriptively favor Candidate by 11.6769592759%, and Candidate median is lower in all four paired blocks. However both arms have high sample CV (32.77% Parent, 35.80% Candidate), and Parent block medians vary from 16.20 to 21.99 us. Treat as MEASUREMENT_BLOCKED, not reliable acceptance/rejection or promotion.",
+  "device_load_before": {
+    "health": "OK",
+    "aicore_percent": 0,
+    "hbm_used_mb": 3432,
+    "hbm_capacity_mb": 65536,
+    "hbm_free_mb": 62104,
+    "npu0_processes": "none observed",
+    "evidence_log": "local-load-before.log"
+  },
+  "host_load_before": {
+    "load_average": "30.92, 39.57, 41.11",
+    "evidence_log": "local-load-before.log"
+  },
+  "device_load_after": {
+    "health": "OK",
+    "aicore_percent": 0,
+    "hbm_used_mb": 3432,
+    "hbm_capacity_mb": 65536,
+    "hbm_free_mb": 62104,
+    "npu0_processes": "none observed",
+    "evidence_log": "device-release.log"
+  },
+  "host_load_after": {
+    "load_average": "36.03, 42.46, 42.76",
+    "evidence_log": "device-release.log"
+  },
+  "device_release_receipt": "device-release.log",
+  "current_local_best": "V026",
+  "official_score": null,
+  "online": "NOT_RUN"
+}

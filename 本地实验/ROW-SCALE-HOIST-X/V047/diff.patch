@@ -1,0 +1,25 @@
+--- a/本地实验/ROW-SCALE-HOIST-X/V026/submission.asc
++++ b/本地实验/ROW-SCALE-HOIST-X/V047/submission.asc
+@@ -599,10 +599,18 @@ public:
+                 AscendC::LocalTensor<T> outputLocal = outputBuf_.Get<T>();
+                 FromFloat(outputLocal, valueLocal, valid);
+                 AscendC::PipeBarrier<PIPE_V>();
+-                AscendC::Mul(outputLocal, outputLocal, gammaLocal, valid);
+-                AscendC::PipeBarrier<PIPE_V>();
+-                AscendC::Muls(outputLocal, outputLocal, half(invRms), valid);
+-                AscendC::PipeBarrier<PIPE_V>();
++                if (residentParams) {
++                    AscendC::LocalTensor<half> scaledGammaLocal = xFp32Buf_.Get<half>();
++                    AscendC::Muls(scaledGammaLocal, gammaLocal, half(invRms), valid);
++                    AscendC::PipeBarrier<PIPE_V>();
++                    AscendC::Mul(outputLocal, outputLocal, scaledGammaLocal, valid);
++                    AscendC::PipeBarrier<PIPE_V>();
++                } else {
++                    AscendC::Mul(outputLocal, outputLocal, gammaLocal, valid);
++                    AscendC::PipeBarrier<PIPE_V>();
++                    AscendC::Muls(outputLocal, outputLocal, half(invRms), valid);
++                    AscendC::PipeBarrier<PIPE_V>();
++                }
+                 AscendC::Add(outputLocal, outputLocal, biasLocal, valid);
+                 AscendC::PipeBarrier<PIPE_V>();
+                 SyncVToMTE3();
