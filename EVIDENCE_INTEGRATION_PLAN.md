@@ -1,8 +1,8 @@
 # Evidence Integration Plan
 
-盘点基准：integration worktree 初始快照 `edcbaab4c506e05ed369830245e60aeb711ca714`；本次状态更新日期 2026-10-09。最新 Main 回执为 `e7f669692a2f5815c4ce444cfb52dde1d24a93a2`，相对 `origin/main=1ea9677ba8e7307a73f13041c7b639ab6a96425c` ahead 16 / behind 2；primary main 有 9 tracked dirty + 8 untracked，未暂存，保持原样。integration 先后合入 `566e...`、`1ea9677...`、最新 `e7f669...`；当前 HEAD=`6433b48cea810881530db6126fbefe5bddfe4914`。
+盘点基准：integration worktree 初始快照 `edcbaab4c506e05ed369830245e60aeb711ca714`；本次状态更新日期 2026-10-09。最新 Main 图回执为 `e7f669692a2f5815c4ce444cfb52dde1d24a93a2`，相对 `origin/main=1ea9677ba8e7307a73f13041c7b639ab6a96425c` ahead 16 / behind 2；最新只读 Main 状态回执确认 primary main 有 9 tracked dirty + 8 untracked，未暂存，精确路径列于 inventory，内容未读、未复制、未覆盖。integration 已合入 `566e...`、`1ea9677...`、`e7f669...`；报告更新前 HEAD=`e5c9d96abde4b6076a17814cdb610c3c64159394`。
 
-本轮报告更新后，只在 integration branch 依次合入 local `main` 与上述已核实 `origin/main`。不合入任何 Candidate，不运行 Compile、Correctness、Local、NPU 或 Online。A/B/C 是证据处置分类，不构成新的 Route 生命周期决定。主工作树 17 项 dirty 保持不动。
+integration branch 已合入 local `main` 至 `e7f669692a2f5815c4ce444cfb52dde1d24a93a2`，并合入已核实的 `origin/main=1ea9677ba8e7307a73f13041c7b639ab6a96425c`；三处 canonical 记录冲突已在 integration 内逐项保留双方差异，当前 `MERGE_HEAD` 不存在。后续只在出现新授权来源时再评估 merge。不合入任何 Candidate，不运行 Compile、Correctness、Local、NPU 或 Online。A/B/C 是证据处置分类，不构成新的 Route 生命周期决定。主工作树 17 项 dirty 保持不动。
 
 ## A 类：可纳入审阅的已提交证据
 
@@ -55,7 +55,7 @@ C 类保留原有位置，待来源人/Owner 通过正式回执确认来源、�
 | W4-R14 | HEAD `64bb1b04c02aee792179e6e75c9f4ffb655d49e1`、clean；旧 task ID `not_found`；current stage 和 `RUNNING_DEVICE_OPERATION` UNKNOWN | `ACTIVE_AGENT=UNKNOWN`、`RUNNING_COMMAND=UNKNOWN`、`SAFE_TO_RETIRE=NO`；Parent fingerprint evidence 待整合，不关闭 Route |
 | W4-R04 / W2 Selective | Main 已确认 Agent 关闭；R04 有 93 个新增 evidence 文件；Selective 有 correctness helper | 仅 Agent close 可记 YES；worktree retirement 仍 NO，等待 evidence disposition |
 | W2 Tiny | Agent 已关闭；detached remote task 仍 UNKNOWN；Parent codegen wrapper 已提交 | 保留 provenance UNKNOWN；不得据 Agent close 标成 worktree 可退役 |
-| Primary main | Main receipt 在 `82a45...` 有 9 tracked + 8 untracked 路径；后续 `566e...` 回执为 dirty 17。primary 未进入；当前逐路径状态不重新读取 | `MAIN_DIRTY_STATE_PRESERVED=YES`；Integration Owner 不改、不暂存、不合并 dirty 内容 |
+| Primary main | 最新只读 Main 状态回执确认 9 tracked + 8 untracked、合计 17、未暂存；精确路径见 inventory。最新可用图回执 HEAD=`e7f669...`、ahead 16 / behind 2；路径回执未提供新 HEAD。primary 未进入 | `MAIN_DIRTY_STATE_PRESERVED=YES`；不读取、复制、覆盖、暂存或合并 dirty 内容 |
 | External detached `/Users/sunyiyang/.codex/worktrees/f0e7/cann` | HEAD `8f9338f8d01230635e617ff037e5951bb77bf67f`；9 tracked + 8 untracked；owner/agent/command UNKNOWN | 保留注册和 dirty 项；`SAFE_TO_CLOSE=NO`、`SAFE_TO_RETIRE=NO` |
 
 ## Agent shutdown 与 Worktree retirement
@@ -141,7 +141,7 @@ origin merge 同时带入其正式提交内容；这些文件并非本轮手工�
 | W3 R5 / Crossrow Full Pipeline V012 | `1ea9677ba8e7307a73f13041c7b639ab6a96425c` | `线上结果/CROSSROW-FULL-PIPELINE-CHAMPION-X/V012/official-result.json`, `submit.stderr.log`, `submit.stdout.log` |
 | W3 R4 / Multirow Panel RMS V020 | `1ea9677ba8e7307a73f13041c7b639ab6a96425c` | `线上结果/MULTIROW-PANEL-RMS-CHAMPION-X/V020/official-result.json`, `submit.stderr.log`, `submit.stdout.log` |
 
-检查 merge 变更路径时没有发现 Candidate 源码或性能路径。主工作树 17 项 dirty 没有进入 integration。W4 的路径级 evidence copy 仍按用户要求暂停。
+对 merge 变更路径的核对未发现 Candidate 源码或性能路径。主工作树 17 项 dirty 没有进入 integration。Evidence-only 路径筛选授权有效；在本次两份报告更新提交后立即开始按 Route 分批整合 W4 已提交证据。
 
 ### Required incoming rule commit and authorization
 
@@ -156,11 +156,11 @@ MAIN_MERGE_BLOCKED=NO
 BLOCK_REASON=NONE_FOR_MERGE; three canonical paths were reconciled in integration. Evidence-only selection is now authorized; primary main remains dirty 9 tracked + 8 untracked and was not entered.
 INTEGRATION_OWNER_ONLINE_PERMISSION=NO
 SERVER3_TRANSIENT_PROCESS_UNATTRIBUTED=clx_ref_parent_; remote RUNNING_COMMAND globally UNKNOWN
-NEXT_ACTION=commit these two report updates, then select W4 committed evidence by route and source SHA; exclude Candidate production paths.
+NEXT_ACTION=commit these two report updates, then start W4 evidence-only integration in route batches; exclude Candidate production paths.
 ```
 
 两个 policy commit 已随 local main merge 进入 integration；primary main 的 17 项 dirty 未带入。六项资格全部满足前，Route 标记为 `NO_ELIGIBLE_SUBMISSION`，本 Integration Owner 不执行 Online。
 
 ### Evidence-selection status
 
-`PATH_LEVEL_EVIDENCE_COPY=AUTHORIZED_ACTIVE_AFTER_REPORT_COMMIT`。本轮先提交两份报告，再从 W4-R01 至 W4-R15 的已提交 Route commits 做 evidence-only selection，优先研究报告、result/日志/raw/profiler、正确性失败证据和必要的 Candidate SHA/source metadata。每条纳入路径记录原始 Route commit SHA、Route、Revision、Candidate SHA、Result 分类；完整 committed Candidate 快照只作可追溯历史证据，生产 kernel 路径和 Candidate 改动不进入当前生产树。W4-R02/R08/R09/R14 的 ACTIVE_AGENT、current stage 或 running operation 按来源保持 UNKNOWN，SAFE_TO_RETIRE=NO。Ignored evidence 也维持：R01 71 个 profiler 文件、W3 crossrow 531 个 Chromium profile 文件、M2 vector 78 个结果文件，均不因 clean 状态退役。W2/W3 独有 Candidate/证据另行列出，不做整批复制，`PUSH=NO`。
+`PATH_LEVEL_EVIDENCE_COPY=AUTHORIZED_ACTIVE_AFTER_REPORT_COMMIT`。当前 inventory/plan 更新已获准，提交这两份报告后立即从 W4-R01 至 W4-R15 的已提交 Route commits 做 evidence-only selection，优先研究报告、result/日志/raw/profiler、正确性失败证据和必要的 Candidate SHA/source metadata。每条纳入路径记录原始 Route commit SHA、Route、Revision、Candidate SHA、Result 分类；完整 committed Candidate 快照只作可追溯历史证据，生产 kernel 路径和 Candidate 改动不进入当前生产树。W4-R02/R08/R09/R14 的 ACTIVE_AGENT、current stage 或 running operation 按来源保持 UNKNOWN，SAFE_TO_RETIRE=NO。Ignored evidence 也维持：R01 71 个 profiler 文件、W3 crossrow 531 个 Chromium profile 文件、M2 vector 78 个结果文件，均不因 clean 状态退役。W2/W3 独有 Candidate/证据另行列出，不做整批复制，`PUSH=NO`。
