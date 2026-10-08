@@ -23,7 +23,7 @@ def wide_geometry(width):
     return 1, tile
 
 
-def analyze(prefix, rows, width):
+def analyze(prefix, rows, width, include_rows=False, reference_stream=None):
     data = Path(str(prefix) + "-output.bin").read_bytes()
     assert len(data) == rows * width * 4
     actual = struct.unpack("<" + "f" * (rows * width), data)
@@ -35,7 +35,10 @@ def analyze(prefix, rows, width):
                       "max_abs": 0.0, "max_abs_fp32_add_reference": 0.0,
                       "worst_examples": []} for name in ("full", "tail")}
     epsilon = f32(1.0e-5)
+    per_row = []
     for row in range(rows):
+        row_regions = {name: {"elements": 0, "bad": 0, "nonfinite": 0, "max_abs": 0.0}
+                       for name in regions} if include_rows else None
         values = []
         for j in range(width):
             i = row * width + j
@@ -46,19 +49,30 @@ def analyze(prefix, rows, width):
         rounded_inv = 1.0 / math.sqrt(math.fsum(f32(v) ** 2 for v in values) / width + epsilon)
         for j, value in enumerate(values):
             index = row * width + j
-            region = regions["tail" if tail and j >= width - tail else "full"]
+            region_name = "tail" if tail and j >= width - tail else "full"
+            region = regions[region_name]
             region["elements"] += 1
+            if include_rows:
+                row_regions[region_name]["elements"] += 1
             got = actual[index]
             if not math.isfinite(got):
                 region["nonfinite"] += 1
                 region["bad"] += 1
+                if include_rows:
+                    row_regions[region_name]["nonfinite"] += 1
+                    row_regions[region_name]["bad"] += 1
                 continue
             expected = value * inv * gamma[j] + bias[j]
+            if reference_stream is not None:
+                reference_stream.write(struct.pack("<d", expected))
             rounded_expected = f32(value) * rounded_inv * gamma[j] + bias[j]
             error = abs(got - expected)
             region["max_abs"] = max(region["max_abs"], error)
             region["max_abs_fp32_add_reference"] = max(region["max_abs_fp32_add_reference"], abs(got - rounded_expected))
             region["bad"] += error > 1.0e-4 + 1.0e-4 * abs(expected)
+            if include_rows:
+                row_regions[region_name]["bad"] += error > 1.0e-4 + 1.0e-4 * abs(expected)
+                row_regions[region_name]["max_abs"] = max(row_regions[region_name]["max_abs"], error)
             if error > 1.0e-4 + 1.0e-4 * abs(expected):
                 example = {"index": index, "actual": got, "reference": expected, "abs_error": error}
                 if tail and j < width - tail and j % tile < tail:
@@ -70,12 +84,17 @@ def analyze(prefix, rows, width):
                 region["worst_examples"].append(example)
                 region["worst_examples"].sort(key=lambda v: v["abs_error"], reverse=True)
                 del region["worst_examples"][5:]
-    return {"prefix": str(prefix), "rows": rows, "width": width, "dtype": "fp32",
+        if include_rows:
+            per_row.append({"row": row, "regions": row_regions})
+    report = {"prefix": str(prefix), "rows": rows, "width": width, "dtype": "fp32",
             "path_basis": "canonical source and runtime arguments; no device field instrumentation",
             "path": "ProcessWideFp32FullCacheRows" if width > 8192 else "narrow",
             "source_derived_cache_rows": cache_rows, "source_derived_tile": tile,
             "source_derived_tail": tail, "atol": 1.0e-4, "rtol": 1.0e-4,
             "regions": regions, "pass": all(r["bad"] == 0 for r in regions.values())}
+    if include_rows:
+        report["per_row"] = per_row
+    return report
 
 
 if __name__ == "__main__":

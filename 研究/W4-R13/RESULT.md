@@ -249,3 +249,238 @@ VERSION_RECORD_EVENT=NONE (no performance revision)
 下一动作：先与 W4-R09 最新事实核对 `:2191` 前对 gamma/bias 暂存区复用的 `V_MTE2` 依赖是否已实测；若未覆盖，在同一 ASC 探测链路内只做这一处正确性诊断，分别报告 Parent 和诊断版本对 reference 的结果。该动作不更改归约、tile 宽度、所有权或输出形式。当前证据尚不足以认定该处同步就是唯一根因；精度可用前不采 Candidate 性能。
 
 本轮只修改 `研究/W4-R13/`；Parent、共享 TSV、规则、Dashboard、其他 Route 工作树及服务均未修改。远端所有本轮设备命令已结束，未创建持久后台任务。
+
+---
+
+## 2026-10-08 本次续接：BATCH-REUSE-01
+
+本次已完成 batch 边界的单变化精度诊断。现有 `DIAG-PARAM-REUSE-01` 的
+`tile>0` 等待覆盖同一 batch 的参数 tile 复用，最后参数 tile 到下一 batch
+首笔输入 MTE2 的顺序仍有缺口。在该边界增加一次 `SyncVToMTE2()` 后，
+FP32 `121x9216` 对原 FP32 reference 与独立 FP64 reference 均通过。
+本次继续沿用原研究 Revision，新增性能版 0，Local 为 NONE。
+
+接手为 SLOT-4、设备 3，分支及工作树沿用本文件上方的 R13 身份；接手 HEAD 为
+`a10cf2a1e5c8f25aa256ce9dbfb79cd3347d12b4`，接手时无未提交内容。
+当前 agent_id 未由本次调用上下文提供，交接使用 Main 持有的既有 agent_id，
+不借用此前已关闭 Agent 的编号。
+规则从本工作树及 `9f918955` 的九个指定入口读取；同版编辑前再次完整读取
+该提交的 AGENTS、Route Skill、执行约定并发布回执。精度、精度标准和资料检索
+Skill 使用已安装的 `ops-direct-invoke` 版本；保留缓存、失败证据和旧二进制。
+共享状态读取 `main@07662d7b` 的三份表，已确认原研究与实际诊断均已登记。
+本节新事件等待 Record，同步前不改变原行的事实。
+
+### 最小双 batch 几何
+
+宽度 9216 来自本路线已验证的单行诊断，行数由当前源码推导。
+设备 3 的 `aclrtGetDeviceInfo(3, ACL_DEV_ATTR_VECTOR_CORE_NUM, ...)` 实测为 40，
+与未改动 runner 使用同一属性。没有人为减少核心数，没有改变 launch 或 Tiling。
+
+`ChooseWideFullYRows` 的 FP32 条件为 `4*D*N + 8*T + 64*N <= 176*1024`。
+`D=9216,T=4096,N=3` 需要 143552 字节；N=4 需要 180480 字节，超过 180224
+字节预算。因此缓存 3 行，最少 `M=3*40+1=121` 即可使一个 block 出现第二批。
+
+| 参数 | 本次值及来源 |
+|---|---|
+| M / D / dtype | 121 / 9216 / FP32，研究输入，未引用 Official testcase |
+| availableCoreNum / blockCount | 40 / 40；前者来自 ACL 查询，后者为 `min(availableCoreNum,M)` |
+| baseRows / extraRows | 3 / 1 |
+| block 0 | beginRow=0，localRows=4；batchBegin=0、3，batchRows=3、1 |
+| block 1 至 39 | beginRow=`3*blockIdx+1`，localRows=3；仅一批，提供同次运行内的对照 |
+| batchLimit / tileWidth / tileCount | 3 / 4096 / 3 |
+| 每行有效 tile | 4096、4096、1024；末 tile 从列 8192 开始 |
+| runner 参数 | device=3，rows=121，width=9216，dtype=0，warmup=0，samples=1，blocks=1，gap_sec=0，batch_n=1 |
+
+runner 的 `blocks=1` 是采样分组，`batch_n=1` 是一次计时中的 launch 数；它们均不代表
+kernel 的 blockCount 或行批数。几何来自源码和 ACL 属性，未插入设备字段输出。
+原始属性查询、计算式及 block 0/1/39 的结果保存于
+`parent-tail-probe/evidence/batch-reuse-01/runtime-geometry.txt`。
+
+### 实际视图与顺序
+
+下表行号均指未改动的 `线上结果/R31B/V011/submission.asc`。
+视图区间使用各缓冲自身起点的偏移，未宣称取得绝对 UB 地址。
+
+| 对象 | 最后读取与下一次覆盖 |
+|---|---|
+| xBuf_，16384 字节 | `gammaLocal=xBuf_.Get<float>()`（2179）；最后 tile 的 1024 个参数占 `[0,4096)` 字节。最后消费者为 batchRow=2 的 `Mul`（2203）。下一 batch 的 `xLocal=xBuf_.Get<float>()`（2121）被首个 `Load`（2125）覆盖 `[0,16384)` 字节。 |
+| residualBuf_，16384 字节 | `biasLocal=residualBuf_.Get<float>()`（2180）；相同 `[0,4096)` 字节由 batchRow=2 的 `Add`（2205）最后读取。下一 batch 的 residual `Load`（2126）覆盖 `[0,16384)` 字节。 |
+| valueFp32Buf_，110592 字节 | 保存本批 3 行的 x+residual 与最终结果。Store（2224–2226）读取该缓存，与参数区分配独立。下一 batch 的 Vector Add（2128）才重写相应缓存。 |
+| reduceFp32Buf_，192 字节 | 沿用 3 行、每行 16 个 FP32 partial；本次未改变布局、partial 数量或归约。 |
+
+对 block 0，下一批第一行的 GM offset 为 `3*9216=27648`，首 tile 从
+xGm/residualGm 的 `[27648,31744)` 元素区间写入上述两个暂存区。
+这两笔 MTE2 与上一批最后的 gamma/bias Vector 读取使用重叠空间。
+
+现有顺序分为四段：
+
+- pass-1 每 tile 的 `SyncVToMTE2`（2135）覆盖平方/归约到下一输入 tile 的复用；
+  它位于当前 tile 的 Load 之后，无法保护进入新 batch 时已经发出的第一笔 Load。
+- 倒数阶段后的 `SyncVToMTE2`（2157）覆盖当前 batch 的工作区到第一个参数 tile。
+- 既有诊断仅在参数 `tile>0` 的 Load 前增加等待，覆盖参数 tile 0→1、1→2；
+  最后 tile 之后没有下一次参数循环，因此该条件不能覆盖 batch 0→1。
+- batch 末尾的 `MTE3_V` 等待（2235–2240）连接输出 MTE3 与后续 Vector，保护
+  valueLocal 的写出与重用。下一笔 MTE2 不在这个目标流水上。
+  SDK `TPipe::ReleaseEventID` 只修改 `eventOccupy`，没有补入等待，见
+  `batch-reuse-01/sdk-ordering.txt` 的 SDK 450–459 行。
+
+```mermaid
+flowchart LR
+    V["末 tile Mul/Add：读 gamma/bias"] -->|V_MTE3| O["Store：读 valueLocal"]
+    O -->|MTE3_V| N["下一批 Vector 写 valueLocal"]
+    V -->|本次 V_MTE2| I["MTE2：x/residual 覆盖参数区"]
+    I -->|MTE2_V| N
+```
+
+本次在 `param_reuse_source.asc:2103` 增加一个可选诊断块：仅当
+`batchBegin>beginRow` 时调用 `SyncVToMTE2()`。`runner_ref_batch_reuse.asc`
+定义 `W4_R13_BATCH_REUSE_SYNC` 后复用原 reference runner；旧诊断入口不定义该符号。
+相对 a10cf2a1 的 kernel 源码只增加这六行，原每 tile 同步保持不动。
+没有改变 reduction、D40000 容量、UB 布局、参数 DMA 粒度、tile、核心数或 FP16 路径。
+
+### DUPLICATE_AUDIT 与诊断身份
+
+`MECHANISM=last parameter consumer before next batch input overwrite`。
+`SEARCHED_HISTORY` 复用本文件上方 a10cf2a1 的已完成审计：本 Route、W3 R2 至 V040
+（6321ad44）、R4 至 V031（ce6c6dc5）、R5 至 V028（1efa0863）、R031/R31A/R31B、
+MIX、STORE/EPILOGUE 和相关 W4。三个 W3 refs 本轮仍指向这些提交，未重跑或重扫全部版本。
+
+本轮补读 `归档/历史工作区/R31B/R31B-V005-NARROW-DEEP-BATCH-FIXED_kernel.asc`
+2245–2263 行及 `R31B-V006-MTE3-QUEUE-DEPTH_kernel.asc` 2089–2112 行。
+V005 的 2261 行在每个参数 tile 末尾执行 `SyncVToMTE2`，也覆盖最后 tile 到下一批；
+V006 删除该等待，改为输出事件队列。`MATCH_FOUND=YES_HISTORICAL_DEPENDENCY`。
+`WHY_NEW_OR_DUPLICATE`：依赖有历史，本次补充当前 V011 派生诊断在实际双批输入上的
+单点因果证据，不把它登记为新的性能机制。
+
+`REVISION=DIAG-PARAM-REUSE-01`，本次 `VARIANT=BATCH-BOUNDARY-SYNC`；
+直接来源是 a10cf2a1 的 `param_reuse_source.asc`，其 kernel 上游为 R31B-V011。
+这三个执行对象为 Parent、旧 tile-sync 诊断、新 batch-sync 诊断，分别独立比较 reference。
+
+### Compile、reference 与原始输出
+
+先复用两个已编译对象，各执行一次 `121x9216`；随后只构建新目标：
+
+```bash
+bash build_server3.sh --target w4r13_ref_batch_reuse_probe
+```
+
+当前工具链仍为 CANN 8.5.0.alpha002、Ascend910B3 / dav-2201。
+2026-10-08 07:01:05–07:01:28 UTC 构建成功，`COMPILE_EXIT_CODE=0`。
+原 runner 的 GM_ADDR 属性、printf 宽度格式警告保留，未因此改动 runner。
+新目标位于原 build 目录；Parent 与 tile-sync 二进制仍保持 05:19 的 mtime。
+没有对已有 ELF 运行可改写输入的提取命令。
+
+| 对象 | 运行时间 UTC | 原 FP32 reference 超差数 | FP64 reference 超差数 | FP64 最大绝对误差 | runner 返回码 |
+|---|---|---:|---:|---:|---:|
+| Parent，原 R31B-V011 | 06:55:33–06:55:37 | 603872 | 603870 | 5.472246700460024 | 3 |
+| tile-sync，既有诊断 | 06:55:40–06:55:44 | 3072 | 3072 | 5.472246700460024 | 3 |
+| batch-sync，本次单点诊断 | 07:02:07–07:02:11 | 0 | 0 | 6.780158479102738e-7 | 0 |
+
+三份完整输出各 1115136 个 FP32 元素，非有限值均为 0；沿用逐元素
+`abs_error <= 1e-4 + 1e-4*abs(reference)`。Parent 的两种 reference 超差数相差 2，
+分别保留。batch-sync 的原 FP32 reference 最大误差为 4.29153e-6。
+
+FP64 分区结果如下；每格为“前 8192 / 末 1024”超差数。
+
+| 实际行与 batch | Parent | tile-sync | batch-sync |
+|---|---:|---:|---:|
+| block 0 / batch 0，行 0–2 | 15866 / 3072 | 0 / 3072 | 0 / 0 |
+| block 0 / batch 1，行 3 | 5119 / 0 | 0 / 0 | 0 / 0 |
+| block 1–39，各自仅一批，行 4–120 | 548719 / 31094 | 0 / 0 | 0 / 0 |
+
+batch-sync 相对 tile-sync 恰好改变行 0–2 的全部 3072 个尾部输出；其余
+1112064 个元素逐位相同。独立复算进一步发现，将下一批行 3 首 tile 的 x/residual
+用作旧批尾部的 gamma/bias，可以在原容差内解释 2944/3072 项。
+例如行 0 列 8192：旧输出 0.47737669944763184，覆盖模型 0.477376685854779，
+新输出 -0.8777997493743896。另 128 项不符合这个完整覆盖模型，模型最大差值
+4.4776149953481；不把它当作全部错误元素的唯一解释，也不追加变体拟合这些元素。
+
+分析复用 `analyze_outputs.py` 原有 FP64 与 FP32-add 参考计算，只增加可选逐行计数及
+FP64 参考值保存；
+与已保存的三个单行参考结果比较完全一致，没有重复 NPU 单行实验。
+`analyze_batch_reuse.py` 将同一计算按 batch 汇总，并对已保存输出进行区域差异比较。
+
+全部新证据位于 `parent-tail-probe/evidence/batch-reuse-01/`：
+
+- `compile-01.log`：新目标的完整构建输出。
+- `parent-121x9216-*`、`tile-sync-121x9216-*`、`batch-sync-121x9216-*`：三份完整
+  `output.bin`、命令和返回码、raw.tsv、stats.txt、运行前后设备与负载输出。
+- `parent-reference.json`、`tile-sync-reference.json`、`batch-sync-reference.json`：
+  独立 FP64 结果、原 FP32 runner 结果、全部 121 行及 batch 分区计数。
+- `effect-analysis.json`：输出逐位差异、2944 项覆盖模型匹配及模型未解释部分。
+- `reference-fp64-121x9216.bin`：完整独立参考，行优先、little-endian float64，
+  1115136 个值、8921088 字节，三个执行对象共用同一输入和参考；
+  `offline-validation.txt` 保存源码单变化、输出长度、逐行汇总及参考数据验证结果。
+- `runtime-geometry.txt`、`sdk-ordering.txt`、`sdk-event-destinations.txt`、
+  `existing-variants-console.log`、`batch-sync-console.log`、`final-process-state.txt`：
+  几何、SDK、连接失败及恢复、执行和结束证据。
+
+### 设备、计时与观察限制
+
+仍使用 `cann-server3` 的 R13 原目录
+`/home/data4t2/lelinfeng/cann/server_runs/W4-R13/parent-tail-probe/`，未进入其他 Route 目录。
+三个样本运行前后 HBM 使用率均为 11%，按原协议换算 FREE_HBM=58327 MB。
+样本前后 AICore 为 1–12%，AIVector 为 4–7%，load1 为 55.47–70.10。
+没有等待独占，没有修改其他用户进程或 lease。
+
+一次独立 SDK SSH 查询在 banner 阶段超时；一次只读重试已连接成功。
+两个在途旧二进制诊断正常结束，新目标的构建及运行也正常结束。
+三次样本的进程列表附加命令 `npu-smi info -t proc -i 3` 不受当前版本支持，
+错误原样保留；HBM 与负载查询有效。07:05 的结束快照改用 `-t proc-mem` 成功，
+显示一个非 R13 的 python 进程占 3914 MB，未对它执行任何写操作。
+运行脚本现已采用该有效参数，未重跑三次样本；结束快照不能替代样本前的进程列表。
+
+原始单次冷启动 device_us / host_wall_us 分别为 Parent `111941/112295`、
+tile-sync `115226/115548`、batch-sync `117952/118282`。
+这些时间只保留为诊断原始值，不计算 Local 分数或性能改善。此次任务只研究精度；
+未运行 Parent same-binary 稳定性或正式交错性能采样。
+
+本次验证限于一个有来源的 D、一个 block 的两批（3+1）、一次固定输入。
+尚未验证两批均满、多于两批、其他宽度或低精度路径。新诊断只对这一复现问题给出
+源码与因果实测结论，不宣称全范围正确或任何 Official 成绩。
+D40000 的 partial 容量问题仍为独立未处理方向，本次没有运行或解决。
+
+### 实际修改、事件与交接
+
+实际修改限于本工作树 `研究/W4-R13/`：本 RESULT.md；parent-tail-probe 下
+CMakeLists.txt、build_server3.sh、param_reuse_source.asc、analyze_outputs.py；
+新增 runner_ref_batch_reuse.asc、run_batch_reuse_server3.sh、analyze_batch_reuse.py
+以及上述新证据目录。未复制整套工程，旧诊断入口、旧输出、失败日志和历史提交保留。
+远端只更新本 Route 的同名构建/诊断文件并增加一个目标和本次证据；没有修改服务、
+共享 TSV、规则、Dashboard 或主工作树。
+
+```text
+ROUTE_RESEARCH_EVENT + ROUTE_EVENT + VERSION_RECORD_EVENT
+EVENT_ID=W4-R13-BATCH-REUSE-20261008
+ROUTE=W4-R13
+REVISION=DIAG-PARAM-REUSE-01
+VARIANT=BATCH-BOUNDARY-SYNC
+DIRECT_PARENT=a10cf2a1:param_reuse_source.asc; kernel upstream R31B-V011
+SINGLE_CHANGE=V_MTE2 before first input Load when batchBegin>beginRow
+CLASSIFICATION=RESEARCH_EXECUTED_VARIANT; SAME_RESEARCH_REVISION
+COMPILE=PASS_RC0; original two binaries reused
+CORRECTNESS=NEW_DIAGNOSTIC_PASS_FP32_AND_FP64; PARENT_FAIL; TILE_SYNC_FAIL
+LOCAL_SCORE=NONE
+LOCAL_DELTA=NONE
+CURRENT_LOCAL_BEST=NONE
+NEW_PERFORMANCE_REVISIONS=0
+VALID_LOCAL=0
+STAGNATION_3_CONTRIBUTION=0
+OFFICIAL_SCORE=NONE
+ONLINE_STATE=PAUSED
+PUSH=NO
+BRANCH=w4/r13-wide-fp32-cache-tail-x
+GIT_COMMIT=see post-commit receipt
+EVIDENCE=研究/W4-R13/parent-tail-probe/evidence/batch-reuse-01/
+STATUS=RESEARCH_RESULT_READY; RECORD_PENDING
+LAST_ACTION=single batch-dependency diagnosis completed
+NEXT_ACTION=Record sync and Main release SLOT-4
+RUNNING_DEVICE_OPERATION=NONE
+```
+
+07:05:16 UTC 的结束快照确认三个二进制均存在、运行中的 R13 executable 列表为空。
+三次设备运行和构建均已退出，没有计时器、后台轮询或未完设备命令。
+本次边界证明与最小诊断已完成；交还槽位，不关闭、合并或替换 Route。
+后续独立研究的精确入口：先从正式题目输入范围确认 D40000 是否需要支持，再决定
+是否在新的同 Route 任务中处理 `ChooseWideFullYRows` 与每行 16 个 partial 的容量关系；
+本次三份诊断对象和数据可直接复用。

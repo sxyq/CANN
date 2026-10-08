@@ -16,4 +16,4 @@ export LIBRARY_PATH="/usr/lib/gcc/${W4_GCC_TARGET}/${W4_GCC_VERSION}:/usr/lib/${
 cmake -S "${W4_PROBE_ROOT}" -B "${W4_PROBE_ROOT}/build" \
     -DCMAKE_BUILD_TYPE=Release -DASCEND_HOME_PATH="${W4_CANN_ROOT}" \
     -DASCEND_CANN_PACKAGE_PATH="${W4_CANN_ROOT}"
-cmake --build "${W4_PROBE_ROOT}/build" --parallel 2
+cmake --build "${W4_PROBE_ROOT}/build" --parallel 2 "$@"
