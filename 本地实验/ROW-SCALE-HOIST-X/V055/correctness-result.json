@@ -1,0 +1,94 @@
+{
+  "route": "ROW-SCALE-HOIST-X",
+  "revision": "V055",
+  "direct_parent": "V026",
+  "stage": "CORRECTNESS",
+  "status": "PASS",
+  "device": 0,
+  "shape_dtype": {
+    "dtype": "bf16",
+    "shape": [
+      128,
+      8192
+    ],
+    "branch": "ProcessBf16FullRowOutputPipelined",
+    "vector_cores": 40,
+    "launch_blocks": 40,
+    "local_rows_min": 3,
+    "local_rows_max": 4
+  },
+  "parent": {
+    "label": "PARENT",
+    "status": "PASS",
+    "device": 0,
+    "dtype": "bf16",
+    "shape": [
+      128,
+      8192
+    ],
+    "matched_ratio": 1,
+    "atol": 0.015625,
+    "rtol": 0.015625,
+    "max_abs_error": 0.00781869888,
+    "max_abs_error_limit": 1
+  },
+  "candidate": {
+    "label": "CANDIDATE",
+    "status": "PASS",
+    "device": 0,
+    "dtype": "bf16",
+    "shape": [
+      128,
+      8192
+    ],
+    "matched_ratio": 1,
+    "atol": 0.015625,
+    "rtol": 0.015625,
+    "max_abs_error": 0.00781869888,
+    "max_abs_error_limit": 1
+  },
+  "parent_dispatch": {
+    "label": "PARENT",
+    "dtype": "bf16",
+    "shape": [
+      128,
+      8192
+    ],
+    "vector_cores": 40,
+    "launch_blocks": 40,
+    "local_rows_min": 3,
+    "local_rows_max": 4,
+    "selected_branch": "ProcessBf16FullRowOutputPipelined",
+    "resident_params": true,
+    "full_row_width": true,
+    "candidate_source_delta_executed": false
+  },
+  "candidate_dispatch": {
+    "label": "CANDIDATE",
+    "dtype": "bf16",
+    "shape": [
+      128,
+      8192
+    ],
+    "vector_cores": 40,
+    "launch_blocks": 40,
+    "local_rows_min": 3,
+    "local_rows_max": 4,
+    "selected_branch": "ProcessBf16FullRowOutputPipelined",
+    "resident_params": true,
+    "full_row_width": true,
+    "candidate_source_delta_executed": true
+  },
+  "tolerances": {
+    "atol": 0.015625,
+    "rtol": 0.015625,
+    "required_matched_ratio": 0.99,
+    "max_abs_error_limit": 1
+  },
+  "evidence": {
+    "invocation": "correctness-invocation.txt",
+    "parent_log": "correctness/parent.log",
+    "candidate_log": "correctness/candidate.log",
+    "pre_run_device_snapshot": "device-snapshot-before-correctness.log"
+  }
+}

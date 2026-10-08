@@ -1,0 +1,14 @@
+--- a/submission.asc
++++ b/submission.asc
+@@ -983,9 +983,9 @@
+                 }
+                 AscendC::LocalTensor<float> valueTile = valueLocal[col];
+                 AscendC::LocalTensor<T> outputTile = useFirst ? gammaStage : biasStage;
+-                AscendC::Mul(valueTile, valueTile, gammaFp32[col], kTileElems);
++                AscendC::Muls(xFp32, gammaFp32[col], invRms, kTileElems);
+                 AscendC::PipeBarrier<PIPE_V>();
+-                AscendC::Muls(valueTile, valueTile, invRms, kTileElems);
++                AscendC::Mul(valueTile, valueTile, xFp32, kTileElems);
+                 AscendC::PipeBarrier<PIPE_V>();
+                 AscendC::Add(valueTile, valueTile, biasFp32[col], kTileElems);
+                 AscendC::PipeBarrier<PIPE_V>();
