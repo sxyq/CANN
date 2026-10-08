@@ -51,6 +51,7 @@ struct Kernel {
 
 const Kernel kParent{"parent", "R31B-V011", run_kernel_parent};
 const Kernel kCandidate{"candidate", "W4-R02-V002", run_kernel_candidate};
+const Kernel kParentReplay{"candidate", "R31B-V011", run_kernel_parent};
 
 bool CheckAcl(aclError status, const char* operation)
 {
@@ -250,7 +251,8 @@ bool Warmup(const Kernel& kernel, int count, void* deviceX, void* deviceResidual
 void PrintUsage(const char* program)
 {
     std::printf("Usage: %s DEVICE WIDTH DTYPE MODE SIDE WARMUPS SAMPLES BLOCKS OUTPUT.tsv\n", program);
-    std::printf("DTYPE: fp32 | fp16 | bf16; MODE: correctness-only | same | paired; SIDE: parent | candidate | -\n");
+    std::printf("DTYPE: fp32 | fp16 | bf16; MODE: correctness-only | same | paired | paired-parent; SIDE: parent | candidate | -\n");
+    std::printf("paired-parent uses Parent in both logical slots and preserves the shared output address.\n");
     std::printf("correctness-only requires SIDE parent/candidate and WARMUPS=0 SAMPLES=0 BLOCKS=1; no events or timing.\n");
     std::printf("same requires >=45 warmups, >=21 samples, >=2 blocks; paired requires >=4 blocks.\n");
 }
@@ -282,7 +284,9 @@ int main(int argc, char** argv)
     const int32_t dtype = std::strcmp(argv[3], "fp32") == 0 ? kFp32 :
                           std::strcmp(argv[3], "fp16") == 0 ? kFp16 :
                           std::strcmp(argv[3], "bf16") == 0 ? kBf16 : -1;
-    const bool paired = std::strcmp(argv[4], "paired") == 0;
+    const bool pairedParent = std::strcmp(argv[4], "paired-parent") == 0;
+    const bool paired = std::strcmp(argv[4], "paired") == 0 || pairedParent;
+    const Kernel& secondKernel = pairedParent ? kParentReplay : kCandidate;
     const bool same = std::strcmp(argv[4], "same") == 0;
     const Kernel* sameKernel = std::strcmp(argv[5], "parent") == 0 ? &kParent :
                                std::strcmp(argv[5], "candidate") == 0 ? &kCandidate : nullptr;
@@ -394,6 +398,16 @@ int main(int argc, char** argv)
         std::fprintf(output, "# DEVICE=%d MODE=%s WARMUPS=%d SAMPLES_PER_BLOCK=%d BLOCKS=%d\n",
                      device, argv[4], warmups, samples, blocks);
         std::fprintf(output, "# AVAILABLE_CORES=%lld EPSILON=%.9g\n", static_cast<long long>(kAvailableCores), kEpsilon);
+        if (paired) {
+            std::fprintf(output, "# SLOT_P_FUNCTION=run_kernel_parent SLOT_C_FUNCTION=%s\n",
+                         pairedParent ? "run_kernel_parent" : "run_kernel_candidate");
+            std::fprintf(output, "# SLOT_P_OUTPUT=%p SLOT_C_OUTPUT=%p OUTPUT_RELATION=SHARED\n",
+                         deviceOutput, deviceOutput);
+            std::fprintf(output, "# X_ADDRESS=%p RESIDUAL_ADDRESS=%p GAMMA_ADDRESS=%p BIAS_ADDRESS=%p\n",
+                         deviceX, deviceResidual, deviceGamma, deviceBias);
+            std::fprintf(output, "# STREAM_HANDLE=%p START_EVENT_HANDLE=%p STOP_EVENT_HANDLE=%p\n",
+                         stream, startEvent, stopEvent);
+        }
         if (correctnessOnly) {
             std::fprintf(output, "# VALIDATION=INDEPENDENT_CPU_FORMULA; rtol=atol; every element required; no Official result\n");
             std::fprintf(output, "side\tsource_id\tdevice\trows\twidth\tdtype\tmax_abs_error\tatol\tmismatches\tnonfinite\tstatus\n");
@@ -421,7 +435,7 @@ int main(int argc, char** argv)
         if (paired) {
             passed = Warmup(kParent, warmups, deviceX, deviceResidual, deviceGamma,
                             deviceBias, deviceOutput, inputGroup, vectorGroup, stream) &&
-                     Warmup(kCandidate, warmups, deviceX, deviceResidual, deviceGamma,
+                     Warmup(secondKernel, warmups, deviceX, deviceResidual, deviceGamma,
                             deviceBias, deviceOutput, inputGroup, vectorGroup, stream);
         } else {
             passed = Warmup(*sameKernel, warmups, deviceX, deviceResidual, deviceGamma,
@@ -433,8 +447,8 @@ int main(int argc, char** argv)
         for (int sample = 0; passed && sample < samples; ++sample) {
             if (paired) {
                 const bool candidateFirst = ((block + sample) % 2) != 0;
-                const Kernel& first = candidateFirst ? kCandidate : kParent;
-                const Kernel& second = candidateFirst ? kParent : kCandidate;
+                const Kernel& first = candidateFirst ? secondKernel : kParent;
+                const Kernel& second = candidateFirst ? kParent : secondKernel;
                 const char* firstOrder = candidateFirst ? "CP" : "PC";
                 double deviceUs = 0.0, wallUs = 0.0;
                 passed = LaunchAndMeasure(first, deviceX, deviceResidual, deviceGamma, deviceBias,
@@ -459,6 +473,16 @@ int main(int argc, char** argv)
             }
         }
         if (passed) passed = std::fflush(output) == 0;
+    }
+
+    if (passed && pairedParent) {
+        std::vector<uint8_t> actual(inputBytes);
+        passed = CheckAcl(aclrtMemcpy(actual.data(), inputBytes, deviceOutput, inputBytes,
+                                     ACL_MEMCPY_DEVICE_TO_HOST), "copy post-timing output");
+        if (passed) {
+            std::fprintf(stderr, "POST_TIMING_REFERENCE mode=paired-parent output=SHARED reference=INDEPENDENT_CPU_FORMULA\n");
+            passed = CompareOutput(stderr, kParent, device, dtype, width, x, residual, gamma, bias, actual);
+        }
     }
 
     if (!passed && exitCode == 0) exitCode = 1;
