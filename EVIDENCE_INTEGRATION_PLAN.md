@@ -203,3 +203,11 @@ NEXT_ACTION=Planning review and authorized primary-main merge only after dirty-s
 `BATCH_01_SCOPE=W4-R03,W4-R06,W4-R12,W4-R13,W4-R15`。归档根目录为 `证据集成/W4/Batch-01-Research/`，来源路径保持 Route 原相对路径；`SOURCE_PATH_MANIFEST.tsv` 逐文件记录 Route、事件/Revision、结果分类、来源 commit、Git blob、源路径和归档路径。已纳入 139 个 evidence 文件；另有 25 个分析脚本、探针源码或构建/执行支持源码明确列为 `EXCLUDE_SOURCE_SUPPORT`，未进入归档。纳入内容包含研究报告、Parent-only result、日志、raw/profile、反汇编和诊断输出；`CANDIDATE_PRODUCTION_PATHS_INCLUDED=0`，不改变生产 kernel 或 Candidate。
 
 `BATCH_01_SOURCE_COMMITS=R03:712e47230287182bc65ab433a3ce714e6fdafd9f,5e95f9bc9d9c44fab03aecf9c84c29c0b947614b; R06:bd825c5fd59c74c283478026e8b32702ba331eb5,b40c09e62adcd85f51258ed1cef3723b80b010c8; R12:a018f702f3e6beb91569299fe903f59826961840,e697ddf35d4c42e735236e597338a148bfb437f2; R13:91e891a2a266ecb2b870afead3c3aa0fd94b67ac,a10cf2a1e5c8f25aa256ce9dbfb79cd3347d12b4,f417e4361ddac6b626ced1e62cfb75de8e3695ee; R15:4213e6f19502875b8efbc70cda1c1cf16d8e0ca5,d13e51e90ab81451ab86e46034db3ddfde4b05d2,744f3ad313f7586c8368a0765021ba3cac8c138e`。
+
+### W3 Batch-09 evidence receipt
+
+`BATCH_09_SCOPE=W3-R1-R3-R4-R5`。来源仅从 Integration worktree 的 Git 对象读取：R1 `64e32f535348cdde1828cd8a8fd89fad100aaa33`（12 commits），R3 `584c590cef81349969c4dcf014a5c04d05032e9d`（12），R4 `ce6c6dc568256ac8b80b674096bd7ca081b897cb`（34），R5 `1efa0863611f1a9b76ab13dd361eba161b32b46d`（29）；共同 base 为 `503b98cb22ae88798bb6bfca83a46676933f3600`。R1/R3 的 Batch-07 来源路径未重复收录；本批追加其余 25 个日志文件。
+
+Batch-09 的 manifest 有 1,570 行：纳入 910 项，排除 660 项。纳入包括 Local 表格与上下文、Correctness/Compile/运行日志、R5 的 15 份修订声明、R4 V001/V002 的四个 UTC 时间记录，以及 R4 V020、R5 V012 的 Official JSON 和 stdout/stderr。六个 Official 附件来源为 `1ea9677ba8e7307a73f13041c7b639ab6a96425c`，提交说明为 `docs: record W3 official calibration`；仅归档已有文件，不改 Official 内容或共享记录。`commits.tsv` 记录四条来源分支的 87 个提交及该 Official 来源提交。
+
+排除项逐条保留来源路径与 commit/tree/blob 标识，类别为 Candidate/Parent/kernel/support 源码、构建配置和执行脚本；未复制 kernel 源码。所有纳入项按其来源 `commit:path` 解析到 manifest 所列 blob，并保留原字节。来源路径与 Batch-07/08 manifest 不重复。R4/R5 来源分支未发现 `研究/` 路径或独立研究报告。R5 ignored profile 文件未读取，相关数量与状态保持 `UNKNOWN`；各 Route 的 Agent/运行命令状态也保持 `UNKNOWN`。没有进入或改动其他工作树、共享账本、分支或 Route 生命周期；`PUSH=NO`。

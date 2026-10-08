@@ -153,3 +153,19 @@ Main commit `e7f669692a2f5815c4ce444cfb52dde1d24a93a2` (parent `566e329e31f0b971
 - Main was not entered. Dirty path names come from the `82a45` Main receipt; at `566e`, only the total count 17 is confirmed. The main/origin graph and conflict preview were read from Git objects in the integration worktree.
 - Ignored evidence is counted where enumerated. `UNKNOWN` means ignored entries were not enumerated; it does not mean none exist.
 - The exact W4 authorization and six qualification items are captured in the updated Evidence Integration Plan from commits `e7c553ec...` / `566e329e...`. This Integration Owner performs no Online action.
+
+## W3 historical evidence integration refresh
+
+2026-10-09，本 Integration worktree 按 source commit/path 归档 W3 R1/R3 尚未出现在 Batch-07 manifest 的已提交路径，以及 W3 R4/R5 可由 Git 对象确认的历史证据。Batch-09 为 `证据集成/W3/Batch-09-R1-R3-R4-R5/`，manifest 1,570 行：910 COPY、660 EXCLUDE。纳入文件逐项与来源 `commit:path` blob 对应；R1/R3 Batch-07 已有 source path 未重复登记。Candidate/kernel/support 源码、构建配置和执行脚本只登记来源标识，不复制。
+
+| Route | 来源 HEAD | 已归档新增项 | 排除项 | 来源状态 |
+|---|---|---:|---:|---|
+| W3 R1 | `64e32f535348cdde1828cd8a8fd89fad100aaa33` | 13 | 80 | committed evidence only; Agent/runtime `UNKNOWN` |
+| W3 R3 | `584c590cef81349969c4dcf014a5c04d05032e9d` | 12 | 80 | committed evidence only; Agent/runtime `UNKNOWN` |
+| W3 R4 | `ce6c6dc568256ac8b80b674096bd7ca081b897cb` | 616 | 248 | committed Local/Correctness evidence; Agent/runtime `UNKNOWN` |
+| W3 R5 | `1efa0863611f1a9b76ab13dd361eba161b32b46d` | 263 | 252 | committed Local/Correctness evidence; ignored profile and runtime `UNKNOWN` |
+| R4/R5 Official attachments | origin source `1ea9677ba8e7307a73f13041c7b639ab6a96425c` | 6 | 0 | R4 V020 and R5 V012 files present in source commit |
+
+R4/R5 Official attachments comprise the existing JSON result and stdout/stderr files for R4 V020 and R5 V012. No Official value or shared ledger was edited. The four Route source ranges contain 87 commits; `commits.tsv` also records the Official source commit. No `研究/` path or standalone R4/R5 research report was found in those committed ranges. The 531 ignored files previously reported for the R5 Route worktree were not read here; current ignored-file and runtime state remain `UNKNOWN`.
+
+Only Git objects in this Integration worktree were used for source retrieval. No other worktree or Primary main contents were read. No Route branch/worktree was closed or removed, and no experiment, Judge, shared-record update, or push occurred. `PUSH=NO`.
