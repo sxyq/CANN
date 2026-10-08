@@ -1,0 +1,156 @@
+{
+  "route": "ROW-SCALE-HOIST-X",
+  "revision": "V053",
+  "direct_parent": "V026",
+  "parent_source_sha256": "7c2569d9e3830c845f2b5dc4587a73a05a0bdf041168614cd55ad84204e063f9",
+  "candidate_source_sha256": "45c4f948ce3fc10633e5d39a47239df1a55673d13f98348006b58a37edbb9ee1",
+  "stage": "LOCAL_PAIRED_INTERLEAVED",
+  "verdict": "MEASUREMENT_BLOCKED",
+  "measurement_quality": "UNQUALIFIED_PARENT_NOISE_AND_MIXED_PAIRED_DIRECTION",
+  "validity": "DESCRIPTIVE_ONLY_NO_LOCAL_PROMOTION",
+  "block_reason": "Parent stability was unqualified (CV 0.600320, MAD/median 0.382562); paired medians split 2 faster and 2 slower. The existing V052-style 20-warmup method was retained as directed and does not meet the current 45-warmup standardized protocol.",
+  "retry_required": true,
+  "local_score": 110.43477910523018,
+  "local_score_type": "descriptive single-shape route-local pooled-median speedup index",
+  "local_score_formula": "100 * Parent pooled median device_us / Candidate pooled median device_us",
+  "local_score_comparable_to_official": false,
+  "local_delta_percent_candidate_vs_parent_positive_is_slower": -9.448816024965446,
+  "pooled_mean_delta_percent_candidate_vs_parent_positive_is_slower": -28.05586070520294,
+  "sample_count_per_arm": 128,
+  "all_primary_window_samples_included": true,
+  "sample_exclusion": "NONE",
+  "shape_dtype": {
+    "dtype": "bf16",
+    "shape": [128, 256],
+    "branch": "ProcessSmallLowPrecisionContiguousBatched",
+    "subcase": "width > kFp32RepeatMaxWidth",
+    "vector_cores": 40,
+    "launch_blocks": 40,
+    "local_rows_min": 3,
+    "local_rows_max": 4,
+    "resident_params": true
+  },
+  "method": {
+    "device": 0,
+    "warmups_per_process": 20,
+    "samples_per_process": 32,
+    "parent_stability_samples": 32,
+    "comparison_blocks": 4,
+    "timer": "ACL device events",
+    "block_order": [
+      "PARENT_BLOCK1",
+      "CANDIDATE_BLOCK1",
+      "PARENT_BLOCK2",
+      "CANDIDATE_BLOCK2",
+      "PARENT_BLOCK3",
+      "CANDIDATE_BLOCK3",
+      "PARENT_BLOCK4",
+      "CANDIDATE_BLOCK4"
+    ]
+  },
+  "parent_stability": {
+    "n": 32,
+    "median_device_us": 11.24,
+    "mean_device_us": 14.663124968750001,
+    "sample_stdev_device_us": 8.802570260617367,
+    "cv": 0.6003202100082604,
+    "median_absolute_deviation_device_us": 4.3,
+    "mad_over_median": 0.38256227758007116,
+    "min_device_us": 6.8,
+    "max_device_us": 39.220001,
+    "same_binary_result": "UNQUALIFIED",
+    "evidence_log": "local-parent-stability-attempt2.log"
+  },
+  "parent": {
+    "n": 128,
+    "median_device_us": 19.0500005,
+    "mean_device_us": 22.444062453125003,
+    "sample_stdev_device_us": 18.25910362006036,
+    "cv": 0.8135382646610863,
+    "median_absolute_deviation_device_us": 6.8500005,
+    "mad_over_median": 0.3595800693023604,
+    "min_device_us": 7.14,
+    "max_device_us": 141.619995,
+    "block_medians_us": [20.04, 11.9100005, 14.6799995, 24.740000000000002],
+    "block_means_us": [25.090624937500003, 21.21499996875, 15.51937484375, 27.9512500625]
+  },
+  "candidate": {
+    "n": 128,
+    "median_device_us": 17.250001,
+    "mean_device_us": 16.1471875546875,
+    "sample_stdev_device_us": 7.227544733427547,
+    "cv": 0.4476039377723958,
+    "median_absolute_deviation_device_us": 4.919998999999999,
+    "mad_over_median": 0.28521731679899603,
+    "min_device_us": 6.54,
+    "max_device_us": 35.599998,
+    "block_medians_us": [12.7799995, 17.58, 16.2700005, 18.7],
+    "block_means_us": [13.8225000625, 16.365000062500002, 14.6481250625, 19.75312503125]
+  },
+  "paired_blocks": {
+    "candidate_vs_parent_delta_percent_positive_is_slower": [
+      -36.22754740518962,
+      47.60704669995606,
+      10.831069851194485,
+      -24.413904607922397
+    ],
+    "candidate_faster_median_blocks": 2,
+    "candidate_slower_median_blocks": 2
+  },
+  "device_load_before": {
+    "snapshot_utc": "2026-10-08T11:43:41Z",
+    "health": "OK",
+    "hbm_used_mb": 9130,
+    "hbm_capacity_mb": 65536,
+    "hbm_free_mb": 56406,
+    "hbm_usage_rate_percent": 13,
+    "aicore_usage_rate_percent": 1,
+    "aivector_usage_rate_percent": 0,
+    "npu0_processes": "python PID 251901, 5752 MB; left undisturbed",
+    "host_load_average": "38.79, 53.24, 63.82",
+    "evidence_log": "device-snapshot-before-local-attempt2.log"
+  },
+  "device_load_after": {
+    "snapshot_utc": "2026-10-08T11:47:53Z",
+    "health": "OK",
+    "hbm_used_mb": 9132,
+    "hbm_capacity_mb": 65536,
+    "hbm_free_mb": 56404,
+    "hbm_usage_rate_percent": 13,
+    "aicore_usage_rate_percent": 1,
+    "aivector_usage_rate_percent": 2,
+    "npu0_processes": "python PID 251901, 5752 MB; left undisturbed",
+    "host_load_average": "63.72, 57.72, 63.04",
+    "v053_runner_remains": false,
+    "evidence_log": "device-snapshot-after-local.log"
+  },
+  "device_release": {
+    "device": 0,
+    "released": true,
+    "released_utc": "2026-10-08T11:48:27Z",
+    "evidence_log": "device-release.log"
+  },
+  "evidence": {
+    "parent_stability": "local-parent-stability-attempt2.log",
+    "parent_blocks": [
+      "local-parent-block1-attempt2.log",
+      "local-parent-block2-attempt2.log",
+      "local-parent-block3-attempt2.log",
+      "local-parent-block4-attempt2.log"
+    ],
+    "candidate_blocks": [
+      "local-candidate-block1-attempt2.log",
+      "local-candidate-block2-attempt2.log",
+      "local-candidate-block3-attempt2.log",
+      "local-candidate-block4-attempt2.log"
+    ],
+    "invocation": "local-invocation-attempt2.txt",
+    "runner_build_log": "local-build-attempt2.log",
+    "runner_identity": "local-build-identity.txt",
+    "device_after": "device-snapshot-after-local.log",
+    "device_release": "device-release.log"
+  },
+  "current_local_best": "V026",
+  "official_score": null,
+  "online": "NOT_RUN"
+}

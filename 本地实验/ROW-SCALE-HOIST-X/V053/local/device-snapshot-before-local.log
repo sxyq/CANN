@@ -1,0 +1,88 @@
+SNAPSHOT_UTC=2026-10-08T11:42:08Z
+
+=== host ===
+hwnput3
+
+=== all NPU HBM and process snapshot ===
++------------------------------------------------------------------------------------------------+
+| npu-smi 25.0.rc1.1               Version: 25.0.rc1.1                                           |
++---------------------------+---------------+----------------------------------------------------+
+| NPU   Name                | Health        | Power(W)    Temp(C)           Hugepages-Usage(page)|
+| Chip                      | Bus-Id        | AICore(%)   Memory-Usage(MB)  HBM-Usage(MB)        |
++===========================+===============+====================================================+
+| 0     910B3               | OK            | 100.8       30                0    / 0             |
+| 0                         | 0000:C1:00.0  | 0           0    / 0          9130 / 65536         |
++===========================+===============+====================================================+
+| 1     910B3               | OK            | 121.7       33                0    / 0             |
+| 0                         | 0000:C2:00.0  | 1           0    / 0          24084/ 65536         |
++===========================+===============+====================================================+
+| 2     910B3               | OK            | 100.4       32                0    / 0             |
+| 0                         | 0000:81:00.0  | 1           0    / 0          6440 / 65536         |
++===========================+===============+====================================================+
+| 3     910B3               | OK            | 90.2        30                0    / 0             |
+| 0                         | 0000:82:00.0  | 0           0    / 0          3428 / 65536         |
++===========================+===============+====================================================+
+| 4     910B3               | OK            | 197.3       56                0    / 0             |
+| 0                         | 0000:01:00.0  | 62          0    / 0          59192/ 65536         |
++===========================+===============+====================================================+
+| 5     910B3               | OK            | 144.0       48                0    / 0             |
+| 0                         | 0000:02:00.0  | 34          0    / 0          60221/ 65536         |
++===========================+===============+====================================================+
+| 6     910B3               | OK            | 153.6       47                0    / 0             |
+| 0                         | 0000:41:00.0  | 43          0    / 0          60222/ 65536         |
++===========================+===============+====================================================+
+| 7     910B3               | OK            | 117.9       39                0    / 0             |
+| 0                         | 0000:42:00.0  | 11          0    / 0          28838/ 65536         |
++===========================+===============+====================================================+
++---------------------------+---------------+----------------------------------------------------+
+| NPU     Chip              | Process id    | Process name             | Process memory(MB)      |
++===========================+===============+====================================================+
+| 0       0                 | 251901        | python                   | 5752                    |
++===========================+===============+====================================================+
+| 1       0                 | 3150467       | python                   | 5748                    |
+| 1       0                 | 203339        | python                   | 14957                   |
++===========================+===============+====================================================+
+| 2       0                 | 2532306       | python                   | 3070                    |
++===========================+===============+====================================================+
+| No running processes found in NPU 3                                                            |
++===========================+===============+====================================================+
+| 4       0                 | 2999855       | VLLMEngineCor            | 55666                   |
++===========================+===============+====================================================+
+| 5       0                 | 89602         | VLLMWorker_TP            | 56700                   |
++===========================+===============+====================================================+
+| 6       0                 | 91228         | VLLMWorker_TP            | 56701                   |
++===========================+===============+====================================================+
+| 7       0                 | 439848        | python3                  | 21260                   |
+| 7       0                 | 2532308       | python                   | 4100                    |
++===========================+===============+====================================================+
+
+=== device 0 detailed usages ===
+	NPU ID                         : 0
+	Chip Count                     : 1
+
+	DDR Capacity(MB)               : 0
+	DDR Usage Rate(%)              : 0
+	DDR Hugepages Total(page)      : 0
+	DDR Hugepages Usage Rate(%)    : 0
+	HBM Capacity(MB)               : 65536
+	HBM Usage Rate(%)              : 13
+	Aicore Usage Rate(%)           : 0
+	Aivector Usage Rate(%)         : 4
+	Aicpu Usage Rate(%)            : 0
+	Ctrlcpu Usage Rate(%)          : 7
+	DDR Bandwidth Usage Rate(%)    : 0
+	HBM Bandwidth Usage Rate(%)    : 0
+	Chip ID                        : 0
+
+
+=== host load ===
+ 11:42:09 up 242 days, 23:18, 36 users,  load average: 47.14, 59.40, 66.70
+
+=== ROW runner processes ===
+3356356 lelinfe+ bash            bash -o pipefail -c set -euo pipefail; snap="本地实验/ROW-SCALE-HOIST-X/V053/local/device-snapshot-before-local.log"; { date -u "+SNAPSHOT_UTC=%Y-%m-%dT%H:%M:%SZ"; printf "\n=== host ===\n"; hostname -f; printf "\n=== all NPU HBM and process snapshot ===\n"; npu-smi info; printf "\n=== device 0 detailed usages ===\n"; npu-smi info -t usages -i 0; printf "\n=== host load ===\n"; uptime; printf "\n=== ROW runner processes ===\n"; ps -eo pid,user,comm,args | rg -i "v053_local|cann-row-scale-hoist|row-scale-hoist" || true; } 2>&1 | tee "$snap"; read -r hbm_used hbm_total < <(awk "/0000:C1:00.0/ {line=\$0; sub(/^.*0000:C1:00.0[[:space:]]*\\|[[:space:]]*/, \"\", line); gsub(/\\|/, \"\", line); if (match(line, /[0-9]+[[:space:]]*\\/[[:space:]]*[0-9]+[[:space:]]*$/)) {pair=substr(line, RSTART, RLENGTH); split(pair, a, \"/\"); gsub(/[[:space:]]/, \"\", a[1]); gsub(/[[:space:]]/, \"\", a[2]); print a[1], a[2]; exit}}" "$snap"); test -n "$hbm_used"; test -n "$hbm_total"; free_hbm=$((hbm_total - hbm_used)); printf "DEVICE_0_HBM_USED_MB=%s\nDEVICE_0_HBM_TOTAL_MB=%s\nDEVICE_0_FREE_HBM_MB=%s\n" "$hbm_used" "$hbm_total" "$free_hbm" | tee -a "$snap"; test "$free_hbm" -ge 100
+3356360 lelinfe+ bash            bash -o pipefail -c set -euo pipefail; snap="本地实验/ROW-SCALE-HOIST-X/V053/local/device-snapshot-before-local.log"; { date -u "+SNAPSHOT_UTC=%Y-%m-%dT%H:%M:%SZ"; printf "\n=== host ===\n"; hostname -f; printf "\n=== all NPU HBM and process snapshot ===\n"; npu-smi info; printf "\n=== device 0 detailed usages ===\n"; npu-smi info -t usages -i 0; printf "\n=== host load ===\n"; uptime; printf "\n=== ROW runner processes ===\n"; ps -eo pid,user,comm,args | rg -i "v053_local|cann-row-scale-hoist|row-scale-hoist" || true; } 2>&1 | tee "$snap"; read -r hbm_used hbm_total < <(awk "/0000:C1:00.0/ {line=\$0; sub(/^.*0000:C1:00.0[[:space:]]*\\|[[:space:]]*/, \"\", line); gsub(/\\|/, \"\", line); if (match(line, /[0-9]+[[:space:]]*\\/[[:space:]]*[0-9]+[[:space:]]*$/)) {pair=substr(line, RSTART, RLENGTH); split(pair, a, \"/\"); gsub(/[[:space:]]/, \"\", a[1]); gsub(/[[:space:]]/, \"\", a[2]); print a[1], a[2]; exit}}" "$snap"); test -n "$hbm_used"; test -n "$hbm_total"; free_hbm=$((hbm_total - hbm_used)); printf "DEVICE_0_HBM_USED_MB=%s\nDEVICE_0_HBM_TOTAL_MB=%s\nDEVICE_0_FREE_HBM_MB=%s\n" "$hbm_used" "$hbm_total" "$free_hbm" | tee -a "$snap"; test "$free_hbm" -ge 100
+3356361 lelinfe+ tee             tee 本地实验/ROW-SCALE-HOIST-X/V053/local/device-snapshot-before-local.log
+3356623 lelinfe+ rg              rg -i v053_local|cann-row-scale-hoist|row-scale-hoist
+DEVICE_0_HBM_USED_MB=9130
+DEVICE_0_HBM_TOTAL_MB=65536
+DEVICE_0_FREE_HBM_MB=56406
