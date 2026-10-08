@@ -137,7 +137,9 @@ a7d3f04ca2a47669d3eb3111d1ba47a21d72a8a5 docs: sync eleven W4 events and latest 
 调度/当前任务.tsv
 ```
 
-### Merge completion receipt
+### Merge completion receipt (historical; superseded)
+
+`SUPERSEDED_BY_FINAL_CLOSEOUT=YES`
 
 ```text
 LOCAL_MAIN_MERGE=540484b8eeaee702de219b9092d4f3a168788f40
@@ -164,7 +166,9 @@ origin merge 同时带入其正式提交内容；这些文件并非本轮手工�
 
 对 merge 变更路径的核对未发现 Candidate 源码或性能路径。主工作树 17 项 dirty 没有进入 integration。Evidence-only 路径筛选授权有效；在本次两份报告更新提交后立即开始按 Route 分批整合 W4 已提交证据。
 
-### Required incoming rule commit and authorization
+### Required incoming rule commit and authorization (historical; superseded)
+
+`SUPERSEDED_BY_FINAL_CLOSEOUT=YES`
 
 ```text
 INCOMING_REQUIRED_INTEGRATION=e7c553ec0da4f96af461baa0dfdb02d4730f8fc7, followed by wording-only 566e329e31f0b971e0c66bebeb60f73e467ee7b7
@@ -175,19 +179,24 @@ MAX_SUBMISSIONS_PER_ROUTE=1
 QUALIFICATIONS=Build/Compile PASS; Correctness PASS; valid Local with numeric score/delta, raw samples and medians, shape/dtype, device, free HBM, load note, current best; route-internal comparable best; submitted source exactly matches validated Candidate commit; route quota/Judge quota/current Judge rules confirmed
 INTEGRATION_BRANCH_RECONCILED=YES
 PRIMARY_MAIN_UPDATED=NO
-PRIMARY_MAIN_UPDATE=DEFERRED_DIRTY_17_AND_PENDING_EVIDENCE_REVIEW
-MAIN_MERGE_BLOCKED=NO (integration-branch-only; this does not mean primary main was updated)
-BLOCK_REASON=PRIMARY_MAIN_UPDATE_DEFERRED; three canonical paths were reconciled in integration. Evidence-only selection is active; primary main remains dirty 9 tracked + 8 untracked and was not entered.
+PRIMARY_MAIN_UPDATE=DEFERRED_DIRTY_17_AND_PENDING_REVIEW
+MAIN_MERGE_BLOCKED=YES
+BLOCK_REASON=DIRTY_17_AND_PENDING_REVIEW; three canonical paths were reconciled in integration. Primary main remains dirty 9 tracked + 8 untracked and was not entered.
 INTEGRATION_OWNER_ONLINE_PERMISSION=NO
 SERVER3_TRANSIENT_PROCESS_UNATTRIBUTED=clx_ref_parent_; remote RUNNING_COMMAND globally UNKNOWN
-NEXT_ACTION=commit these two report updates, then start W4 evidence-only integration in route batches; exclude Candidate production paths.
+NEXT_ACTION=Planning review and authorized primary-main merge only after dirty-state resolution; no worktree retirement yet
 ```
 
 两个 policy commit 已随 local main merge 进入 integration；primary main 的 17 项 dirty 未带入。六项资格全部满足前，Route 标记为 `NO_ELIGIBLE_SUBMISSION`，本 Integration Owner 不执行 Online。
 
-### Evidence-selection status
+### Evidence-selection status (historical; superseded)
 
-`PATH_LEVEL_EVIDENCE_COPY=AUTHORIZED_ACTIVE_AFTER_REPORT_COMMIT`。当前 inventory/plan 更新已获准，提交这两份报告后立即从 W4-R01 至 W4-R15 的已提交 Route commits 做 evidence-only selection，优先研究报告、result/日志/raw/profiler、正确性失败证据和必要的 Candidate SHA/source metadata。每条纳入路径记录原始 Route commit SHA、Route、Revision、Candidate SHA、Result 分类；完整 committed Candidate 快照只作可追溯历史证据，生产 kernel 路径和 Candidate 改动不进入当前生产树。W4-R02/R08/R09/R14 的 ACTIVE_AGENT、current stage 或 running operation 按来源保持 UNKNOWN，SAFE_TO_RETIRE=NO。Ignored evidence 也维持：R01 71 个 profiler 文件、W3 crossrow 531 个 Chromium profile 文件、M2 vector 78 个结果文件，均不因 clean 状态退役。W2/W3 独有 Candidate/证据另行列出，不做整批复制，`PUSH=NO`。
+`SUPERSEDED_BY_FINAL_CLOSEOUT=YES`
+
+`PATH_LEVEL_EVIDENCE_COPY=SUPERSEDED_BY_FINAL_CLOSEOUT`。五批 evidence integration 已完成：`1566 manifest rows / 1097 included / 469 excluded / 1097 blob exact / 0 duplicate / 0 selected source extensions`。Candidate 与生产 kernel 未合入；各批次来源、路径和排除项继续以本报告及 inventory 为准。`PUSH=NO`。
+
+`INTEGRATION_BRANCH_RECONCILED=YES; PRIMARY_MAIN_UPDATED=NO; PRIMARY_MAIN_UPDATE=DEFERRED_DIRTY_17_AND_PENDING_REVIEW; MAIN_MERGE_BLOCKED=YES`
+`NEXT_ACTION=Planning review and authorized primary-main merge only after dirty-state resolution; no worktree retirement yet`
 
 ### Batch 01 Evidence Receipt
 
