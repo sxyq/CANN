@@ -1,0 +1,24 @@
+INVOCATION_UTC=2026-10-08T04:34:42Z
+DEVICE_ASSIGNMENT=V050 device 0 exclusive Parent/Candidate Correctness and Local only if both pass
+PRE_RUN_SNAPSHOT=device-snapshot-before-correctness.log; HBM used 9137/65536 MB, free 56399 MB; >=100 MB gate passed
+RUNNER_BUILD_DIR=/tmp/cann-row-scale-hoist-x-v050-runners.rPvBxa
+RUNTIME_ENV=source /usr/local/Ascend/ascend-toolkit/set_env.sh; LD_LIBRARY_PATH=/usr/local/Ascend/ascend-toolkit/latest/lib64:/usr/local/Ascend/driver/lib64/driver:$LD_LIBRARY_PATH
+PARENT_COMMAND=/tmp/cann-row-scale-hoist-x-v050-runners.rPvBxa/v050_correctness_parent
+CANDIDATE_COMMAND=/tmp/cann-row-scale-hoist-x-v050-runners.rPvBxa/v050_correctness_candidate
+INTENDED_PARENT_OUTPUT=本地实验/ROW-SCALE-HOIST-X/V050/correctness-parent.log
+INTENDED_CANDIDATE_OUTPUT=本地实验/ROW-SCALE-HOIST-X/V050/correctness-candidate.log
+INTENDED_STATUS_OUTPUT=本地实验/ROW-SCALE-HOIST-X/V050/correctness-status.txt
+ACTUAL_TEE_PATH_TYPO=本地実験 (Japanese 実験); this directory did not exist, so tee returned ENOENT.
+OUTER_COMMAND_EXIT=1 (tee/log-path failure after both runner processes completed)
+PARENT_PROCESS_EXIT=0; PARENT_RESULT=PASS; stdout recovered to correctness-parent.log
+CANDIDATE_PROCESS_EXIT=2; CANDIDATE_RESULT=FAIL; stdout recovered to correctness-candidate.log
+COMPLETE_TERMINAL_STDOUT:
+DISPATCH_AUDIT={"label":"PARENT","dtype":"fp32","shape":[128,3072],"vector_cores":40,"launch_blocks":40,"local_rows_min":3,"local_rows_max":4,"selected_branch":"ProcessSmallFp32Batched","candidate_source_delta_executed":false}
+CORRECTNESS_RESULT={"label":"PARENT","status":"PASS","device":0,"dtype":"fp32","shape":[128,3072],"vector_cores":40,"matched_ratio":1.000000000,"atol":1.52587891e-05,"rtol":0.0009765625,"max_abs_error":3.09944153e-06,"max_abs_error_limit":0.00999999978}
+PARENT_EXIT=0
+DISPATCH_AUDIT={"label":"CANDIDATE","dtype":"fp32","shape":[128,3072],"vector_cores":40,"launch_blocks":40,"local_rows_min":3,"local_rows_max":4,"selected_branch":"ProcessSmallFp32Batched","candidate_source_delta_executed":true}
+CORRECTNESS_RESULT={"label":"CANDIDATE","status":"FAIL","device":0,"dtype":"fp32","shape":[128,3072],"vector_cores":40,"matched_ratio":0.996419271,"atol":1.52587891e-05,"rtol":0.0009765625,"max_abs_error":1.47696984,"max_abs_error_limit":0.00999999978}
+CANDIDATE_EXIT=2
+CORRECTNESS_END_UTC=2026-10-08T04:34:51Z
+TIMING_RAW_SAMPLES=NOT_APPLICABLE; Local was not run because Candidate correctness failed.
+NO_RELAUNCH=The runtime was entered and complete Parent/Candidate output and process exit codes are recoverable; no second device invocation was made.

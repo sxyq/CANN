@@ -1,0 +1,13 @@
+diff --git "a/\346\234\254\345\234\260\345\256\236\351\252\214/ROW-SCALE-HOIST-X/V026/submission.asc" "b/\346\234\254\345\234\260\345\256\236\351\252\214/ROW-SCALE-HOIST-X/V050/submission.asc"
+index 99c9143e..d3c23e69 100644
+--- "a/\346\234\254\345\234\260\345\256\236\351\252\214/ROW-SCALE-HOIST-X/V026/submission.asc"
++++ "b/\346\234\254\345\234\260\345\256\236\351\252\214/ROW-SCALE-HOIST-X/V050/submission.asc"
+@@ -1454,0 +1455 @@ private:
++            AscendC::LocalTensor<float> gammaScaleLocal = xBuf_.Get<float>();
+@@ -1457 +1458 @@ private:
+-                AscendC::Muls(valueRow, valueRow, invRmsValues[batchRow],
++                AscendC::Muls(gammaScaleLocal, gammaLocal, invRmsValues[batchRow],
+@@ -1460 +1461,2 @@ private:
+-                AscendC::Mul(valueRow, valueRow, gammaLocal, static_cast<int32_t>(rowWidth));
++                AscendC::Mul(valueRow, valueRow, gammaScaleLocal,
++                             static_cast<int32_t>(rowWidth));

@@ -1,0 +1,59 @@
+{
+  "route": "ROW-SCALE-HOIST-X",
+  "revision": "V050",
+  "direct_parent": "V026",
+  "stage": "CORRECTNESS",
+  "status": "CANDIDATE_FAIL",
+  "device": 0,
+  "dtype": "fp32",
+  "shape": [128, 3072],
+  "vector_cores": 40,
+  "launch_blocks": 40,
+  "local_rows_per_core": [3, 4],
+  "selected_branch": "ProcessSmallFp32Batched",
+  "parent_source_sha256": "7c2569d9e3830c845f2b5dc4587a73a05a0bdf041168614cd55ad84204e063f9",
+  "candidate_source_sha256": "5d769538274d3b0744a478f641c852769a97d070b5b4ed316786dc67be45ad93",
+  "parent": {
+    "status": "PASS",
+    "matched_ratio": 1.0,
+    "max_abs_error": 3.09944153e-06,
+    "candidate_source_delta_executed": false,
+    "process_exit": 0,
+    "evidence": "correctness-parent.log"
+  },
+  "candidate": {
+    "status": "FAIL",
+    "matched_ratio": 0.996419271,
+    "max_abs_error": 1.47696984,
+    "candidate_source_delta_executed": true,
+    "process_exit": 2,
+    "evidence": "correctness-candidate.log"
+  },
+  "tolerance": {
+    "atol": 1.52587891e-05,
+    "rtol": 0.0009765625,
+    "matched_ratio_min": 0.99,
+    "max_abs_error_limit": 0.01
+  },
+  "local": "NOT_RUN_CANDIDATE_CORRECTNESS_FAIL",
+  "current_local_best": "V026",
+  "raw_output_recovery_note": "Both runner stdout streams were present in the tool output and were restored to their per-arm logs after tee failed on a Japanese directory-name typo.",
+  "invocation": {
+    "start_utc": "2026-10-08T04:34:42Z",
+    "end_utc": "2026-10-08T04:34:51Z",
+    "runner_build_dir": "/tmp/cann-row-scale-hoist-x-v050-runners.rPvBxa",
+    "parent_process_exit": 0,
+    "candidate_process_exit": 2,
+    "outer_pipeline_exit": 1,
+    "outer_pipeline_failure": "tee received ENOENT because the requested path used 本地実験 instead of 本地实验; neither runner failed to enter the runtime",
+    "stdout_and_exit_receipt": "correctness-invocation.txt"
+  },
+  "device_release": {
+    "status": "RELEASED",
+    "timestamp_utc": "2026-10-08T04:41:56Z",
+    "local_skipped": true,
+    "evidence": "device-release.log",
+    "post_capture_hbm_used_mb": 5226,
+    "post_capture_hbm_capacity_mb": 65536
+  }
+}
