@@ -1,0 +1,27 @@
+--- V026/submission.asc
++++ V062/submission.asc
+@@ -1790,14 +1790,17 @@
+                 // gammaBuf_ was only a staging buffer for the cached FP32
+                 // parameters, so it is now safe to reuse as the packed output.
+                 AscendC::LocalTensor<T> outputLocal = gammaBuf_.Get<T>();
+-                for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
+-                    const uint64_t valueOffset = static_cast<uint64_t>(batchRow) * rowWidth;
+-                    AscendC::LocalTensor<float> valueRow = valueLocal[valueOffset];
+-                    AscendC::Muls(valueRow, valueRow, invRmsValues[batchRow], width);
+-                    AscendC::PipeBarrier<PIPE_V>();
+-                }
+                 if (width <= kFp32RepeatMaxWidth) {
+-                    ApplyFp32GammaBiasBatch(valueLocal, gammaFp32, biasFp32, width, batchRows);
++                    for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
++                        const uint64_t valueOffset = static_cast<uint64_t>(batchRow) * rowWidth;
++                        AscendC::LocalTensor<float> valueRow = valueLocal[valueOffset];
++                        AscendC::Mul(valueRow, valueRow, gammaFp32, width);
++                        AscendC::PipeBarrier<PIPE_V>();
++                        AscendC::Muls(valueRow, valueRow, invRmsValues[batchRow], width);
++                        AscendC::PipeBarrier<PIPE_V>();
++                        AscendC::Add(valueRow, valueRow, biasFp32, width);
++                        AscendC::PipeBarrier<PIPE_V>();
++                    }
+                 } else {
+                     for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
+                         const uint64_t valueOffset = static_cast<uint64_t>(batchRow) * rowWidth;

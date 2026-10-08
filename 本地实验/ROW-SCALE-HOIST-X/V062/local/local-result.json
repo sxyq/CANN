@@ -1,0 +1,200 @@
+{
+  "route": "ROW-SCALE-HOIST-X",
+  "revision": "V062",
+  "stage": "LOCAL",
+  "status": "COMPLETE_DESCRIPTIVE_MEASUREMENT_BLOCKED",
+  "direct_parent": "V026",
+  "current_local_best": "V026",
+  "shape": [128, 128],
+  "dtype": "bf16",
+  "dispatch": "ProcessSmallLowPrecisionContiguousBatched narrow subcase",
+  "single_change": "BF16 narrow contiguous-batched value row-scale placement: gamma -> invRms -> bias",
+  "device": {
+    "id": 0,
+    "soc": "Ascend910B3",
+    "hbm_total_mb": 65536,
+    "hbm_used_mb_before": 18122,
+    "hbm_used_mb_after": 18125,
+    "free_hbm_mb_before": 47414,
+    "free_hbm_mb_after": 47411,
+    "aicore_pct_before": 20,
+    "aicore_pct_after": 23,
+    "other_process_present": true,
+    "other_processes": [
+      "python PID 2743971, 9044 MB",
+      "python PID 251901, 5752 MB",
+      "python PID 2055831, 4086 MB"
+    ],
+    "before_snapshot": "local/device-snapshot-before-local-retry.log",
+    "after_snapshot": "local/device-snapshot-after-local-retry.log",
+    "process_before_snapshot": "local/process-snapshot-before-local-retry.log",
+    "process_after_snapshot": "local/process-snapshot-after-local-retry.log",
+    "other_processes_left_untouched": true
+  },
+  "protocol": {
+    "warmups_per_invocation": 20,
+    "samples_per_invocation": 32,
+    "parent_stability_invocations": 1,
+    "paired_blocks": 4,
+    "invocations_per_arm": 4,
+    "successful_invocations": 9,
+    "timing": "device event",
+    "sampling": "interleaved Parent/Candidate blocks",
+    "raw_samples_preserved": true,
+    "raw_sample_count_per_arm": 128,
+    "raw_sample_count_total": 256,
+    "invocation_status": "local/invocation-status-retry.tsv"
+  },
+  "source_sha256": {
+    "parent": "7c2569d9e3830c845f2b5dc4587a73a05a0bdf041168614cd55ad84204e063f9",
+    "candidate": "1dd6fb4b2a29d752b0d8a190cc5c8e5310a7725a8aee05d708bf0a0f43955996"
+  },
+  "correctness": {
+    "parent": "PASS",
+    "candidate": "PASS",
+    "matched_ratio": 1.0,
+    "max_abs_error": 0.00390625,
+    "max_abs_error_limit": 1.0,
+    "evidence": "correctness-result.json"
+  },
+  "score": {
+    "local_score": 137.3737344029,
+    "local_delta_pct": -27.2058807787,
+    "score_delta_vs_100_pct": 37.3737344029,
+    "formula": "100 * pooled Parent median us / pooled Candidate median us",
+    "parent_pooled_median_us": 23.1199995,
+    "candidate_pooled_median_us": 16.83,
+    "parent_pooled_mean_us": 31.4057811,
+    "candidate_pooled_mean_us": 21.7917189,
+    "parent_median_throughput_elements_per_s": 708650534.3566,
+    "candidate_median_throughput_elements_per_s": 973499702.9115,
+    "throughput_delta_pct": 37.3737344029,
+    "local_score_type": "descriptive median speed index",
+    "local_score_comparable_to_official": false,
+    "official_score": null
+  },
+  "pooled_statistics": {
+    "parent": {
+      "sample_count": 128,
+      "median_us": 23.1199995,
+      "mean_us": 31.4057811,
+      "stdev_us": 28.2190917,
+      "cv": 0.8985318,
+      "min_us": 6.32,
+      "max_us": 232.360001,
+      "mad_us": 11.04,
+      "mad_over_median": 0.4775086,
+      "p10_us": 7.7,
+      "p90_us": 65.700005
+    },
+    "candidate": {
+      "sample_count": 128,
+      "median_us": 16.83,
+      "mean_us": 21.7917189,
+      "stdev_us": 21.9154194,
+      "cv": 1.0056765,
+      "min_us": 6.5,
+      "max_us": 159.380005,
+      "mad_us": 6.76,
+      "mad_over_median": 0.4016637,
+      "p10_us": 7.22,
+      "p90_us": 39.220001
+    },
+    "parent_stability": {
+      "sample_count": 32,
+      "median_us": 16.599998,
+      "mean_us": 21.388128,
+      "stdev_us": 15.31781996,
+      "cv": 0.7161834,
+      "min_us": 7.52,
+      "max_us": 80.859993,
+      "mad_us": 4.96,
+      "mad_over_median": 0.2987952,
+      "p10_us": 8.54,
+      "p90_us": 43.98
+    }
+  },
+  "paired_blocks": [
+    {
+      "block": 1,
+      "parent_median_us": 19.230001,
+      "candidate_median_us": 17.76,
+      "candidate_delta_pct": -7.6443106,
+      "parent_log": "local/parent-block1-retry.log",
+      "candidate_log": "local/candidate-block1-retry.log"
+    },
+    {
+      "block": 2,
+      "parent_median_us": 24.85,
+      "candidate_median_us": 9.960001,
+      "candidate_delta_pct": -59.9195131,
+      "parent_log": "local/parent-block2-retry.log",
+      "candidate_log": "local/candidate-block2-retry.log"
+    },
+    {
+      "block": 3,
+      "parent_median_us": 41.66,
+      "candidate_median_us": 13.76,
+      "candidate_delta_pct": -66.9707153,
+      "parent_log": "local/parent-block3-retry.log",
+      "candidate_log": "local/candidate-block3-retry.log"
+    },
+    {
+      "block": 4,
+      "parent_median_us": 20.1,
+      "candidate_median_us": 22.190001,
+      "candidate_delta_pct": 10.3980149,
+      "parent_log": "local/parent-block4-retry.log",
+      "candidate_log": "local/candidate-block4-retry.log"
+    }
+  ],
+  "paired_direction": "3/4 candidate-faster",
+  "quality_verdict": "MEASUREMENT_BLOCKED",
+  "quality_reasons": [
+    "Parent pooled CV is 0.8985318 and Candidate pooled CV is 1.0056765.",
+    "Paired block medians are mixed despite a 3/4 favorable direction.",
+    "Concurrent Python processes and changing AICore load remained on device 0; no process was disturbed.",
+    "The numeric result is descriptive only and does not promote the Local Best."
+  ],
+  "promotion": "NOT_PROMOTED; Current Local Best remains V026",
+  "raw_timing_files": [
+    "local/parent-stability-retry.log",
+    "local/parent-block1-retry.log",
+    "local/candidate-block1-retry.log",
+    "local/parent-block2-retry.log",
+    "local/candidate-block2-retry.log",
+    "local/parent-block3-retry.log",
+    "local/candidate-block3-retry.log",
+    "local/parent-block4-retry.log",
+    "local/candidate-block4-retry.log"
+  ],
+  "environment_fix": {
+    "initial_attempt": "FAIL_BEFORE_RUN",
+    "initial_failure": "latest/set_env.sh absent and libmsprofiler.so unresolved",
+    "direct_fix": "/usr/local/Ascend/ascend-toolkit/set_env.sh",
+    "fixed_retry": "PASS_ALL_9_INVOCATIONS",
+    "evidence": "local/environment-fix-evidence.md"
+  },
+  "timestamps": {
+    "correctness_start_utc": "2026-10-08T19:06:37.251Z",
+    "correctness_end_utc": "2026-10-08T19:06:47.193Z",
+    "local_start_utc": "2026-10-08T19:12:21Z",
+    "local_result_utc": "2026-10-08T19:13:01Z",
+    "compile_timestamp": "NOT_CAPTURED_IN_PRIOR_RECEIPT",
+    "next_edit_timestamp": "PENDING_V063_EDIT",
+    "local_result_to_next_edit_seconds": "PENDING_V063_EDIT",
+    "sla": "V062 evidence closure timestamped; next edit is recorded with V063 receipt"
+  },
+  "online": {
+    "online_forbidden": true,
+    "local_online_candidate": false,
+    "local_score_comparable_to_official": false
+  },
+  "evidence": {
+    "compile": "compile-result.json",
+    "correctness": "correctness-result.json",
+    "raw_index": "raw-evidence-index.tsv",
+    "result": "RESULT.md",
+    "version_record_event": "VERSION_RECORD_EVENT"
+  }
+}

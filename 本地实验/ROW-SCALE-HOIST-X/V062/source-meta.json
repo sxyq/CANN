@@ -1,0 +1,31 @@
+{
+  "route": "ROW-SCALE-HOIST-X",
+  "revision": "V062",
+  "direct_parent": "V026",
+  "parent_path": "本地实验/ROW-SCALE-HOIST-X/V026/submission.asc",
+  "candidate_path": "本地实验/ROW-SCALE-HOIST-X/V062/submission.asc",
+  "parent_source_sha256": "7c2569d9e3830c845f2b5dc4587a73a05a0bdf041168614cd55ad84204e063f9",
+  "candidate_source_sha256": "1dd6fb4b2a29d752b0d8a190cc5c8e5310a7725a8aee05d708bf0a0f43955996",
+  "exact_function": "AddRmsNormBiasKernel<T>::ProcessSmallLowPrecisionContiguousBatched",
+  "exact_code_site": "本地实验/ROW-SCALE-HOIST-X/V062/submission.asc:1793",
+  "single_change": "In the BF16 narrow width <= kFp32RepeatMaxWidth branch, apply gamma, then the existing row invRms scale, then bias.",
+  "unchanged": [
+    "BF16 wide branch",
+    "FP16 branch",
+    "dispatch predicates",
+    "reduction and invRms calculation",
+    "dtype policy",
+    "buffers and synchronization outside the changed epilogue",
+    "other route mechanisms"
+  ],
+  "target": {
+    "dtype": "bf16",
+    "shape": [128, 128],
+    "branch": "ProcessSmallLowPrecisionContiguousBatched",
+    "width_condition": "width <= kFp32RepeatMaxWidth",
+    "runner_candidate_delta_executed": true
+  },
+  "v061_preserved": true,
+  "v061_parent_for_v062": false,
+  "online": "FORBIDDEN"
+}

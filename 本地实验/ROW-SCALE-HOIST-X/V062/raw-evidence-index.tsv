@@ -1,0 +1,29 @@
+kind	path	status	note
+rule	RULE_REFRESH_RECEIPT.md	PASS	V062 receipt; canonical route-skill gap verified; V026 parent; Online forbidden
+source	submission.asc	PASS	Candidate source SHA-256 recorded in source-meta.json
+source	diff.patch	PASS	V026 to V062 single diff at ProcessSmallLowPrecisionContiguousBatched narrow BF16 epilogue
+compile	compile/configure.log	PASS	Canonical compile configure
+compile	compile/build.log	PASS	device and submission targets built
+compile	compile-result.json	PASS	Compile receipt
+correctness	correctness/parent.log	PASS	Exact V026 Parent BF16 [128,128]
+correctness	correctness/candidate.log	PASS	V062 Candidate BF16 [128,128], source delta executed
+correctness	correctness-result.json	PASS	Parent and Candidate matched ratio 1.0
+environment	local/environment-source-run.log	FAIL	Initial wrong latest/set_env.sh path; retained
+environment	local/environment-fix-evidence.md	PASS	Canonical set_env.sh direct fix and loader smoke evidence
+timing	local/parent-stability-retry.log	PASS	Parent stability raw 32 samples
+timing	local/parent-block1-retry.log	PASS	Parent block 1 raw 32 samples
+timing	local/candidate-block1-retry.log	PASS	Candidate block 1 raw 32 samples
+timing	local/parent-block2-retry.log	PASS	Parent block 2 raw 32 samples
+timing	local/candidate-block2-retry.log	PASS	Candidate block 2 raw 32 samples
+timing	local/parent-block3-retry.log	PASS	Parent block 3 raw 32 samples
+timing	local/candidate-block3-retry.log	PASS	Candidate block 3 raw 32 samples
+timing	local/parent-block4-retry.log	PASS	Parent block 4 raw 32 samples
+timing	local/candidate-block4-retry.log	PASS	Candidate block 4 raw 32 samples
+timing	local/local-result.json	PASS	Numeric descriptive Local result and all aggregate statistics
+load	local/device-snapshot-before-local-retry.log	PASS	Device/HBM/AICore/process snapshot before timing
+load	local/device-snapshot-after-local-retry.log	PASS	Device/HBM/AICore/process snapshot after timing
+load	local/process-snapshot-before-local-retry.log	PASS	Process context before timing
+load	local/process-snapshot-after-local-retry.log	PASS	Process context after timing
+invocation	local/invocation-status-retry.tsv	PASS	All nine fixed-environment invocations exit 0
+result	RESULT.md	MEASUREMENT_BLOCKED	Numeric score retained; V026 remains Local Best
+result	VERSION_RECORD_EVENT	PENDING_COMMIT	Route event written before scoped result commit
