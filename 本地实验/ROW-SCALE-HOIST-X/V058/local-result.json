@@ -1,0 +1,115 @@
+{
+  "route": "ROW-SCALE-HOIST-X",
+  "revision": "V058",
+  "direct_parent": "V026",
+  "shape": [128, 128],
+  "dtype": "fp16",
+  "device": 3,
+  "method": "45 warmups; 32 timed device-event samples per invocation; 32-sample Parent stability; four interleaved Parent/Candidate blocks",
+  "score_definition": "score_index = 100 * Parent latency / Candidate latency; candidate_delta_pct = 100 * (Candidate / Parent - 1), so negative delta is faster",
+  "parent_source_sha256": "7c2569d9e3830c845f2b5dc4587a73a05a0bdf041168614cd55ad84204e063f9",
+  "candidate_source_sha256": "6c4a11c570226ec17821063c33c6e5f48f1f9a0ec7c9f5b825c38c766ef7b20d",
+  "sample_count_per_arm": 128,
+  "raw_sample_files": [
+    "local/parent-stability-20261008T164921Z.log",
+    "local/parent-block1-20261008T164921Z.log",
+    "local/candidate-block1-20261008T164921Z.log",
+    "local/parent-block2-20261008T164921Z.log",
+    "local/candidate-block2-20261008T164921Z.log",
+    "local/parent-block3-20261008T164921Z.log",
+    "local/candidate-block3-20261008T164921Z.log",
+    "local/parent-block4-20261008T164921Z.log",
+    "local/candidate-block4-20261008T164921Z.log"
+  ],
+  "parent_pooled": {
+    "median_us": 18.64,
+    "mean_us": 17.81531253125,
+    "sample_sd_us": 8.1109588401,
+    "cv": 0.4552801881,
+    "mad_us": 4.2500005,
+    "mad_over_median": 0.2280043187,
+    "min_us": 6.82,
+    "p10_us": 7.696,
+    "p90_us": 24.356,
+    "max_us": 65.080002
+  },
+  "candidate_pooled": {
+    "median_us": 14.24,
+    "mean_us": 14.7343749844,
+    "sample_sd_us": 6.6780660165,
+    "cv": 0.4532303558,
+    "mad_us": 6.0500005,
+    "mad_over_median": 0.4248595857,
+    "min_us": 6.64,
+    "p10_us": 7.488,
+    "p90_us": 23.0179993,
+    "max_us": 36.919998
+  },
+  "parent_stability": {
+    "sample_count": 32,
+    "median_us": 22.21,
+    "mean_us": 22.169374875,
+    "sample_sd_us": 11.6894580316,
+    "cv": 0.5272795511,
+    "mad_us": 5.519999,
+    "mad_over_median": 0.2485366502,
+    "min_us": 6.96,
+    "p10_us": 7.172,
+    "p90_us": 32.7540015,
+    "max_us": 55.360001
+  },
+  "pooled_median_score_index": 130.8988764045,
+  "candidate_pooled_median_delta_pct": -23.6051502146,
+  "pooled_mean_score_index": 120.9098624824,
+  "candidate_pooled_mean_delta_pct": -17.2937608671,
+  "paired_blocks": [
+    {
+      "block": 1,
+      "parent_median_us": 15.17,
+      "candidate_median_us": 12.4300005,
+      "score_index": 122.0434383732,
+      "candidate_delta_pct": -18.0619611074
+    },
+    {
+      "block": 2,
+      "parent_median_us": 11.08,
+      "candidate_median_us": 12.6,
+      "score_index": 87.9365079365,
+      "candidate_delta_pct": 13.7184115523
+    },
+    {
+      "block": 3,
+      "parent_median_us": 21.1099995,
+      "candidate_median_us": 17.3500005,
+      "score_index": 121.6714633524,
+      "candidate_delta_pct": -17.811459446
+    },
+    {
+      "block": 4,
+      "parent_median_us": 19.3100005,
+      "candidate_median_us": 11.47,
+      "score_index": 168.3522275501,
+      "candidate_delta_pct": -40.600726551
+    }
+  ],
+  "paired_geometric_score_index": 121.7650950512,
+  "candidate_faster_paired_blocks": 3,
+  "invocation_exit_codes": [0, 0, 0, 0, 0, 0, 0, 0, 0],
+  "device_load_before": {
+    "snapshot": "device-snapshot-before-local.log",
+    "hbm_capacity_mb": 65536,
+    "hbm_used_mb": 9130,
+    "hbm_free_mb": 56406,
+    "aicore_pct": 11,
+    "aivector_pct": 12,
+    "external_process_pid": 2055830,
+    "external_process": "python training process; left untouched"
+  },
+  "device_snapshot_after_local": "device-snapshot-after-local.log",
+  "device_release": "device-release.log",
+  "quality_verdict": "MEASUREMENT_BLOCKED",
+  "verdict_reason": "Descriptive medians and means favor Candidate, with 3/4 paired blocks faster. Parent stability CV=0.5272795511 and stability median 22.21 us differs materially from pooled Parent median 18.64 us; concurrent non-Route NPU activity was present. Preserve numeric result but do not promote.",
+  "current_local_best": "V026",
+  "official_comparable": false,
+  "online": "NOT_RUN"
+}
