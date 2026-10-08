@@ -1,0 +1,8 @@
+Post-Local reporting command errors; raw experiment evidence was not modified.
+
+Two attempted awk load-summary commands failed before reading any input because the awk program had a syntax error around the malformed variable expression `a min=v`. The shell reported:
+
+awk: cmd. line:1: /HBM Usage Rate/ {v=$NF; if(!h||v<hmin)hmin=v; if(!h||v>hmax)hmax=v; h++} /Aicore Usage Rate/ {v=$NF; if(!a||v<amin)amin=v; if(!a||v>amax)amax=v; a++}
+awk: cmd. line:1:                                                                                                                          ^ syntax error
+
+A corrected read-only awk summary over retained per-pair usage snapshots completed successfully and reported 36 snapshots: HBM usage 5%, AICore 0%, AIVector 0%, CtrlCPU 2-17%.
