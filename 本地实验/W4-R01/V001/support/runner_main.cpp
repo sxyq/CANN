@@ -34,6 +34,7 @@ constexpr int32_t kFp16 = 1;
 constexpr float kEpsilon = 1.0e-5f;
 constexpr float kAtol = 1.0e-3f;
 constexpr float kRtol = 1.0e-3f;
+constexpr double kAllowedMismatchFraction = 0.001;
 using KernelCall = void (*)(
     GM_ADDR, const TensorGroupInfo&, GM_ADDR, const TensorGroupInfo&,
     GM_ADDR, const TensorGroupInfo&, GM_ADDR, const TensorGroupInfo&,
@@ -43,6 +44,7 @@ struct Options {
     std::string mode;
     std::string dtype;
     std::string output;
+    std::string comparison = "parent-candidate";
     int device = -1;
     int64_t rows = 0;
     int64_t width = 0;
@@ -94,6 +96,16 @@ struct TensorGroups {
     TensorGroupInfo output;
 };
 
+KernelCall SecondKernel(const Options& options)
+{
+    return options.comparison == "parent-parent" ? run_kernel_parent : run_kernel_candidate;
+}
+
+const char* SecondLabel(const Options& options)
+{
+    return options.comparison == "parent-parent" ? "R31B_V011-same-function" : "W4-R01-V001";
+}
+
 bool CheckAcl(aclError status, const char* operation)
 {
     if (status == ACL_SUCCESS) return true;
@@ -113,11 +125,14 @@ bool ParseInt64(const char* text, int64_t minimum, int64_t maximum, int64_t& val
 
 void PrintUsage(const char* program)
 {
-    std::printf("Usage: %s --mode correctness|local --device ID --rows M --width D --blocks N --dtype fp16 [options]\n",
+    std::printf("Usage: %s --mode correctness|local|parent-diagnostic --device ID --rows M --width D --blocks N --dtype fp16 [options]\n",
                 program);
     std::printf("Required dimensions are explicit local-proxy inputs; width must select the wide path (D > 8192).\n");
     std::printf("Options: --warmups N (default 5), --repeats N (default 21), --output FILE\n");
-    std::printf("Correctness compares Parent R31B V011 with Candidate V001. Local performs that comparison first,\n");
+    std::printf("--comparison parent-candidate (default) or parent-parent (one Parent function, two outputs).\n");
+    std::printf("parent-diagnostic requires parent-parent and records reference failures without timing Candidate.\n");
+    std::printf("Correctness compares both outputs with an independent CPU reference before Local,\n");
+    std::printf("using atol=rtol=1e-3 and the existing template's 0.1%% mismatch allowance; strict counts remain visible.\n");
     std::printf("then alternates Parent/Candidate order and reports raw device-event and wall-time samples.\n");
 }
 
@@ -130,6 +145,8 @@ bool ParseOptions(int argc, char** argv, Options& options)
             options.dtype = argv[++i];
         } else if (std::strcmp(argv[i], "--output") == 0 && i + 1 < argc) {
             options.output = argv[++i];
+        } else if (std::strcmp(argv[i], "--comparison") == 0 && i + 1 < argc) {
+            options.comparison = argv[++i];
         } else if (std::strcmp(argv[i], "--device") == 0 && i + 1 < argc) {
             int64_t parsed = 0;
             if (!ParseInt64(argv[++i], 0, 255, parsed)) return false;
@@ -154,7 +171,9 @@ bool ParseOptions(int argc, char** argv, Options& options)
             return false;
         }
     }
-    return options.mode == "correctness" || options.mode == "local";
+    if (options.mode == "parent-diagnostic") return options.comparison == "parent-parent";
+    return (options.mode == "correctness" || options.mode == "local") &&
+           (options.comparison == "parent-candidate" || options.comparison == "parent-parent");
 }
 
 uint16_t ToFp16(float value)
@@ -176,6 +195,63 @@ float InputValue(uint64_t index, uint32_t multiplier, uint32_t offset)
 {
     const uint64_t residue = ((index % 2047U) * multiplier + offset) % 2047U;
     return static_cast<float>(static_cast<int64_t>(residue) - 1023) / 1024.0f;
+}
+
+std::vector<float> CpuReference(const Options& options,
+                              const std::vector<uint16_t>& x,
+                              const std::vector<uint16_t>& residual,
+                              const std::vector<uint16_t>& gamma,
+                              const std::vector<uint16_t>& bias)
+{
+    // Evaluate the problem formula independently in FP64, rounding only the output to FP16.
+    std::vector<float> expected(x.size());
+    const size_t width = static_cast<size_t>(options.width);
+    for (size_t row = 0; row < static_cast<size_t>(options.rows); ++row) {
+        double squareSum = 0.0;
+        for (size_t col = 0; col < width; ++col) {
+            const size_t index = row * width + col;
+            const double value = static_cast<double>(FromFp16(x[index])) + FromFp16(residual[index]);
+            squareSum += value * value;
+        }
+        const double rms = std::sqrt(squareSum / static_cast<double>(width) + kEpsilon);
+        for (size_t col = 0; col < width; ++col) {
+            const size_t index = row * width + col;
+            const double value = static_cast<double>(FromFp16(x[index])) + FromFp16(residual[index]);
+            const double result = value / rms * FromFp16(gamma[col]) + FromFp16(bias[col]);
+            expected[index] = FromFp16(ToFp16(static_cast<float>(result)));
+        }
+    }
+    return expected;
+}
+
+bool CompareReference(const char* label, const Options& options,
+                      const std::vector<uint16_t>& actual, const std::vector<float>& expected)
+{
+    size_t failures = 0;
+    size_t nonfinite = 0;
+    float maxAbs = 0.0f;
+    for (size_t index = 0; index < expected.size(); ++index) {
+        const float value = FromFp16(actual[index]);
+        const float error = std::fabs(value - expected[index]);
+        maxAbs = std::max(maxAbs, error);
+        const bool finite = std::isfinite(value) && std::isfinite(expected[index]);
+        if (!finite) ++nonfinite;
+        if (!finite || error > kAtol + kRtol * std::fabs(expected[index])) {
+            if (failures < 8) {
+                std::printf("REFERENCE_FAILURE label=%s index=%zu actual=%.9g expected=%.9g abs_error=%.9g\n",
+                            label, index, value, expected[index], error);
+            }
+            ++failures;
+        }
+    }
+    const double mismatchFraction = static_cast<double>(failures) / expected.size();
+    const bool passed = nonfinite == 0 && mismatchFraction <= kAllowedMismatchFraction;
+    std::printf("REFERENCE label=%s implementation=cpu_fp64_formula_final_fp16 device=%d rows=%lld width=%lld dtype=fp16 blocks=%u atol=%.9g rtol=%.9g elements=%zu tolerance_failures=%zu nonfinite=%zu max_abs=%.9g mismatch_fraction=%.12g allowed_mismatch_fraction=%.12g strict_all_elements=%s result=%s\n",
+                label, options.device, static_cast<long long>(options.rows),
+                static_cast<long long>(options.width), options.blocks, kAtol, kRtol,
+                expected.size(), failures, nonfinite, maxAbs, mismatchFraction,
+                kAllowedMismatchFraction, failures == 0 ? "PASS" : "FAIL", passed ? "PASS" : "FAIL");
+    return passed;
 }
 
 void CallKernel(KernelCall kernel, const Runtime& runtime,
@@ -215,8 +291,8 @@ bool CompareOutputs(const Runtime& runtime, const Options& options,
         if (error > kAtol + kRtol * std::fabs(expected)) ++toleranceFailures;
     }
     const bool passed = toleranceFailures == 0;
-    std::printf("CORRECTNESS proxy_only=1 parent=R31B_V011 candidate=W4-R01-V001 input=deterministic_fp16_pattern_v1 epsilon=%.8g device=%d rows=%lld width=%lld dtype=fp16 blocks=%u bit_differences=%zu max_abs=%.9g tolerance_failures=%zu nonfinite=%zu result=%s\n",
-                kEpsilon,
+    std::printf("CORRECTNESS proxy_only=1 parent=R31B_V011 candidate=%s input=deterministic_fp16_pattern_v1 epsilon=%.8g device=%d rows=%lld width=%lld dtype=fp16 blocks=%u bit_differences=%zu max_abs=%.9g tolerance_failures=%zu nonfinite=%zu result=%s\n",
+                SecondLabel(options), kEpsilon,
                 options.device, static_cast<long long>(options.rows),
                 static_cast<long long>(options.width), options.blocks,
                 bitDifferences, maxAbs, toleranceFailures, nonfinite, passed ? "PASS" : "FAIL");
@@ -239,10 +315,10 @@ bool RunCorrectness(const Runtime& runtime, const Options& options,
 {
     for (int i = 0; i < warmups; ++i) {
         if (!SynchronizeKernel(run_kernel_parent, runtime, groups, options, runtime.parentOutput) ||
-            !SynchronizeKernel(run_kernel_candidate, runtime, groups, options, runtime.candidateOutput)) return false;
+            !SynchronizeKernel(SecondKernel(options), runtime, groups, options, runtime.candidateOutput)) return false;
     }
     if (!SynchronizeKernel(run_kernel_parent, runtime, groups, options, runtime.parentOutput) ||
-        !SynchronizeKernel(run_kernel_candidate, runtime, groups, options, runtime.candidateOutput) ||
+        !SynchronizeKernel(SecondKernel(options), runtime, groups, options, runtime.candidateOutput) ||
         !CopyOutputs(runtime, outputBytes, parent, candidate)) return false;
     return CompareOutputs(runtime, options, parent, candidate);
 }
@@ -286,8 +362,8 @@ bool RunLocal(const Runtime& runtime, const Options& options,
     std::vector<Sample> samples(static_cast<size_t>(options.repeats));
     for (int i = 0; i < options.warmups; ++i) {
         const bool parentFirst = (i & 1) == 0;
-        const KernelCall first = parentFirst ? run_kernel_parent : run_kernel_candidate;
-        const KernelCall second = parentFirst ? run_kernel_candidate : run_kernel_parent;
+        const KernelCall first = parentFirst ? run_kernel_parent : SecondKernel(options);
+        const KernelCall second = parentFirst ? SecondKernel(options) : run_kernel_parent;
         void* firstOutput = parentFirst ? runtime.parentOutput : runtime.candidateOutput;
         void* secondOutput = parentFirst ? runtime.candidateOutput : runtime.parentOutput;
         if (!SynchronizeKernel(first, runtime, groups, options, firstOutput) ||
@@ -301,10 +377,10 @@ bool RunLocal(const Runtime& runtime, const Options& options,
         if (parentFirst) {
             if (!Measure(run_kernel_parent, runtime, groups, options, runtime.parentOutput,
                          sample.parentDeviceUs, sample.parentWallUs) ||
-                !Measure(run_kernel_candidate, runtime, groups, options, runtime.candidateOutput,
+                !Measure(SecondKernel(options), runtime, groups, options, runtime.candidateOutput,
                          sample.candidateDeviceUs, sample.candidateWallUs)) return false;
         } else {
-            if (!Measure(run_kernel_candidate, runtime, groups, options, runtime.candidateOutput,
+            if (!Measure(SecondKernel(options), runtime, groups, options, runtime.candidateOutput,
                          sample.candidateDeviceUs, sample.candidateWallUs) ||
                 !Measure(run_kernel_parent, runtime, groups, options, runtime.parentOutput,
                          sample.parentDeviceUs, sample.parentWallUs)) return false;
@@ -321,7 +397,8 @@ bool RunLocal(const Runtime& runtime, const Options& options,
         }
         output = &file;
     }
-    *output << "# LOCAL_PROXY_ONLY parent=R31B_V011 candidate=W4-R01-V001 input=deterministic_fp16_pattern_v1"
+    *output << "# LOCAL_PROXY_ONLY parent=R31B_V011 candidate=" << SecondLabel(options)
+            << " comparison=" << options.comparison << " input=deterministic_fp16_pattern_v1"
             << " epsilon=" << kEpsilon << " order=alternating_PC_CP device_load=EXTERNAL_NOT_CAPTURED device=" << options.device
             << " rows=" << options.rows << " width=" << options.width << " dtype=fp16"
             << " requested_blocks=" << options.blocks << " effective_blocks="
@@ -363,8 +440,8 @@ bool RunLocal(const Runtime& runtime, const Options& options,
     }
 
     const uint64_t effectiveBlocks = std::min<uint64_t>(options.blocks, static_cast<uint64_t>(options.rows));
-    std::printf("LOCAL_PROXY_ONLY parent=R31B_V011 candidate=W4-R01-V001 input=deterministic_fp16_pattern_v1 epsilon=%.8g order=alternating_PC_CP device_load=EXTERNAL_NOT_CAPTURED device=%d rows=%lld width=%lld dtype=fp16 requested_blocks=%u effective_blocks=%llu min_rows_per_block=%lld max_rows_per_block=%lld warmups=%d paired_samples=%d\n",
-                kEpsilon,
+    std::printf("LOCAL_PROXY_ONLY parent=R31B_V011 candidate=%s comparison=%s input=deterministic_fp16_pattern_v1 epsilon=%.8g order=alternating_PC_CP device_load=EXTERNAL_NOT_CAPTURED device=%d rows=%lld width=%lld dtype=fp16 requested_blocks=%u effective_blocks=%llu min_rows_per_block=%lld max_rows_per_block=%lld warmups=%d paired_samples=%d\n",
+                SecondLabel(options), options.comparison.c_str(), kEpsilon,
                 options.device, static_cast<long long>(options.rows),
                 static_cast<long long>(options.width), options.blocks,
                 static_cast<unsigned long long>(effectiveBlocks),
@@ -410,7 +487,7 @@ int main(int argc, char** argv)
     }
     const uint64_t effectiveBlocks = std::min<uint64_t>(
         options.blocks, static_cast<uint64_t>(options.rows));
-    if (options.mode == "local" &&
+    if (options.mode != "correctness" &&
         static_cast<uint64_t>(options.rows) / effectiveBlocks < 2) {
         std::fprintf(stderr,
                      "local proxy requires at least two rows per effective block; rows=%lld effective_blocks=%llu\n",
@@ -476,7 +553,16 @@ int main(int argc, char** argv)
     const bool correctnessOk = RunCorrectness(
         runtime, options, groups, dataBytes,
         parentOutput, candidateOutput, options.mode == "correctness" ? 2 : 1);
+    const std::vector<float> reference = CpuReference(options, hostX, hostResidual, hostGamma, hostBias);
+    const bool parentReferenceOk = CompareReference("R31B_V011", options, parentOutput, reference);
+    const bool candidateReferenceOk = CompareReference(SecondLabel(options), options, candidateOutput, reference);
     if (!correctnessOk) return 3;
+    if (options.mode == "parent-diagnostic") {
+        std::printf("PARENT_DIAGNOSTIC_ONLY=1 CANDIDATE_DISPATCHED=0 REFERENCE_ACCEPTED=%s\n",
+                    parentReferenceOk && candidateReferenceOk ? "YES" : "NO");
+    } else if (!parentReferenceOk || !candidateReferenceOk) {
+        return 3;
+    }
     if (options.mode == "correctness") return 0;
     if (!RunLocal(runtime, options, groups)) return 1;
     return 0;
