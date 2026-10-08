@@ -1,0 +1,17 @@
+diff --git "a/\346\234\254\345\234\260\345\256\236\351\252\214/ROW-SCALE-HOIST-X/V026/submission.asc" "b/\346\234\254\345\234\260\345\256\236\351\252\214/ROW-SCALE-HOIST-X/V057/submission.asc"
+index 99c9143e..cb451442 100644
+--- "a/\346\234\254\345\234\260\345\256\236\351\252\214/ROW-SCALE-HOIST-X/V026/submission.asc"
++++ "b/\346\234\254\345\234\260\345\256\236\351\252\214/ROW-SCALE-HOIST-X/V057/submission.asc"
+@@ -1556,9 +1556,10 @@ private:
+                     useFirst ? outputReadyFirst : outputReadySecond;
+                 const AscendC::TEventID outputRelease =
+                     useFirst ? outputReleaseFirst : outputReleaseSecond;
+-                AscendC::Muls(valueRow, valueRow, invRmsValues[batchRow], width);
++                AscendC::LocalTensor<float> gammaScaleLocal = xBuf_.Get<float>();
++                AscendC::Muls(gammaScaleLocal, gammaLocal, invRmsValues[batchRow], width);
+                 AscendC::PipeBarrier<PIPE_V>();
+-                AscendC::Mul(valueRow, valueRow, gammaLocal, width);
++                AscendC::Mul(valueRow, valueRow, gammaScaleLocal, width);
+                 AscendC::PipeBarrier<PIPE_V>();
+                 AscendC::Add(valueRow, valueRow, biasLocal, width);
+                 AscendC::PipeBarrier<PIPE_V>();
