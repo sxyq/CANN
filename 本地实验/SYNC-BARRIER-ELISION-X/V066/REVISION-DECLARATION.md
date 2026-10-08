@@ -1,0 +1,25 @@
+# SYNC-BARRIER-ELISION-X V066
+
+- ROUTE: `SYNC-BARRIER-ELISION-X`
+- REVISION: `V066`
+- DIRECT_PARENT: exact `R31B-V011`
+- PARENT_SOURCE_SHA256: `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`
+- CANDIDATE_SOURCE_SHA256: `1676a5fa9125c2670797f3c68ac90762c488336bc16fb8fb554c7a14f61d0efc`.
+- SINGLE_HYPOTHESIS: test whether the post-bias-Add vector-pipeline barrier is required before advancing to the next row in the FP16 small-contiguous batched fallback.
+- SINGLE_CHANGE_BOUNDARY: delete only `AscendC::PipeBarrier<PIPE_V>()` immediately after `AscendC::Add(outputRow, outputRow, biasLocal, width)` in the `width > kFp16RepeatMaxWidth` branch of `ProcessSmallLowPrecisionContiguousBatched`. Preserve the Mul, the barrier before Add, Add, every other synchronization operation, and every other path.
+- DUPLICATION_AUDIT: all 65 available Route-local candidate sources retain this exact post-Add barrier. V017/V058 are different functions or paths; V065 removes the pre-Add barrier. See `RULE_REFRESH_RECEIPT.md`.
+- FOCUS_AXIS: FP16 row-wise fallback post-bias-Add vector-pipeline dependency.
+- FOCUS_VALUE: one `PIPE_V` barrier after row-wise bias Add when width exceeds 192.
+- CASE: FP16 `128x256`, selected to exercise this fallback.
+- CURRENT_LOCAL_BEST: exact `R31B-V011`; V065 remains rejected/noisy and is not inherited.
+- RUNNER_SOURCE_SHA256: `236079fd29a5e99ee67682e3d2524c0af5358eebadf24f0135c48d6d89b696a0`.
+- CANDIDATE_EXECUTABLE_SHA256: `f8731e9210f167c4ee3b839282add1a2eca662c01a28f80ec1585bc65b113164`.
+- CORRECTNESS_EXECUTABLE_SHA256: `ad7e9af0c78b2d4647fb167f8a29bd0f3095c0a8d28863bc6c6a8d1d26a1098b`.
+- COMPILE: PASS for Candidate and correctness targets. Initial `<vector>` failures and the final host include-path fix are preserved in `logs/compile-v066.log`, `logs/compile-v066-hostfix.log`, and `logs/compile-v066-cxxpath-fix.log`.
+- COMPILE_FIX: configure used the V060 CANN 8.5.0.alpha002 compiler; the successful build exported the matching C++11/7.3 include roots via `CPLUS_INCLUDE_PATH`. No Candidate change was made for the fix.
+- DEVICE_COORDINATION: At rule-refresh time V065 had released device 3 and no V066 assignment was recorded. Subsequent Main coordination excluded device 2 while MODE-DISPATCH V093 held it and permitted a fresh snapshot-based choice. Device 3 was selected because it had no active NPU process, 0% AICore, and over 62 GB free HBM; snapshots and the explicit post-capture release are in `logs/npu-snapshot-v066-*.log`.
+- CORRECTNESS: PASS, 8/8 FP16 Parent/Candidate bitwise cases on device 3; see `logs/correctness-v066-device3.log`. The earlier device-2 log is preserved but is not used as authoritative evidence.
+- SAME-BINARY QUALIFICATION: Parent and Candidate each completed 31 samples on device 3. Both show high jitter; exact statistics and raw samples are in `RESULT.md` and the qualification logs.
+- LOCAL: 62 interleaved device-event pairs over two 31-pair blocks, FP16 `128x256`; primary paired-median score `+2.347418%`, separate pooled median-latency ratio `+9.154930%`, mean-latency ratio `-7.362204%`. All raw samples and load snapshots are preserved.
+- VERDICT: `LOCAL_REJECTED_NOISY`; no promotion. `CURRENT_LOCAL_BEST` remains exact `R31B-V011`.
+- OFFICIAL / ONLINE: none; `NOT_SUBMITTED`.

@@ -1,0 +1,16 @@
+# RULE_REFRESH_RECEIPT - SYNC-BARRIER-ELISION-X V066
+
+- RULE_REFRESH_UTC: `2026-10-08T15:49:38.940438561Z`.
+- Owner/worktree/branch: same SYNC-BARRIER-ELISION-X Route context; `/home/data4t2/lelinfeng/cann-route-w4-3-sync-barrier-elision`; `exp/w4-compile-sweep/r-w4-3-sync-barrier-elision-x`.
+- HEAD before V066: `abc3ef50e27848bf729dd0878bc5cbdfdac7eb02`, the V065 scoped result commit. Worktree was clean before this V066 scaffold; V066 directory did not exist.
+- Required rules reread in this worktree: `AGENTS.md`; `.agents/skills/cann-mainline/SKILL.md`; canonical `.agents/skills/cann-route-executor/SKILL.md`; `项目规则/实验总则.md`; `项目规则/执行约定.md`; `项目规则/本地性能测试规范.md`; `项目规则/服务器实验规范.md`; `项目规则/线上提交规范.md`; `项目规则/Git工作流程.md`.
+- Route state from committed Route-local evidence: V065 commit `abc3ef50`, Compile PASS, bitwise Correctness PASS on eight cases, 62 Local pairs, paired-median score `-0.306905%`, separate pooled median-latency score `-2.557545%`, and high block disagreement/jitter. V065 is `LOCAL_REJECTED_NOISY` and is not promoted.
+- Current Local Best and V066 Direct Parent: exact `R31B-V011`, source SHA256 `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`, verified from the committed V065 `parent.asc`. V065 Candidate is not inherited.
+- Route-local duplicate audit: inspected the synchronization declarations for V001-V065 and checked all 65 available Route-local `submission.asc` files for the exact row-wise `Add(outputRow, outputRow, biasLocal, width)` site in `ProcessSmallLowPrecisionContiguousBatched`. The exact site exists in every candidate source, and none deletes the immediately following `PIPE_V` barrier. No other Route or shared record was read. Related but distinct points: V017 is generic `Process()` after its epilogue; V058 is the `ApplyFp16GammaBiasBatch` helper; V065 removes the barrier before this fallback `Add`, not after it.
+- Active-path basis: the FP16 `128x256` case enters `ProcessSmallLowPrecisionContiguousBatched`; width 256 exceeds `kFp16RepeatMaxWidth=192`, selecting the row-wise fallback. The selected barrier is immediately after bias `Add` and before the next row-loop iteration / later V-to-MTE3 handoff.
+- V066 single factor: remove only `AscendC::PipeBarrier<PIPE_V>()` immediately after `AscendC::Add(outputRow, outputRow, biasLocal, width)` in that FP16 width-greater-than-192 fallback. Preserve Mul, the barrier between Mul and Add, Add, all other barriers/events, stores, and all other paths.
+- Support-only runner update: V066 labels will identify Parent `R31B_V011` and Candidate `V066`; its correctness summary count will be 8, correcting the stale V065 diagnostic count. This does not change the kernel hypothesis.
+- Device: V065 explicitly released device 3 at `2026-10-08T15:36:43.762995519Z`. There is no V066 device assignment. Do not run V066 Correctness or Local on any device until a fresh explicit allocation is received. Compile is host/build work and follows immediately after the V066 Candidate edit.
+- No shared-record or lease writes, Online, SSH, cross-route reads, push, reset, clean, rebase, history rewrite, or Local Best change.
+
+This receipt and the bounded Route-local duplicate audit are complete before the V066 Candidate performance edit.
