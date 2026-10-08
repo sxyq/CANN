@@ -139,7 +139,7 @@ if (!std::is_same<T, half>::value || tile + 1 < tileCount) {
 |---|---|---|
 | L3546–3548 | `dtype==1` 调用 `add_rms_norm_bias_custom<half>` | FP16 入口 |
 | L3474–3475、L60–83 | `Init`；`rowWidth>kCacheElems`，其中 `kCacheElems=8192` | FP16 宽行配置 |
-| L171–180、L3076 | `Process` 转入 `ProcessWideLowPrecision` | 与 FP32 宽行函数分开 |
+| L159–168、L3076 | `Process` 转入 `ProcessWideLowPrecision` | 与 FP32 宽行函数分开 |
 | L3267–3346 | pass-2 参数 tile 循环；末 tile 为 `tile+1==tileCount` | 仅末 tile 省发送与 pending 置位 |
 | L3282/L3287、L3354/L3357 | 参数槽复用等待与尾部等待 | 仍按已证明的布尔状态消费事件 |
 | L3339–3344 | 每行 V→MTE2、V→MTE3、Store、MTE3→V | 原顺序保留 |
