@@ -1,4 +1,6 @@
 #include <acl/acl.h>
+#include <dlfcn.h>
+#include <unistd.h>
 
 #include <algorithm>
 #include <cerrno>
@@ -82,10 +84,12 @@ struct Runtime {
 
 struct Sample {
     char order[3]{};
-    double parentDeviceUs = 0.0;
-    double candidateDeviceUs = 0.0;
-    double parentWallUs = 0.0;
-    double candidateWallUs = 0.0;
+    double parentDeviceUs = std::numeric_limits<double>::quiet_NaN();
+    double candidateDeviceUs = std::numeric_limits<double>::quiet_NaN();
+    double parentWallUs = std::numeric_limits<double>::quiet_NaN();
+    double candidateWallUs = std::numeric_limits<double>::quiet_NaN();
+    bool parentCompleted = false;
+    bool candidateCompleted = false;
 };
 
 struct TensorGroups {
@@ -125,12 +129,14 @@ bool ParseInt64(const char* text, int64_t minimum, int64_t maximum, int64_t& val
 
 void PrintUsage(const char* program)
 {
-    std::printf("Usage: %s --mode correctness|local|parent-diagnostic --device ID --rows M --width D --blocks N --dtype fp16 [options]\n",
+    std::printf("Usage: %s --mode correctness|local|parent-diagnostic|task-study --device ID --rows M --width D --blocks N --dtype fp16 [options]\n",
                 program);
     std::printf("Required dimensions are explicit local-proxy inputs; width must select the wide path (D > 8192).\n");
     std::printf("Options: --warmups N (default 5), --repeats N (default 21), --output FILE\n");
     std::printf("--comparison parent-candidate (default) or parent-parent (one Parent function, two outputs).\n");
     std::printf("parent-diagnostic requires parent-parent and records reference failures without timing Candidate.\n");
+    std::printf("task-study uses Parent only: 16x16384 then 16x32768, blocks=8, warmups=45, repeats=42, three groups each, one process.\n");
+    std::printf("task-study requires an output prefix and preserves both output addresses within each input.\n");
     std::printf("Correctness compares both outputs with an independent CPU reference before Local,\n");
     std::printf("using atol=rtol=1e-3 and the existing template's 0.1%% mismatch allowance; strict counts remain visible.\n");
     std::printf("then alternates Parent/Candidate order and reports raw device-event and wall-time samples.\n");
@@ -171,7 +177,9 @@ bool ParseOptions(int argc, char** argv, Options& options)
             return false;
         }
     }
-    if (options.mode == "parent-diagnostic") return options.comparison == "parent-parent";
+    if (options.mode == "parent-diagnostic" || options.mode == "task-study") {
+        return options.comparison == "parent-parent";
+    }
     return (options.mode == "correctness" || options.mode == "local") &&
            (options.comparison == "parent-candidate" || options.comparison == "parent-parent");
 }
@@ -360,6 +368,7 @@ bool RunLocal(const Runtime& runtime, const Options& options,
               const TensorGroups& groups)
 {
     std::vector<Sample> samples(static_cast<size_t>(options.repeats));
+    bool completed = true;
     for (int i = 0; i < options.warmups; ++i) {
         const bool parentFirst = (i & 1) == 0;
         const KernelCall first = parentFirst ? run_kernel_parent : SecondKernel(options);
@@ -375,15 +384,26 @@ bool RunLocal(const Runtime& runtime, const Options& options,
         const bool parentFirst = (i & 1) == 0;
         std::strcpy(sample.order, parentFirst ? "PC" : "CP");
         if (parentFirst) {
-            if (!Measure(run_kernel_parent, runtime, groups, options, runtime.parentOutput,
-                         sample.parentDeviceUs, sample.parentWallUs) ||
-                !Measure(SecondKernel(options), runtime, groups, options, runtime.candidateOutput,
-                         sample.candidateDeviceUs, sample.candidateWallUs)) return false;
+            sample.parentCompleted = Measure(run_kernel_parent, runtime, groups, options, runtime.parentOutput,
+                                             sample.parentDeviceUs, sample.parentWallUs);
+            if (sample.parentCompleted) {
+                sample.candidateCompleted = Measure(SecondKernel(options), runtime, groups, options,
+                                                    runtime.candidateOutput, sample.candidateDeviceUs,
+                                                    sample.candidateWallUs);
+            }
         } else {
-            if (!Measure(SecondKernel(options), runtime, groups, options, runtime.candidateOutput,
-                         sample.candidateDeviceUs, sample.candidateWallUs) ||
-                !Measure(run_kernel_parent, runtime, groups, options, runtime.parentOutput,
-                         sample.parentDeviceUs, sample.parentWallUs)) return false;
+            sample.candidateCompleted = Measure(SecondKernel(options), runtime, groups, options,
+                                                runtime.candidateOutput, sample.candidateDeviceUs,
+                                                sample.candidateWallUs);
+            if (sample.candidateCompleted) {
+                sample.parentCompleted = Measure(run_kernel_parent, runtime, groups, options, runtime.parentOutput,
+                                                 sample.parentDeviceUs, sample.parentWallUs);
+            }
+        }
+        if (!sample.parentCompleted || !sample.candidateCompleted) {
+            samples.resize(static_cast<size_t>(i + 1));
+            completed = false;
+            break;
         }
     }
 
@@ -405,7 +425,7 @@ bool RunLocal(const Runtime& runtime, const Options& options,
             << std::min<uint64_t>(options.blocks, static_cast<uint64_t>(options.rows))
             << " warmups=" << options.warmups << " paired_samples=" << options.repeats << '\n';
     *output << "sample\torder\tparent_device_us\tcandidate_device_us\tdelta_device_us"
-               "\tparent_wall_us\tcandidate_wall_us\tdelta_wall_us\n";
+               "\tparent_wall_us\tcandidate_wall_us\tdelta_wall_us\tparent_completed\tcandidate_completed\n";
     *output << std::fixed << std::setprecision(6);
 
     std::vector<double> parentDevice, candidateDevice, deltaDevice;
@@ -423,7 +443,8 @@ bool RunLocal(const Runtime& runtime, const Options& options,
         const double wallDelta = sample.candidateWallUs - sample.parentWallUs;
         *output << i << '\t' << sample.order << '\t' << sample.parentDeviceUs << '\t'
                 << sample.candidateDeviceUs << '\t' << deviceDelta << '\t'
-                << sample.parentWallUs << '\t' << sample.candidateWallUs << '\t' << wallDelta << '\n';
+                << sample.parentWallUs << '\t' << sample.candidateWallUs << '\t' << wallDelta << '\t'
+                << sample.parentCompleted << '\t' << sample.candidateCompleted << '\n';
         parentDevice.push_back(sample.parentDeviceUs);
         candidateDevice.push_back(sample.candidateDeviceUs);
         deltaDevice.push_back(deviceDelta);
@@ -436,6 +457,11 @@ bool RunLocal(const Runtime& runtime, const Options& options,
     output->flush();
     if (!*output) {
         std::fprintf(stderr, "failed while writing local samples\n");
+        return false;
+    }
+    if (!completed) {
+        std::fprintf(stderr, "TIMING_FAILURE partial_samples_saved=%zu output=%s\n",
+                     samples.size(), options.output.c_str());
         return false;
     }
 
@@ -470,21 +496,8 @@ bool RunLocal(const Runtime& runtime, const Options& options,
 
 }  // namespace
 
-int main(int argc, char** argv)
+int RunCase(const Options& options)
 {
-    for (int i = 1; i < argc; ++i) {
-        if (std::strcmp(argv[i], "--help") == 0 || std::strcmp(argv[i], "-h") == 0) {
-            PrintUsage(argv[0]);
-            return 0;
-        }
-    }
-
-    Options options;
-    if (!ParseOptions(argc, argv, options) || options.device < 0 || options.rows <= 0 ||
-        options.width <= 8192 || options.blocks == 0 || options.dtype != "fp16") {
-        PrintUsage(argv[0]);
-        return 2;
-    }
     const uint64_t effectiveBlocks = std::min<uint64_t>(
         options.blocks, static_cast<uint64_t>(options.rows));
     if (options.mode != "correctness" &&
@@ -509,8 +522,6 @@ int main(int argc, char** argv)
     const size_t paramBytes = static_cast<size_t>(options.width) * sizeof(uint16_t);
 
     Runtime runtime;
-    if (!CheckAcl(aclInit(nullptr), "aclInit")) return 1;
-    runtime.initialized = true;
     if (!CheckAcl(aclrtSetDevice(options.device), "aclrtSetDevice") ||
         !CheckAcl(aclrtCreateStream(&runtime.stream), "aclrtCreateStream") ||
         !CheckAcl(aclrtCreateEvent(&runtime.startEvent), "aclrtCreateEvent(start)") ||
@@ -550,6 +561,17 @@ int main(int argc, char** argv)
         {xInfo, 1}, {residualInfo, 1}, {gammaInfo, 1}, {biasInfo, 1}, {outputInfo, 1}
     };
 
+    if (options.mode == "task-study") {
+        std::printf("TIMING_CONTEXT pid=%ld rows=%lld width=%lld device=%d blocks=%u comparison=%s x=%p residual=%p gamma=%p bias=%p output_P=%p output_C=%p stream=%p start_event=%p stop_event=%p parent_function=%p second_function=%p\n",
+                    static_cast<long>(getpid()), static_cast<long long>(options.rows),
+                    static_cast<long long>(options.width), options.device, options.blocks,
+                    options.comparison.c_str(), runtime.x, runtime.residual, runtime.gamma, runtime.bias,
+                    runtime.parentOutput, runtime.candidateOutput, runtime.stream,
+                    runtime.startEvent, runtime.stopEvent, reinterpret_cast<void*>(run_kernel_parent),
+                    reinterpret_cast<void*>(SecondKernel(options)));
+        std::printf("REFERENCE_PHASE=PRE rows=%lld width=%lld\n",
+                    static_cast<long long>(options.rows), static_cast<long long>(options.width));
+    }
     const bool correctnessOk = RunCorrectness(
         runtime, options, groups, dataBytes,
         parentOutput, candidateOutput, options.mode == "correctness" ? 2 : 1);
@@ -564,6 +586,69 @@ int main(int argc, char** argv)
         return 3;
     }
     if (options.mode == "correctness") return 0;
-    if (!RunLocal(runtime, options, groups)) return 1;
+    const int groupCount = options.mode == "task-study" ? 3 : 1;
+    for (int group = 1; group <= groupCount; ++group) {
+        Options sampleOptions = options;
+        if (options.mode == "task-study") {
+            sampleOptions.output += "-r" + std::to_string(options.rows) + "-d" +
+                                    std::to_string(options.width) + "-b" + std::to_string(group) + ".tsv";
+            std::printf("TIMING_GROUP rows=%lld width=%lld group=%d warmup_calls=%d timed_calls=%d output=%s\n",
+                        static_cast<long long>(options.rows), static_cast<long long>(options.width), group,
+                        options.warmups * 2, options.repeats * 2, sampleOptions.output.c_str());
+        }
+        if (!RunLocal(runtime, sampleOptions, groups)) return 1;
+    }
+    if (options.mode == "task-study") {
+        std::printf("REFERENCE_PHASE=POST rows=%lld width=%lld additional_launches=0\n",
+                    static_cast<long long>(options.rows), static_cast<long long>(options.width));
+        if (!CopyOutputs(runtime, dataBytes, parentOutput, candidateOutput)) return 1;
+        const bool pairOk = CompareOutputs(runtime, options, parentOutput, candidateOutput);
+        const bool firstOk = CompareReference("R31B_V011", options, parentOutput, reference);
+        const bool secondOk = CompareReference(SecondLabel(options), options, candidateOutput, reference);
+        if (!pairOk || !firstOk || !secondOk) return 3;
+    }
     return 0;
+}
+
+int main(int argc, char** argv)
+{
+    for (int i = 1; i < argc; ++i) {
+        if (std::strcmp(argv[i], "--help") == 0 || std::strcmp(argv[i], "-h") == 0) {
+            PrintUsage(argv[0]);
+            return 0;
+        }
+    }
+    Options options;
+    if (!ParseOptions(argc, argv, options) || options.device < 0 || options.rows <= 0 ||
+        options.width <= 8192 || options.blocks == 0 || options.dtype != "fp16") {
+        PrintUsage(argv[0]);
+        return 2;
+    }
+    if (options.mode == "task-study" &&
+        (options.rows != 16 || options.width != 16384 || options.blocks != 8 ||
+         options.warmups != 45 || options.repeats != 42 || options.output.empty())) {
+        std::fprintf(stderr, "task-study requires the declared R01 dimensions, counts and output prefix\n");
+        return 2;
+    }
+    Runtime session;
+    if (!CheckAcl(aclInit(nullptr), "aclInit")) return 1;
+    session.initialized = true;
+    if (options.mode == "task-study") {
+        Dl_info parentInfo{}, candidateInfo{};
+        dladdr(reinterpret_cast<void*>(run_kernel_parent), &parentInfo);
+        dladdr(reinterpret_cast<void*>(run_kernel_candidate), &candidateInfo);
+        std::printf("STUDY_SESSION pid=%ld parent_library=%s candidate_library=%s candidate_dispatched=0\n",
+                    static_cast<long>(getpid()), parentInfo.dli_fname, candidateInfo.dli_fname);
+        std::ifstream maps("/proc/self/maps");
+        std::string line;
+        while (std::getline(maps, line)) {
+            if (line.find("libw4r01_v001_") != std::string::npos) {
+                std::printf("LIBRARY_MAP %s\n", line.c_str());
+            }
+        }
+    }
+    const int firstStatus = RunCase(options);
+    if (firstStatus != 0 || options.mode != "task-study") return firstStatus;
+    options.width = 32768;
+    return RunCase(options);
 }
