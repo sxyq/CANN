@@ -20,25 +20,25 @@ The 8200 result is an exact Parent failure, not a Candidate regression. Local wa
 
 ## Partial Local
 
-Host `hwnput3`, fixed device 4, `128x8192` FP32 on the threshold-selected path. Six interleaved P/C pairs used warmup 45, 31 samples/block, 2 blocks, batch 64, gap 0. Each side retained 62 device-event samples per pair (372/side; 744 total); all invocations returned `rc=0,bad=0`. All samples were retained.
+Host `hwnput3`, fixed device 4, `128x8192` FP32 on the threshold-selected path. Two interleaved P/C batches of six pairs each used warmup 45, 31 samples/block, 2 blocks, batch 64, gap 0. Each side retained 62 device-event samples per pair (744/side; 1488 total); all invocations returned `rc=0,bad=0`. All samples were retained. The second batch is recorded in `v074-local-recheck02.log`; pair rows 07-12 are in `v074-local-recheck02-paired-summary.tsv`.
 
-For each pair, `pair_speedup = Parent_median / Candidate_median`, using all 62 raw `device_us` values. The one-shape partial score is the arithmetic mean of the six pair speedups; `delta_pct = (score - 1) * 100`. Per-pair values are in `v074-local-paired-summary.tsv`.
+For each pair, `pair_speedup = Parent_median / Candidate_median`, using all 62 raw `device_us` values. The one-shape partial score is the arithmetic mean of all 12 pair speedups; `delta_pct = (score - 1) * 100`. Pair rows 01-06 are in `v074-local-paired-summary.tsv`, and rows 07-12 are in `v074-local-recheck02-paired-summary.tsv`.
 
-- `PARTIAL_ROUTE_LOCAL_SCORE=1.004435421982x`; `PARTIAL_ROUTE_LOCAL_DELTA=+0.4435421982%` (one jointly-correct shape).
-- Median-based direction: Candidate faster in 3/6 pairs and slower in 3/6. All six paired median deltas are within the corresponding Parent+Candidate MAD sum.
-- Pooled raw `device_us` summary (372 samples/side; unscaled MAD; P10/P90 nearest-rank; CV uses population standard deviation / mean):
+- First six-pair batch: `1.004435421982x` (`+0.4435421982%`). Second six-pair batch: `1.056752425081x` (`+5.6752425081%`). Combined 12-pair receipt: `PARTIAL_ROUTE_LOCAL_SCORE=1.030593923531x`; `PARTIAL_ROUTE_LOCAL_DELTA=+3.0593923531%` (one jointly-correct shape).
+- Median-based direction over all pairs: Candidate faster in 7/12 pairs and slower in 5/12. Eleven of twelve paired median deltas are within the corresponding Parent+Candidate MAD sum; pair 07 is outside.
+- Pooled raw `device_us` summary (744 samples/side; unscaled MAD; P10/P90 use linear interpolation at `p*(n-1)`; CV uses population standard deviation / mean):
 
   | Metric | Parent | Candidate |
   |---|---:|---:|
-  | Median | `20.690800` | `20.388400` |
-  | MAD | `2.752050` | `2.524700` |
-  | P10 | `17.564700` | `17.655000` |
-  | P90 | `43.535900` | `43.685300` |
-  | Min / max | `11.010900 / 151.047000` | `14.324100 / 157.731000` |
-  | CV | `78.44684312%` | `83.29540044%` |
+  | Median | `21.424200` | `20.904050` |
+  | MAD | `2.374200` | `2.556100` |
+  | P10 | `17.852430` | `17.596760` |
+  | P90 | `29.132480` | `35.268720` |
+  | Min / max | `10.694400 / 151.047000` | `11.005600 / 157.731000` |
+  | CV | `64.00857824%` | `74.24592616%` |
 
 - Both pooled distributions are highly noisy; maxima are retained and no sample was classified as a protocol failure or removed. `LOAD_QUALITY=NOISY`, `MEASUREMENT_QUALITY=NOISY`, `NEEDS_ONE_MORE_LOCAL=YES`.
-- Device 4 snapshot: AICore `68% -> 66%`; HBM `59193 -> 59195 MB`. Existing PID `2999855` (`VLLMEngineCor`, `55666 MB`) was present before and after, untouched.
+- First Local batch device 4 snapshot: AICore `68% -> 66%`; HBM `59193 -> 59195 MB`. Second batch: AICore `60% -> 58%`; HBM `59192 -> 59195 MB`. Existing PID `2999855` (`VLLMEngineCor`, `55666 MB`) was present before and after both batches, untouched.
 - `CONTROL_ONLY=NO` for shape 8192, but this single noisy shape is only a partial local score and is not comparable to Official.
 
 ## Result Flags
@@ -46,6 +46,6 @@ For each pair, `pair_speedup = Parent_median / Candidate_median`, using all 62 r
 - `COMPILE=PASS`; reference probe build `PASS`.
 - `CORRECTNESS=FAIL_PARTIAL`: Candidate passed the threshold shape, failed 8184, and shared the Parent failure at 8200.
 - `PARTIAL_CORRECTNESS=YES`.
-- `LOCAL_SCORE=1.004435421982x` (partial, noisy; not a promotion).
+- `LOCAL_SCORE=1.030593923531x` (12-pair partial, noisy; not a promotion).
 - `LOCAL_SCORE_COMPARABLE_TO_OFFICIAL=NO`; `ONLINE=NOT_ELIGIBLE`.
 - `CURRENT_LOCAL_BEST=NONE`; `NEEDS_ONE_MORE_LOCAL=YES`. Do not promote V074 from this noisy single-shape result; use exact `R31B-V011` as Parent for the next threshold OFAT.
