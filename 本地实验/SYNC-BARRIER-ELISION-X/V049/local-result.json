@@ -1,0 +1,72 @@
+{
+  "route": "SYNC-BARRIER-ELISION-X",
+  "revision": "V049",
+  "status": "LOCAL_REJECTED_NOISY",
+  "direct_parent": "R31B-V011",
+  "host": "hwnput3",
+  "soc": "Ascend910B3",
+  "npu_arch": "dav-2201",
+  "device": 3,
+  "shape": "128x128",
+  "dtype": "fp16",
+  "parent_source_sha256": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "candidate_source_sha256": "83e4f9248e939a102171b3ac931bfa80cfa9128a347107c00ac627ce8a542225",
+  "runner_source_sha256": "50ae64763878571c47a82392b3b2dbd1c18eb7650eaf65e8d2c532c5f587c12f",
+  "runner_executable_sha256": "a95741aa95b977ce6fafa39c0148324e3c7b6b68387c953d0924b24edabc2c40",
+  "runner_candidate_label": "CANDIDATE_V049",
+  "method": "60 warmups per invocation; two Parent and two Candidate same-binary qualification runs with 31 pairs each; then two interleaved device-event Parent/Candidate blocks of 31 pairs each, alternating P,C and C,P. Device-event latency is primary; wall latency and per-sample throughput are retained. No samples were filtered.",
+  "qualification_status": "COMPLETED_HIGH_JITTER",
+  "same_binary_qualification": {
+    "parent": [
+      {"run": 1, "first_median_us": 16.8, "second_median_us": 17.66, "first_mad_over_median": 0.141667, "second_mad_over_median": 0.080408, "median_drift_fraction": 0.049913},
+      {"run": 2, "first_median_us": 6.58, "second_median_us": 16.74, "first_mad_over_median": 0.112462, "second_mad_over_median": 0.266428, "median_drift_fraction": 0.871355}
+    ],
+    "candidate": [
+      {"run": 1, "first_median_us": 15.8, "second_median_us": 7.18, "first_mad_over_median": 0.174684, "second_mad_over_median": 0.169916, "median_drift_fraction": 0.750218},
+      {"run": 2, "first_median_us": 16.84, "second_median_us": 16.74, "first_mad_over_median": 0.084323, "second_mad_over_median": 0.102748, "median_drift_fraction": 0.005956}
+    ],
+    "interpretation": "Large same-binary first/second median drift in Parent run 2 and Candidate run 1. All qualification raw samples are retained as noise context."
+  },
+  "sample_pairs_per_block": 31,
+  "total_paired_samples": 62,
+  "local_score": 1.684717,
+  "local_score_unit": "percent",
+  "local_score_type": "ROUTE_LOCAL_MEDIAN_PAIRED_DEVICE_SPEEDUP_PERCENT",
+  "local_score_method": "-100 * median(candidate_device_us - parent_device_us across all 62 pairs) / median(parent_device_us across all 62 pairs); no outlier filtering.",
+  "local_delta_candidate_minus_parent_us": -0.14,
+  "local_score_comparable_to_official": false,
+  "pooled": {
+    "parent_device_us": {"median": 8.31, "mean": 12.729355, "stdev_sample": 11.403062, "cv": 0.895808, "min": 5.64, "max": 80.76, "mad": 2.3, "p10": 6.124, "p90": 19.112, "median_per_sample_throughput_g_elements_s": 1.971740},
+    "candidate_device_us": {"median": 9.55, "mean": 11.749355, "stdev_sample": 5.626071, "cv": 0.478841, "min": 5.92, "max": 27.58, "mad": 3.29, "p10": 6.26, "p90": 19.33, "median_per_sample_throughput_g_elements_s": 1.715830},
+    "paired_delta_candidate_minus_parent_us": {"median": -0.14, "mean": -0.98, "stdev_sample": 12.954994, "min": -74.14, "max": 13.72, "mad": 3.34, "p10": -9.602, "p90": 11.296},
+    "parent_wall_us": {"median": 83.276, "mean": 103.701113, "stdev_sample": 99.280284, "cv": 0.957370, "min": 61.8, "max": 836.606, "mad": 10.945, "p10": 69.9179, "p90": 128.4779},
+    "candidate_wall_us": {"median": 84.5305, "mean": 93.267145, "stdev_sample": 31.868247, "cv": 0.341688, "min": 68.72, "max": 270.042, "mad": 12.6795, "p10": 70.6201, "p90": 124.8091}
+  },
+  "blocks": [
+    {"block": 1, "sample_pairs": 31, "runner_score_percent": -7.204612, "parent_median_device_us": 6.94, "candidate_median_device_us": 9.44, "median_paired_delta_us": 0.5, "paired_delta_mad_us": 3.64, "parent_device_cv": 0.555790, "candidate_device_cv": 0.474706},
+    {"block": 2, "sample_pairs": 31, "runner_score_percent": 3.464203, "parent_median_device_us": 8.66, "candidate_median_device_us": 9.92, "median_paired_delta_us": -0.3, "paired_delta_mad_us": 3.2, "parent_device_cv": 0.989975, "candidate_device_cv": 0.490092}
+  ],
+  "device_load": {
+    "assignment": "Main allocated device 3 exclusively to V049 qualification, paired timing and result capture; shared lease TSV was not modified by this Route.",
+    "device3_aicore_percent_pre_between_post": [0, 0, 0],
+    "device3_hbm_mb_pre_between_post": [3426, 3428, 3428],
+    "device3_temperature_c_pre_between_post": [40, 39, 40],
+    "device3_process_reported_pre_between_post": [false, false, false],
+    "host_load_average_pre_between_post": [[69.52, 59.35, 54.48], [62.90, 58.27, 54.18], [58.37, 57.45, 53.96]],
+    "other_device_activity_observed": true,
+    "notes": "Full npu-smi/process snapshots are preserved in the raw Local log. Other-device activity was not modified. No low-load threshold or sample filtering was applied."
+  },
+  "repeatability": "Noisy and directionally inconsistent: block scores reverse sign (-7.204612% and +3.464203%). Qualification also has large median drift in Parent run 2 and Candidate run 1. Pooled device CV is 0.895808 for Parent and 0.478841 for Candidate; paired deltas range from -74.14 to +13.72 us. The pooled paired score is small and does not justify promotion.",
+  "interpretation": "LOCAL_REJECTED_NOISY; CURRENT_LOCAL_BEST remains R31B-V011. The pooled paired metric is positive despite block reversal and pooled marginal medians of 8.31 us Parent versus 9.55 us Candidate; do not treat it as a stable gain. Numeric single-shape Local is not comparable to Official 45.16.",
+  "current_local_best": "R31B-V011",
+  "official_score": null,
+  "online_state": "NOT_SUBMITTED",
+  "evidence": {
+    "qualification_raw_samples_and_load": "logs/qualification-v049-20261007T235402Z.log",
+    "raw_interleaved_samples_and_load": "logs/local-interleaved-v049-20261007T235508Z.log",
+    "compile": "logs/compile-v049-20261007T234919Z.log",
+    "correctness_preflight": "logs/correctness-v049-20261007T235110Z.log",
+    "correctness_retry": "logs/correctness-retry-v049-20261007T235132Z.log",
+    "runner_build": "logs/correctness-runner-build-v049-20261007T234959Z.log"
+  }
+}
