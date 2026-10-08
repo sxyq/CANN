@@ -1,0 +1,34 @@
+diff --git "a/\346\234\254\345\234\260\345\256\236\351\252\214/ROW-SCALE-HOIST-X/V026/submission.asc" "b/\346\234\254\345\234\260\345\256\236\351\252\214/ROW-SCALE-HOIST-X/V064/submission.asc"
+index 99c9143e..79a5844d 100644
+--- "a/\346\234\254\345\234\260\345\256\236\351\252\214/ROW-SCALE-HOIST-X/V026/submission.asc"
++++ "b/\346\234\254\345\234\260\345\256\236\351\252\214/ROW-SCALE-HOIST-X/V064/submission.asc"
+@@ -1649,16 +1649,20 @@ private:
+             }
+             SyncSToV();
+ 
+-            for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
+-                AscendC::LocalTensor<float> valueRow =
+-                    valueLocal[static_cast<uint64_t>(batchRow) * rowWidth];
+-                AscendC::Muls(valueRow, valueRow, invRmsValues[batchRow],
+-                              static_cast<int32_t>(rowWidth));
+-                AscendC::PipeBarrier<PIPE_V>();
+-            }
+             if (rowWidth <= static_cast<uint64_t>(kFp32RepeatMaxWidth)) {
+-                ApplyFp32GammaBiasBatch(valueLocal, gammaLocal, biasLocal,
+-                                        static_cast<int32_t>(rowWidth), batchRows);
++                for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
++                    AscendC::LocalTensor<float> valueRow =
++                        valueLocal[static_cast<uint64_t>(batchRow) * rowWidth];
++                    AscendC::Mul(valueRow, valueRow, gammaLocal,
++                                 static_cast<int32_t>(rowWidth));
++                    AscendC::PipeBarrier<PIPE_V>();
++                    AscendC::Add(valueRow, valueRow, biasLocal,
++                                 static_cast<int32_t>(rowWidth));
++                    AscendC::PipeBarrier<PIPE_V>();
++                    AscendC::Muls(valueRow, valueRow, invRmsValues[batchRow],
++                                  static_cast<int32_t>(rowWidth));
++                    AscendC::PipeBarrier<PIPE_V>();
++                }
+             } else {
+                 for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
+                     AscendC::LocalTensor<float> valueRow =
