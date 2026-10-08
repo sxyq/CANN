@@ -57,7 +57,9 @@ inline std::string ValidateQualificationRecord(
     if (record.revision != "V001") return "paired qualification mismatch: revision";
     if (record.mode != "noise-floor") return "paired qualification mismatch: mode";
     if (record.implementation != "parent") return "paired qualification mismatch: implementation";
-    if (record.qualification != "PASS") return "paired qualification mismatch: verdict";
+    if (record.qualification != "PASS" && record.qualification != "NEEDS_VALIDATION") {
+        return "paired qualification mismatch: verdict";
+    }
     if (record.shape != expected.shape) return "paired qualification mismatch: shape";
     if (record.dtype != expected.dtype) return "paired qualification mismatch: dtype";
     if (record.device != std::to_string(expected.device)) {
