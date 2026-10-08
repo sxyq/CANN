@@ -1,0 +1,37 @@
+{
+  "route": "SYNC-BARRIER-ELISION-X",
+  "revision": "V069",
+  "parent_revision": "R31B-V011",
+  "parent_sha256": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "candidate_sha256": "ab23dd2b5b36289dd522d550abc768a6371ed74d3033fc8740067c4a26f365b9",
+  "candidate_change": "Remove only the guarded WaitFlag<MTE3_V>(outputReleaseFirst) in ProcessSmallLowPrecisionContiguousBatched before first output tile reuse.",
+  "compile": {
+    "status": "PASS",
+    "targets": ["sync_barrier_elision_v069", "sync_barrier_elision_correctness"],
+    "host_include_environment_fix": "CPLUS_INCLUDE_PATH set to existing GCC 11 and toolkit C++ include directories; no Candidate source change"
+  },
+  "correctness": {
+    "status": "PASS",
+    "device": 3,
+    "cases": 9,
+    "fp16_bitwise_mismatches": 0,
+    "bf16_bitwise_mismatches": 0
+  },
+  "local": {
+    "device": 3,
+    "shape": "128x256",
+    "dtype": "bf16",
+    "interleaved_pairs": 62,
+    "paired_median_delta_us": 0.49,
+    "paired_median_score_percent": -2.927121,
+    "pooled_median_latency_ratio_gain_percent": 54.285714,
+    "mean_latency_change_percent": 3.047901,
+    "verdict": "LOCAL_REJECTED_NOISY",
+    "promoted": false,
+    "official_comparable": false
+  },
+  "correctness_runner_sha256": "700d8830fa2af0abd4ff1efa50b515a8cb98fc159729f7602ec275d461f66e0c",
+  "online": false,
+  "shared_records_written": false,
+  "pushed": false
+}
