@@ -11,7 +11,8 @@
 - FOCUS_AXIS: FP16 batched output-ready V-to-MTE3 event wait.
 - FOCUS_VALUE: one `WaitFlag<V_MTE3>(outputReady)` before `Store`.
 - CURRENT_LOCAL_BEST: exact `R31B-V011`; V061 is not inherited.
+- POST_RUN_PATH_AUDIT: the actual deletion is in `ProcessWideFp16BatchedOutputPipelined`, which has no call site in the current source. The measured 128x128 path dispatches to `ProcessSmallLowPrecisionContiguousBatched`; see `RESULT.md`. The numeric Local result is retained but does not evaluate the declared change.
 - COMPILE: PASS for `sync_barrier_elision_v062` and `sync_barrier_elision_correctness`; build artifacts and hashes are recorded in `RESULT.md` (the full compiler transcript was not retained under this revision's `logs/`).
 - CORRECTNESS: PASS, 7/7 FP16 cases bitwise equal.
-- LOCAL: 62 interleaved pairs at FP16 128x128; paired-median score `-0.429185%`; separate median-latency ratio `+3.249540%`; `LOCAL_REJECTED_NOISY` due to block disagreement and high jitter.
+- LOCAL: 62 interleaved pairs at FP16 128x128; paired-median score `-0.429185%`; separate median-latency ratio `+3.249540%`; `LOCAL_REJECTED_UNEXERCISED_CHANGE_NOISY` because the changed function was not dispatched and the raw blocks are noisy.
 - CURRENT_LOCAL_BEST: exact `R31B-V011` (unchanged).
