@@ -1,0 +1,25 @@
+--- a/submission.asc
++++ b/submission.asc
+@@ -597,13 +597,19 @@ public:
+                 Store(outputGm_, rowOffset, valueLocal, valid);
+             } else if constexpr (std::is_same<T, half>::value) {
+                 AscendC::LocalTensor<T> outputLocal = outputBuf_.Get<T>();
+                 FromFloat(outputLocal, valueLocal, valid);
+                 AscendC::PipeBarrier<PIPE_V>();
+-                AscendC::Mul(outputLocal, outputLocal, gammaLocal, valid);
+-                AscendC::PipeBarrier<PIPE_V>();
+-                AscendC::Muls(outputLocal, outputLocal, half(invRms), valid);
++                if (localRows == 1) {
++                    AscendC::Muls(gammaLocal, gammaLocal, half(invRms), valid);
++                    AscendC::PipeBarrier<PIPE_V>();
++                    AscendC::Mul(outputLocal, outputLocal, gammaLocal, valid);
++                } else {
++                    AscendC::Mul(outputLocal, outputLocal, gammaLocal, valid);
++                    AscendC::PipeBarrier<PIPE_V>();
++                    AscendC::Muls(outputLocal, outputLocal, half(invRms), valid);
++                }
+                 AscendC::PipeBarrier<PIPE_V>();
+                 AscendC::Add(outputLocal, outputLocal, biasLocal, valid);
+                 AscendC::PipeBarrier<PIPE_V>();
+                 SyncVToMTE3();
+                 Store(outputGm_, rowOffset, outputLocal, valid);
