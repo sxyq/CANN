@@ -1,0 +1,11 @@
+ROUTE=ROW-SCALE-HOIST-X
+REVISION=V045
+WORKTREE=/home/data4t2/lelinfeng/cann-row-scale-hoist-x-w4
+BRANCH=exp/row-scale-hoist-x-w4
+PRE_REVISION_HEAD=23671e2b573a2f262cead86e78e7f67e92b32d39
+RULES_READ=AGENTS.md; 项目规则/实验总则.md; 项目规则/执行约定.md; 项目规则/本地性能测试规范.md; 项目规则/服务器实验规范.md; 项目规则/线上提交规范.md; 项目规则/Git工作流程.md; 技术路线/技术路线总表.md; 技术路线/技术路线图.md; 技术路线/路线成绩表.tsv; 技术路线/全版本记录.tsv; .agents/skills/cann-mainline/SKILL.md; .agents/skills/cann-route-executor/SKILL.md
+ROUTE_STATE=V043 parent correctness gate blocked; V044 committed with Local MEASUREMENT_BLOCKED; V026 remains CURRENT_LOCAL_BEST
+AUTHORIZATION=Continue one-factor probes only within the existing row-scale placement/order axis, sibling from V026; no Online or shared-record edits
+REVISION_INVENTORY=V045 was unused; FP32 ProcessNarrowMidOverlap gamma-operand scale placement was distinct from V020/V029 value-operand ordering, V042 wait placement, V039 full-row FP32, V043 narrow BF16, and V044 narrow FP16
+EXECUTION=ONE CHANGE -> COMPILE -> CORRECTNESS -> LOCAL -> RESULT -> COMMIT
+DEVICE=0 reserved exclusively for V045 correctness and Local through numeric result capture; released after result capture

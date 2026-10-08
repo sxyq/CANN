@@ -1,0 +1,21 @@
+--- a/submission.asc
++++ b/submission.asc
+@@ -587,10 +587,16 @@
+                 AscendC::WaitFlag<AscendC::HardEvent::MTE2_V>(paramReady);
+             }
+             if constexpr (AscendC::IsSameType<T, float>::value) {
++                if (!residentParams) {
++                    AscendC::Muls(gammaLocal, gammaLocal, invRms, valid);
++                    AscendC::PipeBarrier<PIPE_V>();
++                }
+                 AscendC::Mul(valueLocal, valueLocal, gammaLocal, valid);
+                 AscendC::PipeBarrier<PIPE_V>();
+-                AscendC::Muls(valueLocal, valueLocal, invRms, valid);
+-                AscendC::PipeBarrier<PIPE_V>();
++                if (residentParams) {
++                    AscendC::Muls(valueLocal, valueLocal, invRms, valid);
++                    AscendC::PipeBarrier<PIPE_V>();
++                }
+                 AscendC::Add(valueLocal, valueLocal, biasLocal, valid);
+                 AscendC::PipeBarrier<PIPE_V>();
+                 SyncVToMTE3();
