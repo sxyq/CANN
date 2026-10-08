@@ -9,7 +9,7 @@
 ## 可复用统计
 
 - Official JSON：116条；Pass 65、Runtime Error 19、Wrong Answer 18、Time Limit Exceeded 6、Compile Error 8；65条含官方分数；submission ID 唯一。
-- `source-meta.json`：实点24份；23份与结果JSON同目录，另有 `线上结果/R31A/V024/source-meta.json` 没有同目录结果JSON。22项可比较的 source 文件摘要值一致。
+- `source-meta.json`：24份；23份与结果JSON同目录，另有 `线上结果/R31A/V024/source-meta.json` 没有同目录结果JSON。22项可比较的 source 文件摘要值一致。
 - W4当前账本：32条，10条 `REAL_EXECUTED_REVISION`、22条 `ROUTE_RESEARCH_EVENT`；15条授权路线均出现在矩阵。Local表38条数据（39行含表头），Official表116条（65条有分数）。
 - Local行分类：10条真实性能记录、24条研究事件、3条同版补充、1条同版结果receipt；来源身份键无重复。`AUDIT_FLAGS`为多标签：OBSERVATION_ONLY=12、MEASUREMENT_BLOCKED=13、NOT_MEASURED=25、CORRECTNESS_FAILED=1、BUILD_FAILED=0、VALID_ACCEPTED=0、VALID_REJECTED=0；标签允许重叠，详见完整报告。
 - 每Route置信枚举为HIGH=0、MEDIUM=0、LOW=0、INVALID=9、NOT_MEASURED=6；结论枚举计数为MEASUREMENT_UNRESOLVED=9、RESEARCH_ONLY=4、CORRECTNESS_PROGRESS=1、DUPLICATE_OR_EXHAUSTION_RISK=1，其余PROVEN_LOCAL_GAIN、VALID_NO_GAIN、INSUFFICIENT_EVIDENCE均为0。
