@@ -1,0 +1,21 @@
+# SYNC-BARRIER-ELISION-X V051
+
+- ROUTE: SYNC-BARRIER-ELISION-X
+- REVISION: V051
+- DIRECT_PARENT: R31B-V011
+- PARENT_SOURCE_SHA256: `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`
+- SINGLE_HYPOTHESIS: In the FP16 branch of `ProcessSmallLowPrecisionContiguousBatched`, remove only `SyncVToMTE3()` immediately before `Store(outputGm_, batchOffset, outputLocal, totalElems)`.
+- SINGLE_CHANGE_BOUNDARY: Delete one pre-Store V-to-MTE3 synchronization call from exact R31B-V011. The adjacent post-Store `SyncMTE3ToV()` and FP32 `else` branch remain unchanged.
+- DUPLICATION_AUDIT: V001-V050 Route-local actual diffs contain no deletion at this exact call site. V027/V038 target different output paths; V046-V050 target distinct operations in the batched path.
+- CANDIDATE_SOURCE_SHA256: `a83c42f9fc4f4307c4fc6904899f67e83b424e1bf5fdd0acce894b0448bd474a`
+- CANDIDATE_EXECUTABLE_SHA256: `a18c88ae56c39a518e86ae289050d6aef6568f686f73f765c3eaea66706e9cc7`
+- COMPILE: PASS; `sync_barrier_elision_v051`, `hwnput3`, Ascend910B3 / `dav-2201`, CANN `8.5.0.alpha002`; `logs/compile-v051-20261008T005607Z.log`.
+- CORRECTNESS: PASS_BITWISE; seven FP16 cases, zero mismatches on device 3. Runner source SHA `9079196fef1607f2ac5f1d21aaee75cc5c806fdf47ca0346272f0181d26d62e7`; executable SHA `150a5b1a40846b82b20d002c1eb86c44e07fbdd9e87f229bd806d8ead3daac23`; `logs/correctness-v051-20261008T005647Z.log`.
+- LOCAL_CASE: FP16 `128x128`, device-event timing; 60 warmups per invocation, two 31-pair same-binary runs per binary, then two interleaved 31-pair Parent/Candidate blocks. 124 qualification samples and all 62 paired samples, throughput, wall diagnostics, and load snapshots are retained in `logs/local-v051-device3-20261008T005745Z.log`.
+- LOCAL: `LOCAL_REJECTED_NOISY`; primary score is ratio-of-medians, `100 * (median(Parent device_us) / median(Candidate device_us) - 1)`, in percent, with negative meaning slower. Pooled medians are Parent `7.40 us` and Candidate `15.57 us`, latency ratio Candidate/Parent `2.104054`, score `-52.472704%`. Block 1 medians/means are Parent `14.44 / 12.178710 us`, Candidate `15.48 / 12.818710 us`, ratio-of-medians score `-6.718346%`; Block 2 is Parent `7.02 / 10.835484 us`, Candidate `15.80 / 13.942581 us`, score `-55.569620%`. Pooled means are Parent `11.507097 us`, Candidate `13.380645 us` (ratio-of-means score `-14.001929%`).
+- SCORE_RECONCILIATION: the runner's `+2.432432%` is retained only as a superseded diagnostic: `-100 * median(Candidate-Parent paired delta) / median(Parent)`, mixing a paired-delta median `-0.18 us` with the marginal Parent median `7.40 us`. It is not a ratio-of-medians or the median of per-pair normalized gains. Exact raw-pair normalized gains `100 * (Parent-Candidate)/Parent` have median `+1.139112%`, mean `-45.012536%`, and range `-278.595318%` to `+69.333333%`; paired deltas range `-13.52 us` to `+18.72 us`. Qualification run median drift reaches `83.9361%` for Parent and `27.2393%` for Candidate. These disagreeing estimators and runs support the noisy rejection; no promotion.
+- LOCAL_QUALITY: pooled Parent/Candidate device-event means are `11.507097 / 13.380645 us`, CVs `0.467325 / 0.448400`; pooled throughput medians/means are Parent `2.215365 / 1.770196 G elements/s`, Candidate `1.052284 / 1.571550 G elements/s`. All 62 pairs, 124 qualification samples, throughput, wall diagnostics, jitter, and load snapshots remain in `logs/local-v051-device3-20261008T005745Z.log`.
+- CURRENT_LOCAL_BEST: R31B-V011 (unchanged). Numeric single-shape Local is not comparable to Official `45.16`.
+- OFFICIAL / ONLINE: no Official score; `NOT_SUBMITTED`.
+- DEVICE ASSIGNMENT: Main assigned device 3 exclusively to V051 from Correctness through result capture, subject to fresh HBM check. Released at `2026-10-08T00:59:21Z`; no shared device TSV was modified.
+- RESULT NOTE: The final post-capture `ps` snapshot briefly showed host process label `clx_ref_parent_`; all corresponding npu-smi snapshots reported no process on NPU 3. The process was not identified or modified.

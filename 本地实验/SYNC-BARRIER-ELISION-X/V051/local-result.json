@@ -1,0 +1,118 @@
+{
+  "route": "SYNC-BARRIER-ELISION-X",
+  "revision": "V051",
+  "status": "LOCAL_REJECTED_NOISY",
+  "direct_parent": "R31B-V011",
+  "host": "hwnput3",
+  "soc": "Ascend910B3",
+  "npu_arch": "dav-2201",
+  "device": 3,
+  "shape": "128x128",
+  "dtype": "fp16",
+  "parent_source_sha256": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "candidate_source_sha256": "a83c42f9fc4f4307c4fc6904899f67e83b424e1bf5fdd0acce894b0448bd474a",
+  "candidate_executable_sha256": "a18c88ae56c39a518e86ae289050d6aef6568f686f73f765c3eaea66706e9cc7",
+  "runner_source_sha256": "9079196fef1607f2ac5f1d21aaee75cc5c806fdf47ca0346272f0181d26d62e7",
+  "runner_executable_sha256": "150a5b1a40846b82b20d002c1eb86c44e07fbdd9e87f229bd806d8ead3daac23",
+  "method": "60 warmups per invocation; two 31-pair same-binary qualification runs per binary; two interleaved 31-pair Parent/Candidate device-event blocks in P,C and C,P order; no sample filtering. Device-event latency is primary; throughput and wall time are diagnostics.",
+  "qualification_status": "COMPLETED_HIGH_VARIABILITY",
+  "same_binary_qualification": {
+    "parent": [
+      {"run": 1, "samples": 31, "first_median_us": 6.90, "second_median_us": 16.88, "median_drift_fraction": 0.839361},
+      {"run": 2, "samples": 31, "first_median_us": 7.46, "second_median_us": 6.82, "median_drift_fraction": 0.089636}
+    ],
+    "candidate": [
+      {"run": 1, "samples": 31, "first_median_us": 15.38, "second_median_us": 15.48, "median_drift_fraction": 0.006481},
+      {"run": 2, "samples": 31, "first_median_us": 7.04, "second_median_us": 9.26, "median_drift_fraction": 0.272393}
+    ],
+    "total_raw_samples": 124
+  },
+  "sample_pairs_per_block": 31,
+  "total_paired_samples": 62,
+  "local_score": -52.472704,
+  "local_score_unit": "percent",
+  "local_score_type": "ROUTE_LOCAL_POOLED_RATIO_OF_MEDIANS_DEVICE_LATENCY_SPEEDUP_PERCENT",
+  "local_score_method": "100 * (median(parent_device_us across all 62 Parent samples) / median(candidate_device_us across all 62 Candidate samples) - 1). Negative means Candidate has higher latency. Raw device-event latency is in microseconds.",
+  "candidate_over_parent_median_latency_ratio": 2.104054,
+  "parent_minus_candidate_median_latency_us": -8.17,
+  "pooled": {
+    "parent_device_us": {"median": 7.40, "mean": 11.507097, "stdev_sample": 5.377556, "cv": 0.467325, "min": 5.86, "max": 22.78, "mad": 1.47, "p10": 6.28, "p90": 18.12},
+    "candidate_device_us": {"median": 15.57, "mean": 13.380645, "stdev_sample": 5.999881, "cv": 0.448400, "min": 5.86, "max": 25.62, "mad": 4.09, "p10": 6.12, "p90": 19.88},
+    "ratio_of_medians_score_percent": -52.472704,
+    "ratio_of_medians_candidate_over_parent": 2.104054,
+    "ratio_of_means_score_percent": -14.001929,
+    "paired_delta_candidate_minus_parent_us": {"median": -0.18, "mean": 1.873548, "stdev_sample": 8.055432, "min": -13.52, "max": 18.72, "mad": 3.26, "p10": -9.56, "p90": 13.50},
+    "parent_throughput_g_elements_s": {"median": 2.215365, "mean": 1.770196, "stdev_sample": 0.765523, "cv": 0.432451, "min": 0.719227, "max": 2.795904, "mad": 0.547732, "p10": 0.904194, "p90": 2.608917},
+    "candidate_throughput_g_elements_s": {"median": 1.052284, "mean": 1.571550, "stdev_sample": 0.813798, "cv": 0.517832, "min": 0.639500, "max": 2.795904, "mad": 0.218812, "p10": 0.824145, "p90": 2.677124},
+    "parent_wall_us": {"median": 62.011, "mean": 66.343790, "stdev_sample": 18.716377, "cv": 0.282112, "min": 52.941, "max": 165.332, "mad": 1.780, "p10": 59.511, "p90": 72.751},
+    "candidate_wall_us": {"median": 62.606, "mean": 64.707129, "stdev_sample": 5.711933, "cv": 0.088274, "min": 55.041, "max": 85.072, "mad": 1.925, "p10": 60.091, "p90": 71.852},
+    "pairwise_parent_normalized_gain_percent": {"formula": "100 * (parent_device_us - candidate_device_us) / parent_device_us per raw pair", "median": 1.139112, "mean": -45.012536, "min": -278.595318, "max": 69.333333}
+  },
+  "blocks": [
+    {
+      "block": 1,
+      "sample_pairs": 31,
+      "parent_median_device_us": 14.44,
+      "parent_mean_device_us": 12.178710,
+      "candidate_median_device_us": 15.48,
+      "candidate_mean_device_us": 12.818710,
+      "candidate_over_parent_median_latency_ratio": 1.072022,
+      "ratio_of_medians_score_percent": -6.718346,
+      "ratio_of_means_score_percent": -4.992702,
+      "median_paired_delta_candidate_minus_parent_us": -0.22,
+      "mean_paired_delta_candidate_minus_parent_us": 0.640000,
+      "paired_delta_min_us": -13.52,
+      "paired_delta_max_us": 18.72,
+      "parent_device_cv": 0.438799,
+      "candidate_device_cv": 0.455332,
+      "parent_throughput_median_mean_g_elements_s": [1.134626, 1.669710],
+      "candidate_throughput_median_mean_g_elements_s": [1.058398, 1.628000]
+    },
+    {
+      "block": 2,
+      "sample_pairs": 31,
+      "parent_median_device_us": 7.02,
+      "parent_mean_device_us": 10.835484,
+      "candidate_median_device_us": 15.80,
+      "candidate_mean_device_us": 13.942581,
+      "candidate_over_parent_median_latency_ratio": 2.250712,
+      "ratio_of_medians_score_percent": -55.569620,
+      "ratio_of_means_score_percent": -22.284947,
+      "median_paired_delta_candidate_minus_parent_us": -0.18,
+      "mean_paired_delta_candidate_minus_parent_us": 3.107097,
+      "paired_delta_min_us": -11.68,
+      "paired_delta_max_us": 18.56,
+      "parent_device_cv": 0.499639,
+      "candidate_device_cv": 0.444892,
+      "parent_throughput_median_mean_g_elements_s": [2.333903, 1.870681],
+      "candidate_throughput_median_mean_g_elements_s": [1.036962, 1.515099]
+    }
+  ],
+  "score_reconciliation": {
+    "superseded_runner_score_percent": 2.432432,
+    "superseded_runner_formula": "-100 * median(candidate_device_us - parent_device_us across raw pairs) / median(parent_device_us)",
+    "superseded_runner_inputs": {"median_paired_delta_candidate_minus_parent_us": -0.18, "parent_marginal_median_us": 7.40},
+    "reason_not_primary": "The median of differences is not the difference of medians: pooled median(C-P) is -0.18 us, while median(C)-median(P) is +8.17 us. This combines a paired-delta median with a separate marginal median and is neither the ratio of marginal medians nor the median of per-pair normalized gains. The positive median of per-pair normalized gains is contradicted by its negative mean, both block ratio-of-medians scores, the pooled ratio-of-means score, and high qualification drift.",
+    "runner_reported_block_scores_percent": [1.523538, 2.564102],
+    "verdict": "LOCAL_REJECTED_NOISY; not promoted"
+  },
+  "device_load": {
+    "assignment": "Main allocated device 3 exclusively to V051 from Correctness through result capture; released at 2026-10-08T00:59:21Z.",
+    "device3_aicore_percent_snapshots": [0, 0, 0, 0, 0, 0, 0],
+    "device3_hbm_mb_snapshots": [3426, 3428, 3428, 3428, 3428, 3428, 3427],
+    "device3_process_snapshots": "No NPU process reported in all seven npu-smi snapshots.",
+    "host_load_average_1m_5m_15m": [[47.23, 48.57, 47.19], [43.88, 47.81, 46.96], [53.78, 49.90, 47.65], [51.47, 49.49, 47.53], [47.88, 48.78, 47.32], [44.98, 48.13, 47.12], [59.72, 51.13, 48.10]],
+    "other_device_activity_observed": true,
+    "notes": "Device 3 remained at 0% reported AICore utilization with stable HBM, while other devices and host load were active. All process/load snapshots remain in the raw log; no other process was changed and no shared device TSV was modified."
+  },
+  "repeatability": "Noisy: the two Local blocks show substantially different latency distributions; Candidate median latency is higher in both. Parent qualification run 1 median drift was 83.9361%; Candidate run 2 drift was 27.2393%. Pooled paired-delta median, pairwise normalized-gain median, ratio-of-means, and ratio-of-medians disagree, with wide paired ranges. No promotion.",
+  "interpretation": "LOCAL_REJECTED_NOISY; CURRENT_LOCAL_BEST remains R31B-V011. Numeric single-shape Local is not comparable to Official 45.16.",
+  "current_local_best": "R31B-V011",
+  "official_score": null,
+  "online_state": "NOT_SUBMITTED",
+  "evidence": {
+    "qualification_interleaved_raw_samples_throughput_wall_jitter_and_load": "logs/local-v051-device3-20261008T005745Z.log",
+    "compile": "logs/compile-v051-20261008T005607Z.log",
+    "correctness": "logs/correctness-v051-20261008T005647Z.log"
+  }
+}
