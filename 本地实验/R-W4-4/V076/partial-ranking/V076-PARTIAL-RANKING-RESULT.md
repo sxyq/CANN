@@ -37,6 +37,7 @@ For each pair, `pair_speedup = Parent_median / Candidate_median`, using all 62 r
 
 - Both distributions are noisy; maxima are retained and no sample was classified as a protocol failure or removed. `LOAD_QUALITY=NOISY`, `MEASUREMENT_QUALITY=NOISY`, `NEEDS_ONE_MORE_LOCAL=YES`.
 - Device 4 snapshot: AICore `45% -> 65%`; HBM `59193 -> 59195 MB`. Existing PID `2999855` (`VLLMEngineCor`, `55666 MB`) was present before and after, untouched.
+- `DEVICE4_RESERVATION=RELEASED` after all correctness and Local raw files and load snapshots were captured.
 - `CONTROL_ONLY=YES`; Local does not measure the threshold-selected path.
 
 ## Result Flags
