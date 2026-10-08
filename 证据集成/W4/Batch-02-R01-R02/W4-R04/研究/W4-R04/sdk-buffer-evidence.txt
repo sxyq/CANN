@@ -1,0 +1,75 @@
+UTC=2026-10-08T04:50:42.998430+00:00
+SOURCE=server3 installed SDK; read-only; no device kernel
+FILE=/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/data/platform_config/Ascend910B3.ini
+version.SoC_version=Ascend910B3
+version.Short_SoC_version=Ascend910B
+version.AIC_version=AIC-C-220
+version.CCEC_AIV_version=dav-c220-vec
+SoCInfo.vector_core_cnt=40
+SoCInfo.cube_core_cnt=20
+AICoreSpec.ub_size=196608
+AICoreSpec.ubblock_size=32
+AICoreSpec.ubbank_size=4096
+AICoreSpec.ubbank_num=64
+AICoreSpec.ubbank_group_num=16
+AICoreSpec.ubburst_in_one_block=32
+FILE=/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ascendc/include/basic_api/impl/kernel_tpipe_impl.h
+289:template <TPosition pos> __aicore__ inline bool TPipe::InitBuffer(TBuf<pos>& buf, uint32_t len)
+290:{
+291:    constexpr auto pool = GetPhyType(pos);
+292:#if defined(ASCENDC_CPU_DEBUG) && ASCENDC_CPU_DEBUG == 1
+293:    auto bufferInitLen = ConstDefiner::Instance().bufferInitLen;
+294:    auto currentPoolSize = bufferInitLen.at(pool);
+295:    ASCENDC_ASSERT((len > 0 && len <= currentPoolSize), {
+296:        KERNEL_LOG(KERNEL_ERROR,
+297:            "buffer length is %u, which should be larger than 0, and at least less than or equal to %u",
+298:            len,
+299:            currentPoolSize);
+300:    });
+301:#endif
+302:
+303:    len = (len + ONE_BLK_SIZE - MIN_BLOCK_LEN) / ONE_BLK_SIZE * ONE_BLK_SIZE;
+304:#if defined(__NPU_ARCH__) && ((__NPU_ARCH__ == 2103) || (__NPU_ARCH__ == 3003) || (__NPU_ARCH__ == 3103) || \
+305:    (__NPU_ARCH__ == 3113))
+306:    if constexpr (pos == TPosition::C2) {
+307:        len = (len + TWO_BLK_SIZE - MIN_BLOCK_LEN) / TWO_BLK_SIZE * TWO_BLK_SIZE;
+308:    }
+309:#endif
+310:    constexpr int32_t bufHandleSize = 1;
+311:    buf.bufStart = this->g_tpipeImpl.buf_ + this->g_tpipeImpl.curBufSize_;
+312:    buf.bufLen = len;
+313:    buf.offset = 0;
+314:
+315:    ASCENDC_ASSERT((pool != Hardware::GM), { KERNEL_LOG(KERNEL_ERROR, "buffer pos can not be Hardware::GM"); });
+316:
+317:    auto curPoolAddr = g_tpipeImpl.bufPool_[static_cast<uint8_t>(pool)].maxAddr;
+318:    auto ptr = buf.bufStart;
+319:#if defined(ASCENDC_CPU_DEBUG) && ASCENDC_CPU_DEBUG == 1
+320:    ASCENDC_ASSERT((len <= currentPoolSize),
+321:                   { KERNEL_LOG(KERNEL_ERROR, "len is %u, exceed limits %u", len, currentPoolSize); });
+322:    auto absAddr = GetBaseAddr(static_cast<int8_t>(pos));
+323:    AscendCBufInit(static_cast<uint8_t>(pos), 1, 1, reinterpret_cast<uint64_t>(curPoolAddr + absAddr), len);
+324:#endif
+325:    for (uint8_t i = 0; i < bufHandleSize; i++, ptr++) {
+326:        ptr->state = TBufState::FREE;
+327:        ptr->enQueEvtID = INVALID_TEVENTID;
+328:        ptr->freeBufEvtID = INVALID_TEVENTID;
+329:        ptr->address = curPoolAddr;
+330:        ptr->dataLen = len;
+331:        ptr->usertag = -1;
+332:        curPoolAddr += len;
+333:    }
+334:    ASCENDC_ASSERT((curPoolAddr <= bufferInitLen.at(pool)), {
+335:        KERNEL_LOG(KERNEL_ERROR, "curPoolAddr is %d, exceed limits %d", curPoolAddr, bufferInitLen.at(pool));
+336:    });
+337:    this->g_tpipeImpl.bufPool_[static_cast<uint8_t>(pool)].maxAddr = curPoolAddr;
+338:    this->g_tpipeImpl.curBufSize_ += bufHandleSize;
+920:__aicore__ inline void TPipe::ResetPool()
+921:{
+922:    g_tpipeImpl.tscmBufferPtr_ = TOTAL_L1_SIZE;
+923:    g_tpipeImpl.curBufSize_ = 0;
+924:    auto buf = g_tpipeImpl.bufPool_;
+925:    for (int32_t i = 0; i < static_cast<int32_t>(Hardware::MAX); i++, buf++) {
+926:        buf->maxAddr = 0;
+927:    }
+928:    auto evt = g_tpipeImpl.eventPool_;
