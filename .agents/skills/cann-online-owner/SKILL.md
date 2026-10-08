@@ -24,7 +24,7 @@ Route Agent evidence → Main summary → Online Owner qualification and formal 
 
 Main 向 Online Owner 提供：
 
-- starting local baseline；
+- starting local measurement context；
 - current local best；
 - 每个独立 Revision 的 Local gain；
 - cumulative local gain；
