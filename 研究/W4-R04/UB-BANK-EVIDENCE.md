@@ -4,14 +4,16 @@
 
 已取得明确适用于 Atlas A2/A3、NPU 架构 2201 的官方 UB 资料：192 KiB、48 个 bank、16 个 bank group，每组 3 个 bank；每个 bank 为 4 KiB，128 行，每行 32 B。服务器安装的 8.5.0.alpha002 配置却含 `ubbank_num=64`。该字段与同文件容量不一致，原因仍为 UNKNOWN，不能据此把 64 写成设备实测 bank 数。
 
-R1 V001–V010 的实际源码差异及旧样本已核对。交换 x/residual 分配顺序、固定 padding、初始 A/B 槽位相位均有历史。当前未证明新的独立 x/residual 布局轴，不建立 OFAT，不重跑旧性能实验。本次为 `ROUTE_RESEARCH_EVENT`，新增性能版本 0，未改变 Route 生命周期。
+R1 V001–V010 的实际源码差异及旧样本已核对。交换 x/residual 分配顺序、宽行分配 padding、初始 A/B 槽位相位均有历史，不重跑旧性能实验。随后根据新到的 R05 子视图证据，完成窄行输入消费者的专项核对：NarrowMid FP32 可在既有分配中只移动 residual 视图，不改变后续分配或参数位置；174 份已读源码未发现该变化。该新轴已具备源码范围与容量依据，设备精度和收益仍待完整 OFAT。本文件的研究事件完成时新增性能版本为 0，未改变 Route 生命周期。
 
 agent_id：`01a119cc-fa30-7740-8fd2-9cdfab6e6c46`，SLOT-4。
 工作树：`/Users/sunyiyang/Desktop/Project/cann/worktrees/w4/R04-ub-bank-xr-layout-x`。
 分支：`w4/r04-ub-bank-xr-layout-x`。接手提交：`de70b634813dea80783fc57716d6e95c158edeec`，接手时无未提交内容。
 Parent：同提交的 `线上结果/R31B/V011/submission.asc`；保留该继承参考，R04 自有 `CURRENT_LOCAL_BEST=NONE`。
 
-指定规则 `9f91895506023d917637f707bb3f61cd9d9f8765` 已按用户要求完整读取。该提交的三份共享表未检出 R04；`w3/m1/record-owner@cecec26bd852540c52b1e932cba7b9cd041331cc` 有旧长 ID 的 V001 条目，明确未编辑 Candidate、未运行实验。故 `LAST_KNOWN_REVISION=V001 (old research only)`，真实性能版本仍为 0，保留 `STATE_SYNC_GAP`。本 Route 不改共享表。
+指定规则 `9f91895506023d917637f707bb3f61cd9d9f8765` 已按用户要求完整读取。开始时在该规则提交的三份共享表中未检出 R04；这是旧对象的查询快照，不代表当前登记状态。`w3/m1/record-owner@cecec26bd852540c52b1e932cba7b9cd041331cc` 有旧长 ID 的 V001 条目，明确未编辑 Candidate、未运行实验。故 `LAST_KNOWN_REVISION=V001 (old research only)`，真实性能版本仍为 0。
+
+2026-10-08 状态补充：从本工作树读取的 `main@285e7b4c2a6810774ca46c053bb7cac0f0b52223` 已在任务表、成绩表登记 R04/R05，均标为 `REGISTERED_ROUTE`；阶段仍为 QUEUED，结果为 UNKNOWN，版本表未出现两者的真实性能版本。当前 `STATE_SYNC_GAP=RESEARCH_EVENT_PENDING`，只待新研究事件同步。本 Route 不改共享表，后续状态以 main 及最新来源回执为准。
 
 ## 官方资料事实
 
@@ -102,6 +104,50 @@ Parent 的 `Init` 宽行 FP16 分支见 L81–97，行批量选择见 L1293，pa
 
 官方 8.5 示例中的 +256 B 可以提示如何把两个 256 B 读区间分开，但在本 Route 上仍属于固定 padding 方向；不把换一个数值包装成新的独立性能概念。
 
+## R05 新来源与既有硬件模型的对应
+
+用户转交的 `61e0aa28d0bdf439a879a171abece8477c806936:研究/W4-R05/PARAM-OUTPUT-LAYOUT-STUDY.md` 已完整读取。该来源只提出 NarrowMid FP32 gamma 子视图位置变化，保持全部 `InitBuffer` 和其他视图不变；没有选定性能偏移值、建立 Candidate 或取得设备结果。此项归 R05，不能计入 R04 的新 x/residual 轴。
+
+以本报告已取得的 TPipe 分配代码，对同一 Parent L116–149 的 FP32 分支作整数地址推导：`gammaBuf_` 起点为 `0x8000`，`valueFp32Buf_` 起点为 `0x20000`。NarrowMid 的 `Mul(valueLocal, valueLocal, gammaLocal, valid)` 位于 L582，两个 Load 位于 L515/L539，均引用同一个 gammaLocal。原地址在官方图示模型中的 group 起点都为 0，bank 分别为 0 和 32；这是 SOURCE_MODEL，未观察设备指针。
+
+设 gamma 子视图偏移 s 个 float。R05 的范围与容量条件为 `128 < D <= 4096`、`s >= 0`、`s % 8 == 0`、`s + round_up(D,8) <= 8192`。结合上面的官方模型，两个读取源的 group 相位差满足：
+
+```text
+gamma_start(s) = 0x8000 + 4*s
+value_start   = 0x20000
+group_phase_difference = (s/8) mod 16
+```
+
+对于同一连续 256 B repeat 的两个 8-DataBlock 读取集合，原集合重合 8 个 group；相位差为 8 时集合不重合，对应关系式 `s ≡ 64 (mod 128)`。本次只用整数集合枚举 16 种 group 相位验证该关系，没有扫性能参数，也没有替 R05 选定具体 s。实际输出为：
+
+```text
+SOURCE_MODEL_ONLY=PASS
+FP32_GAMMA_START=0x8000; FP32_VALUE_START=0x20000
+SAME_REPEAT_PARENT_GROUP_INTERSECTION=8
+DISJOINT_GROUP_PHASES_MOD_16=[8]; FLOAT_OFFSET_RELATION=s mod 128 = 64
+CAPACITY_CONDITION=s mod 8 = 0; s + round_up(D,8) <= 8192
+WIDE_FP16_INPUT_ALLOCATION=16384; TWO_FULL_SLOTS=16384; FORWARD_SPARE=0
+PERFORMANCE_OFFSET_SELECTED=NONE; DEVICE_OPERATIONS=0
+```
+
+上述关系提供可转交的资料依据，不能直接预测 Mul 周期数或整核收益。实际 UB 起点、生成指令的访问方式、原地 Mul 的读写关系及随后 bias Add 的冲突贡献仍未实测；若实际地址或访问方式不符合模型，对应推论即失效。SDK 的 `ubbank_num=64` 与官方 48 的差异也继续保留为 UNKNOWN。
+
+R04 已审阅的宽行 FP16 x/residual 分配各为 16384 B，两个完整槽位各占 8192 B，没有类似 gamma 分配的正向空余子视图空间。这项宽行限制没有排除窄行分配的剩余容量，后续专项核对见下一节。此补充复用既有硬件资料，没有访问 server3 或增加硬件采集。
+
+## R04 窄行输入子视图：新增源码依据
+
+`narrow_input_audit.py` 与输出 `narrow-input-audit.txt` 专门回答新的输入子视图问题，不重算旧性能结果。它从固定 Git 对象读取 174 份源码：Parent 所在对象的 59 份相关历史文件、W3 R1/R2/R4/R5 的 10/40/31/28 份 Candidate，以及 6 份相关 W4 Candidate。含 NarrowMid 的历史函数均与 Parent 相同，只有 W4 R08 的跨行预取函数不同；R08 的 residual 视图起点仍为零。较早版本中没有该函数的文件明确标记为 `NARROW_MID_PRESENT=NO`，不将其当作函数相同。
+
+Parent L116–117 给 x/residual 各分配 4096 个 T，NarrowMid 在 L528–529 获取起点为零的视图，L536 将 residual 数据加载到同一视图，FP32 在 L546 用该视图参与 `Add(valueLocal, xLocal, residualLocal, valid)`。Add 输出是独立的 valueLocal；本路径的参数使用 gammaBuf_/biasBuf_，与宽行复用输入区域的做法不同。所有分配、事件、DMA 数量、数据类型和算术顺序均可保持原样。
+
+因此，一个容量受限的独立输入轴是：仅在 NarrowMid FP32 中，将 residual 的 Load/Add 视图向后移动 64 float（256 B）；条件为 `D <= 4096-64`。D>4032 时保留原视图，其他 dtype 和路径均不改。D 已由原分派限定为大于 128；因为 4032 是 8 的倍数，对每个受影响 D 都有 `64+round_up(D,8)<=4096`。尾部 DataCopyPad 的 32 B 目标范围也完整落在原分配中，沿用 R06 已核对的单块跨度依据。
+
+该 256 B 来自 2201 官方图示的 group 相位关系，没有从旧时长选值。源码模型中 x 起点为 0，residual 起点由 `0x4000` 变为 `0x4100`；两个完整 repeat 的读取 group 集合由重合 8 个变为不重合。其余 buffer 起点不变。地址模型及 SDK 字段差异的限制继续适用，不宣称已测得 bank 冲突下降。
+
+数据语义可逐项对应：原 residual GM 的同一 D 个 float 写入偏移后的视图，原 Add 从该视图读取，余下归约和输出不变；两行之间仍保留原 inputRelease 依赖。此为源码可行性证明，实际 Correctness 必须分别对 Parent/Candidate 与独立 reference 比较。
+
+首组有来源的 Local 输入可复用 `16×2048`、`16×2056 FP32`：来自 W3 R2 V040 runner，R03 `712e4723` 的 host 证据已将两者绑定到设备 3 的 40 个可用核、16 blocks、NarrowMid 每核一行。两者都会受此视图变化影响，不能称为未变化对照。新的正式版本须先保留 Parent same-binary 数据，再交错采样；本研究没有新计时，也没有编辑 Candidate。
+
 ## DUPLICATE_AUDIT 范围
 
 | 来源 | 本次实际读取范围与结论 |
@@ -113,19 +159,21 @@ Parent 的 `Init` 宽行 FP16 分支见 L81–97，行批量选择见 L1293，pa
 | W3 R5，`1efa0863611f1a9b76ab13dd361eba161b32b46d` | V001–V028 各自 Parent.asc/Candidate.asc 差异；V012 初始参数槽相位、V016/V019 参数 issue-order、V020 输入初始槽相位已有覆盖。 |
 | R031 / R31A / R31B | R031 D001–D004 分配代码；R31A V016/V024/V025/V026/V028、R31B V016/V017 的分配代码及本工作树版本机制记录；多槽、驻留、生命周期和 tile 变化不重新作为布局发现。 |
 | MIX、STORE/EPILOGUE | MIX-A V007、STORE V002 的分配代码及版本机制记录；EPILOGUE 仅核对已有机制记录，未宣称全源码覆盖。 |
-| 相关 W4 | R02 `traversal-coverage.md`、R06 `DUPLICATE-AUDIT.md` 及 `bd825c5f` 的 `TRANSACTION-STRUCTURE-20261008.md`、R09 `event-dependency.md` 和旧 R04 Record 条目；资料均通过本工作树的 Git 对象读取。 |
+| 相关 W4 | R02 `traversal-coverage.md`、R06 `DUPLICATE-AUDIT.md` 及 `bd825c5f` 的 `TRANSACTION-STRUCTURE-20261008.md`、R09 `event-dependency.md`、R05 `61e0aa28` 的 `PARAM-OUTPUT-LAYOUT-STUDY.md` 和旧 R04 Record 条目；资料均通过本工作树的 Git 对象读取。 |
 
-`MECHANISM=allocation order / fixed padding / initial double-buffer slot phase`；`MATCH_FOUND=YES`。当前没有独立性和精度均已得到证明的新表示法，`NEW_PERFORMANCE_REVISION=NO`。没有宣称全部可能布局已经用尽。
+`MECHANISM=allocation order / wide allocation padding / initial double-buffer slot phase`；`MATCH_FOUND=YES`。这些旧机制不创建新版本。
+
+专项补充：`MECHANISM=NarrowMid FP32 residual consumer subview with unchanged allocations`；`MATCH_FOUND=NO_IN_READ_SOURCES`。它有独立的消费者范围和容量证明，区别于移动全部后续分配的宽行扩容；设备精度与 Local 尚未验证。本研究事件仍为 `NEW_PERFORMANCE_REVISION=NO`，后续真实性能版本单独声明和记录。
 
 ## 验证、交接与精确下一动作
 
-复现本次离线验证：在本工作树执行 `python3 -B 研究/W4-R04/ub_bank_audit.py`。它只读固定 Git 对象并向 stdout 输出，完成 10 个资料地址、11 份分配模型、10 份源码差异、10 份旧 reference 函数和 840 个旧单侧样本的核对。原执行返回 0，完整输出为 `source-audit.txt`。
+复现原离线验证：在本工作树执行 `python3 -B 研究/W4-R04/ub_bank_audit.py`。它只读固定 Git 对象并向 stdout 输出，完成 10 个资料地址、11 份分配模型、10 份源码差异、10 份旧 reference 函数和 840 个旧单侧样本的核对。原执行返回 0，完整输出为 `source-audit.txt`。该脚本与原输出均未改变，未重跑旧实验或原脚本。新专项命令 `python3 -B 研究/W4-R04/narrow_input_audit.py` 返回 0，174 份源码结果保存在 `narrow-input-audit.txt`。
 
-共同硬件资料已经可交给 R05：复用本文件、两张官方图和 `sdk-buffer-evidence.txt`，无需重新取同一硬件资料。R05 仍需针对自己的参数/输出消费者作源码归因。
+共同硬件资料及 R05 消费者对应已可由 Main 转交：复用本文件、两张官方图和 `sdk-buffer-evidence.txt`，无需重新取同一硬件资料。R05 已安全交接；其后续 fresh Agent 可结合自身研究声明参数子视图实验，仍须实际 Compile、独立 reference Correctness 和 Local，不能把本报告的地址集合关系写成性能结果。
 
-下一项有判别力的 R04 研究是 Parent-only 指令归因：复用 R31B V011，在有来源的 `2×32768 FP16` 输入下，一次性取得实际 x/r 两个槽位的 UB 指针、已生成的 Add 指令与 ResourceConflictRatio；对照 `2×8192 FP16`。只回答 pass-1 输入读取是否存在可定位的冲突，以及它与 pass-2 参数访问、原地 Add 读写是否可区分。若做不到这种区分，不从整核计时继续选择 padding。具体测量入口由下一次接手时在本 Route 目录建立，先用现成二进制和结果；本次未执行该探针，也不创建后台任务。
+R04 的精确下一动作是重读规则、声明单一 residual 子视图变化，完成一版 Compile→Correctness→Local；不新增 bank 探测、不扫偏移值。原宽行的 Parent-only 指令归因保留为后续研究建议：复用 R31B V011 的 `2×32768 FP16`，对照 `2×8192 FP16`，取得实际 x/r 槽位地址、已生成 Add 指令及 ResourceConflictRatio，以区分输入与 pass-2 参数/原地读写贡献。本轮不执行这项额外采集；若后续需要，由 Main/Planning 安排。
 
-仍未确认：配置项 64 的成因、已编译 Parent 的实际 UB 地址与指令级冲突占比、独立于固定 padding/顺序交换/槽位相位的新 x/residual 表示法、其精度与 Local 收益。新的表示法只有在来源核对、字节覆盖和数值语义均明确后才能成为 OFAT。
+仍未确认：配置项 64 的成因、已编译 Parent 的实际 UB 地址与指令级冲突占比、窄行输入子视图的设备精度与 Local 收益。不得将源码可行性或 group 集合关系写成实测结果。
 
 ```text
 ROUTE_RESEARCH_EVENT
@@ -133,7 +181,8 @@ EVENT_ID=R04-UB2201-EVIDENCE-20261008
 AGENT_ID=01a119cc-fa30-7740-8fd2-9cdfab6e6c46
 ROUTE=W4-R04 UB-BANK-XR-LAYOUT-X
 EVENT_CLASS=HARDWARE_DOC_AND_SOURCE_RESEARCH
-STATUS=ROUTE_REVIEW_REQUIRED
+REVISION=NONE
+STATUS=SOURCE_AXIS_READY
 DIRECT_PARENT=R31B-V011
 LAST_KNOWN_REVISION=V001 (old research only; no performance Candidate)
 COMPILE=NOT_RUN
@@ -149,8 +198,9 @@ OFFICIAL_SCORE=NONE
 ONLINE_STATE=PAUSED
 PUSH=NO
 BLOCKER=NONE
+STATE_SYNC_GAP=RESEARCH_EVENT_PENDING; R04/R05 registered at main@285e7b4c
 RUNNING_DEVICE_OPERATION=NONE
-NEXT_ACTION=Main/Planning 复核；R05 复用共同资料；后续 R04 先做 Parent-only 指令归因，不重复旧 padding
+NEXT_ACTION=Main 转交共同资料与 R05 相位关系；R04 声明并完成一版 NarrowMid FP32 residual 子视图 OFAT
 ```
 
 本次只新增本目录中的研究脚本、输出、资料图与本说明，未改 Candidate、规则、共享 TSV、Dashboard、其他工作树或服务器文件。所有前台查询与离线验证已结束。具体提交及最终工作树状态由完成回执给出。
