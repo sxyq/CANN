@@ -1,0 +1,23 @@
+# SYNC-BARRIER-ELISION-X V067
+
+- ROUTE: `SYNC-BARRIER-ELISION-X`
+- REVISION: `V067`
+- DIRECT_PARENT: exact `R31B-V011`
+- PARENT_SOURCE_SHA256: `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`
+- SINGLE_HYPOTHESIS: test whether the post-bias-Add vector-pipeline barrier is required before the next row in the BF16 small-contiguous batched fallback.
+- SINGLE_CHANGE_BOUNDARY: delete only `AscendC::PipeBarrier<PIPE_V>()` immediately after `AscendC::Add(valueRow, valueRow, biasFp32, width)` in the `width > kFp32RepeatMaxWidth` branch of `ProcessSmallLowPrecisionContiguousBatched`. Preserve Mul, the barrier before Add, Add, conversion, all other sync operations, and all other paths.
+- DUPLICATION_AUDIT: all 66 Route-local Candidate sources V001-V066 retain this exact BF16 post-Add barrier; no prior Route declaration/result identifies this point as tested. See `RULE_REFRESH_RECEIPT.md`.
+- FOCUS_AXIS: BF16 row-wise fallback post-bias-Add vector-pipeline dependency.
+- FOCUS_VALUE: one `PIPE_V` barrier after BF16 row-wise bias Add when width exceeds 192.
+- CASE: BF16 `128x256`, which selects the aligned multi-row batched path and its width>192 row-wise FP32-staged gamma/bias fallback.
+- CURRENT_LOCAL_BEST: exact `R31B-V011`; V066 remains rejected/noisy and is not inherited.
+- CANDIDATE_SOURCE_SHA256: `f9b114bd621d81f059c851db3e6e19c10de7b089a16a46a51d953faa3a914225`.
+- RUNNER_SOURCE_SHA256: `49ae9443fd96154469db2d9fe650235c0b30cd1a7c54f37b75f9f0cb1125c02f`.
+- CANDIDATE_EXECUTABLE_SHA256: `b84e74349d5f84c9687f3696d1a44d1c008916e984fb21a1c8ec19588de7ef49`.
+- CORRECTNESS_EXECUTABLE_SHA256: `de86f67d77f99a49a427f31b3acccbfd89bc6ad99ba398fd2188b75150ac94c3`.
+- COMPILE: PASS for `sync_barrier_elision_v067` and the BF16-aware correctness/Local runner; successful log is `logs/compile-v067.log`.
+- CORRECTNESS: PASS, 9/9 bitwise Parent/Candidate cases (8 FP16 controls plus target BF16 `128x256`) on device 5; see `logs/correctness-v067-device5.log`.
+- LOCAL: 62 interleaved BF16 device-event pairs on device 5. Primary paired-median score `-14.202899%`; pooled median-latency ratio `-26.763285%`; mean-latency ratio `-32.949286%`. Verdict `LOCAL_REJECTED_NOISY`; no promotion. Full raw-derived metrics in `RESULT.md`.
+- DEVICE_RELEASE: V067 Route timing on device 5 ended after the post-capture snapshot at `2026-10-08T16:50:16.097879877Z`. The resident VLLM process was left untouched.
+- CURRENT_LOCAL_BEST remains exact `R31B-V011`.
+- OFFICIAL / ONLINE: none; `NOT_SUBMITTED`.

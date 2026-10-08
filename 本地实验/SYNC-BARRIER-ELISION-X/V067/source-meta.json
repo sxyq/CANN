@@ -1,0 +1,47 @@
+{
+  "route": "SYNC-BARRIER-ELISION-X",
+  "revision": "V067",
+  "direct_parent": "R31B-V011",
+  "parent_source_sha256": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "candidate_source": "submission.asc",
+  "candidate_source_sha256": "f9b114bd621d81f059c851db3e6e19c10de7b089a16a46a51d953faa3a914225",
+  "single_change": "Delete only the PIPE_V immediately after row-wise BF16 bias Add in ProcessSmallLowPrecisionContiguousBatched when width exceeds 192.",
+  "parent_candidate_diff": "diff.patch",
+  "compile": {
+    "status": "PASS",
+    "build_dir": "/tmp/sync-v067-build.NUSG9l",
+    "candidate_executable_sha256": "b84e74349d5f84c9687f3696d1a44d1c008916e984fb21a1c8ec19588de7ef49",
+    "correctness_executable_sha256": "de86f67d77f99a49a427f31b3acccbfd89bc6ad99ba398fd2188b75150ac94c3",
+    "toolkit": "CANN 8.5.0.alpha002",
+    "log": "logs/compile-v067.log"
+  },
+  "correctness": {
+    "status": "PASS",
+    "cases_passed": 9,
+    "cases_total": 9,
+    "cases": "8 FP16 controls and BF16 128x256 target",
+    "comparison": "bitwise Parent/Candidate",
+    "device": 5,
+    "log": "logs/correctness-v067-device5.log"
+  },
+  "local": {
+    "status": "LOCAL_REJECTED_NOISY",
+    "shape": "128x256",
+    "dtype": "BF16",
+    "device": 5,
+    "pairs": 62,
+    "primary_formula": "-100 * median(candidate_device_us - parent_device_us) / median(parent_device_us)",
+    "primary_paired_median_score_percent": -14.202899,
+    "median_paired_candidate_minus_parent_us": 1.47,
+    "pooled_median_latency_ratio_percent": -26.763285,
+    "mean_latency_ratio_percent": -32.949286,
+    "raw_logs": [
+      "logs/local-v067-block1-device5.log",
+      "logs/local-v067-block2-device5.log"
+    ],
+    "result": "RESULT.md"
+  },
+  "current_local_best": "R31B-V011",
+  "official_score": null,
+  "online_state": "NOT_SUBMITTED"
+}
