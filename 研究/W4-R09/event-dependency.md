@@ -90,6 +90,164 @@ Local 期间设备 3 的可用 HBM 始终为 60948 MB（按既有百分比公式
 
 已完成性能版本事件的事实来源是 `本地实验/W4-R09/V001/local-result.json`，Git commit 由该文件所属提交及本轮最终 `VERSION_RECORD_EVENT` 提供。`PUSH=NO`，`OFFICIAL=NONE`，`Online=PAUSED`。
 
-精确下一动作：由 Main 安排 R09 再次执行时，先只读分析本次已生成的 Parent/Candidate 设备代码，定位该 `V_MTE2` 发送、尾部等待与新条件分支，确认生成指令的实际差异；不改源码，不重复已完成的八个精度用例。随后再决定是否需要新的测量信息。
+首次交接的下一动作是只读分析已生成的 Parent/Candidate 设备代码，不改源码、不重复八个精度用例。本次 fresh 接手已完成下述设备对象比较；精确指令位置仍未取得，当前下一动作见末节。
 
 剩余独立同步点目前为 `UNKNOWN`。可研究 `ProcessNarrowMidOverlap` 的末次 `inputRelease` 生命周期（Parent L499–619），先对照 MIX-A V007 与 ASYNC-OVERLAP 历史，证明资源复用与事件消费均安全且机制未测，再决定能否声明下一版。这里仅给出研究方向，不宣称它已获安全或独立性证明。
+
+## V001 设备代码研究：2026-10-08 fresh 接手
+
+V001 的源码变化已体现在 FP16 设备函数内容中：同名函数从 13792 B 变为 13728 B，两个版本的代码字节不同。FP32、BF16 同名函数内容及其函数内相对重定位记录一致。BF16 的入口地址前移 64 B，不能把地址移动当作 BF16 代码变化。
+
+本次没有取得可读设备指令，无法把某个地址绑定到末次 `SetFlag`、尾部 `WaitFlag` 或条件跳转，也无法给出指令数、执行拍数或这项改动的实际耗时。原 Local 继续为 `MEASUREMENT_BLOCKED`，`CURRENT_LOCAL_BEST=UNKNOWN`。
+
+### 接手范围与复用
+
+- 接手 HEAD：`96044629c9783ab540daed927be37697424365dd`，dirty 为 NONE；分支与工作树沿用本文起点中的 R09 对象。
+- 已读本树 AGENTS/Route Skill，并通过本树 Git 读取 `9f91895506023d917637f707bb3f61cd9d9f8765` 的九项指定规则。接手时共享来源为 `main@4959725ea0bbf8f1e3c5f939e176db6db69bd9fe`，其中 V001、H0、H2 已登记。本次研究事件等待 Record 同步。
+- 本树未包含通用 AscendC/性能 Skill；改读已安装的 `ops-direct-invoke` 同名 Skill 和 `api-pipeline.md`。这些文件未修改。
+- 复用原完整依赖证明、双方各八个独立 FP64 reference 结果和全部 372 对原始样本。双方 reference 失败数及逐位差异均为 0，最大绝对误差 0.00390625。本次不增加这些验证的覆盖范围。
+- 复用原历史核对中 W3 R2 至 V040、R4 至 V031、R5 至 V028，以及 R31/R31A/R31B、MIX、STORE/EPILOGUE 和相关 W4 证据；没有重新扫描同一性能想法。
+- 额外读取 `e697ddf35d4c42e735236e597338a148bfb437f2:研究/W4-R12/TINY-ENTRY-CODEGEN-STUDY.md` 及其 ELF 读取脚本；读取 `1a31a3b527d81d4db0fce20dda091b85889330b6:本地实验/W4-R05/gamma-view-20261008/RESULT.md`、`results/emit-parent-ir.log`、`results/parent-device-identity.log`。均通过本树 Git 对象读取，没有访问其他 Route 工作树。
+
+```text
+DUPLICATE_AUDIT
+MECHANISM=既有 V001 末参数 release 的设备对象取证
+SEARCHED_HISTORY=复用上述完整历史核对；新增读取 R12/R05 已提交工具诊断
+MATCH_FOUND=EXISTING_V001
+WHY_NEW_OR_DUPLICATE=性能机制已经执行，本次只补设备代码证据
+NEW_PERFORMANCE_REVISIONS=0
+```
+
+### 源位置到实际对象
+
+本地与远端 Parent/Candidate 的差异均只有 L3346 开始的一处条件包裹：
+
+```cpp
+if (!std::is_same<T, half>::value || tile + 1 < tileCount) {
+    AscendC::SetFlag<AscendC::HardEvent::V_MTE2>(prel);
+    if (useA) {
+        pRelA = true;
+    } else {
+        pRelB = true;
+    }
+}
+```
+
+源端路径可以确认如下。下表行号属于未修改的 Parent；Candidate 在改动之后增加两行。
+
+| 源位置 | 路径或操作 | 可证范围 |
+|---|---|---|
+| L3546–3548 | `dtype==1` 调用 `add_rms_norm_bias_custom<half>` | FP16 入口 |
+| L3474–3475、L60–83 | `Init`；`rowWidth>kCacheElems`，其中 `kCacheElems=8192` | FP16 宽行配置 |
+| L171–180、L3076 | `Process` 转入 `ProcessWideLowPrecision` | 与 FP32 宽行函数分开 |
+| L3267–3346 | pass-2 参数 tile 循环；末 tile 为 `tile+1==tileCount` | 仅末 tile 省发送与 pending 置位 |
+| L3282/L3287、L3354/L3357 | 参数槽复用等待与尾部等待 | 仍按已证明的布尔状态消费事件 |
+| L3339–3344 | 每行 V→MTE2、V→MTE3、Store、MTE3→V | 原顺序保留 |
+
+原构建日志和保存的 CMake recipe 说明：`support/parent_adapter.asc` 包含 `../Parent.asc`，`candidate_adapter.asc` 包含 `../Candidate.asc`；编译使用 CANN `8.5.0.alpha002` 的 `bisheng -c -x asc`、`--npu-arch=dav-2201`、设备 `-O3`，分别生成下列对象，再用原 `-Wl,-Bsymbolic -shared` 链接动态库。两个 wrapper 的 host 导出名分别为 `run_kernel_parent`、`run_kernel_candidate`，设备入口的符号名相同。
+
+远端根目录仍为 `/home/data4t2/lelinfeng/cann/server_runs/W4-R09/V001/build/`：
+
+| 实际只读对象 | 大小 B | 内嵌已链接设备 ELF 的文件偏移 |
+|---|---:|---:|
+| `CMakeFiles/w4r09_v001_parent.dir/parent_adapter.asc.o` | 136288 | `0xa00` |
+| `CMakeFiles/w4r09_v001_candidate.dir/candidate_adapter.asc.o` | 136176 | `0xa00` |
+| `libw4r09_v001_parent.so` | 530176 | `0x53500` |
+| `libw4r09_v001_candidate.so` | 530112 | `0x53500` |
+
+四个文件均保留 `.aicore_binary` 和 `__aicore_rel_binary`。前者为已链接设备 ELF（类型 2），后者为可重定位设备 ELF（类型 1），机器字段均为 4137。每侧编译对象与动态库中的这两个 ELF 分别逐字节一致。此结论只覆盖内嵌设备 ELF；未声称不同外层对象或 Parent/Candidate 整库一致。
+
+FP16 实际符号为 `_Z24add_rms_norm_bias_customIDhEvPhS0_S0_S0_S0_mmjff`。两个设备 ELF 均只有 FP32、FP16、BF16 三个 `FUNC` 符号，没有独立的 `ProcessWideLowPrecision` 函数符号，也没有 `.debug_*` 源码行号段。因此源端分派可以定位，机器代码中的具体基本块仍未定位；不能声称其他 FP16 分支的生成代码完全未变。
+
+### 字节、符号与地址分别比较
+
+下列地址属于设备 `.text`，不属于 host 地址。符号边界另由 GNU `readelf --wide --symbols` 读取匿名内存 fd，结果与解析脚本一致。
+
+| 设备函数 | Parent 范围 | Candidate 范围 | 函数内容 | 函数内相对重定位记录 |
+|---|---|---|---|---|
+| FP32：`...IfE...` | `[0x0,0x3228)`，12840 B | 相同 | 逐字节一致 | 一致，8 项 |
+| FP16：`...IDhE...` | `[0x3228,0x6808)`，13792 B | `[0x3228,0x67c8)`，13728 B | 不同，长度少 64 B | 7 项，部分位置不同 |
+| BF16：`...Iu6__bf16E...` | `[0x6808,0xa064)`，14428 B | `[0x67c8,0xa024)`，14428 B | 逐字节一致 | 一致，7 项 |
+
+已链接设备 `.text` 从 41060 B 变为 40996 B；`.aicore_binary` 从 44248 B 变为 44184 B。已链接设备 ELF 中，内容不同的段只有 `.text`、`.rela.text` 和 `.symtab`；`.rodata`、`.ascend.meta`、各入口的元数据、栈记录及 `.comment` 内容一致。可重定位设备 ELF 还存在 `.strtab` 内容变化，尺寸为 1064→1070 B。字符串与符号表变化单列，不作为指令变化或耗时依据。
+
+FP16 的七项重定位均指向 `g_vecTPipePtr`，类型值为 291，addend 为 0。按函数起点归一后，位置为：
+
+```text
+Parent:    0x00e0 0x0624 0x134c 0x18e0 0x1eb4 0x26f8 0x2e84
+Candidate: 0x00e0 0x0624 0x1310 0x18a0 0x1e78 0x26b8 0x2e44
+```
+
+FP16 按四字节单元进行精确序列对齐时，两种设备 ELF 都得到 11184 B 相同片段、277 处不相同片段；这些数字属于指定对齐算法，不是指令数。不同片段包含 Parent 2608 B、Candidate 2544 B，覆盖函数内 Parent `[0x5b0,0x3254)`、Candidate `[0x5b0,0x3214)`。它们并非仅集中在一个尾部字节区间。
+
+第一处差异在两侧函数内 `0x5b0`（设备 `.text` 地址 `0x37d8`），原始八字节分别为 `8038a6028ce89d04` 与 `8038a00284e89d04`。可重定位设备对象中已有同样差异；外层库的符号名或装载地址无法单独解释这些代码内容差异。没有尝试从原始编码解释寄存器、跳转、事件指令或周期。
+
+### 可以解释的源码工作量与不能解释的耗时
+
+根据既有依赖证明，源码每批省去一个末参数 tile 的发送及其尾部消费，同时保留每行同步。将原两个 Local 输入代入 `ChooseWideFullYRows`（L1293）及 L3083–3100 的行分配，得到：
+
+| 原 FP16 输入 | tile 宽度 / tile 数 | batchLimit | 每个逻辑 block 的行数 / 批数 | 源码省去的事件对总数 |
+|---|---|---:|---|---:|
+| `16x16384/b8` | 4096 / 4 | 2 | 2 行 / 1 批 | 8 |
+| `128x12288/b40` | 4096 / 3 | 3 | 前 8 个为 4 行 / 2 批，其余 32 个为 3 行 / 1 批 | 48 |
+
+此表是源码循环计数，未转换成实际设备指令数。新增条件 `tile+1<tileCount` 已在同轮预取处使用；编译器是否复用判断、如何安排 pending 状态以及最终执行多少次比较/跳转，均未取得指令证据。64 B 的函数尺寸差不能回答这些问题，也不能据此推导执行拍数。
+
+原 Local 的两个描述性延迟变化仍为 -3.195676% 与 +4.420293%。Parent 同二进制 MAD/median 达 12.46%–23.13%，且 `128x12288` 的 PC/CP 配对差值中位数为 +4.7099995/-2.710001 us。代码不同仅排除了“两侧 FP16 函数完全同码”这一解释，没有解决次序与波动来源，没有建立代码变化到收益的因果关系。没有新的 Candidate 实跑，故本研究 `LOCAL_SCORE=NONE`、`LOCAL_DELTA=NONE`。
+
+### 工具能力与停止位置
+
+沿用 R12 已提交的结果：默认、`dav-c220`、AICore、`dav-c220-vec` 解码均只有 `<not available>`；native plugin 不支持既有 `-S` / `-###` 请求，保存中间文件曾导致 frontend 139，机器打印请求被拒绝。R05 的同工具 IR 路径也未取得输出。本次没有重试这些命令。
+
+本次只做符号表读取和一次已安装 `bisheng --help` 查询。帮助中出现的 `-emit-llvm`、`--cce-aicore-only`、`-save-temps`、`-mllvm` 和 plugin 选项属于已知入口；通用帮助不证明 native ASC 路径接受某个输出组合。compiler 目录本身仅有 bin/include/lib，查询的 doc/docs/share/doc 子目录不存在。此有限范围内未取得新的正式支持入口，不推断整套工具链永远无法输出设备指令。没有新增编译诊断、安装或工具链变更。
+
+取证使用只读文件输入和内存 ELF 解析；GNU `readelf` 仅访问匿名内存 fd。本次没有调用 `objcopy`，没有重新链接或复制 Parent/Candidate 库。四个原对象读取前后 size、inode、mtime、ctime 均一致，原编译时间仍为 03:45 UTC。本次未运行 NPU 程序；分配设备为 4，但实际使用设备为 NONE，也未查询新的 HBM 数值。原 V001 的测量设备 3 保持原记载。
+
+必要的新证据只有：`研究/W4-R09/device-code-audit.py`、`本地实验/W4-R09/V001/code-study/device-code-audit.json`、`本地实验/W4-R09/V001/code-study/toolchain-readonly.log`，以及本文的研究补充。JSON 保留全部比较片段、原对象状态和实际构建 recipe；日志保存独立符号读取与能力查询。没有修改 Parent、Candidate、原 runner、旧结果、规则、共享 TSV 或 Dashboard；远端没有新增持久文件。
+
+## 本次研究事件与交接
+
+```text
+ROUTE_RESEARCH_EVENT
+EVENT_ID=W4-R09-V001-DEVICE-CODE-DIFF-20261008
+ROUTE=W4-R09
+REVISION=V001
+EVENT_CLASS=EXISTING_DEVICE_OBJECT_RESEARCH
+DIRECT_PARENT=R31B-V011
+SOURCE_COMMIT=96044629c9783ab540daed927be37697424365dd
+STATUS=DEVICE_CODE_DIFFERENCE_CONFIRMED_INSTRUCTION_MAPPING_UNAVAILABLE
+SOURCE_BRANCH=FP16; rowWidth>8192; pass-2 final parameter tile
+DEVICE_SYMBOL=_Z24add_rms_norm_bias_customIDhEvPhS0_S0_S0_S0_mmjff
+DEVICE_BASIC_BLOCK=UNRESOLVED
+PARENT_FP16_BYTES=13792
+CANDIDATE_FP16_BYTES=13728
+FP32_BF16_CODE_BYTES_EQUAL=YES
+OBJECT_LIBRARY_DEVICE_ELFS_EQUAL=YES_WITHIN_EACH_SIDE
+COMPILE=NOT_RUN
+CORRECTNESS=NOT_RUN
+EXISTING_COMPILE=PASS_REUSED
+EXISTING_REFERENCE=BOTH_SIDES_8_OF_8_FP64_CPU_REUSED
+DIAGNOSTIC_COMPILE=NOT_RUN
+LOCAL_SCORE=NONE
+LOCAL_DELTA=NONE
+EXISTING_LOCAL_VERDICT=MEASUREMENT_BLOCKED
+CURRENT_LOCAL_BEST=UNKNOWN
+NEW_PERFORMANCE_REVISIONS=0
+VALID_LOCAL_RESULTS=0
+STAGNATION_3_CONTRIBUTION=0
+VERSION_RECORD_EVENT=NONE
+OFFICIAL_SCORE=NONE
+ONLINE_STATE=PAUSED
+PUSH=NO
+BRANCH=w4/r09-event-barrier-min-x
+WORKTREE=/Users/sunyiyang/Desktop/Project/cann/worktrees/w4/R09-event-barrier-min-x
+DEVICE_ASSIGNED=4
+DEVICE_USED_THIS_EVENT=NONE
+RUNNING_DEVICE_OPERATION=NONE
+STATE_SYNC_GAP=本研究事件与 fresh 接手等待 Record 同步
+ROUTE_LIFECYCLE_CHANGED=NO
+```
+
+精确下一动作：取得当前 CANN `8.5.0.alpha002` 正式支持的 DAV_2201 设备指令输出方法，或带源码映射的最终生成代码；以本文记录的 FP16 符号和两侧设备 ELF 为输入，先定位 L3346 的末 tile 条件、发送与尾部消费对应的基本块，再解释实际新增和省去的执行工作。没有这一新来源前，不重复旧解码命令、原 P/C 或八个精度用例，不建立 V002。当前对象本身没有行号信息，后续如需编译诊断，仅使用未改 Parent 与独立研究输出位置。
+
+`ProcessNarrowMidOverlap` 的 `inputRelease` 仍只是前文记载的独立研究线索，本次未扩展该方向，也未涉及 R13 的 FP32 同步诊断。所有本次命令已返回；远端取证记录中 R09 进程列表为空。最终本地 commit、HEAD 和 dirty 由交接回执给出，槽位交还 Main 处理，不自行改变 Route 生命周期。
