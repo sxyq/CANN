@@ -1,6 +1,27 @@
 # Evidence Integration Plan
 
-盘点基准：integration worktree 初始快照 `edcbaab4c506e05ed369830245e60aeb711ca714`；本次状态更新日期 2026-10-09。最新 Main 图回执为 `e7f669692a2f5815c4ce444cfb52dde1d24a93a2`，相对 `origin/main=1ea9677ba8e7307a73f13041c7b639ab6a96425c` ahead 16 / behind 2；最新只读 Main 状态回执确认 primary main 有 9 tracked dirty + 8 untracked，未暂存，精确路径列于 inventory，内容未读、未复制、未覆盖。integration 已合入 `566e...`、`1ea9677...`、`e7f669...`；报告更新前 HEAD=`e5c9d96abde4b6076a17814cdb610c3c64159394`。
+## Final closeout status
+
+`INTEGRATION_BRANCH_RECONCILED=YES`；当前 Integration HEAD=`6ec8c174c7352677ff623e760d6ddd55dc48e84e`，分支为 `integration/w4-closeout-20261008`。`PRIMARY_MAIN_UPDATED=NO`；`PRIMARY_MAIN_UPDATE=DEFERRED_DIRTY_17_AND_PENDING_REVIEW`；`MAIN_MERGE_BLOCKED=YES`。Primary main HEAD=`e7f669692a2f5815c4ce444cfb52dde1d24a93a2`，仍有 9 tracked dirty + 8 untracked，未修改；当前没有获授权的主线写入者。`origin/main=1ea9677ba8e7307a73f13041c7b639ab6a96425c`。
+
+Evidence copy completed W4 R01-R15 where available。Candidate 与生产 kernel 未合入。总核验为 `1566 manifest rows = 1097 included + 469 excluded`；`1097/1097 source/archive blobs 一致`；cross-batch source key duplicates=`0`；archive selected source extensions `.asc/.c/.cc/.cpp/.cxx/.h/.hpp`=`0`。
+
+五批归档统计如下；Batch-02 与 Batch-04 各由两个连续提交完成。`Files` 为该批次归档路径下的 tracked 文件数，包含 manifest；纳入/排除数按 manifest 行统计。
+
+| Batch | Commit(s) | Files | Manifest rows | Included | Excluded |
+|---|---|---:|---:|---:|---:|
+| Batch-01 Research | `c235eb00` | 140 | 164 | 139 | 25 |
+| Batch-02 R01/R02 | `4df78bc6`, `97cdf851` | 360 | 484 | 359 | 125 |
+| Batch-03 R07 | `c9ff35a7` | 3 | 2 | 2 | 0 |
+| Batch-04 R08/R09 | `cf95a3d7`, `4fb3441c` | 88 | 219 | 87 | 132 |
+| Batch-05 R10/R11/R14 | `6ec8c174` | 511 | 697 | 510 | 187 |
+| Total | 7 commits | 1102 | 1566 | 1097 | 469 |
+
+所有 33 个注册 worktree 均保留，`SAFE_TO_RETIRE=NO`。原因包括 Route lifecycle 未被 Planning 关闭、Candidate branch 仍需保留、W2/W3 独有 evidence 未全部整合、R02/R08/R09/R14 旧 runtime/command UNKNOWN、R01/W3-crossrow/M2 ignored evidence、external detached dirty checkout，以及 primary dirty。
+
+本轮只做报告更新、精确 add 两个报告文件并提交；没有运行 Compile、Correctness、Local、NPU、Online；没有删除、clean、reset、rebase、force-push；`PUSH=NO`。
+
+盘点基准：integration worktree 初始快照 `edcbaab4c506e05ed369830245e60aeb711ca714`；本次状态更新日期 2026-10-09。最新 Main 图回执为 `e7f669692a2f5815c4ce444cfb52dde1d24a93a2`，相对 `origin/main=1ea9677ba8e7307a73f13041c7b639ab6a96425c` ahead 16 / behind 2；最新只读 Main 状态回执确认 primary main 有 9 tracked dirty + 8 untracked，未暂存，精确路径列于 inventory，内容未读、未复制、未覆盖。integration 已合入 `566e...`、`1ea9677...`、`e7f669...`；最终报告提交前 HEAD=`6ec8c174c7352677ff623e760d6ddd55dc48e84e`。
 
 integration branch 已合入 local `main` 至 `e7f669692a2f5815c4ce444cfb52dde1d24a93a2`，并合入已核实的 `origin/main=1ea9677ba8e7307a73f13041c7b639ab6a96425c`；三处 canonical 记录冲突已在 integration 内逐项保留双方差异，当前 `MERGE_HEAD` 不存在。后续只在出现新授权来源时再评估 merge。不合入任何 Candidate，不运行 Compile、Correctness、Local、NPU 或 Online。A/B/C 是证据处置分类，不构成新的 Route 生命周期决定。主工作树 17 项 dirty 保持不动。
 

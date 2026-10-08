@@ -1,6 +1,29 @@
 # Worktree Integration Inventory
 
-盘点时间：2026-10-09（本次状态更新）。纳入 R14、R04、W2 Tiny、W2 Selective 关闭回执、Main 状态回执、服务器只读补充、Record Owner 两个规则提交及三次 local/origin main merge 回执。最新可用 Main 图状态回执：HEAD=`e7f669692a2f5815c4ce444cfb52dde1d24a93a2`，ahead 16 / behind 2；Main 只读状态回执确认 9 tracked + 8 untracked、未暂存，精确路径见下文。未进入 primary main，未读取或复制 dirty 内容。此次报告编辑前 integration HEAD=`e5c9d96abde4b6076a17814cdb610c3c64159394`。
+## Final closeout status
+
+`INTEGRATION_BRANCH_RECONCILED=YES`。本报告更新提交位于 Integration 工作树 `/Users/sunyiyang/Desktop/Project/cann/worktrees/integration/w4-closeout-20261008`，分支 `integration/w4-closeout-20261008`；更新前 HEAD=`6ec8c174c7352677ff623e760d6ddd55dc48e84e`。
+
+`PRIMARY_MAIN_UPDATED=NO`；`PRIMARY_MAIN_UPDATE=DEFERRED_DIRTY_17_AND_PENDING_REVIEW`；`MAIN_MERGE_BLOCKED=YES`。Primary main HEAD=`e7f669692a2f5815c4ce444cfb52dde1d24a93a2`，仍有 9 tracked dirty + 8 untracked，未修改；当前没有获授权的主线写入者。`origin/main=1ea9677ba8e7307a73f13041c7b639ab6a96425c`。
+
+Evidence copy completed for W4 R01-R15 where available。Candidate 与生产 kernel 未合入。总核验 `1566 manifest rows = 1097 included + 469 excluded`；`1097/1097 source/archive blobs 一致`；cross-batch source key duplicates=`0`；archive selected source extensions `.asc/.c/.cc/.cpp/.cxx/.h/.hpp`=`0`。
+
+| Batch | Commit(s) | Files | Manifest rows | Included | Excluded |
+|---|---|---:|---:|---:|---:|
+| Batch-01 Research | `c235eb00` | 140 | 164 | 139 | 25 |
+| Batch-02 R01/R02 | `4df78bc6`, `97cdf851` | 360 | 484 | 359 | 125 |
+| Batch-03 R07 | `c9ff35a7` | 3 | 2 | 2 | 0 |
+| Batch-04 R08/R09 | `cf95a3d7`, `4fb3441c` | 88 | 219 | 87 | 132 |
+| Batch-05 R10/R11/R14 | `6ec8c174` | 511 | 697 | 510 | 187 |
+| Total | 7 commits | 1102 | 1566 | 1097 | 469 |
+
+`Files` 为该批次归档路径下的 tracked 文件数，包含 manifest；纳入/排除数按 manifest 行统计。
+
+所有 33 个注册 worktree 均保留，`SAFE_TO_RETIRE=NO`。原因包括 Route lifecycle 未被 Planning 关闭、Candidate branch 仍需保留、W2/W3 独有 evidence 未全部整合、R02/R08/R09/R14 旧 runtime/command UNKNOWN、R01/W3-crossrow/M2 ignored evidence、external detached dirty checkout，以及 primary dirty。
+
+本轮没有运行 Compile、Correctness、Local、NPU、Online；没有删除、clean、reset、rebase、force-push；`PUSH=NO`。
+
+盘点时间：2026-10-09（最终收口）。纳入 R14、R04、W2 Tiny、W2 Selective 关闭回执、Main 状态回执、服务器只读补充、Record Owner 两个规则提交、三次 local/origin main merge 回执及本轮五批 evidence copy。最新可用 Main 图状态回执：HEAD=`e7f669692a2f5815c4ce444cfb52dde1d24a93a2`，ahead 16 / behind 2；Main 只读状态回执确认 9 tracked + 8 untracked、未暂存，精确路径见下文。未进入 primary main，未读取或复制 dirty 内容。最终报告提交前 Integration HEAD=`6ec8c174c7352677ff623e760d6ddd55dc48e84e`。
 
 工作位置：`/Users/sunyiyang/Desktop/Project/cann/worktrees/integration/w4-closeout-20261008`。本报告覆盖 `git worktree list` 的全部 33 个注册点：32 个项目工作树（含 primary `main` 与本 integration 工作树），以及 1 个仓库外 detached Codex 检出 `/Users/sunyiyang/.codex/worktrees/f0e7/cann`。外部检出的 owner、agent、command 未知；dirty 仅记录回执计数 9 tracked + 8 untracked，不查看其未提交内容，也不移除。primary `main` 未进入。其他工作树只使用 worktree 元数据、Git 提交对象、允许的状态名称或用户/共享记录回执；未读取其他工作树的未提交文件内容。
 
@@ -16,7 +39,7 @@
 WORKTREE_PATH	ROUTE/OWNER	BRANCH	HEAD	BASE_COMMIT	UNIQUE_COMMITS	TRACKED_DIRTY	UNTRACKED	IGNORED_EVIDENCE	ACTIVE_AGENT	RUNNING_COMMAND	MERGED_EVIDENCE	UNMERGED_EVIDENCE	KERNEL_DIFF	SAFE_TO_CLOSE	SAFE_TO_CLOSE_BASIS	SAFE_TO_RETIRE	SAFE_TO_RETIRE_BASIS	BLOCK_REASON
 /Users/sunyiyang/Desktop/Project/cann	PRIMARY main	main	e7f669692a2f5815c4ce444cfb52dde1d24a93a2 (latest graph receipt; exact-path receipt does not refresh HEAD); de70b634813dea80783fc57716d6e95c158edeec	0 vs itself; 16 ahead / 2 behind origin at latest graph receipt	9 tracked + 8 untracked, none staged; exact names in Main dirty-state receipt below	8 exact paths from latest read-only Main receipt below	UNKNOWN	UNKNOWN	UNKNOWN	0	0	0	NO	primary not entered; no shutdown receipt	NO	primary dirty state preserved; outside permitted worktree	MAIN_DIRTY_STATE_PRESERVED=YES; 17 dirty entries; INTEGRATION_BRANCH_RECONCILED=YES; PRIMARY_MAIN_UPDATED=NO; PRIMARY_MAIN_UPDATE=DEFERRED_DIRTY_17_AND_PENDING_EVIDENCE_REVIEW
 /Users/sunyiyang/.codex/worktrees/f0e7/cann	External detached / UNKNOWN	DETACHED	8f9338f8d01230635e617ff037e5951bb77bf67f	8f9338f8d01230635e617ff037e5951bb77bf67f	0	9 tracked (names/content not read)	8 untracked (names/content not read)	UNKNOWN	UNKNOWN	UNKNOWN	0	0	0	NO	owner/agent/command UNKNOWN; no close receipt	NO	external detached checkout remains registered; no removal authorized	external dirty registration retained
-/Users/sunyiyang/Desktop/Project/cann/worktrees/integration/w4-closeout-20261008	Integration Owner	integration/w4-closeout-20261008	e5c9d96abde4b6076a17814cdb610c3c64159394 (before this report update)	e7f669692a2f5815c4ce444cfb52dde1d24a93a2	8 unique commits vs latest main (5 non-merge, 3 merge)	2 report paths modified (this update)	0	0	current Integration Owner	no device command started here; global server3 attribution UNKNOWN	0 patch-equivalent commits	5 patch-unique commits by git cherry; includes report and origin-origin history	0	NO	report update pending; evidence selection authorized after report commit	NO	retained until explicit evidence disposition	no merge conflict; report update pending
+/Users/sunyiyang/Desktop/Project/cann/worktrees/integration/w4-closeout-20261008	Integration Owner	integration/w4-closeout-20261008	6ec8c174c7352677ff623e760d6ddd55dc48e84e (before final report commit)	e7f669692a2f5815c4ce444cfb52dde1d24a93a2	16 unique commits vs main (13 patch-unique)	2 report paths modified for final commit	0	0	current Integration Owner	no device command started here; global server3 attribution UNKNOWN	0 patch-equivalent commits	13 patch-unique commits by git cherry	0	YES	closeout report commit contains only the two authorized report paths	NO	all 33 registrations retained; evidence, Candidate branches and unresolved Route lifecycle preserved	no merge conflict; PRIMARY_MAIN_UPDATED=NO
 /Users/sunyiyang/Desktop/Project/cann/worktrees/m2/vector	VECTOR-MATH-X	m2/vector-math	4320c8382b4c6846e137edc0e8243d744ad82f49	7fd752f75fb38c3f95dd29374ea79cb8375e03c3	10	0	0	78 ignored entries under 本地实验	UNKNOWN	UNKNOWN	0 patch-equivalent	10 unique commits	2 source paths: S3-TAIL-PROBE/tail_probe.asc; V003/submission.asc	NO	no current owner shutdown or running-command receipt	NO	10 unique commits and Candidate evidence remain outside main	separate VECTOR-MATH-X workstream; not W4 closeout scope
 /Users/sunyiyang/Desktop/Project/cann/worktrees/support/arch-hardware	Support / arch-hardware	support/arch-hardware	503b98cb22ae88798bb6bfca83a46676933f3600	503b98cb22ae88798bb6bfca83a46676933f3600	0	0	0	0	UNKNOWN	UNKNOWN	0 patch-equivalent	0	0	NO	owner/runtime shutdown not established by current receipt	NO	retirement awaits Support owner completion confirmation	owner status UNKNOWN
 /Users/sunyiyang/Desktop/Project/cann/worktrees/support/community-intelligence	Support / community-intelligence	support/community-intelligence	503b98cb22ae88798bb6bfca83a46676933f3600	503b98cb22ae88798bb6bfca83a46676933f3600	0	0	0	0	UNKNOWN	UNKNOWN	0 patch-equivalent	0	0	NO	owner/runtime shutdown not established by current receipt	NO	retirement awaits Support owner completion confirmation	owner status UNKNOWN
