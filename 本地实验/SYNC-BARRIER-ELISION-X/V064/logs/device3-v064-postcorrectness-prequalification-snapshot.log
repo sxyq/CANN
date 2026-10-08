@@ -1,0 +1,40 @@
+SNAPSHOT_UTC=2026-10-08T15:09:30.480807598Z
+
+=== device 3 memory ===
+	DDR Capacity(MB)               : 0
+	DDR Clock Speed(MHz)           : 0
+	HBM Capacity(MB)               : 65536
+	HBM Clock Speed(MHz)           : 1600
+	HBM Temperature(C)             : 33
+	HBM Manufacturer ID            : 0x57
+
+=== device 3 usages ===
+	DDR Capacity(MB)               : 0
+	DDR Usage Rate(%)              : 0
+	DDR Hugepages Total(page)      : 0
+	DDR Hugepages Usage Rate(%)    : 0
+	HBM Capacity(MB)               : 65536
+	HBM Usage Rate(%)              : 5
+	Aicore Usage Rate(%)           : 0
+	Aivector Usage Rate(%)         : 0
+	Aicpu Usage Rate(%)            : 0
+	Ctrlcpu Usage Rate(%)          : 5
+	DDR Bandwidth Usage Rate(%)    : 0
+	HBM Bandwidth Usage Rate(%)    : 0
+
+=== device 3 processes ===
+	No process in device.
+
+=== host load ===
+ 15:09:32 up 243 days,  2:45, 36 users,  load average: 40.93, 50.70, 55.54
+
+=== V064 runner processes ===
+1262485 1833615 Ss         00:02 bash            /bin/bash -lc set -o pipefail; { date -u '+SNAPSHOT_UTC=%Y-%m-%dT%H:%M:%S.%NZ'; printf '\n=== device 3 memory ===\n'; npu-smi info -t memory -i 3 -c 0; printf '\n=== device 3 usages ===\n'; npu-smi info -t usages -i 3 -c 0; printf '\n=== device 3 processes ===\n'; npu-smi info -t proc-mem -i 3 -c 0; printf '\n=== host load ===\n'; uptime; printf '\n=== V064 runner processes ===\n'; ps -eo pid,ppid,stat,etime,comm,args | rg '[s]ync_barrier_elision|[c]orrectness_runner' || true; printf '\n=== source/executable identities ===\n'; sha256sum 本地实验/SYNC-BARRIER-ELISION-X/V064/parent.asc 本地实验/SYNC-BARRIER-ELISION-X/V064/submission.asc /tmp/sync-v064-build/sync_barrier_elision_v064 /tmp/sync-v064-build/sync_barrier_elision_correctness; runner_strings=$(strings /tmp/sync-v064-build/sync_barrier_elision_correctness); rg -q 'CANDIDATE_V064' <<< "$runner_strings" && rg -q 'PARENT_R31B_V011' <<< "$runner_strings" && rg -q 'revision=V064' <<< "$runner_strings" && printf 'RUNNER_IDENTITY=PASS\n'; } 2>&1 | tee 本地实验/SYNC-BARRIER-ELISION-X/V064/logs/device3-v064-postcorrectness-prequalification-snapshot.log
+1262489 1262485 S          00:02 bash            /bin/bash -lc set -o pipefail; { date -u '+SNAPSHOT_UTC=%Y-%m-%dT%H:%M:%S.%NZ'; printf '\n=== device 3 memory ===\n'; npu-smi info -t memory -i 3 -c 0; printf '\n=== device 3 usages ===\n'; npu-smi info -t usages -i 3 -c 0; printf '\n=== device 3 processes ===\n'; npu-smi info -t proc-mem -i 3 -c 0; printf '\n=== host load ===\n'; uptime; printf '\n=== V064 runner processes ===\n'; ps -eo pid,ppid,stat,etime,comm,args | rg '[s]ync_barrier_elision|[c]orrectness_runner' || true; printf '\n=== source/executable identities ===\n'; sha256sum 本地实验/SYNC-BARRIER-ELISION-X/V064/parent.asc 本地实验/SYNC-BARRIER-ELISION-X/V064/submission.asc /tmp/sync-v064-build/sync_barrier_elision_v064 /tmp/sync-v064-build/sync_barrier_elision_correctness; runner_strings=$(strings /tmp/sync-v064-build/sync_barrier_elision_correctness); rg -q 'CANDIDATE_V064' <<< "$runner_strings" && rg -q 'PARENT_R31B_V011' <<< "$runner_strings" && rg -q 'revision=V064' <<< "$runner_strings" && printf 'RUNNER_IDENTITY=PASS\n'; } 2>&1 | tee 本地实验/SYNC-BARRIER-ELISION-X/V064/logs/device3-v064-postcorrectness-prequalification-snapshot.log
+
+=== source/executable identities ===
+a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3  本地实验/SYNC-BARRIER-ELISION-X/V064/parent.asc
+4db6715c4e11a1b840998f2aeb08a97a551bf4f84dbfd83c1d630f41e5d75204  本地实验/SYNC-BARRIER-ELISION-X/V064/submission.asc
+dfb731b7642ad608b90e60e68c5416f79a61eccb6b30aaf48a9a47e0fece3bee  /tmp/sync-v064-build/sync_barrier_elision_v064
+fff22a75ab61ea2e6ac06efcc5b1df0f8c90cf5f4c1ce84ef7a3b9bc79e739e6  /tmp/sync-v064-build/sync_barrier_elision_correctness
+RUNNER_IDENTITY=PASS
