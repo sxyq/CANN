@@ -1,0 +1,176 @@
+ROUTE=TINY-MINIMAL-KERNEL-CHAMPION-X
+REVISION=V006
+MODE=--paired
+DEVICE=7
+MIN_FREE_HBM_MB=100
+ADMISSION=RULE=FREE_HBM_GE_100MB
+LEASE_METADATA=NONE
+LOAD_METADATA=UNSET
+NOTE=lease and load are recorded context only, not admission gates
+PARENT_QUALIFICATION_LOG=本地实验/TINY-MINIMAL-KERNEL-CHAMPION-X/V006/support/run-parent-qualify-20261005T154654+0800.log
+REMOTE_HOST=hwnput3
+REMOTE_PARENT_SOURCE_SHA=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
+REMOTE_CANDIDATE_SOURCE_SHA=7d73bbda187c0481175e9ea0219d082db2364f68c3552a2f6fa070ffdb7bb933
+RUNNER_SHA=6f657a59ea5ee76e121016d66ff33a82d6e5b717faad635eb5ceffb389d9f820
+LOAD_SNAPSHOT=BEFORE_RUN
+2026-10-05T15:48:23+0800
+	NPU ID                         : 7
+	Chip Count                     : 1
+
+	DDR Capacity(MB)               : 0
+	DDR Usage Rate(%)              : 0
+	DDR Hugepages Total(page)      : 0
+	DDR Hugepages Usage Rate(%)    : 0
+	HBM Capacity(MB)               : 65536
+	HBM Usage Rate(%)              : 54
+	Aicore Usage Rate(%)           : 26
+	Aivector Usage Rate(%)         : 47
+	Aicpu Usage Rate(%)            : 0
+	Ctrlcpu Usage Rate(%)          : 8
+	DDR Bandwidth Usage Rate(%)    : 0
+	HBM Bandwidth Usage Rate(%)    : 14
+	Chip ID                        : 0
+
+PROCESSES_BEGIN
+  82397 vllm            /usr/local/python3.12.13/bin/python3 /usr/local/python3.12.13/bin/vllm serve /models/Qwen3.8-27B-w8a8 --host 0.0.0.0 --port 9001 --tensor-parallel-size 4 --quantization ascend --served-model-name qwen3.8 --max-model-len 256000 --max-num-seqs 8 --max-num-batched-tokens 8192 --gpu-memory-utilization 0.90 --enable-prefix-caching --trust-remote-code --reasoning-parser qwen3 --enable-auto-tool-choice --tool-call-parser qwen3_coder
+  83352 vllm            /usr/local/python3.12.13/bin/python3 /usr/local/python3.12.13/bin/vllm serve /models/Qwen3.8-27B-w8a8 --host 0.0.0.0 --port 9002 --tensor-parallel-size 2 --quantization ascend --served-model-name qwen3.8 --max-model-len 256000 --max-num-seqs 8 --max-num-batched-tokens 8192 --gpu-memory-utilization 0.90 --enable-prefix-caching --trust-remote-code --reasoning-parser qwen3 --enable-auto-tool-choice --tool-call-parser qwen3_coder
+  87336 VLLM::EngineCor VLLM::EngineCore
+  87670 VLLM::EngineCor VLLM::EngineCore
+  89395 VLLM::Worker_TP VLLM::Worker_TP0
+  89602 VLLM::Worker_TP VLLM::Worker_TP0
+  91055 VLLM::Worker_TP VLLM::Worker_TP1
+  91228 VLLM::Worker_TP VLLM::Worker_TP1
+  92813 VLLM::Worker_TP VLLM::Worker_TP2
+  94498 VLLM::Worker_TP VLLM::Worker_TP3
+1608662 ray::vLLMHttpSe ray::vLLMHttpServer
+1614472 VLLM::EngineCor VLLM::EngineCore
+1617353 VLLM::Worker    VLLM::Worker
+2992910 vllm            /home/data4t1/zhangkaijie/conda/envs/qwen38_a2/bin/python3.12 /home/data4t1/zhangkaijie/conda/envs/qwen38_a2/bin/vllm serve /home/data4t2/models/Qwen3.8-27B-w8a8 --host 0.0.0.0 --port 9000 --tensor-parallel-size 1 --max-model-len 200000 --max-num-seqs 8 --max-num-batched-tokens 16384 --enable-prefix-caching --trust-remote-code --speculative-config {"method":"mtp","num_speculative_tokens":4} --enable-auto-tool-choice --tool-call-parser qwen3_coder --gpu-memory-utilization 0.85
+2999855 VLLM::EngineCor VLLM::EngineCore
+PROCESSES_END
+LOAD_NOTE=measurement context only, not an admission gate
+RUNNER_COMMAND=/home/data4t2/lelinfeng/cann/server_runs/TINY-MINIMAL-KERNEL-CHAMPION-X/V006/20261005T074454Z-88733/build/tiny_runner_v006 --paired 7
+RUN_BEGIN mode=--paired device=7 parent=R31B-V011 cases=3
+PAIR case=target-r1-d64-fp32 pair=01 order=P,C parent_device_us=10.860 candidate_device_us=56.260 parent_wall_us=121.450 candidate_wall_us=121.771 delta_us=45.400
+PAIR case=target-r1-d64-fp32 pair=02 order=C,P parent_device_us=43.280 candidate_device_us=26.980 parent_wall_us=105.461 candidate_wall_us=79.761 delta_us=-16.300
+PAIR case=target-r1-d64-fp32 pair=03 order=P,C parent_device_us=57.060 candidate_device_us=44.860 parent_wall_us=107.690 candidate_wall_us=88.361 delta_us=-12.200
+PAIR case=target-r1-d64-fp32 pair=04 order=C,P parent_device_us=55.600 candidate_device_us=40.260 parent_wall_us=100.180 candidate_wall_us=88.521 delta_us=-15.340
+PAIR case=target-r1-d64-fp32 pair=05 order=P,C parent_device_us=57.740 candidate_device_us=54.540 parent_wall_us=107.731 candidate_wall_us=95.011 delta_us=-3.200
+PAIR case=target-r1-d64-fp32 pair=06 order=C,P parent_device_us=55.500 candidate_device_us=55.200 parent_wall_us=100.150 candidate_wall_us=157.641 delta_us=-0.300
+PAIR case=target-r1-d64-fp32 pair=07 order=P,C parent_device_us=15.400 candidate_device_us=4.800 parent_wall_us=83.700 candidate_wall_us=75.031 delta_us=-10.600
+PAIR case=target-r1-d64-fp32 pair=08 order=C,P parent_device_us=55.100 candidate_device_us=59.440 parent_wall_us=101.061 candidate_wall_us=105.440 delta_us=4.340
+PAIR case=target-r1-d64-fp32 pair=09 order=P,C parent_device_us=40.020 candidate_device_us=107.900 parent_wall_us=84.751 candidate_wall_us=159.911 delta_us=67.880
+PAIR case=target-r1-d64-fp32 pair=10 order=C,P parent_device_us=36.860 candidate_device_us=49.120 parent_wall_us=87.181 candidate_wall_us=103.500 delta_us=12.260
+PAIR case=target-r1-d64-fp32 pair=11 order=P,C parent_device_us=101.040 candidate_device_us=55.240 parent_wall_us=165.321 candidate_wall_us=99.031 delta_us=-45.800
+PAIR case=target-r1-d64-fp32 pair=12 order=C,P parent_device_us=54.000 candidate_device_us=54.900 parent_wall_us=106.211 candidate_wall_us=93.340 delta_us=0.900
+PAIR case=target-r1-d64-fp32 pair=13 order=P,C parent_device_us=26.720 candidate_device_us=6.600 parent_wall_us=83.211 candidate_wall_us=99.850 delta_us=-20.120
+PAIR case=target-r1-d64-fp32 pair=14 order=C,P parent_device_us=47.140 candidate_device_us=77.480 parent_wall_us=95.061 candidate_wall_us=135.541 delta_us=30.340
+PAIR case=target-r1-d64-fp32 pair=15 order=P,C parent_device_us=57.220 candidate_device_us=52.300 parent_wall_us=106.951 candidate_wall_us=106.130 delta_us=-4.920
+PAIR case=target-r1-d64-fp32 pair=16 order=C,P parent_device_us=57.120 candidate_device_us=37.780 parent_wall_us=100.101 candidate_wall_us=87.991 delta_us=-19.340
+PAIR case=target-r1-d64-fp32 pair=17 order=P,C parent_device_us=59.860 candidate_device_us=55.120 parent_wall_us=102.810 candidate_wall_us=106.711 delta_us=-4.740
+PAIR case=target-r1-d64-fp32 pair=18 order=C,P parent_device_us=59.220 candidate_device_us=31.840 parent_wall_us=125.710 candidate_wall_us=76.061 delta_us=-27.380
+PAIR case=target-r1-d64-fp32 pair=19 order=P,C parent_device_us=55.460 candidate_device_us=130.800 parent_wall_us=119.430 candidate_wall_us=180.221 delta_us=75.340
+PAIR case=target-r1-d64-fp32 pair=20 order=C,P parent_device_us=31.420 candidate_device_us=57.540 parent_wall_us=78.301 candidate_wall_us=98.021 delta_us=26.120
+PAIR case=target-r1-d64-fp32 pair=21 order=P,C parent_device_us=64.920 candidate_device_us=8.560 parent_wall_us=121.850 candidate_wall_us=82.720 delta_us=-56.360
+CORRECTNESS case=target-r1-d64-fp32 result=PASS mismatches=0 max_abs=0 compare=bitwise
+SUMMARY case=target-r1-d64-fp32 metric=device_us binary=PARENT n=21 median=55.460 mean=49.597 stdev=19.098 cv=0.38505 min=10.860 max=101.040 mad=4.400 p10=26.720 p90=59.860
+SUMMARY case=target-r1-d64-fp32 metric=device_us binary=CANDIDATE n=21 median=54.540 mean=50.834 stdev=29.759 cv=0.58542 min=4.800 max=130.800 mad=9.680 p10=8.560 p90=77.480
+SUMMARY case=target-r1-d64-fp32 metric=wall_us binary=PARENT n=21 median=102.810 mean=104.967 stdev=19.247 cv=0.18336 min=78.301 max=165.321 mad=7.749 p10=83.700 p90=121.850
+SUMMARY case=target-r1-d64-fp32 metric=wall_us binary=CANDIDATE n=21 median=99.031 mean=106.694 stdev=28.860 cv=0.27050 min=75.031 max=180.221 mad=10.670 p10=79.761 p90=157.641
+SUMMARY case=target-r1-d64-fp32 metric=paired_delta_us binary=CANDIDATE_MINUS_PARENT n=21 median=-4.740 mean=1.237 stdev=32.945 cv=26.62984 min=-56.360 max=75.340 mad=14.600 p10=-27.380 p90=45.400
+LOCAL_RESULT case=target-r1-d64-fp32 parent_median_us=55.460 candidate_median_us=54.540 delta_median_us=-4.740 delta_percent=-1.6588
+PAIR case=control-r2-d64-fp32 pair=01 order=P,C parent_device_us=38.620 candidate_device_us=42.280 parent_wall_us=112.390 candidate_wall_us=106.011 delta_us=3.660
+PAIR case=control-r2-d64-fp32 pair=02 order=C,P parent_device_us=33.200 candidate_device_us=5.640 parent_wall_us=98.600 candidate_wall_us=88.281 delta_us=-27.560
+PAIR case=control-r2-d64-fp32 pair=03 order=P,C parent_device_us=41.680 candidate_device_us=31.180 parent_wall_us=107.311 candidate_wall_us=93.471 delta_us=-10.500
+PAIR case=control-r2-d64-fp32 pair=04 order=C,P parent_device_us=35.380 candidate_device_us=31.660 parent_wall_us=98.981 candidate_wall_us=82.270 delta_us=-3.720
+PAIR case=control-r2-d64-fp32 pair=05 order=P,C parent_device_us=38.620 candidate_device_us=25.780 parent_wall_us=114.331 candidate_wall_us=98.140 delta_us=-12.840
+PAIR case=control-r2-d64-fp32 pair=06 order=C,P parent_device_us=16.480 candidate_device_us=28.080 parent_wall_us=83.201 candidate_wall_us=100.630 delta_us=11.600
+PAIR case=control-r2-d64-fp32 pair=07 order=P,C parent_device_us=38.060 candidate_device_us=29.260 parent_wall_us=93.260 candidate_wall_us=85.891 delta_us=-8.800
+PAIR case=control-r2-d64-fp32 pair=08 order=C,P parent_device_us=30.020 candidate_device_us=135.640 parent_wall_us=99.941 candidate_wall_us=199.381 delta_us=105.620
+PAIR case=control-r2-d64-fp32 pair=09 order=P,C parent_device_us=27.840 candidate_device_us=39.780 parent_wall_us=95.431 candidate_wall_us=100.580 delta_us=11.940
+PAIR case=control-r2-d64-fp32 pair=10 order=C,P parent_device_us=37.240 candidate_device_us=5.040 parent_wall_us=99.981 candidate_wall_us=97.711 delta_us=-32.200
+PAIR case=control-r2-d64-fp32 pair=11 order=P,C parent_device_us=47.140 candidate_device_us=18.340 parent_wall_us=108.350 candidate_wall_us=90.200 delta_us=-28.800
+PAIR case=control-r2-d64-fp32 pair=12 order=C,P parent_device_us=45.560 candidate_device_us=44.400 parent_wall_us=105.051 candidate_wall_us=123.501 delta_us=-1.160
+PAIR case=control-r2-d64-fp32 pair=13 order=P,C parent_device_us=45.520 candidate_device_us=35.940 parent_wall_us=102.480 candidate_wall_us=116.851 delta_us=-9.580
+PAIR case=control-r2-d64-fp32 pair=14 order=C,P parent_device_us=40.540 candidate_device_us=42.180 parent_wall_us=110.041 candidate_wall_us=99.901 delta_us=1.640
+PAIR case=control-r2-d64-fp32 pair=15 order=P,C parent_device_us=32.960 candidate_device_us=28.580 parent_wall_us=101.620 candidate_wall_us=91.041 delta_us=-4.380
+PAIR case=control-r2-d64-fp32 pair=16 order=C,P parent_device_us=38.040 candidate_device_us=35.380 parent_wall_us=96.800 candidate_wall_us=95.181 delta_us=-2.660
+PAIR case=control-r2-d64-fp32 pair=17 order=P,C parent_device_us=37.780 candidate_device_us=33.700 parent_wall_us=94.371 candidate_wall_us=93.861 delta_us=-4.080
+PAIR case=control-r2-d64-fp32 pair=18 order=C,P parent_device_us=30.040 candidate_device_us=27.520 parent_wall_us=84.941 candidate_wall_us=90.080 delta_us=-2.520
+PAIR case=control-r2-d64-fp32 pair=19 order=P,C parent_device_us=29.460 candidate_device_us=29.460 parent_wall_us=105.211 candidate_wall_us=87.960 delta_us=0.000
+PAIR case=control-r2-d64-fp32 pair=20 order=C,P parent_device_us=28.280 candidate_device_us=31.040 parent_wall_us=85.260 candidate_wall_us=87.561 delta_us=2.760
+PAIR case=control-r2-d64-fp32 pair=21 order=P,C parent_device_us=22.540 candidate_device_us=11.500 parent_wall_us=85.481 candidate_wall_us=87.931 delta_us=-11.040
+CORRECTNESS case=control-r2-d64-fp32 result=PASS mismatches=0 max_abs=0 compare=bitwise
+SUMMARY case=control-r2-d64-fp32 metric=device_us binary=PARENT n=21 median=37.240 mean=35.000 stdev=7.697 cv=0.21990 min=16.480 max=47.140 mad=4.440 p10=27.840 p90=45.520
+SUMMARY case=control-r2-d64-fp32 metric=device_us binary=CANDIDATE n=21 median=31.040 mean=33.923 stdev=25.736 cv=0.75867 min=5.040 max=135.640 mad=4.900 p10=11.500 p90=42.280
+SUMMARY case=control-r2-d64-fp32 metric=wall_us binary=PARENT n=21 median=99.941 mean=99.192 stdev=9.162 cv=0.09237 min=83.201 max=114.331 mad=5.570 p10=85.260 p90=110.041
+SUMMARY case=control-r2-d64-fp32 metric=wall_us binary=CANDIDATE n=21 median=93.861 mean=100.783 stdev=24.718 cv=0.24526 min=82.270 max=199.381 mad=5.930 p10=87.561 p90=116.851
+SUMMARY case=control-r2-d64-fp32 metric=paired_delta_us binary=CANDIDATE_MINUS_PARENT n=21 median=-3.720 mean=-1.077 stdev=27.100 cv=-25.15944 min=-32.200 max=105.620 mad=6.480 p10=-27.560 p90=11.600
+LOCAL_RESULT case=control-r2-d64-fp32 parent_median_us=37.240 candidate_median_us=31.040 delta_median_us=-3.720 delta_percent=-16.6488
+PAIR case=control-r1-d129-fp32 pair=01 order=P,C parent_device_us=4.240 candidate_device_us=52.400 parent_wall_us=96.680 candidate_wall_us=114.681 delta_us=48.160
+PAIR case=control-r1-d129-fp32 pair=02 order=C,P parent_device_us=41.100 candidate_device_us=50.480 parent_wall_us=154.551 candidate_wall_us=110.801 delta_us=9.380
+PAIR case=control-r1-d129-fp32 pair=03 order=P,C parent_device_us=54.500 candidate_device_us=50.660 parent_wall_us=96.630 candidate_wall_us=106.500 delta_us=-3.840
+PAIR case=control-r1-d129-fp32 pair=04 order=C,P parent_device_us=15.160 candidate_device_us=58.780 parent_wall_us=80.140 candidate_wall_us=101.121 delta_us=43.620
+PAIR case=control-r1-d129-fp32 pair=05 order=P,C parent_device_us=4.540 candidate_device_us=59.280 parent_wall_us=84.091 candidate_wall_us=109.881 delta_us=54.740
+PAIR case=control-r1-d129-fp32 pair=06 order=C,P parent_device_us=38.620 candidate_device_us=4.720 parent_wall_us=122.601 candidate_wall_us=80.070 delta_us=-33.900
+PAIR case=control-r1-d129-fp32 pair=07 order=P,C parent_device_us=6.100 candidate_device_us=15.660 parent_wall_us=91.411 candidate_wall_us=96.550 delta_us=9.560
+PAIR case=control-r1-d129-fp32 pair=08 order=C,P parent_device_us=37.940 candidate_device_us=92.340 parent_wall_us=103.780 candidate_wall_us=158.621 delta_us=54.400
+PAIR case=control-r1-d129-fp32 pair=09 order=P,C parent_device_us=35.100 candidate_device_us=29.520 parent_wall_us=97.781 candidate_wall_us=84.611 delta_us=-5.580
+PAIR case=control-r1-d129-fp32 pair=10 order=C,P parent_device_us=4.940 candidate_device_us=60.940 parent_wall_us=90.040 candidate_wall_us=131.931 delta_us=56.000
+PAIR case=control-r1-d129-fp32 pair=11 order=P,C parent_device_us=37.040 candidate_device_us=48.320 parent_wall_us=90.271 candidate_wall_us=109.470 delta_us=11.280
+PAIR case=control-r1-d129-fp32 pair=12 order=C,P parent_device_us=7.400 candidate_device_us=39.600 parent_wall_us=92.361 candidate_wall_us=89.230 delta_us=32.200
+PAIR case=control-r1-d129-fp32 pair=13 order=P,C parent_device_us=24.500 candidate_device_us=6.040 parent_wall_us=90.100 candidate_wall_us=74.731 delta_us=-18.460
+PAIR case=control-r1-d129-fp32 pair=14 order=C,P parent_device_us=30.500 candidate_device_us=70.800 parent_wall_us=88.071 candidate_wall_us=144.991 delta_us=40.300
+PAIR case=control-r1-d129-fp32 pair=15 order=P,C parent_device_us=25.100 candidate_device_us=28.780 parent_wall_us=91.020 candidate_wall_us=111.371 delta_us=3.680
+PAIR case=control-r1-d129-fp32 pair=16 order=C,P parent_device_us=34.760 candidate_device_us=6.260 parent_wall_us=96.820 candidate_wall_us=114.091 delta_us=-28.500
+PAIR case=control-r1-d129-fp32 pair=17 order=P,C parent_device_us=4.140 candidate_device_us=6.360 parent_wall_us=83.031 candidate_wall_us=101.391 delta_us=2.220
+PAIR case=control-r1-d129-fp32 pair=18 order=C,P parent_device_us=18.140 candidate_device_us=47.040 parent_wall_us=89.571 candidate_wall_us=98.680 delta_us=28.900
+PAIR case=control-r1-d129-fp32 pair=19 order=P,C parent_device_us=41.500 candidate_device_us=21.260 parent_wall_us=91.221 candidate_wall_us=76.830 delta_us=-20.240
+PAIR case=control-r1-d129-fp32 pair=20 order=C,P parent_device_us=99.320 candidate_device_us=214.420 parent_wall_us=227.571 candidate_wall_us=287.052 delta_us=115.100
+PAIR case=control-r1-d129-fp32 pair=21 order=P,C parent_device_us=43.020 candidate_device_us=67.820 parent_wall_us=106.000 candidate_wall_us=117.901 delta_us=24.800
+CORRECTNESS case=control-r1-d129-fp32 result=PASS mismatches=0 max_abs=0 compare=bitwise
+SUMMARY case=control-r1-d129-fp32 metric=device_us binary=PARENT n=21 median=30.500 mean=28.936 stdev=22.526 cv=0.77846 min=4.140 max=99.320 mad=12.360 p10=4.540 p90=43.020
+SUMMARY case=control-r1-d129-fp32 metric=device_us binary=CANDIDATE n=21 median=48.320 mean=49.118 stdev=45.080 cv=0.91780 min=4.720 max=214.420 mad=19.500 p10=6.260 p90=70.800
+SUMMARY case=control-r1-d129-fp32 metric=wall_us binary=PARENT n=21 median=91.411 mean=103.035 stdev=32.729 cv=0.31765 min=80.140 max=227.571 mad=5.269 p10=84.091 p90=122.601
+SUMMARY case=control-r1-d129-fp32 metric=wall_us binary=CANDIDATE n=21 median=109.470 mean=115.262 stdev=44.570 cv=0.38668 min=74.731 max=287.052 mad=10.790 p10=80.070 p90=144.991
+SUMMARY case=control-r1-d129-fp32 metric=paired_delta_us binary=CANDIDATE_MINUS_PARENT n=21 median=11.280 mean=20.182 stdev=35.498 cv=1.75891 min=-33.900 max=115.100 mad=29.020 p10=-20.240 p90=54.740
+LOCAL_RESULT case=control-r1-d129-fp32 parent_median_us=30.500 candidate_median_us=48.320 delta_median_us=11.280 delta_percent=58.4262
+RUNNER_COMPLETE mode=PAIRED cases=3 pairs_each=21 timing=DEVICE_EVENT_PRIMARY
+LOAD_SNAPSHOT=AFTER_RUN
+2026-10-05T15:48:31+0800
+	NPU ID                         : 7
+	Chip Count                     : 1
+
+	DDR Capacity(MB)               : 0
+	DDR Usage Rate(%)              : 0
+	DDR Hugepages Total(page)      : 0
+	DDR Hugepages Usage Rate(%)    : 0
+	HBM Capacity(MB)               : 65536
+	HBM Usage Rate(%)              : 54
+	Aicore Usage Rate(%)           : 34
+	Aivector Usage Rate(%)         : 71
+	Aicpu Usage Rate(%)            : 0
+	Ctrlcpu Usage Rate(%)          : 6
+	DDR Bandwidth Usage Rate(%)    : 0
+	HBM Bandwidth Usage Rate(%)    : 66
+	Chip ID                        : 0
+
+PROCESSES_BEGIN
+  82397 vllm            /usr/local/python3.12.13/bin/python3 /usr/local/python3.12.13/bin/vllm serve /models/Qwen3.8-27B-w8a8 --host 0.0.0.0 --port 9001 --tensor-parallel-size 4 --quantization ascend --served-model-name qwen3.8 --max-model-len 256000 --max-num-seqs 8 --max-num-batched-tokens 8192 --gpu-memory-utilization 0.90 --enable-prefix-caching --trust-remote-code --reasoning-parser qwen3 --enable-auto-tool-choice --tool-call-parser qwen3_coder
+  83352 vllm            /usr/local/python3.12.13/bin/python3 /usr/local/python3.12.13/bin/vllm serve /models/Qwen3.8-27B-w8a8 --host 0.0.0.0 --port 9002 --tensor-parallel-size 2 --quantization ascend --served-model-name qwen3.8 --max-model-len 256000 --max-num-seqs 8 --max-num-batched-tokens 8192 --gpu-memory-utilization 0.90 --enable-prefix-caching --trust-remote-code --reasoning-parser qwen3 --enable-auto-tool-choice --tool-call-parser qwen3_coder
+  87336 VLLM::EngineCor VLLM::EngineCore
+  87670 VLLM::EngineCor VLLM::EngineCore
+  89395 VLLM::Worker_TP VLLM::Worker_TP0
+  89602 VLLM::Worker_TP VLLM::Worker_TP0
+  91055 VLLM::Worker_TP VLLM::Worker_TP1
+  91228 VLLM::Worker_TP VLLM::Worker_TP1
+  92813 VLLM::Worker_TP VLLM::Worker_TP2
+  94498 VLLM::Worker_TP VLLM::Worker_TP3
+1608662 ray::vLLMHttpSe ray::vLLMHttpServer
+1614472 VLLM::EngineCor VLLM::EngineCore
+1617353 VLLM::Worker    VLLM::Worker
+2992910 vllm            /home/data4t1/zhangkaijie/conda/envs/qwen38_a2/bin/python3.12 /home/data4t1/zhangkaijie/conda/envs/qwen38_a2/bin/vllm serve /home/data4t2/models/Qwen3.8-27B-w8a8 --host 0.0.0.0 --port 9000 --tensor-parallel-size 1 --max-model-len 200000 --max-num-seqs 8 --max-num-batched-tokens 16384 --enable-prefix-caching --trust-remote-code --speculative-config {"method":"mtp","num_speculative_tokens":4} --enable-auto-tool-choice --tool-call-parser qwen3_coder --gpu-memory-utilization 0.85
+2999855 VLLM::EngineCor VLLM::EngineCore
+PROCESSES_END
+LOAD_NOTE=measurement context only, not an admission gate
+REMOTE_RUN=PASS

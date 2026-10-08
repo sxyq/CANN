@@ -1,0 +1,61 @@
+REMOTE_ATTEMPT=/home/data4t2/lelinfeng/server_runs/UB-BANK-LAYOUT-CHAMPION-X/V010/compile-20261005T092827Z-18158
+DEVICE=7
+ADMISSION=RULE=FREE_HBM_GE_100MB
+LOAD_NOTE=load, lease, AICore and VLLM are measurement context only
+2026-10-05T17:31:01+0800
+REMOTE_HOST=hwnput3
+2026-10-05T09:31:05+0000
+LD_LIBRARY_PATH=/usr/lib/aarch64-linux-gnu:/lib/aarch64-linux-gnu:/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/tools/aml/lib64:/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/tools/aml/lib64/plugin:/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/lib64:/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/lib64/plugin/opskernel:/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/lib64/plugin/nnengine:/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/opp/built-in/op_impl/ai_core/tbe/op_tiling/lib/linux/aarch64:/usr/local/Ascend/driver/lib64:/usr/local/Ascend/driver/lib64/common:/usr/local/Ascend/driver/lib64/driver:
+LIBSTDCXX_RESOLUTION
+	libgcc_s.so.1 => /usr/lib/aarch64-linux-gnu/libgcc_s.so.1 (0x0000ffffaae70000)
+LOAD_BEFORE
+	NPU ID                         : 7
+	Chip Count                     : 1
+
+	DDR Capacity(MB)               : 0
+	DDR Usage Rate(%)              : 0
+	DDR Hugepages Total(page)      : 0
+	DDR Hugepages Usage Rate(%)    : 0
+	HBM Capacity(MB)               : 65536
+	HBM Usage Rate(%)              : 54
+	Aicore Usage Rate(%)           : 34
+	Aivector Usage Rate(%)         : 32
+	Aicpu Usage Rate(%)            : 0
+	Ctrlcpu Usage Rate(%)          : 6
+	DDR Bandwidth Usage Rate(%)    : 0
+	HBM Bandwidth Usage Rate(%)    : 23
+	Chip ID                        : 0
+
+PROCESS_CONTEXT_BEFORE
+  82397 vllm            /usr/local/python3.12.13/bin/python3 /usr/local/python3.12.13/bin/vllm serve /models/Qwen3.8-27B-w8a8 --host 0.0.0.0 --port 9001 --tensor-parallel-size 4 --quantization ascend --served-model-name qwen3.8 --max-model-len 256000 --max-num-seqs 8 --max-num-batched-tokens 8192 --gpu-memory-utilization 0.90 --enable-prefix-caching --trust-remote-code --reasoning-parser qwen3 --enable-auto-tool-choice --tool-call-parser qwen3_coder
+  83352 vllm            /usr/local/python3.12.13/bin/python3 /usr/local/python3.12.13/bin/vllm serve /models/Qwen3.8-27B-w8a8 --host 0.0.0.0 --port 9002 --tensor-parallel-size 2 --quantization ascend --served-model-name qwen3.8 --max-model-len 256000 --max-num-seqs 8 --max-num-batched-tokens 8192 --gpu-memory-utilization 0.90 --enable-prefix-caching --trust-remote-code --reasoning-parser qwen3 --enable-auto-tool-choice --tool-call-parser qwen3_coder
+2992910 vllm            /home/data4t1/zhangkaijie/conda/envs/qwen38_a2/bin/python3.12 /home/data4t1/zhangkaijie/conda/envs/qwen38_a2/bin/vllm serve /home/data4t2/models/Qwen3.8-27B-w8a8 --host 0.0.0.0 --port 9000 --tensor-parallel-size 1 --max-model-len 200000 --max-num-seqs 8 --max-num-batched-tokens 16384 --enable-prefix-caching --trust-remote-code --speculative-config {"method":"mtp","num_speculative_tokens":4} --enable-auto-tool-choice --tool-call-parser qwen3_coder --gpu-memory-utilization 0.85
+CASE_BEGIN name=fp16-mid-control-d8192 dtype=fp16 rows=2 width=8192 device=7 mode=CORRECTNESS_ONLY
+CORRECTNESS case=fp16-mid-control-d8192 binary=R31B_V011 result=PASS failures=0 max_abs=0.0009765625 max_rel=0.0012618296
+CORRECTNESS case=fp16-mid-control-d8192 binary=UB_BANK_V010 result=PASS failures=0 max_abs=0.0009765625 max_rel=0.0012618296
+CASE_END name=fp16-mid-control-d8192 correctness=PASS timing=NOT_RUN
+CASE_BEGIN name=fp16-wide-d32768 dtype=fp16 rows=2 width=32768 device=7 mode=CORRECTNESS_ONLY
+CORRECTNESS case=fp16-wide-d32768 binary=R31B_V011 result=PASS failures=0 max_abs=0.001953125 max_rel=0.010989011
+CORRECTNESS case=fp16-wide-d32768 binary=UB_BANK_V010 result=PASS failures=0 max_abs=0.001953125 max_rel=0.010989011
+CASE_END name=fp16-wide-d32768 correctness=PASS timing=NOT_RUN
+RUNNER_COMPLETE mode=CORRECTNESS_ONLY correctness=PASS cases=2 device=7 timing=NOT_RUN
+LOAD_AFTER
+	NPU ID                         : 7
+	Chip Count                     : 1
+
+	DDR Capacity(MB)               : 0
+	DDR Usage Rate(%)              : 0
+	DDR Hugepages Total(page)      : 0
+	DDR Hugepages Usage Rate(%)    : 0
+	HBM Capacity(MB)               : 65536
+	HBM Usage Rate(%)              : 54
+	Aicore Usage Rate(%)           : 35
+	Aivector Usage Rate(%)         : 24
+	Aicpu Usage Rate(%)            : 0
+	Ctrlcpu Usage Rate(%)          : 4
+	DDR Bandwidth Usage Rate(%)    : 0
+	HBM Bandwidth Usage Rate(%)    : 49
+	Chip ID                        : 0
+
+POST_NPU_SMI_RC=0
+CORRECTNESS_RUNNER_RC=0
