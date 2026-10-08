@@ -1,0 +1,16 @@
+# RULE_REFRESH_RECEIPT - SYNC-BARRIER-ELISION-X V068
+
+- RULE_REFRESH_UTC: `2026-10-08T16:56:20.534331542Z`.
+- Owner/worktree/branch: same sole SYNC-BARRIER-ELISION-X Route context; `/home/data4t2/lelinfeng/cann-route-w4-3-sync-barrier-elision`; `exp/w4-compile-sweep/r-w4-3-sync-barrier-elision-x`.
+- HEAD before V068: `00aedfba5416d7932e140bfe4a75a4b71b78a468`, the scoped V067 result commit. V068 did not exist.
+- Required current-worktree rules reread: `AGENTS.md`; `.agents/skills/cann-mainline/SKILL.md`; canonical `.agents/skills/cann-route-executor/SKILL.md`; `项目规则/实验总则.md`; `项目规则/执行约定.md`; `项目规则/本地性能测试规范.md`; `项目规则/服务器实验规范.md`; `项目规则/线上提交规范.md`; `项目规则/Git工作流程.md`.
+- V067 result from committed Route-local evidence: Compile PASS, 9/9 bitwise Correctness PASS including BF16 `128x256`, 62 BF16 Local pairs, primary paired-median score `-14.202899%`, pooled median-latency ratio `-26.763285%`, mean-latency ratio `-32.949286%`. The timing device had resident VLLM load and qualification/local jitter was extreme. V067 is `LOCAL_REJECTED_NOISY`, not promoted.
+- Current Local Best and V068 Direct Parent: exact `R31B-V011`, SHA256 `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`. V068 `parent.asc` and initial `submission.asc` are byte-identical to that source. V067 is not inherited.
+- Route-local duplicate audit: checked the exact `Mul(valueRow, valueRow, gammaFp32, width)` / `PIPE_V` / `Add(valueRow, valueRow, biasFp32, width)` context in all 67 available Route-local `submission.asc` files V001-V067; all 67 retain this pre-Add barrier. V067 removes only the following post-Add barrier. No existing Route declaration/result identifies this BF16 row-wise pre-Add point as a prior deletion. No other Route worktree or shared record was read.
+- Active-path basis: BF16 `128x256` dispatches to `ProcessSmallLowPrecisionContiguousBatched`; width 256 exceeds `kFp32RepeatMaxWidth=192`, selecting the row-wise FP32-staged gamma/bias fallback. The selected point is the `PIPE_V` immediately after BF16 row-wise gamma `Mul` and before bias `Add`.
+- V068 one-factor declaration: delete only that pre-Add `PIPE_V` barrier in the BF16 row-wise fallback. Preserve Mul, Add, the post-Add barrier, conversion, all other barriers/events, and all other paths.
+- Support runner changes only: update Candidate/revision labels to V068. BF16 encoding, dtype metadata, correctness case, and timing method are otherwise the V067 Route-local runner. No additional Kernel factor is introduced.
+- Device coordination: device 2 remains excluded while MODE-DISPATCH V093 occupancy is unresolved. After V068 Compile PASS, take a fresh live device/process snapshot and use a non-conflicting device with at least 100 MB free HBM; prefer device 3 only if its snapshot satisfies the current process-eligibility condition, otherwise select another eligible device. Do not disturb existing processes. No formal lease API or shared TSV write is required. No device use before Compile PASS.
+- No Online, SSH, push, shared-record write, cross-route read, history rewrite, reset, clean, rebase, or Local Best change.
+
+This receipt and the exact Route-local duplicate audit were completed before the V068 Candidate performance edit.
