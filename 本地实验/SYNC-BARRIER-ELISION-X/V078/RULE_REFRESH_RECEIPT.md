@@ -1,0 +1,24 @@
+# V078 RULE_REFRESH_RECEIPT
+
+ROUTE = SYNC-BARRIER-ELISION-X
+REVISION = V078
+RECEIPT_TIMESTAMP_UTC = 2026-10-08T19:37:49Z
+AGENTS_READ = YES
+ROUTE_SKILL_READ = YES
+EXPERIMENT_RULE_READ = YES
+EXECUTION_RULE_READ = YES
+SERVER_RULE_READ = YES
+LOCAL_RULE_READ = YES
+GIT_RULE_READ = YES
+ONLINE_RULE_READ = YES
+ONE_CHANGE = remove only the BF16-path PipeBarrier<PIPE_V> after ToFloat(xFp32, xLocal, valid) and ToFloat(residualFp32, residualLocal, valid), before Add(valueLocal, xFp32, residualFp32, valid), in ProcessSmallLowPrecisionContiguousBatched
+DIRECT_PARENT = exact R31B V011
+PARENT_SHA256 = a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
+CURRENT_LOCAL_BEST = exact R31B V011
+DISTINCT_FROM = V012 main tiled conversion-to-Add boundary; V077 small-batched Add-to-Mul boundary
+AUTHORITATIVE_LOOP = RULE_REFRESH -> ONE CHANGE -> COMPILE -> CORRECTNESS -> LOCAL -> RESULT -> COMMIT -> VERSION_RECORD_EVENT
+OWN_WORKTREE_ONLY = YES
+ONLINE_FORBIDDEN = YES
+SHARED_RECORDS = UNTOUCHED
+PRIOR_SLA_NOTE = V077 LOCAL_RESULT_TO_NEXT_EDIT exceeded 180 seconds and is preserved as a failure; no timestamp rewritten
+NEXT_ACTION = EDIT exact V011-derived candidate, then direct Compile
