@@ -1,0 +1,18 @@
+Initial offline analysis returned 1 before creating its JSON or task-map output.
+No NPU command was running. Kernel, runner and collected samples were unchanged.
+
+Traceback (most recent call last):
+  File "analyze.py", line 143, in <module>
+    main()
+  File "analyze.py", line 135, in main
+    result["profile"] = attach_tasks(rows, args.profile_export, args.output.with_suffix(".task-map.tsv"))
+  File "analyze.py", line 92, in attach_tasks
+    assert abs(interval_error) < 0.0001, (row["launch_ordinal"], interval_error)
+AssertionError: ('63', -0.02000016399999982)
+
+The task-record start interval and ACL elapsed time differ by at most 0.024006614 us
+over the 124 samples. Observed rounded differences: 74 at 0 us, 27 at +0.02 us,
+23 at -0.02 us. The analysis now retains these differences instead of requiring
+sub-nanosecond agreement between the two timing representations. Exact op/task
+identity, duration and start-time agreement remain required. Each timed kernel
+must lie between its adjacent EVENT_RECORD tasks on the same stream.
