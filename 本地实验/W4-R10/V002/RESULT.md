@@ -180,3 +180,185 @@ task_time / runtime timeline，按调用开始时间、P/P 与 P/C 次序定位�
 `results/final-state.log` 于 05:14:43 UTC 确认 `R10_ACTIVE_PROCESSES=[]`，
 runner 与两份动态库时间仍为本次 05:05 构建时刻。
 `RUNNING_DEVICE_OPERATION=NONE`。最终提交号与 Git 状态由提交后回执提供。
+
+## 2026-10-08：同版计时归因与交叉诊断
+
+### 当前需求与状态
+
+本次 V002 计时归因任务完成，接受结果仍为 `MEASUREMENT_BLOCKED`：
+`LOCAL_SCORE=NONE`、`LOCAL_DELTA=NONE`、R10 已接受 Local Best=NONE，
+上游 `CURRENT_LOCAL_BEST=R31B V011`。没有改 kernel、重建两份 kernel 库或创建 V003。
+新增性能版 0、有效 Local 0、连续无改善贡献 0；不是 STAGNATION_3。
+原 V002 的 34.25/33.73 us、配对 -3.7819107924% 继续保留为旧观察值。
+
+### 本轮实际完成
+
+先对旧 496 个计时调用做 connection_id、API 区间和前序调用分析；随后只执行一次
+有区别的交叉诊断，每个原有 BF16 输入启动一个进程，进程内先 P/P 再 P/C。
+两个阶段保持同输入、双库驻留、两个输出 buffer、stream、event 和同步节奏。
+每个观测前指定 Parent/Candidate 前序调用，独立改变其同/异输出 buffer、
+逻辑槽位、buffer 对应与调用先后。32 条件、两组，实际安排与全部前序调用均保留。
+完整采集前声明在 `研究/W4-R10/TIMING-ATTRIBUTION-20261008.md`。
+
+旧 trace 已证明三项具体限制：
+
+- 两份设备二进制分别在 launch 1 和 186 前注册；旧 P/P 为 61–184，尚未包含
+  Candidate 设备注册后的运行状态。
+- P/C 第一位置有 61/62 次紧接同一 kernel，第二位置 0/62 次紧接同一 kernel。
+  原调用位置与前序 kernel 混杂；原 P/P 的两位置则都只调用 Parent。
+- target 的 248 个 timed call 中有 46 个设备开始早于对应 host Node@launch，
+  control 有 25 个；对应 Runtime@KernelLaunch 为 49/32。连接关系逐条一致，
+  跨时钟绝对时刻不能直接用作因果先后或真实提交等待时长。
+
+旧两输入共 496/496 个 timed call 的两次 host RecordEvent 之间均有
+Runtime@DevMalloc 和 AscendCL@aclrtFree。原外围分配在计时外的描述，只适用于
+runner 明写的五个输入/输出 buffer，不涵盖生成式 launch 包装内部的调用。
+旧 task 1169 的 10012.24 us 和 task 180 的 2205.544 us 主要处在 kernel-task
+区间内，因此仅移除 event 外围区间不足以取得可靠测量。
+
+### 修改或操作对象
+
+本轮本地修改/新增限于指定 R10 工作树内：
+
+- `本地实验/W4-R10/V002/support/probe.cpp`：新增 diagnose 模式；抽取原 reference
+  计算供新旧模式共用；输入、epsilon、容差与原八个 reference 公式保持不变。
+- `support/host_diagnostic.sh`：只编译 host 的入口和一次有限采集入口。
+- `support/timing_attribution.py`：旧 trace 与新 trace 逐调用对应、全部样本统计、
+  独立因素对照及原八个 reference 结果复用核对。
+- 本文件、前述研究声明、`results/timing-attribution-20261008/`：原始数据、
+  导出、日志、统计和本次事实。原 V001/V002 数据保持原样。
+
+远端仍只操作既有
+`/home/data4t2/lelinfeng/cann/w4/R10-active-core-d-aware-x/V002/`。
+原 `build/r10_probe`、`libr10_parent.so`、`libr10_candidate.so` 保留；仅新增必要的
+`build/r10_probe_timing`（101928 B）。其动态依赖明确指向原两库。未使用 objcopy，
+没有改写已测 ELF，也没有把局部段比较当作整个文件相同的证明。
+
+host 构建采用原 `/usr/bin/c++ -std=gnu++17` 和原 include/link 参数，无新增优化
+参数；2026-10-08 06:56:05–06:56:08 UTC 返回 0。采集命令为：
+
+```text
+bash support/host_diagnostic.sh capture
+build/r10_probe_timing diagnose 4 128 12288 2 <new-results>/target
+build/r10_probe_timing diagnose 4 48 12288 2 <new-results>/control
+msprof: task-time=on, aic-mode=task-based, ai-core=off, ascendcl=on, runtime-api=on, aicpu=off
+```
+
+### 验证结果
+
+两个原有 BF16 输入的 Parent/Candidate 分别在 A/B 两个实际输出 buffer 对独立
+CPU FP64 reference 通过；每输入共四次真实 launch，所有 failures/nonfinite=0。
+采样后再次读回 A/B，两者仍通过。target 最大绝对误差为
+0.0078120810018278419，control 为 0.0078120285855041161。
+原八输入、16 份双方 reference 结果继续复用；其余六个输入没有重复运行。
+V001 原宽 FP32/较大 FP16 失败域没有被重验或宣布解决。
+
+两次采集实际各 756 个 kernel：4 次 reference、240 次预热、512 个 timed call。
+timed call 中，P/P 和 P/C 各 128 个观测、128 个指定前序调用。两输入全部 1024 条
+计时值均保留；下表只用观测调用，前序调用没有混入 P/P 资格。
+target 的 Parent 为 40 blocks，Candidate 为 32；control 双方均 40。
+两份设备二进制均已在 launch 1/3 前注册，首个 timed call 为 125。
+
+| 输入 / P/P 范围 | 整体中位 us | MAD/中位 | 两组中位 us | 组间相对差 | 结论 |
+|---|---:|---:|---|---:|---|
+| target kernel task | 31.500 | 17.4286% | 32.042 / 31.190 | 2.7048% | 未取得资格 |
+| control kernel task | 18.462 | 10.2481% | 18.590 / 18.382 | 1.1266% | 未取得资格 |
+| target event | 39.550001 | 27.3325% | 41.530000 / 38.070001 | 8.7484% | 未取得资格 |
+| control event | 25.150000 | 20.0795% | 26.020000 / 24.290000 | 6.8787% | 未取得资格 |
+
+target P1/P2 task 中位为 31.310/31.572 us，MAD 为 16.3526%/17.6422%；
+control 为 18.300/18.570 us，MAD 为 10.9180%/9.3700%。此外，target 两个真实
+输出 buffer A/B 的 MAD 为 18.8100%/16.2290%；control A 为 11.4116%。
+没有通过选择单个槽位或单个较稳的分组来接受全次结果。
+
+| 输入 / P/C 范围 | Parent 中位 us | Candidate 中位 us | 配对 delta % | 总体中位比 delta % |
+|---|---:|---:|---:|---:|
+| target kernel task | 31.930 | 28.180 | -1.4061318749 | -11.7444409646 |
+| control kernel task | 17.850 | 17.860 | -0.3834903657 | +0.0560224090 |
+| target event | 39.020000 | 40.200001 | -8.9564315979 | +3.0240917522 |
+| control event | 24.770000 | 41.449999 | +0.2690109684 | +67.3395212174 |
+
+这些 P/C 数字全部为观察值。target P/C 两侧 task MAD 为 19.2922%/22.5053%，
+Candidate 的两组中位为 24.840/33.680 us，相对差 31.3698%。control Candidate
+两组为 16.690/21.730 us，相对差 28.2195%。P/P 配对绝对差 p90 为 target
+19.1872 us、control 183.2040 us，远大于 P/C 配对差中位 -0.230/-0.070 us。
+
+独立因素对照在相同 block、同一观测标签且其余四个因素相同时逐项相减；每项
+每标签 32 对，全部 1280 个对照及原始操作序号保留。下表为 target P/P task
+的对照差中位，两个标签都真正调用同一 Parent：
+
+| 改变的因素（后者减前者） | P1 us | P2 us |
+|---|---:|---:|
+| 前序 Parent → Candidate | +2.730 | +1.800 |
+| 前序同 buffer → 另一个 buffer | -0.650 | +4.518 |
+| 观测输出 A → B | -7.118 | +5.918 |
+| 观测第一 → 第二位置 | +4.082 | -3.118 |
+| 逻辑槽位 0 → 1 | -0.460 | -0.022 |
+
+前序 kernel 可保留为线索，但这些对照的 p10–p90 均横跨零，P/C 中方向也随分组
+变化。例如 target P/C 在 Candidate 写 A/B 时配对差中位为 +0.780/-5.650 us，
+两组总体为 -1.342/+0.492 us。现有数据没有支持一个固定的地址或位置偏移作为
+全部差异来源。新设计已经解开原前序/位置对应，却仍没有取得可靠 Local；不能把
+该结果反推成旧采集的无干扰收益，也不能将全部波动指定给某个因素。
+
+新 target 观测 task 1110 达 304.768 us，event 为 310.180008411 us，此时 host
+分配/释放仅 3.42/4.27 us；control task 744 为 341.788 us，event 405.140012503 us。
+另一方面，target task 288 的 kernel 32.460 us、event 205.259993672 us，外围区间
+172.824 us，分配/释放 3.84/5.14 us。两类长尾同时存在，短 API 时长不能独自解释
+它们，也不能据此排除分配可能带来的间接影响。所有样本都参与统计。
+
+每次新采集的 756 个 op_summary 与 task_time 全部一致，512 个 timed call 的
+device/stream/task、前后 EVENT_RECORD、host connection_id 与前序调用对应均通过。
+ACL elapsed 与设备事件时间差最大偏差为 target 0.024006328 us、control
+0.028012579 us。新 control 仍有 6 个设备开始早于 host Node、13 个早于 Runtime
+launch；不把这些跨时钟绝对差作为真实队列等待。两份新 trace 都有 512/512 次
+逐 launch 分配/释放，target 观测 P/P 对应 API 中位为 3.390/4.010 us。
+
+只读原两库的 BF16 host 包装取得了额外结构证据：Parent 入口 0x4b0ac、Candidate
+入口 0x4b31c；分别在 0x4b0fc/0x4b36c 调用 AllocAscendMemDevice，size 参数为
+8 字节，返回指针保存在栈上偏移 72 字节处；以栈首地址和 80 字节大小传给 launch
+helper，正常返回路径读取同一指针并调用 FreeAscendMemDevice。
+这是原已测库的结构事实；尚未确认该附加参数在设备侧的完整用途，不擅自绕过它。
+
+全部数据入口为 `results/timing-attribution-20261008/`：
+
+- `target.pp.tsv`、`target.pc.tsv`、`control.pp.tsv`、`control.pc.tsv`：1024 条原始
+  event/wall、槽位、地址、前序与执行序号。
+- `target-task-map.tsv`、`control-task-map.tsv`：1024 条逐调用设备 task/API 对应。
+- `target-pairs.tsv`、`control-pairs.tsv`：256 对观测的全部数值；
+  `target-contrasts.tsv`、`control-contrasts.tsv`：1280 个独立因素对照。
+- `diagnostic-summary.json`：全样本统计、各组/标签/因素数值和八输入 reference 复用。
+- `old-*-attribution.tsv`、`old-attribution-summary.json`：旧 496 条原始计时的扩展归因。
+- 两份 `*-capture/PROF*/mindstudio_profiler_output/`：完整 CSV、runtime timeline 和
+  辅助导出；更底层采集继续保留在远端同名 PROF 目录。
+- `host-compile.log`、`capture-session.log`、`transfer-*.log`、`analysis.log`、
+  `wrapper-final-state.log`：构建、执行、传输、离线统计、只读对象分析与结束状态。
+
+### 剩余工作与风险
+
+本轮没有新增已证实且已排除历史重复的性能轴。现有 V002 的有效 Local 仍缺；
+完整批之外的核数取整范围也没有新增研究结论。两个 buffer 是设备地址身份，
+物理 HBM 通道/分配位置仍未知。当前采集不能分开设备内部负载、主机调度、
+profiler 开销与内部申请/释放的间接影响；没有逐核计时或无 profiler 对照。
+
+不同的精确下一研究动作：从上述两份原库的 BF16 host 包装，沿 Parent 的
+0x49c24、Candidate 的 0x49cb4 launch helper 及 80 字节参数布局，追踪尾部
+8 字节设备指针的接收方、生命周期和必要同步。先做只读 ABI/生成对象分析，
+确认用途后再提出单一 host 测量干预；不重跑本次 32 条件矩阵、不先改 kernel
+或创建 V003。该动作不要求使用设备，也不预设移除这次申请是安全的。
+
+采集于 06:56:48–06:57:18 UTC 完成。各阶段 HBM 使用率 90%，项目公式可用
+6553 MB；ACL 在 target 采样前后均为 6270.550781 MiB，control 为
+6278.175781→6277.437500 MiB。AICore 59–62%、AIVector 37–40%，host load1
+68.85–73.98；快照不代表整个窗口负载恒定。没有停止或更改其他用户进程。
+
+07:06:38 UTC 结束审计确认 `R10_ACTIVE_PROCESSES=[]`；原 runner 与两库的大小、
+mtime、inode 仍与构建前记录一致。所有本轮构建、reference、计时、导出、传输、
+离线统计与远端只读命令已结束，`RUNNING_DEVICE_OPERATION=NONE`。上述构建、采集、
+传输和统计均返回 0。
+无文件删除、外部 push、新分支、工作树、子代理或定时任务。证据为真实研究产物，
+继续保留供复核；没有临时备份需要清理。当前槽位可交回 Main，Route 生命周期不变。
+
+研究事件 ID 为 `W4-R10-TIMING-ATTRIBUTION-20261008`，V002 同版事件类型为
+`TIMING_ATTRIBUTION_SUPPLEMENT`。提交后回执提供实际提交号与最终 dirty 状态，
+等待 Record 异步同步。
