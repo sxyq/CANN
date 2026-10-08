@@ -1,0 +1,33 @@
+--- 本地实验/ROW-SCALE-HOIST-X/V026/submission.asc	2026-10-06 21:15:17.803774521 +0000
++++ 本地实验/ROW-SCALE-HOIST-X/V061/submission.asc	2026-10-08 18:15:53.977780781 +0000
+@@ -2364,13 +2364,25 @@
+                 // row pitch cannot be mistaken for the tail width.
+                 if (valid == panelWidth &&
+                     (valid % kWideFp32PanelAlignment) == 0) {
+-                    for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
+-                        AscendC::LocalTensor<float> valueRow = valueLocal[batchRow * panelWidth];
+-                        AscendC::Muls(valueRow, valueRow, invRmsValues[batchRow], valid);
++                    const uint8_t rowStride =
++                        static_cast<uint8_t>(valid / kSmallFp32ScalarStride);
++                    for (int32_t col = 0; col < valid; col += 64) {
++                        const int32_t chunk = valid - col < 64 ? valid - col : 64;
++                        AscendC::Mul(valueLocal[col], valueLocal[col], gammaLocal[col], chunk,
++                                     static_cast<uint8_t>(batchRows),
++                                     {1, 1, 1, rowStride, rowStride, 0});
++                        AscendC::PipeBarrier<PIPE_V>();
++                        for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
++                            AscendC::LocalTensor<float> valueRow =
++                                valueLocal[batchRow * panelWidth + col];
++                            AscendC::Muls(valueRow, valueRow, invRmsValues[batchRow], chunk);
++                            AscendC::PipeBarrier<PIPE_V>();
++                        }
++                        AscendC::Add(valueLocal[col], valueLocal[col], biasLocal[col], chunk,
++                                     static_cast<uint8_t>(batchRows),
++                                     {1, 1, 1, rowStride, rowStride, 0});
+                         AscendC::PipeBarrier<PIPE_V>();
+                     }
+-                    ApplyFp32GammaBiasBatch(valueLocal, gammaLocal, biasLocal,
+-                                            valid, batchRows);
+                 } else {
+                     for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
+                         AscendC::LocalTensor<float> valueRow = valueLocal[batchRow * panelWidth];
