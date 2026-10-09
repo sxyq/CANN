@@ -6,19 +6,22 @@
 
 引用的 W4 Online 约定属于已退役阶段的历史安排，其中唯一正式提交者是 Online Owner，使用唯一现有 Judge 脚本。本轮五路线重建未指定 Online 操作。本文件保留的 Commit/Event 顺序继续约束开发期实验与 Git 溯源，不能作为新增实验环节或提交条件；当前实验沿用用户指令与现有流程。
 
-本轮规则维护已获用户授权精确提交并普通推送以下文件：
+本轮规则维护与 W4 状态更新已获用户授权精确提交并普通推送以下文件：
 
 ```text
+.agents/skills/cann-online-owner/SKILL.md
 .agents/skills/cann-main-orchestrator/SKILL.md
 .agents/skills/cann-route-executor/SKILL.md
 .agents/skills/cann-record-owner/SKILL.md
+AGENTS.md
 项目规则/W4持续探索控制契约.md
 项目规则/实验总则.md
 项目规则/执行约定.md
 项目规则/Git工作流程.md
+项目规则/线上提交规范.md
 ```
 
-只暂存并提交上述路径中的本轮规则变更。根 `AGENTS.md`、其他已暂存或未暂存文件及未跟踪文件均不纳入。
+只暂存并提交上述路径中的本轮规则变更。其他已暂存、未暂存文件和未跟踪资料均不纳入。
 
 本文件是实验 Git 顺序和安全边界的唯一说明。
 
