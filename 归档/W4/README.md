@@ -32,6 +32,17 @@
 - 已提交源码的 `source_commit` 使用真实 Git 路径历史，并检查 commit 内容与当前源码 SHA 一致。
 - 未提交源码使用 `source_commit=UNKNOWN`、`source_state=UNCOMMITTED`；不把 worktree 状态伪造为 commit。
 
+## 增量 source-like 分类
+
+续审中除五个 direct `submission.asc` 外，没有发现独立 Candidate/performance source。audit 中列出的未提交 source-like 文件均按以下事实保留在原 W4 worktree，不复制进 submission-only archive：
+
+- MODE V001: `compile_unit.asc`、`compile_unit.cpp` 是 host compile metadata declarations。
+- MODE V016/V029/V111: 各自 `src/adapter.cpp`、`src/device_include.asc` 是 compile/runner adapter；不是 Candidate submission。
+- MODE V111 partial-ranking stage: `local_types.h`、`main.asc`、`runner_candidate.asc`、`runner_parent.asc`、`runner_ref_candidate.asc`、`runner_ref_parent.asc`、`submission_shim.asc` 是 partial-ranking runner/support；`parent.asc` 是已归档 Parent SHA 的重复。
+- SYNC V081: `parent.asc` 是已归档 Parent SHA 的重复，`src/compile_adapter.asc` 和 `support/correctness_runner.asc` 是 compile/correctness runner。
+- STAGING V034: `route_support/STAGING-LIVENESS-X/V034/exact_source_kernel.cpp` 是包含 V034 submission 的 generated exact-source adapter，不是 Candidate 本体。
+- 各 worktree `build*` 下的 `CMakeFiles/.../CompilerIdCXX/CMakeCXXCompilerId.cpp` 是 CMake/generated build artifacts；它们不属于 audit source-like archive。
+
 ## 结果口径
 
 `官方结果摘要.tsv` 只引用当前正式记录能定位的 `线上结果/<ROUTE>/<REVISION>/result.json`。五条 W4 路线均没有该正式结果，因此 Planning 给出的分数只作为 `PLANNING_CLAIM_UNVERIFIED` 保存，不能写入 Official Score 或 Submission ID。具体冲突和 source-meta 解释见 `冲突与证据界限.md`。
