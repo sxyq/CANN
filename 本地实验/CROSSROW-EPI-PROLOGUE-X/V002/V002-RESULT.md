@@ -101,3 +101,9 @@ H1 is implemented and correctness-safe, but this single local run cannot accept 
 One read-only connection/device/lease check was attempted after the polluted local result. The existing `cann-server3` hostname could not be resolved, so no remote identity, NPU/HBM snapshot, or lease authorization was obtained. The clean paired measurement was not run, and this V002 remains `LOCAL_NO_PROMOTION / MEASUREMENT_CONTAMINATED`. No source, Runner, ABI, timing boundary, shape, or V002 raw data changed.
 
 Evidence: `server3-lease-check.log`
+
+## Current-host doctor
+
+The current Worktree host is `hwnput3` and exposes eight NPUs. Devices 2 and 3 are idle in the `npu-smi info` snapshot with approximately 62 GB free HBM each, but no current R1/V002 lease file or authorization variable is visible. Other devices are occupied, and the installed `npu-smi` rejected the attempted singular `usage` and `proc` type probes with rc=215; its successful `info` output already includes HBM and process status. Because an idle device without a verified lease is not a safe performance target, no paired measurement was run.
+
+Evidence: `server3-doctor-20261009.log`
