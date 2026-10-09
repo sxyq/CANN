@@ -1,0 +1,127 @@
+{
+  "route": "ROW-SCALE-HOIST-X",
+  "revision": "V062",
+  "source_commit": "4042019061242d3ec3a6c47cd6057b5e1ef2e9c1",
+  "source_object": "4042019061242d3ec3a6c47cd6057b5e1ef2e9c1:本地实验/ROW-SCALE-HOIST-X/V062/submission.asc",
+  "candidate_source_sha256": "1dd6fb4b2a29d752b0d8a190cc5c8e5310a7725a8aee05d708bf0a0f43955996",
+  "direct_parent": "V026",
+  "parent_source_sha256": "7c2569d9e3830c845f2b5dc4587a73a05a0bdf041168614cd55ad84204e063f9",
+  "compile": {
+    "status": "PASS",
+    "candidate_targets": "device submission",
+    "local_targets": "v062_local_parent v062_local_candidate",
+    "local_build_dir": "/tmp/cann-row-scale-hoist-x-v062-local-retest-20261009T095647Z",
+    "local_parent_binary_sha256": "1646702441154ca23c140e7ea709407cbef7e1bdea3aca6649fc5029908229fc",
+    "local_candidate_binary_sha256": "8cb66ae28123bcacb511eb0f5ff8b7baf48c3ab5aeaaf5db04747004ee4a636e",
+    "evidence": [
+      "compile.log",
+      "local/configure.log",
+      "local/build.log",
+      "local/binary-sha256.txt",
+      "local/identity.txt"
+    ],
+    "initial_harness_failure_preserved": "local/initial-env-failure.log"
+  },
+  "correctness": {
+    "status": "PASS",
+    "coverage": "BF16 [128,128]",
+    "dispatch": "ProcessSmallLowPrecisionContiguousBatched",
+    "parent_matched_ratio": 1.0,
+    "candidate_matched_ratio": 1.0,
+    "parent_max_abs_error": 0.00390625,
+    "candidate_max_abs_error": 0.00390625,
+    "max_abs_error_limit": 1.0,
+    "candidate_source_delta_executed": true,
+    "evidence": [
+      "correctness-parent.log",
+      "correctness-candidate.log",
+      "correctness-status.txt"
+    ]
+  },
+  "local": {
+    "status": "COMPLETE_DESCRIPTIVE_MEASUREMENT_BLOCKED",
+    "device": 0,
+    "shape": [128, 128],
+    "dtype": "BF16",
+    "warmups_per_invocation": 20,
+    "samples_per_invocation": 32,
+    "invocations": 9,
+    "successful_invocations": 9,
+    "sample_count_per_arm": 128,
+    "protocol": "Parent stability then four interleaved Parent/Candidate blocks",
+    "timing": "device event",
+    "formula": "100 * pooled Parent median device_us / pooled Candidate median device_us",
+    "parent_pooled_median_us": 19.7300005,
+    "candidate_pooled_median_us": 20.8500005,
+    "parent_pooled_mean_us": 25.169218796875015,
+    "candidate_pooled_mean_us": 29.50203132031249,
+    "parent_pooled_cv": 0.8762475930750339,
+    "candidate_pooled_cv": 1.33021069599053,
+    "parent_stability_median_us": 19.79,
+    "parent_stability_mean_us": 20.5799999375,
+    "parent_stability_cv": 0.44285515954415183,
+    "score": 94.6282974909281,
+    "candidate_delta_pct": 5.676634422791826,
+    "paired_direction": "2/4 candidate-faster",
+    "raw_max_parent_us": 176.880005,
+    "raw_max_candidate_us": 339.080017,
+    "paired_blocks": [
+      {
+        "block": 1,
+        "parent_median_us": 21.550001,
+        "candidate_median_us": 19.389999,
+        "candidate_delta_pct": -10.023210671776772
+      },
+      {
+        "block": 2,
+        "parent_median_us": 18.48,
+        "candidate_median_us": 18.82,
+        "candidate_delta_pct": 1.8398268398268414
+      },
+      {
+        "block": 3,
+        "parent_median_us": 21.42,
+        "candidate_median_us": 21.23,
+        "candidate_delta_pct": -0.8870214752567773
+      },
+      {
+        "block": 4,
+        "parent_median_us": 16.780001,
+        "candidate_median_us": 27.6,
+        "candidate_delta_pct": 64.4815158235092
+      }
+    ],
+    "raw_evidence": [
+      "local/parent-stability.log",
+      "local/parent-block1.log",
+      "local/candidate-block1.log",
+      "local/parent-block2.log",
+      "local/candidate-block2.log",
+      "local/parent-block3.log",
+      "local/candidate-block3.log",
+      "local/parent-block4.log",
+      "local/candidate-block4.log"
+    ],
+    "invocation_status": "local/local-invocation-status.tsv",
+    "pre_snapshot": "local/device-snapshot-before-local.log",
+    "post_snapshot": "local/device-snapshot-after-local.log",
+    "process_snapshots": [
+      "local/process-snapshot-before-local.log",
+      "local/process-snapshot-after-local.log"
+    ],
+    "release_receipt": "local/device-release.log"
+  },
+  "quality_verdict": "MEASUREMENT_BLOCKED",
+  "quality_reasons": [
+    "Parent pooled CV is 0.8762475931 and Candidate pooled CV is 1.3302106960.",
+    "Candidate raw maximum is 339.080017 us and Parent raw maximum is 176.880005 us.",
+    "Paired block direction is mixed at 2/4 Candidate-faster.",
+    "Concurrent device-0 processes and load remained untouched."
+  ],
+  "current_local_best": "V026",
+  "promoted": false,
+  "official_comparable": false,
+  "exportable": true,
+  "online": "NOT_RUN",
+  "historical_v062_local_not_used_for_this_score": "本地实验/ROW-SCALE-HOIST-X/V062/local/*-retry.log"
+}
