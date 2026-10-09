@@ -1,0 +1,82 @@
+{
+  "route": "MODE-DISPATCH-CUTOFF-X",
+  "revision": "V110",
+  "direct_parent": "exact R31B-V011",
+  "parent_sha256": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "candidate_sha256": "7ea92a5921239f127218b968c298012577491bf1b0ef337d7b6561b9f295c3c4",
+  "single_change": "kSmallFp32BatchMaxWidth: 4096 -> 920",
+  "focus_axis": "FP32_SMALL_BATCH_CUTOFF_OFAT",
+  "compile": "PASS",
+  "correctness": "PASS",
+  "correctness_shapes": ["FP32 128x916", "FP32 128x920", "FP32 128x924"],
+  "partial_correctness": true,
+  "local_score_comparable_to_official": false,
+  "local_score": 0.9794605573677525,
+  "local_delta_pct": -2.053944263225,
+  "local_verdict": "LOCAL_REJECTED",
+  "current_local_best": "exact R31B-V011",
+  "official_score": null,
+  "online": "NOT_RUN",
+  "device": 3,
+  "device_released": true,
+  "device_release_timestamp": "2026-10-09T00:04:51.265246712Z",
+  "formula": "Per-pair median(parent raw device_us)/median(candidate raw device_us) over 62 samples per invocation; shape score is the arithmetic mean of six pair speedups; route score is the equal-weight geometric mean of three shape scores; combined-MAD pass is abs(parent median-candidate median) <= parent MAD+candidate MAD.",
+  "sample_count": {"invocations": 36, "event_samples": 2232, "per_side_per_shape": 372, "excluded": 0},
+  "candidate_faster_pairs": 4,
+  "within_combined_mad_pairs": 7,
+  "shape_scores": [
+    {
+      "shape": "FP32 128x916",
+      "pair_speedups": [0.984473676898, 0.956000810739, 0.945126817329, 0.946879834310, 1.044171304637, 1.004158492891],
+      "score": 0.9801351561339863,
+      "delta_pct": -1.986484386601,
+      "candidate_faster_pairs": 2,
+      "within_combined_mad_pairs": 2,
+      "parent": {"median_us": 7.495, "mean_us": 7.612029543011, "stdev_us": 0.531770972309, "cv_pct": 6.985929, "mad_us": 0.165935, "min_us": 6.91906, "max_us": 15.1497, "p10_us": 7.273375, "p90_us": 8.00312, "throughput_gelem_s": 15.643495664},
+      "candidate": {"median_us": 7.713125, "mean_us": 7.731850591398, "stdev_us": 0.329372354275, "cv_pct": 4.259942, "mad_us": 0.21688, "min_us": 7.09781, "max_us": 9.49063, "p10_us": 7.387656, "p90_us": 8.146248, "throughput_gelem_s": 15.201102018}
+    },
+    {
+      "shape": "FP32 128x920",
+      "pair_speedups": [0.920494470309, 0.995245308538, 1.031666012982, 0.981613075383, 0.983118705331, 0.979560806715],
+      "score": 0.9819497298764089,
+      "delta_pct": -1.805027012359,
+      "candidate_faster_pairs": 1,
+      "within_combined_mad_pairs": 4,
+      "parent": {"median_us": 7.456565, "mean_us": 7.900840322581, "stdev_us": 7.047905502663, "cv_pct": 89.204505, "mad_us": 0.13, "min_us": 6.83031, "max_us": 143.527, "p10_us": 7.262161, "p90_us": 7.949308, "throughput_gelem_s": 15.792794672},
+      "candidate": {"median_us": 7.57344, "mean_us": 8.037136424731, "stdev_us": 6.946466566522, "cv_pct": 86.429621, "mad_us": 0.17313, "min_us": 6.95875, "max_us": 141.671, "p10_us": 7.35156, "p90_us": 8.144933, "throughput_gelem_s": 15.549076774}
+    },
+    {
+      "shape": "FP32 128x924",
+      "pair_speedups": [0.976646730200, 1.062352827050, 0.975021664947, 0.946201824590, 0.944853949031, 0.952754619125],
+      "score": 0.9763052691572213,
+      "delta_pct": -2.369473084278,
+      "candidate_faster_pairs": 1,
+      "within_combined_mad_pairs": 1,
+      "parent": {"median_us": 7.533595, "mean_us": 7.744390241935, "stdev_us": 1.497047784850, "cv_pct": 19.330738, "mad_us": 0.17469, "min_us": 6.75187, "max_us": 27.1528, "p10_us": 7.30244, "p90_us": 7.999596, "throughput_gelem_s": 15.699277702},
+      "candidate": {"median_us": 7.76938, "mean_us": 7.908304946237, "stdev_us": 0.778263963186, "cv_pct": 9.841097, "mad_us": 0.166095, "min_us": 7.15563, "max_us": 16.8269, "p10_us": 7.496623, "p90_us": 8.233098, "throughput_gelem_s": 15.222836314}
+    }
+  ],
+  "load": {
+    "quality": "LOW_LOAD_DEVICE3_WITH_TIMING_OUTLIERS",
+    "snapshots": 36,
+    "hbm_used_mb_range": [3428, 3431],
+    "free_hbm_mb_range": [62105, 62108],
+    "aicore_pct_range": [0, 0],
+    "no_device_process_snapshots": "36/36",
+    "aivector_and_ctrlcpu": "not reported by captured npu-smi info snapshots"
+  },
+  "measurement_quality": "NOISY",
+  "noise_note": "Candidate faster in 4/18 pairs and 7/18 pairs lie within combined MAD. At 128x920, retained Parent/Candidate maxima are 143.527/141.671 us with CV 89.204505%/86.429621%; 128x924 Parent CV is 19.330738%. All samples are retained.",
+  "parent_known_correctness_failure": "C15 FP32 1x32768 excluded; known exact-Parent failure, not Candidate regression",
+  "timestamps_utc": {
+    "candidate_edit": "2026-10-08T23:53:50.877746290Z",
+    "compile_pass_log_mtime": "2026-10-08T23:55:25.166676013Z",
+    "correctness_start": "2026-10-08T23:56:14.798987337Z",
+    "correctness_end": "2026-10-08T23:56:58.729768919Z",
+    "local_start": "2026-10-08T23:57:51.173137714Z",
+    "local_capture_end": "2026-10-09T00:02:46.568376459Z",
+    "local_result": "2026-10-09T00:03:48.109151389Z",
+    "capture_to_result_gap_seconds": 61.540774930,
+    "next_edit": "PENDING_AFTER_V110_COMMIT"
+  }
+}
