@@ -244,3 +244,84 @@ Main/Record 尚需同步这两项及本次 commit。
 相同的双库驻留、同一进程和相同输出地址条件，保留两种先后次序，针对本次 task-map 中的次序差作有限比较。
 不重跑当前相同命令、不先开 V003、不扫描其他偏移。指令级冲突计数仍可作为后续归因来源，
 本轮未采集。尚未确认第二个独立布局变化，参数/输出的其他消费者需要新的专项来源后才可声明版本。
+
+## 2026-10-09：V002 同版 Local 资格复测
+
+```text
+ROUTE=W4-R05 UB-BANK-PARAM-OUT-LAYOUT-X
+REVISION=V002 (reused; no new performance revision)
+DIRECT_PARENT=R31B-V011
+DEVICE_ID=2
+DTYPE=FP32
+TARGET_SHAPES=16x2048, 16x2056
+CLASSIFICATION=MEASUREMENT_BLOCKED
+LOCAL_VERDICT=MEASUREMENT_BLOCKED
+LOCAL_SCORE=NONE
+LOCAL_DELTA=NONE
+CURRENT_LOCAL_BEST=NONE
+CONFIDENCE=INSUFFICIENT
+PUSH=NO
+```
+
+V002 Candidate 未编辑。Candidate 原有 Compile 与六组独立 CPU FP64 reference Correctness 均为 PASS；本次只重建现有 host runner `r05_probe`，构建通过。第二轮同进程采样仍未取得可用 Local：P/P 同二进制稳定性在两个目标 shape 均未达既有 0.10 MAD/median 与组间漂移要求；16x2048 的 P/C kernel-task 次序分组方向相反。16x2056 的 P/C kernel-task 单独达到稳定性要求，但其 P/P 控制未达标，且 device-event 数据不稳定，故不作为 V002 Local 成绩。两轮到此停止，不再更换同一 shape 的设备或负载时段。
+
+### 源码身份
+
+```text
+PARENT_SOURCE=线上结果/R31B/V011/submission.asc
+PARENT_PATH_COMMIT=0a6b8f7cbcb1248601d76de3bc442a55141568fb
+PARENT_SOURCE_SHA256=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
+CANDIDATE_SOURCE=本地实验/W4-R05/gamma-view-20261008/candidate.asc
+CANDIDATE_SOURCE_COMMIT=1a31a3b527d81d4db0fce20dda091b85889330b6
+CANDIDATE_SOURCE_SHA256=4ce5ac7eccdf990f457ede40966f3a6690495248b25cfd3a27dee3f2ab1bb96b
+CANDIDATE_CHANGE=ProcessNarrowMidOverlap FP32 gammaLocal +64 float (+256 B)
+```
+
+Candidate 与 Parent 的差异仍只有该三行视图偏移，未改 Candidate。V002 的设备、工具链与实现为 server3 d2、Ascend910B3 / dav-2201、CANN 8.5.0.alpha002。
+
+### 第一轮：双进程分开采样
+
+P/P 与 P/C 分别由现有 runner 在各自进程运行；两次运行均加载 Parent 与 Candidate 库。每个 shape 的 Parent/P1/P2 与 Parent/Candidate 各保留 124 个 raw 样本，分属 31 对 PC 与 31 对 CP。输出设备地址在每次运行内相同；观测到两个进程分配到的地址值也一致：目标 shape 为 `0x12c0c005b000`。
+
+| Shape | P/P kernel-task median P1/P2 (us) | P/P MAD/median；block drift | P/C kernel-task median P/C (us) | C-P delta | PC/CP paired median (us) | P/C device-event median P/C (us) |
+|---|---:|---:|---:|---:|---:|---:|
+| 16x2048 | 3.55 / 3.61 | 0.169/0.180；0.299/0.144 | 4.28 / 4.56 | +6.542% | +0.260；PC +0.320，CP +0.200 | 31.860 / 33.790；+6.058% |
+| 16x2056 | 3.39 / 4.04 | 0.127/0.210；0.083/0.267 | 4.40 / 4.648 | +5.636% | +0.260；PC +0.400，CP +0.180 | 38.430 / 33.960；-11.632% |
+
+两项 P/P 均为 `MEASUREMENT_BLOCKED`。P/C kernel-task 两侧单独稳定，但它们不能弥补 P/P 控制未达标；16x2056 的 P/C event 中位数方向还与 kernel-task 不同，event 两侧均未达稳定要求。第一轮最终不产生 Local score。
+
+### 第二轮：单进程、同一输入与输出分配
+
+Parent/P1/P2 与 Parent/Candidate 在一次 `r05_probe qualify` 进程内先后执行；每个 shape 只分配一次输入与输出，两个 arm 共享同一输出设备地址，P/P 与 P/C 的 raw 均逐样本记录地址、arm、logical slot、PC/CP 顺序。每个 arm 每个 shape 各 124 个样本，每侧 62 个；Parent/P/P 顺序为 31 个 P1→P2、31 个 P2→P1，P/C 为 31 个 PC、31 个 CP。目标 shape 的所有 arm 地址均为 `0x12c0c005b000`。
+
+raw 的 `side` 列对应逻辑执行槽：P/P 使用 `P1` / `P2`，P/C 使用 `P` / `C`；`position=0/1` 表示配对内发射位置，`arm` 区分 P/P 控制与 P/C 对比。
+
+| Shape | P/P kernel-task median P1/P2 (us) | P/P MAD/median；block drift | P/C kernel-task median P/C (us) | C-P delta | P/C paired/order median (us) | P/C device-event median P/C (us) |
+|---|---:|---:|---:|---:|---:|---:|
+| 16x2048 | 4.812 / 3.690 | 0.120/0.244；0.003/0.033 | 3.980 / 4.060 | +2.010% | -0.510；C-first +1.340，P-first -1.700 | 29.050 / 26.660；-8.227% |
+| 16x2056 | 4.370 / 4.380 | 0.137/0.240；0.133/0.288 | 4.890 / 4.550 | -6.953% | -0.340；C-first -0.280，P-first -0.560 | 25.520 / 25.240；-1.097% |
+
+16x2048 的 P/P 两侧 MAD/median 超限；P/C 次序分组的中位差方向反转，且两侧 MAD/median 与 Candidate block drift 超限。16x2056 的 P/P 两侧 MAD/median 与两侧 block drift 超限；P/C kernel-task 单独达标，但 device-event 两侧 MAD/median 超限。两项 shape 因同二进制控制均失败而保留 `MEASUREMENT_BLOCKED`，不把观察中位数当作 Local score。
+
+Profile 导出对 1104 次 kernel launch 全部完成 task 匹配；两 arm 各有 372 个 timed 样本、每个样本均由相邻 event 记录包围，最大 interval 差分别为 0.024002 us 与 0.024002 us。原始 CSV、task-map、summary 与全部 raw 均保留。`off-1x64` 仅作未受影响参考，不参加目标判定。
+
+### 设备与负载记录
+
+| 轮次/阶段 | 设备快照时间 UTC | FREE_HBM (npu-smi) | AICore / AIVector | host load average 起止 |
+|---|---|---:|---:|---|
+| 第一轮 P/P | 04:38:39 | 60948 MB | 16%/10% → 1%/3% | 28.71/38.02/49.59 → 27.83/37.53/49.31 |
+| 第一轮 P/C | 04:39:55 | 60948 MB | 17%/5% → 1%/2% | 25.83/35.09/47.67 → 26.00/34.83/47.45 |
+| 第二轮同进程 | 04:53:05 | 60948 MB | 11%/11%；阶段起止 15%/14% → 4%/9% | 46.72/44.99/46.71 → 73.21/50.72/48.55 |
+
+`aclrtGetMemInfo` 在第二轮约为 60692.86→60692.61 MiB。所有执行前 FREE_HBM 均超过 100 MB；负载只作上下文记录，未读取进程明细或停止任何任务。第二轮前的 runner 编译于 04:52:15 完成并通过。一次更早的环境载入尝试因 shell nounset 提前退出，msprof/kernel 均未启动；随后按现有入口的载入方式完成 P/P 阶段，原失败信息保留在本次执行记录中。
+
+### 证据路径与停止位置
+
+```text
+第一轮 raw / map / summary：本地实验/W4-R05/gamma-view-20261008/results/requal-20261009T0430Z/
+第二轮 raw / map / summary：本地实验/W4-R05/gamma-view-20261008/results/requal-20261009T0445Z/
+第二轮调用顺序：qualification.calls.tsv
+第二轮 profile exports：profile-export/
+```
+
+最终分类为 `MEASUREMENT_BLOCKED`，`LOCAL_SCORE=NONE`、`LOCAL_DELTA=NONE`、`CURRENT_LOCAL_BEST=NONE`。本轮未新建性能版本、未改共享记录、Dashboard 或 Parent，未访问其他 worktree，未 push。已用完这两个 shape 的资格轮次，不再为同一 shape 更换设备或负载时段。下一动作：提交本 Route 的 runner 与完整测量证据，并向 Main 发送 `ROUTE_EVENT + VERSION_RECORD_EVENT`；后续是否转向由 Main/Planning 复核。

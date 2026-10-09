@@ -58,8 +58,13 @@ def main():
     ap=argparse.ArgumentParser()
     ap.add_argument("prefix",type=Path)
     ap.add_argument("export",type=Path)
+    ap.add_argument("--calls",type=Path)
     args=ap.parse_args()
-    rows=read(Path(str(args.prefix)+".raw.tsv")); calls=read(Path(str(args.prefix)+".calls.tsv"))
+    rows=read(Path(str(args.prefix)+".raw.tsv"))
+    calls_path=args.calls or Path(str(args.prefix)+".calls.tsv")
+    calls=read(calls_path)
+    arm=rows[0]["arm"]
+    assert all(r["arm"]==arm for r in rows)
     opfiles=list(args.export.glob("op_summary_*.csv")); taskfiles=list(args.export.glob("task_time_*.csv"))
     assert len(opfiles)==len(taskfiles)==1
     ops=read(opfiles[0],","); tasks=read(taskfiles[0],",")
@@ -78,7 +83,7 @@ def main():
     mapped=[]
     for r in rows:
         ordinal=int(r["launch_ordinal"]); op=ops[ordinal-1]; call=calls[ordinal-1]
-        assert call["phase"]=="timed" and call["case"]==r["case"] and call["side"]==r["side"]
+        assert call["phase"]=="timed" and call["arm"]==arm and call["case"]==r["case"] and call["side"]==r["side"]
         key=(op["Device_id"],op["Stream ID"],op["Task ID"])
         task=index[key]; before=index[(key[0],key[1],str(int(key[2])-1))]; after=index[(key[0],key[1],str(int(key[2])+1))]
         assert before["kernel_type"]==after["kernel_type"]=="EVENT_RECORD"
@@ -92,8 +97,8 @@ def main():
             event_minus_task_us=float(r["device_us"])-float(task["task_time(us)"]),
             interval_error_us=float(end-begin)-float(r["device_us"]),
             record_to_kernel_us=float(start-begin),kernel_to_record_us=float(end-stop)))
-    assert len(mapped)==372 and sum(c["phase"]=="timed" for c in calls)==372
-    result=dict(all_samples_retained=True,complete_kernel_calls=len(calls),timed_calls=len(mapped),
+    assert len(mapped)==372 and sum(c["phase"]=="timed" and c["arm"]==arm for c in calls)==372
+    result=dict(comparison_arm=arm,all_samples_retained=True,complete_kernel_calls=len(calls),timed_calls=len(mapped),
                 op_task_matches=len(ops),event_brackets=len(mapped),device=2,
                 max_interval_error_us=max(abs(r["interval_error_us"]) for r in mapped),cases={})
     for case in dict.fromkeys(r["case"] for r in mapped):

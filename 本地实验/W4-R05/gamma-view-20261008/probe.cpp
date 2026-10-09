@@ -19,8 +19,8 @@ struct Case { const char* name; int rows; int width; bool timed; };
 const Case cases[] = {{"on-16x2048",16,2048,true}, {"on-16x2056",16,2056,true},
     {"off-1x64",1,64,true}, {"lower-16x129",16,129,false},
     {"upper-16x4096",16,4096,false}, {"resident-80x2056",80,2056,false}};
-struct Call { int ordinal; std::string shape, phase, side; int blocks; };
-struct Sample { int ordinal; std::string shape; int block, pair, position; std::string side; double eventUs, wallUs; };
+struct Call { int ordinal; std::string shape, phase, arm, side; int blocks; };
+struct Sample { int ordinal; std::string shape; int block, pair, position; std::string arm, side; double eventUs, wallUs; void* outputAddress; };
 std::vector<Call> calls;
 std::vector<Sample> samples;
 void Require(aclError rc, const char* what) {
@@ -74,14 +74,14 @@ struct Data {
     ~Data() { for(void* p:dev) if(p) Require(aclrtFree(p),"free"); }
 };
 void Launch(Kernel kernel, Data& d, int64_t cores, aclrtStream stream,
-            const char* phase,const char* side) {
+            const char* phase,const char* arm,const char* side) {
     kernel(d.dev[0],d.dg,d.dev[1],d.dg,d.dev[2],d.pg,d.dev[3],d.pg,d.dev[4],d.dg,cores,stream,kEpsilon);
-    calls.push_back({int(calls.size()+1),d.spec.name,phase,side,int(std::min<int64_t>(cores,d.spec.rows))});
+    calls.push_back({int(calls.size()+1),d.spec.name,phase,arm,side,int(std::min<int64_t>(cores,d.spec.rows))});
 }
 bool Reference(Kernel kernel,Data& d,int64_t cores,aclrtStream stream,const char* side,FILE* f) {
     std::fill(d.out.begin(),d.out.end(),NAN);
     Require(aclrtMemcpy(d.dev[4],d.bytes[4],d.out.data(),d.bytes[4],ACL_MEMCPY_HOST_TO_DEVICE),"sentinel");
-    Launch(kernel,d,cores,stream,"reference",side);
+    Launch(kernel,d,cores,stream,"reference","reference",side);
     Require(aclrtSynchronizeStream(stream),"reference sync");
     Require(aclrtMemcpy(d.out.data(),d.bytes[4],d.dev[4],d.bytes[4],ACL_MEMCPY_DEVICE_TO_HOST),"output");
     size_t failures=0; double maxAbs=0;
@@ -98,20 +98,20 @@ bool Reference(Kernel kernel,Data& d,int64_t cores,aclrtStream stream,const char
         d.spec.name,side,d.out.size(),failures,maxAbs,failures?"FAIL":"PASS");
     return failures==0;
 }
-void Measure(Kernel p,Kernel c,bool same,Data& d,int64_t cores,aclrtStream stream,aclrtEvent start,aclrtEvent stop) {
+void Measure(Kernel p,Kernel c,bool same,Data& d,int64_t cores,aclrtStream stream,aclrtEvent start,aclrtEvent stop,const char* arm) {
     const char* labels[2]={same?"P1":"P",same?"P2":"C"};
     Kernel funcs[2]={p,c};
-    for(int i=0;i<kWarmup;++i) { Launch(funcs[i%2],d,cores,stream,"warmup",labels[i%2]); Require(aclrtSynchronizeStream(stream),"warmup sync"); }
+    for(int i=0;i<kWarmup;++i) { Launch(funcs[i%2],d,cores,stream,"warmup",arm,labels[i%2]); Require(aclrtSynchronizeStream(stream),"warmup sync"); }
     for(int block=0;block<kBlocks;++block) for(int pair=0;pair<kPairs;++pair) for(int pos=0;pos<2;++pos) {
         int side=((block+pair)%2+pos)%2;
         auto t0=std::chrono::steady_clock::now();
         Require(aclrtRecordEvent(start,stream),"start");
-        Launch(funcs[side],d,cores,stream,"timed",labels[side]);
+        Launch(funcs[side],d,cores,stream,"timed",arm,labels[side]);
         Require(aclrtRecordEvent(stop,stream),"stop");
         Require(aclrtSynchronizeEvent(stop),"sample sync");
         auto t1=std::chrono::steady_clock::now(); float elapsed=0;
         Require(aclrtEventElapsedTime(&elapsed,start,stop),"elapsed");
-        samples.push_back({int(calls.size()),d.spec.name,block,pair,pos,labels[side],elapsed*1000.,std::chrono::duration<double,std::micro>(t1-t0).count()});
+        samples.push_back({int(calls.size()),d.spec.name,block,pair,pos,arm,labels[side],elapsed*1000.,std::chrono::duration<double,std::micro>(t1-t0).count(),d.dev[4]});
     }
 }
 Kernel Load(const std::filesystem::path& folder,const char* name,const char* symbol) {
@@ -122,22 +122,23 @@ Kernel Load(const std::filesystem::path& folder,const char* name,const char* sym
 }
 }
 int main(int argc,char** argv) {
-    if(argc!=4) { std::fprintf(stderr,"usage: r05_probe parent|correctness|local DEVICE OUTPUT_PREFIX\n"); return 2; }
+    if(argc!=4) { std::fprintf(stderr,"usage: r05_probe parent|correctness|local|qualify DEVICE OUTPUT_PREFIX\n"); return 2; }
     std::string mode=argv[1],prefix=argv[3]; int device=std::stoi(argv[2]);
-    if(mode!="parent" && mode!="correctness" && mode!="local") return 2;
+    if(mode!="parent" && mode!="correctness" && mode!="local" && mode!="qualify") return 2;
     auto folder=std::filesystem::absolute(argv[0]).parent_path();
     Kernel parent=Load(folder,"libr05_parent.so","r05_parent_run_kernel");
-    Kernel candidate=mode=="parent"?parent:Load(folder,"libr05_candidate.so","r05_candidate_run_kernel");
+    Kernel candidateResident=Load(folder,"libr05_candidate.so","r05_candidate_run_kernel");
+    Kernel candidate=mode=="parent"?parent:candidateResident;
     Require(aclInit(nullptr),"init"); Require(aclrtSetDevice(device),"device");
     int64_t cores=0; Require(aclrtGetDeviceInfo(device,ACL_DEV_ATTR_VECTOR_CORE_NUM,&cores),"core count");
     if(cores<=0) return 2;
     aclrtStream stream=nullptr; Require(aclrtCreateStream(&stream),"stream");
     aclrtEvent start=nullptr,stop=nullptr;
     Require(aclrtCreateEvent(&start),"start event"); Require(aclrtCreateEvent(&stop),"stop event");
-    calls.reserve(2000); samples.reserve(500);
-    std::printf("RUN mode=%s device=%d cores=%ld warmup_total=%d blocks=%d pairs=%d one_output_address=YES raw_in_memory=YES\n",mode.c_str(),device,cores,kWarmup,kBlocks,kPairs);
+    calls.reserve(2000); samples.reserve(800);
+    std::printf("RUN mode=%s device=%d cores=%ld warmup_total=%d blocks=%d pairs=%d one_output_address=YES candidate_library_resident=YES raw_in_memory=YES\n",mode.c_str(),device,cores,kWarmup,kBlocks,kPairs);
     bool pass=true;
-    if(mode!="local") {
+    if(mode=="parent" || mode=="correctness") {
         Memory("before_reference");
         FILE* ref=Open(prefix+".reference.tsv");
         std::fprintf(ref,"case\tside\tindex\tx\tresidual\tgamma\tbias\treference_fp64\tactual_fp32\tabs_error\ttolerance\tpass\n");
@@ -152,16 +153,30 @@ int main(int argc,char** argv) {
         for(const auto& spec:cases) if(spec.timed) {
             Data d(spec);
             std::printf("TIMING case=%s rows=%d width=%d blocks=%ld guard=%s\n",spec.name,spec.rows,spec.width,std::min<int64_t>(cores,spec.rows),spec.width>128?"ON":"OFF");
-            Measure(parent,candidate,mode=="parent",d,cores,stream,start,stop);
+            if(mode=="qualify") {
+                Measure(parent,parent,true,d,cores,stream,start,stop,"parent");
+                Measure(parent,candidate,false,d,cores,stream,start,stop,"local");
+            } else {
+                Measure(parent,candidate,mode=="parent",d,cores,stream,start,stop,mode=="parent"?"parent":"local");
+            }
         }
         Memory("after_local");
     }
-    FILE* raw=Open(prefix+".raw.tsv");
-    std::fprintf(raw,"launch_ordinal\tcase\tblock\tpair\tposition\tside\tdevice_us\twall_us\n");
-    for(const auto& s:samples) std::fprintf(raw,"%d\t%s\t%d\t%d\t%d\t%s\t%.9f\t%.9f\n",s.ordinal,s.shape.c_str(),s.block,s.pair,s.position,s.side.c_str(),s.eventUs,s.wallUs);
-    std::fclose(raw);
-    FILE* trace=Open(prefix+".calls.tsv"); std::fprintf(trace,"launch_ordinal\tcase\tphase\tside\tblock_dim\n");
-    for(const auto& c:calls) std::fprintf(trace,"%d\t%s\t%s\t%s\t%d\n",c.ordinal,c.shape.c_str(),c.phase.c_str(),c.side.c_str(),c.blocks);
+    auto writeRaw=[&](const std::string& path,const char* armFilter) {
+        FILE* raw=Open(path);
+        std::fprintf(raw,"launch_ordinal\tcase\tblock\tpair\tposition\tarm\tside\tdevice_us\twall_us\toutput_device_address\n");
+        for(const auto& s:samples) if(armFilter==nullptr || s.arm==armFilter)
+            std::fprintf(raw,"%d\t%s\t%d\t%d\t%d\t%s\t%s\t%.9f\t%.9f\t%p\n",s.ordinal,s.shape.c_str(),s.block,s.pair,s.position,s.arm.c_str(),s.side.c_str(),s.eventUs,s.wallUs,s.outputAddress);
+        std::fclose(raw);
+    };
+    if(mode=="qualify") {
+        writeRaw(prefix+".parent.raw.tsv","parent");
+        writeRaw(prefix+".local.raw.tsv","local");
+    } else {
+        writeRaw(prefix+".raw.tsv",nullptr);
+    }
+    FILE* trace=Open(prefix+".calls.tsv"); std::fprintf(trace,"launch_ordinal\tcase\tphase\tarm\tside\tblock_dim\n");
+    for(const auto& c:calls) std::fprintf(trace,"%d\t%s\t%s\t%s\t%s\t%d\n",c.ordinal,c.shape.c_str(),c.phase.c_str(),c.arm.c_str(),c.side.c_str(),c.blocks);
     std::fclose(trace);
     Require(aclrtDestroyEvent(stop),"destroy stop"); Require(aclrtDestroyEvent(start),"destroy start");
     Require(aclrtDestroyStream(stream),"destroy stream"); Require(aclrtResetDevice(device),"release context"); Require(aclFinalize(),"finalize");
