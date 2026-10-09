@@ -37,7 +37,7 @@ link_directories(
     "/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/lib64"
     "/usr/local/Ascend/ascend-toolkit/latest/lib64")
 
-foreach(variant IN ITEMS ref_parent ref_reuse ref_batch_reuse)
+foreach(variant IN ITEMS ref_parent ref_reuse ref_batch_reuse ref_candidate)
     add_executable(w4r13_${variant}_probe runner_${variant}.asc)
     target_include_directories(w4r13_${variant}_probe PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR})
