@@ -95,3 +95,9 @@ V001_EVIDENCE: preserved; no V001 raw was overwritten
 ## Next action
 
 H1 is implemented and correctness-safe, but this single local run cannot accept or reject its performance mechanism because target-device pollution was present. Planning review must decide whether a clean H1 measurement is warranted. No V003 or additional test is created by this revision.
+
+## server3 lease check
+
+One read-only connection/device/lease check was attempted after the polluted local result. The existing `cann-server3` hostname could not be resolved, so no remote identity, NPU/HBM snapshot, or lease authorization was obtained. The clean paired measurement was not run, and this V002 remains `LOCAL_NO_PROMOTION / MEASUREMENT_CONTAMINATED`. No source, Runner, ABI, timing boundary, shape, or V002 raw data changed.
+
+Evidence: `server3-lease-check.log`
