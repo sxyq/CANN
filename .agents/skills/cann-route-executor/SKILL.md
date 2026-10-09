@@ -5,15 +5,19 @@ description: CANN AddRmsNormBias Route Agent 执行 Skill。负责单 Route 的�
 
 # Route Executor
 
-## W4 Official Scoring Override
+## 历史：W4 Official 评分安排（已归档）
+
+以下候选数量和 Official 评测安排只记录旧 W4 阶段，W4 已退役，不构成当前五路线任务的提交要求。
 
 > **W4 强制执行规则：本项目禁止设置、保留或新增任何自行定义的实验、评分、Correctness 覆盖、Local 测量稳定性、审批或其他线上提交前置门禁。每条 W4 技术路线必须选取至少两个不同源码身份的真实 Candidate 进行 Official 线上评分。任何研究报告、状态同步、历史归档或本地测量结果均不得作为阻止合法 Official 提交的内部条件。服务器运行安全、工作树隔离及评测平台强制规则仍须遵守。**
 
-每条 Route 至少提供两个源码身份不同的真实性能 Candidate；只有研究材料时，在该 Route 自己的 worktree 中继续产生真实 Candidate。Compile、Correctness、Local 仍服务于开发和问题定位，任何结果都不作为 Official 提交前置。Route Agent 不正式提交，按来源将候选交给唯一 Online Owner；现行细则见 `项目规则/线上提交规范.md`。
+旧 W4 每条 Route 至少提供两个源码身份不同的真实性能 Candidate；若只有研究材料，则在该 Route 自己的 worktree 继续产出真实 Candidate。Compile、Correctness、Local 用于开发和问题定位，结果不作为 Official 提交前置。Route Agent 不正式提交，按来源把候选交给唯一 Online Owner，详细流程见 `项目规则/线上提交规范.md`。这些仅是旧阶段事实。当前任务按用户指定的五路线重建推进，路线身份仍以只读审计及研究结果为准；本轮未指定 Online 提交。
 
-## ACTIVE PORTFOLIO W4
+## 当前任务与路线范围
 
-每个 Route Agent/Context 只执行一条 W4 授权路线，禁止换 Route；一条 Route 同时只有一个 Candidate 写入者。W3/W2 只作历史来源。最多 5 个 active Child 包含 Record Owner；队列、fresh context、版本额度和交接见 `项目规则/W4持续探索控制契约.md`。
+本轮目标为重建五条路线。N01-N04 的源码去重审计尚未完成，N05 的替代方向尚待研究；在 Main 发布只读审计和研究结论前，不预设路线名称或 Candidate。W4 的 15 路线名单、Child 数量、队列及版本额度均为归档内容，不定义当前分配。
+
+路线确定后，一个 Route Agent/Context 只负责一条 Route；同一时段一条 Route 只有一个 Candidate 写入者。路线间交接继续使用独立 context 与工作树。
 
 ## Route ownership
 
@@ -21,13 +25,13 @@ description: CANN AddRmsNormBias Route Agent 执行 Skill。负责单 Route 的�
 1 Route = 1 Agent = 1 Context = 1 Branch = 1 Worktree
 ```
 
-所有命令 workdir 固定在自己的 Route worktree；不进入其他实际工作树、不写主目录或共享记录，不改 Dashboard，不决定 Route 生命周期，不正式提交 Online。需要跨 Route 已提交证据时，从本工作树使用 `git show`；工作树元数据用 `git worktree list`，不读取其他工作树未提交文件。规则落后于 main 时，用 `git show main:<规则路径>` 读取当前入口。
+所有命令 workdir 固定在自己的 Route worktree；不进入其他实际工作树、不写主目录或共享记录，不改 Dashboard，不决定 Route 生命周期，不正式提交 Online。Route Agent 不得用 `git show` 或 `git grep` 访问其他 Route 的 Git 对象；跨 Route 信息只使用 Main 发布的只读审计摘要或自己的 Direct Parent。规则落后于 main 时，仅读取本 Route 可访问的公共规则入口。
 
 本次任务结束当前安全闭环后发送交接回执，列出 agent_id、Route、worktree/branch/HEAD/dirty、最后版本/研究事件、未完动作及 `RUNNING_DEVICE_OPERATION=NONE`。Main 关闭旧 Agent 并确认后，用空槽创建 fresh context 接手下一 Route；本 Agent 不切换路线、不创建 Child。
 
 ## RULE REFRESH REQUIRED
 
-每个新 Revision、resume、Route switch、Child restart、reconnect、context restore 或 long interruption 后，Candidate edit 前必须重新读取 `AGENTS.md`、本 Skill、`项目规则/W4持续探索控制契约.md`、`项目规则/实验总则.md`、`项目规则/执行约定.md`、`项目规则/服务器实验规范.md`、`项目规则/本地性能测试规范.md`，然后先发送新的 `RULE_REFRESH_RECEIPT`。同版 Compile/Correctness direct fix 前先重读 `AGENTS.md`、本 Skill、`项目规则/执行约定.md`，再发送注明读取范围的 receipt，然后只做直接修复，编辑后下一实验动作必须是 `COMPILE`；中间不插入阅读。无对应 receipt 不得 edit。
+每个新 Revision、resume、Route switch、Child restart、reconnect、context restore 或 long interruption 后，Candidate edit 前必须重新读取 `AGENTS.md`、本 Skill、`项目规则/实验总则.md`、`项目规则/执行约定.md`、`项目规则/服务器实验规范.md`、`项目规则/本地性能测试规范.md` 和 `项目规则/Git工作流程.md`，然后发送新的 `RULE_REFRESH_RECEIPT`。W4 控制文件只在查阅旧阶段时作为历史来源。同版 Compile/Correctness direct fix 前先重读 `AGENTS.md`、本 Skill、`项目规则/执行约定.md`，然后只做直接修复，编辑后下一实验动作必须是 `COMPILE`；中间不插入阅读。该流程沿用当前根规则，不附加 Online 提交条件。
 
 ## Authoritative loop
 
@@ -54,14 +58,14 @@ ONE CHANGE
 6. 报告 Local score、delta、samples、raw latency、jitter、`FREE_HBM`、device load、repeatability 和结果解释。
 7. 提交本轮实验结果的 Git commit。失败版本、负结果和工具失败都保留。
 8. 发送 `VERSION_RECORD_EVENT`，并等待该事件存在后才能开始下一普通 Revision；Record Owner 异步写入不得延误已经在途的 Compile、Correctness、Local 或 commit。
-9. 有效 Local 改善时把该 Revision 标为 `CURRENT_LOCAL_BEST`；下一轮可从它继续。本轮 `PUSH=NO`。
+9. 有效 Local 改善时把该 Revision 标为 `CURRENT_LOCAL_BEST`；下一轮可从它继续。Route Candidate 实验分支保持 `PUSH=NO`；本轮授权规则文件的集成推送按 Git 工作流程执行。
 10. Local 未改善时保留负结果，不提升为 Local Best；下一轮回到当前 `CURRENT_LOCAL_BEST`。
 
 ## LOCAL SCORE REQUIRED
 
 正常完成必须报告 numeric Local score 和 numeric Local delta，以及 Parent/Candidate raw samples、Parent/Candidate medians、shape/dtype、device、free HBM、load note、current best。Compile 或 Correctness 失败时保留失败证据、Git commit/status，并发送 `VERSION_RECORD_EVENT`，其中未执行 Local 的字段使用 `NONE`，不得补造数值。`VERSION_RECORD_EVENT REQUIRED`；`NEXT REVISION BLOCKED UNTIL PREVIOUS EVENT EXISTS`。
 
-Local accumulation 由完整的小变化循环组成，不能把多个独立变化折叠进一个 Revision。每 Route 本轮新增性能版上限 10，不要求跑满；连续 3 个有效 numeric Local 无改善报告 `STAGNATION_3`。研究、重复和旧结果恢复不新增性能版；无效测量与 Compile/Correctness 失败不计入有效 Local 或连续次数，有效改善清零连续次数。新建真实性能版与有效 Local 分开计数；真实失败版仍须发事件。达到上限或报告后完成安全交接，交 Main/Planning 安排后续，不自行宣布 Route 关闭。
+Local accumulation 由完整的小变化循环组成，不能把多个独立变化折叠进一个 Revision。旧 W4 每 Route 最多新增 10 个性能版、连续 3 个有效 numeric Local 无改善时报告 `STAGNATION_3` 的计数安排只作历史记录，不套用为新五路线的版本上限。失败版与有效 Local 分开记载；真实失败结果仍须保留。结束当前任务时完成安全交接，不自行宣布 Route 关闭。
 
 ## 资源准入
 

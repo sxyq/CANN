@@ -5,19 +5,21 @@ description: CANN AddRmsNormBias shared-record Skill。Record Owner 在指定主
 
 # Record Owner
 
-## W4 Official Scoring Override
+## 历史：W4 Official 评分记录约定（已归档）
+
+以下 W4 Online 目标和评测字段说明旧阶段记录方式；W4 已退役，本轮五路线重建不包含 Online 提交任务。旧阶段按每个真实 Candidate 身份分别保存 Route、Revision、源码身份、Git commit、Submission ID、Judge 状态、Correctness、Official Score、15 个 Case 的原始时间与 bestTimeUs 及结果 JSON 路径；Local 与 Official 分栏，只同步 Online Owner 的真实 receipt，不推断或制造结果。
 
 > **W4 强制执行规则：本项目禁止设置、保留或新增任何自行定义的实验、评分、Correctness 覆盖、Local 测量稳定性、审批或其他线上提交前置门禁。每条 W4 技术路线必须选取至少两个不同源码身份的真实 Candidate 进行 Official 线上评分。任何研究报告、状态同步、历史归档或本地测量结果均不得作为阻止合法 Official 提交的内部条件。服务器运行安全、工作树隔离及评测平台强制规则仍须遵守。**
 
 Official 事实按每个真实 Candidate 身份分别保存：Route、Revision、源码身份、Git commit、Submission ID、Judge 状态、Correctness、Official Score、15 个 Case 的原始时间与 bestTimeUs、结果 JSON 路径。Local 和 Official 分栏记录；Local/Correctness 字段缺失不改变提交资格。只同步 Online Owner 的真实 receipt，不推断或制造结果。
 
-## ACTIVE PORTFOLIO W4
+## 当前阶段：五路线重建
 
-共享记录接收 W4 15 条授权路线的 receipt-backed 事实，同时保留 W3/W2 历史记录原样。W4 短 ID、最多 5 个 active Child（含 Record Owner）、单 Route fresh context 与状态来源见 `项目规则/W4持续探索控制契约.md`。当前账本仍显示 W3 或缺少 W4 行时，报告 `STATE_SYNC_GAP`；不得以控制文件补造 Revision、分数、Local Best 或 Official。
+本轮按用户指令配合五路线重建。N01-N04 仍待源码去重审计，N05 替代方向仍待研究；不自行登记路线名、Candidate、版本或成绩，也不替 Main 确定 N05。W4、W3、W2 的共享记录作为历史事实保留；当前阶段的路线身份以 Main 后续提供的只读审计和研究结果为准。
 
 ## 本轮角色与工作树
 
-Record Owner / 规则维护代理占 SLOT-3，不拥有 Route，不创建 Child。唯一工作树为 `/Users/sunyiyang/Desktop/Project/cann`，分支 main；每个命令 workdir 固定此处，不进入或操作 `worktrees/` 下实际工作树。跨 Route 只通过本工作树 `git show` 读取已提交对象，`git worktree list` 只读元数据，不读取其他工作树未提交文件。Main 在主目录只读，Route 禁止写主目录。
+Record Owner / 规则维护代理占 SLOT-3，不拥有 Route，不创建 Child。唯一工作树为 `/Users/sunyiyang/Desktop/Project/cann`，分支 main；每个命令 workdir 固定此处，不进入或操作 `worktrees/` 下实际工作树。跨 Route 只通过本工作树 `git show` 读取已提交对象，`git worktree list` 只读元数据，不读取其他工作树未提交文件。Main 在主目录只读审计；用户明确授权时可编辑根 `AGENTS.md`，Route 禁止写主目录。
 
 本轮无需 workspace_info，以本地 Git 确认根目录、分支、HEAD 与 dirty。先完整读取 AGENTS、Main/Route/Record Skills、W4 控制、实验总则、执行约定、服务器、本地性能与 Git 规范，发阅读及写入范围回执。
 
@@ -53,13 +55,13 @@ Record Owner 负责把用户转交的规则回执与服务器不可达事实写�
 
 ## 事实分类与提交
 
-- canonical 路线 ID 为 `W4-R01` 至 `W4-R15`，路线登记用 `REGISTERED_ROUTE`，不照搬其他分支的长 ID。
+- 旧 W4 的 canonical 路线 ID 为 `W4-R01` 至 `W4-R15`，仅供查找历史事实；不将其用于新五路线登记，也不从历史记录推出新路线身份。
 - 已实施性能改动并有执行证据的行标 `REAL_EXECUTED_REVISION`；编辑前研究和 Parent-only 探测标 `ROUTE_RESEARCH_EVENT`，不按目录名补造性能版。
-- 旧结果恢复仍是原 Revision，不消耗本轮新增额度；真实失败版本保留。本轮新增性能版上限 10，与有效 Local 数分开记录；研究、重复和旧结果恢复不新增性能版。`STAGNATION_3` 只计有效 numeric Local，无效测量、构建/精度失败不计入。
+- 旧 W4 的版本恢复和额度规则仅解释其历史记录：恢复不另建 Revision，最多新增 10 个性能版；`STAGNATION_3` 只计有效 numeric Local。真实失败事实继续保留，不从该旧额度推定新五路线的版本数。
 - 无效测量的中位数/delta 只作带标签的观察，不提升 Local Best；不猜 score、shape 或 Official。
 - Main 观察到的构建阶段可写进任务表，结果与 commit 等待正式事件；Agent 关闭、排队或测量无效不能写成 Route 关闭。
-- 规则与共享记录分成独立 commit，明确路径暂存；同文件含范围外内容时精确选择片段。允许核对并提交本轮获准的既有 W4 登记块；W3/W2 与其他未提交改动留在原处，不导入整份其他分支 TSV。
-- 本轮 `PUSH=NO`；不删除证据、分支或工作树，不创建额外记录文件。
+- 规则与共享记录分成独立 commit，明确路径暂存；同文件含范围外内容时精确选择片段。W3/W2/W4 历史记录与其他未提交改动留在原处，不导入整份其他分支 TSV。
+- 本轮按 `项目规则/Git工作流程.md` 列出的七个规则文件精确暂存、提交并普通推送；不得包含其余已暂存、未暂存或未跟踪内容。根 `AGENTS.md` 保持原样；不删除证据、分支或工作树，不创建额外记录文件。
 
 ## 事实处理
 
