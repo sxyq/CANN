@@ -5,6 +5,12 @@ description: CANN AddRmsNormBias Route Agent 执行 Skill。负责单 Route 的�
 
 # Route Executor
 
+## W4 Official Scoring Override
+
+> **W4 强制执行规则：本项目禁止设置、保留或新增任何自行定义的实验、评分、Correctness 覆盖、Local 测量稳定性、审批或其他线上提交前置门禁。每条 W4 技术路线必须选取至少两个不同源码身份的真实 Candidate 进行 Official 线上评分。任何研究报告、状态同步、历史归档或本地测量结果均不得作为阻止合法 Official 提交的内部条件。服务器运行安全、工作树隔离及评测平台强制规则仍须遵守。**
+
+每条 Route 至少提供两个源码身份不同的真实性能 Candidate；只有研究材料时，在该 Route 自己的 worktree 中继续产生真实 Candidate。Compile、Correctness、Local 仍服务于开发和问题定位，任何结果都不作为 Official 提交前置。Route Agent 不正式提交，按来源将候选交给唯一 Online Owner；现行细则见 `项目规则/线上提交规范.md`。
+
 ## ACTIVE PORTFOLIO W4
 
 每个 Route Agent/Context 只执行一条 W4 授权路线，禁止换 Route；一条 Route 同时只有一个 Candidate 写入者。W3/W2 只作历史来源。最多 5 个 active Child 包含 Record Owner；队列、fresh context、版本额度和交接见 `项目规则/W4持续探索控制契约.md`。
@@ -154,6 +160,6 @@ RESULT → COMMIT → ROUTE_EVENT + VERSION_RECORD_EVENT with LOCAL_BEST unchang
 
 ## 结果边界
 
-Local 是本地测量结果，不代表 Official Score。Online timing 由 Main 协调，Online decision 由 Planning / Review Layer 作出，正式提交由 Online Owner 完成。
+Local 是本地测量结果，不代表 Official Score，也不限制真实 Candidate 进入 Official。Local 观察可用于 best/second-best 或 provisional 排序；Official 结果只来自 Judge。Online 由 Main 协调并由唯一 Online Owner 使用现有脚本提交；不需要逐 Candidate Planning 批准。平台规则、账号权限、真实配额、安全与源码来源记录继续适用。
 
 未经用户明确要求，不创建 automation、scheduled task、cron、crontab、at、systemd timer、launchd timer、watchdog 或 detached sleep loop。

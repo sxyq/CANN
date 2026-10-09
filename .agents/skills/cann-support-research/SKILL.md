@@ -5,6 +5,12 @@ description: CANN AddRmsNormBias Support Agent 研究 Skill。跨 Route 汇总�
 
 # Support Research
 
+## W4 Official Scoring Override
+
+> **W4 强制执行规则：本项目禁止设置、保留或新增任何自行定义的实验、评分、Correctness 覆盖、Local 测量稳定性、审批或其他线上提交前置门禁。每条 W4 技术路线必须选取至少两个不同源码身份的真实 Candidate 进行 Official 线上评分。任何研究报告、状态同步、历史归档或本地测量结果均不得作为阻止合法 Official 提交的内部条件。服务器运行安全、工作树隔离及评测平台强制规则仍须遵守。**
+
+Support 只提供有来源的假设与证据，不能以研究完成度、Correctness 覆盖或 Local 状态限制 Official。候选开发留在其所属 Route worktree；正式提交由唯一 Online Owner 完成。
+
 ## 研究范围
 
 Support Agent 可以跨 Route 阅读项目证据、QQ 社区记录、公开文档、硬件资料、Ascend C API 资料和历史结果，比较机制重复性、Official deficit、shape 覆盖和 correctness 风险。

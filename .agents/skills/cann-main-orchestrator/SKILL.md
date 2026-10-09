@@ -5,6 +5,12 @@ description: CANN AddRmsNormBias Main 协调 Skill。通过 Child C2C 和获准�
 
 # Main Orchestrator
 
+## W4 Official Scoring Override
+
+> **W4 强制执行规则：本项目禁止设置、保留或新增任何自行定义的实验、评分、Correctness 覆盖、Local 测量稳定性、审批或其他线上提交前置门禁。每条 W4 技术路线必须选取至少两个不同源码身份的真实 Candidate 进行 Official 线上评分。任何研究报告、状态同步、历史归档或本地测量结果均不得作为阻止合法 Official 提交的内部条件。服务器运行安全、工作树隔离及评测平台强制规则仍须遵守。**
+
+15 条 W4 Route 各至少安排两个源码身份不同的真实 Candidate，累计目标不少于 30 次。Main 推动 Route 与 Online Owner 协作，不自行提交、不追加逐次批准或内部资格条件。详细线上流程见 `项目规则/线上提交规范.md`。
+
 完整有效要求清单唯一入口为 [项目规则/执行约定.md](../../../项目规则/执行约定.md#main-完整刷新与复述)。本 Skill 规定 Main 的协调边界；每次刷新、派发和答复都必须同时按该清单逐项执行。摘要、context compaction、模型切换或新指令不能解除未完成授权、读写边界和安全要求；新指令只按明确范围替换旧要求。
 
 ## ACTIVE PORTFOLIO W4
@@ -46,7 +52,7 @@ Main 不决定 Route 生命周期，不正式提交 Online，不创建任何自�
 
 收到 `ROUTE_EVENT`、`VERSION_RECORD_EVENT`、`RULE_REFRESH_RECEIPT`、测量结果、Compile 结果、Correctness 结果或状态回复后，Main 必须判断 Child 是否空闲以及是否有可执行下一动作；有动作则立即发送下一 C2C 指令。同 Route 有动作时继续；当前任务完成或暂时无动作时，等待本 Agent 的原子命令结束，保存证据与事件，关闭旧 Agent后用空槽安排下一 Route。旧 Agent 不换 Route；Agent 关闭不改变 Route 生命周期。
 
-当前授权范围为 `ONLINE_AUTHORIZATION_SCOPE=W4_BEST_OF_ROUTE_VALIDATED_CANDIDATES_ONLY`：每条现有 W4 Route 最多提交一个符合全部资格的路线内最佳 Candidate，无需另等逐 Route Planning 批准。Main 可向 Online Owner 提供带来源的 Route 结果与资格材料，但不得正式提交；Route Agent 同样不得提交。每 Route 资格、源码/提交对应关系、Judge 规则与额度要求见 `项目规则/线上提交规范.md`。不得用不同 shape 的跨 Route Local 百分比排序，也不得在规则中预列具体合格 Route；不合格 Route 标为 `NO_ELIGIBLE_SUBMISSION`。授权范围外事项须另获明确授权。
+当前 Online 授权为 `USER_AUTHORIZED_W4_MULTI_SUBMISSION`：每条 W4 Route 至少安排两个源码身份不同的真实 Candidate 进行 Official 评测，长期目标至少 30 次。Local 可帮助按最佳/次佳或暂定顺序安排；Local 缺失、波动或不利，Correctness 覆盖不全，或缺少逐项 Planning 批准，都不构成内部提交前置。Main 负责路线执行与候选交接；Online Owner 仍是唯一正式 Judge submitter，并使用唯一现有提交脚本。账户权限、Judge 真实配额及平台规则按实际状态处理，不增设项目审批。Candidate 来源须可追溯，Route Agent 只在自己的 worktree 修改。详见 `项目规则/线上提交规范.md`。
 
 ## Route ownership
 
