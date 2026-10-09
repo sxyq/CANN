@@ -324,3 +324,108 @@ NEXT_ACTION = Main/Planning 根据地址证明及旧 C2/C3 资料复核 R15 的�
 
 本轮写入仅为本文件和 cross_row_address_model.py。
 Parent、Kernel、构建脚本、共享 TSV、规则、Dashboard、其他工作树及远端数据均未修改。
+
+## 7. 2026-10-09 Official 对照与 Parent 路径复核
+
+### 可确认的 Official 范围
+
+从 `main@93a6f0b8` 的已提交 `技术路线/路线成绩表.tsv` 与 `调度/线上候选.tsv` 可读到七个已登记 W4 Official Candidate。用户本轮另提供了 14 个不同通过源码身份的汇总；这七条记录不代表完整的 14 身份比较集。可读记录中的七个 Candidate 均为 15/15 Pass、最大误差 0%，总分如下：
+
+| Route / Revision | Submission ID | 源码 commit | Official Score | 相对 R31B V011 |
+|---|---|---|---:|---:|
+| W4-R01 / V001 | `6ac8bc97694b590c3c9683ea` | `93f15d9bab643fa6e8dbf6ed8833a144672d9fb3` | 42.36 | −2.80 |
+| W4-R02 / V002 | `6ac8ba83694b590c3c956480` | `60ca277d2afc3d985965e16ca09d1ff9b03f8c10` | 41.72 | −3.44 |
+| W4-R04 / V002 | `6ac8bdf4694b590c3c9747c6` | `8ffc6b6962921dfcd4d9912185eebfc940fe85a0` | 41.94 | −3.22 |
+| W4-R05 / V002 | `6ac8bf63694b590c3c982dfc` | `1a31a3b527d81d4db0fce20dda091b85889330b6` | 42.15 | −3.01 |
+| W4-R07 / V002 | `6ac8c0db694b590c3c99061d` | `addff7d657da4f3fee46e3b882fb80556d916da8` | 42.14 | −3.02 |
+| W4-R08 / V001 | `6ac8c1d9694b590c3c99a9a7` | `fa9b19bbcd05240c0398d9a7f5747b651ffe686e` | 42.75 | −2.41 |
+| W4-R09 / V001 | `6ac8c346694b590c3c9a6235` | `96044629c9783ab540daed927be37697424365dd` | 42.46 | −2.70 |
+
+这些字段证明可读记录中的总分均低于 Parent；main 记录没有给出对应结果各自的 15 项 `timeUs`，也没有说明它们与用户所述 14 身份的对应关系。原始逐项数组仍未在本工作树可读。R15 不从总分差分摊到单项，也不按 Case ID 或耗时猜测输入形状。
+
+可读取的 Parent Official 文件 `线上结果/R31B/V011/result.json` 记录了 Parent 本身的逐项时间。index 7 为 52.34 us，`bestTimeUs` 13.99 us；index 14 为 16486.82 us，`bestTimeUs` 3750.12 us；index 15 为 9637.47 us，`bestTimeUs` 8321.94 us。上述仅描述 Parent 的官方数组；Case 输入形状和 dtype 未由该数组提供，不能据此归因到 R15 的跨行路径。
+
+### Case 数组的来源缺口
+
+`main@93a6f0b8` 的可达 Git 树中没有七个 W4 官方结果 JSON；逐路径 `git log --all` 也没有对应提交。七条调度记录保留了结果路径、Submission ID、总分和源码身份，但未保存每项 Case 数组。
+
+本工作树使用项目只读命令尝试读取 W4-R01 Submission `6ac8bc97694b590c3c9683ea`：
+
+~~~text
+python3 工具/cannjudge.py poll 6ac8bc97694b590c3c9683ea --once --json
+HTTP 403
+~~~
+
+再经配置代理执行同一只读 GET，结果仍为 HTTP 403。未读取主工作树未提交内容，未访问其他 Route 工作树，未提交 Judge。
+
+因此，从本工作树可读的正式记录只能独立确认表内七个 W4 总分低于 Parent；逐项数组无法重新计算。用户提供的 14 身份共性统计另见第 8 节。若要将 Case 退化映射到代码分支，还需要 Judge 的 Case 输入 shape、dtype 和边界清单。Case ID 本身不足以完成映射。
+
+### 当前 Parent 下的传输路径与剩余方向
+
+当前参照源码为 R31B V011，source SHA-256 `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`，来源 commit `43a1049a1e08e518c88e354a754fdebb85a96f99`。其小 D 多行分支已对 x 与 residual 分别作连续批量读取；再次把相邻行作为一个连续负载读取属于已存在的 flat 形式。
+
+Wide FP32 按 row/tile 读取，x 与 residual 各复用一个 tile 缓冲。Wide FP16/BF16 已在 `(row,tile)` 序列上使用双缓冲 MTE2，下一 tile 的读取与当前计算交错；再把下一行放入同一缓冲会覆盖队列中已发出的下一项，增加独立缓冲或改变遍历顺序则落回本文件第 2、4 节已核对的存储寿命与 strided 方向。补 padding、改目的地址间隔或通过 `SliceInfo` / `Nd2Nz` 表达，仍由固定块长和间隔或逐条既有搬运实现；目标 DAV_2201 的 NDDMA 入口不适用。
+
+既有 MULTIROW-DMA V001 在 48x16384 FP16 的四组 Parent/Candidate 中均慢于 Parent，配对 delta 中位数 +8.4%；V002 的 16 组配对 delta 中位数 −1.84%，同代码对照 −1.48%，方向范围 −7.1% 至 +5.4%，未分离出稳定收益。两版结论只针对其实现，不外推到新算法；但其地址形式、排队冲突与 R15 已提交的 3880 项地址/寿命模型共同覆盖了目前提出的跨行形式。
+
+目前未找到一个同时满足以下条件的新 R15 机制：目标工具链存在对应传输原语；它不等同 Parent 已有连续搬运或历史固定 stride 多块搬运；源和目标范围、LocalTensor 容量、消费者保存期均可证明安全。W4-R15 仍是登记路线，未改变生命周期；本次没有 Candidate 性能版，不运行 Compile、Correctness、Local 或 NPU。
+
+要解除代码侧障碍，需要提供 DAV_2201 实际可用、且不属于单一固定 stride 多块或逐项发出旧搬运的传输原语及编译展开，并给出 GM 边界、目标 UB 视图/跨度和全部消费者寿命证明。仅有逐 Case 总分或“跨行 DMA”名称不足以构成独立机制。
+
+~~~text
+ROUTE_RESEARCH_EVENT = W4-R15-OFFICIAL-CASE-STRUCTURE-20261009
+ROUTE = W4-R15-SAFE-MULTIROW-DMA-X
+DIRECT_PARENT = R31B V011
+CURRENT_PARENT_SHA256 = a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
+STATUS = NO_NEW_INDEPENDENT_MECHANISM_FOUND; CASE_ARRAYS_UNAVAILABLE
+W4_OFFICIAL_CANDIDATES_IN_MAIN_SNAPSHOT = 7
+W4_OFFICIAL_SCORES = R01/V001:42.36;R02/V002:41.72;R04/V002:41.94;R05/V002:42.15;R07/V002:42.14;R08/V001:42.75;R09/V001:42.46
+PER_CASE_COMPARISON = NOT_AVAILABLE; API_GET_HTTP_403_DIRECT_AND_PROXY
+CASE_SHAPE_DTYPE_MAPPING = UNKNOWN
+NEW_PERFORMANCE_REVISIONS = 0
+COMPILE = NOT_RUN
+CORRECTNESS = NOT_RUN
+LOCAL_SCORE = NONE
+LOCAL_DELTA = NONE
+OFFICIAL_R15 = NONE
+DEVICE_OPERATION = NONE
+VERSION_RECORD_EVENT = NONE
+PUSH = NO
+ROUTE_LIFECYCLE_CHANGED = NO
+NEXT_ACTION = 取得14身份对应的逐Case官方JSON与Judge输入shape/dtype清单；若提出新传输形式，再提供DAV_2201接口展开及完整地址/容量/寿命证明
+~~~
+
+## 8. 2026-10-09 用户补充的 14 身份逐 Case 统计
+
+来源为本轮用户提供的摘要，比较对象是保存的 R31B V011 Official 结果：
+
+| Case ID | 慢于 R31B V011 | 快于 R31B V011 | 可确认内容 |
+|---|---:|---:|---|
+| 03 | 14/14 | 0/14 | 14 个不同源码身份均较慢 |
+| 08 | 14/14 | 0/14 | 14 个不同源码身份均较慢 |
+| 15 | 14/14 | 0/14 | 14 个不同源码身份均较慢 |
+| 11 | 13/14 | 1/14 | 以较慢为主 |
+| 01 | 0/14 | 14/14 | 14 个不同源码身份均较快 |
+| 14 | 11/14 | 3/14 | 方向混合 |
+
+该汇总支持“多份 W4 源码在部分相同 Case 上低于 Parent”的观察。它未包含逐身份时间、未列其余 Case 的计数，也未给出 shape/dtype；原始结果 JSON 仍不可读。此处只引用用户提供的聚合数，不声称已从 Judge 数组独立重算，不把 Case ID 映射到某个 kernel 分支。
+
+R15 的代码可行性仍由 Parent、目标传输接口及地址/寿命证据决定。Case 03、08、11、15 的统计没有表明这些输入会走已存在的连续批量分支、wide 分支或特定 row/tile 循环；Case 14 的混合方向也不能推出某种多行搬运收益。现有已审计候选仍只有 Parent 已用的 flat 形式、固定 stride 多块形式、为其改变 padding/pitch 或遍历顺序，以及把既有搬运逐项展开的高层写法；它们分别已被 Parent 覆盖、历史 MULTIROW-DMA 实测、地址/寿命分析或目标接口实现排除。新统计没有提供未被这些证据覆盖的新传输原语。
+
+因此本次不创建性能 Candidate。解除这项代码障碍仍需 DAV_2201 实际支持的独立传输形式及其工具链展开，并给出 GM 范围、LocalTensor 可用跨度和消费者寿命证明。若要把 Case 共性用于选路，还需各源码身份的逐项原始时间及 Judge 输入 shape/dtype；不以 Case ID 或时间级别补推。
+
+~~~text
+ROUTE_RESEARCH_EVENT = W4-R15-OFFICIAL-CASE-SUPPLEMENT-20261009
+SOURCE = USER_SUPPLIED_SUMMARY; ORIGINAL_CASE_ARRAYS = NOT_AVAILABLE_IN_WORKTREE
+OFFICIAL_SOURCE_IDENTITIES = 14_DISTINCT_PASSING
+COMMON_SLOWER_CASES = 03:14/14;08:14/14;15:14/14;11:13/14
+COMMON_FASTER_CASES = 01:14/14
+MIXED_CASES = 14:SLOWER_11/14;FASTER_3/14
+SHAPE_OR_DTYPE_INFERENCE = NONE
+R15_INDEPENDENT_DMA_MECHANISM = NONE_IDENTIFIED
+NEW_PERFORMANCE_REVISIONS = 0
+DEVICE_OPERATION = NONE
+PUSH = NO
+ROUTE_LIFECYCLE_CHANGED = NO
+NEXT_ACTION = 等待 DAV_2201 独立传输原语与完整边界/容量/寿命证据；收到原始 Official arrays 与输入映射后再关联目标 Case，不猜 hidden shape
+~~~
