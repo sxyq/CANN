@@ -362,3 +362,87 @@ mtime、inode 仍与构建前记录一致。所有本轮构建、reference、计
 研究事件 ID 为 `W4-R10-TIMING-ATTRIBUTION-20261008`，V002 同版事件类型为
 `TIMING_ATTRIBUTION_SUPPLEMENT`。提交后回执提供实际提交号与最终 dirty 状态，
 等待 Record 异步同步。
+
+## 2026-10-09：V002 设备 0 两轮计时资格
+
+### 当前结论
+
+在 Main 分配的 DEVICE_ID=0 上，复用现有 `r10_probe` 与 `r10_probe_timing`，对
+`128x12288 BF16` 完成两种不同条件的同进程 Parent/Parent 与 Parent/Candidate 采集。
+两轮的 P/C kernel-task 稳定性均未通过；第二轮的 P/P 总体通过，但 P1 侧及部分
+槽位/位置分层未通过。性能方向随首侧与分层变化，不能形成可接受 Local。
+
+```text
+ROUTE=W4-R10
+REVISION=V002
+SHAPE=128x12288 BF16
+DEVICE_ID=0
+PARENT=R31B V011
+PARENT_SOURCE_SHA256=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
+CANDIDATE_SOURCE_SHA256=baad7b0588f44f0d7942ea115319b3bb1f04f77a6e0a5a28af28ace0819e4540
+COMPILE=PASS_EXISTING
+CORRECTNESS=PASS_EXISTING_AND_DEVICE0_REFERENCE
+LOCAL_VERDICT=MEASUREMENT_BLOCKED
+LOCAL_SCORE=NONE
+LOCAL_DELTA=NONE
+MEASUREMENT_CONFIDENCE=LOW
+ROUTE_LOCAL_BEST=NONE
+CURRENT_LOCAL_BEST=R31B V011
+NEW_PERFORMANCE_REVISIONS=0
+VALID_LOCAL_RESULTS=0
+PUSH=NO
+```
+
+Candidate 与 Parent 源码未改，未重建 kernel 库。`COMPILE=PASS_EXISTING` 沿用
+V002 的 `results/compile.log`；Correctness 沿用 V002 八个输入的通过记录。第二轮
+另在设备 0 对 P/C 两库、A/B 两个输出地址做了 CPU FP64 reference 比较，768 行
+全部 `failures=0`、`nonfinite=0`，最大绝对误差 `0.007812081001827842`。
+
+### 两轮结果
+
+| 轮次 / UTC | runner / 条件 | Parent/Parent kernel-task | Parent/Candidate kernel-task | 结论 |
+|---|---|---|---|---|
+| 1 / `04:34:11–04:34:22` | `r10_probe measure`；单输出地址；每阶段 124 条计时样本 | P1/P2 中位 `16.78/16.77 us`；MAD/中位 `1.48%`；两段差 `0.24%` | Parent/Candidate 中位 `22.20/20.45 us`；配对观察 `-1.5116%`；MAD/中位 `17.15%`；两段差 `9.32%` | P/P 通过；P/C 未通过。首侧分组为 `+6.37%/-9.12%`，方向不同 |
+| 2 / `04:41:54–04:42:06` | `r10_probe_timing diagnose`；显式前序调用、A/B 输出地址和逻辑槽交叉；每阶段 128 probes + 128 conditioners | P1/P2 中位 `19.892/17.20 us`；合并中位 `17.84 us`、MAD/中位 `6.95%`、两段差 `1.73%`；P1 侧 MAD/中位 `16.49%`，逻辑槽 0 未通过 | Parent/Candidate 中位 `19.82/17.78 us`；配对观察 `-4.9806%`；MAD/中位 `10.67%`；两段差 `17.73%` | P/P 分层未通过；P/C 未通过。首侧分组为 `+0.75%/-12.83%`，方向不同 |
+
+第一轮 device-event 的 Parent/Candidate 中位为 `43.11/44.85 us`，配对观察
+`-1.9813%`；P/P device-event MAD/中位 `11.36%`。第二轮 Parent/Candidate
+device-event 中位为 `31.54/31.46 us`，配对观察 `-7.3656%`；P/P device-event
+MAD/中位 `15.66%`、两段差 `14.86%`。这些 event 数字与 kernel-task 统计均保留，
+不作为已通过的 Local 分数。全部样本参与统计，长尾值未删除。
+
+第二轮实际输出 A/B 地址分别为 `0x12c041a00000`、`0x12c041e00000`；两份库在
+launch 1、3 前完成设备注册。Profiler 中 756 个 kernel 调用与 task-time 记录对应；
+512 个计时调用的 host connection、device task 与前后 EVENT_RECORD 均完成逐项关联。
+父版实际 block dim 为 40，Candidate 为 32。配对中位数只作观察，受 P/P 波动、首侧
+方向和分层离散影响，不能确立提升。
+
+### 资源与运行信息
+
+两轮均使用 hwnput3 / DEVICE_ID=0，CANN 8.5.0.alpha002、Ascend910B3，NPU
+`availableCoreNum=40`。各轮开始时资源脚本
+报告 `FREE_HBM=51118 MB`，`npu-smi` HBM Usage Rate 为 22%（容量 65536 MB）。
+第一轮 ACL free HBM 在分配前/计时前/结束时为 `50646.246/50634.246/50634.246 MiB`；
+主机 load average 开始 `34.51/44.38/54.73`，结束 `31.96/43.33/54.22`，AICore/
+AIVector 从 `10%/7%` 变化到 `2%/5%`。第二轮 ACL free HBM 在分配前/诊断计时前/
+结束时为 `50646.000/50629.938/50629.938 MiB`；主机 load average 开始
+`30.69/35.29/46.48`，结束 `56.03/40.80/48.06`，AICore/AIVector 结束为 `9%/16%`。
+没有读取或更改其他进程。
+
+### 原始数据与停止位置
+
+第一轮原始输出、task-time 映射及完整 profiler 导出均在
+`本地实验/W4-R10/V002/results/qualification-device0-round1/`，其中包括
+`profile-target.pp.tsv`、`profile-target.pc.tsv`、`profile-target.task-map.tsv`、
+`profile-target-capture/`、`profile-session.log` 和 `resource-snapshot.log`。
+
+第二轮全部数据在 `本地实验/W4-R10/V002/results/qualification-device0-round2/`，其中
+`target.pp.tsv`、`target.pc.tsv` 含 conditioner 与 probe 的全部记录；
+`target-task-map.tsv`、`target-pairs.tsv`、`target-contrasts.tsv`、
+`diagnostic-summary.json`、`target.reference.tsv`、`target-capture/`、
+`profile-session.log` 和 `resource-snapshot.log` 保留逐调用映射、统计、reference、
+设备事件与负载事实。
+
+该 shape 已完成本次允许的两轮；不再换设备或采样窗口重试，不创建 V003。Local
+分数与增益均为 NONE，V002 不列为 Route Local Best。下一步交 Main 决定 R10 是否转入
+新研究方向；本 Route Agent 不扩展当前 V002 任务范围。
