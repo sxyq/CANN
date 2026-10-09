@@ -27,6 +27,7 @@
 - `索引/revision-source-index.tsv`：Revision -> source path -> exact source commit（若存在）-> SHA-256 -> archived source，并保留 source-meta、sidecar、Local/Online 状态及正式结果查找路径。
 - `索引/sha-dedup-index.tsv`：SHA 去重关系和全部 Revision 反向映射。
 - `索引/inventory-receipt.tsv`：数量和未提交源码收据。
+- `索引/incremental-source-audit-20261009.tsv`：续审中对五个原 worktree 的重哈希、额外未提交源码样本、Git 历史缺口和保留/不归档判定；不改变 294 条 Revision 与 266 个去重源码计数。
 - `源码/<SHA-256>.submission.asc`：唯一源码文件名由实际 SHA-256 决定。
 - 已提交源码的 `source_commit` 使用真实 Git 路径历史，并检查 commit 内容与当前源码 SHA 一致。
 - 未提交源码使用 `source_commit=UNKNOWN`、`source_state=UNCOMMITTED`；不把 worktree 状态伪造为 commit。
