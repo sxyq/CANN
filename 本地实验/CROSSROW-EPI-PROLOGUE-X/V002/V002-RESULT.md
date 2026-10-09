@@ -107,3 +107,9 @@ Evidence: `server3-lease-check.log`
 The current Worktree host is `hwnput3` and exposes eight NPUs. Devices 2 and 3 are idle in the `npu-smi info` snapshot with approximately 62 GB free HBM each, but no current R1/V002 lease file or authorization variable is visible. Other devices are occupied, and the installed `npu-smi` rejected the attempted singular `usage` and `proc` type probes with rc=215; its successful `info` output already includes HBM and process status. Because an idle device without a verified lease is not a safe performance target, no paired measurement was run.
 
 Evidence: `server3-doctor-20261009.log`
+
+## Authorized lease gate
+
+The current user instruction requires a real authorized non-conflicting lease before measuring. The existing Route-owned evidence exposes no current R1/V002 lease file or authorization variable. Devices 2 and 3 meet the numeric HBM threshold and show no running NPU process, but they cannot be claimed without authorization. No shared scheduler/tooling or other Route was inspected, no V002 Runner invocation was made, and the prior polluted raw remains the only Local evidence. V002 stays `LOCAL_NO_PROMOTION / MEASUREMENT_CONTAMINATED`; no V003 was created.
+
+Evidence: `lease-blocker-20261009.log`
