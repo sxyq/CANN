@@ -1,0 +1,66 @@
+{
+  "route": "W4-R15-SAFE-MULTIROW-DMA-X",
+  "revision": "V001",
+  "direct_parent": "R31B-V011",
+  "parent_commit": "43a1049a1e08e518c88e354a754fdebb85a96f99",
+  "parent_source_sha256": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "candidate_source": "本地实验/W4-R15/V001/submission.asc",
+  "candidate_source_sha256": "90b295ab3c0bceff011ffadd780b1abfc2d412146e2f20bb025158b40889a7f4",
+  "single_change": "Use ordinary GM-to-UB DataCopy only when byte count, GM source address, and UB destination address are 32-byte aligned; otherwise retain DataCopyPad. DataCopyParams.blockLen is expressed in 32-byte blocks on DAV_C220.",
+  "compile": {
+    "status": "PASS",
+    "soc": "Ascend910B3",
+    "npu_arch": "dav-2201",
+    "cann": "8.5.0.alpha002",
+    "device": 0,
+    "free_hbm_mb": 8519,
+    "other_process_present": true,
+    "load_note": "HBM usage 87%, AICore/AIVector usage 0%; load fields are observational.",
+    "log": "本地实验/W4-R15/V001/compile.log"
+  },
+  "correctness": {
+    "status": "PASS",
+    "proxy_cases": [
+      {"rows": 2, "width": 12288, "dtype": "fp16", "parent": "PASS", "candidate": "PASS"},
+      {"rows": 2, "width": 32768, "dtype": "fp16", "parent": "PASS", "candidate": "PASS"},
+      {"rows": 2, "width": 12288, "dtype": "bf16", "parent": "PASS", "candidate": "PASS"},
+      {"rows": 2, "width": 32768, "dtype": "bf16", "parent": "PASS", "candidate": "PASS"}
+    ],
+    "device": 0,
+    "free_hbm_mb": 8519,
+    "log": "本地实验/W4-R15/V001/correctness.log",
+    "note": "Proxy runner shapes are explicitly named; no Official Case ID mapping is asserted. An initial run exposed and retained the blockLen-unit defect; the corrected source passed all listed cases."
+  },
+  "local": {
+    "status": "OBSERVED_NOISY",
+    "case": {"rows": 2, "width": 12288, "dtype": "fp16", "name": "local-proxy-fp16-d12288"},
+    "method": "21 interleaved Parent/Candidate pairs, alternating P,C and C,P; device event primary, wall time diagnostic; warmup 45 each.",
+    "device": 0,
+    "free_hbm_mb": 8519,
+    "device_load": {"hbm_usage_percent": 87, "aicore_usage_percent": 0, "aivector_usage_percent": 0, "other_process_present": true},
+    "parent_raw_device_us": [6.540, 7.380, 24.720, 66.000, 59.660, 55.620, 5.600, 17.140, 56.860, 14.200, 53.220, 16.680, 50.600, 5.880, 6.220, 5.680, 5.580, 5.980, 5.920, 6.240, 6.180],
+    "candidate_raw_device_us": [39.140, 47.080, 6.040, 7.620, 5.840, 15.680, 70.280, 69.260, 5.780, 62.380, 5.600, 69.600, 6.100, 5.880, 6.120, 5.960, 5.880, 5.940, 6.080, 18.680, 83.500],
+    "parent_raw_wall_us": [125.651, 67.861, 66.920, 108.651, 112.721, 100.151, 73.291, 66.981, 105.411, 67.640, 97.041, 66.031, 98.081, 117.891, 120.282, 127.631, 124.721, 144.251, 128.402, 66.321, 127.931],
+    "candidate_raw_wall_us": [94.491, 95.631, 164.672, 121.901, 76.691, 63.901, 118.451, 118.031, 77.540, 107.391, 81.031, 113.321, 109.161, 115.301, 125.721, 121.421, 128.641, 120.311, 71.260, 65.371, 128.651],
+    "parent_median_us": 7.380,
+    "candidate_median_us": 6.120,
+    "local_score_candidate_median_us": 6.120,
+    "local_delta_paired_median_candidate_minus_parent_us": 0.160,
+    "paired_delta_raw_us": [32.600, 39.700, -18.680, -58.380, -53.820, -39.940, 64.680, 52.120, -51.080, 48.180, -47.620, 52.920, -44.500, 0.000, -0.100, 0.280, 0.300, -0.040, 0.160, 12.440, 77.320],
+    "paired_delta_mad_us": 40.100,
+    "parent_cv": 0.99248,
+    "candidate_cv": 1.07993,
+    "wall_parent_median_us": 105.411,
+    "wall_candidate_median_us": 113.321,
+    "interpretation": "No stable performance direction is established. Candidate and Parent marginal medians differ by -1.260 us, while the median paired Candidate-minus-Parent delta is +0.160 us; paired MAD is 40.100 us and both device-time CVs are near 1. The Local observation is noisy and does not determine Official eligibility.",
+    "log": "本地实验/W4-R15/V001/local.log"
+  },
+  "official": "NOT_SUBMITTED",
+  "current_local_best": "NONE",
+  "evidence": [
+    "本地实验/W4-R15/V001/REVISION-DECLARATION.md",
+    "本地实验/W4-R15/V001/compile.log",
+    "本地实验/W4-R15/V001/correctness.log",
+    "本地实验/W4-R15/V001/local.log"
+  ]
+}
