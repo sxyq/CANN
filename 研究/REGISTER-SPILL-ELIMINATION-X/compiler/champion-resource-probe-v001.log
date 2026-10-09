@@ -1,0 +1,114 @@
+W5-R02 REGISTER-SPILL-ELIMINATION-X compiler/resource probe
+Timestamp UTC: 2026-10-09T15:54:38Z
+Worktree: /home/data4t2/lelinfeng/cann-w5-r02-register
+Branch: research/w5-r02-register-spill
+Parent source: /home/data4t2/lelinfeng/cann-w5-r02-register/线上结果/R31B/V011/submission.asc
+Parent SHA256: a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
+Parent bytes: 190020
+
+ENVIRONMENT
+ASCEND_HOME_PATH=/usr/local/Ascend/ascend-toolkit/latest
+ASCEND_HOME_PATH_REAL=/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002
+BISHENG=/usr/local/Ascend/ascend-toolkit/latest/compiler/ccec_compiler/bin/bisheng
+BISHENG_VERSION=clang 15.0.5 (clang-5c68a1cb1231 flang-5c68a1cb1231)
+SOC=Ascend910B3
+CCE_AICORE_ARCH=dav-c220-vec for CCE probe; dav-c220 for established ASC command
+NPU_DEVICE=2
+NPU_HBM_CAPACITY_MB=65536
+NPU_HBM_USAGE_RATE_PERCENT=5
+NPU_FREE_HBM_MB=62259
+NPU_AICORE_USAGE_RATE_PERCENT=0
+
+EXISTING_COMPILE_PATH
+Historical adapter: /home/data4t2/lelinfeng/cann-w5-r02-register/归档/历史工作区/R31B/compile_adapter_v011.asc
+Historical adapter includes the exact SHA-matching copy:
+  /home/data4t2/lelinfeng/cann-w5-r02-register/归档/历史工作区/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+Historical CMake object command source:
+  /home/data4t2/lelinfeng/phase4-workspaces/R31B/build-recheck/CMakeFiles/r31b_submission_v011.dir/build.make:76
+The command is an ASC translation unit using -c -x asc, --cce-aicore-arch=dav-c220,
+the HCC C++ 7.3 include roots, --npu-arch=dav-2201, and compile_adapter_v011.asc.
+Historical compile result: compile-v011-server3.log reports Built target r31b_submission_v011.
+
+ASC_PROBE
+Command shape (output redirected to /tmp):
+  bisheng -I<adapter-dir> --cce-aicore-arch=dav-c220 \
+    -I<hcc>/include/c++/7.3.0 -I<hcc>/include/c++/7.3.0/aarch64-target-linux-gnu \
+    -I<hcc>/include/c++/7.3.0/backward \
+    -Xaicore-start -O3 -std=c++17 -Xaicore-end \
+    -Xhost-start <same HCC include roots> -fPIC -O2 -Xhost-end \
+    --npu-arch=dav-2201 --cce-res-usage -c -x asc compile_adapter_v011.asc
+ASC_RC=0
+ASC_OBJECT=/tmp/w5-r02-register-probe.8MvVCC/champion-asc.o
+ASC_OBJECT_SHA256=5e9768038f310916901e08fc28ba705053297f72625d253167b9e973a6595092
+ASC_OBJECT_BYTES=136376
+ASC_OUTPUT:
+  bisheng: warning: argument unused during compilation: '--cce-res-usage' [-Wunused-command-line-argument]
+Meaning: the established ASC path compiles the exact parent, but does not emit a
+resource report. This is not spill evidence.
+
+CCE_EXTENSION_PROBE
+Input: exact parent bytes at a temporary .asc path, with -x cce and CCE flags.
+CCE_ASC_RC=1
+CCE_ASC_OUTPUT:
+  bisheng: error: cannot compile ASC file and CCE file together.
+  bisheng: warning: '-x cce' after last input file has no effect [-Wunused-command-line-argument]
+This reproduces the prior recorded failure and proves that the .asc extension is
+the wrong input classification for the CCE resource probe.
+
+CCE_EXACT_BYTES_PROBE
+Input: temporary .cpp copy of the exact parent; SHA256 remains
+  a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
+  (the copied file was verified against the parent; canonical parent SHA is the
+   value at the top of this file)
+Command shape:
+  bisheng -c -o /tmp/champion-cce.o <AscendC include roots> \
+    -include resource_probe_preinclude.h \
+    -isystem /usr/include/c++/11 -isystem /usr/include/aarch64-linux-gnu/c++/11 \
+    -isystem /usr/include/aarch64-linux-gnu -isystem /usr/include \
+    -O3 -std=c++17 --cce-aicore-lang --cce-aicore-arch=dav-c220-vec \
+    --cce-aicore-only --cce-auto-sync --npu-arch=dav-2201 \
+    --npu-soc=Ascend910B3 --cce-res-usage champion.cpp
+CCE_CPP_RC=0
+CCE_OBJECT=/tmp/w5-r02-register-cce2.Txd24J/champion-cce.o
+CCE_OBJECT_SHA256=b0a0afe89667559eea1918efeaeaf1bc44b28f9dd9aa5fc3d885fccf61408a2a
+CCE_OBJECT_BYTES=114520
+CCE_OUTPUT:
+  bisheng: warning: argument unused during compilation: '--cce-res-usage' [-Wunused-command-line-argument]
+Meaning: the exact source compiles in CCE mode after input classification is fixed,
+but this vector kernel still does not produce the documented resource report.
+
+INTERNAL_RESOURCE_PROBE
+Command change: replace --cce-res-usage with -mllvm -cce-res-usage on the exact
+temporary .cpp copy and the same CCE flags.
+MLLVM_RC=0
+MLLVM_OUTPUT=empty
+MLLVM_OBJECT=/tmp/w5-r02-register-mllvm.CnExmf/champion-mllvm.o
+MLLVM_OBJECT_SHA256=b0a0afe89667559eea1918efeaeaf1bc44b28f9dd9aa5fc3d885fccf61408a2a
+No Function properties, Stack size, Used register number, Total Spilled Byte Size,
+NumSpills, NumReloads, scratch, or live-range report was emitted.
+
+OBJECT_METADATA
+The successful CCE object contains three exact kernel symbols:
+  _Z24add_rms_norm_bias_customIfEvPhS0_S0_S0_S0_mmjff       text size 0x34c8 (13512)
+  _Z24add_rms_norm_bias_customIDhEvPhS0_S0_S0_S0_mmjff      text size 0x3740 (14144)
+  _Z24add_rms_norm_bias_customIu6__bf16EvPhS0_S0_S0_S0_mmjff text size 0x3a18 (14872)
+The object has .ascend.stack.size.record bytes:
+  00 80 00 00 00 00 00 00 00 80 00 00 00 00 00 00
+This is two little-endian 0x8000 (32768) records. The same bytes and metadata
+appear in the existing simple AddRmsNormBias control object
+/home/data4t2/lelinfeng/phase4-review-repro/G001-V002/build/CMakeFiles/submission.dir/src/adapter.cpp.o;
+therefore this fixed object metadata is not attributable to a W5-R02 spill.
+The object format is elf64-hiipu. llvm-objdump has no instruction decoder for
+the function sections, and bisheng reports -S as unsupported for this CCE path.
+
+CONCLUSION
+No direct compiler/resource evidence proves register pressure, spill/reload,
+scratch traffic, or a target live-range bottleneck in ProcessWideLowPrecision
+or ProcessWideFp32FullCacheRows. Do not infer spill from source variable count,
+object size, or the fixed stack-size record.
+STATUS=FEASIBILITY_UNPROVEN
+CANDIDATE_EDIT=NO
+V001_CREATED=NO
+CORRECTNESS=NOT_RUN
+LOCAL=NOT_RUN
+ONLINE=NOT_SUBMITTED
