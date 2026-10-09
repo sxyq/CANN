@@ -1,5 +1,11 @@
 # Git 工作流程
 
+## W4 Official Scoring Override
+
+> **W4 强制执行规则：本项目禁止设置、保留或新增任何自行定义的实验、评分、Correctness 覆盖、Local 测量稳定性、审批或其他线上提交前置门禁。每条 W4 技术路线必须选取至少两个不同源码身份的真实 Candidate 进行 Official 线上评分。任何研究报告、状态同步、历史归档或本地测量结果均不得作为阻止合法 Official 提交的内部条件。服务器运行安全、工作树隔离及评测平台强制规则仍须遵守。**
+
+本文件中的 Commit/Event 顺序仅约束开发期实验与 Git 溯源；不得解释为 Official 提交必须等待 Local Best、Correctness 覆盖或 Planning 批准。正式提交仍由唯一 Online Owner 使用唯一现有 Judge 脚本。
+
 本文件是实验 Git 顺序和安全边界的唯一说明。
 
 ## 实验版本顺序

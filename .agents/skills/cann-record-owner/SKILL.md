@@ -5,6 +5,12 @@ description: CANN AddRmsNormBias shared-record Skill。Record Owner 在指定主
 
 # Record Owner
 
+## W4 Official Scoring Override
+
+> **W4 强制执行规则：本项目禁止设置、保留或新增任何自行定义的实验、评分、Correctness 覆盖、Local 测量稳定性、审批或其他线上提交前置门禁。每条 W4 技术路线必须选取至少两个不同源码身份的真实 Candidate 进行 Official 线上评分。任何研究报告、状态同步、历史归档或本地测量结果均不得作为阻止合法 Official 提交的内部条件。服务器运行安全、工作树隔离及评测平台强制规则仍须遵守。**
+
+Official 事实按每个真实 Candidate 身份分别保存：Route、Revision、源码身份、Git commit、Submission ID、Judge 状态、Correctness、Official Score、15 个 Case 的原始时间与 bestTimeUs、结果 JSON 路径。Local 和 Official 分栏记录；Local/Correctness 字段缺失不改变提交资格。只同步 Online Owner 的真实 receipt，不推断或制造结果。
+
 ## ACTIVE PORTFOLIO W4
 
 共享记录接收 W4 15 条授权路线的 receipt-backed 事实，同时保留 W3/W2 历史记录原样。W4 短 ID、最多 5 个 active Child（含 Record Owner）、单 Route fresh context 与状态来源见 `项目规则/W4持续探索控制契约.md`。当前账本仍显示 W3 或缺少 W4 行时，报告 `STATE_SYNC_GAP`；不得以控制文件补造 Revision、分数、Local Best 或 Official。

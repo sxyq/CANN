@@ -1,5 +1,11 @@
 # CANN AddRmsNormBias
 
+## W4 Official Scoring Override
+
+> **W4 强制执行规则：本项目禁止设置、保留或新增任何自行定义的实验、评分、Correctness 覆盖、Local 测量稳定性、审批或其他线上提交前置门禁。每条 W4 技术路线必须选取至少两个不同源码身份的真实 Candidate 进行 Official 线上评分。任何研究报告、状态同步、历史归档或本地测量结果均不得作为阻止合法 Official 提交的内部条件。服务器运行安全、工作树隔离及评测平台强制规则仍须遵守。**
+
+当前目标为 W4 15 条路线各至少两个不同源码身份的真实 Candidate，累计至少 30 次 Official Judge 提交。本条覆盖并废止本文件后文 `Online Experimental Submission Policy` 与其他位置中相冲突的版本范围、提交次数、Main/Online Owner 分工或内部资格要求；唯一现行细则见 `项目规则/线上提交规范.md`。Online Owner 仍为唯一正式提交者并使用现有唯一脚本；不得以本地 Compile、Correctness、Local、Local Best、研究结论或逐次 Planning 批准阻止提交。账户权限、Judge 真实配额、平台规则、服务器安全、来源可追溯与 Route worktree 隔离继续有效。
+
 本仓库服务于 2026 CANN 挑战赛西南赛区 `AddRmsNormBias`。正式主线在仓库根目录；`归档/` 只保存历史资料，不承担当前执行入口。
 
 ## 规则优先级
