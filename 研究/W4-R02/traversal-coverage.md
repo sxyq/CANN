@@ -318,3 +318,36 @@ OFFICIAL_SCORE=NONE、ONLINE_STATE=PAUSED、PUSH=NO。本轮研究事件和 V002
 与 `pp-task-map.tsv`，从 task 256/342/375/514 对应的 API 时段和相邻调用间隔取证，
 形成有区别的有限计时设计；不无变化重采本次命令，不先改打印/flush，不先开 V003。
 V002 的有效性能结论仍缺；分段遍历的历史覆盖仍为 UNKNOWN，本轮没有推进该方向。
+
+## 2026-10-09：V002 device 3 资格复测与交错对照
+
+### 范围与来源
+
+复用已有 V002、R31B-V011 Parent、同一个 `build/r02_runner`、msprof 参数及统计程序；Candidate 源码未改，没有新增性能版。目标固定为 `128×20480 FP16`，每槽预热 45 次，4 组、每组 21 对。原 device 1 的 P/P 数据作为前次未通过资格的证据；本次改用已分配的 device 3，只做一轮新的 P/P 与一轮同进程 P/C 交错对照。P/P event 条件仍未通过，因此 P/C 结果仅作计时诊断，不登记为有效 Local，也不再换卡或窗口重试。
+
+Parent 来源 `parent.asc`，SHA256=`a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`；V002 Candidate 来源 `submission.asc`，SHA256=`b512579409b6614002f4bd7463d9a243b13d2bec0723094e52cc8c2b5c35bf38`。V002 原 Compile 与独立 CPU reference Correctness 均为 PASS；本次未重跑这两项，源码未变。
+
+### 同二进制 P/P
+
+`pp-event.tsv` 有 168 个计时调用；258 条 op_summary 与 668 条 task_time 记录成功映射，全部调用均有前后 EVENT_RECORD，样本遗漏数为 0。逻辑 P/C 两槽都调用 Parent，物理输出地址相同：`0x12c041e00000`。
+
+device-event 全部样本中位数为 33.580 us，MAD/median=17.004%，四组中位数相对范围=26.295%；P、C 逻辑槽也都超出 10% 限值。kernel-task 中位数为 21.744 us，MAD/median=0.368%，四组中位数相对范围=0.230%，符合既有阈值。整体 P/P 结果为 `MEASUREMENT_BLOCKED`，原因是 Local 的 event 范围不稳定。event 第一/第二位置中位数为 34.250/28.910 us；kernel-task 对应值为 21.742/21.752 us。event 与 kernel-task 的分离说明主要波动出现在 kernel 执行以外的计时范围；不据此确认具体 host API 原因。
+
+### 同进程 P/C 交错对照
+
+P/C 两侧都使用同一物理输出地址 `0x12c041e00000`，P 槽调用 Parent，C 槽调用 V002 Candidate；PC 与 CP 各 42 对，共 84 个 Parent 和 84 个 Candidate 样本。所有 258 条 op_summary、668 条 task_time 与 168 个计时调用完成映射，样本遗漏数为 0。
+
+| 时间范围 | Parent 中位 us | Candidate 中位 us | 槽中位比差 % | 配对 C-P 中位 us | PC / CP 配对差中位 us | P/C MAD/median % | P/C 四组相对范围 % |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| device event | 27.620 | 32.430 | +17.415 | +0.230 | +0.090 / +0.650 | 15.605 / 26.426 | 54.526 / 57.909 |
+| kernel task | 21.480 | 21.272 | -0.968 | -0.218 | -0.210 / -0.228 | 0.279 / 0.376 | 0.372 / 0.376 |
+
+event 的第一/第二位置中位数为 31.200/28.050 us；kernel-task 为 21.370/21.400 us。逐对 event 差在 PC 与 CP 下分别为 +0.090 与 +0.650 us，kernel-task 分别为 -0.210 与 -0.228 us。device-event 组间变化很大，而 kernel-task 两侧稳定；采样含 wall 时间最高 3814.280 us 的长尾，按规范完整保留。该组数据不能用来接受 Local 分数。
+
+### 设备、证据与结论
+
+device 3 的 P/P 与 P/C 前后 FREE_HBM 都为 62259 MB，HBM 使用率 5%，AICore/AIVector 均为 0%。host load average：P/P 前后为 28.71/38.02/49.59 与 26.63/35.72/48.07；P/C 前后为 40.39/43.54/47.15 与 38.60/43.06/46.96。未读取或改动其他用户进程。
+
+完整 raw samples、profiler 导出、资源快照及映射统计均保存在 `本地实验/W4-R02/V002/timing-scope-20261009/`：`pp-event.tsv`、`pc-event.tsv`、`pp-task-map.tsv`、`pc-task-map.tsv`、`pp-summary.json`、`pc-summary.json` 和两个 profiler 输出目录。`summarize.py` 仅增加 capture 目录与设备号参数，并在资格未通过时将 Local score/delta 置为 NONE；两次离线汇总均通过。
+
+最终分类为 `MEASUREMENT_BLOCKED`；`LOCAL_SCORE=NONE`、`LOCAL_DELTA=NONE`、`CURRENT_LOCAL_BEST=NONE`。本轮新增性能版 0、有效 Local 0；不创建 V003，不做该 shape 的第三次资格尝试。下一步为提交本次 V002 证据与统计程序扩展，并向 Main 发送 Route / Version 事件，等待后续安排。

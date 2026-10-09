@@ -200,8 +200,11 @@ def old_order_analysis():
     return results
 
 
-def timing_scope_summary(phase):
-    capture = ROOT / "timing-scope-20261008"
+def timing_scope_summary(phase, capture_path=None, device_id=1):
+    capture = Path(capture_path) if capture_path else ROOT / "timing-scope-20261008"
+    if not capture.is_absolute():
+        capture = ROOT / capture
+    device_id = str(device_id)
     profile = capture / (phase + "-profile")
     op_paths = list(profile.glob("**/op_summary_*.csv"))
     task_paths = list(profile.glob("**/task_time_*.csv"))
@@ -214,7 +217,7 @@ def timing_scope_summary(phase):
     tasks = {(row["Device_id"], row["stream_id"], row["task_id"]): row for row in task_rows}
     assert len(tasks) == len(task_rows)
     assert len(operators) == 258
-    assert {row["Device_id"] for row in operators} == {"1"}
+    assert {row["Device_id"] for row in operators} == {device_id}
     assert {row["Task Type"] for row in operators} == {"AI_VECTOR_CORE"}
     assert {int(row["Block Dim"]) for row in operators} == {40}
     assert len({row["Stream ID"] for row in operators}) == 1
@@ -303,7 +306,7 @@ def timing_scope_summary(phase):
         label = path.name.removesuffix(".usages.txt")
         capacity, rate = value("HBM Capacity(MB)"), value("HBM Usage Rate(%)")
         resource[label] = {
-            "device": 1, "hbm_capacity_mb": capacity, "hbm_used_percent": rate,
+            "device": int(device_id), "hbm_capacity_mb": capacity, "hbm_used_percent": rate,
             "free_hbm_mb_from_usages": capacity * (100 - rate) // 100,
             "aicore_percent": value("Aicore Usage Rate(%)"), "aivector_percent": value("Aivector Usage Rate(%)"),
             "host_load": (capture / (label + ".load.txt")).read_text().strip(),
@@ -313,8 +316,8 @@ def timing_scope_summary(phase):
         "route": "W4-R02", "revision": "V002", "direct_parent": "R31B-V011", "phase": phase,
         "new_performance_revisions": 0, "current_local_best": None,
         "candidate_measured": phase == "pc", "qualification": "PASS" if qualified else "MEASUREMENT_BLOCKED",
-        "local_score_us": None if phase == "pp" else metrics["event"]["slots"]["C"]["median_us"],
-        "local_delta_percent": None if phase == "pp" else metrics["event"]["slot_median_ratio_delta_percent"],
+        "local_score_us": metrics["event"]["slots"]["C"]["median_us"] if phase == "pc" and qualified else None,
+        "local_delta_percent": metrics["event"]["slot_median_ratio_delta_percent"] if phase == "pc" and qualified else None,
         "official_score": None, "online": "PAUSED", "push": "NO", "samples_omitted": 0,
         "protocol": {"rows": 128, "width": 20480, "dtype": "fp16", "warmups_per_slot": 45,
                      "blocks": 4, "pairs_per_block": 21, "samples_per_slot": 84,
@@ -343,8 +346,10 @@ def timing_scope_summary(phase):
 
 
 def main():
-    if len(sys.argv) == 3 and sys.argv[1] == "--timing-scope" and sys.argv[2] in ("pp", "pc"):
-        print(json.dumps(timing_scope_summary(sys.argv[2]), ensure_ascii=False, indent=2))
+    if len(sys.argv) >= 3 and len(sys.argv) <= 5 and sys.argv[1] == "--timing-scope" and sys.argv[2] in ("pp", "pc"):
+        capture = sys.argv[3] if len(sys.argv) >= 4 else None
+        device = int(sys.argv[4]) if len(sys.argv) == 5 else 1
+        print(json.dumps(timing_scope_summary(sys.argv[2], capture, device), ensure_ascii=False, indent=2))
         return
     shapes = [shape_result(width) for width in (20480, 18432, 22528)]
     correctness = []
