@@ -47,6 +47,8 @@
 
 `官方结果摘要.tsv` 只引用当前正式记录能定位的 `线上结果/<ROUTE>/<REVISION>/result.json`。五条 W4 路线均没有该正式结果，因此 Planning 给出的分数只作为 `PLANNING_CLAIM_UNVERIFIED` 保存，不能写入 Official Score 或 Submission ID。具体冲突和 source-meta 解释见 `冲突与证据界限.md`。
 
+本轮用户报告的同一组 W4 分数另以 `user_reported_official_score` 和 `USER_REPORTED_OFFICIAL_RESULT` 保存；这不改变上述 formal 字段或 `PLANNING_CLAIM_UNVERIFIED`。用户报告没有提供可核验的 W4 Submission ID，故对应字段保持 `NOT_RECORDED`，也不声称存在服务器 Judge JSON 验证。Champion 行的 Submission ID 仍只来自正式结果文件。
+
 Overall Champion 仍为正式记录中的 `R31B V011 / 45.16 / 15/15`，Submission ID 为 `6ab2c10c0304f72a56a0c5cb`，证据为 `线上结果/R31B/V011/result.json`。本归档不改变任何 Champion、历史 Revision 证据或 Main-1 worktree。
 
 W4 的机制总结、失败原因和证据路径见 `W4技术总结.md`。
