@@ -1,0 +1,1259 @@
+#!/usr/bin/env python3
+"""Route-owned orchestration for W5 experiments.
+
+This program deliberately has no compiler, runner, scorer, revision creator, or
+online submitter.  Build/correctness/local/record commands are delegated to an
+explicit executable supplied by the caller or by W5CTL_*_BACKEND.
+"""
+
+from __future__ import annotations
+
+import argparse
+import csv
+import hashlib
+import json
+import math
+import os
+import re
+import shlex
+import shutil
+import statistics
+import subprocess
+import sys
+import tempfile
+import time
+from collections import Counter
+from pathlib import Path
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
+
+
+ROUTE = "W5-R02-REGISTER-SPILL-ELIMINATION-X"
+EXPECTED_BRANCH = "research/w5-r02-register-spill"
+SCRIPT_PATH = Path(__file__).resolve()
+ROUTE_ROOT = SCRIPT_PATH.parent
+REPO_ROOT = ROUTE_ROOT.parents[1]
+
+EXIT_USAGE = 64
+EXIT_IDENTITY = 65
+EXIT_STATS_REJECTED = 66
+EXIT_NOT_RUN = 78
+
+STAGES = ("build", "correctness", "local", "record")
+GOOD_QUALITY = {"CLEAN", "OK", "PASS", "STABLE"}
+BAD_QUALITY = {
+    "CONTAMINATED",
+    "LOAD_CONTAMINATED",
+    "POLLUTED",
+    "NOISE_CONTAMINATED",
+    "REJECTED_CONTAMINATION",
+}
+GENERIC_TOKENS = {
+    "add",
+    "alignas",
+    "auto",
+    "bool",
+    "const",
+    "else",
+    "false",
+    "float",
+    "for",
+    "if",
+    "int",
+    "long",
+    "return",
+    "static",
+    "true",
+    "uint8_t",
+    "void",
+    "while",
+}
+
+
+class UsageError(Exception):
+    pass
+
+
+class Outcome:
+    def __init__(
+        self,
+        status: str,
+        rc: int = 0,
+        source_sha: Optional[str] = None,
+        artifact_sha: Optional[str] = None,
+        raw_sha: Optional[str] = None,
+        reason: Optional[str] = None,
+    ) -> None:
+        self.status = status
+        self.rc = rc
+        self.source_sha = source_sha
+        self.artifact_sha = artifact_sha
+        self.raw_sha = raw_sha
+        self.reason = reason
+
+
+def now_utc() -> str:
+    return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+
+
+def emit(key: str, value: Any) -> None:
+    print(f"{key}={value}")
+
+
+def fmt_number(value: Optional[float]) -> str:
+    if value is None or not math.isfinite(value):
+        return "NONE"
+    return f"{value:.6f}"
+
+
+def normalize_rc(returncode: int) -> int:
+    return 128 + (-returncode) if returncode < 0 else returncode
+
+
+def resolve_path(raw: Optional[str]) -> Optional[Path]:
+    if not raw:
+        return None
+    path = Path(raw).expanduser()
+    if not path.is_absolute():
+        path = Path.cwd() / path
+    return path.resolve()
+
+
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for block in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def verify_file(
+    raw_path: Optional[str],
+    label: str,
+    expected_sha: Optional[str] = None,
+    required: bool = True,
+) -> Tuple[Optional[Path], Optional[str], Optional[str]]:
+    path = resolve_path(raw_path)
+    if path is None:
+        return None, None, f"{label.upper()}_NOT_SET" if required else None
+    if not path.is_file():
+        return path, None, f"{label.upper()}_MISSING:{path}"
+    try:
+        digest = sha256_file(path)
+    except OSError as exc:
+        return path, None, f"{label.upper()}_READ_FAILED:{exc}"
+    if expected_sha and digest.lower() != expected_sha.lower():
+        return path, digest, f"{label.upper()}_SHA_MISMATCH:expected={expected_sha}:actual={digest}"
+    return path, digest, None
+
+
+def resolve_backend(raw: Optional[str]) -> Tuple[Optional[Path], Optional[str]]:
+    if not raw:
+        return None, "BACKEND_NOT_CONFIGURED"
+    if "/" in raw or raw.startswith("."):
+        path = resolve_path(raw)
+    else:
+        found = shutil.which(raw)
+        path = Path(found).resolve() if found else None
+    if path is None:
+        return None, f"BACKEND_NOT_FOUND:{raw}"
+    if not path.is_file():
+        return path, f"BACKEND_NOT_FILE:{path}"
+    if not os.access(path, os.X_OK):
+        return path, f"BACKEND_NOT_EXECUTABLE:{path}"
+    return path, None
+
+
+def write_log(path: Optional[str], stdout: bytes, stderr: bytes) -> Optional[str]:
+    if not path:
+        return None
+    target = resolve_path(path)
+    if target is None:
+        return None
+    if target.exists():
+        emit("LOG_STATUS", "EXISTING_UNCHANGED")
+        emit("LOG_BLOCKER", f"LOG_NOT_OVERWRITTEN:{target}")
+        return None
+    target.parent.mkdir(parents=True, exist_ok=True)
+    payload = b"[stdout]\n" + stdout + b"\n[stderr]\n" + stderr
+    target.write_bytes(payload)
+    return str(target)
+
+
+def backend_env(
+    stage: str,
+    source: Optional[Path],
+    artifact: Optional[Path],
+    source_sha: Optional[str],
+    artifact_sha: Optional[str],
+    raw: Optional[Path],
+) -> Dict[str, str]:
+    env = os.environ.copy()
+    env["W5CTL_ROUTE"] = ROUTE
+    env["W5CTL_STAGE"] = stage
+    if source:
+        env["W5CTL_SOURCE"] = str(source)
+    if artifact:
+        env["W5CTL_ARTIFACT"] = str(artifact)
+    if source_sha:
+        env["W5CTL_SOURCE_SHA256"] = source_sha
+    if artifact_sha:
+        env["W5CTL_ARTIFACT_SHA256"] = artifact_sha
+    if raw:
+        env["W5CTL_RAW_PATH"] = str(raw)
+    return env
+
+
+def print_backend_output(stdout: bytes, stderr: bytes) -> None:
+    if stdout:
+        sys.stdout.write(stdout.decode(errors="replace"))
+        if not stdout.endswith(b"\n"):
+            sys.stdout.write("\n")
+    if stderr:
+        sys.stdout.write(stderr.decode(errors="replace"))
+        if not stderr.endswith(b"\n"):
+            sys.stdout.write("\n")
+    sys.stdout.flush()
+
+
+def execute_backend(
+    stage: str,
+    backend_raw: Optional[str],
+    backend_args: Sequence[str],
+    workdir_raw: Optional[str],
+    log_path: Optional[str],
+    source: Optional[Path],
+    artifact: Optional[Path],
+    source_sha: Optional[str],
+    artifact_sha: Optional[str],
+    raw: Optional[Path],
+) -> Outcome:
+    backend, error = resolve_backend(backend_raw)
+    if error:
+        emit("STATUS", "NOT_RUN")
+        emit("BACKEND_STATUS", "NOT_CONFIGURED")
+        emit("BLOCKER", error)
+        return Outcome("NOT_RUN", EXIT_NOT_RUN, source_sha, artifact_sha, reason=error)
+    assert backend is not None
+    cwd = resolve_path(workdir_raw) if workdir_raw else None
+    if cwd is not None and not cwd.is_dir():
+        reason = f"BACKEND_WORKDIR_MISSING:{cwd}"
+        emit("STATUS", "NOT_RUN")
+        emit("BLOCKER", reason)
+        return Outcome("NOT_RUN", EXIT_NOT_RUN, source_sha, artifact_sha, reason=reason)
+    command = [str(backend), *backend_args]
+    emit("BACKEND_COMMAND", shlex.join(command))
+    try:
+        completed = subprocess.run(
+            command,
+            cwd=str(cwd) if cwd else None,
+            env=backend_env(stage, source, artifact, source_sha, artifact_sha, raw),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+    except OSError as exc:
+        reason = f"BACKEND_EXEC_FAILED:{exc}"
+        emit("STATUS", "NOT_RUN")
+        emit("BLOCKER", reason)
+        return Outcome("NOT_RUN", EXIT_NOT_RUN, source_sha, artifact_sha, reason=reason)
+    print_backend_output(completed.stdout, completed.stderr)
+    actual_rc = normalize_rc(completed.returncode)
+    log_written = write_log(log_path, completed.stdout, completed.stderr)
+    emit("BACKEND_RC", actual_rc)
+    if log_written:
+        emit("OUTPUT_LOG", log_written)
+    if actual_rc != 0:
+        emit("STATUS", "FAILED")
+        emit("BLOCKER", f"BACKEND_RC={actual_rc}")
+        return Outcome("FAILED", actual_rc, source_sha, artifact_sha, reason=f"BACKEND_RC={actual_rc}")
+    return Outcome("PASS", 0, source_sha, artifact_sha)
+
+
+def identity_stage(
+    stage: str,
+    backend_raw: Optional[str],
+    backend_args: Sequence[str],
+    workdir_raw: Optional[str],
+    log_path: Optional[str],
+    source_raw: Optional[str],
+    artifact_raw: Optional[str],
+    expected_source_sha: Optional[str],
+    expected_artifact_sha: Optional[str],
+    raw_raw: Optional[str],
+    min_pairs: int = 3,
+    max_cv: float = 0.20,
+) -> Outcome:
+    source, source_sha, source_error = verify_file(
+        source_raw, "source", expected_source_sha, required=True
+    )
+    if source_error:
+        if stage == "local":
+            print_stats(blocked_stats("NOT_RUN", source_error))
+        emit("STATUS", "BLOCKED")
+        emit("IDENTITY_STATUS", "FAIL")
+        emit("BLOCKER", source_error)
+        return Outcome("BLOCKED", EXIT_IDENTITY, source_sha, reason=source_error)
+    artifact, artifact_sha_before, artifact_error = verify_file(
+        artifact_raw,
+        "artifact",
+        expected_artifact_sha if stage != "build" else None,
+        required=True,
+    )
+    if artifact_error and (stage != "build" or "_MISSING:" not in artifact_error):
+        if stage == "local":
+            print_stats(blocked_stats("NOT_RUN", artifact_error))
+        emit("STATUS", "BLOCKED")
+        emit("IDENTITY_STATUS", "FAIL")
+        emit("BLOCKER", artifact_error)
+        return Outcome("BLOCKED", EXIT_IDENTITY, source_sha, artifact_sha_before, reason=artifact_error)
+    if artifact is None:
+        if stage == "local":
+            print_stats(blocked_stats("NOT_RUN", "ARTIFACT_NOT_SET"))
+        emit("STATUS", "BLOCKED")
+        emit("IDENTITY_STATUS", "FAIL")
+        emit("BLOCKER", "ARTIFACT_NOT_SET")
+        return Outcome("BLOCKED", EXIT_IDENTITY, source_sha, reason="ARTIFACT_NOT_SET")
+    if source is not None:
+        emit("SOURCE_SHA256", source_sha)
+    if artifact_sha_before:
+        emit("ARTIFACT_SHA256_BEFORE", artifact_sha_before)
+    raw = resolve_path(raw_raw)
+    if stage == "local" and raw is None:
+        print_stats(blocked_stats("NOT_RUN", "RAW_SAMPLE_PATH_NOT_SET"))
+        emit("STATUS", "BLOCKED")
+        emit("BLOCKER", "RAW_SAMPLE_PATH_NOT_SET")
+        return Outcome("BLOCKED", EXIT_NOT_RUN, source_sha, artifact_sha_before, reason="RAW_SAMPLE_PATH_NOT_SET")
+    delegated = execute_backend(
+        stage,
+        backend_raw,
+        backend_args,
+        workdir_raw,
+        log_path,
+        source,
+        artifact,
+        source_sha,
+        artifact_sha_before,
+        raw,
+    )
+    if delegated.status != "PASS":
+        if stage == "local":
+            delegated_status = "BACKEND_FAILED" if delegated.status == "FAILED" else "NOT_RUN"
+            print_stats(blocked_stats(delegated_status, delegated.reason or delegated.status))
+        return delegated
+    source_after, source_sha_after, source_after_error = verify_file(
+        str(source), "source", expected_source_sha, required=True
+    )
+    artifact_after, artifact_sha_after, artifact_after_error = verify_file(
+        str(artifact), "artifact", expected_artifact_sha, required=True
+    )
+    if source_after_error or artifact_after_error or source_sha_after != source_sha or artifact_after is None:
+        reason = source_after_error or artifact_after_error or "ARTIFACT_MISSING_AFTER_BACKEND"
+        if stage == "local":
+            print_stats(blocked_stats("IDENTITY_FAILED", reason))
+        emit("STATUS", "BLOCKED")
+        emit("IDENTITY_STATUS", "FAIL")
+        emit("BLOCKER", reason)
+        return Outcome("BLOCKED", EXIT_IDENTITY, source_sha_after, artifact_sha_after, reason=reason)
+    emit("SOURCE_SHA256_AFTER", source_sha_after)
+    emit("ARTIFACT_SHA256", artifact_sha_after)
+    if stage == "local":
+        stats = analyze_raw(raw, min_pairs, max_cv)
+        print_stats(stats)
+        if stats["status"] != "ACCEPTED":
+            return Outcome(
+                "REJECTED",
+                EXIT_STATS_REJECTED,
+                source_sha_after,
+                artifact_sha_after,
+                stats.get("raw_sha"),
+                stats["status"],
+            )
+    emit("IDENTITY_STATUS", "PASS")
+    emit("STATUS", "PASS")
+    return Outcome("PASS", 0, source_sha_after, artifact_sha_after)
+
+
+def field(row: Dict[str, Any], *names: str) -> Any:
+    lowered = {str(key).strip().lower(): value for key, value in row.items()}
+    for name in names:
+        if name.lower() in lowered:
+            return lowered[name.lower()]
+    return None
+
+
+def bool_value(value: Any) -> bool:
+    return str(value).strip().lower() in {"1", "true", "yes", "y", "contaminated", "polluted"}
+
+
+def normalize_variant(value: Any) -> Optional[str]:
+    if value is None:
+        return None
+    token = str(value).strip().lower()
+    if token in {"parent", "p", "baseline", "control"}:
+        return "parent"
+    if token in {"candidate", "cand", "c", "v001", "variant"}:
+        return "candidate"
+    return None
+
+
+def load_raw_rows(path: Path) -> List[Dict[str, Any]]:
+    if path.suffix.lower() == ".json":
+        payload = json.loads(path.read_text())
+        if isinstance(payload, dict):
+            payload = payload.get("samples", payload.get("rows"))
+        if not isinstance(payload, list):
+            raise ValueError("JSON raw input must be a list or contain samples/rows")
+        return [item for item in payload if isinstance(item, dict)]
+    with path.open(newline="") as stream:
+        sample = stream.read(4096)
+        stream.seek(0)
+        delimiter = "\t" if "\t" in sample.splitlines()[0] else ","
+        return list(csv.DictReader(stream, delimiter=delimiter))
+
+
+def parse_raw(path: Path) -> Tuple[List[Dict[str, Any]], bool, Optional[str]]:
+    try:
+        rows = load_raw_rows(path)
+    except (OSError, ValueError, IndexError, csv.Error) as exc:
+        return [], False, f"RAW_READ_OR_PARSE_FAILED:{exc}"
+    records: List[Dict[str, Any]] = []
+    contaminated = False
+    seen: set = set()
+    for number, row in enumerate(rows, 1):
+        pair = field(row, "pair", "sample", "id", "index")
+        variant = normalize_variant(field(row, "variant", "mode", "side"))
+        raw_latency = field(row, "latency_us", "device_us", "median_us", "time_us")
+        quality = field(row, "quality", "measurement_quality", "load_quality", "noise_status")
+        if pair is None or variant is None or raw_latency is None:
+            return records, contaminated, f"RAW_ROW_INVALID:{number}"
+        try:
+            latency = float(str(raw_latency).strip())
+        except ValueError:
+            return records, contaminated, f"RAW_LATENCY_INVALID:{number}"
+        if not math.isfinite(latency) or latency <= 0:
+            return records, contaminated, f"RAW_LATENCY_INVALID:{number}"
+        key = (str(pair).strip(), variant)
+        if key in seen:
+            return records, contaminated, f"RAW_DUPLICATE_PAIR_VARIANT:{pair}:{variant}"
+        seen.add(key)
+        quality_token = str(quality).strip().upper() if quality is not None else ""
+        row_contaminated = bool_value(field(row, "contaminated", "polluted", "reject"))
+        if quality_token in BAD_QUALITY or (quality_token and quality_token not in GOOD_QUALITY):
+            row_contaminated = True
+        contaminated = contaminated or row_contaminated
+        records.append(
+            {
+                "pair": str(pair).strip(),
+                "variant": variant,
+                "latency": latency,
+                "contaminated": row_contaminated,
+            }
+        )
+    return records, contaminated, None
+
+
+def coefficient_of_variation(values: Sequence[float]) -> float:
+    if len(values) < 2:
+        return 0.0
+    mean = statistics.fmean(values)
+    if mean == 0:
+        return math.inf
+    return statistics.pstdev(values) / abs(mean)
+
+
+def analyze_raw(path: Optional[Path], min_pairs: int, max_cv: float) -> Dict[str, Any]:
+    result: Dict[str, Any] = {
+        "status": "RAW_PARSE_ERROR",
+        "parent_median": None,
+        "candidate_median": None,
+        "ratio_delta": None,
+        "paired_delta": None,
+        "raw_count": 0,
+        "pair_count": 0,
+        "noise_status": "UNKNOWN",
+        "raw_sha": None,
+        "reason": "RAW_SAMPLE_PATH_NOT_SET",
+    }
+    if path is None or not path.is_file():
+        result["status"] = "NOT_RUN"
+        result["reason"] = "RAW_SAMPLES_MISSING"
+        return result
+    try:
+        result["raw_sha"] = sha256_file(path)
+    except OSError as exc:
+        result["reason"] = f"RAW_READ_FAILED:{exc}"
+        return result
+    records, contaminated, error = parse_raw(path)
+    result["raw_count"] = len(records)
+    if error:
+        result["reason"] = error
+        return result
+    if contaminated:
+        result["status"] = "REJECTED_CONTAMINATION"
+        result["noise_status"] = "CONTAMINATED"
+        result["reason"] = "STRUCTURED_CONTAMINATION_FLAG"
+        return result
+    values = {"parent": [], "candidate": []}
+    pairs: Dict[str, Dict[str, float]] = {}
+    for record in records:
+        values[record["variant"]].append(record["latency"])
+        pairs.setdefault(record["pair"], {})[record["variant"]] = record["latency"]
+    if values["parent"]:
+        result["parent_median"] = statistics.median(values["parent"])
+    if values["candidate"]:
+        result["candidate_median"] = statistics.median(values["candidate"])
+    complete = [
+        (pair["parent"], pair["candidate"])
+        for pair in pairs.values()
+        if "parent" in pair and "candidate" in pair
+    ]
+    result["pair_count"] = len(complete)
+    if result["parent_median"] is not None and result["candidate_median"] is not None:
+        result["ratio_delta"] = result["candidate_median"] / result["parent_median"] - 1.0
+    if complete:
+        result["paired_delta"] = statistics.median([candidate - parent for parent, candidate in complete])
+    if len(complete) < min_pairs or not values["parent"] or not values["candidate"]:
+        result["status"] = "INSUFFICIENT_DATA"
+        result["noise_status"] = "INSUFFICIENT_DATA"
+        result["reason"] = f"COMPLETE_PAIRS={len(complete)}<MIN_PAIRS={min_pairs}"
+        return result
+    cvs = [coefficient_of_variation(values["parent"]), coefficient_of_variation(values["candidate"])]
+    if max(cvs) > max_cv:
+        result["status"] = "NOISY"
+        result["noise_status"] = "NOISY"
+        result["reason"] = f"MAX_CV={max(cvs):.6f}>MAX_CV={max_cv:.6f}"
+        return result
+    result["status"] = "ACCEPTED"
+    result["noise_status"] = "STABLE"
+    result["reason"] = "MEASURED_PAIRS_ACCEPTED"
+    return result
+
+
+def print_stats(stats: Dict[str, Any]) -> None:
+    emit("MEDIAN_PARENT_US", fmt_number(stats.get("parent_median")))
+    emit("MEDIAN_CANDIDATE_US", fmt_number(stats.get("candidate_median")))
+    emit("MEDIAN_RATIO_DELTA", fmt_number(stats.get("ratio_delta")))
+    emit("PAIRED_MEDIAN_DELTA", fmt_number(stats.get("paired_delta")))
+    emit("RAW_SAMPLE_COUNT", stats.get("raw_count", 0))
+    emit("RAW_PAIR_COUNT", stats.get("pair_count", 0))
+    emit("MEASUREMENT_QUALITY", stats.get("status", "RAW_PARSE_ERROR"))
+    emit("NOISE_STATUS", stats.get("noise_status", "UNKNOWN"))
+    emit("LOCAL_STATISTICS_REASON", stats.get("reason", "UNKNOWN"))
+    if stats.get("raw_sha"):
+        emit("RAW_SHA256", stats["raw_sha"])
+
+
+def blocked_stats(status: str, reason: str) -> Dict[str, Any]:
+    return {
+        "status": status,
+        "parent_median": None,
+        "candidate_median": None,
+        "ratio_delta": None,
+        "paired_delta": None,
+        "raw_count": 0,
+        "pair_count": 0,
+        "noise_status": "UNKNOWN",
+        "raw_sha": None,
+        "reason": reason,
+    }
+
+
+def clean_patch_lines(path: Path) -> List[str]:
+    lines: List[str] = []
+    raw_lines = path.read_text(errors="replace").splitlines()
+    unified = any(
+        line.startswith(("diff ", "@@ ", "@@@", "--- ", "+++ ")) for line in raw_lines
+    )
+    for raw in raw_lines:
+        if raw.startswith(("diff ", "index ", "+++ ", "--- ", "@@ ", "@@@", "\\")):
+            continue
+        if unified and not raw.startswith(("+", "-")):
+            continue
+        if raw.startswith(("+", "-")):
+            raw = raw[1:]
+        normalized = " ".join(raw.strip().split())
+        if normalized:
+            lines.append(normalized)
+    return lines
+
+
+def mechanism_tokens(lines: Iterable[str]) -> Counter:
+    tokens = Counter()
+    for line in lines:
+        for token in re.findall(r"[A-Za-z_][A-Za-z0-9_]*", line.lower()):
+            if token not in GENERIC_TOKENS and len(token) > 1:
+                tokens[token] += 1
+    return tokens
+
+
+def dedup_command(args: argparse.Namespace) -> int:
+    parent = resolve_path(args.parent_patch)
+    candidate = resolve_path(args.candidate_patch)
+    if parent is None or candidate is None or not parent.is_file() or not candidate.is_file():
+        emit("PATCH_SIMILARITY", "NONE")
+        emit("MECHANISM_OVERLAP", "NONE")
+        emit("DEDUP_STATUS", "SIMILARITY_INSUFFICIENT_DATA")
+        emit("BLOCKER", "PATCH_INPUT_MISSING")
+        return EXIT_NOT_RUN
+    try:
+        parent_lines = clean_patch_lines(parent)
+        candidate_lines = clean_patch_lines(candidate)
+        common: Counter = Counter()
+        common_inputs = list(args.common or [])
+        common_inputs.extend(args.champion_scaffold or [])
+        common_inputs.extend(args.abi_scaffold or [])
+        for raw_common in common_inputs:
+            common_path = resolve_path(raw_common)
+            if common_path is None or not common_path.is_file():
+                emit("PATCH_SIMILARITY", "NONE")
+                emit("MECHANISM_OVERLAP", "NONE")
+                emit("DEDUP_STATUS", "SIMILARITY_INSUFFICIENT_DATA")
+                emit("BLOCKER", f"COMMON_INPUT_MISSING:{raw_common}")
+                return EXIT_NOT_RUN
+            common.update(clean_patch_lines(common_path))
+        parent_counter = Counter(parent_lines)
+        candidate_counter = Counter(candidate_lines)
+        if common:
+            parent_counter -= common
+            candidate_counter -= common
+        parent_lines = list(parent_counter.elements())
+        candidate_lines = list(candidate_counter.elements())
+    except OSError as exc:
+        emit("PATCH_SIMILARITY", "NONE")
+        emit("MECHANISM_OVERLAP", "NONE")
+        emit("DEDUP_STATUS", "SIMILARITY_INSUFFICIENT_DATA")
+        emit("BLOCKER", f"PATCH_READ_FAILED:{exc}")
+        return EXIT_NOT_RUN
+    emit("COMMON_EXCLUDED_LINE_COUNT", sum(common.values()))
+    if len(parent_lines) < args.min_lines or len(candidate_lines) < args.min_lines:
+        emit("PATCH_SIMILARITY", "NONE")
+        emit("MECHANISM_OVERLAP", "NONE")
+        emit("DEDUP_STATUS", "SIMILARITY_INSUFFICIENT_DATA")
+        emit("BLOCKER", "MEANINGFUL_PATCH_LINES_BELOW_MINIMUM")
+        return EXIT_NOT_RUN
+    overlap_lines = sum((Counter(parent_lines) & Counter(candidate_lines)).values())
+    patch_similarity = (2.0 * overlap_lines) / (len(parent_lines) + len(candidate_lines))
+    parent_tokens = mechanism_tokens(parent_lines)
+    candidate_tokens = mechanism_tokens(candidate_lines)
+    token_union = set(parent_tokens) | set(candidate_tokens)
+    if not token_union:
+        emit("PATCH_SIMILARITY", fmt_number(patch_similarity))
+        emit("MECHANISM_OVERLAP", "NONE")
+        emit("DEDUP_STATUS", "SIMILARITY_INSUFFICIENT_DATA")
+        emit("BLOCKER", "MECHANISM_TOKENS_EMPTY")
+        return EXIT_NOT_RUN
+    token_overlap = len(set(parent_tokens) & set(candidate_tokens)) / len(token_union)
+    status = (
+        "DUPLICATE"
+        if patch_similarity >= args.duplicate_threshold
+        and token_overlap >= args.mechanism_threshold
+        else "DISTINCT"
+    )
+    emit("PATCH_SIMILARITY", fmt_number(patch_similarity))
+    emit("MECHANISM_OVERLAP", fmt_number(token_overlap))
+    emit("DEDUP_STATUS", status)
+    emit("DEDUP_METHOD", "normalized-change-lines-with-explicit-common-exclusion")
+    return 0
+
+
+def record_command(args: argparse.Namespace) -> int:
+    record_source = None
+    record_artifact = None
+    if getattr(args, "source", None) or getattr(args, "artifact", None):
+        record_source, source_sha, source_error = verify_file(
+            getattr(args, "source", None),
+            "source",
+            getattr(args, "expected_source_sha", None),
+            required=True,
+        )
+        record_artifact, artifact_sha, artifact_error = verify_file(
+            getattr(args, "artifact", None),
+            "artifact",
+            getattr(args, "expected_artifact_sha", None),
+            required=True,
+        )
+        if source_error or artifact_error:
+            emit("STATUS", "BLOCKED")
+            emit("IDENTITY_STATUS", "FAIL")
+            emit("BLOCKER", source_error or artifact_error)
+            return EXIT_IDENTITY
+        emit("SOURCE_SHA256", source_sha)
+        emit("ARTIFACT_SHA256", artifact_sha)
+    evidence = args.evidence or []
+    if not evidence:
+        emit("STATUS", "NOT_RUN")
+        emit("BLOCKER", "EVIDENCE_PATH_NOT_SET")
+        return EXIT_NOT_RUN
+    evidence_paths: List[Path] = []
+    for raw in evidence:
+        path, digest, error = verify_file(raw, "evidence", required=True)
+        if error:
+            emit("STATUS", "BLOCKED")
+            emit("BLOCKER", error)
+            return EXIT_IDENTITY
+        assert path is not None and digest is not None
+        evidence_paths.append(path)
+        emit("EVIDENCE_PATH", path)
+        emit("EVIDENCE_SHA256", digest)
+    backend, error = resolve_backend(args.backend)
+    if error:
+        emit("STATUS", "NOT_RUN")
+        emit("BLOCKER", error)
+        return EXIT_NOT_RUN
+    assert backend is not None
+    command = [str(backend), *(args.backend_arg or [])]
+    emit("BACKEND_COMMAND", shlex.join(command))
+    workdir = getattr(args, "backend_workdir", getattr(args, "workdir", None))
+    env = os.environ.copy()
+    env.update({"W5CTL_ROUTE": ROUTE, "W5CTL_STAGE": "record"})
+    env["W5CTL_EVIDENCE_PATHS"] = os.pathsep.join(str(path) for path in evidence_paths)
+    if record_source:
+        env["W5CTL_SOURCE"] = str(record_source)
+    if record_artifact:
+        env["W5CTL_ARTIFACT"] = str(record_artifact)
+    try:
+        completed = subprocess.run(
+            command,
+            cwd=str(resolve_path(workdir)) if workdir else None,
+            env=env,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+    except OSError as exc:
+        emit("STATUS", "NOT_RUN")
+        emit("BLOCKER", f"BACKEND_EXEC_FAILED:{exc}")
+        return EXIT_NOT_RUN
+    print_backend_output(completed.stdout, completed.stderr)
+    actual_rc = normalize_rc(completed.returncode)
+    log_written = write_log(args.log, completed.stdout, completed.stderr)
+    emit("BACKEND_RC", actual_rc)
+    if log_written:
+        emit("OUTPUT_LOG", log_written)
+    if actual_rc != 0:
+        emit("STATUS", "FAILED")
+        return actual_rc
+    emit("STATUS", "PASS")
+    return 0
+
+
+def git_output(repo_root: Path, *arguments: str) -> Tuple[int, str]:
+    try:
+        completed = subprocess.run(
+            ["git", *arguments],
+            cwd=str(repo_root),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+            text=True,
+        )
+    except OSError as exc:
+        return EXIT_NOT_RUN, str(exc)
+    return normalize_rc(completed.returncode), completed.stdout.strip()
+
+
+def doctor_command(args: argparse.Namespace) -> int:
+    repo_root = resolve_path(args.repo_root) if args.repo_root else REPO_ROOT
+    assert repo_root is not None
+    rc, actual_root = git_output(repo_root, "rev-parse", "--show-toplevel")
+    if rc != 0:
+        emit("DOCTOR_STATUS", "BLOCKED")
+        emit("BLOCKER", f"GIT_ROOT_FAILED:{actual_root}")
+        return EXIT_NOT_RUN
+    emit("REPO_ROOT", actual_root)
+    root_ok = Path(actual_root).resolve() == repo_root.resolve()
+    emit("REPO_ROOT_CHECK", "PASS" if root_ok else "FAIL")
+    rc, branch = git_output(repo_root, "branch", "--show-current")
+    branch_ok = rc == 0 and branch == (args.expected_branch or EXPECTED_BRANCH)
+    emit("BRANCH", branch)
+    emit("BRANCH_CHECK", "PASS" if branch_ok else "FAIL")
+    rc, status = git_output(repo_root, "-c", "core.quotePath=false", "status", "--short")
+    changed = [line[3:] for line in status.splitlines() if len(line) >= 3]
+    route_prefix = str(ROUTE_ROOT.relative_to(repo_root)) + "/"
+    out_of_scope = [path for path in changed if not path.startswith(route_prefix)]
+    emit("WORKTREE_CHANGED_COUNT", len(changed))
+    emit("WORKTREE_SCOPE", "PASS" if not out_of_scope else "FAIL")
+    if out_of_scope:
+        emit("OUT_OF_SCOPE_CHANGES", ";".join(out_of_scope))
+    champion = resolve_path(args.source) if args.source else repo_root / "线上结果/R31B/V011/submission.asc"
+    champion_path, champion_sha, champion_error = verify_file(str(champion), "champion", required=True)
+    champion_ok = champion_error is None
+    if champion_error:
+        emit("CHAMPION_CHECK", "FAIL")
+        emit("CHAMPION_BLOCKER", champion_error)
+    else:
+        emit("CHAMPION_CHECK", "PASS")
+        emit("CHAMPION_SHA256", champion_sha)
+    backend_fields = {
+        "BUILD_BACKEND": os.environ.get("W5CTL_BUILD_BACKEND"),
+        "CORRECTNESS_BACKEND": os.environ.get("W5CTL_CORRECTNESS_BACKEND"),
+        "LOCAL_BACKEND": os.environ.get("W5CTL_LOCAL_BACKEND"),
+        "RECORD_BACKEND": os.environ.get("W5CTL_RECORD_BACKEND"),
+    }
+    missing: List[str] = []
+    for label, value in backend_fields.items():
+        _, backend_error = resolve_backend(value)
+        state = "READY" if value and not backend_error else "NOT_CONFIGURED"
+        emit(label, state)
+        if state != "READY":
+            missing.append(label)
+    emit("NO_SECOND_RUNNER", "YES")
+    emit("NO_SECOND_SCORER", "YES")
+    emit("REVISION_AUTOCREATE", "DISABLED")
+    emit("ONLINE", "NOT_SUBMITTED")
+    blocked = not (root_ok and branch_ok and rc == 0 and not out_of_scope and champion_ok)
+    emit("EXECUTION_READINESS", "BLOCKED" if missing or blocked else "READY")
+    emit("DOCTOR_STATUS", "PASS" if not blocked else "BLOCKED")
+    if missing:
+        emit("BACKEND_BLOCKER", "MISSING=" + ",".join(missing))
+    return 0 if not blocked else EXIT_NOT_RUN
+
+
+def checkpoint_path(args: argparse.Namespace) -> Optional[Path]:
+    path = resolve_path(args.checkpoint)
+    if path is None:
+        emit("CYCLE_STATUS", "BLOCKED")
+        emit("BLOCKER", "CHECKPOINT_NOT_SET")
+    return path
+
+
+def parse_stage_order(raw: Optional[str]) -> List[str]:
+    if not raw:
+        return ["build", "correctness", "local"]
+    stages = [part.strip() for part in raw.split(",") if part.strip()]
+    if not stages or any(stage not in STAGES for stage in stages) or len(set(stages)) != len(stages):
+        raise UsageError(f"invalid stage order: {raw}")
+    indices = [STAGES.index(stage) for stage in stages]
+    if indices != sorted(indices):
+        raise UsageError("stage order must be build,correctness,local,record")
+    return stages
+
+
+def load_checkpoint(path: Path) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
+    if not path.exists():
+        return None, None
+    try:
+        payload = json.loads(path.read_text())
+    except (OSError, json.JSONDecodeError) as exc:
+        return None, f"CHECKPOINT_READ_FAILED:{exc}"
+    if not isinstance(payload, dict) or payload.get("schema") != 1 or payload.get("route") != ROUTE:
+        return None, "CHECKPOINT_SCHEMA_OR_ROUTE_MISMATCH"
+    return payload, None
+
+
+def save_checkpoint(path: Path, payload: Dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, temporary = tempfile.mkstemp(prefix=path.name + ".", dir=str(path.parent))
+    try:
+        with os.fdopen(fd, "w") as stream:
+            json.dump(payload, stream, indent=2, sort_keys=True)
+            stream.write("\n")
+        os.replace(temporary, path)
+    finally:
+        if os.path.exists(temporary):
+            os.unlink(temporary)
+
+
+def checkpoint_identity(
+    args: argparse.Namespace,
+    payload: Dict[str, Any],
+) -> Tuple[Optional[Path], Optional[str], Optional[Path], Optional[str], Optional[str]]:
+    source_raw = args.source or payload.get("identity", {}).get("source_path")
+    artifact_raw = args.artifact or payload.get("identity", {}).get("artifact_path")
+    source, source_sha, source_error = verify_file(
+        source_raw,
+        "source",
+        args.expected_source_sha or payload.get("identity", {}).get("source_sha256"),
+        required=True,
+    )
+    if source_error:
+        return source, source_sha, None, None, source_error
+    artifact, artifact_sha, artifact_error = verify_file(
+        artifact_raw, "artifact", args.expected_artifact_sha, required=True
+    )
+    if artifact_error and "_MISSING:" not in artifact_error:
+        return source, source_sha, artifact, artifact_sha, artifact_error
+    stored = payload.get("identity", {})
+    if stored.get("source_path") and str(source) != stored["source_path"]:
+        return source, source_sha, artifact, artifact_sha, "CHECKPOINT_SOURCE_PATH_CHANGED"
+    if stored.get("source_sha256") and source_sha != stored["source_sha256"]:
+        return source, source_sha, artifact, artifact_sha, "CHECKPOINT_SOURCE_SHA_CHANGED"
+    stored_artifact = stored.get("artifact_path")
+    if stored_artifact and artifact and str(artifact) != stored_artifact:
+        return source, source_sha, artifact, artifact_sha, "CHECKPOINT_ARTIFACT_PATH_CHANGED"
+    if stored.get("artifact_sha256") and artifact_sha != stored["artifact_sha256"]:
+        return source, source_sha, artifact, artifact_sha, "CHECKPOINT_ARTIFACT_SHA_CHANGED"
+    return source, source_sha, artifact, artifact_sha, None
+
+
+def stage_options(args: argparse.Namespace, stage: str) -> Dict[str, Any]:
+    return {
+        "backend": getattr(args, f"{stage}_backend"),
+        "backend_arg": getattr(args, f"{stage}_arg") or [],
+        "log": getattr(args, f"{stage}_log"),
+    }
+
+
+def run_record_from_pipeline(args: argparse.Namespace) -> Outcome:
+    evidence = args.record_evidence or []
+    if not evidence:
+        emit("STATUS", "NOT_RUN")
+        emit("BLOCKER", "RECORD_EVIDENCE_NOT_SET")
+        return Outcome("NOT_RUN", EXIT_NOT_RUN, reason="RECORD_EVIDENCE_NOT_SET")
+    proxy = argparse.Namespace(
+        evidence=evidence,
+        backend=args.record_backend,
+        backend_arg=args.record_arg or [],
+        backend_workdir=args.record_workdir,
+        log=args.record_log,
+        source=None,
+        artifact=None,
+        expected_source_sha=None,
+        expected_artifact_sha=None,
+    )
+    record_rc = record_command(proxy)
+    return Outcome("PASS" if record_rc == 0 else "FAILED", record_rc)
+
+
+def pipeline_command(args: argparse.Namespace, resume: bool) -> int:
+    path = checkpoint_path(args)
+    if path is None:
+        return EXIT_NOT_RUN
+    existing, error = load_checkpoint(path)
+    if error:
+        emit("CYCLE_STATUS", "BLOCKED")
+        emit("BLOCKER", error)
+        return EXIT_NOT_RUN
+    if resume and existing is None:
+        emit("CYCLE_STATUS", "BLOCKED")
+        emit("BLOCKER", "CHECKPOINT_NOT_FOUND")
+        return EXIT_NOT_RUN
+    try:
+        requested_stages = parse_stage_order(args.stages) if args.stages else None
+    except UsageError as exc:
+        emit("CYCLE_STATUS", "BLOCKED")
+        emit("BLOCKER", str(exc))
+        return EXIT_USAGE
+    if existing:
+        stages = existing.get("stage_order", requested_stages or ["build", "correctness", "local"])
+        if requested_stages and stages != requested_stages:
+            emit("CYCLE_STATUS", "BLOCKED")
+            emit("BLOCKER", "CHECKPOINT_STAGE_ORDER_CHANGED")
+            return EXIT_NOT_RUN
+        payload = existing
+    else:
+        stages = requested_stages or ["build", "correctness", "local"]
+        payload = {
+            "schema": 1,
+            "route": ROUTE,
+            "created_utc": now_utc(),
+            "stage_order": stages,
+            "identity": {},
+            "stages": {},
+            "revision_created": False,
+            "online": "NOT_SUBMITTED",
+        }
+    source, source_sha, artifact, artifact_sha, identity_error = checkpoint_identity(args, payload)
+    if identity_error:
+        emit("CYCLE_STATUS", "BLOCKED")
+        emit("IDENTITY_STATUS", "FAIL")
+        emit("BLOCKER", identity_error)
+        return EXIT_IDENTITY
+    assert source is not None and source_sha is not None and artifact is not None
+    payload["identity"] = {
+        "source_path": str(source),
+        "source_sha256": source_sha,
+        "artifact_path": str(artifact),
+        "artifact_sha256": artifact_sha,
+    }
+    payload["updated_utc"] = now_utc()
+    save_checkpoint(path, payload)
+    start_stage = args.from_stage if resume else None
+    if start_stage and start_stage not in stages:
+        emit("CYCLE_STATUS", "BLOCKED")
+        emit("BLOCKER", f"FROM_STAGE_NOT_IN_CHECKPOINT:{start_stage}")
+        return EXIT_USAGE
+    if start_stage:
+        for prior in stages[: stages.index(start_stage)]:
+            if payload.get("stages", {}).get(prior, {}).get("status") != "PASS":
+                emit("CYCLE_STATUS", "BLOCKED")
+                emit("BLOCKER", f"PRIOR_STAGE_NOT_PASS:{prior}")
+                return EXIT_NOT_RUN
+    did_work = False
+    for stage in stages:
+        record = payload.setdefault("stages", {}).get(stage, {})
+        if record.get("status") == "PASS":
+            if stage == "local":
+                raw_path, raw_sha, raw_error = verify_file(
+                    args.raw or record.get("raw_path"),
+                    "raw",
+                    record.get("raw_sha256"),
+                    required=True,
+                )
+                if raw_error:
+                    emit("CYCLE_STATUS", "BLOCKED")
+                    emit("IDENTITY_STATUS", "FAIL")
+                    emit("BLOCKER", raw_error)
+                    return EXIT_IDENTITY
+            emit("STAGE", stage)
+            emit("STAGE_STATUS", "SKIPPED_CHECKPOINT_PASS")
+            continue
+        if existing and not resume:
+            emit("CYCLE_STATUS", "BLOCKED")
+            emit("BLOCKER", f"CHECKPOINT_REQUIRES_RESUME:{stage}")
+            return EXIT_NOT_RUN
+        did_work = True
+        opts = stage_options(args, stage)
+        if stage == "record":
+            outcome = run_record_from_pipeline(args)
+        else:
+            outcome = identity_stage(
+                stage,
+                opts["backend"],
+                opts["backend_arg"],
+                args.backend_workdir,
+                opts["log"],
+                str(source),
+                str(artifact),
+                args.expected_source_sha,
+                args.expected_artifact_sha,
+                args.raw,
+                args.min_pairs,
+                args.max_cv,
+            )
+        payload["stages"][stage] = {
+            "status": outcome.status,
+            "return_code": outcome.rc,
+            "reason": outcome.reason,
+            "source_sha256": outcome.source_sha,
+            "artifact_sha256": outcome.artifact_sha,
+            "raw_sha256": outcome.raw_sha,
+            "raw_path": str(resolve_path(args.raw)) if stage == "local" and args.raw else None,
+            "finished_utc": now_utc(),
+        }
+        if outcome.artifact_sha:
+            payload["identity"]["artifact_sha256"] = outcome.artifact_sha
+        payload["updated_utc"] = now_utc()
+        save_checkpoint(path, payload)
+        emit("CHECKPOINT", path)
+        if outcome.rc != 0:
+            emit("CURRENT_STAGE", stage)
+            emit("NEXT_ACTION", "resume --from-stage " + stage)
+            return outcome.rc
+    all_pass = all(payload.get("stages", {}).get(stage, {}).get("status") == "PASS" for stage in stages)
+    payload["status"] = "PASS" if all_pass else "INCOMPLETE"
+    payload["updated_utc"] = now_utc()
+    save_checkpoint(path, payload)
+    emit("CHECKPOINT", path)
+    emit("CYCLE_STATUS", "PASS" if all_pass else "NOOP")
+    emit("CURRENT_STAGE", stages[-1] if stages else "NONE")
+    emit("NEXT_ACTION", "report --checkpoint " + str(path))
+    if not did_work:
+        emit("IDEMPOTENT_NOOP", "YES")
+    emit("REVISION_CREATED", "NO")
+    emit("ONLINE", "NOT_SUBMITTED")
+    return 0 if all_pass else EXIT_NOT_RUN
+
+
+def report_command(args: argparse.Namespace) -> int:
+    path = resolve_path(args.checkpoint)
+    if path is None:
+        emit("REPORT_STATUS", "NOT_RUN")
+        emit("BLOCKER", "CHECKPOINT_NOT_SET")
+        return EXIT_NOT_RUN
+    payload, error = load_checkpoint(path)
+    if error or payload is None:
+        emit("REPORT_STATUS", "NOT_RUN")
+        emit("BLOCKER", error or "CHECKPOINT_NOT_FOUND")
+        return EXIT_NOT_RUN
+    emit("ROUTE", payload.get("route"))
+    emit("CHECKPOINT", path)
+    emit("CHECKPOINT_STATUS", payload.get("status", "INCOMPLETE"))
+    identity = payload.get("identity", {})
+    emit("SOURCE_PATH", identity.get("source_path", "NONE"))
+    emit("SOURCE_SHA256", identity.get("source_sha256", "NONE"))
+    emit("ARTIFACT_PATH", identity.get("artifact_path", "NONE"))
+    emit("ARTIFACT_SHA256", identity.get("artifact_sha256", "NONE"))
+    stages = payload.get("stage_order", [])
+    for stage in stages:
+        emit(stage.upper() + "_STATUS", payload.get("stages", {}).get(stage, {}).get("status", "NOT_RUN"))
+    emit("REVISION_CREATED", "YES" if payload.get("revision_created") else "NO")
+    emit("ONLINE", payload.get("online", "NOT_SUBMITTED"))
+    emit("REPORT_STATUS", "PASS")
+    return 0
+
+
+def add_backend_options(parser: argparse.ArgumentParser, env_name: str) -> None:
+    parser.add_argument("--backend", default=os.environ.get(env_name))
+    parser.add_argument("--backend-arg", action="append", default=[])
+    parser.add_argument("--backend-workdir", default=os.environ.get("W5CTL_BACKEND_WORKDIR"))
+    parser.add_argument("--log")
+
+
+def add_identity_options(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--source", default=os.environ.get("W5CTL_SOURCE"))
+    parser.add_argument("--artifact", default=os.environ.get("W5CTL_ARTIFACT"))
+    parser.add_argument("--expected-source-sha", default=os.environ.get("W5CTL_SOURCE_SHA256"))
+    parser.add_argument("--expected-artifact-sha", default=os.environ.get("W5CTL_ARTIFACT_SHA256"))
+
+
+def add_pipeline_options(parser: argparse.ArgumentParser, resume: bool) -> None:
+    parser.add_argument("--checkpoint", required=True)
+    parser.add_argument("--source", default=os.environ.get("W5CTL_SOURCE"))
+    parser.add_argument("--artifact", default=os.environ.get("W5CTL_ARTIFACT"))
+    parser.add_argument("--expected-source-sha", default=os.environ.get("W5CTL_SOURCE_SHA256"))
+    parser.add_argument("--expected-artifact-sha", default=os.environ.get("W5CTL_ARTIFACT_SHA256"))
+    parser.add_argument("--raw", default=os.environ.get("W5CTL_RAW_PATH"))
+    parser.add_argument("--stages")
+    parser.add_argument("--backend-workdir", default=os.environ.get("W5CTL_BACKEND_WORKDIR"))
+    parser.add_argument("--min-pairs", type=int, default=3)
+    parser.add_argument("--max-cv", type=float, default=0.20)
+    for stage in ("build", "correctness", "local"):
+        env_name = f"W5CTL_{stage.upper()}_BACKEND"
+        parser.add_argument(f"--{stage}-backend", dest=f"{stage}_backend", default=os.environ.get(env_name))
+        parser.add_argument(f"--{stage}-arg", dest=f"{stage}_arg", action="append", default=[])
+        parser.add_argument(f"--{stage}-log", dest=f"{stage}_log")
+    parser.add_argument("--record-backend", default=os.environ.get("W5CTL_RECORD_BACKEND"))
+    parser.add_argument("--record-arg", action="append", default=[])
+    parser.add_argument("--record-workdir", default=os.environ.get("W5CTL_RECORD_WORKDIR"))
+    parser.add_argument("--record-log")
+    parser.add_argument("--record-evidence", action="append", default=[])
+    if resume:
+        parser.add_argument("--from-stage", choices=STAGES)
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(prog="w5ctl")
+    sub = parser.add_subparsers(dest="command", required=True)
+
+    doctor = sub.add_parser("doctor", help="read-only route and backend audit")
+    doctor.add_argument("--dry-run", action="store_true", help="explicitly select read-only mode")
+    doctor.add_argument("--repo-root")
+    doctor.add_argument("--expected-branch", default=os.environ.get("W5CTL_EXPECTED_BRANCH", EXPECTED_BRANCH))
+    doctor.add_argument("--source")
+
+    for name, env_name in (
+        ("build", "W5CTL_BUILD_BACKEND"),
+        ("correctness", "W5CTL_CORRECTNESS_BACKEND"),
+    ):
+        stage = sub.add_parser(name, help=f"delegate {name} to an existing backend")
+        add_identity_options(stage)
+        add_backend_options(stage, env_name)
+
+    local = sub.add_parser("local", help="delegate local measurement and validate fixed raw statistics")
+    add_identity_options(local)
+    add_backend_options(local, "W5CTL_LOCAL_BACKEND")
+    local.add_argument("--raw", default=os.environ.get("W5CTL_RAW_PATH"))
+    local.add_argument("--stats-only", action="store_true")
+    local.add_argument("--min-pairs", type=int, default=3)
+    local.add_argument("--max-cv", type=float, default=0.20)
+
+    record = sub.add_parser("record", help="delegate evidence recording; never commits by itself")
+    add_identity_options(record)
+    record.add_argument("--evidence", action="append", default=[])
+    record.add_argument("--backend", default=os.environ.get("W5CTL_RECORD_BACKEND"))
+    record.add_argument("--backend-arg", action="append", default=[])
+    record.add_argument("--backend-workdir", default=os.environ.get("W5CTL_RECORD_WORKDIR"))
+    record.add_argument("--log")
+
+    dedup = sub.add_parser("dedup", help="compare meaningful patch changes only")
+    dedup.add_argument("--parent-patch", required=True)
+    dedup.add_argument("--candidate-patch", required=True)
+    dedup.add_argument("--common", action="append", default=[])
+    dedup.add_argument("--champion-scaffold", action="append", default=[])
+    dedup.add_argument("--abi-scaffold", action="append", default=[])
+    dedup.add_argument("--min-lines", type=int, default=1)
+    dedup.add_argument("--duplicate-threshold", type=float, default=0.85)
+    dedup.add_argument("--mechanism-threshold", type=float, default=0.70)
+
+    cycle = sub.add_parser("cycle", help="idempotent build/correctness/local orchestration")
+    add_pipeline_options(cycle, resume=False)
+
+    resume = sub.add_parser("resume", help="resume an explicit checkpoint without rerunning passed stages")
+    add_pipeline_options(resume, resume=True)
+
+    report = sub.add_parser("report", help="read a checkpoint and emit a structured receipt")
+    report.add_argument("--checkpoint", required=True)
+    return parser
+
+
+def local_command(args: argparse.Namespace) -> int:
+    if args.stats_only:
+        stats = analyze_raw(resolve_path(args.raw), args.min_pairs, args.max_cv)
+        emit("STATS_ONLY", "YES")
+        print_stats(stats)
+        return 0 if stats["status"] == "ACCEPTED" else EXIT_STATS_REJECTED
+    return identity_stage(
+        "local",
+        args.backend,
+        args.backend_arg,
+        args.backend_workdir,
+        args.log,
+        args.source,
+        args.artifact,
+        args.expected_source_sha,
+        args.expected_artifact_sha,
+        args.raw,
+        args.min_pairs,
+        args.max_cv,
+    ).rc
+
+
+def dispatch(args: argparse.Namespace) -> int:
+    if args.command == "doctor":
+        return doctor_command(args)
+    if args.command == "build":
+        return identity_stage(
+            "build",
+            args.backend,
+            args.backend_arg,
+            args.backend_workdir,
+            args.log,
+            args.source,
+            args.artifact,
+            args.expected_source_sha,
+            args.expected_artifact_sha,
+            None,
+        ).rc
+    if args.command == "correctness":
+        return identity_stage(
+            "correctness",
+            args.backend,
+            args.backend_arg,
+            args.backend_workdir,
+            args.log,
+            args.source,
+            args.artifact,
+            args.expected_source_sha,
+            args.expected_artifact_sha,
+            None,
+        ).rc
+    if args.command == "local":
+        return local_command(args)
+    if args.command == "record":
+        return record_command(args)
+    if args.command == "dedup":
+        return dedup_command(args)
+    if args.command == "cycle":
+        return pipeline_command(args, resume=False)
+    if args.command == "resume":
+        return pipeline_command(args, resume=True)
+    if args.command == "report":
+        return report_command(args)
+    raise UsageError(f"unknown command: {args.command}")
+
+
+def main(argv: Optional[Sequence[str]] = None) -> int:
+    parser = build_parser()
+    try:
+        args = parser.parse_args(argv)
+        return dispatch(args)
+    except UsageError as exc:
+        print(f"ERROR={exc}", file=sys.stderr)
+        return EXIT_USAGE
+    except BrokenPipeError:
+        return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
