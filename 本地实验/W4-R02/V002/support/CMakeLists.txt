@@ -1,0 +1,30 @@
+cmake_minimum_required(VERSION 3.16)
+find_package(ASC REQUIRED)
+project(r02_tile_traversal LANGUAGES ASC CXX)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(ASCEND_HOME_PATH "$ENV{ASCEND_HOME_PATH}" CACHE PATH "CANN toolkit root")
+set(ACL_INCLUDE_DIR "${ASCEND_HOME_PATH}/aarch64-linux/include")
+set(ACL_LIB_DIR "${ASCEND_HOME_PATH}/aarch64-linux/lib64")
+set(R02_RUNTIME_DIRS "${ACL_LIB_DIR};${ASCEND_HOME_PATH}/lib64;/usr/local/Ascend/driver/lib64/driver;/usr/local/Ascend/driver/lib64/common;$ORIGIN")
+
+ascendc_library(r02_parent SHARED parent_kernel.asc)
+ascendc_library(r02_candidate SHARED candidate_kernel.asc)
+foreach(kernel_target IN ITEMS r02_parent r02_candidate)
+    target_include_directories(${kernel_target} PRIVATE "${CMAKE_CURRENT_LIST_DIR}" "${ACL_INCLUDE_DIR}")
+    target_compile_options(${kernel_target} PRIVATE $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=dav-2201>)
+    target_link_directories(${kernel_target} PRIVATE "${ACL_LIB_DIR}" "${ASCEND_HOME_PATH}/lib64")
+    target_link_options(${kernel_target} PRIVATE "-Wl,-Bsymbolic")
+    set_target_properties(${kernel_target} PROPERTIES BUILD_RPATH "${R02_RUNTIME_DIRS}")
+endforeach()
+ascendc_compile_definitions(r02_parent PRIVATE run_kernel=run_kernel_parent)
+ascendc_compile_definitions(r02_candidate PRIVATE run_kernel=run_kernel_candidate)
+
+add_executable(r02_runner runner_main.cpp)
+target_include_directories(r02_runner PRIVATE "${CMAKE_CURRENT_LIST_DIR}" "${ACL_INCLUDE_DIR}")
+add_dependencies(r02_runner r02_parent r02_candidate)
+target_link_libraries(r02_runner PRIVATE
+    "$<TARGET_FILE:r02_parent>" "$<TARGET_FILE:r02_candidate>"
+    "${ACL_LIB_DIR}/libascendcl.so" dl m)
+set_target_properties(r02_runner PROPERTIES BUILD_RPATH "${R02_RUNTIME_DIRS}")
