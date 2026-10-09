@@ -117,7 +117,7 @@ void PrintUsage(const char* program)
                 program);
     std::printf("Required dimensions are explicit local-proxy inputs; width must select the cached-row or wide path (D >= 4097).\n");
     std::printf("Options: --warmups N (default 5), --repeats N (default 21), --output FILE\n");
-    std::printf("Correctness compares Parent V001 with Candidate V012. Local performs that comparison first,\n");
+    std::printf("Correctness compares Parent W3-CROSSROW-FULL-PIPELINE-V012 with Candidate W5-R01-CROSSROW-EPI-PROLOGUE-X-V001. Local performs that comparison first,\n");
     std::printf("then alternates Parent/Candidate order and reports raw device-event and wall-time samples.\n");
 }
 
@@ -215,7 +215,7 @@ bool CompareOutputs(const Runtime& runtime, const Options& options,
         if (error > kAtol + kRtol * std::fabs(expected)) ++toleranceFailures;
     }
     const bool passed = toleranceFailures == 0;
-    std::printf("CORRECTNESS proxy_only=1 parent=V001 candidate=V012 input=deterministic_fp16_pattern_v1 epsilon=%.8g device=%d rows=%lld width=%lld dtype=fp16 blocks=%u bit_differences=%zu max_abs=%.9g tolerance_failures=%zu nonfinite=%zu result=%s\n",
+    std::printf("CORRECTNESS proxy_only=1 parent=W3-CROSSROW-FULL-PIPELINE-V012 candidate=W5-R01-CROSSROW-EPI-PROLOGUE-X-V001 input=deterministic_fp16_pattern_v1 epsilon=%.8g device=%d rows=%lld width=%lld dtype=fp16 blocks=%u bit_differences=%zu max_abs=%.9g tolerance_failures=%zu nonfinite=%zu result=%s\n",
                 kEpsilon,
                 options.device, static_cast<long long>(options.rows),
                 static_cast<long long>(options.width), options.blocks,
@@ -321,7 +321,7 @@ bool RunLocal(const Runtime& runtime, const Options& options,
         }
         output = &file;
     }
-    *output << "# LOCAL_PROXY_ONLY parent=V001 candidate=V012 input=deterministic_fp16_pattern_v1"
+    *output << "# LOCAL_PROXY_ONLY parent=W3-CROSSROW-FULL-PIPELINE-V012 candidate=W5-R01-CROSSROW-EPI-PROLOGUE-X-V001 input=deterministic_fp16_pattern_v1"
             << " epsilon=" << kEpsilon << " order=alternating_PC_CP device_load=EXTERNAL_NOT_CAPTURED device=" << options.device
             << " rows=" << options.rows << " width=" << options.width << " dtype=fp16"
             << " requested_blocks=" << options.blocks << " effective_blocks="
@@ -363,7 +363,7 @@ bool RunLocal(const Runtime& runtime, const Options& options,
     }
 
     const uint64_t effectiveBlocks = std::min<uint64_t>(options.blocks, static_cast<uint64_t>(options.rows));
-    std::printf("LOCAL_PROXY_ONLY parent=V001 candidate=V012 input=deterministic_fp16_pattern_v1 epsilon=%.8g order=alternating_PC_CP device_load=EXTERNAL_NOT_CAPTURED device=%d rows=%lld width=%lld dtype=fp16 requested_blocks=%u effective_blocks=%llu min_rows_per_block=%lld max_rows_per_block=%lld warmups=%d paired_samples=%d\n",
+    std::printf("LOCAL_PROXY_ONLY parent=W3-CROSSROW-FULL-PIPELINE-V012 candidate=W5-R01-CROSSROW-EPI-PROLOGUE-X-V001 input=deterministic_fp16_pattern_v1 epsilon=%.8g order=alternating_PC_CP device_load=EXTERNAL_NOT_CAPTURED device=%d rows=%lld width=%lld dtype=fp16 requested_blocks=%u effective_blocks=%llu min_rows_per_block=%lld max_rows_per_block=%lld warmups=%d paired_samples=%d\n",
                 kEpsilon,
                 options.device, static_cast<long long>(options.rows),
                 static_cast<long long>(options.width), options.blocks,
