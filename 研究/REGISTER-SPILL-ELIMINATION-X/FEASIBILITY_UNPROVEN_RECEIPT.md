@@ -6,6 +6,7 @@ WORKTREE=/home/data4t2/lelinfeng/cann-w5-r02-register
 BRANCH=research/w5-r02-register-spill
 CURRENT_STAGE=ORTHOGONAL_RESEARCH_ONLY
 RECEIPT_TIME_UTC=2026-10-09T15:54:38Z
+LATEST_UPDATE_UTC=2026-10-09T17:31:34Z
 
 ## RULE_REFRESH_RECEIPT
 
@@ -102,13 +103,31 @@ The research does not prove a real register-spill bottleneck, so the receipt
 does not authorize a one-variable live-range change. This is not a Route
 lifecycle decision; Planning/Review retains that authority.
 
+## Authorized New Resource Path Probe
+
+Planning authorized one exact-Parent probe using the previously untried
+`-Xclang -fcce-res-usage` path. The byte-identical temporary `.cpp` input was
+compiled in a subprocess with no `--cce-res-usage` or `-mllvm` resource flag.
+The command returned `COMPILER_RC=1` before resource lowering because the
+invocation did not resolve `kernel_tpipe_impl.h` from `kernel_operator.h`.
+stdout was empty, no object was created, and no resource, register, spill,
+reload, scratch, or live-range field was emitted. Raw evidence is retained at:
+
+```text
+研究/REGISTER-SPILL-ELIMINATION-X/compiler/champion-xclang-fcce-res-usage.log
+```
+
+This is a probe setup failure, not evidence for or against a spill. The
+hypothesis therefore remains `FEASIBILITY_UNPROVEN`; no include repair or
+second probe is authorized by this action.
+
 ## Route Receipt
 
 ```text
 ROUTE_EVENT
 ROUTE=W5-R02-REGISTER-SPILL-ELIMINATION-X
 REVISION=NONE
-LAST_ACTION=READ_ONLY_PARENT_COMPILER_RESOURCE_PROBES
+LAST_ACTION=AUTHORIZED_XCLANG_FCCE_RES_USAGE_PROBE_RC1
 NEXT_ACTION=STOP_BEFORE_CANDIDATE_EDIT; REQUIRE_DIRECT_VECTOR_RESOURCE_EVIDENCE
 CHANGE=NONE
 COMPILE=PASS_READ_ONLY_PARENT_PROBE
@@ -120,7 +139,7 @@ LOCAL_DELTA=NONE
 CURRENT_LOCAL_BEST=NONE
 GIT_COMMIT=SEE_COMMIT_CONTAINING_THIS_RECEIPT
 PUSH=NO
-BLOCKER=FEASIBILITY_UNPROVEN_NO_DIRECT_VECTOR_RESOURCE_REPORT
+BLOCKER=XCLANG_FCCE_RES_USAGE_PROBE_FAILED_MISSING_KERNEL_TPIPE_IMPL; FEASIBILITY_UNPROVEN_NO_DIRECT_VECTOR_RESOURCE_REPORT
 ```
 
 No formal Revision or `VERSION_RECORD_EVENT` is claimed because no Candidate
