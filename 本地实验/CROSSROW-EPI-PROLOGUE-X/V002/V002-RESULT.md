@@ -113,3 +113,9 @@ Evidence: `server3-doctor-20261009.log`
 The current user instruction requires a real authorized non-conflicting lease before measuring. The existing Route-owned evidence exposes no current R1/V002 lease file or authorization variable. Devices 2 and 3 meet the numeric HBM threshold and show no running NPU process, but they cannot be claimed without authorization. No shared scheduler/tooling or other Route was inspected, no V002 Runner invocation was made, and the prior polluted raw remains the only Local evidence. V002 stays `LOCAL_NO_PROMOTION / MEASUREMENT_CONTAMINATED`; no V003 was created.
 
 Evidence: `lease-blocker-20261009.log`
+
+## R1/Zeno current-context doctor
+
+The current execution context is the NPU host `hwnput3` and `npu-smi info` sees eight devices. NPU 0-3 have no running NPU processes and more than 62 GB free HBM, while NPU 4-7 are occupied. No current R1/V002 lease or authorization is visible. The existing Runner is present, but its current SHA256 (`5210262b...`) differs from the V002 execution artifact SHA256 (`9d1274ae...`), so exact V002 identity was not claimed. No Runner invocation or new measurement was made.
+
+Evidence: `zeno-doctor-20261009.log`
