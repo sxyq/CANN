@@ -18,9 +18,13 @@ CLI = Path(__file__).resolve().parents[1] / "w5ctl"
 
 
 def run_cli(*args):
+    return run_cli_in(ROOT, *args)
+
+
+def run_cli_in(cwd, *args):
     return subprocess.run(
         [sys.executable, "-B", str(CLI), *args],
-        cwd=str(ROOT),
+        cwd=str(cwd),
         text=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
@@ -51,7 +55,7 @@ class W5CtlTest(unittest.TestCase):
         self.assertIn("NO_SECOND_SCORER=YES", result.stdout)
 
     def test_backend_return_codes_and_sha_guards(self):
-        with tempfile.TemporaryDirectory(prefix="w5ctl-test-") as temp:
+        with tempfile.TemporaryDirectory(prefix=".w5ctl-test-", dir=str(CLI.parent)) as temp:
             root = Path(temp)
             source = root / "source.asc"
             artifact = root / "artifact.o"
@@ -142,8 +146,33 @@ class W5CtlTest(unittest.TestCase):
             self.assertIn("EVIDENCE_SHA256=", result.stdout)
             self.assertIn("STATUS=FAILED", result.stdout)
 
+            result = run_cli(
+                "build",
+                "--backend",
+                str(fail),
+                "--source",
+                "/tmp/w5ctl-outside-source.asc",
+                "--artifact",
+                str(artifact),
+            )
+            self.assertEqual(result.returncode, 65, result.stdout + result.stderr)
+            self.assertIn("OUT_OF_SCOPE:source", result.stdout)
+
+            result = run_cli_in(
+                "/tmp",
+                "build",
+                "--backend",
+                str(fail),
+                "--source",
+                str(source),
+                "--artifact",
+                str(artifact),
+            )
+            self.assertEqual(result.returncode, 78, result.stdout + result.stderr)
+            self.assertIn("WORKTREE_ISOLATION", result.stdout)
+
     def test_local_statistics_accept_insufficient_and_contamination(self):
-        with tempfile.TemporaryDirectory(prefix="w5ctl-test-") as temp:
+        with tempfile.TemporaryDirectory(prefix=".w5ctl-test-", dir=str(CLI.parent)) as temp:
             root = Path(temp)
             clean = root / "clean.tsv"
             write_raw(clean)
@@ -153,6 +182,7 @@ class W5CtlTest(unittest.TestCase):
             self.assertIn("MEDIAN_CANDIDATE_US=9.000000", result.stdout)
             self.assertIn("MEDIAN_RATIO_DELTA=-0.100000", result.stdout)
             self.assertIn("PAIRED_MEDIAN_DELTA=-1.000000", result.stdout)
+            self.assertIn("PAIRED_MEDIAN_PERCENT_DELTA=-0.100000", result.stdout)
             self.assertIn("RAW_SAMPLE_COUNT=8", result.stdout)
             self.assertIn("MEASUREMENT_QUALITY=ACCEPTED", result.stdout)
             self.assertIn("NOISE_STATUS=STABLE", result.stdout)
@@ -173,8 +203,38 @@ class W5CtlTest(unittest.TestCase):
             self.assertIn("NOISE_STATUS=CONTAMINATED", result.stdout)
             self.assertIn("MEDIAN_PARENT_US=NONE", result.stdout)
 
+            missing_quality = root / "missing-quality.tsv"
+            missing_quality.write_text(
+                "pair\tvariant\tlatency_us\n"
+                "1\tparent\t10\n"
+                "1\tcandidate\t9\n"
+            )
+            result = run_cli("local", "--stats-only", "--raw", str(missing_quality))
+            self.assertEqual(result.returncode, 66, result.stdout + result.stderr)
+            self.assertIn("MEASUREMENT_QUALITY=RAW_PARSE_ERROR", result.stdout)
+            self.assertIn("RAW_QUALITY_MISSING", result.stdout)
+
+            unpaired = root / "unpaired.tsv"
+            write_raw(unpaired, pairs=3)
+            with unpaired.open("a") as stream:
+                stream.write("4\tparent\t10\tCLEAN\tfalse\n")
+            result = run_cli("local", "--stats-only", "--raw", str(unpaired))
+            self.assertEqual(result.returncode, 66, result.stdout + result.stderr)
+            self.assertIn("MEASUREMENT_QUALITY=UNPAIRED_DATA", result.stdout)
+            self.assertIn("NOISE_STATUS=INCOMPLETE_PAIRS", result.stdout)
+
+            nonpositive_parent = root / "nonpositive-parent.tsv"
+            nonpositive_parent.write_text(
+                "pair\tvariant\tlatency_us\tquality\tcontaminated\n"
+                "1\tparent\t0\tCLEAN\tfalse\n"
+                "1\tcandidate\t9\tCLEAN\tfalse\n"
+            )
+            result = run_cli("local", "--stats-only", "--raw", str(nonpositive_parent))
+            self.assertEqual(result.returncode, 66, result.stdout + result.stderr)
+            self.assertIn("RAW_PARENT_LATENCY_NONPOSITIVE", result.stdout)
+
     def test_dedup_same_and_different_patches(self):
-        with tempfile.TemporaryDirectory(prefix="w5ctl-test-") as temp:
+        with tempfile.TemporaryDirectory(prefix=".w5ctl-test-", dir=str(CLI.parent)) as temp:
             root = Path(temp)
             common = root / "common.patch"
             common.write_text("#include <abi_scaffold.h>\n")
@@ -201,9 +261,11 @@ class W5CtlTest(unittest.TestCase):
                 "--common",
                 str(common),
             )
-            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertEqual(result.returncode, 78, result.stdout + result.stderr)
             self.assertIn("PATCH_SIMILARITY=1.000000", result.stdout)
-            self.assertIn("DEDUP_STATUS=DUPLICATE", result.stdout)
+            self.assertIn("PATCH_SIMILARITY_GATE=0.600000", result.stdout)
+            self.assertIn("PATCH_SIMILARITY_GATE_STATUS=BLOCKED", result.stdout)
+            self.assertIn("DEDUP_STATUS=BLOCKED_PATCH_SIMILARITY", result.stdout)
             self.assertIn("COMMON_EXCLUDED_LINE_COUNT=1", result.stdout)
 
             different = root / "different.patch"
@@ -231,10 +293,51 @@ class W5CtlTest(unittest.TestCase):
                 str(common),
             )
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertIn("PATCH_SIMILARITY_GATE_STATUS=PASS", result.stdout)
+            self.assertIn("DEDUP_STATUS=DISTINCT", result.stdout)
+
+            gate_parent = root / "gate-parent.patch"
+            gate_parent.write_text("\n".join(f"+mechanism_{index}" for index in range(1, 10)) + "\n")
+            gate_blocked = root / "gate-blocked.patch"
+            gate_blocked.write_text(
+                "\n".join(
+                    [*(f"+mechanism_{index}" for index in range(1, 7)), "+blocked_10", "+blocked_11", "+blocked_12", "+blocked_13"]
+                )
+                + "\n"
+            )
+            result = run_cli(
+                "dedup",
+                "--parent-patch",
+                str(gate_parent),
+                "--candidate-patch",
+                str(gate_blocked),
+            )
+            self.assertEqual(result.returncode, 78, result.stdout + result.stderr)
+            self.assertIn("PATCH_SIMILARITY=0.631579", result.stdout)
+            self.assertIn("PATCH_SIMILARITY_GATE_STATUS=BLOCKED", result.stdout)
+            self.assertIn("DEDUP_STATUS=BLOCKED_PATCH_SIMILARITY", result.stdout)
+
+            gate_allowed = root / "gate-allowed.patch"
+            gate_allowed.write_text(
+                "\n".join(
+                    [*(f"+mechanism_{index}" for index in range(1, 7)), "+allowed_10", "+allowed_11", "+allowed_12", "+allowed_13", "+allowed_14"]
+                )
+                + "\n"
+            )
+            result = run_cli(
+                "dedup",
+                "--parent-patch",
+                str(gate_parent),
+                "--candidate-patch",
+                str(gate_allowed),
+            )
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertIn("PATCH_SIMILARITY=0.600000", result.stdout)
+            self.assertIn("PATCH_SIMILARITY_GATE_STATUS=PASS", result.stdout)
             self.assertIn("DEDUP_STATUS=DISTINCT", result.stdout)
 
     def test_cycle_resume_and_repeat_are_checkpoint_idempotent(self):
-        with tempfile.TemporaryDirectory(prefix="w5ctl-test-") as temp:
+        with tempfile.TemporaryDirectory(prefix=".w5ctl-test-", dir=str(CLI.parent)) as temp:
             root = Path(temp)
             source = root / "source.asc"
             artifact = root / "artifact.o"

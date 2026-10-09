@@ -67,13 +67,18 @@ MEDIAN_PARENT_US
 MEDIAN_CANDIDATE_US
 MEDIAN_RATIO_DELTA
 PAIRED_MEDIAN_DELTA
+PAIRED_MEDIAN_PERCENT_DELTA
 RAW_SAMPLE_COUNT
 MEASUREMENT_QUALITY
 NOISE_STATUS
 ```
 
 `MEDIAN_RATIO_DELTA` is `(candidate_median / parent_median) - 1` and
-`PAIRED_MEDIAN_DELTA` is candidate minus parent in microseconds. `--stats-only`
+`PAIRED_MEDIAN_DELTA` is candidate minus parent in microseconds.
+`PAIRED_MEDIAN_PERCENT_DELTA` is the median of per-pair
+`(candidate - parent) / parent` values. Parent latency must be positive. Every
+pair must contain exactly one parent and one candidate row with an explicit
+clean quality value; missing quality or unpaired rows are rejected. `--stats-only`
 is for analyzing an already-produced raw file; it does not run a backend.
 
 ## Dedup and checkpoints
@@ -81,13 +86,23 @@ is for analyzing an already-produced raw file; it does not run a backend.
 `dedup` compares normalized changed lines and explicitly subtracts files given
 with `--common`, `--champion-scaffold`, or `--abi-scaffold` (for example shared
 Champion or ABI scaffold). It reports
-`PATCH_SIMILARITY`, `MECHANISM_OVERLAP`, and `DEDUP_STATUS`. Missing or empty
-post-exclusion data is `SIMILARITY_INSUFFICIENT_DATA`.
+`PATCH_SIMILARITY`, `MECHANISM_OVERLAP`, `PATCH_SIMILARITY_GATE`,
+`PATCH_SIMILARITY_GATE_STATUS`, and `DEDUP_STATUS`. The hard W5 gate is
+`PATCH_SIMILARITY <= 0.60`; a value such as `0.61` is
+`BLOCKED_PATCH_SIMILARITY`, never `DISTINCT`. Missing or empty post-exclusion
+data is `SIMILARITY_INSUFFICIENT_DATA`.
 
 `cycle --checkpoint <path>` writes an atomic JSON checkpoint after each stage.
 Successful stages are skipped on repeat calls. A failed or `NOT_RUN` stage is
 only retried by explicit `resume`; `resume` also preserves completed stages.
 Neither command creates a Revision or changes Online state.
+
+All execution commands verify the current Git root is
+`/home/data4t2/lelinfeng/cann-w5-r02-register`, the branch is
+`research/w5-r02-register-spill`, and every source, artifact, raw, log,
+checkpoint, evidence, patch, common-scaffold, backend, and backend-workdir
+path resolves inside that worktree. Violations fail with
+`OUT_OF_SCOPE`/`WORKTREE_ISOLATION` before delegation.
 
 ## Self-test
 

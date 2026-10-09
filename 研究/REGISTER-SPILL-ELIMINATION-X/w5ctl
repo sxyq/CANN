@@ -31,7 +31,8 @@ ROUTE = "W5-R02-REGISTER-SPILL-ELIMINATION-X"
 EXPECTED_BRANCH = "research/w5-r02-register-spill"
 SCRIPT_PATH = Path(__file__).resolve()
 ROUTE_ROOT = SCRIPT_PATH.parent
-REPO_ROOT = ROUTE_ROOT.parents[1]
+EXPECTED_REPO_ROOT = Path("/home/data4t2/lelinfeng/cann-w5-r02-register").resolve()
+PATCH_SIMILARITY_GATE = 0.60
 
 EXIT_USAGE = 64
 EXIT_IDENTITY = 65
@@ -118,6 +119,39 @@ def resolve_path(raw: Optional[str]) -> Optional[Path]:
     return path.resolve()
 
 
+def scoped_path(raw: Optional[str], label: str) -> Tuple[Optional[Path], Optional[str]]:
+    path = resolve_path(raw)
+    if path is None:
+        return None, None
+    try:
+        path.relative_to(EXPECTED_REPO_ROOT)
+    except ValueError:
+        return path, f"OUT_OF_SCOPE:{label}:{path}:expected={EXPECTED_REPO_ROOT}"
+    return path, None
+
+
+def current_git_context() -> Tuple[int, Optional[Path], Optional[str], Optional[str]]:
+    start = Path.cwd().resolve()
+    root_rc, root_text = git_output(start, "rev-parse", "--show-toplevel")
+    if root_rc != 0:
+        return root_rc, None, None, f"WORKTREE_ISOLATION:GIT_ROOT_FAILED:{root_text}"
+    branch_rc, branch = git_output(start, "branch", "--show-current")
+    if branch_rc != 0:
+        return branch_rc, Path(root_text).resolve(), None, f"WORKTREE_ISOLATION:GIT_BRANCH_FAILED:{branch}"
+    return 0, Path(root_text).resolve(), branch, None
+
+
+def require_current_worktree() -> Optional[str]:
+    rc, root, branch, error = current_git_context()
+    if error:
+        return error
+    if rc != 0 or root != EXPECTED_REPO_ROOT:
+        return f"WORKTREE_ISOLATION:root={root}:expected={EXPECTED_REPO_ROOT}"
+    if branch != EXPECTED_BRANCH:
+        return f"WORKTREE_ISOLATION:branch={branch}:expected={EXPECTED_BRANCH}"
+    return None
+
+
 def sha256_file(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as stream:
@@ -132,7 +166,9 @@ def verify_file(
     expected_sha: Optional[str] = None,
     required: bool = True,
 ) -> Tuple[Optional[Path], Optional[str], Optional[str]]:
-    path = resolve_path(raw_path)
+    path, scope_error = scoped_path(raw_path, label)
+    if scope_error:
+        return path, None, scope_error
     if path is None:
         return None, None, f"{label.upper()}_NOT_SET" if required else None
     if not path.is_file():
@@ -156,6 +192,10 @@ def resolve_backend(raw: Optional[str]) -> Tuple[Optional[Path], Optional[str]]:
         path = Path(found).resolve() if found else None
     if path is None:
         return None, f"BACKEND_NOT_FOUND:{raw}"
+    try:
+        path.relative_to(EXPECTED_REPO_ROOT)
+    except ValueError:
+        return path, f"OUT_OF_SCOPE:backend:{path}:expected={EXPECTED_REPO_ROOT}"
     if not path.is_file():
         return path, f"BACKEND_NOT_FILE:{path}"
     if not os.access(path, os.X_OK):
@@ -166,7 +206,11 @@ def resolve_backend(raw: Optional[str]) -> Tuple[Optional[Path], Optional[str]]:
 def write_log(path: Optional[str], stdout: bytes, stderr: bytes) -> Optional[str]:
     if not path:
         return None
-    target = resolve_path(path)
+    target, scope_error = scoped_path(path, "log")
+    if scope_error:
+        emit("LOG_STATUS", "BLOCKED")
+        emit("LOG_BLOCKER", scope_error)
+        return None
     if target is None:
         return None
     if target.exists():
@@ -234,7 +278,16 @@ def execute_backend(
         emit("BLOCKER", error)
         return Outcome("NOT_RUN", EXIT_NOT_RUN, source_sha, artifact_sha, reason=error)
     assert backend is not None
-    cwd = resolve_path(workdir_raw) if workdir_raw else None
+    cwd, cwd_error = scoped_path(workdir_raw, "backend-workdir")
+    if cwd_error:
+        emit("STATUS", "BLOCKED")
+        emit("BLOCKER", cwd_error)
+        return Outcome("BLOCKED", EXIT_NOT_RUN, source_sha, artifact_sha, reason=cwd_error)
+    _, log_error = scoped_path(log_path, "log")
+    if log_error:
+        emit("STATUS", "BLOCKED")
+        emit("BLOCKER", log_error)
+        return Outcome("BLOCKED", EXIT_NOT_RUN, source_sha, artifact_sha, reason=log_error)
     if cwd is not None and not cwd.is_dir():
         reason = f"BACKEND_WORKDIR_MISSING:{cwd}"
         emit("STATUS", "NOT_RUN")
@@ -283,6 +336,13 @@ def identity_stage(
     min_pairs: int = 3,
     max_cv: float = 0.20,
 ) -> Outcome:
+    isolation_error = require_current_worktree()
+    if isolation_error:
+        if stage == "local":
+            print_stats(blocked_stats("NOT_RUN", isolation_error))
+        emit("STATUS", "BLOCKED")
+        emit("BLOCKER", isolation_error)
+        return Outcome("BLOCKED", EXIT_NOT_RUN, reason=isolation_error)
     source, source_sha, source_error = verify_file(
         source_raw, "source", expected_source_sha, required=True
     )
@@ -317,7 +377,13 @@ def identity_stage(
         emit("SOURCE_SHA256", source_sha)
     if artifact_sha_before:
         emit("ARTIFACT_SHA256_BEFORE", artifact_sha_before)
-    raw = resolve_path(raw_raw)
+    raw, raw_scope_error = scoped_path(raw_raw, "raw")
+    if raw_scope_error:
+        if stage == "local":
+            print_stats(blocked_stats("NOT_RUN", raw_scope_error))
+        emit("STATUS", "BLOCKED")
+        emit("BLOCKER", raw_scope_error)
+        return Outcome("BLOCKED", EXIT_NOT_RUN, source_sha, artifact_sha_before, reason=raw_scope_error)
     if stage == "local" and raw is None:
         print_stats(blocked_stats("NOT_RUN", "RAW_SAMPLE_PATH_NOT_SET"))
         emit("STATUS", "BLOCKED")
@@ -430,8 +496,14 @@ def parse_raw(path: Path) -> Tuple[List[Dict[str, Any]], bool, Optional[str]]:
             latency = float(str(raw_latency).strip())
         except ValueError:
             return records, contaminated, f"RAW_LATENCY_INVALID:{number}"
-        if not math.isfinite(latency) or latency <= 0:
+        if not math.isfinite(latency):
             return records, contaminated, f"RAW_LATENCY_INVALID:{number}"
+        if variant == "parent" and latency <= 0:
+            return records, contaminated, f"RAW_PARENT_LATENCY_NONPOSITIVE:{number}"
+        if latency <= 0:
+            return records, contaminated, f"RAW_LATENCY_INVALID:{number}"
+        if quality is None or not str(quality).strip():
+            return records, contaminated, f"RAW_QUALITY_MISSING:{number}"
         key = (str(pair).strip(), variant)
         if key in seen:
             return records, contaminated, f"RAW_DUPLICATE_PAIR_VARIANT:{pair}:{variant}"
@@ -468,6 +540,7 @@ def analyze_raw(path: Optional[Path], min_pairs: int, max_cv: float) -> Dict[str
         "candidate_median": None,
         "ratio_delta": None,
         "paired_delta": None,
+        "paired_percent_delta": None,
         "raw_count": 0,
         "pair_count": 0,
         "noise_status": "UNKNOWN",
@@ -508,10 +581,24 @@ def analyze_raw(path: Optional[Path], min_pairs: int, max_cv: float) -> Dict[str
         if "parent" in pair and "candidate" in pair
     ]
     result["pair_count"] = len(complete)
+    unpaired = [pair for pair in pairs.values() if set(pair) != {"parent", "candidate"}]
+    if unpaired:
+        result["status"] = "UNPAIRED_DATA"
+        result["noise_status"] = "INCOMPLETE_PAIRS"
+        result["reason"] = f"UNPAIRED_ROWS={len(unpaired)}"
+        return result
+    if result["parent_median"] is None or result["parent_median"] <= 0:
+        result["status"] = "INVALID_PARENT_LATENCY"
+        result["noise_status"] = "INVALID_INPUT"
+        result["reason"] = "PARENT_MEDIAN_MUST_BE_POSITIVE"
+        return result
     if result["parent_median"] is not None and result["candidate_median"] is not None:
         result["ratio_delta"] = result["candidate_median"] / result["parent_median"] - 1.0
     if complete:
         result["paired_delta"] = statistics.median([candidate - parent for parent, candidate in complete])
+        result["paired_percent_delta"] = statistics.median(
+            [(candidate - parent) / parent for parent, candidate in complete]
+        )
     if len(complete) < min_pairs or not values["parent"] or not values["candidate"]:
         result["status"] = "INSUFFICIENT_DATA"
         result["noise_status"] = "INSUFFICIENT_DATA"
@@ -534,6 +621,7 @@ def print_stats(stats: Dict[str, Any]) -> None:
     emit("MEDIAN_CANDIDATE_US", fmt_number(stats.get("candidate_median")))
     emit("MEDIAN_RATIO_DELTA", fmt_number(stats.get("ratio_delta")))
     emit("PAIRED_MEDIAN_DELTA", fmt_number(stats.get("paired_delta")))
+    emit("PAIRED_MEDIAN_PERCENT_DELTA", fmt_number(stats.get("paired_percent_delta")))
     emit("RAW_SAMPLE_COUNT", stats.get("raw_count", 0))
     emit("RAW_PAIR_COUNT", stats.get("pair_count", 0))
     emit("MEASUREMENT_QUALITY", stats.get("status", "RAW_PARSE_ERROR"))
@@ -550,6 +638,7 @@ def blocked_stats(status: str, reason: str) -> Dict[str, Any]:
         "candidate_median": None,
         "ratio_delta": None,
         "paired_delta": None,
+        "paired_percent_delta": None,
         "raw_count": 0,
         "pair_count": 0,
         "noise_status": "UNKNOWN",
@@ -586,15 +675,26 @@ def mechanism_tokens(lines: Iterable[str]) -> Counter:
     return tokens
 
 
+def dedup_insufficient(reason: str) -> int:
+    emit("PATCH_SIMILARITY", "NONE")
+    emit("MECHANISM_OVERLAP", "NONE")
+    emit("PATCH_SIMILARITY_GATE", fmt_number(PATCH_SIMILARITY_GATE))
+    emit("PATCH_SIMILARITY_GATE_STATUS", "NOT_EVALUATED")
+    emit("DEDUP_STATUS", "SIMILARITY_INSUFFICIENT_DATA")
+    emit("BLOCKER", reason)
+    return EXIT_NOT_RUN
+
+
 def dedup_command(args: argparse.Namespace) -> int:
-    parent = resolve_path(args.parent_patch)
-    candidate = resolve_path(args.candidate_patch)
+    isolation_error = require_current_worktree()
+    if isolation_error:
+        return dedup_insufficient(isolation_error)
+    parent, parent_scope_error = scoped_path(args.parent_patch, "parent-patch")
+    candidate, candidate_scope_error = scoped_path(args.candidate_patch, "candidate-patch")
+    if parent_scope_error or candidate_scope_error:
+        return dedup_insufficient(parent_scope_error or candidate_scope_error)
     if parent is None or candidate is None or not parent.is_file() or not candidate.is_file():
-        emit("PATCH_SIMILARITY", "NONE")
-        emit("MECHANISM_OVERLAP", "NONE")
-        emit("DEDUP_STATUS", "SIMILARITY_INSUFFICIENT_DATA")
-        emit("BLOCKER", "PATCH_INPUT_MISSING")
-        return EXIT_NOT_RUN
+        return dedup_insufficient("PATCH_INPUT_MISSING")
     try:
         parent_lines = clean_patch_lines(parent)
         candidate_lines = clean_patch_lines(candidate)
@@ -603,13 +703,11 @@ def dedup_command(args: argparse.Namespace) -> int:
         common_inputs.extend(args.champion_scaffold or [])
         common_inputs.extend(args.abi_scaffold or [])
         for raw_common in common_inputs:
-            common_path = resolve_path(raw_common)
+            common_path, common_scope_error = scoped_path(raw_common, "common-patch")
+            if common_scope_error:
+                return dedup_insufficient(common_scope_error)
             if common_path is None or not common_path.is_file():
-                emit("PATCH_SIMILARITY", "NONE")
-                emit("MECHANISM_OVERLAP", "NONE")
-                emit("DEDUP_STATUS", "SIMILARITY_INSUFFICIENT_DATA")
-                emit("BLOCKER", f"COMMON_INPUT_MISSING:{raw_common}")
-                return EXIT_NOT_RUN
+                return dedup_insufficient(f"COMMON_INPUT_MISSING:{raw_common}")
             common.update(clean_patch_lines(common_path))
         parent_counter = Counter(parent_lines)
         candidate_counter = Counter(candidate_lines)
@@ -619,25 +717,24 @@ def dedup_command(args: argparse.Namespace) -> int:
         parent_lines = list(parent_counter.elements())
         candidate_lines = list(candidate_counter.elements())
     except OSError as exc:
-        emit("PATCH_SIMILARITY", "NONE")
-        emit("MECHANISM_OVERLAP", "NONE")
-        emit("DEDUP_STATUS", "SIMILARITY_INSUFFICIENT_DATA")
-        emit("BLOCKER", f"PATCH_READ_FAILED:{exc}")
-        return EXIT_NOT_RUN
+        return dedup_insufficient(f"PATCH_READ_FAILED:{exc}")
     emit("COMMON_EXCLUDED_LINE_COUNT", sum(common.values()))
     if len(parent_lines) < args.min_lines or len(candidate_lines) < args.min_lines:
-        emit("PATCH_SIMILARITY", "NONE")
-        emit("MECHANISM_OVERLAP", "NONE")
-        emit("DEDUP_STATUS", "SIMILARITY_INSUFFICIENT_DATA")
-        emit("BLOCKER", "MEANINGFUL_PATCH_LINES_BELOW_MINIMUM")
-        return EXIT_NOT_RUN
+        return dedup_insufficient("MEANINGFUL_PATCH_LINES_BELOW_MINIMUM")
     overlap_lines = sum((Counter(parent_lines) & Counter(candidate_lines)).values())
     patch_similarity = (2.0 * overlap_lines) / (len(parent_lines) + len(candidate_lines))
+    emit("PATCH_SIMILARITY", fmt_number(patch_similarity))
+    emit("PATCH_SIMILARITY_GATE", fmt_number(PATCH_SIMILARITY_GATE))
+    if patch_similarity > PATCH_SIMILARITY_GATE:
+        emit("PATCH_SIMILARITY_GATE_STATUS", "BLOCKED")
+        emit("DEDUP_STATUS", "BLOCKED_PATCH_SIMILARITY")
+        emit("BLOCKER", f"PATCH_SIMILARITY={patch_similarity:.6f}>GATE={PATCH_SIMILARITY_GATE:.6f}")
+        return EXIT_NOT_RUN
+    emit("PATCH_SIMILARITY_GATE_STATUS", "PASS")
     parent_tokens = mechanism_tokens(parent_lines)
     candidate_tokens = mechanism_tokens(candidate_lines)
     token_union = set(parent_tokens) | set(candidate_tokens)
     if not token_union:
-        emit("PATCH_SIMILARITY", fmt_number(patch_similarity))
         emit("MECHANISM_OVERLAP", "NONE")
         emit("DEDUP_STATUS", "SIMILARITY_INSUFFICIENT_DATA")
         emit("BLOCKER", "MECHANISM_TOKENS_EMPTY")
@@ -649,7 +746,6 @@ def dedup_command(args: argparse.Namespace) -> int:
         and token_overlap >= args.mechanism_threshold
         else "DISTINCT"
     )
-    emit("PATCH_SIMILARITY", fmt_number(patch_similarity))
     emit("MECHANISM_OVERLAP", fmt_number(token_overlap))
     emit("DEDUP_STATUS", status)
     emit("DEDUP_METHOD", "normalized-change-lines-with-explicit-common-exclusion")
@@ -657,6 +753,24 @@ def dedup_command(args: argparse.Namespace) -> int:
 
 
 def record_command(args: argparse.Namespace) -> int:
+    isolation_error = require_current_worktree()
+    if isolation_error:
+        emit("STATUS", "BLOCKED")
+        emit("BLOCKER", isolation_error)
+        return EXIT_NOT_RUN
+    workdir, workdir_error = scoped_path(
+        getattr(args, "backend_workdir", getattr(args, "workdir", None)),
+        "backend-workdir",
+    )
+    if workdir_error:
+        emit("STATUS", "BLOCKED")
+        emit("BLOCKER", workdir_error)
+        return EXIT_NOT_RUN
+    _, log_error = scoped_path(getattr(args, "log", None), "log")
+    if log_error:
+        emit("STATUS", "BLOCKED")
+        emit("BLOCKER", log_error)
+        return EXIT_NOT_RUN
     record_source = None
     record_artifact = None
     if getattr(args, "source", None) or getattr(args, "artifact", None):
@@ -703,7 +817,6 @@ def record_command(args: argparse.Namespace) -> int:
     assert backend is not None
     command = [str(backend), *(args.backend_arg or [])]
     emit("BACKEND_COMMAND", shlex.join(command))
-    workdir = getattr(args, "backend_workdir", getattr(args, "workdir", None))
     env = os.environ.copy()
     env.update({"W5CTL_ROUTE": ROUTE, "W5CTL_STAGE": "record"})
     env["W5CTL_EVIDENCE_PATHS"] = os.pathsep.join(str(path) for path in evidence_paths)
@@ -714,7 +827,7 @@ def record_command(args: argparse.Namespace) -> int:
     try:
         completed = subprocess.run(
             command,
-            cwd=str(resolve_path(workdir)) if workdir else None,
+            cwd=str(workdir) if workdir else None,
             env=env,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -749,33 +862,31 @@ def git_output(repo_root: Path, *arguments: str) -> Tuple[int, str]:
         )
     except OSError as exc:
         return EXIT_NOT_RUN, str(exc)
-    return normalize_rc(completed.returncode), completed.stdout.strip()
+    return normalize_rc(completed.returncode), completed.stdout.rstrip("\r\n")
 
 
 def doctor_command(args: argparse.Namespace) -> int:
-    repo_root = resolve_path(args.repo_root) if args.repo_root else REPO_ROOT
-    assert repo_root is not None
-    rc, actual_root = git_output(repo_root, "rev-parse", "--show-toplevel")
-    if rc != 0:
+    requested_root = resolve_path(args.repo_root) if args.repo_root else EXPECTED_REPO_ROOT
+    rc, actual_root, branch, context_error = current_git_context()
+    if context_error or actual_root is None or branch is None:
         emit("DOCTOR_STATUS", "BLOCKED")
-        emit("BLOCKER", f"GIT_ROOT_FAILED:{actual_root}")
+        emit("BLOCKER", context_error or "WORKTREE_ISOLATION:GIT_CONTEXT_UNAVAILABLE")
         return EXIT_NOT_RUN
     emit("REPO_ROOT", actual_root)
-    root_ok = Path(actual_root).resolve() == repo_root.resolve()
+    root_ok = actual_root == EXPECTED_REPO_ROOT and requested_root == EXPECTED_REPO_ROOT
     emit("REPO_ROOT_CHECK", "PASS" if root_ok else "FAIL")
-    rc, branch = git_output(repo_root, "branch", "--show-current")
-    branch_ok = rc == 0 and branch == (args.expected_branch or EXPECTED_BRANCH)
     emit("BRANCH", branch)
+    branch_ok = branch == EXPECTED_BRANCH and args.expected_branch == EXPECTED_BRANCH
     emit("BRANCH_CHECK", "PASS" if branch_ok else "FAIL")
-    rc, status = git_output(repo_root, "-c", "core.quotePath=false", "status", "--short")
+    status_rc, status = git_output(actual_root, "-c", "core.quotePath=false", "status", "--short")
     changed = [line[3:] for line in status.splitlines() if len(line) >= 3]
-    route_prefix = str(ROUTE_ROOT.relative_to(repo_root)) + "/"
+    route_prefix = str(ROUTE_ROOT.relative_to(EXPECTED_REPO_ROOT)) + "/"
     out_of_scope = [path for path in changed if not path.startswith(route_prefix)]
     emit("WORKTREE_CHANGED_COUNT", len(changed))
     emit("WORKTREE_SCOPE", "PASS" if not out_of_scope else "FAIL")
     if out_of_scope:
         emit("OUT_OF_SCOPE_CHANGES", ";".join(out_of_scope))
-    champion = resolve_path(args.source) if args.source else repo_root / "线上结果/R31B/V011/submission.asc"
+    champion = args.source if args.source else str(EXPECTED_REPO_ROOT / "线上结果/R31B/V011/submission.asc")
     champion_path, champion_sha, champion_error = verify_file(str(champion), "champion", required=True)
     champion_ok = champion_error is None
     if champion_error:
@@ -801,7 +912,7 @@ def doctor_command(args: argparse.Namespace) -> int:
     emit("NO_SECOND_SCORER", "YES")
     emit("REVISION_AUTOCREATE", "DISABLED")
     emit("ONLINE", "NOT_SUBMITTED")
-    blocked = not (root_ok and branch_ok and rc == 0 and not out_of_scope and champion_ok)
+    blocked = not (root_ok and branch_ok and status_rc == 0 and not out_of_scope and champion_ok)
     emit("EXECUTION_READINESS", "BLOCKED" if missing or blocked else "READY")
     emit("DOCTOR_STATUS", "PASS" if not blocked else "BLOCKED")
     if missing:
@@ -810,7 +921,11 @@ def doctor_command(args: argparse.Namespace) -> int:
 
 
 def checkpoint_path(args: argparse.Namespace) -> Optional[Path]:
-    path = resolve_path(args.checkpoint)
+    path, scope_error = scoped_path(args.checkpoint, "checkpoint")
+    if scope_error:
+        emit("CYCLE_STATUS", "BLOCKED")
+        emit("BLOCKER", scope_error)
+        return None
     if path is None:
         emit("CYCLE_STATUS", "BLOCKED")
         emit("BLOCKER", "CHECKPOINT_NOT_SET")
@@ -916,6 +1031,11 @@ def run_record_from_pipeline(args: argparse.Namespace) -> Outcome:
 
 
 def pipeline_command(args: argparse.Namespace, resume: bool) -> int:
+    isolation_error = require_current_worktree()
+    if isolation_error:
+        emit("CYCLE_STATUS", "BLOCKED")
+        emit("BLOCKER", isolation_error)
+        return EXIT_NOT_RUN
     path = checkpoint_path(args)
     if path is None:
         return EXIT_NOT_RUN
@@ -1056,7 +1176,16 @@ def pipeline_command(args: argparse.Namespace, resume: bool) -> int:
 
 
 def report_command(args: argparse.Namespace) -> int:
-    path = resolve_path(args.checkpoint)
+    isolation_error = require_current_worktree()
+    if isolation_error:
+        emit("REPORT_STATUS", "BLOCKED")
+        emit("BLOCKER", isolation_error)
+        return EXIT_NOT_RUN
+    path, scope_error = scoped_path(args.checkpoint, "checkpoint")
+    if scope_error:
+        emit("REPORT_STATUS", "BLOCKED")
+        emit("BLOCKER", scope_error)
+        return EXIT_NOT_RUN
     if path is None:
         emit("REPORT_STATUS", "NOT_RUN")
         emit("BLOCKER", "CHECKPOINT_NOT_SET")
@@ -1163,7 +1292,7 @@ def build_parser() -> argparse.ArgumentParser:
     dedup.add_argument("--champion-scaffold", action="append", default=[])
     dedup.add_argument("--abi-scaffold", action="append", default=[])
     dedup.add_argument("--min-lines", type=int, default=1)
-    dedup.add_argument("--duplicate-threshold", type=float, default=0.85)
+    dedup.add_argument("--duplicate-threshold", type=float, default=PATCH_SIMILARITY_GATE)
     dedup.add_argument("--mechanism-threshold", type=float, default=0.70)
 
     cycle = sub.add_parser("cycle", help="idempotent build/correctness/local orchestration")
@@ -1178,8 +1307,22 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def local_command(args: argparse.Namespace) -> int:
+    isolation_error = require_current_worktree()
+    if isolation_error:
+        print_stats(blocked_stats("NOT_RUN", isolation_error))
+        emit("STATUS", "BLOCKED")
+        emit("BLOCKER", isolation_error)
+        return EXIT_NOT_RUN
     if args.stats_only:
-        stats = analyze_raw(resolve_path(args.raw), args.min_pairs, args.max_cv)
+        raw, raw_scope_error = scoped_path(args.raw, "raw")
+        if raw_scope_error:
+            stats = blocked_stats("NOT_RUN", raw_scope_error)
+            emit("STATS_ONLY", "YES")
+            print_stats(stats)
+            emit("STATUS", "BLOCKED")
+            emit("BLOCKER", raw_scope_error)
+            return EXIT_NOT_RUN
+        stats = analyze_raw(raw, args.min_pairs, args.max_cv)
         emit("STATS_ONLY", "YES")
         print_stats(stats)
         return 0 if stats["status"] == "ACCEPTED" else EXIT_STATS_REJECTED
