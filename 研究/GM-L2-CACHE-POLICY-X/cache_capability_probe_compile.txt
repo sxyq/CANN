@@ -1,0 +1,26 @@
+ROUTE=W5-R04 GM-L2-CACHE-POLICY-X
+PROBE=cache_capability_probe.asc
+PARENT=归档/历史工作区/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+PARENT_SHA256=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
+TOOLCHAIN=/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002
+BISHENG=/usr/local/Ascend/ascend-toolkit/latest/compiler/ccec_compiler/bin/bisheng
+BISHENG_VERSION=clang 15.0.5
+TARGET_ARCH=dav-2201
+TARGET_SOC=Ascend910B3
+RESULT=PASS
+RETURN_CODE=0
+OBJECT_BYTES=142816
+OBJECT_SHA256=d9cf84617ca1a03235ff89fa437da5068b4c8ab3726615d0e8164fe8e893926a
+
+The probe was compiled with the CANN direct-invocation flags used by the archived R31B build:
+
+```text
+source /usr/local/Ascend/ascend-toolkit/set_env.sh
+CPATH=<CANN hcc C++ include set> CPLUS_INCLUDE_PATH=<CANN hcc C++ include set> \
+bisheng --npu-arch=dav-2201 --npu-soc=Ascend910B3 \
+  --cce-aicore-arch=dav-c220 -Xaicore-start -O3 -std=c++17 -Xaicore-end \
+  -Xhost-start -fPIC -O2 -std=c++17 -Xhost-end \
+  -o cache_capability_probe.o -c -x asc cache_capability_probe.asc
+```
+
+The exact source and the unchanged parent are included in the route-owned probe. No kernel was launched and no Candidate source was edited.
