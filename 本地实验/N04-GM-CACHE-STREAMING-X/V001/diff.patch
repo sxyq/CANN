@@ -1,0 +1,13 @@
+--- 线上结果/R31B/V011/submission.asc	2026-10-10 18:18:13
++++ 本地实验/N04-GM-CACHE-STREAMING-X/V001/Candidate.asc	2026-10-10 19:24:58
+@@ -2085,6 +2085,10 @@
+                                                          float invRowWidth,
+                                                          float epsilon)
+     {
++        // N04 V001: stream the one-pass x/residual inputs without allocating
++        // them in L2 for the large working-set FP32 path.
++        xGm_.SetL2CacheHint(AscendC::CacheMode::CACHE_MODE_DISABLE);
++        residualGm_.SetL2CacheHint(AscendC::CacheMode::CACHE_MODE_DISABLE);
+         const uint64_t blockIdx = static_cast<uint64_t>(AscendC::GetBlockIdx());
+         const uint64_t baseRows = rowCount / blockCount;
+         const uint64_t extraRows = rowCount % blockCount;

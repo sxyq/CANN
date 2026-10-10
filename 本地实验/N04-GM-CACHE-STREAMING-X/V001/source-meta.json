@@ -1,0 +1,33 @@
+{
+  "ROUTE": "N04 GM-CACHE-STREAMING-X",
+  "REVISION": "V001",
+  "DIRECT_PARENT": "1c51a5b2eb9b5b9dffc031c1fbbbc35e9506b49f",
+  "PERFORMANCE_ANCHOR": "R31B V011 / Official 45.16",
+  "PARENT_SOURCE_PATH": "线上结果/R31B/V011/submission.asc",
+  "PARENT_SOURCE_SHA256": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "CANDIDATE_SOURCE_PATH": "本地实验/N04-GM-CACHE-STREAMING-X/V001/Candidate.asc",
+  "CANDIDATE_SOURCE_SHA256": "337601ad3b5575b0f669234514af5500849e1d9f6d9df8923a53a0b0e54eb0ca",
+  "CHANGE": "ProcessWideFp32FullCacheRows: set CACHE_MODE_DISABLE on xGm_ and residualGm_ for the large-working-set FP32 input stream.",
+  "HYPOTHESIS": "Bypassing L2 allocation for one-pass wide-row inputs may reduce eviction pressure on reusable data; performance can also be neutral or regress if input L2 reuse or hint overhead dominates.",
+  "UNCHANGED": [
+    "arithmetic",
+    "tile sizes",
+    "DMA descriptors",
+    "cross-row access order",
+    "synchronization",
+    "output cache policy",
+    "FP16 3x20480 shape excluded"
+  ],
+  "API_EVIDENCE": "CANN 8.5.0.alpha002 AscendC GlobalTensor::SetL2CacheHint; CACHE_MODE_DISABLE address alteration for DAV_2201 requires L2_CACHE_HINT compile definition.",
+  "BUILD_INPUT": "本地实验/R31B/V016/support/CMakeLists.txt, device.cpp, adapter.cpp, compile_adapter_v016.asc, link_one.sh; copied to the N04 temporary build directory with the Candidate at the expected single-version source path",
+  "BUILD_COMMAND": "source /usr/local/Ascend/ascend-toolkit/set_env.sh; export SOC_VERSION=Ascend910B3 ASCEND_CANN_PACKAGE_PATH=/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002; cmake -S <N04_TMP> -B <N04_TMP>/build -DCMAKE_CXX_FLAGS=-DL2_CACHE_HINT; cmake --build <N04_TMP>/build --target device submission full_link --verbose --parallel 1 -- -B",
+  "COMPILE": "DEVICE_PASS; SUBMISSION_PASS; FULL_LINK_FAIL; RC=2; undefined symbol g_opSystemRunCfg from CANN L2CacheAlter under L2_CACHE_HINT",
+  "CORRECTNESS": "NOT_RUN; full_link failed and no executable was produced",
+  "LOCAL": "NONE",
+  "DEVICE_ID": "6",
+  "DEVICE6_PRE": "HBM used 91%; AICore 0%; AIVector 0%; PID 3357697 VLLMWorker_TP 56358 MB",
+  "DEVICE6_POST": "HBM used 91%; AICore 0%; AIVector 0%; PID 3357697 VLLMWorker_TP 56358 MB",
+  "SERVER_SNAPSHOT": "server-preflight.txt",
+  "BUILD_LOG": "compile-v001-existing-entry.log",
+  "NEXT_ACTION": "Commit V001 source and evidence; resolve g_opSystemRunCfg through the existing CANN integration before another compile attempt."
+}
