@@ -1,0 +1,42 @@
+diff --git "a/\346\234\254\345\234\260\345\256\236\351\252\214/N05-SCALAR-ADDRESS-GENERATION-X/V002/submission.asc" "b/\346\234\254\345\234\260\345\256\236\351\252\214/N05-SCALAR-ADDRESS-GENERATION-X/V003/submission.asc"
+index b4f86156..8d80a71b 100644
+--- "a/\346\234\254\345\234\260\345\256\236\351\252\214/N05-SCALAR-ADDRESS-GENERATION-X/V002/submission.asc"
++++ "b/\346\234\254\345\234\260\345\256\236\351\252\214/N05-SCALAR-ADDRESS-GENERATION-X/V003/submission.asc"
+@@ -3275,11 +3275,15 @@ private:
+                     ? tileWidth : static_cast<int32_t>(rowWidth));
+                 AscendC::SetFlag<AscendC::HardEvent::MTE2_V>(prd0);
+             }
++            // V003: carry the pass-2 output GM cursor by row and tile.
++            // Store order and all vector/event operations remain unchanged.
++            const uint64_t outputBase = batchBegin * rowWidth;
++            uint64_t col = 0;
+             for (int32_t tile = 0; tile < tileCount; ++tile) {
+-                const uint64_t col = static_cast<uint64_t>(tile) * tileWidth;
+                 const int32_t valid = static_cast<int32_t>(
+                     rowWidth - col < static_cast<uint64_t>(tileWidth)
+                         ? rowWidth - col : static_cast<uint64_t>(tileWidth));
++                uint64_t outputOffset = outputBase + col;
+                 const bool useA = (tile & 1) == 0;
+                 AscendC::LocalTensor<T> gammaLocal = useA ? gBase : gBase[tileWidth];
+                 AscendC::LocalTensor<T> biasLocal = useA ? bBase : bBase[tileWidth];
+@@ -3349,10 +3353,9 @@ private:
+                     AscendC::PipeBarrier<PIPE_V>();
+                     SyncVToMTE2();
+                     SyncVToMTE3();
+-                    Store(outputGm_,
+-                          (batchBegin + static_cast<uint64_t>(batchRow)) * rowWidth + col,
+-                          outputLocal, valid);
++                    Store(outputGm_, outputOffset, outputLocal, valid);
+                     SyncMTE3ToV();
++                    outputOffset += rowWidth;
+                 }
+                 AscendC::SetFlag<AscendC::HardEvent::V_MTE2>(prel);
+                 if (useA) {
+@@ -3360,6 +3363,7 @@ private:
+                 } else {
+                     pRelB = true;
+                 }
++                col += static_cast<uint64_t>(tileWidth);
+             }
+             if (pRelA) {
+                 AscendC::WaitFlag<AscendC::HardEvent::V_MTE2>(prel0);
