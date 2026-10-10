@@ -138,3 +138,111 @@ BLOCKERS_WITH_RESPONSIBLE_OWNER:
 
 No resource probe, Candidate edit, V001, Runner change, shared-entrypoint
 change, or Online submission is authorized by this request.
+
+## R2 Real Backend Adaptation Request — 2026-10-10
+
+This addendum supersedes stale implementation-gap descriptions above where the
+route-owned CLI has since changed. It does not claim canonical publication or
+end-to-end acceptance.
+
+```text
+REQUEST_UPDATE_COMMIT_BASE=5008dab25507d211b83a20a4acc99e337f3761a3
+W5CTL_IMPLEMENTATION_COMMIT=7946399307959a9dd8fdeab984032a5a884519ca
+TOOLING_OWNER=Unique canonical Tooling/Integration Owner
+TOOLING_OWNER_NAMED_IDENTITY=UNKNOWN_FROM_PUBLISHED_R2_CONTEXT
+REQUEST_CHANNEL=ROUTE_OWNED_REQUEST_ON_RESEARCH_BRANCH
+OWNER_ACK=NOT_RECEIVED
+W5CTL_INTEGRATED=NO
+CANONICAL_ENTRYPOINT=NONE_CONFIRMED
+PUBLICATION_COMMIT=NONE
+E2E=BLOCKED_NOT_RUN
+```
+
+The concrete request to that single Owner is to publish/adapt the current
+route-owned entrypoint once, at the canonical location selected by the Owner,
+and bind each call to the invocation's own `W5CTL_REPO_ROOT`,
+`W5CTL_EXPECTED_BRANCH`, `W5CTL_ROUTE`, and `W5CTL_ROUTE_ROOT`. Preserve the
+R2 CLI's SHA guards, real return-code propagation, scoped inputs, checkpoint
+identity, and no-second-runner/no-second-scorer behavior. Do not make R2 copy
+or modify shared Tooling.
+
+The already documented historical executables are discoverable and executable
+in this worktree, but are not route-agnostic adapters:
+
+- `本地实验/REDUCE-INVSCALE-X/V002/support/compile.sh` derives `ROOT` from its
+  own script location, configures/builds that route's fixed CMake targets, and
+  writes its own `build/` and `compile.log`; it does not consume
+  `W5CTL_SOURCE` / `W5CTL_ARTIFACT` as build inputs/outputs.
+- `本地实验/REDUCE-INVSCALE-X/V002/support/run_correctness.sh` uses that
+  route's `$ROOT/build/reduce_invscale_{parent,candidate}_probe` binaries and
+  writes its own `results/`; it does not consume the R2 source/artifact
+  identity.
+- `本地实验/REDUCE-INVSCALE-X/V002/support/run_probes.sh` uses that route's
+  fixed `v001ref` and candidate probe binaries. Its paired sequence is four
+  pairs and its default output is that route's `results/`; it does not provide
+  the required R2 binary identity, 45-warmup/device-event provenance, unique
+  Runner identity, or a complete contamination receipt.
+- The published Record Owner skill defines an asynchronous shared-record role,
+  not an executable `W5CTL_RECORD_BACKEND`. `dedup` is implemented inside the
+  route-owned `w5ctl`; it has no separate backend.
+
+Please provide or bind only existing approved Build, Correctness, Paired Local,
+and evidence-recording paths that honor the following caller contract, or
+specify the already-existing compatible paths and exact invocation:
+
+```text
+INPUTS: W5CTL_ROUTE, W5CTL_STAGE, W5CTL_SOURCE, W5CTL_SOURCE_SHA256,
+        W5CTL_ARTIFACT, W5CTL_ARTIFACT_SHA256, W5CTL_BACKEND_WORKDIR
+LOCAL:  W5CTL_RAW_PATH plus exact Parent/Candidate artifact identities,
+        unique existing Runner identity, device-event provenance,
+        45 warmup samples, PC/CP interleaving and contamination fields
+OUTPUTS: all artifacts, logs, raw data and evidence remain under the bound
+         caller's worktree/route evidence directory; return the backend's
+         real process status
+RECORD: evidence paths linked to exact Parent, Candidate and Artifact SHA,
+        route/branch and resulting evidence receipt; use the existing Git /
+        Record Owner workflow, not a second ledger
+DEDUP: keep the existing in-wrapper path; exclude explicit shared Champion/ABI
+       scaffold; PATCH_SIMILARITY must be <= 0.60; mechanism overlap is an
+       independent manual/Owner review signal and numeric overlap never proves
+       orthogonality
+```
+
+The route's real command results are:
+
+```text
+doctor --dry-run: RC=0; root/branch/scope and Parent SHA checks PASS;
+  Build/Correctness/Local executables READY; Record backend NOT_CONFIGURED;
+  EXECUTION_READINESS=BLOCKED.
+build: RC=65; pre-delegation SOURCE_MISSING for the intentionally absent
+  R2 Candidate path; historical backend was NOT invoked.
+correctness: RC=65; same R2 source identity preflight; historical backend was
+  NOT invoked.
+local: RC=65; SOURCE_MISSING; raw sample count 0, all latency/statistics NONE,
+  MEASUREMENT_QUALITY=NOT_RUN; historical backend was NOT invoked.
+record: RC=78; evidence receipt SHA was read, then BACKEND_NOT_CONFIGURED.
+dedup: RC=78; parent/candidate patch inputs missing;
+  SIMILARITY_INSUFFICIENT_DATA, gates NOT_EVALUATED.
+```
+
+No backend was passed off as executed: invoking the listed historical scripts
+would build/run their fixed route binaries and write their route-local result
+directories, not validate R2. R2 has no authorized Candidate or Artifact
+because the register-spill hypothesis remains `FEASIBILITY_UNPROVEN`; do not
+use the top Champion as a donor or create V001 to satisfy backend wiring.
+This is a source/identity and backend-contract limitation, not an HBM/load
+stop. At the recorded current snapshot, device 3 had 65,536 MB HBM capacity,
+3,429 MB used (about 62,107 MB free), AICore 0%, and no running process shown;
+external processes, device utilization, load, and leases are not execution
+gates.
+
+```text
+REQUESTED_RESPONSIBLE_OWNER=Unique canonical Tooling/Integration Owner
+OWNER_PERSON_NAME=UNKNOWN; OWNER_ACK_REQUIRED
+R1_R5_WORK=NOT_BLOCKED_BY_THIS_R2_REQUEST
+R2_HYPOTHESIS=FEASIBILITY_UNPROVEN
+R2_CANDIDATE=NONE; V001=NO
+NEXT_ACTION=OWNER_ACK_AND_ROUTE_AWARE_EXISTING_BACKEND_BINDING
+BLOCKER=NO_R2_CANDIDATE_OR_ARTIFACT; NO_ROUTE_AWARE_BACKEND_CONTRACT;
+         NO_RECORD_BACKEND; NO_CANDIDATE_PATCH_FOR_DEDUP
+```
