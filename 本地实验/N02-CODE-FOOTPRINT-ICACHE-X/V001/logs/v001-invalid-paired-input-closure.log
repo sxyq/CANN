@@ -1,0 +1,40 @@
+ROUTE=N02 CODE-FOOTPRINT-ICACHE-X
+REVISION=V001
+HOST=hwnput3
+UTC=2026-10-10T12:49:50Z
+DEVICE=4
+STATUS=STOPPED_WITH_INVALID_PAIRED_INPUT
+
+=== REASON FOR BINARY EQUALITY ===
+The prior paired build used one include directory for both sides:
+PARENT_INCLUDE_DIR=/tmp/cann-n02-code-footprint-icache-x-v001-jziPyb/artifact-candidate
+CANDIDATE_INCLUDE_DIR=/tmp/cann-n02-code-footprint-icache-x-v001-jziPyb/artifact-candidate
+The paired runner build directory was shared:
+PAIRED_DIR=/tmp/cann-n02-code-footprint-icache-x-v001-jziPyb/paired
+RUNNER=/tmp/cann-n02-code-footprint-icache-x-v001-jziPyb/paired/build/paired_runner_v016
+
+device.cpp and adapter.cpp included the same expected filename:
+INCLUDE=R31B-V016-WIDE-TILE-SEED_kernel.asc
+The modified Candidate source was also staged under a different filename:
+MISSTAGED_CANDIDATE=R31B-V011-LP-ROW-PIPELINE_kernel.asc
+The compiler followed the V016 include filename. The preserved source audit records:
+CANDIDATE_V016_SHA256=2238d0ff3604f0de752d9d9ecb5546f0ec94aa2205b9018853cdd19d7ca04fd1
+PARENT_V016_SHA256=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
+
+=== PRESERVED BUILD EVIDENCE ===
+The existing V016 single-version CMake input was used for device, submission, and full_link. The raw logs retain configure/build output, environment, device snapshots, source identities, object SHA256, and alink SHA256:
+LOG=logs/v016-single-build-device4.log
+LOG=logs/v016-paired-build-device4.log
+LOG=logs/v016-paired-build-device4-envfix.log
+LOG=logs/compiled-input-source-audit.log
+LOG=logs/compiled-input-dependency-confirm.log
+LOG=logs/preflight-compile.log
+LOG=logs/preflight-compile-retry-device4.log
+LOG=logs/compile-device4-cann-env-retry.log
+
+=== RUNTIME SAFETY ===
+NPU4 had an existing VLLMEngineCor process PID 2999855. The existing paired runner calls aclrtResetDevice(4). It was not run, and no existing process was stopped or modified.
+CORRECTNESS=NOT_RUN
+LOCAL=NONE
+RUNNER_ACTION=STOPPED; NO_NEW_RUNNER
+INTERPRETATION=The equal object and alink SHA values are unusable as a Parent/Candidate result because the paired input mapping and runner directory were shared.

@@ -1,0 +1,210 @@
+ROUTE=N02 CODE-FOOTPRINT-ICACHE-X
+REVISION=V001
+HOST=hwnput3
+UTC=2026-10-10T12:21:27Z
+CANDIDATE_DIR=/tmp/cann-n02-code-footprint-icache-x-v001-jziPyb/artifact-candidate
+PARENT_DIR=/tmp/cann-n02-code-footprint-icache-x-v001-jziPyb/artifact-parent
+
+=== INPUT DIR /tmp/cann-n02-code-footprint-icache-x-v001-jziPyb/artifact-candidate ===
+-- device.cpp --
+#include <cstdint>
+#include <cstddef>
+
+#ifndef TENSOR_GROUP_INFO_DEFINED
+#define TENSOR_GROUP_INFO_DEFINED
+struct TensorInfo { const int64_t* shape; int64_t numDims; int32_t dtype; };
+struct TensorGroupInfo { const TensorInfo* tensors; int64_t numTensors; };
+#endif
+
+#ifndef ACLRT_STREAM_DEFINED
+#define ACLRT_STREAM_DEFINED
+using aclrtStream = void*;
+#endif
+
+#ifndef ACL_SUCCESS
+#define ACL_SUCCESS 0
+#endif
+#ifndef ACL_MEM_MALLOC_HUGE_FIRST
+#define ACL_MEM_MALLOC_HUGE_FIRST 1
+#endif
+#ifndef ACL_MEMCPY_HOST_TO_DEVICE
+#define ACL_MEMCPY_HOST_TO_DEVICE 1
+#endif
+inline int aclrtMalloc(void** p, size_t s, int) { if (p) *p = nullptr; (void)s; return 0; }
+inline int aclrtFree(void*) { return 0; }
+inline int aclrtMemset(void*, size_t, int, size_t) { return 0; }
+inline int aclrtMemcpy(void*, size_t, const void*, size_t, int) { return 0; }
+inline int aclrtSynchronizeStream(aclrtStream) { return 0; }
+
+#include "R31B-V016-WIDE-TILE-SEED_kernel.asc"
+-- adapter.cpp --
+#include <cstdint>
+#include <cstddef>
+
+#ifndef TENSOR_GROUP_INFO_DEFINED
+#define TENSOR_GROUP_INFO_DEFINED
+struct TensorInfo { const int64_t* shape; int64_t numDims; int32_t dtype; };
+struct TensorGroupInfo { const TensorInfo* tensors; int64_t numTensors; };
+#endif
+
+#ifndef ACLRT_STREAM_DEFINED
+#define ACLRT_STREAM_DEFINED
+using aclrtStream = void*;
+#endif
+
+#ifndef ACL_SUCCESS
+#define ACL_SUCCESS 0
+#endif
+#ifndef ACL_MEM_MALLOC_HUGE_FIRST
+#define ACL_MEM_MALLOC_HUGE_FIRST 1
+#endif
+#ifndef ACL_MEMCPY_HOST_TO_DEVICE
+#define ACL_MEMCPY_HOST_TO_DEVICE 1
+#endif
+inline int aclrtMalloc(void** p, size_t s, int) { if (p) *p = nullptr; (void)s; return 0; }
+inline int aclrtFree(void*) { return 0; }
+inline int aclrtMemset(void*, size_t, int, size_t) { return 0; }
+inline int aclrtMemcpy(void*, size_t, const void*, size_t, int) { return 0; }
+inline int aclrtSynchronizeStream(aclrtStream) { return 0; }
+
+#include "R31B-V016-WIDE-TILE-SEED_kernel.asc"
+int main() { return 0; }
+-- include source identities --
+-rw-r--r-- 1 lelinfeng lelinfeng 190020 Oct 10 12:08 /tmp/cann-n02-code-footprint-icache-x-v001-jziPyb/artifact-candidate/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+-rw-r--r-- 1 lelinfeng lelinfeng 190039 Oct 10 12:08 /tmp/cann-n02-code-footprint-icache-x-v001-jziPyb/artifact-candidate/R31B-V016-WIDE-TILE-SEED_kernel.asc
+2238d0ff3604f0de752d9d9ecb5546f0ec94aa2205b9018853cdd19d7ca04fd1  /tmp/cann-n02-code-footprint-icache-x-v001-jziPyb/artifact-candidate/R31B-V016-WIDE-TILE-SEED_kernel.asc
+a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3  /tmp/cann-n02-code-footprint-icache-x-v001-jziPyb/artifact-candidate/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+-- source marker --
+-- compile rule references --
+CMakeFiles/device.dir/device.cpp.o: CMakeFiles/device.dir/flags.make
+CMakeFiles/device.dir/device.cpp.o: ../device.cpp
+CMakeFiles/device.dir/device.cpp.o: CMakeFiles/device.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/tmp/cann-n02-code-footprint-icache-x-v001-jziPyb/artifact-candidate/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/device.dir/device.cpp.o"
+	/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/bin/bisheng $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/device.dir/device.cpp.o -MF CMakeFiles/device.dir/device.cpp.o.d -o CMakeFiles/device.dir/device.cpp.o -c /tmp/cann-n02-code-footprint-icache-x-v001-jziPyb/artifact-candidate/device.cpp
+
+CMakeFiles/submission.dir/adapter.cpp.o: CMakeFiles/submission.dir/flags.make
+CMakeFiles/submission.dir/adapter.cpp.o: ../adapter.cpp
+CMakeFiles/submission.dir/adapter.cpp.o: CMakeFiles/submission.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/tmp/cann-n02-code-footprint-icache-x-v001-jziPyb/artifact-candidate/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/submission.dir/adapter.cpp.o"
+	/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/bin/bisheng $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/submission.dir/adapter.cpp.o -MF CMakeFiles/submission.dir/adapter.cpp.o.d -o CMakeFiles/submission.dir/adapter.cpp.o -c /tmp/cann-n02-code-footprint-icache-x-v001-jziPyb/artifact-candidate/adapter.cpp
+
+-- object and linked artifact identities --
+-rw-rw-r-- 1 lelinfeng lelinfeng 334040 Oct 10 12:11 /tmp/cann-n02-code-footprint-icache-x-v001-jziPyb/artifact-candidate/build/CMakeFiles/device.dir/device.cpp.o
+3e3266d0d3abffa5d0a48660f97f9a7c3abf9e8abb485d87617fe97c89c0bb57  /tmp/cann-n02-code-footprint-icache-x-v001-jziPyb/artifact-candidate/build/CMakeFiles/device.dir/device.cpp.o
+-rw-rw-r-- 1 lelinfeng lelinfeng 334040 Oct 10 12:12 /tmp/cann-n02-code-footprint-icache-x-v001-jziPyb/artifact-candidate/build/CMakeFiles/submission.dir/adapter.cpp.o
+7df79bf620d54da293e2f689dd2b913d7d46c5035681faf43d66ca6417d09064  /tmp/cann-n02-code-footprint-icache-x-v001-jziPyb/artifact-candidate/build/CMakeFiles/submission.dir/adapter.cpp.o
+-rwxrwxr-x 1 lelinfeng lelinfeng 183144 Oct 10 12:12 /tmp/cann-n02-code-footprint-icache-x-v001-jziPyb/artifact-candidate/build/device.alink
+998896a58bf828357e6885fb5eab3e41b79fcf70e898baeb3abf126f90be1b9f  /tmp/cann-n02-code-footprint-icache-x-v001-jziPyb/artifact-candidate/build/device.alink
+-rwxrwxr-x 1 lelinfeng lelinfeng 183144 Oct 10 12:12 /tmp/cann-n02-code-footprint-icache-x-v001-jziPyb/artifact-candidate/build/submission.alink
+1e13fdfd6df7876db3820b2c299271d82aad5259f0e293ad540dd006a00a3630  /tmp/cann-n02-code-footprint-icache-x-v001-jziPyb/artifact-candidate/build/submission.alink
+
+=== INPUT DIR /tmp/cann-n02-code-footprint-icache-x-v001-jziPyb/artifact-parent ===
+-- device.cpp --
+#include <cstdint>
+#include <cstddef>
+
+#ifndef TENSOR_GROUP_INFO_DEFINED
+#define TENSOR_GROUP_INFO_DEFINED
+struct TensorInfo { const int64_t* shape; int64_t numDims; int32_t dtype; };
+struct TensorGroupInfo { const TensorInfo* tensors; int64_t numTensors; };
+#endif
+
+#ifndef ACLRT_STREAM_DEFINED
+#define ACLRT_STREAM_DEFINED
+using aclrtStream = void*;
+#endif
+
+#ifndef ACL_SUCCESS
+#define ACL_SUCCESS 0
+#endif
+#ifndef ACL_MEM_MALLOC_HUGE_FIRST
+#define ACL_MEM_MALLOC_HUGE_FIRST 1
+#endif
+#ifndef ACL_MEMCPY_HOST_TO_DEVICE
+#define ACL_MEMCPY_HOST_TO_DEVICE 1
+#endif
+inline int aclrtMalloc(void** p, size_t s, int) { if (p) *p = nullptr; (void)s; return 0; }
+inline int aclrtFree(void*) { return 0; }
+inline int aclrtMemset(void*, size_t, int, size_t) { return 0; }
+inline int aclrtMemcpy(void*, size_t, const void*, size_t, int) { return 0; }
+inline int aclrtSynchronizeStream(aclrtStream) { return 0; }
+
+#include "R31B-V016-WIDE-TILE-SEED_kernel.asc"
+-- adapter.cpp --
+#include <cstdint>
+#include <cstddef>
+
+#ifndef TENSOR_GROUP_INFO_DEFINED
+#define TENSOR_GROUP_INFO_DEFINED
+struct TensorInfo { const int64_t* shape; int64_t numDims; int32_t dtype; };
+struct TensorGroupInfo { const TensorInfo* tensors; int64_t numTensors; };
+#endif
+
+#ifndef ACLRT_STREAM_DEFINED
+#define ACLRT_STREAM_DEFINED
+using aclrtStream = void*;
+#endif
+
+#ifndef ACL_SUCCESS
+#define ACL_SUCCESS 0
+#endif
+#ifndef ACL_MEM_MALLOC_HUGE_FIRST
+#define ACL_MEM_MALLOC_HUGE_FIRST 1
+#endif
+#ifndef ACL_MEMCPY_HOST_TO_DEVICE
+#define ACL_MEMCPY_HOST_TO_DEVICE 1
+#endif
+inline int aclrtMalloc(void** p, size_t s, int) { if (p) *p = nullptr; (void)s; return 0; }
+inline int aclrtFree(void*) { return 0; }
+inline int aclrtMemset(void*, size_t, int, size_t) { return 0; }
+inline int aclrtMemcpy(void*, size_t, const void*, size_t, int) { return 0; }
+inline int aclrtSynchronizeStream(aclrtStream) { return 0; }
+
+#include "R31B-V016-WIDE-TILE-SEED_kernel.asc"
+int main() { return 0; }
+-- include source identities --
+bash: line 19: rg: command not found
+bash: line 20: rg: command not found
+-rw-r--r-- 1 lelinfeng lelinfeng 190020 Oct 10 12:08 /tmp/cann-n02-code-footprint-icache-x-v001-jziPyb/artifact-parent/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+-rw-r--r-- 1 lelinfeng lelinfeng 190020 Oct 10 12:08 /tmp/cann-n02-code-footprint-icache-x-v001-jziPyb/artifact-parent/R31B-V016-WIDE-TILE-SEED_kernel.asc
+a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3  /tmp/cann-n02-code-footprint-icache-x-v001-jziPyb/artifact-parent/R31B-V016-WIDE-TILE-SEED_kernel.asc
+a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3  /tmp/cann-n02-code-footprint-icache-x-v001-jziPyb/artifact-parent/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+-- source marker --
+-- compile rule references --
+CMakeFiles/device.dir/device.cpp.o: CMakeFiles/device.dir/flags.make
+CMakeFiles/device.dir/device.cpp.o: ../device.cpp
+CMakeFiles/device.dir/device.cpp.o: CMakeFiles/device.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/tmp/cann-n02-code-footprint-icache-x-v001-jziPyb/artifact-parent/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/device.dir/device.cpp.o"
+	/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/bin/bisheng $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/device.dir/device.cpp.o -MF CMakeFiles/device.dir/device.cpp.o.d -o CMakeFiles/device.dir/device.cpp.o -c /tmp/cann-n02-code-footprint-icache-x-v001-jziPyb/artifact-parent/device.cpp
+
+CMakeFiles/submission.dir/adapter.cpp.o: CMakeFiles/submission.dir/flags.make
+CMakeFiles/submission.dir/adapter.cpp.o: ../adapter.cpp
+CMakeFiles/submission.dir/adapter.cpp.o: CMakeFiles/submission.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/tmp/cann-n02-code-footprint-icache-x-v001-jziPyb/artifact-parent/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/submission.dir/adapter.cpp.o"
+	/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/bin/bisheng $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/submission.dir/adapter.cpp.o -MF CMakeFiles/submission.dir/adapter.cpp.o.d -o CMakeFiles/submission.dir/adapter.cpp.o -c /tmp/cann-n02-code-footprint-icache-x-v001-jziPyb/artifact-parent/adapter.cpp
+
+-- object and linked artifact identities --
+-rw-rw-r-- 1 lelinfeng lelinfeng 334040 Oct 10 12:12 /tmp/cann-n02-code-footprint-icache-x-v001-jziPyb/artifact-parent/build/CMakeFiles/device.dir/device.cpp.o
+3e3266d0d3abffa5d0a48660f97f9a7c3abf9e8abb485d87617fe97c89c0bb57  /tmp/cann-n02-code-footprint-icache-x-v001-jziPyb/artifact-parent/build/CMakeFiles/device.dir/device.cpp.o
+-rw-rw-r-- 1 lelinfeng lelinfeng 334040 Oct 10 12:12 /tmp/cann-n02-code-footprint-icache-x-v001-jziPyb/artifact-parent/build/CMakeFiles/submission.dir/adapter.cpp.o
+7df79bf620d54da293e2f689dd2b913d7d46c5035681faf43d66ca6417d09064  /tmp/cann-n02-code-footprint-icache-x-v001-jziPyb/artifact-parent/build/CMakeFiles/submission.dir/adapter.cpp.o
+-rwxrwxr-x 1 lelinfeng lelinfeng 183144 Oct 10 12:12 /tmp/cann-n02-code-footprint-icache-x-v001-jziPyb/artifact-parent/build/device.alink
+998896a58bf828357e6885fb5eab3e41b79fcf70e898baeb3abf126f90be1b9f  /tmp/cann-n02-code-footprint-icache-x-v001-jziPyb/artifact-parent/build/device.alink
+-rwxrwxr-x 1 lelinfeng lelinfeng 183144 Oct 10 12:12 /tmp/cann-n02-code-footprint-icache-x-v001-jziPyb/artifact-parent/build/submission.alink
+1e13fdfd6df7876db3820b2c299271d82aad5259f0e293ad540dd006a00a3630  /tmp/cann-n02-code-footprint-icache-x-v001-jziPyb/artifact-parent/build/submission.alink
+
+=== SOURCE DIFFERENCE ===
+--- /tmp/cann-n02-code-footprint-icache-x-v001-jziPyb/artifact-parent/R31B-V016-WIDE-TILE-SEED_kernel.asc	2026-10-10 12:08:59.541243782 +0000
++++ /tmp/cann-n02-code-footprint-icache-x-v001-jziPyb/artifact-candidate/R31B-V016-WIDE-TILE-SEED_kernel.asc	2026-10-10 12:08:55.641131816 +0000
+@@ -3364,7 +3364,7 @@
+         }
+     }
+ 
+-    __aicore__ inline void Load(const AscendC::LocalTensor<T>& dst,
++    __aicore__ __attribute__((noinline)) void Load(const AscendC::LocalTensor<T>& dst,
+                                 const AscendC::GlobalTensor<T>& src,
+                                 uint64_t offset, int32_t count)
+     {
+SOURCE_DIFF_RC=1
+bash: line 19: rg: command not found
+bash: line 20: rg: command not found
