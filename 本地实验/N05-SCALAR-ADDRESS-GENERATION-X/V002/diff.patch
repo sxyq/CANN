@@ -1,0 +1,65 @@
+diff --git "a/\346\234\254\345\234\260\345\256\236\351\252\214/N05-SCALAR-ADDRESS-GENERATION-X/V001/submission.asc" "b/\346\234\254\345\234\260\345\256\236\351\252\214/N05-SCALAR-ADDRESS-GENERATION-X/V002/submission.asc"
+index 07b1f89a..b4f86156 100644
+--- "a/\346\234\254\345\234\260\345\256\236\351\252\214/N05-SCALAR-ADDRESS-GENERATION-X/V001/submission.asc"
++++ "b/\346\234\254\345\234\260\345\256\236\351\252\214/N05-SCALAR-ADDRESS-GENERATION-X/V002/submission.asc"
+@@ -3123,11 +3123,16 @@ private:
+             int32_t batchRow = 0;
+             int32_t tile = 0;
+             uint64_t col = 0;
+-            uint64_t rowOffset = batchBegin * rowWidth;
++            // V002: carry the flattened row-major GM input cursor.  The
++            // increment is one tile within a row and the remaining tail at a
++            // row boundary, preserving the existing tile stream.
++            uint64_t gmOffset = batchBegin * rowWidth;
+             bool relA = false;
+             bool relB = false;
+             for (int32_t u = 0; u < units; ++u) {
+                 const bool wrapsRow = (tile + 1 == tileCount);
++                const uint64_t gmStep = wrapsRow
++                    ? rowWidth - col : static_cast<uint64_t>(tileWidth);
+                 const int32_t valid = static_cast<int32_t>(
+                     rowWidth - col < static_cast<uint64_t>(tileWidth)
+                         ? rowWidth - col : static_cast<uint64_t>(tileWidth));
+@@ -3138,15 +3143,14 @@ private:
+                 const AscendC::TEventID rd = useA ? rd0 : rd1;
+                 const AscendC::TEventID rel = useA ? rel0 : rel1;
+                 if (u == 0) {
+-                    Load(xLocal, xGm_, rowOffset + col, valid);
+-                    Load(residualLocal, residualGm_, rowOffset + col, valid);
++                    Load(xLocal, xGm_, gmOffset, valid);
++                    Load(residualLocal, residualGm_, gmOffset, valid);
+                     AscendC::SetFlag<AscendC::HardEvent::MTE2_V>(rd);
+                 }
+                 AscendC::WaitFlag<AscendC::HardEvent::MTE2_V>(rd);
+                 if (u + 1 < units) {
+                     const uint64_t nCol = wrapsRow ? 0 : col + static_cast<uint64_t>(tileWidth);
+-                    const uint64_t nRowOffset = rowOffset +
+-                        (wrapsRow ? rowWidth : static_cast<uint64_t>(0));
++                    const uint64_t nextGmOffset = gmOffset + gmStep;
+                     const int32_t nValid = static_cast<int32_t>(
+                         rowWidth - nCol < static_cast<uint64_t>(tileWidth)
+                             ? rowWidth - nCol : static_cast<uint64_t>(tileWidth));
+@@ -3167,8 +3171,8 @@ private:
+                             relB = false;
+                         }
+                     }
+-                    Load(xNext, xGm_, nRowOffset + nCol, nValid);
+-                    Load(rNext, residualGm_, nRowOffset + nCol, nValid);
++                    Load(xNext, xGm_, nextGmOffset, nValid);
++                    Load(rNext, residualGm_, nextGmOffset, nValid);
+                     AscendC::SetFlag<AscendC::HardEvent::MTE2_V>(nrd);
+                 }
+                 if constexpr (std::is_same<T, half>::value) {
+@@ -3206,11 +3210,11 @@ private:
+                 } else {
+                     relB = true;
+                 }
++                gmOffset += gmStep;
+                 if (wrapsRow) {
+                     ++batchRow;
+                     tile = 0;
+                     col = 0;
+-                    rowOffset += rowWidth;
+                 } else {
+                     ++tile;
+                     col += static_cast<uint64_t>(tileWidth);
