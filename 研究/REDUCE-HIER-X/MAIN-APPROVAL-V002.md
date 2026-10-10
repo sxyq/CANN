@@ -1,12 +1,12 @@
-# MAIN APPROVAL — REDUCE-HIER-X V002
+# current route recordS — REDUCE-HIER-X V002
 
 Date: 2026-09-27
-Approver: MAIN-2
+Recordr: MAIN-2
 DIRECT_PARENT=FROZEN_R31B_V011
 PARENT_SOURCE_SHA=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
 OFFICIAL_ANCHOR=45.16
 
-## APPROVED SINGLE HYPOTHESIS
+## SELECTED SINGLE HYPOTHESIS
 
 H2 — Full manual vector reduction tree (R011, 0–1 GetValue).
 
@@ -17,7 +17,7 @@ one SyncSToV after).
 
 Target win: large-D multi-tile rows (D=8192..32768, tileCount=2..8), estimated -18% to -35%.
 
-FORBIDDEN: no scheduling, no dtype split, no DMA, no wide specialization, no epilogue change,
+DEFERRED: no scheduling, no dtype split, no DMA, no wide specialization, no epilogue change,
 no gamma/bias caching, no sync-removal as the performance variable.
 
 ## Implementation notes

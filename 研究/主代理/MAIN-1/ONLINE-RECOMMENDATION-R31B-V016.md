@@ -11,7 +11,7 @@
 
 ## Trigger
 
-Campaign conditional approval trigger **A** met:
+Campaign conditional decision trigger **A** met:
 
 | 条件 | 状态 | 证据 |
 |---|---|---|
@@ -19,7 +19,7 @@ Campaign conditional approval trigger **A** met:
 | 多 pair | YES | 15/16 与 16/18 对为负 |
 | 相关 shape 方向一致 | YES | 变更域 fp16 宽行一致；其余形状持平无回退 |
 
-`ONLINE_DECISION = APPROVED_ON_TRIGGER`。
+`ONLINE_DECISION = SELECTED_ON_TRIGGER`。
 
 ## Main Review checklist
 

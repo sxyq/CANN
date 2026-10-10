@@ -44,6 +44,6 @@ Source: `phase4/online/R31B/V011/result.json` (15/15 Pass, Official 45.16).
 ## Implications for VECTOR-MATH-X
 
 - Cases 14 and 7 are the highest-value targets (together worth ~2.5 points of Official score if improved to ratio 1.5x).
-- Case 14 likely needs wide-path improvements (forbidden in current scope) or epilogue pipelining (EPI-PIPE-3).
+- Case 14 likely needs wide-path improvements (deferred in current scope) or epilogue pipelining (EPI-PIPE-3).
 - Case 7 is well-suited to SEQ-FUSE-2 (denominator handoff reduction on short rows).
 - Cases 9, 15 are near best — low ROI.

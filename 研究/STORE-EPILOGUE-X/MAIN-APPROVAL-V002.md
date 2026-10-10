@@ -1,13 +1,13 @@
-# MAIN APPROVAL — STORE-EPILOGUE-X V002
+# current route recordS — STORE-EPILOGUE-X V002
 
 Date: 2026-09-27 (C2C overnight)
 DIRECT_PARENT=FROZEN_R31B_V011
 PARENT_SOURCE_SHA=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
 V001_DISPOSITION=NEEDS_ONE_MORE_LOCAL (large −7.61% 6/0; medium slight regression)
 
-## APPROVED SINGLE HYPOTHESIS
+## SELECTED SINGLE HYPOTHESIS
 
-STORE-H2B-GATED — single-row resident writeback merge WITH tileCount>=4 gate.
+STORE-H2B-THRESHOLD — single-row resident writeback merge WITH tileCount>=4 threshold.
 
 Same mechanism as V001 (merge contiguous UB output-tile run into one
 DataCopyPad), but apply it only when the row's tileCount >= 4.

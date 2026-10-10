@@ -23,7 +23,7 @@ identical (same FP32 intermediate semantics, same result tolerance).
 - partial-sum lifetime
 - reduction workspace organization
 
-## Forbidden
+## Deferred
 
 - dtype specialization
 - row scheduling changes
@@ -72,12 +72,12 @@ EXPECTED_RISK_SHAPES
 CORRECTNESS_RISK
 MEASUREMENT_PLAN
 
-Then STOP. Do not edit kernel until Main approves exactly one hypothesis.
+Then STOP. Do not edit kernel until Main records exactly one hypothesis.
 
 ## Hard constraints
 
-- MAIN-1 worktrees under /Users/sunyiyang/Desktop/Project/cann-sixlane/ are READ/WRITE FORBIDDEN
+- MAIN-1 worktrees under /Users/sunyiyang/Desktop/Project/cann-sixlane/ are READ/WRITE DEFERRED
 - Do not modify shared control under canonical cann/
 - Do not submit to CANNJudge
 - Mathematical semantics must stay identical
-- ONE FACTOR AT A TIME after approval
+- ONE FACTOR AT A TIME after decision

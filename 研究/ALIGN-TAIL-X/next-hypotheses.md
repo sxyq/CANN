@@ -2,7 +2,7 @@
 
 > Resource rule carried into this research record: compile/link/source identity/host build/correctness may use up to 8 cards in parallel, one version per card, while each card has `FREE_HBM >= 100 MB`. AICore, VLLM, resident processes, and HBM use below full capacity do not stop that work. Timing uses live HBM utilization below 100% plus an unconflicted lease; AICore 0% and a VLLM-free device are not prerequisites. Older text using stricter wording is historical context only.
 
-> **MAIN-2 APPROVALS 2026-09-25** — APPROVED NEXT backlog: H1 threshold-controlled bulk+tail split (bulk via direct DataCopy; small remainder via minimal tail / DataCopyPad chosen by threshold). H1 implementation FORBIDDEN while current Candidate is undecided. Scope: ALIGN keeps DataCopy / DataCopyPad / aligned bulk / tail / copy-direction asymmetry only; H2 row-group geometry DEFER_TO_SCHED. H3 copy-direction asymmetry remains in research.
+> **current route record 2026-09-25** — SELECTED NEXT backlog: H1 threshold-controlled bulk+tail split (bulk via direct DataCopy; small remainder via minimal tail / DataCopyPad chosen by threshold). H1 implementation remains described while current Candidate is undecided. Scope: ALIGN keeps DataCopy / DataCopyPad / aligned bulk / tail / copy-direction asymmetry only; H2 row-group geometry DEFER_TO_SCHED. H3 copy-direction asymmetry remains in research.
 
 ## CURRENT_CANDIDATE
 
@@ -42,7 +42,7 @@ Per-tile copy-path cost model for the ALIGN parent architecture (R009 copy-centr
 - DUPLICATE_CHECK: not the candidate (V001 has no threshold); not parent (parent never splits); no other active route owns a split policy (SCHED=core ownership, BATCH=batched multi-row DMA, REDUCE=invscale, ASYNC=MTE3 overlap, UB-LIVENESS=buffer aliasing). R010 donor is a per-row independent implementation with different tiling — this is a policy on the ALIGN parent path only.
 - MINIMAL_OFAT_DIFF: add two constants + split condition in `Load`/`Store`; nothing else.
 - EXPECTED_LOCAL_PROBES: exact-shape 2×100 FP32 same-binary first (V001 vs parent), then threshold sweep {never-split, ≥64B remainder, ≥512B bulk, always-split=V001} as separate binaries under interleaved pairs; device-event primary per protocol.
-- CLASSIFICATION: READY_FOR_MAIN_REVIEW (execution contingent on V001 exact-shape result and a clean device window; run as V002 only after Main issues NEXT_HYPOTHESIS).
+- CLASSIFICATION: READY_FOR_MAIN_REVIEW (execution contingent on V001 exact-shape result and a clean device window; run as V002 only after the current route records NEXT_HYPOTHESIS).
 
 ## HYPOTHESIS-2
 
@@ -55,7 +55,7 @@ Per-tile copy-path cost model for the ALIGN parent architecture (R009 copy-centr
 - ASCEND_FEASIBILITY: high for the pad/blockCount path (documented, blockCount≤4095 clip required); direct multi-row DataCopy with stride also exists for the aligned case.
 - UB/CORE/DMA_IMPACT: UB grows by up to (rLengthAlign−rowWidth)×rows×sizeof(T) per buffer — must re-check the 192KiB budget with 7 buffers; DMA descriptors drop roughly rowCount×(2 passes×2 + 2 params + 1 store) → ~(passes+params+store) per row-group; core occupancy unchanged (host policy is a separate revision).
 - SYNC_IMPACT: fewer EnQue/DeQue events possible, but V001 uses raw PipeBarrier — barrier count can drop proportionally to op count; no new sync primitives.
-- PRECISION_RISK: padded UB slots are excluded by count=valid in every op; pad dummy in GM→UB must not be read — safe if counts stay valid. I001 V006 "padded uKeep slack fix" (WA 13/15, results.tsv) is the historical warning: padding only fails when padded elements leak into compute; keep counts valid.
+- PRECISION_RISK: padded UB slots are excluded by count=valid in every op; pad dummy in GM→UB is not read — safe if counts stay valid. I001 V006 "padded uKeep slack fix" (WA 13/15, results.tsv) is the historical warning: padding only fails when padded elements leak into compute; keep counts valid.
 - DUPLICATE_CHECK: BATCH-RESIDENT-X owns R015 contiguous multi-row batch DMA *after parameter residency* — overlap risk on the "multi-row single DMA" element; scoping difference: this hypothesis is the padded-stride layout (rLengthAlign) that makes multi-row pad *legal for non-aligned D* on the ALIGN parent path without param-residency changes. SCHED-ROWGROUP-X owns R012 32B row-group **core ownership** — different layer (who owns rows vs how rows are laid out/copied). Must be reviewed against both before promotion; if Main judges it inside BATCH's scope, mark DUPLICATE and drop.
 - MINIMAL_OFAT_DIFF: change UB addressing stride + replace per-row pad calls with one blockCount pad per row-group; no compute/schedule/host change.
 - EXPECTED_LOCAL_PROBES: 2×100 FP32 (group=2, 7 ops/row → ~4 calls/row-group), then a mid non-aligned shape (e.g. 4×1025 FP32) for descriptor scaling; correctness golden on NaN/Inf rows and row-group boundaries.
@@ -84,7 +84,7 @@ Per-tile copy-path cost model for the ALIGN parent architecture (R009 copy-centr
 - MECHANISM: compile-time (`if constexpr`) per-dtype copy policy. The byte-split granularity is dtype-dependent: FP32 tails are multiples of 4B (bulk granularity 8 elems), FP16/BF16 tails are multiples of 2B (bulk granularity 16 elems), so narrow dtypes produce a tail on every D%16≠0 row while transferring half the bytes per element — descriptor overhead per byte is roughly 2× worse. Uniform single-pad for narrow dtypes removes the split (and its branch) exactly where the byte/descriptor ratio is worst; FP32 keeps V001's split.
 - BOTTLENECK: per-byte DMA descriptor overhead for narrow dtypes; judge dtypes include FP16 and BF16 (PROBLEM.md: dtype FP16/BF16/FP32, D 64..32768, D may be non-32B).
 - EXPECTED_SHAPES: FP16/BF16 with D%16≠0 (e.g. 4×65 BF16, 2×101 FP16); FP32 behavior unchanged (this hypothesis is a no-op for the current probe).
-- WHY_IT_MAY_HELP: matches the split to the regime where it can pay (FP32, larger element bytes) and drops branch+second descriptor where it likely cannot (2B-element tails).
+- WHY_IT_MAY_HELP: matches the split to the regime where it can pay (FP32, larger element bytes) and drops branch+second descriptor where it likely does not (2B-element tails).
 - WHY_IT_MAY_FAIL: if descriptor cost is shape-independent rather than byte-proportional, narrow dtypes benefit from the split just as much; if pad cost scales with blockLen (not per-call), uniform pad loses on wide narrow-dtype rows.
 - ASCEND_FEASIBILITY: high — both call forms legal for T=half/bfloat16_t; candidate already instantiates `AddRmsNormBiasKernel<half>/<bfloat16_t>` (`submission.asc:469-481`).
 - UB/CORE/DMA_IMPACT: no UB or core change; DMA op count per non-aligned narrow tile 2→1.
@@ -122,7 +122,7 @@ Per-tile copy-path cost model for the ALIGN parent architecture (R009 copy-centr
    WHY_NOT_DUPLICATE: parent never splits non-aligned sizes and never keys a policy on remainder size, direction, dtype, or padded counts.
 2. SOURCE_ROUTE: R010 (FULL-R010-TAIL-CENTRIC I001, archive independent branch; compile-only run).
    MECHANISM: per-row outer loop; full 32B blocks via DataCopy, last block via DataCopyPad, output uses the same symmetric branch to avoid tail writes into the next row (I001 README).
-   OLD_CONTEXT: CANN9 compile + static preflight only; no runtime/perf evidence.
+   OLD_CONTEXT: CANN9 compile + static initial snapshot only; no runtime/perf evidence.
    CURRENT_CONTEXT: flavor donor behind V001's tail specialization; its tiling (per-row, no 4096 tile, no two-pass FP32 residency) differs from ALIGN's architecture.
    WHY_ORTHOGONAL: H3 (direction asymmetry) and H4 (dtype policy) split what R010 kept symmetric; H5 removes the compute tail R010 also ignores.
    WHY_NOT_DUPLICATE: different tiling/scheduling; R010 has no threshold, no dtype branch, no padded-count compute; it is not an active route.
@@ -177,9 +177,9 @@ Per-tile copy-path cost model for the ALIGN parent architecture (R009 copy-centr
 
 ## RECOMMENDED_NEXT
 
-1. Track-A unchanged: run exact-shape same-binary (2×100 FP32, Direct Parent, device events, warmup≥10) on the next Main-assigned device admitted by live HBM and lease state; no source edits until Main issues NEXT_HYPOTHESIS.
+1. Track-A unchanged: run exact-shape same-binary (2×100 FP32, Direct Parent, device events, warmup≥10) on the next Main-assigned device admitted by live HBM and lease state; no source edits until the current route records NEXT_HYPOTHESIS.
 2. HYPOTHESIS-1 (threshold-controlled split) is the leading next revision: READY_FOR_MAIN_REVIEW, execution contingent on the V001 exact-shape result — V001 neutral/negative ⇒ H1 directly; V001 positive ⇒ H1 remains the natural refinement (sweep thresholds on top of the winning split).
-3. Main decision needed: HYPOTHESIS-2 scope vs BATCH-RESIDENT-X (multi-row DMA) and SCHED-ROWGROUP-X (row-group ownership) before it can be promoted past NEEDS_MORE_EVIDENCE.
+3. current route record needed: HYPOTHESIS-2 scope vs BATCH-RESIDENT-X (multi-row DMA) and SCHED-ROWGROUP-X (row-group ownership) before it can be promoted past NEEDS_MORE_EVIDENCE.
 4. OPTIONAL-4/5: gather narrow-dtype probes and the D≡1..7 (mod 4096) ReduceSum-count golden before any revision; H5 doubles as a latent correctness hardening worth a standalone correctness run even without timing.
 5. Data still missing: measured DataCopyPad vs DataCopy cost on dav-2201 (no local msprof evidence exists; official docs claim negligible difference in aligned cases only). One msprof comparison of parent vs V001 on the exact shape would resolve H1's core uncertainty — collect it opportunistically with the qualification run if load permits.
 
@@ -203,7 +203,7 @@ Track-A ran and finished this cycle. Exact-shape same-binary on 2×100 FP32 (Dir
 - Raw evidence (permanent): `cann-next6/ALIGN-TAIL-X/phase4/local/ALIGN-TAIL-X/V001/support/results-qual-2x100/d4/{sb1,sb2}-parent-w10-s31-raw.tsv`, `-stats.txt`, `summary`, npu-smi start/end, timestamps.
 - SHA unchanged: V001 `f573d16d39fb54a2a75f75f90943168b96dd97d83fb6bd094f11fd73c61df840`; parent `c8d0f010…`; probe binaries `a8bd66a6…` / `bfb2988a…` re-verified local + server before the run. No kernel edit, no new revision.
 - Device ecology during the window (shared `server3-device-leases.tsv`, all MAIN-2): ALIGN d4 → BATCH-RESIDENT-X d5 → REDUCE-INVSCALE-X d6 leased in sequence, then ASYNC-TRIPLE-X took d4 at 14:27:51Z after my release. One malformed line exists (BATCH's first claim: device field = `2026-09-25T00:00:00Z`, later corrected to d5) — Main should be aware the lease file has an unparseable row.
-- Consequence for the hypotheses below: no V001-vs-parent number exists, so the decision rule "V001 neutral/negative ⇒ H1 directly; V001 positive ⇒ H1 as refinement" (RECOMMENDED_NEXT §2) cannot be applied. All three Track-B entries remain research-only; none may be promoted to V002 until Main issues NEXT_HYPOTHESIS.
+- Consequence for the hypotheses below: no V001-vs-parent number exists, so the decision rule "V001 neutral/negative ⇒ H1 directly; V001 positive ⇒ H1 as refinement" (RECOMMENDED_NEXT §2) is not applied. All three Track-B entries remain research-only; none may be promoted to V002 until the current route records NEXT_HYPOTHESIS.
 
 ## HYPOTHESIS-1 — DEEPENING 2026-09-25 (OFAT / falsification / precision-ABI)
 
@@ -226,7 +226,7 @@ Fields follow MAIN-2's required field order; this block is the reviewable versio
   - `OFAT-BOTH`: `R_min=64B`, `B_min=512B` (only after R1 and B1 are each measured alone — never both at once)
   - references: parent (never-split) and V001 (`R=0,B=32`), both already built.
 - FALSIFICATION (what kills H1, stated before any data):
-  1. *Resolution kill* — if V001 vs parent on the exact shape lands inside the same-binary floor in both blocks (|Δ| ≤ floor), the entire split family is below measurement resolution; thresholds cannot show a win ⇒ H1 demoted from READY_FOR_MAIN_REVIEW.
+  1. *Resolution kill* — if V001 vs parent on the exact shape lands inside the same-binary floor in both blocks (|Δ| ≤ floor), the entire split family is below measurement resolution; thresholds does not show a win ⇒ H1 demoted from READY_FOR_MAIN_REVIEW.
   2. *Direction kill* — if the sweep is monotone toward never-split (parent ≥ all thresholds ≥ V001), the split itself is wrong and thresholds are not the lever ⇒ H1 as stated is false; the correct next step would be "drop the split", not "tune it".
   3. *Mechanism kill* — one msprof comparison (parent vs V001, same shape) showing the extra DataCopy adds an instruction but ≈0 cycles (MTE issue hidden) ⇒ descriptor-cost mechanism false, thresholds can only regress.
   4. *Flat kill* — all four settings equal within floor ⇒ shape-insensitive; keep V001 or parent as-is on correctness grounds, no revision.
@@ -258,7 +258,7 @@ Fields follow MAIN-2's required field order; this block is the reviewable versio
 
 - TITLE: `sizeAligned` is checked without `startAligned` on the full-tile path — add start alignment to the direct-DataCopy predicate.
 - MECHANISM: `Load`/`Store` branch on `sizeAligned = (byteCount & 31)==0` **first** and take direct `DataCopy` unconditionally (`kernel.asc:113-117`, `159-163`); `startAligned` is only consulted inside the non-size-aligned branch (`kernel.asc:119`, `165`). For a full 4096-element tile (`byteCount=16384`, always size-aligned) with a GM start that is not 32 B aligned, the code therefore issues `DataCopy` from an unaligned GM address. Parent has the identical size-only predicate (`parent/kernel.asc:107-112`, `131-136`). H6 = predicate becomes `sizeAligned && startAligned`, so an unaligned-start full tile falls to the pad path (parent's full-pad form; V001 would additionally keep its bulk+tail split for that tile).
-- BOTTLENECK: not a performance hypothesis — it is a completeness question about the alignment predicate that defines this route (aligned bulk vs pad tail). If the hardware/doc really requires a 32 B GM start for `DataCopy`, every non-aligned-D shape with D≥4096 and rows≥2 silently runs half its tiles on a forbidden call form.
+- BOTTLENECK: not a performance hypothesis — it is a completeness question about the alignment predicate that defines this route (aligned bulk vs pad tail). If the hardware/doc really requires a 32 B GM start for `DataCopy`, every non-aligned-D shape with D≥4096 and rows≥2 silently runs half its tiles on a deferred call form.
 - EXPECTED_SHAPES: D ∈ [4096, 32768] with D%8≠0 (row-1 start = D×4 bytes ≡ non-zero mod 32) and rows ≥ 2 — e.g. 2×4100, 2×4103, 3×8193. Below D=4096 every tile's `valid` is the whole row, so `byteCount` is non-aligned whenever the row start is, and the pad path is taken anyway (this is why 2×100 never exercises the edge). Gamma/bias loads use `col` offsets only (aligned when D%8≠0 rows are handled per-column) and are unaffected for col=0 tiles.
 - WHY_IT_MAY_HELP: closes a potential data-corruption path with a two-operand predicate change; if the edge is real it explains any historical shape-dependent wrongness and it is a correctness-first repair (README allows correctness-only repairs with no performance variable).
 - WHY_IT_MAY_FAIL: local references only state count alignment for `DataCopy` (`common-traps.md` 原因2: `count*sizeof(T)` must be a 32 B multiple; `api-datacopy.md:84-96` table is element counts) and state a 32 B start requirement only for the **UB side of DataCopyPad** (`api-datacopy.md:123`). No local doc says GM start must be 32 B aligned for `DataCopy`. The parent is historical phase3 online 17.64 / 15/15, which is evidence the edge either does not exist on dav-2201 or was never covered by those 15 cases — **UNKNOWN, not assumed**.
@@ -300,7 +300,7 @@ Evidence read (docs only; no source copied):
   2. UB addresses must be 32 B aligned;
   3. `count * sizeof(T)` must be 32 B aligned; if not, the transfer size is **silently rounded down** to a 32 B multiple (a real behavior note, but it does not fire here — both parent and V001 only issue `DataCopy` under `sizeAligned`).
 - Corroborating local refs: skill `ascendc-api-best-practices/references/api-datacopy.md` §32字节对齐 (L84-93, a size table) and §UB端起始地址 (L121-123, UB-side start requirement applies to DataCopyPad); `ascendc-precision-debug/references/common-traps.md` 原因2 (L371-379, `count*sizeof(T)` only).
-- Conflicting summary NOT used: `ascendc-docs-search/references/api-index.md` L189 "DataCopy：512 字节对齐" — a generic cheat-sheet line that contradicts the API doc's explicit 约束说明; most plausibly describes cube/AdvAPI copy paths, not basic GM↔UB `DataCopy`. Recorded so nobody re-litigates it.
+- Conflicting summary NOT used: `ascendc-docs-search/references/api-index.md` L189 "DataCopy：512 字节对齐" — a generic cheat-sheet line that contradicts the API doc's explicit 约束说明; most plausibly describes cube/AdvAPI copy paths, not basic GM↔UB `DataCopy`. Recorded so nobody re-litithresholds it.
 - Public web: hiascend CANN 8.5 API pages return JS shells only (fetched 2026-09-25; no per-API text retrievable) → CANN 8.5 online wording UNCONFIRMED. Version caveat: the primary source is the 9.2.0 devkit while this route builds CANN 8.5.0.alpha002; this class of constraint is expected to be stable across versions but is formally unverified for 8.5.
 
 **CONSEQUENCE:** no official GM-32B clause exists for `DataCopy`. Row starts are always
@@ -325,7 +325,7 @@ unreachable (why 2×100 is blind). Host forces one core on non-32B rowBytes
 **Confound:** for D ∈ (4096, 8192] the tail tile has valid = D−4096; D=4100 → 4, D=4103 → 7,
 both below the Level-2 `ReduceSum` documented minimum of 8 (H5's separate edge, counts are
 `valid`). Structurally in fp32, D%8≠0 ⇒ tail%8≠0, so an unaligned-start shape can never carry
-a multiple-of-8 tail — the two edges cannot be split by fp32 tail arithmetic. They are split
+a multiple-of-8 tail — the two edges is not split by fp32 tail arithmetic. They are split
 by ROW COUNT (alignment edge needs rows≥2; reduce edge does not) plus one FP16 shape whose
 tail is canonical:
 
@@ -369,14 +369,14 @@ Decision tree (pre-registered):
   `108-114/157-163` are the same size-only test; every future ALIGN revision inherits it. A
   real edge sits on BOTH sides of every P/C pair on triggering shapes.
 - **Qualification blindness.** All local qualification to date used small probes (2×100) that
-  mathematically cannot reach the edge — P/C on them returns bad=0 while the bug (if real)
+  mathematically does not reach the edge — P/C on them returns bad=0 while the bug (if real)
   lives untouched on D≥4096 unaligned-start shapes.
 - **Official-set evidence cuts toward "not real."** Parent is historical phase3 online 15/15
   (17.64). If the hidden official set contains any D∈[4096,32768] with D%8≠0 (plausible
   given the advertised D range with non-32B allowed), the edge would already have failed
   there → parent passing is suggestive that dav-2201 does not enforce a GM-32B rule.
   The official shape list is unknown, so this is supporting evidence, not proof.
-- **What a shared bug would cost.** runner_ref aborts with exit 3 on bad>0, so timing cannot
+- **What a shared bug would cost.** runner_ref aborts with exit 3 on bad>0, so timing does not
   be silently wrong; the concrete loss is that D≥4096 unaligned-start shapes become
   unmeasurable and unscoreable until the predicate question settles, plus a potential
   wrong-answer class failure on any official shape in that band. If tree (1) fires, Main
@@ -384,7 +384,7 @@ Decision tree (pre-registered):
   correctness-only repairs with no performance variable) and decide whether the parent used
   as P reference is repaired too — that touches every ALIGN P/C on record.
 - **Scope of this cycle:** design + docs only. No device slot used (d4/d5/d6 leased, d7
-  forbidden), no kernel edit, no new revision.
+  deferred), no kernel edit, no new revision.
 
 ### 4. Fields refresh (full set, H6 updated)
 

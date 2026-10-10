@@ -210,7 +210,7 @@ Per-tile issue overhead: two tiles × three API calls each, with a `PipeBarrier`
 Issue width is a pure dataflow/granularity choice in the unified FP32 chain; no dtype branch, no conversion change. FP32 and BF16 take the same structural change.
 
 **WHY_NOT_DUPLICATE_EXISTING_MAIN2**
-- ASYNC-TRIPLE-X: near-border on the shared epilogue site; the store ring and event placement must not move. The declared variable is compute issue width only.
+- ASYNC-TRIPLE-X: near-border on the shared epilogue site; the store ring and event placement does not move. The declared variable is compute issue width only.
 - H1 (this document): instruction form vs issue width — different axes, do not merge into one revision.
 
 **EXPECTED_WIN_SHAPES**
@@ -225,7 +225,7 @@ Low. Same ops, same operands, same per-element order. Only the `calCount` on the
 
 **MEASUREMENT_PLAN**
 1. Same-binary on 8192 (acting) and 4096 (zero-delta control).
-2. One revision: only affine call width. Diff must not move any store/event line.
+2. One revision: only affine call width. Diff does not move any store/event line.
 3. Interleaved P/C on 4×8192 FP32; 2×4096 control.
 4. Falsifier: if 8192 regresses and 4096 is flat, the per-tile order was hiding store latency (ASYNC territory) — return to parent.
 
@@ -264,8 +264,8 @@ MulAddDst(outRow[col], valueRow[col], scaleRow[col]);             // once per ti
 
 ---
 
-## 5. REQUEST_MAIN_APPROVAL
+## 5. REQUEST_MAIN_ROUTE_RECORD
 
-REQUEST_MAIN_APPROVAL: **HYPOTHESIS-V002-1 — VMLA FUSED AFFINE with row-level operand preparation.**
+REQUEST_MAIN_ROUTE_RECORD: **HYPOTHESIS-V002-1 — VMLA FUSED AFFINE with row-level operand preparation.**
 
-Requested disposition: approve V002-1 as the single hypothesis for performance revision V002 of EPILOGUE-FUSE-X, parent V001 (SOURCE_SHA `89868a52b59fcaf1d68220398698ef033827a50b1559df9fc69ffcab105dd597`). No kernel edit until Main approves exactly one hypothesis. V002-2 and V002-3 stay in backlog with their stated prerequisites.
+Requested disposition: record V002-1 as the single hypothesis for performance revision V002 of EPILOGUE-FUSE-X, parent V001 (SOURCE_SHA `89868a52b59fcaf1d68220398698ef033827a50b1559df9fc69ffcab105dd597`). kernel edit follows the selected hypothesis in the current specification. V002-2 and V002-3 stay in backlog with their stated prerequisites.

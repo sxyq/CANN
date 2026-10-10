@@ -36,7 +36,7 @@ CURRENT_BRANCH_STATE: m2/multirow-dma-champion，V002 Candidate=NEEDS_ONE_MORE_L
 PROCESS_DEVIATION = YES
 ```
 
-### 1.2 child 在 Main approval 前创建性能 Revision
+### 1.2 child 在 current route record 前创建性能 Revision
 
 | 项 | 结果 |
 |---|---|
@@ -173,7 +173,7 @@ UNKNOWN_COUNT=0
 | 类型 | 数量 | 说明 |
 |---|---|---|
 | historical_missing_reverts | 1 | MULTIROW V001 |
-| child_preapproval_violations | 0 | — |
+| child_predecision_violations | 0 | — |
 | results_not_in_canonical | 0 | Main-2 wave-1 与 Main-1 四条 Online closure 事实均已进入 `origin/main` |
 | shared_ledger_divergence | 1（结构） | main1/main2 各自增量，本轮收口 |
 

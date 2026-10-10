@@ -2,7 +2,7 @@
 
 > Current resource rule: use up to 8 cards in parallel for different compile versions, one version per card, and continue each card while `FREE_HBM >= 100 MB`. AICore activity, VLLM residency, and resident processes do not stop compile or safe correctness work. Timing uses live HBM utilization below 100% plus an unconflicted lease; AICore 0% is not required. Historical load values below are observations only.
 
-> **MAIN-2 APPROVALS 2026-09-25** — Probe shape change APPROVED (measurement design only, not a Revision): single-tile FP32 rows=1 D=6144 must not serve as primary reduction-architecture evidence; add at least one MULTI_TILE_D probe (D>6144) confirmed to traverse multiple reduction tiles in both Parent and Candidate. APPROVED NEXT backlog: H2 first-output-tile MTE2 overlap with rms tail (chosen over H1 reciprocal-sqrt, whose Rsqrt API feasibility remains in research); H3 wider ReduceSum partial stays as donor evidence.
+> **current route record 2026-09-25** — Probe shape change SELECTED (measurement design only, not a Revision): single-tile FP32 rows=1 D=6144 is not used as primary reduction-architecture evidence; add at least one MULTI_TILE_D probe (D>6144) confirmed to traverse multiple reduction tiles in both Parent and Candidate. SELECTED NEXT backlog: H2 first-output-tile MTE2 overlap with rms tail (chosen over H1 reciprocal-sqrt, whose Rsqrt API feasibility remains in research); H3 wider ReduceSum partial stays as donor evidence.
 
 Route agent: REDUCE-INVSCALE-X (MAIN-2). Worktree `cann-next6/REDUCE-INVSCALE-X`.
 Mode: Long-Horizon Parallel Exploration (execution-contract §R). This file is append-target for
@@ -42,8 +42,8 @@ per-route research; no kernel edits, no `.asc`/`.cpp` changes, no device runs th
   `MEASUREMENT_BLOCKED`. All output below is research only; every hypothesis needs the same-binary parent
   run to PASS (unified device-event protocol, warmup≥10, ≥21 samples, in-process) for its exact shape
   before it can be measured.
-- This is a measurement-infrastructure blocker, not a Route failure. No Main decision is required to
-  continue research; a Main decision IS required to open a device window for same-binary qualification.
+- This is a measurement-infrastructure blocker, not a Route failure. No current route record is required to
+  continue research; a current route record IS required to open a device window for same-binary qualification.
 
 ## BOTTLENECK_MODEL
 
@@ -138,7 +138,7 @@ G001 negative evidence on large-D and R004 historical BLOCKED status (see OPTION
 - **UB/CORE/DMA_IMPACT:** UB none (same buffers). Core: fewer idle cycles. DMA: one earlier MTE2 issue
   for tile 0 per row.
 - **SYNC_IMPACT:** **HIGH** — must preserve `SyncMte2ToVector` / `SyncVectorToMte2` ordering so a tile-0
-  load cannot overwrite buffers the tail still reads (`rowSum`/`partials_` live in UB; x/r staging is
+  load does not overwrite buffers the tail still reads (`rowSum`/`partials_` live in UB; x/r staging is
   `inputX_`/`inputR_`). Manageable, but this is the primary risk and correctness must be re-proven first.
 - **PRECISION_RISK:** None — pure reordering, identical arithmetic.
 - **DUPLICATE_CHECK:** Distinct from **ASYNC-TRIPLE-X** (adds MTE3 store overlap / triple
@@ -271,7 +271,7 @@ G001 negative evidence on large-D and R004 historical BLOCKED status (see OPTION
 
 1. **Do not edit V002** (TRACK-A). It stays the correctness-accepted candidate at
    `bef271b62a2c7f2d0b0ef23f5f3610129460f5a431d7d9b3dd7ac3ea9a80ad26`; no V003 while measurement is blocked.
-2. **Unblock measurement first (Main decision needed):** run the unified same-binary (parent-only) noise
+2. **Unblock measurement first (current route record needed):** run the unified same-binary (parent-only) noise
    floor for this route's **Direct Parent** at its **exact probe shape** under the device-event protocol
    (warmup≥10, ≥21 samples, in-process). Until that PASSes, no P/C for any hypothesis can run.
 3. **Lead hypothesis when a window opens: HYPOTHESIS-2** (overlap normalization tail with first output
@@ -301,9 +301,9 @@ G001 negative evidence on large-D and R004 historical BLOCKED status (see OPTION
 
 ---
 
-## PROBE-SHAPE DESIGN (approved change, 2026-09-25)
+## PROBE-SHAPE DESIGN (selected change, 2026-09-25)
 
-Approved scope (MAIN-2, 2026-09-25): single-tile FP32 rows=1 D=6144 no longer serves as
+Selected scope (MAIN-2, 2026-09-25): single-tile FP32 rows=1 D=6144 no longer serves as
 primary reduction-architecture evidence; add one MULTI_TILE_D probe (D > 6144) confirmed by
 source trace to traverse >=2 reduction tiles in BOTH Direct Parent and Candidate.
 Measurement design only — no kernel edits, no device runs this turn.
@@ -346,7 +346,7 @@ Measurement design only — no kernel edits, no device runs this turn.
   reference point, never as primary architecture evidence.
 - Expected signal: multi-tile topology items (serialized per-tile loop, collector+collapse,
   second partial, V002's extra sync) change behavior only at D > 6144; at D=6144 they are
-  constant/zero, so a 6144-only P/C cannot show them.
+  constant/zero, so a 6144-only P/C does not show them.
 
 ### Legality table (dtype-aware)
 
@@ -586,7 +586,7 @@ reduce pass (2 tiles)  ->  [collapse]  ->  TAIL: Muls -> Adds -> Sqrt -> V2S ->
 - Measurement prerequisite (updated with this cycle's data): the FP32 1x8192 shape is
   MEASUREMENT_PROTOCOL_BLOCKED_FOR_SHAPE on d6 for the Direct Parent. H2's first
   implementation window therefore also needs an unblocked shape — either an improved
-  harness/host state (Main decision) or re-qualification on d4/d5 in a future lease.
+  harness/host state (current route record) or re-qualification on d4/d5 in a future lease.
   Correctness prerequisite unchanged: full 16-shape matrix of the hoisted variant first.
 
 ## H3 REFINEMENT — UB arithmetic settled from toolchain headers (FP32 near-zero signal)
@@ -693,7 +693,7 @@ FP16 single-stage window exists only for D ∈ [8192, ~13232] — off-probe, off
 ## UPDATED RECOMMENDED_NEXT (supersedes the handoff summary above)
 1. V002 stays the correctness-accepted candidate; SHA unchanged; no V003.
 2. Track-A for this cycle is closed (one clean attempt, UNQUALIFIED). Next device
-   window: Main decides harness/host improvement first — the 1x8192 shape cannot be
+   window: Main decides harness/host improvement first — the 1x8192 shape is not
    re-run as-is on d6 expecting a different outcome.
 3. H2 remains the lead hypothesis (READY_FOR_MAIN_REVIEW); implementation blocked only
    by (a) shape qualification and (b) Main's go on V002 disposition.
@@ -715,7 +715,7 @@ L186-188 (FP32 atol=rtol=1e-4; FP16 1e-3; BF16 2e-2), pass test `error > atol + 
 
 ### P — preconditions (all required before any run)
 
-- [ ] P1. Main issues NEXT_HYPOTHESIS for the H1 source edit — the battery judges an
+- [ ] P1. the current route records NEXT_HYPOTHESIS for the H1 source edit — the battery judges an
   **rsqrt-variant build**; without that authorization only the control half (P4) can run.
 - [ ] P2. Control binary = current V002 (`bef271b6…ad26` unchanged). Kernel sources untouched
   by the battery itself; the only edit anywhere is the host-side harness regime argument (S1).

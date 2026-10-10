@@ -2,10 +2,10 @@
 
 Date: 2026-09-27 (C2C overnight; probe only, no performance revision)
 Route: VECTOR-MATH-X
-Approval: MAIN-APPROVAL-SEQ-FUSE-2-PROBE.md
+Decision: MAIN-ROUTE-RECORD-SEQ-FUSE-2-PROBE.md
 Spec: SEQ-FUSE-2-SPEC.md (DIV_FEASIBILITY_PROBE section)
 Host: cann-server3, device 4, one-shot per form (isolated process per
-form so hazard forms cannot take down the others)
+form so hazard forms does not take down the others)
 Probe binary: `vmx_div_probe` SHA
 17be3095f5e11c078dad4b2bb29822bd8977ff3206d6231152c52fcdd4e94bd1
 
@@ -60,7 +60,7 @@ Denominator sweep used (P5): 1.25, 0.875, 1e-6, 1e6, 1.1920929e-07
 ## Consequence for SEQ-FUSE-2
 
 The Div feasibility blocker is cleared. V003 may proceed to Main
-approval with the P1 form as the only legal Div shape:
+decision with the P1 form as the only legal Div shape:
 `Div(invRmsSlot, onesSlot, meanSqSlot, 1-or-8)`, all slots distinct and
 32B-aligned. Form B (single pull + scalar divide) is no longer needed
 as a fallback — the pure-V chain is fully feasible.

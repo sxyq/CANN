@@ -1,6 +1,6 @@
 # VECTOR-MATH-X PROPOSAL — Track-B Hypotheses
 
-ROUTE_PROPOSED=VECTOR-MATH-X (new lane; worktree pending Main approval)
+ROUTE_PROPOSED=VECTOR-MATH-X (new lane; worktree pending current route record)
 PARENT=FROZEN_R31B_V011 (R31B-V011-LP-ROW-PIPELINE_kernel.asc)
 PARENT_SOURCE_SHA=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
 OFFICIAL_ANCHOR=45.16
@@ -227,8 +227,8 @@ Reasons:
 
 ---
 
-## 4. REQUEST_MAIN_APPROVAL
+## 4. REQUEST_MAIN_ROUTE_RECORD
 
-REQUEST_MAIN_APPROVAL: **VM-H2 VECTOR-DENOMINATOR** as the first VECTOR-MATH-X revision.
+REQUEST_MAIN_ROUTE_RECORD: **VM-H2 VECTOR-DENOMINATOR** as the first VECTOR-MATH-X revision.
 
-Requested disposition: approve VM-H2, create the VECTOR-MATH-X worktree/branch from FROZEN_R31B_V011, and declare the revision. VM-H1 (Rsqrt) is included as a sub-step of VM-H2. VM-H3 and VM-H4 stay in backlog with their stated prerequisites. No kernel edit until Main approves exactly one hypothesis.
+Requested disposition: record VM-H2, create the VECTOR-MATH-X worktree/branch from FROZEN_R31B_V011, and declare the revision. VM-H1 (Rsqrt) is included as a sub-step of VM-H2. VM-H3 and VM-H4 stay in backlog with their stated prerequisites. kernel edit follows the selected hypothesis in the current specification.

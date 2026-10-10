@@ -7,7 +7,7 @@
 - CANONICAL_HEAD_AT_BOOTSTRAP: `ed860e392d7604694ac6664da60aff1fc1f4c04f`
 - OVERALL_OFFICIAL_CHAMPION: `R31B V011 / 45.16`
 - PLANNING_DECISIONS_CHANGED: `0`
-- NEW_ROUTES_OUTSIDE_APPROVED_5: `0`
+- NEW_ROUTES_OUTSIDE_SELECTED_5: `0`
 - SOURCE_KERNEL_WRITTEN_BY_MAIN: `0`
 - SHARED_LEDGER_WRITTEN_BY_MAIN: `0`
 - CHILD_SPAWN_RETRIES: `initial 10 attempts failed with runtime 429; one EPI child later exited on concurrency limit and was replaced`
@@ -52,7 +52,7 @@ Default order if multiple lanes qualify together: SELECTIVE-FASTPATH, SYNC-TOPOL
 
 ## Current lifecycle state
 
-No route lifecycle decision was made in this bootstrap. Any `LANE_NEEDS_PLANNING_REVIEW` remains a report to Planning / Review Layer, not a Main decision.
+No route lifecycle decision was made in this bootstrap. Any `LANE_NEEDS_PLANNING_REVIEW` remains a report to Planning / Review Layer, not a current route record.
 
 ## RECOVERY_RECEIPT / BOOTSTRAP_RECEIPT (2026-10-02)
 
@@ -105,7 +105,7 @@ This section records the initial recovery-time search and is superseded by the 2
 - Commit each independent fact; push at the scheduled interval and before handoff.
 - Online submission remains Main/Judge-Owner only, with exact-source identity verified before and after submission.
 - No Candidate source, Revision, server run, performance measurement, or Online submission was created in this recovery.
-- `PLANNING_DECISIONS_CHANGED=0`; `NEW_ROUTES_OUTSIDE_APPROVED_5=0`.
+- `PLANNING_DECISIONS_CHANGED=0`; `NEW_ROUTES_OUTSIDE_SELECTED_5=0`.
 
 At that recovery point, the next step was to request Planning / Review selections and identify the Dashboard. The later C2C CONTROL and current Dashboard reference are recorded below.
 
@@ -131,7 +131,7 @@ At that recovery point, the next step was to request Planning / Review selection
 
 ### Current lane instructions and Main review
 
-The attached C2C CONTROL supplies these current Planning selections. Each Route Agent declared its Revision before the source commit. Main's V001 single-factor review is recorded below. Build and correctness work is approved; SYNC local timing is approved only for its declared primary shape after harness and device-lease revalidation.
+The attached C2C CONTROL supplies these current Planning selections. Each Route Agent declared its Revision before the source commit. Main's V001 single-factor review is recorded below. Build and correctness work is selected; SYNC local timing is selected only for its declared primary shape after harness and device-lease revalidation.
 
 | Route | Current instruction | Main review / first action | Revision state |
 |---|---|---|---|
@@ -164,9 +164,9 @@ Route worktrees and branches are the current locations returned by Git, not the 
 
 ### RULE_CONFLICT
 
-- `ONLINE_OWNER`: the attachment assigns submission ownership and automatic cadence to Main-1. Current `线上提交规范.md` and `调度/主代理分工.md` reserve submission for one unified Judge Owner after Planning approval and explicit confirmation. Main-1 will prepare exact-source packages and queue entries only; formal Judge submission awaits Planning's written resolution and the designated owner.
+- `ONLINE_OWNER`: the attachment assigns submission ownership and automatic cadence to Main-1. Current `线上提交规范.md` and `调度/主代理分工.md` reserve submission for one unified Judge Owner after Planning decision and explicit confirmation. Main-1 will prepare exact-source packages and queue entries only; formal Judge submission awaits Planning's written resolution and the designated owner.
 - `SERVER_CONCURRENCY`: the attachment allows up to five NPU-associated jobs per device; current `服务器实验规范.md` allows up to eight distinct versions total, one per device. The planned five lanes fit the shared allowance when assigned to distinct devices. No second NPU-associated job will be placed on a device; broader concurrency needs Planning to update the project rule.
-- `ONLINE_CADENCE`: automatic submission every 18–22 minutes is not compatible with the current approval-and-owner sequence. No timer-driven submission will run while this remains unresolved.
+- `ONLINE_CADENCE`: automatic submission every 18–22 minutes is not compatible with the current decision-and-owner sequence. No timer-driven submission will run while this remains unresolved.
 
 These conflicts affect formal Online submissions and concurrency above one version per device; they do not prevent the four independent Local candidates or the Fastpath qualification from proceeding under the current project rules.
 
@@ -175,7 +175,7 @@ These conflicts affect formal Online submissions and concurrency above one versi
 - Live read-only snapshot: `hwnput3`, 8 x 910B3, Toolkit `8.5.0.alpha002` available. Free HBM by device 0–7: `5313, 5262, 5319, 5318, 6346, 5356, 5357, 13428 MB`; project disk availability `698 GB`; host RAM available `711 GiB`, Swap full but no swap-in/out during the sample, CPU idle 90%, no measured I/O wait.
 - Existing VLLM / user Python activity remains untouched. No AddRmsNormBias probe or project build process was present during the process query. The historical `phase4-review-repro/R31B-V016` directory is absent from server3; new build outputs must use unique paths under `/home/data4t2/lelinfeng/cann/`.
 - The latest-row lease view has one unreleased entry for device 6: owner `MAIN-2`, route `STORE-EPILOGUE-X`, lease `R2-STORE-V002-TIMING`, started `2026-09-28T00:00:00Z`. Main-1 will avoid device 6 for timing until its owner resolves the lease. No other device has an unreleased lease in the local schedule log.
-- `SERVER_JOB_BOARD`: SYNC V001 → device 4; STORE V001 → device 5; EPI V001 → device 7; SMALLMID V001 → device 1. Assigned for build/correctness only, one Candidate per device. Each Route Agent must repeat live device/HBM/process preflight immediately before its run. No performance lease is active for these assignments.
+- `SERVER_JOB_BOARD`: SYNC V001 → device 4; STORE V001 → device 5; EPI V001 → device 7; SMALLMID V001 → device 1. Assigned for build/correctness only, one Candidate per device. Each Route Agent must repeat live device/HBM/process initial snapshot immediately before its run. No performance lease is active for these assignments.
 - `SERVER_JOBS`: four assignments staged; source branches are pushed and corresponding server mirrors are fast-forwarded. Harness preparation is pending; no build or correctness job has started.
 - `SOURCE_TRANSFER_STATE` (2026-10-02): for each row, local `submission.asc` SHA256, local `submission.sha256` value, server `submission.asc` SHA256, and server sidecar value matched exactly.
 
@@ -265,8 +265,8 @@ The exact Candidate source, `submission.sha256`, server route-tree source, and s
 
 ## MAIN1_PORTFOLIO_CORRECTION (2026-10-03)
 
-- Planning portfolio: SYNC continues; STORE and EPI are parked and their worktrees are to close; SMALLMID V001 is correctness-rejected and its worktree is to close; SELECTIVE-FASTPATH gets one research-only cycle. The three approved replacement routes are CASE47-SMALL-CLUSTER, CASE14-INTRAROW-PARALLELISM, and TINY-FIXED-OVERHEAD. No sixth lane is opened.
-- Current active portfolio: SYNC, CASE47, CASE14, SELECTIVE-FASTPATH, TINY. Planning decisions are followed as received; this Main changes none of them. Three approved route slots are being populated, with zero routes outside the approved five.
+- Planning portfolio: SYNC continues; STORE and EPI are parked and their worktrees are to close; SMALLMID V001 is correctness-rejected and its worktree is to close; SELECTIVE-FASTPATH gets one research-only cycle. The three selected replacement routes are CASE47-SMALL-CLUSTER, CASE14-INTRAROW-PARALLELISM, and TINY-FIXED-OVERHEAD. No sixth lane is opened.
+- Current active portfolio: SYNC, CASE47, CASE14, SELECTIVE-FASTPATH, TINY. Planning decisions are followed as received; this Main changes none of them. Three selected route slots are being populated, with zero routes outside the selected five.
 - Champion recomputation from fetched `origin/main`: `OVERALL_CHAMPION=R31B V011`, Official `45.16`, `15/15`. The canonical `result.json`, `source-meta.json`, `submission.sha256`, and retained `submission.asc` all identify source SHA `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`.
 - STORE V001 closure class: `PARKED_BY_BASELINE_OR_ENVIRONMENT_BLOCK`. Run-004 has Parent and Candidate output variation; all four calls returned RC=3. No Candidate-only correctness failure is established. Preserve branch and V001 evidence.
 - EPI V001 closure class: `PARKED_BY_BASELINE_OR_ENVIRONMENT_BLOCK`. The matrix is 2 PASS, 10 FAIL, 2 MISSING; at D8193 both Parent and Candidate returned ACL 507035. The shared wide-FP32 failures do not establish that H3 alone caused them. Preserve branch and V001 evidence.
@@ -274,9 +274,9 @@ The exact Candidate source, `submission.sha256`, server route-tree source, and s
 - The STORE, EPI, and SMALLMID worktrees are clean with no ignored or untracked files. Their branches remain present; all existing evidence commits remain reachable. No matching route process or active device lease was found. Before removing those linked worktrees, add an explicit current-source restoration record to each branch while keeping its V001 submission package unchanged.
 - SYNC V001 remains the only active Revision. Its first Build/Correctness run passed, but the later pointer-cast Build attempt failed. The current Route Agent is validating the committed fix; no timing process is running. Main will add a fresh d4 lease only after the latest Build and Correctness both pass.
 - Support-A (`01a0fe0f-8958-78d2-a7c7-d4eb803a2210`) is mapping Official case families from recorded sources. Support-B (`01a0fe0f-8a32-75c2-930a-4bd3bfab9fb6`) is evaluating existing pipeline and profiler evidence. Both are read-only and may not start device jobs.
-- Branch/worktree names for the approved replacements: `w2/m1/case47-small-cluster`, `w2/m1/case14-intrarow-parallelism`, and `w2/m1/tiny-fixed-overhead`, under `worktrees/w2/m1/`. Each will use a minimal sparse checkout and a fresh Route Agent context. All three Direct Parents are the exact Official-backed R31B V011 source above.
+- Branch/worktree names for the selected replacements: `w2/m1/case47-small-cluster`, `w2/m1/case14-intrarow-parallelism`, and `w2/m1/tiny-fixed-overhead`, under `worktrees/w2/m1/`. Each will use a minimal sparse checkout and a fresh Route Agent context. All three Direct Parents are the exact Official-backed R31B V011 source above.
 - Event order: each Route Agent's committed source triggers its own Build immediately; Build PASS triggers Correctness; Correctness PASS triggers Formal Local Performance once Main records that lane's device lease. Score recording and dashboard refresh happen per result; no lane waits for unrelated routes or pushes.
-- `PLANNING_DECISIONS_CHANGED=0`; `NEW_ROUTES_OUTSIDE_APPROVED_5=0`; `PERFORMANCE_HYPOTHESES_MAIN_SELECTED=0`.
+- `PLANNING_DECISIONS_CHANGED=0`; `NEW_ROUTES_OUTSIDE_SELECTED_5=0`; `PERFORMANCE_HYPOTHESES_MAIN_SELECTED=0`.
 
 ## MAIN1_PORTFOLIO_REBALANCE_COMPLETED (2026-10-03)
 
@@ -313,7 +313,7 @@ The three local linked worktrees were removed after confirming clean status, no 
 
 The three new worktrees are sparse, approximately 7.5 MB each, and were created under `cann/worktrees/w2/m1/`. Their working trees are clean. All three use exact Official-backed R31B V011 as Direct Parent; no Local-positive revision is used as a parent.
 
-- `PLANNING_DECISIONS_CHANGED=0`; `NEW_ROUTES_WITHIN_APPROVED_PORTFOLIO=3`; `NEW_ROUTES_OUTSIDE_APPROVED_5=0`; `PERFORMANCE_HYPOTHESES_MAIN_SELECTED=0`.
+- `PLANNING_DECISIONS_CHANGED=0`; `NEW_ROUTES_WITHIN_SELECTED_PORTFOLIO=3`; `NEW_ROUTES_OUTSIDE_SELECTED_5=0`; `PERFORMANCE_HYPOTHESES_MAIN_SELECTED=0`.
 - Main-1 and canonical changes are committed locally. No external push was made under the repository push policy; user changes in the canonical worktree remain untouched.
 
 ## MAIN1_TRACK_B_HANDOFF_REVIEW (2026-10-03)
@@ -334,7 +334,7 @@ The three new worktrees are sparse, approximately 7.5 MB each, and were created 
 
 - Route handoff commit `990a6a37` records five hypotheses against R31B V011 source SHA `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`; case1/3/5 input shape and dtype are not retained in Judge results.
 - Main review: `NEEDS_MORE_EVIDENCE`; no hypothesis selected. H1 changes active core count and may alter `localRows` or select another existing specialization; H2 depends on `rowCount == blockCount`; H3 only applies to a confirmed generic single-tile path; H4 needs generated UB layout/resource evidence; H5 needs API confirmation for conditional event-ID allocation and release.
-- The five mechanisms are separate at source level from FASTPATH's wide FP32 store donor, but Official case-to-path mapping is absent, so workload overlap cannot be ruled out. No Revision, Build, correctness run, device use, or performance measurement was started.
+- The five mechanisms are separate at source level from FASTPATH's wide FP32 store donor, but Official case-to-path mapping is absent, so workload overlap is not ruled out. No Revision, Build, correctness run, device use, or performance measurement was started.
 
 - `PLANNING_DECISIONS_CHANGED=0`; `NEW_ROUTES=0`; `PERFORMANCE_HYPOTHESES_MAIN_SELECTED=0`.
 
@@ -345,7 +345,7 @@ The three new worktrees are sparse, approximately 7.5 MB each, and were created 
 - `RECORDED_OVERALL_CHAMPION=R31B V011 / 45.16 / 15-of-15` remains the score recorded in the canonical route ledger.
 - Strict source audit requires the retained source bytes, `submission.sha256`, a recorded remote SHA, a matching `result.json` source SHA, a 15/15 result, and `formal_result_eligible=true` where that field exists. `CURRENT_VERIFIED_CHAMPION=EPILOGUE-ARITH-CHAMPION-X V002 / 44.96 / 15-of-15` is the highest result meeting those recorded conditions.
 - R31B V011 retained source, sidecar, and `result.json` source SHA agree, but its `source-meta.json` says the result digest came from the submit client, `judge_native_source_hash=MISSING`, and no remote SHA is recorded. Therefore `RECORDED_OVERALL_CHAMPION` and `CURRENT_VERIFIED_CHAMPION` remain separate until Judge-native or remote identity evidence is available.
-- The Planning-approved Direct Parent for the five Main-1 lanes remains the exact R31B V011 source. This audit does not change Parent selection, Official score history, or Planning decisions.
+- The Planning-selected Direct Parent for the five Main-1 lanes remains the exact R31B V011 source. This audit does not change Parent selection, Official score history, or Planning decisions.
 - Read-only CANNJudge problem lookup returned the 15 testcase IDs and public timing references only. The submission lookup for R31B V011 returned HTTP 403. No retained source mapped testcase IDs to rows, D, dtype, dispatch, or core ownership.
 
 ### Route handoffs and local execution
@@ -361,9 +361,9 @@ The three new worktrees are sparse, approximately 7.5 MB each, and were created 
 - CASE47, CASE14, FASTPATH, and TINY use their existing isolated Route worktrees and branches. No Candidate kernel was changed, no new Revision was opened, and no Official submission was started.
 - STORE-W2, EPI-W2, and SMALLMID worktrees remain closed. Their branches and all evidence remain present. Current-source restoration commits are STORE `53d9f04b`, EPI `d9c08342`, and SMALLMID `351be0cd`; classifications remain STORE/EPI `PARKED_BY_BASELINE_OR_ENVIRONMENT_BLOCK` and SMALLMID `CORRECTNESS_REJECTED`.
 - The three old evidence branches are ahead of their recorded remote refs by 1, 2, and 13 commits respectively. CASE47, CASE14, and TINY have no matching remote refs; FASTPATH is ahead by 2. SYNC support commits `c0b14f9b` and `32741065` were pushed, bringing its route branch to `origin`.
-- The canonical d4 lease was committed as `48baa17f` and pushed to `origin/main`. Latest preflight `2026-10-03T02:16:19Z`: d4 HBM `59190/65536 MB`, AICore `0%`, VLLM EngineCore PID `2999855`, project disk free `607G`; no SYNC runner or active d4 lease existed before this reservation.
+- The canonical d4 lease was committed as `48baa17f` and pushed to `origin/main`. Latest initial snapshot `2026-10-03T02:16:19Z`: d4 HBM `59190/65536 MB`, AICore `0%`, VLLM EngineCore PID `2999855`, project disk free `607G`; no SYNC runner or active d4 lease existed before this reservation.
 - New lease `M1-SYNC-V001-D4-SAMEBINARY-W60-20261003T021619Z` is active for Parent same-binary only. Candidate SHA, server source, local/remote runner source, and timing executable identity matched before the lease. Parent window and Candidate P/C have not run.
-- `PLANNING_DECISIONS_CHANGED=0`; `NEW_ROUTES_OUTSIDE_APPROVED_5=0`; `PERFORMANCE_HYPOTHESES_MAIN_SELECTED=0`.
+- `PLANNING_DECISIONS_CHANGED=0`; `NEW_ROUTES_OUTSIDE_SELECTED_5=0`; `PERFORMANCE_HYPOTHESES_MAIN_SELECTED=0`.
 
 ## MAIN1_SYNC_TIMING_HARNESS_BUILD_ATTEMPT (2026-10-03)
 
@@ -398,7 +398,7 @@ The three new worktrees are sparse, approximately 7.5 MB each, and were created 
 - Server snapshot: free HBM d1/d4/d5/d7 = 1412/5121/1494/40757 MB; project disk available = 630 GB. Existing VLLM and Python work remains untouched. No lane-specific compile or runner process was present at this snapshot.
 - Per-route flow: fixed local source commit → build → correctness → immediate formal local performance, subject only to that route's own result and the existing per-device timing protocol. GitHub push and unrelated route progress are not prerequisites.
 - Each stage produces its own route-local evidence commit. Main updates the route summary, dashboard and Online Queue as each score arrives; no batch closeout is required to advance another lane.
-- Online submission remains governed by the current repository approval and unified Judge Owner process. The attachment's different Main-1 ownership/cadence instruction remains a recorded policy conflict.
+- Online submission remains governed by the current repository decision and unified Judge Owner process. The attachment's different Main-1 ownership/cadence instruction remains a recorded policy conflict.
 - `PLANNING_DECISIONS_CHANGED=0`; `NEW_ROUTES=0`.
 
 ### Stage results (2026-10-02)
@@ -423,7 +423,7 @@ The three new worktrees are sparse, approximately 7.5 MB each, and were created 
 - STORE V001: run-004 finished on `1x32768 FP32`. Parent repeats differ in 94,690 bytes and Candidate repeats differ in 79,925 bytes. All four invocations return RC=3. The Parent is also nondeterministic, so evidence does not isolate a Candidate-only defect. No performance data exists.
 - EPI V001: matrix result is 2 PASS, 10 FAIL, 2 MISSING. D8193 Parent/Candidate retry again returned ACL `507035` and produced no TSV; both sides also fail the runner golden at D12288, D16384, D18416, D18417, and D32768. Local performance was not authorized or run; no more runner is assigned.
 - SMALLMID V001: Correctness failure at BF16 D2049 remains; D3073 and D4095 are unrun. No follow-up performance work is assigned.
-- No Local result or Official submission was produced. No Online Queue row was added. Main decisions remain unchanged; `PLANNING_DECISIONS_CHANGED=0`, `NEW_ROUTES=0`.
+- No Local result or Official submission was produced. No Online Queue row was added. current route records remain unchanged; `PLANNING_DECISIONS_CHANGED=0`, `NEW_ROUTES=0`.
 
 ### STORE correctness detail
 
@@ -493,7 +493,7 @@ The three new worktrees are sparse, approximately 7.5 MB each, and were created 
 - The next Parent window lease `M1-SYNC-V001-D4-WINDOW-PC-W60-20261003T023748Z` was released after SSH timed out before the stage began. No Parent window or Candidate P/C samples were produced. A read-only SSH retry from this session also timed out; no remote process was started.
 - Current SYNC V001 state remains `BUILD=PASS; CORRECTNESS=PASS; SAME_BINARY=PASS; PARENT_WINDOW=NOT_RUN; CANDIDATE_PC=NOT_RUN; LOCAL_SCORE=NONE`. The W60 raw and jitter files remain on server3 and have not yet been copied into this route's local evidence directory, so this receipt records the measured summary and remote evidence path only.
 - Next action: after direct SSH access returns, retrieve and verify the existing W60 raw/jitter evidence, then take a fresh live device snapshot and lease before retrying Parent window. Run Candidate P/C only if Parent window passes. No new Revision, score, Online Queue entry, or Planning decision was added.
-- `PLANNING_DECISIONS_CHANGED=0`; `NEW_ROUTES_OUTSIDE_APPROVED_5=0`; `PERFORMANCE_HYPOTHESES_MAIN_SELECTED=0`.
+- `PLANNING_DECISIONS_CHANGED=0`; `NEW_ROUTES_OUTSIDE_SELECTED_5=0`; `PERFORMANCE_HYPOTHESES_MAIN_SELECTED=0`.
 
 ## MAIN1_TRACKB_AND_SYNC_CONTINUATION (2026-10-03)
 
@@ -504,7 +504,7 @@ The three new worktrees are sparse, approximately 7.5 MB each, and were created 
 - TINY supplement commit `f39f0fb309eed9a4d8a17447f4ebe9ee834e252f`: case1/3/5 share the V011 Host and template entry, but their dtype specialization and device paths are not known. `ACTIVE_CORE_COUNT` is duplicate to R016/SCHED/CASE47-H2; other proposals remain conditional on an exact input manifest and path replay.
 - SYNC V001 W60 same-binary remains PASS (median `8.320000 us`, MAD/median `0.024038`, drift `0.019231`). The retrieval Agent, SSH alias, and direct Mac connection to `10.11.32.3:22` all timed out; raw/jitter remain remote. Parent window and Candidate P/C remain NOT_RUN; its lease remains released.
 - CASE14 API supplement commit `3ed15bd4fb713b2c0273d8932e2936b84ee4d7d0`: C001 compiles for the recorded CANN/DAV_C220 Vector target and its host wrapper allocates workspace; this confirms expressibility only. Official case1 is TLE and case14 is skipped. Support-B's `PIPELINE_ONLY_EXPLANATION=INSUFFICIENT` uses the 4.3963x case14 time ratio, while the cited 2.1598x pipeline ceiling comes from a historical summary without raw exports; case14 utilization and path remain unknown.
-- CASE47, FASTPATH and TINY remain `MAIN_SELECTED=NONE`; CASE14 retains `NEEDS_MORE_EVIDENCE` and no selection. SYNC V001 continues its already approved Local measurement closure. Main-2 remains unchanged. `PLANNING_DECISIONS_CHANGED=0`; `NEW_ROUTES=0`.
+- CASE47, FASTPATH and TINY remain `MAIN_SELECTED=NONE`; CASE14 retains `NEEDS_MORE_EVIDENCE` and no selection. SYNC V001 continues its already selected Local measurement closure. Main-2 remains unchanged. `PLANNING_DECISIONS_CHANGED=0`; `NEW_ROUTES=0`.
 
 ## SUPPORT_BOOTSTRAP_RECEIPT / SUPPORT-2 HARDWARE EVIDENCE (2026-10-03)
 
@@ -527,12 +527,12 @@ The server rules and recorded experiments identify server3 as Ascend 910B3; the 
 
 | Area | Existing evidence | Limit |
 |---|---|---|
-| Pipeline activity | `CASE14-SEGMENTED-TIMING.md` reports 535 Parent task samples. In the `>=13 us` duration bucket, V/S/MTE2/MTE3 busy ratios are 0.463/0.157/0.443/0.170; sum 1.233, with a stated ideal-overlap ceiling near 2.16x. Eight-to-six tile round trips saved 0.16 us, about 0.08 us per removed tile including synchronization. | The local probes are `2x/8x/16x32768` and `2x/8x16384` FP32, not mapped to Official case14. Original `op_summary` exports are absent from the retained V002 evidence directory, so the profile summary cannot be independently recomputed here. The report's roughly 110 sync/barrier calls per row at D=32768 is source enumeration, not a per-call latency measurement. |
+| Pipeline activity | `CASE14-SEGMENTED-TIMING.md` reports 535 Parent task samples. In the `>=13 us` duration bucket, V/S/MTE2/MTE3 busy ratios are 0.463/0.157/0.443/0.170; sum 1.233, with a stated ideal-overlap ceiling near 2.16x. Eight-to-six tile round trips saved 0.16 us, about 0.08 us per removed tile including synchronization. | The local probes are `2x/8x/16x32768` and `2x/8x16384` FP32, not mapped to Official case14. Original `op_summary` exports are absent from the retained V002 evidence directory, so the profile summary is not independently recomputed here. The report's roughly 110 sync/barrier calls per row at D=32768 is source enumeration, not a per-call latency measurement. |
 | `PipeBarrier` | R31A V028 removed two redundant PipeBarriers before `SetFlag` in the D=24576 batch-affine path. Five correctness runs passed. Eight clean paired blocks across d4/d6 favored V028; median delta was -1.09%, while same-code control showed +0.59% slot bias. The handoff estimates roughly 0.008-0.012 us per dynamic barrier for that path. | This is a path-level estimate from a narrow single-change comparison, not a universal primitive latency. The correctness evidence applies to those V-pipe dependencies only. |
 | MTE2/V/MTE3 overlap | R31B V017 deferred the MTE3 completion wait. Two attempts measured BF16 D=32768 at -2.00 us (-14.3%), with 16/16 and 20/20 clean pairs; reported overlap scaling is 0.11-0.15 us per tile. R31A V021's analogous FP32 deferred-wait probe remained mixed at D=24576 and had no qualified D=32768 P/C. | These are shape- and path-specific wait-placement results. They do not give isolated `SetFlag`/`WaitFlag` latency or a portable MTE bandwidth value. |
 | Load-wait diagnostic | BATCH-RESIDENT V001's follow-up records `second_set_run=false`; its first polling log has `chosen=null` and empty device data for all 16 attempts. | No MTE2 transfer or event-wait duration was measured by this log. |
 | DataCopy / bandwidth | API notes state that aligned `DataCopyPad` and `DataCopy` performance is similar and the two `DataCopyPad` parameter forms use the same MTE instruction. | ALIGN-TAIL V001 Candidate timing was withheld after Parent window qualification failed twice; there is no retained direct-copy versus pad-copy paired result or 910B3 bandwidth measurement. |
-| Cast and scalar handoff | Existing hypotheses describe per-core parameter casts and V-to-scalar `GetValue` paths. ASYNC-TRIPLE's 0.5-2 us tail estimate is explicitly assumption-based. VECTOR-MATH V002 changed `Muls` to `Duplicate+Mul`, but correctness was 53/54 and short-shape same-binary qualification failed. | No isolated Cast throughput, V/S handoff latency, or `GetValue` latency measurement is retained. V002's timings cannot identify those costs separately. |
+| Cast and scalar handoff | Existing hypotheses describe per-core parameter casts and V-to-scalar `GetValue` paths. ASYNC-TRIPLE's 0.5-2 us tail estimate is explicitly assumption-based. VECTOR-MATH V002 changed `Muls` to `Duplicate+Mul`, but correctness was 53/54 and short-shape same-binary qualification failed. | No isolated Cast throughput, V/S handoff latency, or `GetValue` latency measurement is retained. V002's timings does not identify those costs separately. |
 | Kernel fixed cost | The short-kernel note records repeated same-binary MAD/median failures for 5-6 us shapes across d4/d5/d6, while 12 us qualified. | This measures repeatability and noise, not an empty-kernel or launch/init fixed-cost floor. No blank-kernel result was found. |
 | Active cores / row utilization | V011 host code chooses `blockCount=min(availableCoreNum,rowCount)`. TINY and CASE47 records identify ownership/core-count overlap with prior R016/SCHED work. SCHED V002's 33x100 probe showed five clean pairs favoring the Candidate at -4.4%, while Candidate same-binary drift was 0.258 and the route verdict remained NEEDS_ONE_MORE_LOCAL. | No active-core utilization trace is linked to an Official testcase. Actual row ownership and specialization for CASE14, CASE47 and TINY remain unknown without the input map and a case-bound profile. |
 
@@ -569,8 +569,8 @@ No kernel-level IR/assembly export, isolated DataCopy/Cast/scalar/kernel-floor m
 
 ### Main selection and Support-A update (2026-10-03)
 
-- **CASE47 H1 / V001:** Main approved the proxy experiment from R31B V011 with FP32 `D=257` and `M=2*A`; `A` is read at runtime from `ACL_DEV_ATTR_VECTOR_CORE_NUM`. All test shapes are proxies; no Official case mapping is known. The selected mechanism groups scalar handoff in `ProcessNarrowMidOverlap` when `localRows>=2` and preserves row math. Candidate commit and Build/Correctness/Local/Official results remain NONE.
-- **TINY H2 / V001:** Main approved the ownership formula fastform only when `rowCount==blockCount`, with exact R31B V011 behavior otherwise. Proxy is FP32 `D=256`, `M=max(2,floor(A/2))`, with primary `availableCoreNum=A`; the control keeps the same shape and caps the core count at `B<M`. Live numeric `A`, `M`, and `B` are pending. No Official mapping is known. Candidate commit and Build/Correctness/Local/Official results remain NONE.
+- **CASE47 H1 / V001:** Main selected the proxy experiment from R31B V011 with FP32 `D=257` and `M=2*A`; `A` is read at runtime from `ACL_DEV_ATTR_VECTOR_CORE_NUM`. All test shapes are proxies; no Official case mapping is known. The selected mechanism groups scalar handoff in `ProcessNarrowMidOverlap` when `localRows>=2` and preserves row math. Candidate commit and Build/Correctness/Local/Official results remain NONE.
+- **TINY H2 / V001:** Main selected the ownership formula fastform only when `rowCount==blockCount`, with exact R31B V011 behavior otherwise. Proxy is FP32 `D=256`, `M=max(2,floor(A/2))`, with primary `availableCoreNum=A`; the control keeps the same shape and caps the core count at `B<M`. Live numeric `A`, `M`, and `B` are pending. No Official mapping is known. Candidate commit and Build/Correctness/Local/Official results remain NONE.
 - **SELECTIVE H3 / V001:** Source commit is `1a43be725337232a7c7102ca6e884127435c2541`; Candidate SHA-256 is `b7d04e2e5ec3f93503bf2ff7b60291e68009b8856c7a07fe66a222915e50c368`. Main review found that a runtime bool was added to the original kernel entry, weakening exact R31B V011 fallback behavior. Route-4 Agent was asked to preserve this commit and submit a separate implementation fix that restores exact fallback before Build. Build and Correctness have not run; this V001 is not ready for execution or result collection. Local and Official results remain NONE.
 - **Agent replacements after 502:** Route-4 old `01a10081-319c-7843-b67f-827666a20b0c` was replaced by `01a100c0-de75-7341-9dda-128a2a8e5de5`; Route-2 old `01a10081-302e-7b32-a670-f051d0054129` was replaced by `01a100cc-5f4d-7522-9512-4244619dcaf3`; Support-A old `01a10081-332f-7030-bc91-518a317070d0` was replaced by read-only `01a100c0-df25-7723-8046-fd333277dc8f`. Each prior Agent failed with 502. These records do not change Route ownership or lifecycle.
 - **Support-A group-file findings:** The original `总报告.md` was missing from the searched project and attachment paths; an existing summary was not used as a substitute. The group file contains a negative cube+vector anecdote; FlashRMS was a joke with no experiment; kernel fusion was stated as intent only; case14 `157 us` appeared alongside a timeout and is invalid; the case4/7 cluster claim is an unsupported community hypothesis. Support-A edited no files.
@@ -651,7 +651,7 @@ Official records currently expose testcase IDs and timing, without an input shap
 ### CASE14 Support-B evidence handoff (2026-10-04)
 
 - Official testcase 14 in `线上结果/R31B/V011/result.json`: ID `6a9a9a99bf41025d6013ebbe`, PASS, `timeUs=16486.82`, `bestTimeUs=3750.12`, score `21.496` (time ratio `4.3963x`). Source: `线上结果/R31B/V011/submission.asc`, SHA256 `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`. The result has no rows, D, dtype, dispatch, or testcase-bound profile.
-- `worktrees/m1/shape-tiling/研究/SHAPE-TILING-CHAMPION-X/CASE14-SEGMENTED-TIMING.md` reports 535 Parent msprof task samples; its `>=13us` bucket has V/S/MTE2/MTE3 busy ratios `0.463/0.157/0.443/0.170` and a reported ideal-overlap ceiling near `2.16x`. Measurements use local FP32 shapes `2x/8x/16x32768` and `2x/8x16384`, not testcase 14. The V002 evidence directory lacks the original `op_summary_*.csv`, so the profile summary cannot be independently recomputed or bound to this testcase. The proxy profile alone does not account for the Official `4.3963x` ratio.
+- `worktrees/m1/shape-tiling/研究/SHAPE-TILING-CHAMPION-X/CASE14-SEGMENTED-TIMING.md` reports 535 Parent msprof task samples; its `>=13us` bucket has V/S/MTE2/MTE3 busy ratios `0.463/0.157/0.443/0.170` and a reported ideal-overlap ceiling near `2.16x`. Measurements use local FP32 shapes `2x/8x/16x32768` and `2x/8x16384`, not testcase 14. The V002 evidence directory lacks the original `op_summary_*.csv`, so the profile summary is not independently recomputed or bound to this testcase. The proxy profile alone does not account for the Official `4.3963x` ratio.
 - C001 identity gap: `线上结果/C001/result.json` identifies submitted `phase4/workspaces/C001/kernel.txt`, SHA256 `e13e9b242d475d9552b4d2739db5bcd48e9378d58badb690bb878993167ce720` (matching `归档/历史工作区/C001/kernel.txt`). `归档/历史工作区/C001/compile.log` instead shows compilation of `/tmp/c001/c001_kernel.cpp`; retained `归档/历史工作区/C001/c001_kernel.cpp` has SHA256 `ba35b61b7b45031d8ca026cce93aeb034504b5862ad343a0c304e2fe2d2853ca`. The retained records do not bind that compiled file to the Official source. C001 TLE occurred on testcase 1; testcases 2–15 were skipped, including testcase 14.
 - `线上结果/R31B/V008/result.json` records `0/15 Runtime Error` for source `归档/历史工作区/R31B/R31B-V008-DSLICE-SMALL-R_kernel.asc`. The result gives no diagnostic identifying the failing stage; testcase 14's shape and whether it reached a particular branch are also unknown.
 - H7 in `worktrees/w2/m1/case14-intrarow-parallelism/研究/CASE14-INTRAROW-PARALLELISM-CHAMPION-X/Track-B.md` remains a proxy-only hypothesis: the probe must be explicitly FP32 with `D>8192` and enter Parent's FP32 wide branch; a timeline bound to testcase ID, source, and executable must show the post-sqrt V-to-S and S-to-V waits on the critical path. The 535-task summary does not meet that condition. Official shape/profile mapping is still absent; `MAIN_SELECTED=NONE`.

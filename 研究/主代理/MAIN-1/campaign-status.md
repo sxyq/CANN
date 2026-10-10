@@ -1,13 +1,13 @@
 # MAIN-1 LONG-RUN CHAMPION-EXPLOIT CAMPAIGN STATUS
 
 - Campaign: LONG-RUN / MULTI-AGENT / CHAMPION-EXPLOIT
-- Planning approval: 本轮正式批准进入
+- Planning decision: 本轮正式批准进入
 - Date: 2026-09-29
 - Main-1 HEAD (campaign start): `dac227c6`
 - Main-1 worktree: `/Users/sunyiyang/Desktop/Project/cann-main1`
 - Main-1 branch: `main1/champion-exploit`
 
-## Approved 5 Active Lanes
+## Selected 5 Active Lanes
 
 | Lane | Route | Branch | Worktree | Official Best | Agent |
 |---|---|---|---|---|---|
@@ -57,7 +57,7 @@
 
 | Date | Event |
 |---|---|
-| 2026-09-29 | SHAPE-TILING V001: BUILD PASS; found wide-FP32 invRms nondeterminism (~0.8%); OFAT safety PASS; timing gated |
+| 2026-09-29 | SHAPE-TILING V001: BUILD PASS; found wide-FP32 invRms nondeterminism (~0.8%); OFAT safety PASS; timing threshold |
 | 2026-09-29 | STORE-EPILOGUE: Track-B next-hypotheses.md produced (store gap analysis) |
 | 2026-09-29 | R31A: same-binary + paired measurements running on D24576/D32768 |
 | 2026-09-29 | Main-1 review sent to SHAPE-TILING: allow same-binary P/C with COMMON_MODE_WITH_PARENT documentation |

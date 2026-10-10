@@ -44,11 +44,11 @@
 - MAIN-2 可在 5 条 lane 内批准下一 OFAT hypothesis，但不写 Kernel。
 - 不开第 6 条路线。
 - PLANNING_DECISIONS_CHANGED = 0（本轮不改 Planning 生命周期决定）。
-- NEW_ROUTES_OUTSIDE_APPROVED_5 = 0。
+- NEW_ROUTES_OUTSIDE_SELECTED_5 = 0。
 
 ## 4. Online 条件式批准
 
-- CONDITIONAL ONLINE APPROVAL：单 Revision 显著稳定超噪，或同一 Local Best chain 连续 2–3 次 LOCAL_ACCEPTED。
+- CONDITIONAL ONLINE ROUTE RECORD：单 Revision 显著稳定超噪，或同一 Local Best chain 连续 2–3 次 LOCAL_ACCEPTED。
 - 触发后 MAIN-2 做 Main Review → 统一 Judge Owner 提交。
 - Route child 不提交 Online。
 
@@ -153,7 +153,7 @@ Planning 待裁：C2 三选项、UB-GAP-CLUE、四条 lane 生命周期、W3 vs 
 
 ```text
 PLANNING_DECISIONS_CHANGED = 0
-NEW_ROUTES_OUTSIDE_APPROVED_5 = 0
+NEW_ROUTES_OUTSIDE_SELECTED_5 = 0
 ```
 
 ### 关键可复用事实

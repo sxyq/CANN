@@ -1,6 +1,6 @@
 # ASYNC-TRIPLE-X — Next-Hypothesis Research (TRACK-B)
 
-> **MAIN-2 APPROVALS 2026-09-25** — Probe shape change APPROVED (measurement design only, not a Revision): old primary probe `8×1024` (width=1024, tileCount=1, Candidate≡SEED instruction stream) is retired as primary performance probe; new probe MUST use width>1024 with tileCount≥2, preferably tileCount≥3 — candidates from 4096 / 6144 / 8192 (e.g. 8×4096 tileCount=4, or rows×8192 tileCount=8). APPROVED NEXT backlog: H1 inter-pass prologue prefetch — implementable only after Main disposes the current triple-overlap Candidate; no queue-depth or extra-buffer changes alongside it.
+> **current route record 2026-09-25** — Probe shape change SELECTED (measurement design only, not a Revision): old primary probe `8×1024` (width=1024, tileCount=1, Candidate≡SEED instruction stream) is retired as primary performance probe; new probe MUST use width>1024 with tileCount≥2, preferably tileCount≥3 — candidates from 4096 / 6144 / 8192 (e.g. 8×4096 tileCount=4, or rows×8192 tileCount=8). SELECTED NEXT backlog: H1 inter-pass prologue prefetch — implementable only after Main disposes the current triple-overlap Candidate; no queue-depth or extra-buffer changes alongside it.
 
 Route: ASYNC-TRIPLE-X · Worktree `cann-next6/ASYNC-TRIPLE-X` · Branch `exp/next6-async-triple-x` · OWNER=MAIN-2
 Mode: Long-Horizon Parallel Exploration (execution-contract section R). TRACK-A candidate untouched this turn.
@@ -528,9 +528,9 @@ device runs, no shared-control changes this turn.
 
 ---
 
-## PROBE-SHAPE DESIGN (approved change, 2026-09-25)
+## PROBE-SHAPE DESIGN (selected change, 2026-09-25)
 
-Measurement-design only. Source 2defc6c2 unchanged, no device runs, no new Revision, no shared-control edits. Derives the new primary/secondary performance probes under Main's approval (retire 8×1024 as primary performance probe). All line references: `cann-next6/ASYNC-TRIPLE-X/phase4/local/ASYNC-TRIPLE-X/V001/submission.asc` (V001), `.../support/ASYNC-TRIPLE-X-SEED.asc` (SEED), `cann-next6/ASYNC-TRIPLE-X/phase4/workspaces/ASYNC-TRIPLE-X/probe_main.inc` (probe host).
+Measurement-design only. Source 2defc6c2 unchanged, no device runs, no new Revision, no shared-control edits. Derives the new primary/secondary performance probes under Main's decision (retire 8×1024 as primary performance probe). All line references: `cann-next6/ASYNC-TRIPLE-X/phase4/local/ASYNC-TRIPLE-X/V001/submission.asc` (V001), `.../support/ASYNC-TRIPLE-X-SEED.asc` (SEED), `cann-next6/ASYNC-TRIPLE-X/phase4/workspaces/ASYNC-TRIPLE-X/probe_main.inc` (probe host).
 
 ### Derived tileCount table
 
@@ -544,7 +544,7 @@ Measurement-design only. Source 2defc6c2 unchanged, no device runs, no new Revis
 | 6144 | 6 | 4 (tiles 1–4) | legal, mechanism engaged |
 | 8192 | 8 | 6 (tiles 1–6) | legal, mechanism engaged, steady state dominates |
 
-Refinement of the approval: tileCount≥2 engages pairwise overlap, but the literal triple (all three stages inside one iteration) requires **tileCount≥3** — at tileCount=2 the two overlap-capable iterations each miss one stage.
+Refinement of the decision: tileCount≥2 engages pairwise overlap, but the literal triple (all three stages inside one iteration) requires **tileCount≥3** — at tileCount=2 the two overlap-capable iterations each miss one stage.
 
 ### Legality of candidate widths (rows × width × dtype)
 
@@ -577,7 +577,7 @@ At rows=8 width=8192 → tileCount=8 (V001:246). Pass-2 loop (V001:266-285):
 - **iteration tile=1**: V001:270 `if (tile + 1 < tileCount)` → `2 < 8` TRUE → V001:274 `CopyInOutputData(row, nextOffset, nextCount)` = MTE2 prefetch tile 2; V001:278 `if (tile >= 1)` TRUE → V001:282 `CopyOut(row, prevOffset, prevCount)` = MTE3 store tile 0, issued BEFORE compute; V001:284 `ComputeOutputTile(count, inverseRms)` = Vector tile 1. → **MTE2(2) / V(1) / MTE3(0) in one iteration — mechanism engaged** (comment V001:276-277 states exactly this).
 - **tiles 2–6** repeat the same three-issue pattern (steady state; 6 total full triple iterations).
 - **tile=7**: V001:270 → `8 < 8` FALSE (no N+1 left), V001:278 TRUE → store tile 6, compute tile 7; then the post-loop flush V001:286-291 stores tile 7.
-- **Contrast at width=1024 (tileCount=1)**: V001:270 → `1 < 1` FALSE, V001:278 → `0 >= 1` FALSE → loop body is only V001:284, and epilogue V001:290 issues the same same-tile copy SEED issues at its L276 — V001 executes the SEED instruction stream and the MTE3-stage hypothesis never runs. The retired probe therefore cannot show the mechanism.
+- **Contrast at width=1024 (tileCount=1)**: V001:270 → `1 < 1` FALSE, V001:278 → `0 >= 1` FALSE → loop body is only V001:284, and epilogue V001:290 issues the same same-tile copy SEED issues at its L276 — V001 executes the SEED instruction stream and the MTE3-stage hypothesis never runs. The retired probe therefore does not show the mechanism.
 - **SEED structural contrast** (diff.patch:16-37): SEED pass-2 is prefetch-guard (SEED:269) → `ComputeOutputTile` (SEED:275) → same-tile `CopyOut` AFTER compute (SEED:276); V001 adds the `tile>=1` prev-store before compute and moves the last store to the post-loop flush. That diff is the entire SINGLE_HYPOTHESIS.
 
 ### OLD-PROBE DATASET TAG
@@ -691,11 +691,11 @@ QUEUE HAZARD AUDIT (TQue depth 2, kDoubleBuffer L13, EnQue/DeQue only)
   - At the new issue point the pass-1 loop has exited: every AccumulateTile has
     called FreeTensor on x/residual (L188-189), so both ring slots are returned.
   - Slot reuse is sequenced by queue events (FreeTensor→AllocTensor waits
-    for the V0 completion of pass-1's last read), so an earlier DataCopyPad cannot
+    for the V0 completion of pass-1's last read), so an earlier DataCopyPad does not
     overwrite a buffer pass-1 Vector still reads — no read/write hazard introduced.
   - paramQueue is first used in pass-2 (pass-1 never touches it) → free.
   - If AllocTensor blocks, it blocks only on pass-1 V0 completion, which FinishRms
-    needs anyway → the reorder cannot lengthen the drain; bounded-downside case.
+    needs anyway → the reorder does not lengthen the drain; bounded-downside case.
   - Scalar issue: EnQue for four async copies returns without waiting for data;
     FinishRms starts immediately after the moved call.
 
@@ -781,7 +781,7 @@ per-iteration scalar issue/branch overhead < 0.5 µs. Because blocks==rows on th
 
 | rank | hypothesis | serial target | expected µs bound per launch | vs 55–70 µs | quiet-window verdict |
 |---|---|---|---|---|---|
-| 1 | **H1** inter-pass prologue prefetch | FinishRms drain + P2 tile-0 fill (2 of the ~6 uncovered segments) | saving = min(tail, load) ≈ **0.5–2 µs**, ceiling ≈3 µs | ≈1–4% (ceiling ~5%) | **WORTH a quiet window later.** Condition: same-binary floor must come in ≤0.03 MAD/med on the exact probe shape (the protocol's ≤0.10 alone = 5.5–7 µs resolution, which cannot see this effect) with ≥4–8 interleaved pairs. First in queue for any such window. |
+| 1 | **H1** inter-pass prologue prefetch | FinishRms drain + P2 tile-0 fill (2 of the ~6 uncovered segments) | saving = min(tail, load) ≈ **0.5–2 µs**, ceiling ≈3 µs | ≈1–4% (ceiling ~5%) | **WORTH a quiet window later.** Condition: same-binary floor must come in ≤0.03 MAD/med on the exact probe shape (the protocol's ≤0.10 alone = 5.5–7 µs resolution, which does not see this effect) with ≥4–8 interleaved pairs. First in queue for any such window. |
 | 2 | **H3** pass-2 MTE2/MTE3 issue order | HBM arbitration order across the 6 full-triple iterations | **0–3 µs if issue order steers arbitration at all; plausibly 0**; downside −0..−3 µs if delaying the load starves V(N) | 0–4%, sign uncertain | **Worth piggybacking, not a dedicated window.** Binary is a two-call swap (near-zero build cost) — co-schedule with H1's window; judge only at floor ≤0.03 with ≥8 pairs. Needs no re-classification (stays NEEDS_MORE_EVIDENCE). |
 | 3 | **H2** output-ring event decoupling | store-completion visibility into the scalar path | ceiling **0–2 µs even if exposure exists** (4 KB store ≈0.2–1 µs is often shorter than one V(N) slot time, so a completion wait would usually cost nothing; plus exposed flush store ≈0.2–1 µs); **0 if TQue is already async** — the main unknown | 0–3% | **NOT worth a window yet.** Resolve the FreeTensor/AllocTensor coupling question by AscendC queue-semantics readback first (device-free). Promote to quiet-window status ONLY if the readback shows coupling — and note its ceiling is below H1's despite being the largest sync change. |
 

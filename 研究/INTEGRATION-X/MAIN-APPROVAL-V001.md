@@ -1,15 +1,15 @@
-# MAIN APPROVAL — INTEGRATION-X V001
+# current route recordS — INTEGRATION-X V001
 
 Date: 2026-09-27
 DIRECT_PARENT=FROZEN_R31B_V011
 PARENT_SOURCE_SHA=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
 OFFICIAL_ANCHOR=45.16
 
-## APPROVED HYPOTHESIS (integration stack)
+## SELECTED HYPOTHESIS (integration stack)
 
 Combine exactly two independently validated mechanisms on the frozen parent:
 
-1. SCHED-CHAMPION-X V002 gated group-aligned ownership
+1. SCHED-CHAMPION-X V002 threshold group-aligned ownership
    SOURCE_SHA de1e93c74338802e646258ada08a8cac1031496a9985e585a5a89015b81bc990
    Local: 33x100 FP32 -4.4% 5/5, no regression on 17x257 FP16
 
@@ -24,7 +24,7 @@ declared two-mechanism merge of two LOCAL signals.
 
 - 33x100 FP32: ~= SCHED alone (-4%)
 - batched small rows: ~= VECTOR alone (-7%)
-- 17x257 FP16: ~= 0 (gated ownership)
+- 17x257 FP16: ~= 0 (threshold ownership)
 - wide path: unchanged
 
 ## After implementation

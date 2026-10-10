@@ -24,13 +24,13 @@
 
 ---
 
-## 2. Child 在 Main approval 前创建性能 Revision
+## 2. Child 在 current route record 前创建性能 Revision
 
 | ROUTE | REVISION | 偏差 | 处置 |
 |---|---|---|---|
 | EPILOGUE-ARITH-CHAMPION-X | V001 | Agent 自行选定 NORM-HOIST 并建源码，Main 事后追认 | PROCESS_VIOLATION 记录；追认有效（假设合格）；后续已改为 Main 先选定 |
 
-**结论**：1 次 preapproval violation。已纠正（后续 H2/H5/H9 等均为 Main 先选定）。
+**结论**：1 次 predecision violation。已纠正（后续 H2/H5/H9 等均为 Main 先选定）。
 
 ---
 

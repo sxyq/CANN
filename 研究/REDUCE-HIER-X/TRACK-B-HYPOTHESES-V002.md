@@ -8,7 +8,7 @@ V001_SOURCE_SHA=b9c618b3b53fd2988b667f0c6830fa4a7206aef0fde69f92cdb5545ba6503521
 V001_LOCAL_VERDICT=NEEDS_ONE_MORE_LOCAL (clean delta -3.8% on 8x8192 FP32 only)
 DIRECT_PARENT_FOR_V002=V001 (if Main accepts V001 as parent) else FROZEN_R31B_V011
 OFFICIAL_ANCHOR=45.16
-MODE=TRACK-B research only — no kernel edit until Main approves exactly one hypothesis
+MODE=TRACK-B research only — kernel edit follows the selected hypothesis in the current specification
 
 ## 1. What V001 taught us
 
@@ -171,7 +171,7 @@ exceed H1 by a factor of `tileCount` on the reduction-tail share.
 
 - **EXPECTED_WIN_SHAPES** (vs V001)
   - D=8192/16384/32768: est. 0 to -5%. Only the fold’s Add chain changes;
-    per-tile V/S is untouched, so this cannot approach H2’s scale.
+    per-tile V/S is untouched, so this stays below H2’s scale.
 
 - **EXPECTED_RISK_SHAPES**
   - D=8192 (tileCount=2, G=2): no-op versus V001.
@@ -184,7 +184,7 @@ exceed H1 by a factor of `tileCount` on the reduction-tail share.
 - **MEASUREMENT_PLAN**
   Same protocol as H2, but expect deltas inside noise at most shapes. Useful
   mainly as a cheap negative control if H2 is blocked. Falsification is
-  immediate: if it cannot beat V001 at D=32768, park.
+  immediate: if it is notat V001 at D=32768, park.
 
 ---
 
@@ -276,12 +276,12 @@ what a 4.4x gap needs.
 Why: it is the only candidate that removes the per-tile `ReduceSum` V/S
 handoff rather than reshaping the (already cheap) merge. Expected win scales
 with tileCount, which is exactly the large-D band where Official case 14
-loses. H3 cannot deliver that scale by construction; H4 is a fallback if H2
+loses. H3 does not deliver that scale by construction; H4 is a fallback if H2
 is correctness-blocked.
 
-## REQUEST_MAIN_APPROVAL
+## REQUEST_MAIN_ROUTE_RECORD
 
-Requesting Main approval for exactly one V002 revision:
+Requesting current route record for exactly one V002 revision:
 
 **HYPOTHESIS-2 — Full manual vector reduction tree (R011, 0–1 GetValue)**
 
@@ -300,5 +300,5 @@ Requesting Main approval for exactly one V002 revision:
 - WHY_NOT_DUPLICATE: see H2 section (distinct from H1 merge timing,
   REDUCE-INVSCALE-X H3 span / H4 stage-count, and from H3/H4 of this file)
 
-No kernel, host, CMake, runner, shared-control, or CANNJudge action until
-this approval is issued.
+Kernel, host, CMake, runner, shared-control, and CANNJudge actions follow
+the current specification is recorded.

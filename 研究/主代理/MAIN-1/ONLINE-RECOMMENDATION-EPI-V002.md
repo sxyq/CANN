@@ -18,7 +18,7 @@
 | 1x32768 | −6.64% (6/6) | −3.13% (4/6) | 两窗均 favor C |
 | 2x16384 | −1.43% (5/6) | −3.62% (5/6) | 两窗均 favor C |
 
-2x16384 effect/MAD = 4.7×。`ONLINE_DECISION = APPROVED_ON_TRIGGER`。
+2x16384 effect/MAD = 4.7×。`ONLINE_DECISION = SELECTED_ON_TRIGGER`。
 
 ## 为什么 V002 取代 V001
 

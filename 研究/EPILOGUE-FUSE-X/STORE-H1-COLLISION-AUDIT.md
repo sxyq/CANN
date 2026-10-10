@@ -104,7 +104,7 @@ all eight wide-path sites listed above. But no wide-path structure
 changes: no tile width (`kWideFp32CachedTileElems` etc. untouched), no
 wide row/batch geometry, no panel layout, no mode. What the blast radius
 proves is the opposite of the claim: the mechanism is cross-path copy
-geometry, which is why it cannot be filed as epilogue-store
+geometry, which is why it is not filed as epilogue-store
 organization. WIDE-X-FRESH4's declared mechanism is a "wide tile-width
 方案" (`main1-route-selection.md:61`) — STORE-H1 does not touch that
 axis — but the wide-path blast radius means any successor that edits
@@ -168,7 +168,7 @@ Why this slice and not STORE-H2 as originally written:
   touch material against WIDE-X-FRESH4; its only border is UB-LIVENESS
   (buffer lifetime), not MAIN-1.
 
-### Successor declaration draft (STORE-EPILOGUE-X V001, NOT implemented, pending Main approval)
+### Successor declaration draft (STORE-EPILOGUE-X V001, NOT implemented, pending current route record)
 
 ```
 ROUTE=STORE-EPILOGUE-X
@@ -199,5 +199,5 @@ WHY_NOT_DUPLICATE=ALIGN-TAIL owns copy geometry (primitive selection);
   VECTOR-MATH denominator untouched.
 ```
 
-Awaiting: VECTOR-MATH V002 disposition, Main approval, WIDE-X-FRESH4
+Next: VECTOR-MATH V002 disposition, current route record, WIDE-X-FRESH4
 clearance. Not implemented.

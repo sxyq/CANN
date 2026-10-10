@@ -39,7 +39,7 @@ Shape class inference basis: absolute time magnitude + ratio pattern. Tiny kerne
 - STORE-H2B (writeback merge): reduces store descriptor count. **OPEN** (spec ready, not implemented).
 - EPI-FUSE-1 (gamma-scaled fusion): reduces epilogue dispatch. **OPEN**.
 - EPI-PIPE-3 (epilogue/prologue overlap): **OPEN** but high complexity.
-- Wide-path changes: **BLOCKED** (mode/wide is forbidden in current lanes).
+- Wide-path changes: **BLOCKED** (mode/wide is deferred in current lanes).
 - Reduction: **BLOCKED** (3 variants already failed).
 
 ---
@@ -75,7 +75,7 @@ Shape class inference basis: absolute time magnitude + ratio pattern. Tiny kerne
 
 **Open MAIN-2 axes**:
 - SCHED (ownership/launch width): **PARK** (structural ceiling documented).
-- Init optimization (fewer/smaller buffers): **BLOCKED** (UB lifetime is forbidden).
+- Init optimization (fewer/smaller buffers): **BLOCKED** (UB lifetime is deferred).
 - Everything else: marginal — fixed cost is not reducible within current constraints.
 
 **Note**: Case 1 and case 3 are the hardest to improve without changing launch/Init. They are the floor for this kernel architecture.
@@ -130,7 +130,7 @@ Shape class inference basis: absolute time magnitude + ratio pattern. Tiny kerne
 | STORE-H2B (writeback merge) | **OPEN** (spec ready) | 14, 8 | Reduces store descriptors; 待主线讨论 |
 | COEFF-LOCALITY (param prefetch/residency) | **BLOCKED** | — | H1 +6.6% regression, H2 failed |
 | Reduction variants | **BLOCKED** | — | 3 variants failed on this parent |
-| Mode/wide/dtype changes | **MAIN-1 / out of scope** | — | Forbidden in current lanes |
+| Mode/wide/dtype changes | **MAIN-1 / out of scope** | — | Deferred in current lanes |
 | SCHED (ownership/launch) | **PARK** | 1, 3 (marginal) | Structural ceiling documented |
 | ALIGN-TAIL (copy primitive) | MAIN-2, separate lane | 14 (wide stores) | Different route |
 | UB-LIVENESS (buffer layout) | MAIN-2, separate lane | all (marginal) | Different route |

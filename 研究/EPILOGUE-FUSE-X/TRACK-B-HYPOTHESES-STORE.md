@@ -188,7 +188,7 @@ Low–medium. The coalesced run is legal only when UB rows are contiguous
 *and* the GM rows are contiguous with no gap — true for all flattened
 row-major output here (`row * rowWidth + col`), but the check must be
 explicit per site. The wide half-y path stores from `gammaBuf_`-backed
-y rows; coalescing must not overrun the resident row length. Tail rows
+y rows; coalescing does not overrun the resident row length. Tail rows
 (when `rowWidth % kTileElems != 0`) keep a per-row length; the coalesced
 store's block length becomes `rowWidth * sizeof(T)`, which is still a
 legal pad block.
@@ -247,11 +247,11 @@ ownership change.
   ring as a mechanism. This hypothesis *reuses the parent's existing*
   V006 2-deep pattern and extends it to two more arms — Main must decide
   whether that is a collision or a legitimate transplant of an in-kernel
-  precedent. Flag before approval.
+  precedent. Flag before decision.
 
 **CORRECTNESS RISK**
 Medium. Store-source liveness is the hazard: the 2-deep convert staging
-must not be overwritten while its store is in flight, and the BF16 arm's
+is not overwritten while its store is in flight, and the BF16 arm's
 current store source is `xBuf_` — the next row's input staging — which
 is exactly what the deferred drain currently protects
 (`:616` waits before releasing `inputRelease`). Reusing `xBuf_` with a
@@ -312,12 +312,12 @@ branch must be checked against `kWideFullYBudgetBytes`.
 - VECTOR-MATH-X: denominator untouched.
 - UB-LIVENESS-X (border): buffer lifetime is their declared axis. This
   is one targeted lifetime decoupling for the store source, not a
-  liveness redesign — flag before approval.
+  liveness redesign — flag before decision.
 - STORE-H3 note: H3 and H4 overlap on the BF16 arm. H4 is the
   *prerequisite* subset of H3 for BF16; pick one, or run H4 first.
 
 **CORRECTNESS RISK**
-Low. Disjoint buffers cannot introduce a new race; the old alias can
+Low. Disjoint buffers does not introduce a new race; the old alias can
 only be removed, not widened. The risk is budget: if the wide BF16 Init
 has no room for the extra tile, the change must be scoped to non-wide
 arms and documented as such.
@@ -357,4 +357,4 @@ Sequencing suggestion after H1 disposes: H2 (coalescing) → H4/H3 merged
 (lowp drain) if FP16/BF16 mid shapes remain weak.
 
 No implementation in this tree. Awaiting VECTOR-MATH-X V002 disposition
-and Main approval before any candidate exists.
+and current route record before any candidate exists.

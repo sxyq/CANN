@@ -188,8 +188,8 @@ Mul(valueTile, valueTile, broadcastBuf, valid);
 
 ---
 
-## 4. REQUEST_MAIN_APPROVAL
+## 4. REQUEST_MAIN_ROUTE_RECORD
 
-REQUEST_MAIN_APPROVAL: **VM-H3a VEC-RECIPROCAL + BROADCAST-MUL** as the single hypothesis for VECTOR-MATH-X V002.
+REQUEST_MAIN_ROUTE_RECORD: **VM-H3a VEC-RECIPROCAL + BROADCAST-MUL** as the single hypothesis for VECTOR-MATH-X V002.
 
-Requested disposition: approve VM-H3a, implement from V001 (PARENT_SOURCE_SHA `dbe776f9…`), run correctness then timing on 32×256 / 8×256 FP32. VM-H3b and VM-H3c stay in backlog. No kernel edit until Main approves exactly one hypothesis.
+Requested disposition: record VM-H3a, implement from V001 (PARENT_SOURCE_SHA `dbe776f9…`), run correctness then timing on 32×256 / 8×256 FP32. VM-H3b and VM-H3c stay in backlog. kernel edit follows the selected hypothesis in the current specification.

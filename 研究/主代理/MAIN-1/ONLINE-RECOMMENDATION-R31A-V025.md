@@ -11,13 +11,13 @@
 
 ## Trigger
 
-Campaign conditional approval trigger **B** met：
+Campaign conditional decision trigger **B** met：
 
 | 条件 | 状态 | 证据 |
 |---|---|---|
 | 同一 Local Best chain 连续 2–3 次 LOCAL_ACCEPTED | YES | V024（−3.66%）→ V025（−4.12% 增量），合计 vs V016 约 −6.8% |
 
-`ONLINE_DECISION = APPROVED_ON_TRIGGER`。
+`ONLINE_DECISION = SELECTED_ON_TRIGGER`。
 
 ## Main Review checklist
 

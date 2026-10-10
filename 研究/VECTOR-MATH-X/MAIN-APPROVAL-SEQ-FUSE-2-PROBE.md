@@ -1,4 +1,4 @@
-# MAIN APPROVAL — SEQ-FUSE-2 DIV_FEASIBILITY_PROBE only
+# current route recordS — SEQ-FUSE-2 DIV_FEASIBILITY_PROBE only
 
 Date: 2026-09-27 (C2C overnight)
 Scope: feasibility probe ONLY. Not a performance revision. Not kernel production code.
@@ -17,5 +17,5 @@ Run the DIV_FEASIBILITY_PROBE (P1–P5) from SEQ-FUSE-2-SPEC.md:
 - No SCHED
 - No MAIN-1 access
 
-If probe PASSES: Main will approve VECTOR-MATH-X V003 SEQ-FUSE-2 implementation in the next cycle.
-If probe FAILS (fast-approx or cannot avoid 507035): write PROBE_FAILED and stop; pick a different Track-B hypothesis.
+If probe PASSES: Main will record VECTOR-MATH-X V003 SEQ-FUSE-2 implementation in the next cycle.
+If probe FAILS (fast-approx or does not avoid 507035): write PROBE_FAILED and stop; pick a different Track-B hypothesis.

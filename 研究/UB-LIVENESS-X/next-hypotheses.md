@@ -1,6 +1,6 @@
 # UB-LIVENESS-X — Next Hypotheses (TRACK-B research)
 
-> **MAIN-2 APPROVALS 2026-09-25** — APPROVED NEXT backlog: H1 TRUE_LIVE_SET_BUDGET (dead-reservation reclaim + live-set model fix + unlock larger effective tile); V004 implementation FORBIDDEN until Judge returns and Main issues NEXT_HYPOTHESIS. Scope: this route keeps only buffer lifetime / aliasing / peak UB footprint / live-set budgeting — H2→BATCH, H3→ASYNC, H5→REDUCE (all marked in-file). JUDGE_OWNER=MAIN-1.
+> **current route record 2026-09-25** — SELECTED NEXT backlog: H1 TRUE_LIVE_SET_BUDGET (dead-reservation reclaim + live-set model fix + unlock larger effective tile); V004 implementation DEFERRED until Judge returns and the current route records NEXT_HYPOTHESIS. Scope: this route keeps only buffer lifetime / aliasing / peak UB footprint / live-set budgeting — H2→BATCH, H3→ASYNC, H5→REDUCE (all marked in-file). JUDGE_OWNER=MAIN-1.
 
 ROUTE: UB-LIVENESS-X · WORKTREE: cann-next6/UB-LIVENESS-X · OWNER: UB-LIVENESS-X Route Agent (MAIN-2)
 APPEND-ONLY file. Sources: V003 `phase4/local/UB-LIVENESS-X/V003/submission.asc` (SHA 2eb9b5d087267a54fb84f8734847ecb68cf94b967102693c0d150fd57d6da7cd, byte-identical to worktree `phase4/workspaces/UB-LIVENESS-X/submission.asc`, verified by SHA256).
