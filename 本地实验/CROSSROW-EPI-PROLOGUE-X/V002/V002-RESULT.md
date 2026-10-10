@@ -3,7 +3,7 @@
 AGENT_ID: W5-R01 CROSSROW-EPI-PROLOGUE-X
 ROUTE: CROSSROW-EPI-PROLOGUE-X
 REVISION: V002
-STATUS: LOCAL_NO_PROMOTION_MEASUREMENT_CONTAMINATED
+STATUS: LOCAL_REJECTED_MEASUREMENT_CONTAMINATED_NEEDS_ONE_MORE_LOCAL
 
 ## Selected single factor
 
@@ -125,3 +125,15 @@ Evidence: `zeno-doctor-20261009.log`
 The V002 source was rebuilt from the recorded `Parent.asc` and `Candidate.asc` through the existing V001 CMake/adapter entry. New artifact hashes and the exact environment/build contract are recorded in `V002-SOURCE-IDENTITY-BUILD.md`; the prior V002 manifest was not reused as a substitute. The target and M=1 correctness probes both passed with zero differences. The temporary V002 adapter/metadata retarget was restored and the existing V001 support entry rebuilt successfully.
 
 No authorized R1/V002 lease or owner was available, so Local was not run. V002 remains `LOCAL_NO_PROMOTION / MEASUREMENT_CONTAMINATED`; no V003 was created.
+
+## 2026-10-10 HBM-qualified V002 recheck
+
+The current execution rule permits Local when the helper reports `FREE_HBM_MB > 100`; external processes are recorded as load quality and are not a stop condition. NPU3 was selected because `free_hbm_mb 3` reported `48496 MB` before and after the run. The existing V001 paired backend was temporarily rebound to the route-owned V002 `Parent.asc` and `Candidate.asc`, rebuilt cleanly, and restored/rebuilt as V001 after the run. No new Runner or Revision was created.
+
+V002 source identity remains Parent `3698c229dfb6a4b336e7ee0506eb1ceaf898c1c37c937c0af7d3eef71fbc685d` and Candidate `426489bfdc63441f2fd179fdff176875b24d815e6e0420343aeed0b0dab7933f`. The new V002-bound artifacts are Parent `3ad998adbb7a126f15b7da0a8f8e0a816ca719d92a4dc42aba97d7832ffa4db4`, Candidate `0ef46469d226225c47ca4c33286b505b48444175095572bc3abf0e8d49c30126`, and paired Runner `9ba784c8748af1c33eeb92cb651203d82a7ffc224294c6ccb8e69b95f8db827f`. Full identity and restore hashes are in `v002-artifact-sha256-20261010.txt`.
+
+Build PASS: `rebuild-v002-local-20261010.log`. Target correctness and M=1 correctness both PASS with zero differences: `correctness-v002-clean-20261010-r16-d6144.log` and `correctness-v002-clean-20261010-m1-d6144.log`.
+
+One Local was run with 45 warmups, 21 device-event paired samples, and alternating PC/CP at `rows=16,width=6144,blocks=8,fp16`. Raw: `local-v002-r16-d6144-w45-20261010.tsv`. Parent median was `17.580001 us`; Candidate median was `17.920000 us`; median-ratio was `+1.934010%`; paired-percent was `+1.592708%`; median paired delta was `+0.279998 us`; Candidate was faster in `10/21` samples and slower in `11/21`.
+
+NPU3 had external PID `1859841` (`zhangka+`, `python3.11`, `14238 MB`) in both pre/post snapshots, with target AICore about 11%/13%; other devices also had external processes. Load quality is `CONTAMINATED_EXTERNAL_PROCESS`. The raw result is retained, but this Local is `LOCAL_REJECTED / MEASUREMENT_CONTAMINATED`, does not advance `LOCAL_BEST`, and requires `NEEDS_ONE_MORE_LOCAL` only if Planning requests a clean causal repeat. Evidence: `V002-LOCAL-RECHECK-20261010.md`.
