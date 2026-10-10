@@ -1,0 +1,28 @@
+N04 V007 SetL2CacheHint capability audit
+ROUTE=N04-GM-CACHE-STREAMING-X
+REVISION=V007
+PARENT=V006 / commit 8103d6fc1a5cf53448b62864cf0a24182e5d0339
+HOST=cann-server3
+CANN=/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002
+SOC_VERSION=Ascend910B3
+ARCH_BRANCH=__NPU_ARCH__=2201
+
+RULE_REFRESH_RECEIPT=Current AGENTS.md, cann-route-executor SKILL.md, V003 PASS evidence, V005 shared rows=2,width=32768 probe mismatch evidence, V006 PASS evidence, and the installed CANN cache-hint headers were read before this V007 audit. The audit stays in the N04 worktree, reads no other Route worktree, creates no Candidate, creates no Runner, and does not push.
+
+API_ENUM=kernel_utils_macros.h:217-221 declares CACHE_MODE_DISABLE=0, CACHE_MODE_NORMAL=1, CACHE_MODE_LAST=2, and CACHE_MODE_PERSISTENT=4.
+API_SIGNATURE=kernel_tensor.h:240 declares GlobalTensor::SetL2CacheHint with CacheRwMode default RW.
+API_DISPATCH=kernel_tensor_impl.h:1489-1499 restores oriAddress_ for NORMAL and calls L2CacheAlter for every other mode on this architecture family.
+ARCH_IMPLEMENTATION=kernel_utils_macros.h:272-283 selects the 2201 L2_CACHE_HINT implementation; only CACHE_MODE_DISABLE adds l2CacheOffset, while every other CacheMode returns the original address.
+RW_IMPLEMENTATION=The 2201 L2CacheAlter body does not branch on CacheRwMode::READ, WRITE, or RW; changing the template argument cannot create a distinct hint effect here.
+
+TESTED_MODES=V003 used DISABLE on xGm_ and residualGm_; V005 changed residualGm_ to NORMAL; V006 changed xGm_ to NORMAL. These revisions cover the two distinct address behaviors exposed by the installed 2201 implementation.
+UNTESTED_ENUM_VALUES=LAST and PERSISTENT are enum values, but the installed 2201 implementation returns the original address for both. They do not provide a real new hint factor for V007.
+UNTESTED_RW_VALUES=READ and WRITE are legal template values, but the installed 2201 implementation ignores the template value in L2CacheAlter. They do not provide a real new hint factor for V007.
+OTHER_TARGETS=gammaGm_, biasGm_, and outputGm_ exist in the FP32 path, but applying an already-tested mode to them would not add a new API mode; parameter and output residency boundaries are therefore unchanged.
+
+AUDIT_RESULT=NO_UNTESTED_LEGAL_SEMANTICALLY_DISTINCT_HINT
+DECISION=STOP_V007_NO_CANDIDATE
+COMPILE=NOT_RUN
+CORRECTNESS=NOT_RUN
+LOCAL_SCORE=NONE
+EVIDENCE_SCOPE=This file preserves the installed API capability result; V003/V005/V006 source and runtime evidence remain in their existing revision directories.
