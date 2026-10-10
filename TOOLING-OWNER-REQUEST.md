@@ -4,10 +4,22 @@
 ROUTE = W5-R05 VECTOR-ILP-DUALCHAIN-X
 AGENT_ID = W5-R05-VECTOR-ILP-DUALCHAIN-X-ROUTE-AGENT
 BRANCH = research/w5-r05-vector-ilp
-REQUEST_STATUS = REQUEST_ONLY / NOT_SENT
+REQUEST_STATUS = REQUEST_PUBLISHED / OWNER_ACK_UNCONFIRMED
+REQUEST_PUBLICATION_COMMIT = e4c49a15932f30727d6a83d9f4134eff4e0216c4
+REQUEST_DELIVERY_CHANNEL = R5 route-owned request file pushed to origin/research/w5-r05-vector-ilp
+R5_TOOLING_OWNER = CANONICAL TOOLING OWNER (NAME UNCONFIRMED)
+OWNER_ACK = UNCONFIRMED (no Owner commit or acceptance receipt)
 ORIGINAL_BLOCKER = EXISTING_CANONICAL_RUNNER_CANNOT_REGISTER_THE_FROZEN_KERNEL
 ORIGINAL_BLOCKER_REVISION = 4442c95e
 ```
+
+## Delivery and acknowledgement status
+
+The pushed route-owned request file is the only delivery evidence available to
+R05. No named Tooling Owner, direct owner endpoint, acknowledgement, owner
+commit, or acceptance receipt is present in the route-owned records. Publication
+of this request is not acceptance and does not authorize use of uncommitted
+tooling changes.
 
 ## Request
 
