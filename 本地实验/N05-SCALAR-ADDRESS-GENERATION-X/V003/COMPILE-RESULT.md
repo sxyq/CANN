@@ -37,3 +37,20 @@ Build output:
 - `adapter.cpp.o`: 334128 bytes; SHA256 `8cc6acf5b7fab509abe5e7e0f737b2ae0165b54a830ab60776b17916c4130ea8`
 
 The temporary directory was removed after the raw log and artifact facts were saved.
+
+## Runtime Entry Build Evidence
+
+RUNTIME_DEVICE=3
+RUNTIME_RESET_CALLS=REMOVED_FROM_TEMPORARY_COPIES; RESET_SCAN=PASS_NO_MATCH
+STANDALONE_PROBE_V002=PASS; TARGETS=probe_v016,probe_v011
+STANDALONE_PROBE_V003=PASS; TARGETS=probe_v016,probe_v011
+PAIRED_RUNNER_FIRST_BUILD=FAIL; ERROR=fatal error: 'vector' file not found
+PAIRED_RUNNER_RETRY=PASS; CPLUS_INCLUDE_PATH=V016 recorded toolchain include set; LD_LIBRARY_PATH=system libstdc++ first
+PAIRED_RUNNER_SIZE=582544 bytes
+PAIRED_RUNNER_SHA256=36b084adfa71e1b41054d7328c7f19f16dda41b3b132e51865a2243eb01ead27
+PARENT_CANDIDATE_RUN=NOT_RUN
+CORRECTNESS=NONE
+LOCAL=NONE
+RAW_RUNTIME_LOGS=runtime-compile-v002-v003.log,runtime-compile-probe-entry.log
+
+The first runtime build log preserves the probe link errors (`rtLinkedDevBinaryRegisterDelay`, `__cce_rtKernelLaunch`) and the paired compiler's missing `<vector>` error. The probe-entry log preserves its initial missing `runtime_probe_fp32.asc` configure failure, then records successful V002/V003 standalone probe builds after the existing V016 inputs were supplied. Its final paired build also succeeded after applying the previously recorded include and library paths. No generated executable was run.

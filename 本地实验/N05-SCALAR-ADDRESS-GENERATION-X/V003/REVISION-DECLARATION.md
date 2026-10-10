@@ -41,6 +41,11 @@ The first-pass V002 input cursor remains unchanged. Vector arithmetic, DMA calls
 
 SOURCE_REVIEW=PASS
 COMPILE=PASS; CONFIGURE_RC=0; BUILD_RC=0; FINAL_RC=0; SSH_RC=0
-CORRECTNESS=NONE; runtime stage intentionally not started
-LOCAL_SCORE=NONE; timing stage intentionally not started
+STANDALONE_RUNTIME_PROBE_BUILD=PASS; V002=PASS; V003=PASS
+PAIRED_RUNNER_BUILD=PASS_AFTER_RETRY; FIRST_ATTEMPT=FAIL_<vector>_NOT_FOUND
+RUNTIME_EXECUTION=NOT_RUN
+CORRECTNESS=NONE; no runtime binary was executed
+LOCAL_SCORE=NONE; no paired device samples were collected
+RUNTIME_RESOURCE_LOG=runtime-preflight-npu3.log
+RUNTIME_BUILD_LOGS=runtime-compile-v002-v003.log,runtime-compile-probe-entry.log
 PUSH=NO
