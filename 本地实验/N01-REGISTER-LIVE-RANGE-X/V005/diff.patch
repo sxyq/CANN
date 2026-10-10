@@ -1,0 +1,14 @@
+--- a/本地实验/N01-REGISTER-LIVE-RANGE-X/V004/submission.asc
++++ b/本地实验/N01-REGISTER-LIVE-RANGE-X/V005/submission.asc
+@@ -2130,11 +2130,11 @@
+                         SyncMTE2ToV();
+                         AscendC::Add(valueTile, xLocal, residualLocal, valid);
+                         AscendC::PipeBarrier<PIPE_V>();
+-                        AscendC::Mul(xLocal, valueTile, valueTile, valid);
++                        AscendC::Mul(residualLocal, valueTile, valueTile, valid);
+                         AscendC::PipeBarrier<PIPE_V>();
+                         AscendC::ReduceSum(
+                             reduceLocal[batchRow * kWideFullYReduceStride + tile],
+-                            xLocal, residualLocal, valid);
++                            residualLocal, xLocal, valid);
+                         SyncVToMTE2();
