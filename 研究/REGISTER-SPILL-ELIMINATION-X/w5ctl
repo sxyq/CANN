@@ -27,11 +27,10 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
 
-ROUTE = "W5-R02-REGISTER-SPILL-ELIMINATION-X"
-EXPECTED_BRANCH = "research/w5-r02-register-spill"
-SCRIPT_PATH = Path(__file__).resolve()
-ROUTE_ROOT = SCRIPT_PATH.parent
-EXPECTED_REPO_ROOT = Path("/home/data4t2/lelinfeng/cann-w5-r02-register").resolve()
+ROUTE: Optional[str] = None
+EXPECTED_BRANCH: Optional[str] = None
+EXPECTED_REPO_ROOT: Optional[Path] = None
+ROUTE_ROOT: Optional[Path] = None
 PATCH_SIMILARITY_GATE = 0.60
 
 EXIT_USAGE = 64
@@ -123,6 +122,8 @@ def scoped_path(raw: Optional[str], label: str) -> Tuple[Optional[Path], Optiona
     path = resolve_path(raw)
     if path is None:
         return None, None
+    if EXPECTED_REPO_ROOT is None:
+        return path, "WORKTREE_ISOLATION:INVOCATION_SCOPE_NOT_CONFIGURED"
     try:
         path.relative_to(EXPECTED_REPO_ROOT)
     except ValueError:
@@ -141,7 +142,49 @@ def current_git_context() -> Tuple[int, Optional[Path], Optional[str], Optional[
     return 0, Path(root_text).resolve(), branch, None
 
 
+def configure_invocation(args: argparse.Namespace) -> Optional[str]:
+    global EXPECTED_REPO_ROOT, EXPECTED_BRANCH, ROUTE, ROUTE_ROOT
+
+    current_rc, current_root, _, current_error = current_git_context()
+    if current_error or current_rc != 0 or current_root is None:
+        return current_error or "WORKTREE_ISOLATION:GIT_CONTEXT_UNAVAILABLE"
+
+    raw_repo_root = getattr(args, "repo_root", None) or os.environ.get("W5CTL_REPO_ROOT")
+    repo_root = resolve_path(raw_repo_root) if raw_repo_root else current_root
+    if repo_root is None or not repo_root.is_dir():
+        return f"WORKTREE_ISOLATION:REPO_ROOT_NOT_DIRECTORY:{repo_root}"
+
+    expected_branch = (
+        getattr(args, "expected_branch", None)
+        or os.environ.get("W5CTL_EXPECTED_BRANCH")
+        or ""
+    ).strip()
+    if not expected_branch:
+        return "WORKTREE_ISOLATION:EXPECTED_BRANCH_REQUIRED"
+
+    route = (getattr(args, "route", None) or os.environ.get("W5CTL_ROUTE") or "").strip()
+    if not route:
+        return "WORKTREE_ISOLATION:ROUTE_REQUIRED"
+
+    raw_route_root = getattr(args, "route_root", None) or os.environ.get("W5CTL_ROUTE_ROOT")
+    route_root = resolve_path(raw_route_root) if raw_route_root else repo_root
+    if route_root is None or not route_root.is_dir():
+        return f"WORKTREE_ISOLATION:ROUTE_ROOT_NOT_DIRECTORY:{route_root}"
+    try:
+        route_root.relative_to(repo_root)
+    except ValueError:
+        return f"OUT_OF_SCOPE:route-root:{route_root}:expected={repo_root}"
+
+    EXPECTED_REPO_ROOT = repo_root
+    EXPECTED_BRANCH = expected_branch
+    ROUTE = route
+    ROUTE_ROOT = route_root
+    return None
+
+
 def require_current_worktree() -> Optional[str]:
+    if EXPECTED_REPO_ROOT is None or not EXPECTED_BRANCH or not ROUTE or ROUTE_ROOT is None:
+        return "WORKTREE_ISOLATION:INVOCATION_SCOPE_NOT_CONFIGURED"
     rc, root, branch, error = current_git_context()
     if error:
         return error
@@ -680,6 +723,10 @@ def dedup_insufficient(reason: str) -> int:
     emit("MECHANISM_OVERLAP", "NONE")
     emit("PATCH_SIMILARITY_GATE", fmt_number(PATCH_SIMILARITY_GATE))
     emit("PATCH_SIMILARITY_GATE_STATUS", "NOT_EVALUATED")
+    emit("MECHANISM_OVERLAP_GATE", "NONE")
+    emit("MECHANISM_OVERLAP_GATE_STATUS", "NOT_EVALUATED")
+    emit("MECHANISM_ORTHOGONALITY", "UNPROVEN")
+    emit("MECHANISM_REVIEW", "NOT_EVALUATED")
     emit("DEDUP_STATUS", "SIMILARITY_INSUFFICIENT_DATA")
     emit("BLOCKER", reason)
     return EXIT_NOT_RUN
@@ -736,18 +783,35 @@ def dedup_command(args: argparse.Namespace) -> int:
     token_union = set(parent_tokens) | set(candidate_tokens)
     if not token_union:
         emit("MECHANISM_OVERLAP", "NONE")
+        emit("MECHANISM_OVERLAP_GATE", fmt_number(args.mechanism_threshold))
+        emit("MECHANISM_OVERLAP_GATE_STATUS", "NOT_EVALUATED")
+        emit("MECHANISM_ORTHOGONALITY", "UNPROVEN")
+        emit("MECHANISM_REVIEW", "NOT_EVALUATED")
         emit("DEDUP_STATUS", "SIMILARITY_INSUFFICIENT_DATA")
         emit("BLOCKER", "MECHANISM_TOKENS_EMPTY")
         return EXIT_NOT_RUN
     token_overlap = len(set(parent_tokens) & set(candidate_tokens)) / len(token_union)
-    status = (
-        "DUPLICATE"
-        if patch_similarity >= args.duplicate_threshold
-        and token_overlap >= args.mechanism_threshold
-        else "DISTINCT"
-    )
     emit("MECHANISM_OVERLAP", fmt_number(token_overlap))
-    emit("DEDUP_STATUS", status)
+    emit("MECHANISM_OVERLAP_GATE", fmt_number(args.mechanism_threshold))
+    if token_overlap >= args.mechanism_threshold:
+        emit("MECHANISM_OVERLAP_GATE_STATUS", "BLOCKED")
+        emit("MECHANISM_ORTHOGONALITY", "UNPROVEN")
+        emit("MECHANISM_REVIEW", "REQUIRED_OWNER_REVIEW")
+        emit("DEDUP_STATUS", "BLOCKED_MECHANISM_OVERLAP")
+        emit(
+            "BLOCKER",
+            f"MECHANISM_OVERLAP={token_overlap:.6f}>=GATE={args.mechanism_threshold:.6f}",
+        )
+        return EXIT_NOT_RUN
+    emit("MECHANISM_OVERLAP_GATE_STATUS", "PASS")
+    emit("MECHANISM_ORTHOGONALITY", "UNPROVEN")
+    if token_overlap > 0.0:
+        emit("MECHANISM_REVIEW", "REQUIRED_OWNER_REVIEW")
+        emit("DEDUP_STATUS", "MANUAL_REVIEW_MECHANISM_OVERLAP")
+        emit("BLOCKER", f"MECHANISM_OVERLAP={token_overlap:.6f}>0.000000")
+        return EXIT_NOT_RUN
+    emit("MECHANISM_REVIEW", "ZERO_TOKEN_OVERLAP_ONLY")
+    emit("DEDUP_STATUS", "DISTINCT")
     emit("DEDUP_METHOD", "normalized-change-lines-with-explicit-common-exclusion")
     return 0
 
@@ -822,8 +886,10 @@ def record_command(args: argparse.Namespace) -> int:
     env["W5CTL_EVIDENCE_PATHS"] = os.pathsep.join(str(path) for path in evidence_paths)
     if record_source:
         env["W5CTL_SOURCE"] = str(record_source)
+        env["W5CTL_SOURCE_SHA256"] = source_sha
     if record_artifact:
         env["W5CTL_ARTIFACT"] = str(record_artifact)
+        env["W5CTL_ARTIFACT_SHA256"] = artifact_sha
     try:
         completed = subprocess.run(
             command,
@@ -866,35 +932,46 @@ def git_output(repo_root: Path, *arguments: str) -> Tuple[int, str]:
 
 
 def doctor_command(args: argparse.Namespace) -> int:
-    requested_root = resolve_path(args.repo_root) if args.repo_root else EXPECTED_REPO_ROOT
+    assert EXPECTED_REPO_ROOT is not None
+    assert EXPECTED_BRANCH is not None
+    assert ROUTE is not None
+    assert ROUTE_ROOT is not None
     rc, actual_root, branch, context_error = current_git_context()
     if context_error or actual_root is None or branch is None:
         emit("DOCTOR_STATUS", "BLOCKED")
         emit("BLOCKER", context_error or "WORKTREE_ISOLATION:GIT_CONTEXT_UNAVAILABLE")
         return EXIT_NOT_RUN
     emit("REPO_ROOT", actual_root)
-    root_ok = actual_root == EXPECTED_REPO_ROOT and requested_root == EXPECTED_REPO_ROOT
+    root_ok = actual_root == EXPECTED_REPO_ROOT
     emit("REPO_ROOT_CHECK", "PASS" if root_ok else "FAIL")
     emit("BRANCH", branch)
-    branch_ok = branch == EXPECTED_BRANCH and args.expected_branch == EXPECTED_BRANCH
+    emit("EXPECTED_BRANCH", EXPECTED_BRANCH)
+    emit("ROUTE", ROUTE)
+    emit("ROUTE_ROOT", ROUTE_ROOT)
+    branch_ok = branch == EXPECTED_BRANCH
     emit("BRANCH_CHECK", "PASS" if branch_ok else "FAIL")
     status_rc, status = git_output(actual_root, "-c", "core.quotePath=false", "status", "--short")
     changed = [line[3:] for line in status.splitlines() if len(line) >= 3]
-    route_prefix = str(ROUTE_ROOT.relative_to(EXPECTED_REPO_ROOT)) + "/"
-    out_of_scope = [path for path in changed if not path.startswith(route_prefix)]
+    route_relative = ROUTE_ROOT.relative_to(EXPECTED_REPO_ROOT)
+    route_prefix = "" if str(route_relative) == "." else str(route_relative) + "/"
+    out_of_scope = [path for path in changed if route_prefix and not path.startswith(route_prefix)]
     emit("WORKTREE_CHANGED_COUNT", len(changed))
     emit("WORKTREE_SCOPE", "PASS" if not out_of_scope else "FAIL")
     if out_of_scope:
         emit("OUT_OF_SCOPE_CHANGES", ";".join(out_of_scope))
-    champion = args.source if args.source else str(EXPECTED_REPO_ROOT / "线上结果/R31B/V011/submission.asc")
-    champion_path, champion_sha, champion_error = verify_file(str(champion), "champion", required=True)
-    champion_ok = champion_error is None
-    if champion_error:
-        emit("CHAMPION_CHECK", "FAIL")
-        emit("CHAMPION_BLOCKER", champion_error)
+    if args.source:
+        champion_path, champion_sha, champion_error = verify_file(args.source, "champion", required=True)
+        champion_ok = champion_error is None
+        if champion_error:
+            emit("CHAMPION_CHECK", "FAIL")
+            emit("CHAMPION_BLOCKER", champion_error)
+        else:
+            emit("CHAMPION_CHECK", "PASS")
+            emit("CHAMPION_SHA256", champion_sha)
     else:
-        emit("CHAMPION_CHECK", "PASS")
-        emit("CHAMPION_SHA256", champion_sha)
+        champion_ok = False
+        emit("CHAMPION_CHECK", "NOT_CONFIGURED")
+        emit("CHAMPION_SHA256", "NONE")
     backend_fields = {
         "BUILD_BACKEND": os.environ.get("W5CTL_BUILD_BACKEND"),
         "CORRECTNESS_BACKEND": os.environ.get("W5CTL_CORRECTNESS_BACKEND"),
@@ -953,6 +1030,10 @@ def load_checkpoint(path: Path) -> Tuple[Optional[Dict[str, Any]], Optional[str]
         return None, f"CHECKPOINT_READ_FAILED:{exc}"
     if not isinstance(payload, dict) or payload.get("schema") != 1 or payload.get("route") != ROUTE:
         return None, "CHECKPOINT_SCHEMA_OR_ROUTE_MISMATCH"
+    if payload.get("repo_root") != str(EXPECTED_REPO_ROOT):
+        return None, "CHECKPOINT_REPO_ROOT_MISMATCH"
+    if payload.get("expected_branch") != EXPECTED_BRANCH:
+        return None, "CHECKPOINT_EXPECTED_BRANCH_MISMATCH"
     return payload, None
 
 
@@ -1066,6 +1147,8 @@ def pipeline_command(args: argparse.Namespace, resume: bool) -> int:
         payload = {
             "schema": 1,
             "route": ROUTE,
+            "repo_root": str(EXPECTED_REPO_ROOT),
+            "expected_branch": EXPECTED_BRANCH,
             "created_utc": now_utc(),
             "stage_order": stages,
             "identity": {},
@@ -1219,6 +1302,13 @@ def add_backend_options(parser: argparse.ArgumentParser, env_name: str) -> None:
     parser.add_argument("--log")
 
 
+def add_scope_options(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--repo-root", default=os.environ.get("W5CTL_REPO_ROOT"))
+    parser.add_argument("--expected-branch", default=os.environ.get("W5CTL_EXPECTED_BRANCH"))
+    parser.add_argument("--route", default=os.environ.get("W5CTL_ROUTE"))
+    parser.add_argument("--route-root", default=os.environ.get("W5CTL_ROUTE_ROOT"))
+
+
 def add_identity_options(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--source", default=os.environ.get("W5CTL_SOURCE"))
     parser.add_argument("--artifact", default=os.environ.get("W5CTL_ARTIFACT"))
@@ -1256,20 +1346,21 @@ def build_parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="command", required=True)
 
     doctor = sub.add_parser("doctor", help="read-only route and backend audit")
+    add_scope_options(doctor)
     doctor.add_argument("--dry-run", action="store_true", help="explicitly select read-only mode")
-    doctor.add_argument("--repo-root")
-    doctor.add_argument("--expected-branch", default=os.environ.get("W5CTL_EXPECTED_BRANCH", EXPECTED_BRANCH))
-    doctor.add_argument("--source")
+    doctor.add_argument("--source", default=os.environ.get("W5CTL_CHAMPION_SOURCE"))
 
     for name, env_name in (
         ("build", "W5CTL_BUILD_BACKEND"),
         ("correctness", "W5CTL_CORRECTNESS_BACKEND"),
     ):
         stage = sub.add_parser(name, help=f"delegate {name} to an existing backend")
+        add_scope_options(stage)
         add_identity_options(stage)
         add_backend_options(stage, env_name)
 
     local = sub.add_parser("local", help="delegate local measurement and validate fixed raw statistics")
+    add_scope_options(local)
     add_identity_options(local)
     add_backend_options(local, "W5CTL_LOCAL_BACKEND")
     local.add_argument("--raw", default=os.environ.get("W5CTL_RAW_PATH"))
@@ -1278,6 +1369,7 @@ def build_parser() -> argparse.ArgumentParser:
     local.add_argument("--max-cv", type=float, default=0.20)
 
     record = sub.add_parser("record", help="delegate evidence recording; never commits by itself")
+    add_scope_options(record)
     add_identity_options(record)
     record.add_argument("--evidence", action="append", default=[])
     record.add_argument("--backend", default=os.environ.get("W5CTL_RECORD_BACKEND"))
@@ -1286,22 +1378,25 @@ def build_parser() -> argparse.ArgumentParser:
     record.add_argument("--log")
 
     dedup = sub.add_parser("dedup", help="compare meaningful patch changes only")
+    add_scope_options(dedup)
     dedup.add_argument("--parent-patch", required=True)
     dedup.add_argument("--candidate-patch", required=True)
     dedup.add_argument("--common", action="append", default=[])
     dedup.add_argument("--champion-scaffold", action="append", default=[])
     dedup.add_argument("--abi-scaffold", action="append", default=[])
     dedup.add_argument("--min-lines", type=int, default=1)
-    dedup.add_argument("--duplicate-threshold", type=float, default=PATCH_SIMILARITY_GATE)
     dedup.add_argument("--mechanism-threshold", type=float, default=0.70)
 
     cycle = sub.add_parser("cycle", help="idempotent build/correctness/local orchestration")
+    add_scope_options(cycle)
     add_pipeline_options(cycle, resume=False)
 
     resume = sub.add_parser("resume", help="resume an explicit checkpoint without rerunning passed stages")
+    add_scope_options(resume)
     add_pipeline_options(resume, resume=True)
 
     report = sub.add_parser("report", help="read a checkpoint and emit a structured receipt")
+    add_scope_options(report)
     report.add_argument("--checkpoint", required=True)
     return parser
 
@@ -1390,6 +1485,11 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = build_parser()
     try:
         args = parser.parse_args(argv)
+        invocation_error = configure_invocation(args)
+        if invocation_error:
+            emit("STATUS", "BLOCKED")
+            emit("BLOCKER", invocation_error)
+            return EXIT_NOT_RUN
         return dispatch(args)
     except UsageError as exc:
         print(f"ERROR={exc}", file=sys.stderr)

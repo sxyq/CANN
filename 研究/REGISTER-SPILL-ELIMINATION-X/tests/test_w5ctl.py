@@ -15,6 +15,21 @@ sys.dont_write_bytecode = True
 
 ROOT = Path(__file__).resolve().parents[3]
 CLI = Path(__file__).resolve().parents[1] / "w5ctl"
+ROUTE = "W5-R02-REGISTER-SPILL-ELIMINATION-X"
+BRANCH = "research/w5-r02-register-spill"
+
+
+def scope_args(repo_root=ROOT, route_root=None, route=ROUTE, branch=BRANCH):
+    return [
+        "--repo-root",
+        str(repo_root),
+        "--expected-branch",
+        branch,
+        "--route",
+        route,
+        "--route-root",
+        str(route_root or CLI.parent),
+    ]
 
 
 def run_cli(*args):
@@ -22,8 +37,13 @@ def run_cli(*args):
 
 
 def run_cli_in(cwd, *args):
+    return run_cli_with_scope(cwd, scope_args(), *args)
+
+
+def run_cli_with_scope(cwd, scope, *args):
+    command = [sys.executable, "-B", str(CLI), args[0], *scope, *args[1:]]
     return subprocess.run(
-        [sys.executable, "-B", str(CLI), *args],
+        command,
         cwd=str(cwd),
         text=True,
         stdout=subprocess.PIPE,
@@ -46,8 +66,46 @@ def write_raw(path, candidate=9.0, quality="CLEAN", pairs=4):
 
 
 class W5CtlTest(unittest.TestCase):
+    def test_invocation_binding_is_explicit_and_route_configurable(self):
+        result = run_cli_with_scope(
+            ROOT,
+            scope_args(repo_root=ROOT, route_root=ROOT, route="W5-ALT-ROUTE"),
+            "doctor",
+            "--dry-run",
+            "--source",
+            str(ROOT / "线上结果/R31B/V011/submission.asc"),
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("ROUTE=W5-ALT-ROUTE", result.stdout)
+        self.assertIn("REPO_ROOT_CHECK=PASS", result.stdout)
+
+    def test_invocation_binding_is_required(self):
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-B",
+                str(CLI),
+                "doctor",
+                "--dry-run",
+                "--source",
+                str(ROOT / "线上结果/R31B/V011/submission.asc"),
+            ],
+            cwd=str(ROOT),
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+        self.assertEqual(result.returncode, 78, result.stdout + result.stderr)
+        self.assertIn("EXPECTED_BRANCH_REQUIRED", result.stdout)
+
     def test_doctor_is_read_only_and_reports_unconfigured_backends(self):
-        result = run_cli("doctor", "--dry-run")
+        result = run_cli(
+            "doctor",
+            "--dry-run",
+            "--source",
+            str(ROOT / "线上结果/R31B/V011/submission.asc"),
+        )
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertIn("DOCTOR_STATUS=PASS", result.stdout)
         self.assertIn("EXECUTION_READINESS=BLOCKED", result.stdout)
@@ -294,14 +352,47 @@ class W5CtlTest(unittest.TestCase):
             )
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             self.assertIn("PATCH_SIMILARITY_GATE_STATUS=PASS", result.stdout)
+            self.assertIn("MECHANISM_ORTHOGONALITY=UNPROVEN", result.stdout)
+            self.assertIn("MECHANISM_REVIEW=ZERO_TOKEN_OVERLAP_ONLY", result.stdout)
             self.assertIn("DEDUP_STATUS=DISTINCT", result.stdout)
 
+            review_parent = root / "review-parent.patch"
+            review_candidate = root / "review-candidate.patch"
+            review_parent.write_text(
+                "+register pressure live range scratch vector spill reload alloc parent_only\n"
+            )
+            review_candidate.write_text(
+                "+register pressure live range scratch vector spill reload alloc candidate_a candidate_b candidate_c\n"
+            )
+            result = run_cli(
+                "dedup",
+                "--parent-patch",
+                str(review_parent),
+                "--candidate-patch",
+                str(review_candidate),
+            )
+            self.assertEqual(result.returncode, 78, result.stdout + result.stderr)
+            self.assertIn("PATCH_SIMILARITY=0.000000", result.stdout)
+            self.assertIn("MECHANISM_OVERLAP=0.692308", result.stdout)
+            self.assertIn("MECHANISM_OVERLAP_GATE_STATUS=PASS", result.stdout)
+            self.assertIn("MECHANISM_ORTHOGONALITY=UNPROVEN", result.stdout)
+            self.assertIn("MECHANISM_REVIEW=REQUIRED_OWNER_REVIEW", result.stdout)
+            self.assertIn("DEDUP_STATUS=MANUAL_REVIEW_MECHANISM_OVERLAP", result.stdout)
+            self.assertNotIn("DEDUP_STATUS=DISTINCT", result.stdout)
+
             gate_parent = root / "gate-parent.patch"
-            gate_parent.write_text("\n".join(f"+mechanism_{index}" for index in range(1, 10)) + "\n")
+            gate_parent.write_text(
+                "\n".join(
+                    ["+for int"] * 6
+                    + [f"+parent_unique_{index}" for index in range(1, 4)]
+                )
+                + "\n"
+            )
             gate_blocked = root / "gate-blocked.patch"
             gate_blocked.write_text(
                 "\n".join(
-                    [*(f"+mechanism_{index}" for index in range(1, 7)), "+blocked_10", "+blocked_11", "+blocked_12", "+blocked_13"]
+                    ["+for int"] * 6
+                    + [f"+blocked_{index}" for index in range(10, 14)]
                 )
                 + "\n"
             )
@@ -320,7 +411,8 @@ class W5CtlTest(unittest.TestCase):
             gate_allowed = root / "gate-allowed.patch"
             gate_allowed.write_text(
                 "\n".join(
-                    [*(f"+mechanism_{index}" for index in range(1, 7)), "+allowed_10", "+allowed_11", "+allowed_12", "+allowed_13", "+allowed_14"]
+                    ["+for int"] * 6
+                    + [f"+allowed_{index}" for index in range(10, 15)]
                 )
                 + "\n"
             )
@@ -334,7 +426,38 @@ class W5CtlTest(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             self.assertIn("PATCH_SIMILARITY=0.600000", result.stdout)
             self.assertIn("PATCH_SIMILARITY_GATE_STATUS=PASS", result.stdout)
+            self.assertIn("MECHANISM_OVERLAP=0.000000", result.stdout)
+            self.assertIn("MECHANISM_REVIEW=ZERO_TOKEN_OVERLAP_ONLY", result.stdout)
             self.assertIn("DEDUP_STATUS=DISTINCT", result.stdout)
+
+            overlap_parent = root / "overlap-parent.patch"
+            overlap_candidate = root / "overlap-candidate.patch"
+            overlap_parent.write_text(
+                "\n".join(
+                    "+register pressure live range scratch vector parent_only"
+                    for _ in range(4)
+                )
+                + "\n"
+            )
+            overlap_candidate.write_text(
+                "\n".join(
+                    "+register pressure live range scratch vector candidate_only"
+                    for _ in range(4)
+                )
+                + "\n"
+            )
+            result = run_cli(
+                "dedup",
+                "--parent-patch",
+                str(overlap_parent),
+                "--candidate-patch",
+                str(overlap_candidate),
+            )
+            self.assertEqual(result.returncode, 78, result.stdout + result.stderr)
+            self.assertIn("PATCH_SIMILARITY=0.000000", result.stdout)
+            self.assertIn("MECHANISM_OVERLAP=0.750000", result.stdout)
+            self.assertIn("MECHANISM_OVERLAP_GATE_STATUS=BLOCKED", result.stdout)
+            self.assertIn("DEDUP_STATUS=BLOCKED_MECHANISM_OVERLAP", result.stdout)
 
     def test_cycle_resume_and_repeat_are_checkpoint_idempotent(self):
         with tempfile.TemporaryDirectory(prefix=".w5ctl-test-", dir=str(CLI.parent)) as temp:
@@ -388,6 +511,7 @@ class W5CtlTest(unittest.TestCase):
                     "-B",
                     str(CLI),
                     "cycle",
+                    *scope_args(),
                     "--checkpoint",
                     str(checkpoint),
                     "--source",
@@ -420,6 +544,7 @@ class W5CtlTest(unittest.TestCase):
                     "-B",
                     str(CLI),
                     "resume",
+                    *scope_args(),
                     "--checkpoint",
                     str(checkpoint),
                     "--source",
@@ -454,6 +579,7 @@ class W5CtlTest(unittest.TestCase):
                     "-B",
                     str(CLI),
                     "cycle",
+                    *scope_args(),
                     "--checkpoint",
                     str(checkpoint),
                     "--source",
