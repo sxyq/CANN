@@ -17,13 +17,16 @@ PERFORMANCE_HYPOTHESIS=Out-of-line Load reduces repeated helper instruction body
 DIFF=diff.patch
 RULE_REFRESH_RECEIPT=ROUTE=N02 CODE-FOOTPRINT-ICACHE-X; HEAD=1c51a5b2eb9b5b9dffc031c1fbbbc35e9506b49f; PARENT=c9510be4e4a9da0084433e45442468da1eb75c72; DIRECT_PARENT=1c51a5b2eb9b5b9dffc031c1fbbbc35e9506b49f; MECHANISM=hotspot code footprint and instruction fetch; NEXT_ACTION=compile V001 on server3.
 DEVICE=4
-COMPILE=PARTIAL_PASS_BUT_PAIRED_INPUT_INVALID
-COMPILE_DETAIL=The existing V016 single-version targets device submission full_link returned 0, but the paired build used PARENT_INCLUDE_DIR=/tmp/cann-n02-code-footprint-icache-x-v001-jziPyb/artifact-candidate and CANDIDATE_INCLUDE_DIR=/tmp/cann-n02-code-footprint-icache-x-v001-jziPyb/artifact-candidate. device.cpp included R31B-V016-WIDE-TILE-SEED_kernel.asc while the Candidate source had also been staged under R31B-V011-LP-ROW-PIPELINE_kernel.asc, so the earlier binary-equality sample is invalid for P/C comparison.
+COMPILE=PASS
+CODEGEN_EQUAL=YES
+COMPILE_DETAIL=The existing V016 single-version targets device submission full_link returned 0 independently in artifact-candidate and artifact-parent. Both device.cpp inputs include R31B-V016-WIDE-TILE-SEED_kernel.asc; the resolved source SHA256 values are Candidate=2238d0ff3604f0de752d9d9ecb5546f0ec94aa2205b9018853cdd19d7ca04fd1 and Parent=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3. The separately built device.alink SHA256 values both equal 998896a58bf828357e6885fb5eab3e41b79fcf70e898baeb3abf126f90be1b9f; submission.alink SHA256 values both equal 1e13fdfd6df7876db3820b2c299271d82aad5259f0e293ad540dd006a00a3630. This is valid evidence that this source change produced no executable difference.
+PAIRED_RUNNER_CONFIG=INVALID
+PAIRED_RUNNER_CONFIG_DETAIL=The paired runner build configuration pointed both PARENT_INCLUDE_DIR and CANDIDATE_INCLUDE_DIR at artifact-candidate. This invalidates runtime P/C selection only; it does not invalidate the independently built artifacts above.
 CORRECTNESS=NOT_RUN
 CORRECTNESS_REASON=The existing paired runner is shared under /tmp/cann-n02-code-footprint-icache-x-v001-jziPyb/paired and calls aclrtResetDevice(4); NPU 4 had active VLLMEngineCor PID 2999855. The runner was not executed.
 LOCAL=NONE
-LOCAL_REASON=No valid independent Parent/Candidate runtime input; no device sample was collected.
-BINARY_EQUALITY=INVALID_EVIDENCE
+LOCAL_REASON=The paired runner configuration did not select independent Parent/Candidate inputs; no device sample was collected.
+BINARY_EQUALITY=VALID_CODEGEN_EQUAL
 FAILURE_EVIDENCE=logs/v016-paired-build-device4.log; logs/v016-paired-build-device4-envfix.log; logs/compiled-input-source-audit.log; logs/compiled-input-dependency-confirm.log
-GIT_COMMIT=LOCAL_COMMIT_TO_REPORT
+GIT_COMMIT=52ebb6561713c6533d7f191fdc3aa22df0872b78
 NEXT_ACTION=STOP V001; preserve evidence and do not run a new Runner

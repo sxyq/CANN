@@ -3,23 +3,34 @@ REVISION=V001
 HOST=hwnput3
 UTC=2026-10-10T12:49:50Z
 DEVICE=4
-STATUS=STOPPED_WITH_INVALID_PAIRED_INPUT
+STATUS=INDEPENDENT_BUILDS_PASS_CODEGEN_EQUAL; PAIRED_RUNTIME_CONFIG_INVALID
 
-=== REASON FOR BINARY EQUALITY ===
-The prior paired build used one include directory for both sides:
+=== SOURCE AND INDEPENDENT BUILD IDENTITY ===
+The separate V016 single-version builds used these input directories:
+PARENT_BUILD_DIR=/tmp/cann-n02-code-footprint-icache-x-v001-jziPyb/artifact-parent
+CANDIDATE_BUILD_DIR=/tmp/cann-n02-code-footprint-icache-x-v001-jziPyb/artifact-candidate
+Both device.cpp and adapter.cpp include:
+INCLUDE=R31B-V016-WIDE-TILE-SEED_kernel.asc
+Resolved source identities from the preserved input audit:
+CANDIDATE_INCLUDE_SHA256=2238d0ff3604f0de752d9d9ecb5546f0ec94aa2205b9018853cdd19d7ca04fd1
+PARENT_INCLUDE_SHA256=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
+The Candidate V016 file was also present under the V011 filename, but the include resolves the V016 filename listed above.
+Both independent builds returned 0 for device, submission, and full_link. Their output identities were:
+CANDIDATE_DEVICE_ALINK_SHA256=998896a58bf828357e6885fb5eab3e41b79fcf70e898baeb3abf126f90be1b9f
+PARENT_DEVICE_ALINK_SHA256=998896a58bf828357e6885fb5eab3e41b79fcf70e898baeb3abf126f90be1b9f
+CANDIDATE_SUBMISSION_ALINK_SHA256=1e13fdfd6df7876db3820b2c299271d82aad5259f0e293ad540dd006a00a3630
+PARENT_SUBMISSION_ALINK_SHA256=1e13fdfd6df7876db3820b2c299271d82aad5259f0e293ad540dd006a00a3630
+CODEGEN_EQUAL=YES
+INTERPRETATION=Valid compile evidence: this source change produced no executable difference.
+
+=== PAIRED RUNNER CONFIGURATION ===
+The separate paired-runner configuration used one include directory for both runtime sides:
 PARENT_INCLUDE_DIR=/tmp/cann-n02-code-footprint-icache-x-v001-jziPyb/artifact-candidate
 CANDIDATE_INCLUDE_DIR=/tmp/cann-n02-code-footprint-icache-x-v001-jziPyb/artifact-candidate
 The paired runner build directory was shared:
 PAIRED_DIR=/tmp/cann-n02-code-footprint-icache-x-v001-jziPyb/paired
 RUNNER=/tmp/cann-n02-code-footprint-icache-x-v001-jziPyb/paired/build/paired_runner_v016
-
-device.cpp and adapter.cpp included the same expected filename:
-INCLUDE=R31B-V016-WIDE-TILE-SEED_kernel.asc
-The modified Candidate source was also staged under a different filename:
-MISSTAGED_CANDIDATE=R31B-V011-LP-ROW-PIPELINE_kernel.asc
-The compiler followed the V016 include filename. The preserved source audit records:
-CANDIDATE_V016_SHA256=2238d0ff3604f0de752d9d9ecb5546f0ec94aa2205b9018853cdd19d7ca04fd1
-PARENT_V016_SHA256=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
+INTERPRETATION=This invalidates paired runtime Parent/Candidate selection only; it does not invalidate the separate build result above.
 
 === PRESERVED BUILD EVIDENCE ===
 The existing V016 single-version CMake input was used for device, submission, and full_link. The raw logs retain configure/build output, environment, device snapshots, source identities, object SHA256, and alink SHA256:
@@ -37,4 +48,4 @@ NPU4 had an existing VLLMEngineCor process PID 2999855. The existing paired runn
 CORRECTNESS=NOT_RUN
 LOCAL=NONE
 RUNNER_ACTION=STOPPED; NO_NEW_RUNNER
-INTERPRETATION=The equal object and alink SHA values are unusable as a Parent/Candidate result because the paired input mapping and runner directory were shared.
+INTERPRETATION=Correctness and Local remain unrun because the paired runner configuration did not select separate runtime inputs and the runner calls aclrtResetDevice(4). No new runner or device execution was attempted.
