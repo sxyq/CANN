@@ -1,0 +1,31 @@
+{
+  "route": "ROW-SCALE-HOIST-X",
+  "revision": "V051",
+  "direct_parent": "V026",
+  "parent_source_sha256": "7c2569d9e3830c845f2b5dc4587a73a05a0bdf041168614cd55ad84204e063f9",
+  "candidate_source_sha256": "5aad6db8fb2be25d65cd39c42c6a5ce72b75fd6e485b4495905c0c1d46f25bba",
+  "single_change": "In the narrow FP32 ProcessSmallFp32ContiguousBatched subcase, multiply the gamma vector by each row's existing invRms into the dead-after-reduction xBuf_ row, then multiply the retained value row by that scratch.",
+  "target": {
+    "dtype": "fp32",
+    "shape": [128, 128],
+    "vector_cores": 40,
+    "launch_blocks": 40,
+    "local_rows_per_core": [3, 4],
+    "selected_branch": "ProcessSmallFp32ContiguousBatched",
+    "subcase": "rowWidth <= kFp32RepeatMaxWidth"
+  },
+  "unchanged": [
+    "wide subcase",
+    "reduction and invRms formula/value",
+    "gamma and bias loads",
+    "dispatch and row assignment",
+    "buffers allocated",
+    "synchronization and stores",
+    "all other consumers"
+  ],
+  "compile_candidate_path": "compile/src/submission.asc",
+  "canonical_candidate_path": "../submission.asc",
+  "compile_candidate_matches_canonical": true,
+  "old_order_swap_source_sha256": "ccf35a52e8e53a87b08740f18d1c2e558bf5b2e3b358bc9af1d54c3c7ff8774b",
+  "old_order_swap_status": "PRESERVED_SUPERSEDED_COMPILE_ONLY_NOT_RUN"
+}
