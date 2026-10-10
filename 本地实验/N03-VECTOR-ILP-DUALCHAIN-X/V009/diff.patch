@@ -1,0 +1,20 @@
+diff --git "a/\346\234\254\345\234\260\345\256\236\351\252\214/N03-VECTOR-ILP-DUALCHAIN-X/V008/submission.asc" "b/\346\234\254\345\234\260\345\256\236\351\252\214/N03-VECTOR-ILP-DUALCHAIN-X/V009/submission.asc"
+index 2d79585f..48d70afb 100644
+--- "a/\346\234\254\345\234\260\345\256\236\351\252\214/N03-VECTOR-ILP-DUALCHAIN-X/V008/submission.asc"
++++ "b/\346\234\254\345\234\260\345\256\236\351\252\214/N03-VECTOR-ILP-DUALCHAIN-X/V009/submission.asc"
+@@ -3179,10 +3179,13 @@ private:
+                         yStore[batchRow * rowWidth + col];
+                     AscendC::Add(xLocal, xLocal, residualLocal, valid);
+                     AscendC::PipeBarrier<PIPE_V>();
+-                    AscendC::Muls(yTile, xLocal, half(1.0f), valid);
+-                    AscendC::PipeBarrier<PIPE_V>();
++                    // V009 FP16 Pass 1: issue the independent widen before
++                    // the retained half copy; both operations read xLocal
++                    // and keep their original Vector barriers.
+                     ToFloat(valueFp32, xLocal, valid);
+                     AscendC::PipeBarrier<PIPE_V>();
++                    AscendC::Muls(yTile, xLocal, half(1.0f), valid);
++                    AscendC::PipeBarrier<PIPE_V>();
+                     AscendC::Mul(xFp32, valueFp32, valueFp32, valid);
+                     AscendC::PipeBarrier<PIPE_V>();
+                     AscendC::ReduceSum(
