@@ -1,0 +1,277 @@
+diff --git "a/\346\234\254\345\234\260\345\256\236\351\252\214/N05-SCALAR-ADDRESS-GENERATION-X/V003/submission.asc" "b/\346\234\254\345\234\260\345\256\236\351\252\214/N05-SCALAR-ADDRESS-GENERATION-X/V004/submission.asc"
+index 8d80a71b..b57beea3 100644
+--- "a/\346\234\254\345\234\260\345\256\236\351\252\214/N05-SCALAR-ADDRESS-GENERATION-X/V003/submission.asc"
++++ "b/\346\234\254\345\234\260\345\256\236\351\252\214/N05-SCALAR-ADDRESS-GENERATION-X/V004/submission.asc"
+@@ -3073,6 +3073,126 @@ private:
+         pipe_.ReleaseEventID<AscendC::HardEvent::MTE3_V>(outputReleaseSecond);
+     }
+ 
++    struct WideLowPrecisionCursor {
++        __aicore__ inline WideLowPrecisionCursor(uint64_t firstRow, int32_t rows,
++                                                 uint64_t rowWidth, int32_t tileWidth,
++                                                 int32_t tileCount)
++            : firstRow_(firstRow), rowWidth_(rowWidth),
++              tileWidth_(tileWidth), tileCount_(tileCount), batchRow_(0), tile_(0),
++              unit_(0), col_(0), inputOffset_(firstRow * rowWidth),
++              units_(rows * tileCount)
++        {
++        }
++
++        __aicore__ inline bool HasNext() const
++        {
++            return unit_ < units_;
++        }
++
++        __aicore__ inline bool HasNextAfterCurrent() const
++        {
++            return unit_ + 1 < units_;
++        }
++
++        __aicore__ inline int32_t UnitIndex() const
++        {
++            return unit_;
++        }
++
++        __aicore__ inline int32_t BatchRowIndex() const
++        {
++            return batchRow_;
++        }
++
++        __aicore__ inline int32_t TileIndex() const
++        {
++            return tile_;
++        }
++
++        __aicore__ inline uint64_t Column() const
++        {
++            return col_;
++        }
++
++        __aicore__ inline uint64_t InputOffset() const
++        {
++            return inputOffset_;
++        }
++
++        __aicore__ inline uint64_t ParameterOffset() const
++        {
++            return col_;
++        }
++
++        __aicore__ inline uint64_t OutputOffset(int32_t localRow) const
++        {
++            return (firstRow_ + static_cast<uint64_t>(localRow)) * rowWidth_ + col_;
++        }
++
++        __aicore__ inline int32_t Valid() const
++        {
++            return Length(rowWidth_ - col_);
++        }
++
++        __aicore__ inline uint64_t NextColumn() const
++        {
++            return WrapsRow() ? 0 : col_ + static_cast<uint64_t>(tileWidth_);
++        }
++
++        __aicore__ inline uint64_t NextInputOffset() const
++        {
++            return inputOffset_ + StepToNext();
++        }
++
++        __aicore__ inline int32_t NextValid() const
++        {
++            return Length(rowWidth_ - NextColumn());
++        }
++
++        __aicore__ inline void Advance()
++        {
++            const bool wrapsRow = WrapsRow();
++            inputOffset_ += StepToNext();
++            ++unit_;
++            if (wrapsRow) {
++                ++batchRow_;
++                tile_ = 0;
++                col_ = 0;
++            } else {
++                ++tile_;
++                col_ += static_cast<uint64_t>(tileWidth_);
++            }
++        }
++
++    private:
++        __aicore__ inline bool WrapsRow() const
++        {
++            return tile_ + 1 == tileCount_;
++        }
++
++        __aicore__ inline uint64_t StepToNext() const
++        {
++            return WrapsRow() ? rowWidth_ - col_ : static_cast<uint64_t>(tileWidth_);
++        }
++
++        __aicore__ inline int32_t Length(uint64_t remaining) const
++        {
++            return remaining < static_cast<uint64_t>(tileWidth_)
++                ? static_cast<int32_t>(remaining) : tileWidth_;
++        }
++
++        uint64_t firstRow_;
++        uint64_t rowWidth_;
++        int32_t tileWidth_;
++        int32_t tileCount_;
++        int32_t batchRow_;
++        int32_t tile_;
++        int32_t unit_;
++        uint64_t col_;
++        uint64_t inputOffset_;
++        int32_t units_;
++    };
++
+     __aicore__ inline void ProcessWideLowPrecision(uint64_t rowCount, uint64_t rowWidth,
+                                                     uint32_t blockCount, float invRowWidth,
+                                                     float epsilon)
+@@ -3119,23 +3239,20 @@ private:
+             AscendC::LocalTensor<float> valueFp32 = valueFp32Buf_.Get<float>();
+             AscendC::LocalTensor<float> xFp32 = xFp32Buf_.Get<float>();
+             AscendC::LocalTensor<float> residualFp32 = residualFp32Buf_.Get<float>();
+-            const int32_t units = batchRows * tileCount;
+-            int32_t batchRow = 0;
+-            int32_t tile = 0;
+-            uint64_t col = 0;
+-            // V002: carry the flattened row-major GM input cursor.  The
+-            // increment is one tile within a row and the remaining tail at a
+-            // row boundary, preserving the existing tile stream.
+-            uint64_t gmOffset = batchBegin * rowWidth;
++            // V004: the cursor owns the complete row-major address state.
++            // Its increment is one tile within a row and the remaining tail
++            // at a row boundary, preserving the existing flattened stream.
++            WideLowPrecisionCursor inputCursor(batchBegin, batchRows, rowWidth,
++                                               tileWidth, tileCount);
+             bool relA = false;
+             bool relB = false;
+-            for (int32_t u = 0; u < units; ++u) {
+-                const bool wrapsRow = (tile + 1 == tileCount);
+-                const uint64_t gmStep = wrapsRow
+-                    ? rowWidth - col : static_cast<uint64_t>(tileWidth);
+-                const int32_t valid = static_cast<int32_t>(
+-                    rowWidth - col < static_cast<uint64_t>(tileWidth)
+-                        ? rowWidth - col : static_cast<uint64_t>(tileWidth));
++            for (; inputCursor.HasNext(); inputCursor.Advance()) {
++                const int32_t u = inputCursor.UnitIndex();
++                const int32_t batchRow = inputCursor.BatchRowIndex();
++                const int32_t tile = inputCursor.TileIndex();
++                const uint64_t col = inputCursor.Column();
++                const uint64_t gmOffset = inputCursor.InputOffset();
++                const int32_t valid = inputCursor.Valid();
+                 const bool useA = (u & 1) == 0;
+                 AscendC::LocalTensor<T> xLocal = useA ? xBase : xBase[tileWidth];
+                 AscendC::LocalTensor<T> residualLocal =
+@@ -3148,12 +3265,10 @@ private:
+                     AscendC::SetFlag<AscendC::HardEvent::MTE2_V>(rd);
+                 }
+                 AscendC::WaitFlag<AscendC::HardEvent::MTE2_V>(rd);
+-                if (u + 1 < units) {
+-                    const uint64_t nCol = wrapsRow ? 0 : col + static_cast<uint64_t>(tileWidth);
+-                    const uint64_t nextGmOffset = gmOffset + gmStep;
+-                    const int32_t nValid = static_cast<int32_t>(
+-                        rowWidth - nCol < static_cast<uint64_t>(tileWidth)
+-                            ? rowWidth - nCol : static_cast<uint64_t>(tileWidth));
++                if (inputCursor.HasNextAfterCurrent()) {
++                    const uint64_t nCol = inputCursor.NextColumn();
++                    const uint64_t nextGmOffset = inputCursor.NextInputOffset();
++                    const int32_t nValid = inputCursor.NextValid();
+                     const bool nextA = !useA;
+                     AscendC::LocalTensor<T> xNext =
+                         nextA ? xBase : xBase[tileWidth];
+@@ -3210,15 +3325,6 @@ private:
+                 } else {
+                     relB = true;
+                 }
+-                gmOffset += gmStep;
+-                if (wrapsRow) {
+-                    ++batchRow;
+-                    tile = 0;
+-                    col = 0;
+-                } else {
+-                    ++tile;
+-                    col += static_cast<uint64_t>(tileWidth);
+-                }
+             }
+             if (relA) {
+                 AscendC::WaitFlag<AscendC::HardEvent::V_MTE2>(rel0);
+@@ -3268,29 +3374,29 @@ private:
+             AscendC::LocalTensor<T> bBase = residualBuf_.Get<T>();
+             bool pRelA = false;
+             bool pRelB = false;
+-            if (tileCount > 0) {
+-                Load(gBase, gammaGm_, 0, tileWidth < static_cast<int32_t>(rowWidth)
+-                    ? tileWidth : static_cast<int32_t>(rowWidth));
+-                Load(bBase, biasGm_, 0, tileWidth < static_cast<int32_t>(rowWidth)
+-                    ? tileWidth : static_cast<int32_t>(rowWidth));
++            // The parameter cursor walks the same tile columns as pass 1.
++            // Its row base also supplies the exact output GM offset for each
++            // retained row, so pass 2 has no independent address arithmetic.
++            WideLowPrecisionCursor outputCursor(batchBegin, 1, rowWidth,
++                                                tileWidth, tileCount);
++            if (outputCursor.HasNext()) {
++                Load(gBase, gammaGm_, outputCursor.ParameterOffset(),
++                     outputCursor.Valid());
++                Load(bBase, biasGm_, outputCursor.ParameterOffset(),
++                     outputCursor.Valid());
+                 AscendC::SetFlag<AscendC::HardEvent::MTE2_V>(prd0);
+             }
+-            // V003: carry the pass-2 output GM cursor by row and tile.
+-            // Store order and all vector/event operations remain unchanged.
+-            const uint64_t outputBase = batchBegin * rowWidth;
+-            uint64_t col = 0;
+-            for (int32_t tile = 0; tile < tileCount; ++tile) {
+-                const int32_t valid = static_cast<int32_t>(
+-                    rowWidth - col < static_cast<uint64_t>(tileWidth)
+-                        ? rowWidth - col : static_cast<uint64_t>(tileWidth));
+-                uint64_t outputOffset = outputBase + col;
++            for (; outputCursor.HasNext(); outputCursor.Advance()) {
++                const int32_t tile = outputCursor.TileIndex();
++                const uint64_t col = outputCursor.Column();
++                const int32_t valid = outputCursor.Valid();
+                 const bool useA = (tile & 1) == 0;
+                 AscendC::LocalTensor<T> gammaLocal = useA ? gBase : gBase[tileWidth];
+                 AscendC::LocalTensor<T> biasLocal = useA ? bBase : bBase[tileWidth];
+                 const AscendC::TEventID prd = useA ? prd0 : prd1;
+                 const AscendC::TEventID prel = useA ? prel0 : prel1;
+                 AscendC::WaitFlag<AscendC::HardEvent::MTE2_V>(prd);
+-                if (tile + 1 < tileCount) {
++                if (outputCursor.HasNextAfterCurrent()) {
+                     const bool nextA = !useA;
+                     if (nextA) {
+                         if (pRelA) {
+@@ -3303,10 +3409,8 @@ private:
+                             pRelB = false;
+                         }
+                     }
+-                    const uint64_t nCol = col + static_cast<uint64_t>(tileWidth);
+-                    const int32_t nValid = static_cast<int32_t>(
+-                        rowWidth - nCol < static_cast<uint64_t>(tileWidth)
+-                            ? rowWidth - nCol : static_cast<uint64_t>(tileWidth));
++                    const uint64_t nCol = outputCursor.NextColumn();
++                    const int32_t nValid = outputCursor.NextValid();
+                     Load(nextA ? gBase : gBase[tileWidth], gammaGm_, nCol, nValid);
+                     Load(nextA ? bBase : bBase[tileWidth], biasGm_, nCol, nValid);
+                     AscendC::SetFlag<AscendC::HardEvent::MTE2_V>(nextA ? prd0 : prd1);
+@@ -3353,9 +3457,8 @@ private:
+                     AscendC::PipeBarrier<PIPE_V>();
+                     SyncVToMTE2();
+                     SyncVToMTE3();
+-                    Store(outputGm_, outputOffset, outputLocal, valid);
++                    Store(outputGm_, outputCursor.OutputOffset(batchRow), outputLocal, valid);
+                     SyncMTE3ToV();
+-                    outputOffset += rowWidth;
+                 }
+                 AscendC::SetFlag<AscendC::HardEvent::V_MTE2>(prel);
+                 if (useA) {
+@@ -3363,7 +3466,6 @@ private:
+                 } else {
+                     pRelB = true;
+                 }
+-                col += static_cast<uint64_t>(tileWidth);
+             }
+             if (pRelA) {
+                 AscendC::WaitFlag<AscendC::HardEvent::V_MTE2>(prel0);
