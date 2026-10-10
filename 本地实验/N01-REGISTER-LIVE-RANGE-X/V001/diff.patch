@@ -1,0 +1,14 @@
+--- R31B-V011/线上结果/R31B/V011/submission.asc
++++ N01-V001/本地实验/N01-REGISTER-LIVE-RANGE-X/V001/submission.asc
+@@ -3183,10 +3183,10 @@
+                     AscendC::Muls(yTile, xLocal, half(1.0f), valid);
+                     AscendC::PipeBarrier<PIPE_V>();
+                     ToFloat(valueFp32, xLocal, valid);
+                     AscendC::PipeBarrier<PIPE_V>();
+-                    AscendC::Mul(xFp32, valueFp32, valueFp32, valid);
++                    AscendC::Mul(valueFp32, valueFp32, valueFp32, valid);
+                     AscendC::PipeBarrier<PIPE_V>();
+                     AscendC::ReduceSum(
+-                        reduceLocal[batchRow * reduceStride + tile], xFp32,
++                        reduceLocal[batchRow * reduceStride + tile], valueFp32,
+                         residualFp32, valid);
