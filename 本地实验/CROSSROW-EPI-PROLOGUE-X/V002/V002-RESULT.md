@@ -3,7 +3,7 @@
 AGENT_ID: W5-R01 CROSSROW-EPI-PROLOGUE-X
 ROUTE: CROSSROW-EPI-PROLOGUE-X
 REVISION: V002
-STATUS: LOCAL_REJECTED_MEASUREMENT_CONTAMINATED_NEEDS_ONE_MORE_LOCAL
+STATUS: NEEDS_ONE_MORE_LOCAL_HIGH_JITTER_NO_SAME_BINARY_PRECHECK
 
 ## Selected single factor
 
@@ -137,3 +137,35 @@ Build PASS: `rebuild-v002-local-20261010.log`. Target correctness and M=1 correc
 One Local was run with 45 warmups, 21 device-event paired samples, and alternating PC/CP at `rows=16,width=6144,blocks=8,fp16`. Raw: `local-v002-r16-d6144-w45-20261010.tsv`. Parent median was `17.580001 us`; Candidate median was `17.920000 us`; median-ratio was `+1.934010%`; paired-percent was `+1.592708%`; median paired delta was `+0.279998 us`; Candidate was faster in `10/21` samples and slower in `11/21`.
 
 NPU3 had external PID `1859841` (`zhangka+`, `python3.11`, `14238 MB`) in both pre/post snapshots, with target AICore about 11%/13%; other devices also had external processes. Load quality is `CONTAMINATED_EXTERNAL_PROCESS`. The raw result is retained, but this Local is `LOCAL_REJECTED / MEASUREMENT_CONTAMINATED`, does not advance `LOCAL_BEST`, and requires `NEEDS_ONE_MORE_LOCAL` only if Planning requests a clean causal repeat. Evidence: `V002-LOCAL-RECHECK-20261010.md`.
+
+## 2026-10-10 13:45 UTC V002 paired Local identity/jitter recheck
+
+This later run supersedes the earlier V002 Local verdict for current status only; all earlier raw and conclusions remain unchanged. It used the same route-owned V002 sources and the existing V001 CMake/adapter/paired-runner path. Parent and Candidate were both loaded into one paired-runner executable and interleaved within the same process (`SAME_BINARY_PROCESS=YES`). `SAME_BINARY_QUALIFICATION=NOT_RUN`: current published Local rules do not require a separate Parent-only precheck, and this existing runner has no qualification mode; this is recorded as not run, not as a pass.
+
+SOURCE_SHA256: Parent `3698c229dfb6a4b336e7ee0506eb1ceaf898c1c37c937c0af7d3eef71fbc685d`; Candidate `426489bfdc63441f2fd179fdff176875b24d815e6e0420343aeed0b0dab7933f`; OFAT diff `e8e656afd7de4f3c565c5ffe7e84758e44ffb4537ffea1fcbf211e4387c9c9ad`.
+V002_ARTIFACTS: Parent `.so` `3ad998adbb7a126f15b7da0a8f8e0a816ca719d92a4dc42aba97d7832ffa4db4`; Candidate `.so` `0ef46469d226225c47ca4c33286b505b48444175095572bc3abf0e8d49c30126`; paired runner `7c3cbde4f33a1c8be8b5637b34a78251f8adfb0141b27527d6dafc49abffd91e`; runner source `093ad39377bf4615d1827ba967ab8f9a6910395d9a7cfd01c513865c5f489526`; ABI `0897a04ba82bda39d53e77d548966eb54a6b7ec16c17387dccf26d86cbf577d2`.
+
+BUILD_COMMAND: `source /usr/local/Ascend/ascend-toolkit/set_env.sh; export CPLUS_INCLUDE_PATH and CPATH to HCC C++ root/target/backward; cmake --build 本地实验/CROSSROW-EPI-PROLOGUE-X/V001/support/build --clean-first --parallel 1`; BUILD_RC: 0; log `rebuild-v002-final-20261010T1340.log`.
+CORRECTNESS_COMMAND: `source /usr/local/Ascend/ascend-toolkit/set_env.sh; crossrow_v001_paired_runner --mode correctness --device 3 --rows 16 --width 6144 --blocks 8 --dtype fp16`; RC: 0; PASS, zero bit differences; log `correctness-v002-clean-20261010T1344-r16-d6144.log`.
+LOCAL_COMMAND: `source /usr/local/Ascend/ascend-toolkit/set_env.sh; crossrow_v001_paired_runner --mode local --device 3 --rows 16 --width 6144 --blocks 8 --dtype fp16 --warmups 45 --repeats 21 --output local-v002-r16-d6144-w45-20261010T1345.tsv`; RC: 0. Device-event timing, alternating PC/CP, 45 warmups, 21 pairs. Raw has 21 consecutive sample IDs and correct alternating order; it is retained in full, including the `50.159998 us` Candidate sample. Raw SHA256: `0124ff6d57981c58bb74be86937a05c7f46813e9797a069a44047da052bb3f4d`.
+
+PARENT_MEDIAN_DEVICE_US: 21.340000
+CANDIDATE_MEDIAN_DEVICE_US: 19.320000
+MEDIAN_RATIO_FORMULA: `100 * (median(C) - median(P)) / median(P)`
+MEDIAN_RATIO_PERCENT: -9.465792%
+MEDIAN_OF_PAIRED_PERCENT_FORMULA: `median_i(100 * (C_i - P_i) / P_i)`
+MEDIAN_OF_PAIRED_PERCENT: -3.308124%
+MEDIAN_PAIRED_DELTA_US: -0.699999
+PARENT_DEVICE_JITTER: mean 20.800952 us; sample stdev 5.395474 us; CV 25.939%; MAD 2.460000 us; min/p10/p90/max 8.020000/14.500000/26.219999/29.400000 us.
+CANDIDATE_DEVICE_JITTER: mean 19.150476 us; sample stdev 9.485986 us; CV 49.534%; MAD 2.960000 us; min/p10/p90/max 7.600000/8.080000/27.200000/50.159998 us.
+PAIR_DIRECTION: raw delta signs give Candidate faster 13/21, slower 8/21, ties 0. A stated 14/21 count is not reproduced by the 21 raw rows.
+WALL_MEDIANS: Parent 74.868000 us; Candidate 74.549000 us. One pair had Candidate wall 112.658000 us alongside 50.159998 device us.
+
+RESOURCE/LOAD: device 3 on `hwnput3`; FREE_HBM 62259 MB pre/post (HBM usage 5%, under 100%); no process on target NPU3 in either full `npu-smi info` snapshot; AICore 0% pre/post. External processes were present on other NPUs and recorded, not used to deny measurement. The checked shared lease table had no active device-3 row; a separate unresolved metadata row referred to device 6 only. Lease/load records are observational for this run.
+LOAD_QUALITY: TARGET_NPU3_NO_PROCESS; OTHER_NPU_ACTIVITY_RECORDED; HIGH_WITHIN_RUN_JITTER.
+LOCAL_VERDICT: NEEDS_ONE_MORE_LOCAL / MEASUREMENT_QUALIFICATION_INSUFFICIENT_HIGH_JITTER.
+LOCAL_BEST: unchanged; no promotion.
+RESTORE: V001 support sources restored with empty tracked diff; corrected restore clean build PASS. The initial restore command typo (wrong path character, RC=1) is retained in `restore-v001-backend-20261010T1350.log`; corrected build is `restore-v001-backend-retry-20261010T1351.log`.
+EVIDENCE: `V002-LOCAL-RECHECK-20261010T1345.md`, `v002-artifact-sha256-20261010T1342.txt`, and the build/correctness/raw/pre/post logs named above.
+
+Because this run is not qualified for causal acceptance, no next Kernel Revision is opened from its apparent median improvement. A proposed FP16 cached-row MTE3 output-drain direction is excluded: the user-provided cross-route dedup review says it materially overlaps Main-1 R31A V021's delayed output MTE3-to-V wait and approaches STORE-EPILOGUE-X's writeback/drain mechanism (`MECHANISM_OVERLAP=YES`, rejected as duplicate before code). No V003 was created. Next: after committing/pushing this V002 result, perform route-local hypothesis research using only R1 V001/V002 evidence; do not repeat this P/C contrast to mask jitter.
