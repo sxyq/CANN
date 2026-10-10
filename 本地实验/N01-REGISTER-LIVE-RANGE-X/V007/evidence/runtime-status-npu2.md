@@ -26,3 +26,34 @@ CORRECTNESS_RUN=NOT_RUN
 LOCAL_RUN=NOT_RUN
 REASON=User requested immediate revision closure after Compile; the existing no-reset paired runner was not invoked, so no device samples were generated.
 RAW_SNAPSHOT=evidence/compile-server3.log sections ---NPU2_PRE_COMPILE--- and ---NPU2_POST_COMPILE---
+
+NPU2_PRE_RUN_UTC=2026-10-10T20:52:21Z
+NPU2_PRE_RUN_HBM_USAGE_MB=63350
+NPU2_PRE_RUN_FREE_HBM_MB=2186
+NPU2_PRE_RUN_AICORE_USAGE_RATE=61%
+NPU2_PRE_RUN_AIVECTOR_USAGE_RATE=NOT_REPORTED_BY_npu-smi_info
+NPU2_PRE_RUN_PROCESS=PID=658669; name=python; memory=59977 MB
+HOST_PRE_RUN_LOAD=64.83 52.36 50.91
+
+NPU2_POST_RUN_UTC=2026-10-10T20:52:56Z
+NPU2_POST_RUN_HBM_USAGE_MB=63353
+NPU2_POST_RUN_FREE_HBM_MB=2183
+NPU2_POST_RUN_AICORE_USAGE_RATE=59%
+NPU2_POST_RUN_AIVECTOR_USAGE_RATE=NOT_REPORTED_BY_npu-smi_info
+NPU2_POST_RUN_PROCESS=PID=658669; name=python; memory=59977 MB
+HOST_POST_RUN_LOAD=76.92 55.74 52.04
+
+RUNNER_SOURCE_SHA256=87da3944c4054eca8e91f62dd6bd90bfed1f50ff6221d83794181a66317b49fa
+RUNNER_BINARY_SHA256=3198cc87f3f2d4f59c445e93f46923589fa4e9d934e3d6f4bcbd7c43578687aa
+RUNNER_CONFIGURE_RC=0
+RUNNER_BUILD_RC=0
+RUNNER_RC=0
+RESET_SCAN=NONE
+RUNNER_COMMAND=/home/data4t2/lelinfeng/phase4-review-repro/R31B-V016/N01-V003/paired-runner-build/paired_runner_v016 --paired
+SHAPES_DTYPES=fp16-tail-d12288; fp16-wide-d32768; bf16-tail-d12288; bf16-wide-d32768
+WARMUP_EACH=45
+PAIRS_EACH=21
+CORRECTNESS=PASS 4/4
+LOCAL_SCORE=NONE
+LOCAL_STATS=fp16-tail delta_median=-0.840us MAD=5.340us p10=-10.900 p90=12.280 spread=1567.900; fp16-wide delta_median=-0.900us MAD=7.420us p10=-70.480 p90=134.280 spread=902.180; bf16-tail delta_median=-0.480us MAD=6.740us p10=-9.320 p90=7.900 spread=116.100; bf16-wide delta_median=0.060us MAD=1.660us p10=-1.600 p90=12.280 spread=33.680
+LOCAL_REASON=All paired-device delta p10-p90 intervals crossed zero; raw samples retained because load and outliers affect repeatability.
