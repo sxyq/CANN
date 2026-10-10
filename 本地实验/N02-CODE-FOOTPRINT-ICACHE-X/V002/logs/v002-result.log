@@ -1,0 +1,49 @@
+ROUTE=N02 CODE-FOOTPRINT-ICACHE-X
+REVISION=V002
+PARENT_REVISION=V001
+PARENT_COMMIT=031fcc5351b25eafa4f6ce04bd426f3f487fdb7b
+HOST=hwnput3
+REMOTE_TEMP=/tmp/cann-n02-code-footprint-icache-x-v002-y3fwWq
+DEVICE=3
+
+=== ONE CHANGE ===
+CHANGE=Existing paired_runner_v016 CMake cache mapping only.
+PARENT_SOURCE_DIR=/tmp/cann-n02-code-footprint-icache-x-v002-y3fwWq/artifact-parent
+CANDIDATE_SOURCE_DIR=/tmp/cann-n02-code-footprint-icache-x-v002-y3fwWq/artifact-candidate
+PARENT_INCLUDE=/tmp/cann-n02-code-footprint-icache-x-v002-y3fwWq/artifact-parent/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+CANDIDATE_INCLUDE=/tmp/cann-n02-code-footprint-icache-x-v002-y3fwWq/artifact-candidate/R31B-V016-WIDE-TILE-SEED_kernel.asc
+PARENT_SOURCE_SHA256=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
+CANDIDATE_SOURCE_SHA256=2238d0ff3604f0de752d9d9ecb5546f0ec94aa2205b9018853cdd19d7ca04fd1
+NO_NEW_RUNNER=YES
+R029_MODE_DISPATCH=NOT_USED
+
+=== COMPILE ===
+ATTEMPT_1=BUILD_RC=2; ASC plugin fatal error: 'vector' file not found; npu-smi info -i 3 was also rejected for missing type.
+ATTEMPT_2_ENV=source /usr/local/Ascend/ascend-toolkit/set_env.sh with nounset disabled; ASCEND_CANN_PACKAGE_PATH=/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002; SOC_VERSION=Ascend910B3; CPLUS_INCLUDE_PATH includes system C++11 and CANN HCC C++7.3 paths; LD_LIBRARY_PATH places /usr/lib/aarch64-linux-gnu before toolkit libraries.
+CONFIGURE_COMMAND=cmake -S /tmp/cann-n02-code-footprint-icache-x-v002-y3fwWq/paired -B /tmp/cann-n02-code-footprint-icache-x-v002-y3fwWq/paired/build -DR31B_V011_SOURCE_DIR=/tmp/cann-n02-code-footprint-icache-x-v002-y3fwWq/artifact-parent -DR31B_V016_SOURCE_DIR=/tmp/cann-n02-code-footprint-icache-x-v002-y3fwWq/artifact-candidate
+BUILD_COMMAND=cmake --build /tmp/cann-n02-code-footprint-icache-x-v002-y3fwWq/paired/build --target paired_runner_v016 --parallel 1 -- -B
+CONFIG_RC=0
+BUILD_RC=0
+DEPENDENCY_AUDIT=The generated dependency file contains both the Parent V011 path and Candidate V016 path above.
+
+=== GENERATED OUTPUT ===
+RUNNER=/tmp/cann-n02-code-footprint-icache-x-v002-y3fwWq/paired/build/paired_runner_v016
+RUNNER_SIZE_BYTES=625984
+RUNNER_SHA256=9a0966dd23c716927b73d9eafd21d993a477c2c2ed855ea2a1032681d87cf43b
+V001_RUNNER_SHA256=9a0966dd23c716927b73d9eafd21d993a477c2c2ed855ea2a1032681d87cf43b
+RUNNER_OBJECT_SHA256=5309600fd1b63dd522eca9a2e31f7a81e7bc4abe64ca293b4c761557937d7dd6
+GENERATED_DIFFERENCE=No binary difference; corrected path mapping is evidenced by CMakeCache and dependency-file paths. V001 had already shown Candidate and Parent kernel codegen equal.
+
+=== DEVICE AND RUNTIME ===
+PRE_NPU3_USAGE=HBM_USAGE_RATE=5%; AICORE=0%; AIVECTOR=0%; no process in device.
+POST_NPU3_USAGE=HBM_USAGE_RATE=5%; AICORE=0%; AIVECTOR=0%; no process in device.
+RUNNER_HARDCODED_DEVICE=4
+RUNNER_RESET_CALL=aclrtResetDevice(4)
+RUNNER_EXECUTION=NOT_RUN
+CORRECTNESS=NOT_RUN
+LOCAL=NONE
+SAFETY_REASON=NPU3 was available, but the existing entry would reset NPU4, so no runtime validation was issued.
+
+=== RESULT ===
+RESULT=PAIRED_INPUT_PATH_FIXED; CODEGEN_EQUAL_RECONFIRMED; NO_RUNTIME_RESULT
+INTERPRETATION=V002 validates the independent Parent/Candidate compile inputs. It provides no Correctness or Local performance result.
