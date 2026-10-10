@@ -9,7 +9,7 @@ description: CANN AddRmsNormBias Route Agent 执行 Skill。负责单 Route 的�
 
 以下候选数量和 Official 评测安排只记录旧 W4 阶段，W4 已退役，不构成当前五路线任务的提交要求。
 
-旧 W4 每条 Route 至少提供两个源码身份不同的真实性能 Candidate；若只有研究材料，则在该 Route 自己的 worktree 继续产出真实 Candidate。Compile、Correctness、Local 用于开发和问题定位，结果不作为 Official 提交前置。Route Agent 不正式提交，按来源把候选交给唯一 Online Owner，详细流程见 `项目规则/线上提交规范.md`。这些仅是旧阶段事实。当前任务按用户指定的五路线重建推进，路线身份仍以只读审计及研究结果为准；本轮未指定 Online 提交。
+旧 W4 每条 Route 至少提供两个源码身份不同的真实性能 Candidate；若只有研究材料，则在该 Route 自己的 worktree 继续产出真实 Candidate。Compile、Correctness、Local 用于开发和问题定位。Route Agent 不正式提交，按来源把候选交给唯一 Online Owner，详细流程见 `项目规则/线上提交规范.md`。这些仅是旧阶段事实。当前任务按用户指定的五路线重建推进，路线身份仍以只读审计及研究结果为准；本轮未指定 Online 提交。
 
 ## 当前任务与路线范围
 
@@ -77,7 +77,7 @@ server3 的 Compile、Correctness、Local、Profile 共用同一个资源条件�
 
 不要因为 other process、load、lease 或缺少 exclusive permission 停止。lease 只用于协调记账，也不得删除、覆盖、伪造或重写他人的 lease。
 
-Profile 与 Local 同样适用该准入条件。
+Profile 与 Local 同样适用该资源条件。
 
 Local 必须在负载较高时照常执行并记录负载上下文，不允许 `LOAD_HIGH → SKIP_LOCAL`。`FREE_HBM`、`DEVICE_LOAD`、`AICORE_LOAD`、`OTHER_PROCESS_PRESENT`、`LOAD_NOTE` 只用于解释测量。
 

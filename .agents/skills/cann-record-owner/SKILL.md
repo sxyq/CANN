@@ -9,7 +9,7 @@ description: CANN AddRmsNormBias shared-record Skill。Record Owner 在指定主
 
 以下 W4 Online 目标和评测字段说明旧阶段记录方式；W4 已退役，本轮五路线重建不包含 Online 提交任务。旧阶段按每个真实 Candidate 身份分别保存 Route、Revision、源码身份、Git commit、Submission ID、Judge 状态、Correctness、Official Score、15 个 Case 的原始时间与 bestTimeUs 及结果 JSON 路径；Local 与 Official 分栏，只同步 Online Owner 的真实 receipt，不推断或制造结果。
 
-Official 事实按每个真实 Candidate 身份分别保存：Route、Revision、源码身份、Git commit、Submission ID、Judge 状态、Correctness、Official Score、15 个 Case 的原始时间与 bestTimeUs、结果 JSON 路径。Local 和 Official 分栏记录；Local/Correctness 字段缺失不改变提交资格。只同步 Online Owner 的真实 receipt，不推断或制造结果。
+Official 事实按每个真实 Candidate 身份分别保存：Route、Revision、源码身份、Git commit、Submission ID、Judge 状态、Correctness、Official Score、15 个 Case 的原始时间与 bestTimeUs、结果 JSON 路径。Local 和 Official 分栏记录；Local/Correctness 字段缺失不改变用户指定的提交范围。只同步 Online Owner 的真实 receipt，不推断或制造结果。
 
 ## 当前阶段：五路线重建
 

@@ -151,7 +151,7 @@ ONE CHANGE → COMPILE → CORRECTNESS → LOCAL → RESULT → COMMIT → VERSI
 ONE CHANGE → COMPILE → CORRECTNESS → LOCAL → RESULT → COMMIT → VERSION_RECORD_EVENT → NEXT CHANGE
 ```
 
-单 Revision 只表达一个小变化。失败和负结果保留。记录异步写入，不能成为实验前置条件。
+单 Revision 只表达一个小变化。失败和负结果保留。记录异步写入，不改变实验执行。
 
 ## server3 资源安全
 
