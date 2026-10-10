@@ -1,0 +1,89 @@
+--- 本地实验/N01-REGISTER-LIVE-RANGE-X/V003/submission.asc	2026-10-10 23:25:26
++++ 本地实验/N01-REGISTER-LIVE-RANGE-X/V004/submission.asc	2026-10-11 00:59:27
+@@ -2118,41 +2118,56 @@
+                     const int32_t valid = static_cast<int32_t>(
+                         rowWidth - col < static_cast<uint64_t>(tileWidth)
+                             ? rowWidth - col : static_cast<uint64_t>(tileWidth));
+-                    AscendC::LocalTensor<float> xLocal = xBuf_.Get<float>();
+-                    AscendC::LocalTensor<float> residualLocal = residualBuf_.Get<float>();
+-                    AscendC::LocalTensor<float> valueTile =
+-                        valueLocal[batchRow * rowWidth + col];
+-                    Load(xLocal, xGm_, rowOffset + col, valid);
+-                    Load(residualLocal, residualGm_, rowOffset + col, valid);
+-                    SyncMTE2ToV();
+-                    AscendC::Add(valueTile, xLocal, residualLocal, valid);
+-                    AscendC::PipeBarrier<PIPE_V>();
+-                    AscendC::Mul(xLocal, valueTile, valueTile, valid);
+-                    AscendC::PipeBarrier<PIPE_V>();
+-                    AscendC::ReduceSum(
+-                        reduceLocal[batchRow * kWideFullYReduceStride + tile],
+-                        xLocal, residualLocal, valid);
+-                    SyncVToMTE2();
++                    {
++                        // End the input/square vector lifetime before the
++                        // per-row normalization scope below.
++                        AscendC::LocalTensor<float> xLocal = xBuf_.Get<float>();
++                        AscendC::LocalTensor<float> residualLocal = residualBuf_.Get<float>();
++                        AscendC::LocalTensor<float> valueTile =
++                            valueLocal[batchRow * rowWidth + col];
++                        Load(xLocal, xGm_, rowOffset + col, valid);
++                        Load(residualLocal, residualGm_, rowOffset + col, valid);
++                        SyncMTE2ToV();
++                        AscendC::Add(valueTile, xLocal, residualLocal, valid);
++                        AscendC::PipeBarrier<PIPE_V>();
++                        AscendC::Mul(xLocal, valueTile, valueTile, valid);
++                        AscendC::PipeBarrier<PIPE_V>();
++                        AscendC::ReduceSum(
++                            reduceLocal[batchRow * kWideFullYReduceStride + tile],
++                            xLocal, residualLocal, valid);
++                        SyncVToMTE2();
++                    }
+                 }
+             }
+
+             for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
+-                AscendC::LocalTensor<float> xLocal = xBuf_.Get<float>();
+-                AscendC::LocalTensor<float> residualLocal = residualBuf_.Get<float>();
+-                AscendC::ReduceSum(
+-                    residualLocal,
+-                    reduceLocal[batchRow * kWideFullYReduceStride],
+-                    xLocal, tileCount);
+-                SyncVToS();
+-                const float squareSum = residualLocal.GetValue(0);
+-                const float meanSquare = squareSum * invRowWidth + epsilon;
+-                SyncSToV();
+-                AscendC::Duplicate(residualLocal, meanSquare, 1);
+-                AscendC::Sqrt(residualLocal, residualLocal, 1);
+-                AscendC::PipeBarrier<PIPE_V>();
+-                SyncVToS();
+-                invRmsValues[batchRow] = 1.0f / residualLocal.GetValue(0);
+-                SyncSToV();
++                float meanSquare = 0.0f;
++                {
++                    // Collapse the tile partials and finish the scalar read
++                    // while the reduction destination is still in scope.
++                    AscendC::LocalTensor<float> xLocal = xBuf_.Get<float>();
++                    AscendC::LocalTensor<float> residualLocal = residualBuf_.Get<float>();
++                    AscendC::ReduceSum(
++                        residualLocal,
++                        reduceLocal[batchRow * kWideFullYReduceStride],
++                        xLocal, tileCount);
++                    SyncVToS();
++                    const float squareSum = residualLocal.GetValue(0);
++                    meanSquare = squareSum * invRowWidth + epsilon;
++                }
++                {
++                    // The old reduction vector is dead after GetValue(0);
++                    // bind the same UB slot to the normalization value.
++                    AscendC::LocalTensor<float> normalizationValue =
++                        residualBuf_.Get<float>();
++                    SyncSToV();
++                    AscendC::Duplicate(normalizationValue, meanSquare, 1);
++                    AscendC::Sqrt(normalizationValue, normalizationValue, 1);
++                    AscendC::PipeBarrier<PIPE_V>();
++                    SyncVToS();
++                    invRmsValues[batchRow] = 1.0f / normalizationValue.GetValue(0);
++                    SyncSToV();
++                }
+             }
+             SyncVToMTE2();
