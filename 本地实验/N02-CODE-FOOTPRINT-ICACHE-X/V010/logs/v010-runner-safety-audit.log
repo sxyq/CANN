@@ -1,0 +1,470 @@
+=== N02 V008 RUNNER SAFETY AUDIT ===
+HOST=hwnput3
+DATE=2026-10-10T20:56:51+00:00
+FILE=/tmp/cann-n02-code-footprint-icache-x-v008-order/parent/runtime_probe.cpp
+e57518d3027097bc398f367486efdb46187de37d5d59fd26b43ed748feb53570  /tmp/cann-n02-code-footprint-icache-x-v008-order/parent/runtime_probe.cpp
+--- SOURCE HEAD ---
+     1	#include <acl/acl.h>
+     2	
+     3	#include <algorithm>
+     4	#include <chrono>
+     5	#include <cmath>
+     6	#include <cstdint>
+     7	#include <cstdio>
+     8	#include <cstdlib>
+     9	#include <cstring>
+    10	#include <vector>
+    11	
+    12	#ifndef TENSOR_GROUP_INFO_DEFINED
+    13	#define TENSOR_GROUP_INFO_DEFINED
+    14	struct TensorInfo { const int64_t* shape; int64_t numDims; int32_t dtype; };
+    15	struct TensorGroupInfo { const TensorInfo* tensors; int64_t numTensors; };
+    16	#endif
+    17	
+    18	#if defined(R31B_PROBE_PARENT)
+    19	#include "R31B-V011-LP-ROW-PIPELINE_kernel.asc"
+    20	#else
+    21	#include "R31B-V016-WIDE-TILE-SEED_kernel.asc"
+    22	#endif
+    23	
+    24	static void CheckAcl(aclError status, const char* operation)
+    25	{
+    26	    if (status != ACL_SUCCESS) {
+    27	        std::fprintf(stderr, "%s failed: %d %s\n", operation, status,
+    28	                     aclGetRecentErrMsg() ? aclGetRecentErrMsg() : "");
+    29	        std::exit(2);
+    30	    }
+    31	}
+    32	
+    33	static uint16_t FloatToHalf(float value)
+    34	{
+    35	    uint32_t bits = 0;
+    36	    std::memcpy(&bits, &value, sizeof(bits));
+    37	    const uint32_t sign = (bits >> 16) & 0x8000u;
+    38	    const uint32_t exponent = (bits >> 23) & 0xffu;
+    39	    uint32_t mantissa = bits & 0x7fffffu;
+    40	    if (exponent == 0xffu) {
+    41	        return static_cast<uint16_t>(sign | 0x7c00u | (mantissa ? 0x0200u : 0u));
+    42	    }
+    43	    int32_t halfExponent = static_cast<int32_t>(exponent) - 112;
+    44	    if (halfExponent >= 31) {
+    45	        return static_cast<uint16_t>(sign | 0x7c00u);
+    46	    }
+    47	    if (halfExponent <= 0) {
+    48	        if (halfExponent < -10) {
+    49	            return static_cast<uint16_t>(sign);
+    50	        }
+    51	        mantissa |= 0x800000u;
+    52	        const int32_t shift = 14 - halfExponent;
+    53	        const uint32_t round = (1u << (shift - 1)) - 1u + ((mantissa >> shift) & 1u);
+    54	        return static_cast<uint16_t>(sign | ((mantissa + round) >> shift));
+    55	    }
+    56	    mantissa += 0xfffu + ((mantissa >> 13) & 1u);
+    57	    if (mantissa & 0x800000u) {
+    58	        mantissa = 0;
+    59	        ++halfExponent;
+    60	        if (halfExponent >= 31) {
+    61	            return static_cast<uint16_t>(sign | 0x7c00u);
+    62	        }
+    63	    }
+    64	    return static_cast<uint16_t>(sign | (static_cast<uint32_t>(halfExponent) << 10) |
+    65	                                 (mantissa >> 13));
+    66	}
+    67	
+    68	static float HalfToFloat(uint16_t value)
+    69	{
+    70	    const float sign = (value & 0x8000u) ? -1.0f : 1.0f;
+    71	    const uint32_t exponent = (value >> 10) & 0x1fu;
+    72	    const uint32_t mantissa = value & 0x03ffu;
+    73	    if (exponent == 0) {
+    74	        return sign * std::ldexp(static_cast<float>(mantissa), -24);
+    75	    }
+    76	    if (exponent == 0x1fu) {
+    77	        return mantissa ? NAN : sign * INFINITY;
+    78	    }
+    79	    return sign * std::ldexp(1.0f + static_cast<float>(mantissa) / 1024.0f,
+    80	                             static_cast<int>(exponent) - 15);
+    81	}
+    82	
+    83	static uint16_t FloatToBfloat16(float value)
+    84	{
+    85	    uint32_t bits = 0;
+    86	    std::memcpy(&bits, &value, sizeof(bits));
+    87	    bits += 0x7fffu + ((bits >> 16) & 1u);
+    88	    return static_cast<uint16_t>(bits >> 16);
+    89	}
+    90	
+    91	static float Bfloat16ToFloat(uint16_t value)
+    92	{
+    93	    const uint32_t bits = static_cast<uint32_t>(value) << 16;
+    94	    float result = 0.0f;
+    95	    std::memcpy(&result, &bits, sizeof(result));
+    96	    return result;
+    97	}
+    98	
+    99	static float Decode(uint16_t value, int dtype)
+   100	{
+   101	    return dtype == 1 ? HalfToFloat(value) : Bfloat16ToFloat(value);
+   102	}
+   103	
+   104	static uint16_t Encode(float value, int dtype)
+   105	{
+   106	    return dtype == 1 ? FloatToHalf(value) : FloatToBfloat16(value);
+   107	}
+   108	
+   109	static float Rounded(float value, int dtype)
+   110	{
+   111	    return Decode(Encode(value, dtype), dtype);
+   112	}
+   113	
+   114	int main(int argc, char** argv)
+   115	{
+   116	    if (argc != 7) {
+   117	        std::fprintf(stderr, "usage: probe dtype rows width device warmup repeats\n");
+   118	        return 2;
+   119	    }
+   120	    const int dtype = std::atoi(argv[1]);
+   121	    const int64_t rows = std::atoll(argv[2]);
+   122	    const int64_t width = std::atoll(argv[3]);
+   123	    const int device = std::atoi(argv[4]);
+   124	    const int warmup = std::atoi(argv[5]);
+   125	    const int repeats = std::atoi(argv[6]);
+   126	    if ((dtype != 1 && dtype != 2) || rows <= 0 || width < 8192 ||
+   127	        warmup < 0 || repeats < 0) {
+   128	        std::fprintf(stderr, "invalid probe arguments\n");
+   129	        return 2;
+   130	    }
+   131	
+   132	    CheckAcl(aclInit(nullptr), "aclInit");
+   133	    CheckAcl(aclrtSetDevice(device), "aclrtSetDevice");
+   134	    aclrtStream stream = nullptr;
+   135	    CheckAcl(aclrtCreateStream(&stream), "aclrtCreateStream");
+   136	
+   137	    const size_t elementCount = static_cast<size_t>(rows * width);
+   138	    const size_t dataBytes = elementCount * sizeof(uint16_t);
+   139	    const size_t paramBytes = static_cast<size_t>(width) * sizeof(uint16_t);
+   140	    std::vector<uint16_t> x(elementCount), residual(elementCount), gamma(width), bias(width);
+   141	    std::vector<uint16_t> output(elementCount);
+   142	    std::vector<float> expected(elementCount);
+   143	    for (size_t i = 0; i < elementCount; ++i) {
+   144	        const float xv = 0.19f * std::sin(static_cast<float>((i * 17) % 997) * 0.013f);
+   145	        const float rv = 0.11f * std::cos(static_cast<float>((i * 29) % 991) * 0.017f);
+   146	        x[i] = Encode(xv, dtype);
+   147	        residual[i] = Encode(rv, dtype);
+   148	    }
+   149	    for (int64_t col = 0; col < width; ++col) {
+   150	        gamma[col] = Encode(0.85f + static_cast<float>(col % 23) * 0.002f, dtype);
+   151	        bias[col] = Encode(-0.025f + static_cast<float>(col % 19) * 0.001f, dtype);
+   152	    }
+   153	
+   154	    void* dx = nullptr;
+   155	    void* dr = nullptr;
+   156	    void* dg = nullptr;
+   157	    void* db = nullptr;
+   158	    void* dout = nullptr;
+   159	    CheckAcl(aclrtMalloc(&dx, dataBytes, ACL_MEM_MALLOC_HUGE_FIRST), "malloc x");
+   160	    CheckAcl(aclrtMalloc(&dr, dataBytes, ACL_MEM_MALLOC_HUGE_FIRST), "malloc residual");
+   161	    CheckAcl(aclrtMalloc(&dg, paramBytes, ACL_MEM_MALLOC_HUGE_FIRST), "malloc gamma");
+   162	    CheckAcl(aclrtMalloc(&db, paramBytes, ACL_MEM_MALLOC_HUGE_FIRST), "malloc bias");
+   163	    CheckAcl(aclrtMalloc(&dout, dataBytes, ACL_MEM_MALLOC_HUGE_FIRST), "malloc output");
+   164	    CheckAcl(aclrtMemcpy(dx, dataBytes, x.data(), dataBytes, ACL_MEMCPY_HOST_TO_DEVICE), "copy x");
+   165	    CheckAcl(aclrtMemcpy(dr, dataBytes, residual.data(), dataBytes, ACL_MEMCPY_HOST_TO_DEVICE), "copy residual");
+   166	    CheckAcl(aclrtMemcpy(dg, paramBytes, gamma.data(), paramBytes, ACL_MEMCPY_HOST_TO_DEVICE), "copy gamma");
+   167	    CheckAcl(aclrtMemcpy(db, paramBytes, bias.data(), paramBytes, ACL_MEMCPY_HOST_TO_DEVICE), "copy bias");
+   168	
+   169	    const int64_t xShape[2] = {rows, width};
+   170	    const int64_t paramShape[1] = {width};
+   171	    const TensorInfo dataInfo{xShape, 2, dtype};
+   172	    const TensorInfo paramInfo{paramShape, 1, dtype};
+   173	    const TensorGroupInfo dataGroup{&dataInfo, 1};
+   174	    const TensorGroupInfo paramGroup{&paramInfo, 1};
+   175	    const float epsilon = 1.0e-5f;
+   176	    const int64_t coreCount = 8;
+   177	
+   178	    auto launch = [&]() {
+   179	        run_kernel((GM_ADDR)dx, dataGroup,
+   180	                   (GM_ADDR)dr, dataGroup,
+   181	                   (GM_ADDR)dg, paramGroup,
+   182	                   (GM_ADDR)db, paramGroup,
+   183	                   (GM_ADDR)dout, dataGroup,
+   184	                   coreCount, stream, epsilon);
+   185	        CheckAcl(aclrtSynchronizeStream(stream), "kernel synchronize");
+   186	    };
+   187	    std::vector<double> samples;
+   188	    if (repeats == 0) {
+   189	        launch();
+   190	    } else {
+   191	        for (int i = 0; i < warmup; ++i) {
+   192	            launch();
+   193	        }
+   194	        samples.reserve(static_cast<size_t>(repeats));
+   195	        for (int i = 0; i < repeats; ++i) {
+   196	            const auto start = std::chrono::steady_clock::now();
+   197	            launch();
+   198	            const auto stop = std::chrono::steady_clock::now();
+   199	            samples.push_back(std::chrono::duration<double, std::micro>(stop - start).count());
+   200	        }
+   201	    }
+   202	    CheckAcl(aclrtMemcpy(output.data(), dataBytes, dout, dataBytes, ACL_MEMCPY_DEVICE_TO_HOST),
+   203	             "copy output");
+   204	
+   205	    float maxAbs = 0.0f;
+   206	    float maxRel = 0.0f;
+   207	    size_t failures = 0;
+   208	    const float tolerance = dtype == 1 ? 0.004f : 0.02f;
+   209	    for (int64_t row = 0; row < rows; ++row) {
+   210	        float squareSum = 0.0f;
+   211	        for (int64_t col = 0; col < width; ++col) {
+   212	            const size_t index = static_cast<size_t>(row * width + col);
+   213	            float y = Decode(x[index], dtype) + Decode(residual[index], dtype);
+   214	            if (dtype == 1) {
+   215	                y = Rounded(y, dtype);
+   216	            }
+   217	            expected[index] = y;
+   218	            squareSum += y * y;
+   219	        }
+   220	        const float invRms = 1.0f / std::sqrt(squareSum / static_cast<float>(width) + epsilon);
+FILE=/tmp/cann-n02-code-footprint-icache-x-v008-order/candidate/runtime_probe.cpp
+e57518d3027097bc398f367486efdb46187de37d5d59fd26b43ed748feb53570  /tmp/cann-n02-code-footprint-icache-x-v008-order/candidate/runtime_probe.cpp
+--- SOURCE HEAD ---
+     1	#include <acl/acl.h>
+     2	
+     3	#include <algorithm>
+     4	#include <chrono>
+     5	#include <cmath>
+     6	#include <cstdint>
+     7	#include <cstdio>
+     8	#include <cstdlib>
+     9	#include <cstring>
+    10	#include <vector>
+    11	
+    12	#ifndef TENSOR_GROUP_INFO_DEFINED
+    13	#define TENSOR_GROUP_INFO_DEFINED
+    14	struct TensorInfo { const int64_t* shape; int64_t numDims; int32_t dtype; };
+    15	struct TensorGroupInfo { const TensorInfo* tensors; int64_t numTensors; };
+    16	#endif
+    17	
+    18	#if defined(R31B_PROBE_PARENT)
+    19	#include "R31B-V011-LP-ROW-PIPELINE_kernel.asc"
+    20	#else
+    21	#include "R31B-V016-WIDE-TILE-SEED_kernel.asc"
+    22	#endif
+    23	
+    24	static void CheckAcl(aclError status, const char* operation)
+    25	{
+    26	    if (status != ACL_SUCCESS) {
+    27	        std::fprintf(stderr, "%s failed: %d %s\n", operation, status,
+    28	                     aclGetRecentErrMsg() ? aclGetRecentErrMsg() : "");
+    29	        std::exit(2);
+    30	    }
+    31	}
+    32	
+    33	static uint16_t FloatToHalf(float value)
+    34	{
+    35	    uint32_t bits = 0;
+    36	    std::memcpy(&bits, &value, sizeof(bits));
+    37	    const uint32_t sign = (bits >> 16) & 0x8000u;
+    38	    const uint32_t exponent = (bits >> 23) & 0xffu;
+    39	    uint32_t mantissa = bits & 0x7fffffu;
+    40	    if (exponent == 0xffu) {
+    41	        return static_cast<uint16_t>(sign | 0x7c00u | (mantissa ? 0x0200u : 0u));
+    42	    }
+    43	    int32_t halfExponent = static_cast<int32_t>(exponent) - 112;
+    44	    if (halfExponent >= 31) {
+    45	        return static_cast<uint16_t>(sign | 0x7c00u);
+    46	    }
+    47	    if (halfExponent <= 0) {
+    48	        if (halfExponent < -10) {
+    49	            return static_cast<uint16_t>(sign);
+    50	        }
+    51	        mantissa |= 0x800000u;
+    52	        const int32_t shift = 14 - halfExponent;
+    53	        const uint32_t round = (1u << (shift - 1)) - 1u + ((mantissa >> shift) & 1u);
+    54	        return static_cast<uint16_t>(sign | ((mantissa + round) >> shift));
+    55	    }
+    56	    mantissa += 0xfffu + ((mantissa >> 13) & 1u);
+    57	    if (mantissa & 0x800000u) {
+    58	        mantissa = 0;
+    59	        ++halfExponent;
+    60	        if (halfExponent >= 31) {
+    61	            return static_cast<uint16_t>(sign | 0x7c00u);
+    62	        }
+    63	    }
+    64	    return static_cast<uint16_t>(sign | (static_cast<uint32_t>(halfExponent) << 10) |
+    65	                                 (mantissa >> 13));
+    66	}
+    67	
+    68	static float HalfToFloat(uint16_t value)
+    69	{
+    70	    const float sign = (value & 0x8000u) ? -1.0f : 1.0f;
+    71	    const uint32_t exponent = (value >> 10) & 0x1fu;
+    72	    const uint32_t mantissa = value & 0x03ffu;
+    73	    if (exponent == 0) {
+    74	        return sign * std::ldexp(static_cast<float>(mantissa), -24);
+    75	    }
+    76	    if (exponent == 0x1fu) {
+    77	        return mantissa ? NAN : sign * INFINITY;
+    78	    }
+    79	    return sign * std::ldexp(1.0f + static_cast<float>(mantissa) / 1024.0f,
+    80	                             static_cast<int>(exponent) - 15);
+    81	}
+    82	
+    83	static uint16_t FloatToBfloat16(float value)
+    84	{
+    85	    uint32_t bits = 0;
+    86	    std::memcpy(&bits, &value, sizeof(bits));
+    87	    bits += 0x7fffu + ((bits >> 16) & 1u);
+    88	    return static_cast<uint16_t>(bits >> 16);
+    89	}
+    90	
+    91	static float Bfloat16ToFloat(uint16_t value)
+    92	{
+    93	    const uint32_t bits = static_cast<uint32_t>(value) << 16;
+    94	    float result = 0.0f;
+    95	    std::memcpy(&result, &bits, sizeof(result));
+    96	    return result;
+    97	}
+    98	
+    99	static float Decode(uint16_t value, int dtype)
+   100	{
+   101	    return dtype == 1 ? HalfToFloat(value) : Bfloat16ToFloat(value);
+   102	}
+   103	
+   104	static uint16_t Encode(float value, int dtype)
+   105	{
+   106	    return dtype == 1 ? FloatToHalf(value) : FloatToBfloat16(value);
+   107	}
+   108	
+   109	static float Rounded(float value, int dtype)
+   110	{
+   111	    return Decode(Encode(value, dtype), dtype);
+   112	}
+   113	
+   114	int main(int argc, char** argv)
+   115	{
+   116	    if (argc != 7) {
+   117	        std::fprintf(stderr, "usage: probe dtype rows width device warmup repeats\n");
+   118	        return 2;
+   119	    }
+   120	    const int dtype = std::atoi(argv[1]);
+   121	    const int64_t rows = std::atoll(argv[2]);
+   122	    const int64_t width = std::atoll(argv[3]);
+   123	    const int device = std::atoi(argv[4]);
+   124	    const int warmup = std::atoi(argv[5]);
+   125	    const int repeats = std::atoi(argv[6]);
+   126	    if ((dtype != 1 && dtype != 2) || rows <= 0 || width < 8192 ||
+   127	        warmup < 0 || repeats < 0) {
+   128	        std::fprintf(stderr, "invalid probe arguments\n");
+   129	        return 2;
+   130	    }
+   131	
+   132	    CheckAcl(aclInit(nullptr), "aclInit");
+   133	    CheckAcl(aclrtSetDevice(device), "aclrtSetDevice");
+   134	    aclrtStream stream = nullptr;
+   135	    CheckAcl(aclrtCreateStream(&stream), "aclrtCreateStream");
+   136	
+   137	    const size_t elementCount = static_cast<size_t>(rows * width);
+   138	    const size_t dataBytes = elementCount * sizeof(uint16_t);
+   139	    const size_t paramBytes = static_cast<size_t>(width) * sizeof(uint16_t);
+   140	    std::vector<uint16_t> x(elementCount), residual(elementCount), gamma(width), bias(width);
+   141	    std::vector<uint16_t> output(elementCount);
+   142	    std::vector<float> expected(elementCount);
+   143	    for (size_t i = 0; i < elementCount; ++i) {
+   144	        const float xv = 0.19f * std::sin(static_cast<float>((i * 17) % 997) * 0.013f);
+   145	        const float rv = 0.11f * std::cos(static_cast<float>((i * 29) % 991) * 0.017f);
+   146	        x[i] = Encode(xv, dtype);
+   147	        residual[i] = Encode(rv, dtype);
+   148	    }
+   149	    for (int64_t col = 0; col < width; ++col) {
+   150	        gamma[col] = Encode(0.85f + static_cast<float>(col % 23) * 0.002f, dtype);
+   151	        bias[col] = Encode(-0.025f + static_cast<float>(col % 19) * 0.001f, dtype);
+   152	    }
+   153	
+   154	    void* dx = nullptr;
+   155	    void* dr = nullptr;
+   156	    void* dg = nullptr;
+   157	    void* db = nullptr;
+   158	    void* dout = nullptr;
+   159	    CheckAcl(aclrtMalloc(&dx, dataBytes, ACL_MEM_MALLOC_HUGE_FIRST), "malloc x");
+   160	    CheckAcl(aclrtMalloc(&dr, dataBytes, ACL_MEM_MALLOC_HUGE_FIRST), "malloc residual");
+   161	    CheckAcl(aclrtMalloc(&dg, paramBytes, ACL_MEM_MALLOC_HUGE_FIRST), "malloc gamma");
+   162	    CheckAcl(aclrtMalloc(&db, paramBytes, ACL_MEM_MALLOC_HUGE_FIRST), "malloc bias");
+   163	    CheckAcl(aclrtMalloc(&dout, dataBytes, ACL_MEM_MALLOC_HUGE_FIRST), "malloc output");
+   164	    CheckAcl(aclrtMemcpy(dx, dataBytes, x.data(), dataBytes, ACL_MEMCPY_HOST_TO_DEVICE), "copy x");
+   165	    CheckAcl(aclrtMemcpy(dr, dataBytes, residual.data(), dataBytes, ACL_MEMCPY_HOST_TO_DEVICE), "copy residual");
+   166	    CheckAcl(aclrtMemcpy(dg, paramBytes, gamma.data(), paramBytes, ACL_MEMCPY_HOST_TO_DEVICE), "copy gamma");
+   167	    CheckAcl(aclrtMemcpy(db, paramBytes, bias.data(), paramBytes, ACL_MEMCPY_HOST_TO_DEVICE), "copy bias");
+   168	
+   169	    const int64_t xShape[2] = {rows, width};
+   170	    const int64_t paramShape[1] = {width};
+   171	    const TensorInfo dataInfo{xShape, 2, dtype};
+   172	    const TensorInfo paramInfo{paramShape, 1, dtype};
+   173	    const TensorGroupInfo dataGroup{&dataInfo, 1};
+   174	    const TensorGroupInfo paramGroup{&paramInfo, 1};
+   175	    const float epsilon = 1.0e-5f;
+   176	    const int64_t coreCount = 8;
+   177	
+   178	    auto launch = [&]() {
+   179	        run_kernel((GM_ADDR)dx, dataGroup,
+   180	                   (GM_ADDR)dr, dataGroup,
+   181	                   (GM_ADDR)dg, paramGroup,
+   182	                   (GM_ADDR)db, paramGroup,
+   183	                   (GM_ADDR)dout, dataGroup,
+   184	                   coreCount, stream, epsilon);
+   185	        CheckAcl(aclrtSynchronizeStream(stream), "kernel synchronize");
+   186	    };
+   187	    std::vector<double> samples;
+   188	    if (repeats == 0) {
+   189	        launch();
+   190	    } else {
+   191	        for (int i = 0; i < warmup; ++i) {
+   192	            launch();
+   193	        }
+   194	        samples.reserve(static_cast<size_t>(repeats));
+   195	        for (int i = 0; i < repeats; ++i) {
+   196	            const auto start = std::chrono::steady_clock::now();
+   197	            launch();
+   198	            const auto stop = std::chrono::steady_clock::now();
+   199	            samples.push_back(std::chrono::duration<double, std::micro>(stop - start).count());
+   200	        }
+   201	    }
+   202	    CheckAcl(aclrtMemcpy(output.data(), dataBytes, dout, dataBytes, ACL_MEMCPY_DEVICE_TO_HOST),
+   203	             "copy output");
+   204	
+   205	    float maxAbs = 0.0f;
+   206	    float maxRel = 0.0f;
+   207	    size_t failures = 0;
+   208	    const float tolerance = dtype == 1 ? 0.004f : 0.02f;
+   209	    for (int64_t row = 0; row < rows; ++row) {
+   210	        float squareSum = 0.0f;
+   211	        for (int64_t col = 0; col < width; ++col) {
+   212	            const size_t index = static_cast<size_t>(row * width + col);
+   213	            float y = Decode(x[index], dtype) + Decode(residual[index], dtype);
+   214	            if (dtype == 1) {
+   215	                y = Rounded(y, dtype);
+   216	            }
+   217	            expected[index] = y;
+   218	            squareSum += y * y;
+   219	        }
+   220	        const float invRms = 1.0f / std::sqrt(squareSum / static_cast<float>(width) + epsilon);
+--- CURRENT TEMP VS V008 DECLARED OUTPUTS ---
+V008_DECLARED_DEVICE_OBJECT=3e3266d0d3abffa5d0a48660f97f9a7c3abf9e8abb485d87617fe97c89c0bb57 size=334040
+V008_DECLARED_DEVICE_ALINK=998896a58bf828357e6885fb5eab3e41b79fcf70e898baeb3abf126f90be1b9f size=183144
+a9e65df9f23780ea7104532abe78079aef08990e49049040ea476014f08496dd  /tmp/cann-n02-code-footprint-icache-x-v008-order/parent/build/CMakeFiles/device.dir/device.cpp.o
+6a56f50d8e78de2dcae64f6d078a8c2f898f0947a004c568aa922b445cae9a0f  /tmp/cann-n02-code-footprint-icache-x-v008-order/parent/build/device.alink
+319920 /tmp/cann-n02-code-footprint-icache-x-v008-order/parent/build/CMakeFiles/device.dir/device.cpp.o
+186816 /tmp/cann-n02-code-footprint-icache-x-v008-order/parent/build/device.alink
+506736 total
+--- RUNNER INVENTORY ---
+/tmp/cann-n02-code-footprint-icache-x-v008-order/candidate/runtime_probe.cpp
+/tmp/cann-n02-code-footprint-icache-x-v008-order/parent/runtime_probe.cpp
+=== END RUNNER SAFETY AUDIT ===
+SSH_RUNNER_SAFETY_AUDIT_RC=0
+--- ACL CALL SUMMARY ---
+FILE=/tmp/cann-n02-code-footprint-icache-x-v008-order/parent/runtime_probe.cpp
+133:    CheckAcl(aclrtSetDevice(device), "aclrtSetDevice");
+262:    CheckAcl(aclrtResetDevice(device), "reset device");
+FILE=/tmp/cann-n02-code-footprint-icache-x-v008-order/candidate/runtime_probe.cpp
+133:    CheckAcl(aclrtSetDevice(device), "aclrtSetDevice");
+262:    CheckAcl(aclrtResetDevice(device), "reset device");
+SSH_ACL_CALL_SUMMARY_RC=0
