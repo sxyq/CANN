@@ -98,4 +98,4 @@ RUNTIME_ASCEND_HOME_PATH=/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002
 RUNTIME_LD_PRELOAD=/usr/lib/aarch64-linux-gnu/libstdc++.so.6
 RUNTIME_LD_LIBRARY_PATH_PREFIX=/usr/lib/aarch64-linux-gnu:/usr/lib/gcc/aarch64-linux-gnu/11
 RESULT=Compile PASS after existing environment include-path repair; FP16 Candidate/Parent Correctness PASS; Local execution completed with LOCAL_SCORE=NONE.
-NEXT_ACTION=V010 evidence is ready for local commit; next revision may study one different independent Vector issue-order factor without changing addresses, DMA, synchronization, ownership, Scalar indexing, or arithmetic.
+NEXT_ACTION=V010 evidence committed locally; next revision may study one different independent Vector issue-order factor without changing addresses, DMA, synchronization, ownership, Scalar indexing, or arithmetic.
