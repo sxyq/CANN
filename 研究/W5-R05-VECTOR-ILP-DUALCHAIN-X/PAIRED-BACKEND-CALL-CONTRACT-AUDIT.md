@@ -7,6 +7,7 @@ BRANCH = research/w5-r05-vector-ilp
 WORKTREE = /home/data4t2/lelinfeng/cann-w5-r05-vector-ilp
 AUDIT_BASE_HEAD = a4dfbf35f6b13955a2d4c74dc66b22e111d43764
 RULE_REFRESH = origin/main 1c51a5b2eb9b5b9dffc031c1fbbbc35e9506b49f
+PUBLIC_DIRECT_BUILD_EVIDENCE = origin/main 1c51a5b2
 W5_ROUTE_SCOPE = CONTINUE_FIVE_W5_ROUTES / NO_ROUTE_SWITCH
 PATCH_SIMILARITY = N/A (documentation-only; no source patch)
 MECHANISM_OVERLAP = NO
@@ -19,8 +20,9 @@ HYPOTHESIS = DEPENDENT_VECTOR_CHAIN vs INDEPENDENT_DUAL_VECTOR_CHAIN (unchanged)
 
 ```text
 ROUTE_OWNED_DIRECT_ADAPTER = NOT_PRESENT
-HISTORICAL_DIRECT_BUILD_FORM = DOCUMENTED, NOT REPRODUCIBLE FROM R5-OWNED FILES
-UNIQUE_PAIRED_RUNNER = SHARED-RUNNER CONTRACT ONLY; LAST RECORDED BUILD FAILED
+HISTORICAL_R31B_DIRECT_BUILD = PUBLICLY CONFIRMED_BUILD_ONLY / R31B-SOURCE-BOUND
+UNIQUE_PAIRED_RUNNER = CURRENT_SHARED-RUNNER_CONTRACT; LAST RECORDED BUILD FAILED
+R5_DIRECT_BACKEND_VIA_CURRENT_CONTROL = NO (requires shared backend selector/adapter)
 LEGAL_DIRECT_BACKEND = NO
 BUILD_THIS_ACTION = NOT_RUN
 CORRECTNESS = NOT_RUN
@@ -101,6 +103,47 @@ does not contain that wrapper, its CLI contract, event-timing implementation,
 build identity manifest, artifact, or a `w5ctl` backend selector. Therefore its
 historical successful build cannot be treated as a current paired backend, and
 there is no lawful direct-executable compile/correctness command to run here.
+
+## Public R31B V016 direct-build evidence cross-check
+
+The current public `origin/main` materials named by Main-2 were read without
+opening any other Route worktree or reading the included R31B kernel files:
+
+- `本地实验/R31B/V016/support/paired/CMakeLists.txt`
+- `本地实验/R31B/V016/support/paired/paired_runner_v016.asc` (only its
+  wrapper/include and entry-renaming lines were inspected)
+- `本地实验/R31B/V016/support/paired/paired-build-v016-success.txt`
+
+They establish that the successful direct build is source-bound, not a
+route-agnostic backend:
+
+1. CMake declares `R31B_V011_SOURCE_DIR` and `R31B_V016_SOURCE_DIR` with
+   R31B-specific defaults and builds the standalone target
+   `paired_runner_v016` from `paired_runner_v016.asc`.
+2. The wrapper literally includes
+   `R31B-V011-LP-ROW-PIPELINE_kernel.asc` and
+   `R31B-V016-WIDE-TILE-SEED_kernel.asc`, renaming their `run_kernel` entries
+   to `run_kernel_v011` and `run_kernel_v016`.
+3. The retained success record says `BUILD_RESULT=PASS`, but also
+   `BUILD_ACTION=forced compile and link; executable was not started`,
+   `DEVICE_CORRECTNESS=NOT_RUN`, and `TIMING=NOT_RUN`.
+
+The CMake source-directory variables being cache-overridable does not by itself
+make this a legal R5 backend: the wrapper's include basenames and the produced
+standalone target remain fixed, and the success record contains no evidence
+that the current unique control layer selects or invokes this executable. R5
+could not make it callable through that existing control layer without a
+shared Tooling/Integration change to the existing backend selector/adapter
+(or equivalent dispatch boundary). Doing so locally would create a separate
+execution entry, which is outside the route contract. This audit did not
+substitute R5 source under R31B names, modify the wrapper/CMake, read/copy any
+R31B kernel source, or use a Champion donor.
+
+Accordingly, the answer to the constrained feasibility question is **NO**:
+the public direct build is evidence for a successful R31B-specific executable
+build only, not for invoking R5's own source pair from the current sole control
+layer without modifying that shared layer. The existing single Owner request
+remains the only request; no second request has been created.
 
 ## Minimal Tooling/Integration Owner interface patch
 
