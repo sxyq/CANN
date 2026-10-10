@@ -1,10 +1,27 @@
 # N05 V004 Correctness
 
-CORRECTNESS=NONE
-DEVICE_ID=NONE
-RUNTIME_PROBE=NOT_RUN
-RUNNER=NOT_CREATED
-CORRECTNESS_RAW_OUTPUT=NONE
-REASON=The requested V004 work was limited to the existing standalone CMake compile; no runtime runner was created or executed.
-
-The compile snapshots recorded NPU2 and NPU3 as process-free, while existing processes remained on the other listed devices. No device reset or runtime call was made.
+CORRECTNESS=PASS
+DEVICE_ID=5
+RUNTIME_PROBE=EXISTING_V016_PAIRED_ENTRY_TEMPORARY_NO_RESET_COPY
+RUNNER=BUILD_AND_RUN_PASS
+FORMAL_RUNNER_CREATED=NO
+CORRECTNESS_RAW_OUTPUT=runtime-run-npu5.log
+SAMPLE_PROTOCOL=4 cases; warmup_each=45; pairs_each=21; 21 samples per binary per case
+CANDIDATE_SOURCE_SHA256=c3b936548900cdf623887d73f1a816e145d751f43b330011c9eee9e61837a74e
+COMPILE_INPUT_ALIAS_SHA256=c3b936548900cdf623887d73f1a816e145d751f43b330011c9eee9e61837a74e
+SOURCE_INPUT_MATCH=PASS
+CASE_FP16_TAIL=V011 PASS max_abs=0.0009765625 max_rel=0.0015923567; V016 PASS max_abs=0.0009765625 max_rel=0.0015923567
+CASE_FP16_WIDE=V011 PASS max_abs=0.001953125 max_rel=0.010989011; V016 PASS max_abs=0.001953125 max_rel=0.010989011
+CASE_BF16_TAIL=V011 PASS max_abs=0.0078125 max_rel=0.0073529412; V016 PASS max_abs=0.0078125 max_rel=0.0073529412
+CASE_BF16_WIDE=V011 PASS max_abs=0.0078125 max_rel=0.01754386; V016 PASS max_abs=0.0078125 max_rel=0.01754386
+RESOURCE_COMMAND=ssh cann-server3 'npu-smi info'
+RESOURCE_RC=0
+RESOURCE_LOG=runtime-preflight-npu5.log
+NPU5_PRE_HBM=59737/65536 MB used; 5799 MB free; PID 3355594 VLLMWorker_TP 56358 MB
+NPU5_POST_HBM=59880/65536 MB used; 5656 MB free; PID 3355594 VLLMWorker_TP 56354 MB
+ENTRY_AUDIT=runtime-entry-audit.log
+TEMP_RUNNER_SOURCE_SHA256=98338315ac52595cbd705e5c1b1f411462e3aed0569fc9d06d759650ea4cbe72
+TEMP_RUNNER_ARTIFACT_SHA256=fc2fde3b1ad55898f70e5c1e4d7595cc828c4b04061803ef73ebe0a990bff7b6
+REASON=Correctness completed with zero failures for all four cases; the temporary copy retained the existing paired protocol and used device 5.
+RESET_DEVICE_CALLS=NONE_EXECUTED
+RUNTIME_FAILURE=NONE
