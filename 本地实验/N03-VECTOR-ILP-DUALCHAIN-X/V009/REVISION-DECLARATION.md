@@ -107,3 +107,43 @@ SOC_VERSION=Ascend910B3
 NPU_ARCH=dav-2201
 RESULT=Compile PASS; FP16 Candidate/Parent Correctness PASS; Local execution completed with LOCAL_SCORE=NONE.
 NEXT_ACTION=V009 closed; no additional samples or mechanism changes in this revision.
+
+## Requalification
+
+REQUAL_RUN_TIME=2026-10-10T20:54:30Z
+REQUAL_SOURCE_SHA256=1a1b5d42d9a06507bb0b9d06f21202c7bbf8748f7e031e388e0036d285de77cf
+REQUAL_REMOTE_HOST=hwnput3
+REQUAL_REMOTE_DIR=/home/data4t2/lelinfeng/cann/server_runs/N03-VECTOR-ILP-DUALCHAIN-X/V009/no-reset-build
+REQUAL_COMMAND_CORRECTNESS=./probe_v016 1 16 12288 6 0 0; ./probe_v011 1 16 12288 6 0 0
+REQUAL_COMMAND_LOCAL=two interleaved pairs; ./probe_v011 1 16 12288 6 5 5 and ./probe_v016 1 16 12288 6 5 5
+REQUAL_DEVICE_ID=6
+REQUAL_SOC_VERSION=(empty after source /usr/local/Ascend/ascend-toolkit/set_env.sh)
+REQUAL_ASCEND_HOME_PATH=/usr/local/Ascend/ascend-toolkit/latest
+REQUAL_LD_PRELOAD=/usr/lib/aarch64-linux-gnu/libstdc++.so.6
+REQUAL_LD_LIBRARY_PATH_PREFIX=/usr/lib/aarch64-linux-gnu:/usr/lib/gcc/aarch64-linux-gnu/11
+REQUAL_ENV_SOURCE_RC=0
+REQUAL_RESET_RUNTIME=NOT_USED; temporary no-reset adaptation retained
+REQUAL_CORRECTNESS=PASS
+REQUAL_CORRECTNESS_RESULT=Candidate and Parent PASS; failures=0 for both; max_abs=0.001953125; max_rel=0.052631579
+REQUAL_CORRECTNESS_LOG=V009/support/requal-v009-no-reset.log
+REQUAL_CORRECTNESS_LOG_SHA256=8024aa278e4164f495e8dccabc3e1a910226f04d220da5ab9b95e4c7ceae572d
+REQUAL_CORRECTNESS_RC=0
+REQUAL_LOCAL_EXECUTION=PASS
+REQUAL_LOCAL_LOG=V009/support/requal-v009-no-reset.log
+REQUAL_LOCAL_LOG_SHA256=8024aa278e4164f495e8dccabc3e1a910226f04d220da5ab9b95e4c7ceae572d
+REQUAL_LOCAL_PAIR_COUNT=2
+REQUAL_PAIR_1_PARENT_MEDIAN_US=154.331
+REQUAL_PAIR_1_CANDIDATE_MEDIAN_US=122.451
+REQUAL_PAIR_2_PARENT_MEDIAN_US=76.351
+REQUAL_PAIR_2_CANDIDATE_MEDIAN_US=105.040
+REQUAL_LOCAL_SCORE=NONE
+REQUAL_LOCAL_DELTA=NONE
+REQUAL_LOCAL_REASON=Two paired samples only; NPU6 HBM usage remained 91% and VLLMWorker_TP PID 3357697 remained present.
+REQUAL_FREE_HBM=NOT_EXACT; HBM capacity 65536 MB; usage rate 91%; proc-mem 56355 MB
+REQUAL_DEVICE_LOAD=HBM_USAGE_RATE=91%; AICORE_USAGE_RATE=0%; AIVECTOR_USAGE_RATE=0%; CTRLCPU_USAGE_RATE=3% before and 14% after
+REQUAL_AICORE_LOAD=0%
+REQUAL_OTHER_PROCESS_PRESENT=YES; VLLMWorker_TP PID 3357697; process untouched
+REQUAL_USAGE_SNAPSHOT_COMMAND=npu-smi info -t usages -i 6; npu-smi info -t proc-mem -i 6
+REQUAL_USAGE_SNAPSHOT_RC=0
+REQUAL_LOCAL_RESULT=Execution completed with two paired samples; LOCAL_SCORE=NONE due to sample count and load.
+REQUAL_NEXT_ACTION=V009 requalification closed; next revision may study one new independent Vector ILP emission-order factor without changing addresses, DMA, synchronization, ownership, Scalar indexing, or arithmetic.
