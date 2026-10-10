@@ -1,0 +1,23 @@
+# SYNC-BARRIER-ELISION-X V081
+
+- ROUTE: `SYNC-BARRIER-ELISION-X`
+- REVISION: `V081`
+- DIRECT_PARENT: exact `R31B-V011`
+- CURRENT_LOCAL_BEST: exact `R31B-V011` (V080 unchanged)
+- PARENT_SOURCE_SHA256: `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`
+- SINGLE_CHANGE: Remove only the BF16/non-half `PipeBarrier<PIPE_V>` immediately after `Mul(xFp32, valueLocal, valueLocal, totalElems)` and before the per-row `ReduceSum` loop in `ProcessSmallLowPrecisionContiguousBatched`.
+- CHANGE_CLASS: one active-path synchronization/dependency-boundary deletion.
+- DUPLICATE_AUDIT: distinct from V069 `WaitFlag<MTE3_V>`, V070 `SyncMTE3ToV`, V071-V074 helper/output barriers, V075-V076 handoffs, V077's different wide-path Add-to-Mul site, V078-V079 input-combine sites, and V080's generic narrow-path post-`Muls` barrier.
+- HYPOTHESIS: the square `Mul` result and the following disjoint per-row `ReduceSum` consumers may not require this common vector-pipe boundary on the active BF16 small-contiguous path.
+- CORRECTNESS_RISK: `ReduceSum` could consume incomplete square results; exact Parent/Candidate correctness is the safety gate.
+- SCOPE_EXCLUSIONS: no math, dtype policy, dispatch, tiling, buffer allocation, address arithmetic, store, event allocation, or other synchronization change.
+- TARGET_LOCAL_CASE: BF16 `128x256` through `ProcessSmallLowPrecisionContiguousBatched`.
+- CANDIDATE_SOURCE_SHA256: `f62c2692d8303288387a33501fa1a54ca8a57b7fbcf29ac8483e027063de570e`.
+- COMPILE: PASS, `sync_barrier_elision_v081` and correctness runner; `/tmp/sync-v081-build.20261008`.
+- CORRECTNESS: PASS, 9/9 cases, zero Parent/Candidate bit mismatches.
+- LOCAL: three complete 31-pair runs; all raw device/wall samples, throughput, jitter, and load context retained in `local.log`.
+- LOCAL_RUN_SCORES: `-1.653804%`, `+2.209942%`, `-5.955334%`.
+- LOCAL_SCORE: `-5.955334%` (latest complete run); `LOCAL_DELTA = -5.955334%`.
+- LOCAL_VERDICT: `LOCAL_REJECTED_NOISY`; the independent runs disagree in direction and Local Best remains exact `R31B-V011`.
+- RUNNER_LABEL_NOTE: the copied runner labels internal `LOCAL_STATS`/`LOCAL_RESULT` lines as `V080`; the raw log is preserved unchanged and execution identity is established by the V081 command, binary hash, and candidate source hash.
+- ONLINE: forbidden; no shared records changed.
