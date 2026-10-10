@@ -1,0 +1,69 @@
+--- 本地实验/N05-SCALAR-ADDRESS-GENERATION-X/V004/submission.asc	2026-10-11 01:07:18
++++ 本地实验/N05-SCALAR-ADDRESS-GENERATION-X/V006/submission.asc	2026-10-11 03:54:33
+@@ -3374,22 +3374,27 @@
+             AscendC::LocalTensor<T> bBase = residualBuf_.Get<T>();
+             bool pRelA = false;
+             bool pRelB = false;
+-            // The parameter cursor walks the same tile columns as pass 1.
+-            // Its row base also supplies the exact output GM offset for each
+-            // retained row, so pass 2 has no independent address arithmetic.
++            // V006: consume the parameter stream by the current tile's valid
++            // length.  The remaining width carries the next parameter DMA
++            // address without changing the tile-order cursor or output stores.
++            uint64_t parameterOffset = 0;
++            uint64_t parameterRemaining = rowWidth;
+             WideLowPrecisionCursor outputCursor(batchBegin, 1, rowWidth,
+                                                 tileWidth, tileCount);
+             if (outputCursor.HasNext()) {
+-                Load(gBase, gammaGm_, outputCursor.ParameterOffset(),
+-                     outputCursor.Valid());
+-                Load(bBase, biasGm_, outputCursor.ParameterOffset(),
+-                     outputCursor.Valid());
++                const int32_t firstValid =
++                    parameterRemaining < static_cast<uint64_t>(tileWidth)
++                        ? static_cast<int32_t>(parameterRemaining) : tileWidth;
++                Load(gBase, gammaGm_, parameterOffset, firstValid);
++                Load(bBase, biasGm_, parameterOffset, firstValid);
+                 AscendC::SetFlag<AscendC::HardEvent::MTE2_V>(prd0);
+             }
+             for (; outputCursor.HasNext(); outputCursor.Advance()) {
+                 const int32_t tile = outputCursor.TileIndex();
+                 const uint64_t col = outputCursor.Column();
+-                const int32_t valid = outputCursor.Valid();
++                const int32_t valid =
++                    parameterRemaining < static_cast<uint64_t>(tileWidth)
++                        ? static_cast<int32_t>(parameterRemaining) : tileWidth;
+                 const bool useA = (tile & 1) == 0;
+                 AscendC::LocalTensor<T> gammaLocal = useA ? gBase : gBase[tileWidth];
+                 AscendC::LocalTensor<T> biasLocal = useA ? bBase : bBase[tileWidth];
+@@ -3409,10 +3414,17 @@
+                             pRelB = false;
+                         }
+                     }
+-                    const uint64_t nCol = outputCursor.NextColumn();
+-                    const int32_t nValid = outputCursor.NextValid();
+-                    Load(nextA ? gBase : gBase[tileWidth], gammaGm_, nCol, nValid);
+-                    Load(nextA ? bBase : bBase[tileWidth], biasGm_, nCol, nValid);
++                    const uint64_t nextParameterOffset =
++                        parameterOffset + static_cast<uint64_t>(valid);
++                    const uint64_t nextParameterRemaining =
++                        parameterRemaining - static_cast<uint64_t>(valid);
++                    const int32_t nValid =
++                        nextParameterRemaining < static_cast<uint64_t>(tileWidth)
++                            ? static_cast<int32_t>(nextParameterRemaining) : tileWidth;
++                    Load(nextA ? gBase : gBase[tileWidth], gammaGm_,
++                         nextParameterOffset, nValid);
++                    Load(nextA ? bBase : bBase[tileWidth], biasGm_,
++                         nextParameterOffset, nValid);
+                     AscendC::SetFlag<AscendC::HardEvent::MTE2_V>(nextA ? prd0 : prd1);
+                 }
+                 AscendC::LocalTensor<T> outputLocal = outputBuf_.Get<T>();
+@@ -3466,6 +3478,8 @@
+                 } else {
+                     pRelB = true;
+                 }
++                parameterOffset += static_cast<uint64_t>(valid);
++                parameterRemaining -= static_cast<uint64_t>(valid);
+             }
+             if (pRelA) {
+                 AscendC::WaitFlag<AscendC::HardEvent::V_MTE2>(prel0);
