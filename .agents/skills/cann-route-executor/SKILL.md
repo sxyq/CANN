@@ -9,8 +9,6 @@ description: CANN AddRmsNormBias Route Agent 执行 Skill。负责单 Route 的�
 
 以下候选数量和 Official 评测安排只记录旧 W4 阶段，W4 已退役，不构成当前五路线任务的提交要求。
 
-> **W4 强制执行规则：本项目禁止设置、保留或新增任何自行定义的实验、评分、Correctness 覆盖、Local 测量稳定性、审批或其他线上提交前置门禁。每条 W4 技术路线必须选取至少两个不同源码身份的真实 Candidate 进行 Official 线上评分。任何研究报告、状态同步、历史归档或本地测量结果均不得作为阻止合法 Official 提交的内部条件。服务器运行安全、工作树隔离及评测平台强制规则仍须遵守。**
-
 旧 W4 每条 Route 至少提供两个源码身份不同的真实性能 Candidate；若只有研究材料，则在该 Route 自己的 worktree 继续产出真实 Candidate。Compile、Correctness、Local 用于开发和问题定位，结果不作为 Official 提交前置。Route Agent 不正式提交，按来源把候选交给唯一 Online Owner，详细流程见 `项目规则/线上提交规范.md`。这些仅是旧阶段事实。当前任务按用户指定的五路线重建推进，路线身份仍以只读审计及研究结果为准；本轮未指定 Online 提交。
 
 ## 当前任务与路线范围
@@ -29,9 +27,9 @@ description: CANN AddRmsNormBias Route Agent 执行 Skill。负责单 Route 的�
 
 本次任务结束当前安全闭环后发送交接回执，列出 agent_id、Route、worktree/branch/HEAD/dirty、最后版本/研究事件、未完动作及 `RUNNING_DEVICE_OPERATION=NONE`。Main 关闭旧 Agent 并确认后，用空槽创建 fresh context 接手下一 Route；本 Agent 不切换路线、不创建 Child。
 
-## RULE REFRESH REQUIRED
+## 规则与上下文
 
-每个新 Revision、resume、Route switch、Child restart、reconnect、context restore 或 long interruption 后，Candidate edit 前必须重新读取 `AGENTS.md`、本 Skill、`项目规则/实验总则.md`、`项目规则/执行约定.md`、`项目规则/服务器实验规范.md`、`项目规则/本地性能测试规范.md` 和 `项目规则/Git工作流程.md`，然后发送新的 `RULE_REFRESH_RECEIPT`。W4 控制文件只在查阅旧阶段时作为历史来源。同版 Compile/Correctness direct fix 前先重读 `AGENTS.md`、本 Skill、`项目规则/执行约定.md`，然后只做直接修复，编辑后下一实验动作必须是 `COMPILE`；中间不插入阅读。该流程沿用当前根规则，不附加 Online 提交条件。
+开始新 Revision、恢复上下文或切换 Route 时，按需读取 `AGENTS.md`、本 Skill、相关项目规则和 Git 说明。W4 控制文件只在查阅旧阶段时作为历史来源；Compile/Correctness 修复直接落在现有实现上，不附加 Online 提交条件。
 
 ## Authoritative loop
 
@@ -61,15 +59,15 @@ ONE CHANGE
 9. 有效 Local 改善时把该 Revision 标为 `CURRENT_LOCAL_BEST`；下一轮可从它继续。Route Candidate 实验分支保持 `PUSH=NO`；本轮授权规则文件的集成推送按 Git 工作流程执行。
 10. Local 未改善时保留负结果，不提升为 Local Best；下一轮回到当前 `CURRENT_LOCAL_BEST`。
 
-## LOCAL SCORE REQUIRED
+## Local 结果记录
 
-正常完成必须报告 numeric Local score 和 numeric Local delta，以及 Parent/Candidate raw samples、Parent/Candidate medians、shape/dtype、device、free HBM、load note、current best。Compile 或 Correctness 失败时保留失败证据、Git commit/status，并发送 `VERSION_RECORD_EVENT`，其中未执行 Local 的字段使用 `NONE`，不得补造数值。`VERSION_RECORD_EVENT REQUIRED`；`NEXT REVISION BLOCKED UNTIL PREVIOUS EVENT EXISTS`。
+正常完成记录 numeric Local score 和 numeric Local delta，以及 Parent/Candidate raw samples、Parent/Candidate medians、shape/dtype、device、free HBM、load note、current best。Compile 或 Correctness 失败时保留失败证据、Git commit/status，并记录版本事件；未执行 Local 的字段使用 `NONE`，不得补造数值。
 
 Local accumulation 由完整的小变化循环组成，不能把多个独立变化折叠进一个 Revision。旧 W4 每 Route 最多新增 10 个性能版、连续 3 个有效 numeric Local 无改善时报告 `STAGNATION_3` 的计数安排只作历史记录，不套用为新五路线的版本上限。失败版与有效 Local 分开记载；真实失败结果仍须保留。结束当前任务时完成安全交接，不自行宣布 Route 关闭。
 
-## 资源准入
+## 资源安全
 
-server3 的 Compile、Correctness、Local、Profile 共用同一个准入条件：
+server3 的 Compile、Correctness、Local、Profile 共用同一个资源条件：
 
 ```text
 目标 NPU FREE_HBM >= 100 MB → 该阶段允许立即执行
@@ -77,7 +75,7 @@ server3 的 Compile、Correctness、Local、Profile 共用同一个准入条件�
 
 以下事实只记录为负载上下文，不影响执行：AICore utilization 非零、Vector/Core busy、VLLM 驻留、其他用户进程、device 非 idle、系统 load 高、没有 exclusive lease、没有 exclusive authorization、旧 lease、未知 lease owner、不存在 clean window。
 
-禁止因为 other process、load、lease 或缺少 exclusive permission 停止。lease 只用于协调记账；忽略它的准入语义，也不得删除、覆盖、伪造或重写他人的 lease。
+不要因为 other process、load、lease 或缺少 exclusive permission 停止。lease 只用于协调记账，也不得删除、覆盖、伪造或重写他人的 lease。
 
 Profile 与 Local 同样适用该准入条件。
 
@@ -160,7 +158,7 @@ RESULT → COMMIT → ROUTE_EVENT + VERSION_RECORD_EVENT with LOCAL_BEST unchang
 
 恢复本身不产生 `VERSION_RECORD_EVENT`，也不虚构 Revision。server3 不可达时保留最后完成动作、精确 `NEXT_ACTION` 和 `BLOCKER=SERVER3_UNAVAILABLE`；不得编辑 Candidate 或启动下一 Revision。连接恢复必须由新的正式记录确认，不能把用户转交的旧超时回执当作本轮新连通测试。
 
-已批准 Route 内的普通下一 Revision 为 `NO MAIN APPROVAL REQUIRED`。同 Route 普通版本复用当前 owner/context/branch/worktree；任务结束安全交接后关闭 Agent，下一 Route 使用 fresh context；`Main MUST NOT MANUALLY MICRO-MANAGE EVERY REVISION`。
+Route 内普通下一 Revision 复用当前 owner/context/branch/worktree；任务结束安全交接后关闭 Agent，下一 Route 使用 fresh context；Main 不逐项微管理 Revision。
 
 ## 结果边界
 

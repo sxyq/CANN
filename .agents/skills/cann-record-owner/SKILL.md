@@ -9,8 +9,6 @@ description: CANN AddRmsNormBias shared-record Skill。Record Owner 在指定主
 
 以下 W4 Online 目标和评测字段说明旧阶段记录方式；W4 已退役，本轮五路线重建不包含 Online 提交任务。旧阶段按每个真实 Candidate 身份分别保存 Route、Revision、源码身份、Git commit、Submission ID、Judge 状态、Correctness、Official Score、15 个 Case 的原始时间与 bestTimeUs 及结果 JSON 路径；Local 与 Official 分栏，只同步 Online Owner 的真实 receipt，不推断或制造结果。
 
-> **W4 强制执行规则：本项目禁止设置、保留或新增任何自行定义的实验、评分、Correctness 覆盖、Local 测量稳定性、审批或其他线上提交前置门禁。每条 W4 技术路线必须选取至少两个不同源码身份的真实 Candidate 进行 Official 线上评分。任何研究报告、状态同步、历史归档或本地测量结果均不得作为阻止合法 Official 提交的内部条件。服务器运行安全、工作树隔离及评测平台强制规则仍须遵守。**
-
 Official 事实按每个真实 Candidate 身份分别保存：Route、Revision、源码身份、Git commit、Submission ID、Judge 状态、Correctness、Official Score、15 个 Case 的原始时间与 bestTimeUs、结果 JSON 路径。Local 和 Official 分栏记录；Local/Correctness 字段缺失不改变提交资格。只同步 Online Owner 的真实 receipt，不推断或制造结果。
 
 ## 当前阶段：五路线重建
@@ -74,7 +72,7 @@ Record Owner 负责把用户转交的规则回执与服务器不可达事实写�
 - 每个 `VERSION_RECORD_EVENT` 都必须登记；负结果、失败结果、工具失败和非 Local Best 不能漏记。
 - 缺失字段保留为 `UNKNOWN` 或 `NONE`，不得发明缺失数据。
 
-`VERSION_RECORD_EVENT REQUIRED`。Record Owner 的异步写入不能延误已经在途的 Compile、Correctness、Local 或 commit；下一普通 Revision 仍遵守 `NEXT REVISION BLOCKED UNTIL PREVIOUS EVENT EXISTS` 的事件顺序要求。
+Record Owner 的异步写入不能延误已经在途的 Compile、Correctness、Local 或 commit；普通 Revision 沿用已有事件顺序记录。
 
 ## C2C receipt
 

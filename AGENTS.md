@@ -20,7 +20,7 @@ W4 的 15 条路线已在证据归档后退役。当前成绩表记录了 26 次
 
 Main 负责协调、跨路线去重和状态汇总；Route Agent 负责自己的源码、真实 Compile、Correctness、Local、结果保存和版本提交。每条路线固定为 `1 Route = 1 Agent = 1 Context = 1 Branch = 1 Local Worktree`。Agent 只能在自己的本地工作树和明确授权的公共只读资料中读取、修改和提交，禁止读取其他 Route 的工作树、分支源码或未公开实验；跨路线比较由 Main 使用授权的只读审计完成。
 
-五条路线的主要优化机制不得重叠。完整源码相似度和有效修改相似度目标均不超过 80%，必须报告真实数据，不得通过变量改名、格式变化、注释或无意义重写制造差异。当前任务不恢复任何已取消的额外 Official 提交条件，不新增调度器、审批系统、Dashboard、常驻隔离工程或重复等待。普通 Route Revision 无需 Main 重新批准；任务恢复或规则变化时仍按现行规则刷新。
+五条路线的主要优化机制不得重叠。完整源码相似度和有效修改相似度目标均不超过 80%，必须报告真实数据，不得通过变量改名、格式变化、注释或无意义重写制造差异。当前任务不恢复已取消的额外 Official 提交条件，不新增调度器、Dashboard、常驻隔离工程或重复等待。普通 Route Revision 直接沿用当前上下文；任务恢复或规则变化时按现行规则刷新。
 
 本仓库服务于 2026 CANN 挑战赛西南赛区 `AddRmsNormBias`。正式主线在仓库根目录；`归档/` 只保存历史资料，不承担当前执行入口。
 
@@ -43,7 +43,7 @@ Main 负责协调、跨路线去重和状态汇总；Route Agent 负责自己的
 
 ## Historical Portfolios
 
-W4 已退役；W3 与 W2 也只作历史来源。`项目规则/W4持续探索控制契约.md` 仅说明旧 W4 的实际安排，不能覆盖当前用户指令或新五路线研究结果。
+W4 已退役；W3 与 W2 也只作历史来源。旧 W4 安排仅保留在归档记录中，不能覆盖当前用户指令或新五路线研究结果。
 
 `ACTIVE PORTFOLIO W3` 保留为历史记录来源，仅包含以下五条路线：
 
@@ -59,7 +59,7 @@ W4 已退役；W3 与 W2 也只作历史来源。`项目规则/W4持续探索控
 
 ## W4 Archive Reference
 
-`项目规则/W4持续探索控制契约.md` 是旧 W4 阶段的事实材料，不再定义当前路线池或新五路线的执行范围。其历史 worktree、版本额度、回执和实验记录继续保留；旧 30 次 Judge 目标不作为新五路线启动条件。
+旧 W4 阶段的 worktree、版本额度、回执和实验记录继续保留在归档位置；旧 30 次 Judge 目标不作为新五路线启动条件。
 
 ## Online Experimental Submission Policy
 
@@ -69,9 +69,9 @@ W4 已退役；W3 与 W2 也只作历史来源。`项目规则/W4持续探索控
 
 - 用户在当前任务中明确点名 Candidate 并要求 Online 提交，即授权本次提交；不再二次询问，也不需要 Planning、Main、Route Agent 或其他角色另行批准。
 - 只提交用户明确指定的 Candidate，不扩展版本或路线范围。用户未指定的 Candidate 不提交。
-- 当前任务执行者可按用户指令直接调用现有官方提交脚本。角色分工不得转化为额外审批或前置等待。
+- 当前任务执行者可按用户指令直接调用现有官方提交脚本。角色分工不增加其他执行步骤。
 
-### 本地测试不作为提交前置条件
+### 本地结果说明
 
 除非用户明确要求，本机 Online 提交不要求预先完成 Compile、Correctness、Golden 对比、Parent/Candidate 比较、Local Score、性能复测、噪声验收、全 shape 覆盖、CANN/NPU 硬件验证、`VALID_LOCAL_BEST=YES`、`ONLINE_CANDIDATE_READY=YES`、超过历史 Official Champion、历史 Git 来源核对、完整实验文档或人工审阅。
 
@@ -109,17 +109,15 @@ Main 的项目状态来自 Child/Record/Online receipt、权威共享状态及�
 
 用户指定的 Online Candidate、授权、执行和结果记录按本文 `Online Experimental Submission Policy` 处理；本地测量值不用于跨路线排序或代替官方分数。
 
-Main 完整有效要求清单见 `项目规则/执行约定.md` 的“Main 完整刷新与复述”及相邻章节。`项目规则/W4持续探索控制契约.md` 仅用于理解 W4 历史；新五路线按当前用户任务和本轮更新后的有效规则执行。摘要、context compaction、模型切换或新指令不能解除仍然有效的授权和边界。
+Main 的当前执行说明见 `项目规则/执行约定.md` 及相邻章节。新五路线按当前用户任务和本轮更新后的有效规则执行。
 
-## RULE REFRESH REQUIRED / STATE REFRESH REQUIRED
+## 状态读取
 
-每次 Main 在开始任务、resume、context compaction、reconnect、模型切换、收到新指令、派发 Child 前，以及用户状态、执行或 Planning 回复前，必须只读刷新适用规则和共享状态。规则至少包括本文件、对应角色 Skill、`项目规则/实验总则.md`、`项目规则/执行约定.md`；W4 控制文件只在核对旧路线时作为历史来源。涉及 server3、Local 或 Git 时读取对应规范。共享状态至少刷新 `技术路线/全版本记录.tsv`、`调度/当前任务.tsv`、`技术路线/路线成绩表.tsv`，必要时读取 `技术路线/技术路线图.md`。Main 优先采用最新 Route receipt、Record receipt 和正式记录；来源冲突时报告 `STATE_SYNC_GAP`，不得猜测或写入共享记录。
-
-完整重读也由 `MODEL_CHANGE`、`CONTEXT_COMPACTION`、`MAIN_RESUME`、`MAIN_RESTART`、`CHILD_RESUME`、状态回复后的新对话轮次、`USER_CONTROL_UPDATE`、`RULE_FILE_CHANGE`、`RULE_UPDATE`、`HANDOFF`、`CHILD_POOL_RECONSTRUCTION` 和主要 Git 状态重新核对触发。用户改变 Child 数量、路线分配、Revision 要求、资源规则、Main 行为、worktree、记录、Online、路线组合或生命周期时，Main 先发送变更回执；规则维护代理更新受影响的现行入口。正在运行的原子性能命令可以完成，规则维护不要求无关路线暂停。
+Main 在开始任务、恢复上下文或收到新指令时，按需读取适用规则和共享状态。W4 控制文件只在核对旧路线时作为历史来源；涉及 server3、Local 或 Git 时读取对应规范。来源冲突时报告 `STATE_SYNC_GAP`，不得猜测或写入共享记录。
 
 Main 可本地只读核对 Git、源码、实验证据和共享状态；按用户明确要求可编辑根 `AGENTS.md`，并通过现有官方提交脚本执行指定 Online。其他文件写入、Compile、Correctness、Local、NPU 和身份计算仍不属于 Main 的常规职责。本轮无需 workspace_info，工作区由本地 Git 确认。
 
-已批准 Route 内的普通下一 Revision 标记为 `NO MAIN APPROVAL REQUIRED`。同 Route 的普通版本复用当前 owner/context/branch/worktree；结束本次 Route 任务后按安全交接关闭旧 Agent，下一 Route 使用 fresh context；`Main MUST NOT MANUALLY MICRO-MANAGE EVERY REVISION`。
+Route 内的普通下一 Revision 复用当前 owner/context/branch/worktree；结束本次 Route 任务后按安全交接关闭旧 Agent，下一 Route 使用 fresh context；Main 不逐项微管理 Revision。
 
 ## PERSIST EXECUTION DISCIPLINE
 
@@ -129,16 +127,13 @@ Route 执行必须闭合为：
 ONE CHANGE → COMPILE → CORRECTNESS → LOCAL → RESULT → COMMIT → VERSION_RECORD_EVENT → NEXT CHANGE
 ```
 
-正常完成必须满足 `LOCAL SCORE REQUIRED`，并报告 numeric Local score/delta、Parent/Candidate raw samples 与 medians、shape/dtype、device、free HBM、load note 和 current best。Compile 或 Correctness 失败也必须保留证据、Git commit/status，并发送 `VERSION_RECORD_EVENT REQUIRED`。`NEXT REVISION BLOCKED UNTIL PREVIOUS EVENT EXISTS`。Record Owner 必须记录每个 `VERSION_RECORD_EVENT`，包括负结果、失败结果和非 Local Best，不得发明缺失数据。
+正常完成记录 numeric Local score/delta、Parent/Candidate raw samples 与 medians、shape/dtype、device、free HBM、load note 和 current best。Compile 或 Correctness 失败也保留证据、Git commit/status，并记录 `VERSION_RECORD_EVENT`。Record Owner 记录每个版本事件，包括负结果、失败结果和非 Local Best，不得发明缺失数据。
 
 新五路线的 Route Agent 在每个新 Revision、resume、Child restart、reconnect、context restore 或 long interruption 后，必须在 Candidate edit 前重新读取本文件、对应 Skill、`项目规则/实验总则.md`、`项目规则/执行约定.md`、`项目规则/服务器实验规范.md`、`项目规则/本地性能测试规范.md` 和 `项目规则/Git工作流程.md`，先发送 `RULE_REFRESH_RECEIPT`。W4 控制文件只用于历史研究。未收到回执不得开始新的 Candidate edit。
 
 ### MAIN_CONTINUATION_RULES
 
-- `MAIN_FINAL_GATE`：状态记录、状态回复或一次监测周期不代表本任务完成。仍有指定研究、证据、规则同步、Git 集成、worktree 处置、隔离验证或 Agent 启动事项时，不得报告任务完成。
-- `MAIN_NEXT_ACTION_REQUIREMENT`：每个 Child 事件都必须形成明确的下一步判断；仍有工作时，Main 向对应 Child 发出后续指令，不能只确认收到或汇总。
-- `MAIN_CONTEXT_RELOAD`：收到用户更新、规则更新、Main/Child 恢复、handoff、context compaction 或模型变化后，重新读取当前权威规则和共享状态，再继续执行。
-- `MAIN_SELF_DRIVING_CAMPAIGN`：Main 在当前用户授权和宿主能力范围内继续本轮五路线重建，不要求重复授权。若平台要求让出本轮，输出 `CHECKPOINT_ONLY`，保存路线、动作、阶段、回执和待办，并在下一轮从该处继续。不得创建 timer、automation、cron 或后台循环，也不得宣称宿主能无限运行。
+继续任务时记录下一步判断、路线交接和未完成事项。平台要求让出本轮时保存路线、动作、阶段、回执和待办；不得创建 timer、automation、cron 或后台循环。
 
 一次状态回复只是 `CHECKPOINT_ONLY`。只要还有本轮指定的路线研究、证据整理、规则同步、Git 集成、worktree 处置、隔离能力核验或 Agent 启动事项，Main 都继续执行下一项，不把状态回复当作任务结束。
 
@@ -158,9 +153,9 @@ ONE CHANGE → COMPILE → CORRECTNESS → LOCAL → RESULT → COMMIT → VERSI
 
 单 Revision 只表达一个小变化。失败和负结果保留。记录异步写入，不能成为实验前置条件。
 
-## server3 资源准入
+## server3 资源安全
 
-对 Compile、Correctness、Local、Profile 使用同一个准入条件：
+对 Compile、Correctness、Local、Profile 使用同一个资源条件：
 
 ```text
 目标 NPU FREE_HBM >= 100 MB → 允许立即执行
@@ -178,7 +173,7 @@ lease 只用于 coordination / bookkeeping；不得为了运行实验删除、�
 - 不杀、不暂停、不迁移其他用户进程、服务、数据或设备任务；
 - 不让多个写入者同时修改同一 Route；
 - 新建或改变 Route 按当前用户明确给出的数量与范围执行，不把旧 W4 路线状态带入新阶段；
-- Route Agent 不需批准用户指定的 Online Candidate；Online 执行按本文 `Online Experimental Submission Policy` 进行；
+- Route Agent 按用户指定的 Online Candidate 执行；Online 执行按本文 `Online Experimental Submission Policy` 进行；
 - Dashboard 只展示状态，不控制实验；不直接修改展示内容。用户明确授权调用官方提交脚本时，允许该脚本按既有行为追加提交事件；
 - 本轮用户已授权集成提交与普通推送；只提交本任务明确范围，并保留其他未提交改动。其他任务没有当前用户明确要求时不提交、不推送；
 - 未经用户明确要求，不创建 automation、scheduled task、cron、crontab、at、systemd timer、launchd timer、watchdog 或 detached sleep loop。

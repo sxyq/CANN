@@ -25,13 +25,13 @@ Route Agent source identity → Main coordination → Online Owner official subm
 - 每次只提交用户在当前任务中明确点名的 Candidate，并遵循指定顺序；未点名的 Candidate 不提交。
 - 新五路线尚未完成命名时，不自行指定路线、Official 数量或 Candidate，也不发起提交。
 - 不把 W4 的路线安排或提交总数用于新阶段。
-- 除平台、账户和运行环境实际要求外，不增设项目内部的提交前置条件。用户明确点名 Candidate 并要求提交时，不要求额外角色批准。
+- 除平台、账户和运行环境实际要求外，不增加项目内部提交条件。用户明确点名 Candidate 并要求提交时，直接处理该对象。
 
 ## 候选信息
 
 记录用户指定 Candidate 的 Route、Revision、源码身份、来源 Git commit 和文件路径，供结果追溯。相同源码身份如实记录，不以此自行扩展或减少用户指定范围。
 
-Local 数据可作为背景信息并与 Official 结果分开保存。Compile、Correctness、Local、Local Best、测量稳定性或研究进度不作为本项目另设的提交前置条件。
+Local 数据作为背景信息并与 Official 结果分开保存。Compile、Correctness、Local、Local Best、测量稳定性和研究进度不改变用户已指定对象的提交范围。
 
 ## 提交流程
 
