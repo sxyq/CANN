@@ -52,13 +52,21 @@ UNRESOLVED_SYMBOL_PROBE=nm -u on device.cpp.o, device.alink and submission.alink
 
 ## Device And Local Results
 
+DEVICE_ID=3
 DEVICE_RUN=NONE
 CORRECTNESS=NONE
+CORRECTNESS_STATUS=NOT_RUN
+CORRECTNESS_REASON=The no-reset FP32 probe targets were not produced. Attempt 3 configured with RC=0 but target build returned RC=2 because ASC registration compilation could not find `vector`.
 LOCAL_SCORE=NONE
-DEVICE_REASON=NPU 2/3 were reserved for N01/N02 and NPU 4/5/6/7 had other users; no device execution was started.
-NO_RESET_SCRIPT=YES
-EVIDENCE_LOG=本地实验/N04-GM-CACHE-STREAMING-X/V002/compile-v002.log
+LOCAL_REASON=No executable and no timing sample.
+DEVICE_REASON=No device program was started; NPU3 was sampled read-only before and after the failed build.
+DEVICE_PRE=HBM 3428/65536 MB (5%); AICore 0%; no running process.
+DEVICE_POST=HBM 3428/65536 MB (5%); AICore 0%; no running process.
+NO_RESET_SOURCE=YES
+NO_RESET_BINARY=NOT_BUILT
+EVIDENCE_LOG=本地实验/N04-GM-CACHE-STREAMING-X/V002/CORRECTNESS-NPU3.md
+RAW_LOGS=本地实验/N04-GM-CACHE-STREAMING-X/V002/correctness-v001-npu3-attempt1.log; 本地实验/N04-GM-CACHE-STREAMING-X/V002/correctness-v001-npu3-attempt2-config-missing-runtime-v016.log; 本地实验/N04-GM-CACHE-STREAMING-X/V002/correctness-v001-npu3-attempt3.log; 本地实验/N04-GM-CACHE-STREAMING-X/V002/npu3-closeout.log
 
 ## Next
 
-When a dedicated N04 device is available, use the existing V016 correctness and local entry with the V002 build artifacts. Do not add a Runner or alter Candidate.asc.
+Preserve the build failure. Do not add a Runner or alter Candidate.asc.
