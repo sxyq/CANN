@@ -11,6 +11,10 @@ R5_TOOLING_OWNER = CANONICAL TOOLING OWNER (NAME UNCONFIRMED)
 OWNER_ACK = UNCONFIRMED (no Owner commit or acceptance receipt)
 ORIGINAL_BLOCKER = EXISTING_CANONICAL_RUNNER_CANNOT_REGISTER_THE_FROZEN_KERNEL
 ORIGINAL_BLOCKER_REVISION = 4442c95e
+REQUEST_SCOPE = ONE_EXISTING_BACKEND_SELECTOR_ADAPTER_CHANGE; NO_SECOND_REQUEST
+RESPONSIBLE_OWNER_ROLE = CANONICAL TOOLING/INTEGRATION OWNER
+RESPONSIBLE_OWNER_NAME = UNCONFIRMED / MUST_BE_NAMED_IN_ACK
+SELECTED_BACKEND = NONE
 ```
 
 ## Delivery and acknowledgement status
@@ -34,6 +38,7 @@ SOURCE_SHA256 = a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
 TOOLING = /home/data4t2/lelinfeng/cann-tooling-runner/工具/route-runner/route-runner/build_server3.sh
 CANN = 8.5.T8.0.B060
 ASCENDC_ARCH = dav-2201
+FIXTURE_ROLE = CONTRACT_ONLY; NOT_R5_DONOR; NOT_CANDIDATE; NO_PERFORMANCE_USE
 ```
 
 ## Confirmed compatibility boundary
@@ -109,6 +114,49 @@ historical path therefore does not prove that the current shared ASC plugin
 registration contract accepts the source. Reusing that path would violate the
 single-Runner requirement and is explicitly out of scope.
 
+## Precise selector/adapter request from the public V016 contract
+
+The public V016 materials establish a successful **R31B-source-bound build**,
+not a reusable R5 backend: its CMake uses R31B-specific source directories,
+its wrapper includes fixed R31B kernel basenames, and its target is the
+standalone `paired_runner_v016`. The success receipt also records compile/link
+only; correctness and timing were not run. R5 must not copy that wrapper,
+rename R5 files to its include names, use R31B kernel bytes as a donor, or
+start that standalone target.
+
+The single existing control layer needs one Owner-side selector/adapter change
+with this minimum semantic interface:
+
+1. The existing selector chooses exactly one backend for a run and reports its
+   backend identity. The direct backend, if selected, is an implementation
+   behind the existing control/timing entry; it is not a second CLI, Runner,
+   score evaluator, fallback chain, or active execution path.
+2. The selected adapter consumes the existing caller-supplied
+   `RUNNER_PARENT_SOURCE`, `RUNNER_CANDIDATE_SOURCE`, their expected SHA-256
+   values, `RUNNER_ASCENDC_ARCH`, and `RUNNER_BUILD_DIR`. It must not replace
+   these with `R31B_V011_SOURCE_DIR`, `R31B_V016_SOURCE_DIR`, fixed R31B include
+   basenames, or an untracked source copy.
+3. The adapter preserves the existing role ABI and control semantics:
+   `run_kernel_parent` and `run_kernel_candidate`, each with five GM
+   arguments, five `TensorGroupInfo` arguments, `int64_t availableCoreNum`,
+   `aclrtStream`, and `float epsilon`. A direct translation unit may implement
+   the internal symbol mapping, but the existing control layer must call both
+   roles through the same interface.
+4. The adapter returns the one selected backend artifact through the existing
+   control layer and extends the existing identity record, if needed, with
+   backend name, exact source paths/SHA-256 values, target architecture, build
+   command, and artifact SHA-256. It must not invent a parallel identity format.
+5. Correctness, generated-instruction inspection, and device-event timing stay
+   separate stages. Backend selection/build must not create a Vector Candidate,
+   start a microprobe, or change the ILP experiment's dtype, operation count,
+   memory traffic, synchronization, shape, or timing boundary.
+
+This is one request to the existing Tooling/Integration Owner. It asks for a
+route-agnostic adapter behind the unique control layer; it does not authorize
+R5 to modify shared tooling. The Owner must choose either this direct adapter
+or the shared-ASC registration repair and provide one acceptance receipt, not
+both.
+
 ## Minimal repair scope
 
 Change only the existing canonical `route-runner` registration/build boundary
@@ -139,6 +187,12 @@ frozen source supplied for both Parent and Candidate:
 5. The accepted source can then be handed back to R05 for separate correctness
    and generated-instruction checks before any ILP microprobe.
 
+For the direct-adapter option, additionally require that the acceptance log
+shows the selector choosing exactly one backend while consuming caller-supplied
+source paths rather than fixed R31B paths, and that the adapter exposes the
+same Parent/Candidate role calls to the existing driver. No R5 Candidate or
+R31B kernel donor is needed or permitted for this contract request.
+
 The final acceptance step must not be interpreted as a performance result.
 Until it passes, R05 remains `FEASIBILITY_UNPROVEN`; correctness, generated
 instructions, timing, score, Online submission, and Champion migration remain
@@ -149,6 +203,10 @@ instructions, timing, score, Online submission, and Champion migration remain
 ```text
 CLASSIFICATION = FEASIBILITY_UNPROVEN
 BLOCKER = EXISTING_CANONICAL_RUNNER_CANNOT_REGISTER_THE_FROZEN_KERNEL
+ADAPTER_BLOCKER = SHARED_BACKEND_SELECTOR_AND_ROUTE_AGNOSTIC_ADAPTER_NOT_ACCEPTED
+OWNER = CANONICAL TOOLING/INTEGRATION OWNER (NAME UNCONFIRMED)
+OWNER_COMMIT = NONE
+ACCEPTED_BACKEND = NONE
 CANDIDATE_EDIT = NONE
 MICROPROBE = NOT_RUN
 PERFORMANCE_INFERENCE = NONE
