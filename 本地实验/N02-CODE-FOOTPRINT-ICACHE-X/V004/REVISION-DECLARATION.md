@@ -34,5 +34,5 @@ NEGATIVE_RESULT=V001, V003, and V004 standalone kernel artifacts are byte-identi
 STOP_NOINLINE_VARIANTS=YES; stop adding repeated inline/noinline attributes on this standalone build path.
 RESULT=FROMFLOAT_NOINLINE_COMPILED; STANDALONE_CODEGEN_EQUAL; PAIRED_RUNNER_DIFFERENCE_RECORDED_ONLY; NO_RUNTIME_RESULT
 PERFORMANCE_CLAIM=NONE
-GIT_COMMIT=TO_BE_RECORDED
+GIT_COMMIT=a3215a5b2edb6da2e080afef339dc0eff74c69d9
 NEXT_ACTION=Stop repeated noinline variants; do not infer kernel performance from paired runner size.
