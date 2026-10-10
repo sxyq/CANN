@@ -127,7 +127,7 @@ Shape class inference basis: absolute time magnitude + ratio pattern. Tiny kerne
 | SEQ-FUSE-2 (inline reciprocal) | **OPEN** | 7, 6, 4, 8 | Broadest applicability; needs Div accuracy probe |
 | EPI-FUSE-1 (gamma-scaled fusion) | **OPEN** | 14, 6, 8 | Multi-tile only; neutral on single-tile |
 | EPI-PIPE-3 (epilogue/prologue overlap) | **OPEN** | 7, 8, 6 | High complexity; buffer aliasing risk |
-| STORE-H2B (writeback merge) | **OPEN** (spec ready) | 14, 8 | Reduces store descriptors; Main approval pending |
+| STORE-H2B (writeback merge) | **OPEN** (spec ready) | 14, 8 | Reduces store descriptors; 待主线讨论 |
 | COEFF-LOCALITY (param prefetch/residency) | **BLOCKED** | — | H1 +6.6% regression, H2 failed |
 | Reduction variants | **BLOCKED** | — | 3 variants failed on this parent |
 | Mode/wide/dtype changes | **MAIN-1 / out of scope** | — | Forbidden in current lanes |
@@ -137,7 +137,7 @@ Shape class inference basis: absolute time magnitude + ratio pattern. Tiny kerne
 
 ---
 
-## Highest-ROI remaining MAIN-2 mechanism after STORE-H2B-GATED
+## Highest-ROI remaining MAIN-2 mechanism after STORE-H2B
 
 **Recommendation: SEQ-FUSE-2 (INLINE-RECIPROCAL DENOMINATOR)**
 
