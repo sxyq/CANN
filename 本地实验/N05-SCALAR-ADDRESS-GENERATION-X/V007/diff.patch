@@ -1,0 +1,49 @@
+--- V006/submission.asc
++++ V007/submission.asc
+@@ -3244,15 +3244,19 @@
+             // at a row boundary, preserving the existing flattened stream.
+             WideLowPrecisionCursor inputCursor(batchBegin, batchRows, rowWidth,
+                                                tileWidth, tileCount);
++            // V007: the retained-y storage is one contiguous row-major stream.
++            // Carry its local element offset by the actual tile span instead
++            // of rebuilding the row and column product for every tile.
++            uint64_t retainedStreamOffset = 0;
+             bool relA = false;
+             bool relB = false;
+             for (; inputCursor.HasNext(); inputCursor.Advance()) {
+                 const int32_t u = inputCursor.UnitIndex();
+                 const int32_t batchRow = inputCursor.BatchRowIndex();
+                 const int32_t tile = inputCursor.TileIndex();
+-                const uint64_t col = inputCursor.Column();
+                 const uint64_t gmOffset = inputCursor.InputOffset();
+                 const int32_t valid = inputCursor.Valid();
++                const uint64_t retainedOffset = retainedStreamOffset;
+                 const bool useA = (u & 1) == 0;
+                 AscendC::LocalTensor<T> xLocal = useA ? xBase : xBase[tileWidth];
+                 AscendC::LocalTensor<T> residualLocal =
+@@ -3293,7 +3297,7 @@
+                 if constexpr (std::is_same<T, half>::value) {
+                     AscendC::LocalTensor<half> yStore = gammaBuf_.Get<half>();
+                     AscendC::LocalTensor<half> yTile =
+-                        yStore[batchRow * rowWidth + col];
++                        yStore[retainedOffset];
+                     AscendC::Add(xLocal, xLocal, residualLocal, valid);
+                     AscendC::PipeBarrier<PIPE_V>();
+                     AscendC::Muls(yTile, xLocal, half(1.0f), valid);
+@@ -3307,7 +3311,7 @@
+                         residualFp32, valid);
+                 } else {
+                     AscendC::LocalTensor<float> valueTile =
+-                        valueFp32[batchRow * rowWidth + col];
++                        valueFp32[retainedOffset];
+                     ToFloat(xFp32, xLocal, valid);
+                     ToFloat(residualFp32, residualLocal, valid);
+                     AscendC::PipeBarrier<PIPE_V>();
+@@ -3325,6 +3329,7 @@
+                 } else {
+                     relB = true;
+                 }
++                retainedStreamOffset += static_cast<uint64_t>(valid);
+             }
+             if (relA) {
+                 AscendC::WaitFlag<AscendC::HardEvent::V_MTE2>(rel0);
