@@ -21,8 +21,9 @@ shape predicates, arithmetic, DMA calls, event operations and synchronization
 calls are unchanged. This is a compiler-supported call-layout factor and is
 independent of the stopped noinline and source-definition-order variants.
 
-SOURCE_PARENT_PATH=V004/submission.asc
-SOURCE_PARENT_SHA256=75aef181ceb2822c69fb32107b6cc20ac4dcc88d13a1fd727bb7755785314f2d
+SOURCE_PARENT_COMMIT=ca28605bcf1fed9a9c43706f881d6c322f902c75
+SOURCE_PARENT_PATH=V008/submission.asc
+SOURCE_PARENT_SHA256=4a2788e57efe4a0019a68928fec2faaa26642a5e3a56e1ea103a0e19ad5fc1b2
 SOURCE_CANDIDATE_PATH=V011/submission.asc
 SOURCE_CANDIDATE_SHA256=cb1a8b0d0742a3427a0f5ccf7aa4619be5a2d60af5f82321bbe86fb34785c388
 SOURCE_PARENT_BYTES=190077
