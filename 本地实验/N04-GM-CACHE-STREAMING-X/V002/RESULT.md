@@ -48,9 +48,17 @@ Compile evidence: `本地实验/N04-GM-CACHE-STREAMING-X/V002/compile-v002.log`.
 
 DEVICE_RUN=NONE
 CORRECTNESS=NONE
+CORRECTNESS_STATUS=NOT_RUN
+CORRECTNESS_REASON=The existing V016 FP32 probe build failed before either Candidate or Parent could start. Attempt 3 returned BUILD_RC=2 with fatal error: 'vector' file not found.
 LOCAL_SCORE=NONE
-DEVICE_REASON=NPU 2/3 are reserved for N01/N02; NPU 4/5/6/7 have other users. No device program was started.
+LOCAL_REASON=No executable and no timing sample.
+DEVICE_ID=3
+DEVICE_REASON=No device program was started; NPU3 was sampled read-only before and after the failed build.
+DEVICE_PRE=HBM 3428/65536 MB (5%); AICore 0%; no running process.
+DEVICE_POST=HBM 3428/65536 MB (5%); AICore 0%; no running process.
+NO_RESET_BINARY=NOT_BUILT
+EVIDENCE=CORRECTNESS-NPU3.md; correctness-v001-npu3-attempt1.log; correctness-v001-npu3-attempt2-config-missing-runtime-v016.log; correctness-v001-npu3-attempt3.log; npu3-closeout.log
 
 ## Next
 
-Run correctness and Local with the existing V016 entry when a dedicated N04 NPU is available. Keep Candidate unchanged and do not add a Runner.
+Preserve the build failure. Do not add a Runner or alter Candidate.asc.
