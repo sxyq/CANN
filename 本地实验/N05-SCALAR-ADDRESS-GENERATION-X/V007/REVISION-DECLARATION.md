@@ -22,9 +22,21 @@ PARENT_REVISION=V006
 ROUTE_MECHANISM=ProcessWideLowPrecision scalar address generation
 EXCLUDED_MECHANISMS=V001 flat-unit decode; V003 output-row carry; V004 WideLowPrecisionCursor; V005 duplicate proposal; V006 Pass2 valid-length parameter carry; N01 register lifetime; N02 code layout/inline; N03 vector instruction scheduling; N04 GM/L2 access policy
 SCOPE=Only the N05 worktree and branch; no other Route worktree or branch
-EXECUTION_LIMIT=V007 source audit and existing V016 standalone Compile; no device run in this source-screening close; no new Runner; no aclrtResetDevice; no push
+EXECUTION_LIMIT=V007 source audit, existing V016 standalone Compile, and NPU5-only Correctness/Local through a temporary no-reset copy; no new formal Runner; no aclrtResetDevice; no push
 RULES_READ=AGENTS.md;.agents/skills/cann-route-executor/SKILL.md;项目规则/服务器实验规范.md;项目规则/Git工作流程.md;项目规则/本地性能测试规范.md;~/.agent-global/environment.md
 HISTORY_READ=V004/diff.patch;V004/REVISION-DECLARATION.md;V006/diff.patch;V006/REVISION-DECLARATION.md;V005/DUPLICATE-KNOWN-PARENT.md
+
+## RULE_REFRESH_RECEIPT_CURRENT_RUN
+
+CURRENT_HEAD=697535db3c913671f78844a27915291ce30877a0
+CURRENT_BRANCH=route/n05-scalar-address-generation-x
+CURRENT_WORKTREE=/Users/sunyiyang/Desktop/Project/cann/worktrees/n05-scalar-address-generation
+CURRENT_SCOPE=Only this N05 worktree, branch, existing V016 input, and NPU5
+CURRENT_CANDIDATE_SOURCE_SHA256=be089220d95db821bd2042d8ae42ff6dd6db4f996fe1e7aa5173bd4a5ce05d0d
+CURRENT_ENTRY=existing V016 paired entry copied temporarily with device=5 and reset call removed
+CURRENT_TEMP_ENTRY_SOURCE_SHA256=98338315ac52595cbd705e5c1b1f411462e3aed0569fc9d06d759650ea4cbe72
+CURRENT_FORMAL_RUNNER_CREATED=NO
+CURRENT_RESET_DEVICE_EXECUTION=NONE
 
 ## Source audit
 
@@ -51,9 +63,13 @@ ROW_CORE_OWNERSHIP_CHANGED=NO
 
 ## Validation state
 
-COMPILE=PASS; device/submission/full_link
-CORRECTNESS=NOT_RUN
-LOCAL_SCORE=NONE
-DEVICE_ID=5; device execution was not started in this source-screening close
-RUNNER=NONE_CREATED
+COMPILE=PASS; device/submission/full_link; existing V007 evidence reused
+CORRECTNESS=PASS; four cases; V011/V016 failures=0
+LOCAL_EXECUTION=PASS; four cases; 21 paired samples per case
+LOCAL_SCORE=NONE; VLLM load and high outlier dispersion
+DEVICE_ID=5
+RUNTIME_LOG=runtime-run-npu5.log
+ENTRY_AUDIT=runtime-entry-audit.log
+RUNNER=TEMPORARY_NO_RESET_COPY_OF_EXISTING_V016_ENTRY; formal runner not created
+RUNTIME_FAILURE=NONE; no OOM or runtime error
 PUSH=NO
