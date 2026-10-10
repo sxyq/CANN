@@ -5,7 +5,7 @@
 #
 # 本文件不判断 AICore utilization、Vector/Core busy、VLLM、其他用户进程、
 # device idle、system load、lease 或 exclusive authorization。
-# 这些事实只作为测量上下文记录，不是执行 Gate。
+# 这些事实只作为测量上下文记录。
 # lease 只是 coordination / bookkeeping metadata，不是执行权限。
 
 MIN_FREE_HBM_MB=100
@@ -54,7 +54,7 @@ record_load_context() {
     npu-smi info -t usages -i "${device_id}" 2>/dev/null || true
     printf 'OTHER_PROCESS_PRESENT=%s\n' \
         "$(ps -eo args= 2>/dev/null | grep -E '[Vv][Ll][Ll][Mm]|EngineCore' | grep -v grep >/dev/null && echo YES || echo NO)"
-    printf 'LOAD_NOTE=measurement context only, not an admission gate\n'
+    printf 'LOAD_NOTE=measurement context only\n'
 }
 
 # 作为脚本 source 时不自动执行。

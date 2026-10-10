@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
 import { spawnSync } from "node:child_process";
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { appendFile, mkdir, readFile, writeFile } from "node:fs/promises";
 import { createInterface } from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
 import { resolve } from "node:path";
@@ -19,6 +19,35 @@ const DEFAULT_PROFILE = resolve(
 const DEFAULT_INTERVAL_MS = 2000;
 const DEFAULT_MAX_WAIT_MS = 30 * 60 * 1000;
 const REQUEST_TIMEOUT_MS = 15000;
+const DASHBOARD_EVENTS_PATH = resolve(PROJECT_ROOT, "归档/任务看板/submit-events.tsv");
+
+function dashboardSubmissionContext(source) {
+  const projectPrefix = PROJECT_ROOT.replaceAll("\\", "/") + "/";
+  const relative = source.path.replaceAll("\\", "/").replace(projectPrefix, "");
+  const match = relative.match(/(?:^|\/)([^/]+)\/(V\d{3})(?:\/|$)/);
+  return match ? { route: match[1], revision: match[2] } : { route: "UNKNOWN", revision: "UNKNOWN" };
+}
+
+async function recordDashboardSubmissionEvent(event) {
+  const fields = [
+    new Date().toISOString(),
+    event.runId || "",
+    event.event || "",
+    event.route || "",
+    event.revision || "",
+    event.sourceSha || "",
+    event.submissionId || "",
+    event.status || "",
+    event.passCount ?? "",
+    event.officialScore ?? "",
+    event.detail || ""
+  ].map((value) => String(value).replace(/[\t\r\n]/g, " "));
+  try {
+    await appendFile(DASHBOARD_EVENTS_PATH, fields.join("\t") + "\n", "utf8");
+  } catch (error) {
+    console.error("Dashboard event log unavailable: " + (error?.message || error));
+  }
+}
 
 function printHelp() {
   console.log(`Usage:
@@ -598,6 +627,14 @@ async function poll(page, problemId, submissionId, source, options) {
     if (status !== lastStatus) {
       console.log(`[CANNJudge] status=${status || "waiting"}`);
       lastStatus = status;
+      await recordDashboardSubmissionEvent({
+        runId: options.dashboardRunId,
+        event: "STATUS_CHANGE",
+        ...options.dashboardContext,
+        sourceSha: sourceSummary(source).sha256,
+        submissionId,
+        status
+      });
     }
     if (isTerminal(status)) {
       let officialScore = null;
@@ -634,6 +671,8 @@ async function submit(options) {
   const preview = sourceSummary(source);
   const identity = verifyLocalIdentity(source, preview);
   options.identity = identity;
+  options.dashboardRunId = randomUUID();
+  options.dashboardContext = dashboardSubmissionContext(source);
   if (options.json) {
     console.log(JSON.stringify({ phase: "preflight", ...preview, identity }, null, 2));
   } else {
@@ -650,6 +689,8 @@ async function submit(options) {
   if (options.dryRun) return;
 
   const session = await openBrowser(options, { headed: options.headed });
+  let submissionStarted = false;
+  let submissionId = "";
   try {
     await openSubmitPage(session.page);
     const user = await getStoredUser(session.page);
@@ -667,11 +708,38 @@ async function submit(options) {
       userId: user._id
     };
     console.log(`Submitting one request for problem ${problemId}...`);
+    submissionStarted = true;
+    await recordDashboardSubmissionEvent({
+      runId: options.dashboardRunId,
+      event: "SUBMIT_START",
+      ...options.dashboardContext,
+      sourceSha: preview.sha256,
+      status: "REQUEST_SENT"
+    });
     const response = await pageApi(session.page, "/api/submissions/submit", { method: "POST", data: payload });
-    const submissionId = String(response?.data?.submissionId || response?.submissionId || "").trim();
+    submissionId = String(response?.data?.submissionId || response?.submissionId || "").trim();
     if (!submissionId) throw new Error("Submission response did not contain submissionId");
     console.log(`submissionId=${submissionId}`);
+    await recordDashboardSubmissionEvent({
+      runId: options.dashboardRunId,
+      event: "SUBMISSION_ACCEPTED",
+      ...options.dashboardContext,
+      sourceSha: preview.sha256,
+      submissionId,
+      status: "WAITING"
+    });
     const result = await poll(session.page, problemId, submissionId, source, options);
+    await recordDashboardSubmissionEvent({
+      runId: options.dashboardRunId,
+      event: "SUBMIT_RESULT",
+      ...options.dashboardContext,
+      sourceSha: preview.sha256,
+      submissionId,
+      status: result.status,
+      passCount: result.passCount,
+      officialScore: result.officialScore,
+      detail: result.identity?.identityStatus
+    });
     if (options.out) {
       await mkdir(resolve(options.out, ".."), { recursive: true });
       await writeFile(options.out, `${JSON.stringify(result, null, 2)}\n`, "utf8");
@@ -693,6 +761,19 @@ async function submit(options) {
       }
     }
     if (result.identity?.formalResultEligible === false) process.exitCode = Math.max(process.exitCode || 0, 3);
+  } catch (error) {
+    if (submissionStarted) {
+      await recordDashboardSubmissionEvent({
+        runId: options.dashboardRunId,
+        event: "SUBMIT_ERROR",
+        ...options.dashboardContext,
+        sourceSha: preview.sha256,
+        submissionId,
+        status: submissionId ? "INTERRUPTED_OR_FAILED" : "REQUEST_FAILED",
+        detail: error?.message || error
+      });
+    }
+    throw error;
   } finally {
     await session.close();
   }

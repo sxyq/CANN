@@ -52,3 +52,17 @@
 Overall Champion 仍为正式记录中的 `R31B V011 / 45.16 / 15/15`，Submission ID 为 `6ab2c10c0304f72a56a0c5cb`，证据为 `线上结果/R31B/V011/result.json`。本归档不改变任何 Champion、历史 Revision 证据或 Main-1 worktree。
 
 W4 的机制总结、失败原因和证据路径见 `W4技术总结.md`。
+
+## 远端分支补充证据
+
+五个旧路线分支在服务器工作树退役后各保留了一次已推送的证据提交。本轮从这些提交中只整合可直接追溯的结果、失败说明和少量运行记录；构建目录、二进制 fixture 和重复源码仍留在远端分支或已有唯一源码归档中。
+
+| 路线 | 远端提交 | 主线补充内容 |
+|---|---|---|
+| `MODE-DISPATCH-CUTOFF-X` | `385d835f911ef8d92f93dfb71c9282c83bcd1d76` | V111 partial-ranking 原始命令记录和源码身份记录 |
+| `ALIGNED-TAIL-DATACOPY-X` | `da7746058ebed571c0d4a785995f19db7225e839` | Parent runner 诊断、重复输出失败证据和 paired runner 脚本 |
+| `SYNC-BARRIER-ELISION-X` | `ee4e25a59d28fd97757f6e63996e6c94a5cd7a29` | V081 Compile、Correctness、Local 原始结果及失败/噪声说明 |
+| `ROW-SCALE-HOIST-X` | `fb504b2c51cc0f6bc9cc0435b93d3c873e816962` | V051 声明、Compile/Correctness/Local 结果、源码身份和差异记录 |
+| `STAGING-LIVENESS-X` | `3253bd52e04ec2267e22fbf0785f6fda38776680` | V034 Compile、Correctness 失败和复测结论 |
+
+这些补充路径及原始提交映射见 `索引/incremental-source-audit-20261009.tsv` 的 `MAINLINE_EVIDENCE_INTEGRATED` 行。它们不改变 W4 路线退役状态，也不产生新性能版本。

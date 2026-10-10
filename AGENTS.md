@@ -6,6 +6,22 @@ W4 的 15 条路线已在证据归档后退役。当前成绩表记录了 26 次
 
 当前任务按最新用户指令重建五条路线。N01-N04 仍需源码去重核验，N05 的替代方向尚待研究结果；此处不预先登记路线名、Candidate 或实验成绩。W4 的研究、成绩和工作树记录只作历史证据。
 
+## 当前唯一活动路线：N01-N05
+
+当前唯一活动路线固定为：
+
+- `N01 REGISTER-LIVE-RANGE-X`：研究宽行 Vector 临时 FP32 值的寄存器生命周期，首版聚焦 `ProcessWideLowPrecision` 与 `ProcessWideFp32FullCacheRows` 的定义、最后使用和复用位置。
+- `N02 CODE-FOOTPRINT-ICACHE-X`：研究融合内核热点代码体积与指令取指，首版只比较辅助函数的 inline/noinline 与布局变化，不重复模式分派。
+- `N03 VECTOR-ILP-DUALCHAIN-X`：研究 Vector 独立操作的指令级并行，保持算术、访存、同步和计算量不变，复用现有可工作的构建入口。
+- `N04 GM-CACHE-STREAMING-X`：研究大工作集 GM/L2 访问策略，首版使用已确认可用的 `SetL2CacheHint` 做单因素比较，不调整参数驻留、DMA 描述符或跨行预取。
+- `N05 SCALAR-ADDRESS-GENERATION-X`：研究 `ProcessWideLowPrecision` 的 Scalar 地址生成，使用递增索引与行列进位减少可避免的整除和重复地址计算，保持 Tile 顺序、算术和 DMA 语义。
+
+五条路线均以 `R31B V011 / Official 45.16` 作为性能对照。W2、W3、W4 只作为历史研究资料，不再进入当前活动路线池。
+
+Main 负责协调、跨路线去重和状态汇总；Route Agent 负责自己的源码、真实 Compile、Correctness、Local、结果保存和版本提交。每条路线固定为 `1 Route = 1 Agent = 1 Context = 1 Branch = 1 Local Worktree`。Agent 只能在自己的本地工作树和明确授权的公共只读资料中读取、修改和提交，禁止读取其他 Route 的工作树、分支源码或未公开实验；跨路线比较由 Main 使用授权的只读审计完成。
+
+五条路线的主要优化机制不得重叠。完整源码相似度和有效修改相似度目标均不超过 80%，必须报告真实数据，不得通过变量改名、格式变化、注释或无意义重写制造差异。当前任务不恢复任何已取消的额外 Official 提交条件，不新增调度器、审批系统、Dashboard、常驻隔离工程或重复等待。普通 Route Revision 无需 Main 重新批准；任务恢复或规则变化时仍按现行规则刷新。
+
 本仓库服务于 2026 CANN 挑战赛西南赛区 `AddRmsNormBias`。正式主线在仓库根目录；`归档/` 只保存历史资料，不承担当前执行入口。
 
 ## 规则优先级
@@ -124,7 +140,7 @@ ONE CHANGE → COMPILE → CORRECTNESS → LOCAL → RESULT → COMMIT → VERSI
 - `MAIN_CONTEXT_RELOAD`：收到用户更新、规则更新、Main/Child 恢复、handoff、context compaction 或模型变化后，重新读取当前权威规则和共享状态，再继续执行。
 - `MAIN_SELF_DRIVING_CAMPAIGN`：Main 在当前用户授权和宿主能力范围内继续本轮五路线重建，不要求重复授权。若平台要求让出本轮，输出 `CHECKPOINT_ONLY`，保存路线、动作、阶段、回执和待办，并在下一轮从该处继续。不得创建 timer、automation、cron 或后台循环，也不得宣称宿主能无限运行。
 
-一次状态回复只是 `CHECKPOINT_ONLY`。只要还有本轮指定的路线研究、证据整理、规则同步、Git 集成、工作树处置、隔离能力核验或 Agent 启动事项，Main 都继续执行下一项，不把状态回复当作任务结束。
+一次状态回复只是 `CHECKPOINT_ONLY`。只要还有本轮指定的路线研究、证据整理、规则同步、Git 集成、worktree 处置、隔离能力核验或 Agent 启动事项，Main 都继续执行下一项，不把状态回复当作任务结束。
 
 ## Route ownership
 

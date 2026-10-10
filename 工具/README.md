@@ -10,7 +10,7 @@ DEVICE="$(choose_eligible_device 0 1 2 3 4 5 6 7)" || echo "所有可用 NPU FRE
 record_load_context "${DEVICE}"
 ```
 
-`FREE_HBM >= 100 MB` 时，Compile、Correctness、Local、Profile 均允许立即执行。AICore utilization、VLLM、其他用户进程、device 非 idle、system load、lease 和 exclusive authorization 都不是执行 Gate；`record_load_context` 只记录这些事实。
+`FREE_HBM >= 100 MB` 时，Compile、Correctness、Local、Profile 均允许立即执行。AICore utilization、VLLM、其他用户进程、device 非 idle、system load、lease 和 exclusive authorization 只作为上下文记录；`record_load_context` 保存这些事实。
 
 lease 只是协调元数据，不是执行权限。不得为了运行实验删除、覆盖、伪造或重写他人的 lease。
 
@@ -55,7 +55,6 @@ npm run cannjudge:submit -- --yes
 ## 只读查询
 
 ```bash
-python3 脚本/cannjudge.py preflight <path>
 python3 脚本/cannjudge.py poll <submissionId> --once
 python3 脚本/cannjudge.py problem
 ```
