@@ -246,3 +246,20 @@ NEXT_ACTION=OWNER_ACK_AND_ROUTE_AWARE_EXISTING_BACKEND_BINDING
 BLOCKER=NO_R2_CANDIDATE_OR_ARTIFACT; NO_ROUTE_AWARE_BACKEND_CONTRACT;
          NO_RECORD_BACKEND; NO_CANDIDATE_PATCH_FOR_DEDUP
 ```
+
+### Request transport receipt
+
+```text
+REQUEST_COMMIT=1c3b35a3a63a6dee937af20fff7e4d33ea755e72
+PUSH_COMMAND=git push origin research/w5-r02-register-spill
+PUSH_ATTEMPTS=1
+PUSH_STATUS=FAILED
+PUSH_ERROR=fatal: unable to access 'https://github.com/sxyq/CANN.git/': Failed to connect to github.com port 443 after 129660 ms: Connection timed out
+REMOTE_REF=refs/heads/research/w5-r02-register-spill
+REMOTE_SHA_AT_READ_ONLY_CHECK=5008dab25507d211b83a20a4acc99e337f3761a3
+REQUEST_UPDATE_REACHED_REMOTE=NO
+RETRY=NOT_ATTEMPTED
+```
+
+The request is retained locally on the existing R2 branch. No alternate
+transport, credentials, TLS setting, or remote was used.
