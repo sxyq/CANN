@@ -1,0 +1,22 @@
+--- 本地实验/N03-VECTOR-ILP-DUALCHAIN-X/V009/submission.asc	2026-10-11 04:23:28
++++ 本地实验/N03-VECTOR-ILP-DUALCHAIN-X/V010/submission.asc	2026-10-11 05:05:52
+@@ -3179,14 +3179,14 @@
+                         yStore[batchRow * rowWidth + col];
+                     AscendC::Add(xLocal, xLocal, residualLocal, valid);
+                     AscendC::PipeBarrier<PIPE_V>();
+-                    // V009 FP16 Pass 1: issue the independent widen before
+-                    // the retained half copy; both operations read xLocal
+-                    // and keep their original Vector barriers.
++                    // V010 FP16 Pass 1: issue the widened square before the
++                    // retained half copy.  Mul reads the widened tile while
++                    // Muls reads xLocal; both retain their Vector barriers.
+                     ToFloat(valueFp32, xLocal, valid);
+-                    AscendC::PipeBarrier<PIPE_V>();
+-                    AscendC::Muls(yTile, xLocal, half(1.0f), valid);
+                     AscendC::PipeBarrier<PIPE_V>();
+                     AscendC::Mul(xFp32, valueFp32, valueFp32, valid);
++                    AscendC::PipeBarrier<PIPE_V>();
++                    AscendC::Muls(yTile, xLocal, half(1.0f), valid);
+                     AscendC::PipeBarrier<PIPE_V>();
+                     AscendC::ReduceSum(
+                         reduceLocal[batchRow * reduceStride + tile], xFp32,
