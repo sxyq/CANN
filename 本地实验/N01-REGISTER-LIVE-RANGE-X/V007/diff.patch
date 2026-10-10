@@ -1,0 +1,16 @@
+--- a/本地实验/N01-REGISTER-LIVE-RANGE-X/V006/submission.asc
++++ b/本地实验/N01-REGISTER-LIVE-RANGE-X/V007/submission.asc
+@@ -2156,10 +2156,10 @@
+                     meanSquare = squareSum * invRowWidth + epsilon;
+                 }
+                 {
+-                    // The row's reduction partials are dead after GetValue(0);
+-                    // reuse their first FP32 slot for the normalization value.
++                    // xBuf_ is dead after the reduction scalar read and before
++                    // the parameter pass; reuse its FP32 staging vector here.
+                     AscendC::LocalTensor<float> normalizationValue =
+-                        reduceLocal[batchRow * kWideFullYReduceStride];
++                        xBuf_.Get<float>();
+                     SyncSToV();
+                     AscendC::Duplicate(normalizationValue, meanSquare, 1);
+                     AscendC::Sqrt(normalizationValue, normalizationValue, 1);
