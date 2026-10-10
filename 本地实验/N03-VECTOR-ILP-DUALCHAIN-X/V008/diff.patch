@@ -1,0 +1,45 @@
+diff --git "a/\346\234\254\345\234\260\345\256\236\351\252\214/N03-VECTOR-ILP-DUALCHAIN-X/V007/submission.asc" "b/\346\234\254\345\234\260\345\256\236\351\252\214/N03-VECTOR-ILP-DUALCHAIN-X/V008/submission.asc"
+index dfb3ab12..2d79585f 100644
+--- "a/\346\234\254\345\234\260\345\256\236\351\252\214/N03-VECTOR-ILP-DUALCHAIN-X/V007/submission.asc"
++++ "b/\346\234\254\345\234\260\345\256\236\351\252\214/N03-VECTOR-ILP-DUALCHAIN-X/V008/submission.asc"
+@@ -3356,12 +3356,10 @@ private:
+                 }
+                 if constexpr (!std::is_same<T, half>::value) {
+                     if (batchRows == 2) {
+-                        // V006 Pass 2: explicit six-stage dual-row Vector
+-                        // microkernel.  This is a direct executable schedule,
+-                        // not a wrapper around the old row loop.  The stage
+-                        // machine keeps both retained value rows live through
+-                        // the independent scale stage before draining either
+-                        // dependent Mul/Add chain.
++                        // V008 Pass 2: interleave the two independent row
++                        // chains by Vector stage.  Each row keeps its original
++                        // Muls -> Mul -> Add dependency while the second row
++                        // advances before either Add drains the pair.
+                         AscendC::LocalTensor<float> firstValue = valueFp32[col];
+                         AscendC::LocalTensor<float> secondValue =
+                             valueFp32[rowWidth + col];
+@@ -3384,16 +3382,16 @@ private:
+                                 AscendC::Mul(firstValue, firstValue, xFp32, valid);
+                                 AscendC::PipeBarrier<PIPE_V>();
+                             } else if (vectorStage == 3) {
+-                                // Middle 1: finish row zero with bias.
+-                                AscendC::Add(firstValue, firstValue,
+-                                             residualFp32, valid);
+-                                AscendC::PipeBarrier<PIPE_V>();
+-                            } else if (vectorStage == 4) {
+-                                // Drain 0: multiply row one by gamma after
+-                                // row zero has completed its dependent chain.
++                                // Middle 1: multiply row one by gamma while
++                                // row zero remains ready for its final Add.
+                                 AscendC::Mul(secondValue, secondValue,
+                                              xFp32, valid);
+                                 AscendC::PipeBarrier<PIPE_V>();
++                            } else if (vectorStage == 4) {
++                                // Drain 0: finish row zero with bias.
++                                AscendC::Add(firstValue, firstValue,
++                                             residualFp32, valid);
++                                AscendC::PipeBarrier<PIPE_V>();
+                             } else {
+                                 // Drain 1: finish row one with bias.
+                                 AscendC::Add(secondValue, secondValue,
