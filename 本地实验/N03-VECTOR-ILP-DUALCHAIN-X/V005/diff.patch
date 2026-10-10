@@ -1,0 +1,62 @@
+--- V004/submission.asc
++++ V005/submission.asc
+@@ -3312,23 +3312,45 @@
+                 }
+                 if constexpr (!std::is_same<T, half>::value) {
+                     if (batchRows == 2) {
+-                        // The two retained BF16 rows share read-only gamma/bias
+-                        // vectors, so stage their independent V chains together.
++                        // V005: a direct three-stage dual-chain microkernel.  The
++                        // first stage seeds both independent row chains, the
++                        // second stage drains row zero, and the final stage
++                        // drains row one.  The value tiles stay at their
++                        // original row-major UB offsets; only Vector issue
++                        // order changes.
+                         AscendC::LocalTensor<float> firstValue = valueFp32[col];
+                         AscendC::LocalTensor<float> secondValue =
+                             valueFp32[rowWidth + col];
+-                        AscendC::Muls(firstValue, firstValue, invRmsValues[0], valid);
+-                        AscendC::PipeBarrier<PIPE_V>();
+-                        AscendC::Muls(secondValue, secondValue, invRmsValues[1], valid);
+-                        AscendC::PipeBarrier<PIPE_V>();
+-                        AscendC::Mul(firstValue, firstValue, xFp32, valid);
+-                        AscendC::PipeBarrier<PIPE_V>();
+-                        AscendC::Mul(secondValue, secondValue, xFp32, valid);
+-                        AscendC::PipeBarrier<PIPE_V>();
+-                        AscendC::Add(firstValue, firstValue, residualFp32, valid);
+-                        AscendC::PipeBarrier<PIPE_V>();
+-                        AscendC::Add(secondValue, secondValue, residualFp32, valid);
+-                        AscendC::PipeBarrier<PIPE_V>();
++                        const int32_t vectorStages = 3;
++                        for (int32_t vectorStage = 0;
++                             vectorStage < vectorStages; ++vectorStage) {
++                            if (vectorStage == 0) {
++                                // Startup: both scale operations are
++                                // independent and can occupy the V pipe.
++                                AscendC::Muls(firstValue, firstValue,
++                                              invRmsValues[0], valid);
++                                AscendC::PipeBarrier<PIPE_V>();
++                                AscendC::Muls(secondValue, secondValue,
++                                              invRmsValues[1], valid);
++                                AscendC::PipeBarrier<PIPE_V>();
++                            } else if (vectorStage == 1) {
++                                // Steady state: finish the first chain while
++                                // the second chain remains ready in UB.
++                                AscendC::Mul(firstValue, firstValue, xFp32, valid);
++                                AscendC::PipeBarrier<PIPE_V>();
++                                AscendC::Add(firstValue, firstValue,
++                                             residualFp32, valid);
++                                AscendC::PipeBarrier<PIPE_V>();
++                            } else {
++                                // Drain: finish the second independent chain.
++                                AscendC::Mul(secondValue, secondValue,
++                                             xFp32, valid);
++                                AscendC::PipeBarrier<PIPE_V>();
++                                AscendC::Add(secondValue, secondValue,
++                                             residualFp32, valid);
++                                AscendC::PipeBarrier<PIPE_V>();
++                            }
++                        }
+                     } else {
+                         AscendC::LocalTensor<float> valueTile = valueFp32[col];
+                         AscendC::Muls(valueTile, valueTile, invRmsValues[0], valid);
