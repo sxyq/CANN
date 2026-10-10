@@ -1,0 +1,59 @@
+ROUTE=N04-GM-CACHE-STREAMING-X
+REVISION=V008
+REVERIFY_SOURCE=本地实验/N04-GM-CACHE-STREAMING-X/V006/Candidate.asc
+SOURCE_SHA=ac67a949fa3ec42e7688a9e709278a4b1286f7ef1a8f7f1623b579ed01cf3960
+HOST=cann-server3 / hwnput3
+DEVICE=3
+ROWS=2
+WIDTH=8192
+RESET_CALL=ABSENT_FROM_NO_RESET_SOURCE
+PARENT=R31B V011 / probe_fp32_v011
+CANDIDATE=V006 / probe_fp32_v016
+
+## First launcher attempt
+
+FIRST_ENV=ASCEND paths were set without sourcing the existing CANN runtime environment.
+FIRST_PRE_HBM=96%
+FIRST_PRE_AICORE=64%
+FIRST_PRE_AIVECTOR=45%
+FIRST_PRE_HBM_BW=37%
+FIRST_CANDIDATE_RAW=/tmp/n04-gm-cache-streaming-v006.zibqDR/no-reset/build/probe_fp32_v016: error while loading shared libraries: libgraph.so: cannot open shared object file: No such file or directory
+FIRST_CANDIDATE_RC=127
+FIRST_BETWEEN_HBM=96%
+FIRST_BETWEEN_AICORE=55%
+FIRST_BETWEEN_AIVECTOR=52%
+FIRST_BETWEEN_HBM_BW=37%
+FIRST_PARENT=NOT_STARTED
+FIRST_CLASS=Launcher library resolution failure before aclInit/kernel execution; no correctness or performance conclusion.
+
+## Runtime-environment retry
+
+RETRY_ENV=source /usr/local/Ascend/ascend-toolkit/set_env.sh; prepend /usr/lib/aarch64-linux-gnu:/usr/lib/gcc/aarch64-linux-gnu/11 to the existing LD_LIBRARY_PATH
+RETRY_NO_RESET_CONFIGURE_RC=0
+RETRY_NO_RESET_BUILD_RC=0
+RETRY_PRE_HBM=96%
+RETRY_PRE_AICORE=56%
+RETRY_PRE_AIVECTOR=51%
+RETRY_PRE_HBM_BW=8%
+RETRY_CANDIDATE_RAW=dtype=fp32 rows=2 width=8192 device=3 correctness=PASS failures=0 max_abs=3.5762787e-07 max_rel=6.0680854e-06
+RETRY_CANDIDATE_RC=0
+RETRY_BETWEEN_HBM=96%
+RETRY_BETWEEN_AICORE=67%
+RETRY_BETWEEN_AIVECTOR=34%
+RETRY_BETWEEN_HBM_BW=41%
+RETRY_PARENT_RAW=dtype=fp32 rows=2 width=8192 device=3 correctness=PASS failures=0 max_abs=3.5762787e-07 max_rel=6.0680854e-06
+RETRY_PARENT_RC=0
+RETRY_POST_HBM=96%
+RETRY_POST_AICORE=53%
+RETRY_POST_AIVECTOR=51%
+RETRY_POST_HBM_BW=27%
+CORRECTNESS=PASS
+DEVICE_RUN=PASS
+PROCESS_MUTATION=NONE
+
+## Local boundary
+
+EXISTING_EXECUTABLES=probe_fp32_v016; probe_fp32_v011; device.alink; submission.alink
+RAW_SAMPLES=NONE_FOR_LOCAL
+LOCAL_SCORE=NONE
+LOCAL_REASON=The existing V006 runner prints correctness only and has no device-event or wall-clock timing path. No timing runner was created.

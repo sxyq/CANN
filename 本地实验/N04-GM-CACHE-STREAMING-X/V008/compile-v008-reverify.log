@@ -1,0 +1,33 @@
+ROUTE=N04-GM-CACHE-STREAMING-X
+REVISION=V008
+REVERIFY_SOURCE=本地实验/N04-GM-CACHE-STREAMING-X/V006/Candidate.asc
+SOURCE_SHA=ac67a949fa3ec42e7688a9e709278a4b1286f7ef1a8f7f1623b579ed01cf3960
+HOST=cann-server3 / hwnput3
+CANN=/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002
+SOC_VERSION=Ascend910B3
+ARCH=__NPU_ARCH__=2201
+REMOTE_ROOT=/tmp/n04-gm-cache-streaming-v006.zibqDR
+
+COMMAND_CONFIGURE=cmake -S REMOTE_ROOT -B REMOTE_ROOT/build -DCMAKE_CXX_FLAGS=-DL2_CACHE_HINT
+CONFIGURE_RC=0
+COMMAND_BUILD=cmake --build REMOTE_ROOT/build --target device submission full_link --verbose --parallel 1 -- -B
+BUILD_RC=0
+TARGETS=device; submission; full_link
+UNRESOLVED_SYMBOLS=NONE
+NM_DEVICE_OBJECT_RC=0
+NM_SUBMISSION_OBJECT_RC=0
+NM_DEVICE_ALINK_RC=0
+NM_SUBMISSION_ALINK_RC=0
+
+NO_RESET_ROOT=/tmp/n04-gm-cache-streaming-v006.zibqDR/no-reset
+CPLUS_INCLUDE_PATH=/usr/include/c++/11:/usr/include/aarch64-linux-gnu/c++/11:/usr/include/c++/11/backward
+NO_RESET_COMMAND_CONFIGURE=cmake -S NO_RESET_ROOT -B NO_RESET_ROOT/build
+NO_RESET_CONFIGURE_RC=0
+NO_RESET_COMMAND_BUILD=cmake --build NO_RESET_ROOT/build --target probe_fp32_v016 probe_fp32_v011 --parallel 1 -- -B
+NO_RESET_BUILD_RC=0
+NO_RESET_BINARIES=probe_fp32_v016; probe_fp32_v011
+RESET_CALL=ABSENT_FROM_NO_RESET_SOURCE
+
+RAW_BUILD_LINES=[100%] Built target device; [100%] Built target submission; [100%] Built target full_link; BUILD_RC=0
+RAW_NO_RESET_LINES=[100%] Built target probe_fp32_v016; [100%] Built target probe_fp32_v011; NO_RESET_BUILD_RC=0
+RAW_WARNINGS=ASC registration warned about the existing g_opSystemRunCfg definition and ignored cce_global attributes on host-side GM_ADDR parsing; no build failure occurred.
