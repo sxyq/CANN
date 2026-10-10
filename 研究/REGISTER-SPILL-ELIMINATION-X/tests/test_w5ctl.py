@@ -229,6 +229,56 @@ class W5CtlTest(unittest.TestCase):
             self.assertEqual(result.returncode, 78, result.stdout + result.stderr)
             self.assertIn("WORKTREE_ISOLATION", result.stdout)
 
+    def test_non_executable_shell_backend_uses_bash_and_propagates_status(self):
+        with tempfile.TemporaryDirectory(prefix=".w5ctl-test-", dir=str(CLI.parent)) as temp:
+            root = Path(temp)
+            source = root / "source.asc"
+            artifact = root / "artifact.so"
+            backend = root / "historical-build.sh"
+            source.write_text("public-parent-candidate-input\n")
+            backend.write_text(
+                "#!/bin/bash\n"
+                "if [[ \"$W5CTL_STAGE\" == build ]]; then\n"
+                "  printf 'artifact-from-shell-backend\\n' > \"$W5CTL_ARTIFACT\"\n"
+                "  echo HISTORICAL_SHELL_BACKEND=BUILD\n"
+                "elif [[ \"$W5CTL_STAGE\" == correctness ]]; then\n"
+                "  echo HISTORICAL_SHELL_BACKEND=CORRECTNESS\n"
+                "  exit 17\n"
+                "fi\n"
+            )
+            backend.chmod(0o644)
+
+            build = run_cli(
+                "build",
+                "--backend",
+                str(backend),
+                "--source",
+                str(source),
+                "--artifact",
+                str(artifact),
+            )
+            self.assertEqual(build.returncode, 0, build.stdout + build.stderr)
+            self.assertIn("BACKEND_COMMAND=/bin/bash", build.stdout)
+            self.assertIn("HISTORICAL_SHELL_BACKEND=BUILD", build.stdout)
+            self.assertIn("BACKEND_RC=0", build.stdout)
+            self.assertIn("IDENTITY_STATUS=PASS", build.stdout)
+            self.assertEqual(artifact.read_text(), "artifact-from-shell-backend\n")
+
+            correctness = run_cli(
+                "correctness",
+                "--backend",
+                str(backend),
+                "--source",
+                str(source),
+                "--artifact",
+                str(artifact),
+            )
+            self.assertEqual(correctness.returncode, 17, correctness.stdout + correctness.stderr)
+            self.assertIn("BACKEND_COMMAND=/bin/bash", correctness.stdout)
+            self.assertIn("HISTORICAL_SHELL_BACKEND=CORRECTNESS", correctness.stdout)
+            self.assertIn("BACKEND_RC=17", correctness.stdout)
+            self.assertIn("STATUS=FAILED", correctness.stdout)
+
     def test_local_statistics_accept_insufficient_and_contamination(self):
         with tempfile.TemporaryDirectory(prefix=".w5ctl-test-", dir=str(CLI.parent)) as temp:
             root = Path(temp)
@@ -290,6 +340,33 @@ class W5CtlTest(unittest.TestCase):
             result = run_cli("local", "--stats-only", "--raw", str(nonpositive_parent))
             self.assertEqual(result.returncode, 66, result.stdout + result.stderr)
             self.assertIn("RAW_PARENT_LATENCY_NONPOSITIVE", result.stdout)
+
+            crossrow = root / "crossrow-runner.tsv"
+            crossrow_lines = [
+                "# LOCAL_PROXY_ONLY parent=public-parent candidate=public-candidate warmups=45 paired_samples=21 device_load=EXTERNAL_NOT_CAPTURED",
+                "sample\torder\tparent_device_us\tcandidate_device_us\tdelta_device_us\tparent_wall_us\tcandidate_wall_us\tdelta_wall_us",
+            ]
+            for sample in range(1, 22):
+                order = "PC" if sample % 2 else "CP"
+                crossrow_lines.append(f"{sample}\t{order}\t20.0\t18.0\t-2.0\t30.0\t28.0\t-2.0")
+            crossrow.write_text("\n".join(crossrow_lines) + "\n")
+            crossrow_before = crossrow.read_bytes()
+            result = run_cli("local", "--stats-only", "--raw", str(crossrow))
+            self.assertEqual(result.returncode, 66, result.stdout + result.stderr)
+            self.assertIn("MEDIAN_PARENT_US=20.000000", result.stdout)
+            self.assertIn("MEDIAN_CANDIDATE_US=18.000000", result.stdout)
+            self.assertIn("MEDIAN_RATIO_DELTA=-0.100000", result.stdout)
+            self.assertIn("PAIRED_MEDIAN_DELTA=-2.000000", result.stdout)
+            self.assertIn("PAIRED_MEDIAN_PERCENT_DELTA=-0.100000", result.stdout)
+            self.assertIn("RAW_SAMPLE_COUNT=42", result.stdout)
+            self.assertIn("RAW_PAIR_COUNT=21", result.stdout)
+            self.assertIn("MEASUREMENT_QUALITY=UNCLASSIFIED", result.stdout)
+            self.assertIn("QUALITY_CLASSIFICATION=UNCLASSIFIED", result.stdout)
+            self.assertIn("NOISE_STATUS=STABLE_NUMERICALLY_ONLY", result.stdout)
+            self.assertIn("PROMOTION_ELIGIBLE=NO", result.stdout)
+            self.assertNotIn("STATUS=PASS", result.stdout)
+            self.assertNotIn("MEASUREMENT_QUALITY=ACCEPTED", result.stdout)
+            self.assertEqual(crossrow.read_bytes(), crossrow_before)
 
     def test_dedup_same_and_different_patches(self):
         with tempfile.TemporaryDirectory(prefix=".w5ctl-test-", dir=str(CLI.parent)) as temp:

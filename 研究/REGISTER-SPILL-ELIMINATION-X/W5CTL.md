@@ -48,8 +48,9 @@ W5CTL_RECORD_BACKEND
 The stage-specific command form is also supported: `build --backend <path>`,
 `correctness --backend <path>`, and `local --backend <path>`. The verified
 historical backend examples above are caller-selected only; `w5ctl` does not
-discover, copy, or replace them. A selected backend must be executable and
-inside the bound worktree, and its real return code is propagated. The backend
+discover, copy, or replace them. A selected backend must be executable, or an
+explicit `.sh`/`.bash` file delegated through the system `/bin/bash`, and must
+be inside the bound worktree. Its real return code is propagated. The backend
 receives `W5CTL_ROUTE`, `W5CTL_STAGE`, source/artifact paths and SHA-256 values,
 and for Local the raw timing path.
 
@@ -66,7 +67,7 @@ or Online submission. Git history/evidence ownership remains governed by
 compute SHA-256 before/after delegation. Optional expected SHA values are
 checked; a changed or missing source/artifact is an identity failure.
 
-Local raw input is TSV/CSV or JSON. TSV/CSV fields are:
+Local raw input is TSV/CSV or JSON. Generic row-oriented TSV/CSV fields are:
 
 ```text
 pair  variant  latency_us  quality  contaminated
@@ -98,6 +99,17 @@ NOISE_STATUS
 pair must contain exactly one parent and one candidate row with an explicit
 clean quality value; missing quality or unpaired rows are rejected. `--stats-only`
 is for analyzing an already-produced raw file; it does not run a backend.
+
+The published CROSSROW paired runner's TSV is also recognized without editing
+the raw file: its leading `# LOCAL_PROXY_ONLY` metadata line, followed by
+`sample/order/parent_device_us/candidate_device_us/delta_device_us/...`, is
+parsed as one paired row per sample (`order` must be `PC` or `CP`). `w5ctl`
+computes the same medians and paired deltas from those device-event values, but
+that schema has no per-sample quality/contamination provenance. It therefore
+reports `MEASUREMENT_QUALITY=UNCLASSIFIED`,
+`QUALITY_CLASSIFICATION=UNCLASSIFIED`, `PROMOTION_ELIGIBLE=NO`, and a nonzero
+return code even when numeric noise checks are stable. This is a statistics
+and parser integration result, not an accepted or promotable Local result.
 
 ## Dedup and checkpoints
 
@@ -137,7 +149,7 @@ python3 -B 研究/REGISTER-SPILL-ELIMINATION-X/tests/test_w5ctl.py
 The test uses temporary fake executables only to verify delegation, return-code
 propagation, SHA guards, raw-stat rejection, dedup, and checkpoint idempotence;
 it does not touch a CANN compiler, NPU, Kernel, CMake, shared scheduler, or
-the tooling-runner worktree. The current `7/7` result is not an E2E result:
+the tooling-runner worktree. The current `8/8` result is not an E2E result:
 real Build,
 Correctness, Local event provenance, Runner identity, and evidence publication
 backends must be supplied and accepted by the Tooling/Integration Owner.

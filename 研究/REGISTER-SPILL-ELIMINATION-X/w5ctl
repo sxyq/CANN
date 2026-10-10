@@ -32,6 +32,7 @@ EXPECTED_BRANCH: Optional[str] = None
 EXPECTED_REPO_ROOT: Optional[Path] = None
 ROUTE_ROOT: Optional[Path] = None
 PATCH_SIMILARITY_GATE = 0.60
+SHELL_BACKEND_SUFFIXES = {".sh", ".bash"}
 
 EXIT_USAGE = 64
 EXIT_IDENTITY = 65
@@ -241,9 +242,15 @@ def resolve_backend(raw: Optional[str]) -> Tuple[Optional[Path], Optional[str]]:
         return path, f"OUT_OF_SCOPE:backend:{path}:expected={EXPECTED_REPO_ROOT}"
     if not path.is_file():
         return path, f"BACKEND_NOT_FILE:{path}"
-    if not os.access(path, os.X_OK):
+    if not os.access(path, os.X_OK) and path.suffix.lower() not in SHELL_BACKEND_SUFFIXES:
         return path, f"BACKEND_NOT_EXECUTABLE:{path}"
     return path, None
+
+
+def backend_command(backend: Path, backend_args: Sequence[str]) -> List[str]:
+    if not os.access(backend, os.X_OK) and backend.suffix.lower() in SHELL_BACKEND_SUFFIXES:
+        return ["/bin/bash", str(backend), *backend_args]
+    return [str(backend), *backend_args]
 
 
 def write_log(path: Optional[str], stdout: bytes, stderr: bytes) -> Optional[str]:
@@ -336,7 +343,7 @@ def execute_backend(
         emit("STATUS", "NOT_RUN")
         emit("BLOCKER", reason)
         return Outcome("NOT_RUN", EXIT_NOT_RUN, source_sha, artifact_sha, reason=reason)
-    command = [str(backend), *backend_args]
+    command = backend_command(backend, backend_args)
     emit("BACKEND_COMMAND", shlex.join(command))
     try:
         completed = subprocess.run(
@@ -469,6 +476,8 @@ def identity_stage(
         stats = analyze_raw(raw, min_pairs, max_cv)
         print_stats(stats)
         if stats["status"] != "ACCEPTED":
+            emit("IDENTITY_STATUS", "PASS")
+            emit("STATUS", "REJECTED")
             return Outcome(
                 "REJECTED",
                 EXIT_STATS_REJECTED,
@@ -514,10 +523,28 @@ def load_raw_rows(path: Path) -> List[Dict[str, Any]]:
             raise ValueError("JSON raw input must be a list or contain samples/rows")
         return [item for item in payload if isinstance(item, dict)]
     with path.open(newline="") as stream:
-        sample = stream.read(4096)
-        stream.seek(0)
+        lines = stream.readlines()
+        sample = "".join(lines[:8])
+        first_data_line = next(
+            (index for index, line in enumerate(lines) if line.strip()), None
+        )
+        if (
+            first_data_line is not None
+            and lines[first_data_line].lstrip().startswith("# LOCAL_PROXY_ONLY ")
+        ):
+            header_index = next(
+                (
+                    index
+                    for index in range(first_data_line + 1, len(lines))
+                    if lines[index].strip() and not lines[index].lstrip().startswith("#")
+                ),
+                None,
+            )
+            if header_index is None:
+                raise ValueError("Crossrow runner raw is missing its TSV header")
+            return list(csv.DictReader(lines[header_index:], delimiter="\t"))
         delimiter = "\t" if "\t" in sample.splitlines()[0] else ","
-        return list(csv.DictReader(stream, delimiter=delimiter))
+        return list(csv.DictReader(lines, delimiter=delimiter))
 
 
 def parse_raw(path: Path) -> Tuple[List[Dict[str, Any]], bool, Optional[str]]:
@@ -528,6 +555,43 @@ def parse_raw(path: Path) -> Tuple[List[Dict[str, Any]], bool, Optional[str]]:
     records: List[Dict[str, Any]] = []
     contaminated = False
     seen: set = set()
+    crossrow_runner_schema = bool(rows) and (
+        field(rows[0], "sample") is not None
+        and field(rows[0], "order") is not None
+        and field(rows[0], "parent_device_us") is not None
+        and field(rows[0], "candidate_device_us") is not None
+    )
+    if crossrow_runner_schema:
+        for number, row in enumerate(rows, 1):
+            pair = field(row, "sample")
+            order = str(field(row, "order") or "").strip().upper()
+            if pair is None or order not in {"PC", "CP"}:
+                return records, contaminated, f"CROSSROW_RAW_ROW_INVALID:{number}"
+            for variant in ("parent", "candidate"):
+                raw_latency = field(row, f"{variant}_device_us")
+                if raw_latency is None:
+                    return records, contaminated, f"CROSSROW_RAW_LATENCY_MISSING:{number}:{variant}"
+                try:
+                    latency = float(str(raw_latency).strip())
+                except ValueError:
+                    return records, contaminated, f"CROSSROW_RAW_LATENCY_INVALID:{number}:{variant}"
+                if not math.isfinite(latency) or latency <= 0:
+                    return records, contaminated, f"CROSSROW_RAW_LATENCY_INVALID:{number}:{variant}"
+                key = (str(pair).strip(), variant)
+                if key in seen:
+                    return records, contaminated, f"RAW_DUPLICATE_PAIR_VARIANT:{pair}:{variant}"
+                seen.add(key)
+                records.append(
+                    {
+                        "pair": str(pair).strip(),
+                        "variant": variant,
+                        "latency": latency,
+                        "contaminated": False,
+                        "unclassified": True,
+                    }
+                )
+        return records, contaminated, None
+
     for number, row in enumerate(rows, 1):
         pair = field(row, "pair", "sample", "id", "index")
         variant = normalize_variant(field(row, "variant", "mode", "side"))
@@ -562,6 +626,7 @@ def parse_raw(path: Path) -> Tuple[List[Dict[str, Any]], bool, Optional[str]]:
                 "variant": variant,
                 "latency": latency,
                 "contaminated": row_contaminated,
+                "unclassified": False,
             }
         )
     return records, contaminated, None
@@ -586,6 +651,7 @@ def analyze_raw(path: Optional[Path], min_pairs: int, max_cv: float) -> Dict[str
         "paired_percent_delta": None,
         "raw_count": 0,
         "pair_count": 0,
+        "quality_classification": "UNKNOWN",
         "noise_status": "UNKNOWN",
         "raw_sha": None,
         "reason": "RAW_SAMPLE_PATH_NOT_SET",
@@ -601,6 +667,8 @@ def analyze_raw(path: Optional[Path], min_pairs: int, max_cv: float) -> Dict[str
         return result
     records, contaminated, error = parse_raw(path)
     result["raw_count"] = len(records)
+    unclassified = any(record.get("unclassified", False) for record in records)
+    result["quality_classification"] = "UNCLASSIFIED" if unclassified else "EXPLICIT"
     if error:
         result["reason"] = error
         return result
@@ -649,9 +717,19 @@ def analyze_raw(path: Optional[Path], min_pairs: int, max_cv: float) -> Dict[str
         return result
     cvs = [coefficient_of_variation(values["parent"]), coefficient_of_variation(values["candidate"])]
     if max(cvs) > max_cv:
-        result["status"] = "NOISY"
         result["noise_status"] = "NOISY"
-        result["reason"] = f"MAX_CV={max(cvs):.6f}>MAX_CV={max_cv:.6f}"
+        cv_reason = f"MAX_CV={max(cvs):.6f}>MAX_CV={max_cv:.6f}"
+        if unclassified:
+            result["status"] = "UNCLASSIFIED"
+            result["reason"] = f"{cv_reason};RAW_QUALITY_PROVENANCE_MISSING"
+        else:
+            result["status"] = "NOISY"
+            result["reason"] = cv_reason
+        return result
+    if unclassified:
+        result["status"] = "UNCLASSIFIED"
+        result["noise_status"] = "STABLE_NUMERICALLY_ONLY"
+        result["reason"] = "RAW_QUALITY_PROVENANCE_MISSING"
         return result
     result["status"] = "ACCEPTED"
     result["noise_status"] = "STABLE"
@@ -668,8 +746,11 @@ def print_stats(stats: Dict[str, Any]) -> None:
     emit("RAW_SAMPLE_COUNT", stats.get("raw_count", 0))
     emit("RAW_PAIR_COUNT", stats.get("pair_count", 0))
     emit("MEASUREMENT_QUALITY", stats.get("status", "RAW_PARSE_ERROR"))
+    emit("QUALITY_CLASSIFICATION", stats.get("quality_classification", "UNKNOWN"))
     emit("NOISE_STATUS", stats.get("noise_status", "UNKNOWN"))
     emit("LOCAL_STATISTICS_REASON", stats.get("reason", "UNKNOWN"))
+    if stats.get("status") == "UNCLASSIFIED":
+        emit("PROMOTION_ELIGIBLE", "NO")
     if stats.get("raw_sha"):
         emit("RAW_SHA256", stats["raw_sha"])
 
@@ -684,6 +765,7 @@ def blocked_stats(status: str, reason: str) -> Dict[str, Any]:
         "paired_percent_delta": None,
         "raw_count": 0,
         "pair_count": 0,
+        "quality_classification": "UNKNOWN",
         "noise_status": "UNKNOWN",
         "raw_sha": None,
         "reason": reason,
@@ -879,7 +961,7 @@ def record_command(args: argparse.Namespace) -> int:
         emit("BLOCKER", error)
         return EXIT_NOT_RUN
     assert backend is not None
-    command = [str(backend), *(args.backend_arg or [])]
+    command = backend_command(backend, args.backend_arg or [])
     emit("BACKEND_COMMAND", shlex.join(command))
     env = os.environ.copy()
     env.update({"W5CTL_ROUTE": ROUTE, "W5CTL_STAGE": "record"})
