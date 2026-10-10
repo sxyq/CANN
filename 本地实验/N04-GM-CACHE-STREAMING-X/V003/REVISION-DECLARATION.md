@@ -38,15 +38,35 @@ PUSH=NO
 
 Current AGENTS.md, cann-route-executor SKILL.md, server experiment rules, Local measurement rules, Git workflow, and N04 V001/V002 records were read before this revision. V001 L2 hint evidence and V002 provider/full-link and no-reset probe build failures are retained. This revision stays on N04 GM/L2 streaming and does not read other Route worktrees. Source and declaration were created before any V003 build command.
 
-## Initial Status Before Build
+## Initial Status Before Retry
 
 COMPILE=PASS; configure RC=0; device PASS; submission PASS; full_link PASS; final build RC=0
 COMPILE_FIRST_ATTEMPT=FAIL; configure RC=1 because the existing CMakeLists.txt input runtime_probe.cpp was not copied; build RC=2; this raw attempt is retained in compile-v003.log
 UNRESOLVED_SYMBOLS=NONE; nm -u returned RC=0 with no output for device.cpp.o, adapter.cpp.o, device.alink, and submission.alink
-NO_RESET_COMPILE=FAIL; configure RC=0; probe build RC=2; fatal error: 'vector' file not found during ASC registration compilation
-CORRECTNESS=NOT_RUN; no probe executable was produced
-DEVICE_RUN=NONE; only read-only NPU3 state was sampled
+INITIAL_NO_RESET_COMPILE=FAIL; configure RC=0; probe build RC=2; fatal error: 'vector' file not found during ASC registration compilation
+INITIAL_CORRECTNESS=NOT_RUN; no probe executable was produced
+INITIAL_DEVICE_RUN=NONE; only read-only NPU3 state was sampled
+INITIAL_LOCAL_SCORE=NONE
+INITIAL_EVIDENCE=compile-v003.log; correctness-v003-npu3.log
+
+## Include Retry And Minimal Correctness
+
+RETRY_ENV=CPLUS_INCLUDE_PATH=/usr/include/c++/11:/usr/include/aarch64-linux-gnu/c++/11:/usr/include/c++/11/backward
+RETRY_BUILD_INPUT=existing V016 CMakeLists.probe.txt copied as CMakeLists.txt; existing runtime_probe_fp32.asc/.cpp and runtime_probe_v016.asc; no-reset source unchanged
+RETRY_CONFIGURE_RC=0
+RETRY_TARGETS=probe_fp32_v016; probe_fp32_v011
+RETRY_BUILD_RC=0; both FP32 no-reset probe executables produced
+RETRY_EVIDENCE=correctness-v003-npu3-retry-cplus-include.log
+CORRECTNESS=PASS; minimal rows=2,width=8192 on NPU3
+CANDIDATE_RESULT=probe_fp32_v016 PASS; failures=0; max_abs=3.5762787e-07; max_rel=6.0680854e-06; RC=0
+PARENT_RESULT=probe_fp32_v011 PASS; failures=0; max_abs=3.5762787e-07; max_rel=6.0680854e-06; RC=0
+DEVICE_ID=3
+DEVICE_PRE=HBM=96%; Aicore=53%; Aivector=33%; HBM bandwidth=26%
+DEVICE_BETWEEN_RUNS=HBM=96%; Aicore=0%; Aivector=0%; HBM bandwidth=23%
+DEVICE_POST=HBM=96%; Aicore=71%; Aivector=37%; HBM bandwidth=40%
+DEVICE_RUN=PASS; no process was stopped or changed
+RESET_CALL=ABSENT_FROM_NO_RESET_PROBE
 LOCAL_SCORE=NONE
-LOCAL_REASON=No timing sample was collected
-EVIDENCE=compile-v003.log; correctness-v003-npu3.log
-GIT_COMMIT=TO_BE_FILLED
+LOCAL_REASON=No timing sample was collected; only minimal correctness was requested in this retry
+EVIDENCE=compile-v003.log; correctness-v003-npu3.log; correctness-v003-npu3-retry-cplus-include.log; correctness-v003-npu3-minimal.log
+SOURCE_COMMIT=63341f2b

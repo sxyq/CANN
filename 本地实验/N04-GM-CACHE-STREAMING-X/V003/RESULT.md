@@ -36,15 +36,39 @@ COMPILE_EVIDENCE=本地实验/N04-GM-CACHE-STREAMING-X/V003/compile-v003.log
 
 NO_RESET_BUILD_INPUT=existing R31B V016 CMakeLists.probe.txt, runtime_probe_fp32.asc, runtime_probe_v016.asc, and a temporary no-reset copy of runtime_probe_fp32.cpp with the existing CANN provider entry
 NO_RESET_CONFIGURE_RC=0
-NO_RESET_BUILD_RC=2
-NO_RESET_FAILURE=fatal error: 'vector' file not found during ASC registration compilation
-NO_RESET_BINARY=NOT_BUILT
-CORRECTNESS=NOT_RUN; no candidate or parent probe command started
-DEVICE_RUN=NONE
+INITIAL_NO_RESET_BUILD_RC=2
+INITIAL_NO_RESET_FAILURE=fatal error: 'vector' file not found during ASC registration compilation
+INITIAL_NO_RESET_BINARY=NOT_BUILT
+INITIAL_CORRECTNESS=NOT_RUN; no candidate or parent probe command started
+INITIAL_DEVICE_RUN=NONE
+INITIAL_LOCAL_SCORE=NONE
+INITIAL_DEVICE_EVIDENCE=NPU3 was sampled read-only before and after the initial failed build; no process was stopped, reset, or changed by this route
+INITIAL_NO_RESET_EVIDENCE=本地实验/N04-GM-CACHE-STREAMING-X/V003/correctness-v003-npu3.log
+
+## Include Retry And Minimal Correctness
+
+RETRY_ENV=CPLUS_INCLUDE_PATH=/usr/include/c++/11:/usr/include/aarch64-linux-gnu/c++/11:/usr/include/c++/11/backward
+RETRY_BUILD_INPUT=existing V016 CMakeLists.probe.txt copied as CMakeLists.txt; existing runtime_probe_fp32.asc/.cpp and runtime_probe_v016.asc; no-reset source unchanged
+RETRY_CONFIGURE_RC=0
+RETRY_TARGETS=probe_fp32_v016; probe_fp32_v011
+RETRY_BUILD_RC=0
+RETRY_BINARY=probe_fp32_v016 and probe_fp32_v011 produced
+RETRY_EVIDENCE=本地实验/N04-GM-CACHE-STREAMING-X/V003/correctness-v003-npu3-retry-cplus-include.log
+
+CORRECTNESS=PASS
+CORRECTNESS_COMMAND=probe_fp32_v016 2 8192 3; probe_fp32_v011 2 8192 3
+CANDIDATE_RESULT=PASS; failures=0; max_abs=3.5762787e-07; max_rel=6.0680854e-06; RC=0
+PARENT_RESULT=PASS; failures=0; max_abs=3.5762787e-07; max_rel=6.0680854e-06; RC=0
+DEVICE_ID=3
+DEVICE_PRE=HBM=96%; Aicore=53%; Aivector=33%; HBM bandwidth=26%
+DEVICE_BETWEEN_RUNS=HBM=96%; Aicore=0%; Aivector=0%; HBM bandwidth=23%
+DEVICE_POST=HBM=96%; Aicore=71%; Aivector=37%; HBM bandwidth=40%
+DEVICE_RUN=PASS; no process was stopped or changed
+RESET_CALL=ABSENT_FROM_NO_RESET_PROBE
 LOCAL_SCORE=NONE
-LOCAL_REASON=No executable timing sample was available
-DEVICE_EVIDENCE=NPU3 was sampled read-only before and after the build; no process was stopped, reset, or changed by this route
-NO_RESET_EVIDENCE=本地实验/N04-GM-CACHE-STREAMING-X/V003/correctness-v003-npu3.log
+LOCAL_REASON=No timing sample was collected; this retry performed minimal correctness only
+NO_RESET_EVIDENCE=本地实验/N04-GM-CACHE-STREAMING-X/V003/correctness-v003-npu3.log; 本地实验/N04-GM-CACHE-STREAMING-X/V003/correctness-v003-npu3-retry-cplus-include.log; 本地实验/N04-GM-CACHE-STREAMING-X/V003/correctness-v003-npu3-minimal.log
+PRIOR_EVIDENCE_RETAINED=V001/V002 compile, provider, and no-reset failure records were not overwritten; existing V016 local records remain unchanged
 
 ## Boundary
 
