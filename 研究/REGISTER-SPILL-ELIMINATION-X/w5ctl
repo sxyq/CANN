@@ -40,6 +40,7 @@ EXIT_STATS_REJECTED = 66
 EXIT_NOT_RUN = 78
 
 STAGES = ("build", "correctness", "local", "record")
+TERMINAL_STAGE_STATUSES = {"PASS", "REJECTED", "UNCLASSIFIED", "INTEGRATION_INCOMPLETE"}
 GOOD_QUALITY = {"CLEAN", "OK", "PASS", "STABLE"}
 BAD_QUALITY = {
     "CONTAMINATED",
@@ -83,6 +84,7 @@ class Outcome:
         artifact_sha: Optional[str] = None,
         raw_sha: Optional[str] = None,
         reason: Optional[str] = None,
+        details: Optional[Dict[str, Any]] = None,
     ) -> None:
         self.status = status
         self.rc = rc
@@ -90,6 +92,7 @@ class Outcome:
         self.artifact_sha = artifact_sha
         self.raw_sha = raw_sha
         self.reason = reason
+        self.details = details or {}
 
 
 def now_utc() -> str:
@@ -478,17 +481,26 @@ def identity_stage(
         if stats["status"] != "ACCEPTED":
             emit("IDENTITY_STATUS", "PASS")
             emit("STATUS", "REJECTED")
+            stage_status = "UNCLASSIFIED" if stats["status"] == "UNCLASSIFIED" else "REJECTED"
             return Outcome(
-                "REJECTED",
+                stage_status,
                 EXIT_STATS_REJECTED,
                 source_sha_after,
                 artifact_sha_after,
                 stats.get("raw_sha"),
                 stats["status"],
+                details={"local": stats, "stage_status": stage_status},
             )
     emit("IDENTITY_STATUS", "PASS")
     emit("STATUS", "PASS")
-    return Outcome("PASS", 0, source_sha_after, artifact_sha_after)
+    details: Dict[str, Any] = {}
+    if stage == "local":
+        details = {"local": stats, "stage_status": "PASS"}
+    return Outcome(
+        "PASS", 0, source_sha_after, artifact_sha_after,
+        stats.get("raw_sha") if stage == "local" else None,
+        details=details,
+    )
 
 
 def field(row: Dict[str, Any], *names: str) -> Any:
@@ -652,6 +664,12 @@ def analyze_raw(path: Optional[Path], min_pairs: int, max_cv: float) -> Dict[str
         "raw_count": 0,
         "pair_count": 0,
         "quality_classification": "UNKNOWN",
+        "promotion_eligible": False,
+        "shape_local_verdict": "NOT_RUN",
+        "shape_candidate_median_us": None,
+        "shape_paired_delta_us": None,
+        "shape_paired_percent_delta": None,
+        "full_local_score": "NOT_COMPUTABLE",
         "noise_status": "UNKNOWN",
         "raw_sha": None,
         "reason": "RAW_SAMPLE_PATH_NOT_SET",
@@ -710,8 +728,12 @@ def analyze_raw(path: Optional[Path], min_pairs: int, max_cv: float) -> Dict[str
         result["paired_percent_delta"] = statistics.median(
             [(candidate - parent) / parent for parent, candidate in complete]
         )
+    result["shape_candidate_median_us"] = result["candidate_median"]
+    result["shape_paired_delta_us"] = result["paired_delta"]
+    result["shape_paired_percent_delta"] = result["paired_percent_delta"]
     if len(complete) < min_pairs or not values["parent"] or not values["candidate"]:
         result["status"] = "INSUFFICIENT_DATA"
+        result["shape_local_verdict"] = "SHAPE_INSUFFICIENT_DATA"
         result["noise_status"] = "INSUFFICIENT_DATA"
         result["reason"] = f"COMPLETE_PAIRS={len(complete)}<MIN_PAIRS={min_pairs}"
         return result
@@ -721,17 +743,22 @@ def analyze_raw(path: Optional[Path], min_pairs: int, max_cv: float) -> Dict[str
         cv_reason = f"MAX_CV={max(cvs):.6f}>MAX_CV={max_cv:.6f}"
         if unclassified:
             result["status"] = "UNCLASSIFIED"
+            result["shape_local_verdict"] = "SHAPE_UNCLASSIFIED_NO_PROMOTION"
             result["reason"] = f"{cv_reason};RAW_QUALITY_PROVENANCE_MISSING"
         else:
             result["status"] = "NOISY"
+            result["shape_local_verdict"] = "SHAPE_NOISY_REJECTED"
             result["reason"] = cv_reason
         return result
     if unclassified:
         result["status"] = "UNCLASSIFIED"
+        result["shape_local_verdict"] = "SHAPE_UNCLASSIFIED_NO_PROMOTION"
         result["noise_status"] = "STABLE_NUMERICALLY_ONLY"
         result["reason"] = "RAW_QUALITY_PROVENANCE_MISSING"
         return result
     result["status"] = "ACCEPTED"
+    result["shape_local_verdict"] = "SHAPE_NUMERICALLY_STABLE"
+    result["promotion_eligible"] = False
     result["noise_status"] = "STABLE"
     result["reason"] = "MEASURED_PAIRS_ACCEPTED"
     return result
@@ -748,9 +775,13 @@ def print_stats(stats: Dict[str, Any]) -> None:
     emit("MEASUREMENT_QUALITY", stats.get("status", "RAW_PARSE_ERROR"))
     emit("QUALITY_CLASSIFICATION", stats.get("quality_classification", "UNKNOWN"))
     emit("NOISE_STATUS", stats.get("noise_status", "UNKNOWN"))
+    emit("SHAPE_LOCAL_VERDICT", stats.get("shape_local_verdict", "NOT_RUN"))
+    emit("SHAPE_CANDIDATE_MEDIAN_US", fmt_number(stats.get("shape_candidate_median_us")))
+    emit("SHAPE_PAIRED_DELTA_US", fmt_number(stats.get("shape_paired_delta_us")))
+    emit("SHAPE_PAIRED_PERCENT_DELTA", fmt_number(stats.get("shape_paired_percent_delta")))
+    emit("FULL_LOCAL_SCORE", stats.get("full_local_score", "NOT_COMPUTABLE"))
+    emit("PROMOTION_ELIGIBLE", "YES" if stats.get("promotion_eligible") else "NO")
     emit("LOCAL_STATISTICS_REASON", stats.get("reason", "UNKNOWN"))
-    if stats.get("status") == "UNCLASSIFIED":
-        emit("PROMOTION_ELIGIBLE", "NO")
     if stats.get("raw_sha"):
         emit("RAW_SHA256", stats["raw_sha"])
 
@@ -766,6 +797,12 @@ def blocked_stats(status: str, reason: str) -> Dict[str, Any]:
         "raw_count": 0,
         "pair_count": 0,
         "quality_classification": "UNKNOWN",
+        "promotion_eligible": False,
+        "shape_local_verdict": "NOT_RUN",
+        "shape_candidate_median_us": None,
+        "shape_paired_delta_us": None,
+        "shape_paired_percent_delta": None,
+        "full_local_score": "NOT_COMPUTABLE",
         "noise_status": "UNKNOWN",
         "raw_sha": None,
         "reason": reason,
@@ -917,48 +954,83 @@ def record_command(args: argparse.Namespace) -> int:
         emit("STATUS", "BLOCKED")
         emit("BLOCKER", log_error)
         return EXIT_NOT_RUN
-    record_source = None
-    record_artifact = None
-    if getattr(args, "source", None) or getattr(args, "artifact", None):
-        record_source, source_sha, source_error = verify_file(
-            getattr(args, "source", None),
-            "source",
-            getattr(args, "expected_source_sha", None),
-            required=True,
-        )
-        record_artifact, artifact_sha, artifact_error = verify_file(
-            getattr(args, "artifact", None),
-            "artifact",
-            getattr(args, "expected_artifact_sha", None),
-            required=True,
-        )
-        if source_error or artifact_error:
-            emit("STATUS", "BLOCKED")
-            emit("IDENTITY_STATUS", "FAIL")
-            emit("BLOCKER", source_error or artifact_error)
-            return EXIT_IDENTITY
-        emit("SOURCE_SHA256", source_sha)
-        emit("ARTIFACT_SHA256", artifact_sha)
-    evidence = args.evidence or []
-    if not evidence:
+    manifest, manifest_error = scoped_path(getattr(args, "manifest", None), "manifest")
+    if manifest_error or manifest is None:
+        emit("STATUS", "BLOCKED")
+        emit("BLOCKER", manifest_error or "RECORD_MANIFEST_NOT_SET")
+        return EXIT_NOT_RUN
+    source, source_sha, source_error = verify_file(
+        args.source, "source", args.expected_source_sha, required=True
+    )
+    artifact, artifact_sha, artifact_error = verify_file(
+        args.artifact, "artifact", args.expected_artifact_sha, required=True
+    )
+    raw, raw_sha, raw_error = verify_file(args.raw, "raw", required=True)
+    if source_error or artifact_error or raw_error:
+        emit("STATUS", "BLOCKED")
+        emit("IDENTITY_STATUS", "FAIL")
+        emit("BLOCKER", source_error or artifact_error or raw_error)
+        return EXIT_IDENTITY
+    if not args.evidence:
         emit("STATUS", "NOT_RUN")
         emit("BLOCKER", "EVIDENCE_PATH_NOT_SET")
         return EXIT_NOT_RUN
+    assert source is not None and source_sha is not None
+    assert artifact is not None and artifact_sha is not None
+    assert raw is not None and raw_sha is not None
     evidence_paths: List[Path] = []
-    for raw in evidence:
-        path, digest, error = verify_file(raw, "evidence", required=True)
+    evidence_digests: List[str] = []
+    for raw_evidence in args.evidence:
+        path, digest, error = verify_file(raw_evidence, "evidence", required=True)
         if error:
             emit("STATUS", "BLOCKED")
             emit("BLOCKER", error)
             return EXIT_IDENTITY
         assert path is not None and digest is not None
         evidence_paths.append(path)
+        evidence_digests.append(digest)
         emit("EVIDENCE_PATH", path)
         emit("EVIDENCE_SHA256", digest)
-    backend, error = resolve_backend(args.backend)
-    if error:
+    local_result = analyze_raw(raw, getattr(args, "min_pairs", 3), getattr(args, "max_cv", 0.20))
+    backend, backend_error = resolve_backend(args.backend)
+    manifest_payload: Dict[str, Any] = {
+        "schema": 1,
+        "route": ROUTE,
+        "stage": "record",
+        "repo_root": str(EXPECTED_REPO_ROOT),
+        "expected_branch": EXPECTED_BRANCH,
+        "source": {"path": str(source), "sha256": source_sha},
+        "artifact": {"path": str(artifact), "sha256": artifact_sha},
+        "raw": {"path": str(raw), "sha256": raw_sha},
+        "evidence": [
+            {"path": str(path), "sha256": digest}
+            for path, digest in zip(evidence_paths, evidence_digests)
+        ],
+        "local_result": local_result,
+        "backend": str(backend) if backend else None,
+        "backend_error": backend_error,
+        "record_status": "LOCAL_MANIFEST_WRITTEN" if backend_error else "PENDING",
+        "integration_status": "INTEGRATION_INCOMPLETE" if backend_error else "PENDING",
+        "revision_created": False,
+        "runner_created": False,
+        "online": "NOT_SUBMITTED",
+        "recorded_utc": now_utc(),
+    }
+    if backend_error:
+        ok, manifest_status = save_manifest_once(manifest, manifest_payload)
+        if not ok:
+            emit("STATUS", "BLOCKED")
+            emit("BLOCKER", manifest_status)
+            return EXIT_NOT_RUN
+        emit("SOURCE_SHA256", source_sha)
+        emit("ARTIFACT_SHA256", artifact_sha)
+        emit("RAW_SHA256", raw_sha)
+        emit("RECORD_MANIFEST", manifest)
+        emit("RECORD_MANIFEST_STATUS", manifest_status)
+        emit("RECORD_STATUS", "LOCAL_MANIFEST_WRITTEN")
+        emit("INTEGRATION_STATUS", "INTEGRATION_INCOMPLETE")
         emit("STATUS", "NOT_RUN")
-        emit("BLOCKER", error)
+        emit("BLOCKER", backend_error)
         return EXIT_NOT_RUN
     assert backend is not None
     command = backend_command(backend, args.backend_arg or [])
@@ -966,20 +1038,16 @@ def record_command(args: argparse.Namespace) -> int:
     env = os.environ.copy()
     env.update({"W5CTL_ROUTE": ROUTE, "W5CTL_STAGE": "record"})
     env["W5CTL_EVIDENCE_PATHS"] = os.pathsep.join(str(path) for path in evidence_paths)
-    if record_source:
-        env["W5CTL_SOURCE"] = str(record_source)
-        env["W5CTL_SOURCE_SHA256"] = source_sha
-    if record_artifact:
-        env["W5CTL_ARTIFACT"] = str(record_artifact)
-        env["W5CTL_ARTIFACT_SHA256"] = artifact_sha
+    env["W5CTL_SOURCE"] = str(source)
+    env["W5CTL_SOURCE_SHA256"] = source_sha
+    env["W5CTL_ARTIFACT"] = str(artifact)
+    env["W5CTL_ARTIFACT_SHA256"] = artifact_sha
+    env["W5CTL_RAW_PATH"] = str(raw)
+    env["W5CTL_RAW_SHA256"] = raw_sha
     try:
         completed = subprocess.run(
-            command,
-            cwd=str(workdir) if workdir else None,
-            env=env,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            check=False,
+            command, cwd=str(workdir) if workdir else None, env=env,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False,
         )
     except OSError as exc:
         emit("STATUS", "NOT_RUN")
@@ -991,9 +1059,21 @@ def record_command(args: argparse.Namespace) -> int:
     emit("BACKEND_RC", actual_rc)
     if log_written:
         emit("OUTPUT_LOG", log_written)
+    manifest_payload["record_status"] = "PASS" if actual_rc == 0 else "FAILED"
+    manifest_payload["integration_status"] = "PASS" if actual_rc == 0 else "BACKEND_FAILED"
+    manifest_payload["backend_rc"] = actual_rc
+    ok, manifest_status = save_manifest_once(manifest, manifest_payload)
+    if not ok:
+        emit("STATUS", "BLOCKED")
+        emit("BLOCKER", manifest_status)
+        return EXIT_NOT_RUN
+    emit("RECORD_MANIFEST", manifest)
+    emit("RECORD_MANIFEST_STATUS", manifest_status)
     if actual_rc != 0:
         emit("STATUS", "FAILED")
         return actual_rc
+    emit("RECORD_STATUS", "PASS")
+    emit("INTEGRATION_STATUS", "PASS")
     emit("STATUS", "PASS")
     return 0
 
@@ -1132,6 +1212,32 @@ def save_checkpoint(path: Path, payload: Dict[str, Any]) -> None:
             os.unlink(temporary)
 
 
+def save_manifest_once(path: Path, payload: Dict[str, Any]) -> Tuple[bool, Optional[str]]:
+    """Persist one identity-bound record manifest without silently replacing it."""
+    if path.exists():
+        try:
+            existing = json.loads(path.read_text())
+        except (OSError, json.JSONDecodeError) as exc:
+            return False, f"RECORD_MANIFEST_READ_FAILED:{exc}"
+        if existing == payload:
+            return True, "RECORD_MANIFEST_REUSED"
+        return False, f"RECORD_MANIFEST_IDENTITY_CONFLICT:{path}"
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        fd, temporary = tempfile.mkstemp(prefix=path.name + ".", dir=str(path.parent))
+        try:
+            with os.fdopen(fd, "w") as stream:
+                json.dump(payload, stream, indent=2, sort_keys=True)
+                stream.write("\n")
+            os.replace(temporary, path)
+        finally:
+            if os.path.exists(temporary):
+                os.unlink(temporary)
+    except OSError as exc:
+        return False, f"RECORD_MANIFEST_WRITE_FAILED:{exc}"
+    return True, "RECORD_MANIFEST_WRITTEN"
+
+
 def checkpoint_identity(
     args: argparse.Namespace,
     payload: Dict[str, Any],
@@ -1172,25 +1278,53 @@ def stage_options(args: argparse.Namespace, stage: str) -> Dict[str, Any]:
     }
 
 
-def run_record_from_pipeline(args: argparse.Namespace) -> Outcome:
+def run_record_from_pipeline(
+    args: argparse.Namespace,
+    payload: Dict[str, Any],
+    source: Path,
+    artifact: Path,
+) -> Outcome:
     evidence = args.record_evidence or []
     if not evidence:
         emit("STATUS", "NOT_RUN")
         emit("BLOCKER", "RECORD_EVIDENCE_NOT_SET")
         return Outcome("NOT_RUN", EXIT_NOT_RUN, reason="RECORD_EVIDENCE_NOT_SET")
+    local_stage = payload.get("stages", {}).get("local", {})
+    raw_path = args.raw or local_stage.get("raw_path")
+    manifest = args.record_manifest
+    if not raw_path or not manifest:
+        emit("STATUS", "NOT_RUN")
+        emit("BLOCKER", "RECORD_RAW_AND_MANIFEST_REQUIRED")
+        return Outcome("INTEGRATION_INCOMPLETE", EXIT_NOT_RUN, reason="RECORD_RAW_AND_MANIFEST_REQUIRED")
     proxy = argparse.Namespace(
         evidence=evidence,
         backend=args.record_backend,
         backend_arg=args.record_arg or [],
         backend_workdir=args.record_workdir,
         log=args.record_log,
-        source=None,
-        artifact=None,
-        expected_source_sha=None,
-        expected_artifact_sha=None,
+        source=str(source),
+        artifact=str(artifact),
+        raw=raw_path,
+        manifest=manifest,
+        expected_source_sha=payload.get("identity", {}).get("source_sha256"),
+        expected_artifact_sha=payload.get("identity", {}).get("artifact_sha256"),
     )
     record_rc = record_command(proxy)
-    return Outcome("PASS" if record_rc == 0 else "FAILED", record_rc)
+    status = "PASS" if record_rc == 0 else "INTEGRATION_INCOMPLETE"
+    details: Dict[str, Any] = {}
+    manifest_path = resolve_path(manifest)
+    if manifest_path and manifest_path.is_file():
+        try:
+            details["record"] = json.loads(manifest_path.read_text())
+        except (OSError, json.JSONDecodeError):
+            pass
+    return Outcome(
+        status,
+        record_rc,
+        raw_sha=details.get("record", {}).get("raw", {}).get("sha256"),
+        reason="RECORD_BACKEND_UNAVAILABLE" if record_rc else None,
+        details=details,
+    )
 
 
 def pipeline_command(args: argparse.Namespace, resume: bool) -> int:
@@ -1235,7 +1369,9 @@ def pipeline_command(args: argparse.Namespace, resume: bool) -> int:
             "stage_order": stages,
             "identity": {},
             "stages": {},
+            "record_manifest": None,
             "revision_created": False,
+            "runner_created": False,
             "online": "NOT_SUBMITTED",
         }
     source, source_sha, artifact, artifact_sha, identity_error = checkpoint_identity(args, payload)
@@ -1245,12 +1381,12 @@ def pipeline_command(args: argparse.Namespace, resume: bool) -> int:
         emit("BLOCKER", identity_error)
         return EXIT_IDENTITY
     assert source is not None and source_sha is not None and artifact is not None
-    payload["identity"] = {
+    payload["identity"].update({
         "source_path": str(source),
         "source_sha256": source_sha,
         "artifact_path": str(artifact),
         "artifact_sha256": artifact_sha,
-    }
+    })
     payload["updated_utc"] = now_utc()
     save_checkpoint(path, payload)
     start_stage = args.from_stage if resume else None
@@ -1260,38 +1396,41 @@ def pipeline_command(args: argparse.Namespace, resume: bool) -> int:
         return EXIT_USAGE
     if start_stage:
         for prior in stages[: stages.index(start_stage)]:
-            if payload.get("stages", {}).get(prior, {}).get("status") != "PASS":
+            prior_status = payload.get("stages", {}).get(prior, {}).get("status")
+            if prior_status not in TERMINAL_STAGE_STATUSES:
                 emit("CYCLE_STATUS", "BLOCKED")
-                emit("BLOCKER", f"PRIOR_STAGE_NOT_PASS:{prior}")
+                emit("BLOCKER", f"PRIOR_STAGE_NOT_COMPLETE:{prior}")
                 return EXIT_NOT_RUN
     did_work = False
     for stage in stages:
-        record = payload.setdefault("stages", {}).get(stage, {})
-        if record.get("status") == "PASS":
+        stage_record = payload.setdefault("stages", {}).get(stage, {})
+        force_stage = bool(resume and start_stage == stage)
+        if stage_record.get("status") in TERMINAL_STAGE_STATUSES and not force_stage:
             if stage == "local":
-                raw_path, raw_sha, raw_error = verify_file(
-                    args.raw or record.get("raw_path"),
+                raw_path, _, raw_error = verify_file(
+                    args.raw or stage_record.get("raw_path"),
                     "raw",
-                    record.get("raw_sha256"),
+                    stage_record.get("raw_sha256"),
                     required=True,
                 )
-                if raw_error:
+                if raw_error or raw_path is None:
                     emit("CYCLE_STATUS", "BLOCKED")
                     emit("IDENTITY_STATUS", "FAIL")
-                    emit("BLOCKER", raw_error)
+                    emit("BLOCKER", raw_error or "RAW_SAMPLES_MISSING")
                     return EXIT_IDENTITY
             emit("STAGE", stage)
-            emit("STAGE_STATUS", "SKIPPED_CHECKPOINT_PASS")
+            emit("STAGE_STATUS", "SKIPPED_CHECKPOINT_" + stage_record["status"])
             continue
-        if existing and not resume:
+        if existing and not resume and stage_record:
             emit("CYCLE_STATUS", "BLOCKED")
             emit("BLOCKER", f"CHECKPOINT_REQUIRES_RESUME:{stage}")
             return EXIT_NOT_RUN
         did_work = True
-        opts = stage_options(args, stage)
+        opts = stage_options(args, stage) if stage != "record" else None
         if stage == "record":
-            outcome = run_record_from_pipeline(args)
+            outcome = run_record_from_pipeline(args, payload, source, artifact)
         else:
+            raw_arg = args.raw or stage_record.get("raw_path")
             outcome = identity_stage(
                 stage,
                 opts["backend"],
@@ -1302,26 +1441,40 @@ def pipeline_command(args: argparse.Namespace, resume: bool) -> int:
                 str(artifact),
                 args.expected_source_sha,
                 args.expected_artifact_sha,
-                args.raw,
+                raw_arg,
                 args.min_pairs,
                 args.max_cv,
             )
-        payload["stages"][stage] = {
-            "status": outcome.status,
+        stage_status = outcome.details.get("stage_status", outcome.status)
+        stage_payload: Dict[str, Any] = {
+            "status": stage_status,
             "return_code": outcome.rc,
             "reason": outcome.reason,
             "source_sha256": outcome.source_sha,
             "artifact_sha256": outcome.artifact_sha,
             "raw_sha256": outcome.raw_sha,
-            "raw_path": str(resolve_path(args.raw)) if stage == "local" and args.raw else None,
+            "raw_path": str(resolve_path(args.raw or stage_record.get("raw_path")))
+            if stage == "local" and (args.raw or stage_record.get("raw_path")) else None,
+            "result": outcome.details.get("local") if stage == "local" else None,
+            "record": outcome.details.get("record") if stage == "record" else None,
             "finished_utc": now_utc(),
         }
+        payload["stages"][stage] = stage_payload
+        if stage == "local" and outcome.details.get("local"):
+            payload["identity"]["raw_path"] = stage_payload["raw_path"]
+            payload["identity"]["raw_sha256"] = outcome.details["local"].get("raw_sha")
+        if stage == "record":
+            payload["record_manifest"] = str(resolve_path(args.record_manifest)) if args.record_manifest else None
+            if outcome.details.get("record"):
+                payload["evidence"] = outcome.details["record"].get("evidence", [])
         if outcome.artifact_sha:
             payload["identity"]["artifact_sha256"] = outcome.artifact_sha
         payload["updated_utc"] = now_utc()
         save_checkpoint(path, payload)
         emit("CHECKPOINT", path)
         if outcome.rc != 0:
+            if stage == "local" and stage_status in {"REJECTED", "UNCLASSIFIED"}:
+                continue
             emit("CURRENT_STAGE", stage)
             emit("NEXT_ACTION", "resume --from-stage " + stage)
             return outcome.rc
@@ -1330,12 +1483,13 @@ def pipeline_command(args: argparse.Namespace, resume: bool) -> int:
     payload["updated_utc"] = now_utc()
     save_checkpoint(path, payload)
     emit("CHECKPOINT", path)
-    emit("CYCLE_STATUS", "PASS" if all_pass else "NOOP")
+    emit("CYCLE_STATUS", "PASS" if all_pass else "INCOMPLETE")
     emit("CURRENT_STAGE", stages[-1] if stages else "NONE")
     emit("NEXT_ACTION", "report --checkpoint " + str(path))
     if not did_work:
         emit("IDEMPOTENT_NOOP", "YES")
     emit("REVISION_CREATED", "NO")
+    emit("RUNNER_CREATED", "NO")
     emit("ONLINE", "NOT_SUBMITTED")
     return 0 if all_pass else EXIT_NOT_RUN
 
@@ -1370,10 +1524,40 @@ def report_command(args: argparse.Namespace) -> int:
     emit("ARTIFACT_SHA256", identity.get("artifact_sha256", "NONE"))
     stages = payload.get("stage_order", [])
     for stage in stages:
-        emit(stage.upper() + "_STATUS", payload.get("stages", {}).get(stage, {}).get("status", "NOT_RUN"))
+        stage_payload = payload.get("stages", {}).get(stage, {})
+        emit(stage.upper() + "_STATUS", stage_payload.get("status", "NOT_RUN"))
+        emit(stage.upper() + "_RETURN_CODE", stage_payload.get("return_code", "NONE"))
+        emit(stage.upper() + "_REASON", stage_payload.get("reason", "NONE"))
+        if stage == "local":
+            local = stage_payload.get("result") or {}
+            emit("LOCAL_MEASUREMENT_QUALITY", local.get("status", "NOT_RUN"))
+            emit("LOCAL_QUALITY_CLASSIFICATION", local.get("quality_classification", "UNKNOWN"))
+            emit("LOCAL_MEDIAN_PARENT_US", fmt_number(local.get("parent_median")))
+            emit("LOCAL_MEDIAN_CANDIDATE_US", fmt_number(local.get("candidate_median")))
+            emit("LOCAL_MEDIAN_RATIO_DELTA", fmt_number(local.get("ratio_delta")))
+            emit("LOCAL_PAIRED_MEDIAN_DELTA_US", fmt_number(local.get("paired_delta")))
+            emit("LOCAL_PAIRED_MEDIAN_PERCENT_DELTA", fmt_number(local.get("paired_percent_delta")))
+            emit("LOCAL_RAW_SAMPLE_COUNT", local.get("raw_count", 0))
+            emit("LOCAL_RAW_PAIR_COUNT", local.get("pair_count", 0))
+            emit("LOCAL_NOISE_STATUS", local.get("noise_status", "UNKNOWN"))
+            emit("SHAPE_LOCAL_VERDICT", local.get("shape_local_verdict", "NOT_RUN"))
+            emit("SHAPE_CANDIDATE_MEDIAN_US", fmt_number(local.get("shape_candidate_median_us")))
+            emit("SHAPE_PAIRED_DELTA_US", fmt_number(local.get("shape_paired_delta_us")))
+            emit("SHAPE_PAIRED_PERCENT_DELTA", fmt_number(local.get("shape_paired_percent_delta")))
+            emit("FULL_LOCAL_SCORE", local.get("full_local_score", "NOT_COMPUTABLE"))
+            emit("LOCAL_PROMOTION_ELIGIBLE", "YES" if local.get("promotion_eligible") else "NO")
+            emit("LOCAL_RAW_SHA256", local.get("raw_sha", stage_payload.get("raw_sha256", "NONE")))
+        if stage == "record":
+            record = stage_payload.get("record") or {}
+            emit("RECORD_MANIFEST", payload.get("record_manifest", "NONE"))
+            emit("RECORD_STATUS", record.get("record_status", stage_payload.get("status", "NOT_RUN")))
+            emit("RECORD_INTEGRATION_STATUS", record.get("integration_status", "UNKNOWN"))
+            emit("RECORD_EVIDENCE_COUNT", len(record.get("evidence", [])))
     emit("REVISION_CREATED", "YES" if payload.get("revision_created") else "NO")
+    emit("RUNNER_CREATED", "YES" if payload.get("runner_created") else "NO")
     emit("ONLINE", payload.get("online", "NOT_SUBMITTED"))
-    emit("REPORT_STATUS", "PASS")
+    report_status = "PASS" if payload.get("status") == "PASS" else "INCOMPLETE"
+    emit("REPORT_STATUS", report_status)
     return 0
 
 
@@ -1419,6 +1603,7 @@ def add_pipeline_options(parser: argparse.ArgumentParser, resume: bool) -> None:
     parser.add_argument("--record-workdir", default=os.environ.get("W5CTL_RECORD_WORKDIR"))
     parser.add_argument("--record-log")
     parser.add_argument("--record-evidence", action="append", default=[])
+    parser.add_argument("--record-manifest", default=os.environ.get("W5CTL_RECORD_MANIFEST"))
     if resume:
         parser.add_argument("--from-stage", choices=STAGES)
 
@@ -1454,6 +1639,8 @@ def build_parser() -> argparse.ArgumentParser:
     add_scope_options(record)
     add_identity_options(record)
     record.add_argument("--evidence", action="append", default=[])
+    record.add_argument("--raw", required=True)
+    record.add_argument("--manifest", required=True)
     record.add_argument("--backend", default=os.environ.get("W5CTL_RECORD_BACKEND"))
     record.add_argument("--backend-arg", action="append", default=[])
     record.add_argument("--backend-workdir", default=os.environ.get("W5CTL_RECORD_WORKDIR"))

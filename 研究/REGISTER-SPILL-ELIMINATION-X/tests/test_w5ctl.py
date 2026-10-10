@@ -197,11 +197,20 @@ class W5CtlTest(unittest.TestCase):
                 "record",
                 "--evidence",
                 str(source),
+                "--source",
+                str(source),
+                "--artifact",
+                str(artifact),
+                "--raw",
+                str(raw),
+                "--manifest",
+                str(root / "record-failed.json"),
                 "--backend",
                 str(fail),
             )
             self.assertEqual(result.returncode, 7, result.stdout + result.stderr)
             self.assertIn("EVIDENCE_SHA256=", result.stdout)
+            self.assertIn("RECORD_MANIFEST_STATUS=RECORD_MANIFEST_WRITTEN", result.stdout)
             self.assertIn("STATUS=FAILED", result.stdout)
 
             result = run_cli(
@@ -689,6 +698,118 @@ class W5CtlTest(unittest.TestCase):
             payload = json.loads(checkpoint.read_text())
             self.assertFalse(payload["revision_created"])
             self.assertEqual(payload["online"], "NOT_SUBMITTED")
+
+    def test_manifest_checkpoint_report_unclassified_and_resume_idempotence(self):
+        with tempfile.TemporaryDirectory(prefix=".w5ctl-test-", dir=str(CLI.parent)) as temp:
+            root = Path(temp)
+            source = root / "source.asc"
+            artifact = root / "artifact.so"
+            raw = root / "crossrow.tsv"
+            checkpoint = root / "checkpoint.json"
+            manifest = root / "record.json"
+            counter = root / "counter"
+            source.write_text("public-source\n")
+            counter.write_text("0")
+            backend = root / "backend.py"
+            write_executable(
+                backend,
+                """
+                #!/usr/bin/env python3
+                import os
+                from pathlib import Path
+                counter = Path(os.environ["TEST_COUNTER"])
+                counter.write_text(str(int(counter.read_text()) + 1))
+                stage = os.environ["W5CTL_STAGE"]
+                if stage == "build":
+                    Path(os.environ["W5CTL_ARTIFACT"]).write_text("artifact")
+                elif stage == "local":
+                    raw = Path(os.environ["W5CTL_RAW_PATH"])
+                    rows = [
+                        "# LOCAL_PROXY_ONLY parent=p candidate=c warmups=45 paired_samples=3",
+                        "sample\torder\tparent_device_us\tcandidate_device_us\tdelta_device_us",
+                    ]
+                    for sample in range(1, 4):
+                        rows.append(f"{sample}\tPC\t10\t9\t-1")
+                    raw.write_text("\\n".join(rows) + "\\n")
+                """,
+            )
+            env = os.environ.copy()
+            env["TEST_COUNTER"] = str(counter)
+            common = [
+                *scope_args(),
+                "--checkpoint",
+                str(checkpoint),
+                "--source",
+                str(source),
+                "--artifact",
+                str(artifact),
+                "--raw",
+                str(raw),
+                "--stages",
+                "build,correctness,local,record",
+                "--build-backend",
+                str(backend),
+                "--correctness-backend",
+                str(backend),
+                "--local-backend",
+                str(backend),
+                "--record-manifest",
+                str(manifest),
+                "--record-evidence",
+                str(source),
+            ]
+            first = subprocess.run(
+                [sys.executable, "-B", str(CLI), "cycle", *common],
+                cwd=str(ROOT), env=env, text=True,
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False,
+            )
+            self.assertEqual(first.returncode, 78, first.stdout + first.stderr)
+            self.assertIn("MEASUREMENT_QUALITY=UNCLASSIFIED", first.stdout)
+            self.assertIn("PROMOTION_ELIGIBLE=NO", first.stdout)
+            self.assertIn("RECORD_STATUS=LOCAL_MANIFEST_WRITTEN", first.stdout)
+            self.assertIn("INTEGRATION_STATUS=INTEGRATION_INCOMPLETE", first.stdout)
+            self.assertTrue(checkpoint.is_file())
+            self.assertTrue(manifest.is_file())
+            payload = json.loads(checkpoint.read_text())
+            record = json.loads(manifest.read_text())
+            self.assertEqual(payload["stages"]["local"]["status"], "UNCLASSIFIED")
+            self.assertEqual(
+                payload["stages"]["local"]["result"]["shape_local_verdict"],
+                "SHAPE_UNCLASSIFIED_NO_PROMOTION",
+            )
+            self.assertFalse(payload["stages"]["local"]["result"]["promotion_eligible"])
+            self.assertEqual(record["source"]["sha256"], __import__("hashlib").sha256(source.read_bytes()).hexdigest())
+            self.assertEqual(record["artifact"]["sha256"], __import__("hashlib").sha256(artifact.read_bytes()).hexdigest())
+            self.assertEqual(record["raw"]["sha256"], __import__("hashlib").sha256(raw.read_bytes()).hexdigest())
+            self.assertEqual(record["evidence"][0]["path"], str(source.resolve()))
+            self.assertEqual(record["evidence"][0]["sha256"], __import__("hashlib").sha256(source.read_bytes()).hexdigest())
+            self.assertEqual(record["local_result"]["shape_local_verdict"], "SHAPE_UNCLASSIFIED_NO_PROMOTION")
+            self.assertEqual(record["integration_status"], "INTEGRATION_INCOMPLETE")
+
+            report = run_cli("report", "--checkpoint", str(checkpoint))
+            self.assertEqual(report.returncode, 0, report.stdout + report.stderr)
+            self.assertIn("LOCAL_STATUS=UNCLASSIFIED", report.stdout)
+            self.assertIn("LOCAL_MEDIAN_PARENT_US=10.000000", report.stdout)
+            self.assertIn("LOCAL_MEDIAN_CANDIDATE_US=9.000000", report.stdout)
+            self.assertIn("LOCAL_RAW_PAIR_COUNT=3", report.stdout)
+            self.assertIn("LOCAL_NOISE_STATUS=STABLE_NUMERICALLY_ONLY", report.stdout)
+            self.assertIn("SHAPE_LOCAL_VERDICT=SHAPE_UNCLASSIFIED_NO_PROMOTION", report.stdout)
+            self.assertIn("LOCAL_PROMOTION_ELIGIBLE=NO", report.stdout)
+            self.assertIn("FULL_LOCAL_SCORE=NOT_COMPUTABLE", report.stdout)
+            self.assertIn("RECORD_INTEGRATION_STATUS=INTEGRATION_INCOMPLETE", report.stdout)
+            self.assertIn("REPORT_STATUS=INCOMPLETE", report.stdout)
+
+            before = counter.read_text()
+            resumed = subprocess.run(
+                [sys.executable, "-B", str(CLI), "resume", *common],
+                cwd=str(ROOT), env=env, text=True,
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False,
+            )
+            self.assertEqual(resumed.returncode, 78, resumed.stdout + resumed.stderr)
+            self.assertIn("IDEMPOTENT_NOOP=YES", resumed.stdout)
+            self.assertEqual(counter.read_text(), before)
+            self.assertIn("REVISION_CREATED=NO", resumed.stdout)
+            self.assertIn("RUNNER_CREATED=NO", resumed.stdout)
 
 
 if __name__ == "__main__":
