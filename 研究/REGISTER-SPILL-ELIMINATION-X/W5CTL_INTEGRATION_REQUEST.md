@@ -54,6 +54,35 @@ All execution paths must retain current-worktree/expected-branch isolation,
 source/artifact SHA validation, backend return-code propagation, and the
 no-second-runner/no-second-scorer constraints.
 
+## Main-2 Acceptance Gaps
+
+The following read-only review findings are part of this request and must be
+closed by the Tooling/Integration Owner before claiming a five-route canonical
+entrypoint:
+
+1. The route implementation currently fixes `EXPECTED_REPO_ROOT`,
+   `EXPECTED_BRANCH`, and `ROUTE` to this R2 private tree. It cannot be copied
+   unchanged as a five-route canonical entry. The Owner must design one unique
+   published entrypoint that binds each invocation to its caller-supplied
+   route root and expected branch, while still rejecting cross-worktree paths.
+2. `dedup` blocks only when `PATCH_SIMILARITY > 0.60`. A low patch similarity
+   can still produce a high numeric `MECHANISM_OVERLAP` and
+   `DEDUP_STATUS=DISTINCT`. The canonical gate must treat mechanism overlap as
+   an independent blocking or explicit manual-acceptance signal, with its
+   threshold and receipt fields defined by the Owner.
+3. `local` validates raw pair/quality/CV data only. It does not establish
+   device-event provenance, the required 45 warmup samples, PC/CP interleaving,
+   or unique Runner identity. E2E acceptance must supply real backend output,
+   raw event provenance, interleaving/warmup evidence, and contamination
+   rejection evidence.
+4. `record` must leave a traceable link from each evidence artifact to the
+   exact Parent/Candidate identity, including the relevant source/artifact
+   SHA and the publication or evidence receipt. A successful backend return
+   alone is not sufficient.
+
+R2 is requesting these design and acceptance changes only; it is not creating
+an alternate wrapper or a second script.
+
 ## Verification Boundary
 
 The route self-test is:
@@ -75,6 +104,7 @@ real backend has been accepted by this route and no E2E PASS may be inferred.
 ## Publication Receipt Status
 
 REQUEST_STATUS=ISSUED; AWAITING_OWNER_ACK
+REQUEST_UPDATE_SOURCE=MAIN-2_READ_ONLY_REVIEW
 REQUEST_ARRIVAL=UNCONFIRMED_FROM_THIS_WORKTREE
 REQUEST_REACHED=UNCONFIRMED_FROM_THIS_WORKTREE
 REQUEST_ACCEPTED=UNCONFIRMED
@@ -95,6 +125,16 @@ BLOCKERS_WITH_RESPONSIBLE_OWNER:
    not create or copy any backend.
 3. `Tooling/Integration Owner`: run and receipt the integrated E2E sequence
    after backend wiring. Until then, the 5/5 self-test remains non-E2E.
+4. `Tooling/Integration Owner`: replace the R2-fixed root/branch/route
+   assumptions with per-invocation route binding in the unique canonical
+   entrypoint and retain cross-worktree rejection.
+5. `Tooling/Integration Owner`: define and enforce the independent mechanism
+   overlap gate/manual-review signal in `dedup`.
+6. `Tooling/Integration Owner`: provide device-event provenance, 45-warmup,
+   PC/CP interleaving, unique Runner identity, and contamination rejection in
+   the real Local E2E receipt.
+7. `Tooling/Integration Owner`: make `record` evidence traceable to exact
+   Parent/Candidate identities and their SHA metadata.
 
 No resource probe, Candidate edit, V001, Runner change, shared-entrypoint
 change, or Online submission is authorized by this request.
