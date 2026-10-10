@@ -1,0 +1,55 @@
+diff --git a/线上结果/R31B/V011/submission.asc b/本地实验/N05-SCALAR-ADDRESS-GENERATION-X/V001/submission.asc
+index 6adb6f58..07b1f89a 100644
+--- a/线上结果/R31B/V011/submission.asc
++++ b/本地实验/N05-SCALAR-ADDRESS-GENERATION-X/V001/submission.asc
+@@ -3120,14 +3120,14 @@ private:
+             AscendC::LocalTensor<float> xFp32 = xFp32Buf_.Get<float>();
+             AscendC::LocalTensor<float> residualFp32 = residualFp32Buf_.Get<float>();
+             const int32_t units = batchRows * tileCount;
++            int32_t batchRow = 0;
++            int32_t tile = 0;
++            uint64_t col = 0;
++            uint64_t rowOffset = batchBegin * rowWidth;
+             bool relA = false;
+             bool relB = false;
+             for (int32_t u = 0; u < units; ++u) {
+-                const int32_t batchRow = u / tileCount;
+-                const int32_t tile = u - batchRow * tileCount;
+-                const uint64_t col = static_cast<uint64_t>(tile) * tileWidth;
+-                const uint64_t rowOffset =
+-                    (batchBegin + static_cast<uint64_t>(batchRow)) * rowWidth;
++                const bool wrapsRow = (tile + 1 == tileCount);
+                 const int32_t valid = static_cast<int32_t>(
+                     rowWidth - col < static_cast<uint64_t>(tileWidth)
+                         ? rowWidth - col : static_cast<uint64_t>(tileWidth));
+@@ -3144,11 +3144,9 @@ private:
+                 }
+                 AscendC::WaitFlag<AscendC::HardEvent::MTE2_V>(rd);
+                 if (u + 1 < units) {
+-                    const int32_t nRow = (u + 1) / tileCount;
+-                    const int32_t nTile = (u + 1) - nRow * tileCount;
+-                    const uint64_t nCol = static_cast<uint64_t>(nTile) * tileWidth;
+-                    const uint64_t nRowOffset =
+-                        (batchBegin + static_cast<uint64_t>(nRow)) * rowWidth;
++                    const uint64_t nCol = wrapsRow ? 0 : col + static_cast<uint64_t>(tileWidth);
++                    const uint64_t nRowOffset = rowOffset +
++                        (wrapsRow ? rowWidth : static_cast<uint64_t>(0));
+                     const int32_t nValid = static_cast<int32_t>(
+                         rowWidth - nCol < static_cast<uint64_t>(tileWidth)
+                             ? rowWidth - nCol : static_cast<uint64_t>(tileWidth));
+@@ -3208,6 +3206,15 @@ private:
+                 } else {
+                     relB = true;
+                 }
++                if (wrapsRow) {
++                    ++batchRow;
++                    tile = 0;
++                    col = 0;
++                    rowOffset += rowWidth;
++                } else {
++                    ++tile;
++                    col += static_cast<uint64_t>(tileWidth);
++                }
+             }
+             if (relA) {
+                 AscendC::WaitFlag<AscendC::HardEvent::V_MTE2>(rel0);
