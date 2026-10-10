@@ -1,0 +1,14 @@
+ROUTE=N03 VECTOR-ILP-DUALCHAIN-X
+REVISION=V006
+SCOPE=V006 probe-src and generated V006 codegen evidence only
+
+SEARCH_COMMAND=grep -RniE "no[_ -]?reset|skip.*reset|reset.*disable|aclrtResetDevice" V006/probe-src V006/codegen
+RESET_REFERENCE=probe-src/runtime_probe.cpp:262: CheckAcl(aclrtResetDevice(device), "reset device");
+FP32_RESET_REFERENCE=probe-src/runtime_probe_fp32.cpp:125: CheckAcl(aclrtResetDevice(device), "reset device");
+CANDIDATE_OBJECT_REFERENCE=codegen/probe-v016-object.objdump.txt:1989: bl 0 <aclrtResetDevice>
+PARENT_OBJECT_REFERENCE=codegen/probe-v011-object.objdump.txt:1989: bl 0 <aclrtResetDevice>
+NO_RESET_ENTRY=TEMPORARY_V016_PROBE_ADAPTATION
+ORIGINAL_RUNTIME_SHA256=e57518d3027097bc398f367486efdb46187de37d5d59fd26b43ed748feb53570
+ADAPTED_RUNTIME_SHA256=2661154f14214c244793309dda0ec30e390906e046e2c2b65f73f9b2bf560581
+ADAPTATION_DIFF=runtime_probe-v006-no-reset.diff; exactly one aclrtResetDevice call removed
+DECISION=The original reset binaries were not run. Candidate and Parent used temporary no-reset copies of the existing V016 probe and both correctness runs passed.
