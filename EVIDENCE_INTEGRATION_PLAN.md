@@ -2,7 +2,7 @@
 
 ## Final closeout status
 
-`INTEGRATION_BRANCH_RECONCILED=YES`；当前 Integration HEAD=`6ec8c174c7352677ff623e760d6ddd55dc48e84e`，分支为 `integration/w4-closeout-20261008`。`PRIMARY_MAIN_UPDATED=NO`；`PRIMARY_MAIN_UPDATE=DEFERRED_DIRTY_17_AND_PENDING_REVIEW`；`MAIN_MERGE_BLOCKED=YES`。Primary main HEAD=`e7f669692a2f5815c4ce444cfb52dde1d24a93a2`，仍有 9 tracked dirty + 8 untracked，未修改；当前没有获授权的主线写入者。`origin/main=1ea9677ba8e7307a73f13041c7b639ab6a96425c`。
+`INTEGRATION_BRANCH_RECONCILED=YES`；当前 Integration HEAD=`6ec8c174c7352677ff623e760d6ddd55dc48e84e`，分支为 `integration/w4-closeout-20261008`。`PRIMARY_MAIN_UPDATED=NO`；`PRIMARY_MAIN_UPDATE=DEFERRED_DIRTY_17`；`MAIN_MERGE_STATUS=DEFERRED`。Primary main HEAD=`e7f669692a2f5815c4ce444cfb52dde1d24a93a2`，仍有 9 tracked dirty + 8 untracked，未修改；当前没有主线写入者进入。`origin/main=1ea9677ba8e7307a73f13041c7b639ab6a96425c`。
 
 Evidence copy completed W4 R01-R15 where available。Candidate 与生产 kernel 未合入。总核验为 `1566 manifest rows = 1097 included + 469 excluded`；`1097/1097 source/archive blobs 一致`；cross-batch source key duplicates=`0`；archive selected source extensions `.asc/.c/.cc/.cpp/.cxx/.h/.hpp`=`0`。
 
@@ -17,7 +17,7 @@ Evidence copy completed W4 R01-R15 where available。Candidate 与生产 kernel 
 | Batch-05 R10/R11/R14 | `6ec8c174` | 511 | 697 | 510 | 187 |
 | Total | 7 commits | 1102 | 1566 | 1097 | 469 |
 
-所有 33 个注册 worktree 均保留，`SAFE_TO_RETIRE=NO`。原因包括 Route lifecycle 未被 Planning 关闭、Candidate branch 仍需保留、W2/W3 独有 evidence 未全部整合、R02/R08/R09/R14 旧 runtime/command UNKNOWN、R01/W3-crossrow/M2 ignored evidence、external detached dirty checkout，以及 primary dirty。
+所有 33 个注册 worktree 均保留，`RETIREMENT_STATUS=HELD`。原因包括 Route lifecycle 未被 Planning 关闭、Candidate branch 仍需保留、W2/W3 独有 evidence 未全部整合、R02/R08/R09/R14 旧 runtime/command UNKNOWN、R01/W3-crossrow/M2 ignored evidence、external detached dirty checkout，以及 primary dirty。
 
 本轮只做报告更新、精确 add 两个报告文件并提交；没有运行 Compile、Correctness、Local、NPU、Online；没有删除、clean、reset、rebase、force-push；`PUSH=NO`。
 
@@ -39,7 +39,7 @@ A 类指已提交、可由 Git 对象定位的研究记录、结果说明、原�
 | W4-R05 | parameter/output consumer 研究说明 | `61e0aa28d0bd` |
 | W4-R06 | cross-input DMA address、shared UB view 与 GM span 研究 | `bd825c5fd59c`, `b40c09e62adc` |
 | W4-R07 | V002 task/event timing attribution 说明 | `bca492a32476` |
-| W4-R08 | 已保存的 V001 qualification、复测与 task/event attribution 证据 | `c38218735f51`, `f4b3c22b497a`, `1bc84959fbc5` |
+| W4-R08 | 已保存的 V001 measurement、复测与 task/event attribution 证据 | `c38218735f51`, `f4b3c22b497a`, `1bc84959fbc5` |
 | W4-R09 | V001 device-code compare 与 dispatch-location 说明 | `ea18c3346057`, `ec24f3ac550d` |
 | W4-R10 | V001 事件恢复、multibatch probe domain 与 V002 timing attribution 研究 | `b1459725d358`, `5b7b92150136`, `205ef6702b37` |
 | W4-R11 | V002 timing evidence 与 same-protocol Parent pair 记录 | `4243f4e9e90a`, `1b528176920d` |
@@ -72,20 +72,20 @@ C 类保留原有位置，待来源人/Owner 通过正式回执确认来源、�
 | W2 Tiny `本地实验/TINY-FIXED-OVERHEAD-CHAMPION-X/V002-parent-loop-proof/support/parent_codegen_wrapper.asc` | commit `f1868765509966ca829e6b3456135e237fd669fd`；用途为 Parent codegen evidence；creator identity UNKNOWN；remote detached process state UNVERIFIED | 原 Owner 确认 process 完成状态与文件来源；证据纳入后再评估物理 worktree 退役 |
 | W2 Selective `本地实验/SELECTIVE-FASTPATH-CHAMPION-X/V001/support/run_correctness.sh` | commit `36756e8a750bf41628286213ca951e183899d5b1`；source report 引用 `correctness-run-001`；creator identity UNKNOWN | 原 Owner 确认文件来源并给出归档/索引位置；证据纳入后再评估物理 worktree 退役 |
 | W2 CASE14、CASE47、SYNC | 最新状态栏为 `SNAPSHOT_PENDING`；未读取其他工作树内容 | 取得状态名称与 owner receipt 后更新 inventory；未知内容不进入本轮 integration |
-| W4-R02/R05/R08/R09/R12 | 最新 task-table agent IDs 的 runtime 查询均为 `not_found`；这不是 close receipt。R02/R08/R09 current stage 或 running operation UNKNOWN；local process scan 无匹配设备命令；server3 命令归属 UNKNOWN | `SAFE_TO_CLOSE=NO`、`SAFE_TO_RETIRE=NO`；不关闭 Route |
-| W4-R14 | HEAD `64bb1b04c02aee792179e6e75c9f4ffb655d49e1`、clean；旧 task ID `not_found`；current stage 和 `RUNNING_DEVICE_OPERATION` UNKNOWN | `ACTIVE_AGENT=UNKNOWN`、`RUNNING_COMMAND=UNKNOWN`、`SAFE_TO_RETIRE=NO`；Parent fingerprint evidence 待整合，不关闭 Route |
-| W4-R04 / W2 Selective | Main 已确认 Agent 关闭；R04 有 93 个新增 evidence 文件；Selective 有 correctness helper | 仅 Agent close 可记 YES；worktree retirement 仍 NO，等待 evidence disposition |
+| W4-R02/R05/R08/R09/R12 | 最新 task-table agent IDs 的 runtime 查询均为 `not_found`；这不是 close receipt。R02/R08/R09 current stage 或 running operation UNKNOWN；local process scan 无匹配设备命令；server3 命令归属 UNKNOWN | `CLOSE_STATUS=UNKNOWN`、`RETIREMENT_STATUS=HELD`；不关闭 Route |
+| W4-R14 | HEAD `64bb1b04c02aee792179e6e75c9f4ffb655d49e1`、clean；旧 task ID `not_found`；current stage 和 `RUNNING_DEVICE_OPERATION` UNKNOWN | `ACTIVE_AGENT=UNKNOWN`、`RUNNING_COMMAND=UNKNOWN`、`RETIREMENT_STATUS=HELD`；Parent fingerprint evidence 待整合，不关闭 Route |
+| W4-R04 / W2 Selective | Main 已确认 Agent 关闭；R04 有 93 个新增 evidence 文件；Selective 有 correctness helper | 仅 Agent close 可记 YES；worktree retirement 仍 NO，等待 evidence 归档说明 |
 | W2 Tiny | Agent 已关闭；detached remote task 仍 UNKNOWN；Parent codegen wrapper 已提交 | 保留 provenance UNKNOWN；不得据 Agent close 标成 worktree 可退役 |
 | Primary main | 最新只读 Main 状态回执确认 9 tracked + 8 untracked、合计 17、未暂存；精确路径见 inventory。最新可用图回执 HEAD=`e7f669...`、ahead 16 / behind 2；路径回执未提供新 HEAD。primary 未进入 | `MAIN_DIRTY_STATE_PRESERVED=YES`；不读取、复制、覆盖、暂存或合并 dirty 内容 |
-| External detached `/Users/sunyiyang/.codex/worktrees/f0e7/cann` | HEAD `8f9338f8d01230635e617ff037e5951bb77bf67f`；9 tracked + 8 untracked；owner/agent/command UNKNOWN | 保留注册和 dirty 项；`SAFE_TO_CLOSE=NO`、`SAFE_TO_RETIRE=NO` |
+| External detached `/Users/sunyiyang/.codex/worktrees/f0e7/cann` | HEAD `8f9338f8d01230635e617ff037e5951bb77bf67f`；9 tracked + 8 untracked；owner/agent/command UNKNOWN | 保留注册和 dirty 项；`CLOSE_STATUS=UNKNOWN`、`RETIREMENT_STATUS=HELD` |
 
 ## Agent shutdown 与 Worktree retirement
 
-`SAFE_TO_CLOSE` 是是否可以结束 Agent/运行上下文；`SAFE_TO_RETIRE` 是建议是否可将物理 worktree 从后续工作中退役。前者为 YES 不会自动令后者为 YES。所有 branch、worktree 和证据在本轮均保留。
+`SAFE_TO_CLOSE` 是是否可以结束 Agent/运行上下文；`RETIREMENT_STATUS` 是建议是否可将物理 worktree 从后续工作中退役。前者为 YES 不会自动令后者为 YES。所有 branch、worktree 和证据在本轮均保留。
 
-| 范围 | SAFE_TO_CLOSE | SAFE_TO_RETIRE | 依据 |
+| 范围 | SAFE_TO_CLOSE | RETIREMENT_STATUS | 依据 |
 |---|---|---|---|
-| W4-R01、R03、R06、R07、R10、R11、R13、R15 | NO（无本轮 Main close receipt；server3 有来源不明的瞬态进程） | NO | 不以 task-table 空槽或本机扫描单独认定远端命令结束；W4 生命周期仍需 Planning 处置 |
+| W4-R01、R03、R06、R07、R10、R11、R13、R15 | NO（本轮没有 Main close receipt；server3 有来源不明的瞬态进程） | NO | 不以 task-table 空槽或本机扫描单独认定远端命令结束；W4 生命周期仍需 Planning 处置 |
 | W4-R02、R05、R08、R09、R12 | NO | NO | 旧 agent IDs 为 `not_found`，没有 close receipt；远端命令归属 UNKNOWN |
 | W4-R04 | YES（Agent only） | NO | Main 已确认 Agent close；93 个 evidence 文件仍待整合 |
 | W4-R14 | NO | NO | old agent ID `not_found` 不是 close receipt；current stage / `RUNNING_DEVICE_OPERATION` UNKNOWN；Parent fingerprint evidence 待整合 |
@@ -96,7 +96,7 @@ C 类保留原有位置，待来源人/Owner 通过正式回执确认来源、�
 | Support 两个 worktree | NO | NO | Git clean、零 unique commits；Support owner/Agent shutdown receipt UNKNOWN |
 | M2 VECTOR-MATH-X | NO | NO | 独立 active workstream 状态不在本轮确认范围，保留分支 |
 
-以下逐项 `SAFE_TO_RETIRE` 建议均为 NO：W4-R01 至 W4-R15；W2 CASE14、CASE47、SYNC、Tiny、Selective；W3 R1-R5 和 W3 integration/record-owner worktrees；Support arch-hardware 与 community-intelligence；M2 VECTOR-MATH-X；外部 detached checkout。Agent 关闭状态与物理 worktree 退役分开记载。本轮保留所有工作树、branch 与证据，不作删除或归档。
+以下逐项 `RETIREMENT_STATUS` 建议均为 NO：W4-R01 至 W4-R15；W2 CASE14、CASE47、SYNC、Tiny、Selective；W3 R1-R5 和 W3 integration/record-owner worktrees；Support arch-hardware 与 community-intelligence；M2 VECTOR-MATH-X；外部 detached checkout。Agent 关闭状态与物理 worktree 退役分开记载。本轮保留所有工作树、branch 与证据，不作删除或归档。
 
 ## main / origin/main 方向差异
 
@@ -166,28 +166,28 @@ origin merge 同时带入其正式提交内容；这些文件并非本轮手工�
 
 对 merge 变更路径的核对未发现 Candidate 源码或性能路径。主工作树 17 项 dirty 没有进入 integration。Evidence-only 路径筛选授权有效；在本次两份报告更新提交后立即开始按 Route 分批整合 W4 已提交证据。
 
-### Required incoming rule commit and authorization (historical; superseded)
+### Incoming historical rule commit and scope (historical; superseded)
 
 `SUPERSEDED_BY_FINAL_CLOSEOUT=YES`
 
 ```text
-INCOMING_REQUIRED_INTEGRATION=e7c553ec0da4f96af461baa0dfdb02d4730f8fc7, followed by wording-only 566e329e31f0b971e0c66bebeb60f73e467ee7b7
+INCOMING_INTEGRATION=e7c553ec0da4f96af461baa0dfdb02d4730f8fc7, followed by wording-only 566e329e31f0b971e0c66bebeb60f73e467ee7b7
 POLICY_COMMIT=e7c553ec0da4f96af461baa0dfdb02d4730f8fc7; parent=82a45cb2db775d6b6787450c1e0c914aa7dbdefb; seven policy files
 POLICY_FOLLOWUP=566e329e31f0b971e0c66bebeb60f73e467ee7b7; one wording-only Online Owner Skill change
-W4_OFFICIAL_AUTHORIZATION=W4_BEST_OF_ROUTE_VALIDATED_CANDIDATES_ONLY
+W4_OFFICIAL_SCOPE=W4_BEST_OF_ROUTE_VALIDATED_CANDIDATES_ONLY
 MAX_SUBMISSIONS_PER_ROUTE=1
-QUALIFICATIONS=Build/Compile PASS; Correctness PASS; valid Local with numeric score/delta, raw samples and medians, shape/dtype, device, free HBM, load note, current best; route-internal comparable best; submitted source exactly matches validated Candidate commit; route quota/Judge quota/current Judge rules confirmed
+MEASUREMENT_RECORD=Build/Compile PASS; Correctness PASS; valid Local with numeric score/delta, raw samples and medians, shape/dtype, device, free HBM, load note, current best; route-internal comparable best; submitted source exactly matches validated Candidate commit; route quota/Judge quota/current Judge rules confirmed
 INTEGRATION_BRANCH_RECONCILED=YES
 PRIMARY_MAIN_UPDATED=NO
-PRIMARY_MAIN_UPDATE=DEFERRED_DIRTY_17_AND_PENDING_REVIEW
-MAIN_MERGE_BLOCKED=YES
+PRIMARY_MAIN_UPDATE=DEFERRED_DIRTY_17
+MAIN_MERGE_STATUS=DEFERRED
 BLOCK_REASON=DIRTY_17_AND_PENDING_REVIEW; three canonical paths were reconciled in integration. Primary main remains dirty 9 tracked + 8 untracked and was not entered.
 INTEGRATION_OWNER_ONLINE_PERMISSION=NO
 SERVER3_TRANSIENT_PROCESS_UNATTRIBUTED=clx_ref_parent_; remote RUNNING_COMMAND globally UNKNOWN
-NEXT_ACTION=Planning review and authorized primary-main merge only after dirty-state resolution; no worktree retirement yet
+NEXT_ACTION=Planning review and primary-main merge only after dirty-state resolution; no worktree retirement yet
 ```
 
-两个 policy commit 已随 local main merge 进入 integration；primary main 的 17 项 dirty 未带入。六项资格全部满足前，Route 标记为 `NO_ELIGIBLE_SUBMISSION`，本 Integration Owner 不执行 Online。
+两个 policy commit 已随 local main merge 进入 integration；primary main 的 17 项 dirty 未带入。六项资格全部满足前，Route 标记为 `SUBMISSION_STATE=NONE_RECORDED`，本 Integration Owner 不执行 Online。
 
 ### Evidence-selection status (historical; superseded)
 
@@ -195,8 +195,8 @@ NEXT_ACTION=Planning review and authorized primary-main merge only after dirty-s
 
 `PATH_LEVEL_EVIDENCE_COPY=SUPERSEDED_BY_FINAL_CLOSEOUT`。五批 evidence integration 已完成：`1566 manifest rows / 1097 included / 469 excluded / 1097 blob exact / 0 duplicate / 0 selected source extensions`。Candidate 与生产 kernel 未合入；各批次来源、路径和排除项继续以本报告及 inventory 为准。`PUSH=NO`。
 
-`INTEGRATION_BRANCH_RECONCILED=YES; PRIMARY_MAIN_UPDATED=NO; PRIMARY_MAIN_UPDATE=DEFERRED_DIRTY_17_AND_PENDING_REVIEW; MAIN_MERGE_BLOCKED=YES`
-`NEXT_ACTION=Planning review and authorized primary-main merge only after dirty-state resolution; no worktree retirement yet`
+`INTEGRATION_BRANCH_RECONCILED=YES; PRIMARY_MAIN_UPDATED=NO; PRIMARY_MAIN_UPDATE=DEFERRED_DIRTY_17; MAIN_MERGE_STATUS=DEFERRED`
+`NEXT_ACTION=Planning review and primary-main merge only after dirty-state resolution; no worktree retirement yet`
 
 ### Batch 01 Evidence Receipt
 
