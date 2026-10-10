@@ -1,0 +1,36 @@
+--- V001/submission.asc
++++ V003/rejected-index-order.asc
+@@ -3120,11 +3120,17 @@
+             AscendC::LocalTensor<float> xFp32 = xFp32Buf_.Get<float>();
+             AscendC::LocalTensor<float> residualFp32 = residualFp32Buf_.Get<float>();
+             const int32_t units = batchRows * tileCount;
++            // V003: alternate independent BF16 rows within each channel tile
++            // so the pass-1 Vector chain does not run all tiles of one row
++            // before issuing the equivalent chain for the next row.
++            const bool interleaveRows = !std::is_same<T, half>::value &&
++                                        batchRows > 1 && tileCount > 1;
+             bool relA = false;
+             bool relB = false;
+             for (int32_t u = 0; u < units; ++u) {
+-                const int32_t batchRow = u / tileCount;
+-                const int32_t tile = u - batchRow * tileCount;
++                const int32_t batchRow = interleaveRows ? (u % batchRows) : (u / tileCount);
++                const int32_t tile = interleaveRows ? (u / batchRows)
++                                                    : (u - batchRow * tileCount);
+                 const uint64_t col = static_cast<uint64_t>(tile) * tileWidth;
+                 const uint64_t rowOffset =
+                     (batchBegin + static_cast<uint64_t>(batchRow)) * rowWidth;
+@@ -3144,8 +3150,11 @@
+                 }
+                 AscendC::WaitFlag<AscendC::HardEvent::MTE2_V>(rd);
+                 if (u + 1 < units) {
+-                    const int32_t nRow = (u + 1) / tileCount;
+-                    const int32_t nTile = (u + 1) - nRow * tileCount;
++                    const int32_t nextU = u + 1;
++                    const int32_t nRow = interleaveRows ? (nextU % batchRows)
++                                                        : (nextU / tileCount);
++                    const int32_t nTile = interleaveRows ? (nextU / batchRows)
++                                                         : (nextU - nRow * tileCount);
+                     const uint64_t nCol = static_cast<uint64_t>(nTile) * tileWidth;
+                     const uint64_t nRowOffset =
+                         (batchBegin + static_cast<uint64_t>(nRow)) * rowWidth;
