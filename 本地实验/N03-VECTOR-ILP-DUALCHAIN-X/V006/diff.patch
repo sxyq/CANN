@@ -1,0 +1,134 @@
+--- V005/submission.asc
++++ V006/submission.asc
+@@ -3191,16 +3191,60 @@
+                 } else {
+                     AscendC::LocalTensor<float> valueTile =
+                         valueFp32[batchRow * rowWidth + col];
+-                    ToFloat(residualFp32, residualLocal, valid);
+-                    ToFloat(xFp32, xLocal, valid);
+-                    AscendC::PipeBarrier<PIPE_V>();
+-                    AscendC::Add(valueTile, xFp32, residualFp32, valid);
+-                    AscendC::PipeBarrier<PIPE_V>();
+-                    AscendC::Mul(residualFp32, valueTile, valueTile, valid);
+-                    AscendC::PipeBarrier<PIPE_V>();
+-                    AscendC::ReduceSum(
+-                        reduceLocal[batchRow * reduceStride + tile], residualFp32,
+-                        xFp32, valid);
++                    if (batchRows == 2 && batchRow == 0) {
++                        // V006 Pass 1 startup: widen and add row zero, then
++                        // retain its complete y tile.  Its square and partial
++                        // reduction are intentionally left for the matching
++                        // row-one tile below.  The input event is still
++                        // released after the last read from xLocal/rLocal.
++                        ToFloat(residualFp32, residualLocal, valid);
++                        ToFloat(xFp32, xLocal, valid);
++                        AscendC::PipeBarrier<PIPE_V>();
++                        AscendC::Add(valueTile, xFp32, residualFp32, valid);
++                        AscendC::PipeBarrier<PIPE_V>();
++                    } else if (batchRows == 2) {
++                        // V006 Pass 1 steady state: form row one first, then
++                        // consume the two independent retained y tiles through
++                        // the same square/reduction Vector stages.  Both
++                        // reduction slots retain the original row/tile mapping.
++                        ToFloat(residualFp32, residualLocal, valid);
++                        ToFloat(xFp32, xLocal, valid);
++                        AscendC::PipeBarrier<PIPE_V>();
++                        AscendC::Add(valueTile, xFp32, residualFp32, valid);
++                        AscendC::PipeBarrier<PIPE_V>();
++
++                        AscendC::LocalTensor<float> firstValue =
++                            valueFp32[col];
++                        AscendC::LocalTensor<float> secondValue = valueTile;
++
++                        // Stage 1: row zero square and partial reduction.
++                        AscendC::Mul(residualFp32, firstValue, firstValue, valid);
++                        AscendC::PipeBarrier<PIPE_V>();
++                        AscendC::ReduceSum(
++                            reduceLocal[tile], residualFp32, xFp32, valid);
++
++                        // Stage 2: row one square and partial reduction.
++                        // The same work vectors are reused after stage 1 has
++                        // completed; no additional GM traffic is introduced.
++                        AscendC::Mul(residualFp32, secondValue, secondValue, valid);
++                        AscendC::PipeBarrier<PIPE_V>();
++                        AscendC::ReduceSum(
++                            reduceLocal[reduceStride + tile], residualFp32,
++                            xFp32, valid);
++                    } else {
++                        // Single-row and larger-batch fallbacks retain the
++                        // original per-unit chain and reduction slot layout.
++                        ToFloat(residualFp32, residualLocal, valid);
++                        ToFloat(xFp32, xLocal, valid);
++                        AscendC::PipeBarrier<PIPE_V>();
++                        AscendC::Add(valueTile, xFp32, residualFp32, valid);
++                        AscendC::PipeBarrier<PIPE_V>();
++                        AscendC::Mul(residualFp32, valueTile, valueTile, valid);
++                        AscendC::PipeBarrier<PIPE_V>();
++                        AscendC::ReduceSum(
++                            reduceLocal[batchRow * reduceStride + tile],
++                            residualFp32, xFp32, valid);
++                    }
+                 }
+                 AscendC::SetFlag<AscendC::HardEvent::V_MTE2>(rel);
+                 if (useA) {
+@@ -3312,40 +3356,46 @@
+                 }
+                 if constexpr (!std::is_same<T, half>::value) {
+                     if (batchRows == 2) {
+-                        // V005: a direct three-stage dual-chain microkernel.  The
+-                        // first stage seeds both independent row chains, the
+-                        // second stage drains row zero, and the final stage
+-                        // drains row one.  The value tiles stay at their
+-                        // original row-major UB offsets; only Vector issue
+-                        // order changes.
++                        // V006 Pass 2: explicit six-stage dual-row Vector
++                        // microkernel.  This is a direct executable schedule,
++                        // not a wrapper around the old row loop.  The stage
++                        // machine keeps both retained value rows live through
++                        // the independent scale stage before draining either
++                        // dependent Mul/Add chain.
+                         AscendC::LocalTensor<float> firstValue = valueFp32[col];
+                         AscendC::LocalTensor<float> secondValue =
+                             valueFp32[rowWidth + col];
+-                        const int32_t vectorStages = 3;
++                        const int32_t vectorStages = 6;
+                         for (int32_t vectorStage = 0;
+                              vectorStage < vectorStages; ++vectorStage) {
+                             if (vectorStage == 0) {
+-                                // Startup: both scale operations are
+-                                // independent and can occupy the V pipe.
++                                // Startup 0: scale row zero.
+                                 AscendC::Muls(firstValue, firstValue,
+                                               invRmsValues[0], valid);
+                                 AscendC::PipeBarrier<PIPE_V>();
++                            } else if (vectorStage == 1) {
++                                // Startup 1: scale row one while row zero's
++                                // scaled value remains resident in UB.
+                                 AscendC::Muls(secondValue, secondValue,
+                                               invRmsValues[1], valid);
+                                 AscendC::PipeBarrier<PIPE_V>();
+-                            } else if (vectorStage == 1) {
+-                                // Steady state: finish the first chain while
+-                                // the second chain remains ready in UB.
++                            } else if (vectorStage == 2) {
++                                // Middle 0: multiply row zero by gamma.
+                                 AscendC::Mul(firstValue, firstValue, xFp32, valid);
+                                 AscendC::PipeBarrier<PIPE_V>();
++                            } else if (vectorStage == 3) {
++                                // Middle 1: finish row zero with bias.
+                                 AscendC::Add(firstValue, firstValue,
+                                              residualFp32, valid);
+                                 AscendC::PipeBarrier<PIPE_V>();
+-                            } else {
+-                                // Drain: finish the second independent chain.
++                            } else if (vectorStage == 4) {
++                                // Drain 0: multiply row one by gamma after
++                                // row zero has completed its dependent chain.
+                                 AscendC::Mul(secondValue, secondValue,
+                                              xFp32, valid);
+                                 AscendC::PipeBarrier<PIPE_V>();
++                            } else {
++                                // Drain 1: finish row one with bias.
+                                 AscendC::Add(secondValue, secondValue,
+                                              residualFp32, valid);
+                                 AscendC::PipeBarrier<PIPE_V>();
