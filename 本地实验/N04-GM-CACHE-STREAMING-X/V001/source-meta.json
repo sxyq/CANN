@@ -21,7 +21,7 @@
   "API_EVIDENCE": "CANN 8.5.0.alpha002 AscendC GlobalTensor::SetL2CacheHint; CACHE_MODE_DISABLE address alteration for DAV_2201 requires L2_CACHE_HINT compile definition.",
   "BUILD_INPUT": "本地实验/R31B/V016/support/CMakeLists.txt, device.cpp, adapter.cpp, compile_adapter_v016.asc, link_one.sh; copied to the N04 temporary build directory with the Candidate at the expected single-version source path",
   "BUILD_COMMAND": "source /usr/local/Ascend/ascend-toolkit/set_env.sh; export SOC_VERSION=Ascend910B3 ASCEND_CANN_PACKAGE_PATH=/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002; cmake -S <N04_TMP> -B <N04_TMP>/build -DCMAKE_CXX_FLAGS=-DL2_CACHE_HINT; cmake --build <N04_TMP>/build --target device submission full_link --verbose --parallel 1 -- -B",
-  "COMPILE": "DEVICE_PASS; SUBMISSION_PASS; FULL_LINK_FAIL; RC=2; undefined symbol g_opSystemRunCfg from CANN L2CacheAlter under L2_CACHE_HINT",
+  "COMPILE": "FAIL/LINK_FAIL; DEVICE_PASS; SUBMISSION_PASS; full_link RC=2; undefined g_opSystemRunCfg from SetL2CacheHint/L2CacheAlter under L2_CACHE_HINT",
   "CORRECTNESS": "NOT_RUN; full_link failed and no executable was produced",
   "LOCAL": "NONE",
   "DEVICE_ID": "6",
@@ -29,5 +29,6 @@
   "DEVICE6_POST": "HBM used 91%; AICore 0%; AIVector 0%; PID 3357697 VLLMWorker_TP 56358 MB",
   "SERVER_SNAPSHOT": "server-preflight.txt",
   "BUILD_LOG": "compile-v001-existing-entry.log",
-  "NEXT_ACTION": "Commit V001 source and evidence; resolve g_opSystemRunCfg through the existing CANN integration before another compile attempt."
+  "LINK_INVESTIGATION": "link-symbol-investigation.md",
+  "NEXT_ACTION": "保留 FAIL/LINK_FAIL；Candidate 不变且停止重复构建。当前 R31B V016 单对象链接入口没有匹配的 g_opSystemRunCfg 提供对象。"
 }
