@@ -1,0 +1,81 @@
+--- 本地实验/N03-VECTOR-ILP-DUALCHAIN-X/V006/submission.asc	2026-10-11 01:34:58
++++ 本地实验/N03-VECTOR-ILP-DUALCHAIN-X/V007/submission.asc	2026-10-11 03:18:14
+@@ -3423,26 +3423,63 @@
+                         SyncMTE3ToV();
+                     }
+                 } else {
+-                    for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
++                    if (batchRows == 2) {
++                        // V007 FP16 dual-row Vector schedule: widen and scale
++                        // both retained rows before draining either row through
++                        // the original conversion, affine, and store sequence.
++                        // The second FP32 scratch tile is already allocated for
++                        // this path; no GM traffic or event ownership changes.
+                         AscendC::LocalTensor<half> yStore = gammaBuf_.Get<half>();
+-                        AscendC::LocalTensor<half> yTile =
+-                            yStore[batchRow * rowWidth + col];
+-                        ToFloat(valueFp32, yTile, valid);
++                        AscendC::LocalTensor<half> firstY = yStore[col];
++                        AscendC::LocalTensor<half> secondY =
++                            yStore[rowWidth + col];
++                        ToFloat(valueFp32, firstY, valid);
+                         AscendC::PipeBarrier<PIPE_V>();
+-                        AscendC::Muls(valueFp32, valueFp32, invRmsValues[batchRow], valid);
++                        ToFloat(xFp32, secondY, valid);
+                         AscendC::PipeBarrier<PIPE_V>();
+-                        FromFloat(outputLocal, valueFp32, valid);
++                        AscendC::Muls(valueFp32, valueFp32, invRmsValues[0], valid);
+                         AscendC::PipeBarrier<PIPE_V>();
+-                        AscendC::Mul(outputLocal, outputLocal, gammaLocal, valid);
++                        AscendC::Muls(xFp32, xFp32, invRmsValues[1], valid);
+                         AscendC::PipeBarrier<PIPE_V>();
+-                        AscendC::Add(outputLocal, outputLocal, biasLocal, valid);
+-                        AscendC::PipeBarrier<PIPE_V>();
+-                        SyncVToMTE2();
+-                        SyncVToMTE3();
+-                        Store(outputGm_,
+-                              (batchBegin + static_cast<uint64_t>(batchRow)) * rowWidth + col,
+-                              outputLocal, valid);
+-                        SyncMTE3ToV();
++                        for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
++                            AscendC::LocalTensor<float> valueTile =
++                                batchRow == 0 ? valueFp32 : xFp32;
++                            FromFloat(outputLocal, valueTile, valid);
++                            AscendC::PipeBarrier<PIPE_V>();
++                            AscendC::Mul(outputLocal, outputLocal, gammaLocal, valid);
++                            AscendC::PipeBarrier<PIPE_V>();
++                            AscendC::Add(outputLocal, outputLocal, biasLocal, valid);
++                            AscendC::PipeBarrier<PIPE_V>();
++                            SyncVToMTE2();
++                            SyncVToMTE3();
++                            Store(outputGm_,
++                                  (batchBegin + static_cast<uint64_t>(batchRow)) * rowWidth + col,
++                                  outputLocal, valid);
++                            SyncMTE3ToV();
++                        }
++                    } else {
++                        for (int32_t batchRow = 0; batchRow < batchRows; ++batchRow) {
++                            AscendC::LocalTensor<half> yStore = gammaBuf_.Get<half>();
++                            AscendC::LocalTensor<half> yTile =
++                                yStore[batchRow * rowWidth + col];
++                            ToFloat(valueFp32, yTile, valid);
++                            AscendC::PipeBarrier<PIPE_V>();
++                            AscendC::Muls(valueFp32, valueFp32,
++                                          invRmsValues[batchRow], valid);
++                            AscendC::PipeBarrier<PIPE_V>();
++                            FromFloat(outputLocal, valueFp32, valid);
++                            AscendC::PipeBarrier<PIPE_V>();
++                            AscendC::Mul(outputLocal, outputLocal, gammaLocal, valid);
++                            AscendC::PipeBarrier<PIPE_V>();
++                            AscendC::Add(outputLocal, outputLocal, biasLocal, valid);
++                            AscendC::PipeBarrier<PIPE_V>();
++                            SyncVToMTE2();
++                            SyncVToMTE3();
++                            Store(outputGm_,
++                                  (batchBegin + static_cast<uint64_t>(batchRow)) * rowWidth + col,
++                                  outputLocal, valid);
++                            SyncMTE3ToV();
++                        }
+                     }
+                 }
+                 AscendC::SetFlag<AscendC::HardEvent::V_MTE2>(prel);
