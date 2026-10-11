@@ -13,7 +13,7 @@ namespace {
 
 using R31BRunKernel = decltype(&n02_parent::run_kernel_v011);
 
-constexpr int kDevice = 5;
+constexpr int kDevice = 6;
 constexpr int kRows = 2;
 constexpr int kWarmup = 45;
 constexpr int kPairs = 21;
