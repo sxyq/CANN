@@ -1,0 +1,1 @@
+mv /home/data4t2/lelinfeng/cann/server_runs/N03-VECTOR-ILP-DUALCHAIN-X-RESET-20261011/V004/07c5795f/candidate/submission.asc /home/data4t2/lelinfeng/cann/server_runs/N03-VECTOR-ILP-DUALCHAIN-X-RESET-20261011/V004/07c5795f/candidate/R31B-V016-WIDE-TILE-SEED_kernel.asc
