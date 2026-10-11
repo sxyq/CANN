@@ -1,0 +1,54 @@
+--- a/本地实验/CROSSROW-EPI-PROLOGUE-X/V004/Candidate.asc
++++ b/本地实验/CROSSROW-EPI-PROLOGUE-X/V004/Candidate.asc
+@@ -3099,7 +3099,7 @@
+             const int32_t batchRows = static_cast<int32_t>(
+                 remainingRows < static_cast<uint64_t>(batchLimit)
+                     ? remainingRows : static_cast<uint64_t>(batchLimit));
+-            float invRmsValues[kWideFullYMaxRows] = {};
++            float invRmsValues[kWideFullYMaxRows];
+             AscendC::LocalTensor<float> reduceLocal = reduceFp32Buf_.Get<float>();
+ 
+             // Pass 1: y = x + residual, retain y, accumulate sum(y^2).
+@@ -3122,12 +3122,9 @@
+             const int32_t units = batchRows * tileCount;
+             bool relA = false;
+             bool relB = false;
+-            // V004: carry the two-dimensional tile coordinates through the
+-            // linear stream instead of reconstructing them with integer
+-            // division and multiply/subtract on every unit.
+-            int32_t batchRow = 0;
+-            int32_t tile = 0;
+             for (int32_t u = 0; u < units; ++u) {
++                const int32_t batchRow = u / tileCount;
++                const int32_t tile = u - batchRow * tileCount;
+                 const uint64_t col = static_cast<uint64_t>(tile) * tileWidth;
+                 const uint64_t rowOffset =
+                     (batchBegin + static_cast<uint64_t>(batchRow)) * rowWidth;
+@@ -3147,12 +3144,8 @@
+                 }
+                 AscendC::WaitFlag<AscendC::HardEvent::MTE2_V>(rd);
+                 if (u + 1 < units) {
+-                    int32_t nRow = batchRow;
+-                    int32_t nTile = tile + 1;
+-                    if (nTile == tileCount) {
+-                        ++nRow;
+-                        nTile = 0;
+-                    }
++                    const int32_t nRow = (u + 1) / tileCount;
++                    const int32_t nTile = (u + 1) - nRow * tileCount;
+                     const uint64_t nCol = static_cast<uint64_t>(nTile) * tileWidth;
+                     const uint64_t nRowOffset =
+                         (batchBegin + static_cast<uint64_t>(nRow)) * rowWidth;
+@@ -3215,12 +3208,6 @@
+                 } else {
+                     relB = true;
+                 }
+-                if (tile + 1 == tileCount) {
+-                    ++batchRow;
+-                    tile = 0;
+-                } else {
+-                    ++tile;
+-                }
+             }
+             if (relA) {
+                 AscendC::WaitFlag<AscendC::HardEvent::V_MTE2>(rel0);
