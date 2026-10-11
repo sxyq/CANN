@@ -160,6 +160,45 @@ provides actual HIIPU instructions or instruction-side hotness. Only then can
 a single compiler/layout OFAT be proposed against a same-path generated-code
 comparison. Until then, keep R3 research-only.
 
+## Incremental profiler interface check and route ledger
+
+Checked at `2026-10-11T06:25:56+00:00` without launching a workload:
+
+```text
+MSPROF = /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/tools/profiler/bin/msprof
+COMMAND = <MSPROF> --help
+RETURN_CODE = 0
+INTERFACE = --instr-profiling (Ascend910B/Ascend910_93)
+INSTR_SAMPLE_INTERFACE = --instr-profiling-freq, default 1000 cycles, range 300..30000 cycles
+APPLICATION_INTERFACE = --application <path>
+```
+
+This is a real profiler capability/argument check, not a profile capture. The
+R3-owned directory still has no host-side application, invocation entry, or
+runner to pass to `--application`. The retained `.alink` is an `elf64-hiipu`
+target image, not a host executable that can be launched by `msprof`; the
+compiler-ID `a.out` is not an AddRmsNormBias workload. Therefore no
+instruction-side profile, instruction hotness, or cache/fetch attribution was
+produced.
+
+The route counters below count Kernel/Revision attempts only; read-only
+feasibility/tool checks are excluded from `TOTAL_ATTEMPTS`:
+
+```text
+TOTAL_ATTEMPTS = 0
+KERNEL_REVISIONS_DECLARED = 0
+BUILD_PASS = 0
+CORRECTNESS_PASS = 0
+FULL_LOCAL_SCORED_REVISIONS = 0
+LOCAL_BEST_IMPROVEMENTS = 0
+LATEST_REVISION/SCORE = NONE / NONE
+BEST_LOCAL_SCORE = SHAPE_LOCAL_ONLY / NONE
+```
+
+The existing section/layout evidence remains valid; no new target instruction
+or profile evidence was produced, and no Revision or Candidate was created.
+
 BLOCKER = INSTRUCTION_PAYLOAD_UNDECODABLE_AND_NO_ROUTE_BUILD_ENTRY: the existing
 object yields real section/function sizes, but no instruction sequence or
-hotness; the R3 worktree has no legal build entry for generating a comparison.
+hotness; `msprof` exposes an instruction-profile interface but the R3 worktree
+has no legal host-side workload/entry for using it or generating a comparison.
