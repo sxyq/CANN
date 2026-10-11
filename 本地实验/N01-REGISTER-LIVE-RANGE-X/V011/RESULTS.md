@@ -32,12 +32,14 @@ In `ProcessWideLowPrecision` Pass 2, V011 moves only the `valueFp32` LocalTensor
 
 The existing `paired_runner_v016` completed 21 interleaved pairs per case (84 total) on d5. Parent is R31B V011; Candidate source is V011. Runner labels Parent `V011` and Candidate `V016` are generic slots, not Route revision names. Values are device-event microseconds; delta is Candidate minus Parent.
 
-| Case | Parent median | Candidate median | Paired delta median | Delta range | Pairs |
-|---|---:|---:|---:|---:|---:|
-| FP16 D=12288 | 6.220 | 5.940 | -0.100 | -151.980 to +78.380 | 21 |
-| FP16 D=32768 | 10.340 | 10.280 | -0.080 | -8.960 to +88.980 | 21 |
-| BF16 D=12288 | 6.660 | 6.620 | -0.140 | -101.440 to +7.580 | 21 |
-| BF16 D=32768 | 13.880 | 13.320 | -0.560 | -121.740 to +139.040 | 21 |
+Each row below summarizes all 21 paired observations for that case (84 pairs total). Percentiles and extrema are retained as emitted by the Runner; paired delta is Candidate minus Parent.
+
+| Case | Parent median; p10-p90; min-max | Candidate median; p10-p90; min-max | Paired delta median; p10-p90; min-max |
+|---|---|---|---|
+| FP16 D=12288 | 6.220; 5.700..7.440; 5.600..157.640 | 5.940; 5.620..7.300; 5.500..85.400 | -0.100; -0.820..+0.840; -151.980..+78.380 |
+| FP16 D=32768 | 10.340; 9.860..11.960; 9.620..18.620 | 10.280; 9.900..34.580; 9.660..98.840 | -0.080; -0.620..+24.220; -8.960..+88.980 |
+| BF16 D=12288 | 6.660; 6.400..14.780; 6.260..107.780 | 6.620; 6.200..7.480; 6.020..14.240 | -0.140; -8.140..+0.340; -101.440..+7.580 |
+| BF16 D=32768 | 13.880; 13.640..14.400; 13.520..135.060 | 13.320; 13.020..113.460; 12.920..153.080 | -0.560; -1.060..+99.800; -121.740..+139.040 |
 
 All raw pairs and outliers are retained in `results/local-v011.raw.log`. Large timing spikes remain, especially for the D=32768 BF16 case. `LOCAL_SCORE=NONE`, `LOAD_QUALITY=NOISY`; no gain is claimed from the medians.
 
