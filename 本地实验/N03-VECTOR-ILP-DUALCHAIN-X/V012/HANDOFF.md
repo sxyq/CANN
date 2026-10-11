@@ -20,3 +20,4 @@ V012 changes only BF16 full-tile affine instruction issue grouping to two-row wa
 - BF16 Correctness: 4/4 Parent/Candidate golden comparisons PASS across two cases; exact matches and zero mismatches.
 - Local: `NONE`. Reused V011 same-binary results: both d6144 and d4096 are `MEASUREMENT_PROTOCOL_BLOCKED_FOR_SHAPE`; no V012 qualification or paired Local was started.
 - d3 before/after Correctness snapshots and raw results are saved under `results/remote-results/`; compile and source SHA records are under `results/remote-logs/`.
+- Normal push advanced `origin/route/n03-vector-ilp-dualchain-x-20261011` to `fff0755bd` after the evidence commit.
