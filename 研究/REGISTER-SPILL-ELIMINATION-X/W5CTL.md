@@ -274,7 +274,10 @@ The test uses temporary fake executables and read-only public scorer fixtures on
 propagation, SHA guards, raw-stat rejection, dedup, manifest identity,
 checkpoint/report/resume idempotence;
 it does not touch a CANN compiler, NPU, Kernel, CMake, shared scheduler, or
-the tooling-runner worktree. The current `14/14` result is not an E2E result:
-real Build,
-Correctness, Local event provenance, Runner identity, and evidence publication
-backends must be supplied and accepted by the Tooling/Integration Owner.
+the tooling-runner worktree. At `2026-10-11T18:09:21Z`, this suite tested
+HEAD `2f1d41be941ef04ff49b2b3b4679d1d73bd83aa8`: `Ran 17 tests in 23.134s`,
+`OK` (`17/17`). The captured log is
+`研究/REGISTER-SPILL-ELIMINATION-X/w5ctl-selftest-HEAD-2f1d41b-20261011T180921Z.log`.
+This is a self-test plus historical-fixture validation, not a real E2E result:
+real Build, Correctness, post-R1-window Canonical device Local, Runner/event
+provenance, and evidence publication are not established by this test.
