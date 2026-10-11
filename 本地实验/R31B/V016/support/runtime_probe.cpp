@@ -259,7 +259,6 @@ int main(int argc, char** argv)
     CheckAcl(aclrtFree(dr), "free residual");
     CheckAcl(aclrtFree(dx), "free x");
     CheckAcl(aclrtDestroyStream(stream), "destroy stream");
-    CheckAcl(aclrtResetDevice(device), "reset device");
     CheckAcl(aclFinalize(), "aclFinalize");
     return failures == 0 ? 0 : 1;
 }
