@@ -202,3 +202,20 @@ BLOCKER = INSTRUCTION_PAYLOAD_UNDECODABLE_AND_NO_ROUTE_BUILD_ENTRY: the existing
 object yields real section/function sizes, but no instruction sequence or
 hotness; `msprof` exposes an instruction-profile interface but the R3 worktree
 has no legal host-side workload/entry for using it or generating a comparison.
+
+## Route-owned commit publication result
+
+The profiler-interface/count update was locally committed, then its one push
+attempt failed:
+
+```text
+COMMIT = 72dee9f79
+PUSH_COMMAND = git push --porcelain origin HEAD:refs/heads/research/w5-r03-code-footprint
+PUSH_EXIT_CODE = 128
+PUSH_ERROR = fatal: unable to access 'https://github.com/sxyq/CANN.git/': Failed to connect to github.com port 443 after 130990 ms: Connection timed out
+LAST_VERIFIED_REMOTE_SHA_BEFORE_PUSH = 38c78c39ad482bdae31436268c0e514616b30aef
+RETRY_OF_THIS_PUSH = NOT_ATTEMPTED
+```
+
+This records one network failure only; it does not alter the target evidence or
+the route's Kernel/Revision counters.
