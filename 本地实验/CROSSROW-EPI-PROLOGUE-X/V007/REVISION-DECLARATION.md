@@ -5,7 +5,15 @@ ROUTE: CROSSROW-EPI-PROLOGUE-X
 REVISION: V007
 BRANCH: research/w5-r01-crossrow-epi-prologue
 WORKTREE: /home/data4t2/lelinfeng/cann-w5-r01-crossrow
-STATUS: SOURCE_CHECKPOINT_READY
+STATUS: COMPLETE_MEASURED
+SOURCE_FIX_COMMIT: 901ecf4c5f30f4761dc6d0ad921e9a7a8071a11d
+BUILD: PASS_RC0
+CORRECTNESS: PASS_7_OF_7
+LOCAL_SCORE: 72.149204
+LOCAL_DELTA_VS_R31B_V011: -27.850796
+LOCAL_VERDICT: LOCAL_NEUTRAL
+MEASUREMENT_QUALITY: POOR
+NO_PROMOTION: YES
 
 ## Direct parent and source identity
 
@@ -23,8 +31,8 @@ TARGET_CASES: C14 and C16 wide BF16; C12 is a non-target control and C13 exercis
 
 ## Orthogonality and scope
 
-WHY_NOT_DUPLICATE: V001/V002 relocate generic successor-row input MTE2 prologue issue points; V003 changes non-wide valueFp32Buf_ capacity; V004 changes wide pass-1 scalar index reconstruction; V005 changes the FP16 pass-1 local-copy primitive; V006 removes a duplicate BF16 parameter conversion. V007 changes only the timing of the existing first gamma/bias parameter prefetch. It does not change successor-row prefetch, arithmetic, MTE3 drain, Store/Epilogue, Sync/Fastpath calls, tiling, ABI, or buffer lifetime.
-MECHANISM_OVERLAP: NO with W3 Crossrow, Main-1 MTE3 drain, Store-Epilogue, Sync/Fastpath, or V001-V006.
+WHY_NOT_DUPLICATE: Within R1 V001-V006, V007 changes only the timing of the existing first gamma/bias parameter prefetch and differs from successor-row input prefetch, buffer sizing, scalar index generation, FP16 local copy, and duplicate conversion. A read-only check of published `origin/w2/main2/control` records found ASYNC-OVERLAP-CHAMPION-X V001 publicly describes the same pass-2 gamma/bias MTE2 hoist above the invRms scalar loop. No other Route source was read or used as donor. This V007 is therefore route-local distinct from R1 V001-V006 and the explicitly excluded W3/Main-1 axes, but not globally novel against that published record.
+MECHANISM_OVERLAP: NO with W3 Crossrow, Main-1 MTE3 drain, Store-Epilogue, Sync/Fastpath, or R1 V001-V006; YES with the published ASYNC-OVERLAP-CHAMPION-X V001 mechanism.
 PATCH_SIMILARITY: ROUTE_LOCAL_SINGLE_LOCATION; no other Route Candidate is used as donor.
 
 ONLY_CHANGE: move one contiguous Pass-2 parameter-prefetch initialization block earlier within ProcessWideLowPrecision(); the per-buffer release waits establish xBuf_/residualBuf_ availability before the Load, and the existing prd0 wait preserves first-use ordering. Parent.asc remains the R31B/V011 baseline.
@@ -34,4 +42,4 @@ UNCHANGED: runner/harness, ABI, shapes, warmup/event protocol, parameter values,
 
 SOURCE_CHECKPOINT -> BUILD -> 7-CASE CORRECTNESS -> FOUR-CORE CANONICAL LOCAL -> RESULT -> COMMIT
 
-FULL_LOCAL_SCORE: required if the existing complete canonical path succeeds; no diagnostic-only result may be promoted.
+FULL_LOCAL_SCORE: 72.149204; complete four-Core canonical measurement. No promotion.
