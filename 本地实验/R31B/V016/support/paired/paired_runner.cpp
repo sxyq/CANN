@@ -14,7 +14,7 @@ namespace {
 using R31BRunKernel = decltype(&r31b_v011::run_kernel_v011);
 
 constexpr int kDevice = 1;
-constexpr int kRows = 2;
+constexpr int kRows = 1024;
 constexpr int kWarmup = 45;
 constexpr int kPairs = 21;
 constexpr int kQualificationBlocks = 2;
