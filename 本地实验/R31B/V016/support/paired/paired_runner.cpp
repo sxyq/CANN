@@ -214,7 +214,7 @@ TimedSample Measure(R31BRunKernel kernel, void* output, const DeviceBuffers& buf
             std::chrono::duration<double, std::micro>(wallStop - wallStart).count()};
 }
 
-void CheckOutput(const CaseSpec& spec, const std::vector<uint16_t>& x,
+bool CheckOutput(const CaseSpec& spec, const std::vector<uint16_t>& x,
                  const std::vector<uint16_t>& residual,
                  const std::vector<uint16_t>& gamma,
                  const std::vector<uint16_t>& bias,
@@ -261,9 +261,7 @@ void CheckOutput(const CaseSpec& spec, const std::vector<uint16_t>& x,
     }
     std::printf("CORRECTNESS case=%s binary=%s result=%s failures=%zu max_abs=%.8g max_rel=%.8g\n",
                 spec.name, label, failures == 0 ? "PASS" : "FAIL", failures, maxAbs, maxRel);
-    if (count == 0 || failures != 0) {
-        std::exit(3);
-    }
+    return count != 0 && failures == 0;
 }
 
 bool CompareOutputs(const CaseSpec& spec, const std::vector<uint16_t>& parent,
@@ -392,7 +390,15 @@ void RunCase(const CaseSpec& spec, aclrtStream stream, Events& events, RunMode m
                              ACL_MEMCPY_DEVICE_TO_HOST), "copy parent correctness output");
         CheckAcl(aclrtMemcpy(candidateOutput.data(), dataBytes, buffers.candidateOutput, dataBytes,
                              ACL_MEMCPY_DEVICE_TO_HOST), "copy candidate correctness output");
-        if (!CompareOutputs(spec, parentOutput, candidateOutput)) {
+        const bool parentGolden = CheckOutput(spec, x, residual, gamma, bias,
+                                              parentOutput, "V011_GOLDEN");
+        const bool candidateGolden = CheckOutput(spec, x, residual, gamma, bias,
+                                                 candidateOutput, "N03_V001_GOLDEN");
+        const bool exactMatch = CompareOutputs(spec, parentOutput, candidateOutput);
+        std::printf("CORRECTNESS_SUMMARY case=%s parent_golden=%s candidate_golden=%s exact_match=%s\n",
+                    spec.name, parentGolden ? "PASS" : "FAIL",
+                    candidateGolden ? "PASS" : "FAIL", exactMatch ? "PASS" : "FAIL");
+        if (!parentGolden || !candidateGolden || !exactMatch) {
             FreeCase(buffers);
             std::exit(3);
         }
