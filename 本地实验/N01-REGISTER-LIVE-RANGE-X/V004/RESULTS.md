@@ -72,13 +72,41 @@ The stage snapshots are `pre-compile-device.txt`, `pre-correctness-device.txt`,
 `post-local-device.txt`. The existing Runner emits case samples but no
 case-boundary device snapshots; no per-case snapshots are claimed.
 
+## Control and repeat
+
+The fixed V004 Runner was also run through the existing `--qualify-v011`
+same-binary Parent control. Each of the four cases completed 62 V011-only
+samples (2 blocks x 31), for 248 sample lines total. Correctness was PASS for
+4/4 cases and the process returned `0`; the existing qualification rule marked
+all four cases `MEASUREMENT_PROTOCOL_BLOCKED_FOR_SHAPE` because the observed
+MAD/median exceeded 0.25. The medians were FP16 D=12288 `10.200 us`, FP16
+D=32768 `23.590 us`, BF16 D=12288 `18.270 us`, and BF16 D=32768 `25.150 us`.
+
+A second fixed V004 `--paired` run completed 4/4 cases, 21 pairs per case,
+84 paired samples total. Parent and Candidate correctness were PASS for all
+four cases (4/4 each). The medians and paired deltas were:
+
+| Case | Parent median (us) | Candidate median (us) | Delta median (us) | Pairs |
+|---|---:|---:|---:|---:|
+| FP16 D=12288 | 7.340 | 16.840 | +2.840 | 21 |
+| FP16 D=32768 | 11.900 | 13.500 | 0.000 | 21 |
+| BF16 D=12288 | 17.960 | 17.820 | -1.760 | 21 |
+| BF16 D=32768 | 18.660 | 19.920 | +1.240 | 21 |
+
+This repeat remains `LOCAL_SCORE=NONE`, `LOAD_QUALITY=NOISY`. Its delta ranges
+were FP16 D=12288 `-12.140..14.720 us`, FP16 D=32768 `-13.140..14.280 us`,
+BF16 D=12288 `-209.660..21.320 us`, and BF16 D=32768 `-21.840..27.760 us`.
+The BF16 D=12288 outlier was retained in raw data. No samples were removed or
+reclassified. Full details are in `REPEAT-01.md` and the paired raw files.
+
 ## Evidence
 
-`results/` retains the full paired raw log, correctness raw log, command and
-return-code records, device snapshots, paired Runner executable, linked device
-binary/text sections, six Parent/Candidate function extracts, byte comparisons,
-and target disassembly output. Failed setup/extraction attempts are recorded in
-`attempts-v004.log`. Host build intermediates are excluded.
+`results/` retains the full initial and repeat paired raw logs, same-binary
+control raw log, correctness raw log, command and return-code records, device
+snapshots, paired Runner executable, linked device binary/text sections, six
+Parent/Candidate function extracts, byte comparisons, and target disassembly
+output. Failed setup/extraction attempts are recorded in `attempts-v004.log`.
+Host build intermediates are excluded.
 
 Remote run: `~/cann/server_runs/N01-REGISTER-LIVE-RANGE-X-RESET-20261011/V004/e833b161`
 
