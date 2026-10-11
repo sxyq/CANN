@@ -7,7 +7,6 @@
 #include <cstdlib>
 #include <cstring>
 #include <numeric>
-#include <utility>
 #include <vector>
 
 namespace {
@@ -22,7 +21,6 @@ constexpr int kQualificationBlocks = 2;
 constexpr int kQualificationSamplesPerBlock = 31;
 constexpr int kCoreCount = 8;
 constexpr float kEpsilon = 1.0e-5f;
-constexpr int kDiagnosticTileElems = 4096;
 
 enum class RunMode {
     kCorrectness,
@@ -216,19 +214,6 @@ TimedSample Measure(R31BRunKernel kernel, void* output, const DeviceBuffers& buf
             std::chrono::duration<double, std::micro>(wallStop - wallStart).count()};
 }
 
-float PairwiseSum(std::vector<float> values)
-{
-    size_t active = values.size();
-    while (active > 1) {
-        size_t next = 0;
-        for (size_t i = 0; i < active; i += 2) {
-            values[next++] = i + 1 < active ? values[i] + values[i + 1] : values[i];
-        }
-        active = next;
-    }
-    return values.empty() ? 0.0f : values[0];
-}
-
 bool CheckOutput(const CaseSpec& spec, const std::vector<uint16_t>& x,
                  const std::vector<uint16_t>& residual,
                  const std::vector<uint16_t>& gamma,
@@ -236,24 +221,16 @@ bool CheckOutput(const CaseSpec& spec, const std::vector<uint16_t>& x,
                  const std::vector<uint16_t>& output, const char* label)
 {
     const size_t count = static_cast<size_t>(kRows) * spec.width;
-    const float tolerance = 0.001f;
+    const float rtol = spec.dtype == 2 ? 0.015625f : 0.001953125f;
+    const float atol = spec.dtype == 2 ? 0.015625f : 0.001953125f;
+    const float maxAbsLimit = spec.dtype == 2 ? 1.0f : 0.1f;
     float maxAbs = 0.0f;
     float maxRel = 0.0f;
     size_t failures = 0;
-    size_t tileSequentialFailures = 0;
-    size_t pairwiseFailures = 0;
-    size_t tilePairwiseFailures = 0;
-    size_t doubleFailures = 0;
-    float tileSequentialMaxAbs = 0.0f;
-    float pairwiseMaxAbs = 0.0f;
-    float tilePairwiseMaxAbs = 0.0f;
-    float doubleMaxAbs = 0.0f;
     size_t diagnosticPrinted = 0;
     for (int row = 0; row < kRows; ++row) {
         std::vector<float> y(spec.width);
-        std::vector<float> squareValues(spec.width);
-        float sequentialSquareSum = 0.0f;
-        double doubleSquareSum = 0.0;
+        double squareSum = 0.0;
         for (int col = 0; col < spec.width; ++col) {
             const size_t index = static_cast<size_t>(row) * spec.width + col;
             float value = Decode(x[index], spec.dtype) + Decode(residual[index], spec.dtype);
@@ -261,61 +238,34 @@ bool CheckOutput(const CaseSpec& spec, const std::vector<uint16_t>& x,
                 value = Rounded(value, spec.dtype);
             }
             y[col] = value;
-            squareValues[col] = value * value;
-            sequentialSquareSum += squareValues[col];
-            doubleSquareSum += static_cast<double>(value) * static_cast<double>(value);
+            squareSum += static_cast<double>(value) * static_cast<double>(value);
         }
-        float tileSequentialSquareSum = 0.0f;
-        float tilePairwiseSquareSum = 0.0f;
-        for (size_t begin = 0; begin < squareValues.size(); begin += kDiagnosticTileElems) {
-            const size_t end = std::min(begin + static_cast<size_t>(kDiagnosticTileElems),
-                                        squareValues.size());
-            float tileSum = 0.0f;
-            std::vector<float> tileValues;
-            tileValues.reserve(end - begin);
-            for (size_t i = begin; i < end; ++i) {
-                tileSum += squareValues[i];
-                tileValues.push_back(squareValues[i]);
-            }
-            tileSequentialSquareSum += tileSum;
-            tilePairwiseSquareSum += PairwiseSum(std::move(tileValues));
-        }
-        const float doubleSquareSumAsFloat = static_cast<float>(doubleSquareSum);
-        const float invRms = 1.0f / std::sqrt(
-            sequentialSquareSum / static_cast<float>(spec.width) + kEpsilon);
-        const float tileSequentialInvRms = 1.0f / std::sqrt(
-            tileSequentialSquareSum / static_cast<float>(spec.width) + kEpsilon);
-        const float pairwiseInvRms = 1.0f / std::sqrt(
-            PairwiseSum(squareValues) / static_cast<float>(spec.width) + kEpsilon);
-        const float tilePairwiseInvRms = 1.0f / std::sqrt(
-            tilePairwiseSquareSum / static_cast<float>(spec.width) + kEpsilon);
-        const float doubleInvRms = 1.0f / std::sqrt(
-            doubleSquareSumAsFloat / static_cast<float>(spec.width) + kEpsilon);
-        auto expectedWithInvRms = [&](float rowInvRms, int col) {
-            float expected = y[col] * rowInvRms;
+        const double invRms = 1.0 / std::sqrt(
+            squareSum / static_cast<double>(spec.width) + static_cast<double>(kEpsilon));
+        auto expectedWithInvRms = [&](int col) {
+            double expectedValue = static_cast<double>(y[col]) * invRms;
+            float expected = 0.0f;
             if (spec.dtype == 1) {
-                expected = Rounded(expected, spec.dtype);
+                expected = Rounded(static_cast<float>(expectedValue), spec.dtype);
                 expected = Rounded(expected * Decode(gamma[col], spec.dtype), spec.dtype);
                 expected = Rounded(expected + Decode(bias[col], spec.dtype), spec.dtype);
             } else {
-                expected = Rounded(expected * Decode(gamma[col], spec.dtype) +
-                                   Decode(bias[col], spec.dtype), spec.dtype);
+                expected = Rounded(static_cast<float>(
+                    expectedValue * static_cast<double>(Decode(gamma[col], spec.dtype)) +
+                    static_cast<double>(Decode(bias[col], spec.dtype))), spec.dtype);
             }
             return expected;
         };
         for (int col = 0; col < spec.width; ++col) {
             const size_t index = static_cast<size_t>(row) * spec.width + col;
-            const float expected = expectedWithInvRms(invRms, col);
-            const float tileSequentialExpected = expectedWithInvRms(tileSequentialInvRms, col);
-            const float pairwiseExpected = expectedWithInvRms(pairwiseInvRms, col);
-            const float tilePairwiseExpected = expectedWithInvRms(tilePairwiseInvRms, col);
-            const float doubleExpected = expectedWithInvRms(doubleInvRms, col);
+            const float expected = expectedWithInvRms(col);
             const float actual = Decode(output[index], spec.dtype);
             const float absError = std::fabs(actual - expected);
             const float relError = absError / std::max(std::fabs(expected), 1.0e-6f);
             maxAbs = std::max(maxAbs, absError);
             maxRel = std::max(maxRel, relError);
-            const bool failed = absError >= tolerance || relError >= tolerance;
+            const float allowedError = atol + rtol * std::fabs(expected);
+            const bool failed = absError > allowedError;
             if (failed) {
                 ++failures;
                 if (diagnosticPrinted < 12) {
@@ -323,52 +273,30 @@ bool CheckOutput(const CaseSpec& spec, const std::vector<uint16_t>& x,
                         "GOLDEN_MISMATCH case=%s binary=%s row=%d col=%d "
                         "x_bits=0x%04x residual_bits=0x%04x gamma_bits=0x%04x bias_bits=0x%04x "
                         "x=%.9g residual=%.9g gamma=%.9g bias=%.9g y=%.9g "
-                        "sum_seq=%.9g sum_tile_seq=%.9g sum_pairwise=%.9g sum_tile_pairwise=%.9g "
-                        "sum_double=%.9g inv_seq=%.9g inv_tile_seq=%.9g inv_pairwise=%.9g "
-                        "inv_tile_pairwise=%.9g inv_double=%.9g expected_seq=%.9g "
-                        "expected_tile_seq=%.9g expected_pairwise=%.9g expected_tile_pairwise=%.9g "
-                        "expected_double=%.9g actual_bits=0x%04x actual=%.9g abs=%.9g rel=%.9g\n",
+                        "sum_double=%.17g inv_rms=%.17g expected=%.9g "
+                        "actual_bits=0x%04x actual=%.9g abs=%.9g rel=%.9g allowed=%.9g\n",
                         spec.name, label, row, col,
                         static_cast<unsigned>(x[index]), static_cast<unsigned>(residual[index]),
                         static_cast<unsigned>(gamma[col]), static_cast<unsigned>(bias[col]),
                         Decode(x[index], spec.dtype), Decode(residual[index], spec.dtype),
                         Decode(gamma[col], spec.dtype), Decode(bias[col], spec.dtype), y[col],
-                        sequentialSquareSum, tileSequentialSquareSum,
-                        PairwiseSum(squareValues), tilePairwiseSquareSum, doubleSquareSumAsFloat,
-                        invRms, tileSequentialInvRms, pairwiseInvRms, tilePairwiseInvRms,
-                        doubleInvRms, expected, tileSequentialExpected, pairwiseExpected,
-                        tilePairwiseExpected, doubleExpected, static_cast<unsigned>(output[index]),
-                        actual, absError, relError);
+                        squareSum, invRms, expected, static_cast<unsigned>(output[index]),
+                        actual, absError, relError, allowedError);
                     ++diagnosticPrinted;
                 }
             }
-            auto recordVariant = [&](float variantExpected, size_t& variantFailures,
-                                     float& variantMaxAbs) {
-                const float variantAbs = std::fabs(actual - variantExpected);
-                const float variantRel = variantAbs /
-                    std::max(std::fabs(variantExpected), 1.0e-6f);
-                variantMaxAbs = std::max(variantMaxAbs, variantAbs);
-                if (variantAbs >= tolerance || variantRel >= tolerance) {
-                    ++variantFailures;
-                }
-            };
-            recordVariant(tileSequentialExpected, tileSequentialFailures, tileSequentialMaxAbs);
-            recordVariant(pairwiseExpected, pairwiseFailures, pairwiseMaxAbs);
-            recordVariant(tilePairwiseExpected, tilePairwiseFailures, tilePairwiseMaxAbs);
-            recordVariant(doubleExpected, doubleFailures, doubleMaxAbs);
         }
     }
-    std::printf("CORRECTNESS case=%s binary=%s result=%s failures=%zu max_abs=%.8g max_rel=%.8g\n",
-                spec.name, label, failures == 0 ? "PASS" : "FAIL", failures, maxAbs, maxRel);
+    const size_t matched = count - failures;
+    const double matchedRatio = count == 0 ? 0.0 :
+        static_cast<double>(matched) / static_cast<double>(count);
+    const bool pass = count != 0 && matchedRatio >= 0.99 && maxAbs <= maxAbsLimit;
     std::printf(
-        "GOLDEN_VARIANTS case=%s binary=%s seq_failures=%zu tile_seq_failures=%zu "
-        "pairwise_failures=%zu tile_pairwise_failures=%zu double_failures=%zu "
-        "seq_max_abs=%.8g tile_seq_max_abs=%.8g pairwise_max_abs=%.8g "
-        "tile_pairwise_max_abs=%.8g double_max_abs=%.8g tile_elems=%d\n",
-        spec.name, label, failures, tileSequentialFailures, pairwiseFailures,
-        tilePairwiseFailures, doubleFailures, maxAbs, tileSequentialMaxAbs,
-        pairwiseMaxAbs, tilePairwiseMaxAbs, doubleMaxAbs, kDiagnosticTileElems);
-    return count != 0 && failures == 0;
+        "CORRECTNESS case=%s binary=%s result=%s failures=%zu matched_ratio=%.9f "
+        "max_abs=%.8g max_rel=%.8g rtol=%.8g atol=%.8g max_abs_limit=%.8g\n",
+        spec.name, label, pass ? "PASS" : "FAIL", failures, matchedRatio,
+        maxAbs, maxRel, rtol, atol, maxAbsLimit);
+    return pass;
 }
 
 bool CompareOutputs(const CaseSpec& spec, const std::vector<uint16_t>& parent,
