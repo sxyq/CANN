@@ -3,29 +3,29 @@
 - Route: `N03-VECTOR-ILP-DUALCHAIN-X`
 - Worktree: `/Users/sunyiyang/Desktop/Project/cann/worktrees/n03-vector-ilp-dualchain`
 - Branch: `route/n03-vector-ilp-dualchain-x-20261011`
-- Parent: `1c51a5b2eb9b5b9dffc031c1fbbbc35e9506b49f`
+- HEAD before evidence update: `7c3fe809dd3da794d7c7344b2d342ba3c219e6d7`
 - Candidate commit: `5d9a02ea070af8cc4cb76c384500b1241b0eb054`
-- V001 source commit: `9be20982612bbc3a4f409731a88cbee4098e48ca`
-- Support commit for independent golden reporting: `44afd954`
-- Correctness support commits: `3ff6771e`, `8fb972fb`
+- Candidate source SHA256: `689fa9bffb93e1246d5d8dd57e83af0ad9c3e70a5addd4b45b10708aaf5cec01`
+- Parent: R31B V011, source SHA256 `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`
+- Device: `cann-server3` / `hwnput3` / d0
 - Remote evidence root: `~/cann/server_runs/N03-VECTOR-ILP-DUALCHAIN-X-RESET-20261011/V002/5d9a02ea`
 
-## Status
+## Final V002 Evidence
 
-V002 was compiled with CANN 8.5 and run on d0 through the existing paired Runner. The first run used the old `0.001` gate and preserved the common 58-error result. After switching the existing entry to the stable double-precision RMS reference and BF16 mixed tolerance, Parent and Candidate both passed with `failures=0`, `matched_ratio=1.0`, and exact output match. No timing was started.
+- CANN 8.5 Adapter and paired Runner compile: PASS, return code `0`.
+- Corrected BF16 Correctness: PASS for Parent and Candidate, `0/98304` failures each, exact match `0` mismatches, `max_abs=0`, `max_rel=0`, `rtol=atol=0.015625`.
+- Parent same-binary control: PASS, `62` samples, median `10.510 us`.
+- V011 Parent / V002 Candidate paired run: PASS at the output-comparison level, `21/21` pairs. Parent median `10.200 us`, Candidate median `11.460 us`, delta `+1.220 us`.
+- Measurement validity: `LOCAL_SCORE=NONE`. Candidate max device time was `258.860 us`, paired delta max was `+248.140 us`, and d0 had HBM usage `91%` with AICore usage `26–31%`; full raw samples and snapshots are retained.
 
-## Evidence files
+## Evidence Paths
 
-- `results/remote-results/candidate-correctness.raw.log`
-- `results/remote-results/candidate-correctness.command`
-- `results/remote-results/correctness-mixed-tolerance.raw.log`
-- `results/remote-results/correctness-mixed-tolerance.command`
-- `results/remote-results/pre-correctness-device.txt`
-- `results/remote-results/pre-mixed-tolerance-device.txt`
-- `results/remote-logs/compile-adapter.log`
-- `results/remote-logs/compile-paired.log`
-- `results/remote-logs/compile-paired-mixed-tolerance.log`
+- Correctness: `results/remote-results/v002-current-correctness.raw.log`, `correctness-mixed-tolerance.raw.log`, and preserved old `candidate-correctness.raw.log` / `golden-diagnostic.raw.log`.
+- Rerun raw and command files: `results/remote-results/rerun-20261011T092525Z/`.
+- Rerun identity and artifact SHA: `rerun-v002-20261011T092525Z-identity.txt`.
+- Rerun device/process snapshots: matching `pre-*` and `post-*` files in that directory.
 
-## Next action
+## Scope
 
-Do not claim a V002 Local score yet. Keep the old failure and new PASS evidence, then continue with the next pure Vector ILP single-point change.
+- This handoff is only for fixed V002. No V003 or later source change was made for this round, and existing V003 files remain untouched.
+- No new Revision was created. No Local score improvement is claimed.
