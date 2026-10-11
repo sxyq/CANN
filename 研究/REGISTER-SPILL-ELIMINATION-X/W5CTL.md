@@ -55,19 +55,22 @@ receives `W5CTL_ROUTE`, `W5CTL_STAGE`, source/artifact paths and SHA-256 values,
 and for Local the raw timing path.
 
 Each backend is run as one subprocess with its real exit code. A missing or
-non-executable backend is `NOT_RUN`/`BLOCKED`, never `PASS`. `record` requires
+non-executable backend is separately reported as `BACKEND_STATUS=NOT_CONFIGURED`
+or a configuration error; it does not prevent a valid route-local manifest from
+being a completed local Record. `record` requires
 `--source`, `--artifact`, `--raw`, `--manifest`, and one or more `--evidence`
 paths. It writes a local JSON manifest containing source/artifact/raw SHA-256
 values, evidence paths and SHA-256 values, and the complete Local result. With
-no Record Owner backend, the complete manifest is still written and the
-command returns `NOT_RUN`/78 with
-`INTEGRATION_STATUS=INTEGRATION_INCOMPLETE`; it never claims Record PASS.
+no Record Owner backend, the complete manifest is still written with
+`RECORD_STATUS=PASS` and `BACKEND_STATUS=NOT_REQUESTED` (or
+`NOT_CONFIGURED`); shared publication remains separate and is not claimed.
 The same manifest and evidence identity are reused on repeated calls without
 changing `recorded_utc`; changed identities fail rather than overwrite. A later
 configured backend may finalize a prior local-only manifest once. A terminal
 backend `PASS`/`FAILED` result is replayed with its original return code and the
-backend is not invoked again. With a valid first-time backend, its real return
-code is propagated. Missing or insufficient Local samples are retained with
+backend is not invoked again. With a configured backend failure, the local
+manifest remains valid and `BACKEND_STATUS=FAILED` plus the real RC are retained.
+Missing or insufficient Local samples are retained with
 their actual `INSUFFICIENT_DATA`/`REJECTED`/`UNCLASSIFIED` state and
 `FULL_LOCAL_SCORE=NOT_COMPUTABLE`.
 `record` never performs `git add`, `commit`, `push`, or Online submission. Git
@@ -130,16 +133,17 @@ and parser integration result, not an accepted or promotable Local result.
 with `--common`, `--champion-scaffold`, or `--abi-scaffold` (for example shared
 Champion or ABI scaffold). It reports
 `PATCH_SIMILARITY`, `MECHANISM_OVERLAP`, `PATCH_SIMILARITY_GATE`,
-`PATCH_SIMILARITY_GATE_STATUS`, `MECHANISM_OVERLAP_GATE`,
+`PATCH_SIMILARITY_GATE_STATUS`, `MECHANISM_OVERLAP_REVIEW_THRESHOLD`,
 `MECHANISM_OVERLAP_GATE_STATUS`, `MECHANISM_ORTHOGONALITY`,
 `MECHANISM_REVIEW`, and `DEDUP_STATUS`. The hard W5 gate is
 `PATCH_SIMILARITY <= 0.60`; a value such as `0.61` is
-`BLOCKED_PATCH_SIMILARITY`, never `DISTINCT`. Mechanism overlap is an
-independent gate: overlap at or above the configured threshold blocks, while a
-nonzero overlap below it still returns `MANUAL_REVIEW_MECHANISM_OVERLAP` and
-requires Owner review. Only zero token overlap returns `DISTINCT`, and even
-that reports `MECHANISM_ORTHOGONALITY=UNPROVEN`; the numeric gate never proves
-semantic orthogonality. Missing or empty post-exclusion data is
+`BLOCKED_PATCH_SIMILARITY`, never `DISTINCT`. Mechanism overlap is a read-only
+review signal for Main: any nonzero token overlap emits
+`MECHANISM_REVIEW=MAIN_READ_ONLY_REVIEW_SIGNAL` and does not require Owner
+acknowledgement or block an otherwise passing patch-similarity gate. Only zero
+token overlap returns `DISTINCT`, and even that reports
+`MECHANISM_ORTHOGONALITY=UNPROVEN`; the numeric gate never proves semantic
+orthogonality. Missing or empty post-exclusion data is
 `SIMILARITY_INSUFFICIENT_DATA`.
 
 `cycle --checkpoint <path>` writes an atomic JSON checkpoint after each stage.
@@ -161,6 +165,21 @@ does not recreate Build or Correctness stages. An incomplete checkpoint or
 manifest is reported as `REPORT_STATUS=INCOMPLETE`, never as a successful
 score; a missing full Local suite remains `FULL_LOCAL_SCORE=NOT_COMPUTABLE`.
 
+`report --route-summary` scans only JSON manifests below the bound
+`ROUTE_ROOT`, revalidates each `route-kernel` Canonical score through the pinned
+published scorer, and prints latest revision/score/quality plus the highest
+reliable Local Best. Shape-only, historical-tool-validation, checkpoint, and
+invalid manifests are excluded; no shared scoreboard is written. With no
+verified R2 Kernel Revision it prints `NONE`.
+
+For `route-kernel` Canonical scoring, all Parent rows must carry one consistent
+non-empty artifact SHA matching the published V011 Parent artifact identity:
+`eed03216f3ad02a7c5dde0978f50edff218619286e4b6a479c79b845cd843c71`.
+Historical validation invocations should pass
+`--canonical-purpose historical-tool-validation` together with
+`--expected-parent-artifact-sha` set to that measured public identity; a
+historical one-shape input still remains `FULL_LOCAL_SCORE=NOT_COMPUTABLE`.
+
 All execution commands verify the current Git root and expected branch supplied
 for that invocation, and every source, artifact, raw, log, checkpoint,
 evidence, patch, common-scaffold, backend, and backend-workdir path resolves
@@ -173,11 +192,11 @@ inside that bound worktree. Violations fail with
 python3 -B 研究/REGISTER-SPILL-ELIMINATION-X/tests/test_w5ctl.py
 ```
 
-The test uses temporary fake executables only to verify delegation, return-code
+The test uses temporary fake executables and read-only public scorer fixtures only to verify delegation, return-code
 propagation, SHA guards, raw-stat rejection, dedup, manifest identity,
 checkpoint/report/resume idempotence;
 it does not touch a CANN compiler, NPU, Kernel, CMake, shared scheduler, or
-the tooling-runner worktree. The current `9/9` result is not an E2E result:
+the tooling-runner worktree. The current `12/12` result is not an E2E result:
 real Build,
 Correctness, Local event provenance, Runner identity, and evidence publication
 backends must be supplied and accepted by the Tooling/Integration Owner.

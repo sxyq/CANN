@@ -10,7 +10,9 @@ from __future__ import annotations
 
 import argparse
 import csv
+import contextlib
 import hashlib
+import io
 import json
 import math
 import os
@@ -41,6 +43,143 @@ EXIT_NOT_RUN = 78
 
 STAGES = ("build", "correctness", "local", "record")
 TERMINAL_STAGE_STATUSES = {"PASS", "REJECTED", "UNCLASSIFIED", "INTEGRATION_INCOMPLETE"}
+CANONICAL_PUBLIC_COMMIT = "6d3ad0b30b21d2462b0fd8716c884f0ff6bdaabb"
+CANONICAL_SCORER_VERSION = "MAIN2-CANONICAL-V1"
+CANONICAL_SCORER_SHA256 = "f43709695115da53e30e58204f8e7c4716486538397394d7e2cb441f3a1d6d7f"
+CANONICAL_SUITE_VERSION = "CANONICAL_LOCAL_SUITE_V1"
+CANONICAL_SUITE_SHA256 = "30b6edcd59f19f3e495bb23cb5cf2f41bf5e132a6d96f7b050e32fb6983b0a95"
+CANONICAL_HARNESS_SHA256 = "2aa1aa3b2801a9202de01946ff079ec3b580c6ee7218dc03a772a87a4a4467e7"
+CANONICAL_BASE_SOURCE_SHA256 = "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3"
+CANONICAL_PARENT_ARTIFACT_SHA256 = "eed03216f3ad02a7c5dde0978f50edff218619286e4b6a479c79b845cd843c71"
+CANONICAL_CORE_CASES = {"C12", "C13", "C14", "C16"}
+
+# This adapter evaluates the exact published scorer module from its pinned Git
+# object. The scorer owns suite validation, run validation, aggregation and
+# scoring; this bridge only supplies read-only file/Git-object access.
+CANONICAL_SCORER_BRIDGE = r'''import vm from "node:vm";
+import fs from "node:fs";
+import path from "node:path";
+import crypto from "node:crypto";
+import {fileURLToPath} from "node:url";
+import {execFileSync} from "node:child_process";
+
+const input = JSON.parse(await new Promise((resolve, reject) => {
+  let data = "";
+  process.stdin.setEncoding("utf8");
+  process.stdin.on("data", chunk => data += chunk);
+  process.stdin.on("end", () => resolve(data));
+  process.stdin.on("error", reject);
+}));
+const commit = input.commit;
+const root = input.repo_root;
+const gitShow = object => execFileSync("git", ["show", `${commit}:${object}`], {cwd: root});
+const digest = bytes => crypto.createHash("sha256").update(bytes).digest("hex");
+const scorerPath = "工具/main2-canonical-scorer.mjs";
+const scorerBytes = gitShow(scorerPath);
+if (digest(scorerBytes) !== input.scorer_sha256) throw new Error("PUBLISHED_SCORER_SHA_MISMATCH");
+const suitePath = "本地实验/CANONICAL-LOCAL-SUITE-V1.tsv";
+const suiteBytes = gitShow(suitePath);
+if (digest(suiteBytes) !== input.suite_sha256) throw new Error("PUBLISHED_SUITE_SHA_MISMATCH");
+const harnessBytes = gitShow("工具/main2-canonical-harness/runner_ref.inc");
+if (digest(harnessBytes) !== input.harness_sha256) throw new Error("PUBLISHED_HARNESS_SHA_MISMATCH");
+const decode = value => Buffer.isBuffer(value) ? value.toString("utf8") : String(value);
+const parseTsv = value => {
+  const lines = decode(value).split(/\r?\n/).filter(line => line.length > 0);
+  if (!lines.length) return [];
+  const header = lines[0].split("\t");
+  return lines.slice(1).map(line => {
+    const columns = line.split("\t"), row = {};
+    header.forEach((name, index) => row[name] = columns[index] ?? "");
+    return row;
+  });
+};
+const gitObjectPattern = /^gitobj:\/\/([0-9a-f]{40})\/(.+)$/;
+const contentCache = new Map();
+const content = file => {
+  if (contentCache.has(file)) return contentCache.get(file);
+  const match = gitObjectPattern.exec(file);
+  const bytes = match
+    ? execFileSync("git", ["show", `${match[1]}:${match[2]}`], {cwd: root})
+    : fs.readFileSync(file);
+  contentCache.set(file, bytes);
+  return bytes;
+};
+const parseStats = file => {
+  const result = {};
+  for (const line of decode(content(file)).split(/\r?\n/)) {
+    const v = line.split("\t");
+    if (v.length === 2) result[v[0]] = v[1];
+    else if (v.length >= 3) result[v[0] + "_" + v[1]] = v[2];
+  }
+  return result;
+};
+const assetsExports = {
+  ROOT: "/virtual/main2-canonical-root", DATA: "", BASE_SHA: input.base_sha,
+  REGISTRY: "", SCORER: input.scorer_version, SUITE: input.suite_version,
+  readTsv: file => parseTsv(content(file)), stats: parseStats,
+  writeTsv: () => { throw new Error("READ_ONLY_SCORER_ADAPTER"); },
+  writeJson: () => { throw new Error("READ_ONLY_SCORER_ADAPTER"); },
+  json: () => null, text: file => decode(content(file)), exists: file => {
+    try { content(file); return true; } catch { return false; }
+  },
+  sha: file => file.endsWith("工具/main2-canonical-harness/runner_ref.inc")
+    ? digest(harnessBytes) : digest(content(file)),
+  key: () => "", safe: () => "", versionDir: () => ""
+};
+const context = vm.createContext({process: {argv: []}, console});
+const scorer = new vm.SourceTextModule(decode(scorerBytes), {context});
+const assetModule = new vm.SyntheticModule(Object.keys(assetsExports), function() {
+  for (const [name, value] of Object.entries(assetsExports)) this.setExport(name, value);
+}, {context});
+const pathModule = new vm.SyntheticModule(["default"], function() { this.setExport("default", path); }, {context});
+const urlModule = new vm.SyntheticModule(["fileURLToPath"], function() {
+  this.setExport("fileURLToPath", fileURLToPath);
+}, {context});
+await scorer.link(specifier => {
+  if (specifier === "./main2-canonical-assets.mjs") return assetModule;
+  if (specifier === "node:path") return pathModule;
+  if (specifier === "node:url") return urlModule;
+  throw new Error("UNEXPECTED_SCORER_IMPORT:" + specifier);
+});
+await scorer.evaluate();
+const suite = scorer.namespace.frozenSuite(parseTsv(suiteBytes));
+const anchorPath = "本地实验/MAIN2-CANONICAL-V1/versions/R31B__V011/measurements.tsv";
+const anchorRows = parseTsv(gitShow(anchorPath));
+const anchorRoot = "本地实验/MAIN2-CANONICAL-V1/versions/R31B__V011/";
+for (const row of anchorRows) {
+  for (const key of ["RAW_PATH", "STATS_PATH"]) {
+    const value = row[key] || "";
+    const marker = "/" + anchorRoot;
+    const index = value.lastIndexOf(marker);
+    if (index < 0) throw new Error("PUBLISHED_ANCHOR_PATH_UNMAPPED:" + key);
+    row[key] = `gitobj://${commit}/${anchorRoot}${value.slice(index + marker.length)}`;
+  }
+}
+const candidateRows = parseTsv(fs.readFileSync(input.measurements_path));
+const coreCells = [];
+const rank = {GOOD: 0, FAIR: 1, POOR: 2};
+for (const c of suite.filter(row => row.CASE_ROLE === "CORE")) {
+  const anchor = scorer.namespace.summarizeRuns(
+    anchorRows.filter(row => row.CASE_ID === c.CASE_ID && row.SIDE === "anchor"), c, input.base_sha);
+  const candidate = scorer.namespace.summarizeRuns(
+    candidateRows.filter(row => row.CASE_ID === c.CASE_ID && row.SIDE === "candidate"), c, input.source_sha);
+  const parent = scorer.namespace.summarizeRuns(
+    candidateRows.filter(row => row.CASE_ID === c.CASE_ID && row.SIDE === "parent"), c, input.base_sha);
+  const quality = [anchor.quality, candidate.quality, parent.quality]
+    .sort((a, b) => (rank[b] ?? 99) - (rank[a] ?? 99))[0];
+  coreCells.push({c, anchor, candidate, parent, quality});
+}
+const scored = scorer.namespace.scoreVectors(coreCells);
+process.stdout.write(JSON.stringify({
+  score: scored.score, delta: scored.score - 100, low: scored.low, high: scored.high,
+  quality: scored.quality, status: scored.status, fragile: scored.fragile,
+  reliable: scored.reliable, paired_score: scored.pairedScore,
+  core_gain_count: scored.coreGainCount, core_cases_complete: coreCells.length + "/4",
+  cells: coreCells.map(cell => ({case_id: cell.c.CASE_ID, quality: cell.quality,
+    anchor_median: cell.anchor.median, candidate_median: cell.candidate.median,
+    parent_median: cell.parent.median}))
+}));
+'''
 GOOD_QUALITY = {"CLEAN", "OK", "PASS", "STABLE"}
 BAD_QUALITY = {
     "CONTAMINATED",
@@ -283,6 +422,7 @@ def backend_env(
     source_sha: Optional[str],
     artifact_sha: Optional[str],
     raw: Optional[Path],
+    canonical_measurements: Optional[Path] = None,
 ) -> Dict[str, str]:
     env = os.environ.copy()
     env["W5CTL_ROUTE"] = ROUTE
@@ -297,6 +437,8 @@ def backend_env(
         env["W5CTL_ARTIFACT_SHA256"] = artifact_sha
     if raw:
         env["W5CTL_RAW_PATH"] = str(raw)
+    if canonical_measurements:
+        env["W5CTL_CANONICAL_MEASUREMENTS"] = str(canonical_measurements)
     return env
 
 
@@ -323,6 +465,7 @@ def execute_backend(
     source_sha: Optional[str],
     artifact_sha: Optional[str],
     raw: Optional[Path],
+    canonical_measurements: Optional[Path] = None,
 ) -> Outcome:
     backend, error = resolve_backend(backend_raw)
     if error:
@@ -352,7 +495,7 @@ def execute_backend(
         completed = subprocess.run(
             command,
             cwd=str(cwd) if cwd else None,
-            env=backend_env(stage, source, artifact, source_sha, artifact_sha, raw),
+            env=backend_env(stage, source, artifact, source_sha, artifact_sha, raw, canonical_measurements),
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             check=False,
@@ -388,6 +531,10 @@ def identity_stage(
     raw_raw: Optional[str],
     min_pairs: int = 3,
     max_cv: float = 0.20,
+    canonical_measurements_raw: Optional[str] = None,
+    canonical_purpose: str = "route-kernel",
+    canonical_revision: Optional[str] = None,
+    expected_parent_artifact_sha: Optional[str] = None,
 ) -> Outcome:
     isolation_error = require_current_worktree()
     if isolation_error:
@@ -430,6 +577,19 @@ def identity_stage(
         emit("SOURCE_SHA256", source_sha)
     if artifact_sha_before:
         emit("ARTIFACT_SHA256_BEFORE", artifact_sha_before)
+    if canonical_measurements_raw:
+        canonical_path, canonical_scope_error = scoped_path(canonical_measurements_raw, "canonical-measurements")
+        if canonical_scope_error:
+            emit("STATUS", "BLOCKED")
+            emit("BLOCKER", canonical_scope_error)
+            return Outcome("BLOCKED", EXIT_NOT_RUN, source_sha, artifact_sha_before, reason=canonical_scope_error)
+        if raw_raw and resolve_path(raw_raw) != canonical_path:
+            emit("STATUS", "BLOCKED")
+            emit("BLOCKER", "CANONICAL_MEASUREMENTS_MUST_BE_LOCAL_RAW_INDEX")
+            return Outcome("BLOCKED", EXIT_NOT_RUN, source_sha, artifact_sha_before, reason="CANONICAL_MEASUREMENTS_MUST_BE_LOCAL_RAW_INDEX")
+        raw_raw = str(canonical_path) if canonical_path else raw_raw
+    else:
+        canonical_path = None
     raw, raw_scope_error = scoped_path(raw_raw, "raw")
     if raw_scope_error:
         if stage == "local":
@@ -453,6 +613,7 @@ def identity_stage(
         source_sha,
         artifact_sha_before,
         raw,
+        canonical_path,
     )
     if delegated.status != "PASS":
         if stage == "local":
@@ -476,6 +637,33 @@ def identity_stage(
     emit("SOURCE_SHA256_AFTER", source_sha_after)
     emit("ARTIFACT_SHA256", artifact_sha_after)
     if stage == "local":
+        if canonical_path:
+            canonical, canonical_error = canonical_local_score(
+                str(canonical_path), source_sha_after or "", artifact_sha_after or "",
+                canonical_purpose, canonical_revision, expected_parent_artifact_sha,
+            )
+            if canonical_error or canonical is None:
+                local = blocked_stats("NOT_COMPUTABLE", canonical_error or "CANONICAL_SCORE_NOT_COMPUTABLE")
+                local["raw_sha"] = sha256_file(canonical_path) if canonical_path.is_file() else None
+                local["reason"] = canonical_error or "CANONICAL_SCORE_NOT_COMPUTABLE"
+                print_stats(local)
+                emit("CANONICAL_SCORE_STATUS", "NOT_COMPUTABLE")
+                emit("CANONICAL_SCORE_REASON", local["reason"])
+                emit("STATUS", "NOT_COMPUTABLE")
+                return Outcome(
+                    "NOT_COMPUTABLE", EXIT_STATS_REJECTED, source_sha_after, artifact_sha_after,
+                    local.get("raw_sha"), local["reason"], details={"local": local, "stage_status": "NOT_COMPUTABLE"},
+                )
+            local = canonical_local_result(canonical)
+            print_stats(local)
+            print_canonical_stats(local)
+            emit("IDENTITY_STATUS", "PASS")
+            emit("LOCAL_SCORE_RESULT", "COMPUTABLE")
+            emit("STATUS", "PASS")
+            return Outcome(
+                "PASS", 0, source_sha_after, artifact_sha_after, canonical["measurements_sha256"],
+                details={"local": local, "stage_status": "PASS"},
+            )
         stats = analyze_raw(raw, min_pairs, max_cv)
         print_stats(stats)
         if stats["status"] != "ACCEPTED":
@@ -764,6 +952,286 @@ def analyze_raw(path: Optional[Path], min_pairs: int, max_cv: float) -> Dict[str
     return result
 
 
+def canonical_reference_identity(raw_path: str, purpose: str) -> Tuple[Optional[Dict[str, str]], Optional[str]]:
+    match = re.fullmatch(r"gitobj://([0-9a-f]{40})/(.+)", raw_path)
+    if match:
+        commit, object_path = match.groups()
+        allowed_prefix = "本地实验/MAIN2-CANONICAL-V1/versions/R31B__V011/measurement/"
+        if purpose != "historical-tool-validation" or commit != CANONICAL_PUBLIC_COMMIT or not object_path.startswith(allowed_prefix):
+            return None, f"CANONICAL_RAW_GIT_OBJECT_OUT_OF_SCOPE:{raw_path}"
+        completed = subprocess.run(
+            ["git", "show", f"{commit}:{object_path}"],
+            cwd=str(EXPECTED_REPO_ROOT), stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            check=False,
+        )
+        if completed.returncode != 0:
+            return None, f"CANONICAL_RAW_GIT_OBJECT_UNAVAILABLE:{object_path}"
+        return {"path": raw_path, "sha256": hashlib.sha256(completed.stdout).hexdigest()}, None
+
+    path, digest, error = verify_file(raw_path, "canonical-raw", required=True)
+    if error or path is None or digest is None:
+        return None, error or "CANONICAL_RAW_IDENTITY_INVALID"
+    try:
+        path.relative_to(ROUTE_ROOT)
+    except ValueError:
+        return None, f"OUT_OF_SCOPE:canonical-raw:{path}:expected={ROUTE_ROOT}"
+    return {"path": str(path), "sha256": digest}, None
+
+
+def canonical_local_score(
+    measurements_raw: Optional[str],
+    source_sha: str,
+    artifact_sha: str,
+    purpose: str,
+    expected_revision: Optional[str],
+    expected_parent_artifact_sha: Optional[str] = None,
+) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
+    """Delegate four-Core aggregation to the pinned published MAIN2 scorer."""
+    if purpose not in {"route-kernel", "historical-tool-validation"}:
+        return None, f"CANONICAL_SCORE_PURPOSE_INVALID:{purpose}"
+    measurements, measurements_sha, error = verify_file(
+        measurements_raw, "canonical-measurements", required=True
+    )
+    if error or measurements is None or measurements_sha is None:
+        return None, error or "CANONICAL_MEASUREMENTS_NOT_SET"
+    try:
+        measurements.relative_to(ROUTE_ROOT)
+    except ValueError:
+        return None, f"OUT_OF_SCOPE:canonical-measurements:{measurements}:expected={ROUTE_ROOT}"
+    try:
+        with measurements.open(newline="") as stream:
+            rows = list(csv.DictReader(stream, delimiter="\t"))
+    except (OSError, csv.Error) as exc:
+        return None, f"CANONICAL_MEASUREMENTS_READ_FAILED:{exc}"
+    if not rows:
+        return None, "CANONICAL_MEASUREMENTS_EMPTY"
+
+    subject_routes = {row.get("ROUTE", "").strip() for row in rows if row.get("CASE_ID") in CANONICAL_CORE_CASES}
+    subject_revisions = {row.get("REVISION", "").strip() for row in rows if row.get("CASE_ID") in CANONICAL_CORE_CASES}
+    if len(subject_routes) != 1 or "" in subject_routes or len(subject_revisions) != 1 or "" in subject_revisions:
+        return None, "CANONICAL_SUBJECT_IDENTITY_INCOMPLETE"
+    subject_route, subject_revision = next(iter(subject_routes)), next(iter(subject_revisions))
+    if expected_revision and subject_revision != expected_revision:
+        return None, "CANONICAL_REVISION_MISMATCH"
+    if not expected_revision:
+        return None, "CANONICAL_REVISION_REQUIRED"
+    if purpose == "route-kernel" and subject_route != ROUTE:
+        return None, "CANONICAL_ROUTE_MISMATCH"
+
+    raw_identities: Dict[str, Dict[str, str]] = {}
+    selected_rows = [row for row in rows if row.get("CASE_ID") in CANONICAL_CORE_CASES]
+    run_keys = set()
+    parent_artifact_sha: Optional[str] = None
+    for row in selected_rows:
+        case_id = row.get("CASE_ID", "")
+        side = row.get("SIDE", "").lower()
+        if side not in {"candidate", "parent"}:
+            return None, f"CANONICAL_SIDE_INVALID:{case_id}:{side}"
+        if row.get("SCORER_VERSION") != CANONICAL_SCORER_VERSION or row.get("SUITE_VERSION") != CANONICAL_SUITE_VERSION:
+            return None, f"CANONICAL_VERSION_MISMATCH:{case_id}"
+        if row.get("ROUTE") != subject_route or row.get("REVISION") != subject_revision:
+            return None, f"CANONICAL_SUBJECT_MIXED:{case_id}"
+        expected_row_source = source_sha if side == "candidate" else CANONICAL_BASE_SOURCE_SHA256
+        if row.get("SOURCE_SHA") != expected_row_source:
+            return None, f"CANONICAL_SOURCE_SHA_MISMATCH:{case_id}:{side}"
+        if side == "candidate" and row.get("EXE_SHA") != artifact_sha:
+            return None, f"CANONICAL_ARTIFACT_SHA_MISMATCH:{case_id}"
+        if side == "parent":
+            current_parent_artifact = row.get("EXE_SHA", "").strip()
+            if not current_parent_artifact:
+                return None, f"CANONICAL_PARENT_ARTIFACT_SHA_MISSING:{case_id}"
+            if parent_artifact_sha is None:
+                parent_artifact_sha = current_parent_artifact
+            elif current_parent_artifact != parent_artifact_sha:
+                return None, f"CANONICAL_PARENT_ARTIFACT_SHA_MIXED:{case_id}"
+        if row.get("HARNESS_SHA") != CANONICAL_HARNESS_SHA256:
+            return None, f"CANONICAL_HARNESS_SHA_MISMATCH:{case_id}"
+        try:
+            valid = row.get("VALID_RUN") == "YES" and int(row.get("RC", "-1")) == 0 and float(row.get("BAD", "nan")) == 0
+            run = int(row.get("RUN", "0"))
+        except (TypeError, ValueError):
+            valid, run = False, 0
+        if not valid or run not in {1, 2, 3}:
+            return None, f"CANONICAL_RUN_INVALID:{case_id}:{side}:{row.get('RUN')}"
+        key = (case_id, side, run)
+        if key in run_keys:
+            return None, f"CANONICAL_RUN_DUPLICATE:{case_id}:{side}:{run}"
+        run_keys.add(key)
+        for path_field in ("RAW_PATH", "STATS_PATH"):
+            raw_file = row.get(path_field, "").strip()
+            if not raw_file:
+                return None, f"CANONICAL_{path_field}_MISSING:{case_id}:{side}:{run}"
+            identity, identity_error = canonical_reference_identity(raw_file, purpose)
+            if identity_error or identity is None:
+                return None, identity_error or f"CANONICAL_{path_field}_INVALID:{case_id}:{side}:{run}"
+            raw_identities[raw_file] = identity
+
+    expected_keys = {
+        (case_id, side, run)
+        for case_id in CANONICAL_CORE_CASES
+        for side in ("candidate", "parent")
+        for run in (1, 2, 3)
+    }
+    if run_keys != expected_keys:
+        missing = sorted(expected_keys - run_keys)
+        extra = sorted(run_keys - expected_keys)
+        return None, f"CANONICAL_CORE_INCOMPLETE:missing={missing}:extra={extra}"
+    if purpose == "route-kernel" and parent_artifact_sha != CANONICAL_PARENT_ARTIFACT_SHA256:
+        return None, "CANONICAL_PARENT_ARTIFACT_SHA_PIN_MISMATCH"
+    if expected_parent_artifact_sha and parent_artifact_sha != expected_parent_artifact_sha:
+        return None, "CANONICAL_PARENT_ARTIFACT_SHA_MISMATCH"
+    for case_id in CANONICAL_CORE_CASES:
+        case_rows = [row for row in selected_rows if row.get("CASE_ID") == case_id]
+        try:
+            sequence = [(row.get("SIDE", "").lower(), int(row.get("RUN", "0"))) for row in case_rows]
+            attempts = {
+                int(row["RUN"]): int(row["ATTEMPT"])
+                for row in case_rows
+                if row.get("ATTEMPT", "").strip()
+            }
+        except (KeyError, TypeError, ValueError):
+            return None, f"CANONICAL_PAIR_ORDER_METADATA_INVALID:{case_id}"
+        expected_sequence = [
+            ("parent", 1), ("candidate", 1),
+            ("candidate", 2), ("parent", 2),
+            ("parent", 3), ("candidate", 3),
+        ]
+        if sequence != expected_sequence:
+            return None, f"CANONICAL_PC_CP_ORDER_INVALID:{case_id}"
+        if set(attempts) != {1, 2, 3} or not (attempts[1] < attempts[2] < attempts[3]):
+            return None, f"CANONICAL_ATTEMPT_ORDER_INVALID:{case_id}"
+        for run in (1, 2, 3):
+            pair_attempts = {
+                int(row["ATTEMPT"])
+                for row in case_rows
+                if int(row["RUN"]) == run
+            }
+            if len(pair_attempts) != 1:
+                return None, f"CANONICAL_PAIR_ATTEMPT_MISMATCH:{case_id}:{run}"
+        for run in (1, 2, 3):
+            candidate = next(row for row in selected_rows if row.get("CASE_ID") == case_id and row.get("SIDE", "").lower() == "candidate" and row.get("RUN") == str(run))
+            parent = next(row for row in selected_rows if row.get("CASE_ID") == case_id and row.get("SIDE", "").lower() == "parent" and row.get("RUN") == str(run))
+            if candidate.get("DEVICE") != parent.get("DEVICE"):
+                return None, f"CANONICAL_PAIRED_DEVICE_MISMATCH:{case_id}:{run}"
+
+    payload = {
+        "commit": CANONICAL_PUBLIC_COMMIT,
+        "repo_root": str(EXPECTED_REPO_ROOT),
+        "scorer_sha256": CANONICAL_SCORER_SHA256,
+        "suite_sha256": CANONICAL_SUITE_SHA256,
+        "harness_sha256": CANONICAL_HARNESS_SHA256,
+        "base_sha": CANONICAL_BASE_SOURCE_SHA256,
+        "scorer_version": CANONICAL_SCORER_VERSION,
+        "suite_version": CANONICAL_SUITE_VERSION,
+        "measurements_path": str(measurements),
+        "source_sha": source_sha,
+    }
+    node = shutil.which("node")
+    if not node:
+        return None, "CANONICAL_SCORER_NODE_UNAVAILABLE"
+    try:
+        completed = subprocess.run(
+            [node, "--no-warnings", "--experimental-vm-modules", "--input-type=module", "-e", CANONICAL_SCORER_BRIDGE],
+            cwd=str(EXPECTED_REPO_ROOT), input=json.dumps(payload), text=True,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False, timeout=120,
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        return None, f"CANONICAL_SCORER_EXEC_FAILED:{exc}"
+    if completed.returncode != 0:
+        message = completed.stderr.strip().splitlines()[-1] if completed.stderr.strip() else "NO_STDERR"
+        return None, f"CANONICAL_SCORER_RC={completed.returncode}:{message}"
+    try:
+        scored = json.loads(completed.stdout)
+    except json.JSONDecodeError as exc:
+        return None, f"CANONICAL_SCORER_OUTPUT_INVALID:{exc}"
+    if scored.get("core_cases_complete") != "4/4" or not math.isfinite(float(scored.get("score", "nan"))):
+        return None, "CANONICAL_SCORER_CORE_VECTOR_INVALID"
+
+    reported_score = float(scored["score"])
+    raw_manifest_bytes = json.dumps(
+        [{"path": item["path"], "sha256": item["sha256"]} for item in (raw_identities[key] for key in sorted(raw_identities))],
+        sort_keys=True, separators=(",", ":"),
+    ).encode()
+    return {
+        "score_status": "COMPUTABLE",
+        "score_scope": purpose,
+        "subject_route": subject_route,
+        "subject_revision": subject_revision,
+        "full_local_score": f"{reported_score:.6f}" if purpose == "route-kernel" else "NOT_COMPUTABLE",
+        "reported_score": f"{reported_score:.6f}",
+        "delta_vs_anchor": f"{float(scored['delta']):.6f}",
+        "quality": scored["quality"],
+        "local_status": scored["status"],
+        "fragile": bool(scored["fragile"]),
+        "reliable": bool(scored["reliable"]),
+        "scorer_promotion_signal": bool(scored["reliable"]),
+        "paired_score": None if scored.get("paired_score") is None else f"{float(scored['paired_score']):.6f}",
+        "core_gain_count": int(scored["core_gain_count"]),
+        "core_cases_complete": "4/4",
+        "core_cases": sorted(CANONICAL_CORE_CASES),
+        "scorer_version": CANONICAL_SCORER_VERSION,
+        "scorer_commit": CANONICAL_PUBLIC_COMMIT,
+        "scorer_sha256": CANONICAL_SCORER_SHA256,
+        "suite_version": CANONICAL_SUITE_VERSION,
+        "suite_sha256": CANONICAL_SUITE_SHA256,
+        "harness_sha256": CANONICAL_HARNESS_SHA256,
+        "anchor_source_sha256": CANONICAL_BASE_SOURCE_SHA256,
+        "parent_source_sha256": CANONICAL_BASE_SOURCE_SHA256,
+        "parent_artifact_sha256": parent_artifact_sha,
+        "anchor_commit": CANONICAL_PUBLIC_COMMIT,
+        "measurements_path": str(measurements),
+        "measurements_sha256": measurements_sha,
+        "raw_file_count": len(raw_identities),
+        "raw_identities": [raw_identities[key] for key in sorted(raw_identities)],
+        "raw_manifest_sha256": hashlib.sha256(raw_manifest_bytes).hexdigest(),
+        "case_summaries": scored.get("cells", []),
+        "promotion_eligible": bool(scored["reliable"]) if purpose == "route-kernel" else False,
+    }, None
+
+
+def canonical_local_result(canonical: Dict[str, Any]) -> Dict[str, Any]:
+    return {
+        "status": "COMPUTABLE",
+        "parent_median": None,
+        "candidate_median": None,
+        "ratio_delta": None,
+        "paired_delta": None,
+        "paired_percent_delta": None,
+        "raw_count": canonical.get("raw_file_count", 0),
+        "pair_count": 12,
+        "quality_classification": canonical.get("quality", "UNCLASSIFIED"),
+        "promotion_eligible": bool(canonical.get("promotion_eligible", False)),
+        "shape_local_verdict": "NOT_APPLICABLE_CANONICAL_SUITE",
+        "shape_candidate_median_us": None,
+        "shape_paired_delta_us": None,
+        "shape_paired_percent_delta": None,
+        "full_local_score": canonical.get("full_local_score", "NOT_COMPUTABLE"),
+        "noise_status": canonical.get("quality", "UNCLASSIFIED"),
+        "raw_sha": canonical.get("measurements_sha256"),
+        "reason": "CANONICAL_SCORER_RESULT_IMPORTED_BY_PINNED_PUBLIC_FUNCTIONS",
+        "canonical": canonical,
+    }
+
+
+def print_canonical_stats(local: Dict[str, Any]) -> None:
+    canonical = local.get("canonical") or {}
+    emit("CANONICAL_SCORER_VERSION", canonical.get("scorer_version", CANONICAL_SCORER_VERSION))
+    emit("CANONICAL_SCORE_SCOPE", canonical.get("score_scope", "UNKNOWN"))
+    emit("CANONICAL_SUBJECT", f"{canonical.get('subject_route', 'NONE')}/{canonical.get('subject_revision', 'NONE')}")
+    emit("CANONICAL_CORE_CASES_COMPLETE", canonical.get("core_cases_complete", "NOT_COMPUTABLE"))
+    emit("CANONICAL_LOCAL_SCORE", canonical.get("reported_score", "NOT_COMPUTABLE"))
+    emit("CANONICAL_QUALITY", canonical.get("quality", "UNCLASSIFIED"))
+    emit("CANONICAL_LOCAL_STATUS", canonical.get("local_status", "NOT_COMPUTABLE"))
+    emit("CANONICAL_RELIABLE_GAIN", "YES" if canonical.get("reliable") else "NO")
+    emit("CANONICAL_PROMOTION_SIGNAL", "YES" if canonical.get("scorer_promotion_signal") else "NO")
+    emit("CANONICAL_PARENT_SOURCE_SHA256", canonical.get("parent_source_sha256", "NONE"))
+    emit("CANONICAL_PARENT_ARTIFACT_SHA256", canonical.get("parent_artifact_sha256", "NONE"))
+    emit("CANONICAL_RAW_FILE_COUNT", canonical.get("raw_file_count", 0))
+    emit("FULL_LOCAL_SCORE", canonical.get("full_local_score", "NOT_COMPUTABLE"))
+    emit("PROMOTION_ELIGIBLE", "YES" if canonical.get("promotion_eligible") else "NO")
+    emit("CANONICAL_MEASUREMENTS_SHA256", canonical.get("measurements_sha256", "NONE"))
+
+
 def print_stats(stats: Dict[str, Any]) -> None:
     emit("MEDIAN_PARENT_US", fmt_number(stats.get("parent_median")))
     emit("MEDIAN_CANDIDATE_US", fmt_number(stats.get("candidate_median")))
@@ -911,25 +1379,17 @@ def dedup_command(args: argparse.Namespace) -> int:
         return EXIT_NOT_RUN
     token_overlap = len(set(parent_tokens) & set(candidate_tokens)) / len(token_union)
     emit("MECHANISM_OVERLAP", fmt_number(token_overlap))
-    emit("MECHANISM_OVERLAP_GATE", fmt_number(args.mechanism_threshold))
-    if token_overlap >= args.mechanism_threshold:
-        emit("MECHANISM_OVERLAP_GATE_STATUS", "BLOCKED")
-        emit("MECHANISM_ORTHOGONALITY", "UNPROVEN")
-        emit("MECHANISM_REVIEW", "REQUIRED_OWNER_REVIEW")
-        emit("DEDUP_STATUS", "BLOCKED_MECHANISM_OVERLAP")
-        emit(
-            "BLOCKER",
-            f"MECHANISM_OVERLAP={token_overlap:.6f}>=GATE={args.mechanism_threshold:.6f}",
-        )
-        return EXIT_NOT_RUN
-    emit("MECHANISM_OVERLAP_GATE_STATUS", "PASS")
+    emit("MECHANISM_OVERLAP_REVIEW_THRESHOLD", fmt_number(args.mechanism_threshold))
+    emit("MECHANISM_OVERLAP_GATE_STATUS", "SIGNAL_ONLY_NOT_A_BLOCKER")
     emit("MECHANISM_ORTHOGONALITY", "UNPROVEN")
     if token_overlap > 0.0:
-        emit("MECHANISM_REVIEW", "REQUIRED_OWNER_REVIEW")
-        emit("DEDUP_STATUS", "MANUAL_REVIEW_MECHANISM_OVERLAP")
-        emit("BLOCKER", f"MECHANISM_OVERLAP={token_overlap:.6f}>0.000000")
-        return EXIT_NOT_RUN
-    emit("MECHANISM_REVIEW", "ZERO_TOKEN_OVERLAP_ONLY")
+        emit("MECHANISM_REVIEW", "MAIN_READ_ONLY_REVIEW_SIGNAL")
+        emit("MECHANISM_REVIEW_SIGNAL", "NONZERO_TOKEN_OVERLAP")
+        emit("DEDUP_STATUS", "PATCH_GATE_PASS_MECHANISM_REVIEW_SIGNAL")
+        emit("DEDUP_METHOD", "normalized-change-lines-with-explicit-common-exclusion")
+        return 0
+    emit("MECHANISM_REVIEW", "NO_TOKEN_OVERLAP_SIGNAL")
+    emit("MECHANISM_REVIEW_SIGNAL", "NONE")
     emit("DEDUP_STATUS", "DISTINCT")
     emit("DEDUP_METHOD", "normalized-change-lines-with-explicit-common-exclusion")
     return 0
@@ -959,40 +1419,90 @@ def record_command(args: argparse.Namespace) -> int:
         emit("STATUS", "BLOCKED")
         emit("BLOCKER", manifest_error or "RECORD_MANIFEST_NOT_SET")
         return EXIT_NOT_RUN
+    try:
+        manifest.relative_to(ROUTE_ROOT)
+    except ValueError:
+        emit("STATUS", "BLOCKED")
+        emit("BLOCKER", f"OUT_OF_SCOPE:manifest:{manifest}:expected={ROUTE_ROOT}")
+        return EXIT_NOT_RUN
     source, source_sha, source_error = verify_file(
         args.source, "source", args.expected_source_sha, required=True
     )
     artifact, artifact_sha, artifact_error = verify_file(
         args.artifact, "artifact", args.expected_artifact_sha, required=True
     )
-    raw, raw_sha, raw_error = verify_file(args.raw, "raw", required=True)
+    canonical_path = getattr(args, "canonical_measurements", None)
+    raw_arg = args.raw or canonical_path
+    if canonical_path and args.raw and resolve_path(args.raw) != resolve_path(canonical_path):
+        emit("STATUS", "BLOCKED")
+        emit("BLOCKER", "CANONICAL_MEASUREMENTS_MUST_BE_LOCAL_RAW_INDEX")
+        return EXIT_NOT_RUN
+    raw, raw_sha, raw_error = verify_file(raw_arg, "raw", required=True)
     if source_error or artifact_error or raw_error:
         emit("STATUS", "BLOCKED")
         emit("IDENTITY_STATUS", "FAIL")
         emit("BLOCKER", source_error or artifact_error or raw_error)
         return EXIT_IDENTITY
-    if not args.evidence:
+    canonical: Optional[Dict[str, Any]] = None
+    if canonical_path:
+        canonical, canonical_error = canonical_local_score(
+            canonical_path, source_sha or "", artifact_sha or "",
+            getattr(args, "canonical_purpose", "route-kernel"),
+            getattr(args, "canonical_revision", None),
+            getattr(args, "expected_parent_artifact_sha", None),
+        )
+        if canonical_error or canonical is None:
+            emit("STATUS", "NOT_COMPUTABLE")
+            emit("CANONICAL_SCORE_STATUS", "NOT_COMPUTABLE")
+            emit("CANONICAL_SCORE_REASON", canonical_error or "CANONICAL_SCORE_NOT_COMPUTABLE")
+            emit("FULL_LOCAL_SCORE", "NOT_COMPUTABLE")
+            return EXIT_STATS_REJECTED
+    if not args.evidence and not canonical:
         emit("STATUS", "NOT_RUN")
         emit("BLOCKER", "EVIDENCE_PATH_NOT_SET")
         return EXIT_NOT_RUN
     assert source is not None and source_sha is not None
     assert artifact is not None and artifact_sha is not None
     assert raw is not None and raw_sha is not None
+    evidence_specs = list(args.evidence or [])
+    if canonical_path:
+        evidence_specs.append(canonical_path)
+    if canonical:
+        evidence_specs.extend(
+            item["path"] for item in canonical.get("raw_identities", [])
+            if not item["path"].startswith("gitobj://")
+        )
     evidence_paths: List[Path] = []
     evidence_digests: List[str] = []
-    for raw_evidence in args.evidence:
+    seen_evidence = set()
+    for raw_evidence in evidence_specs:
         path, digest, error = verify_file(raw_evidence, "evidence", required=True)
         if error:
             emit("STATUS", "BLOCKED")
             emit("BLOCKER", error)
             return EXIT_IDENTITY
         assert path is not None and digest is not None
+        if path in seen_evidence:
+            continue
+        seen_evidence.add(path)
         evidence_paths.append(path)
         evidence_digests.append(digest)
         emit("EVIDENCE_PATH", path)
         emit("EVIDENCE_SHA256", digest)
-    local_result = analyze_raw(raw, getattr(args, "min_pairs", 3), getattr(args, "max_cv", 0.20))
+    if canonical:
+        local_result = canonical_local_result(canonical)
+    else:
+        local_result = analyze_raw(raw, getattr(args, "min_pairs", 3), getattr(args, "max_cv", 0.20))
     backend, backend_error = resolve_backend(args.backend)
+    if args.backend and backend_error:
+        initial_backend_status = "CONFIGURATION_ERROR"
+        initial_integration_status = "BACKEND_CONFIGURATION_ERROR"
+    elif backend is not None:
+        initial_backend_status = "PENDING"
+        initial_integration_status = "PENDING"
+    else:
+        initial_backend_status = "NOT_REQUESTED" if args.backend == "" else "NOT_CONFIGURED"
+        initial_integration_status = initial_backend_status
     manifest_payload: Dict[str, Any] = {
         "schema": 1,
         "route": ROUTE,
@@ -1009,13 +1519,17 @@ def record_command(args: argparse.Namespace) -> int:
         "local_result": local_result,
         "backend": str(backend) if backend else None,
         "backend_error": backend_error,
-        "record_status": "LOCAL_MANIFEST_WRITTEN" if backend_error else "PENDING",
-        "integration_status": "INTEGRATION_INCOMPLETE" if backend_error else "PENDING",
+        "record_status": "PASS",
+        "backend_status": initial_backend_status,
+        "backend_rc": None,
+        "integration_status": initial_integration_status,
         "revision_created": False,
         "runner_created": False,
         "online": "NOT_SUBMITTED",
         "recorded_utc": now_utc(),
     }
+    if canonical:
+        print_canonical_stats(local_result)
     existing_manifest: Optional[Dict[str, Any]] = None
     if manifest.exists():
         try:
@@ -1032,15 +1546,25 @@ def record_command(args: argparse.Namespace) -> int:
             emit("STATUS", "BLOCKED")
             emit("BLOCKER", f"RECORD_MANIFEST_IDENTITY_CONFLICT:{manifest}")
             return EXIT_NOT_RUN
-        prior_status = existing_manifest.get("record_status")
-        if prior_status in {"PASS", "FAILED"}:
+        prior_backend_status = existing_manifest.get("backend_status")
+        if prior_backend_status is None:
+            # Read legacy manifests written before local Record and backend
+            # publication were separated.
+            prior_status = existing_manifest.get("record_status")
+            if prior_status == "FAILED":
+                prior_backend_status = "FAILED"
+            elif prior_status == "PASS" and existing_manifest.get("integration_status") == "PASS":
+                prior_backend_status = "PASS"
+            else:
+                prior_backend_status = "NOT_CONFIGURED"
+        if prior_backend_status in {"PASS", "FAILED"}:
             try:
-                prior_rc = int(existing_manifest.get("backend_rc", 0 if prior_status == "PASS" else EXIT_NOT_RUN))
+                prior_rc = int(existing_manifest.get("backend_rc", 0 if prior_backend_status == "PASS" else EXIT_NOT_RUN))
             except (TypeError, ValueError):
                 emit("STATUS", "BLOCKED")
                 emit("BLOCKER", "RECORD_MANIFEST_BACKEND_RC_INVALID")
                 return EXIT_NOT_RUN
-            if (prior_status == "PASS" and prior_rc != 0) or (prior_status == "FAILED" and prior_rc == 0):
+            if (prior_backend_status == "PASS" and prior_rc != 0) or (prior_backend_status == "FAILED" and prior_rc == 0):
                 emit("STATUS", "BLOCKED")
                 emit("BLOCKER", "RECORD_MANIFEST_STATUS_RC_CONFLICT")
                 return EXIT_NOT_RUN
@@ -1049,49 +1573,59 @@ def record_command(args: argparse.Namespace) -> int:
             emit("RAW_SHA256", raw_sha)
             emit("RECORD_MANIFEST", manifest)
             emit("RECORD_MANIFEST_STATUS", "RECORD_MANIFEST_REUSED")
-            emit("RECORD_STATUS", prior_status)
+            emit("RECORD_STATUS", "PASS")
+            emit("BACKEND_STATUS", prior_backend_status)
+            emit("BACKEND_RC", prior_rc)
             emit("INTEGRATION_STATUS", existing_manifest.get("integration_status", "UNKNOWN"))
             emit("IDEMPOTENT_NOOP", "YES")
-            if prior_status == "FAILED":
-                emit("STATUS", "FAILED")
-                emit("BACKEND_RC", prior_rc)
+            if prior_backend_status == "FAILED":
+                emit("STATUS", "PASS")
                 return prior_rc
             emit("STATUS", "PASS")
-            emit("BACKEND_RC", prior_rc)
             return 0
-        if prior_status == "LOCAL_MANIFEST_WRITTEN" and backend_error:
-            emit("SOURCE_SHA256", source_sha)
-            emit("ARTIFACT_SHA256", artifact_sha)
-            emit("RAW_SHA256", raw_sha)
-            emit("RECORD_MANIFEST", manifest)
-            emit("RECORD_MANIFEST_STATUS", "RECORD_MANIFEST_REUSED")
-            emit("RECORD_STATUS", prior_status)
-            emit("INTEGRATION_STATUS", existing_manifest.get("integration_status", "INTEGRATION_INCOMPLETE"))
-            emit("IDEMPOTENT_NOOP", "YES")
-            emit("STATUS", "NOT_RUN")
-            emit("BLOCKER", existing_manifest.get("backend_error") or backend_error)
-            return EXIT_NOT_RUN
-        if prior_status != "LOCAL_MANIFEST_WRITTEN":
-            emit("STATUS", "BLOCKED")
-            emit("BLOCKER", f"RECORD_MANIFEST_STATE_UNSUPPORTED:{prior_status}")
-            return EXIT_NOT_RUN
-    if backend_error:
-        ok, manifest_status = save_manifest_once(manifest, manifest_payload)
-        if not ok:
-            emit("STATUS", "BLOCKED")
-            emit("BLOCKER", manifest_status)
-            return EXIT_NOT_RUN
+    ok, manifest_status = save_manifest_once(manifest, manifest_payload)
+    if not ok:
+        emit("STATUS", "BLOCKED")
+        emit("BLOCKER", manifest_status)
+        return EXIT_NOT_RUN
+    if backend is None and not args.backend:
+        persisted = existing_manifest or manifest_payload
+        backend_status = persisted.get("backend_status", initial_backend_status)
         emit("SOURCE_SHA256", source_sha)
         emit("ARTIFACT_SHA256", artifact_sha)
         emit("RAW_SHA256", raw_sha)
         emit("RECORD_MANIFEST", manifest)
         emit("RECORD_MANIFEST_STATUS", manifest_status)
-        emit("RECORD_STATUS", "LOCAL_MANIFEST_WRITTEN")
-        emit("INTEGRATION_STATUS", "INTEGRATION_INCOMPLETE")
-        emit("STATUS", "NOT_RUN")
-        emit("BLOCKER", backend_error)
+        emit("RECORD_STATUS", "PASS")
+        emit("BACKEND_STATUS", backend_status)
+        emit("BACKEND_RC", persisted.get("backend_rc") if persisted.get("backend_rc") is not None else "NONE")
+        emit("INTEGRATION_STATUS", persisted.get("integration_status", initial_integration_status))
+        if manifest_status == "RECORD_MANIFEST_REUSED":
+            emit("IDEMPOTENT_NOOP", "YES")
+        emit("STATUS", "PASS")
+        return 0
+    if backend_error and args.backend:
+        manifest_payload["backend_status"] = "CONFIGURATION_ERROR"
+        manifest_payload["integration_status"] = "BACKEND_CONFIGURATION_ERROR"
+        manifest_payload["backend_error"] = backend_error
+        manifest_payload["backend_rc"] = None
+        write_error = write_manifest_atomic(manifest, manifest_payload)
+        if write_error:
+            emit("STATUS", "PASS")
+            emit("RECORD_STATUS", "PASS")
+            emit("BACKEND_STATUS", "CONFIGURATION_ERROR")
+            emit("BACKEND_ERROR", backend_error)
+            emit("BLOCKER", write_error)
+            return EXIT_NOT_RUN
+        emit("RECORD_MANIFEST", manifest)
+        emit("RECORD_MANIFEST_STATUS", manifest_status)
+        emit("RECORD_STATUS", "PASS")
+        emit("BACKEND_STATUS", "CONFIGURATION_ERROR")
+        emit("BACKEND_RC", "NONE")
+        emit("BACKEND_ERROR", backend_error)
+        emit("INTEGRATION_STATUS", "BACKEND_CONFIGURATION_ERROR")
+        emit("STATUS", "PASS")
         return EXIT_NOT_RUN
-    assert backend is not None
     command = backend_command(backend, args.backend_arg or [])
     emit("BACKEND_COMMAND", shlex.join(command))
     env = os.environ.copy()
@@ -1103,14 +1637,27 @@ def record_command(args: argparse.Namespace) -> int:
     env["W5CTL_ARTIFACT_SHA256"] = artifact_sha
     env["W5CTL_RAW_PATH"] = str(raw)
     env["W5CTL_RAW_SHA256"] = raw_sha
+    if canonical:
+        env["W5CTL_CANONICAL_LOCAL_SCORE"] = canonical["reported_score"]
+        env["W5CTL_CANONICAL_QUALITY"] = canonical["quality"]
+        env["W5CTL_CANONICAL_SCORE_SCOPE"] = canonical["score_scope"]
     try:
         completed = subprocess.run(
             command, cwd=str(workdir) if workdir else None, env=env,
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False,
         )
     except OSError as exc:
-        emit("STATUS", "NOT_RUN")
-        emit("BLOCKER", f"BACKEND_EXEC_FAILED:{exc}")
+        manifest_payload["backend_status"] = "FAILED"
+        manifest_payload["integration_status"] = "BACKEND_FAILED"
+        manifest_payload["backend_rc"] = EXIT_NOT_RUN
+        manifest_payload["backend_error"] = f"BACKEND_EXEC_FAILED:{exc}"
+        write_manifest_atomic(manifest, manifest_payload)
+        emit("RECORD_MANIFEST", manifest)
+        emit("RECORD_STATUS", "PASS")
+        emit("BACKEND_STATUS", "FAILED")
+        emit("BACKEND_RC", EXIT_NOT_RUN)
+        emit("STATUS", "PASS")
+        emit("BLOCKER", manifest_payload["backend_error"])
         return EXIT_NOT_RUN
     print_backend_output(completed.stdout, completed.stderr)
     actual_rc = normalize_rc(completed.returncode)
@@ -1118,7 +1665,8 @@ def record_command(args: argparse.Namespace) -> int:
     emit("BACKEND_RC", actual_rc)
     if log_written:
         emit("OUTPUT_LOG", log_written)
-    manifest_payload["record_status"] = "PASS" if actual_rc == 0 else "FAILED"
+    manifest_payload["record_status"] = "PASS"
+    manifest_payload["backend_status"] = "PASS" if actual_rc == 0 else "FAILED"
     manifest_payload["integration_status"] = "PASS" if actual_rc == 0 else "BACKEND_FAILED"
     manifest_payload["backend_rc"] = actual_rc
     ok, manifest_status = save_manifest_once(manifest, manifest_payload)
@@ -1128,10 +1676,11 @@ def record_command(args: argparse.Namespace) -> int:
         return EXIT_NOT_RUN
     emit("RECORD_MANIFEST", manifest)
     emit("RECORD_MANIFEST_STATUS", manifest_status)
-    if actual_rc != 0:
-        emit("STATUS", "FAILED")
-        return actual_rc
     emit("RECORD_STATUS", "PASS")
+    emit("BACKEND_STATUS", manifest_payload["backend_status"])
+    if actual_rc != 0:
+        emit("STATUS", "PASS")
+        return actual_rc
     emit("INTEGRATION_STATUS", "PASS")
     emit("STATUS", "PASS")
     return 0
@@ -1309,7 +1858,7 @@ def write_manifest_atomic(path: Path, payload: Dict[str, Any]) -> Optional[str]:
 
 
 def save_manifest_once(path: Path, payload: Dict[str, Any]) -> Tuple[bool, Optional[str]]:
-    """Persist/reuse one identity-bound local record and allow local→backend finalization."""
+    """Persist/reuse an identity-bound local record and separate backend state."""
     if path.exists():
         try:
             existing = json.loads(path.read_text())
@@ -1317,16 +1866,30 @@ def save_manifest_once(path: Path, payload: Dict[str, Any]) -> Tuple[bool, Optio
             return False, f"RECORD_MANIFEST_READ_FAILED:{exc}"
         if not isinstance(existing, dict) or not same_record_identity(existing, payload):
             return False, f"RECORD_MANIFEST_IDENTITY_CONFLICT:{path}"
-        existing_status = existing.get("record_status")
-        requested_status = payload.get("record_status")
-        if existing_status in {"PASS", "FAILED"}:
+        existing_backend = existing.get("backend_status")
+        requested_backend = payload.get("backend_status")
+        if existing_backend is None:
+            old_status = existing.get("record_status")
+            if old_status == "FAILED":
+                existing_backend = "FAILED"
+            elif old_status == "PASS" and existing.get("integration_status") == "PASS":
+                existing_backend = "PASS"
+            else:
+                existing_backend = "NOT_CONFIGURED"
+        if existing_backend in {"PASS", "FAILED"}:
             return True, "RECORD_MANIFEST_REUSED"
-        if existing_status == "LOCAL_MANIFEST_WRITTEN" and requested_status in {"PASS", "FAILED"}:
-            error = write_manifest_atomic(path, payload)
-            return (False, error) if error else (True, "RECORD_MANIFEST_FINALIZED")
-        if existing_status == "LOCAL_MANIFEST_WRITTEN" and requested_status == "LOCAL_MANIFEST_WRITTEN":
+        if existing_backend == requested_backend:
             return True, "RECORD_MANIFEST_REUSED"
-        return False, f"RECORD_MANIFEST_STATE_CONFLICT:{existing_status}->{requested_status}"
+        allowed_transitions = {
+            "NOT_CONFIGURED": {"PENDING", "CONFIGURATION_ERROR"},
+            "NOT_REQUESTED": {"PENDING", "CONFIGURATION_ERROR"},
+            "CONFIGURATION_ERROR": {"PENDING", "CONFIGURATION_ERROR"},
+            "PENDING": {"PASS", "FAILED", "CONFIGURATION_ERROR"},
+        }
+        if requested_backend not in allowed_transitions.get(existing_backend, set()):
+            return False, f"RECORD_MANIFEST_BACKEND_STATE_CONFLICT:{existing_backend}->{requested_backend}"
+        error = write_manifest_atomic(path, payload)
+        return (False, error) if error else (True, "RECORD_MANIFEST_FINALIZED")
     error = write_manifest_atomic(path, payload)
     if error:
         return False, error
@@ -1380,12 +1943,12 @@ def run_record_from_pipeline(
     artifact: Path,
 ) -> Outcome:
     evidence = args.record_evidence or []
-    if not evidence:
+    if not evidence and not args.canonical_measurements:
         emit("STATUS", "NOT_RUN")
         emit("BLOCKER", "RECORD_EVIDENCE_NOT_SET")
         return Outcome("NOT_RUN", EXIT_NOT_RUN, reason="RECORD_EVIDENCE_NOT_SET")
     local_stage = payload.get("stages", {}).get("local", {})
-    raw_path = args.raw or local_stage.get("raw_path")
+    raw_path = args.raw or args.canonical_measurements or local_stage.get("raw_path")
     manifest = args.record_manifest
     if not raw_path or not manifest:
         emit("STATUS", "NOT_RUN")
@@ -1403,9 +1966,14 @@ def run_record_from_pipeline(
         manifest=manifest,
         expected_source_sha=payload.get("identity", {}).get("source_sha256"),
         expected_artifact_sha=payload.get("identity", {}).get("artifact_sha256"),
+        canonical_measurements=args.canonical_measurements,
+        canonical_purpose=args.canonical_purpose,
+        canonical_revision=args.canonical_revision,
+        expected_parent_artifact_sha=args.expected_parent_artifact_sha,
+        min_pairs=args.min_pairs,
+        max_cv=args.max_cv,
     )
     record_rc = record_command(proxy)
-    status = "PASS" if record_rc == 0 else "INTEGRATION_INCOMPLETE"
     details: Dict[str, Any] = {}
     manifest_path = resolve_path(manifest)
     if manifest_path and manifest_path.is_file():
@@ -1413,12 +1981,16 @@ def run_record_from_pipeline(
             details["record"] = json.loads(manifest_path.read_text())
         except (OSError, json.JSONDecodeError):
             pass
+    record_payload = details.get("record", {})
+    local_record_pass = record_payload.get("record_status") == "PASS"
+    status = "PASS" if local_record_pass else "INTEGRATION_INCOMPLETE"
+    backend_status = record_payload.get("backend_status", "UNKNOWN")
     return Outcome(
         status,
         record_rc,
         raw_sha=details.get("record", {}).get("raw", {}).get("sha256"),
-        reason="RECORD_BACKEND_UNAVAILABLE" if record_rc else None,
-        details=details,
+        reason=("RECORD_BACKEND_" + str(backend_status)) if backend_status not in {"PASS", "NOT_CONFIGURED", "NOT_REQUESTED"} else None,
+        details={**details, "stage_status": status},
     )
 
 
@@ -1525,7 +2097,7 @@ def pipeline_command(args: argparse.Namespace, resume: bool) -> int:
         if stage == "record":
             outcome = run_record_from_pipeline(args, payload, source, artifact)
         else:
-            raw_arg = args.raw or stage_record.get("raw_path")
+            raw_arg = args.raw or args.canonical_measurements or stage_record.get("raw_path")
             outcome = identity_stage(
                 stage,
                 opts["backend"],
@@ -1539,6 +2111,10 @@ def pipeline_command(args: argparse.Namespace, resume: bool) -> int:
                 raw_arg,
                 args.min_pairs,
                 args.max_cv,
+                args.canonical_measurements,
+                args.canonical_purpose,
+                args.canonical_revision,
+                args.expected_parent_artifact_sha,
             )
         stage_status = outcome.details.get("stage_status", outcome.status)
         stage_payload: Dict[str, Any] = {
@@ -1548,8 +2124,8 @@ def pipeline_command(args: argparse.Namespace, resume: bool) -> int:
             "source_sha256": outcome.source_sha,
             "artifact_sha256": outcome.artifact_sha,
             "raw_sha256": outcome.raw_sha,
-            "raw_path": str(resolve_path(args.raw or stage_record.get("raw_path")))
-            if stage == "local" and (args.raw or stage_record.get("raw_path")) else None,
+            "raw_path": str(resolve_path(args.raw or args.canonical_measurements or stage_record.get("raw_path")))
+            if stage == "local" and (args.raw or args.canonical_measurements or stage_record.get("raw_path")) else None,
             "result": outcome.details.get("local") if stage == "local" else None,
             "record": outcome.details.get("record") if stage == "record" else None,
             "finished_utc": now_utc(),
@@ -1569,6 +2145,9 @@ def pipeline_command(args: argparse.Namespace, resume: bool) -> int:
         emit("CHECKPOINT", path)
         if outcome.rc != 0:
             if stage == "local" and stage_status in {"REJECTED", "UNCLASSIFIED"}:
+                continue
+            if stage == "record" and stage_status == "PASS":
+                emit("RECORD_BACKEND_FAILURE_RECORDED", "YES")
                 continue
             emit("CURRENT_STAGE", stage)
             emit("NEXT_ACTION", "resume --from-stage " + stage)
@@ -1672,6 +2251,29 @@ def report_manifest_command(path: Path) -> int:
     raw_path, raw_sha = resolved["raw"]
     integration_status = payload.get("integration_status", "UNKNOWN")
     full_score = local.get("full_local_score", "NOT_COMPUTABLE")
+    canonical = local.get("canonical")
+    if isinstance(canonical, dict):
+        recomputed, canonical_error = canonical_local_score(
+            canonical.get("measurements_path"), source_sha, artifact_sha,
+            canonical.get("score_scope", ""), canonical.get("subject_revision"),
+            canonical.get("parent_artifact_sha256"),
+        )
+        if canonical_error or recomputed is None:
+            emit("REPORT_STATUS", "BLOCKED")
+            emit("IDENTITY_STATUS", "FAIL")
+            emit("BLOCKER", canonical_error or "CANONICAL_SCORE_REVALIDATION_FAILED")
+            return EXIT_IDENTITY
+        for key in (
+            "reported_score", "quality", "local_status", "reliable", "promotion_eligible",
+            "raw_manifest_sha256", "parent_artifact_sha256", "measurements_sha256",
+            "scorer_commit", "scorer_sha256", "suite_sha256", "harness_sha256",
+        ):
+            if recomputed.get(key) != canonical.get(key):
+                emit("REPORT_STATUS", "BLOCKED")
+                emit("IDENTITY_STATUS", "FAIL")
+                emit("BLOCKER", f"CANONICAL_SCORE_MANIFEST_MISMATCH:{key}")
+                return EXIT_IDENTITY
+        full_score = canonical.get("full_local_score", "NOT_COMPUTABLE")
 
     emit("ROUTE", payload.get("route"))
     emit("RECORD_MANIFEST", manifest_path)
@@ -1709,15 +2311,153 @@ def report_manifest_command(path: Path) -> int:
     emit("SHAPE_PAIRED_PERCENT_DELTA", fmt_number(local.get("shape_paired_percent_delta")))
     emit("FULL_LOCAL_SCORE", full_score)
     emit("PROMOTION_ELIGIBLE", "YES" if local.get("promotion_eligible") else "NO")
+    if isinstance(canonical, dict):
+        print_canonical_stats(local)
+        emit("CANONICAL_SUBJECT_REVISION", canonical.get("subject_revision", "NONE"))
+        emit("CANONICAL_SCORE_SCOPE", canonical.get("score_scope", "UNKNOWN"))
+        emit("CANONICAL_LOCAL_SCORE", canonical.get("reported_score", "NOT_COMPUTABLE"))
+        emit("CANONICAL_QUALITY", canonical.get("quality", "UNKNOWN"))
+        emit("CANONICAL_RELIABLE", "YES" if canonical.get("reliable") else "NO")
+        emit("CANONICAL_CORE_CASES_COMPLETE", canonical.get("core_cases_complete", "NOT_COMPUTABLE"))
+        emit("CANONICAL_SCORE_REVALIDATION", "PASS_READ_ONLY")
     emit("LOCAL_REASON", local.get("reason", "NONE"))
-    emit("RECORD_STATUS", payload.get("record_status", "UNKNOWN"))
+    record_status = payload.get("record_status", "UNKNOWN")
+    backend_status = payload.get("backend_status")
+    if backend_status is None:
+        if payload.get("integration_status") == "PASS":
+            backend_status = "PASS"
+        elif record_status == "FAILED":
+            backend_status = "FAILED"
+        elif payload.get("integration_status") == "INTEGRATION_INCOMPLETE":
+            backend_status = "NOT_CONFIGURED"
+        else:
+            backend_status = "UNKNOWN"
+    emit("RECORD_STATUS", record_status)
+    emit("BACKEND_STATUS", backend_status)
+    emit("BACKEND_RC", payload.get("backend_rc") if payload.get("backend_rc") is not None else "NONE")
     emit("RECORD_INTEGRATION_STATUS", integration_status)
     emit("REVISION_CREATED", "YES" if payload.get("revision_created") else "NO")
     emit("RUNNER_CREATED", "YES" if payload.get("runner_created") else "NO")
     emit("ONLINE", payload.get("online", "NOT_SUBMITTED"))
-    complete_score = full_score not in (None, "", "NOT_COMPUTABLE")
-    report_status = "PASS" if integration_status == "PASS" and complete_score and local.get("promotion_eligible") else "INCOMPLETE"
+    complete_score = (
+        full_score not in (None, "", "NOT_COMPUTABLE")
+        and isinstance(canonical, dict)
+        and canonical.get("core_cases_complete") == "4/4"
+    )
+    emit("LOCAL_SCORE_COMPLETENESS", "COMPLETE" if complete_score else "INCOMPLETE")
+    local_record_persisted = record_status in {"PASS", "FAILED", "LOCAL_MANIFEST_WRITTEN"}
+    report_status = "PASS" if local_record_persisted else "INCOMPLETE"
     emit("REPORT_STATUS", report_status)
+    return 0
+
+
+def report_route_summary_command() -> int:
+    assert ROUTE_ROOT is not None
+    summaries: Dict[str, Dict[str, Any]] = {}
+    invalid: List[Tuple[str, str]] = []
+    seen_paths = set()
+    for candidate_path in sorted(ROUTE_ROOT.rglob("*.json")):
+        try:
+            resolved_path = candidate_path.resolve(strict=True)
+            resolved_path.relative_to(ROUTE_ROOT)
+        except (OSError, ValueError):
+            continue
+        if resolved_path in seen_paths or not resolved_path.is_file():
+            continue
+        seen_paths.add(resolved_path)
+        try:
+            payload = json.loads(resolved_path.read_text())
+        except (OSError, json.JSONDecodeError):
+            continue
+        if (
+            not isinstance(payload, dict)
+            or payload.get("schema") != 1
+            or payload.get("stage") != "record"
+            or payload.get("route") != ROUTE
+        ):
+            continue
+        local = payload.get("local_result")
+        canonical = local.get("canonical") if isinstance(local, dict) else None
+        if not isinstance(canonical, dict) or canonical.get("score_scope") != "route-kernel":
+            continue
+        captured = io.StringIO()
+        with contextlib.redirect_stdout(captured):
+            result = report_manifest_command(resolved_path)
+        values: Dict[str, str] = {}
+        for line in captured.getvalue().splitlines():
+            key, separator, value = line.partition("=")
+            if separator:
+                values[key] = value
+        if result != 0 or values.get("REPORT_STATUS") != "PASS":
+            invalid.append((str(resolved_path.relative_to(ROUTE_ROOT)), values.get("BLOCKER", "MANIFEST_NOT_VERIFIED")))
+            continue
+        revision = values.get("CANONICAL_SUBJECT_REVISION", "").strip()
+        score = values.get("CANONICAL_LOCAL_SCORE", "NOT_COMPUTABLE")
+        quality = values.get("CANONICAL_QUALITY", "UNKNOWN")
+        reliable = values.get("CANONICAL_RELIABLE") == "YES"
+        if (
+            not revision
+            or values.get("CANONICAL_CORE_CASES_COMPLETE") != "4/4"
+            or score in {"", "NOT_COMPUTABLE"}
+        ):
+            invalid.append((str(resolved_path.relative_to(ROUTE_ROOT)), "CANONICAL_SCORE_INCOMPLETE"))
+            continue
+        entry = {
+            "revision": revision,
+            "score": score,
+            "quality": quality,
+            "reliable": reliable,
+            "recorded_utc": str(payload.get("recorded_utc", "")),
+            "manifest": str(resolved_path),
+        }
+        current = summaries.get(revision)
+        if current is None or (entry["recorded_utc"], entry["manifest"]) > (
+            current["recorded_utc"], current["manifest"]
+        ):
+            summaries[revision] = entry
+
+    ordered = sorted(
+        summaries.values(),
+        key=lambda item: (item["recorded_utc"], item["revision"]),
+    )
+    emit("ROUTE", ROUTE)
+    emit("ROUTE_ROOT", ROUTE_ROOT)
+    emit("KERNEL_REVISION_COUNT", len(ordered))
+    if not ordered:
+        emit("KERNEL_REVISIONS", "NONE" if not invalid else "UNVERIFIED")
+        emit("LATEST_REVISION", "NONE" if not invalid else "UNVERIFIED")
+        emit("LATEST_SCORE", "NONE")
+        emit("LATEST_QUALITY", "NONE")
+    else:
+        emit("KERNEL_REVISIONS", ",".join(item["revision"] for item in ordered))
+        for item in ordered:
+            emit("KERNEL_REVISION", item["revision"])
+            emit("REVISION_SCORE", item["score"])
+            emit("REVISION_QUALITY", item["quality"])
+            emit("REVISION_RELIABLE", "YES" if item["reliable"] else "NO")
+            emit("REVISION_MANIFEST", item["manifest"])
+        latest = ordered[-1]
+        emit("LATEST_REVISION", latest["revision"])
+        emit("LATEST_SCORE", latest["score"])
+        emit("LATEST_QUALITY", latest["quality"])
+    reliable_entries = [item for item in ordered if item["reliable"]]
+    if reliable_entries:
+        best = max(reliable_entries, key=lambda item: (float(item["score"]), item["revision"]))
+        emit("BEST_LOCAL_REVISION", best["revision"])
+        emit("BEST_LOCAL_SCORE", best["score"])
+        emit("BEST_LOCAL_QUALITY", best["quality"])
+        emit("BEST_LOCAL_MANIFEST", best["manifest"])
+    else:
+        emit("BEST_LOCAL_REVISION", "NONE")
+        emit("BEST_LOCAL_SCORE", "NONE")
+        emit("BEST_LOCAL_QUALITY", "NONE")
+        emit("BEST_LOCAL_MANIFEST", "NONE")
+    emit("UNVERIFIED_KERNEL_MANIFEST_COUNT", len(invalid))
+    for path, reason in invalid:
+        emit("UNVERIFIED_KERNEL_MANIFEST", f"{path}:{reason}")
+    emit("SUMMARY_SCOPE", "ROUTE_ROOT_ONLY")
+    emit("SCOREBOARD_WRITTEN", "NO")
+    emit("REPORT_STATUS", "PASS" if not invalid else "PARTIAL")
     return 0
 
 
@@ -1727,6 +2467,8 @@ def report_command(args: argparse.Namespace) -> int:
         emit("REPORT_STATUS", "BLOCKED")
         emit("BLOCKER", isolation_error)
         return EXIT_NOT_RUN
+    if getattr(args, "route_summary", False):
+        return report_route_summary_command()
     if args.manifest:
         path, scope_error = scoped_path(args.manifest, "manifest")
         if scope_error:
@@ -1775,6 +2517,32 @@ def report_command(args: argparse.Namespace) -> int:
         emit(stage.upper() + "_REASON", stage_payload.get("reason", "NONE"))
         if stage == "local":
             local = stage_payload.get("result") or {}
+            canonical = local.get("canonical")
+            if isinstance(canonical, dict):
+                source, source_sha, source_error = verify_file(
+                    identity.get("source_path"), "source", identity.get("source_sha256"), required=True
+                )
+                artifact, artifact_sha, artifact_error = verify_file(
+                    identity.get("artifact_path"), "artifact", identity.get("artifact_sha256"), required=True
+                )
+                if source_error or artifact_error or source_sha is None or artifact_sha is None:
+                    emit("REPORT_STATUS", "BLOCKED")
+                    emit("IDENTITY_STATUS", "FAIL")
+                    emit("BLOCKER", source_error or artifact_error or "CHECKPOINT_CANONICAL_IDENTITY_INVALID")
+                    return EXIT_IDENTITY
+                recomputed, canonical_error = canonical_local_score(
+                    canonical.get("measurements_path"), source_sha, artifact_sha,
+                    canonical.get("score_scope", ""), canonical.get("subject_revision"),
+                    canonical.get("parent_artifact_sha256"),
+                )
+                if canonical_error or recomputed is None or any(
+                    recomputed.get(key) != canonical.get(key)
+                    for key in ("reported_score", "quality", "local_status", "raw_manifest_sha256", "parent_artifact_sha256")
+                ):
+                    emit("REPORT_STATUS", "BLOCKED")
+                    emit("IDENTITY_STATUS", "FAIL")
+                    emit("BLOCKER", canonical_error or "CHECKPOINT_CANONICAL_SCORE_MISMATCH")
+                    return EXIT_IDENTITY
             emit("LOCAL_MEASUREMENT_QUALITY", local.get("status", "NOT_RUN"))
             emit("LOCAL_QUALITY_CLASSIFICATION", local.get("quality_classification", "UNKNOWN"))
             emit("LOCAL_MEDIAN_PARENT_US", fmt_number(local.get("parent_median")))
@@ -1792,10 +2560,15 @@ def report_command(args: argparse.Namespace) -> int:
             emit("FULL_LOCAL_SCORE", local.get("full_local_score", "NOT_COMPUTABLE"))
             emit("LOCAL_PROMOTION_ELIGIBLE", "YES" if local.get("promotion_eligible") else "NO")
             emit("LOCAL_RAW_SHA256", local.get("raw_sha", stage_payload.get("raw_sha256", "NONE")))
+            if isinstance(canonical, dict):
+                print_canonical_stats(local)
+                emit("CANONICAL_SCORE_REVALIDATION", "PASS_READ_ONLY")
         if stage == "record":
             record = stage_payload.get("record") or {}
             emit("RECORD_MANIFEST", payload.get("record_manifest", "NONE"))
             emit("RECORD_STATUS", record.get("record_status", stage_payload.get("status", "NOT_RUN")))
+            emit("BACKEND_STATUS", record.get("backend_status", "UNKNOWN"))
+            emit("BACKEND_RC", record.get("backend_rc") if record.get("backend_rc") is not None else "NONE")
             emit("RECORD_INTEGRATION_STATUS", record.get("integration_status", "UNKNOWN"))
             emit("RECORD_EVIDENCE_COUNT", len(record.get("evidence", [])))
     emit("REVISION_CREATED", "YES" if payload.get("revision_created") else "NO")
@@ -1827,6 +2600,20 @@ def add_identity_options(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--expected-artifact-sha", default=os.environ.get("W5CTL_ARTIFACT_SHA256"))
 
 
+def add_canonical_options(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--canonical-measurements", default=os.environ.get("W5CTL_CANONICAL_MEASUREMENTS"))
+    parser.add_argument(
+        "--canonical-purpose",
+        choices=("route-kernel", "historical-tool-validation"),
+        default=os.environ.get("W5CTL_CANONICAL_PURPOSE", "route-kernel"),
+    )
+    parser.add_argument("--canonical-revision", default=os.environ.get("W5CTL_CANONICAL_REVISION"))
+    parser.add_argument(
+        "--expected-parent-artifact-sha",
+        default=os.environ.get("W5CTL_CANONICAL_PARENT_ARTIFACT_SHA256"),
+    )
+
+
 def add_pipeline_options(parser: argparse.ArgumentParser, resume: bool) -> None:
     parser.add_argument("--checkpoint", required=True)
     parser.add_argument("--source", default=os.environ.get("W5CTL_SOURCE"))
@@ -1834,6 +2621,7 @@ def add_pipeline_options(parser: argparse.ArgumentParser, resume: bool) -> None:
     parser.add_argument("--expected-source-sha", default=os.environ.get("W5CTL_SOURCE_SHA256"))
     parser.add_argument("--expected-artifact-sha", default=os.environ.get("W5CTL_ARTIFACT_SHA256"))
     parser.add_argument("--raw", default=os.environ.get("W5CTL_RAW_PATH"))
+    add_canonical_options(parser)
     parser.add_argument("--stages")
     parser.add_argument("--backend-workdir", default=os.environ.get("W5CTL_BACKEND_WORKDIR"))
     parser.add_argument("--min-pairs", type=int, default=3)
@@ -1876,6 +2664,7 @@ def build_parser() -> argparse.ArgumentParser:
     add_identity_options(local)
     add_backend_options(local, "W5CTL_LOCAL_BACKEND")
     local.add_argument("--raw", default=os.environ.get("W5CTL_RAW_PATH"))
+    add_canonical_options(local)
     local.add_argument("--stats-only", action="store_true")
     local.add_argument("--min-pairs", type=int, default=3)
     local.add_argument("--max-cv", type=float, default=0.20)
@@ -1884,7 +2673,8 @@ def build_parser() -> argparse.ArgumentParser:
     add_scope_options(record)
     add_identity_options(record)
     record.add_argument("--evidence", action="append", default=[])
-    record.add_argument("--raw", required=True)
+    record.add_argument("--raw", default=os.environ.get("W5CTL_RAW_PATH"))
+    add_canonical_options(record)
     record.add_argument("--manifest", required=True)
     record.add_argument("--backend", default=os.environ.get("W5CTL_RECORD_BACKEND"))
     record.add_argument("--backend-arg", action="append", default=[])
@@ -1914,6 +2704,7 @@ def build_parser() -> argparse.ArgumentParser:
     report_input = report.add_mutually_exclusive_group(required=True)
     report_input.add_argument("--checkpoint")
     report_input.add_argument("--manifest")
+    report_input.add_argument("--route-summary", action="store_true")
     return parser
 
 
@@ -1925,6 +2716,43 @@ def local_command(args: argparse.Namespace) -> int:
         emit("BLOCKER", isolation_error)
         return EXIT_NOT_RUN
     if args.stats_only:
+        if args.canonical_measurements:
+            if args.raw and resolve_path(args.raw) != resolve_path(args.canonical_measurements):
+                emit("STATS_ONLY", "YES")
+                emit("CANONICAL_SCORE_STATUS", "NOT_COMPUTABLE")
+                emit("BLOCKER", "CANONICAL_MEASUREMENTS_MUST_BE_LOCAL_RAW_INDEX")
+                emit("FULL_LOCAL_SCORE", "NOT_COMPUTABLE")
+                return EXIT_NOT_RUN
+            source, source_sha, source_error = verify_file(
+                args.source, "source", args.expected_source_sha, required=True
+            )
+            artifact, artifact_sha, artifact_error = verify_file(
+                args.artifact, "artifact", args.expected_artifact_sha, required=True
+            )
+            if source_error or artifact_error or source is None or artifact is None:
+                emit("STATS_ONLY", "YES")
+                emit("IDENTITY_STATUS", "FAIL")
+                emit("CANONICAL_SCORE_STATUS", "NOT_COMPUTABLE")
+                emit("BLOCKER", source_error or artifact_error or "CANONICAL_IDENTITY_MISSING")
+                emit("FULL_LOCAL_SCORE", "NOT_COMPUTABLE")
+                return EXIT_IDENTITY
+            canonical, canonical_error = canonical_local_score(
+                args.canonical_measurements, source_sha or "", artifact_sha or "",
+                args.canonical_purpose, args.canonical_revision,
+                args.expected_parent_artifact_sha,
+            )
+            emit("STATS_ONLY", "YES")
+            if canonical_error or canonical is None:
+                stats = blocked_stats("NOT_COMPUTABLE", canonical_error or "CANONICAL_SCORE_NOT_COMPUTABLE")
+                print_stats(stats)
+                emit("CANONICAL_SCORE_STATUS", "NOT_COMPUTABLE")
+                emit("CANONICAL_SCORE_REASON", canonical_error or "CANONICAL_SCORE_NOT_COMPUTABLE")
+                return EXIT_STATS_REJECTED
+            local = canonical_local_result(canonical)
+            print_stats(local)
+            print_canonical_stats(local)
+            emit("CANONICAL_AGGREGATION", "PASS_READ_ONLY")
+            return 0
         raw, raw_scope_error = scoped_path(args.raw, "raw")
         if raw_scope_error:
             stats = blocked_stats("NOT_RUN", raw_scope_error)
@@ -1950,6 +2778,10 @@ def local_command(args: argparse.Namespace) -> int:
         args.raw,
         args.min_pairs,
         args.max_cv,
+        args.canonical_measurements,
+        args.canonical_purpose,
+        args.canonical_revision,
+        args.expected_parent_artifact_sha,
     ).rc
 
 

@@ -2,6 +2,9 @@
 """Self-test for the route-owned w5ctl orchestration contract."""
 
 import json
+import csv
+import hashlib
+import io
 import os
 import stat
 import subprocess
@@ -17,6 +20,9 @@ ROOT = Path(__file__).resolve().parents[3]
 CLI = Path(__file__).resolve().parents[1] / "w5ctl"
 ROUTE = "W5-R02-REGISTER-SPILL-ELIMINATION-X"
 BRANCH = "research/w5-r02-register-spill"
+CANONICAL_COMMIT = "6d3ad0b30b21d2462b0fd8716c884f0ff6bdaabb"
+ANCHOR_ROOT = "本地实验/MAIN2-CANONICAL-V1/versions/R31B__V011/"
+CANONICAL_CASES = ("C12", "C13", "C14", "C16")
 
 
 def scope_args(repo_root=ROOT, route_root=None, route=ROUTE, branch=BRANCH):
@@ -36,6 +42,10 @@ def run_cli(*args):
     return run_cli_in(ROOT, *args)
 
 
+def run_cli_with_route_root(route_root, *args):
+    return run_cli_with_scope(ROOT, scope_args(route_root=route_root), *args)
+
+
 def run_cli_in(cwd, *args):
     return run_cli_with_scope(cwd, scope_args(), *args)
 
@@ -49,6 +59,107 @@ def run_cli_with_scope(cwd, scope, *args):
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         check=False,
+    )
+
+
+def git_object(object_path):
+    completed = subprocess.run(
+        ["git", "show", f"{CANONICAL_COMMIT}:{object_path}"],
+        cwd=str(ROOT),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+    if completed.returncode != 0:
+        raise AssertionError(completed.stderr.decode("utf-8", "replace"))
+    return completed.stdout
+
+
+def create_canonical_fixture(route_root, revision, candidate_scale):
+    source = route_root / f"{revision}.asc"
+    artifact = route_root / f"{revision}.o"
+    measurements = route_root / f"{revision}-measurements.tsv"
+    manifest = route_root / f"{revision}-record.json"
+    source.write_text(f"route kernel source {revision}\n")
+    artifact.write_bytes(f"route kernel artifact {revision}\n".encode())
+    source_sha = hashlib.sha256(source.read_bytes()).hexdigest()
+    artifact_sha = hashlib.sha256(artifact.read_bytes()).hexdigest()
+    index = list(csv.DictReader(
+        io.StringIO(git_object(ANCHOR_ROOT + "measurements.tsv").decode()),
+        delimiter="\t",
+    ))
+    anchor = {
+        (row["CASE_ID"], int(row["RUN"])): row
+        for row in index
+        if row.get("CASE_ID") in CANONICAL_CASES and row.get("SIDE") == "anchor"
+    }
+    output_rows = []
+    for case_id in CANONICAL_CASES:
+        stable_parent_us = float(anchor[(case_id, 1)]["MEDIAN_US"])
+        for run in (1, 2, 3):
+            anchor_row = anchor[(case_id, run)]
+            suffix = anchor_row["RAW_PATH"].split(ANCHOR_ROOT, 1)[-1]
+            if suffix == anchor_row["RAW_PATH"]:
+                raise AssertionError("published anchor raw path does not map to its public commit")
+            raw_object = ANCHOR_ROOT + suffix
+            stats_object = anchor_row["STATS_PATH"].split(ANCHOR_ROOT, 1)[-1]
+            if stats_object == anchor_row["STATS_PATH"]:
+                raise AssertionError("published anchor stats path does not map to its public commit")
+            raw_bytes = git_object(raw_object)
+            stats_bytes = git_object(ANCHOR_ROOT + stats_object)
+            stats_path = route_root / f"{revision}-{case_id}-run{run}-stats.txt"
+            stats_path.write_bytes(stats_bytes)
+            for side in (("parent", "candidate") if run in (1, 3) else ("candidate", "parent")):
+                side_scale = 1.0 if side == "parent" else candidate_scale
+                raw_path = route_root / f"{revision}-{case_id}-run{run}-{side}-raw.tsv"
+                raw_rows = list(csv.DictReader(io.StringIO(raw_bytes.decode()), delimiter="\t"))
+                for sample in raw_rows:
+                    sample["device_us"] = f"{stable_parent_us * side_scale:.9g}"
+                with raw_path.open("w", newline="") as stream:
+                    writer = csv.DictWriter(stream, fieldnames=raw_rows[0].keys(), delimiter="\t", lineterminator="\n")
+                    writer.writeheader()
+                    writer.writerows(raw_rows)
+                row = dict(anchor_row)
+                row.update({
+                    "ROUTE": ROUTE,
+                    "REVISION": revision,
+                    "SOURCE_SHA": source_sha if side == "candidate" else anchor_row["SOURCE_SHA"],
+                    "SIDE": side,
+                    "RUN": str(run),
+                    "ATTEMPT": str(run),
+                    "EXE_SHA": artifact_sha if side == "candidate" else anchor_row["EXE_SHA"],
+                    "RAW_PATH": str(raw_path.resolve()),
+                    "STATS_PATH": str(stats_path.resolve()),
+                })
+                output_rows.append(row)
+    with measurements.open("w", newline="") as stream:
+        writer = csv.DictWriter(stream, fieldnames=index[0].keys(), delimiter="\t", lineterminator="\n")
+        writer.writeheader()
+        writer.writerows(output_rows)
+    return {
+        "source": source,
+        "artifact": artifact,
+        "measurements": measurements,
+        "manifest": manifest,
+        "source_sha": source_sha,
+        "artifact_sha": artifact_sha,
+    }
+
+
+def run_canonical_record(route_root, fixture, revision, extra_args=()):
+    return run_cli_with_route_root(
+        route_root,
+        "record",
+        "--source", str(fixture["source"]),
+        "--artifact", str(fixture["artifact"]),
+        "--raw", str(fixture["measurements"]),
+        "--canonical-measurements", str(fixture["measurements"]),
+        "--canonical-purpose", "route-kernel",
+        "--canonical-revision", revision,
+        "--manifest", str(fixture["manifest"]),
+        "--evidence", str(fixture["source"]),
+        "--backend", "",
+        *extra_args,
     )
 
 
@@ -210,8 +321,20 @@ class W5CtlTest(unittest.TestCase):
             )
             self.assertEqual(result.returncode, 7, result.stdout + result.stderr)
             self.assertIn("EVIDENCE_SHA256=", result.stdout)
-            self.assertIn("RECORD_MANIFEST_STATUS=RECORD_MANIFEST_WRITTEN", result.stdout)
-            self.assertIn("STATUS=FAILED", result.stdout)
+            self.assertIn("RECORD_MANIFEST_STATUS=RECORD_MANIFEST_FINALIZED", result.stdout)
+            self.assertIn("RECORD_STATUS=PASS", result.stdout)
+            self.assertIn("BACKEND_STATUS=FAILED", result.stdout)
+            self.assertIn("BACKEND_RC=7", result.stdout)
+            self.assertIn("STATUS=PASS", result.stdout)
+            failed_manifest = root / "record-failed.json"
+            failed_payload = json.loads(failed_manifest.read_text())
+            self.assertEqual(failed_payload["record_status"], "PASS")
+            self.assertEqual(failed_payload["backend_status"], "FAILED")
+            self.assertEqual(failed_payload["backend_rc"], 7)
+            report = run_cli("report", "--manifest", str(failed_manifest))
+            self.assertEqual(report.returncode, 0, report.stdout + report.stderr)
+            self.assertIn("REPORT_STATUS=PASS", report.stdout)
+            self.assertIn("BACKEND_STATUS=FAILED", report.stdout)
 
             result = run_cli(
                 "build",
@@ -261,11 +384,15 @@ class W5CtlTest(unittest.TestCase):
                 "--backend", "",
             ]
             first = run_cli(*common)
-            self.assertEqual(first.returncode, 78, first.stdout + first.stderr)
+            self.assertEqual(first.returncode, 0, first.stdout + first.stderr)
             self.assertIn("RECORD_MANIFEST_STATUS=RECORD_MANIFEST_WRITTEN", first.stdout)
-            self.assertIn("INTEGRATION_STATUS=INTEGRATION_INCOMPLETE", first.stdout)
+            self.assertIn("RECORD_STATUS=PASS", first.stdout)
+            self.assertIn("BACKEND_STATUS=NOT_REQUESTED", first.stdout)
+            self.assertIn("BACKEND_RC=NONE", first.stdout)
             saved_bytes = manifest.read_bytes()
             saved = json.loads(saved_bytes)
+            self.assertEqual(saved["record_status"], "PASS")
+            self.assertEqual(saved["backend_status"], "NOT_REQUESTED")
             self.assertEqual(saved["source"]["sha256"], __import__("hashlib").sha256(source.read_bytes()).hexdigest())
             self.assertEqual(saved["artifact"]["sha256"], __import__("hashlib").sha256(artifact.read_bytes()).hexdigest())
             self.assertEqual(saved["raw"]["sha256"], __import__("hashlib").sha256(raw.read_bytes()).hexdigest())
@@ -275,10 +402,16 @@ class W5CtlTest(unittest.TestCase):
             self.assertFalse(saved["local_result"]["promotion_eligible"])
 
             repeated = run_cli(*common)
-            self.assertEqual(repeated.returncode, 78, repeated.stdout + repeated.stderr)
+            self.assertEqual(repeated.returncode, 0, repeated.stdout + repeated.stderr)
             self.assertIn("RECORD_MANIFEST_STATUS=RECORD_MANIFEST_REUSED", repeated.stdout)
             self.assertIn("IDEMPOTENT_NOOP=YES", repeated.stdout)
             self.assertEqual(manifest.read_bytes(), saved_bytes)
+            local_report = run_cli("report", "--manifest", str(manifest))
+            self.assertEqual(local_report.returncode, 0, local_report.stdout + local_report.stderr)
+            self.assertIn("RECORD_STATUS=PASS", local_report.stdout)
+            self.assertIn("BACKEND_STATUS=NOT_REQUESTED", local_report.stdout)
+            self.assertIn("LOCAL_SCORE_COMPLETENESS=INCOMPLETE", local_report.stdout)
+            self.assertIn("REPORT_STATUS=PASS", local_report.stdout)
 
             bad_sha = run_cli(
                 *common,
@@ -313,6 +446,7 @@ class W5CtlTest(unittest.TestCase):
             finalized_bytes = manifest.read_bytes()
             finalized = json.loads(finalized_bytes)
             self.assertEqual(finalized["record_status"], "PASS")
+            self.assertEqual(finalized["backend_status"], "PASS")
             self.assertEqual(finalized["backend_rc"], 0)
 
             replay = subprocess.run(
@@ -538,7 +672,7 @@ class W5CtlTest(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             self.assertIn("PATCH_SIMILARITY_GATE_STATUS=PASS", result.stdout)
             self.assertIn("MECHANISM_ORTHOGONALITY=UNPROVEN", result.stdout)
-            self.assertIn("MECHANISM_REVIEW=ZERO_TOKEN_OVERLAP_ONLY", result.stdout)
+            self.assertIn("MECHANISM_REVIEW=NO_TOKEN_OVERLAP_SIGNAL", result.stdout)
             self.assertIn("DEDUP_STATUS=DISTINCT", result.stdout)
 
             review_parent = root / "review-parent.patch"
@@ -556,13 +690,13 @@ class W5CtlTest(unittest.TestCase):
                 "--candidate-patch",
                 str(review_candidate),
             )
-            self.assertEqual(result.returncode, 78, result.stdout + result.stderr)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             self.assertIn("PATCH_SIMILARITY=0.000000", result.stdout)
             self.assertIn("MECHANISM_OVERLAP=0.692308", result.stdout)
-            self.assertIn("MECHANISM_OVERLAP_GATE_STATUS=PASS", result.stdout)
+            self.assertIn("MECHANISM_OVERLAP_GATE_STATUS=SIGNAL_ONLY_NOT_A_BLOCKER", result.stdout)
             self.assertIn("MECHANISM_ORTHOGONALITY=UNPROVEN", result.stdout)
-            self.assertIn("MECHANISM_REVIEW=REQUIRED_OWNER_REVIEW", result.stdout)
-            self.assertIn("DEDUP_STATUS=MANUAL_REVIEW_MECHANISM_OVERLAP", result.stdout)
+            self.assertIn("MECHANISM_REVIEW=MAIN_READ_ONLY_REVIEW_SIGNAL", result.stdout)
+            self.assertIn("DEDUP_STATUS=PATCH_GATE_PASS_MECHANISM_REVIEW_SIGNAL", result.stdout)
             self.assertNotIn("DEDUP_STATUS=DISTINCT", result.stdout)
 
             gate_parent = root / "gate-parent.patch"
@@ -612,7 +746,7 @@ class W5CtlTest(unittest.TestCase):
             self.assertIn("PATCH_SIMILARITY=0.600000", result.stdout)
             self.assertIn("PATCH_SIMILARITY_GATE_STATUS=PASS", result.stdout)
             self.assertIn("MECHANISM_OVERLAP=0.000000", result.stdout)
-            self.assertIn("MECHANISM_REVIEW=ZERO_TOKEN_OVERLAP_ONLY", result.stdout)
+            self.assertIn("MECHANISM_REVIEW=NO_TOKEN_OVERLAP_SIGNAL", result.stdout)
             self.assertIn("DEDUP_STATUS=DISTINCT", result.stdout)
 
             overlap_parent = root / "overlap-parent.patch"
@@ -638,11 +772,12 @@ class W5CtlTest(unittest.TestCase):
                 "--candidate-patch",
                 str(overlap_candidate),
             )
-            self.assertEqual(result.returncode, 78, result.stdout + result.stderr)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             self.assertIn("PATCH_SIMILARITY=0.000000", result.stdout)
             self.assertIn("MECHANISM_OVERLAP=0.750000", result.stdout)
-            self.assertIn("MECHANISM_OVERLAP_GATE_STATUS=BLOCKED", result.stdout)
-            self.assertIn("DEDUP_STATUS=BLOCKED_MECHANISM_OVERLAP", result.stdout)
+            self.assertIn("MECHANISM_OVERLAP_GATE_STATUS=SIGNAL_ONLY_NOT_A_BLOCKER", result.stdout)
+            self.assertIn("MECHANISM_REVIEW_SIGNAL=NONZERO_TOKEN_OVERLAP", result.stdout)
+            self.assertIn("DEDUP_STATUS=PATCH_GATE_PASS_MECHANISM_REVIEW_SIGNAL", result.stdout)
 
     def test_cycle_resume_and_repeat_are_checkpoint_idempotent(self):
         with tempfile.TemporaryDirectory(prefix=".w5ctl-test-", dir=str(CLI.parent)) as temp:
@@ -867,8 +1002,8 @@ class W5CtlTest(unittest.TestCase):
             self.assertEqual(first.returncode, 78, first.stdout + first.stderr)
             self.assertIn("MEASUREMENT_QUALITY=UNCLASSIFIED", first.stdout)
             self.assertIn("PROMOTION_ELIGIBLE=NO", first.stdout)
-            self.assertIn("RECORD_STATUS=LOCAL_MANIFEST_WRITTEN", first.stdout)
-            self.assertIn("INTEGRATION_STATUS=INTEGRATION_INCOMPLETE", first.stdout)
+            self.assertIn("RECORD_STATUS=PASS", first.stdout)
+            self.assertIn("BACKEND_STATUS=NOT_REQUESTED", first.stdout)
             self.assertTrue(checkpoint.is_file())
             self.assertTrue(manifest.is_file())
             payload = json.loads(checkpoint.read_text())
@@ -885,7 +1020,8 @@ class W5CtlTest(unittest.TestCase):
             self.assertEqual(record["evidence"][0]["path"], str(source.resolve()))
             self.assertEqual(record["evidence"][0]["sha256"], __import__("hashlib").sha256(source.read_bytes()).hexdigest())
             self.assertEqual(record["local_result"]["shape_local_verdict"], "SHAPE_UNCLASSIFIED_NO_PROMOTION")
-            self.assertEqual(record["integration_status"], "INTEGRATION_INCOMPLETE")
+            self.assertEqual(record["record_status"], "PASS")
+            self.assertEqual(record["backend_status"], "NOT_REQUESTED")
             manifest_bytes_after_record = manifest.read_bytes()
 
             report = run_cli("report", "--checkpoint", str(checkpoint))
@@ -898,7 +1034,8 @@ class W5CtlTest(unittest.TestCase):
             self.assertIn("SHAPE_LOCAL_VERDICT=SHAPE_UNCLASSIFIED_NO_PROMOTION", report.stdout)
             self.assertIn("LOCAL_PROMOTION_ELIGIBLE=NO", report.stdout)
             self.assertIn("FULL_LOCAL_SCORE=NOT_COMPUTABLE", report.stdout)
-            self.assertIn("RECORD_INTEGRATION_STATUS=INTEGRATION_INCOMPLETE", report.stdout)
+            self.assertIn("RECORD_STATUS=PASS", report.stdout)
+            self.assertIn("BACKEND_STATUS=NOT_REQUESTED", report.stdout)
             self.assertIn("REPORT_STATUS=INCOMPLETE", report.stdout)
 
             manifest_report = run_cli("report", "--manifest", str(manifest))
@@ -911,8 +1048,9 @@ class W5CtlTest(unittest.TestCase):
             self.assertIn("SHAPE_LOCAL_VERDICT=SHAPE_UNCLASSIFIED_NO_PROMOTION", manifest_report.stdout)
             self.assertIn("FULL_LOCAL_SCORE=NOT_COMPUTABLE", manifest_report.stdout)
             self.assertIn("PROMOTION_ELIGIBLE=NO", manifest_report.stdout)
-            self.assertIn("RECORD_INTEGRATION_STATUS=INTEGRATION_INCOMPLETE", manifest_report.stdout)
-            self.assertIn("REPORT_STATUS=INCOMPLETE", manifest_report.stdout)
+            self.assertIn("BACKEND_STATUS=NOT_REQUESTED", manifest_report.stdout)
+            self.assertIn("LOCAL_SCORE_COMPLETENESS=INCOMPLETE", manifest_report.stdout)
+            self.assertIn("REPORT_STATUS=PASS", manifest_report.stdout)
 
             outside_report = run_cli(
                 "report", "--manifest", str(ROOT / "outside-route-manifest.json")
@@ -954,6 +1092,125 @@ class W5CtlTest(unittest.TestCase):
             self.assertIn("RUNNER_CREATED=NO", resumed_again.stdout)
             self.assertEqual(counter.read_text(), before)
             self.assertEqual(manifest.read_bytes(), manifest_bytes_after_record)
+
+    def test_route_summary_reports_full_scores_quality_and_reliable_best(self):
+        with tempfile.TemporaryDirectory(prefix=".w5ctl-summary-", dir=str(CLI.parent)) as temp:
+            route_root = Path(temp)
+            proxy_source = route_root / "shape-proxy.asc"
+            proxy_artifact = route_root / "shape-proxy.o"
+            proxy_raw = route_root / "shape-proxy.tsv"
+            proxy_manifest = route_root / "shape-proxy-record.json"
+            proxy_source.write_text("shape proxy, not a kernel revision\n")
+            proxy_artifact.write_text("shape proxy artifact\n")
+            write_raw(proxy_raw, pairs=4)
+            proxy = run_cli_with_route_root(
+                route_root,
+                "record",
+                "--source", str(proxy_source),
+                "--artifact", str(proxy_artifact),
+                "--raw", str(proxy_raw),
+                "--manifest", str(proxy_manifest),
+                "--evidence", str(proxy_source),
+                "--backend", "",
+            )
+            self.assertEqual(proxy.returncode, 0, proxy.stdout + proxy.stderr)
+            empty_summary = run_cli_with_route_root(route_root, "report", "--route-summary")
+            self.assertEqual(empty_summary.returncode, 0, empty_summary.stdout + empty_summary.stderr)
+            self.assertIn("KERNEL_REVISION_COUNT=0", empty_summary.stdout)
+            self.assertIn("KERNEL_REVISIONS=NONE", empty_summary.stdout)
+            self.assertIn("LATEST_REVISION=NONE", empty_summary.stdout)
+            self.assertIn("BEST_LOCAL_REVISION=NONE", empty_summary.stdout)
+            self.assertIn("SUMMARY_SCOPE=ROUTE_ROOT_ONLY", empty_summary.stdout)
+            self.assertIn("SCOREBOARD_WRITTEN=NO", empty_summary.stdout)
+
+            fixtures = {}
+            for revision, scale in (("V001", 0.7), ("V002", 0.5), ("V003", 1.2)):
+                fixture = create_canonical_fixture(route_root, revision, scale)
+                recorded = run_canonical_record(route_root, fixture, revision)
+                self.assertEqual(recorded.returncode, 0, recorded.stdout + recorded.stderr)
+                self.assertIn("FULL_LOCAL_SCORE=", recorded.stdout)
+                self.assertIn("RECORD_STATUS=PASS", recorded.stdout)
+                self.assertIn("BACKEND_STATUS=NOT_REQUESTED", recorded.stdout)
+                payload = json.loads(fixture["manifest"].read_text())
+                payload["recorded_utc"] = {
+                    "V001": "2026-10-11T10:00:00Z",
+                    "V002": "2026-10-11T11:00:00Z",
+                    "V003": "2026-10-11T12:00:00Z",
+                }[revision]
+                fixture["manifest"].write_text(json.dumps(payload, indent=2) + "\n")
+                fixtures[revision] = fixture
+
+            slow_report = run_cli_with_route_root(
+                route_root, "report", "--manifest", str(fixtures["V003"]["manifest"])
+            )
+            self.assertEqual(slow_report.returncode, 0, slow_report.stdout + slow_report.stderr)
+            slow_record = json.loads(fixtures["V003"]["manifest"].read_text())
+            self.assertLess(float(slow_record["local_result"]["canonical"]["reported_score"]), 100.0)
+            self.assertIn("LOCAL_SCORE_COMPLETENESS=COMPLETE", slow_report.stdout)
+            self.assertIn("REPORT_STATUS=PASS", slow_report.stdout)
+            self.assertIn("PROMOTION_ELIGIBLE=NO", slow_report.stdout)
+
+            summary = run_cli_with_route_root(route_root, "report", "--route-summary")
+            self.assertEqual(summary.returncode, 0, summary.stdout + summary.stderr)
+            self.assertIn("KERNEL_REVISION_COUNT=3", summary.stdout)
+            self.assertIn("KERNEL_REVISIONS=V001,V002,V003", summary.stdout)
+            self.assertIn("LATEST_REVISION=V003", summary.stdout)
+            self.assertIn("LATEST_SCORE=", summary.stdout)
+            self.assertIn("LATEST_QUALITY=", summary.stdout)
+            self.assertIn("BEST_LOCAL_REVISION=NONE", summary.stdout)
+            self.assertIn("BEST_LOCAL_QUALITY=NONE", summary.stdout)
+            self.assertIn("REPORT_STATUS=PASS", summary.stdout)
+            self.assertEqual(summary.stdout.count("KERNEL_REVISION=V00"), 3)
+            self.assertIn("REVISION_SCORE=", summary.stdout)
+            self.assertIn("REVISION_QUALITY=", summary.stdout)
+            self.assertEqual(summary.stdout.count("REVISION_RELIABLE=NO"), 3)
+
+    def test_canonical_aggregation_rejects_missing_core_parent_identity_and_order(self):
+        with tempfile.TemporaryDirectory(prefix=".w5ctl-canonical-reject-", dir=str(CLI.parent)) as temp:
+            route_root = Path(temp)
+            fixture = create_canonical_fixture(route_root, "V004", 0.7)
+            with fixture["measurements"].open() as stream:
+                base_rows = list(csv.DictReader(stream, delimiter="\t"))
+            headers = list(base_rows[0].keys())
+
+            cases = []
+            missing_core = [row for row in base_rows if row["CASE_ID"] != "C16"]
+            cases.append(("missing-core", missing_core, (), "CANONICAL_CORE_INCOMPLETE"))
+            missing_parent = [dict(row) for row in base_rows]
+            next(row for row in missing_parent if row["CASE_ID"] == "C12" and row["SIDE"] == "parent")["EXE_SHA"] = ""
+            cases.append(("missing-parent-artifact", missing_parent, (), "CANONICAL_PARENT_ARTIFACT_SHA_MISSING"))
+            mixed_parent = [dict(row) for row in base_rows]
+            parents = [row for row in mixed_parent if row["CASE_ID"] == "C12" and row["SIDE"] == "parent"]
+            parents[1]["EXE_SHA"] = "f" * 64
+            cases.append(("mixed-parent-artifact", mixed_parent, (), "CANONICAL_PARENT_ARTIFACT_SHA_MIXED"))
+            unpinned_parent = [dict(row) for row in base_rows]
+            for row in unpinned_parent:
+                if row["SIDE"] == "parent":
+                    row["EXE_SHA"] = "f" * 64
+            cases.append(("unpinned-parent-artifact", unpinned_parent, (), "CANONICAL_PARENT_ARTIFACT_SHA_PIN_MISMATCH"))
+            invalid_order = [dict(row) for row in base_rows]
+            invalid_order[0], invalid_order[1] = invalid_order[1], invalid_order[0]
+            cases.append(("invalid-pc-order", invalid_order, (), "CANONICAL_PC_CP_ORDER_INVALID"))
+            cases.append((
+                "expected-parent-artifact-mismatch",
+                [dict(row) for row in base_rows],
+                ("--expected-parent-artifact-sha", "0" * 64),
+                "CANONICAL_PARENT_ARTIFACT_SHA_MISMATCH",
+            ))
+
+            for name, rows, extra_args, expected_error in cases:
+                with self.subTest(name=name):
+                    measurements = route_root / f"{name}.tsv"
+                    manifest = route_root / f"{name}-record.json"
+                    with measurements.open("w", newline="") as stream:
+                        writer = csv.DictWriter(stream, fieldnames=headers, delimiter="\t", lineterminator="\n")
+                        writer.writeheader()
+                        writer.writerows(rows)
+                    variant = dict(fixture, measurements=measurements, manifest=manifest)
+                    result = run_canonical_record(route_root, variant, "V004", extra_args)
+                    self.assertEqual(result.returncode, 66, result.stdout + result.stderr)
+                    self.assertIn(expected_error, result.stdout)
+                    self.assertFalse(manifest.exists())
 
 
 if __name__ == "__main__":
