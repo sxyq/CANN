@@ -27,4 +27,8 @@ inline int aclrtMemset(void*, size_t, int, size_t) { return 0; }
 inline int aclrtMemcpy(void*, size_t, const void*, size_t, int) { return 0; }
 inline int aclrtSynchronizeStream(aclrtStream) { return 0; }
 
+#if defined(N02_DEVICE_PARENT)
+#include "../../../../线上结果/R31B/V011/submission.asc"
+#else
 #include "../../../N02-CODE-FOOTPRINT-ICACHE-X/V001/submission.asc"
+#endif
