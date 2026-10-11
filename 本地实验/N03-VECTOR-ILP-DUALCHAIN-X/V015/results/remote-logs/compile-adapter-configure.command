@@ -1,0 +1,1 @@
+ssh cann-server3 'cmake -S /home/data4t2/lelinfeng/cann/server_runs/N03-VECTOR-ILP-DUALCHAIN-X-RESET-20261011/V015/fb7f0b69/adapter -B /home/data4t2/lelinfeng/cann/server_runs/N03-VECTOR-ILP-DUALCHAIN-X-RESET-20261011/V015/fb7f0b69/build-adapter -DR31B_PARENT_SOURCE_DIR=/home/data4t2/lelinfeng/cann/server_runs/N03-VECTOR-ILP-DUALCHAIN-X-RESET-20261011/V003/b6cd00ca/parent'
