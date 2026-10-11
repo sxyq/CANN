@@ -1,0 +1,30 @@
+REVISION=V012
+PARENT_REVISION_COMMIT=d3341d74208cb73a49c939fb28e960e3d1eca84d
+SOURCE_COMMIT=beae4dcca02b5bf90550d3d290188e8f98cba518
+SOURCE_SHA256=4e6e4b1f13f00bffbff9102c65f9ab0e8b788adcbd6a653331faeac8c0da5a17
+SOURCE_LOCAL=本地实验/N01-REGISTER-LIVE-RANGE-X/V012/submission.asc
+SOURCE_REMOTE=/home/data4t2/lelinfeng/cann/server_runs/N01-REGISTER-LIVE-RANGE-X-RESET-20261011/V012/beae4dcc/candidate/R31B-V016-WIDE-TILE-SEED_kernel.asc
+PARENT_SOURCE=/home/data4t2/lelinfeng/cann/server_runs/N01-REGISTER-LIVE-RANGE-X-RESET-20261011/V004/e833b161/parent/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+REMOTE_RUN=/home/data4t2/lelinfeng/cann/server_runs/N01-REGISTER-LIVE-RANGE-X-RESET-20261011/V012/beae4dcc
+CANN=8.5.0.alpha002
+SOC=Ascend910B3
+DEVICE_ID=5
+RUNNER_TARGET=paired_runner_v016
+RUNNER_CMAKELISTS_SHA256=29eb6e937ca94fbf2877ae22d2ee9a864066f8e5844ea0ccdc356c1ea40a3f3a
+RUNNER_ASC_SOURCE_SHA256=b827960aa2d60e6efd953b30f3ecfcfab17af5111f4d03e5309c4c94c68d1a55
+RUNNER_CPP_SOURCE_SHA256=4f6701ea7edbbcfd3e410e22c0c3ea39a25bc4996b9bf05be4c422827c56f789
+ENV_COMMAND=set +u; source /usr/local/Ascend/ascend-toolkit/set_env.sh
+CONFIGURE_COMMAND=cmake -S /home/data4t2/lelinfeng/cann/server_runs/N01-REGISTER-LIVE-RANGE-X-RESET-20261011/V012/beae4dcc/support/paired -B /home/data4t2/lelinfeng/cann/server_runs/N01-REGISTER-LIVE-RANGE-X-RESET-20261011/V012/beae4dcc/build -DCMAKE_BUILD_TYPE=Release -DR31B_V011_SOURCE_DIR=/home/data4t2/lelinfeng/cann/server_runs/N01-REGISTER-LIVE-RANGE-X-RESET-20261011/V004/e833b161/parent -DR31B_V016_SOURCE_DIR=/home/data4t2/lelinfeng/cann/server_runs/N01-REGISTER-LIVE-RANGE-X-RESET-20261011/V012/beae4dcc/candidate
+BUILD_COMMAND=set +u; source /usr/local/Ascend/ascend-toolkit/set_env.sh; export CPLUS_INCLUDE_PATH=/usr/include/c++/11:/usr/include/aarch64-linux-gnu/c++/11:/usr/include/aarch64-linux-gnu; export CPATH=/usr/include/aarch64-linux-gnu; cmake --build /home/data4t2/lelinfeng/cann/server_runs/N01-REGISTER-LIVE-RANGE-X-RESET-20261011/V012/beae4dcc/build --target paired_runner_v016 -- -j1
+BUILD_LOG=build-v012.log
+CONFIGURE_EXIT_CODE=0
+COMPILE_EXIT_CODE=0
+RUNNER_BINARY_SHA256=9d67ececaefcb3c51c4e6d0e1384ebbb762b60e961a20e5eba18ba6c7f9074dc
+DEVICE_ELF=results/aicore_binary_v012.bin
+DEVICE_ELF_SHA256=32a6969657ee119dcc83f21d2459987b1669b968b584b14fd84c285602defbe5
+DEVICE_ELF_IDENTICAL_TO_V011=NO
+DEVICE_TEXT_SIZE=0x14148
+FP32_CANDIDATE_FUNCTION_SIZE=12840
+FP16_CANDIDATE_FUNCTION_SIZE=13800
+BF16_CANDIDATE_FUNCTION_SIZE=14548
+REGISTER_COUNT=UNKNOWN
