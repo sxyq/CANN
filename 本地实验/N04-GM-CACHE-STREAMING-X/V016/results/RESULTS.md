@@ -31,12 +31,13 @@
 - Status: NOT RUN. No paired timing was started.
 - The closest pre-Local snapshot (`pre-local-d7-clock.txt`, `pre-local-d7-usage.txt`, and `pre-local-d7-processes.txt`) records `2026-10-11T22:03:06+00:00`, AICore 13%, AIVector 17%, HBM bandwidth 0%, and HBM use 37%. The earlier observation at 21:59 recorded AIVector 9%; activity rose again before the run. These measurements show active shared compute despite zero reported HBM bandwidth, so timing was deferred.
 - The existing Python process PID 439848 (21,260 MiB) remained untouched; no paired Runner process was present.
+- A saved read-only recheck at `local-defer-recheck-clock.txt` (`2026-10-11T22:10:03+00:00`) momentarily showed AICore 0%, AIVector 3%, and HBM bandwidth 0%. The next pre-Local snapshot at `pre-local-d7-final-clock.txt` (`2026-10-11T22:12:27+00:00`) rose to AICore 9%, AIVector 15%, and HBM bandwidth 9%; the Python PID remained present. This renewed shared activity kept Local unstarted. The final device and disk readings are in `pre-local-d7-final-*` and `server-space-pre-local-final.txt`.
 - `LOCAL_SCORE=NONE` means no Local performance conclusion is available. Resume with a fresh read-only d7 snapshot when activity is suitable, then use the existing Runner for 45 warmups and 21 alternating pairs per case. Preserve every sample and post-run state.
 
 ## Resource State
 
 - Immediately before V016 inputs were added, `/home/data4t2` reported 100% use with 16,609,017,856 bytes available; the existing N04 run tree occupied 38 MB. The build completed with no cleanup or changes to other data.
-- After build, `/home/data4t2` still reported 100% use and 16,604,868,608 bytes available. No files outside this V016 run directory were removed or changed.
+- After build, `/home/data4t2` still reported 100% use and 16,604,868,608 bytes available. On the 22:10 recheck it reported 16,600,543,232 bytes available; the final 22:12 snapshot reported 16,596,586,496 bytes available. No files outside this V016 run directory were removed or changed.
 - d7 remained at 37% HBM use. All local and post-run data generation remains limited to the available server space; the device and Python process were not modified.
 
 ## Evidence Files
