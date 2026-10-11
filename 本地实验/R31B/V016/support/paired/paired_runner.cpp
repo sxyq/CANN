@@ -374,9 +374,9 @@ void RunCase(const CaseSpec& spec, aclrtStream stream, Events& events, RunMode m
                              ACL_MEMCPY_DEVICE_TO_HOST), "copy parent output");
         CheckAcl(aclrtMemcpy(candidateOutput.data(), dataBytes, buffers.candidateOutput, dataBytes,
                              ACL_MEMCPY_DEVICE_TO_HOST), "copy candidate output");
-        CheckOutput(spec, x, residual, gamma, bias, parentOutput, "V003");
-        CheckOutput(spec, x, residual, gamma, bias, candidateOutput, "V004");
-        std::printf("CASE_END name=%s correctness=PASS parent=V003 candidate=V004\n", spec.name);
+        CheckOutput(spec, x, residual, gamma, bias, parentOutput, "V004");
+        CheckOutput(spec, x, residual, gamma, bias, candidateOutput, "V005");
+        std::printf("CASE_END name=%s correctness=PASS parent=V004 candidate=V005\n", spec.name);
         FreeCase(buffers);
         return;
     }
@@ -406,13 +406,13 @@ void RunCase(const CaseSpec& spec, aclrtStream stream, Events& events, RunMode m
                 blockWall.push_back(timed.wallUs);
                 allDevice.push_back(timed.deviceUs);
                 allWall.push_back(timed.wallUs);
-                std::printf("SAME_BINARY_SAMPLE case=%s block=%d sample=%02d device_us=%.3f wall_us=%.3f binary=V003\n",
+                std::printf("SAME_BINARY_SAMPLE case=%s block=%d sample=%02d device_us=%.3f wall_us=%.3f binary=V004\n",
                             spec.name, block + 1, sample + 1,
                             timed.deviceUs, timed.wallUs);
             }
             const Stats blockStats = Summarize(blockDevice);
             blockMedians[block] = blockStats.median;
-            PrintStats(spec.name, "device_us", block == 0 ? "V003_BLOCK_1" : "V003_BLOCK_2",
+            PrintStats(spec.name, "device_us", block == 0 ? "V004_BLOCK_1" : "V004_BLOCK_2",
                        blockDevice);
         }
 
@@ -429,16 +429,16 @@ void RunCase(const CaseSpec& spec, aclrtStream stream, Events& events, RunMode m
         const char* verdict = passed ? "PASS" :
                               blocked ? "MEASUREMENT_PROTOCOL_BLOCKED_FOR_SHAPE" :
                                         "NEEDS_VALIDATION";
-        PrintStats(spec.name, "device_us", "V003_ALL", allDevice);
-        PrintStats(spec.name, "wall_us", "V003_ALL", allWall);
+        PrintStats(spec.name, "device_us", "V004_ALL", allDevice);
+        PrintStats(spec.name, "wall_us", "V004_ALL", allWall);
         std::printf("SAME_BINARY_QUAL case=%s result=%s samples=%zu median_us=%.3f mad_over_median=%.5f block_drift=%.5f\n",
                     spec.name, verdict, allDevice.size(), fullStats.median,
                     madRatio, blockDrift);
 
         CheckAcl(aclrtMemcpy(parentOutput.data(), dataBytes, buffers.parentOutput, dataBytes,
                              ACL_MEMCPY_DEVICE_TO_HOST), "copy same-binary output");
-        CheckOutput(spec, x, residual, gamma, bias, parentOutput, "V003");
-        std::printf("CASE_END name=%s same_binary=V003 correctness=PASS\n", spec.name);
+        CheckOutput(spec, x, residual, gamma, bias, parentOutput, "V004");
+        std::printf("CASE_END name=%s same_binary=V004 correctness=PASS\n", spec.name);
         FreeCase(buffers);
         return;
     }
@@ -493,14 +493,14 @@ void RunCase(const CaseSpec& spec, aclrtStream stream, Events& events, RunMode m
                          ACL_MEMCPY_DEVICE_TO_HOST), "copy parent output");
     CheckAcl(aclrtMemcpy(candidateOutput.data(), dataBytes, buffers.candidateOutput, dataBytes,
                          ACL_MEMCPY_DEVICE_TO_HOST), "copy candidate output");
-    CheckOutput(spec, x, residual, gamma, bias, parentOutput, "V003");
-    CheckOutput(spec, x, residual, gamma, bias, candidateOutput, "V004");
+    CheckOutput(spec, x, residual, gamma, bias, parentOutput, "V004");
+    CheckOutput(spec, x, residual, gamma, bias, candidateOutput, "V005");
 
-    PrintStats(spec.name, "device_us", "V003", parentDevice);
-    PrintStats(spec.name, "device_us", "V004", candidateDevice);
-    PrintStats(spec.name, "wall_us", "V003", parentWall);
-    PrintStats(spec.name, "wall_us", "V004", candidateWall);
-    PrintStats(spec.name, "paired_device_delta_us", "V004_minus_V003", deltas);
+    PrintStats(spec.name, "device_us", "V004", parentDevice);
+    PrintStats(spec.name, "device_us", "V005", candidateDevice);
+    PrintStats(spec.name, "wall_us", "V004", parentWall);
+    PrintStats(spec.name, "wall_us", "V005", candidateWall);
+    PrintStats(spec.name, "paired_device_delta_us", "V005_minus_V004", deltas);
     std::printf("CASE_END name=%s correctness=PASS\n", spec.name);
     FreeCase(buffers);
 }
