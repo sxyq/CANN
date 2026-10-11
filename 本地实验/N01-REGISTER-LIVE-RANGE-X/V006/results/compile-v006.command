@@ -1,0 +1,21 @@
+REVISION=V006
+SOURCE_COMMIT=6cc244b025049552159903387f9f77dc668cdce9
+SOURCE_SHA256=5116d0e69f1fdc4dcb200a56f1882d259ca81b0a77ec6cbb818c1e13118f3211
+SOURCE_LOCAL=本地实验/N01-REGISTER-LIVE-RANGE-X/V006/submission.asc
+SOURCE_REMOTE=/home/data4t2/lelinfeng/cann/server_runs/N01-REGISTER-LIVE-RANGE-X-RESET-20261011/V006/6cc244b0/candidate/R31B-V016-WIDE-TILE-SEED_kernel.asc
+PARENT_SOURCE=/home/data4t2/lelinfeng/cann/server_runs/N01-REGISTER-LIVE-RANGE-X-RESET-20261011/V004/e833b161/parent/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+REMOTE_RUN=/home/data4t2/lelinfeng/cann/server_runs/N01-REGISTER-LIVE-RANGE-X-RESET-20261011/V006/6cc244b0
+CANN=8.5.0.alpha002
+SOC=Ascend910B3
+DEVICE_ID=5
+RUNNER_TARGET=paired_runner_v016
+RUNNER_SOURCE_SHA256=4f6701ea7edbbcfd3e410e22c0c3ea39a25bc4996b9bf05be4c422827c56f789
+ENV_COMMAND=set +u; source /usr/local/Ascend/ascend-toolkit/set_env.sh
+CPLUS_INCLUDE_PATH=/usr/include/c++/11:/usr/include/aarch64-linux-gnu/c++/11:/usr/include/aarch64-linux-gnu
+CPATH=/usr/include/aarch64-linux-gnu
+CONFIGURE_COMMAND=cmake -S /home/data4t2/lelinfeng/cann/server_runs/N01-REGISTER-LIVE-RANGE-X-RESET-20261011/V006/6cc244b0/support/paired -B /home/data4t2/lelinfeng/cann/server_runs/N01-REGISTER-LIVE-RANGE-X-RESET-20261011/V006/6cc244b0/build -DCMAKE_BUILD_TYPE=Release -DR31B_V011_SOURCE_DIR=/home/data4t2/lelinfeng/cann/server_runs/N01-REGISTER-LIVE-RANGE-X-RESET-20261011/V004/e833b161/parent -DR31B_V016_SOURCE_DIR=/home/data4t2/lelinfeng/cann/server_runs/N01-REGISTER-LIVE-RANGE-X-RESET-20261011/V006/6cc244b0/candidate
+BUILD_COMMAND=cmake --build /home/data4t2/lelinfeng/cann/server_runs/N01-REGISTER-LIVE-RANGE-X-RESET-20261011/V006/6cc244b0/build --target paired_runner_v016 -- -j1
+CONFIGURE_EXIT_CODE=0
+COMPILE_EXIT_CODE=0
+RUNNER_BINARY_SHA256=239a8cd96dd3ac40b00e8657fc0e0d11ca0b19793ff8719d1155f9752338111a
+ASC_OBJECT_SHA256=629d0258b6d1fb8373349f2d773beb7c53580282cf553ac7f8be39dcfaac5ffc
