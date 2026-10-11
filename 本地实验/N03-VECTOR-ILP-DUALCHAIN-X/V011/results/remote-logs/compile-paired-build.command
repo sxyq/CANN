@@ -1,0 +1,1 @@
+ssh cann-server3 'ASCEND_HOME_PATH=/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002 CPLUS_INCLUDE_PATH=/usr/include/c++/11:/usr/include/aarch64-linux-gnu/c++/11 cmake --build /home/data4t2/lelinfeng/cann/server_runs/N03-VECTOR-ILP-DUALCHAIN-X-RESET-20261011/V011/95d330e1/build-paired --target paired_runner_v016 -j2'
