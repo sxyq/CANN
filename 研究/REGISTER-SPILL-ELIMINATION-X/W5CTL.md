@@ -54,11 +54,19 @@ be inside the bound worktree. Its real return code is propagated. The backend
 receives `W5CTL_ROUTE`, `W5CTL_STAGE`, source/artifact paths and SHA-256 values,
 and for Local the raw timing path.
 
+For a published historical build whose executable bytes are not present in the
+public Git object, `--artifact-receipt <build.json>` binds the recorded
+`EXE_SHA` without pretending that the receipt is an executable. The receipt is
+route-scoped and its SHA is retained in the local manifest. `record` and
+`report` also accept optional `--build-receipt` and `--correctness-receipt`;
+they verify the published PASS/RC and correctness cell counts and expose the
+results as `BUILD_STATUS` and `CORRECTNESS_STATUS`.
+
 Each backend is run as one subprocess with its real exit code. A missing or
 non-executable backend is separately reported as `BACKEND_STATUS=NOT_CONFIGURED`
 or a configuration error; it does not prevent a valid route-local manifest from
 being a completed local Record. `record` requires
-`--source`, `--artifact`, `--raw`, `--manifest`, and one or more `--evidence`
+`--source`, `--artifact` (or `--artifact-receipt`), `--raw`, `--manifest`, and one or more `--evidence`
 paths. It writes a local JSON manifest containing source/artifact/raw SHA-256
 values, evidence paths and SHA-256 values, and the complete Local result. With
 no Record Owner backend, the complete manifest is still written with
@@ -79,9 +87,11 @@ the existing evidence roots.
 
 ## Identity and local data contract
 
-`build`, `correctness`, and `local` require `--source` and `--artifact` and
-compute SHA-256 before/after delegation. Optional expected SHA values are
-checked; a changed or missing source/artifact is an identity failure.
+`build`, `correctness`, and `local` require `--source` and an executable
+`--artifact` (or a published `--artifact-receipt` for read-only historical
+validation) and compute/verify SHA-256 identity before/after delegation.
+Optional expected SHA values are checked; a changed or missing source/artifact
+is an identity failure.
 
 Local raw input is TSV/CSV or JSON. Generic row-oriented TSV/CSV fields are:
 
@@ -185,11 +195,24 @@ Historical validation invocations should pass
 `--expected-parent-artifact-sha` set to that measured public identity; a
 historical one-shape input still remains `FULL_LOCAL_SCORE=NOT_COMPUTABLE`.
 
-The pinned public scorer commit contains the R31B V011 anchor and scorer
-assets, but no published W5-R01 CROSSROW candidate four-Core measurements
-bundle. Therefore the R2 CROSSROW record is retained as shape-level historical
-evidence only; tests using local scorer fixtures validate control flow, not
-Canonical E2E or R2 Kernel performance.
+The pinned public commit also contains the complete published
+`MAIN2-CANONICAL-V1/versions/VECTOR-MATH-X__V003` source/receipt/measurement
+bundle. R2's route-owned historical validation directory records its candidate
+source SHA `f019d099...`, published candidate `EXE_SHA`
+`da52970a...`, Parent source SHA `a8c19a19...`, Parent artifact SHA
+`eed03216...`, and the published scorer result `60.477249` for C12/C13/C14/C16.
+This is `score_scope=historical-tool-validation`: it is not an R2 Kernel
+Revision, does not enter `report --route-summary`, and does not become a
+promotion or Official score. The published Build/Correctness receipts are
+validated as evidence; because executable bytes and a legal R2-selected backend
+invocation are not present in this route, this receipt must not be called a
+fresh w5ctl Build/Correctness/Local E2E run.
+
+This Vector-Math bundle is not W5-R01 CROSSROW V001. The public CROSSROW
+materials currently lack the complete C12/C13/C14/C16, three-run paired raw
+bundle together with verified artifact and Canonical scorer metadata, so the
+older one-shape `UNCLASSIFIED` CROSSROW record remains incomplete. A separate
+`r1-public-build-w5ctl.log` is WIDE-X-FRESH4 and is not R1 CROSSROW evidence.
 
 All execution commands verify the current Git root and expected branch supplied
 for that invocation, and every source, artifact, raw, log, checkpoint,
@@ -207,7 +230,7 @@ The test uses temporary fake executables and read-only public scorer fixtures on
 propagation, SHA guards, raw-stat rejection, dedup, manifest identity,
 checkpoint/report/resume idempotence;
 it does not touch a CANN compiler, NPU, Kernel, CMake, shared scheduler, or
-the tooling-runner worktree. The current `12/12` result is not an E2E result:
+the tooling-runner worktree. The current `14/14` result is not an E2E result:
 real Build,
 Correctness, Local event provenance, Runner identity, and evidence publication
 backends must be supplied and accepted by the Tooling/Integration Owner.

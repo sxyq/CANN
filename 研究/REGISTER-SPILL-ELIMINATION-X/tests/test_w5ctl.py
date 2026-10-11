@@ -75,6 +75,37 @@ def git_object(object_path):
     return completed.stdout
 
 
+def create_public_canonical_fixture(route_root, as_git_objects=True):
+    public_version = "本地实验/MAIN2-CANONICAL-V1/versions/VECTOR-MATH-X__V003"
+    public_build = "本地实验/MAIN2-CANONICAL-V1/builds/VECTOR-MATH-X__V003"
+    source = route_root / "public-vector-math-submission.asc"
+    parent = route_root / "public-vector-math-parent.asc"
+    receipt = route_root / "public-vector-math-build.json"
+    correctness = route_root / "public-vector-math-correctness.json"
+    measurements = route_root / "public-vector-math-measurements.tsv"
+    source.write_bytes(git_object(public_build + "/submission.asc"))
+    parent.write_bytes(git_object(public_build + "/parent.asc"))
+    receipt.write_bytes(git_object(public_version + "/build.json"))
+    correctness.write_bytes(git_object(public_version + "/correctness.json"))
+    measurement_text = git_object(public_version + "/measurements.tsv").decode()
+    if as_git_objects:
+        measurement_text = measurement_text.replace(
+            "/home/data4t2/lelinfeng/cann-w2-main2-control/",
+            f"gitobj://{CANONICAL_COMMIT}/",
+        )
+    measurements.write_text(measurement_text)
+    return {
+        "source": source,
+        "parent": parent,
+        "receipt": receipt,
+        "correctness": correctness,
+        "measurements": measurements,
+        "source_sha": hashlib.sha256(source.read_bytes()).hexdigest(),
+        "parent_sha": hashlib.sha256(parent.read_bytes()).hexdigest(),
+        "artifact_sha": json.loads(receipt.read_text())["EXE_SHA"],
+    }
+
+
 def create_canonical_fixture(route_root, revision, candidate_scale):
     source = route_root / f"{revision}.asc"
     artifact = route_root / f"{revision}.o"
@@ -1192,6 +1223,152 @@ class W5CtlTest(unittest.TestCase):
             self.assertIn("REVISION_SCORE=", summary.stdout)
             self.assertIn("REVISION_QUALITY=", summary.stdout)
             self.assertEqual(summary.stdout.count("REVISION_RELIABLE=NO"), 3)
+
+    def test_public_canonical_receipt_and_pinned_paths_are_identity_bound(self):
+        with tempfile.TemporaryDirectory(prefix=".w5ctl-public-canonical-", dir=str(CLI.parent)) as temp:
+            route_root = Path(temp)
+            fixture = create_public_canonical_fixture(route_root, as_git_objects=True)
+            local = run_cli_with_route_root(
+                route_root,
+                "local",
+                "--stats-only",
+                "--source", str(fixture["source"]),
+                "--artifact-receipt", str(fixture["receipt"]),
+                "--canonical-measurements", str(fixture["measurements"]),
+                "--canonical-purpose", "historical-tool-validation",
+                "--canonical-revision", "V003",
+                "--expected-parent-artifact-sha", "eed03216f3ad02a7c5dde0978f50edff218619286e4b6a479c79b845cd843c71",
+            )
+            self.assertEqual(local.returncode, 0, local.stdout + local.stderr)
+            self.assertIn("CANONICAL_CORE_CASES_COMPLETE=4/4", local.stdout)
+            self.assertIn("CANONICAL_LOCAL_SCORE=60.477249", local.stdout)
+            self.assertIn("CANONICAL_SCORE_SCOPE=historical-tool-validation", local.stdout)
+            self.assertIn("PROMOTION_ELIGIBLE=NO", local.stdout)
+
+            manifest = route_root / "public-canonical-record.json"
+            recorded = run_cli_with_route_root(
+                route_root,
+                "record",
+                "--source", str(fixture["source"]),
+                "--artifact-receipt", str(fixture["receipt"]),
+                "--raw", str(fixture["measurements"]),
+                "--canonical-measurements", str(fixture["measurements"]),
+                "--canonical-purpose", "historical-tool-validation",
+                "--canonical-revision", "V003",
+                "--expected-parent-artifact-sha", "eed03216f3ad02a7c5dde0978f50edff218619286e4b6a479c79b845cd843c71",
+                "--build-receipt", str(fixture["receipt"]),
+                "--correctness-receipt", str(fixture["correctness"]),
+                "--manifest", str(manifest),
+                "--evidence", str(fixture["source"]),
+                "--evidence", str(fixture["parent"]),
+                "--evidence", str(fixture["receipt"]),
+                "--evidence", str(fixture["correctness"]),
+                "--backend", "",
+            )
+            self.assertEqual(recorded.returncode, 0, recorded.stdout + recorded.stderr)
+            payload = json.loads(manifest.read_text())
+            self.assertEqual(payload["artifact"]["identity_mode"], "PUBLIC_BUILD_RECEIPT")
+            self.assertEqual(payload["artifact"]["sha256"], fixture["artifact_sha"])
+            self.assertEqual(payload["local_result"]["canonical"]["reported_score"], "60.477249")
+            self.assertEqual(payload["local_result"]["canonical"]["score_scope"], "historical-tool-validation")
+
+            report = run_cli_with_route_root(route_root, "report", "--manifest", str(manifest))
+            self.assertEqual(report.returncode, 0, report.stdout + report.stderr)
+            self.assertIn("REPORT_STATUS=PASS", report.stdout)
+            self.assertIn("BUILD_STATUS=PASS", report.stdout)
+            self.assertIn("CORRECTNESS_STATUS=PASS", report.stdout)
+            self.assertIn("LOCAL_SCORE_COMPLETENESS=COMPLETE", report.stdout)
+            self.assertIn("CANONICAL_LOCAL_SCORE=60.477249", report.stdout)
+            self.assertIn("FULL_LOCAL_SCORE=NOT_COMPUTABLE", report.stdout)
+            self.assertIn("PROMOTION_ELIGIBLE=NO", report.stdout)
+
+            repeated = run_cli_with_route_root(
+                route_root,
+                "record",
+                "--source", str(fixture["source"]),
+                "--artifact-receipt", str(fixture["receipt"]),
+                "--raw", str(fixture["measurements"]),
+                "--canonical-measurements", str(fixture["measurements"]),
+                "--canonical-purpose", "historical-tool-validation",
+                "--canonical-revision", "V003",
+                "--expected-parent-artifact-sha", "eed03216f3ad02a7c5dde0978f50edff218619286e4b6a479c79b845cd843c71",
+                "--build-receipt", str(fixture["receipt"]),
+                "--correctness-receipt", str(fixture["correctness"]),
+                "--manifest", str(manifest),
+                "--evidence", str(fixture["source"]),
+                "--evidence", str(fixture["parent"]),
+                "--evidence", str(fixture["receipt"]),
+                "--evidence", str(fixture["correctness"]),
+                "--backend", "",
+            )
+            self.assertEqual(repeated.returncode, 0, repeated.stdout + repeated.stderr)
+            self.assertIn("RECORD_MANIFEST_STATUS=RECORD_MANIFEST_REUSED", repeated.stdout)
+
+            bad_receipt = route_root / "bad-build.json"
+            bad_payload = json.loads(fixture["receipt"].read_text())
+            bad_payload["EXE_SHA"] = "0" * 64
+            bad_receipt.write_text(json.dumps(bad_payload))
+            bad = run_cli_with_route_root(
+                route_root,
+                "record",
+                "--source", str(fixture["source"]),
+                "--artifact-receipt", str(bad_receipt),
+                "--expected-artifact-sha", fixture["artifact_sha"],
+                "--raw", str(fixture["measurements"]),
+                "--canonical-measurements", str(fixture["measurements"]),
+                "--canonical-purpose", "historical-tool-validation",
+                "--canonical-revision", "V003",
+                "--expected-parent-artifact-sha", "eed03216f3ad02a7c5dde0978f50edff218619286e4b6a479c79b845cd843c71",
+                "--manifest", str(route_root / "bad-record.json"),
+                "--evidence", str(fixture["source"]),
+                "--backend", "",
+            )
+            self.assertEqual(bad.returncode, 65, bad.stdout + bad.stderr)
+            self.assertIn("ARTIFACT_SHA_MISMATCH", bad.stdout)
+
+            invalid_prefix = route_root / "invalid-prefix.tsv"
+            invalid_prefix.write_text(
+                fixture["measurements"].read_text().replace(
+                    f"gitobj://{CANONICAL_COMMIT}/本地实验/MAIN2-CANONICAL-V1/",
+                    f"gitobj://{CANONICAL_COMMIT}/归档/not-allowed/",
+                    1,
+                )
+            )
+            rejected_prefix = run_cli_with_route_root(
+                route_root,
+                "local",
+                "--stats-only",
+                "--source", str(fixture["source"]),
+                "--artifact-receipt", str(fixture["receipt"]),
+                "--canonical-measurements", str(invalid_prefix),
+                "--canonical-purpose", "historical-tool-validation",
+                "--canonical-revision", "V003",
+                "--expected-parent-artifact-sha", "eed03216f3ad02a7c5dde0978f50edff218619286e4b6a479c79b845cd843c71",
+            )
+            self.assertEqual(rejected_prefix.returncode, 66, rejected_prefix.stdout + rejected_prefix.stderr)
+            self.assertIn("CANONICAL_RAW_GIT_OBJECT_OUT_OF_SCOPE", rejected_prefix.stdout)
+
+            external_path = route_root / "external-path.tsv"
+            external_path.write_text(
+                fixture["measurements"].read_text().replace(
+                    f"gitobj://{CANONICAL_COMMIT}/本地实验/MAIN2-CANONICAL-V1/",
+                    "/tmp/arbitrary-file/本地实验/MAIN2-CANONICAL-V1/",
+                    1,
+                )
+            )
+            rejected_external = run_cli_with_route_root(
+                route_root,
+                "local",
+                "--stats-only",
+                "--source", str(fixture["source"]),
+                "--artifact-receipt", str(fixture["receipt"]),
+                "--canonical-measurements", str(external_path),
+                "--canonical-purpose", "historical-tool-validation",
+                "--canonical-revision", "V003",
+                "--expected-parent-artifact-sha", "eed03216f3ad02a7c5dde0978f50edff218619286e4b6a479c79b845cd843c71",
+            )
+            self.assertEqual(rejected_external.returncode, 66, rejected_external.stdout + rejected_external.stderr)
+            self.assertIn("CANONICAL_PUBLIC_EXTERNAL_FILE_REJECTED", rejected_external.stdout)
 
     def test_canonical_aggregation_rejects_missing_core_parent_identity_and_order(self):
         with tempfile.TemporaryDirectory(prefix=".w5ctl-canonical-reject-", dir=str(CLI.parent)) as temp:

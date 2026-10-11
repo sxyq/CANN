@@ -51,6 +51,8 @@ CANONICAL_SUITE_SHA256 = "30b6edcd59f19f3e495bb23cb5cf2f41bf5e132a6d96f7b050e32f
 CANONICAL_HARNESS_SHA256 = "2aa1aa3b2801a9202de01946ff079ec3b580c6ee7218dc03a772a87a4a4467e7"
 CANONICAL_BASE_SOURCE_SHA256 = "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3"
 CANONICAL_PARENT_ARTIFACT_SHA256 = "eed03216f3ad02a7c5dde0978f50edff218619286e4b6a479c79b845cd843c71"
+PUBLIC_CANONICAL_ROOT_MARKER = "/本地实验/MAIN2-CANONICAL-V1/"
+PUBLIC_CANONICAL_SOURCE_ROOT = "/home/data4t2/lelinfeng/cann-w2-main2-control"
 CANONICAL_CORE_CASES = {"C12", "C13", "C14", "C16"}
 
 # This adapter evaluates the exact published scorer module from its pinned Git
@@ -155,7 +157,21 @@ for (const row of anchorRows) {
     row[key] = `gitobj://${commit}/${anchorRoot}${value.slice(index + marker.length)}`;
   }
 }
-const candidateRows = parseTsv(fs.readFileSync(input.measurements_path));
+const candidateMeasurementBytes = input.measurements_git_object
+  ? gitShow(input.measurements_git_object)
+  : fs.readFileSync(input.measurements_path);
+const candidateRows = parseTsv(candidateMeasurementBytes);
+for (const row of candidateRows) {
+  for (const key of ["RAW_PATH", "STATS_PATH"]) {
+    const value = row[key] || "";
+    const marker = "/本地实验/MAIN2-CANONICAL-V1/";
+    const index = value.lastIndexOf(marker);
+    if (index >= 0) {
+      const objectPath = value.slice(index + 1);
+      row[key] = `gitobj://${commit}/${objectPath}`;
+    }
+  }
+}
 const coreCells = [];
 const rank = {GOOD: 0, FAIR: 1, POOR: 2};
 for (const c of suite.filter(row => row.CASE_ROLE === "CORE")) {
@@ -368,6 +384,174 @@ def verify_file(
     return path, digest, None
 
 
+def read_pinned_public_object(raw_path: Optional[str]) -> Tuple[Optional[str], Optional[bytes], Optional[str]]:
+    if not raw_path:
+        return None, None, "PUBLIC_GIT_OBJECT_NOT_SET"
+    uri_match = re.fullmatch(r"gitobj://([0-9a-f]{40})/(.+)", raw_path)
+    if uri_match:
+        commit, object_path = uri_match.groups()
+    elif raw_path.startswith(PUBLIC_CANONICAL_SOURCE_ROOT + PUBLIC_CANONICAL_ROOT_MARKER):
+        commit = CANONICAL_PUBLIC_COMMIT
+        marker_index = raw_path.rfind(PUBLIC_CANONICAL_ROOT_MARKER)
+        object_path = raw_path[marker_index + 1:]
+    else:
+        return None, None, f"PUBLIC_GIT_OBJECT_PATH_INVALID:{raw_path}"
+    allowed = (
+        "本地实验/MAIN2-CANONICAL-V1/versions/",
+        "本地实验/MAIN2-CANONICAL-V1/builds/VECTOR-MATH-X__V003/",
+    )
+    if (
+        commit != CANONICAL_PUBLIC_COMMIT
+        or not object_path.startswith(allowed)
+        or ".." in Path(object_path).parts
+        or object_path.startswith("/")
+    ):
+        return None, None, f"PUBLIC_GIT_OBJECT_OUT_OF_SCOPE:{raw_path}"
+    try:
+        completed = subprocess.run(
+            ["git", "show", f"{commit}:{object_path}"],
+            cwd=str(EXPECTED_REPO_ROOT), stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE, check=False,
+        )
+    except OSError as exc:
+        return None, None, f"PUBLIC_GIT_OBJECT_READ_FAILED:{exc}"
+    if completed.returncode != 0:
+        return None, None, f"PUBLIC_GIT_OBJECT_UNAVAILABLE:{object_path}"
+    return f"gitobj://{commit}/{object_path}", completed.stdout, None
+
+
+def verify_identity_reference(
+    raw_path: Optional[str],
+    label: str,
+    expected_sha: Optional[str] = None,
+    allow_public: bool = False,
+) -> Tuple[Optional[Any], Optional[str], Optional[str]]:
+    if allow_public and raw_path and (raw_path.startswith("gitobj://") or raw_path.startswith(PUBLIC_CANONICAL_SOURCE_ROOT + PUBLIC_CANONICAL_ROOT_MARKER)):
+        canonical_ref, contents, error = read_pinned_public_object(raw_path)
+        if error or canonical_ref is None or contents is None:
+            return raw_path, None, error
+        digest = hashlib.sha256(contents).hexdigest()
+        if expected_sha and digest.lower() != expected_sha.lower():
+            return canonical_ref, digest, f"{label.upper()}_SHA_MISMATCH:expected={expected_sha}:actual={digest}"
+        return canonical_ref, digest, None
+    path, digest, error = verify_file(raw_path, label, expected_sha, required=True)
+    if error:
+        return path, digest, error
+    if path is not None:
+        try:
+            path.relative_to(ROUTE_ROOT)
+        except (AttributeError, ValueError):
+            return path, digest, f"OUT_OF_SCOPE:{label}:{path}:expected={ROUTE_ROOT}"
+    return path, digest, None
+
+
+def verify_stage_receipt(
+    raw_path: Optional[str],
+    stage: str,
+    expected_source_sha: Optional[str] = None,
+    expected_artifact_sha: Optional[str] = None,
+) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
+    path, digest, error = verify_file(raw_path, f"{stage}-receipt", required=True)
+    if error or path is None or digest is None:
+        return None, error or f"{stage.upper()}_RECEIPT_NOT_SET"
+    try:
+        path.relative_to(ROUTE_ROOT)
+        payload = json.loads(path.read_text())
+    except (AttributeError, ValueError):
+        return None, f"OUT_OF_SCOPE:{stage}-receipt:{path}:expected={ROUTE_ROOT}"
+    except (OSError, json.JSONDecodeError) as exc:
+        return None, f"{stage.upper()}_RECEIPT_READ_FAILED:{exc}"
+    if not isinstance(payload, dict):
+        return None, f"{stage.upper()}_RECEIPT_SCHEMA_INVALID"
+    if stage == "build":
+        status = payload.get("BUILD_STATUS")
+        rc = payload.get("BUILD_RC")
+        receipt_source = payload.get("SOURCE_SHA")
+        receipt_artifact = payload.get("EXE_SHA")
+        if status != "PASS" or str(rc) != "0":
+            return None, f"BUILD_RECEIPT_NOT_PASS:status={status}:rc={rc}"
+        if expected_source_sha and receipt_source != expected_source_sha:
+            return None, f"BUILD_RECEIPT_SOURCE_SHA_MISMATCH:expected={expected_source_sha}:actual={receipt_source}"
+        if expected_artifact_sha and receipt_artifact != expected_artifact_sha:
+            return None, f"BUILD_RECEIPT_ARTIFACT_SHA_MISMATCH:expected={expected_artifact_sha}:actual={receipt_artifact}"
+    elif stage == "correctness":
+        status = payload.get("CORRECTNESS_STATUS")
+        try:
+            pass_count = int(payload.get("PASS_COUNT", -1))
+            case_count = int(payload.get("CASE_COUNT", -1))
+        except (TypeError, ValueError):
+            return None, "CORRECTNESS_RECEIPT_COUNTS_INVALID"
+        if status != "PASS" or pass_count != case_count or case_count <= 0:
+            return None, f"CORRECTNESS_RECEIPT_NOT_PASS:status={status}:pass={pass_count}:cases={case_count}"
+        cells = payload.get("CELLS", [])
+        if not isinstance(cells, list) or any(
+            cell.get("RC") not in (0, "0") or cell.get("BAD") not in (0, "0", 0.0)
+            for cell in cells if isinstance(cell, dict)
+        ):
+            return None, "CORRECTNESS_RECEIPT_CELL_FAILURE"
+    else:
+        return None, f"STAGE_RECEIPT_STAGE_INVALID:{stage}"
+    return {
+        "path": str(path),
+        "sha256": digest,
+        "status": "PASS",
+        "return_code": 0,
+        "payload": payload,
+    }, None
+
+
+def verify_artifact_reference(
+    raw_path: Optional[str],
+    expected_sha: Optional[str] = None,
+    receipt_raw: Optional[str] = None,
+) -> Tuple[Optional[Path], Optional[str], Optional[str], Optional[Dict[str, str]]]:
+    """Verify a local artifact or a published build receipt's EXE_SHA.
+
+    The receipt mode never pretends the executable bytes are local. It binds
+    the recorded executable identity to a route-owned/public build.json.
+    """
+    if receipt_raw and raw_path:
+        raw_resolved = resolve_path(raw_path)
+        receipt_resolved = resolve_path(receipt_raw)
+        if raw_path != receipt_raw and raw_resolved != receipt_resolved:
+            return raw_resolved, None, "ARTIFACT_AND_RECEIPT_PATH_MISMATCH", None
+    if not receipt_raw:
+        path, digest, error = verify_file(raw_path, "artifact", expected_sha, required=True)
+        return path, digest, error, ({"identity_mode": "LOCAL_FILE_SHA256"} if not error else None)
+    public_reference = receipt_raw.startswith("gitobj://") or receipt_raw.startswith(
+        PUBLIC_CANONICAL_SOURCE_ROOT + PUBLIC_CANONICAL_ROOT_MARKER
+    )
+    if public_reference:
+        receipt_uri, receipt_bytes, receipt_error = read_pinned_public_object(receipt_raw)
+        receipt = receipt_uri
+        receipt_sha = hashlib.sha256(receipt_bytes).hexdigest() if receipt_bytes is not None else None
+        if receipt_error is None and not receipt_uri.endswith("/build.json"):
+            receipt_error = "ARTIFACT_RECEIPT_PATH_INVALID:EXPECTED_BUILD_JSON"
+    else:
+        receipt, receipt_sha, receipt_error = verify_file(receipt_raw, "artifact-receipt", required=True)
+        if receipt_error is None and receipt is not None:
+            try:
+                receipt.relative_to(ROUTE_ROOT)
+            except (AttributeError, ValueError):
+                receipt_error = f"OUT_OF_SCOPE:artifact-receipt:{receipt}:expected={ROUTE_ROOT}"
+    if receipt_error or receipt is None or receipt_sha is None:
+        return receipt, None, receipt_error, None
+    try:
+        receipt_content = receipt_bytes if public_reference else receipt.read_bytes()
+        payload = json.loads(receipt_content)
+        artifact_sha = str(payload.get("EXE_SHA", "")).strip()
+    except (OSError, json.JSONDecodeError) as exc:
+        return receipt, None, f"ARTIFACT_RECEIPT_READ_FAILED:{exc}", None
+    if not re.fullmatch(r"[0-9a-fA-F]{64}", artifact_sha):
+        return receipt, None, "ARTIFACT_RECEIPT_EXE_SHA_MISSING", None
+    if expected_sha and artifact_sha.lower() != expected_sha.lower():
+        return receipt, artifact_sha, f"ARTIFACT_SHA_MISMATCH:expected={expected_sha}:actual={artifact_sha}", None
+    return receipt, artifact_sha, None, {
+        "identity_mode": "PUBLIC_BUILD_RECEIPT",
+        "receipt_sha256": receipt_sha,
+    }
+
+
 def resolve_backend(raw: Optional[str]) -> Tuple[Optional[Path], Optional[str]]:
     if not raw:
         return None, "BACKEND_NOT_CONFIGURED"
@@ -535,6 +719,7 @@ def identity_stage(
     canonical_purpose: str = "route-kernel",
     canonical_revision: Optional[str] = None,
     expected_parent_artifact_sha: Optional[str] = None,
+    artifact_receipt_raw: Optional[str] = None,
 ) -> Outcome:
     isolation_error = require_current_worktree()
     if isolation_error:
@@ -553,13 +738,12 @@ def identity_stage(
         emit("IDENTITY_STATUS", "FAIL")
         emit("BLOCKER", source_error)
         return Outcome("BLOCKED", EXIT_IDENTITY, source_sha, reason=source_error)
-    artifact, artifact_sha_before, artifact_error = verify_file(
+    artifact, artifact_sha_before, artifact_error, artifact_identity = verify_artifact_reference(
         artifact_raw,
-        "artifact",
         expected_artifact_sha if stage != "build" else None,
-        required=True,
+        artifact_receipt_raw,
     )
-    if artifact_error and (stage != "build" or "_MISSING:" not in artifact_error):
+    if artifact_error and (stage != "build" or not artifact_error.startswith("ARTIFACT_MISSING:")):
         if stage == "local":
             print_stats(blocked_stats("NOT_RUN", artifact_error))
         emit("STATUS", "BLOCKED")
@@ -623,8 +807,10 @@ def identity_stage(
     source_after, source_sha_after, source_after_error = verify_file(
         str(source), "source", expected_source_sha, required=True
     )
-    artifact_after, artifact_sha_after, artifact_after_error = verify_file(
-        str(artifact), "artifact", expected_artifact_sha, required=True
+    artifact_after, artifact_sha_after, artifact_after_error, artifact_identity_after = verify_artifact_reference(
+        str(artifact),
+        expected_artifact_sha,
+        str(artifact) if artifact_identity and artifact_identity.get("identity_mode") == "PUBLIC_BUILD_RECEIPT" else None,
     )
     if source_after_error or artifact_after_error or source_sha_after != source_sha or artifact_after is None:
         reason = source_after_error or artifact_after_error or "ARTIFACT_MISSING_AFTER_BACKEND"
@@ -662,7 +848,11 @@ def identity_stage(
             emit("STATUS", "PASS")
             return Outcome(
                 "PASS", 0, source_sha_after, artifact_sha_after, canonical["measurements_sha256"],
-                details={"local": local, "stage_status": "PASS"},
+                details={
+                    "local": local,
+                    "stage_status": "PASS",
+                    "artifact_identity": artifact_identity_after or artifact_identity,
+                },
             )
         stats = analyze_raw(raw, min_pairs, max_cv)
         print_stats(stats)
@@ -687,7 +877,7 @@ def identity_stage(
     return Outcome(
         "PASS", 0, source_sha_after, artifact_sha_after,
         stats.get("raw_sha") if stage == "local" else None,
-        details=details,
+        details={**details, "artifact_identity": artifact_identity_after or artifact_identity},
     )
 
 
@@ -953,11 +1143,25 @@ def analyze_raw(path: Optional[Path], min_pairs: int, max_cv: float) -> Dict[str
 
 
 def canonical_reference_identity(raw_path: str, purpose: str) -> Tuple[Optional[Dict[str, str]], Optional[str]]:
+    public_marker = PUBLIC_CANONICAL_ROOT_MARKER
+    public_index = raw_path.rfind(public_marker)
+    if public_index >= 0 and not raw_path.startswith("gitobj://"):
+        if not raw_path.startswith(PUBLIC_CANONICAL_SOURCE_ROOT + public_marker):
+            return None, f"CANONICAL_PUBLIC_EXTERNAL_FILE_REJECTED:{raw_path}"
+        object_path = raw_path[public_index + 1:]
+        if purpose != "historical-tool-validation" or not object_path.startswith("本地实验/MAIN2-CANONICAL-V1/"):
+            return None, f"CANONICAL_PUBLIC_PATH_OUT_OF_SCOPE:{raw_path}"
+        if ".." in Path(object_path).parts:
+            return None, f"CANONICAL_PUBLIC_PATH_OUT_OF_SCOPE:{raw_path}"
+        raw_path = f"gitobj://{CANONICAL_PUBLIC_COMMIT}/{object_path}"
     match = re.fullmatch(r"gitobj://([0-9a-f]{40})/(.+)", raw_path)
     if match:
         commit, object_path = match.groups()
-        allowed_prefix = "本地实验/MAIN2-CANONICAL-V1/versions/R31B__V011/measurement/"
-        if purpose != "historical-tool-validation" or commit != CANONICAL_PUBLIC_COMMIT or not object_path.startswith(allowed_prefix):
+        allowed_prefixes = (
+            "本地实验/MAIN2-CANONICAL-V1/versions/R31B__V011/measurement/",
+            "本地实验/MAIN2-CANONICAL-V1/versions/",
+        )
+        if purpose != "historical-tool-validation" or commit != CANONICAL_PUBLIC_COMMIT or not object_path.startswith(allowed_prefixes):
             return None, f"CANONICAL_RAW_GIT_OBJECT_OUT_OF_SCOPE:{raw_path}"
         completed = subprocess.run(
             ["git", "show", f"{commit}:{object_path}"],
@@ -989,19 +1193,28 @@ def canonical_local_score(
     """Delegate four-Core aggregation to the pinned published MAIN2 scorer."""
     if purpose not in {"route-kernel", "historical-tool-validation"}:
         return None, f"CANONICAL_SCORE_PURPOSE_INVALID:{purpose}"
-    measurements, measurements_sha, error = verify_file(
-        measurements_raw, "canonical-measurements", required=True
+    measurements, measurements_sha, error = verify_identity_reference(
+        measurements_raw,
+        "canonical-measurements",
+        allow_public=(purpose == "historical-tool-validation"),
     )
     if error or measurements is None or measurements_sha is None:
         return None, error or "CANONICAL_MEASUREMENTS_NOT_SET"
+    measurements_git_object: Optional[str] = None
+    if isinstance(measurements, str) and measurements.startswith("gitobj://"):
+        measurements_git_object = measurements
+        _, measurement_bytes, measurement_error = read_pinned_public_object(measurements)
+        if measurement_error or measurement_bytes is None:
+            return None, measurement_error or "CANONICAL_MEASUREMENTS_UNAVAILABLE"
+    else:
+        try:
+            measurements.relative_to(ROUTE_ROOT)
+            measurement_bytes = measurements.read_bytes()
+        except (AttributeError, OSError, ValueError) as exc:
+            return None, f"OUT_OF_SCOPE:canonical-measurements:{measurements}:expected={ROUTE_ROOT}:{exc}"
     try:
-        measurements.relative_to(ROUTE_ROOT)
-    except ValueError:
-        return None, f"OUT_OF_SCOPE:canonical-measurements:{measurements}:expected={ROUTE_ROOT}"
-    try:
-        with measurements.open(newline="") as stream:
-            rows = list(csv.DictReader(stream, delimiter="\t"))
-    except (OSError, csv.Error) as exc:
+        rows = list(csv.DictReader(io.StringIO(measurement_bytes.decode("utf-8")), delimiter="\t"))
+    except (UnicodeDecodeError, csv.Error) as exc:
         return None, f"CANONICAL_MEASUREMENTS_READ_FAILED:{exc}"
     if not rows:
         return None, "CANONICAL_MEASUREMENTS_EMPTY"
@@ -1124,6 +1337,7 @@ def canonical_local_score(
         "scorer_version": CANONICAL_SCORER_VERSION,
         "suite_version": CANONICAL_SUITE_VERSION,
         "measurements_path": str(measurements),
+        "measurements_git_object": measurements_git_object,
         "source_sha": source_sha,
     }
     node = shutil.which("node")
@@ -1428,8 +1642,10 @@ def record_command(args: argparse.Namespace) -> int:
     source, source_sha, source_error = verify_file(
         args.source, "source", args.expected_source_sha, required=True
     )
-    artifact, artifact_sha, artifact_error = verify_file(
-        args.artifact, "artifact", args.expected_artifact_sha, required=True
+    artifact, artifact_sha, artifact_error, artifact_identity = verify_artifact_reference(
+        args.artifact,
+        args.expected_artifact_sha,
+        getattr(args, "artifact_receipt", None),
     )
     canonical_path = getattr(args, "canonical_measurements", None)
     raw_arg = args.raw or canonical_path
@@ -1443,6 +1659,21 @@ def record_command(args: argparse.Namespace) -> int:
         emit("IDENTITY_STATUS", "FAIL")
         emit("BLOCKER", source_error or artifact_error or raw_error)
         return EXIT_IDENTITY
+    stage_evidence: Dict[str, Dict[str, Any]] = {}
+    for stage, receipt_raw in (
+        ("build", getattr(args, "build_receipt", None)),
+        ("correctness", getattr(args, "correctness_receipt", None)),
+    ):
+        if receipt_raw:
+            receipt, receipt_error = verify_stage_receipt(
+                receipt_raw, stage, source_sha, artifact_sha
+            )
+            if receipt_error or receipt is None:
+                emit("STATUS", "BLOCKED")
+                emit("IDENTITY_STATUS", "FAIL")
+                emit("BLOCKER", receipt_error or f"{stage.upper()}_RECEIPT_INVALID")
+                return EXIT_IDENTITY
+            stage_evidence[stage] = receipt
     canonical: Optional[Dict[str, Any]] = None
     if canonical_path:
         canonical, canonical_error = canonical_local_score(
@@ -1510,12 +1741,17 @@ def record_command(args: argparse.Namespace) -> int:
         "repo_root": str(EXPECTED_REPO_ROOT),
         "expected_branch": EXPECTED_BRANCH,
         "source": {"path": str(source), "sha256": source_sha},
-        "artifact": {"path": str(artifact), "sha256": artifact_sha},
+        "artifact": {
+            "path": str(artifact),
+            "sha256": artifact_sha,
+            **(artifact_identity or {}),
+        },
         "raw": {"path": str(raw), "sha256": raw_sha},
         "evidence": [
             {"path": str(path), "sha256": digest}
             for path, digest in zip(evidence_paths, evidence_digests)
         ],
+        "stage_evidence": stage_evidence,
         "local_result": local_result,
         "backend": str(backend) if backend else None,
         "backend_error": backend_error,
@@ -1839,6 +2075,7 @@ def same_record_identity(existing: Dict[str, Any], requested: Dict[str, Any]) ->
         "artifact",
         "raw",
         "evidence",
+        "stage_evidence",
         "local_result",
         "revision_created",
         "runner_created",
@@ -1906,7 +2143,7 @@ def save_manifest_once(path: Path, payload: Dict[str, Any]) -> Tuple[bool, Optio
 def checkpoint_identity(
     args: argparse.Namespace,
     payload: Dict[str, Any],
-) -> Tuple[Optional[Path], Optional[str], Optional[Path], Optional[str], Optional[str]]:
+) -> Tuple[Optional[Path], Optional[str], Optional[Path], Optional[str], Optional[Dict[str, str]], Optional[str]]:
     source_raw = args.source or payload.get("identity", {}).get("source_path")
     artifact_raw = args.artifact or payload.get("identity", {}).get("artifact_path")
     source, source_sha, source_error = verify_file(
@@ -1916,23 +2153,27 @@ def checkpoint_identity(
         required=True,
     )
     if source_error:
-        return source, source_sha, None, None, source_error
-    artifact, artifact_sha, artifact_error = verify_file(
-        artifact_raw, "artifact", args.expected_artifact_sha, required=True
-    )
-    if artifact_error and "_MISSING:" not in artifact_error:
-        return source, source_sha, artifact, artifact_sha, artifact_error
+        return source, source_sha, None, None, None, source_error
     stored = payload.get("identity", {})
+    artifact_raw = args.artifact or stored.get("artifact_path")
+    artifact_receipt_raw = getattr(args, "artifact_receipt", None) or stored.get("artifact_receipt_path")
+    artifact, artifact_sha, artifact_error, artifact_identity = verify_artifact_reference(
+        artifact_raw,
+        args.expected_artifact_sha or stored.get("artifact_sha256"),
+        artifact_receipt_raw,
+    )
+    if artifact_error and not artifact_error.startswith("ARTIFACT_MISSING:"):
+        return source, source_sha, artifact, artifact_sha, artifact_identity, artifact_error
     if stored.get("source_path") and str(source) != stored["source_path"]:
-        return source, source_sha, artifact, artifact_sha, "CHECKPOINT_SOURCE_PATH_CHANGED"
+        return source, source_sha, artifact, artifact_sha, artifact_identity, "CHECKPOINT_SOURCE_PATH_CHANGED"
     if stored.get("source_sha256") and source_sha != stored["source_sha256"]:
-        return source, source_sha, artifact, artifact_sha, "CHECKPOINT_SOURCE_SHA_CHANGED"
+        return source, source_sha, artifact, artifact_sha, artifact_identity, "CHECKPOINT_SOURCE_SHA_CHANGED"
     stored_artifact = stored.get("artifact_path")
     if stored_artifact and artifact and str(artifact) != stored_artifact:
-        return source, source_sha, artifact, artifact_sha, "CHECKPOINT_ARTIFACT_PATH_CHANGED"
+        return source, source_sha, artifact, artifact_sha, artifact_identity, "CHECKPOINT_ARTIFACT_PATH_CHANGED"
     if stored.get("artifact_sha256") and artifact_sha != stored["artifact_sha256"]:
-        return source, source_sha, artifact, artifact_sha, "CHECKPOINT_ARTIFACT_SHA_CHANGED"
-    return source, source_sha, artifact, artifact_sha, None
+        return source, source_sha, artifact, artifact_sha, artifact_identity, "CHECKPOINT_ARTIFACT_SHA_CHANGED"
+    return source, source_sha, artifact, artifact_sha, artifact_identity, None
 
 
 def stage_options(args: argparse.Namespace, stage: str) -> Dict[str, Any]:
@@ -1969,6 +2210,12 @@ def run_record_from_pipeline(
         log=args.record_log,
         source=str(source),
         artifact=str(artifact),
+        artifact_receipt=(
+            getattr(args, "artifact_receipt", None)
+            or payload.get("identity", {}).get("artifact_receipt_path")
+        ),
+        build_receipt=getattr(args, "build_receipt", None),
+        correctness_receipt=getattr(args, "correctness_receipt", None),
         raw=raw_path,
         manifest=manifest,
         expected_source_sha=payload.get("identity", {}).get("source_sha256"),
@@ -2054,7 +2301,7 @@ def pipeline_command(args: argparse.Namespace, resume: bool) -> int:
             "runner_created": False,
             "online": "NOT_SUBMITTED",
         }
-    source, source_sha, artifact, artifact_sha, identity_error = checkpoint_identity(args, payload)
+    source, source_sha, artifact, artifact_sha, artifact_identity, identity_error = checkpoint_identity(args, payload)
     if identity_error:
         emit("CYCLE_STATUS", "BLOCKED")
         emit("IDENTITY_STATUS", "FAIL")
@@ -2067,6 +2314,10 @@ def pipeline_command(args: argparse.Namespace, resume: bool) -> int:
         "artifact_path": str(artifact),
         "artifact_sha256": artifact_sha,
     })
+    if artifact_identity and artifact_identity.get("identity_mode") == "PUBLIC_BUILD_RECEIPT":
+        payload["identity"]["artifact_identity_mode"] = artifact_identity["identity_mode"]
+        payload["identity"]["artifact_receipt_path"] = str(artifact)
+        payload["identity"]["artifact_receipt_sha256"] = artifact_identity.get("receipt_sha256")
     payload["updated_utc"] = now_utc()
     save_checkpoint(path, payload)
     start_stage = args.from_stage if resume else None
@@ -2128,6 +2379,7 @@ def pipeline_command(args: argparse.Namespace, resume: bool) -> int:
                 args.canonical_purpose,
                 args.canonical_revision,
                 args.expected_parent_artifact_sha,
+                getattr(args, "artifact_receipt", None),
             )
         stage_status = outcome.details.get("stage_status", outcome.status)
         stage_payload: Dict[str, Any] = {
@@ -2220,9 +2472,9 @@ def report_manifest_command(path: Path) -> int:
         emit("BLOCKER", "RECORD_MANIFEST_EXPECTED_BRANCH_MISMATCH")
         return EXIT_NOT_RUN
 
+    artifact_item = payload.get("artifact")
     identities = [
         ("source", payload.get("source")),
-        ("artifact", payload.get("artifact")),
         ("raw", payload.get("raw")),
     ]
     evidence = payload.get("evidence")
@@ -2234,6 +2486,11 @@ def report_manifest_command(path: Path) -> int:
     identities.extend((f"evidence_{index}", item) for index, item in enumerate(evidence))
 
     resolved: Dict[str, Tuple[Path, str]] = {}
+    if not isinstance(artifact_item, dict) or not isinstance(artifact_item.get("path"), str) or not isinstance(artifact_item.get("sha256"), str):
+        emit("REPORT_STATUS", "BLOCKED")
+        emit("IDENTITY_STATUS", "FAIL")
+        emit("BLOCKER", "RECORD_MANIFEST_IDENTITY_MALFORMED:artifact")
+        return EXIT_IDENTITY
     for label, item in identities:
         if not isinstance(item, dict) or not isinstance(item.get("path"), str) or not isinstance(item.get("sha256"), str):
             emit("REPORT_STATUS", "BLOCKED")
@@ -2262,6 +2519,77 @@ def report_manifest_command(path: Path) -> int:
             emit("BLOCKER", identity_error or f"RECORD_MANIFEST_IDENTITY_INVALID:{label}")
             return EXIT_IDENTITY
         resolved[label] = (identity_path, digest)
+
+    artifact_identity_mode = artifact_item.get("identity_mode", "LOCAL_FILE_SHA256")
+    if artifact_identity_mode == "PUBLIC_BUILD_RECEIPT":
+        artifact_path, artifact_sha, artifact_error, artifact_meta = verify_artifact_reference(
+            None, artifact_item["sha256"], artifact_item["path"]
+        )
+        if artifact_error or artifact_path is None or artifact_sha is None or artifact_meta is None:
+            emit("REPORT_STATUS", "BLOCKED")
+            emit("IDENTITY_STATUS", "FAIL")
+            emit("BLOCKER", artifact_error or "RECORD_MANIFEST_ARTIFACT_RECEIPT_INVALID")
+            return EXIT_IDENTITY
+        if artifact_item.get("receipt_sha256") != artifact_meta.get("receipt_sha256"):
+            emit("REPORT_STATUS", "BLOCKED")
+            emit("IDENTITY_STATUS", "FAIL")
+            emit("BLOCKER", "RECORD_MANIFEST_ARTIFACT_RECEIPT_SHA_MISMATCH")
+            return EXIT_IDENTITY
+        resolved["artifact"] = (artifact_path, artifact_sha)
+    else:
+        artifact_path, artifact_scope_error = scoped_path(artifact_item["path"], "artifact")
+        if artifact_scope_error or artifact_path is None:
+            emit("REPORT_STATUS", "BLOCKED")
+            emit("IDENTITY_STATUS", "FAIL")
+            emit("BLOCKER", artifact_scope_error or "RECORD_MANIFEST_IDENTITY_INVALID:artifact")
+            return EXIT_IDENTITY
+        try:
+            artifact_path.relative_to(ROUTE_ROOT)
+        except ValueError:
+            emit("REPORT_STATUS", "BLOCKED")
+            emit("IDENTITY_STATUS", "FAIL")
+            emit("BLOCKER", f"OUT_OF_SCOPE:artifact:{artifact_path}:expected={ROUTE_ROOT}")
+            return EXIT_IDENTITY
+        artifact_path, artifact_sha, artifact_error = verify_file(
+            str(artifact_path), "artifact", artifact_item["sha256"], required=True
+        )
+        if artifact_error or artifact_path is None or artifact_sha is None:
+            emit("REPORT_STATUS", "BLOCKED")
+            emit("IDENTITY_STATUS", "FAIL")
+            emit("BLOCKER", artifact_error or "RECORD_MANIFEST_IDENTITY_INVALID:artifact")
+            return EXIT_IDENTITY
+        resolved["artifact"] = (artifact_path, artifact_sha)
+
+    stage_evidence = payload.get("stage_evidence") or {}
+    if not isinstance(stage_evidence, dict):
+        emit("REPORT_STATUS", "BLOCKED")
+        emit("IDENTITY_STATUS", "FAIL")
+        emit("BLOCKER", "RECORD_MANIFEST_STAGE_EVIDENCE_INVALID")
+        return EXIT_IDENTITY
+    for stage in ("build", "correctness"):
+        item = stage_evidence.get(stage)
+        if item is None:
+            emit(stage.upper() + "_STATUS", "NOT_INCLUDED_IN_MANIFEST")
+            continue
+        if not isinstance(item, dict) or not isinstance(item.get("path"), str) or not isinstance(item.get("sha256"), str):
+            emit("REPORT_STATUS", "BLOCKED")
+            emit("IDENTITY_STATUS", "FAIL")
+            emit("BLOCKER", f"RECORD_MANIFEST_STAGE_EVIDENCE_MALFORMED:{stage}")
+            return EXIT_IDENTITY
+        verified, stage_error = verify_stage_receipt(
+            item["path"], stage, resolved["source"][1], resolved["artifact"][1]
+        )
+        if stage_error or verified is None:
+            emit("REPORT_STATUS", "BLOCKED")
+            emit("IDENTITY_STATUS", "FAIL")
+            emit("BLOCKER", stage_error or f"RECORD_MANIFEST_STAGE_EVIDENCE_INVALID:{stage}")
+            return EXIT_IDENTITY
+        if verified["sha256"] != item["sha256"]:
+            emit("REPORT_STATUS", "BLOCKED")
+            emit("IDENTITY_STATUS", "FAIL")
+            emit("BLOCKER", f"RECORD_MANIFEST_STAGE_EVIDENCE_SHA_MISMATCH:{stage}")
+            return EXIT_IDENTITY
+        emit(stage.upper() + "_STATUS", "PASS")
 
     local = payload.get("local_result")
     if not isinstance(local, dict):
@@ -2311,8 +2639,6 @@ def report_manifest_command(path: Path) -> int:
         evidence_path, evidence_sha = resolved[f"evidence_{index}"]
         emit("EVIDENCE_PATH", evidence_path)
         emit("EVIDENCE_SHA256", evidence_sha)
-    emit("BUILD_STATUS", "NOT_INCLUDED_IN_MANIFEST")
-    emit("CORRECTNESS_STATUS", "NOT_INCLUDED_IN_MANIFEST")
     emit("LOCAL_STATUS", local.get("status", "NOT_RUN"))
     emit("LOCAL_MEASUREMENT_QUALITY", local.get("status", "NOT_RUN"))
     emit("LOCAL_QUALITY_CLASSIFICATION", local.get("quality_classification", "UNKNOWN"))
@@ -2360,9 +2686,9 @@ def report_manifest_command(path: Path) -> int:
     emit("RUNNER_CREATED", "YES" if payload.get("runner_created") else "NO")
     emit("ONLINE", payload.get("online", "NOT_SUBMITTED"))
     complete_score = (
-        full_score not in (None, "", "NOT_COMPUTABLE")
-        and isinstance(canonical, dict)
+        isinstance(canonical, dict)
         and canonical.get("core_cases_complete") == "4/4"
+        and canonical.get("reported_score") not in (None, "", "NOT_COMPUTABLE")
     )
     emit("LOCAL_SCORE_COMPLETENESS", "COMPLETE" if complete_score else "INCOMPLETE")
     local_record_persisted = record_status in {"PASS", "FAILED", "LOCAL_MANIFEST_WRITTEN"}
@@ -2622,6 +2948,7 @@ def add_scope_options(parser: argparse.ArgumentParser) -> None:
 def add_identity_options(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--source", default=os.environ.get("W5CTL_SOURCE"))
     parser.add_argument("--artifact", default=os.environ.get("W5CTL_ARTIFACT"))
+    parser.add_argument("--artifact-receipt", default=os.environ.get("W5CTL_ARTIFACT_RECEIPT"))
     parser.add_argument("--expected-source-sha", default=os.environ.get("W5CTL_SOURCE_SHA256"))
     parser.add_argument("--expected-artifact-sha", default=os.environ.get("W5CTL_ARTIFACT_SHA256"))
 
@@ -2644,6 +2971,7 @@ def add_pipeline_options(parser: argparse.ArgumentParser, resume: bool) -> None:
     parser.add_argument("--checkpoint", required=True)
     parser.add_argument("--source", default=os.environ.get("W5CTL_SOURCE"))
     parser.add_argument("--artifact", default=os.environ.get("W5CTL_ARTIFACT"))
+    parser.add_argument("--artifact-receipt", default=os.environ.get("W5CTL_ARTIFACT_RECEIPT"))
     parser.add_argument("--expected-source-sha", default=os.environ.get("W5CTL_SOURCE_SHA256"))
     parser.add_argument("--expected-artifact-sha", default=os.environ.get("W5CTL_ARTIFACT_SHA256"))
     parser.add_argument("--raw", default=os.environ.get("W5CTL_RAW_PATH"))
@@ -2663,6 +2991,8 @@ def add_pipeline_options(parser: argparse.ArgumentParser, resume: bool) -> None:
     parser.add_argument("--record-log")
     parser.add_argument("--record-evidence", action="append", default=[])
     parser.add_argument("--record-manifest", default=os.environ.get("W5CTL_RECORD_MANIFEST"))
+    parser.add_argument("--build-receipt", default=os.environ.get("W5CTL_BUILD_RECEIPT"))
+    parser.add_argument("--correctness-receipt", default=os.environ.get("W5CTL_CORRECTNESS_RECEIPT"))
     if resume:
         parser.add_argument("--from-stage", choices=STAGES)
 
@@ -2706,6 +3036,8 @@ def build_parser() -> argparse.ArgumentParser:
     record.add_argument("--backend-arg", action="append", default=[])
     record.add_argument("--backend-workdir", default=os.environ.get("W5CTL_RECORD_WORKDIR"))
     record.add_argument("--log")
+    record.add_argument("--build-receipt", default=os.environ.get("W5CTL_BUILD_RECEIPT"))
+    record.add_argument("--correctness-receipt", default=os.environ.get("W5CTL_CORRECTNESS_RECEIPT"))
 
     dedup = sub.add_parser("dedup", help="compare meaningful patch changes only")
     add_scope_options(dedup)
@@ -2752,8 +3084,10 @@ def local_command(args: argparse.Namespace) -> int:
             source, source_sha, source_error = verify_file(
                 args.source, "source", args.expected_source_sha, required=True
             )
-            artifact, artifact_sha, artifact_error = verify_file(
-                args.artifact, "artifact", args.expected_artifact_sha, required=True
+            artifact, artifact_sha, artifact_error, artifact_identity = verify_artifact_reference(
+                args.artifact,
+                args.expected_artifact_sha,
+                getattr(args, "artifact_receipt", None),
             )
             if source_error or artifact_error or source is None or artifact is None:
                 emit("STATS_ONLY", "YES")
@@ -2808,6 +3142,7 @@ def local_command(args: argparse.Namespace) -> int:
         args.canonical_purpose,
         args.canonical_revision,
         args.expected_parent_artifact_sha,
+        getattr(args, "artifact_receipt", None),
     ).rc
 
 
@@ -2826,6 +3161,7 @@ def dispatch(args: argparse.Namespace) -> int:
             args.expected_source_sha,
             args.expected_artifact_sha,
             None,
+            artifact_receipt_raw=getattr(args, "artifact_receipt", None),
         ).rc
     if args.command == "correctness":
         return identity_stage(
@@ -2839,6 +3175,7 @@ def dispatch(args: argparse.Namespace) -> int:
             args.expected_source_sha,
             args.expected_artifact_sha,
             None,
+            artifact_receipt_raw=getattr(args, "artifact_receipt", None),
         ).rc
     if args.command == "local":
         return local_command(args)
