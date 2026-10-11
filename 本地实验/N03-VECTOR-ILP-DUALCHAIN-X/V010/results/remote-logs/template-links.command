@@ -1,0 +1,1 @@
+ssh cann-server3 'set -e; ROOT="$HOME/cann/server_runs/N03-VECTOR-ILP-DUALCHAIN-X-RESET-20261011"; printf "V009_ADAPTER_LINKS\n"; ls -la "$ROOT/V009/8dd29687/adapter"; readlink -f "$ROOT/V009/8dd29687/adapter/R31B-V016-WIDE-TILE-SEED_kernel.asc" || true; printf "RUNNER_SOURCE_HEAD\n"; sed -n "1,100p" "$ROOT/V003/b6cd00ca/paired/paired_runner_v016.asc"'
