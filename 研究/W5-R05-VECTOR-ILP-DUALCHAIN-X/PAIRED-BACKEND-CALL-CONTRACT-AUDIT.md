@@ -202,3 +202,99 @@ BLOCKER = NO_ROUTE_OWNED_DIRECT_ADAPTER_OR_VERIFIABLE_PAIRED_CALL_CONTRACT
 SECONDARY_BLOCKER = SHARED_TOOLING_BACKEND_SELECTOR_AND_DRIVER_ARE_OUT_OF_R5_WRITE_SCOPE
 MICROPROBE_STATUS = NOT_RUN
 ```
+
+## P4 canonical build/execute adaptation check
+
+```text
+P4_CHECK = COMPLETED / READ_ONLY_ROUTE_CONTRACT_EVALUATION
+P4_ROUTE_WORKTREE = /home/data4t2/lelinfeng/cann-w5-r05-vector-ilp
+P4_ROUTE_HEAD = 8ed086eb3a1df1fe0e59bbee3854d7f2b0f4a52d
+P4_CANONICAL_BUILD_ENTRY = /home/data4t2/lelinfeng/cann-tooling-runner/工具/route-runner/route-runner/build_server3.sh
+P4_CANONICAL_ENTRY_ACCESS = NOT_OPENED_OR_MODIFIED (dirty shared tooling out of R5 scope)
+P4_LEGAL_ROUTE_ADAPTER = NONE
+P4_BUILD = NOT_RETRIED (known shared-plugin failure retained)
+P4_CORRECTNESS = NOT_RUN
+P4_LOCAL = NOT_RUN
+P4_KERNEL_REVISION = NONE (contract audit only)
+```
+
+The route-owned V001 build metadata gives the exact current input and link
+boundary without reopening the shared tooling source. Both ASC targets receive
+the caller-supplied source path, SHA-256, `dav-2201`, and a compile definition
+that maps `run_kernel` to `run_kernel_parent` or `run_kernel_candidate`:
+
+```text
+Parent target = libroute_runner_parent.so from parent_adapter.asc.o
+Candidate target = libroute_runner_candidate.so from candidate_adapter.asc.o
+Final target = one route_runner linked against both shared libraries
+Host ABI = five (GM_ADDR, TensorGroupInfo) pairs, int64_t availableCoreNum,
+           aclrtStream, float epsilon
+Device entry = templated __global__ __vector__ add_rms_norm_bias_custom<T>
+```
+
+The failure occurs after these inputs reach the shared ASC targets and before
+any of the three artifacts exists: `Unknown kernelInfo` for the Vector entry,
+then unresolved `__origin__add_rms_norm_bias_custom<float/half/__bf16>`.
+Therefore the source path, source identity, host role ABI, and final link
+shape are not the missing R5-side interface. The missing interface is the
+canonical ASC device-entry registration/link contract for a source included
+inside the two shared adapter targets.
+
+The published direct-source history is not a currently reusable backend. Its
+wrapper/CMake uses fixed R31B include basenames and a standalone
+`paired_runner_v016`; its later public Main-1 record shows that direct-source
+registration cleared `Unknown kernelInfo` but then failed on missing
+`aclrtStream`. It has no accepted canonical selector, source identity record,
+or current Parent/Candidate control-layer receipt. R5 therefore did not copy,
+rename, invoke, or adapt that history.
+
+The minimum legal shared-owner patch is one change at the existing
+`route-runner` registration/selector boundary, with either of these mutually
+exclusive implementations:
+
+1. Repair registration/link generation for the existing Parent/Candidate
+   shared ASC targets while preserving `RUNNER_*_SOURCE`, expected SHA-256,
+   `run_kernel_parent`/`run_kernel_candidate`, and the single `route_runner`;
+   or
+2. Register one route-agnostic direct backend behind the existing selector,
+   consuming those same source paths, SHA-256 values, architecture, and build
+   directory, and returning one artifact plus the existing identity record.
+
+The route-owned build metadata identifies the concrete canonical boundary,
+without opening its dirty source worktree:
+
+```text
+BUILD_ENTRY = /home/data4t2/lelinfeng/cann-tooling-runner/工具/route-runner/route-runner/build_server3.sh
+BUILD_ROOT = /home/data4t2/lelinfeng/cann-tooling-runner/工具/route-runner/route-runner
+ASC_UNITS = parent_adapter.asc, candidate_adapter.asc
+DRIVER_UNIT = runner_main.cpp
+TARGETS = route_runner_parent, route_runner_candidate, route_runner
+```
+
+For option 1, the patch point is ASC registration and generated-stub/origin
+symbol resolution in the two adapter targets; do not alter the source or
+weaken either SHA check. For option 2, the patch point is the existing build
+entry/selector and its adapter generation: consume the provided absolute paths
+and produce the same driver-visible role calls and identity evidence. The
+historical Main-1 direct-source attempt additionally shows that a source-TU
+adapter must make the `aclrtStream` declaration available (its separate
+attempt cleared plugin registration but failed host compilation on that
+missing declaration). These are Owner-side shared-tool changes; R5 did not
+inspect or edit those files.
+
+The Owner acceptance must name the changed tooling file(s), commit, selected
+backend, command, artifact SHA-256, exact source identities, and show: build
+RC 0; no `Unknown kernelInfo` or undefined `__origin__` symbols; both role
+calls accepted by the existing driver; and unchanged correctness/device-event
+timing entry points. This is a contract acceptance only. No R5 Candidate,
+second Runner, fallback chain, or new score path is permitted.
+
+```text
+P4_DECISION = ADAPTER_NOT_AVAILABLE / FEASIBILITY_UNPROVEN
+P4_OWNER = CANONICAL TOOLING/INTEGRATION OWNER (NAME UNCONFIRMED)
+P4_OWNER_ACK = UNCONFIRMED
+P4_OWNER_COMMIT = NONE
+P4_NEXT = named Owner supplies one accepted backend commit and receipt
+P4_BLOCKER = shared ASC registration or route-agnostic selector/adapter is not accepted
+MICROPROBE = NOT_RUN
+```
