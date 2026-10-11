@@ -23,8 +23,12 @@
 
 ## Local
 
-Local has not started yet. The old 0.001-gate failures remain preserved in V001/V002; the corrected mixed-tolerance correctness output is in `results/remote-results/correctness.raw.log`.
+- Same-binary Parent qualification: completed for both cases, 62 samples each. `d6144`: median `10.560 us`, MAD/median `0.10701`, block drift `0.12121`; `d4096`: median `7.640 us`, MAD/median `0.10340`, block drift `0.09424`. Both reported `NEEDS_VALIDATION`.
+- Paired Local: completed with 21 Parent/Candidate pairs per case. `d6144`: Parent median `10.480 us`, Candidate median `11.080 us`, paired delta median `+0.180 us`; `d4096`: Parent median `7.040 us`, Candidate median `7.120 us`, paired delta median `-0.220 us`.
+- Both Local scores: `NONE`. The raw paired samples contain substantial excursions (including `35.860 us` on d6144 and `343.980 us` / `200.480 us` on d4096); control MAD/block drift also indicates unstable measurement. No samples were removed.
+- Raw control, paired samples, and pre/post device/process snapshots are preserved under `results/remote-results/`.
+- The old 0.001-gate failures remain preserved in V001/V002; the corrected mixed-tolerance correctness output is in `results/remote-results/correctness.raw.log`.
 
 ## Next action
 
-Run the existing same-binary Parent qualification and paired Parent/Candidate Local on d0 for both cases, preserving raw samples and fresh device snapshots. Do not change the V003 Kernel during measurement.
+Treat V003 as correctness-passing with inconclusive Local performance. Do not claim a speedup from either case. A later revision must remain a distinct Vector ILP emission-order hypothesis.
