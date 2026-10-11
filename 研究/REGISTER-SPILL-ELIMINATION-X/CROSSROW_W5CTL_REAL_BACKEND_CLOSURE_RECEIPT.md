@@ -148,3 +148,34 @@ AUXILIARY_CROSSROW_BUILD_PASS=1
 AUXILIARY_CROSSROW_CORRECTNESS_PASS=1
 COUNT_AUDIT_BASE_SHA=3b2772b430752e331ff8387108523d309e170a0d
 ```
+
+## Route-local record idempotence follow-up
+
+The existing real CROSSROW manifest was passed through the `record` command
+again with the backend explicitly unconfigured. It returned RC=78,
+`RECORD_MANIFEST_STATUS=RECORD_MANIFEST_REUSED`, and
+`IDEMPOTENT_NOOP=YES`; manifest SHA-256 was
+`1695ad2aaa3553d4617fe07f33823b586267483bf28d2a0595c4f65fc660f4c3` both
+before and after. No Record Owner backend was invoked, so the recorded shared
+integration state remains `INTEGRATION_INCOMPLETE`.
+
+Route self-tests also cover a two-pair `INSUFFICIENT_DATA` Local manifest with
+`FULL_LOCAL_SCORE=NOT_COMPUTABLE`, wrong-source-SHA refusal, one-time
+local-manifest-to-backend finalization, terminal backend-result replay without
+re-invocation, and repeated checkpoint resume without changing the manifest or
+rerunning stage executables. These are unit tests only, not a Record Owner E2E
+acceptance.
+
+The existing real manifest was subsequently replayed using the existing
+`w5ctl record` command with the same source/artifact/raw/evidence paths and an
+explicit empty `--backend` selection:
+
+```text
+REAL_RECORD_REPLAY_RC=78
+RECORD_MANIFEST_STATUS=RECORD_MANIFEST_REUSED
+IDEMPOTENT_NOOP=YES
+RECORD_BACKEND=NOT_CONFIGURED
+RECORD_INTEGRATION_STATUS=INTEGRATION_INCOMPLETE
+MANIFEST_SHA256_BEFORE=1695ad2aaa3553d4617fe07f33823b586267483bf28d2a0595c4f65fc660f4c3
+MANIFEST_SHA256_AFTER=1695ad2aaa3553d4617fe07f33823b586267483bf28d2a0595c4f65fc660f4c3
+```

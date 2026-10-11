@@ -238,6 +238,105 @@ class W5CtlTest(unittest.TestCase):
             self.assertEqual(result.returncode, 78, result.stdout + result.stderr)
             self.assertIn("WORKTREE_ISOLATION", result.stdout)
 
+    def test_route_local_record_is_idempotent_sha_bound_and_finalizable(self):
+        with tempfile.TemporaryDirectory(prefix=".w5ctl-test-", dir=str(CLI.parent)) as temp:
+            root = Path(temp)
+            source = root / "source.asc"
+            artifact = root / "artifact.o"
+            raw = root / "raw.tsv"
+            manifest = root / "record.json"
+            counter = root / "record-backend-count"
+            source.write_text("route-local-source\n")
+            artifact.write_text("route-local-artifact\n")
+            write_raw(raw, pairs=2)
+            counter.write_text("0")
+
+            common = [
+                "record",
+                "--source", str(source),
+                "--artifact", str(artifact),
+                "--raw", str(raw),
+                "--manifest", str(manifest),
+                "--evidence", str(source),
+                "--backend", "",
+            ]
+            first = run_cli(*common)
+            self.assertEqual(first.returncode, 78, first.stdout + first.stderr)
+            self.assertIn("RECORD_MANIFEST_STATUS=RECORD_MANIFEST_WRITTEN", first.stdout)
+            self.assertIn("INTEGRATION_STATUS=INTEGRATION_INCOMPLETE", first.stdout)
+            saved_bytes = manifest.read_bytes()
+            saved = json.loads(saved_bytes)
+            self.assertEqual(saved["source"]["sha256"], __import__("hashlib").sha256(source.read_bytes()).hexdigest())
+            self.assertEqual(saved["artifact"]["sha256"], __import__("hashlib").sha256(artifact.read_bytes()).hexdigest())
+            self.assertEqual(saved["raw"]["sha256"], __import__("hashlib").sha256(raw.read_bytes()).hexdigest())
+            self.assertEqual(saved["local_result"]["status"], "INSUFFICIENT_DATA")
+            self.assertEqual(saved["local_result"]["pair_count"], 2)
+            self.assertEqual(saved["local_result"]["full_local_score"], "NOT_COMPUTABLE")
+            self.assertFalse(saved["local_result"]["promotion_eligible"])
+
+            repeated = run_cli(*common)
+            self.assertEqual(repeated.returncode, 78, repeated.stdout + repeated.stderr)
+            self.assertIn("RECORD_MANIFEST_STATUS=RECORD_MANIFEST_REUSED", repeated.stdout)
+            self.assertIn("IDEMPOTENT_NOOP=YES", repeated.stdout)
+            self.assertEqual(manifest.read_bytes(), saved_bytes)
+
+            bad_sha = run_cli(
+                *common,
+                "--expected-source-sha",
+                "0" * 64,
+            )
+            self.assertEqual(bad_sha.returncode, 65, bad_sha.stdout + bad_sha.stderr)
+            self.assertIn("SOURCE_SHA_MISMATCH", bad_sha.stdout)
+            self.assertEqual(manifest.read_bytes(), saved_bytes)
+
+            record_backend = root / "record-backend.py"
+            write_executable(
+                record_backend,
+                """
+                #!/usr/bin/env python3
+                import os
+                from pathlib import Path
+                path = Path(os.environ["TEST_RECORD_BACKEND_COUNT"])
+                path.write_text(str(int(path.read_text()) + 1))
+                """,
+            )
+            env = os.environ.copy()
+            env["TEST_RECORD_BACKEND_COUNT"] = str(counter)
+            finalize = subprocess.run(
+                [sys.executable, "-B", str(CLI), "record", *scope_args(), *common[1:-2], "--backend", str(record_backend)],
+                cwd=str(ROOT), env=env, text=True,
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False,
+            )
+            self.assertEqual(finalize.returncode, 0, finalize.stdout + finalize.stderr)
+            self.assertIn("RECORD_MANIFEST_STATUS=RECORD_MANIFEST_FINALIZED", finalize.stdout)
+            self.assertEqual(counter.read_text(), "1")
+            finalized_bytes = manifest.read_bytes()
+            finalized = json.loads(finalized_bytes)
+            self.assertEqual(finalized["record_status"], "PASS")
+            self.assertEqual(finalized["backend_rc"], 0)
+
+            replay = subprocess.run(
+                [sys.executable, "-B", str(CLI), "record", *scope_args(), *common[1:-2], "--backend", str(record_backend)],
+                cwd=str(ROOT), env=env, text=True,
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False,
+            )
+            self.assertEqual(replay.returncode, 0, replay.stdout + replay.stderr)
+            self.assertIn("RECORD_MANIFEST_STATUS=RECORD_MANIFEST_REUSED", replay.stdout)
+            self.assertIn("IDEMPOTENT_NOOP=YES", replay.stdout)
+            self.assertEqual(counter.read_text(), "1")
+            self.assertEqual(manifest.read_bytes(), finalized_bytes)
+
+            raw.write_text(raw.read_text().replace("9.0", "8.0"))
+            changed_identity = run_cli(
+                *common[:-2],
+                "--backend",
+                str(record_backend),
+            )
+            self.assertEqual(changed_identity.returncode, 78, changed_identity.stdout + changed_identity.stderr)
+            self.assertIn("RECORD_MANIFEST_IDENTITY_CONFLICT", changed_identity.stdout)
+            self.assertEqual(counter.read_text(), "1")
+            self.assertEqual(manifest.read_bytes(), finalized_bytes)
+
     def test_non_executable_shell_backend_uses_bash_and_propagates_status(self):
         with tempfile.TemporaryDirectory(prefix=".w5ctl-test-", dir=str(CLI.parent)) as temp:
             root = Path(temp)
@@ -755,6 +854,8 @@ class W5CtlTest(unittest.TestCase):
                 str(backend),
                 "--record-manifest",
                 str(manifest),
+                "--record-backend",
+                "",
                 "--record-evidence",
                 str(source),
             ]
@@ -785,6 +886,7 @@ class W5CtlTest(unittest.TestCase):
             self.assertEqual(record["evidence"][0]["sha256"], __import__("hashlib").sha256(source.read_bytes()).hexdigest())
             self.assertEqual(record["local_result"]["shape_local_verdict"], "SHAPE_UNCLASSIFIED_NO_PROMOTION")
             self.assertEqual(record["integration_status"], "INTEGRATION_INCOMPLETE")
+            manifest_bytes_after_record = manifest.read_bytes()
 
             report = run_cli("report", "--checkpoint", str(checkpoint))
             self.assertEqual(report.returncode, 0, report.stdout + report.stderr)
@@ -828,16 +930,30 @@ class W5CtlTest(unittest.TestCase):
             self.assertIn("ARTIFACT_SHA_MISMATCH", tampered_report.stdout)
 
             before = counter.read_text()
+            interrupted_checkpoint = json.loads(checkpoint.read_text())
+            interrupted_checkpoint["stages"].pop("record")
+            checkpoint.write_text(json.dumps(interrupted_checkpoint))
             resumed = subprocess.run(
-                [sys.executable, "-B", str(CLI), "resume", *common],
+                [sys.executable, "-B", str(CLI), "resume", *common, "--from-stage", "record"],
                 cwd=str(ROOT), env=env, text=True,
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False,
             )
             self.assertEqual(resumed.returncode, 78, resumed.stdout + resumed.stderr)
-            self.assertIn("IDEMPOTENT_NOOP=YES", resumed.stdout)
+            self.assertIn("RECORD_MANIFEST_STATUS=RECORD_MANIFEST_REUSED", resumed.stdout)
             self.assertEqual(counter.read_text(), before)
-            self.assertIn("REVISION_CREATED=NO", resumed.stdout)
-            self.assertIn("RUNNER_CREATED=NO", resumed.stdout)
+            self.assertEqual(manifest.read_bytes(), manifest_bytes_after_record)
+
+            resumed_again = subprocess.run(
+                [sys.executable, "-B", str(CLI), "resume", *common],
+                cwd=str(ROOT), env=env, text=True,
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False,
+            )
+            self.assertEqual(resumed_again.returncode, 78, resumed_again.stdout + resumed_again.stderr)
+            self.assertIn("IDEMPOTENT_NOOP=YES", resumed_again.stdout)
+            self.assertIn("REVISION_CREATED=NO", resumed_again.stdout)
+            self.assertIn("RUNNER_CREATED=NO", resumed_again.stdout)
+            self.assertEqual(counter.read_text(), before)
+            self.assertEqual(manifest.read_bytes(), manifest_bytes_after_record)
 
 
 if __name__ == "__main__":

@@ -1016,6 +1016,65 @@ def record_command(args: argparse.Namespace) -> int:
         "online": "NOT_SUBMITTED",
         "recorded_utc": now_utc(),
     }
+    existing_manifest: Optional[Dict[str, Any]] = None
+    if manifest.exists():
+        try:
+            existing_manifest = json.loads(manifest.read_text())
+        except (OSError, json.JSONDecodeError) as exc:
+            emit("STATUS", "BLOCKED")
+            emit("BLOCKER", f"RECORD_MANIFEST_READ_FAILED:{exc}")
+            return EXIT_NOT_RUN
+        if not isinstance(existing_manifest, dict) or existing_manifest.get("schema") != 1:
+            emit("STATUS", "BLOCKED")
+            emit("BLOCKER", "RECORD_MANIFEST_SCHEMA_MISMATCH")
+            return EXIT_NOT_RUN
+        if not same_record_identity(existing_manifest, manifest_payload):
+            emit("STATUS", "BLOCKED")
+            emit("BLOCKER", f"RECORD_MANIFEST_IDENTITY_CONFLICT:{manifest}")
+            return EXIT_NOT_RUN
+        prior_status = existing_manifest.get("record_status")
+        if prior_status in {"PASS", "FAILED"}:
+            try:
+                prior_rc = int(existing_manifest.get("backend_rc", 0 if prior_status == "PASS" else EXIT_NOT_RUN))
+            except (TypeError, ValueError):
+                emit("STATUS", "BLOCKED")
+                emit("BLOCKER", "RECORD_MANIFEST_BACKEND_RC_INVALID")
+                return EXIT_NOT_RUN
+            if (prior_status == "PASS" and prior_rc != 0) or (prior_status == "FAILED" and prior_rc == 0):
+                emit("STATUS", "BLOCKED")
+                emit("BLOCKER", "RECORD_MANIFEST_STATUS_RC_CONFLICT")
+                return EXIT_NOT_RUN
+            emit("SOURCE_SHA256", source_sha)
+            emit("ARTIFACT_SHA256", artifact_sha)
+            emit("RAW_SHA256", raw_sha)
+            emit("RECORD_MANIFEST", manifest)
+            emit("RECORD_MANIFEST_STATUS", "RECORD_MANIFEST_REUSED")
+            emit("RECORD_STATUS", prior_status)
+            emit("INTEGRATION_STATUS", existing_manifest.get("integration_status", "UNKNOWN"))
+            emit("IDEMPOTENT_NOOP", "YES")
+            if prior_status == "FAILED":
+                emit("STATUS", "FAILED")
+                emit("BACKEND_RC", prior_rc)
+                return prior_rc
+            emit("STATUS", "PASS")
+            emit("BACKEND_RC", prior_rc)
+            return 0
+        if prior_status == "LOCAL_MANIFEST_WRITTEN" and backend_error:
+            emit("SOURCE_SHA256", source_sha)
+            emit("ARTIFACT_SHA256", artifact_sha)
+            emit("RAW_SHA256", raw_sha)
+            emit("RECORD_MANIFEST", manifest)
+            emit("RECORD_MANIFEST_STATUS", "RECORD_MANIFEST_REUSED")
+            emit("RECORD_STATUS", prior_status)
+            emit("INTEGRATION_STATUS", existing_manifest.get("integration_status", "INTEGRATION_INCOMPLETE"))
+            emit("IDEMPOTENT_NOOP", "YES")
+            emit("STATUS", "NOT_RUN")
+            emit("BLOCKER", existing_manifest.get("backend_error") or backend_error)
+            return EXIT_NOT_RUN
+        if prior_status != "LOCAL_MANIFEST_WRITTEN":
+            emit("STATUS", "BLOCKED")
+            emit("BLOCKER", f"RECORD_MANIFEST_STATE_UNSUPPORTED:{prior_status}")
+            return EXIT_NOT_RUN
     if backend_error:
         ok, manifest_status = save_manifest_once(manifest, manifest_payload)
         if not ok:
@@ -1212,16 +1271,27 @@ def save_checkpoint(path: Path, payload: Dict[str, Any]) -> None:
             os.unlink(temporary)
 
 
-def save_manifest_once(path: Path, payload: Dict[str, Any]) -> Tuple[bool, Optional[str]]:
-    """Persist one identity-bound record manifest without silently replacing it."""
-    if path.exists():
-        try:
-            existing = json.loads(path.read_text())
-        except (OSError, json.JSONDecodeError) as exc:
-            return False, f"RECORD_MANIFEST_READ_FAILED:{exc}"
-        if existing == payload:
-            return True, "RECORD_MANIFEST_REUSED"
-        return False, f"RECORD_MANIFEST_IDENTITY_CONFLICT:{path}"
+def same_record_identity(existing: Dict[str, Any], requested: Dict[str, Any]) -> bool:
+    """Compare immutable evidence identity, excluding timestamps and backend outcome."""
+    identity_fields = (
+        "schema",
+        "route",
+        "stage",
+        "repo_root",
+        "expected_branch",
+        "source",
+        "artifact",
+        "raw",
+        "evidence",
+        "local_result",
+        "revision_created",
+        "runner_created",
+        "online",
+    )
+    return all(existing.get(field) == requested.get(field) for field in identity_fields)
+
+
+def write_manifest_atomic(path: Path, payload: Dict[str, Any]) -> Optional[str]:
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
         fd, temporary = tempfile.mkstemp(prefix=path.name + ".", dir=str(path.parent))
@@ -1234,7 +1304,32 @@ def save_manifest_once(path: Path, payload: Dict[str, Any]) -> Tuple[bool, Optio
             if os.path.exists(temporary):
                 os.unlink(temporary)
     except OSError as exc:
-        return False, f"RECORD_MANIFEST_WRITE_FAILED:{exc}"
+        return f"RECORD_MANIFEST_WRITE_FAILED:{exc}"
+    return None
+
+
+def save_manifest_once(path: Path, payload: Dict[str, Any]) -> Tuple[bool, Optional[str]]:
+    """Persist/reuse one identity-bound local record and allow local→backend finalization."""
+    if path.exists():
+        try:
+            existing = json.loads(path.read_text())
+        except (OSError, json.JSONDecodeError) as exc:
+            return False, f"RECORD_MANIFEST_READ_FAILED:{exc}"
+        if not isinstance(existing, dict) or not same_record_identity(existing, payload):
+            return False, f"RECORD_MANIFEST_IDENTITY_CONFLICT:{path}"
+        existing_status = existing.get("record_status")
+        requested_status = payload.get("record_status")
+        if existing_status in {"PASS", "FAILED"}:
+            return True, "RECORD_MANIFEST_REUSED"
+        if existing_status == "LOCAL_MANIFEST_WRITTEN" and requested_status in {"PASS", "FAILED"}:
+            error = write_manifest_atomic(path, payload)
+            return (False, error) if error else (True, "RECORD_MANIFEST_FINALIZED")
+        if existing_status == "LOCAL_MANIFEST_WRITTEN" and requested_status == "LOCAL_MANIFEST_WRITTEN":
+            return True, "RECORD_MANIFEST_REUSED"
+        return False, f"RECORD_MANIFEST_STATE_CONFLICT:{existing_status}->{requested_status}"
+    error = write_manifest_atomic(path, payload)
+    if error:
+        return False, error
     return True, "RECORD_MANIFEST_WRITTEN"
 
 

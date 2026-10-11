@@ -62,8 +62,15 @@ values, evidence paths and SHA-256 values, and the complete Local result. With
 no Record Owner backend, the complete manifest is still written and the
 command returns `NOT_RUN`/78 with
 `INTEGRATION_STATUS=INTEGRATION_INCOMPLETE`; it never claims Record PASS.
-With a valid backend, its real return code is propagated. `record` never
-performs `git add`, `commit`, `push`, or Online submission. Git
+The same manifest and evidence identity are reused on repeated calls without
+changing `recorded_utc`; changed identities fail rather than overwrite. A later
+configured backend may finalize a prior local-only manifest once. A terminal
+backend `PASS`/`FAILED` result is replayed with its original return code and the
+backend is not invoked again. With a valid first-time backend, its real return
+code is propagated. Missing or insufficient Local samples are retained with
+their actual `INSUFFICIENT_DATA`/`REJECTED`/`UNCLASSIFIED` state and
+`FULL_LOCAL_SCORE=NOT_COMPUTABLE`.
+`record` never performs `git add`, `commit`, `push`, or Online submission. Git
 history/evidence ownership remains governed by `项目规则/Git工作流程.md` and
 the existing evidence roots.
 
