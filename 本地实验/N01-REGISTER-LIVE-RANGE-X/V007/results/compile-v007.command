@@ -1,0 +1,31 @@
+REVISION=V007
+PARENT_REVISION_COMMIT=6cc244b025049552159903387f9f77dc668cdce9
+SOURCE_COMMIT=a22a9fb37de40f64f3087106ceda534888897242
+SOURCE_SHA256=e99237a06ab559d12d07fdf5f3831ae16e4bfdfa0c324f9eb0be1dc028469def
+SOURCE_LOCAL=本地实验/N01-REGISTER-LIVE-RANGE-X/V007/submission.asc
+SOURCE_REMOTE=/home/data4t2/lelinfeng/cann/server_runs/N01-REGISTER-LIVE-RANGE-X-RESET-20261011/V007/a22a9fb3/candidate/R31B-V016-WIDE-TILE-SEED_kernel.asc
+PARENT_SOURCE=/home/data4t2/lelinfeng/cann/server_runs/N01-REGISTER-LIVE-RANGE-X-RESET-20261011/V004/e833b161/parent/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+REMOTE_RUN=/home/data4t2/lelinfeng/cann/server_runs/N01-REGISTER-LIVE-RANGE-X-RESET-20261011/V007/a22a9fb3
+CANN=8.5.0.alpha002
+SOC=Ascend910B3
+DEVICE_ID=5
+RUNNER_TARGET=paired_runner_v016
+RUNNER_SOURCE_SHA256=4f6701ea7edbbcfd3e410e22c0c3ea39a25bc4996b9bf05be4c422827c56f789
+ENV_COMMAND=set +u; source /usr/local/Ascend/ascend-toolkit/set_env.sh
+CPLUS_INCLUDE_PATH=/usr/include/c++/11:/usr/include/aarch64-linux-gnu/c++/11:/usr/include/aarch64-linux-gnu
+CPATH=/usr/include/aarch64-linux-gnu
+CONFIGURE_COMMAND=cmake -S /home/data4t2/lelinfeng/cann/server_runs/N01-REGISTER-LIVE-RANGE-X-RESET-20261011/V007/a22a9fb3/support/paired -B /home/data4t2/lelinfeng/cann/server_runs/N01-REGISTER-LIVE-RANGE-X-RESET-20261011/V007/a22a9fb3/build -DCMAKE_BUILD_TYPE=Release -DR31B_V011_SOURCE_DIR=/home/data4t2/lelinfeng/cann/server_runs/N01-REGISTER-LIVE-RANGE-X-RESET-20261011/V004/e833b161/parent -DR31B_V016_SOURCE_DIR=/home/data4t2/lelinfeng/cann/server_runs/N01-REGISTER-LIVE-RANGE-X-RESET-20261011/V007/a22a9fb3/candidate
+BUILD_COMMAND=set +u; source /usr/local/Ascend/ascend-toolkit/set_env.sh; export CPLUS_INCLUDE_PATH=/usr/include/c++/11:/usr/include/aarch64-linux-gnu/c++/11:/usr/include/aarch64-linux-gnu; export CPATH=/usr/include/aarch64-linux-gnu; cmake --build /home/data4t2/lelinfeng/cann/server_runs/N01-REGISTER-LIVE-RANGE-X-RESET-20261011/V007/a22a9fb3/build --target paired_runner_v016 -- -j1
+ATTEMPT_01_BUILD_EXIT_CODE=2
+ATTEMPT_01_CAUSE=ASC compiler plugin crashed because ASCEND_HOME_PATH was not loaded; raw log compile-v007-attempt-01.log
+CONFIGURE_EXIT_CODE=0
+COMPILE_EXIT_CODE=0
+RUNNER_BINARY_SHA256=4b0f0d94e3889943d35f97e509c31496c49cbea08fc6cd47733c84dcaf881841
+DEVICE_ELF=results/aicore_binary_v007.bin
+DEVICE_ELF_SHA256=0b6d16e3352e05aa20c09397e55035fe02dfcd193724fe6688ab2da2eb5ccfd8
+DEVICE_CODE_EXTRACT_EXIT_CODE=0
+DEVICE_TEXT_SIZE=0x14148
+FP32_CANDIDATE_FUNCTION_SIZE=12840
+FP16_CANDIDATE_FUNCTION_SIZE=13804
+BF16_CANDIDATE_FUNCTION_SIZE=14544
+REGISTER_COUNT=UNKNOWN
