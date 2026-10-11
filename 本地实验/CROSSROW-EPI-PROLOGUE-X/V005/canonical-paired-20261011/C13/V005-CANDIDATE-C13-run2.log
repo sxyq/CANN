@@ -1,0 +1,51 @@
+V005 LOCAL SIDE PRE V005-CANDIDATE-C13-run2
+Sun Oct 11 14:28:43 UTC 2026
+hwnput3
+COMMAND: /tmp/w5-r01-canonical.Mk9W1S/V003/build/clx_ref_candidate_probe 7 128 16384 1 /home/data4t2/lelinfeng/cann-w5-r01-crossrow/本地实验/CROSSROW-EPI-PROLOGUE-X/V005/canonical-paired-20261011/C13/V005-CANDIDATE-C13-run2 45 31 1 0 1
+DEVICE:
+	NPU ID                         : 7
+	Chip Count                     : 1
+
+	DDR Capacity(MB)               : 0
+	DDR Usage Rate(%)              : 0
+	DDR Hugepages Total(page)      : 0
+	DDR Hugepages Usage Rate(%)    : 0
+	HBM Capacity(MB)               : 65536
+	HBM Usage Rate(%)              : 37
+	Aicore Usage Rate(%)           : 0
+	Aivector Usage Rate(%)         : 0
+	Aicpu Usage Rate(%)            : 0
+	Ctrlcpu Usage Rate(%)          : 13
+	DDR Bandwidth Usage Rate(%)    : 0
+	HBM Bandwidth Usage Rate(%)    : 56
+	Chip ID                        : 0
+
+PROC:
+This device does not support querying proc info.
+REF_HARNESS device=7 shape=128x16384 dtype=1 warmup=45 samples=31 blocks=1 bad=0
+V005 LOCAL SIDE POST V005-CANDIDATE-C13-run2
+Sun Oct 11 14:28:51 UTC 2026
+hwnput3
+RC=0
+DEVICE:
+	NPU ID                         : 7
+	Chip Count                     : 1
+
+	DDR Capacity(MB)               : 0
+	DDR Usage Rate(%)              : 0
+	DDR Hugepages Total(page)      : 0
+	DDR Hugepages Usage Rate(%)    : 0
+	HBM Capacity(MB)               : 65536
+	HBM Usage Rate(%)              : 37
+	Aicore Usage Rate(%)           : 1
+	Aivector Usage Rate(%)         : 4
+	Aicpu Usage Rate(%)            : 0
+	Ctrlcpu Usage Rate(%)          : 2
+	DDR Bandwidth Usage Rate(%)    : 0
+	HBM Bandwidth Usage Rate(%)    : 0
+	Chip ID                        : 0
+
+PROC:
+This device does not support querying proc info.
+SELF:
+3313857      85 /bin/bash -lc set -o pipefail route="$PWD/本地实验/CROSSROW-EPI-PROLOGUE-X/V005" harn="/tmp/w5-r01-canonical.Mk9W1S/V003" out="$route/canonical-paired-20261011" mkdir -p "$out" source /usr/local/Ascend/ascend-toolkit/set_env.sh hcc_root="$ASCEND_HOME_PATH/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0" export CPLUS_INCLUDE_PATH="$hcc_root:$hcc_root/aarch64-target-linux-gnu:$hcc_root/backward" export CPATH="$CPLUS_INCLUDE_PATH" {   echo 'V005 CANONICAL LOCAL PRECHECK'   date -u; hostname; pwd; git rev-parse HEAD   echo 'PARENT_SOURCE:'; sha256sum "$route/Parent.asc"   echo 'CANDIDATE_SOURCE:'; sha256sum "$route/Candidate.asc"   echo 'PARENT_ARTIFACT:'; sha256sum "$harn/build/clx_ref_parent_probe"   echo 'CANDIDATE_ARTIFACT:'; sha256sum "$harn/build/clx_ref_candidate_probe"   echo 'RUNNER_REF:'; sha256sum "$harn/runner_ref.inc" "$harn/local_types.h" "$harn/CMakeLists.txt"   echo 'SELECTOR_BEFORE:'; readlink -f "$harn/submission.asc"; sha256sum "$harn/submission.asc"   echo 'DEVICE_PRE:'; npu-smi info -t usages -i 7 2>&1 || true   echo 'PROC_PRE:'; npu-smi info proc -i 7 2>&1 || true   echo 'SELF_PRE:'; ps -eo pid=,etimes=,args= | rg 'clx_ref_(parent|candidate)_probe' || true   echo 'SAME_BINARY_PROCESS=NO; separate Parent/Candidate executables, same runner_ref.inc'   echo 'SAME_BINARY_QUALIFICATION=NOT_RUN' } | tee "$out/LOCAL-PREFLIGHT-20261011.txt" ln -sfn "$route/Candidate.asc" "$harn/submission.asc" rc_total=0 run_side() {   kind="$1"; exe="$2"; case_id="$3"; rows="$4"; width="$5"; dtype="$6"; run_no="$7"   case_dir="$out/$case_id"   mkdir -p "$case_dir"   tag="V005-${kind}-${case_id}-run${run_no}"   prefix="$case_dir/$tag"   pre="$case_dir/${tag}-pre.txt"   post="$case_dir/${tag}-post.txt"   log="$case_dir/${tag}.log"   rcfile="$case_dir/${tag}.rc"   {     echo "V005 LOCAL SIDE PRE $tag"; date -u; hostname     echo "COMMAND: $exe 7 $rows $width $dtype $prefix 45 31 1 0 1"     echo 'DEVICE:'; npu-smi info -t usages -i 7 2>&1 || true     echo 'PROC:'; npu-smi info proc -i 7 2>&1 || true   } > "$pre"   cat "$pre" > "$log"   "$exe" 7 "$rows" "$width" "$dtype" "$prefix" 45 31 1 0 1 2>&1 | tee -a "$log"   rc=${PIPESTATUS[0]}   echo "$rc" > "$rcfile"   {     echo "V005 LOCAL SIDE POST $tag"; date -u; hostname     echo "RC=$rc"     echo 'DEVICE:'; npu-smi info -t usages -i 7 2>&1 || true     echo 'PROC:'; npu-smi info proc -i 7 2>&1 || true     echo 'SELF:'; ps -eo pid=,etimes=,args= | rg 'clx_ref_(parent|candidate)_probe' || true   } > "$post"   cat "$post" >> "$log"   if [ "$rc" -ne 0 ]; then rc_total=1; fi } run_side PARENT "$harn/build/clx_ref_parent_probe" C12 8 8192 2 1 run_side CANDIDATE "$harn/build/clx_ref_candidate_probe" C12 8 8192 2 1 run_side CANDIDATE "$harn/build/clx_ref_candidate_probe" C12 8 8192 2 2 run_side PARENT "$harn/build/clx_ref_parent_probe" C12 8 8192 2 2 run_side PARENT "$harn/build/clx_ref_parent_probe" C12 8 8192 2 3 run_side CANDIDATE "$harn/build/clx_ref_candidate_probe" C12 8 8192 2 3 run_side PARENT "$harn/build/clx_ref_parent_probe" C13 128 16384 1 1 run_side CANDIDATE "$harn/build/clx_ref_candidate_probe" C13 128 16384 1 1 run_side CANDIDATE "$harn/build/clx_ref_candidate_probe" C13 128 16384 1 2 run_side PARENT "$harn/build/clx_ref_parent_probe" C13 128 16384 1 2 run_side PARENT "$harn/build/clx_ref_parent_probe" C13 128 16384 1 3 run_side CANDIDATE "$harn/build/clx_ref_candidate_probe" C13 128 16384 1 3 run_side PARENT "$harn/build/clx_ref_parent_probe" C14 128 16384 2 1 run_side CANDIDATE "$harn/build/clx_ref_candidate_probe" C14 128 16384 2 1 run_side CANDIDATE "$harn/build/clx_ref_candidate_probe" C14 128 16384 2 2 run_side PARENT "$harn/build/clx_ref_parent_probe" C14 128 16384 2 2 run_side PARENT "$harn/build/clx_ref_parent_probe" C14 128 16384 2 3 run_side CANDIDATE "$harn/build/clx_ref_candidate_probe" C14 128 16384 2 3 run_side PARENT "$harn/build/clx_ref_parent_probe" C16 9 32768 2 1 run_side CANDIDATE "$harn/build/clx_ref_candidate_probe" C16 9 32768 2 1 run_side CANDIDATE "$harn/build/clx_ref_candidate_probe" C16 9 32768 2 2 run_side PARENT "$harn/build/clx_ref_parent_probe" C16 9 32768 2 2 run_side PARENT "$harn/build/clx_ref_parent_probe" C16 9 32768 2 3 run_side CANDIDATE "$harn/build/clx_ref_candidate_probe" C16 9 32768 2 3 {   echo 'V005 CANONICAL LOCAL POSTCHECK'   date -u; hostname   echo 'DEVICE_POST:'; npu-smi info -t usages -i 7 2>&1 || true   echo 'PROC_POST:'; npu-smi info proc -i 7 2>&1 || true   echo 'SELF_POST:'; ps -eo pid=,etimes=,args= | rg 'clx_ref_(parent|candidate)_probe' || true   echo "LOCAL_RC_TOTAL=$rc_total" } | tee "$out/LOCAL-POSTCHECK-20261011.txt" ln -sfn "$route/../V004/Candidate.asc" "$harn/submission.asc" echo "SELECTOR_RESTORED=$(readlink -f "$harn/submission.asc")" | tee -a "$out/LOCAL-POSTCHECK-20261011.txt" exit "$rc_total"
