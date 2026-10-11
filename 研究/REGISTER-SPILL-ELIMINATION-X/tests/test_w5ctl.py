@@ -891,6 +891,7 @@ class W5CtlTest(unittest.TestCase):
             )
             self.assertEqual(resumed.returncode, 0, resumed.stdout + resumed.stderr)
             self.assertIn("CYCLE_STATUS=PASS", resumed.stdout)
+            self.assertIn("E2E_STATUS=INCOMPLETE", resumed.stdout)
             self.assertEqual(counter.read_text(), "3")
 
             repeated = subprocess.run(
@@ -928,6 +929,7 @@ class W5CtlTest(unittest.TestCase):
             report = run_cli("report", "--checkpoint", str(checkpoint))
             self.assertEqual(report.returncode, 0, report.stdout + report.stderr)
             self.assertIn("BUILD_STATUS=PASS", report.stdout)
+            self.assertIn("E2E_STATUS=INCOMPLETE", report.stdout)
             self.assertIn("ONLINE=NOT_SUBMITTED", report.stdout)
             payload = json.loads(checkpoint.read_text())
             self.assertFalse(payload["revision_created"])
@@ -1080,7 +1082,6 @@ class W5CtlTest(unittest.TestCase):
             self.assertIn("RECORD_MANIFEST_STATUS=RECORD_MANIFEST_REUSED", resumed.stdout)
             self.assertEqual(counter.read_text(), before)
             self.assertEqual(manifest.read_bytes(), manifest_bytes_after_record)
-
             resumed_again = subprocess.run(
                 [sys.executable, "-B", str(CLI), "resume", *common],
                 cwd=str(ROOT), env=env, text=True,
@@ -1092,6 +1093,33 @@ class W5CtlTest(unittest.TestCase):
             self.assertIn("RUNNER_CREATED=NO", resumed_again.stdout)
             self.assertEqual(counter.read_text(), before)
             self.assertEqual(manifest.read_bytes(), manifest_bytes_after_record)
+
+    def test_record_manifest_request_defaults_cycle_to_four_stages_without_e2e_claim(self):
+        with tempfile.TemporaryDirectory(prefix=".w5ctl-cycle-contract-", dir=str(CLI.parent)) as temp:
+            root = Path(temp)
+            checkpoint = root / "checkpoint.json"
+            manifest = root / "record.json"
+            source = CLI.parent / "public-crossrow-v001" / "Candidate.asc"
+            artifact = CLI.parent / "public-crossrow-v001" / "build" / "crossrow_v001_paired_runner"
+            raw = CLI.parent / "crossrow-public-paired-local-device3.tsv"
+            result = run_cli(
+                "cycle",
+                "--checkpoint", str(checkpoint),
+                "--source", str(source),
+                "--artifact", str(artifact),
+                "--raw", str(raw),
+                "--record-manifest", str(manifest),
+                "--record-evidence", str(source),
+                "--record-backend", "",
+            )
+            self.assertEqual(result.returncode, 78, result.stdout + result.stderr)
+            self.assertTrue(checkpoint.is_file())
+            payload = json.loads(checkpoint.read_text())
+            self.assertEqual(payload["stage_order"], ["build", "correctness", "local", "record"])
+            self.assertNotEqual(payload.get("e2e_status"), "PASS")
+            self.assertIn("CURRENT_STAGE=build", result.stdout)
+            self.assertNotIn("E2E_STATUS=PASS", result.stdout)
+            self.assertFalse(manifest.exists())
 
     def test_route_summary_reports_full_scores_quality_and_reliable_best(self):
         with tempfile.TemporaryDirectory(prefix=".w5ctl-summary-", dir=str(CLI.parent)) as temp:

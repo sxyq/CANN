@@ -154,6 +154,11 @@ preserved as `PASS`, `REJECTED`, `UNCLASSIFIED`, or
 `UNCLASSIFIED_NO_PROMOTION`. Completed terminal stages are skipped on repeated
 `cycle`/`resume` calls. Failed or missing stages require explicit `resume`.
 Neither command creates a Revision or Runner, or changes Online state.
+When `--record-manifest` is supplied without `--stages`, the default stage
+order is explicitly `build,correctness,local,record` and the checkpoint emits
+`E2E_STATUS=PASS` only after the route-local manifest is written and verified.
+A three-stage `build,correctness,local` cycle remains a valid control-layer
+cycle but emits `E2E_STATUS=INCOMPLETE`; it must not be reported as E2E.
 
 `report --checkpoint <path>` reads the checkpoint without invoking a backend.
 `report --manifest <path>` queries an archived local manifest through the same
@@ -179,6 +184,12 @@ Historical validation invocations should pass
 `--canonical-purpose historical-tool-validation` together with
 `--expected-parent-artifact-sha` set to that measured public identity; a
 historical one-shape input still remains `FULL_LOCAL_SCORE=NOT_COMPUTABLE`.
+
+The pinned public scorer commit contains the R31B V011 anchor and scorer
+assets, but no published W5-R01 CROSSROW candidate four-Core measurements
+bundle. Therefore the R2 CROSSROW record is retained as shape-level historical
+evidence only; tests using local scorer fixtures validate control flow, not
+Canonical E2E or R2 Kernel performance.
 
 All execution commands verify the current Git root and expected branch supplied
 for that invocation, and every source, artifact, raw, log, checkpoint,

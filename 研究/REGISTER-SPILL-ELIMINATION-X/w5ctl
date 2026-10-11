@@ -1791,6 +1791,13 @@ def parse_stage_order(raw: Optional[str]) -> List[str]:
     return stages
 
 
+def default_pipeline_stages(args: argparse.Namespace) -> List[str]:
+    """A manifest request makes Record part of the default end-to-end cycle."""
+    return ["build", "correctness", "local", "record"] if args.record_manifest else [
+        "build", "correctness", "local"
+    ]
+
+
 def load_checkpoint(path: Path) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
     if not path.exists():
         return None, None
@@ -2018,15 +2025,21 @@ def pipeline_command(args: argparse.Namespace, resume: bool) -> int:
         emit("CYCLE_STATUS", "BLOCKED")
         emit("BLOCKER", str(exc))
         return EXIT_USAGE
+    defaults = default_pipeline_stages(args)
     if existing:
-        stages = existing.get("stage_order", requested_stages or ["build", "correctness", "local"])
+        stages = existing.get("stage_order", requested_stages or defaults)
         if requested_stages and stages != requested_stages:
             emit("CYCLE_STATUS", "BLOCKED")
             emit("BLOCKER", "CHECKPOINT_STAGE_ORDER_CHANGED")
             return EXIT_NOT_RUN
+        if args.record_manifest and not requested_stages and "record" not in stages:
+            emit("CYCLE_STATUS", "BLOCKED")
+            emit("E2E_STATUS", "INCOMPLETE")
+            emit("BLOCKER", "CHECKPOINT_MISSING_RECORD_STAGE_USE_EXPLICIT_STAGES")
+            return EXIT_NOT_RUN
         payload = existing
     else:
-        stages = requested_stages or ["build", "correctness", "local"]
+        stages = requested_stages or defaults
         payload = {
             "schema": 1,
             "route": ROUTE,
@@ -2154,10 +2167,17 @@ def pipeline_command(args: argparse.Namespace, resume: bool) -> int:
             return outcome.rc
     all_pass = all(payload.get("stages", {}).get(stage, {}).get("status") == "PASS" for stage in stages)
     payload["status"] = "PASS" if all_pass else "INCOMPLETE"
+    e2e_complete = (
+        "record" in stages
+        and payload.get("record_manifest")
+        and payload.get("stages", {}).get("record", {}).get("status") == "PASS"
+    )
+    payload["e2e_status"] = "PASS" if e2e_complete else "INCOMPLETE"
     payload["updated_utc"] = now_utc()
     save_checkpoint(path, payload)
     emit("CHECKPOINT", path)
     emit("CYCLE_STATUS", "PASS" if all_pass else "INCOMPLETE")
+    emit("E2E_STATUS", payload["e2e_status"])
     emit("CURRENT_STAGE", stages[-1] if stages else "NONE")
     emit("NEXT_ACTION", "report --checkpoint " + str(path))
     if not did_work:
@@ -2574,6 +2594,12 @@ def report_command(args: argparse.Namespace) -> int:
     emit("REVISION_CREATED", "YES" if payload.get("revision_created") else "NO")
     emit("RUNNER_CREATED", "YES" if payload.get("runner_created") else "NO")
     emit("ONLINE", payload.get("online", "NOT_SUBMITTED"))
+    e2e_complete = (
+        "record" in stages
+        and payload.get("record_manifest")
+        and payload.get("stages", {}).get("record", {}).get("status") == "PASS"
+    )
+    emit("E2E_STATUS", "PASS" if e2e_complete else "INCOMPLETE")
     report_status = "PASS" if payload.get("status") == "PASS" else "INCOMPLETE"
     emit("REPORT_STATUS", report_status)
     return 0
