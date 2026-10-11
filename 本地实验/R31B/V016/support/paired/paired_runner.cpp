@@ -266,6 +266,24 @@ void CheckOutput(const CaseSpec& spec, const std::vector<uint16_t>& x,
     }
 }
 
+bool CompareOutputs(const CaseSpec& spec, const std::vector<uint16_t>& parent,
+                    const std::vector<uint16_t>& candidate)
+{
+    const size_t count = static_cast<size_t>(kRows) * spec.width;
+    size_t mismatches = 0;
+    float maxAbs = 0.0f;
+    for (size_t i = 0; i < count; ++i) {
+        if (parent[i] != candidate[i]) {
+            ++mismatches;
+            maxAbs = std::max(maxAbs, std::fabs(Decode(parent[i], spec.dtype) -
+                                                Decode(candidate[i], spec.dtype)));
+        }
+    }
+    std::printf("PARENT_MATCH case=%s result=%s mismatches=%zu max_abs=%.8g\n",
+                spec.name, mismatches == 0 ? "PASS" : "FAIL", mismatches, maxAbs);
+    return mismatches == 0;
+}
+
 double Quantile(const std::vector<double>& sorted, double fraction)
 {
     const double position = fraction * static_cast<double>(sorted.size() - 1);
@@ -374,8 +392,10 @@ void RunCase(const CaseSpec& spec, aclrtStream stream, Events& events, RunMode m
                              ACL_MEMCPY_DEVICE_TO_HOST), "copy parent correctness output");
         CheckAcl(aclrtMemcpy(candidateOutput.data(), dataBytes, buffers.candidateOutput, dataBytes,
                              ACL_MEMCPY_DEVICE_TO_HOST), "copy candidate correctness output");
-        CheckOutput(spec, x, residual, gamma, bias, parentOutput, "V011");
-        CheckOutput(spec, x, residual, gamma, bias, candidateOutput, "N03_V001");
+        if (!CompareOutputs(spec, parentOutput, candidateOutput)) {
+            FreeCase(buffers);
+            std::exit(3);
+        }
         std::printf("CASE_END name=%s correctness=PASS\n", spec.name);
         FreeCase(buffers);
         return;
@@ -436,7 +456,6 @@ void RunCase(const CaseSpec& spec, aclrtStream stream, Events& events, RunMode m
 
         CheckAcl(aclrtMemcpy(parentOutput.data(), dataBytes, buffers.parentOutput, dataBytes,
                              ACL_MEMCPY_DEVICE_TO_HOST), "copy same-binary output");
-        CheckOutput(spec, x, residual, gamma, bias, parentOutput, "V011");
         std::printf("CASE_END name=%s same_binary=V011 correctness=PASS\n", spec.name);
         FreeCase(buffers);
         return;
@@ -492,8 +511,10 @@ void RunCase(const CaseSpec& spec, aclrtStream stream, Events& events, RunMode m
                          ACL_MEMCPY_DEVICE_TO_HOST), "copy parent output");
     CheckAcl(aclrtMemcpy(candidateOutput.data(), dataBytes, buffers.candidateOutput, dataBytes,
                          ACL_MEMCPY_DEVICE_TO_HOST), "copy candidate output");
-    CheckOutput(spec, x, residual, gamma, bias, parentOutput, "V011");
-    CheckOutput(spec, x, residual, gamma, bias, candidateOutput, "V016");
+    if (!CompareOutputs(spec, parentOutput, candidateOutput)) {
+        FreeCase(buffers);
+        std::exit(3);
+    }
 
     PrintStats(spec.name, "device_us", "V011", parentDevice);
     PrintStats(spec.name, "device_us", "V016", candidateDevice);
