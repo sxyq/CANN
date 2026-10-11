@@ -20,3 +20,4 @@ V013 changes only BF16 full-tile affine issue grouping to waves of up to three r
 - BF16 Correctness: 4/4 Parent/Candidate golden comparisons PASS across two cases; exact matches and zero mismatches.
 - Local: `NONE`. Reused V011 same-binary results: both d6144 and d4096 are `MEASUREMENT_PROTOCOL_BLOCKED_FOR_SHAPE`; no V013 timing was started.
 - d3 snapshots, Correctness raw output, compile logs, and source SHA records are saved under this V013 directory.
+- Normal push advanced `origin/route/n03-vector-ilp-dualchain-x-20261011` to `56e5dc223` after the evidence commit.
