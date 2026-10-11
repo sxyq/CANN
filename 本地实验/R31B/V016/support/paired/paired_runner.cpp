@@ -14,7 +14,7 @@ namespace {
 using R31BRunKernel = decltype(&r31b_v011::run_kernel_v011);
 
 constexpr int kDevice = 0;
-constexpr int kRows = 2;
+constexpr int kRows = 16;
 constexpr int kWarmup = 45;
 constexpr int kPairs = 21;
 constexpr int kQualificationBlocks = 2;
@@ -220,7 +220,7 @@ void CheckOutput(const CaseSpec& spec, const std::vector<uint16_t>& x,
                  const std::vector<uint16_t>& output, const char* label)
 {
     const size_t count = static_cast<size_t>(kRows) * spec.width;
-    const float tolerance = spec.dtype == 1 ? 0.004f : 0.02f;
+    const float tolerance = 0.001f;
     float maxAbs = 0.0f;
     float maxRel = 0.0f;
     size_t failures = 0;
@@ -513,10 +513,7 @@ int main(int argc, char** argv)
     CheckAcl(aclrtCreateEvent(&events.stop), "create stop event");
 
     const CaseSpec cases[] = {
-        {"fp16-tail-d12288", 1, 12288},
-        {"fp16-wide-d32768", 1, 32768},
-        {"bf16-tail-d12288", 2, 12288},
-        {"bf16-wide-d32768", 2, 32768},
+        {"bf16-cache-params-d6144", 2, 6144},
     };
     for (const CaseSpec& spec : cases) {
         RunCase(spec, stream, events, mode);
@@ -526,7 +523,7 @@ int main(int argc, char** argv)
     CheckAcl(aclrtDestroyEvent(events.start), "destroy start event");
     CheckAcl(aclrtDestroyStream(stream), "destroy stream");
     CheckAcl(aclFinalize(), "aclFinalize");
-    std::printf("RUNNER_COMPLETE mode=%s correctness=PASS cases=4 warmup_each=45 pairs_each=21 timing=DEVICE_EVENT_PRIMARY wall=DIAGNOSTIC\n",
-                mode == RunMode::kQualifyV011 ? "QUALIFY_V011" : "PAIRED");
+    std::printf("RUNNER_COMPLETE mode=%s correctness=PASS cases=1 rows=%d warmup_each=45 pairs_each=21 timing=DEVICE_EVENT_PRIMARY wall=DIAGNOSTIC\n",
+                mode == RunMode::kQualifyV011 ? "QUALIFY_V011" : "PAIRED", kRows);
     return 0;
 }
