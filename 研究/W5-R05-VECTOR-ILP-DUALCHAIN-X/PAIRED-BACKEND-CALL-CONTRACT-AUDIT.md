@@ -298,3 +298,75 @@ P4_NEXT = named Owner supplies one accepted backend commit and receipt
 P4_BLOCKER = shared ASC registration or route-agnostic selector/adapter is not accepted
 MICROPROBE = NOT_RUN
 ```
+
+## Published Canonical Host/backend contract follow-up
+
+```text
+PUBLIC_MAIN_REF = origin/main
+PUBLIC_MAIN_SHA = 1c51a5b2eb9b5b9dffc031c1fbbbc35e9506b49f (remote main verified)
+PUBLIC_ROUTE_LOCAL_ADAPTER_INPUT = NOT_DOCUMENTED
+CANONICAL_BACKEND_SELECTOR_API = NOT_FOUND_IN_PUBLISHED_MAIN
+R5_SOURCE_ABI = HOST_ROLE_COMPATIBLE
+R5_ROUTE_LOCAL_ADAPTER_CALLABLE_BY_CANONICAL_HOST = NO
+```
+
+The published project contract at this revision documents Route ownership,
+build/correctness work, and local timing, but exposes no Canonical Host API for
+selecting or injecting a route-owned adapter translation unit. The archived
+Phase4 `execution-contract.md` is a historical execution policy, not such an
+adapter ABI. The published R31B V016 direct build is likewise a fixed-source
+standalone executable, not a Canonical Host backend.
+
+The only currently evidenced Canonical build inputs are the R5 V001
+`build_server3.sh` contract: `RUNNER_PARENT_SOURCE`,
+`RUNNER_CANDIDATE_SOURCE`, expected SHA-256 values, `RUNNER_ASCENDC_ARCH`, and
+`RUNNER_BUILD_DIR`. They identify kernel source files and build location; no
+published input selects an adapter file or a route-local backend. The
+generated V001 build metadata points to these shared units/targets:
+
+```text
+/home/data4t2/lelinfeng/cann-tooling-runner/工具/route-runner/route-runner/build_server3.sh
+/home/data4t2/lelinfeng/cann-tooling-runner/工具/route-runner/route-runner/parent_adapter.asc
+/home/data4t2/lelinfeng/cann-tooling-runner/工具/route-runner/route-runner/candidate_adapter.asc
+/home/data4t2/lelinfeng/cann-tooling-runner/工具/route-runner/route-runner/runner_main.cpp
+```
+
+The build definitions pass the exact source path and rename only host
+`run_kernel` to each role symbol, so the host-call ABI is already represented.
+However, the ASC shared-library compile does not register the launched
+`__global__ __vector__ add_rms_norm_bias_custom<T>` entry and cannot resolve
+the generated `__origin__...` symbols. A shim in the R5 worktree cannot fix
+this boundary: the current host has no adapter-path/selector input to consume
+it. Supplying the shim as `RUNNER_*_SOURCE` would violate source identity; a
+separate CMake target or executable would be a second execution chain.
+
+Therefore the smallest Owner change is to the existing Canonical build
+boundary, not to route-local files: keep the source/SHA inputs and existing
+driver role ABI, add an accepted route-agnostic source-registration adapter
+inside the existing backend selector, and make that path register/link the
+Vector device entry while returning the artifact through the same Host
+workload. Alternatively, the Owner may repair registration in the current
+Parent/Candidate ASC units. No new CLI, Runner, scorer, timing harness, or
+fallback chain is part of either patch. The shared tooling worktree was not
+opened or modified.
+
+Verification must first use the exact frozen source for both roles and retain
+build logs, exact input paths/hashes, selected backend and artifact SHA. Build
+must return 0 without `Unknown kernelInfo` or undefined `__origin__` symbols,
+and the existing Host must expose both role calls. Only after this acceptance
+and an R5 Candidate exists should its correctness run; dependent-versus-
+independent timing remains a separate, coordinated measurement stage. No
+NPU timing was started in this follow-up.
+
+```text
+CANONICAL_HOST_ADAPTATION = NOT_LEGALLY_CALLABLE_FROM_R5_WITHOUT_OWNER_CHANGE
+OWNER_REQUEST = EXISTING TOOLING-OWNER-REQUEST.md (no duplicate request)
+OWNER_NAME = UNCONFIRMED
+OWNER_ACK = UNCONFIRMED
+OWNER_COMMIT = NONE
+NEXT_CONCRETE_STEP = Owner adds/accepts the adapter registration boundary in the existing Canonical Host
+BLOCKER = no published adapter selector/input; ASC Vector device registration/link remains unresolved
+KERNEL_REVISION = NONE_ADDED
+MICROPROBE = NOT_RUN
+LOCAL_SCORE = NONE
+```
