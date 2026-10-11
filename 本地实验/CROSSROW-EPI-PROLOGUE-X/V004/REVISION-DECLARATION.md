@@ -11,7 +11,7 @@ STATUS: IN_PROGRESS
 
 LARGEST_OBSERVED_LOSS: C12
 LARGEST_OBSERVED_LOSS_EVIDENCE: V003 candidate median 10.98 us versus frozen anchor 6.58 us (+66.87%); same-window R31B/V011 parent was also 18.56 us. The C12 raw is highly dispersed and the parent drift means this is not a source-attributed regression claim.
-SOURCE_ATTRIBUTION_CHECK: C12 is rows=8,width=8192,FP16 and dispatches to ProcessFp16FullRowOutputPipelined. V001/V002 generic Process() prologue edits are not executed there; V003 rowWidth-sized valueFp32Buf_ is equal to the prior kCacheElems allocation at width 8192. Existing V001-V003 diffs therefore do not explain the C12 anchor gap.
+SOURCE_ATTRIBUTION_CHECK: C12 is rows=8,width=8192,BF16 and the published suite maps it to generic cached-row with localRows=1. V001/V002 successor-prologue edits are guarded by localRows>1 and therefore do not execute for this case; V003 rowWidth-sized valueFp32Buf_ is equal to the prior kCacheElems allocation at width 8192. Existing V001-V003 diffs therefore do not explain the C12 anchor gap.
 
 ## Direct parent and source identity
 
@@ -24,7 +24,7 @@ PARENT_SELECTION_REASON: V003 is POOR/LOCAL_NEUTRAL and is not used as Parent; t
 
 HYPOTHESIS_ID: H1_WIDE_INDEX_STATE
 HYPOTHESIS: ProcessWideLowPrecision() repeatedly derives batchRow and tile from the linear unit index with integer division and multiply/subtract operations in the pass-1 tile stream, and repeats the same derivation for the next prefetched unit. Carrying the row/tile state forward removes this scalar address-generation overhead while preserving every GM offset, valid length, buffer selection, event, arithmetic operation, and loop order.
-TARGET_CASES: C14 (128x16384 FP16) and C16 (9x32768 FP16/BF16 dtype as registered by the canonical suite); C13 FP32 and C12 full-row FP16 are explicit non-target controls for source-path coverage.
+TARGET_CASES: C13 (128x16384 FP16), C14 (128x16384 BF16), and C16 (9x32768 BF16); all three use ProcessWideLowPrecision(). C12 (8x8192 BF16, generic cached-row/localRows=1) is an explicit non-target control for source-path coverage.
 
 ## Orthogonality and scope
 
