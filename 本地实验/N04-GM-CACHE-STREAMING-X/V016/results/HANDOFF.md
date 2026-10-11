@@ -1,0 +1,7 @@
+# N04 V016 Handoff
+
+V016 directly follows N04 V015 and adds only a persistent L2 hint to `biasGm_` in the wide low-precision path. The existing gamma, x, residual, and output hints remain unchanged; arithmetic and dataflow are unchanged. Candidate source commit is `6bf56393e`, SHA-256 `a2d30d539378dcce1df4abbd2fc534306859c3350fbf216455b078d99e9a4de3`.
+
+The existing server3 CANN 8.5 paired entry compiled successfully after restoring the CANN environment and the route's existing C++ include path. Champion/Candidate Correctness passed all four cases on d7. Paired Local was not started: the latest pre-run snapshot at `2026-10-11T22:03:06+00:00` showed AICore at 13% and AIVector at 17%, after earlier readings of 4% and 9%. The existing Python process (PID 439848, 21,260 MiB) remained untouched. The raw snapshots, earlier build/loader failures, successful executable, correctness output, and exact source identities are retained here.
+
+The build volume remains 100% used with 16,604,868,608 bytes available. No unrelated data was cleaned. Resume by taking a fresh read-only d7 and disk snapshot. Keep the Python process untouched. When d7 activity is suitable and the available space remains sufficient for the small result set, run the existing `paired_runner_v016 --paired` entry for 45 warmups and 21 alternating pairs per case against R31B V011 Champion, then append raw statistics and post-run device state to this V016 result.
