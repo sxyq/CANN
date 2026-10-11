@@ -1375,6 +1375,135 @@ class W5CtlTest(unittest.TestCase):
             self.assertEqual(rejected_external.returncode, 66, rejected_external.stdout + rejected_external.stderr)
             self.assertIn("CANONICAL_PUBLIC_EXTERNAL_FILE_REJECTED", rejected_external.stdout)
 
+    def test_public_historical_canonical_record_checkpoint_resume_is_identity_bound_not_e2e(self):
+        """Published data exercises persistence; stub backends are unit fixtures, not E2E."""
+        with tempfile.TemporaryDirectory(prefix=".w5ctl-canonical-checkpoint-", dir=str(CLI.parent)) as temp:
+            route_root = Path(temp)
+            fixture = create_public_canonical_fixture(route_root, as_git_objects=True)
+            checkpoint = route_root / "historical-checkpoint.json"
+            manifest = route_root / "historical-record.json"
+            calls = route_root / "backend-calls.txt"
+            backend = route_root / "test-only-stage-backend.py"
+            write_executable(
+                backend,
+                """
+                #!/usr/bin/env python3
+                import os
+                from pathlib import Path
+                with Path(os.environ["W5CTL_TEST_CALLS"]).open("a") as stream:
+                    stream.write(os.environ["W5CTL_STAGE"] + "\\n")
+                """,
+            )
+            env = os.environ.copy()
+            env["W5CTL_TEST_CALLS"] = str(calls)
+            common = [
+                "--checkpoint", str(checkpoint),
+                "--source", str(fixture["source"]),
+                "--artifact-receipt", str(fixture["receipt"]),
+                "--expected-source-sha", fixture["source_sha"],
+                "--expected-artifact-sha", fixture["artifact_sha"],
+                "--raw", str(fixture["measurements"]),
+                "--canonical-measurements", str(fixture["measurements"]),
+                "--canonical-purpose", "historical-tool-validation",
+                "--canonical-revision", "V003",
+                "--expected-parent-artifact-sha", "eed03216f3ad02a7c5dde0978f50edff218619286e4b6a479c79b845cd843c71",
+                "--record-manifest", str(manifest),
+                "--record-evidence", str(fixture["source"]),
+                "--record-evidence", str(fixture["receipt"]),
+                "--record-evidence", str(fixture["correctness"]),
+                "--build-receipt", str(fixture["receipt"]),
+                "--correctness-receipt", str(fixture["correctness"]),
+                "--build-backend", str(backend),
+                "--correctness-backend", str(backend),
+                "--local-backend", str(backend),
+                "--record-backend", "",
+            ]
+
+            def invoke(command, *extra):
+                options = common if command in {"cycle", "resume"} else []
+                return subprocess.run(
+                    [sys.executable, "-B", str(CLI), command,
+                     *scope_args(route_root=route_root), *options, *extra],
+                    cwd=str(ROOT), env=env, text=True,
+                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False,
+                )
+
+            cycle = invoke("cycle")
+            self.assertEqual(cycle.returncode, 0, cycle.stdout + cycle.stderr)
+            self.assertIn("CYCLE_STATUS=PASS", cycle.stdout)
+            self.assertIn("E2E_STATUS=INCOMPLETE", cycle.stdout)
+            self.assertNotIn("E2E_STATUS=PASS", cycle.stdout)
+            self.assertEqual(calls.read_text().splitlines(), ["build", "correctness", "local"])
+
+            saved_manifest = json.loads(manifest.read_text())
+            saved_checkpoint = json.loads(checkpoint.read_text())
+            canonical = saved_manifest["local_result"]["canonical"]
+            expected_raw_sha = hashlib.sha256(fixture["measurements"].read_bytes()).hexdigest()
+            self.assertEqual(saved_manifest["source"]["sha256"], fixture["source_sha"])
+            self.assertEqual(saved_manifest["artifact"]["sha256"], fixture["artifact_sha"])
+            self.assertEqual(saved_manifest["raw"]["sha256"], expected_raw_sha)
+            self.assertEqual(
+                saved_checkpoint["record_manifest_sha256"],
+                hashlib.sha256(manifest.read_bytes()).hexdigest(),
+            )
+            self.assertEqual(canonical["measurements_sha256"], expected_raw_sha)
+            self.assertEqual(canonical["score_scope"], "historical-tool-validation")
+            self.assertEqual(canonical["reported_score"], "60.477249")
+            self.assertEqual(canonical["quality"], "POOR")
+            self.assertTrue(canonical["raw_identities"])
+            self.assertEqual(saved_checkpoint["identity"]["raw_sha256"], expected_raw_sha)
+            self.assertEqual(saved_checkpoint["stages"]["local"]["result"]["canonical"], canonical)
+            self.assertEqual(
+                saved_checkpoint["stages"]["record"]["record"]["local_result"]["canonical"],
+                canonical,
+            )
+
+            checkpoint_report = invoke("report", "--checkpoint", str(checkpoint))
+            self.assertEqual(checkpoint_report.returncode, 0, checkpoint_report.stdout + checkpoint_report.stderr)
+            self.assertIn("CANONICAL_LOCAL_SCORE=60.477249", checkpoint_report.stdout)
+            self.assertIn("CANONICAL_QUALITY=POOR", checkpoint_report.stdout)
+            self.assertIn("CANONICAL_RAW_MANIFEST_SHA256=" + canonical["raw_manifest_sha256"], checkpoint_report.stdout)
+            self.assertIn("LOCAL_RAW_SHA256=" + expected_raw_sha, checkpoint_report.stdout)
+            self.assertIn("RECORD_MANIFEST_SHA256=" + saved_checkpoint["record_manifest_sha256"], checkpoint_report.stdout)
+            self.assertIn("FULL_LOCAL_SCORE=NOT_COMPUTABLE", checkpoint_report.stdout)
+            self.assertIn("E2E_STATUS=INCOMPLETE", checkpoint_report.stdout)
+
+            manifest_report = invoke("report", "--manifest", str(manifest))
+            self.assertEqual(manifest_report.returncode, 0, manifest_report.stdout + manifest_report.stderr)
+            self.assertIn("REPORT_STATUS=PASS", manifest_report.stdout)
+            self.assertIn("CANONICAL_LOCAL_SCORE=60.477249", manifest_report.stdout)
+            self.assertIn("CANONICAL_QUALITY=POOR", manifest_report.stdout)
+            self.assertIn("CANONICAL_RAW_MANIFEST_SHA256=" + canonical["raw_manifest_sha256"], manifest_report.stdout)
+            self.assertIn("E2E_STATUS=INCOMPLETE", manifest_report.stdout)
+
+            corrupted_checkpoint = json.loads(checkpoint.read_text())
+            corrupted_checkpoint["stages"]["local"]["result"]["canonical"]["raw_manifest_sha256"] = "0" * 64
+            checkpoint.write_text(json.dumps(corrupted_checkpoint))
+            corrupted_report = invoke("report", "--checkpoint", str(checkpoint))
+            self.assertEqual(corrupted_report.returncode, 65, corrupted_report.stdout + corrupted_report.stderr)
+            self.assertIn("CHECKPOINT_CANONICAL_SCORE_MISMATCH:raw_manifest_sha256", corrupted_report.stdout)
+            checkpoint.write_text(json.dumps(saved_checkpoint))
+
+            corrupted_evidence = json.loads(checkpoint.read_text())
+            corrupted_evidence["evidence"][0]["sha256"] = "0" * 64
+            checkpoint.write_text(json.dumps(corrupted_evidence))
+            bad_evidence_report = invoke("report", "--checkpoint", str(checkpoint))
+            self.assertEqual(bad_evidence_report.returncode, 65, bad_evidence_report.stdout + bad_evidence_report.stderr)
+            self.assertIn("CHECKPOINT_RECORD_EVIDENCE_MISMATCH", bad_evidence_report.stdout)
+            checkpoint.write_text(json.dumps(saved_checkpoint))
+
+            resumed_record = invoke("resume", "--from-stage", "record")
+            self.assertEqual(resumed_record.returncode, 0, resumed_record.stdout + resumed_record.stderr)
+            self.assertIn("RECORD_MANIFEST_STATUS=RECORD_MANIFEST_REUSED", resumed_record.stdout)
+            self.assertIn("E2E_STATUS=INCOMPLETE", resumed_record.stdout)
+            self.assertEqual(calls.read_text().splitlines(), ["build", "correctness", "local"])
+
+            resumed_noop = invoke("resume")
+            self.assertEqual(resumed_noop.returncode, 0, resumed_noop.stdout + resumed_noop.stderr)
+            self.assertIn("IDEMPOTENT_NOOP=YES", resumed_noop.stdout)
+            self.assertIn("E2E_STATUS=INCOMPLETE", resumed_noop.stdout)
+            self.assertEqual(calls.read_text().splitlines(), ["build", "correctness", "local"])
+
     def test_public_crossrow_files_match_pinned_ref_and_canonical_host_raw_is_per_side(self):
         public_root = "本地实验/CROSSROW-EPI-PROLOGUE-X/V001"
         route_root = CLI.parent / "public-crossrow-v001"

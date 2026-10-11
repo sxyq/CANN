@@ -1441,9 +1441,160 @@ def print_canonical_stats(local: Dict[str, Any]) -> None:
     emit("CANONICAL_PARENT_SOURCE_SHA256", canonical.get("parent_source_sha256", "NONE"))
     emit("CANONICAL_PARENT_ARTIFACT_SHA256", canonical.get("parent_artifact_sha256", "NONE"))
     emit("CANONICAL_RAW_FILE_COUNT", canonical.get("raw_file_count", 0))
+    emit("CANONICAL_RAW_MANIFEST_SHA256", canonical.get("raw_manifest_sha256", "NONE"))
     emit("FULL_LOCAL_SCORE", canonical.get("full_local_score", "NOT_COMPUTABLE"))
     emit("PROMOTION_ELIGIBLE", "YES" if canonical.get("promotion_eligible") else "NO")
     emit("CANONICAL_MEASUREMENTS_SHA256", canonical.get("measurements_sha256", "NONE"))
+
+
+CANONICAL_REVALIDATION_FIELDS = (
+    "score_status",
+    "score_scope",
+    "subject_route",
+    "subject_revision",
+    "full_local_score",
+    "reported_score",
+    "delta_vs_anchor",
+    "quality",
+    "local_status",
+    "fragile",
+    "reliable",
+    "scorer_promotion_signal",
+    "paired_score",
+    "core_gain_count",
+    "core_cases_complete",
+    "core_cases",
+    "scorer_version",
+    "scorer_commit",
+    "scorer_sha256",
+    "suite_version",
+    "suite_sha256",
+    "harness_sha256",
+    "anchor_source_sha256",
+    "parent_source_sha256",
+    "parent_artifact_sha256",
+    "anchor_commit",
+    "measurements_path",
+    "measurements_sha256",
+    "raw_file_count",
+    "raw_identities",
+    "raw_manifest_sha256",
+    "case_summaries",
+    "promotion_eligible",
+)
+
+
+def canonical_revalidation_mismatch(
+    stored: Dict[str, Any], recomputed: Dict[str, Any]
+) -> Optional[str]:
+    for key in CANONICAL_REVALIDATION_FIELDS:
+        if recomputed.get(key) != stored.get(key):
+            return key
+    return None
+
+
+def route_canonical_score_complete(canonical: Any) -> bool:
+    if not isinstance(canonical, dict):
+        return False
+    if canonical.get("score_scope") != "route-kernel" or canonical.get("core_cases_complete") != "4/4":
+        return False
+    try:
+        score = float(canonical.get("full_local_score", "nan"))
+    except (TypeError, ValueError):
+        return False
+    return math.isfinite(score) and score > 0
+
+
+def checkpoint_record_manifest(
+    payload: Dict[str, Any],
+) -> Tuple[Optional[Path], Optional[str], Optional[str]]:
+    manifest_raw = payload.get("record_manifest")
+    if not manifest_raw:
+        return None, None, None
+    manifest, digest, error = verify_file(
+        str(manifest_raw),
+        "record-manifest",
+        payload.get("record_manifest_sha256"),
+        required=True,
+    )
+    if error or manifest is None or digest is None:
+        return manifest, digest, error or "CHECKPOINT_RECORD_MANIFEST_IDENTITY_INVALID"
+    try:
+        manifest.relative_to(ROUTE_ROOT)
+    except (AttributeError, ValueError):
+        return manifest, digest, f"OUT_OF_SCOPE:record-manifest:{manifest}:expected={ROUTE_ROOT}"
+    try:
+        recorded = json.loads(manifest.read_text())
+    except (OSError, json.JSONDecodeError) as exc:
+        return manifest, digest, f"CHECKPOINT_RECORD_MANIFEST_READ_FAILED:{exc}"
+    checkpoint_record = payload.get("stages", {}).get("record", {}).get("record")
+    if not isinstance(recorded, dict) or recorded != checkpoint_record:
+        return manifest, digest, "CHECKPOINT_RECORD_MANIFEST_CONTENT_MISMATCH"
+    return manifest, digest, None
+
+
+def checkpoint_evidence_error(payload: Dict[str, Any]) -> Optional[str]:
+    record = payload.get("stages", {}).get("record", {}).get("record")
+    if not isinstance(record, dict):
+        return "CHECKPOINT_RECORD_EVIDENCE_MISSING"
+    evidence = record.get("evidence")
+    if not isinstance(evidence, list) or not evidence or payload.get("evidence") != evidence:
+        return "CHECKPOINT_RECORD_EVIDENCE_MISMATCH"
+    for index, item in enumerate(evidence):
+        if not isinstance(item, dict) or not isinstance(item.get("path"), str) or not isinstance(item.get("sha256"), str):
+            return f"CHECKPOINT_RECORD_EVIDENCE_MALFORMED:{index}"
+        path, scope_error = scoped_path(item["path"], f"checkpoint-evidence-{index}")
+        if scope_error or path is None:
+            return scope_error or f"CHECKPOINT_RECORD_EVIDENCE_INVALID:{index}"
+        try:
+            path.relative_to(ROUTE_ROOT)
+        except ValueError:
+            return f"OUT_OF_SCOPE:checkpoint-evidence:{path}:expected={ROUTE_ROOT}"
+        verified, _, verify_error = verify_file(item["path"], "checkpoint-evidence", item["sha256"], required=True)
+        if verify_error or verified is None:
+            return verify_error or f"CHECKPOINT_RECORD_EVIDENCE_INVALID:{index}"
+    return None
+
+
+def checkpoint_e2e_complete(payload: Dict[str, Any]) -> bool:
+    required_stages = ("build", "correctness", "local", "record")
+    if any(payload.get("stages", {}).get(stage, {}).get("status") != "PASS" for stage in required_stages):
+        return False
+    if not payload.get("record_manifest") or not payload.get("record_manifest_sha256"):
+        return False
+    _, _, manifest_error = checkpoint_record_manifest(payload)
+    if manifest_error or checkpoint_evidence_error(payload):
+        return False
+    stages = payload.get("stages", {})
+    identity = payload.get("identity", {})
+    local_stage = stages.get("local", {})
+    local_result = local_stage.get("result")
+    if not isinstance(local_result, dict):
+        return False
+    local_canonical = local_result.get("canonical")
+    if not route_canonical_score_complete(local_canonical):
+        return False
+    record = stages.get("record", {}).get("record")
+    if not isinstance(record, dict) or record.get("record_status") != "PASS":
+        return False
+    record_local = record.get("local_result")
+    if not isinstance(record_local, dict):
+        return False
+    record_canonical = record_local.get("canonical")
+    if not route_canonical_score_complete(record_canonical):
+        return False
+    measurement_sha = local_canonical.get("measurements_sha256")
+    if not measurement_sha or any(
+        value != measurement_sha
+        for value in (
+            identity.get("raw_sha256"),
+            local_result.get("raw_sha"),
+            local_stage.get("raw_sha256"),
+            record.get("raw", {}).get("sha256") if isinstance(record.get("raw"), dict) else None,
+        )
+    ):
+        return False
+    return canonical_revalidation_mismatch(local_canonical, record_canonical) is None
 
 
 def print_stats(stats: Dict[str, Any]) -> None:
@@ -2403,6 +2554,12 @@ def pipeline_command(args: argparse.Namespace, resume: bool) -> int:
             payload["record_manifest"] = str(resolve_path(args.record_manifest)) if args.record_manifest else None
             if outcome.details.get("record"):
                 payload["evidence"] = outcome.details["record"].get("evidence", [])
+            record_manifest = resolve_path(args.record_manifest)
+            payload["record_manifest_sha256"] = (
+                sha256_file(record_manifest)
+                if record_manifest is not None and record_manifest.is_file()
+                else None
+            )
         if outcome.artifact_sha:
             payload["identity"]["artifact_sha256"] = outcome.artifact_sha
         payload["updated_utc"] = now_utc()
@@ -2419,11 +2576,7 @@ def pipeline_command(args: argparse.Namespace, resume: bool) -> int:
             return outcome.rc
     all_pass = all(payload.get("stages", {}).get(stage, {}).get("status") == "PASS" for stage in stages)
     payload["status"] = "PASS" if all_pass else "INCOMPLETE"
-    e2e_complete = (
-        "record" in stages
-        and payload.get("record_manifest")
-        and payload.get("stages", {}).get("record", {}).get("status") == "PASS"
-    )
+    e2e_complete = checkpoint_e2e_complete(payload)
     payload["e2e_status"] = "PASS" if e2e_complete else "INCOMPLETE"
     payload["updated_utc"] = now_utc()
     save_checkpoint(path, payload)
@@ -2566,6 +2719,7 @@ def report_manifest_command(path: Path) -> int:
         emit("IDENTITY_STATUS", "FAIL")
         emit("BLOCKER", "RECORD_MANIFEST_STAGE_EVIDENCE_INVALID")
         return EXIT_IDENTITY
+    verified_stages = set()
     for stage in ("build", "correctness"):
         item = stage_evidence.get(stage)
         if item is None:
@@ -2589,6 +2743,7 @@ def report_manifest_command(path: Path) -> int:
             emit("IDENTITY_STATUS", "FAIL")
             emit("BLOCKER", f"RECORD_MANIFEST_STAGE_EVIDENCE_SHA_MISMATCH:{stage}")
             return EXIT_IDENTITY
+        verified_stages.add(stage)
         emit(stage.upper() + "_STATUS", "PASS")
 
     local = payload.get("local_result")
@@ -2611,16 +2766,17 @@ def report_manifest_command(path: Path) -> int:
             emit("IDENTITY_STATUS", "FAIL")
             emit("BLOCKER", canonical_error or "CANONICAL_SCORE_REVALIDATION_FAILED")
             return EXIT_IDENTITY
-        for key in (
-            "reported_score", "quality", "local_status", "reliable", "promotion_eligible",
-            "raw_manifest_sha256", "parent_artifact_sha256", "measurements_sha256",
-            "scorer_commit", "scorer_sha256", "suite_sha256", "harness_sha256",
-        ):
-            if recomputed.get(key) != canonical.get(key):
-                emit("REPORT_STATUS", "BLOCKED")
-                emit("IDENTITY_STATUS", "FAIL")
-                emit("BLOCKER", f"CANONICAL_SCORE_MANIFEST_MISMATCH:{key}")
-                return EXIT_IDENTITY
+        mismatch = canonical_revalidation_mismatch(canonical, recomputed)
+        if mismatch:
+            emit("REPORT_STATUS", "BLOCKED")
+            emit("IDENTITY_STATUS", "FAIL")
+            emit("BLOCKER", f"CANONICAL_SCORE_MANIFEST_MISMATCH:{mismatch}")
+            return EXIT_IDENTITY
+        if canonical.get("measurements_sha256") != raw_sha:
+            emit("REPORT_STATUS", "BLOCKED")
+            emit("IDENTITY_STATUS", "FAIL")
+            emit("BLOCKER", "CANONICAL_MEASUREMENTS_RAW_SHA_MISMATCH")
+            return EXIT_IDENTITY
         full_score = canonical.get("full_local_score", "NOT_COMPUTABLE")
 
     emit("ROUTE", payload.get("route"))
@@ -2691,6 +2847,14 @@ def report_manifest_command(path: Path) -> int:
         and canonical.get("reported_score") not in (None, "", "NOT_COMPUTABLE")
     )
     emit("LOCAL_SCORE_COMPLETENESS", "COMPLETE" if complete_score else "INCOMPLETE")
+    e2e_complete = (
+        verified_stages == {"build", "correctness"}
+        and record_status == "PASS"
+        and isinstance(canonical, dict)
+        and route_canonical_score_complete(canonical)
+        and canonical.get("measurements_sha256") == raw_sha
+    )
+    emit("E2E_STATUS", "PASS" if e2e_complete else "INCOMPLETE")
     local_record_persisted = record_status in {"PASS", "FAILED", "LOCAL_MANIFEST_WRITTEN"}
     report_status = "PASS" if local_record_persisted else "INCOMPLETE"
     emit("REPORT_STATUS", report_status)
@@ -2847,6 +3011,14 @@ def report_command(args: argparse.Namespace) -> int:
         emit("REPORT_STATUS", "NOT_RUN")
         emit("BLOCKER", error or "CHECKPOINT_NOT_FOUND")
         return EXIT_NOT_RUN
+    record_manifest_path, record_manifest_sha, record_manifest_error = checkpoint_record_manifest(payload)
+    record_stage_status = payload.get("stages", {}).get("record", {}).get("status")
+    evidence_error = checkpoint_evidence_error(payload) if record_stage_status == "PASS" else None
+    if (record_manifest_error or evidence_error) and record_stage_status == "PASS":
+        emit("REPORT_STATUS", "BLOCKED")
+        emit("IDENTITY_STATUS", "FAIL")
+        emit("BLOCKER", record_manifest_error or evidence_error)
+        return EXIT_IDENTITY
     emit("ROUTE", payload.get("route"))
     emit("CHECKPOINT", path)
     emit("CHECKPOINT_STATUS", payload.get("status", "INCOMPLETE"))
@@ -2868,9 +3040,22 @@ def report_command(args: argparse.Namespace) -> int:
                 source, source_sha, source_error = verify_file(
                     identity.get("source_path"), "source", identity.get("source_sha256"), required=True
                 )
-                artifact, artifact_sha, artifact_error = verify_file(
-                    identity.get("artifact_path"), "artifact", identity.get("artifact_sha256"), required=True
-                )
+                if identity.get("artifact_identity_mode") == "PUBLIC_BUILD_RECEIPT":
+                    artifact, artifact_sha, artifact_error, artifact_meta = verify_artifact_reference(
+                        None,
+                        identity.get("artifact_sha256"),
+                        identity.get("artifact_receipt_path") or identity.get("artifact_path"),
+                    )
+                    if (
+                        artifact_error is None
+                        and artifact_meta is not None
+                        and artifact_meta.get("receipt_sha256") != identity.get("artifact_receipt_sha256")
+                    ):
+                        artifact_error = "CHECKPOINT_ARTIFACT_RECEIPT_SHA_MISMATCH"
+                else:
+                    artifact, artifact_sha, artifact_error = verify_file(
+                        identity.get("artifact_path"), "artifact", identity.get("artifact_sha256"), required=True
+                    )
                 if source_error or artifact_error or source_sha is None or artifact_sha is None:
                     emit("REPORT_STATUS", "BLOCKED")
                     emit("IDENTITY_STATUS", "FAIL")
@@ -2881,13 +3066,30 @@ def report_command(args: argparse.Namespace) -> int:
                     canonical.get("score_scope", ""), canonical.get("subject_revision"),
                     canonical.get("parent_artifact_sha256"),
                 )
-                if canonical_error or recomputed is None or any(
-                    recomputed.get(key) != canonical.get(key)
-                    for key in ("reported_score", "quality", "local_status", "raw_manifest_sha256", "parent_artifact_sha256")
+                mismatch = (
+                    canonical_revalidation_mismatch(canonical, recomputed)
+                    if recomputed is not None else None
+                )
+                if canonical_error or recomputed is None or mismatch:
+                    emit("REPORT_STATUS", "BLOCKED")
+                    emit("IDENTITY_STATUS", "FAIL")
+                    emit("BLOCKER", canonical_error or (
+                        f"CHECKPOINT_CANONICAL_SCORE_MISMATCH:{mismatch}"
+                        if mismatch else "CHECKPOINT_CANONICAL_SCORE_MISMATCH"
+                    ))
+                    return EXIT_IDENTITY
+                measurement_sha = canonical.get("measurements_sha256")
+                if any(
+                    value != measurement_sha
+                    for value in (
+                        identity.get("raw_sha256"),
+                        local.get("raw_sha"),
+                        stage_payload.get("raw_sha256"),
+                    )
                 ):
                     emit("REPORT_STATUS", "BLOCKED")
                     emit("IDENTITY_STATUS", "FAIL")
-                    emit("BLOCKER", canonical_error or "CHECKPOINT_CANONICAL_SCORE_MISMATCH")
+                    emit("BLOCKER", "CHECKPOINT_CANONICAL_MEASUREMENTS_RAW_SHA_MISMATCH")
                     return EXIT_IDENTITY
             emit("LOCAL_MEASUREMENT_QUALITY", local.get("status", "NOT_RUN"))
             emit("LOCAL_QUALITY_CLASSIFICATION", local.get("quality_classification", "UNKNOWN"))
@@ -2911,7 +3113,9 @@ def report_command(args: argparse.Namespace) -> int:
                 emit("CANONICAL_SCORE_REVALIDATION", "PASS_READ_ONLY")
         if stage == "record":
             record = stage_payload.get("record") or {}
-            emit("RECORD_MANIFEST", payload.get("record_manifest", "NONE"))
+            emit("RECORD_MANIFEST", record_manifest_path or payload.get("record_manifest", "NONE"))
+            emit("RECORD_MANIFEST_SHA256", record_manifest_sha or "NONE")
+            emit("RECORD_MANIFEST_STATUS", "IDENTITY_VERIFIED" if record_manifest_path else "INCOMPLETE")
             emit("RECORD_STATUS", record.get("record_status", stage_payload.get("status", "NOT_RUN")))
             emit("BACKEND_STATUS", record.get("backend_status", "UNKNOWN"))
             emit("BACKEND_RC", record.get("backend_rc") if record.get("backend_rc") is not None else "NONE")
@@ -2920,11 +3124,7 @@ def report_command(args: argparse.Namespace) -> int:
     emit("REVISION_CREATED", "YES" if payload.get("revision_created") else "NO")
     emit("RUNNER_CREATED", "YES" if payload.get("runner_created") else "NO")
     emit("ONLINE", payload.get("online", "NOT_SUBMITTED"))
-    e2e_complete = (
-        "record" in stages
-        and payload.get("record_manifest")
-        and payload.get("stages", {}).get("record", {}).get("status") == "PASS"
-    )
+    e2e_complete = checkpoint_e2e_complete(payload)
     emit("E2E_STATUS", "PASS" if e2e_complete else "INCOMPLETE")
     report_status = "PASS" if payload.get("status") == "PASS" else "INCOMPLETE"
     emit("REPORT_STATUS", report_status)

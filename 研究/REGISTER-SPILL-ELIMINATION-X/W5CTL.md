@@ -189,27 +189,40 @@ orthogonality. Missing or empty post-exclusion data is
 
 `cycle --checkpoint <path>` writes an atomic JSON checkpoint after each stage.
 The checkpoint retains source/artifact/raw identity, evidence SHA values, stage
-return codes/reasons, and the complete Local result. Stage statuses are
-preserved as `PASS`, `REJECTED`, `UNCLASSIFIED`, or
+return codes/reasons, the route-local manifest SHA, and the complete Local
+result. Stage statuses are preserved as `PASS`, `REJECTED`, `UNCLASSIFIED`, or
 `INTEGRATION_INCOMPLETE`; Crossrow data remains
 `UNCLASSIFIED_NO_PROMOTION`. Completed terminal stages are skipped on repeated
 `cycle`/`resume` calls. Failed or missing stages require explicit `resume`.
 Neither command creates a Revision or Runner, or changes Online state.
 When `--record-manifest` is supplied without `--stages`, the default stage
 order is explicitly `build,correctness,local,record` and the checkpoint emits
-`E2E_STATUS=PASS` only after the route-local manifest is written and verified.
-A three-stage `build,correctness,local` cycle remains a valid control-layer
-cycle but emits `E2E_STATUS=INCOMPLETE`; it must not be reported as E2E.
+`E2E_STATUS=PASS` only when all four stages pass, the Local result is a
+complete `route-kernel` 4/4 Canonical score, and the route-local Record contains
+the same score and raw identity. Historical-tool-validation scores and
+shape-only measurements remain `E2E_STATUS=INCOMPLETE`; score quality and
+promotion eligibility do not gate completion. A three-stage
+`build,correctness,local` cycle remains a valid control-layer cycle but emits
+`E2E_STATUS=INCOMPLETE`; it must not be reported as E2E.
 
 `report --checkpoint <path>` reads the checkpoint without invoking a backend.
 `report --manifest <path>` queries an archived local manifest through the same
-read-only report path. Both modes verify the current route root/branch and the
-recorded source, artifact, raw, and evidence SHA-256 identities before printing
-Local medians, paired deltas, quality classification, verdict, raw SHA and
-promotion eligibility. A manifest query reports the archived Record status but
-does not recreate Build or Correctness stages. An incomplete checkpoint or
-manifest is reported as `REPORT_STATUS=INCOMPLETE`, never as a successful
-score; a missing full Local suite remains `FULL_LOCAL_SCORE=NOT_COMPUTABLE`.
+read-only report path. Both modes verify the current route root/branch and
+source, artifact, and raw identities; manifest mode also verifies evidence
+SHA-256 values, while checkpoint mode verifies the route-local manifest SHA,
+content, and its evidence identities. Reports print Local medians, paired
+deltas, quality classification, verdict, raw SHA and promotion eligibility.
+Canonical reports also re-run the pinned scorer and
+compare its score, quality, scorer/suite identities, measurements SHA, and raw
+manifest SHA with the persisted values; checkpoint reports also verify that
+the recorded manifest still matches its checkpoint SHA and contents. A
+manifest query reports the archived Record status but does not recreate Build
+or Correctness stages; its E2E status
+is incomplete unless matching Build/Correctness receipts and a complete
+route-kernel Canonical score are present. An incomplete checkpoint or manifest
+is reported as `REPORT_STATUS=INCOMPLETE`, never as a successful score; a
+historical-only or missing full Local suite remains
+`FULL_LOCAL_SCORE=NOT_COMPUTABLE`.
 
 `report --route-summary` scans only JSON manifests below the bound
 `ROUTE_ROOT`, revalidates each `route-kernel` Canonical score through the pinned
