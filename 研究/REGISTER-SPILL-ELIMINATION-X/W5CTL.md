@@ -137,6 +137,37 @@ reports `MEASUREMENT_QUALITY=UNCLASSIFIED`,
 return code even when numeric noise checks are stable. This is a statistics
 and parser integration result, not an accepted or promotable Local result.
 
+### Published Host/backend compatibility finding
+
+The R2-owned `public-crossrow-v001` source and support CMake/runner files are
+byte-identical to the published R1 commit
+`d2412ab5cb2d091679947c65d90d45912541b1a5`. Its existing route-local
+`crossrow_public_build_backend.sh` is a valid thin Build adapter for the
+published support CMake target; recorded w5ctl evidence has Build RC 0 and
+artifact SHA `70fce83a...`. Correctness can invoke the resulting executable
+directly when the required flags are passed with `--correctness-arg`; the
+recorded explicit 16x6144 FP16 invocation returned RC 0 and
+`bit_differences=0`. Local can likewise pass explicit `--local-arg` values,
+including `--output <raw-path>`; its historical 45-warmup/21-pair result is
+shape-only, `UNCLASSIFIED`, and not a Canonical score. Those Parent/Candidate
+identities are W3 CROSSROW V012 and W5-R01 V001, not R31B V011.
+
+The published MAIN2 Canonical host is not directly interchangeable with that
+paired Local backend. Its runner ABI takes positional
+`device, rows, width, dtype, prefix, warmup, samples, blocks, gap, batch_n`
+arguments and emits one-side raw rows (`block, rep, device_us, host_wall_us`)
+per invocation. The published benchmark orchestrator pairs Parent/Candidate
+and loops the frozen suite/runs; w5ctl Local delegates one backend subprocess
+and expects a paired-row raw input. Passing the host's per-side TSV directly
+does not parse as a paired measurement (tested: `RAW_ROW_INVALID`,
+`FULL_LOCAL_SCORE=NOT_COMPUTABLE`). Calling the full benchmark orchestrator
+from R2 is also not a safe direct backend: it is rooted at its canonical
+campaign paths and performs its own route/lease/evidence writes. The smallest
+valid future connection is an accepted stage interface on that existing
+Canonical backend that binds caller source/artifact identity and route-local
+output paths, then returns the official four-Core/three-run measurements
+index for w5ctl's pinned scorer. No runner or score formula is added here.
+
 ## Dedup and checkpoints
 
 `dedup` compares normalized changed lines and explicitly subtracts files given

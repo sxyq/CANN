@@ -21,6 +21,7 @@ CLI = Path(__file__).resolve().parents[1] / "w5ctl"
 ROUTE = "W5-R02-REGISTER-SPILL-ELIMINATION-X"
 BRANCH = "research/w5-r02-register-spill"
 CANONICAL_COMMIT = "6d3ad0b30b21d2462b0fd8716c884f0ff6bdaabb"
+PUBLIC_R1_CROSSROW_COMMIT = "d2412ab5cb2d091679947c65d90d45912541b1a5"
 ANCHOR_ROOT = "本地实验/MAIN2-CANONICAL-V1/versions/R31B__V011/"
 CANONICAL_CASES = ("C12", "C13", "C14", "C16")
 
@@ -62,9 +63,9 @@ def run_cli_with_scope(cwd, scope, *args):
     )
 
 
-def git_object(object_path):
+def git_object_at(commit, object_path):
     completed = subprocess.run(
-        ["git", "show", f"{CANONICAL_COMMIT}:{object_path}"],
+        ["git", "show", f"{commit}:{object_path}"],
         cwd=str(ROOT),
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
@@ -73,6 +74,10 @@ def git_object(object_path):
     if completed.returncode != 0:
         raise AssertionError(completed.stderr.decode("utf-8", "replace"))
     return completed.stdout
+
+
+def git_object(object_path):
+    return git_object_at(CANONICAL_COMMIT, object_path)
 
 
 def create_public_canonical_fixture(route_root, as_git_objects=True):
@@ -1369,6 +1374,125 @@ class W5CtlTest(unittest.TestCase):
             )
             self.assertEqual(rejected_external.returncode, 66, rejected_external.stdout + rejected_external.stderr)
             self.assertIn("CANONICAL_PUBLIC_EXTERNAL_FILE_REJECTED", rejected_external.stdout)
+
+    def test_public_crossrow_files_match_pinned_ref_and_canonical_host_raw_is_per_side(self):
+        public_root = "本地实验/CROSSROW-EPI-PROLOGUE-X/V001"
+        route_root = CLI.parent / "public-crossrow-v001"
+        for relative in (
+            "CMakeLists.txt",
+            "Candidate.asc",
+            "Parent.asc",
+            "compile_adapter.asc",
+            "support/CMakeLists.txt",
+            "support/candidate_adapter.asc",
+            "support/parent_adapter.asc",
+            "support/runner_abi.h",
+            "support/runner_main.cpp",
+        ):
+            with self.subTest(relative=relative):
+                self.assertEqual(
+                    (route_root / relative).read_bytes(),
+                    git_object_at(PUBLIC_R1_CROSSROW_COMMIT, public_root + "/" + relative),
+                )
+
+        crossrow_runner = git_object_at(
+            PUBLIC_R1_CROSSROW_COMMIT, public_root + "/support/runner_main.cpp"
+        ).decode()
+        self.assertIn("--mode correctness|local --device ID --rows M --width D --blocks N --dtype fp16", crossrow_runner)
+        self.assertIn("--output FILE", crossrow_runner)
+        self.assertIn("sample\\torder\\tparent_device_us\\tcandidate_device_us\\tdelta_device_us", crossrow_runner)
+        self.assertIn("parent=W3-CROSSROW-FULL-PIPELINE-V012", crossrow_runner)
+        self.assertNotIn("aclrtResetDevice", crossrow_runner)
+
+        canonical_benchmark = git_object_at(
+            CANONICAL_COMMIT, "工具/main2-canonical-benchmark.mjs"
+        ).decode()
+        canonical_runner = git_object_at(
+            CANONICAL_COMMIT, "工具/main2-canonical-harness/runner_ref.inc"
+        ).decode()
+        self.assertIn("const argv=[String(device),c.ROWS,c.WIDTH,c.DTYPE_CODE,prefix,String(warmup),String(samples),'1','0','1']", canonical_benchmark)
+        self.assertIn("block\\trep\\tdevice_us\\thost_wall_us", canonical_runner)
+        self.assertIn("for(const c of frozenSuite())", canonical_benchmark)
+
+        with tempfile.TemporaryDirectory(prefix=".w5ctl-canonical-one-side-", dir=str(CLI.parent)) as temp:
+            raw = Path(temp) / "one-side-raw.tsv"
+            raw.write_text("block\trep\tdevice_us\thost_wall_us\n0\t0\t10.0\t12.0\n")
+            result = run_cli("local", "--stats-only", "--raw", str(raw))
+            self.assertEqual(result.returncode, 66, result.stdout + result.stderr)
+            self.assertIn("MEASUREMENT_QUALITY=RAW_PARSE_ERROR", result.stdout)
+            self.assertIn("LOCAL_STATISTICS_REASON=RAW_ROW_INVALID:1", result.stdout)
+            self.assertIn("FULL_LOCAL_SCORE=NOT_COMPUTABLE", result.stdout)
+
+    def test_crossrow_backend_args_bind_raw_path_and_preserve_shape_only_verdict(self):
+        with tempfile.TemporaryDirectory(prefix=".w5ctl-crossrow-backend-", dir=str(CLI.parent)) as temp:
+            route_root = Path(temp)
+            source = route_root / "Candidate.asc"
+            artifact = route_root / "paired_runner"
+            raw = route_root / "paired.tsv"
+            backend = route_root / "crossrow_backend.py"
+            source.write_text("published Crossrow V001 source identity\n")
+            artifact.write_text("runner identity placeholder for backend contract unit test\n")
+            write_executable(
+                backend,
+                """
+                #!/usr/bin/env python3
+                import os
+                import sys
+                from pathlib import Path
+                expected = [
+                    "--mode", "local", "--device", "3", "--rows", "16",
+                    "--width", "6144", "--blocks", "8", "--dtype", "fp16",
+                    "--warmups", "45", "--repeats", "21", "--output",
+                    os.environ["W5CTL_RAW_PATH"],
+                ]
+                if sys.argv[1:] != expected:
+                    print("BACKEND_ARG_CONTRACT_MISMATCH=" + repr(sys.argv[1:]))
+                    raise SystemExit(97)
+                print("BACKEND_ARG_CONTRACT=PASS")
+                rows = [
+                    "# LOCAL_PROXY_ONLY parent=W3-CROSSROW-FULL-PIPELINE-V012 candidate=W5-R01-CROSSROW-EPI-PROLOGUE-X-V001 warmups=45 paired_samples=3",
+                    "sample\\torder\\tparent_device_us\\tcandidate_device_us\\tdelta_device_us\\tparent_wall_us\\tcandidate_wall_us\\tdelta_wall_us",
+                    "1\\tPC\\t10\\t9\\t-1\\t12\\t11\\t-1",
+                    "2\\tCP\\t10\\t9\\t-1\\t12\\t11\\t-1",
+                    "3\\tPC\\t10\\t9\\t-1\\t12\\t11\\t-1",
+                ]
+                Path(os.environ["W5CTL_RAW_PATH"]).write_text("\\n".join(rows) + "\\n")
+                """,
+            )
+            result = run_cli_with_route_root(
+                route_root,
+                "local",
+                "--source", str(source),
+                "--artifact", str(artifact),
+                "--raw", str(raw),
+                "--backend", str(backend),
+                "--backend-arg=--mode",
+                "--backend-arg=local",
+                "--backend-arg=--device",
+                "--backend-arg=3",
+                "--backend-arg=--rows",
+                "--backend-arg=16",
+                "--backend-arg=--width",
+                "--backend-arg=6144",
+                "--backend-arg=--blocks",
+                "--backend-arg=8",
+                "--backend-arg=--dtype",
+                "--backend-arg=fp16",
+                "--backend-arg=--warmups",
+                "--backend-arg=45",
+                "--backend-arg=--repeats",
+                "--backend-arg=21",
+                "--backend-arg=--output",
+                "--backend-arg=" + str(raw),
+            )
+            self.assertEqual(result.returncode, 66, result.stdout + result.stderr)
+            self.assertIn("BACKEND_ARG_CONTRACT=PASS", result.stdout)
+            self.assertIn("BACKEND_RC=0", result.stdout)
+            self.assertIn("RAW_PAIR_COUNT=3", result.stdout)
+            self.assertIn("MEASUREMENT_QUALITY=UNCLASSIFIED", result.stdout)
+            self.assertIn("SHAPE_LOCAL_VERDICT=SHAPE_UNCLASSIFIED_NO_PROMOTION", result.stdout)
+            self.assertIn("FULL_LOCAL_SCORE=NOT_COMPUTABLE", result.stdout)
+            self.assertIn("PROMOTION_ELIGIBLE=NO", result.stdout)
 
     def test_canonical_aggregation_rejects_missing_core_parent_identity_and_order(self):
         with tempfile.TemporaryDirectory(prefix=".w5ctl-canonical-reject-", dir=str(CLI.parent)) as temp:
