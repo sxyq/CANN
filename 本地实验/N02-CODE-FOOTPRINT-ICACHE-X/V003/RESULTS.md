@@ -48,6 +48,8 @@ Paired device median deltas (V003 minus V011) were +0.440 us, +0.100 us, -0.260 
 
 V001's four 21-pair raw blocks were read and summarized in V002's `RESULTS.md`; their spikes likewise did not support a score. V002's helper-sharing change and V003's inline attribute both produced the same Candidate object as V001.
 
+The V002 raw 21-pair blocks were also read here. Their paired device median deltas and p10/p90 ranges were: FP16-tail -0.140 us (-39.580, +0.540), FP16-wide +0.060 us (-0.340, +0.500), BF16-tail -0.300 us (-0.660, +6.780), and BF16-wide -0.840 us (-1.160, -0.600). The Parent/Candidate device maxima were 78.380/15.320 us, 121.120/161.520 us, 75.240/90.520 us, and 142.560/13.560 us. These isolated maxima and wide p10/p90 spans make V002 medians unsuitable for a performance claim; `LOCAL_SCORE` remains `NONE`.
+
 ## Device Snapshot
 
 Pre-Local d5 snapshots record HBM use, AICore, existing process load, and post-run state. The route did not change any existing process. The snapshots are under `results/snapshots/`.
@@ -55,4 +57,3 @@ Pre-Local d5 snapshots record HBM use, AICore, existing process load, and post-r
 ## Evidence Files
 
 `results/compile/` contains full_link and paired build logs, object/link size and SHA evidence, raw object disassembly, and assembly diff. `results/correctness/` and `results/local/` contain raw runner output and return codes. `results/artifacts/` contains the four Parent/V003 device artifacts. No probe executable or full build directory was copied into the repository.
-
