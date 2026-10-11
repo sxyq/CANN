@@ -27,4 +27,4 @@ inline int aclrtMemset(void*, size_t, int, size_t) { return 0; }
 inline int aclrtMemcpy(void*, size_t, const void*, size_t, int) { return 0; }
 inline int aclrtSynchronizeStream(aclrtStream) { return 0; }
 
-#include "R31B-V016-WIDE-TILE-SEED_kernel.asc"
+#include "../../../N02-CODE-FOOTPRINT-ICACHE-X/V001/submission.asc"

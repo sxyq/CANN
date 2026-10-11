@@ -16,9 +16,9 @@ struct TensorGroupInfo { const TensorInfo* tensors; int64_t numTensors; };
 #endif
 
 #if defined(R31B_PROBE_PARENT)
-#include "R31B-V011-LP-ROW-PIPELINE_kernel.asc"
+#include "../../../../线上结果/R31B/V011/submission.asc"
 #else
-#include "R31B-V016-WIDE-TILE-SEED_kernel.asc"
+#include "../../../../本地实验/N02-CODE-FOOTPRINT-ICACHE-X/V001/submission.asc"
 #endif
 
 static void CheckAcl(aclError status, const char* operation)
@@ -259,7 +259,6 @@ int main(int argc, char** argv)
     CheckAcl(aclrtFree(dr), "free residual");
     CheckAcl(aclrtFree(dx), "free x");
     CheckAcl(aclrtDestroyStream(stream), "destroy stream");
-    CheckAcl(aclrtResetDevice(device), "reset device");
     CheckAcl(aclFinalize(), "aclFinalize");
     return failures == 0 ? 0 : 1;
 }

@@ -11,9 +11,9 @@
 
 namespace {
 
-using R31BRunKernel = decltype(&r31b_v011::run_kernel_v011);
+using R31BRunKernel = decltype(&n02_parent::run_kernel_v011);
 
-constexpr int kDevice = 4;
+constexpr int kDevice = 5;
 constexpr int kRows = 2;
 constexpr int kWarmup = 45;
 constexpr int kPairs = 21;
@@ -364,7 +364,7 @@ void RunCase(const CaseSpec& spec, aclrtStream stream, Events& events, RunMode m
                 kDevice, kWarmup, kPairs, kPairs);
     if (mode == RunMode::kQualifyV011) {
         for (int i = 0; i < kWarmup; ++i) {
-            Launch(r31b_v011::run_kernel_v011, buffers.parentOutput, buffers,
+            Launch(n02_parent::run_kernel_v011, buffers.parentOutput, buffers,
                    dataGroup, paramGroup, stream);
             CheckAcl(aclrtSynchronizeStream(stream), "same-binary warmup synchronize");
         }
@@ -381,7 +381,7 @@ void RunCase(const CaseSpec& spec, aclrtStream stream, Events& events, RunMode m
             blockWall.reserve(kQualificationSamplesPerBlock);
             for (int sample = 0; sample < kQualificationSamplesPerBlock; ++sample) {
                 const TimedSample timed = Measure(
-                    r31b_v011::run_kernel_v011, buffers.parentOutput, buffers,
+                    n02_parent::run_kernel_v011, buffers.parentOutput, buffers,
                     dataGroup, paramGroup, stream, events);
                 blockDevice.push_back(timed.deviceUs);
                 blockWall.push_back(timed.wallUs);
@@ -425,9 +425,9 @@ void RunCase(const CaseSpec& spec, aclrtStream stream, Events& events, RunMode m
     }
 
     for (int i = 0; i < kWarmup; ++i) {
-        Launch(r31b_v011::run_kernel_v011, buffers.parentOutput, buffers, dataGroup, paramGroup, stream);
+        Launch(n02_parent::run_kernel_v011, buffers.parentOutput, buffers, dataGroup, paramGroup, stream);
         CheckAcl(aclrtSynchronizeStream(stream), "parent warmup synchronize");
-        Launch(r31b_v016::run_kernel_v016, buffers.candidateOutput, buffers, dataGroup, paramGroup, stream);
+        Launch(n02_candidate::run_kernel_n02_candidate, buffers.candidateOutput, buffers, dataGroup, paramGroup, stream);
         CheckAcl(aclrtSynchronizeStream(stream), "candidate warmup synchronize");
     }
 
@@ -441,14 +441,14 @@ void RunCase(const CaseSpec& spec, aclrtStream stream, Events& events, RunMode m
         PairSample sample{};
         const bool parentFirst = (pair % 2) == 0;
         if (parentFirst) {
-            sample.parent = Measure(r31b_v011::run_kernel_v011, buffers.parentOutput, buffers,
+            sample.parent = Measure(n02_parent::run_kernel_v011, buffers.parentOutput, buffers,
                                     dataGroup, paramGroup, stream, events);
-            sample.candidate = Measure(r31b_v016::run_kernel_v016, buffers.candidateOutput, buffers,
+            sample.candidate = Measure(n02_candidate::run_kernel_n02_candidate, buffers.candidateOutput, buffers,
                                        dataGroup, paramGroup, stream, events);
         } else {
-            sample.candidate = Measure(r31b_v016::run_kernel_v016, buffers.candidateOutput, buffers,
+            sample.candidate = Measure(n02_candidate::run_kernel_n02_candidate, buffers.candidateOutput, buffers,
                                        dataGroup, paramGroup, stream, events);
-            sample.parent = Measure(r31b_v011::run_kernel_v011, buffers.parentOutput, buffers,
+            sample.parent = Measure(n02_parent::run_kernel_v011, buffers.parentOutput, buffers,
                                     dataGroup, paramGroup, stream, events);
         }
         sample.deltaUs = sample.candidate.deviceUs - sample.parent.deviceUs;
@@ -475,13 +475,13 @@ void RunCase(const CaseSpec& spec, aclrtStream stream, Events& events, RunMode m
     CheckAcl(aclrtMemcpy(candidateOutput.data(), dataBytes, buffers.candidateOutput, dataBytes,
                          ACL_MEMCPY_DEVICE_TO_HOST), "copy candidate output");
     CheckOutput(spec, x, residual, gamma, bias, parentOutput, "V011");
-    CheckOutput(spec, x, residual, gamma, bias, candidateOutput, "V016");
+    CheckOutput(spec, x, residual, gamma, bias, candidateOutput, "N02-V001");
 
     PrintStats(spec.name, "device_us", "V011", parentDevice);
-    PrintStats(spec.name, "device_us", "V016", candidateDevice);
+    PrintStats(spec.name, "device_us", "N02-V001", candidateDevice);
     PrintStats(spec.name, "wall_us", "V011", parentWall);
-    PrintStats(spec.name, "wall_us", "V016", candidateWall);
-    PrintStats(spec.name, "paired_device_delta_us", "V016_minus_V011", deltas);
+    PrintStats(spec.name, "wall_us", "N02-V001", candidateWall);
+    PrintStats(spec.name, "paired_device_delta_us", "N02-V001_minus_V011", deltas);
     std::printf("CASE_END name=%s correctness=PASS\n", spec.name);
     FreeCase(buffers);
 }
@@ -525,7 +525,6 @@ int main(int argc, char** argv)
     CheckAcl(aclrtDestroyEvent(events.stop), "destroy stop event");
     CheckAcl(aclrtDestroyEvent(events.start), "destroy start event");
     CheckAcl(aclrtDestroyStream(stream), "destroy stream");
-    CheckAcl(aclrtResetDevice(kDevice), "reset device");
     CheckAcl(aclFinalize(), "aclFinalize");
     std::printf("RUNNER_COMPLETE mode=%s correctness=PASS cases=4 warmup_each=45 pairs_each=21 timing=DEVICE_EVENT_PRIMARY wall=DIAGNOSTIC\n",
                 mode == RunMode::kQualifyV011 ? "QUALIFY_V011" : "PAIRED");
