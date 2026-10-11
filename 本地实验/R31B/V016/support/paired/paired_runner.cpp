@@ -596,7 +596,9 @@ int main(int argc, char** argv)
 
     const CaseSpec cases[] = {
         {"bf16-cache-params-d6144", 2, 6144},
+        {"bf16-full-tile-d4096", 2, 4096},
     };
+    const size_t caseCount = sizeof(cases) / sizeof(cases[0]);
     for (const CaseSpec& spec : cases) {
         RunCase(spec, stream, events, mode);
     }
@@ -607,7 +609,7 @@ int main(int argc, char** argv)
     CheckAcl(aclFinalize(), "aclFinalize");
     const char* modeName = mode == RunMode::kCorrectness ? "CORRECTNESS" :
                            mode == RunMode::kQualifyV011 ? "QUALIFY_V011" : "PAIRED";
-    std::printf("RUNNER_COMPLETE mode=%s correctness=PASS cases=1 rows=%d warmup_each=45 pairs_each=21 timing=DEVICE_EVENT_PRIMARY wall=DIAGNOSTIC\n",
-                modeName, kRows);
+    std::printf("RUNNER_COMPLETE mode=%s correctness=PASS cases=%zu rows=%d warmup_each=45 pairs_each=21 timing=DEVICE_EVENT_PRIMARY wall=DIAGNOSTIC\n",
+                modeName, caseCount, kRows);
     return 0;
 }
