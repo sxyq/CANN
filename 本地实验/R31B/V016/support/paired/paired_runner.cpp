@@ -24,7 +24,7 @@ constexpr float kEpsilon = 1.0e-5f;
 
 enum class RunMode {
     kCorrectness,
-    kQualifyV011,
+    kQualifyParent,
     kPaired,
 };
 
@@ -374,14 +374,14 @@ void RunCase(const CaseSpec& spec, aclrtStream stream, Events& events, RunMode m
                              ACL_MEMCPY_DEVICE_TO_HOST), "copy parent output");
         CheckAcl(aclrtMemcpy(candidateOutput.data(), dataBytes, buffers.candidateOutput, dataBytes,
                              ACL_MEMCPY_DEVICE_TO_HOST), "copy candidate output");
-        CheckOutput(spec, x, residual, gamma, bias, parentOutput, "V011");
-        CheckOutput(spec, x, residual, gamma, bias, candidateOutput, "V016");
-        std::printf("CASE_END name=%s correctness=PASS parent=V011 candidate=V016\n", spec.name);
+        CheckOutput(spec, x, residual, gamma, bias, parentOutput, "V001");
+        CheckOutput(spec, x, residual, gamma, bias, candidateOutput, "V002");
+        std::printf("CASE_END name=%s correctness=PASS parent=V001 candidate=V002\n", spec.name);
         FreeCase(buffers);
         return;
     }
 
-    if (mode == RunMode::kQualifyV011) {
+    if (mode == RunMode::kQualifyParent) {
         for (int i = 0; i < kWarmup; ++i) {
             Launch(r31b_v011::run_kernel_v011, buffers.parentOutput, buffers,
                    dataGroup, paramGroup, stream);
@@ -406,13 +406,13 @@ void RunCase(const CaseSpec& spec, aclrtStream stream, Events& events, RunMode m
                 blockWall.push_back(timed.wallUs);
                 allDevice.push_back(timed.deviceUs);
                 allWall.push_back(timed.wallUs);
-                std::printf("SAME_BINARY_SAMPLE case=%s block=%d sample=%02d device_us=%.3f wall_us=%.3f binary=V011\n",
+                std::printf("SAME_BINARY_SAMPLE case=%s block=%d sample=%02d device_us=%.3f wall_us=%.3f binary=V001\n",
                             spec.name, block + 1, sample + 1,
                             timed.deviceUs, timed.wallUs);
             }
             const Stats blockStats = Summarize(blockDevice);
             blockMedians[block] = blockStats.median;
-            PrintStats(spec.name, "device_us", block == 0 ? "V011_BLOCK_1" : "V011_BLOCK_2",
+            PrintStats(spec.name, "device_us", block == 0 ? "V001_BLOCK_1" : "V001_BLOCK_2",
                        blockDevice);
         }
 
@@ -429,16 +429,16 @@ void RunCase(const CaseSpec& spec, aclrtStream stream, Events& events, RunMode m
         const char* verdict = passed ? "PASS" :
                               blocked ? "MEASUREMENT_PROTOCOL_BLOCKED_FOR_SHAPE" :
                                         "NEEDS_VALIDATION";
-        PrintStats(spec.name, "device_us", "V011_ALL", allDevice);
-        PrintStats(spec.name, "wall_us", "V011_ALL", allWall);
+        PrintStats(spec.name, "device_us", "V001_ALL", allDevice);
+        PrintStats(spec.name, "wall_us", "V001_ALL", allWall);
         std::printf("SAME_BINARY_QUAL case=%s result=%s samples=%zu median_us=%.3f mad_over_median=%.5f block_drift=%.5f\n",
                     spec.name, verdict, allDevice.size(), fullStats.median,
                     madRatio, blockDrift);
 
         CheckAcl(aclrtMemcpy(parentOutput.data(), dataBytes, buffers.parentOutput, dataBytes,
                              ACL_MEMCPY_DEVICE_TO_HOST), "copy same-binary output");
-        CheckOutput(spec, x, residual, gamma, bias, parentOutput, "V011");
-        std::printf("CASE_END name=%s same_binary=V011 correctness=PASS\n", spec.name);
+        CheckOutput(spec, x, residual, gamma, bias, parentOutput, "V001");
+        std::printf("CASE_END name=%s same_binary=V001 correctness=PASS\n", spec.name);
         FreeCase(buffers);
         return;
     }
@@ -493,14 +493,14 @@ void RunCase(const CaseSpec& spec, aclrtStream stream, Events& events, RunMode m
                          ACL_MEMCPY_DEVICE_TO_HOST), "copy parent output");
     CheckAcl(aclrtMemcpy(candidateOutput.data(), dataBytes, buffers.candidateOutput, dataBytes,
                          ACL_MEMCPY_DEVICE_TO_HOST), "copy candidate output");
-    CheckOutput(spec, x, residual, gamma, bias, parentOutput, "V011");
-    CheckOutput(spec, x, residual, gamma, bias, candidateOutput, "V016");
+    CheckOutput(spec, x, residual, gamma, bias, parentOutput, "V001");
+    CheckOutput(spec, x, residual, gamma, bias, candidateOutput, "V002");
 
-    PrintStats(spec.name, "device_us", "V011", parentDevice);
-    PrintStats(spec.name, "device_us", "V016", candidateDevice);
-    PrintStats(spec.name, "wall_us", "V011", parentWall);
-    PrintStats(spec.name, "wall_us", "V016", candidateWall);
-    PrintStats(spec.name, "paired_device_delta_us", "V016_minus_V011", deltas);
+    PrintStats(spec.name, "device_us", "V001", parentDevice);
+    PrintStats(spec.name, "device_us", "V002", candidateDevice);
+    PrintStats(spec.name, "wall_us", "V001", parentWall);
+    PrintStats(spec.name, "wall_us", "V002", candidateWall);
+    PrintStats(spec.name, "paired_device_delta_us", "V002_minus_V001", deltas);
     std::printf("CASE_END name=%s correctness=PASS\n", spec.name);
     FreeCase(buffers);
 }
@@ -510,14 +510,14 @@ void RunCase(const CaseSpec& spec, aclrtStream stream, Events& events, RunMode m
 int main(int argc, char** argv)
 {
     if (argc != 2) {
-        std::fprintf(stderr, "usage: paired_runner_v016 --correctness|--qualify-v011|--paired\n");
+        std::fprintf(stderr, "usage: paired_runner_v016 --correctness|--qualify-parent|--paired\n");
         return 1;
     }
     RunMode mode;
     if (std::strcmp(argv[1], "--correctness") == 0) {
         mode = RunMode::kCorrectness;
-    } else if (std::strcmp(argv[1], "--qualify-v011") == 0) {
-        mode = RunMode::kQualifyV011;
+    } else if (std::strcmp(argv[1], "--qualify-parent") == 0) {
+        mode = RunMode::kQualifyParent;
     } else if (std::strcmp(argv[1], "--paired") == 0) {
         mode = RunMode::kPaired;
     } else {
@@ -552,7 +552,7 @@ int main(int argc, char** argv)
                     kDevice);
     } else {
         std::printf("RUNNER_COMPLETE mode=%s correctness=PASS cases=4 warmup_each=45 pairs_each=21 timing=DEVICE_EVENT_PRIMARY wall=DIAGNOSTIC\n",
-                    mode == RunMode::kQualifyV011 ? "QUALIFY_V011" : "PAIRED");
+                    mode == RunMode::kQualifyParent ? "QUALIFY_PARENT" : "PAIRED");
     }
     return 0;
 }
