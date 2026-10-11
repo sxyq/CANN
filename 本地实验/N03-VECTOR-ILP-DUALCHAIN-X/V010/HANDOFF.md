@@ -20,3 +20,4 @@ V010 changes only the BF16 full-tile batch Vector issue order: independent row n
 - Paired Local: 21 pairs per case, both Parent-match checks PASS. d6144 Parent/Candidate medians `12.040/10.320 us`, delta median `-1.900 us`, range `-41.580–13.500 us`; d4096 `18.560/11.480 us`, delta median `-3.560 us`, range `-48.320–52.280 us`. Both distributions cross zero and contain large outliers; `LOCAL_SCORE=NONE`.
 - Device context before/after paired Local: HBM usage `97%` both times; AICore/AIVector `6%/3%` before and `20%/26%` after. Another user's Python PID `816980` used `60246 MB` and was left untouched.
 - Raw Compile, Correctness, Parent qualification, paired Local, and device/process evidence is stored in this V010 directory under `results/remote-logs/` and `results/remote-results/`.
+- Normal push created `origin/route/n03-vector-ilp-dualchain-x-20261011`; the remote ref was `d15bc465e56f3c79a94a43656c482b80829f6e3b` after the evidence commit push.

@@ -41,3 +41,8 @@
 ## Status
 
 - Compile and Correctness passed. Local performance is inconclusive; `LOCAL_SCORE=NONE`.
+
+## Publication
+
+- Normal push created `origin/route/n03-vector-ilp-dualchain-x-20261011`.
+- Remote ref was `d15bc465e56f3c79a94a43656c482b80829f6e3b` after the evidence commit push; no history was rewritten.
