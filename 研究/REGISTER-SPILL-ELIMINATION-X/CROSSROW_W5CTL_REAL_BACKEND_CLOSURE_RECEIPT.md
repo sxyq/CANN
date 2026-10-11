@@ -103,3 +103,48 @@ checkpoint, and manifest in this route directory. The ignored build directory
 and artifact are not staged in the evidence commit.
 
 NEXT_ACTION=Tooling/Record Owner must supply and accept the shared Record backend and a full published Local suite before any E2E/score claim.
+
+## Read-only manifest query and Local-suite/count audit
+
+The route-owned `w5ctl report --manifest` path was added and then run against
+the existing `crossrow-real-record.json`. It verified the manifest, source,
+artifact, raw, and evidence SHA-256 values against files in this R2 worktree.
+It reports the archived shape statistics and does not infer Build or
+Correctness status from the record manifest:
+
+```text
+MANIFEST_SHA256=1695ad2aaa3553d4617fe07f33823b586267483bf28d2a0595c4f65fc660f4c3
+SOURCE_SHA256=3698c229dfb6a4b336e7ee0506eb1ceaf898c1c37c937c0af7d3eef71fbc685d
+ARTIFACT_SHA256=70fce83a4c70cfd16de3433b2c6beb72a9c0a5b5b2600cd76da3b39550ac75c9
+RAW_SHA256=a42a3303aebb50409a627751aa2154530c8fc15c427334b8901107a6d75ebac2
+LOCAL_STATUS=UNCLASSIFIED; NOISE_STATUS=NOISY; RAW_PAIR_COUNT=21
+FULL_LOCAL_SCORE=NOT_COMPUTABLE; PROMOTION_ELIGIBLE=NO
+RECORD_INTEGRATION_STATUS=INTEGRATION_INCOMPLETE
+BUILD_STATUS=NOT_INCLUDED_IN_MANIFEST
+CORRECTNESS_STATUS=NOT_INCLUDED_IN_MANIFEST
+REPORT_STATUS=INCOMPLETE
+```
+
+No complete published Local suite manifest/formula or full-suite result exists
+in the R2-owned records examined for this closure. The available CROSSROW
+result is one `16x6144 fp16` shape only; it is not an R2 Kernel result.
+
+The following counters use a strict R2 Register-Spill Kernel-revision scope;
+public CROSSROW backend validation is listed separately and is not counted as
+an R2 Kernel score or revision:
+
+```text
+TOTAL_ATTEMPTS=0 (declared R2 Kernel revision attempts)
+KERNEL_REVISIONS_DECLARED=0
+BUILD_PASS=0 (R2 Kernel revisions)
+CORRECTNESS_PASS=0 (R2 Kernel revisions)
+FULL_LOCAL_SCORED_REVISIONS=0
+LOCAL_BEST_IMPROVEMENTS=0
+LATEST_REVISION=NONE
+LATEST_SCORE=SHAPE_LOCAL_ONLY/NONE (CROSSROW proxy; not an R2 score)
+BEST_LOCAL_SCORE=NONE
+AUXILIARY_CROSSROW_VALIDATION_CYCLES=1
+AUXILIARY_CROSSROW_BUILD_PASS=1
+AUXILIARY_CROSSROW_CORRECTNESS_PASS=1
+COUNT_AUDIT_BASE_SHA=3b2772b430752e331ff8387108523d309e170a0d
+```

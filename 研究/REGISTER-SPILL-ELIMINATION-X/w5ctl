@@ -1494,12 +1494,162 @@ def pipeline_command(args: argparse.Namespace, resume: bool) -> int:
     return 0 if all_pass else EXIT_NOT_RUN
 
 
+def report_manifest_command(path: Path) -> int:
+    manifest_path, manifest_sha, manifest_error = verify_file(
+        str(path), "manifest", required=True
+    )
+    if manifest_error or manifest_path is None or manifest_sha is None:
+        emit("REPORT_STATUS", "BLOCKED")
+        emit("IDENTITY_STATUS", "FAIL")
+        emit("BLOCKER", manifest_error or "RECORD_MANIFEST_NOT_FOUND")
+        return EXIT_IDENTITY
+    try:
+        payload = json.loads(manifest_path.read_text())
+    except (OSError, json.JSONDecodeError) as exc:
+        emit("REPORT_STATUS", "NOT_RUN")
+        emit("BLOCKER", f"RECORD_MANIFEST_READ_FAILED:{exc}")
+        return EXIT_NOT_RUN
+    if not isinstance(payload, dict) or payload.get("schema") != 1 or payload.get("stage") != "record":
+        emit("REPORT_STATUS", "BLOCKED")
+        emit("BLOCKER", "RECORD_MANIFEST_SCHEMA_MISMATCH")
+        return EXIT_NOT_RUN
+    if payload.get("route") != ROUTE:
+        emit("REPORT_STATUS", "BLOCKED")
+        emit("BLOCKER", "RECORD_MANIFEST_ROUTE_MISMATCH")
+        return EXIT_NOT_RUN
+    if payload.get("repo_root") != str(EXPECTED_REPO_ROOT):
+        emit("REPORT_STATUS", "BLOCKED")
+        emit("BLOCKER", "RECORD_MANIFEST_REPO_ROOT_MISMATCH")
+        return EXIT_NOT_RUN
+    if payload.get("expected_branch") != EXPECTED_BRANCH:
+        emit("REPORT_STATUS", "BLOCKED")
+        emit("BLOCKER", "RECORD_MANIFEST_EXPECTED_BRANCH_MISMATCH")
+        return EXIT_NOT_RUN
+
+    identities = [
+        ("source", payload.get("source")),
+        ("artifact", payload.get("artifact")),
+        ("raw", payload.get("raw")),
+    ]
+    evidence = payload.get("evidence")
+    if not isinstance(evidence, list) or not evidence:
+        emit("REPORT_STATUS", "BLOCKED")
+        emit("IDENTITY_STATUS", "FAIL")
+        emit("BLOCKER", "RECORD_MANIFEST_EVIDENCE_MISSING")
+        return EXIT_IDENTITY
+    identities.extend((f"evidence_{index}", item) for index, item in enumerate(evidence))
+
+    resolved: Dict[str, Tuple[Path, str]] = {}
+    for label, item in identities:
+        if not isinstance(item, dict) or not isinstance(item.get("path"), str) or not isinstance(item.get("sha256"), str):
+            emit("REPORT_STATUS", "BLOCKED")
+            emit("IDENTITY_STATUS", "FAIL")
+            emit("BLOCKER", f"RECORD_MANIFEST_IDENTITY_MALFORMED:{label}")
+            return EXIT_IDENTITY
+        identity_scoped, identity_scope_error = scoped_path(item["path"], label)
+        if identity_scope_error or identity_scoped is None:
+            emit("REPORT_STATUS", "BLOCKED")
+            emit("IDENTITY_STATUS", "FAIL")
+            emit("BLOCKER", identity_scope_error or f"RECORD_MANIFEST_IDENTITY_INVALID:{label}")
+            return EXIT_IDENTITY
+        try:
+            identity_scoped.relative_to(ROUTE_ROOT)
+        except ValueError:
+            emit("REPORT_STATUS", "BLOCKED")
+            emit("IDENTITY_STATUS", "FAIL")
+            emit("BLOCKER", f"OUT_OF_SCOPE:{label}:{identity_scoped}:expected={ROUTE_ROOT}")
+            return EXIT_IDENTITY
+        identity_path, digest, identity_error = verify_file(
+            str(identity_scoped), label, item["sha256"], required=True
+        )
+        if identity_error or identity_path is None or digest is None:
+            emit("REPORT_STATUS", "BLOCKED")
+            emit("IDENTITY_STATUS", "FAIL")
+            emit("BLOCKER", identity_error or f"RECORD_MANIFEST_IDENTITY_INVALID:{label}")
+            return EXIT_IDENTITY
+        resolved[label] = (identity_path, digest)
+
+    local = payload.get("local_result")
+    if not isinstance(local, dict):
+        local = {}
+    source_path, source_sha = resolved["source"]
+    artifact_path, artifact_sha = resolved["artifact"]
+    raw_path, raw_sha = resolved["raw"]
+    integration_status = payload.get("integration_status", "UNKNOWN")
+    full_score = local.get("full_local_score", "NOT_COMPUTABLE")
+
+    emit("ROUTE", payload.get("route"))
+    emit("RECORD_MANIFEST", manifest_path)
+    emit("RECORD_MANIFEST_SHA256", manifest_sha)
+    emit("RECORD_MANIFEST_STATUS", "IDENTITY_VERIFIED")
+    emit("IDENTITY_STATUS", "PASS")
+    emit("SOURCE_PATH", source_path)
+    emit("SOURCE_SHA256", source_sha)
+    emit("ARTIFACT_PATH", artifact_path)
+    emit("ARTIFACT_SHA256", artifact_sha)
+    emit("RAW_PATH", raw_path)
+    emit("RAW_SHA256", raw_sha)
+    emit("EVIDENCE_COUNT", len(evidence))
+    for index, _ in enumerate(evidence):
+        evidence_path, evidence_sha = resolved[f"evidence_{index}"]
+        emit("EVIDENCE_PATH", evidence_path)
+        emit("EVIDENCE_SHA256", evidence_sha)
+    emit("BUILD_STATUS", "NOT_INCLUDED_IN_MANIFEST")
+    emit("CORRECTNESS_STATUS", "NOT_INCLUDED_IN_MANIFEST")
+    emit("LOCAL_STATUS", local.get("status", "NOT_RUN"))
+    emit("LOCAL_MEASUREMENT_QUALITY", local.get("status", "NOT_RUN"))
+    emit("LOCAL_QUALITY_CLASSIFICATION", local.get("quality_classification", "UNKNOWN"))
+    emit("MEDIAN_PARENT_US", fmt_number(local.get("parent_median")))
+    emit("MEDIAN_CANDIDATE_US", fmt_number(local.get("candidate_median")))
+    emit("MEDIAN_RATIO_DELTA", fmt_number(local.get("ratio_delta")))
+    emit("PAIRED_MEDIAN_DELTA_US", fmt_number(local.get("paired_delta")))
+    emit("PAIRED_MEDIAN_PERCENT_DELTA", fmt_number(local.get("paired_percent_delta")))
+    emit("RAW_SAMPLE_COUNT", local.get("raw_count", 0))
+    emit("RAW_PAIR_COUNT", local.get("pair_count", 0))
+    emit("MEASUREMENT_QUALITY", local.get("quality_classification", "UNKNOWN"))
+    emit("NOISE_STATUS", local.get("noise_status", "UNKNOWN"))
+    emit("SHAPE_LOCAL_VERDICT", local.get("shape_local_verdict", "NOT_RUN"))
+    emit("SHAPE_CANDIDATE_MEDIAN_US", fmt_number(local.get("shape_candidate_median_us")))
+    emit("SHAPE_PAIRED_DELTA_US", fmt_number(local.get("shape_paired_delta_us")))
+    emit("SHAPE_PAIRED_PERCENT_DELTA", fmt_number(local.get("shape_paired_percent_delta")))
+    emit("FULL_LOCAL_SCORE", full_score)
+    emit("PROMOTION_ELIGIBLE", "YES" if local.get("promotion_eligible") else "NO")
+    emit("LOCAL_REASON", local.get("reason", "NONE"))
+    emit("RECORD_STATUS", payload.get("record_status", "UNKNOWN"))
+    emit("RECORD_INTEGRATION_STATUS", integration_status)
+    emit("REVISION_CREATED", "YES" if payload.get("revision_created") else "NO")
+    emit("RUNNER_CREATED", "YES" if payload.get("runner_created") else "NO")
+    emit("ONLINE", payload.get("online", "NOT_SUBMITTED"))
+    complete_score = full_score not in (None, "", "NOT_COMPUTABLE")
+    report_status = "PASS" if integration_status == "PASS" and complete_score and local.get("promotion_eligible") else "INCOMPLETE"
+    emit("REPORT_STATUS", report_status)
+    return 0
+
+
 def report_command(args: argparse.Namespace) -> int:
     isolation_error = require_current_worktree()
     if isolation_error:
         emit("REPORT_STATUS", "BLOCKED")
         emit("BLOCKER", isolation_error)
         return EXIT_NOT_RUN
+    if args.manifest:
+        path, scope_error = scoped_path(args.manifest, "manifest")
+        if scope_error:
+            emit("REPORT_STATUS", "BLOCKED")
+            emit("BLOCKER", scope_error)
+            return EXIT_NOT_RUN
+        if path is None:
+            emit("REPORT_STATUS", "NOT_RUN")
+            emit("BLOCKER", "RECORD_MANIFEST_NOT_SET")
+            return EXIT_NOT_RUN
+        try:
+            path.relative_to(ROUTE_ROOT)
+        except ValueError:
+            emit("REPORT_STATUS", "BLOCKED")
+            emit("BLOCKER", f"OUT_OF_SCOPE:manifest:{path}:expected={ROUTE_ROOT}")
+            return EXIT_NOT_RUN
+        return report_manifest_command(path)
+
     path, scope_error = scoped_path(args.checkpoint, "checkpoint")
     if scope_error:
         emit("REPORT_STATUS", "BLOCKED")
@@ -1664,9 +1814,11 @@ def build_parser() -> argparse.ArgumentParser:
     add_scope_options(resume)
     add_pipeline_options(resume, resume=True)
 
-    report = sub.add_parser("report", help="read a checkpoint and emit a structured receipt")
+    report = sub.add_parser("report", help="read a checkpoint or record manifest and emit a structured receipt")
     add_scope_options(report)
-    report.add_argument("--checkpoint", required=True)
+    report_input = report.add_mutually_exclusive_group(required=True)
+    report_input.add_argument("--checkpoint")
+    report_input.add_argument("--manifest")
     return parser
 
 

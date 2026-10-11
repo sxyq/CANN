@@ -799,6 +799,34 @@ class W5CtlTest(unittest.TestCase):
             self.assertIn("RECORD_INTEGRATION_STATUS=INTEGRATION_INCOMPLETE", report.stdout)
             self.assertIn("REPORT_STATUS=INCOMPLETE", report.stdout)
 
+            manifest_report = run_cli("report", "--manifest", str(manifest))
+            self.assertEqual(manifest_report.returncode, 0, manifest_report.stdout + manifest_report.stderr)
+            self.assertIn("RECORD_MANIFEST_STATUS=IDENTITY_VERIFIED", manifest_report.stdout)
+            self.assertIn("IDENTITY_STATUS=PASS", manifest_report.stdout)
+            self.assertIn("SOURCE_SHA256=" + record["source"]["sha256"], manifest_report.stdout)
+            self.assertIn("ARTIFACT_SHA256=" + record["artifact"]["sha256"], manifest_report.stdout)
+            self.assertIn("RAW_SHA256=" + record["raw"]["sha256"], manifest_report.stdout)
+            self.assertIn("SHAPE_LOCAL_VERDICT=SHAPE_UNCLASSIFIED_NO_PROMOTION", manifest_report.stdout)
+            self.assertIn("FULL_LOCAL_SCORE=NOT_COMPUTABLE", manifest_report.stdout)
+            self.assertIn("PROMOTION_ELIGIBLE=NO", manifest_report.stdout)
+            self.assertIn("RECORD_INTEGRATION_STATUS=INTEGRATION_INCOMPLETE", manifest_report.stdout)
+            self.assertIn("REPORT_STATUS=INCOMPLETE", manifest_report.stdout)
+
+            outside_report = run_cli(
+                "report", "--manifest", str(ROOT / "outside-route-manifest.json")
+            )
+            self.assertEqual(outside_report.returncode, 78, outside_report.stdout + outside_report.stderr)
+            self.assertIn("OUT_OF_SCOPE:manifest", outside_report.stdout)
+
+            tampered_manifest = root / "tampered-record.json"
+            tampered_record = dict(record)
+            tampered_record["artifact"] = dict(record["artifact"])
+            tampered_record["artifact"]["sha256"] = "0" * 64
+            tampered_manifest.write_text(json.dumps(tampered_record))
+            tampered_report = run_cli("report", "--manifest", str(tampered_manifest))
+            self.assertEqual(tampered_report.returncode, 65, tampered_report.stdout + tampered_report.stderr)
+            self.assertIn("ARTIFACT_SHA_MISMATCH", tampered_report.stdout)
+
             before = counter.read_text()
             resumed = subprocess.run(
                 [sys.executable, "-B", str(CLI), "resume", *common],

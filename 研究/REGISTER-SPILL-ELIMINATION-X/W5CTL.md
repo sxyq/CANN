@@ -55,11 +55,17 @@ receives `W5CTL_ROUTE`, `W5CTL_STAGE`, source/artifact paths and SHA-256 values,
 and for Local the raw timing path.
 
 Each backend is run as one subprocess with its real exit code. A missing or
-non-executable backend is `NOT_RUN`/`BLOCKED`, never `PASS`. `record` accepts
-an explicit evidence backend, passes source/artifact SHA-256 identity alongside
-evidence paths, and never performs `git add`, `commit`, `push`,
-or Online submission. Git history/evidence ownership remains governed by
-`项目规则/Git工作流程.md` and the existing evidence roots.
+non-executable backend is `NOT_RUN`/`BLOCKED`, never `PASS`. `record` requires
+`--source`, `--artifact`, `--raw`, `--manifest`, and one or more `--evidence`
+paths. It writes a local JSON manifest containing source/artifact/raw SHA-256
+values, evidence paths and SHA-256 values, and the complete Local result. With
+no Record Owner backend, the complete manifest is still written and the
+command returns `NOT_RUN`/78 with
+`INTEGRATION_STATUS=INTEGRATION_INCOMPLETE`; it never claims Record PASS.
+With a valid backend, its real return code is propagated. `record` never
+performs `git add`, `commit`, `push`, or Online submission. Git
+history/evidence ownership remains governed by `项目规则/Git工作流程.md` and
+the existing evidence roots.
 
 ## Identity and local data contract
 
@@ -130,9 +136,23 @@ semantic orthogonality. Missing or empty post-exclusion data is
 `SIMILARITY_INSUFFICIENT_DATA`.
 
 `cycle --checkpoint <path>` writes an atomic JSON checkpoint after each stage.
-Successful stages are skipped on repeat calls. A failed or `NOT_RUN` stage is
-only retried by explicit `resume`; `resume` also preserves completed stages.
-Neither command creates a Revision or changes Online state.
+The checkpoint retains source/artifact/raw identity, evidence SHA values, stage
+return codes/reasons, and the complete Local result. Stage statuses are
+preserved as `PASS`, `REJECTED`, `UNCLASSIFIED`, or
+`INTEGRATION_INCOMPLETE`; Crossrow data remains
+`UNCLASSIFIED_NO_PROMOTION`. Completed terminal stages are skipped on repeated
+`cycle`/`resume` calls. Failed or missing stages require explicit `resume`.
+Neither command creates a Revision or Runner, or changes Online state.
+
+`report --checkpoint <path>` reads the checkpoint without invoking a backend.
+`report --manifest <path>` queries an archived local manifest through the same
+read-only report path. Both modes verify the current route root/branch and the
+recorded source, artifact, raw, and evidence SHA-256 identities before printing
+Local medians, paired deltas, quality classification, verdict, raw SHA and
+promotion eligibility. A manifest query reports the archived Record status but
+does not recreate Build or Correctness stages. An incomplete checkpoint or
+manifest is reported as `REPORT_STATUS=INCOMPLETE`, never as a successful
+score; a missing full Local suite remains `FULL_LOCAL_SCORE=NOT_COMPUTABLE`.
 
 All execution commands verify the current Git root and expected branch supplied
 for that invocation, and every source, artifact, raw, log, checkpoint,
@@ -147,9 +167,10 @@ python3 -B 研究/REGISTER-SPILL-ELIMINATION-X/tests/test_w5ctl.py
 ```
 
 The test uses temporary fake executables only to verify delegation, return-code
-propagation, SHA guards, raw-stat rejection, dedup, and checkpoint idempotence;
+propagation, SHA guards, raw-stat rejection, dedup, manifest identity,
+checkpoint/report/resume idempotence;
 it does not touch a CANN compiler, NPU, Kernel, CMake, shared scheduler, or
-the tooling-runner worktree. The current `8/8` result is not an E2E result:
+the tooling-runner worktree. The current `9/9` result is not an E2E result:
 real Build,
 Correctness, Local event provenance, Runner identity, and evidence publication
 backends must be supplied and accepted by the Tooling/Integration Owner.
