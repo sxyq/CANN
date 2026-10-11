@@ -370,3 +370,117 @@ KERNEL_REVISION = NONE_ADDED
 MICROPROBE = NOT_RUN
 LOCAL_SCORE = NONE
 ```
+
+## Public adapter reuse check and executable minimum plan
+
+```text
+PUBLIC_ADAPTER_CHECK = PARTIAL_SHAPE_MATCH / NOT_CALLABLE_BY_CANONICAL_HOST
+PUBLIC_W4R01_ABI_MATCH = YES (host role ABI and TensorGroupInfo layout)
+PUBLIC_W4R01_SELECTOR_MATCH = NO
+PUBLIC_MODE_R015C_ABI_MATCH = NO
+ROUTE_LOCAL_ADAPTER_INPUT = NOT_EXPOSED
+EXECUTABLE_R5_BACKEND = NONE
+```
+
+The published W4-R01 adapter is the closest public shape. Its adapter files
+provide `using aclrtStream = void*`, include a `runner_abi.h` containing the
+same `TensorInfo`/`TensorGroupInfo` structs, then include one source per role;
+its CMake uses two `ascendc_library(... SHARED ...)` targets and one paired
+executable. Its public host declarations are the R5-compatible role calls:
+
+```text
+extern "C" void run_kernel_parent(
+    GM_ADDR, const TensorGroupInfo&, GM_ADDR, const TensorGroupInfo&,
+    GM_ADDR, const TensorGroupInfo&, GM_ADDR, const TensorGroupInfo&,
+    GM_ADDR, const TensorGroupInfo&, int64_t, aclrtStream, float);
+extern "C" void run_kernel_candidate(
+    GM_ADDR, const TensorGroupInfo&, GM_ADDR, const TensorGroupInfo&,
+    GM_ADDR, const TensorGroupInfo&, GM_ADDR, const TensorGroupInfo&,
+    GM_ADDR, const TensorGroupInfo&, int64_t, aclrtStream, float);
+```
+
+That public shape is evidence for the minimum adapter body, not a callable R5
+backend. The published W4-R01 CMake and adapter names are route-specific, and
+the Canonical Host contract has no input selecting those adapter files. It
+also records a build-environment fix (`CPATH`/`C_INCLUDE_PATH` for the HCC
+host headers) but does not publish a Canonical selector or artifact handoff
+API. R5 cannot copy the route files or create a separate target to consume
+them without creating a second execution chain.
+
+The published MODE-X adapter is not ABI-compatible: its exported functions
+are `mode_r015c_parent_launch(uint32_t, void*, void*, void*, aclrtStream)` and
+`mode_r015c_candidate_launch(...)`, with route-specific tiling headers, fixed
+source/tiling SHA values, and a standalone `r015c_pair_runner`. It cannot
+stand in for R5's five `(GM_ADDR, TensorGroupInfo)` pairs, core count, and
+epsilon role ABI.
+
+The legal minimum plan, once an Owner change is accepted, is therefore:
+
+```text
+1. Canonical selector accepts one route-local adapter registration for the
+   caller's Parent/Candidate source paths and expected SHA-256 values.
+2. Each selected adapter supplies the public-compatible ABI shim
+   (TensorInfo/TensorGroupInfo plus aclrtStream declaration), includes exactly
+   its selected source, and maps run_kernel to the existing role symbol.
+3. The existing ASC registration/build boundary emits a linkable device stub
+   for add_rms_norm_bias_custom<float/half/__bf16>; no __origin__ symbol is
+   left unresolved.
+4. The same single route_runner/Host workload returns the two role artifacts
+   and identity record; no new CLI, runner, scorer, or timing chain is added.
+5. R5 then runs the supplied canonical correctness command, checks generated
+   instructions, and only after a coordinated free timing slot runs the
+   dependent/independent pair with identical shape, dtype, memory traffic,
+   synchronization, warmup, event boundary, and sample protocol.
+```
+
+The exact missing interface is not a missing R5 host function: the current
+`runner_main.cpp` role signature is already represented in V001 metadata. It
+is the absent adapter-selection input and the device registration boundary
+between these existing Canonical files:
+
+```text
+/home/data4t2/lelinfeng/cann-tooling-runner/工具/route-runner/route-runner/build_server3.sh
+/home/data4t2/lelinfeng/cann-tooling-runner/工具/route-runner/route-runner/parent_adapter.asc
+/home/data4t2/lelinfeng/cann-tooling-runner/工具/route-runner/route-runner/candidate_adapter.asc
+/home/data4t2/lelinfeng/cann-tooling-runner/工具/route-runner/route-runner/runner_main.cpp
+```
+
+The Owner must expose one adapter-selection/source-registration hook at that
+boundary, preserve the existing role ABI and source identity checks, and make
+the generated `__global__ __vector__` registration resolve the corresponding
+`__origin__` symbols. The source and route-local files do not need a new host
+function. The public W4-R01 shim (`aclrtStream` declaration plus ABI header)
+is the compatibility pattern the Owner may use, not a permission for R5 to
+modify shared tooling.
+
+The only known build command remains the existing canonical entry, staged for
+use only after Owner acceptance and after R5 has a real Parent/Candidate pair:
+
+```bash
+RUNNER_PARENT_SOURCE=<R5-parent-source> \
+RUNNER_CANDIDATE_SOURCE=<R5-independent-or-dependent-source> \
+RUNNER_PARENT_SHA256=<sha256> \
+RUNNER_CANDIDATE_SHA256=<sha256> \
+RUNNER_ASCENDC_ARCH=dav-2201 \
+RUNNER_BUILD_DIR=/home/data4t2/lelinfeng/cann-w5-r05-vector-ilp/本地实验/W5-R05-VECTOR-ILP-DUALCHAIN-X/V001/accepted-build \
+bash /home/data4t2/lelinfeng/cann-tooling-runner/工具/route-runner/route-runner/build_server3.sh
+```
+
+This command was not executed in the follow-up: the adapter selector, Owner
+acceptance, R5 Candidate source pair, and canonical correctness invocation
+are absent. Reusing the same command with the frozen source would repeat the
+known failure and would not establish an R5 Candidate. No timing or score is
+claimed.
+
+```text
+PUBLIC_ADAPTER_DECISION = NOT_ALLOWED_AS_CURRENT_CANONICAL_BACKEND
+MINIMUM_OWNER_CHANGE = selector/source-registration hook + public-compatible ABI shim + device-stub/origin link fix
+MISSING_HOST_FUNCTION = NONE_IDENTIFIED
+MISSING_SELECTOR_INTERFACE = route-local adapter/source registration input
+MISSING_REGISTRATION_POINT = parent_adapter.asc/candidate_adapter.asc ASC device-entry registration boundary
+OWNER_FILES = build_server3.sh, parent_adapter.asc, candidate_adapter.asc, runner_main.cpp (shared tooling scope)
+R5_BUILD = NOT_RUN
+R5_CORRECTNESS = NOT_RUN
+R5_MICROPROBE = NOT_RUN
+R5_LOCAL_SCORE = NONE
+```
