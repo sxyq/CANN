@@ -1,0 +1,24 @@
+REVISION=V005
+SOURCE_COMMIT=9e74552a6c38e7b829f8edbf64f7fe0dbd85e94c
+SOURCE_SHA256=a1a2e93cfc0165c43fb7da5de4a9855d64dd2b0952e24a4714da75743f2513ba
+SOURCE_LOCAL=本地实验/N01-REGISTER-LIVE-RANGE-X/V005/submission.asc
+SOURCE_REMOTE=/home/data4t2/lelinfeng/cann/server_runs/N01-REGISTER-LIVE-RANGE-X-RESET-20261011/V005/9e74552a/candidate/R31B-V016-WIDE-TILE-SEED_kernel.asc
+PARENT_SOURCE=/home/data4t2/lelinfeng/cann/server_runs/N01-REGISTER-LIVE-RANGE-X-RESET-20261011/V004/e833b161/parent
+REMOTE_RUN=/home/data4t2/lelinfeng/cann/server_runs/N01-REGISTER-LIVE-RANGE-X-RESET-20261011/V005/9e74552a
+CANN=8.5.0.alpha002
+SOC=Ascend910B3
+DEVICE_ID=5
+RUNNER_TARGET=paired_runner_v016
+RUNNER_DEVICE_CHANGE=existing support source kDevice 7 -> 5
+RUNNER_SOURCE_SHA256=4f6701ea7edbbcfd3e410e22c0c3ea39a25bc4996b9bf05be4c422827c56f789
+ENV_COMMAND=set +u; source /usr/local/Ascend/ascend-toolkit/set_env.sh
+CPLUS_INCLUDE_PATH=/usr/include/c++/11:/usr/include/aarch64-linux-gnu/c++/11:/usr/include/aarch64-linux-gnu
+CPATH=/usr/include/aarch64-linux-gnu
+CONFIGURE_COMMAND=cmake -S /home/data4t2/lelinfeng/cann/server_runs/N01-REGISTER-LIVE-RANGE-X-RESET-20261011/V005/9e74552a/support/paired -B /home/data4t2/lelinfeng/cann/server_runs/N01-REGISTER-LIVE-RANGE-X-RESET-20261011/V005/9e74552a/build -DCMAKE_BUILD_TYPE=Release -DR31B_V011_SOURCE_DIR=/home/data4t2/lelinfeng/cann/server_runs/N01-REGISTER-LIVE-RANGE-X-RESET-20261011/V004/e833b161/parent -DR31B_V016_SOURCE_DIR=/home/data4t2/lelinfeng/cann/server_runs/N01-REGISTER-LIVE-RANGE-X-RESET-20261011/V005/9e74552a/candidate
+CONFIGURE_EXIT_CODE=0
+BUILD_COMMAND=cmake --build /home/data4t2/lelinfeng/cann/server_runs/N01-REGISTER-LIVE-RANGE-X-RESET-20261011/V005/9e74552a/build --target paired_runner_v016 -- -j1
+COMPILE_EXIT_CODE=0
+SSH_EXIT_CODE=0
+RUNNER_BINARY_SHA256=07f126f77f4884963d5b6b666f8bb89b2c1974a9c0de54888f764b780783189c
+DEVICE_ELF_SHA256=e7bcbc4abe5d80c22f3732c5d22f5f772c603d06f979a0200b1a26d341e24479
+FP16_CANDIDATE_FUNCTION_SHA256=4e2c81495acd77197d2b803d44283b2e9d10538f65b5e777d80fc28df01d5407
