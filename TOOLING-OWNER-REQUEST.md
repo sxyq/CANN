@@ -97,6 +97,29 @@ The tooling-owned fixture also reproduced `Unknown kernelInfo` under the same
 shared registration path, so this is a current ASC plugin/shared-target
 compatibility blocker rather than an R05 Candidate or timing result.
 
+## Safety blocker from Main read-only inspection
+
+Main reports that the only shared `cann-tooling-runner` worktree currently has
+staged/unstaged dirty changes. R5 has not opened, used, or treated those
+changes as accepted tooling. Main also reports the following safety defect in
+the dirty `runner_main.cpp`:
+
+```text
+FILE = /home/data4t2/lelinfeng/cann-tooling-runner/工具/route-runner/route-runner/runner_main.cpp
+LINE = 597
+OBSERVED_BEHAVIOR = after any successful aclrtSetDevice(device), call aclrtResetDevice(device)
+SAFETY_STATUS = REJECTED_FOR_DEVICE_VALIDATION
+```
+
+`aclrtResetDevice(device)` is a whole-device reset and can affect unrelated
+user work on that card. It violates the project server/process protection
+rules. The shared Owner must delete this unconditional reset or replace it
+with per-process cleanup that does not reset the device (synchronize the
+stream as needed, destroy events/stream, and free this process's allocations).
+No R5 build, correctness run, or device-event validation may use the dirty
+Runner or proceed until an Owner commit and acceptance receipt prove that this
+reset path is absent or safely replaced.
+
 ## Contract difference from the historical successful path
 
 The historical R31B paired path used a single direct executable translation
@@ -171,6 +194,9 @@ the following:
    interface.
 5. No source rewrite, no Candidate edit, no second Runner, and no direct
    executable fallback chain.
+6. No unconditional `aclrtResetDevice(device)` after successful
+   `aclrtSetDevice(device)`; teardown must be process-local and must not reset
+   a shared NPU.
 
 ## Acceptance conditions
 
@@ -186,6 +212,13 @@ frozen source supplied for both Parent and Candidate:
    `SOURCE_SHA256` shown above without substitution.
 5. The accepted source can then be handed back to R05 for separate correctness
    and generated-instruction checks before any ILP microprobe.
+6. The Owner acceptance log identifies the reset teardown change at
+   `runner_main.cpp:597` (or its current equivalent), demonstrates that the
+   successful-device path performs no whole-device reset, and retains the
+   relevant source diff/commit evidence.
+7. A device validation smoke test completes without resetting the selected
+   device or affecting unrelated processes; this is a safety acceptance, not
+   a performance result.
 
 For the direct-adapter option, additionally require that the acceptance log
 shows the selector choosing exactly one backend while consuming caller-supplied
@@ -207,6 +240,8 @@ ADAPTER_BLOCKER = SHARED_BACKEND_SELECTOR_AND_ROUTE_AGNOSTIC_ADAPTER_NOT_ACCEPTE
 OWNER = CANONICAL TOOLING/INTEGRATION OWNER (NAME UNCONFIRMED)
 OWNER_COMMIT = NONE
 ACCEPTED_BACKEND = NONE
+SAFETY_BLOCKER = DIRTY_RUNNER_HAS_UNACCEPTED_ACLRTRESETDEVICE_AFTER_ACLRTSETDEVICE
+SAFETY_OWNER_CHANGE = REMOVE_OR_REPLACE_WHOLE_DEVICE_RESET_WITH_PROCESS_LOCAL_TEARDOWN
 CANDIDATE_EDIT = NONE
 MICROPROBE = NOT_RUN
 PERFORMANCE_INFERENCE = NONE
