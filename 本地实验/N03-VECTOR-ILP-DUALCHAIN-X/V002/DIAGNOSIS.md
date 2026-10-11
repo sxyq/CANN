@@ -39,6 +39,10 @@ The case has `98304` output elements, so 58 differences still give matched ratio
 
 No Local timing was run during this diagnosis. Main's reported `FULL_SOURCE_SIMILARITY` range `0.982-0.999` is retained as a real route fact; no cosmetic source changes were made to alter it.
 
+## Corrected rerun
+
+The existing paired Runner was then updated with the stable double-precision RMS reference and the project BF16 mixed tolerance. CANN 8.5 rebuilt it successfully, and the same Parent/Candidate correctness entry returned `PASS` for both binaries with `failures=0`, `matched_ratio=1.000000000`, `max_abs=0`, `max_rel=0`, and `mismatches=0`. The corrected raw output is `results/remote-results/correctness-mixed-tolerance.raw.log`; the old `0.001` failure output remains preserved.
+
 ## Next action
 
-Update the existing correctness reference/gate to the project BF16 mixed-tolerance rule and a high-precision or reduction-order-stable CPU RMS reference, rerun Parent and Candidate correctness through the same paired entry, and only then decide whether timing is admissible.
+Correctness is now admissible for a subsequent experiment. Keep timing out of this diagnosis record and use the next pure Vector ILP single-point Kernel revision for the next measurement decision.
