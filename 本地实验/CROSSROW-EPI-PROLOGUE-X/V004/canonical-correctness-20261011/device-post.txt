@@ -1,0 +1,27 @@
+V004 CANONICAL 7-CASE CORRECTNESS POST
+Sun Oct 11 13:05:45 UTC 2026
+hwnput3
+DEVICE_POST:
+	NPU ID                         : 7
+	Chip Count                     : 1
+
+	DDR Capacity(MB)               : 0
+	DDR Usage Rate(%)              : 0
+	DDR Hugepages Total(page)      : 0
+	DDR Hugepages Usage Rate(%)    : 0
+	HBM Capacity(MB)               : 65536
+	HBM Usage Rate(%)              : 37
+	Aicore Usage Rate(%)           : 0
+	Aivector Usage Rate(%)         : 0
+	Aicpu Usage Rate(%)            : 0
+	Ctrlcpu Usage Rate(%)          : 4
+	DDR Bandwidth Usage Rate(%)    : 0
+	HBM Bandwidth Usage Rate(%)    : 2
+	Chip ID                        : 0
+
+PROC_POST:
+This device does not support querying proc info.
+SELF_POST:
+2576292      99 /bin/bash -lc set -o pipefail route="$PWD/本地实验/CROSSROW-EPI-PROLOGUE-X/V004" harn="/tmp/w5-r01-canonical.Mk9W1S/V003" out="$route/canonical-correctness-20261011" mkdir -p "$out" source /usr/local/Ascend/ascend-toolkit/set_env.sh hcc_root="$ASCEND_HOME_PATH/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0" export CPLUS_INCLUDE_PATH="$hcc_root:$hcc_root/aarch64-target-linux-gnu:$hcc_root/backward" export CPATH="$CPLUS_INCLUDE_PATH" {   echo 'V004 CANONICAL 7-CASE CORRECTNESS PRE'   date -u; hostname; pwd; git rev-parse HEAD   echo 'PARENT_SOURCE:'; sha256sum "$route/Parent.asc"   echo 'CANDIDATE_SOURCE:'; sha256sum "$route/Candidate.asc"   echo 'PARENT_ARTIFACT:'; sha256sum "$harn/build/clx_ref_parent_probe"   echo 'CANDIDATE_ARTIFACT:'; sha256sum "$harn/build/clx_ref_candidate_probe"   echo 'RUNNER_REF:'; sha256sum "$harn/runner_ref.inc" "$harn/local_types.h" "$harn/CMakeLists.txt"   echo 'SELECTOR:'; readlink -f "$harn/submission.asc"; sha256sum "$harn/submission.asc"   echo 'DEVICE_PRE:'; npu-smi info -t usages -i 7 2>&1 || true   echo 'PROC_PRE:'; npu-smi info proc -i 7 2>&1 || true   echo 'SELF_PRE:'; ps -eo pid=,etimes=,args= | rg 'clx_ref_(parent|candidate)_probe' || true } > "$out/device-pre.txt" ln -sfn "$route/Candidate.asc" "$harn/submission.asc" rc_total=0 run_case() {   kind="$1"; exe="$2"; case_id="$3"; rows="$4"; width="$5"; dtype="$6"   prefix="$out/${kind}-${case_id}"   log="$out/${kind}-${case_id}.log"   rcfile="$out/${kind}-${case_id}.rc"   echo "COMMAND: $exe 7 $rows $width $dtype $prefix 0 1 1 0 1" | tee "$log"   "$exe" 7 "$rows" "$width" "$dtype" "$prefix" 0 1 1 0 1 2>&1 | tee -a "$log"   rc=${PIPESTATUS[0]}   echo "$rc" > "$rcfile"   echo "RC=$rc" | tee -a "$log"   if [ "$rc" -ne 0 ]; then rc_total=1; fi } run_case PARENT "$harn/build/clx_ref_parent_probe" C01 1 128 1 run_case CANDIDATE "$harn/build/clx_ref_candidate_probe" C01 1 128 1 run_case PARENT "$harn/build/clx_ref_parent_probe" C08 8 2048 2 run_case CANDIDATE "$harn/build/clx_ref_candidate_probe" C08 8 2048 2 run_case PARENT "$harn/build/clx_ref_parent_probe" C11 1 8192 0 run_case CANDIDATE "$harn/build/clx_ref_candidate_probe" C11 1 8192 0 run_case PARENT "$harn/build/clx_ref_parent_probe" C12 8 8192 2 run_case CANDIDATE "$harn/build/clx_ref_candidate_probe" C12 8 8192 2 run_case PARENT "$harn/build/clx_ref_parent_probe" C13 128 16384 1 run_case CANDIDATE "$harn/build/clx_ref_candidate_probe" C13 128 16384 1 run_case PARENT "$harn/build/clx_ref_parent_probe" C14 128 16384 2 run_case CANDIDATE "$harn/build/clx_ref_candidate_probe" C14 128 16384 2 run_case PARENT "$harn/build/clx_ref_parent_probe" C16 9 32768 2 run_case CANDIDATE "$harn/build/clx_ref_candidate_probe" C16 9 32768 2 {   echo 'V004 CANONICAL 7-CASE CORRECTNESS POST'   date -u; hostname   echo 'DEVICE_POST:'; npu-smi info -t usages -i 7 2>&1 || true   echo 'PROC_POST:'; npu-smi info proc -i 7 2>&1 || true   echo 'SELF_POST:'; ps -eo pid=,etimes=,args= | rg 'clx_ref_(parent|candidate)_probe' || true   echo "CORRECTNESS_RC_TOTAL=$rc_total" } > "$out/device-post.txt" ln -sfn "$route/../V003/Candidate.asc" "$harn/submission.asc" printf 'SELECTOR_RESTORED=%s\n' "$(readlink -f "$harn/submission.asc")" >> "$out/device-post.txt" exit "$rc_total"
+CORRECTNESS_RC_TOTAL=0
+SELECTOR_RESTORED=/home/data4t2/lelinfeng/cann-w5-r01-crossrow/本地实验/CROSSROW-EPI-PROLOGUE-X/V003/Candidate.asc
