@@ -428,7 +428,7 @@ void RunCase(const CaseSpec& spec, aclrtStream stream, Events& events, RunMode m
         const bool parentGolden = CheckOutput(spec, x, residual, gamma, bias,
                                               parentOutput, "V011_GOLDEN");
         const bool candidateGolden = CheckOutput(spec, x, residual, gamma, bias,
-                                                 candidateOutput, "N03_V001_GOLDEN");
+                                                 candidateOutput, "N03_CANDIDATE_GOLDEN");
         const bool exactMatch = CompareOutputs(spec, parentOutput, candidateOutput);
         std::printf("CORRECTNESS_SUMMARY case=%s parent_golden=%s candidate_golden=%s exact_match=%s\n",
                     spec.name, parentGolden ? "PASS" : "FAIL",
