@@ -1,0 +1,173 @@
+SNAPSHOT_UTC=2026-10-11T12:59:12+0000
+hwnput3
++------------------------------------------------------------------------------------------------+
+| npu-smi 25.0.rc1.1               Version: 25.0.rc1.1                                           |
++---------------------------+---------------+----------------------------------------------------+
+| NPU   Name                | Health        | Power(W)    Temp(C)           Hugepages-Usage(page)|
+| Chip                      | Bus-Id        | AICore(%)   Memory-Usage(MB)  HBM-Usage(MB)        |
++===========================+===============+====================================================+
+| 0     910B3               | OK            | 134.6       34                0    / 0             |
+| 0                         | 0000:C1:00.0  | 29          0    / 0          59813/ 65536         |
++===========================+===============+====================================================+
+| 1     910B3               | OK            | 129.2       33                0    / 0             |
+| 0                         | 0000:C2:00.0  | 25          0    / 0          59718/ 65536         |
++===========================+===============+====================================================+
+| 2     910B3               | OK            | 113.3       36                0    / 0             |
+| 0                         | 0000:81:00.0  | 9           0    / 0          62856/ 65536         |
++===========================+===============+====================================================+
+| 3     910B3               | OK            | 116.2       33                0    / 0             |
+| 0                         | 0000:82:00.0  | 4           0    / 0          59872/ 65536         |
++===========================+===============+====================================================+
+| 4     910B3               | OK            | 206.9       62                0    / 0             |
+| 0                         | 0000:01:00.0  | 60          0    / 0          59213/ 65536         |
++===========================+===============+====================================================+
+| 5     910B3               | OK            | 92.6        33                0    / 0             |
+| 0                         | 0000:02:00.0  | 0           0    / 0          59876/ 65536         |
++===========================+===============+====================================================+
+| 6     910B3               | OK            | 93.4        36                0    / 0             |
+| 0                         | 0000:41:00.0  | 0           0    / 0          59876/ 65536         |
++===========================+===============+====================================================+
+| 7     910B3               | OK            | 106.1       36                0    / 0             |
+| 0                         | 0000:42:00.0  | 0           0    / 0          24791/ 65536         |
++===========================+===============+====================================================+
++---------------------------+---------------+----------------------------------------------------+
+| NPU     Chip              | Process id    | Process name             | Process memory(MB)      |
++===========================+===============+====================================================+
+| 0       0                 | 75295         | VLLMEngineCor            | 56294                   |
++===========================+===============+====================================================+
+| 1       0                 | 3711298       | VLLMEngineCor            | 56149                   |
++===========================+===============+====================================================+
+| 2       0                 | 816979        | python                   | 59485                   |
++===========================+===============+====================================================+
+| 3       0                 | 816980        | python                   | 56500                   |
++===========================+===============+====================================================+
+| 4       0                 | 2999855       | VLLMEngineCor            | 55686                   |
++===========================+===============+====================================================+
+| 5       0                 | 3355594       | VLLMWorker_TP            | 56354                   |
++===========================+===============+====================================================+
+| 6       0                 | 3357697       | VLLMWorker_TP            | 56355                   |
++===========================+===============+====================================================+
+| 7       0                 | 439848        | python3                  | 21260                   |
++===========================+===============+====================================================+
+bash: line 4: rg: command not found
+
+PRE_CORRECTNESS_DEVICE=2
+SNAPSHOT_UTC=2026-10-11T13:03:16+0000
+	NPU ID                         : 2
+	Chip Count                     : 1
+
+	DDR Capacity(MB)               : 0
+	DDR Usage Rate(%)              : 0
+	DDR Hugepages Total(page)      : 0
+	DDR Hugepages Usage Rate(%)    : 0
+	HBM Capacity(MB)               : 65536
+	HBM Usage Rate(%)              : 95
+	Aicore Usage Rate(%)           : 9
+	Aivector Usage Rate(%)         : 7
+	Aicpu Usage Rate(%)            : 0
+	Ctrlcpu Usage Rate(%)          : 4
+	DDR Bandwidth Usage Rate(%)    : 0
+	HBM Bandwidth Usage Rate(%)    : 2
+	Chip ID                        : 0
+
+awk: cmd. line:1: NR == 1 || \$2 ~ /paired_runner/
+awk: cmd. line:1:            ^ backslash not last character on line
+awk: cmd. line:1: NR == 1 || \$2 ~ /paired_runner/
+awk: cmd. line:1:            ^ syntax error
+
+PRE_CORRECTNESS_DETAIL_DEVICE=2
+SNAPSHOT_UTC=2026-10-11T13:03:58+0000
+Must input parameter of type.
+Usage: npu-smi info <watch|proc|-h|-m|-l|-t type> [Options...]
+
+Commands:
+       watch          Show all device's status in scrolling format
+       proc           Show device's matrix process status in scrolling format
+       -h, --help     Show this help text and exit
+       -m             Show all device's mapping information
+       -l             Show all device's topology information
+       -t type        Show information for type
+                      type: board, flash, memory, usages, sensors, temp, power, volt, mac-addr,
+                            common, health, product, ecc, ip, sys-time, i2c_check, work-mode,
+                            ecc-enable, p2p-enable, ssh-enable, license, customized-info,
+                            device-share, nve-level, aicpu-config, pcie-err, mcu-monitor,
+                            err-count, boot-area, vnpu-mode, info-vnpu, vnpu-svm, cpu-num-cfg,
+                            first-power-on-date, proc-mem, phyid-remap, vnpu-cfg-recover, key-manage,
+                            template-info, pkcs-enable, p2p-mem-cfg, pwm-mode, pwm-duty-ratio,
+                            boot-select, topo, hccs, sio-info, spod-info, tls-csr-get, tls-cert,
+                            tls-cert-period, rootkey, hccs-bw, cpu-freq-up, hccs-credit.
+
+Options:
+       -i %d          Card ID
+       -c %d          Chip ID
+       -p %d          Chip Physical ID
+2574436 bash -c printf "\nPRE_CORRECTNESS_DETAIL_DEVICE=2\n" date -u +SNAPSHOT_UTC=%Y-%m-%dT%H:%M:%S%z npu-smi info -i 2 pgrep -af "paired_runner_v001" || true
+
+PRE_CORRECTNESS_MEMORY_DEVICE=2
+SNAPSHOT_UTC=2026-10-11T13:05:21+0000
+	NPU ID                         : 2
+	Chip Count                     : 1
+
+	DDR Capacity(MB)               : 0
+	DDR Clock Speed(MHz)           : 0
+	HBM Capacity(MB)               : 65536
+	HBM Clock Speed(MHz)           : 1600
+	HBM Temperature(C)             : 35
+	HBM Manufacturer ID            : 0x57
+	Chip ID                        : 0
+
+
+NPU_PROCESS_DEVICE=2
+This device does not support querying proc info.
+
+PRE_CORRECTNESS_RETRY_DEVICE=2
+SNAPSHOT_UTC=2026-10-11T13:08:20+0000
+	NPU ID                         : 2
+	Chip Count                     : 1
+
+	DDR Capacity(MB)               : 0
+	DDR Usage Rate(%)              : 0
+	DDR Hugepages Total(page)      : 0
+	DDR Hugepages Usage Rate(%)    : 0
+	HBM Capacity(MB)               : 65536
+	HBM Usage Rate(%)              : 95
+	Aicore Usage Rate(%)           : 15
+	Aivector Usage Rate(%)         : 13
+	Aicpu Usage Rate(%)            : 0
+	Ctrlcpu Usage Rate(%)          : 4
+	DDR Bandwidth Usage Rate(%)    : 0
+	HBM Bandwidth Usage Rate(%)    : 3
+	Chip ID                        : 0
+
+	NPU ID                         : 2
+	Chip Count                     : 1
+
+	Process id:816979  Process name:python            Process memory(MB):59485
+	Chip ID                        : 0
+
+
+PRE_PRELOAD_CORRECTNESS_DEVICE=2
+SNAPSHOT_UTC=2026-10-11T13:12:59+0000
+	NPU ID                         : 2
+	Chip Count                     : 1
+
+	DDR Capacity(MB)               : 0
+	DDR Usage Rate(%)              : 0
+	DDR Hugepages Total(page)      : 0
+	DDR Hugepages Usage Rate(%)    : 0
+	HBM Capacity(MB)               : 65536
+	HBM Usage Rate(%)              : 95
+	Aicore Usage Rate(%)           : 7
+	Aivector Usage Rate(%)         : 4
+	Aicpu Usage Rate(%)            : 0
+	Ctrlcpu Usage Rate(%)          : 5
+	DDR Bandwidth Usage Rate(%)    : 0
+	HBM Bandwidth Usage Rate(%)    : 1
+	Chip ID                        : 0
+
+	NPU ID                         : 2
+	Chip Count                     : 1
+
+	Process id:816979  Process name:python            Process memory(MB):59485
+	Chip ID                        : 0
+
