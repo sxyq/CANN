@@ -375,7 +375,7 @@ void RunCase(const CaseSpec& spec, aclrtStream stream, Events& events, RunMode m
         CheckAcl(aclrtMemcpy(candidateOutput.data(), dataBytes, buffers.candidateOutput, dataBytes,
                              ACL_MEMCPY_DEVICE_TO_HOST), "copy candidate correctness output");
         CheckOutput(spec, x, residual, gamma, bias, parentOutput, "V011");
-        CheckOutput(spec, x, residual, gamma, bias, candidateOutput, "N02-V006");
+        CheckOutput(spec, x, residual, gamma, bias, candidateOutput, "N02-V007");
         std::printf("CASE_END name=%s parent_correctness=PASS candidate_correctness=PASS\n",
                     spec.name);
         FreeCase(buffers);
@@ -494,13 +494,13 @@ void RunCase(const CaseSpec& spec, aclrtStream stream, Events& events, RunMode m
     CheckAcl(aclrtMemcpy(candidateOutput.data(), dataBytes, buffers.candidateOutput, dataBytes,
                          ACL_MEMCPY_DEVICE_TO_HOST), "copy candidate output");
     CheckOutput(spec, x, residual, gamma, bias, parentOutput, "V011");
-    CheckOutput(spec, x, residual, gamma, bias, candidateOutput, "N02-V006");
+    CheckOutput(spec, x, residual, gamma, bias, candidateOutput, "N02-V007");
 
     PrintStats(spec.name, "device_us", "V011", parentDevice);
-    PrintStats(spec.name, "device_us", "N02-V006", candidateDevice);
+    PrintStats(spec.name, "device_us", "N02-V007", candidateDevice);
     PrintStats(spec.name, "wall_us", "V011", parentWall);
-    PrintStats(spec.name, "wall_us", "N02-V006", candidateWall);
-    PrintStats(spec.name, "paired_device_delta_us", "N02-V006_minus_V011", deltas);
+    PrintStats(spec.name, "wall_us", "N02-V007", candidateWall);
+    PrintStats(spec.name, "paired_device_delta_us", "N02-V007_minus_V011", deltas);
     std::printf("CASE_END name=%s correctness=PASS\n", spec.name);
     FreeCase(buffers);
 }
