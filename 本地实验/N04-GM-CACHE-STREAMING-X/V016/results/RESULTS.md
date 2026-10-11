@@ -33,12 +33,13 @@
 - The existing Python process PID 439848 (21,260 MiB) remained untouched; no paired Runner process was present.
 - A saved read-only recheck at `local-defer-recheck-clock.txt` (`2026-10-11T22:10:03+00:00`) momentarily showed AICore 0%, AIVector 3%, and HBM bandwidth 0%. The next pre-Local snapshot at `pre-local-d7-final-clock.txt` (`2026-10-11T22:12:27+00:00`) rose to AICore 9%, AIVector 15%, and HBM bandwidth 9%; the Python PID remained present. This renewed shared activity kept Local unstarted. The final device and disk readings are in `pre-local-d7-final-*` and `server-space-pre-local-final.txt`.
 - On resume, the fresh snapshot at `pre-local-d7-resume-20261012-clock.txt` (`2026-10-11T22:26:27+00:00`) showed AICore 7%, AIVector 0%, and HBM bandwidth 8%, with the existing Python PID still present and no V016 Runner process. Shared compute remained active, so no timing was started. The full snapshot is preserved in `pre-local-d7-resume-20261012-*`.
+- Further reads at 22:40 and 22:41 briefly showed lower activity, but the fresh 22:43 snapshot rose to AICore 12%, AIVector 3%, and HBM bandwidth 7%. PID 439848 remained present; exact-name lookup found no `paired_runner_v016`. Timing remained unstarted. The latest readings and available disk space are in `pre-local-d7-resume-20261012-final-*` and `server-space-pre-local-resume-20261012-final.txt`.
 - `LOCAL_SCORE=NONE` means no Local performance conclusion is available. Resume with a fresh read-only d7 snapshot when activity is suitable, then use the existing Runner for 45 warmups and 21 alternating pairs per case. Preserve every sample and post-run state.
 
 ## Resource State
 
 - Immediately before V016 inputs were added, `/home/data4t2` reported 100% use with 16,609,017,856 bytes available; the existing N04 run tree occupied 38 MB. The build completed with no cleanup or changes to other data.
-- After build, `/home/data4t2` still reported 100% use and 16,604,868,608 bytes available. On the 22:10 recheck it reported 16,600,543,232 bytes available; the 22:12 snapshot reported 16,596,586,496 bytes; the 22:26 snapshot reported 16,590,204,928 bytes available. No files outside this V016 run directory were removed or changed.
+- After build, `/home/data4t2` still reported 100% use and 16,604,868,608 bytes available. On the 22:10 recheck it reported 16,600,543,232 bytes available; the 22:12 snapshot reported 16,596,586,496 bytes; the 22:26 snapshot reported 16,590,204,928 bytes; the 22:43 snapshot reported 16,583,258,112 bytes available. No files outside this V016 run directory were removed or changed.
 - d7 remained at 37% HBM use. All local and post-run data generation remains limited to the available server space; the device and Python process were not modified.
 
 ## Evidence Files
