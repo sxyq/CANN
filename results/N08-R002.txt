@@ -1,0 +1,31 @@
+route=N08
+revision=R002
+parent_sha=00fd3ce6f1a51263eff38ac0f31f0be504690a67
+final_source_commit=9f82680acd25d82c72eb7f32e0c25ecfe57302cc
+branch_head=9f82680acd25d82c72eb7f32e0c25ecfe57302cc
+source=phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+source_sha256=5d12d7d429d3e414891ed81625423594151bd9ce6fc8a64595659bec6e942a28
+artifact=build/r31b_submission_v011
+artifact_sha256=cd176391f7268bbae97af82e529295bc957b86c6ad6bc137393ce9132d68c450
+
+hypothesis=In the active ProcessWideFp32FullCacheRows output loop, use DataCopy when the local value tile offset, GM output offset, and transfer count are all 32-byte aligned. Keep the existing DataCopyPad Store for any misaligned row or tail.
+evidence=The dispatch method ProcessWideFp32 calls ProcessWideFp32FullCacheRows. The local source is valueLocal[batchRow * rowWidth + col], so its alignment is checked independently from the GM output offset. The 8-float alignment and count conditions satisfy the documented 32-byte DataCopy requirement.
+scope=One output-copy site only. No arithmetic, row partition, reduction, or tile-size changes.
+
+build_command=./tools/run.sh build
+build_exit_code=0
+build_log=results/build-20261012T155821+0000.log
+cann=/usr/local/Ascend/ascend-toolkit/latest (8.5.T8.0.B060)
+npu_arch=dav-2201
+previous_candidate_commit=80599a799
+previous_candidate_log=results/build-20261012T155028+0000.log
+previous_candidate_exit_code=0
+previous_candidate_artifact_sha256=ab5af53c246e7ff7ff36047906699b327bf7f8dfd38ed1101dcdcc04477d8c67
+previous_candidate_note=The first R002 edit targeted ProcessWideFp32CachedRows, but dispatch uses ProcessWideFp32FullCacheRows. Its artifact hash matched R001, so it was treated as an inactive-path experiment and corrected within R002. The final artifact hash differs from both R001 and that inactive-path build.
+
+correctness_status=NOT_RUN
+correctness_reason=This compile-only R002 turn did not issue a device task. The route's current sparse worktree has no correctness runner or test inputs.
+local_status=NOT_RUN
+local_reason=This compile-only R002 turn did not issue a device task. The route's current sparse worktree has no canonical Local runner, data, or scorer. No Local Score is claimed.
+device_status=NOT_USED
+remote_status=NOT_ATTEMPTED
