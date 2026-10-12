@@ -1,0 +1,36 @@
+{
+  "route": "N06",
+  "revision": "R042",
+  "source_commit": "23c4e5d210ad9f703b649bc013301d54dfb73d5a",
+  "parent_source_commit": "fcca053fb88ab3ff7a34708b22d72054db30dc99",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "e329c211f5f39ce30a9ef83bb60b152b8d7802108accf3e00fdbb75f393f20fd",
+  "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+  "cmake_sha256": "3a8bc9f92541f92fe403bd7a2c196cb9bf9008cea9c4d668c7b1d603c81b991f",
+  "runner_sha256": "23f6d76d82a7bf645559971d25ee46a6d2d02a59d0f17bf54fed33748196a787",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "Increase the wide FP16 residual ping-pong second-slot phase from 160 to 192 bytes and allocate matching tail space. The I/O budget uses the same phase constant; other R041 placements are unchanged.",
+  "hypothesis": "A 192-byte second-slot offset may alter MTE2/Vector bank interaction relative to smaller candidate offsets. This is compile-only evidence.",
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "log": "results/build_042.log",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "c53ae6075fc6f06e2e580bd7b5bd9a2d3f2f18443d5668ef82ba1bc4c36c603a",
+    "artifact_sha256_file": "results/build-artifact_042.sha256"
+  },
+  "correctness": {
+    "command": "./tools/run.sh correctness",
+    "exit_code": 2,
+    "result": "Not run: runner accepts only build.",
+    "output": "usage: ./tools/run.sh build"
+  },
+  "local": {
+    "command": "./tools/run.sh local",
+    "exit_code": 2,
+    "result": "Not run: runner accepts only build.",
+    "output": "usage: ./tools/run.sh build"
+  },
+  "device_work_submitted": false,
+  "performance_effect": "Unknown; compile only."
+}
