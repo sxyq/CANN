@@ -1,0 +1,52 @@
+{
+  "route_id": "N07",
+  "revision": "R010",
+  "branch": "research/n07-parameter-tile-reuse",
+  "parent_sha": "dd0d265fd",
+  "source_commit": "4935d19746246ba6ed12b9c1fb20e06946c57268",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "decfb9a4bdb3ad95a9573fa645b47e5f03466073066d8b87c69410cd43d22ea3",
+  "hypothesis": "For wide FP16 rows with enough rows per block, retaining the full native-half gamma and bias vectors in UB avoids reloading those parameters for each batch while preserving the existing half y cache and arithmetic order.",
+  "selection": {
+    "cache_preference": "native FP16 gamma/bias pair cache for the FP16 specialization",
+    "enable_condition": "minimumRowsPerBlock > 2 * baselineRows and the resident-parameter budget chooser returns a valid configuration",
+    "parameter_cache_bytes": "2 * row_width * sizeof(half)",
+    "budget_bytes": 180224,
+    "cached_rows_and_tile": "selected by resident-budget chooser"
+  },
+  "build": {
+    "status": "passed",
+    "entrypoint_command": "./tools/run.sh build",
+    "exit_code": 0,
+    "output": [
+      "-- Configuring done",
+      "-- Generating done",
+      "-- Build files have been written to: /home/data4t2/lelinfeng/cann/worktrees/n07-parameter-tile-reuse/phase4/workspaces/R31B/build-n07",
+      "Consolidate compiler generated dependencies of target r31b_submission_v011",
+      "[ 50%] Building ASC object CMakeFiles/r31b_submission_v011.dir/compile_adapter_v011.asc.o",
+      "[100%] Linking ASC executable r31b_submission_v011",
+      "[100%] Built target r31b_submission_v011"
+    ],
+    "target": "r31b_submission_v011",
+    "artifact_path": "phase4/workspaces/R31B/build-n07/r31b_submission_v011",
+    "artifact_sha256": "4f40541f4e14e8ec26f7a0630f6cdc28671116d131a19ba903a9e4bcbc24d489"
+  },
+  "correctness": {
+    "status": "not_run",
+    "command": "./tools/run.sh correctness",
+    "exit_code": 3,
+    "output": "not_run: correctness harness is not present in this sparse worktree"
+  },
+  "local": {
+    "status": "not_run",
+    "command": "./tools/run.sh local",
+    "exit_code": 3,
+    "output": "not_run: canonical Local runner and scorer are not present in this sparse worktree"
+  },
+  "performance_measurement": {
+    "status": "not_run",
+    "reason": "No Local runner/scorer is present; build success is compile evidence only, not correctness or performance evidence."
+  },
+  "device_id": "NONE",
+  "evidence_note": "Local CANN compilation passed. No NPU command or runtime correctness test was run."
+}
