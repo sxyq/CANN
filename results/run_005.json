@@ -1,0 +1,27 @@
+{
+  "route": "N06",
+  "revision": "R005",
+  "source_commit": "cda06604d6c7ea11a327e4c1823b63df1dfba326",
+  "parent_source_commit": "18ee50aff9a998d07784c76f0773c5cd5c133b99",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "de46f5589c18e9ce74f36c5a6fd7c02248720677174d05bd7b36c11bd20fce84",
+  "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+  "cmake_sha256": "3a8bc9f92541f92fe403bd7a2c196cb9bf9008cea9c4d668c7b1d603c81b991f",
+  "runner_sha256": "23f6d76d82a7bf645559971d25ee46a6d2d02a59d0f17bf54fed33748196a787",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "In the wide FP16 path, add a 32-byte pad to valueFp32Buf_ so value and residual scratch begin at different allocation phases. Include the added bytes in the FP16 UB row-budget calculation. No arithmetic, tensor indexing, or synchronization changed.",
+  "hypothesis": "The R004 layout leaves valueFp32Buf_ and residualFp32Buf_ at the same 32-byte allocation phase even though Mul reads value and writes residual. One transfer-aligned allocation offset may reduce same-phase bank contention; this is an unmeasured hypothesis, not a claimed bank width or performance result.",
+  "allocation_basis": "/usr/local/Ascend/ascend-toolkit/latest/compiler/tikcpp/tikcfw/impl/kernel_tpipe_impl.h:289",
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "log": "results/build_005.log",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "89a83e49f5a7389e9e79d27cad0ebb86bd40ba14e80241bb5bdc5782926dbe62",
+    "artifact_sha256_file": "results/build-artifact_005.sha256"
+  },
+  "correctness": "not_run",
+  "local": "not_run",
+  "device_work_submitted": false,
+  "performance_effect": "Unknown; compile only."
+}
