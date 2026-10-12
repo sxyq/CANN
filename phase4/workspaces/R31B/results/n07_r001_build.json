@@ -7,10 +7,13 @@
   "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
   "source_sha256": "d9297e337f4aee09994ff6d7f41ad3d55ff172a1382ee042b44f791dea114c1c",
   "build_config_commit": "d37b3be8e976ecd23826282e4dfe44abd8ddf6cc",
+  "entrypoint_commit": "b2d6f586d29b8a83e06a475cd221701d871745cb",
   "build": {
     "status": "passed",
     "configure_command": "source /usr/local/Ascend/ascend-toolkit/set_env.sh && cmake -S . -B build-n07",
     "compile_command": "source /usr/local/Ascend/ascend-toolkit/set_env.sh && cmake --build build-n07 --target r31b_submission_v011 -j2",
+    "entrypoint_command": "./tools/run.sh build",
+    "entrypoint_exit_code": 0,
     "exit_code": 0,
     "target": "r31b_submission_v011",
     "artifact_path": "phase4/workspaces/R31B/build-n07/r31b_submission_v011",
@@ -35,13 +38,17 @@
     }
   ],
   "correctness": {
-    "status": "not_run",
-    "command_not_executed": "./tools/run.sh correctness",
-    "reason": "This sparse worktree has no tools/run.sh or correctness harness. Per launch instructions, all 8 NPU cards are occupied and device tests must not be started."
+    "status": "not_available",
+    "entrypoint_command": "./tools/run.sh correctness",
+    "entrypoint_exit_code": 3,
+    "test_executed": false,
+    "reason": "The sparse worktree has no correctness harness; the entrypoint returned not_run. Per launch instructions, all 8 NPU cards are occupied and device tests must not be started."
   },
   "local": {
-    "status": "not_run",
-    "command_not_executed": "./tools/run.sh local",
-    "reason": "This sparse worktree has no canonical Local runner or scorer. Per launch instructions, all 8 NPU cards are occupied. No partial score was substituted."
+    "status": "not_available",
+    "entrypoint_command": "./tools/run.sh local",
+    "entrypoint_exit_code": 3,
+    "test_executed": false,
+    "reason": "The sparse worktree has no canonical Local runner or scorer; the entrypoint returned not_run. Per launch instructions, all 8 NPU cards are occupied. No partial score was substituted."
   }
 }
