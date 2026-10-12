@@ -1,0 +1,49 @@
+{
+  "route_id": "N07",
+  "revision": "R024",
+  "branch": "research/n07-parameter-tile-reuse",
+  "parent_sha": "d426590945d5a6d4d6ee1f3d6e464df39a3e7720",
+  "source_commit": "bc5bf790a479580ff791885102c5d6d05fe33537",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "4024477e82e362856dbd1034bdb06ee2e213a57b5e71b72c7b67706a4c731546",
+  "hypothesis": "Full FP32, native BF16 pair, and native gamma-only parameter cache candidates consume UB. Avoid selecting a layout that retains fewer rows than baseline, since the reduced batch capacity can add row-batch reduction and dispatch work.",
+  "selection_change": {
+    "candidate_condition": "candidateRows >= baselineRows",
+    "previous_condition": "candidateRows > 0"
+  },
+  "build": {
+    "status": "passed",
+    "entrypoint_command": "./tools/run.sh build",
+    "exit_code": 0,
+    "output": [
+      "-- Configuring done",
+      "-- Generating done",
+      "-- Build files have been written to: /home/data4t2/lelinfeng/cann/worktrees/n07-parameter-tile-reuse/phase4/workspaces/R31B/build-n07",
+      "Consolidate compiler generated dependencies of target r31b_submission_v011",
+      "[ 50%] Building ASC object CMakeFiles/r31b_submission_v011.dir/compile_adapter_v011.asc.o",
+      "[100%] Linking ASC executable r31b_submission_v011",
+      "[100%] Built target r31b_submission_v011"
+    ],
+    "target": "r31b_submission_v011",
+    "artifact_path": "phase4/workspaces/R31B/build-n07/r31b_submission_v011",
+    "artifact_sha256": "193ab4702ae71af32dc3053148464a3cac3f91702c429b73e61f6bee1cec0616"
+  },
+  "correctness": {
+    "status": "not_run",
+    "command": "./tools/run.sh correctness",
+    "exit_code": 3,
+    "output": "not_run: correctness harness is not present in this sparse worktree"
+  },
+  "local": {
+    "status": "not_run",
+    "command": "./tools/run.sh local",
+    "exit_code": 3,
+    "output": "not_run: canonical Local runner and scorer are not present in this sparse worktree"
+  },
+  "performance_measurement": {
+    "status": "not_run",
+    "reason": "No Local runner/scorer is present; the batch-capacity guard is an unmeasured strategy candidate."
+  },
+  "device_id": "NONE",
+  "evidence_note": "Local CANN compilation passed. No NPU command, runtime correctness test, or performance measurement was run."
+}
