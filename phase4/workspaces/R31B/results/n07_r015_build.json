@@ -1,0 +1,46 @@
+{
+  "route_id": "N07",
+  "revision": "R015",
+  "branch": "research/n07-parameter-tile-reuse",
+  "parent_sha": "e6de12b45b3fb1210c6ee8f1f1773c6b91b964cb",
+  "source_commit": "f0b6344110aa7c37fb1b9a642256993f67d54e44",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "006bbfac93928aa1cbb7efad2c93e0ed394736e46babc8b7f937c5a35a07d6f0",
+  "hypothesis": "The FP16 resident gamma/bias buffers hold complete rows, and the chooser constrains row size to at most 16 tiles. Loading each full parameter vector with one DataCopyPad should reduce per-tile DMA descriptor and loop overhead while preserving the existing UB cache layout.",
+  "change": "Replaced the FP16 gamma/bias cache tile loop with one full-row Load for each parameter.",
+  "build": {
+    "status": "passed",
+    "entrypoint_command": "./tools/run.sh build",
+    "exit_code": 0,
+    "output": [
+      "-- Configuring done",
+      "-- Generating done",
+      "-- Build files have been written to: /home/data4t2/lelinfeng/cann/worktrees/n07-parameter-tile-reuse/phase4/workspaces/R31B/build-n07",
+      "Consolidate compiler generated dependencies of target r31b_submission_v011",
+      "[ 50%] Building ASC object CMakeFiles/r31b_submission_v011.dir/compile_adapter_v011.asc.o",
+      "[100%] Linking ASC executable r31b_submission_v011",
+      "[100%] Built target r31b_submission_v011"
+    ],
+    "target": "r31b_submission_v011",
+    "artifact_path": "phase4/workspaces/R31B/build-n07/r31b_submission_v011",
+    "artifact_sha256": "8277e194f1b92e9f276d3f2b4157f631dd1476c592644835a02d6de0b26dff7b"
+  },
+  "correctness": {
+    "status": "not_run",
+    "command": "./tools/run.sh correctness",
+    "exit_code": 3,
+    "output": "not_run: correctness harness is not present in this sparse worktree"
+  },
+  "local": {
+    "status": "not_run",
+    "command": "./tools/run.sh local",
+    "exit_code": 3,
+    "output": "not_run: canonical Local runner and scorer are not present in this sparse worktree"
+  },
+  "performance_measurement": {
+    "status": "not_run",
+    "reason": "No Local runner/scorer is present; build success is compile evidence only, not correctness or performance evidence."
+  },
+  "device_id": "NONE",
+  "evidence_note": "Local CANN compilation passed. No NPU command, runtime correctness test, or performance measurement was run."
+}
