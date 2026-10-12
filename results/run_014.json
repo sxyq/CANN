@@ -1,0 +1,36 @@
+{
+  "route": "N06",
+  "revision": "R014",
+  "source_commit": "11f313d9faf115d92d706365d41fe97b8081c12d",
+  "parent_source_commit": "0e24b5ecc1ca8aa2815fbddda40c56dff4200726",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "971b13a031aa23a40973a074b8793b321cb05aeb4f1cced91eb46254992ab529",
+  "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+  "cmake_sha256": "3a8bc9f92541f92fe403bd7a2c196cb9bf9008cea9c4d668c7b1d603c81b991f",
+  "runner_sha256": "23f6d76d82a7bf645559971d25ee46a6d2d02a59d0f17bf54fed33748196a787",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "Offset the wide FP16 retained-y tile by 32 bytes inside gammaBuf_ for both producer and consumer accesses; add the tail padding and include it in the wide-row UB estimate. BF16 and narrow paths are unchanged.",
+  "hypothesis": "A 32-byte retained-y base phase shift may change UB bank interaction between the retained data and the FP32 work buffers during the wide FP16 pipeline. This is a placement hypothesis only; hardware performance and correctness are unmeasured.",
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "log": "results/build_014.log",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "2b1f1e745fcb6638d416ff85b4bbfae28a65efa7ae6defae74850bf078bcf9f4",
+    "artifact_sha256_file": "results/build-artifact_014.sha256"
+  },
+  "correctness": {
+    "command": "./tools/run.sh correctness",
+    "exit_code": 2,
+    "result": "Not run: runner accepts only build.",
+    "output": "usage: ./tools/run.sh build"
+  },
+  "local": {
+    "command": "./tools/run.sh local",
+    "exit_code": 2,
+    "result": "Not run: runner accepts only build.",
+    "output": "usage: ./tools/run.sh build"
+  },
+  "device_work_submitted": false,
+  "performance_effect": "Unknown; compile only."
+}
