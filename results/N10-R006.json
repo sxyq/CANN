@@ -1,0 +1,41 @@
+{
+  "route": "N10",
+  "revision": "R006",
+  "mechanism": "row-to-core balance / intra-block row visitation order",
+  "hypothesis": "Alternating intra-batch row visitation direction on odd physical blocks may stagger wide-row GM service phases while leaving each block's row ownership and arithmetic unchanged.",
+  "status": "exploratory_build_passed_performance_unknown",
+  "parent_candidate": "0fcc7b240e6ca7df1d1c43e0dfd5615c02867d97",
+  "source_commit": "2804ae1d33792a1cbcddd3a176a06dd618dbb9b3",
+  "source_sha256": "0c55dd0553d14f2e2eb6e44e0a273e6c3414ef30a08370833794d69663603c0d",
+  "change": "In ProcessWideLowPrecision, odd physical blocks reverse row visitation within each existing buffered batch; even blocks keep ascending order. Block count, logical row ownership, row set per block, and per-row arithmetic are unchanged.",
+  "row_order_validation": {
+    "command": "python3 inline batch-row ownership/order check",
+    "status": "passed",
+    "cases": 2048,
+    "output": "N10 R006 batch-row ownership/order check passed: 2048 cases"
+  },
+  "build": {
+    "command": "./tools/run.sh build",
+    "status": "passed",
+    "return_code": 0,
+    "log": "build-20261012T200651979612665Z.log",
+    "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+    "cmake_sha256": "435cd84be945c1757159940c4c36fbab97fb06e9bf14e8a746a8121b42dda9fc",
+    "artifact_sha256": "3e4a2ae43af301899e82b360d0b1cf8ef1b35c5eff1172d86fa7a93264b878ec"
+  },
+  "correctness": {
+    "status": "not_run",
+    "return_code": 127,
+    "log": "correctness-20261012T200734039188050Z.log",
+    "reason": "No correctness runner exists in the N10 sparse worktree."
+  },
+  "local": {
+    "status": "not_run",
+    "return_code": 127,
+    "log": "local-20261012T200802969291253Z.log",
+    "reason": "No Canonical Local runner exists in the N10 sparse worktree."
+  },
+  "performance_claim": null,
+  "device_id": null,
+  "free_hbm_mb": null
+}
