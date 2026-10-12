@@ -1,0 +1,41 @@
+{
+  "route": "N10",
+  "revision": "R005",
+  "mechanism": "row-to-core balance / launch block assignment",
+  "hypothesis": "For rows wider than twice the row-cache threshold, three launch waves may reduce per-block work variation further than the two-wave policy while preserving the existing assignment mapping and kernel arithmetic.",
+  "status": "exploratory_build_passed_performance_unknown",
+  "parent_candidate": "a392186fcc3e8a01657a68970a2087a79328ecf5",
+  "source_commit": "50b78b649f8d67af196215242e464c7dfb3c6bdb",
+  "source_sha256": "dae7b776970ba3b910f08fcc2af9333cc5ea20c8b33644fcef0bb2b2a8ce55d3",
+  "change": "Keep 2x block scheduling for rowWidth in (8192, 16384], use 3x for rowWidth > 16384, cap at rowCount, and guard the uint32 launch-count multiplication.",
+  "scheduler_validation": {
+    "command": "python3 inline host scheduler bounds check",
+    "status": "passed",
+    "cases": 28676,
+    "output": "N10 R005 scheduler bounds passed: 28676 cases"
+  },
+  "build": {
+    "command": "./tools/run.sh build",
+    "status": "passed",
+    "return_code": 0,
+    "log": "build-20261012T195123825099501Z.log",
+    "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+    "cmake_sha256": "435cd84be945c1757159940c4c36fbab97fb06e9bf14e8a746a8121b42dda9fc",
+    "artifact_sha256": "c7ca30678e8f21ff6de57ba5d26af70863c9a06d0007d5873bcc8f91e913e3d2"
+  },
+  "correctness": {
+    "status": "not_run",
+    "return_code": 127,
+    "log": "correctness-20261012T195155417121100Z.log",
+    "reason": "No correctness runner exists in the N10 sparse worktree."
+  },
+  "local": {
+    "status": "not_run",
+    "return_code": 127,
+    "log": "local-20261012T195207321651839Z.log",
+    "reason": "No Canonical Local runner exists in the N10 sparse worktree."
+  },
+  "performance_claim": null,
+  "device_id": null,
+  "free_hbm_mb": null
+}
