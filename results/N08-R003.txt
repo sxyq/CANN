@@ -1,0 +1,28 @@
+route=N08
+revision=R003
+parent_sha=a232d0191606be0eeceb3226421f530d568207a5
+source_commit=7b01570089a1b538e2ec2e0efc138078d385e0a9
+built_tree_head=7b01570089a1b538e2ec2e0efc138078d385e0a9
+source=phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+source_sha256=bb469f6a3053aabcfcba3cc6ea7880297e969c6a2445970cfc4facd697db3471
+artifact=build/r31b_submission_v011
+artifact_sha256=ce11884c1be3cb3591392cf8a2ac3336d7b651f5f9a64b1580b67c724697381e
+
+hypothesis=For a short tail read in the active FP32 full-cache input pass, if a following row exists, the GM offset is 32-byte aligned, and the rounded transfer fits the existing tile buffer, round the read length up to the next 32-byte boundary and use DataCopy. The vector arithmetic and reduction continue to consume only the original valid count. Last-row and unaligned cases retain DataCopyPad.
+evidence=FP32 wide dispatch reaches ProcessWideFp32FullCacheRows. Its x/residual buffers are allocated to tileWidth elements, and every rounded read is bounded by tileCapacity. Inputs are flat contiguous row tensors; only read-only x/residual data can be read ahead, and the global final row always falls back to exact-length Load.
+scope=Only x/residual tail reads in ProcessWideFp32FullCacheRows. No output, arithmetic, reduction, scheduling, or tiling changes.
+
+build_command=./tools/run.sh build
+build_exit_code=0
+build_log=results/build-20261012T163315+0000.log
+cann=/usr/local/Ascend/ascend-toolkit/latest (8.5.T8.0.B060)
+npu_arch=dav-2201
+previous_artifact_sha256=cd176391f7268bbae97af82e529295bc957b86c6ad6bc137393ce9132d68c450
+artifact_changed=true
+
+correctness_status=NOT_RUN
+correctness_reason=No device correctness task was issued in this compile-only revision; no correctness runner or inputs are present in this sparse worktree.
+local_status=NOT_RUN
+local_reason=No device Local task was issued in this compile-only revision; no canonical Local runner, inputs, or scorer are present in this sparse worktree. No Local Score is claimed.
+device_status=NOT_USED
+remote_status=NOT_ATTEMPTED
