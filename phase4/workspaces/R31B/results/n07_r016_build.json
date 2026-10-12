@@ -1,0 +1,49 @@
+{
+  "route_id": "N07",
+  "revision": "R016",
+  "branch": "research/n07-parameter-tile-reuse",
+  "parent_sha": "17c776c1473edbd6b16efedf1748eeed6f246777",
+  "source_commit": "b40b676e72e59d01a128e23f23c6b5dc2fb238a9",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "b11924afe16b1a63e5650d4f9031b218720ada0c4605e5439290ec4ce32d18e5",
+  "hypothesis": "Once a core owns more than one baseline row batch, the streaming path rereads the full gamma/bias row for a later batch. Allowing the FP16 resident cache at this point may avoid that repeated parameter traffic. Only the FP16 threshold changed; BF16 and other paths remain unchanged.",
+  "selection_change": {
+    "previous_condition": "minimumRowsPerBlock > 2 * baselineRows",
+    "candidate_condition": "minimumRowsPerBlock > baselineRows"
+  },
+  "build": {
+    "status": "passed",
+    "entrypoint_command": "./tools/run.sh build",
+    "exit_code": 0,
+    "output": [
+      "-- Configuring done",
+      "-- Generating done",
+      "-- Build files have been written to: /home/data4t2/lelinfeng/cann/worktrees/n07-parameter-tile-reuse/phase4/workspaces/R31B/build-n07",
+      "Consolidate compiler generated dependencies of target r31b_submission_v011",
+      "[ 50%] Building ASC object CMakeFiles/r31b_submission_v011.dir/compile_adapter_v011.asc.o",
+      "[100%] Linking ASC executable r31b_submission_v011",
+      "[100%] Built target r31b_submission_v011"
+    ],
+    "target": "r31b_submission_v011",
+    "artifact_path": "phase4/workspaces/R31B/build-n07/r31b_submission_v011",
+    "artifact_sha256": "791132ef767e199fff30635d9ec77a8dc1e60df3bc019fbe23e899270ebde3ca"
+  },
+  "correctness": {
+    "status": "not_run",
+    "command": "./tools/run.sh correctness",
+    "exit_code": 3,
+    "output": "not_run: correctness harness is not present in this sparse worktree"
+  },
+  "local": {
+    "status": "not_run",
+    "command": "./tools/run.sh local",
+    "exit_code": 3,
+    "output": "not_run: canonical Local runner and scorer are not present in this sparse worktree"
+  },
+  "performance_measurement": {
+    "status": "not_run",
+    "reason": "No Local runner/scorer is present; this heuristic has not been measured and Build success is not performance evidence."
+  },
+  "device_id": "NONE",
+  "evidence_note": "Local CANN compilation passed. No NPU command, runtime correctness test, or performance measurement was run."
+}
