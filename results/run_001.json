@@ -1,0 +1,63 @@
+{
+  "route": "N06",
+  "revision": "5fe9db3617824a95b2600e9c42b4fa53309797d3",
+  "parent": "43a1049a1e08e518c88e354a754fdebb85a96f99",
+  "soc": "Ascend910B3",
+  "npu_arch": "dav-2201",
+  "cann_toolkit": "/usr/local/Ascend/ascend-toolkit/latest (8.5.0.alpha002)",
+  "hypothesis": {
+    "mechanism": "UB-BANK-PLACEMENT-X",
+    "change": "Add 32 bytes to the wide low-precision xFp32Buf_ allocation so the following residualFp32Buf_ begins at a different aligned phase.",
+    "scope": "No tensor indices, Tile semantics, synchronization, reduction topology, or arithmetic changed.",
+    "status": "Compile validated; bank-conflict and performance effects remain unmeasured."
+  },
+  "source_sha256": {
+    "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc": "229a4105ad537f44a7be4a08154a7bb6b671c14781ab6dca831de58bf86c2185",
+    "phase4/workspaces/R31B/compile_adapter_v011.asc": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+    "phase4/workspaces/R31B/CMakeLists.txt": "3a8bc9f92541f92fe403bd7a2c196cb9bf9008cea9c4d668c7b1d603c81b991f"
+  },
+  "build": {
+    "status": "passed",
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "log": "results/build-current.log",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "4606434b19f4c7912abe2d7ea6d8f6bc8f902fa3635cd95634ad5d5d14a7dee7",
+    "artifact_sha256_file": "results/build-artifact.sha256",
+    "attempts": [
+      {
+        "command": "cmake --build build --target r31b_submission_v011 --verbose -j2",
+        "exit_code": 2,
+        "reason": "ASCEND_HOME_PATH was absent in the compiler process; kernel_operator.h was not found.",
+        "log": "results/build.log"
+      },
+      {
+        "command": "source /usr/local/Ascend/ascend-toolkit/set_env.sh; cmake --build build --target r31b_submission_v011 --verbose -j2",
+        "exit_code": 2,
+        "reason": "CCE plugin-generated registration code could not find the C++ standard header vector.",
+        "log": "results/build-retry.log"
+      },
+      {
+        "command": "source SDK environment and set CPLUS_INCLUDE_PATH to HCC C++ 7.3.0 include directories; cmake --build build --target r31b_submission_v011 --verbose -j2",
+        "exit_code": 0,
+        "reason": "Build succeeded with the HCC standard-library include path inherited by the plugin process.",
+        "log": "results/build-cplus.log"
+      }
+    ]
+  },
+  "correctness": {
+    "status": "not_run",
+    "command_executed": null,
+    "intended_entry": "./tools/run.sh correctness",
+    "reason": "The sparse N06 worktree has no correctness adapter or test files, and npu-smi showed active user processes on all 8 devices; no device test was started."
+  },
+  "local": {
+    "status": "not_run",
+    "command_executed": null,
+    "intended_entry": "./tools/run.sh local",
+    "reason": "The sparse N06 worktree has no Canonical Local runner or scorer, and npu-smi showed active user processes on all 8 devices; no device measurement was started."
+  },
+  "device_snapshot": "results/npu-smi-info.txt",
+  "device_safety": "No NPU workload was submitted; existing processes were not changed.",
+  "remote": "No cann-server3 command was run by this route task."
+}
