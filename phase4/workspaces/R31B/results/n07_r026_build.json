@@ -1,0 +1,45 @@
+{
+  "route_id": "N07",
+  "revision": "R026",
+  "branch": "research/n07-parameter-tile-reuse",
+  "parent_sha": "e609e181231f7b13757fc259bff6f792b130e0ce",
+  "source_commit": "de1b60f3d385b7cf01d83c2c251d685751e70a74",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "6fe8a9410f0d827d58babdd28d792db4048002d7a53509e27c1597a7210c2ac8",
+  "finding": "The low-precision wide-row chooser counted the double-buffered x/residual tiles but omitted the separately allocated outputBuf_ tile. All FP16 and BF16 baseline/cache chooser calls now account for this additional low-precision IO tile.",
+  "build": {
+    "status": "passed",
+    "entrypoint_command": "./tools/run.sh build",
+    "exit_code": 0,
+    "output": [
+      "-- Configuring done",
+      "-- Generating done",
+      "-- Build files have been written to: /home/data4t2/lelinfeng/cann/worktrees/n07-parameter-tile-reuse/phase4/workspaces/R31B/build-n07",
+      "Consolidate compiler generated dependencies of target r31b_submission_v011",
+      "[ 50%] Building ASC object CMakeFiles/r31b_submission_v011.dir/compile_adapter_v011.asc.o",
+      "[100%] Linking ASC executable r31b_submission_v011",
+      "[100%] Built target r31b_submission_v011"
+    ],
+    "target": "r31b_submission_v011",
+    "artifact_path": "phase4/workspaces/R31B/build-n07/r31b_submission_v011",
+    "artifact_sha256": "a3211163699255bc61ff8f6ad737d12af4fd25c66f61ffd0577c577cbdc70b7a"
+  },
+  "correctness": {
+    "status": "not_run",
+    "command": "./tools/run.sh correctness",
+    "exit_code": 3,
+    "output": "not_run: correctness harness is not present in this sparse worktree"
+  },
+  "local": {
+    "status": "not_run",
+    "command": "./tools/run.sh local",
+    "exit_code": 3,
+    "output": "not_run: canonical Local runner and scorer are not present in this sparse worktree"
+  },
+  "performance_measurement": {
+    "status": "not_run",
+    "reason": "No Local runner/scorer is present. This is a UB budget-accounting correction, not measured performance evidence."
+  },
+  "device_id": "NONE",
+  "evidence_note": "Local CANN compilation passed. No NPU command or runtime correctness test was run."
+}
