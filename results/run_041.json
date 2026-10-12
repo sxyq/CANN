@@ -1,0 +1,36 @@
+{
+  "route": "N06",
+  "revision": "R041",
+  "source_commit": "51c46c62f8aa10efe463e47277a3c951986ce11a",
+  "parent_source_commit": "cf1ec6a4d5146bbd63da6dc0da251761333457d3",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "c314af7ec3484a3b070268308a9aee248cabf784d44200252f4f9cb9f8d32b43",
+  "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+  "cmake_sha256": "3a8bc9f92541f92fe403bd7a2c196cb9bf9008cea9c4d668c7b1d603c81b991f",
+  "runner_sha256": "23f6d76d82a7bf645559971d25ee46a6d2d02a59d0f17bf54fed33748196a787",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "Increase the wide FP16 ReduceSum partial active offset from 160 to 192 bytes, allocate matching tail space, and add 32 bytes to the wide-row estimate. Other R040 placements remain unchanged.",
+  "hypothesis": "A 192-byte active partial-array phase may interact differently from smaller candidates with ReduceSum scratch. This is compile-validated only.",
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "log": "results/build_041.log",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "300d6f0617d515a7f92ce7027de75069a167b54103c389c62aaa43d7840631d0",
+    "artifact_sha256_file": "results/build-artifact_041.sha256"
+  },
+  "correctness": {
+    "command": "./tools/run.sh correctness",
+    "exit_code": 2,
+    "result": "Not run: runner accepts only build.",
+    "output": "usage: ./tools/run.sh build"
+  },
+  "local": {
+    "command": "./tools/run.sh local",
+    "exit_code": 2,
+    "result": "Not run: runner accepts only build.",
+    "output": "usage: ./tools/run.sh build"
+  },
+  "device_work_submitted": false,
+  "performance_effect": "Unknown; compile only."
+}
