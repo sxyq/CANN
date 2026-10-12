@@ -1,0 +1,74 @@
+{
+  "route_id": "N07",
+  "revision": "R007",
+  "branch": "research/n07-parameter-tile-reuse",
+  "parent_sha": "6efc6e326187e1325daccbaaa730b8159b500f5e",
+  "source_commit": "021df01c537a43fd0b43b4d3525d056874b70bd2",
+  "implementation_commit": "2d9288d1c",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "702035a757f6f56d4d047001b8f74a693bdd21b4424eb99dd87d4c2e18a6cb3d",
+  "hypothesis": "For wide BF16 rows with repeated per-core batches, retain the complete FP32 gamma/bias vectors in UB once per CTA instead of reloading and converting the parameter tiles for every row batch. Enable only when the complete parameter cache fits the existing UB budget and the minimum rows per block exceeds two baseline batches. Arithmetic order and GM tail-copy behavior are unchanged.",
+  "selection": {
+    "parameter_cache_bytes": "2 * row_width * sizeof(float)",
+    "enable_condition": "minimumRowsPerBlock > 2 * baselineRows and resident-budget chooser returns a valid configuration",
+    "budget_bytes": 180224,
+    "baseline_rows": "selected by R006 parameter-reuse chooser",
+    "cached_rows_and_tile": "selected by resident-budget chooser"
+  },
+  "build": {
+    "status": "passed_after_fix",
+    "entrypoint_command": "./tools/run.sh build",
+    "attempts": [
+      {
+        "status": "failed",
+        "exit_code": 2,
+        "reason": "Initial R007 source had a missing function-closing brace around the new cached-parameter branch; compiler diagnosed the following kernel entry as nested in the class.",
+        "output": [
+          "error: declaration of 'T' shadows template parameter",
+          "error: kernel function 'add_rms_norm_bias_custom' must be a free function or static member function",
+          "error: expected member name or ';' after declaration specifiers",
+          "error: expected '}'",
+          "gmake[3]: *** [CMakeFiles/r31b_submission_v011.dir/build.make:76: CMakeFiles/r31b_submission_v011.dir/compile_adapter_v011.asc.o] Error 1",
+          "gmake[2]: *** [CMakeFiles/Makefile2:83: CMakeFiles/r31b_submission_v011.dir/all] Error 2",
+          "gmake[1]: *** [CMakeFiles/Makefile2:90: CMakeFiles/r31b_submission_v011.dir/rule] Error 2",
+          "gmake: *** [Makefile:124: r31b_submission_v011] Error 2"
+        ]
+      },
+      {
+        "status": "passed",
+        "exit_code": 0,
+        "output": [
+          "-- Configuring done",
+          "-- Generating done",
+          "-- Build files have been written to: phase4/workspaces/R31B/build-n07",
+          "Consolidate compiler generated dependencies of target r31b_submission_v011",
+          "[ 50%] Building ASC object CMakeFiles/r31b_submission_v011.dir/compile_adapter_v011.asc.o",
+          "[100%] Linking ASC executable r31b_submission_v011",
+          "[100%] Built target r31b_submission_v011"
+        ],
+        "target": "r31b_submission_v011",
+        "artifact_path": "phase4/workspaces/R31B/build-n07/r31b_submission_v011",
+        "artifact_sha256": "b4b155546586b0770cc539c39738bf37a2533df53319abf4fdcba1e7a1e9d2ce"
+      }
+    ]
+  },
+  "correctness": {
+    "status": "not_run",
+    "command": "./tools/run.sh correctness",
+    "exit_code": 3,
+    "reason": "The sparse worktree has no correctness harness; the entrypoint reported not_run."
+  },
+  "local": {
+    "status": "not_run",
+    "command": "./tools/run.sh local",
+    "exit_code": 3,
+    "reason": "The sparse worktree has no canonical Local runner or scorer; the entrypoint reported not_run."
+  },
+  "performance_measurement": {
+    "status": "not_run",
+    "reason": "No Local runner/scorer is present. Build success is compile evidence only, not correctness or performance evidence."
+  },
+  "device_id": "NONE",
+  "free_hbm_mb": "UNKNOWN",
+  "evidence_note": "Only local CANN compilation was performed; no NPU command or runtime correctness test was run."
+}
