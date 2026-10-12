@@ -1,0 +1,36 @@
+{
+  "route": "N06",
+  "revision": "R024",
+  "source_commit": "dca45c0d440f4f143a4518081e6b22f6a4abbd10",
+  "parent_source_commit": "2afeee7856d78cfecd0e0513f446f62588c74e43",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "abf9dd1bd3e380b4bd634a037486851aaa878328faf19a5c9d9e16bb9c6b8e5d",
+  "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+  "cmake_sha256": "3a8bc9f92541f92fe403bd7a2c196cb9bf9008cea9c4d668c7b1d603c81b991f",
+  "runner_sha256": "23f6d76d82a7bf645559971d25ee46a6d2d02a59d0f17bf54fed33748196a787",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "Increase the wide FP16 residual ping-pong second-slot phase from 64 to 96 bytes, with matching allocation padding and I/O estimate. All other placements and event ordering are unchanged.",
+  "hypothesis": "This 96-byte transfer-aligned candidate may affect the MTE2/Vector interaction differently from 32- and 64-byte offsets. Hardware correctness and performance are unmeasured.",
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "log": "results/build_024.log",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "7bacf4237cd3179eaacb35054a65dda15fb6d5bf02b0bab223498cc2fdc3a9bb",
+    "artifact_sha256_file": "results/build-artifact_024.sha256"
+  },
+  "correctness": {
+    "command": "./tools/run.sh correctness",
+    "exit_code": 2,
+    "result": "Not run: runner accepts only build.",
+    "output": "usage: ./tools/run.sh build"
+  },
+  "local": {
+    "command": "./tools/run.sh local",
+    "exit_code": 2,
+    "result": "Not run: runner accepts only build.",
+    "output": "usage: ./tools/run.sh build"
+  },
+  "device_work_submitted": false,
+  "performance_effect": "Unknown; compile only."
+}
