@@ -133,3 +133,34 @@ Ordered by source-meta terminal_at descending. Times are UTC. Each is Pass 15/15
 | 2026-10-11 23:45:52.649 | N01 V017 | 6acc1f64694b590c3c8c5b47 | 41.03 |
 
 N04 V018 HTTP 429 returned no SID and is not a valid receipt.
+
+## 2026-10-12 Current Route Source Audit
+
+The following identities are the latest route sources observed during this audit. Similarity uses the existing `归档/历史控制文件/code_similarity.py` normalization and metrics. Its self-test passed all 10 assertions. The script's default file set still points to historical sources, so the current values below were calculated from the current source files with its existing functions; its historical output TSV was not overwritten.
+
+| Route | Version / route commit | Candidate source SHA-256 | Direct parent source SHA-256 | Build evidence |
+|---|---|---|---|---|
+| N01 | V021 / `ad003eac` | `d4f9994b9eb43e75b454143cbdb3f2b8a2222545d6ad4496fc6022c1682e5134` | V020: `2add7f609bb93ffb84bed7040f1526ce02aab2b1049eed14ad12ef867d1cf7dc` | Existing V021 Candidate build input matches. FP32 test Runner built; its Parent/reference failed before Candidate comparison. |
+| N02 | V015 / `e8959772` | `531751ef88ca63ec4adb4da24b2089b6b429a4b08cb4ee1da88f826479c468a4` | V014: `697b2f181763300a05207df7e9bff373e86e5844b272a99a74fe67a6541b44d6` | No V015 build input or device artifact recorded yet. |
+| N03 | V021 / `ef3a3653` | `3742d0979b631cc3b4b174161bc72c5bec4b9fa32331bb5c101250b295793927` | V020: `f7c5cade4ee68dedb456ee1f05a27c315456c86d8e067a4f1516853503637722` | Candidate local/remote source identity matches. The Local comparison reference is R31B V011; it is distinct from the direct source parent. |
+| N04 | V020 / `904366f1` | `d17d17335443581bcdb64cb8c1625f8d2f1b1e9295c5cabea95b8d726e3ed5c4` | V019: `13435a1b4b14e5094f99931cfe99647a4cf43603bea8592cf580743870cbcaf5` | Candidate build input matches. V020 Correctness used R31B V011; paired Local is pending. |
+| N05 | V028 / `004980c0` | `0e0f0a7bbf6417404175818800d07b892702c563acde9710de9a9d82549949d6` | V027: `adb2c54017dc1ee120ddb8037939e44512eb63c02d4dd939932d3be2e17e7229` | Separate Parent/Candidate inputs and matching local/remote identities are recorded; Local validity is NONE. |
+
+| Source pair | Line | Token | 8-token Shingle | Identical long blocks |
+|---|---:|---:|---:|---:|
+| N01 V021 / N02 V015 | 0.954633 | 0.976269 | 0.941136 | 9 |
+| N01 V021 / N03 V021 | 0.984979 | 0.995950 | 0.965416 | 13 |
+| N01 V021 / N04 V020 | 0.990149 | 0.997653 | 0.977106 | 8 |
+| N01 V021 / N05 V028 | 0.976080 | 0.995230 | 0.922063 | 7 |
+| N02 V015 / N03 V021 | 0.956507 | 0.978054 | 0.942152 | 13 |
+| N02 V015 / N04 V020 | 0.961512 | 0.977157 | 0.953386 | 8 |
+| N02 V015 / N05 V028 | 0.950305 | 0.977176 | 0.902983 | 6 |
+| N03 V021 / N04 V020 | 0.993034 | 0.996828 | 0.978272 | 8 |
+| N03 V021 / N05 V028 | 0.978640 | 0.995721 | 0.921794 | 15 |
+| N04 V020 / N05 V028 | 0.983776 | 0.996229 | 0.932779 | 10 |
+
+All ten pairs exceed 80% on all three complete-source metrics. Effective-change similarity is not measured for these exact identities: the earlier `Line/Shingle=0`, `Token max=0.410256` values have no matching Source SHA record, and the existing script does not extract effective-change regions. Do not treat those earlier values as current results.
+
+The observed mechanisms remain distinct: N01 reuses a dead FP32 reduction temporary; N02 V015 changes hot-loop/control-flow layout; N03 widens the BF16 affine issue wave to two rows; N04 changes the wide low-precision bias cache hint; N05 changes pass-one retained-y tile address calculation. No mechanism overlap was observed in the current source diffs.
+
+Recent visible commits show N01, N03, N04, and N05 touching their route evidence/source paths. N02 also changed shared R31B V016 test-support files (`adapter.cpp`, `device.cpp`, `paired_runner.cpp`, and `paired_runner_v016.asc`); no visible commit path writes another route's private kernel source. Cross-route access remains inconclusive because per-agent file-read logs are unavailable: `AUDIT_VISIBILITY_LIMITED=YES`.
