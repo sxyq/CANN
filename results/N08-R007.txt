@@ -1,0 +1,30 @@
+route=N08
+revision=R007
+parent_sha=be86da293381c1334afb41517104ac06c3373cf2
+source_commit=9846c4fb318aec044cb4a6b3bbbdabfd34e6f51a
+built_tree_head=9846c4fb318aec044cb4a6b3bbbdabfd34e6f51a
+source=phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+source_sha256=47136ba31b97a9d912101d2fab9528c18c839125493ffd0314a3c5ae2e3ab75f
+artifact=build/r31b_submission_v011
+artifact_sha256=0f18e6ae6c0ee213c928fc7df15f8b25346612c90e70403207b2fe1db0715e5e
+aicore_binary_section_sha256=f65246f97fc3b538fbab116f723fc23b78a1d381a3aab9774b5ea007be69d51f
+
+hypothesis=Hoist the active FP32 output store's per-row GM and UB 32-byte address-alignment checks out of the tile loop. Since tileWidth is selected in multiples of 512 elements, tile starts are 32-byte aligned and both row-start alignment predicates are invariant across tiles. This removes repeated address-modulo checks from each tile's transaction-selection branch.
+evidence=For each batch row, outputRowOffset=(batchBegin+batchRow)*rowWidth and localRowOffset=batchRow*rowWidth determine address alignment for every tile because col=tile*tileWidth and tileWidth%8==0. The DataCopy branch still requires valid%8==0 and the precomputed conjunction of both row-start alignment checks; all other cases retain Store/DataCopyPad. The extracted .aicore_binary section hash changed relative to R006; this confirms a generated device-section change but is not performance data.
+scope=FP32 full-y output store address-alignment predicate placement only. No GM transfer lengths, arithmetic, reduction, row scheduling, or tile sizing changes.
+
+build_command=./tools/run.sh build
+build_exit_code=0
+build_log=results/build-20261012T181245+0000.log
+cann=/usr/local/Ascend/ascend-toolkit/latest (8.5.T8.0.B060)
+npu_arch=dav-2201
+previous_artifact_sha256=10fdf5d9b1a4686661d885fa299d3d5bb5f2b79252a6226f83c51237fe4c7228
+previous_aicore_binary_section_sha256=b841a57fd4cf3624f97c2591a8d9526b32ea8780bd0adfb10c856bfa89b52094
+artifact_changed=true
+
+correctness_status=NOT_RUN
+correctness_reason=The route worktree exposes no correctness runner or inputs.
+local_status=NOT_RUN
+local_reason=The route worktree exposes no Canonical Local runner, inputs, or scorer. No Local Score is claimed.
+device_status=NOT_USED
+remote_status=NOT_ATTEMPTED
