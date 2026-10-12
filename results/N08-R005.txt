@@ -1,0 +1,30 @@
+route=N08
+revision=R005
+parent_sha=bdfb5a13f5ee1587a614e8933493acc088c98218
+source_commit=3bdf562c40ffce0ac0f97b495b97a6c9f898a26d
+built_tree_head=3bdf562c40ffce0ac0f97b495b97a6c9f898a26d
+source=phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+source_sha256=c119e1cacf8c1768f8cf8f02b1b32875afaceb47e3cbad715593cfdc0ff21c1a
+artifact=build/r31b_submission_v011
+artifact_sha256=4fa513c32d1b096fdad2d72160e5769df616ae7b3ada7294a293249c78ca2d56
+aicore_binary_section_sha256=a8ccc4eb317ed69a547aacf7e5dbb5f38a7427bbee8016b4292d6fb82fe5346c
+
+hypothesis=In the R003/R004 aligned tail-load decision, test the GM source-offset alignment predicate before the tail-count alignment predicate. For row widths not divisible by the FP32 data-block width, some row starts are misaligned; short-circuiting their GM alignment failure first can avoid evaluating the count-alignment predicate on those rows.
+evidence=The active helper's offset is rowOffset + col, with col advancing by a tileWidth divisible by 512. Therefore its block alignment is determined by rowOffset. For widths not divisible by 8 FP32 elements, row starts can be unaligned while tail count remains independent. The source change preserves the same conditions, DataCopy length, fallback, and computation semantics, changing predicate evaluation order only. The extracted .aicore_binary section hash changed relative to the R004 build; this is code-generation evidence only and not a performance result.
+scope=Condition order in LoadTailWithFollowingRow only. No GM transfer length, arithmetic, reduction, row scheduling, or tile sizing changes.
+
+build_command=./tools/run.sh build
+build_exit_code=0
+build_log=results/build-20261012T175556+0000.log
+cann=/usr/local/Ascend/ascend-toolkit/latest (8.5.T8.0.B060)
+npu_arch=dav-2201
+previous_artifact_sha256=e2385cb2011ebec21d69dbf263e4e796650b632daf60e34d734fd3fd4279c32b
+previous_aicore_binary_section_sha256=dc031fadfc92868bf5701eeb3c99bf5411c8196925d6e596c955991d5553c4a8
+artifact_changed=true
+
+correctness_status=NOT_RUN
+correctness_reason=The route worktree exposes no correctness runner or inputs.
+local_status=NOT_RUN
+local_reason=The route worktree exposes no Canonical Local runner, inputs, or scorer. No Local Score is claimed.
+device_status=NOT_USED
+remote_status=NOT_ATTEMPTED
