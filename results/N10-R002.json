@@ -1,0 +1,43 @@
+{
+  "route": "N10",
+  "revision": "R002",
+  "mechanism": "row-to-core balance / remainder ownership",
+  "hypothesis": "With R001 overdecomposition, spreading the remainder rows across block IDs instead of assigning them to the first blocks may reduce clustered long-block work in a multi-wave schedule.",
+  "status": "exploratory_build_passed_performance_unknown",
+  "parent_candidate": "6213e0da7f82cc5611cd167ed5eadf0962e634d1",
+  "source_commit": "43752629aab9039d651b2e15668cc547939dafe4",
+  "source_sha256": "fd93657cbea33f5a734f67bf088159ab13563709000842c34bb4eb6ad4236564",
+  "partition_validation": {
+    "range": "rowCount=1..512; blockCount<=min(rowCount,32)",
+    "command": "bash exhaustive quotient/remainder range check",
+    "status": "passed",
+    "output": "passed: n=1..512, b<=min(n,32)",
+    "large_boundary_command": "python3 arbitrary-precision final-block check for 7 row counts x 7 block counts",
+    "large_boundary_status": "passed",
+    "large_boundary_output": "passed: 31 large-boundary final-block checks",
+    "initial_attempt": {
+      "return_code": 1,
+      "reason": "Bash signed integer arithmetic overflowed on the UINT32_MAX squared intermediate; rerun with Python arbitrary-precision arithmetic passed."
+    }
+  },
+  "build": {
+    "command": "./tools/run.sh build",
+    "status": "passed",
+    "return_code": 0,
+    "log": "build-20261012T185654522943993Z.log",
+    "artifact_sha256": "9d920f4680038ad638e039df5df4fff352416ca645b754e2eeb5efbc2f33995f"
+  },
+  "correctness": {
+    "status": "not_run",
+    "return_code": 127,
+    "log": "correctness-20261012T185829461027157Z.log",
+    "reason": "No correctness runner exists in the N10 sparse worktree."
+  },
+  "local": {
+    "status": "not_run",
+    "return_code": 127,
+    "log": "local-20261012T185829454754164Z.log",
+    "reason": "No Canonical Local runner exists in the N10 sparse worktree."
+  },
+  "performance_claim": null
+}
