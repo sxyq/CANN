@@ -1,0 +1,46 @@
+{
+  "route_id": "N07",
+  "revision": "R025",
+  "branch": "research/n07-parameter-tile-reuse",
+  "parent_sha": "b85e68438b1121da21c6d993ed3fcdf2fee6e7fa",
+  "source_commit": "129ddaeaae7be24f643b11adb1f90e74377f10c4",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "435ce3823720b6e5982fe5c4a42ab7f413a1aa07e3daa39208b36f7cd7f751f0",
+  "hypothesis": "In the BF16-to-FP32 parameter-cache fill loop, PipeBarrier<PIPE_V> after ToFloat completes the vector read of the shared low-precision staging tile before the next iteration reuses that tile. The additional V-to-MTE2 event wait is redundant.",
+  "change": "Removed the per-tile SyncVToMTE2 after the parameter conversion barrier. MTE2-to-Vector waits before conversion remain.",
+  "build": {
+    "status": "passed",
+    "entrypoint_command": "./tools/run.sh build",
+    "exit_code": 0,
+    "output": [
+      "-- Configuring done",
+      "-- Generating done",
+      "-- Build files have been written to: /home/data4t2/lelinfeng/cann/worktrees/n07-parameter-tile-reuse/phase4/workspaces/R31B/build-n07",
+      "Consolidate compiler generated dependencies of target r31b_submission_v011",
+      "[ 50%] Building ASC object CMakeFiles/r31b_submission_v011.dir/compile_adapter_v011.asc.o",
+      "[100%] Linking ASC executable r31b_submission_v011",
+      "[100%] Built target r31b_submission_v011"
+    ],
+    "target": "r31b_submission_v011",
+    "artifact_path": "phase4/workspaces/R31B/build-n07/r31b_submission_v011",
+    "artifact_sha256": "f05804c130fe01f0d68af361e9ca6e000f0c8a81e2a04f932e46597842816c41"
+  },
+  "correctness": {
+    "status": "not_run",
+    "command": "./tools/run.sh correctness",
+    "exit_code": 3,
+    "output": "not_run: correctness harness is not present in this sparse worktree"
+  },
+  "local": {
+    "status": "not_run",
+    "command": "./tools/run.sh local",
+    "exit_code": 3,
+    "output": "not_run: canonical Local runner and scorer are not present in this sparse worktree"
+  },
+  "performance_measurement": {
+    "status": "not_run",
+    "reason": "No Local runner/scorer is present; the conversion-barrier change is unmeasured."
+  },
+  "device_id": "NONE",
+  "evidence_note": "Local CANN compilation passed. No NPU command, runtime correctness test, or performance measurement was run."
+}
