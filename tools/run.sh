@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 set -o pipefail
 
-if [[ "${1:-}" != "build" || "$#" -ne 1 ]]; then
-    printf 'usage: %s build\n' "$0" >&2
+action="${1:-}"
+if [[ "$#" -ne 1 || ( "$action" != "build" && "$action" != "correctness" && "$action" != "local" ) ]]; then
+    printf 'usage: %s {build|correctness|local}\n' "$0" >&2
     exit 2
 fi
 
@@ -13,8 +14,21 @@ build_dir="${TMPDIR:-/tmp}/n10-row-core-balance-build"
 results_dir="$worktree/results"
 mkdir -p "$results_dir"
 timestamp="$(date -u +%Y%m%dT%H%M%S%NZ)"
-log_file="$results_dir/build-${timestamp}.log"
+log_file="$results_dir/${action}-${timestamp}.log"
 exec > >(tee "$log_file") 2>&1
+
+if [[ "$action" != "build" ]]; then
+    printf 'ROUTE=N10\n'
+    printf 'UTC=%s\n' "$timestamp"
+    printf 'WORKTREE=%s\n' "$worktree"
+    printf 'BRANCH=%s\n' "$(git -C "$worktree" branch --show-current)"
+    printf 'HEAD=%s\n' "$(git -C "$worktree" rev-parse HEAD)"
+    printf 'COMMAND=./tools/run.sh %s\n' "$action"
+    printf 'STATUS=not_run\n'
+    printf 'REASON=no %s runner is present in the N10 sparse worktree\n' "$action"
+    printf 'RC=127\n'
+    exit 127
+fi
 
 build_rc=0
 printf 'ROUTE=N10\n'

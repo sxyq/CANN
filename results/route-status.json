@@ -2,9 +2,9 @@
   "route": "N10",
   "parent_sha": "43a1049a1e08e518c88e354a754fdebb85a96f99",
   "mechanism": "row-to-core balance / launch block assignment",
-  "axis_status": "closed_no_change",
-  "kernel_changed": false,
-  "closure_basis": {
+  "axis_status": "active_exploration",
+  "kernel_changed": true,
+  "baseline_assignment": {
     "block_count": "min(availableCoreNum, rowCount)",
     "row_partition": "quotient/remainder contiguous assignment",
     "maximum_per_core_work_difference_rows": 1,
@@ -14,10 +14,10 @@
     "command": "./tools/run.sh build",
     "status": "passed",
     "return_code": 0,
-    "log": "build-20261012T152345645352743Z.log",
-    "kernel_sha256": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+    "log": "build-20261012T181543457276195Z.log",
+    "kernel_sha256": "c1d4f17943a9c5ef29d2fc7d89131d3c0b892ae15c6687e8895b451390461911",
     "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
-    "artifact_sha256": "d72e5c947140dbd940e800427f5ff71f3555598cbaf36c574ede009c45ce24e8"
+    "artifact_sha256": "6f08cafe197ca0c68411ac3984ec7278a599a209a85d8e98e729932145db7c72"
   },
   "build_attempts": [
     {
@@ -39,15 +39,31 @@
       "log": "build-20261012T152345645352743Z.log",
       "return_code": 0,
       "cause": "V011 adapter build passed with exported SDK C++ include directories."
+    },
+    {
+      "log": "build-20261012T181119437716683Z.log",
+      "return_code": 2,
+      "cause": "The first R001 build could not resolve the private kCacheElems member from host code."
+    },
+    {
+      "log": "build-20261012T181543457276195Z.log",
+      "return_code": 0,
+      "cause": "R001 rebuilt successfully after sharing the row-cache threshold with host scheduling."
     }
   ],
+  "last_experiment": "N10-R001",
+  "performance_status": "unknown_not_measured",
   "correctness": {
     "status": "not_run",
-    "reason": "No device test was requested for this route execution."
+    "return_code": 127,
+    "log": "correctness-20261012T181811110504276Z.log",
+    "reason": "No correctness runner exists in the N10 sparse worktree."
   },
   "local": {
     "status": "not_run",
-    "reason": "No device measurement was requested for this route execution."
+    "return_code": 127,
+    "log": "local-20261012T181811114245474Z.log",
+    "reason": "No Canonical Local runner exists in the N10 sparse worktree."
   },
   "isolation": "worktree-level soft isolation only; no OS-level filesystem boundary"
 }
