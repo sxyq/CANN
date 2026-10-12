@@ -1,0 +1,36 @@
+{
+  "route": "N06",
+  "revision": "R039",
+  "source_commit": "6bbdf4f716caf18084244c684c20e0716717b01a",
+  "parent_source_commit": "63e1e46a3f06e1ab4432684777ed8cb38c1fd30f",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "fc8058f33b6c67beea0bde82731bfb32de93d76d28d6d8a7e816da015e5b3a58",
+  "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+  "cmake_sha256": "3a8bc9f92541f92fe403bd7a2c196cb9bf9008cea9c4d668c7b1d603c81b991f",
+  "runner_sha256": "23f6d76d82a7bf645559971d25ee46a6d2d02a59d0f17bf54fed33748196a787",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "Increase the wide FP16 valueFp32Buf_ active phase from 128 to 160 bytes and add matching allocation space and UB estimate. Other R038 placements remain unchanged.",
+  "hypothesis": "A 160-byte active value-scratch phase may interact differently from smaller candidates with FP16 conversion and normalization. No device measurements are available.",
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "log": "results/build_039.log",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "693fcbd8f6227963851593d9dfb0bf3f1f690bfbef35e050c37026f8c9d645e9",
+    "artifact_sha256_file": "results/build-artifact_039.sha256"
+  },
+  "correctness": {
+    "command": "./tools/run.sh correctness",
+    "exit_code": 2,
+    "result": "Not run: runner accepts only build.",
+    "output": "usage: ./tools/run.sh build"
+  },
+  "local": {
+    "command": "./tools/run.sh local",
+    "exit_code": 2,
+    "result": "Not run: runner accepts only build.",
+    "output": "usage: ./tools/run.sh build"
+  },
+  "device_work_submitted": false,
+  "performance_effect": "Unknown; compile only."
+}
