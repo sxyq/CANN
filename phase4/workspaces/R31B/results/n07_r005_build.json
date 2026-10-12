@@ -1,0 +1,37 @@
+{
+  "route_id": "N07",
+  "revision": "R005",
+  "branch": "research/n07-parameter-tile-reuse",
+  "parent_sha": "9665c1c6a22dbc7b2b220ee64567f2e574baaded",
+  "source_commit": "464e3cbbed60299f74f818d08eb46bcfb929b1e8",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "6ba4ad69c0a0bd0ae10bd00239990f2c530e3e131ddd0d342fb838995decbb84",
+  "hypothesis": "The BF16 rowWidth == kCacheElems path enters ProcessBf16FullRowOutputPipelined, where gamma/bias are promoted from two tiles before row processing while x/residual staging buffers are idle. Load the second x/residual tile during conversion of the first gamma/bias tile, wait for that DMA before converting the second parameter tile, and complete V-to-MTE2 before the first row reuses those input buffers.",
+  "build": {
+    "status": "passed",
+    "entrypoint_command": "./tools/run.sh build",
+    "exit_code": 0,
+    "configure_command": "source /usr/local/Ascend/ascend-toolkit/set_env.sh && cmake -S <route>/phase4/workspaces/R31B -B <route>/phase4/workspaces/R31B/build-n07",
+    "compile_command": "source /usr/local/Ascend/ascend-toolkit/set_env.sh && cmake --build <route>/phase4/workspaces/R31B/build-n07 --target r31b_submission_v011 -j2",
+    "target": "r31b_submission_v011",
+    "artifact_path": "phase4/workspaces/R31B/build-n07/r31b_submission_v011",
+    "artifact_sha256": "408f359d3349e43903bb8b0ff4d9242202c7d6481e957951461439c934f8c3d0",
+    "compiler": "bisheng from /usr/local/Ascend/ascend-toolkit/latest (CANN 8.5.T8.0, aarch64 host)"
+  },
+  "correctness": {
+    "status": "not_run",
+    "command": "./tools/run.sh correctness",
+    "exit_code": 3,
+    "reason": "The sparse worktree does not contain a correctness harness; the entrypoint returned: not_run: correctness harness is not present in this sparse worktree. No device test was started."
+  },
+  "local": {
+    "status": "not_run",
+    "command": "./tools/run.sh local",
+    "exit_code": 3,
+    "reason": "The sparse worktree does not contain the canonical Local runner or scorer; the entrypoint returned: not_run: canonical Local runner and scorer are not present in this sparse worktree. No score is claimed."
+  },
+  "performance_measurement": {
+    "status": "not_run",
+    "reason": "No Local runner or scorer is present; build success is not performance evidence."
+  }
+}
