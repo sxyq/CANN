@@ -1,0 +1,46 @@
+{
+  "route_id": "N07",
+  "revision": "R013",
+  "branch": "research/n07-parameter-tile-reuse",
+  "parent_sha": "338b8b236035ebed29f88bf56b60768fa701fc10",
+  "source_commit": "5d7596e8a36b2140db36b444b3bde24e0cf155ec",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "a808b2c1efa6199740581cb6586974763a42b1cf2e9fc2bdefc6164802c12a6d",
+  "change": "Cached-parameter branches now compute each retained row's inverse RMS from the pass-1 reduction partials before parameterized output. The streaming fallback retains its existing reduction and parameter-prefetch order.",
+  "finding": "Source audit found that cached-parameter output branches consumed invRmsValues without assigning them in this batch loop. Build success did not expose this runtime correctness issue.",
+  "build": {
+    "status": "passed",
+    "entrypoint_command": "./tools/run.sh build",
+    "exit_code": 0,
+    "output": [
+      "-- Configuring done",
+      "-- Generating done",
+      "-- Build files have been written to: /home/data4t2/lelinfeng/cann/worktrees/n07-parameter-tile-reuse/phase4/workspaces/R31B/build-n07",
+      "Consolidate compiler generated dependencies of target r31b_submission_v011",
+      "[ 50%] Building ASC object CMakeFiles/r31b_submission_v011.dir/compile_adapter_v011.asc.o",
+      "[100%] Linking ASC executable r31b_submission_v011",
+      "[100%] Built target r31b_submission_v011"
+    ],
+    "target": "r31b_submission_v011",
+    "artifact_path": "phase4/workspaces/R31B/build-n07/r31b_submission_v011",
+    "artifact_sha256": "12f26df05977f98719eb60ec44c547fae7dd91a95a32c4df07d935ce4b7ccc6e"
+  },
+  "correctness": {
+    "status": "not_run",
+    "command": "./tools/run.sh correctness",
+    "exit_code": 3,
+    "output": "not_run: correctness harness is not present in this sparse worktree"
+  },
+  "local": {
+    "status": "not_run",
+    "command": "./tools/run.sh local",
+    "exit_code": 3,
+    "output": "not_run: canonical Local runner and scorer are not present in this sparse worktree"
+  },
+  "performance_measurement": {
+    "status": "not_run",
+    "reason": "No Local runner/scorer is present; build success is compile evidence only, not correctness or performance evidence."
+  },
+  "device_id": "NONE",
+  "evidence_note": "Local CANN compilation passed. The fix was not executed on NPU or checked by runtime correctness because no such entrypoint is present in this worktree."
+}
