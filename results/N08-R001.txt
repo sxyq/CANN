@@ -1,0 +1,34 @@
+route=N08
+revision=R001
+parent_sha=43a1049a1e08e518c88e354a754fdebb85a96f99
+source_commit=82693de8f
+build_config_commit=e65f233be
+built_tree_head=e65f233bee388c26cb7571533efda2cecfc8e54e
+source=phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+source_sha256=8e66e017648d922acaa41d564f87f6ebd110d6cdb6403e5c5ea3e4ece40d646b
+artifact=build/r31b_submission_v011
+artifact_sha256=ab5af53c246e7ff7ff36047906699b327bf7f8dfd38ed1101dcdcc04477d8c67
+
+hypothesis=Use DataCopy for Load operations only when GM element offset and transfer length are both 32-byte aligned; retain exact-length DataCopyPad for partial or misaligned tails.
+scope=No Store, UB placement, parameter reuse, arithmetic, reduction, or row scheduling changes.
+result=Hypothesis is compile-validated only. No device performance or correctness claim is made.
+
+build_command=./tools/run.sh build
+build_exit_code=0
+build_log=results/build-20261012T144634+0000.log
+cann=/usr/local/Ascend/ascend-toolkit/latest (8.5.T8.0.B060)
+npu_arch=dav-2201
+intermediate_build_log=results/build-20261012T144211+0000.log
+intermediate_source_sha256=3268ab0c1fe04ce157cbd51822e0b0b554592970a43bd361e7f375ad7029845f
+intermediate_note=This earlier successful build included a DataCopy Store branch. That branch was removed because its local source-view alignment could not be established from the GM offset check; it is not the final candidate.
+
+build_debug_history=An earlier bare CMake compile failed with missing cstdint/vector headers; CPLUS_INCLUDE_PATH fixed compiler subprocess header lookup. The next link failed to locate libstdc++; adding the host GCC 11 library directories fixed linking. The final build command above completed both ASC compilation and linking.
+
+correctness_status=NOT_RUN
+correctness_command_not_issued=./tools/run.sh correctness
+correctness_reason=No correctness inputs or runner are present in this sparse worktree. Route startup also reported all 8 NPU cards occupied by high-memory processes; device execution was intentionally avoided to protect other users.
+local_status=NOT_RUN
+local_command_not_issued=./tools/run.sh local
+local_reason=No canonical Local runner, data, or scorer is present in this sparse worktree, and device use is unavailable under the supplied resource state. No Local Score is claimed.
+remote_status=NOT_ATTEMPTED
+remote_context=Main reported cann-server3 DNS resolution failure; this route did not claim remote execution.
