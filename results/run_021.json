@@ -1,0 +1,36 @@
+{
+  "route": "N06",
+  "revision": "R021",
+  "source_commit": "717312410d8f84fd36ab0b38c1dc2cbc8f6e921f",
+  "parent_source_commit": "fecd04a378b1dd0fb02be79d25680e4bf05e57dc",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "1c001fe8a56d6682e9170995b758e7adfe98d158f04cf763e59d69ba03f93569",
+  "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+  "cmake_sha256": "3a8bc9f92541f92fe403bd7a2c196cb9bf9008cea9c4d668c7b1d603c81b991f",
+  "runner_sha256": "23f6d76d82a7bf645559971d25ee46a6d2d02a59d0f17bf54fed33748196a787",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "Offset the wide FP16 xFp32Buf_ view by 32 bytes in both passes and add the matching allocation tail and UB estimate. BF16 uses offset zero; all arithmetic and other scratch placements are unchanged.",
+  "hypothesis": "A 32-byte active x-scratch phase may alter UB bank interaction with the FP16 square/reduction pipeline. No hardware correctness or performance result is available.",
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "log": "results/build_021.log",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "023bc9553a2b140a954e20477e7d1099b1eb430e8ecf43cc8896d853342d9a7e",
+    "artifact_sha256_file": "results/build-artifact_021.sha256"
+  },
+  "correctness": {
+    "command": "./tools/run.sh correctness",
+    "exit_code": 2,
+    "result": "Not run: runner accepts only build.",
+    "output": "usage: ./tools/run.sh build"
+  },
+  "local": {
+    "command": "./tools/run.sh local",
+    "exit_code": 2,
+    "result": "Not run: runner accepts only build.",
+    "output": "usage: ./tools/run.sh build"
+  },
+  "device_work_submitted": false,
+  "performance_effect": "Unknown; compile only."
+}
