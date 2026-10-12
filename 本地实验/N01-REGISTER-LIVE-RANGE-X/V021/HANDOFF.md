@@ -6,9 +6,10 @@ V021 source commit `c50d6f4a7f466fbde2c2b92eb544082cf3a1a0b5`, source SHA256 `d4
 - Correctness: PASS, 4/4 on d5, Runner exit `0`.
 - Paired Local: completed, 4 x 21 on d5, Runner exit `0`; severe outliers in three cases, so `LOCAL_SCORE=NONE`.
 - Those Correctness/Local cases are FP16/BF16 and do not execute the changed FP32 function.
-- An FP32-only extension to the same Runner target was prepared with case `D=12288`, selected because source dispatch sends `D>8192` through the changed function and 4096-element tiles produce three iterations. Runner rebuild stopped: after an initial missing-`<vector>` error, retry with system C++ include paths failed with `No space left on device` on `/home/data4t2` (100% full, 0 bytes available). FP32 Correctness and Local were not run.
+- After `/home/data4t2` recovered to about 6.8 GB free, the same `paired_runner_v016` target was rebuilt with the existing FP32 extension and system C++ include paths; build exit `0`, binary SHA256 `88025ed8e024a4b223f289799a038d82b1837daf26bc97bffc6a337f06436730`.
+- FP32 Correctness ran on d5 for `[2,12288]`. The Runner launched both kernels, then stopped while checking the V011 Parent against its CPU reference: 15,389 failures, max absolute error `0.092312813`, max relative error `29.889896`, exit `3`. The Candidate comparison was not reached, so this is not a V021 correctness verdict. FP32 Local was not run.
 - Runner Candidate labels `V001`/`V016` are generic slots; actual Candidate is V021. Parent is fixed R31B V011.
-- d5 after the failed FP32 build: HBM `91%`, AICore `0%`; existing VLLMWorker PID `3355594` remained at `56354 MB`; no N01 Runner was present. No process was interrupted.
+- d5 before FP32 build and Correctness showed HBM `91%`, AICore `0%`; existing VLLMWorker PID `3355594` remained at `56354 MB`. It was observed only and not changed. The Runner was absent before execution and exited after the failed Parent check.
 - Exact input identities, distributions, and raw evidence are in `RESULTS.md` and `results/`.
 
-NEXT_ACTION: resume only the V021 FP32-only build/correctness/local chain after `/home/data4t2` has free space; keep the completed low-precision evidence unchanged and do not start V022 yet.
+NEXT_ACTION: investigate why the existing FP32 Parent reference comparison fails before Candidate comparison; do not run paired Local until FP32 Correctness completes for both Parent and Candidate. Keep completed low-precision evidence unchanged and do not start V022 yet.

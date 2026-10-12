@@ -19,7 +19,8 @@ The source change is in the FP32 path `ProcessWideFp32FullCacheRows`: the square
 - CANN `8.5.0.alpha002`, Ascend910B3, device 5. Configure, compile, and device-code extraction returned `0`.
 - Candidate input: `/home/data4t2/lelinfeng/cann/server_runs/N01-REGISTER-LIVE-RANGE-X-RESET-20261011/V021/c50d6f4a/candidate/R31B-V016-WIDE-TILE-SEED_kernel.asc`; build record identifies its source as V021 with SHA256 above.
 - Measurement Parent input: `/home/data4t2/lelinfeng/cann/server_runs/N01-REGISTER-LIVE-RANGE-X-RESET-20261011/V004/e833b161/parent/R31B-V011-LP-ROW-PIPELINE_kernel.asc`, SHA256 above.
-- Existing Runner target `paired_runner_v016`; binary SHA256 `bbd673d981aaa371e1d65a288c7b7939b69c2afcffa1a8d9e6e0e0e47e794bbf`.
+- Existing Runner target `paired_runner_v016`; before the FP32 extension build, its binary SHA256 was `bbd673d981aaa371e1d65a288c7b7939b69c2afcffa1a8d9e6e0e0e47e794bbf`.
+- FP32 extension build on 2026-10-12 reused the same target and build directory with the previously recorded system C++ include paths. Build returned `0`; resulting Runner binary SHA256 is `88025ed8e024a4b223f289799a038d82b1837daf26bc97bffc6a337f06436730`. Candidate and Parent source SHA values remained unchanged.
 - Extracted AICore binary SHA256 `fe3c6595abd33f115b03ee03b5b87b8e81be8ee2b7db1ec61d8d084832258323`; it differs from V020. Register count is unknown.
 - Runner labels `V001` in Correctness and `V016` in Local are generic slots. Actual Candidate input in both runs is the V021 build above; Local Parent is R31B V011.
 - Committed build and device-code evidence: `results/compile-v021.command`, `results/build-v021.log`, `results/device-code-v021.command`, and `results/device-code-v021.log`. The extracted binary remains locally at `results/aicore_binary_v021.bin`; the repository's existing `*.bin` ignore rule excludes it from the commit.
@@ -49,9 +50,11 @@ FP16 D=12288, FP16 D=32768, and BF16 D=32768 contain severe event-time outliers 
 - The FP32 case was selected from N01 source dispatch: `D=12288` exceeds `kCacheElems=8192`, and the source uses 4096-element tiles, so this input enters `ProcessWideFp32FullCacheRows` and runs three tile iterations. This selection does not assume any Judge shape/dtype mapping.
 - Existing `paired_runner_v016` has only FP16/BF16 case definitions. Its existing source was extended locally at `results/paired_runner-v021.cpp` with FP32 input/reference support and FP32-only modes. Candidate kernel source was unchanged; local and remote Candidate SHA256 remain `d4f9994b9eb43e75b454143cbdb3f2b8a2222545d6ad4496fc6022c1682e5134`.
 - Runner source SHA256: original `4f6701ea7edbbcfd3e410e22c0c3ea39a25bc4996b9bf05be4c422827c56f789`; FP32-enabled source `7836fb57a342642132a3345209796665b7fa900b599d3842f37560b446b5ba3b`.
-- Rebuilding the existing target first failed with exit `2` because the plugin could not find `<vector>`. A retry with the system C++ include directories reached compilation but failed with exit `2`: `fatal error: error in backend: IO failure on output stream: No space left on device`.
-- At the failure, `/home/data4t2` was 100% full with 0 bytes available; `/` had 85 GB available and inode use was 5%. No files were deleted or cleaned. Both build logs and exact commands are retained in `results/fp32-runner-build-v021*`.
-- The existing remote Runner binary remains unchanged at SHA256 `bbd673d981aaa371e1d65a288c7b7939b69c2afcffa1a8d9e6e0e0e47e794bbf`. FP32 Correctness and FP32 paired Local were not run; no FP32 samples exist yet.
+- Earlier build failures remain recorded: the first attempt lacked `<vector>`; retry with system C++ include directories failed when `/home/data4t2` had no free space. On 2026-10-12, the same build target succeeded when the volume reported about 6.8 GB available. No files were deleted or cleaned.
+- Reusing the same target, build directory, and system C++ include paths succeeded on 2026-10-12 (exit `0`). The new Runner binary SHA256 is `88025ed8e024a4b223f289799a038d82b1837daf26bc97bffc6a337f06436730`. Pre-build free space was `6,816,476 KiB` on `/home/data4t2` and `88,273,860 KiB` on `/`; post-build free space was `6,817,936 KiB` and `88,273,588 KiB`, respectively.
+- FP32 Correctness was attempted on d5 using `[2,12288]`, dtype FP32, with the recorded Candidate and R31B V011 source identities. The Runner launched Parent and Candidate, synchronized both, then the Parent comparison failed first: `failures=15389 max_abs=0.092312813 max_rel=29.889896`; exit code `3`. Since `CheckOutput` exits immediately on Parent failure, Candidate output was not compared. This result does not establish whether the V021 Candidate passes or fails correctness.
+- FP32 paired Local was not run. No FP32 timing samples exist. The 45 warmups and 21 paired samples remain pending until a correctness run can compare both Parent and Candidate successfully.
+- Build commands/logs, binary identities, device snapshots, and the unchanged Candidate identity are retained in the `fp32-*v021*` evidence files. No Candidate source was changed.
 
 ## Device State And Evidence
 
@@ -59,11 +62,13 @@ Before sampling on d5: HBM use `91%`, AICore use `0%`, temperature `39 C`; exist
 
 After the failed FP32 Runner build, d5 still showed HBM use `91%`, AICore use `0%`, and only the existing `VLLMWorker_TP` PID `3355594` at `56354 MB`; no N01 Runner was present. This is a post-build snapshot, not a pre-run snapshot for FP32 testing.
 
+The user-provided live reading before this attempt was d5 HBM `59876/65536 MiB` with AICore `0%`. For the 2026-10-12 FP32 attempt, pre-build and pre-Correctness snapshots reported HBM use `91%`, AICore use `0%`, with the same VLLMWorker PID and memory use. The post-Correctness snapshot again showed HBM `91%`, AICore `0%`, the same VLLMWorker, and no paired Runner process. The VLLMWorker was not modified.
+
 The live pre-run snapshot is `results/pre-local-device-recheck-01.txt`; the post-run snapshot is `results/post-local-device.txt`. The earlier snapshot remains at `results/pre-local-device.txt`.
 
 Full evidence includes `results/local-v021.command`, `results/local-v021.raw.log`, `results/pre-local-device-recheck-01.command`, `results/pre-local-device-recheck-01.txt`, `results/post-local-device.command`, `results/post-local-device.txt`, `results/correctness-v021.command`, and `results/correctness-v021.raw.log`.
 
 LOW_PRECISION_LOCAL_SCORE: NONE
-FP32_CORRECTNESS: NOT RUN (Runner build stopped: `/home/data4t2` has no free space)
-FP32_LOCAL: NOT RUN
-NEXT_ACTION: resume V021 FP32-only validation after `/home/data4t2` has available space; do not repeat the four completed low-precision cases.
+FP32_CORRECTNESS: ATTEMPTED; stopped at V011 Parent reference comparison, 15,389 failures, max_abs=0.092312813, max_rel=29.889896, exit=3; Candidate comparison not reached.
+FP32_LOCAL: NOT RUN (V011 Parent reference failed; Candidate output was not compared)
+NEXT_ACTION: investigate the FP32 Parent/reference mismatch before another Correctness attempt; do not repeat the four completed low-precision cases.
