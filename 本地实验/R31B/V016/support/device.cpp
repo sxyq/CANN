@@ -30,5 +30,5 @@ inline int aclrtSynchronizeStream(aclrtStream) { return 0; }
 #if defined(N02_DEVICE_PARENT)
 #include "../../../../线上结果/R31B/V011/submission.asc"
 #else
-#include "../../../N02-CODE-FOOTPRINT-ICACHE-X/V012/submission.asc"
+#include "../../../N02-CODE-FOOTPRINT-ICACHE-X/V013/submission.asc"
 #endif
