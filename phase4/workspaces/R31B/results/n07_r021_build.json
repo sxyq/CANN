@@ -1,0 +1,46 @@
+{
+  "route_id": "N07",
+  "revision": "R021",
+  "branch": "research/n07-parameter-tile-reuse",
+  "parent_sha": "3892e275a4e60946ed52dd3e451da61601f4f30b",
+  "source_commit": "8b973812f9bffd5226099fcd0ceabe089160fd84",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "483912f4a6e76ea94d250352c7b42d8eab4ade7219bbe27c68f95f5fa74da35c",
+  "hypothesis": "In the BF16 gamma-only cache path, bias is copied into residualBuf and converted into the distinct residualFp32Buf before output rows run. Subsequent output vector operations do not read the low-precision bias staging buffer, so the V-to-MTE2 wait at the end of each tile is unnecessary.",
+  "change": "Removed the per-tile V-to-MTE2 wait after gamma-only cached output. The MTE2-to-Vector wait before reading each bias tile and all output MTE3 synchronization remain unchanged.",
+  "build": {
+    "status": "passed",
+    "entrypoint_command": "./tools/run.sh build",
+    "exit_code": 0,
+    "output": [
+      "-- Configuring done",
+      "-- Generating done",
+      "-- Build files have been written to: /home/data4t2/lelinfeng/cann/worktrees/n07-parameter-tile-reuse/phase4/workspaces/R31B/build-n07",
+      "Consolidate compiler generated dependencies of target r31b_submission_v011",
+      "[ 50%] Building ASC object CMakeFiles/r31b_submission_v011.dir/compile_adapter_v011.asc.o",
+      "[100%] Linking ASC executable r31b_submission_v011",
+      "[100%] Built target r31b_submission_v011"
+    ],
+    "target": "r31b_submission_v011",
+    "artifact_path": "phase4/workspaces/R31B/build-n07/r31b_submission_v011",
+    "artifact_sha256": "e9d92ff07030b510bee51200b1acd570faa7a12ec02eeee6648bc68ffe1f9bc1"
+  },
+  "correctness": {
+    "status": "not_run",
+    "command": "./tools/run.sh correctness",
+    "exit_code": 3,
+    "output": "not_run: correctness harness is not present in this sparse worktree"
+  },
+  "local": {
+    "status": "not_run",
+    "command": "./tools/run.sh local",
+    "exit_code": 3,
+    "output": "not_run: canonical Local runner and scorer are not present in this sparse worktree"
+  },
+  "performance_measurement": {
+    "status": "not_run",
+    "reason": "No Local runner/scorer is present; this synchronization change is an unmeasured hypothesis."
+  },
+  "device_id": "NONE",
+  "evidence_note": "Local CANN compilation passed. No NPU command, runtime correctness test, or performance measurement was run."
+}
