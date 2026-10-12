@@ -1,0 +1,37 @@
+{
+  "route": "N06",
+  "revision": "R007",
+  "source_commit": "b89295ded5dc7d9fd31474691a5fe03e195af4b5",
+  "parent_source_commit": "24d4b6393999be59cd6030a3582916e9e749dde8",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "18c78767832c1ca3eafcd2ebbfe47c6d7bc05d340a6893bc2ef830cb775d3391",
+  "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+  "cmake_sha256": "3a8bc9f92541f92fe403bd7a2c196cb9bf9008cea9c4d668c7b1d603c81b991f",
+  "runner_sha256": "23f6d76d82a7bf645559971d25ee46a6d2d02a59d0f17bf54fed33748196a787",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "In the wide FP16 path, increase the residualFp32Buf_ tail pad from 32 to 64 bytes, advancing the following ReduceSum partial buffer by one additional transfer-aligned allocation slot. Include the added bytes in the FP16 UB row-budget calculation. Arithmetic, tensor indexing, and synchronization are unchanged.",
+  "hypothesis": "R006 tested a 32-byte residual-to-partial offset. This next candidate phase may map the partial output differently relative to residual input; 32 bytes is a candidate allocation increment, not a claimed bank width. Performance remains unmeasured.",
+  "allocation_basis": "/usr/local/Ascend/ascend-toolkit/latest/compiler/tikcpp/tikcfw/impl/kernel_tpipe_impl.h:289",
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "log": "results/build_007.log",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "674fdf1addef2177b1a5f4a5669d65f12c4e1853789b51abee8fd89e218c12a8",
+    "artifact_sha256_file": "results/build-artifact_007.sha256"
+  },
+  "correctness": {
+    "command": "./tools/run.sh correctness",
+    "exit_code": 2,
+    "result": "Not run: runner accepts only build.",
+    "output": "usage: ./tools/run.sh build"
+  },
+  "local": {
+    "command": "./tools/run.sh local",
+    "exit_code": 2,
+    "result": "Not run: runner accepts only build.",
+    "output": "usage: ./tools/run.sh build"
+  },
+  "device_work_submitted": false,
+  "performance_effect": "Unknown; compile only."
+}
