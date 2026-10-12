@@ -38,3 +38,9 @@
 - Correctness and device state: `pre-correctness-d7.txt`, `pre-correctness-d7-recheck1.txt`, `pre-correctness-d7-launch.txt`, `correctness-v011-v020.log`, `post-correctness-d7.txt`.
 - Local decisions: `pre-local-d7.txt`, `pre-local-recheck-d7.txt`.
 - Existing Runner sources and artifact: `paired_runner_v016.asc`, `paired_runner.cpp`, `paired_runner_abi.h`, `paired-CMakeLists.txt`, `artifacts/paired_runner_v016`.
+
+## Resume Snapshot And Object Review
+
+- Read-only server snapshot at `2026-10-12T11:50:28+00:00` is retained in `pre-local-resume-20261012T115028Z.txt`. `/home/data4t2` reported 6,815,252 KiB available while displaying 100% capacity. NPU d7 reported AICore 19%, HBM 60,613/65,536 MiB, and an existing Python process (PID 3954164) using 57,243 MiB. No process was changed.
+- The existing V020 `paired_runner_v016.asc.o` is an AArch64 relocatable ELF (274,152 bytes) containing an `.aicore_binary` section. This confirms an embedded device image, but the available object metadata does not provide instruction-level timing or identify an L2/HBM bottleneck. The N04 evidence tree has no saved msprof collection or device-instruction disassembly.
+- No Local or profiler run was started: d7 had active shared compute and the existing Python process remained present. No samples were collected. The six-receipt Official mapping in Main records dtype/Rows/D as UNKNOWN; no Official Case is mapped to a Local shape.
