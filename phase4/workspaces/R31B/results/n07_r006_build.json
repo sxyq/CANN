@@ -1,0 +1,53 @@
+{
+  "route_id": "N07",
+  "revision": "R006",
+  "branch": "research/n07-parameter-tile-reuse",
+  "parent_sha": "4b2de4359da1282b5559d748fc514b2d2a487073",
+  "source_commit": "810921579",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "00e9b7b3a3ae6b0c0122a5ee46f3f181cd8c9dc5036d9912f1ce72bc5f2e4205",
+  "hypothesis": "For wide FP16/BF16 paths, jointly choose tile width and batch rows to reduce gamma/bias tile loads per row under the existing UB budget. The search minimizes ceil(rowWidth/tileElems)/rows, keeps the larger tile on ties, and preserves tileCount <= the reduction partial stride. FP32 retains its existing selection.",
+  "selection_example": {
+    "dtype": "BF16",
+    "row_width": 16384,
+    "previous_tile_elems": 4096,
+    "previous_batch_rows": 1,
+    "candidate_tile_elems": 2560,
+    "candidate_batch_rows": 2,
+    "candidate_tiles_per_batch": 7,
+    "candidate_tile_loads_per_row_ratio": "3.5 vs 4"
+  },
+  "build": {
+    "status": "passed",
+    "entrypoint_command": "./tools/run.sh build",
+    "exit_code": 0,
+    "output": [
+      "-- Configuring done",
+      "-- Generating done",
+      "-- Build files have been written to: phase4/workspaces/R31B/build-n07",
+      "Consolidate compiler generated dependencies of target r31b_submission_v011",
+      "[ 50%] Building ASC object CMakeFiles/r31b_submission_v011.dir/compile_adapter_v011.asc.o",
+      "[100%] Linking ASC executable r31b_submission_v011",
+      "[100%] Built target r31b_submission_v011"
+    ],
+    "target": "r31b_submission_v011",
+    "artifact_path": "phase4/workspaces/R31B/build-n07/r31b_submission_v011",
+    "artifact_sha256": "03a8365f3d98ac66193d33d360ba748b6d95c4bcc458f51b467111e23f23dc23"
+  },
+  "correctness": {
+    "status": "not_run",
+    "command": "./tools/run.sh correctness",
+    "exit_code": 3,
+    "reason": "The sparse worktree has no correctness harness; the entrypoint reported not_run."
+  },
+  "local": {
+    "status": "not_run",
+    "command": "./tools/run.sh local",
+    "exit_code": 3,
+    "reason": "The sparse worktree has no canonical Local runner or scorer; the entrypoint reported not_run."
+  },
+  "performance_measurement": {
+    "status": "not_run",
+    "reason": "No Local runner/scorer is present. Build success and the selection calculation are not performance evidence."
+  }
+}
