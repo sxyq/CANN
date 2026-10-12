@@ -1,0 +1,53 @@
+{
+  "route_id": "N07",
+  "revision": "R008",
+  "branch": "research/n07-parameter-tile-reuse",
+  "parent_sha": "1af5ce866c67641f231cb315b47ddde39218773a",
+  "source_commit": "a1f60d530051c212377c8495876168c7ab454c9f",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "c8b45c7cba67bdb75bf83eeec49ad47efc05fe247b0fc8792bb91a75e73e246b",
+  "hypothesis": "When the R007 full FP32 gamma/bias cache does not fit UB, keeping complete BF16 parameter vectors in native BF16 can still eliminate repeated GM parameter loads at half the resident parameter storage. Parameters are converted to FP32 once per tile for each row batch, trading repeated conversion work for a smaller persistent cache.",
+  "selection": {
+    "cache_preference": "full FP32 parameter cache first; native BF16 cache only if the FP32 cache chooser returns no valid configuration",
+    "enable_condition": "minimumRowsPerBlock > 2 * baselineRows and native-cache resident-budget chooser returns a valid configuration",
+    "native_parameter_cache_bytes": "2 * row_width * sizeof(bfloat16)",
+    "budget_bytes": 180224,
+    "cached_rows_and_tile": "selected by resident-budget chooser"
+  },
+  "build": {
+    "status": "passed",
+    "entrypoint_command": "./tools/run.sh build",
+    "exit_code": 0,
+    "output": [
+      "-- Configuring done",
+      "-- Generating done",
+      "-- Build files have been written to: phase4/workspaces/R31B/build-n07",
+      "Consolidate compiler generated dependencies of target r31b_submission_v011",
+      "[ 50%] Building ASC object CMakeFiles/r31b_submission_v011.dir/compile_adapter_v011.asc.o",
+      "[100%] Linking ASC executable r31b_submission_v011",
+      "[100%] Built target r31b_submission_v011"
+    ],
+    "target": "r31b_submission_v011",
+    "artifact_path": "phase4/workspaces/R31B/build-n07/r31b_submission_v011",
+    "artifact_sha256": "afe115946a80ea44d5299c6c3fae5a00ccf7cad4c6e2f4f580daae6b3e822094"
+  },
+  "correctness": {
+    "status": "not_run",
+    "command": "./tools/run.sh correctness",
+    "exit_code": 3,
+    "reason": "The sparse worktree has no correctness harness; the entrypoint reported not_run."
+  },
+  "local": {
+    "status": "not_run",
+    "command": "./tools/run.sh local",
+    "exit_code": 3,
+    "reason": "The sparse worktree has no canonical Local runner or scorer; the entrypoint reported not_run."
+  },
+  "performance_measurement": {
+    "status": "not_run",
+    "reason": "No Local runner/scorer is present. Build success is compile evidence only, not correctness or performance evidence."
+  },
+  "device_id": "NONE",
+  "free_hbm_mb": "UNKNOWN",
+  "evidence_note": "Only local CANN compilation was performed; no NPU command or runtime correctness test was run."
+}
