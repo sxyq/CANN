@@ -1,0 +1,36 @@
+{
+  "route": "N06",
+  "revision": "R013",
+  "source_commit": "dadf1f1d42329419f42d44134c9aaafcd1525b99",
+  "parent_source_commit": "80d34ce2193dcdc79f7da9268b9dab51b471532c",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "6578fd91cbcf94f866412353e8fadbb4fc2505f9540ca16ce810ab50badca564",
+  "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+  "cmake_sha256": "3a8bc9f92541f92fe403bd7a2c196cb9bf9008cea9c4d668c7b1d603c81b991f",
+  "runner_sha256": "23f6d76d82a7bf645559971d25ee46a6d2d02a59d0f17bf54fed33748196a787",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "Remove the wide FP16 InitBuffer allocation for outputBuf_, which is not used by the wide FP16 ProcessWideLowPrecision branch. Keep outputBuf_ allocations for the narrow FP16 and wide BF16 paths unchanged.",
+  "hypothesis": "Removing the unused tile allocation reduces UB allocation by tileElems * sizeof(half) for the wide FP16 path. Any effect on UB fit or runtime is unmeasured.",
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "log": "results/build_013.log",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "8b124929d9a9fb3699c093f797caa1ff6d4c02efef7dbf75c21c0f19c0c18047",
+    "artifact_sha256_file": "results/build-artifact_013.sha256"
+  },
+  "correctness": {
+    "command": "./tools/run.sh correctness",
+    "exit_code": 2,
+    "result": "Not run: runner accepts only build.",
+    "output": "usage: ./tools/run.sh build"
+  },
+  "local": {
+    "command": "./tools/run.sh local",
+    "exit_code": 2,
+    "result": "Not run: runner accepts only build.",
+    "output": "usage: ./tools/run.sh build"
+  },
+  "device_work_submitted": false,
+  "performance_effect": "Unknown; compile only."
+}
