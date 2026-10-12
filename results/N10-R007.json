@@ -1,0 +1,41 @@
+{
+  "route": "N10",
+  "revision": "R007",
+  "mechanism": "row-to-core balance / one-wave scheduling control",
+  "hypothesis": "A single launch wave may avoid queueing overhead and provide a useful control against wide-row block overdecomposition while retaining the existing row-range mapping function and R006 row visitation order.",
+  "status": "exploratory_build_passed_performance_unknown",
+  "parent_candidate": "1b28f48ddc015c5c0876ec28809cbb19f034d86e",
+  "source_commit": "539f8d5e66c1efecad7af8a1ac0639fbefa4609a",
+  "source_sha256": "6ab3aae18ea351e0620f18bcb398db93a2dc1655d31fd421672d8ac7c248d9e6",
+  "change": "Remove the special 2x/3x wide-row launch multiplier. Launch min(availableCoreNum, rowCount), capped at UINT32_MAX; retain the existing row-range mapping code and R006 intra-batch visitation order.",
+  "scheduler_validation": {
+    "command": "python3 inline one-wave launch bounds check",
+    "status": "passed",
+    "cases": 9219,
+    "output": "N10 R007 one-wave launch bounds passed: 9219 cases"
+  },
+  "build": {
+    "command": "./tools/run.sh build",
+    "status": "passed",
+    "return_code": 0,
+    "log": "build-20261012T201623961720774Z.log",
+    "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+    "cmake_sha256": "435cd84be945c1757159940c4c36fbab97fb06e9bf14e8a746a8121b42dda9fc",
+    "artifact_sha256": "0acba1b1483f15404a24bfb09a746e8e65f9278d8cb09005e201f68a4511b1a9"
+  },
+  "correctness": {
+    "status": "not_run",
+    "return_code": 127,
+    "log": "correctness-20261012T201715456098172Z.log",
+    "reason": "No correctness runner exists in the N10 sparse worktree."
+  },
+  "local": {
+    "status": "not_run",
+    "return_code": 127,
+    "log": "local-20261012T201748983017318Z.log",
+    "reason": "No Canonical Local runner exists in the N10 sparse worktree."
+  },
+  "performance_claim": null,
+  "device_id": null,
+  "free_hbm_mb": null
+}
