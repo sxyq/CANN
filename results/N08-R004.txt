@@ -1,0 +1,28 @@
+route=N08
+revision=R004
+parent_sha=0c64c7e86cde12beb5ee5afad3825c1f8d2f7009
+source_commit=aad62f3609734d24bdb43dd14f7db5baa220ef6b
+built_tree_head=aad62f3609734d24bdb43dd14f7db5baa220ef6b
+source=phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+source_sha256=a88a3d61418299f71cfd5c00210f4735d9b3c52389a763b6b678053009088088
+artifact=build/r31b_submission_v011
+artifact_sha256=e2385cb2011ebec21d69dbf263e4e796650b632daf60e34d734fd3fd4279c32b
+
+hypothesis=Move tail transfer-length rounding behind the eligibility checks in LoadTailWithFollowingRow so full tiles, final-row tails, aligned tails, and unaligned GM offsets do not compute the rounded count. Remove the redundant rounded-count capacity comparison because wideFullYTileElems_ is selected from 4096 in 512-element decrements, so every capacity is a multiple of the 32-byte block size for the supported input element types.
+evidence=The helper has one call site in ProcessWideFp32FullCacheRows. Its tileCapacity is wideFullYTileElems_, initialized by ChooseWideFullYRows to 4096 and decremented only by 512 to a minimum of 2048. For each supported element type, the rounded count of any positive count below this capacity remains at or below capacity. The scalar rounding is now evaluated only after hasFollowingRow, short-count, unaligned-tail, and GM-offset-alignment checks pass.
+scope=LoadTailWithFollowingRow tail eligibility and transfer-length calculation only. No GM transaction choice, arithmetic, reduction, row scheduling, or tile sizing changes.
+
+build_command=./tools/run.sh build
+build_exit_code=0
+build_log=results/build-20261012T170201+0000.log
+cann=/usr/local/Ascend/ascend-toolkit/latest (8.5.T8.0.B060)
+npu_arch=dav-2201
+previous_artifact_sha256=ce11884c1be3cb3591392cf8a2ac3336d7b651f5f9a64b1580b67c724697381e
+artifact_changed=true
+
+correctness_status=NOT_RUN
+correctness_reason=The route worktree exposes only the build command; no correctness runner or inputs are present.
+local_status=NOT_RUN
+local_reason=The route worktree exposes no Canonical Local runner, inputs, or scorer. No Local Score is claimed.
+device_status=NOT_USED
+remote_status=NOT_ATTEMPTED
