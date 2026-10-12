@@ -1,0 +1,36 @@
+{
+  "route": "N06",
+  "revision": "R009",
+  "source_commit": "d3848b66111d9b0f38a85542599e7f11a287571f",
+  "parent_source_commit": "1ada8d6b4ac480224e818901e5f643715fb3e41f",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "7f433e597e42c553545df21cb5b7e083503e501809fff30dba99a1a25e992719",
+  "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+  "cmake_sha256": "3a8bc9f92541f92fe403bd7a2c196cb9bf9008cea9c4d668c7b1d603c81b991f",
+  "runner_sha256": "23f6d76d82a7bf645559971d25ee46a6d2d02a59d0f17bf54fed33748196a787",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "In the wide FP16 full-y initialization, move the shape-sized gammaBuf_ retained-y allocation to immediately before reduceFp32Buf_. Fixed x/value/residual scratch bases, allocation sizes, reduction pitch, arithmetic, indexing, and synchronization remain unchanged.",
+  "hypothesis": "Pass 1 writes retained y into gammaBuf_ while also producing reduction partials. Allocating gammaBuf_ immediately before reduceFp32Buf_ changes only the partial buffer's shape-dependent base relative to the simultaneously active retained-y region; this may alter their UB bank interaction. No bank mapping or performance benefit is assumed.",
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "log": "results/build_009.log",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "983b9b462d09e89c7f23978ba77760d348e7e543e068ac690cbc62ad115abdae",
+    "artifact_sha256_file": "results/build-artifact_009.sha256"
+  },
+  "correctness": {
+    "command": "./tools/run.sh correctness",
+    "exit_code": 2,
+    "result": "Not run: runner accepts only build.",
+    "output": "usage: ./tools/run.sh build"
+  },
+  "local": {
+    "command": "./tools/run.sh local",
+    "exit_code": 2,
+    "result": "Not run: runner accepts only build.",
+    "output": "usage: ./tools/run.sh build"
+  },
+  "device_work_submitted": false,
+  "performance_effect": "Unknown; compile only."
+}
