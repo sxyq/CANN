@@ -1,0 +1,35 @@
+{
+  "route_id": "N07",
+  "revision": "R002",
+  "branch": "research/n07-parameter-tile-reuse",
+  "parent_sha": "d716533ce0b0e52b384025a65e4f037ebde77777",
+  "source_commit": "21b2a2e0f12fb7b56a5971eef08c5f1daa354185",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "e20b08926a04e921938ba99630ea22df43cf5261324b2d7114196e503303da83",
+  "hypothesis": "After pass 1 waits for all x/residual double-buffer releases, xBuf and residualBuf are available for parameter staging. Starting the first gamma/bias tile DMA before per-row ReduceSum/scalar denominator work may overlap parameter fetch with this row-tail work. The remaining parameter double-buffer pipeline and arithmetic are unchanged.",
+  "build": {
+    "status": "passed",
+    "entrypoint_command": "./tools/run.sh build",
+    "exit_code": 0,
+    "configure_command": "source /usr/local/Ascend/ascend-toolkit/set_env.sh && cmake -S <route>/phase4/workspaces/R31B -B <route>/phase4/workspaces/R31B/build-n07",
+    "compile_command": "source /usr/local/Ascend/ascend-toolkit/set_env.sh && cmake --build <route>/phase4/workspaces/R31B/build-n07 --target r31b_submission_v011 -j2",
+    "target": "r31b_submission_v011",
+    "artifact_path": "phase4/workspaces/R31B/build-n07/r31b_submission_v011",
+    "artifact_sha256": "5aed0a0032ef61ca9f29173013f4bf0e54dcf371c176f9cb4ab6e90ead8bc8bd",
+    "compiler": "bisheng from /usr/local/Ascend/ascend-toolkit/latest (CANN 8.5.T8.0, aarch64 host)"
+  },
+  "correctness": {
+    "status": "not_run",
+    "command": "./tools/run.sh correctness",
+    "reason": "No correctness harness is present in this sparse worktree. The 8 NPU cards are occupied by other users, so no device test was started."
+  },
+  "local": {
+    "status": "not_run",
+    "command": "./tools/run.sh local",
+    "reason": "No canonical Local runner or scorer is present in this sparse worktree. The 8 NPU cards are occupied by other users, so no device measurement was started; no score is claimed."
+  },
+  "performance_measurement": {
+    "status": "not_run",
+    "reason": "Device resources are occupied. Build success is not treated as performance evidence."
+  }
+}
