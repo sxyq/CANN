@@ -1,0 +1,45 @@
+{
+  "route_id": "N07",
+  "revision": "R014",
+  "branch": "research/n07-parameter-tile-reuse",
+  "parent_sha": "590d52e95553b469deb9a399375130d2ff1e55a2",
+  "source_commit": "c191826eae17ac83695b771ac86cf2c5577dea6f",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "c0efae36df6baf52f52d2ece499224b0352c8e326cf39a285e53af737deb6849",
+  "hypothesis": "For the FP16 full-parameter-cache path, issuing gamma/bias loads after pass 1 allows their MTE2 transfers to overlap the per-row RMS partial reductions. A single MTE2-to-Vector wait remains before the first parameter-cache read, and the cache is loaded once per block.",
+  "build": {
+    "status": "passed",
+    "entrypoint_command": "./tools/run.sh build",
+    "exit_code": 0,
+    "output": [
+      "-- Configuring done",
+      "-- Generating done",
+      "-- Build files have been written to: /home/data4t2/lelinfeng/cann/worktrees/n07-parameter-tile-reuse/phase4/workspaces/R31B/build-n07",
+      "Consolidate compiler generated dependencies of target r31b_submission_v011",
+      "[ 50%] Building ASC object CMakeFiles/r31b_submission_v011.dir/compile_adapter_v011.asc.o",
+      "[100%] Linking ASC executable r31b_submission_v011",
+      "[100%] Built target r31b_submission_v011"
+    ],
+    "target": "r31b_submission_v011",
+    "artifact_path": "phase4/workspaces/R31B/build-n07/r31b_submission_v011",
+    "artifact_sha256": "c652db22cabf062170ff45a1c47a8c8c7f86f084fc85a9eca89204661c9e4eda"
+  },
+  "correctness": {
+    "status": "not_run",
+    "command": "./tools/run.sh correctness",
+    "exit_code": 3,
+    "output": "not_run: correctness harness is not present in this sparse worktree"
+  },
+  "local": {
+    "status": "not_run",
+    "command": "./tools/run.sh local",
+    "exit_code": 3,
+    "output": "not_run: canonical Local runner and scorer are not present in this sparse worktree"
+  },
+  "performance_measurement": {
+    "status": "not_run",
+    "reason": "No Local runner/scorer is present; build success is compile evidence only, not correctness or performance evidence."
+  },
+  "device_id": "NONE",
+  "evidence_note": "Local CANN compilation passed. No NPU command, runtime correctness test, or performance measurement was run."
+}
