@@ -1,0 +1,36 @@
+{
+  "route": "N06",
+  "revision": "R010",
+  "source_commit": "0f61ad9f12e99738290f4ae208560233579e0240",
+  "parent_source_commit": "05ae56d7260dbe1070e34088d1d3e93b9ceb1a9a",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "d709675c254327e11054cf412e4ad2aeb65582ab7b50ba1dfaf09a7f81f1a241",
+  "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+  "cmake_sha256": "3a8bc9f92541f92fe403bd7a2c196cb9bf9008cea9c4d668c7b1d603c81b991f",
+  "runner_sha256": "23f6d76d82a7bf645559971d25ee46a6d2d02a59d0f17bf54fed33748196a787",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "In the wide FP16 full-y initialization, move gammaBuf_ retained-y allocation between xFp32Buf_ and valueFp32Buf_. Allocation sizes, reduction pitch, arithmetic, indexing, and synchronization are unchanged.",
+  "hypothesis": "Pass 1 writes retained y to gammaBuf_ while converting the native sum through valueFp32Buf_. Interposing the shape-sized retained-y allocation changes valueFp32Buf_ and downstream scratch placement relative to the simultaneously active y region, potentially changing their UB bank interaction. No bank mapping or performance gain is claimed.",
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "log": "results/build_010.log",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "acfef1edbd4df9cfc4661f54394a22636a47d35b4ed298d8a9d367e7885503fa",
+    "artifact_sha256_file": "results/build-artifact_010.sha256"
+  },
+  "correctness": {
+    "command": "./tools/run.sh correctness",
+    "exit_code": 2,
+    "result": "Not run: runner accepts only build.",
+    "output": "usage: ./tools/run.sh build"
+  },
+  "local": {
+    "command": "./tools/run.sh local",
+    "exit_code": 2,
+    "result": "Not run: runner accepts only build.",
+    "output": "usage: ./tools/run.sh build"
+  },
+  "device_work_submitted": false,
+  "performance_effect": "Unknown; compile only."
+}
