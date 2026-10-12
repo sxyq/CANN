@@ -28,6 +28,7 @@
 
 - Status: NOT RUN; `LOCAL_SCORE=NONE`.
 - The fresh pre-Local snapshot at `2026-10-12T02:31:59+00:00` showed AICore 6%, AIVector 15%, HBM use 37%, and shared Python PID 439848 using 21,260 MiB. This active shared compute was left untouched; no timed samples were collected.
+- A later live recheck at `2026-10-12T07:37:10+00:00` showed d7 idle (AICore 0%, AIVector 0%, HBM use 5%, no process in device), but `/home/data4t2` had only 2.0 MB free at 100% use. The Same-binary qualification and paired Local were not started because the remote experiment filesystem had insufficient free space for new experiment data. No samples were collected; the live snapshot is `pre-local-recheck-d7.txt`.
 - Reassess only with a new d7 reading before any later Local run. Reuse the existing Runner with 45 warmups and 21 alternating pairs per case when shared activity is suitable.
 
 ## Evidence
@@ -35,5 +36,5 @@
 - Initial server and d7 state: `pre-resume-server3-d7.txt`.
 - Configure/build and inputs: `configure.log`, `paired-build.log`, `build-identity.txt`, `remote-inputs.txt`.
 - Correctness and device state: `pre-correctness-d7.txt`, `pre-correctness-d7-recheck1.txt`, `pre-correctness-d7-launch.txt`, `correctness-v011-v020.log`, `post-correctness-d7.txt`.
-- Local decision: `pre-local-d7.txt`.
+- Local decisions: `pre-local-d7.txt`, `pre-local-recheck-d7.txt`.
 - Existing Runner sources and artifact: `paired_runner_v016.asc`, `paired_runner.cpp`, `paired_runner_abi.h`, `paired-CMakeLists.txt`, `artifacts/paired_runner_v016`.
