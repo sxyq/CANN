@@ -1,0 +1,46 @@
+{
+  "route_id": "N07",
+  "revision": "R017",
+  "branch": "research/n07-parameter-tile-reuse",
+  "parent_sha": "f8be2756665626c0fb25453a8399ecc5b8379bd2",
+  "source_commit": "fbdecd160749491219a8a2ca7fdd6d358616b876",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "557b9d9c038e7202a8563b2acd080193c28ca614a1462ebb736dfa3fb75cb8b7",
+  "hypothesis": "For BF16 native full-parameter and gamma-only caches, each tile is copied to a distinct UB offset and no vector consumer reads the cache until the preload loop ends. One synchronization after the preload loop can replace per-tile MTE2-to-Vector waits.",
+  "change": "Moved MTE2-to-Vector synchronization after the native gamma-only and gamma/bias cache preload loops. The FP32-conversion staging path is unchanged.",
+  "build": {
+    "status": "passed",
+    "entrypoint_command": "./tools/run.sh build",
+    "exit_code": 0,
+    "output": [
+      "-- Configuring done",
+      "-- Generating done",
+      "-- Build files have been written to: /home/data4t2/lelinfeng/cann/worktrees/n07-parameter-tile-reuse/phase4/workspaces/R31B/build-n07",
+      "Consolidate compiler generated dependencies of target r31b_submission_v011",
+      "[ 50%] Building ASC object CMakeFiles/r31b_submission_v011.dir/compile_adapter_v011.asc.o",
+      "[100%] Linking ASC executable r31b_submission_v011",
+      "[100%] Built target r31b_submission_v011"
+    ],
+    "target": "r31b_submission_v011",
+    "artifact_path": "phase4/workspaces/R31B/build-n07/r31b_submission_v011",
+    "artifact_sha256": "4ac11452dec5d33b2916fd1ef829d9c007dae8ce4fe821ad3cd13f7697c82777"
+  },
+  "correctness": {
+    "status": "not_run",
+    "command": "./tools/run.sh correctness",
+    "exit_code": 3,
+    "output": "not_run: correctness harness is not present in this sparse worktree"
+  },
+  "local": {
+    "status": "not_run",
+    "command": "./tools/run.sh local",
+    "exit_code": 3,
+    "output": "not_run: canonical Local runner and scorer are not present in this sparse worktree"
+  },
+  "performance_measurement": {
+    "status": "not_run",
+    "reason": "No Local runner/scorer is present; this synchronization change has not been measured."
+  },
+  "device_id": "NONE",
+  "evidence_note": "Local CANN compilation passed. No NPU command, runtime correctness test, or performance measurement was run."
+}
