@@ -1,0 +1,36 @@
+{
+  "route": "N06",
+  "revision": "R012",
+  "source_commit": "51e499dbf73268b7016d1cdbd6f7e5d24cbb7a92",
+  "parent_source_commit": "541f26d57c127249ecb0a11bfb1fcea1985ac3c5",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "b4953db1b26870ac0cd226530149b864903329b5c3a8a5ba3fe5df6758be5233",
+  "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+  "cmake_sha256": "3a8bc9f92541f92fe403bd7a2c196cb9bf9008cea9c4d668c7b1d603c81b991f",
+  "runner_sha256": "23f6d76d82a7bf645559971d25ee46a6d2d02a59d0f17bf54fed33748196a787",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "In the wide FP16 low-precision pipeline, pad residualBuf_ by 32 bytes and start its second ping-pong input slot at tileWidth + 16 half elements. Account for the added bytes in the FP16 I/O budget. The first residual slot, xBuf_ slots, BF16 path, arithmetic, and event ordering are unchanged.",
+  "hypothesis": "The two-deep FP16 input pipeline currently places the second residual slot at the same 64-byte phase as the first and as the corresponding x slot. Advancing only the second residual slot by 32 bytes may change bank contention while MTE2 loads the next residual tile and Vector consumes the current pair. This is an unmeasured placement hypothesis; no bank width is asserted.",
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "log": "results/build_012.log",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "8dd4200dba1f7776955491bc15f2a944b91d3d627a89a518f29bae025e76ee22",
+    "artifact_sha256_file": "results/build-artifact_012.sha256"
+  },
+  "correctness": {
+    "command": "./tools/run.sh correctness",
+    "exit_code": 2,
+    "result": "Not run: runner accepts only build.",
+    "output": "usage: ./tools/run.sh build"
+  },
+  "local": {
+    "command": "./tools/run.sh local",
+    "exit_code": 2,
+    "result": "Not run: runner accepts only build.",
+    "output": "usage: ./tools/run.sh build"
+  },
+  "device_work_submitted": false,
+  "performance_effect": "Unknown; compile only."
+}
