@@ -12,7 +12,7 @@ DEVICE: d5 / NPU 5 / `hwnput3` / Ascend910B3
 
 ## Change
 
-In the wide low-precision row path, the square operation now writes `valueTile * valueTile` to `residualLocal`. The following `ReduceSum` reads that tile and uses `xLocal` as its scratch tile after the loaded `xLocal` values are no longer needed. This tests reuse of a dead FP32 temporary's storage during the reduction. No Scalar address generation, UB allocation, core assignment, arithmetic formula, or DMA ordering changed.
+The source change is in the FP32 path `ProcessWideFp32FullCacheRows`: the square operation writes `valueTile * valueTile` to `residualLocal`, then `ReduceSum` reads that tile and uses the no-longer-needed `xLocal` as scratch. This tests reuse of a dead FP32 temporary during reduction. No Scalar address generation, UB allocation, core assignment, arithmetic formula, or DMA ordering changed.
 
 ## Build And Device Code
 
@@ -29,6 +29,7 @@ In the wide low-precision row path, the square operation now writes `valueTile *
 - d5: PASS, 4/4 cases; Runner exit `0`.
 - Raw output: `results/correctness-v021.raw.log`.
 - Candidate source and Runner identity: `results/correctness-v021.command`.
+- Coverage note: these four cases are FP16/BF16. They do not execute the changed FP32 function and are not correctness evidence for the source change described above.
 
 ## Paired Local
 
@@ -43,13 +44,26 @@ The existing Runner completed 21 interleaved pairs per case (84 total) on d5, ex
 
 FP16 D=12288, FP16 D=32768, and BF16 D=32768 contain severe event-time outliers and broad paired-delta tails. BF16 D=12288 is comparatively stable but its -0.160 us paired median is small and the p10-p90 interval crosses zero. `LOCAL_SCORE=NONE`, `LOAD_QUALITY=NOISY`; no gain is claimed and no sample was removed.
 
+## FP32 Path Verification Attempt
+
+- The FP32 case was selected from N01 source dispatch: `D=12288` exceeds `kCacheElems=8192`, and the source uses 4096-element tiles, so this input enters `ProcessWideFp32FullCacheRows` and runs three tile iterations. This selection does not assume any Judge shape/dtype mapping.
+- Existing `paired_runner_v016` has only FP16/BF16 case definitions. Its existing source was extended locally at `results/paired_runner-v021.cpp` with FP32 input/reference support and FP32-only modes. Candidate kernel source was unchanged; local and remote Candidate SHA256 remain `d4f9994b9eb43e75b454143cbdb3f2b8a2222545d6ad4496fc6022c1682e5134`.
+- Runner source SHA256: original `4f6701ea7edbbcfd3e410e22c0c3ea39a25bc4996b9bf05be4c422827c56f789`; FP32-enabled source `7836fb57a342642132a3345209796665b7fa900b599d3842f37560b446b5ba3b`.
+- Rebuilding the existing target first failed with exit `2` because the plugin could not find `<vector>`. A retry with the system C++ include directories reached compilation but failed with exit `2`: `fatal error: error in backend: IO failure on output stream: No space left on device`.
+- At the failure, `/home/data4t2` was 100% full with 0 bytes available; `/` had 85 GB available and inode use was 5%. No files were deleted or cleaned. Both build logs and exact commands are retained in `results/fp32-runner-build-v021*`.
+- The existing remote Runner binary remains unchanged at SHA256 `bbd673d981aaa371e1d65a288c7b7939b69c2afcffa1a8d9e6e0e0e47e794bbf`. FP32 Correctness and FP32 paired Local were not run; no FP32 samples exist yet.
+
 ## Device State And Evidence
 
 Before sampling on d5: HBM use `91%`, AICore use `0%`, temperature `39 C`; existing `VLLMWorker_TP` PID `3355594` used `56354 MB`. After sampling: HBM use `91%`, AICore use `0%`, temperature `42 C`; the same process remained at `56354 MB`. No other process was changed; the paired Runner exited.
+
+After the failed FP32 Runner build, d5 still showed HBM use `91%`, AICore use `0%`, and only the existing `VLLMWorker_TP` PID `3355594` at `56354 MB`; no N01 Runner was present. This is a post-build snapshot, not a pre-run snapshot for FP32 testing.
 
 The live pre-run snapshot is `results/pre-local-device-recheck-01.txt`; the post-run snapshot is `results/post-local-device.txt`. The earlier snapshot remains at `results/pre-local-device.txt`.
 
 Full evidence includes `results/local-v021.command`, `results/local-v021.raw.log`, `results/pre-local-device-recheck-01.command`, `results/pre-local-device-recheck-01.txt`, `results/post-local-device.command`, `results/post-local-device.txt`, `results/correctness-v021.command`, and `results/correctness-v021.raw.log`.
 
-LOCAL_SCORE: NONE
-NEXT_ACTION: stop at V021; do not create V022 in this task window.
+LOW_PRECISION_LOCAL_SCORE: NONE
+FP32_CORRECTNESS: NOT RUN (Runner build stopped: `/home/data4t2` has no free space)
+FP32_LOCAL: NOT RUN
+NEXT_ACTION: resume V021 FP32-only validation after `/home/data4t2` has available space; do not repeat the four completed low-precision cases.
