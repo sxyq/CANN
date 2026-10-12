@@ -1,0 +1,30 @@
+route=N08
+revision=R010
+parent_sha=aab1a5cdfd08da124ba9b2414655f0ee8832acb1
+source_commit=703051f0a0a7a1a8a1d572f378209c7e56484105
+built_tree_head=703051f0a0a7a1a8a1d572f378209c7e56484105
+source=phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+source_sha256=0a76fbabb013219f23d1fbc88a764f3dd9ff371cf310366b20e4493c9dd7e2c5
+artifact=build/r31b_submission_v011
+artifact_sha256=e67af7137030ac90bd1de4ac71f41ebed719d5dc47a13796f1f5363e23a56de3
+aicore_binary_section_sha256=a112c4b27d468f9546bd8265f43b04d2f710380a62380dfbeab07b523c58fe9e
+
+hypothesis=Extend aligned-down short-tail DataCopy eligibility to the global final row only when the valid input endpoint is already 32-byte aligned. In that case roundUp(prefix+count, 8) equals prefix+count, so the aligned transfer ends exactly at the tensor boundary and requires no read-ahead beyond the allocation.
+evidence=The active full-y caller marks the aligned window in-bounds if another row follows, or if this tile reaches rowWidth and (rowOffset+col+valid) is block-aligned. For the last row, that endpoint is the global tensor element count. The helper also requires count>0, count<tileCapacity, and alignedCount<=tileCapacity. Thus a final-row aligned window reads from offset-prefix (a block-aligned nonnegative element index) through exactly the global tensor end; if the endpoint is not aligned, the existing Load path remains. The extracted .aicore_binary section hash changed relative to R009; this is code-generation evidence only, not a performance or correctness result.
+scope=Eligibility for aligned-down short-tail x/residual reads at the global tensor boundary. No output stores, arithmetic, reduction, scheduling, or tile sizing changes.
+
+build_command=./tools/run.sh build
+build_exit_code=0
+build_log=results/build-20261012T195306+0000.log
+cann=/usr/local/Ascend/ascend-toolkit/latest (8.5.T8.0.B060)
+npu_arch=dav-2201
+previous_artifact_sha256=52e37b0e51da23b9fdf6e05ec728640681eb2d42d101581277b649fc302ce6d3
+previous_aicore_binary_section_sha256=d7b69ed1884e4eff8a5db130fa99bf09600475582b50e04b94c273be70825de6
+artifact_changed=true
+
+correctness_status=NOT_RUN
+correctness_reason=The route worktree exposes no correctness runner or inputs.
+local_status=NOT_RUN
+local_reason=The route worktree exposes no Canonical Local runner, inputs, or scorer. No Local Score is claimed.
+device_status=NOT_USED
+remote_status=NOT_ATTEMPTED
