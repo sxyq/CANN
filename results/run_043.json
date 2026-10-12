@@ -1,0 +1,36 @@
+{
+  "route": "N06",
+  "revision": "R043",
+  "source_commit": "3a5eea3ccd5196c4409fd1b1d17ed9e5eb4750e6",
+  "parent_source_commit": "fa3e7ae65e91047faf2a5bfd04d4313f04c4507d",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "f1a742ae070edf86d4a1c82e86595a8ab32a51349f51fefa478042d6ade3648a",
+  "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+  "cmake_sha256": "3a8bc9f92541f92fe403bd7a2c196cb9bf9008cea9c4d668c7b1d603c81b991f",
+  "runner_sha256": "23f6d76d82a7bf645559971d25ee46a6d2d02a59d0f17bf54fed33748196a787",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "Increase the wide FP16 retained-y active phase from 160 to 192 bytes, allocate matching tail space, and add 32 bytes to the wide-row UB estimate. Other R042 placements remain unchanged.",
+  "hypothesis": "A 192-byte retained-y phase may interact differently with the FP16 producer/consumer path than smaller offsets. No hardware result is available.",
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "log": "results/build_043.log",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "a21495ed69406cde1ec1ef35cf5d29788418ee65c91b2813c549eb7a7307c695",
+    "artifact_sha256_file": "results/build-artifact_043.sha256"
+  },
+  "correctness": {
+    "command": "./tools/run.sh correctness",
+    "exit_code": 2,
+    "result": "Not run: runner accepts only build.",
+    "output": "usage: ./tools/run.sh build"
+  },
+  "local": {
+    "command": "./tools/run.sh local",
+    "exit_code": 2,
+    "result": "Not run: runner accepts only build.",
+    "output": "usage: ./tools/run.sh build"
+  },
+  "device_work_submitted": false,
+  "performance_effect": "Unknown; compile only."
+}
