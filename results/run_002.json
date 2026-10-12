@@ -1,0 +1,26 @@
+{
+  "route": "N06",
+  "revision": "b7483b464",
+  "parent_revision": "5fe9db3617824a95b2600e9c42b4fa53309797d3",
+  "tooling_commit": "4f7b571ec9007810b22a2a0e89912284cda36add",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "8abd1f3e34c317379c5bb1d976bfe0e0d6f709886e05e6f718966099c1ff8a14",
+  "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+  "cmake_sha256": "3a8bc9f92541f92fe403bd7a2c196cb9bf9008cea9c4d668c7b1d603c81b991f",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "Apply the existing 32-byte workspace phase skew to the wide BF16 path as well as FP16, and include the extra allocation in the full-y UB budget calculation.",
+  "hypothesis": "The wide BF16 path allocates same-sized adjacent FP32 workspaces and uses both during conversion/reduction; offsetting the second workspace may alter UB bank phase. 32 bytes is only the candidate transfer-aligned offset, not a known UB bank width.",
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "log": "results/build_002.log",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "506901f9c43abc350a63d1e8a67507fa1dfeb9b070bdc074b3bd51b7a6fd88c8",
+    "artifact_sha256_file": "results/build-artifact_002.sha256"
+  },
+  "correctness": "not_run",
+  "local": "not_run",
+  "device_snapshot": "results/npu-smi-r002.txt",
+  "device_action": "No NPU work was submitted. npu-smi showed processes on all 8 devices.",
+  "performance_effect": "Unknown; no correctness or Local measurements were run."
+}
