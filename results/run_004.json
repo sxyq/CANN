@@ -1,0 +1,27 @@
+{
+  "route": "N06",
+  "revision": "R004",
+  "source_commit": "035f4594b606d538bb0f18dbdacfc00ec50c6dd4",
+  "parent_source_commit": "e9ad9e9538b63c788a600960c227d70c333d38a1",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "7c292cc53fef7539059aa08310265b50b13ec6a554bea72a876aa455b731b381",
+  "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+  "cmake_sha256": "3a8bc9f92541f92fe403bd7a2c196cb9bf9008cea9c4d668c7b1d603c81b991f",
+  "runner_sha256": "23f6d76d82a7bf645559971d25ee46a6d2d02a59d0f17bf54fed33748196a787",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "In the wide FP16 path, allocate the padded x FP32 scratch before value FP32 scratch. Buffer sizes, arithmetic, synchronization, and the existing skew are unchanged.",
+  "hypothesis": "TPipe::InitBuffer advances the VECCALC pool allocation cursor in call order. Moving xFp32Buf_ before valueFp32Buf_ changes their relative base phase and may improve bank placement for Mul(xFp32, valueFp32, valueFp32).",
+  "allocation_basis": "/usr/local/Ascend/ascend-toolkit/latest/compiler/tikcpp/tikcfw/impl/kernel_tpipe_impl.h:289",
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "log": "results/build_004.log",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "0cec89134b21a127da5c4919347d52be52253a966e44861018d13684d34ee0ff",
+    "artifact_sha256_file": "results/build-artifact_004.sha256"
+  },
+  "correctness": "not_run",
+  "local": "not_run",
+  "device_work_submitted": false,
+  "performance_effect": "Unknown; compile only."
+}
