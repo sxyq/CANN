@@ -1,0 +1,36 @@
+{
+  "route": "N06",
+  "revision": "R036",
+  "source_commit": "be14e82e4ce5922901f2b3aebc40635e61cc3512",
+  "parent_source_commit": "6171c703646d58ab496f69449764c3546a929cd9",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "26a98419dfc90bf093fc165bac8e763b8a9cffdcc11c7ec81c738e45944ca45f",
+  "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+  "cmake_sha256": "3a8bc9f92541f92fe403bd7a2c196cb9bf9008cea9c4d668c7b1d603c81b991f",
+  "runner_sha256": "23f6d76d82a7bf645559971d25ee46a6d2d02a59d0f17bf54fed33748196a787",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "Increase the wide FP16 xFp32Buf_ active phase from 96 to 128 bytes, allocate matching tail space, and add 32 bytes to the UB estimate. Other R035 placements remain unchanged.",
+  "hypothesis": "A 128-byte active x-scratch phase may interact differently with the FP16 square/reduction pipeline than prior candidates. No hardware result is available.",
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "log": "results/build_036.log",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "d9a563c40e8c239fa0edf435cc11a839f48282529f4e5afd7abf3a1297e770e4",
+    "artifact_sha256_file": "results/build-artifact_036.sha256"
+  },
+  "correctness": {
+    "command": "./tools/run.sh correctness",
+    "exit_code": 2,
+    "result": "Not run: runner accepts only build.",
+    "output": "usage: ./tools/run.sh build"
+  },
+  "local": {
+    "command": "./tools/run.sh local",
+    "exit_code": 2,
+    "result": "Not run: runner accepts only build.",
+    "output": "usage: ./tools/run.sh build"
+  },
+  "device_work_submitted": false,
+  "performance_effect": "Unknown; compile only."
+}
