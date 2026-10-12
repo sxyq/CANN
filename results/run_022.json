@@ -1,0 +1,36 @@
+{
+  "route": "N06",
+  "revision": "R022",
+  "source_commit": "59e15e52fdf7d563499241576ff276439cdd6f19",
+  "parent_source_commit": "3aa1aaa59cf4ba0b7150979f031a99d4db6d1d67",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "99ee9438f4cdaf3dcc4c77abb98b0975ba558fee92d289ca626cce9bba554cc2",
+  "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+  "cmake_sha256": "3a8bc9f92541f92fe403bd7a2c196cb9bf9008cea9c4d668c7b1d603c81b991f",
+  "runner_sha256": "23f6d76d82a7bf645559971d25ee46a6d2d02a59d0f17bf54fed33748196a787",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "Change the wide FP16 retained-y active base phase from 64 bytes back to 32 bytes, reduce its tail allocation accordingly, and reduce the wide-row UB estimate by 32 bytes. Other R021 placements are unchanged.",
+  "hypothesis": "This single-parameter comparison tests whether the 32-byte retained-y phase is preferable to the prior 64-byte candidate; there are no device measurements to determine a winner.",
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "log": "results/build_022.log",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "63795d2552da845da3f4b8cf0e3bff62e470f8a556efc9cf2fd8c41546d32dbb",
+    "artifact_sha256_file": "results/build-artifact_022.sha256"
+  },
+  "correctness": {
+    "command": "./tools/run.sh correctness",
+    "exit_code": 2,
+    "result": "Not run: runner accepts only build.",
+    "output": "usage: ./tools/run.sh build"
+  },
+  "local": {
+    "command": "./tools/run.sh local",
+    "exit_code": 2,
+    "result": "Not run: runner accepts only build.",
+    "output": "usage: ./tools/run.sh build"
+  },
+  "device_work_submitted": false,
+  "performance_effect": "Unknown; compile only."
+}
