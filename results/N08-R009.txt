@@ -1,0 +1,30 @@
+route=N08
+revision=R009
+parent_sha=b35097af25a2ec4bf68f1d6803530b74383fb5e8
+source_commit=52d68abc7052ee6e7934c0aca5f28a56dd1e43cf
+built_tree_head=52d68abc7052ee6e7934c0aca5f28a56dd1e43cf
+source=phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+source_sha256=2d549ed8ae1e9dbd49b0abc60c6dd2dc3d466b6b89ce9b3d639c103819a2ea5e
+artifact=build/r31b_submission_v011
+artifact_sha256=52e37b0e51da23b9fdf6e05ec728640681eb2d42d101581277b649fc302ce6d3
+aicore_binary_section_sha256=d7b69ed1884e4eff8a5db130fa99bf09600475582b50e04b94c273be70825de6
+
+hypothesis=For short FP32 tail reads with a following row, align an unaligned GM source offset down to the previous 32-byte boundary, issue DataCopy for roundUp(prefix+valid, 8) elements into the existing aligned tile buffer, and make the Add consume from the UB prefix. This can replace DataCopyPad for eligible unaligned tails while preserving the original valid element count.
+evidence=The helper is called only by ProcessWideFp32FullCacheRows for the contiguous read-only x/residual tensors. A short tail has count < tileCapacity; the rounded transfer is issued only if it fits the buffer. The offset-prefix GM element index is 8-float aligned, the DataCopy length is an 8-float multiple, and the UB destination is the aligned tile base. hasFollowingRow ensures the rounded read cannot pass the global tensor end; the caller's wide-row path has rowWidth > 8192, and tail starts are well beyond the tensor origin, so the aligned-down start remains in bounds. Add reads only [prefix, prefix+valid); subsequent square/reduction consumes valid elements as before. Last rows, full tiles, and transfers that do not fit retain Load. The extracted .aicore_binary section hash differs from R008; this is code-generation evidence, not a performance or correctness result.
+scope=Short-tail x/residual CopyIn and Add source view in the active FP32 full-y path. No output stores, arithmetic order, reduction, scheduling, or tile sizing changes.
+
+build_command=./tools/run.sh build
+build_exit_code=0
+build_log=results/build-20261012T193501+0000.log
+cann=/usr/local/Ascend/ascend-toolkit/latest (8.5.T8.0.B060)
+npu_arch=dav-2201
+previous_artifact_sha256=aa3dcde46fa6fed94ceec97d67f31646679e8111b32b40328ef960fb68c7ebe4
+previous_aicore_binary_section_sha256=dd712ab8b865ba07e5e2cfd95edd32f935b50d93405d45581abe0c81a42cae5f
+artifact_changed=true
+
+correctness_status=NOT_RUN
+correctness_reason=The route worktree exposes no correctness runner or inputs.
+local_status=NOT_RUN
+local_reason=The route worktree exposes no Canonical Local runner, inputs, or scorer. No Local Score is claimed.
+device_status=NOT_USED
+remote_status=NOT_ATTEMPTED
