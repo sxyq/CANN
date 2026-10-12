@@ -1,0 +1,36 @@
+{
+  "route": "N06",
+  "revision": "R008",
+  "source_commit": "0b9f2a8fa857ffc643e2729e7e77a549fee52639",
+  "parent_source_commit": "0437d85fc09a1444b4088490c8339e66ea57c9d1",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "baf56a87f8f19fc21d1f9200e673969d65547fb6341deb8ad97a4e35f226cde3",
+  "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+  "cmake_sha256": "3a8bc9f92541f92fe403bd7a2c196cb9bf9008cea9c4d668c7b1d603c81b991f",
+  "runner_sha256": "23f6d76d82a7bf645559971d25ee46a6d2d02a59d0f17bf54fed33748196a787",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "Change only the wide FP16 full-y reduction scratch pitch between row batches. For each shape, set the row pitch to AlignUp(tileCount, 16) + 8 floats, preserving contiguous tile partials within a row while staggering consecutive row starts by 32 bytes modulo 64 bytes. Use the selected pitch in both UB budgeting and allocation. FP32/BF16 retain the original 16-float pitch.",
+  "hypothesis": "The original 16-float row pitch places successive rows' reduction partials 64 bytes apart, so they begin at the same candidate bank phase. A shape-sized pitch ending at 8 modulo 16 floats alternates row starts by 32 bytes modulo 64 while retaining enough slots for every tile. The bank mapping and performance effect are unmeasured; no bank width is asserted.",
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "log": "results/build_008.log",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "63ac22cacc951e31f939d8562907725f0eb7a02c488a7474e4186c3aac6e13b6",
+    "artifact_sha256_file": "results/build-artifact_008.sha256"
+  },
+  "correctness": {
+    "command": "./tools/run.sh correctness",
+    "exit_code": 2,
+    "result": "Not run: runner accepts only build.",
+    "output": "usage: ./tools/run.sh build"
+  },
+  "local": {
+    "command": "./tools/run.sh local",
+    "exit_code": 2,
+    "result": "Not run: runner accepts only build.",
+    "output": "usage: ./tools/run.sh build"
+  },
+  "device_work_submitted": false,
+  "performance_effect": "Unknown; compile only."
+}
