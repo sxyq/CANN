@@ -35,7 +35,16 @@
 
 - `LOCAL_SCORE=NONE`; no V021 paired Local command was run for d6144 or d4096.
 - V019 records the existing same-binary controls for both shapes as `MEASUREMENT_PROTOCOL_BLOCKED_FOR_SHAPE`, so the protocol does not support timing them. Original controls remain at `../V011/results/remote-results/same-binary-control.raw.log`; these historical samples are not V021 performance data.
+- The N03 same-binary raw logs, including V002 reruns, contain only BF16 cases with 16 rows and widths 6144 and 4096. No other BF16 shape has qualification evidence. d6144 had earlier isolated `PASS` results, followed by `NEEDS_VALIDATION` and blocked results; the latest V011 control is blocked for both d6144 and d4096. Neither shape was retimed for this result.
+- The Official case shapes are unknown, so no existing Local case can be matched to their score or bestTime changes. This round has no credible Local result mappable to an Official case; `LOCAL_SCORE=NONE`.
+
+## Next ILP Hypothesis
+
+- Source-level dependency evidence in `submission.asc` is: independent BF16 input `ToFloat` calls feed `Add`, then `Mul`, then `ReduceSum`; the full-tile output chain is `Muls -> Mul -> Add`. V001/V003 and V019 cover the independent conversion orders; V010-V018 cover row stage grouping, wave sizes, and issue order; V020/V021 cover one- and two-row affine waves.
+- The compiled device object is ELF `hiipu`; the available generic `llvm-objdump` reports instructions as unavailable, and CANN `msobjdump` exposes ELF metadata rather than a readable instruction listing. Therefore this is a source-level issue hypothesis, not a claim about decoded hardware instructions.
+- Next candidate hypothesis, design only: split each 4096-element affine Vector `Mul` and `Add` into two contiguous 2048-element VECCALC segments. Within the existing two-row wave, issue both rows' segments for `Mul`, retain the existing stage wait, then issue both rows' segments for `Add` and retain its existing wait. This changes only affine vector issue granularity; elementwise arithmetic count, per-element `Muls -> Mul -> Add`, Scalar addresses, outer row/tile traversal, DMA, and event synchronization stay unchanged.
+- This hypothesis was not implemented or tested in this turn. No new Candidate or device run was started.
 
 ## Status
 
-- Adapter and paired Runner builds passed; BF16 Correctness passed for both cases. Local remains `NONE` under the existing shape controls.
+- Adapter and paired Runner builds passed; BF16 Correctness passed for both cases. Local is `NONE`, with no credible mapping to an Official case shape. The next source-level issue hypothesis is recorded above; it has not been implemented or measured.
