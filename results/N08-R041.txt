@@ -1,0 +1,30 @@
+route=N08
+revision=R041
+parent_sha=a30cd56144dacb3bb29f3bc5ecadc4d05c280048
+source_commit=c3caa2d24429bcd31df39e954fe6aca48719893b
+built_tree_head=c3caa2d24429bcd31df39e954fe6aca48719893b
+source=phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+source_sha256=4808c8a1dd6bb3f7e50518ecd56426edd4334d99ad8fa2ea7d6b8f74de4fe070
+artifact=build/r31b_submission_v011
+artifact_sha256=ea5c517718669abea863d5e8dbf018546541d87f030cdde5a2f9af3bb5055894
+aicore_binary_section_sha256=8a8b9037f650cd39c913ab48065875a34896391348e594dcecfa8371973c7043
+
+hypothesis=For short tails whose rounded aligned window cannot be read ahead, split a sufficiently large exact range into an aligned DataCopy body and an exact DataCopyPad suffix, avoiding a single unaligned padded transaction for the bulk.
+evidence=LoadTailPair applies this only when coveredCount=prefix+count fits tileCapacity, the exact suffix is nonempty, and the aligned body is larger than prefix plus suffix. The source starts at offset-prefix, which is nonnegative because prefix is the low block residue of offset; the aligned body and exact suffix end at offset+count without reading past the valid endpoint. Both destinations are block aligned, and the helper returns prefix so consumers still process only count elements. Build succeeded with exit code 0; artifact and extracted .aicore_binary section hashes differ from R040. This is code-generation evidence only, not correctness or performance evidence.
+scope=Paired short-tail fallback transaction decomposition in LoadTailPair only when rounded read-ahead is disallowed. No valid consumer range, arithmetic, reduction, scheduling, tile sizing, or UB placement changes.
+
+build_command=./tools/run.sh build
+build_exit_code=0
+build_log=results/build-20261013T093659+0000.log
+cann=/usr/local/Ascend/ascend-toolkit/latest
+compile_target=ASCEND_COMPUTE_UNIT=ascend910b; --npu-arch=dav-2201
+previous_artifact_sha256=d8008ae64d1cfc4c74189598c35e0e1bc2d20c4defc12cacd3dff3a9b84041e1
+previous_aicore_binary_section_sha256=24c24e097aead2cb4a1dd291e7aa237371bd64e9b8307cf64a4d9e1ae61d2207
+artifact_changed=true
+
+correctness_status=NOT_RUN
+correctness_reason=The route worktree exposes no correctness runner or inputs.
+local_status=NOT_RUN
+local_reason=The route worktree exposes no Canonical Local runner, inputs, or scorer. No Local Score is claimed.
+device_status=NOT_USED
+remote_status=NOT_ATTEMPTED
