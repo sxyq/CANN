@@ -1,0 +1,37 @@
+{
+  "route": "N06",
+  "revision": "R156",
+  "source_commit": "08763ea2a95420d18401f1176586eb00d9a0cc7d",
+  "parent_source_commit": "70c2f3941e2216c5f20e4f5eb5ef0cb8eb8cc4ac",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "af9b7dc88326a458ac158d5fae927e2033d8a1f79c6d3892f1c577f1286ed70e",
+  "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+  "cmake_sha256": "3a8bc9f92541f92fe403bd7a2c196cb9bf9008cea9c4d668c7b1d603c81b991f",
+  "runner_sha256": "23f6d76d82a7bf645559971d25ee46a6d2d02a59d0f17bf54fed33748196a787",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "Shift the active FP16 wide-path residual conversion scratch view to 96 bytes within its unchanged 64-byte-slack allocation. Buffer size, total UB use, BF16 view, chooser budget, and other placements are unchanged.",
+  "hypothesis": "An intermediate aligned residual-conversion scratch phase may change placement interaction with neighboring vector scratch. This is a placement probe, not a claimed bank-width or performance result.",
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "log": "results/build_156.log",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "748353bc5f826ca9aa2fdb2c44be236c33096c56ec6a9f46152d06018023e66a",
+    "artifact_sha256_file": "results/build-artifact_156.sha256"
+  },
+  "correctness": {
+    "command": "./tools/run.sh correctness",
+    "exit_code": 2,
+    "result": "Not run: runner accepts only build.",
+    "output": "usage: ./tools/run.sh build"
+  },
+  "local": {
+    "command": "./tools/run.sh local",
+    "exit_code": 2,
+    "result": "Not run: runner accepts only build.",
+    "output": "usage: ./tools/run.sh build"
+  },
+  "device": "None; compile only, no device work submitted.",
+  "workload": "CANN build only; no shape execution or Local workload ran.",
+  "performance_effect": "Unknown; compile only."
+}
