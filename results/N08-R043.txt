@@ -1,0 +1,30 @@
+route=N08
+revision=R043
+parent_sha=b2a0437ef179acf1ba44aab86f6f3bf333e7a22a
+source_commit=71bf1e874aaa0dda45032c0036dc317552145972
+built_tree_head=71bf1e874aaa0dda45032c0036dc317552145972
+source=phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+source_sha256=3f366afeee29976cb37772aab847841a51434f70111275d9e37c2d0b556892b0
+artifact=build/r31b_submission_v011
+artifact_sha256=2bc7300ebd983584ceac6bcb4955d85672367a856658c0d7fc61d7c6c2a788c5
+aicore_binary_section_sha256=fdff962edabf4c740f4af021eea729b170a8734638276e2464b2b3ec9d6de89b
+
+hypothesis=Apply the existing aligned-body plus exact-suffix output tail plan to the wide low-precision Pass-2 tile store, whose output scratch starts at an aligned UB base and whose per-row GM alignment is already computed.
+evidence=This call site passes outputBuf_.Get<T>() as the tile-local source base and the existing outputRowDataCopyAligned[batchRow] predicate for the GM start. The shared helper emits the split only for an unaligned valid length with a nonempty suffix and a body larger than the suffix; the final padded Store ends exactly at outputOffset+valid. This is a cross-path application of the same transaction mechanism tested in R042, not a new mechanism. Build succeeded with exit code 0; artifact and extracted .aicore_binary section hashes differ from R042. This is code-generation evidence only, not correctness or performance evidence.
+scope=Enable the existing exact-tail output split at the wide low-precision Pass-2 output call site only. No output range/values, input or parameter transactions, arithmetic, reduction, scheduling, tile sizing, or UB placement changes.
+
+build_command=./tools/run.sh build
+build_exit_code=0
+build_log=results/build-20261013T095429+0000.log
+cann=/usr/local/Ascend/ascend-toolkit/latest
+compile_target=ASCEND_COMPUTE_UNIT=ascend910b; --npu-arch=dav-2201
+previous_artifact_sha256=4d06416b7751b9c1d34cd0952beddb18bf58640b5ea3ad65cc19c93d0408bca4
+previous_aicore_binary_section_sha256=48426cfe7c82f0f6dc270cd4e60dac3be33aae61e9f3263b9f8effa71d60a25a
+artifact_changed=true
+
+correctness_status=NOT_RUN
+correctness_reason=The route worktree exposes no correctness runner or inputs.
+local_status=NOT_RUN
+local_reason=The route worktree exposes no Canonical Local runner, inputs, or scorer. No Local Score is claimed.
+device_status=NOT_USED
+remote_status=NOT_ATTEMPTED
