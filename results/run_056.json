@@ -1,0 +1,37 @@
+{
+  "route": "N06",
+  "revision": "R056",
+  "source_commit": "62fcd93f707d02c5b40118910d9d1be6be8aae53",
+  "parent_source_commit": "57f45131e6e4511cf536ecdec0f07ffb775789a2",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "54cfb92db573f223e2b9977b154f465e7264b27f83e7d35ecc97d11474fe0c7c",
+  "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+  "cmake_sha256": "3a8bc9f92541f92fe403bd7a2c196cb9bf9008cea9c4d668c7b1d603c81b991f",
+  "runner_sha256": "23f6d76d82a7bf645559971d25ee46a6d2d02a59d0f17bf54fed33748196a787",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "Increase only the wide FP16 x input ping-pong second-slot phase from 288 to 320 bytes. Matching allocation capacity and UB estimate follow the same constant; other placements and event ordering are unchanged.",
+  "hypothesis": "A 320-byte x second-slot phase may interact differently from smaller candidates with concurrent MTE2 input loads and vector consumption. The phase is an experimental allocation offset, not an asserted UB bank width.",
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "log": "results/build_056.log",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "0bc8d477a95058d62e7777b26948d79ad7f8b399027a0ffd8afa0d8e3f7c2b64",
+    "artifact_sha256_file": "results/build-artifact_056.sha256"
+  },
+  "correctness": {
+    "command": "./tools/run.sh correctness",
+    "exit_code": 2,
+    "result": "Not run: runner accepts only build.",
+    "output": "usage: ./tools/run.sh build"
+  },
+  "local": {
+    "command": "./tools/run.sh local",
+    "exit_code": 2,
+    "result": "Not run: runner accepts only build.",
+    "output": "usage: ./tools/run.sh build"
+  },
+  "device": "None; compile only, no device work submitted.",
+  "workload": "CANN build only; no shape execution or Local workload ran.",
+  "performance_effect": "Unknown; compile only."
+}
