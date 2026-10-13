@@ -1,0 +1,30 @@
+route=N08
+revision=R057
+parent_sha=3fe9746e9e6bd2dbe8a78cb43f1dd7a3689d2f12
+source_commit=6f1898d1ae325efc6453ffc49ad5c5f4e2db3a9b
+built_tree_head=6f1898d1ae325efc6453ffc49ad5c5f4e2db3a9b
+source=phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+source_sha256=d3ec495839bcbc0505a3b56e8fde5057e4479df8a66fb10f16a72d1c5bbb3962
+artifact=build/r31b_submission_v011
+artifact_sha256=12c2b6ff3e6de3215822eeab687aa1c05f0edf0da8d4be88890b611e0546e285
+aicore_binary_section_sha256=80023fa50bc5fa100036e90fefcef57da32a5c9e5141e03738163c9f6a0ec2a6
+
+hypothesis=When a rounded aligned read is safe but rejected by the read-amplification budget, use an aligned body plus exact padded suffix if that exact decomposition also satisfies the split gate.
+evidence=The suffix-split branch follows the attempted bounded rounded read, so an aligned DataCopy candidate accepted by the existing <=2x check returns first. The broadened predicate keeps all previous !alignedWindowIsInBounds split cases unchanged; newly enabled in-bounds cases additionally require prefix<=count, bounding coveredCount=count+prefix to <=2*count. The tile-capacity check bounds local writes. With exactTailCount>0, the aligned body is coveredCount-exactTailCount and the DataCopyPad suffix has exactly exactTailCount elements; together they cover [0,coveredCount) in local memory, while valid input begins at local prefix and ends at prefix+count=coveredCount. GM source begins at offset-prefix (nonnegative by the prefix residue) and the final suffix ends exactly at offset+count, with no read past the valid endpoint. A prior edge check found the old out-of-bounds branch can allow prefix>count (e.g. B=16,count=7,prefix=10,exactTailCount=1); the conditional preserves that existing branch but does not extend it to in-bounds windows. Zero suffix remains handled by the separate exact-end aligned-copy case; short tails that fail count>2*exactTailCount retain the original DataCopyPad fallback. Build succeeded with exit code 0. Artifact and extracted .aicore_binary section hashes differ from R056, demonstrating generated-artifact change only; no correctness or performance conclusion is supported.
+scope=Eligibility for the existing aligned-body plus exact-suffix paired read decomposition in LoadTailPair when rounded-read amplification is rejected. No valid consumer range, arithmetic, reduction, scheduling, tile sizing, or UB placement changes.
+
+build_command=./tools/run.sh build
+build_exit_code=0
+build_log=results/build-20261013T122642+0000.log
+cann=/usr/local/Ascend/ascend-toolkit/latest
+compile_target=ASCEND_COMPUTE_UNIT=ascend910b; --npu-arch=dav-2201
+previous_artifact_sha256=2ce5a2ca50af1f91ae8c8925ae340a33e028aa21399dad395e2496ab88115cb6
+previous_aicore_binary_section_sha256=13c84908c8feb85c0284798ef4f6f28de33fd1b641471f15ab1f97994769295f
+artifact_changed=true
+
+correctness_status=NOT_RUN
+correctness_reason=The route worktree exposes no correctness runner or inputs.
+local_status=NOT_RUN
+local_reason=The route worktree exposes no Canonical Local runner, inputs, or scorer. No Local Score is claimed.
+device_status=NOT_USED
+remote_status=NOT_ATTEMPTED
