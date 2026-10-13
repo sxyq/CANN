@@ -1,0 +1,31 @@
+route=N08
+revision=R064
+parent_sha=98ea267590097c49369976f555e274fc70c5496a
+source_commit=a6896a59768bc4fb65a64202d23a56ef3d38f631
+built_tree_head=a6896a59768bc4fb65a64202d23a56ef3d38f631
+source=phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+source_sha256=264a5e3f85ded3d8c0ad934e60f1bb9ebd2cc8c85cd0b196225c9dd0f342de4b
+artifact=build/r31b_submission_v011
+artifact_sha256=be24ce7de0b5e1cdadfa3864cbdf4b4913e61a42985c7582b4d438ee7c68ee88
+aicore_binary_section_sha256=548b8bfe508abce5414e929937470e3c7652f1cc8e3c976c0dad0fb3c7e1f0e4
+
+hypothesis=Relax the aligned-source output-tail split suffix ratio from 4:1 to 2:1, while requiring a nonzero aligned body and a suffix no larger than half the body.
+evidence=The split predicate is bodyCount >= 2*tailCount. With B=16,count=23, bodyCount=16 and tailCount=7: R063's 4:1 predicate falls back since 16<28, while R064 splits since 16>=14. With count=25 (body16, tail9), both fall back because 16 is less than both 36 and 18. With count=17 (body16, tail1), both split. All branches cover exactly count elements, and only transaction decomposition is varied. Build succeeded with exit code 0; full artifact and extracted .aicore_binary section hashes differ from the pre-build artifact, demonstrating generated-artifact changes only. No correctness or performance conclusion is supported.
+scope=The aligned-source output-tail split body-to-suffix ratio in StoreTailFromAlignedRow only. Output range/values, arithmetic, reduction, scheduling, tile sizing, and UB placement are unchanged.
+
+build_command=./tools/run.sh build
+build_exit_code=0
+build_log=results/build-20261013T131639+0000.log
+cann=/usr/local/Ascend/ascend-toolkit/latest
+compile_target=ASCEND_COMPUTE_UNIT=ascend910b; --npu-arch=dav-2201
+previous_artifact_sha256=c18001b1a0afa3f3e3eb7fa94ad5db895f911b61cd27df1275881c210d4012da
+previous_aicore_binary_section_sha256=31a6b0489c7698e066e32e2dd8da32fd817019827184c50247e1e3b75dd9d04e
+previous_artifact_note=The pre-build full artifact hash differs from the R063 record (068bcb45f60dda6d40615f979af009d610eef0db95f8ace85e9c70f254097b49), while the extracted .aicore_binary section hash matches the R063 record; the measured pre-build file is used as the comparison baseline, and the cause of the full-file difference is unknown.
+artifact_changed=true
+
+correctness_status=NOT_RUN
+correctness_reason=The route worktree exposes no correctness runner or inputs.
+local_status=NOT_RUN
+local_reason=The route worktree exposes no Canonical Local runner, inputs, or scorer. No Local Score is claimed.
+device_status=NOT_USED
+remote_status=NOT_ATTEMPTED
