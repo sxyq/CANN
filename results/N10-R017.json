@@ -1,0 +1,41 @@
+{
+  "route": "N10",
+  "revision": "R017",
+  "mechanism": "row-to-core balance / thirty-two-row cyclic stripes",
+  "hypothesis": "Assigning thirty-two adjacent wide low-precision rows to each block per stripe may change ownership granularity compared with R016 while retaining balanced work across blocks.",
+  "status": "exploratory_build_passed_performance_unknown",
+  "parent_candidate": "ce9fa419bcdba82ca5138c32c53e17f5facc4711",
+  "source_commit": "211d63f706baa88a74bfbaa65480a51ddaa78477",
+  "source_sha256": "cd8528069646c0f989103aed8be35946c7581047f031f936a7ab191070fd1fd1",
+  "change": "In ProcessWideLowPrecision, increase the grouped cyclic row stripe width from sixteen to thirty-two rows. Keep lane-wise tail distribution, row mapping helper, batch visitation, arithmetic, and tile behavior unchanged.",
+  "ownership_validation": {
+    "command": "python3 inline thirty-two-row stripe ownership, tail balance, visitation, and boundary checks",
+    "status": "passed",
+    "cases": 23627,
+    "output": "R017 thirty-two-row stripe ownership, tail balance, visitation, and boundary checks passed: 23627 cases"
+  },
+  "build": {
+    "command": "./tools/run.sh build",
+    "status": "passed",
+    "return_code": 0,
+    "log": "build-20261013T084249758492278Z.log",
+    "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+    "cmake_sha256": "435cd84be945c1757159940c4c36fbab97fb06e9bf14e8a746a8121b42dda9fc",
+    "artifact_sha256": "06b4984ac50ef67b65eff3b58d49f52d1a20ecaaefceba8ad5d93cca5246a63d"
+  },
+  "correctness": {
+    "status": "not_run",
+    "return_code": 127,
+    "log": "correctness-20261013T084443975526101Z.log",
+    "reason": "No correctness runner exists in the N10 sparse worktree."
+  },
+  "local": {
+    "status": "not_run",
+    "return_code": 127,
+    "log": "local-20261013T084443980435484Z.log",
+    "reason": "No Canonical Local runner exists in the N10 sparse worktree."
+  },
+  "performance_claim": null,
+  "device_id": null,
+  "free_hbm_mb": null
+}
