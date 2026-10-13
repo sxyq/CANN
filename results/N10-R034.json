@@ -1,0 +1,43 @@
+{
+  "route": "N10",
+  "revision": "R034",
+  "mechanism": "row-to-core balance / dtype-specific extremely-wide low-precision scheduling",
+  "hypothesis": "For rowWidth > 65536, FP16 may use two waves while BF16 retains three because FP16 retains y in half precision and has a smaller retained-row footprint.",
+  "status": "exploratory_build_passed_performance_unknown",
+  "parent_candidate": "82c2d3a0c7739720254b618b5b156b344a52b23d",
+  "source_commit": "d3c0e595ff7c199bc702664431daba3b4f47bd71",
+  "source_sha256": "b0053b9e13f9e8343a27a72f127691dafbfb305ba99ebe86dfd43a5b2225ab03",
+  "change": "For rowWidth > 65536, use two scheduling waves for FP32 and FP16 and retain three for BF16. Keep the mid-wide low-precision rule and kernel ownership/arithmetic unchanged.",
+  "scheduler_validation": {
+    "command": "python3 inline R034 dtype/width and UINT32 scheduler checks",
+    "status": "passed",
+    "cases": 297222,
+    "output": "R034 dtype/width and UINT32 scheduler checks passed: 297222 cases",
+    "scope_note": "Static scheduler bounds/balance checks only; not runtime correctness or performance validation."
+  },
+  "build": {
+    "command": "./tools/run.sh build",
+    "status": "passed",
+    "return_code": 0,
+    "log": "build-20261013T133342091328451Z.log",
+    "kernel_sha256": "b0053b9e13f9e8343a27a72f127691dafbfb305ba99ebe86dfd43a5b2225ab03",
+    "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+    "cmake_sha256": "435cd84be945c1757159940c4c36fbab97fb06e9bf14e8a746a8121b42dda9fc",
+    "artifact_sha256": "cf7baf98755f2908ccf5385bef63c6c94e25a06b7565ca501a54070c30cbba45"
+  },
+  "correctness": {
+    "status": "not_run",
+    "return_code": 127,
+    "log": "correctness-20261013T133429579658644Z.log",
+    "reason": "No correctness runner exists in the N10 sparse worktree."
+  },
+  "local": {
+    "status": "not_run",
+    "return_code": 127,
+    "log": "local-20261013T133447670272773Z.log",
+    "reason": "No Canonical Local runner exists in the N10 sparse worktree."
+  },
+  "performance_claim": null,
+  "device_id": null,
+  "free_hbm_mb": null
+}
