@@ -1,0 +1,42 @@
+{
+  "route": "N10",
+  "revision": "R027",
+  "mechanism": "row-to-core balance / three waves for extremely wide rows",
+  "hypothesis": "For rowWidth > 65536, the larger per-row tile count may benefit from three scheduling waves, while other wide rows retain the two-wave grid.",
+  "status": "exploratory_build_passed_performance_unknown",
+  "parent_candidate": "1a9403bf5ee6cc8a181a256a8b1d112b8fbc3b29",
+  "source_commit": "08b8b72f3d7a4f56d4e068c20c804e54a86ac37f",
+  "source_sha256": "6090a20946aa8d57d060f3069e02f0d0b0e5e6ee58bf1816b1a80b994edc57f4",
+  "change": "Use three scheduling waves only for rowWidth > 65536; retain two waves for other rowWidth > 8192 shapes. Cap each grid at rowCount. Row mapping, arithmetic, and tile behavior are unchanged.",
+  "scheduler_validation": {
+    "command": "python3 inline R027 three/two-wave boundary and grouped-row-balance checks",
+    "status": "passed",
+    "cases": 165120,
+    "output": "R027 three/two-wave boundary and grouped-row-balance checks passed: 165120 cases"
+  },
+  "build": {
+    "command": "./tools/run.sh build",
+    "status": "passed",
+    "return_code": 0,
+    "log": "build-20261013T124736361832500Z.log",
+    "kernel_sha256": "6090a20946aa8d57d060f3069e02f0d0b0e5e6ee58bf1816b1a80b994edc57f4",
+    "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+    "cmake_sha256": "435cd84be945c1757159940c4c36fbab97fb06e9bf14e8a746a8121b42dda9fc",
+    "artifact_sha256": "782deb873432300d20bfc8a1aea4f876d5874b3cab863efc2ec3bdc316c18633"
+  },
+  "correctness": {
+    "status": "not_run",
+    "return_code": 127,
+    "log": "correctness-20261013T124854224274044Z.log",
+    "reason": "No correctness runner exists in the N10 sparse worktree."
+  },
+  "local": {
+    "status": "not_run",
+    "return_code": 127,
+    "log": "local-20261013T124913795537141Z.log",
+    "reason": "No Canonical Local runner exists in the N10 sparse worktree."
+  },
+  "performance_claim": null,
+  "device_id": null,
+  "free_hbm_mb": null
+}
