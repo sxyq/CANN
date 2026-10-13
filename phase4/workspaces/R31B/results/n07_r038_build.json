@@ -1,0 +1,46 @@
+{
+  "route_id": "N07",
+  "revision": "R038",
+  "branch": "research/n07-parameter-tile-reuse",
+  "parent_sha": "f084029dbda1b75dd8c585e32eb367183023c44f",
+  "source_commit": "dc8089be9a95257ffd5fe336078b82f38b50374b",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "1683344f0f0d64c3b5327293b4b9f7ef93ab8b4aa2b57223f50c663c6aa3e06d",
+  "hypothesis": "The BF16 gamma-only parameter cache may preserve the baseline batch size while selecting a narrower tile than the nonresident parameter-reuse chooser. Requiring additional cached rows before selecting this fallback tests whether retaining the baseline tile strategy is preferable at equal row capacity. A read-only chooser-formula enumeration found rowWidth 8193 yields baseline tile 4096 / 3 rows and gamma-only tile 3584 / 3 rows; the prior FP32 and native cache candidates yield 2 and 3 rows respectively, so the gamma-only decision is reachable when minimumRowsPerBlock >= 3. This is arithmetic analysis only, not device or performance evidence.",
+  "change": "Changed only the BF16 gamma-only fallback acceptance comparison from gammaRows >= baselineRows to gammaRows > baselineRows. FP16 and other BF16 cache decisions, chooser policy, arithmetic, tile scheduling, and output paths are unchanged.",
+  "build": {
+    "status": "passed",
+    "entrypoint_command": "./tools/run.sh build",
+    "exit_code": 0,
+    "output": [
+      "-- Configuring done",
+      "-- Generating done",
+      "-- Build files have been written to: /home/data4t2/lelinfeng/cann/worktrees/n07-parameter-tile-reuse/phase4/workspaces/R31B/build-n07",
+      "Consolidate compiler generated dependencies of target r31b_submission_v011",
+      "[ 50%] Building ASC object CMakeFiles/r31b_submission_v011.dir/compile_adapter_v011.asc.o",
+      "[100%] Linking ASC executable r31b_submission_v011",
+      "[100%] Built target r31b_submission_v011"
+    ],
+    "target": "r31b_submission_v011",
+    "artifact_path": "phase4/workspaces/R31B/build-n07/r31b_submission_v011",
+    "artifact_sha256": "49eb6e8b9d15ef16f9d43cbecb85293c060cff73fc6eeea219c64c77a3de0764"
+  },
+  "correctness": {
+    "status": "not_run",
+    "command": "./tools/run.sh correctness",
+    "exit_code": 3,
+    "output": "not_run: correctness harness is not present in this sparse worktree"
+  },
+  "local": {
+    "status": "not_run",
+    "command": "./tools/run.sh local",
+    "exit_code": 3,
+    "output": "not_run: canonical Local runner and scorer are not present in this sparse worktree"
+  },
+  "performance_measurement": {
+    "status": "not_run",
+    "reason": "Canonical Local runner/scorer is unavailable; no device performance measurement was collected."
+  },
+  "device_id": "NONE",
+  "evidence_note": "Local CANN compilation passed. No NPU runtime correctness test or performance measurement was run."
+}
