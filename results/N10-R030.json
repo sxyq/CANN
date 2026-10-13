@@ -1,0 +1,43 @@
+{
+  "route": "N10",
+  "revision": "R030",
+  "mechanism": "row-to-core balance / processing-batch-aligned stripes",
+  "hypothesis": "Using the per-core processing batch size as the cyclic row stripe width may align full row-ownership segments with the kernel's existing batch boundaries and reduce batch-to-stripe boundary crossings.",
+  "status": "exploratory_build_passed_performance_unknown",
+  "parent_candidate": "c69869a510be9d9f4603c60f55b4a1f152bddab7",
+  "source_commit": "8afb6a53061f3cd6352d12938cf88838cef424e1",
+  "source_sha256": "bd907cceb48b408b81eea3480698217cbe624d01ad94199474ae2a1303c8cd0e",
+  "change": "Set ProcessWideLowPrecision rowGroupWidth to wideFullYRows_ and use it consistently for stripe size, full-row ownership, and row mapping. Do not change batch processing, arithmetic, or tile behavior.",
+  "ownership_validation": {
+    "command": "python3 inline R030 adaptive stripe/batch-alignment and ownership checks",
+    "status": "passed",
+    "cases": 110976,
+    "output": "R030 adaptive stripe/batch-alignment and ownership checks passed: 110976 cases",
+    "scope_note": "Static ownership checks only; not runtime correctness or performance validation."
+  },
+  "build": {
+    "command": "./tools/run.sh build",
+    "status": "passed",
+    "return_code": 0,
+    "log": "build-20261013T130649474914227Z.log",
+    "kernel_sha256": "bd907cceb48b408b81eea3480698217cbe624d01ad94199474ae2a1303c8cd0e",
+    "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+    "cmake_sha256": "435cd84be945c1757159940c4c36fbab97fb06e9bf14e8a746a8121b42dda9fc",
+    "artifact_sha256": "51d1fa949565f4a4fd112adc6ddbd94b005967eb9040ba042e1ba696afd9699f"
+  },
+  "correctness": {
+    "status": "not_run",
+    "return_code": 127,
+    "log": "correctness-20261013T130732560748393Z.log",
+    "reason": "No correctness runner exists in the N10 sparse worktree."
+  },
+  "local": {
+    "status": "not_run",
+    "return_code": 127,
+    "log": "local-20261013T130801433557815Z.log",
+    "reason": "No Canonical Local runner exists in the N10 sparse worktree."
+  },
+  "performance_claim": null,
+  "device_id": null,
+  "free_hbm_mb": null
+}
