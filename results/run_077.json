@@ -1,0 +1,37 @@
+{
+  "route": "N06",
+  "revision": "R077",
+  "source_commit": "e4e7f8f78c12116ad99a7d88f235d1b5793cfbd9",
+  "parent_source_commit": "82794a24fb97c2e234239b10e8577873a244c18c",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "b46b93a23a94666d3cc7d4e1a83bb0fd2ace36c104a190ddc596934cb6cdf3c8",
+  "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+  "cmake_sha256": "3a8bc9f92541f92fe403bd7a2c196cb9bf9008cea9c4d668c7b1d603c81b991f",
+  "runner_sha256": "23f6d76d82a7bf645559971d25ee46a6d2d02a59d0f17bf54fed33748196a787",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "Move only residualFp32Buf_ after xFp32Buf_, retained y, GM input buffers, and reduction partials. Its length, active phase, arithmetic, indexing, and synchronization are unchanged.",
+  "hypothesis": "TPipe allocation order changes the residual conversion scratch base relative to x conversion scratch and all larger active regions. Allocating it last may alter vector bank interaction; no bank mapping or performance gain is assumed.",
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "log": "results/build_077.log",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "102d5629bf4d2ac49bb647d97d2ddf3b436f46c4176ddc38bc9c44c88b89e338",
+    "artifact_sha256_file": "results/build-artifact_077.sha256"
+  },
+  "correctness": {
+    "command": "./tools/run.sh correctness",
+    "exit_code": 2,
+    "result": "Not run: runner accepts only build.",
+    "output": "usage: ./tools/run.sh build"
+  },
+  "local": {
+    "command": "./tools/run.sh local",
+    "exit_code": 2,
+    "result": "Not run: runner accepts only build.",
+    "output": "usage: ./tools/run.sh build"
+  },
+  "device": "None; compile only, no device work submitted.",
+  "workload": "CANN build only; no shape execution or Local workload ran.",
+  "performance_effect": "Unknown; compile only."
+}
