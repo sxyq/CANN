@@ -1,0 +1,30 @@
+route=N08
+revision=R019
+parent_sha=68a6763bb42a6f742388bc7368d71d66360a417f
+source_commit=f718262ece356af05e4c0c0a7dac0e83bc7ee72a
+built_tree_head=f718262ece356af05e4c0c0a7dac0e83bc7ee72a
+source=phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+source_sha256=10067ae77a2eeeabe2a6a5b38ef41675374ef1dfe1027bb0aeec1975f625d62c
+artifact=build/r31b_submission_v011
+artifact_sha256=5299c6dc072b6e3958131aa7f600d52b5e301530391d955ae6db5c8bad4a7590
+aicore_binary_section_sha256=b489a052b20849402ef99f650236b3e88e6ec13f97996884ea81a61c8b4c11c5
+
+hypothesis=For the low-precision gamma/bias parameter partial tile, use an aligned-down and rounded-up pair copy when the valid endpoint equals the parameter vector end and that endpoint is 32-byte aligned; otherwise retain exact-count transfers.
+evidence=The helper is called only for a short final parameter tile. If rowWidth is block aligned, roundUp(prefix+nValid) equals prefix+nValid and the aligned window ends exactly at rowWidth, so neither parameter read crosses its allocation. Otherwise aligned-window eligibility is false and the helper keeps exact DataCopy/DataCopyPad selection. The returned prefix is tracked with each ping-pong slot and used for both FP16 channel arithmetic and BF16 conversion; vector operations still consume nValid values. Artifact and extracted .aicore_binary section hashes differ from R018; this is code-generation evidence only, not correctness or performance evidence.
+scope=Bounded aligned-window transaction selection and prefix view for partial gamma/bias parameter loads in ProcessWideLowPrecision Pass 2. No full-tile transfers, output transactions, arithmetic order, reduction, scheduling, tile sizing, or UB placement changes.
+
+build_command=./tools/run.sh build
+build_exit_code=0
+build_log=results/build-20261013T045432+0000.log
+cann=/usr/local/Ascend/ascend-toolkit/latest (8.5.T8.0.B060)
+compile_target=ASCEND_COMPUTE_UNIT=ascend910b; --npu-arch=dav-2201
+previous_artifact_sha256=c203232583ecec3abb2095161d9b4af0bb79b05b02e77063857e08c812f3c5d1
+previous_aicore_binary_section_sha256=a94935674d567c8922516e884eb421c8bf8f221e44c8b9194c6fe852d8e0cf21
+artifact_changed=true
+
+correctness_status=NOT_RUN
+correctness_reason=The route worktree exposes no correctness runner or inputs.
+local_status=NOT_RUN
+local_reason=The route worktree exposes no Canonical Local runner, inputs, or scorer. No Local Score is claimed.
+device_status=NOT_USED
+remote_status=NOT_ATTEMPTED
