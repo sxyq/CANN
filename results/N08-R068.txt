@@ -1,0 +1,31 @@
+route=N08
+revision=R068
+parent_sha=8104b1f0d996351b6cbfec4dc57f4b3a5f70c459
+source_commit=76223edb53afc32e295c0111a1d4f8b0fb144f56
+built_tree_head=76223edb53afc32e295c0111a1d4f8b0fb144f56
+source=phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+source_sha256=ae75c1fcccfd08d5b1a15f4f389bb48633d8b61d55fb5d0005d843791ea5a327
+artifact=build/r31b_submission_v011
+artifact_sha256=a06371121549e8ee198531c62dc2fa23aba8aeb2a01db456af3868234040db58
+aicore_binary_section_sha256=4779de868a48773888539afbe1c5675d29dc41649bc3f86be9b2e339b0fb483e
+
+hypothesis=For in-bounds paired body-plus-exact-suffix fallback reads, avoid the two-transaction split when the aligned body is only one data block; retain the historical out-of-bounds split eligibility.
+evidence=The new splitBodyLargeEnough gate requires alignedBodyCount >= 2*B only when alignedWindowIsInBounds is true. For B=16,prefix=1,count=16, coveredCount=17, alignedBodyCount=16, exactTailCount=1: the bounded rounded path is rejected by the current one-half excess budget (alignedCount=32, excess=16, 16<32), the R067 split gate passes (16>1+3*1), but R068 uses one exact 17-element DataCopyPad because its body is below 2B. For the historical out-of-bounds edge B=16,prefix=10,count=7, coveredCount=17, body=16, tail=1, the old split gate still passes (7>2) and splitBodyLargeEnough is true because alignedWindowIsInBounds is false. Build succeeded with exit code 0; artifact and extracted .aicore_binary section hashes differ from the pre-build artifact, demonstrating generated-artifact changes only. No correctness or performance conclusion is supported.
+scope=Minimum aligned-body size for in-bounds paired body-plus-suffix fallback in LoadTailPair only. Historical out-of-bounds eligibility, GM ranges, consumer count, arithmetic, reduction, scheduling, tile sizing, and UB placement are unchanged.
+
+build_command=./tools/run.sh build
+build_exit_code=0
+build_log=results/build-20261013T133817+0000.log
+cann=/usr/local/Ascend/ascend-toolkit/latest
+compile_target=ASCEND_COMPUTE_UNIT=ascend910b; --npu-arch=dav-2201
+previous_artifact_sha256=e042672ebadec3efa48615b5a78fdaf7c24681224a2f2b4bf4b0cbde64c55a84
+previous_aicore_binary_section_sha256=b41969d0ce1377a9eab8373e82f9fbbc6c6676046a051182d536d65be05e9d48
+previous_artifact_note=The pre-build full artifact hash differs from the R067 record (5d0eb01e022b0d2049b5a0728ead862d5a6abb3cf68d62018edf9885ccd2d0d6), while the extracted .aicore_binary section hash matches the R067 record; the measured pre-build file is used as the comparison baseline, and the cause of the full-file difference is unknown.
+artifact_changed=true
+
+correctness_status=NOT_RUN
+correctness_reason=The route worktree exposes no correctness runner or inputs.
+local_status=NOT_RUN
+local_reason=The route worktree exposes no Canonical Local runner, inputs, or scorer. No Local Score is claimed.
+device_status=NOT_USED
+remote_status=NOT_ATTEMPTED
