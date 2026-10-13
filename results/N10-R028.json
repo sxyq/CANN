@@ -1,0 +1,42 @@
+{
+  "route": "N10",
+  "revision": "R028",
+  "mechanism": "row-to-core balance / two waves only for very wide rows",
+  "hypothesis": "Widths between 8192 and 32768 may not benefit from extra blocks, while rows wider than 32768 still need two waves and rows beyond 65536 retain three.",
+  "status": "exploratory_build_passed_performance_unknown",
+  "parent_candidate": "4fa9d0099a6a47b36eec057ef084d9c3e15bf309",
+  "source_commit": "a0fbcee1e66c7d8cc940e5fead5607246f6a04b7",
+  "source_sha256": "7af6ada5ab0db036191faf84be74b16227307fa95630896b9a8667b5116fdd39",
+  "change": "Raise the two-wave condition from rowWidth > 8192 to rowWidth > 32768. Retain three waves for rowWidth > 65536. Row mapping, arithmetic, and tile behavior are unchanged.",
+  "scheduler_validation": {
+    "command": "python3 inline R028 two/three-wave threshold and grouped-row-balance checks",
+    "status": "passed",
+    "cases": 198144,
+    "output": "R028 two/three-wave threshold and grouped-row-balance checks passed: 198144 cases"
+  },
+  "build": {
+    "command": "./tools/run.sh build",
+    "status": "passed",
+    "return_code": 0,
+    "log": "build-20261013T125334471299353Z.log",
+    "kernel_sha256": "7af6ada5ab0db036191faf84be74b16227307fa95630896b9a8667b5116fdd39",
+    "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+    "cmake_sha256": "435cd84be945c1757159940c4c36fbab97fb06e9bf14e8a746a8121b42dda9fc",
+    "artifact_sha256": "61984562bd4fe5546fe64a1a7ba6f8e71fe9c459c633537f549989f72f8908b4"
+  },
+  "correctness": {
+    "status": "not_run",
+    "return_code": 127,
+    "log": "correctness-20261013T125433501252783Z.log",
+    "reason": "No correctness runner exists in the N10 sparse worktree."
+  },
+  "local": {
+    "status": "not_run",
+    "return_code": 127,
+    "log": "local-20261013T125459150498303Z.log",
+    "reason": "No Canonical Local runner exists in the N10 sparse worktree."
+  },
+  "performance_claim": null,
+  "device_id": null,
+  "free_hbm_mb": null
+}
