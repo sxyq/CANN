@@ -1,0 +1,30 @@
+route=N08
+revision=R044
+parent_sha=20098493cbe8abc5b128ca0eeaf5d5791721efad
+source_commit=29db21f619ab834745f6a518b3640e0eca0a82be
+built_tree_head=29db21f619ab834745f6a518b3640e0eca0a82be
+source=phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+source_sha256=36691f7dc098e253c3b53e436576405f13a5122811ea3646a0fe56e8b052eba7
+artifact=build/r31b_submission_v011
+artifact_sha256=3a0fb847ea76bf29a84afc8edbceddd0fb57048f16107b27a5ed9c8d3aac355a
+aicore_binary_section_sha256=52f882337716603f7eec4b27451d319b56a5514283446dd090bdbf3cbe894580
+
+hypothesis=Apply the exact aligned-body plus suffix store plan to partial output tiles in the active FP32 full-cache pass when both GM and local row starts are block aligned.
+evidence=The existing rowDataCopyAligned predicate is true only when both the GM row start and cached local row start are block aligned; tile starts are block aligned. On a partial tail, the shared helper keeps the existing DataCopy case for block-aligned lengths and splits only when the padded suffix is nonempty and the aligned body is larger than it. The final Store covers exactly outputOffset through outputOffset+valid. This is a cross-path application of the same transaction mechanism tested in R042/R043, not a new mechanism. Build succeeded with exit code 0; artifact and extracted .aicore_binary section hashes differ from R043. This is code-generation evidence only, not correctness or performance evidence.
+scope=Transaction decomposition for partial output stores in ProcessWideFp32FullCacheRows only. No output values/range, input/parameter transactions, arithmetic, reduction, scheduling, tile sizing, or UB placement changes.
+
+build_command=./tools/run.sh build
+build_exit_code=0
+build_log=results/build-20261013T100436+0000.log
+cann=/usr/local/Ascend/ascend-toolkit/latest
+compile_target=ASCEND_COMPUTE_UNIT=ascend910b; --npu-arch=dav-2201
+previous_artifact_sha256=2bc7300ebd983584ceac6bcb4955d85672367a856658c0d7fc61d7c6c2a788c5
+previous_aicore_binary_section_sha256=fdff962edabf4c740f4af021eea729b170a8734638276e2464b2b3ec9d6de89b
+artifact_changed=true
+
+correctness_status=NOT_RUN
+correctness_reason=The route worktree exposes no correctness runner or inputs.
+local_status=NOT_RUN
+local_reason=The route worktree exposes no Canonical Local runner, inputs, or scorer. No Local Score is claimed.
+device_status=NOT_USED
+remote_status=NOT_ATTEMPTED
