@@ -1,0 +1,30 @@
+route=N08
+revision=R048
+parent_sha=235de192f741f54ed8b6026a25e429b8eda97449
+source_commit=90b67531aae0ca5fc4d47950fcbcd1bb0c7b9f37
+built_tree_head=90b67531aae0ca5fc4d47950fcbcd1bb0c7b9f37
+source=phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+source_sha256=a3c874201ee07b6ab9b1e28d67571a3a260b5d7c5505a997ea97ac106c0c07e7
+artifact=build/r31b_submission_v011
+artifact_sha256=91f8e1d15dd2d9361d36e1d4f3c550c70a3255656e4b83acff05d6a7338a075f
+aicore_binary_section_sha256=f2cb1e88e1d2e61fcef09d27a70e216e14a97a4afc8687f0512698ada751df1b
+
+hypothesis=For prefix-zero bounded tail reads, test the exact 2x read-amplification bound as count >= kElementsPerDataBlock/2 before computing the rounded transfer length.
+evidence=The preceding exact-block branch returns when count is block aligned, so this gate sees positive, non-block-aligned count. For 0<count<B, roundUp(count,B)-count <= count iff count >= B/2; for count>=B the bound is always true. The existing outer count<tileCapacity guard and block-multiple tile capacity ensure roundUp(count,B)<=tileCapacity; alignedWindowIsInBounds continues to guard the GM window. Build succeeded with exit code 0. Artifact and extracted .aicore_binary section hashes differ from R047, demonstrating generated-artifact change only; no correctness or performance conclusion is supported.
+scope=The prefix-zero rounded paired-read eligibility gate in LoadTailPair only. No GM valid range, output, arithmetic, reduction, scheduling, tile sizing, or UB placement changes.
+
+build_command=./tools/run.sh build
+build_exit_code=0
+build_log=results/build-20261013T105304+0000.log
+cann=/usr/local/Ascend/ascend-toolkit/latest
+compile_target=ASCEND_COMPUTE_UNIT=ascend910b; --npu-arch=dav-2201
+previous_artifact_sha256=bc1fc5a502a7927d19e39d38d846b1e9b02cab738dc775714e505c44f44df3df
+previous_aicore_binary_section_sha256=b47ec458413c91f1c6ff37bc0640d88a0ffa30eaa76284a5b1934a7c650798f3
+artifact_changed=true
+
+correctness_status=NOT_RUN
+correctness_reason=The route worktree exposes no correctness runner or inputs.
+local_status=NOT_RUN
+local_reason=The route worktree exposes no Canonical Local runner, inputs, or scorer. No Local Score is claimed.
+device_status=NOT_USED
+remote_status=NOT_ATTEMPTED
