@@ -1,0 +1,42 @@
+{
+  "route": "N10",
+  "revision": "R024",
+  "mechanism": "row-to-core balance / three-wave scheduling for very wide rows",
+  "hypothesis": "For rowWidth > 32768, three scheduling waves may retain fine-grained row work distribution while reducing block scheduling overhead compared with the current four-wave grid.",
+  "status": "exploratory_build_passed_performance_unknown",
+  "parent_candidate": "4af81b97c40ecccfcb966095b5caef029f88b57e",
+  "source_commit": "e365c459a82558af460958921faa590ed214dbe2",
+  "source_sha256": "61dcd43be3c8abf3b67a9d3e1912e2b290f2b32b3f5f6b6afc9e6254b997aca4",
+  "change": "For rowWidth > 32768 only, change requestedBlocks from four times available cores to three times when overflow-safe, capped at rowCount. Leave the two-wave branch, row mapping, kernel arithmetic, and tile behavior unchanged.",
+  "scheduler_validation": {
+    "command": "python3 inline R024 three-wave block-count and grouped-row-balance checks",
+    "status": "passed",
+    "cases": 165120,
+    "output": "R024 3-wave block-count and grouped-row-balance checks passed: 165120 cases"
+  },
+  "build": {
+    "command": "./tools/run.sh build",
+    "status": "passed",
+    "return_code": 0,
+    "log": "build-20261013T122345406148182Z.log",
+    "kernel_sha256": "61dcd43be3c8abf3b67a9d3e1912e2b290f2b32b3f5f6b6afc9e6254b997aca4",
+    "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+    "cmake_sha256": "435cd84be945c1757159940c4c36fbab97fb06e9bf14e8a746a8121b42dda9fc",
+    "artifact_sha256": "fc641d6eb8f8a71db20092f491b0b173d99e9512fab663d6f4b49f2a56dbb99a"
+  },
+  "correctness": {
+    "status": "not_run",
+    "return_code": 127,
+    "log": "correctness-20261013T122421624211176Z.log",
+    "reason": "No correctness runner exists in the N10 sparse worktree."
+  },
+  "local": {
+    "status": "not_run",
+    "return_code": 127,
+    "log": "local-20261013T122436047500538Z.log",
+    "reason": "No Canonical Local runner exists in the N10 sparse worktree."
+  },
+  "performance_claim": null,
+  "device_id": null,
+  "free_hbm_mb": null
+}
