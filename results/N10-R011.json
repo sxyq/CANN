@@ -1,0 +1,41 @@
+{
+  "route": "N10",
+  "revision": "R011",
+  "mechanism": "row-to-core balance / identity cyclic block ownership",
+  "hypothesis": "Using physical block IDs directly as cyclic row residues may differ from the R010 half-grid rotation in block dispatch/address mapping while preserving row counts and interleaved ownership.",
+  "status": "exploratory_build_passed_performance_unknown",
+  "parent_candidate": "e814f4d50f057e35d36edb6643d5eeb1c9c6bfe5",
+  "source_commit": "89c44d2b280ff903c31eb672a21870b2a71f97ab",
+  "source_sha256": "9f6aa97757f62898d42eb9bc9cf0f74d406f3a285b50ee1cc51ad0a1da6b67e4",
+  "change": "In ProcessWideLowPrecision, set logicalBlockIdx to the physical blockIdx instead of the existing half-grid rotated index. Keep cyclic row formula, row-count calculation, batch ordering, arithmetic, and tile behavior unchanged.",
+  "ownership_validation": {
+    "command": "python3 inline identity cyclic ownership, reversed batch visitation, and boundary checks",
+    "status": "passed",
+    "cases": 13299,
+    "output": "R011 identity cyclic ownership, reversed batch visitation, and boundary checks passed: 13299 cases"
+  },
+  "build": {
+    "command": "./tools/run.sh build",
+    "status": "passed",
+    "return_code": 0,
+    "log": "build-20261013T045516665973191Z.log",
+    "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+    "cmake_sha256": "435cd84be945c1757159940c4c36fbab97fb06e9bf14e8a746a8121b42dda9fc",
+    "artifact_sha256": "d73da892874220232dcabbc2d9328e81d950cd1cc44d15bedd1b26b15520f15f"
+  },
+  "correctness": {
+    "status": "not_run",
+    "return_code": 127,
+    "log": "correctness-20261013T045612576910688Z.log",
+    "reason": "No correctness runner exists in the N10 sparse worktree."
+  },
+  "local": {
+    "status": "not_run",
+    "return_code": 127,
+    "log": "local-20261013T045612579075144Z.log",
+    "reason": "No Canonical Local runner exists in the N10 sparse worktree."
+  },
+  "performance_claim": null,
+  "device_id": null,
+  "free_hbm_mb": null
+}
