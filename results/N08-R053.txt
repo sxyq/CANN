@@ -1,0 +1,30 @@
+route=N08
+revision=R053
+parent_sha=6f9cb4adc380c6a839369965684ba1690b3c8317
+source_commit=50b38c02160e22b49198ab1a224945840f3f7818
+built_tree_head=50b38c02160e22b49198ab1a224945840f3f7818
+source=phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+source_sha256=ab8ca97deec2d2400bae146c4c1e287e3cda6c9508385fe127d47fd74501c3c7
+artifact=build/r31b_submission_v011
+artifact_sha256=b322bc94bd6a4083d9bb889d13afaab94f8e9de528e7511484e4703c993581a6
+aicore_binary_section_sha256=ec7db6a5b2a35cf817881cf12b4a89feb0d1e3e3d97a27267078d8b51da923b5
+
+hypothesis=Remove the redundant tailCount>0 part of the aligned-source output-tail split guard.
+evidence=In StoreTailFromAlignedRow, this branch requires count>0 and offsetIsBlockAligned, while the preceding branch tests countIsBlockAligned and the same aligned offset. Therefore reaching this branch means countIsBlockAligned=false. All active direct callsites provide this flag from valid%B==0: ProcessNarrowMidOverlap (tailCopyLengthAligned), ProcessWideFp32FullCacheRows (validBlockAligned), and ProcessWideLowPrecision Pass 2 (tailCopyLengthAligned). Each uses the split branch only for a partial tile tail; StoreTailFromAlignedBuffer leaves sourceBaseIsBlockAligned=false. Thus count is non-block-aligned here, so tailCount=count-bodyCount is positive. bodyCount>0 remains required for a nonempty aligned body. Build succeeded with exit code 0. Artifact and extracted .aicore_binary section hashes differ from R052, demonstrating generated-artifact change only; no correctness or performance conclusion is supported.
+scope=Eligibility predicate for the aligned-source output-tail store split in StoreTailFromAlignedRow only. No output range, transaction size, arithmetic, reduction, scheduling, tile sizing, or UB placement changes.
+
+build_command=./tools/run.sh build
+build_exit_code=0
+build_log=results/build-20261013T114921+0000.log
+cann=/usr/local/Ascend/ascend-toolkit/latest
+compile_target=ASCEND_COMPUTE_UNIT=ascend910b; --npu-arch=dav-2201
+previous_artifact_sha256=e4d95ad4015311043b4553bec54f7390865633155ba19a7b5330ec0ac420b2d4
+previous_aicore_binary_section_sha256=5402625ae3524a2d053f2ee5ec91753699947cf2dc303b3117fcd3f77ac3ca80
+artifact_changed=true
+
+correctness_status=NOT_RUN
+correctness_reason=The route worktree exposes no correctness runner or inputs.
+local_status=NOT_RUN
+local_reason=The route worktree exposes no Canonical Local runner, inputs, or scorer. No Local Score is claimed.
+device_status=NOT_USED
+remote_status=NOT_ATTEMPTED
