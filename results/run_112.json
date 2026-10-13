@@ -1,0 +1,37 @@
+{
+  "route": "N06",
+  "revision": "R112",
+  "source_commit": "95d829b102c5793a063ad00d60169f0e92c72913",
+  "parent_source_commit": "cd8bea0b1053c27f23a981634f621b26595142d5",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "56c7c5b366a81a136b4bedde1c63f0a7432e301a720b908c4e3323721efa2da7",
+  "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+  "cmake_sha256": "3a8bc9f92541f92fe403bd7a2c196cb9bf9008cea9c4d668c7b1d603c81b991f",
+  "runner_sha256": "23f6d76d82a7bf645559971d25ee46a6d2d02a59d0f17bf54fed33748196a787",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "Increase the wide FP16 retained-y active view phase from 1280 to 1312 bytes and increase ChooseWideFullYRows extra-work budget by the same 32 bytes. Other active placements are unchanged.",
+  "hypothesis": "The larger retained-y base phase may alter its interaction with the wide-row producer/consumer path. Matching the UB estimate preserves the allocation budget; the phase is not a claimed bank width or performance gain.",
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "log": "results/build_112.log",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "3cc9d28519173e9abedacc4f30572e907b71767d1c9898643ba7fb000f05c1b2",
+    "artifact_sha256_file": "results/build-artifact_112.sha256"
+  },
+  "correctness": {
+    "command": "./tools/run.sh correctness",
+    "exit_code": 2,
+    "result": "Not run: runner accepts only build.",
+    "output": "usage: ./tools/run.sh build"
+  },
+  "local": {
+    "command": "./tools/run.sh local",
+    "exit_code": 2,
+    "result": "Not run: runner accepts only build.",
+    "output": "usage: ./tools/run.sh build"
+  },
+  "device": "None; compile only, no device work submitted.",
+  "workload": "CANN build only; no shape execution or Local workload ran.",
+  "performance_effect": "Unknown; compile only."
+}
