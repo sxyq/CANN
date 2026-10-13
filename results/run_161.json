@@ -1,0 +1,37 @@
+{
+  "route": "N06",
+  "revision": "R161",
+  "source_commit": "14196b749c69b49920394292ffbf1a413c00b189",
+  "parent_source_commit": "45ca6a08037da477904b3a7c41d4b83eb1258ffa",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "b1267b7d3221b562247e8c6424c6413b1a4180f6604ac03ac6886029a8c3a7d9",
+  "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+  "cmake_sha256": "3a8bc9f92541f92fe403bd7a2c196cb9bf9008cea9c4d668c7b1d603c81b991f",
+  "runner_sha256": "23f6d76d82a7bf645559971d25ee46a6d2d02a59d0f17bf54fed33748196a787",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "Shift the active FP16 wide-path ReduceSum partial view to 128 bytes within the unchanged 192-byte phase allowance. Buffer size, total UB use, chooser budget, BF16 view, and other placements are unchanged; this remains in bounds.",
+  "hypothesis": "A lower aligned reduction-partial phase may change its interaction with neighboring vector scratch. This is a placement probe, not a claimed bank-width or performance result.",
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "log": "results/build_161.log",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "4c31967e48e376b44d51c5999937219e2ffe13b74df10c2de468f7b117b4a249",
+    "artifact_sha256_file": "results/build-artifact_161.sha256"
+  },
+  "correctness": {
+    "command": "./tools/run.sh correctness",
+    "exit_code": 2,
+    "result": "Not run: runner accepts only build.",
+    "output": "usage: ./tools/run.sh build"
+  },
+  "local": {
+    "command": "./tools/run.sh local",
+    "exit_code": 2,
+    "result": "Not run: runner accepts only build.",
+    "output": "usage: ./tools/run.sh build"
+  },
+  "device": "None; compile only, no device work submitted.",
+  "workload": "CANN build only; no shape execution or Local workload ran.",
+  "performance_effect": "Unknown; compile only."
+}
