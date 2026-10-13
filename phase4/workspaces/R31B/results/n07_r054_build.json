@@ -1,0 +1,52 @@
+{
+  "route_id": "N07",
+  "revision": "R054",
+  "branch": "research/n07-parameter-tile-reuse",
+  "parent_sha": "43a1049a1e08e518c88e354a754fdebb85a96f99",
+  "source_commit": "ecf5788d75432fe904e2411904ea9e4832342980",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "e60128a7503c7798eff826e7a769cee7ae0c16d18703ae950618e9ba2137408c",
+  "hypothesis": "When FP32 and native full-pair parameter caches estimate the same number of row batches, preferring the candidate with fewer parameter tiles may reduce tile-loop and parameter-conversion repetitions. Native representation can add output-stage conversions, so a lower tile count may not improve runtime; no performance claim is made.",
+  "change": "Changed only full-pair candidate tie-breaking: minimize estimated row batch count first, then minimize ceil(rowWidth / candidateTileElems); retain FP32 on a complete tie. The gamma-only selection condition and all runtime loading, arithmetic, and tile scheduling code are unchanged.",
+  "chooser_comparison": {
+    "primary_key": "estimated per-block batch count = ceil(maximumRowsPerBlock / candidateCacheRows)",
+    "secondary_key": "tile count = ceil(rowWidth / candidateTileElems)",
+    "tie_break": "FP32 cache when batch count and tile count are equal",
+    "tradeoff": "Fewer tiles may reduce repeated conversion/loop work, while native caching may add output-stage conversions; measured effect is unknown."
+  },
+  "build": {
+    "status": "passed",
+    "entrypoint_command": "./tools/run.sh build",
+    "exit_code": 0,
+    "output": [
+      "-- Configuring done",
+      "-- Generating done",
+      "-- Build files have been written to: /home/data4t2/lelinfeng/cann/worktrees/n07-parameter-tile-reuse/phase4/workspaces/R31B/build-n07",
+      "Consolidate compiler generated dependencies of target r31b_submission_v011",
+      "[ 50%] Building ASC object CMakeFiles/r31b_submission_v011.dir/compile_adapter_v011.asc.o",
+      "[100%] Linking ASC executable r31b_submission_v011",
+      "[100%] Built target r31b_submission_v011"
+    ],
+    "target": "r31b_submission_v011",
+    "artifact_path": "phase4/workspaces/R31B/build-n07/r31b_submission_v011",
+    "artifact_sha256": "6197a5811be86e34045931d472de97f2876052553fe399c0004fd1e9e70df293"
+  },
+  "correctness": {
+    "status": "not_run",
+    "command": "./tools/run.sh correctness",
+    "exit_code": 3,
+    "output": "not_run: correctness harness is not present in this sparse worktree"
+  },
+  "local": {
+    "status": "not_run",
+    "command": "./tools/run.sh local",
+    "exit_code": 3,
+    "output": "not_run: canonical Local runner and scorer are not present in this sparse worktree"
+  },
+  "performance_measurement": {
+    "status": "not_run",
+    "reason": "Canonical Local runner/scorer is unavailable; no device performance measurement was collected."
+  },
+  "device_id": "NONE",
+  "evidence_note": "Local CANN compilation passed. No NPU runtime correctness test or performance measurement was run."
+}
