@@ -1,0 +1,30 @@
+route=N08
+revision=R024
+parent_sha=85e4d20982be1765e156d1ef037ba9a6667c9eb9
+source_commit=94fd52c75c77e14762ad400582716cecdb32f8c5
+built_tree_head=94fd52c75c77e14762ad400582716cecdb32f8c5
+source=phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+source_sha256=61480d830102d31dedfa73abf8f99ec6e4e34f31788e553306122416657c4350
+artifact=build/r31b_submission_v011
+artifact_sha256=49a8436cf23c566d5d317869961dc83b3c15f961ffee7bfa87052a9b056f7a27
+aicore_binary_section_sha256=f994f5dc4a4ae2f5c44fd8731c4dbb10e0dfc94b0793ea2721ec5c62882105f5
+
+hypothesis=For partial output tiles in the generic cached row path, use DataCopy from the aligned output staging base when the tail count and GM destination are both block aligned; retain DataCopyPad for other tails and full tiles.
+evidence=The cached row output loop has FP32, FP16, and BF16 branches that all store the valid tile to GM via Store. The new branch is gated by valid<kTileElems, precomputes whether the count is a data-block multiple, and the helper checks the GM offset. FP32 cached y slice offsets advance by kTileElems (4096 floats), while half/BF16 staging tensors are passed at their base, so the UB source address is 32-byte aligned. Non-aligned tails retain exact-count Store/DataCopyPad, and full tiles retain the prior Store path. Artifact and extracted .aicore_binary section hashes differ from R023; this is code-generation evidence only, not correctness or performance evidence.
+scope=Transfer selection for partial output tiles in the generic cached row path. No GM output ranges, arithmetic, reduction, scheduling, full-tile transactions, or UB placement changes.
+
+build_command=./tools/run.sh build
+build_exit_code=0
+build_log=results/build-20261013T054248+0000.log
+cann=/usr/local/Ascend/ascend-toolkit/latest (8.5.T8.0.B060)
+compile_target=ASCEND_COMPUTE_UNIT=ascend910b; --npu-arch=dav-2201
+previous_artifact_sha256=7d155e8297c01d22bfb8b366440c925042f1cd4818d4cb5caddcea4eea3ae70d
+previous_aicore_binary_section_sha256=76a63369975f0851e122b3220d7a07b61f8cee5caffa7f1c23dbd99f852ea7dc
+artifact_changed=true
+
+correctness_status=NOT_RUN
+correctness_reason=The route worktree exposes no correctness runner or inputs.
+local_status=NOT_RUN
+local_reason=The route worktree exposes no Canonical Local runner, inputs, or scorer. No Local Score is claimed.
+device_status=NOT_USED
+remote_status=NOT_ATTEMPTED
