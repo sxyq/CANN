@@ -1,0 +1,31 @@
+route=N08
+revision=R058
+parent_sha=07742fd855cced42476d050ef62a617f2a797592
+source_commit=66b92359accb1f7c59287b9d4bfb8f41d4539da1
+built_tree_head=66b92359accb1f7c59287b9d4bfb8f41d4539da1
+source=phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+source_sha256=131499609506fa7430391a7c41f58feb9fc33986a1efb8aa1eecc221da4361f3
+artifact=build/r31b_submission_v011
+artifact_sha256=11a4984b47237f24aa2687f55e46dcc953295adaa73e98c40bc8aa1cedcb8133
+aicore_binary_section_sha256=d7a161308100b2144ccd448508957985facc2219e0a9ea63c7ae5cb1887d7762
+
+hypothesis=For newly enabled in-bounds aligned-body plus exact-suffix reads, require a larger valid payload margin (count > prefix + 3 * exactTailCount) before selecting the split transaction; retain the historical out-of-bounds split threshold.
+evidence=The split gate now branches on alignedWindowIsInBounds. For false, eligibility remains count > 2 * exactTailCount, preserving the prior out-of-bounds selection boundary. For true, eligibility additionally requires prefix <= count and count > prefix + 3 * exactTailCount. Example B=16, prefix=5, count=14 gives coveredCount=19, exactTailCount=3, and rounded alignedCount=32; its read amplification is 18 > 14, so the rounded read is rejected. R057 admitted the body-plus-suffix split because 14 > 6; R058 rejects it because 14 is not greater than 5 + 9 and falls through to exact-count DataCopyPad. The prior out-of-bounds edge B=16, prefix=10, count=7, exactTailCount=1 remains eligible because 7 > 2 and the out-of-bounds threshold is unchanged. These checks establish the path-selection boundary only. Build succeeded with exit code 0; both the full artifact and extracted .aicore_binary section hashes differ from the pre-build artifact, demonstrating a generated-artifact change only. No correctness or performance conclusion is supported.
+scope=The split eligibility threshold for newly enabled in-bounds paired tail reads in LoadTailPair only. Historical out-of-bounds split eligibility, GM ranges, transaction extent of each selected path, output, arithmetic, reduction, scheduling, tile sizing, and UB placement remain unchanged.
+
+build_command=./tools/run.sh build
+build_exit_code=0
+build_log=results/build-20261013T123912+0000.log
+cann=/usr/local/Ascend/ascend-toolkit/latest
+compile_target=ASCEND_COMPUTE_UNIT=ascend910b; --npu-arch=dav-2201
+previous_artifact_sha256=0110a619949b93f77d44b865e0e5b1d1b2b4941ff59a8d6fa2a1f886c73dd347
+previous_aicore_binary_section_sha256=80023fa50bc5fa100036e90fefcef57da32a5c9e5141e03738163c9f6a0ec2a6
+previous_artifact_note=The pre-build full artifact hash differs from the R057 record (12c2b6ff3e6de3215822eeab687aa1c05f0edf0da8d4be88890b611e0546e285), while the extracted .aicore_binary section hash matches the R057 record; the measured pre-build file is used as the comparison baseline, and the cause of the full-file difference is unknown.
+artifact_changed=true
+
+correctness_status=NOT_RUN
+correctness_reason=The route worktree exposes no correctness runner or inputs.
+local_status=NOT_RUN
+local_reason=The route worktree exposes no Canonical Local runner, inputs, or scorer. No Local Score is claimed.
+device_status=NOT_USED
+remote_status=NOT_ATTEMPTED
