@@ -1,0 +1,52 @@
+{
+  "route": "N10",
+  "revision": "R009",
+  "mechanism": "row-to-core balance / two-wave scheduling for midwide rows",
+  "hypothesis": "For 16384 < rowWidth <= 32768, two scheduling waves may reduce per-block row groups while avoiding the higher overdecomposition tested for wider rows.",
+  "status": "exploratory_build_passed_performance_unknown",
+  "parent_candidate": "023ac80ff079998b9d9ed6150eccd4a9d8ed2d18",
+  "source_commit": "1c745c62bcbe9e674b4fd8fd03f00956befded3e",
+  "source_sha256": "e29ba609195bb045a29d1578f27ecb33808d9aaf14529d50da22cea9e4e19b6b",
+  "change": "For rowWidth > 16384 and <= 32768, multiply requestedBlocks by two when safe, then cap at rowCount and the existing uint32 launch limit. The existing four-wave branch for rowWidth > 32768 remains unchanged; other widths keep one wave. Row-range mapping and arithmetic are unchanged.",
+  "scheduler_validation": {
+    "command": "python3 inline two/four-wave scheduler boundary and partition checks",
+    "status": "passed",
+    "cases": 48027,
+    "output": "R009 four/two-wave scheduler boundary and partition checks passed: 48027 cases",
+    "initial_attempts": [
+      {
+        "status": "terminated_before_completion",
+        "reason": "An exhaustive range crossed 2048 row counts, 129 available-core values, and seven widths and was still running after about two minutes; it was stopped and replaced with a bounded checker."
+      },
+      {
+        "status": "failed",
+        "return_code": 1,
+        "reason": "The large-count sample included block index -1 when blockCount was one; corrected the sample set to valid block indices."
+      }
+    ]
+  },
+  "build": {
+    "command": "./tools/run.sh build",
+    "status": "passed",
+    "return_code": 0,
+    "log": "build-20261013T041036340925370Z.log",
+    "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+    "cmake_sha256": "435cd84be945c1757159940c4c36fbab97fb06e9bf14e8a746a8121b42dda9fc",
+    "artifact_sha256": "8f7cd97d90e53531635a1a67ac6c1799bcd27a63f51fbe6ea28de6d6c9c8352f"
+  },
+  "correctness": {
+    "status": "not_run",
+    "return_code": 127,
+    "log": "correctness-20261013T041145911999448Z.log",
+    "reason": "No correctness runner exists in the N10 sparse worktree."
+  },
+  "local": {
+    "status": "not_run",
+    "return_code": 127,
+    "log": "local-20261013T041145909743736Z.log",
+    "reason": "No Canonical Local runner exists in the N10 sparse worktree."
+  },
+  "performance_claim": null,
+  "device_id": null,
+  "free_hbm_mb": null
+}
