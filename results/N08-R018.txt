@@ -1,0 +1,30 @@
+route=N08
+revision=R018
+parent_sha=990cf455f9e858d38e5d8321f6e311eb6f568b4a
+source_commit=8be8a96a8b4f36e9891bbded6d1655dda99504ad
+built_tree_head=8be8a96a8b4f36e9891bbded6d1655dda99504ad
+source=phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+source_sha256=b66f0a632e4fc27f6b98d6303e4b080a3bf4243c6e7b670ab3f818ab644e205a
+artifact=build/r31b_submission_v011
+artifact_sha256=c203232583ecec3abb2095161d9b4af0bb79b05b02e77063857e08c812f3c5d1
+aicore_binary_section_sha256=a94935674d567c8922516e884eb421c8bf8f221e44c8b9194c6fe852d8e0cf21
+
+hypothesis=For partial wide low-precision x/residual input tiles, align the GM start down and round the transaction up to a 32-byte boundary when the bounded read window is safe; continue computing only the original valid range from the returned UB prefix.
+evidence=ProcessWideLowPrecision Pass 1 stores each tail prefix with its ping-pong buffer slot and uses that prefix for the half Add/Muls/ToFloat or BF16 ToFloat inputs. For a non-final row, the flattened x/residual tensor has following elements available for bounded read-ahead. For the global final row, the aligned-window path is allowed only when the valid row endpoint is block aligned, which makes roundUp(prefix+valid) end exactly at the allocation boundary. If the rounded count exceeds tile capacity or the boundary condition fails, LoadTailPair falls back to the exact Load-equivalent transaction. Vector/reduction counts remain valid. Artifact and extracted .aicore_binary section hashes differ from R017; this is code-generation evidence only, not correctness or performance evidence.
+scope=Bounded aligned-window transaction selection for partial x/residual input tails in ProcessWideLowPrecision Pass 1. No full-tile copies, output/parameter transfers, arithmetic order, reduction, scheduling, tile sizing, or UB placement changes.
+
+build_command=./tools/run.sh build
+build_exit_code=0
+build_log=results/build-20261013T044634+0000.log
+cann=/usr/local/Ascend/ascend-toolkit/latest (8.5.T8.0.B060)
+compile_target=ASCEND_COMPUTE_UNIT=ascend910b; --npu-arch=dav-2201
+previous_artifact_sha256=ad42b123261cc1209a9e0e3b4749b4e80755d655c754d7aa3d87c798ee66ba71
+previous_aicore_binary_section_sha256=bc9988a294d54eaef375dba7b0f91c7032f0d3fdc2ac5acd5e0c46a9387db376
+artifact_changed=true
+
+correctness_status=NOT_RUN
+correctness_reason=The route worktree exposes no correctness runner or inputs.
+local_status=NOT_RUN
+local_reason=The route worktree exposes no Canonical Local runner, inputs, or scorer. No Local Score is claimed.
+device_status=NOT_USED
+remote_status=NOT_ATTEMPTED
