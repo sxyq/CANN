@@ -1,0 +1,42 @@
+{
+  "route": "N10",
+  "revision": "R026",
+  "mechanism": "row-to-core balance / two-wave scheduling for wide rows",
+  "hypothesis": "For rowWidth > 32768, two waves may reduce block scheduling overhead compared with three waves while retaining balanced row work across cores.",
+  "status": "exploratory_build_passed_performance_unknown",
+  "parent_candidate": "3829ac7ae8537f6c3348943728112d282afff967",
+  "source_commit": "c2f39ca1585289b5a461d54a120ca74027f46cd3",
+  "source_sha256": "ae37930d5197416c9c3fbe67ae5225a4dc7dae5a7c55e1d87f1b62afff3f1689",
+  "change": "Use a single two-wave rule for all rowWidth > 8192 shapes. For rowWidth > 32768 this reduces the grid multiplier from three to two; row mapping, arithmetic, and tile behavior remain unchanged.",
+  "scheduler_validation": {
+    "command": "python3 inline R026 two-wave threshold and grouped-row-balance checks",
+    "status": "passed",
+    "cases": 198144,
+    "output": "R026 two-wave threshold and grouped-row-balance checks passed: 198144 cases"
+  },
+  "build": {
+    "command": "./tools/run.sh build",
+    "status": "passed",
+    "return_code": 0,
+    "log": "build-20261013T124112095663420Z.log",
+    "kernel_sha256": "ae37930d5197416c9c3fbe67ae5225a4dc7dae5a7c55e1d87f1b62afff3f1689",
+    "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+    "cmake_sha256": "435cd84be945c1757159940c4c36fbab97fb06e9bf14e8a746a8121b42dda9fc",
+    "artifact_sha256": "28546d53c0bd3d8da069958b4315acf53a6c0cd00bc22ea4c54bdcdd7386e7f7"
+  },
+  "correctness": {
+    "status": "not_run",
+    "return_code": 127,
+    "log": "correctness-20261013T124202325047060Z.log",
+    "reason": "No correctness runner exists in the N10 sparse worktree."
+  },
+  "local": {
+    "status": "not_run",
+    "return_code": 127,
+    "log": "local-20261013T124217382291488Z.log",
+    "reason": "No Canonical Local runner exists in the N10 sparse worktree."
+  },
+  "performance_claim": null,
+  "device_id": null,
+  "free_hbm_mb": null
+}
