@@ -1,0 +1,37 @@
+{
+  "route": "N06",
+  "revision": "R047",
+  "source_commit": "95208784cd832543cf3adeff3f9ce441e3eb9c43",
+  "parent_source_commit": "86176229caa64344f183a79a818e3d6a611ab7b4",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "e154d18b74484e372d16d7fa5b9761a05ae7060ea8d031725ced2a01365bdc0c",
+  "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+  "cmake_sha256": "3a8bc9f92541f92fe403bd7a2c196cb9bf9008cea9c4d668c7b1d603c81b991f",
+  "runner_sha256": "23f6d76d82a7bf645559971d25ee46a6d2d02a59d0f17bf54fed33748196a787",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "In the wide FP16 full-y path, offset only the x input ping-pong second slot by 32 bytes, with matching allocation capacity and UB estimate. Other placements and event ordering are unchanged.",
+  "hypothesis": "The second x input slot previously began immediately after the first tile. A transfer-aligned 32-byte phase may alter UB bank interaction between concurrent MTE2 input loads and vector consumption. This does not assert a bank width or performance benefit.",
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "log": "results/build_047.log",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "87b8aede7acc6f984c1223c59c06903dd003f63d77099eebdec568326b1344b6",
+    "artifact_sha256_file": "results/build-artifact_047.sha256"
+  },
+  "correctness": {
+    "command": "./tools/run.sh correctness",
+    "exit_code": 2,
+    "result": "Not run: runner accepts only build.",
+    "output": "usage: ./tools/run.sh build"
+  },
+  "local": {
+    "command": "./tools/run.sh local",
+    "exit_code": 2,
+    "result": "Not run: runner accepts only build.",
+    "output": "usage: ./tools/run.sh build"
+  },
+  "device": "None; compile only, no device work submitted.",
+  "workload": "CANN build only; no shape execution or Local workload ran.",
+  "performance_effect": "Unknown; compile only."
+}
