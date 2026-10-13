@@ -1,0 +1,37 @@
+{
+  "route": "N06",
+  "revision": "R158",
+  "source_commit": "c82e29fd76cdc32f1ca4da7cb02f621ab71799a4",
+  "parent_source_commit": "c8d9aa8698920e15de581e51e783bd4ee3ee06bf",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "e9ebadbcc91df381ba06af01cddc26276896ff13b8f06203498dcafda1d93bde",
+  "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+  "cmake_sha256": "3a8bc9f92541f92fe403bd7a2c196cb9bf9008cea9c4d668c7b1d603c81b991f",
+  "runner_sha256": "23f6d76d82a7bf645559971d25ee46a6d2d02a59d0f17bf54fed33748196a787",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "Shift the active FP16 wide-path x conversion scratch view to 128 bytes within its unchanged 64-byte-slack allocation. Buffer size, total UB use, BF16 view, chooser budget, and other placements are unchanged.",
+  "hypothesis": "An intermediate aligned x-conversion scratch phase may change its interaction with neighboring vector scratch. This is a placement probe, not a claimed bank-width or performance result.",
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "log": "results/build_158.log",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "bd2f5c6cc8afc7fb837c7170b7a35c5fe8f878b5e7c9ef4894f7d1f4135a560f",
+    "artifact_sha256_file": "results/build-artifact_158.sha256"
+  },
+  "correctness": {
+    "command": "./tools/run.sh correctness",
+    "exit_code": 2,
+    "result": "Not run: runner accepts only build.",
+    "output": "usage: ./tools/run.sh build"
+  },
+  "local": {
+    "command": "./tools/run.sh local",
+    "exit_code": 2,
+    "result": "Not run: runner accepts only build.",
+    "output": "usage: ./tools/run.sh build"
+  },
+  "device": "None; compile only, no device work submitted.",
+  "workload": "CANN build only; no shape execution or Local workload ran.",
+  "performance_effect": "Unknown; compile only."
+}
