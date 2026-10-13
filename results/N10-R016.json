@@ -1,0 +1,41 @@
+{
+  "route": "N10",
+  "revision": "R016",
+  "mechanism": "row-to-core balance / sixteen-row cyclic stripes",
+  "hypothesis": "Assigning sixteen adjacent wide low-precision rows to each block per stripe may change ownership granularity compared with R015 while retaining balanced work across blocks.",
+  "status": "exploratory_build_passed_performance_unknown",
+  "parent_candidate": "6ef832f3e31ce27f08fe5f2a054cf9eded47ff78",
+  "source_commit": "66a203228888388eb2c07a996af8dce9d99c7ae4",
+  "source_sha256": "4803ac866f1daf9f2fc4769e04b7eecac4252f58891a99e9dc348da132112b3a",
+  "change": "In ProcessWideLowPrecision, increase the grouped cyclic row stripe width from eight to sixteen rows. Keep lane-wise tail distribution, row mapping helper, batch visitation, arithmetic, and tile behavior unchanged.",
+  "ownership_validation": {
+    "command": "python3 inline sixteen-row stripe ownership, tail balance, visitation, and boundary checks",
+    "status": "passed",
+    "cases": 23623,
+    "output": "R016 sixteen-row stripe ownership, tail balance, visitation, and boundary checks passed: 23623 cases"
+  },
+  "build": {
+    "command": "./tools/run.sh build",
+    "status": "passed",
+    "return_code": 0,
+    "log": "build-20261013T080426082413227Z.log",
+    "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+    "cmake_sha256": "435cd84be945c1757159940c4c36fbab97fb06e9bf14e8a746a8121b42dda9fc",
+    "artifact_sha256": "6badaab94628303a70ef4785f159d4894da6ed944f9a6e54df3c4734edd54873"
+  },
+  "correctness": {
+    "status": "not_run",
+    "return_code": 127,
+    "log": "correctness-20261013T080649844757212Z.log",
+    "reason": "No correctness runner exists in the N10 sparse worktree."
+  },
+  "local": {
+    "status": "not_run",
+    "return_code": 127,
+    "log": "local-20261013T080649844370569Z.log",
+    "reason": "No Canonical Local runner exists in the N10 sparse worktree."
+  },
+  "performance_claim": null,
+  "device_id": null,
+  "free_hbm_mb": null
+}
