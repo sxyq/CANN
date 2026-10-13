@@ -1,0 +1,52 @@
+{
+  "route_id": "N07",
+  "revision": "R051",
+  "branch": "research/n07-parameter-tile-reuse",
+  "parent_sha": "43a1049a1e08e518c88e354a754fdebb85a96f99",
+  "source_commit": "2c4eb783557b75fc72d16d5fb9934513cf67f9a4",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "2fe8a674e89e684fa58247ec7a2ec997cf15a72c24f2fc20cec25de908991f2d",
+  "hypothesis": "A full-pair FP32/native parameter cache may improve cross-row parameter reuse even when it does not raise the retained-y row capacity, provided the candidate tile width does not shrink. Such a candidate preserves batch capacity and does not increase tile count; cache setup and changed parameter residency may still affect runtime, so no performance gain is assumed.",
+  "change": "For FP32/native full-pair candidates, accept capacity as useful when rows exceed baseline, or when rows equal baseline and candidate tileElems is at least the baseline tileElems. Gamma-only selection criteria and all runtime load, arithmetic, and tile traversal code are unchanged.",
+  "chooser_comparison": {
+    "baseline_rows": "ChooseWideFullYRows without resident parameter bytes",
+    "full_pair_acceptance": "candidateRows > baselineRows or (candidateRows == baselineRows and candidateTileElems >= baselineTileElems)",
+    "reuse_rationale": "Equal row capacity with an equal or larger tile width keeps batch capacity and tile count while allowing parameters to be cached across rows.",
+    "tradeoff": "Additional parameter cache residency and setup may change runtime; no measurement is available."
+  },
+  "build": {
+    "status": "passed",
+    "entrypoint_command": "./tools/run.sh build",
+    "exit_code": 0,
+    "output": [
+      "-- Configuring done",
+      "-- Generating done",
+      "-- Build files have been written to: /home/data4t2/lelinfeng/cann/worktrees/n07-parameter-tile-reuse/phase4/workspaces/R31B/build-n07",
+      "Consolidate compiler generated dependencies of target r31b_submission_v011",
+      "[ 50%] Building ASC object CMakeFiles/r31b_submission_v011.dir/compile_adapter_v011.asc.o",
+      "[100%] Linking ASC executable r31b_submission_v011",
+      "[100%] Built target r31b_submission_v011"
+    ],
+    "target": "r31b_submission_v011",
+    "artifact_path": "phase4/workspaces/R31B/build-n07/r31b_submission_v011",
+    "artifact_sha256": "ade29322a060024ea540ad1ab591bb43b5e5b25e45e1b36346b083a2a5a8a43b"
+  },
+  "correctness": {
+    "status": "not_run",
+    "command": "./tools/run.sh correctness",
+    "exit_code": 3,
+    "output": "not_run: correctness harness is not present in this sparse worktree"
+  },
+  "local": {
+    "status": "not_run",
+    "command": "./tools/run.sh local",
+    "exit_code": 3,
+    "output": "not_run: canonical Local runner and scorer are not present in this sparse worktree"
+  },
+  "performance_measurement": {
+    "status": "not_run",
+    "reason": "Canonical Local runner/scorer is unavailable; no device performance measurement was collected."
+  },
+  "device_id": "NONE",
+  "evidence_note": "Local CANN compilation passed. No NPU runtime correctness test or performance measurement was run."
+}
