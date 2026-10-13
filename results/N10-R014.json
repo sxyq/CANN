@@ -1,0 +1,41 @@
+{
+  "route": "N10",
+  "revision": "R014",
+  "mechanism": "row-to-core balance / four-row cyclic stripes",
+  "hypothesis": "Assigning four adjacent wide low-precision rows to each block per stripe may change ownership granularity compared with R013 while retaining balanced work across blocks.",
+  "status": "exploratory_build_passed_performance_unknown",
+  "parent_candidate": "eb41f43e9d077407af8ff943f8ed6ca0b2ff6cfe",
+  "source_commit": "01001e64c7390db8354991f4bf600a30e3ed5f04",
+  "source_sha256": "5e6ad847237afd9f1756ca54b273915f6ce8ca84982478311e22288cb2af615d",
+  "change": "In ProcessWideLowPrecision, map each block's full local ordinal range to adjacent four-row groups spaced by 4*blockCount. Distribute partial-stripe lanes independently across blocks so per-block row counts differ by at most one. Reuse the grouped ordinal-to-row helper for input, prefetch, and output; arithmetic and tile processing are unchanged.",
+  "ownership_validation": {
+    "command": "python3 inline four-row stripe ownership, tail balance, visitation, and boundary checks",
+    "status": "passed",
+    "cases": 23615,
+    "output": "R014 four-row stripe ownership, tail balance, visitation, and boundary checks passed: 23615 cases"
+  },
+  "build": {
+    "command": "./tools/run.sh build",
+    "status": "passed",
+    "return_code": 0,
+    "log": "build-20261013T064318667301454Z.log",
+    "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+    "cmake_sha256": "435cd84be945c1757159940c4c36fbab97fb06e9bf14e8a746a8121b42dda9fc",
+    "artifact_sha256": "6fbdb616a0a4bdf968f82093ebe4deccb2d4ba4ba41900bdf9ef4fdf39406e08"
+  },
+  "correctness": {
+    "status": "not_run",
+    "return_code": 127,
+    "log": "correctness-20261013T064553044167777Z.log",
+    "reason": "No correctness runner exists in the N10 sparse worktree."
+  },
+  "local": {
+    "status": "not_run",
+    "return_code": 127,
+    "log": "local-20261013T064553042861543Z.log",
+    "reason": "No Canonical Local runner exists in the N10 sparse worktree."
+  },
+  "performance_claim": null,
+  "device_id": null,
+  "free_hbm_mb": null
+}
