@@ -1,0 +1,30 @@
+route=N08
+revision=R015
+parent_sha=5e4073f51353b61da0b4cdcb25c8cae46331cf8c
+source_commit=692035d56a4fecae314b3333ceca4e09ac8bdccb
+built_tree_head=692035d56a4fecae314b3333ceca4e09ac8bdccb
+source=phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+source_sha256=cd5347cd07f8e37f05e0f53fbedf9981f0b9346ea93886b73817db7831422f15
+artifact=build/r31b_submission_v011
+artifact_sha256=d3f0fb8765ca0777b3fb2a6be94d5e4ee4028dda2a3a770e17be6cbc649ac8b3
+aicore_binary_section_sha256=d483115f0d3b2b4b098b5e513e2b2228f1624bea6b47cef64e934f921a5eda12
+
+hypothesis=On partial output tiles in wide low-precision Pass 2, use DataCopy from the aligned output staging buffer when the exact tail count and GM destination offset are both 32-byte aligned; retain DataCopyPad for other tails and all full tiles.
+evidence=The call is gated by valid<tileWidth, and outputLocal is the base of outputBuf_. The fast-path conditions establish a 32-byte-aligned element count and GM address for DataCopy; otherwise the original Store path uses exact-count DataCopyPad. The actual output element range is unchanged. The artifact and extracted .aicore_binary section hashes differ from R014; this is code-generation evidence only, not correctness or performance evidence.
+scope=Transfer selection for partial output tiles in ProcessWideLowPrecision. No output values/ranges, arithmetic, reduction, scheduling, full-tile writes, or UB placement changes.
+
+build_command=./tools/run.sh build
+build_exit_code=0
+build_log=results/build-20261013T042502+0000.log
+cann=/usr/local/Ascend/ascend-toolkit/latest (8.5.T8.0.B060)
+compile_target=ASCEND_COMPUTE_UNIT=ascend910b; --npu-arch=dav-2201
+previous_artifact_sha256=1c1d45254a797b6316f21f8a0a9f4eccc7b99296648dada84cab724164f8a1e3
+previous_aicore_binary_section_sha256=af2f3ef36685d3bc66db80303402c923ec4b5b0bd3a83082312ee3c77693b066
+artifact_changed=true
+
+correctness_status=NOT_RUN
+correctness_reason=The route worktree exposes no correctness runner or inputs.
+local_status=NOT_RUN
+local_reason=The route worktree exposes no Canonical Local runner, inputs, or scorer. No Local Score is claimed.
+device_status=NOT_USED
+remote_status=NOT_ATTEMPTED
