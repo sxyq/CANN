@@ -1,0 +1,37 @@
+{
+  "route": "N06",
+  "revision": "R163",
+  "source_commit": "cc481f4f81e8875b476b39943340ab49c535ca11",
+  "parent_source_commit": "cebe96f598ecdd6e22c2c9c40128c7c1e95799cc",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "14889e585db9677429bea0046dcfcf83ed5107bdcd710ad9cba4217a234f8a9b",
+  "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+  "cmake_sha256": "3a8bc9f92541f92fe403bd7a2c196cb9bf9008cea9c4d668c7b1d603c81b991f",
+  "runner_sha256": "23f6d76d82a7bf645559971d25ee46a6d2d02a59d0f17bf54fed33748196a787",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "Shift the active FP16 wide-path value conversion scratch view from 192B to the maximum 224B offset covered by its unchanged allocation. The active tile view ends exactly at the allocation boundary; total UB use, chooser budget, BF16 view, and other placements are unchanged.",
+  "hypothesis": "The maximum in-bounds aligned value-conversion phase may change its interaction with neighboring vector scratch. This is a placement probe, not a claimed bank-width or performance result.",
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "log": "results/build_163.log",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "7041a7c43a23739625ab96ca9cee1ab8efada57a188ae3fae2788892a20029ab",
+    "artifact_sha256_file": "results/build-artifact_163.sha256"
+  },
+  "correctness": {
+    "command": "./tools/run.sh correctness",
+    "exit_code": 2,
+    "result": "Not run: runner accepts only build.",
+    "output": "usage: ./tools/run.sh build"
+  },
+  "local": {
+    "command": "./tools/run.sh local",
+    "exit_code": 2,
+    "result": "Not run: runner accepts only build.",
+    "output": "usage: ./tools/run.sh build"
+  },
+  "device": "None; compile only, no device work submitted.",
+  "workload": "CANN build only; no shape execution or Local workload ran.",
+  "performance_effect": "Unknown; compile only."
+}
