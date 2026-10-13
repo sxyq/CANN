@@ -1,0 +1,46 @@
+{
+  "route_id": "N07",
+  "revision": "R059",
+  "branch": "research/n07-parameter-tile-reuse",
+  "parent_sha": "43a1049a1e08e518c88e354a754fdebb85a96f99",
+  "source_commit": "2e5e1dda30290c4c527b1de78d0f48905f236552",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "3f573368b24ead0e3f03d541236c5bc0319c7af12d35238d15519356a56bc1fa",
+  "hypothesis": "An FP16 full-row parameter cache may provide gamma/bias reuse across rows even when it does not increase retained-y row capacity. Allowing an equal-row-capacity candidate can avoid reloading parameters per row, but its tile width may be smaller and increase Pass1 tile/event work. Runtime effect is unknown.",
+  "change": "Changed only the FP16 wide-path cache activation comparison from cachedRows > baselineRows to cachedRows >= baselineRows. Candidate evaluation still requires at least two minimum rows per block, and buffer sizing, tile selection, parameter load scheduling, and arithmetic are unchanged.",
+  "build": {
+    "status": "passed",
+    "entrypoint_command": "./tools/run.sh build",
+    "exit_code": 0,
+    "output": [
+      "-- Configuring done",
+      "-- Generating done",
+      "-- Build files have been written to: /home/data4t2/lelinfeng/cann/worktrees/n07-parameter-tile-reuse/phase4/workspaces/R31B/build-n07",
+      "Consolidate compiler generated dependencies of target r31b_submission_v011",
+      "[ 50%] Building ASC object CMakeFiles/r31b_submission_v011.dir/compile_adapter_v011.asc.o",
+      "[100%] Linking ASC executable r31b_submission_v011",
+      "[100%] Built target r31b_submission_v011"
+    ],
+    "target": "r31b_submission_v011",
+    "artifact_path": "phase4/workspaces/R31B/build-n07/r31b_submission_v011",
+    "artifact_sha256": "11abd1741da9ee7cbd8e7dae07e81bc31ec4a44d319c86d7c8914c1f479aaa62"
+  },
+  "correctness": {
+    "status": "not_run",
+    "command": "./tools/run.sh correctness",
+    "exit_code": 3,
+    "output": "not_run: correctness harness is not present in this sparse worktree"
+  },
+  "local": {
+    "status": "not_run",
+    "command": "./tools/run.sh local",
+    "exit_code": 3,
+    "output": "not_run: canonical Local runner and scorer are not present in this sparse worktree"
+  },
+  "performance_measurement": {
+    "status": "not_run",
+    "reason": "Canonical Local runner/scorer is unavailable; no device performance measurement was collected."
+  },
+  "device_id": "NONE",
+  "evidence_note": "Local CANN compilation passed. No NPU runtime correctness test or performance measurement was run."
+}
