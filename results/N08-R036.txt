@@ -1,0 +1,30 @@
+route=N08
+revision=R036
+parent_sha=ecd78e0af85d4ac58608029b01290698e7fb1838
+source_commit=ad6d9afa02bc58073c5ac1bc43cb77b20d4de962
+built_tree_head=ad6d9afa02bc58073c5ac1bc43cb77b20d4de962
+source=phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+source_sha256=7dde44ba9d78b5feafa07eafe575af84f7ba2b6d74813bf9f3c6fb93a246fe0d
+artifact=build/r31b_submission_v011
+artifact_sha256=0fecc68f60f8b45529e97988c7c77285b63bddc4976c8a34343fe8d9c9c04585
+aicore_binary_section_sha256=0fa10d55fe00474286a2b24804fde9aaee9fdc0a2474d0946a655eec1be9dd66
+
+hypothesis=Within LoadTailPair short-tail handling, compute the GM start's block residue once and reuse it for aligned-window selection and exact-count DataCopy eligibility.
+evidence=The helper now derives prefix=offset&mask once for count>0 and count<tileCapacity. If prefix is zero and count is block aligned, the exact paired DataCopy is selected regardless of read-ahead eligibility; otherwise only an eligible aligned window may extend the copy, and all remaining cases use exact DataCopyPad. This avoids recomputing GM-offset alignment in the short-tail fallback while preserving ranges and the aligned-window bounds check. Artifact and extracted .aicore_binary section hashes differ from R035; this is code-generation evidence only, not correctness or performance evidence.
+scope=Reuse the GM start alignment residue across shared paired short-tail decisions in LoadTailPair. No GM ranges, arithmetic, reduction, scheduling, tile sizing, or UB placement changes.
+
+build_command=./tools/run.sh build
+build_exit_code=0
+build_log=results/build-20261013T080636+0000.log
+cann=/usr/local/Ascend/ascend-toolkit/latest (8.5.T8.0.B060)
+compile_target=ASCEND_COMPUTE_UNIT=ascend910b; --npu-arch=dav-2201
+previous_artifact_sha256=882b9fe29447cb7e2e7a76f2ce134f81407edff259c99e53da7559b9f551da88
+previous_aicore_binary_section_sha256=3f8c0a5d3c46790cdc7c19cba65c129d7360e944ec4131e8b98bade1b08cb74f
+artifact_changed=true
+
+correctness_status=NOT_RUN
+correctness_reason=The route worktree exposes no correctness runner or inputs.
+local_status=NOT_RUN
+local_reason=The route worktree exposes no Canonical Local runner, inputs, or scorer. No Local Score is claimed.
+device_status=NOT_USED
+remote_status=NOT_ATTEMPTED
