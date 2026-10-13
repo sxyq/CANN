@@ -1,0 +1,54 @@
+{
+  "route": "N10",
+  "revision": "R013",
+  "mechanism": "row-to-core balance / paired cyclic row stripes",
+  "hypothesis": "Assigning two adjacent wide low-precision rows to a block per cyclic stripe may change the row ownership granularity while preserving inter-block work balance.",
+  "status": "exploratory_build_passed_performance_unknown",
+  "parent_candidate": "fc9f8f7fd5eb7387d0b082656f22b35816b1c817",
+  "source_commit": "df726c70f13db917f6016cb79706f9cae1f17f95",
+  "source_sha256": "412998cc9d29f81ee0be7b1f2f26911205c172268a975b42a023a1f49fb908a2",
+  "change": "In ProcessWideLowPrecision, map each block's full local ordinal range to adjacent row pairs spaced by 2*blockCount. Distribute the partial stripe's first and second lanes independently across blocks so local row counts differ by at most one. Reuse the same ordinal-to-row helper for input, prefetch, and output; arithmetic and tile processing are unchanged.",
+  "ownership_validation": {
+    "command": "python3 inline paired-stripe ownership, tail balance, visitation, and boundary checks",
+    "status": "passed",
+    "cases": 23611,
+    "output": "R013 paired-stripe ownership, tail balance, visitation, and boundary checks passed: 23611 cases",
+    "initial_attempts": [
+      {
+        "status": "failed",
+        "return_code": 1,
+        "output": "AssertionError: (2, 2, [0, 2])",
+        "reason": "Assigning both rows of a partial pair to one block made the row-count difference two. Tail lanes were changed to distribute independently across blocks."
+      },
+      {
+        "status": "failed",
+        "return_code": 1,
+        "reason": "The checker asserted fullOwnedRows + tailRows == rowCount and omitted the full stripe width. Corrected to fullPairRows * stripeRows + tailRows == rowCount."
+      }
+    ]
+  },
+  "build": {
+    "command": "./tools/run.sh build",
+    "status": "passed",
+    "return_code": 0,
+    "log": "build-20261013T055450918263586Z.log",
+    "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+    "cmake_sha256": "435cd84be945c1757159940c4c36fbab97fb06e9bf14e8a746a8121b42dda9fc",
+    "artifact_sha256": "b4f0c98fd82d5a9026e9475152ca6e1b14df5665c583fb1176e932ee5b02ce59"
+  },
+  "correctness": {
+    "status": "not_run",
+    "return_code": 127,
+    "log": "correctness-20261013T055629707229993Z.log",
+    "reason": "No correctness runner exists in the N10 sparse worktree."
+  },
+  "local": {
+    "status": "not_run",
+    "return_code": 127,
+    "log": "local-20261013T055629712713054Z.log",
+    "reason": "No Canonical Local runner exists in the N10 sparse worktree."
+  },
+  "performance_claim": null,
+  "device_id": null,
+  "free_hbm_mb": null
+}
