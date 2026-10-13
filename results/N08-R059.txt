@@ -1,0 +1,31 @@
+route=N08
+revision=R059
+parent_sha=48fe11932e4af1fa659cab36e9a0b9c9af974a6e
+source_commit=c42296079cd8e9d0afe0cd3c4101f6fc804d3790
+built_tree_head=c42296079cd8e9d0afe0cd3c4101f6fc804d3790
+source=phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+source_sha256=17c7a117c59fe7e18c130c7fdde2b407008c87f1f84abf3a416a7fed70eea0aa
+artifact=build/r31b_submission_v011
+artifact_sha256=0cef58e7afc38ccce5bca631d6b8dd0391516ee62a56d9024189fc9070c3f590
+aicore_binary_section_sha256=2b804a29dcf98c8c2d7183428be90f3d96d666cee90f07ee9c05032f54897c28
+
+hypothesis=For aligned-source output-tail stores, avoid splitting when the aligned body contains only one data block; require at least two blocks before issuing DataCopy plus an exact DataCopyPad suffix, otherwise retain one exact Store.
+evidence=StoreTailFromAlignedRow previously split whenever the aligned body was nonempty after source-base and GM-offset alignment checks. R059 requires bodyCount >= 2 * kElementsPerDataBlock. With B=16 and count=17, bodyCount=16 and tailCount=1, so the prior DataCopy-plus-Store path now uses one exact Store; with count=33, bodyCount=32 and tailCount=1, the split remains eligible. Both paths cover exactly [offset,offset+count): the split copies the aligned body then the exact suffix, while Store uses the existing exact-count DataCopyPad helper. Build succeeded with exit code 0; artifact and extracted .aicore_binary section hashes differ from the pre-build file, demonstrating a generated-artifact change only. No correctness or performance conclusion is supported.
+scope=Minimum aligned-body length for the aligned-source output-tail split in StoreTailFromAlignedRow only. Output range, values, arithmetic, reduction, scheduling, tile sizing, and UB placement are unchanged.
+
+build_command=./tools/run.sh build
+build_exit_code=0
+build_log=results/build-20261013T124717+0000.log
+cann=/usr/local/Ascend/ascend-toolkit/latest
+compile_target=ASCEND_COMPUTE_UNIT=ascend910b; --npu-arch=dav-2201
+previous_artifact_sha256=b482b77e39ef1adf4bd3f4ef5b5ff1315e2f4f9aa4ad2463c0caa1afd2681767
+previous_aicore_binary_section_sha256=d7a161308100b2144ccd448508957985facc2219e0a9ea63c7ae5cb1887d7762
+previous_artifact_note=The pre-build full artifact hash differs from the R058 record (11a4984b47237f24aa2687f55e46dcc953295adaa73e98c40bc8aa1cedcb8133), while the extracted .aicore_binary section hash matches the R058 record; the measured pre-build file is used as the comparison baseline, and the cause of the full-file difference is unknown.
+artifact_changed=true
+
+correctness_status=NOT_RUN
+correctness_reason=The route worktree exposes no correctness runner or inputs.
+local_status=NOT_RUN
+local_reason=The route worktree exposes no Canonical Local runner, inputs, or scorer. No Local Score is claimed.
+device_status=NOT_USED
+remote_status=NOT_ATTEMPTED
