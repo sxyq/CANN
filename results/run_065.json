@@ -1,0 +1,37 @@
+{
+  "route": "N06",
+  "revision": "R065",
+  "source_commit": "a1fdaa1170910636d75de9875451c47d867907d1",
+  "parent_source_commit": "a6db98d445a2f7ee698329d48c8c97288524ae8c",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "dbe2d458768d73e5ef41678fc74556dec1dedcd900dc66b7474b3f4b2ee6a8ff",
+  "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+  "cmake_sha256": "3a8bc9f92541f92fe403bd7a2c196cb9bf9008cea9c4d668c7b1d603c81b991f",
+  "runner_sha256": "23f6d76d82a7bf645559971d25ee46a6d2d02a59d0f17bf54fed33748196a787",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "Move the wide FP16 residualBuf_ and xBuf_ InitBuffer allocations together after vector/reduction scratch. Their group order, allocation lengths, active offsets, arithmetic, indexing, and event order remain unchanged.",
+  "hypothesis": "TPipe allocation order changes the GM input ping-pong region bases relative to simultaneously active vector/reduction scratch. Moving both input buffers as a group may change MTE2/Vector bank interaction; no bank mapping or performance gain is assumed.",
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "log": "results/build_065.log",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "b77a615e8455df67d8648e53075846e2b2eb03884457e0df0eef6caff5094a38",
+    "artifact_sha256_file": "results/build-artifact_065.sha256"
+  },
+  "correctness": {
+    "command": "./tools/run.sh correctness",
+    "exit_code": 2,
+    "result": "Not run: runner accepts only build.",
+    "output": "usage: ./tools/run.sh build"
+  },
+  "local": {
+    "command": "./tools/run.sh local",
+    "exit_code": 2,
+    "result": "Not run: runner accepts only build.",
+    "output": "usage: ./tools/run.sh build"
+  },
+  "device": "None; compile only, no device work submitted.",
+  "workload": "CANN build only; no shape execution or Local workload ran.",
+  "performance_effect": "Unknown; compile only."
+}
