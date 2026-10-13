@@ -51,3 +51,23 @@
 - Same-binary P/P and paired timing were not started because the target had active shared compute and a large resident Python workload; timing under that snapshot would not give a dependable comparison. `LOCAL_SCORE=NONE`; zero samples collected.
 - The existing V019 executable pairs R31B V011 with N04 V019; the existing V020 executable pairs R31B V011 with N04 V020. V020 `--qualify-parent` measures R31B V011 alone. Neither existing binary provides interleaved V019/V020 samples. Direct V019/V020 pairing would require a new combined Runner build, so none was attempted. The V019 and V020 source SHA-256 values are `13435a1b4b14e5094f99931cfe99647a4cf43603bea8592cf580743870cbcaf5` and `d17d17335443581bcdb64cb8c1625f8d2f1b1e9295c5cabea95b8d726e3ed5c4`.
 - No Correctness was repeated. The existing V020 compile and 4/4 Correctness result remain valid for its recorded source identity.
+
+## 2026-10-13 Direct V019/V020 Pair Preparation
+
+- Purpose: adapt the existing `paired_runner_v016` target to interleave direct Parent N04 V019 and Candidate N04 V020 using their source-level entry points. Candidate source is unchanged; no second Runner was added.
+- Worktree and starting point: `/Users/sunyiyang/Desktop/Project/cann/worktrees/n04-gm-cache-streaming`, branch `route/n04-gm-cache-streaming-x-20261011`, starting HEAD `fe602519704545657839ba0b1cbcb0216a22e270`.
+- Remote Kernel inputs were read-only verified against local source identities:
+
+| Input | Remote path | SHA-256 |
+|---|---|---|
+| N04 V019 Kernel source | `/home/data4t2/lelinfeng/cann/server_runs/N04-GM-CACHE-STREAMING-X-RESET-20261011/V019/1c80adf17/source/N04-V019-GM-CACHE-STREAMING-X_kernel.asc` | `13435a1b4b14e5094f99931cfe99647a4cf43603bea8592cf580743870cbcaf5` |
+| N04 V020 Kernel source | `/home/data4t2/lelinfeng/cann/server_runs/N04-GM-CACHE-STREAMING-X-RESET-20261011/V020/e2a5b36cf/source/N04-V020-GM-CACHE-STREAMING-X_kernel.asc` | `d17d17335443581bcdb64cb8c1625f8d2f1b1e9295c5cabea95b8d726e3ed5c4` |
+| V019 paired ABI header | `/home/data4t2/lelinfeng/cann/server_runs/N04-GM-CACHE-STREAMING-X-RESET-20261011/V019/1c80adf17/support/paired/paired_runner_abi.h` | `096c0229f5d9e6fa37460808387517280cb0f2e4296e07b8c37f75cd73c89617` |
+| V020 paired ABI header | `/home/data4t2/lelinfeng/cann/server_runs/N04-GM-CACHE-STREAMING-X-RESET-20261011/V020/e2a5b36cf/support/paired/paired_runner_abi.h` | `096c0229f5d9e6fa37460808387517280cb0f2e4296e07b8c37f75cd73c89617` |
+
+- Adapter file identities: `paired_runner_v016.asc` = `a85b8c00c50c706f0363e35599743edc5845404663ffe7833f0e962d7b4e5aa4`; `paired_runner.cpp` = `778c0c28bc124c6022090bb09f260855639aa143b2a2b2e11c85b074f124f502`; `paired-CMakeLists.txt` = `5098708912a558d564b54f5a01a91075af947eba1c33973d796cff798f60e346`.
+- `paired_runner_v016.asc` includes both Kernel sources under separate namespaces; `paired_runner.cpp` selects V019 for Parent and V020 for Candidate; CMake includes both remote source directories and keeps target `paired_runner_v016`.
+- The existing V019 executable is not required by this source build because both Kernel sources are compiled into the paired target. Its verified SHA-256 is `d3de11ce4967e47175dbc14a47e3596d2bded44d998cb1c22e91e9fe8e4776ce`; it remains untouched.
+- The existing V020/R31B executable SHA-256 remains `bd47685567583fc9f46c2e07fc4b6c8d4ad3bffa470b0b0eaacca76e079f4b4f`. It and all prior R31B/V020 result files were preserved.
+- `TEST_NOT_RUN`: Correctness, P/P, Local, and Profile were not run; the adapted target was not built. The latest user-provided d7 state is AICore 8% with shared Python PID 3954164. No device task was launched. Remote access in this continuation was limited to read-only source, ABI, and binary identity queries.
+- Recovery point: this worktree's `本地实验/N04-GM-CACHE-STREAMING-X/V020/results/paired_runner_v016.asc`, `paired_runner.cpp`, and `paired-CMakeLists.txt`, target `paired_runner_v016`. Starting branch and HEAD were `route/n04-gm-cache-streaming-x-20261011` and `fe602519704545657839ba0b1cbcb0216a22e270`.

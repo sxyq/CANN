@@ -11,7 +11,7 @@
 
 namespace {
 
-using R31BRunKernel = decltype(&r31b_v011::run_kernel_v011);
+using ParentRunKernel = decltype(&n04_v019::run_kernel_v019);
 
 constexpr int kDevice = 7;
 constexpr int kRows = 1024;
@@ -364,26 +364,26 @@ void RunCase(const CaseSpec& spec, aclrtStream stream, Events& events, RunMode m
                 spec.name, spec.dtype == 1 ? "fp16" : "bf16", kRows, spec.width,
                 kDevice, kWarmup, kPairs, kPairs);
     if (mode == RunMode::kCorrectness) {
-        Launch(r31b_v011::run_kernel_v011, buffers.parentOutput, buffers,
+        Launch(n04_v019::run_kernel_v019, buffers.parentOutput, buffers,
                dataGroup, paramGroup, stream);
         CheckAcl(aclrtSynchronizeStream(stream), "parent correctness synchronize");
-        Launch(r31b_v016::run_kernel_v016, buffers.candidateOutput, buffers,
+        Launch(n04_v020::run_kernel_v020, buffers.candidateOutput, buffers,
                dataGroup, paramGroup, stream);
         CheckAcl(aclrtSynchronizeStream(stream), "candidate correctness synchronize");
         CheckAcl(aclrtMemcpy(parentOutput.data(), dataBytes, buffers.parentOutput, dataBytes,
                              ACL_MEMCPY_DEVICE_TO_HOST), "copy parent output");
         CheckAcl(aclrtMemcpy(candidateOutput.data(), dataBytes, buffers.candidateOutput, dataBytes,
                              ACL_MEMCPY_DEVICE_TO_HOST), "copy candidate output");
-        CheckOutput(spec, x, residual, gamma, bias, parentOutput, "R31B_V011");
+        CheckOutput(spec, x, residual, gamma, bias, parentOutput, "N04_V019");
         CheckOutput(spec, x, residual, gamma, bias, candidateOutput, "N04_V020");
-        std::printf("CASE_END name=%s correctness=PASS parent=R31B_V011 candidate=N04_V020\n", spec.name);
+        std::printf("CASE_END name=%s correctness=PASS parent=N04_V019 candidate=N04_V020\n", spec.name);
         FreeCase(buffers);
         return;
     }
 
     if (mode == RunMode::kQualifyParent) {
         for (int i = 0; i < kWarmup; ++i) {
-            Launch(r31b_v011::run_kernel_v011, buffers.parentOutput, buffers,
+            Launch(n04_v019::run_kernel_v019, buffers.parentOutput, buffers,
                    dataGroup, paramGroup, stream);
             CheckAcl(aclrtSynchronizeStream(stream), "same-binary warmup synchronize");
         }
@@ -400,19 +400,19 @@ void RunCase(const CaseSpec& spec, aclrtStream stream, Events& events, RunMode m
             blockWall.reserve(kQualificationSamplesPerBlock);
             for (int sample = 0; sample < kQualificationSamplesPerBlock; ++sample) {
                 const TimedSample timed = Measure(
-                    r31b_v011::run_kernel_v011, buffers.parentOutput, buffers,
+                    n04_v019::run_kernel_v019, buffers.parentOutput, buffers,
                     dataGroup, paramGroup, stream, events);
                 blockDevice.push_back(timed.deviceUs);
                 blockWall.push_back(timed.wallUs);
                 allDevice.push_back(timed.deviceUs);
                 allWall.push_back(timed.wallUs);
-                std::printf("SAME_BINARY_SAMPLE case=%s block=%d sample=%02d device_us=%.3f wall_us=%.3f binary=R31B_V011\n",
+                std::printf("SAME_BINARY_SAMPLE case=%s block=%d sample=%02d device_us=%.3f wall_us=%.3f binary=N04_V019\n",
                             spec.name, block + 1, sample + 1,
                             timed.deviceUs, timed.wallUs);
             }
             const Stats blockStats = Summarize(blockDevice);
             blockMedians[block] = blockStats.median;
-            PrintStats(spec.name, "device_us", block == 0 ? "R31B_V011_BLOCK_1" : "R31B_V011_BLOCK_2",
+            PrintStats(spec.name, "device_us", block == 0 ? "N04_V019_BLOCK_1" : "N04_V019_BLOCK_2",
                        blockDevice);
         }
 
@@ -429,24 +429,24 @@ void RunCase(const CaseSpec& spec, aclrtStream stream, Events& events, RunMode m
         const char* verdict = passed ? "PASS" :
                               blocked ? "MEASUREMENT_PROTOCOL_BLOCKED_FOR_SHAPE" :
                                         "NEEDS_VALIDATION";
-        PrintStats(spec.name, "device_us", "R31B_V011_ALL", allDevice);
-        PrintStats(spec.name, "wall_us", "R31B_V011_ALL", allWall);
+        PrintStats(spec.name, "device_us", "N04_V019_ALL", allDevice);
+        PrintStats(spec.name, "wall_us", "N04_V019_ALL", allWall);
         std::printf("SAME_BINARY_QUAL case=%s result=%s samples=%zu median_us=%.3f mad_over_median=%.5f block_drift=%.5f\n",
                     spec.name, verdict, allDevice.size(), fullStats.median,
                     madRatio, blockDrift);
 
         CheckAcl(aclrtMemcpy(parentOutput.data(), dataBytes, buffers.parentOutput, dataBytes,
                              ACL_MEMCPY_DEVICE_TO_HOST), "copy same-binary output");
-        CheckOutput(spec, x, residual, gamma, bias, parentOutput, "R31B_V011");
-        std::printf("CASE_END name=%s same_binary=R31B_V011 correctness=PASS\n", spec.name);
+        CheckOutput(spec, x, residual, gamma, bias, parentOutput, "N04_V019");
+        std::printf("CASE_END name=%s same_binary=N04_V019 correctness=PASS\n", spec.name);
         FreeCase(buffers);
         return;
     }
 
     for (int i = 0; i < kWarmup; ++i) {
-        Launch(r31b_v011::run_kernel_v011, buffers.parentOutput, buffers, dataGroup, paramGroup, stream);
+        Launch(n04_v019::run_kernel_v019, buffers.parentOutput, buffers, dataGroup, paramGroup, stream);
         CheckAcl(aclrtSynchronizeStream(stream), "parent warmup synchronize");
-        Launch(r31b_v016::run_kernel_v016, buffers.candidateOutput, buffers, dataGroup, paramGroup, stream);
+        Launch(n04_v020::run_kernel_v020, buffers.candidateOutput, buffers, dataGroup, paramGroup, stream);
         CheckAcl(aclrtSynchronizeStream(stream), "candidate warmup synchronize");
     }
 
@@ -460,14 +460,14 @@ void RunCase(const CaseSpec& spec, aclrtStream stream, Events& events, RunMode m
         PairSample sample{};
         const bool parentFirst = (pair % 2) == 0;
         if (parentFirst) {
-            sample.parent = Measure(r31b_v011::run_kernel_v011, buffers.parentOutput, buffers,
+            sample.parent = Measure(n04_v019::run_kernel_v019, buffers.parentOutput, buffers,
                                     dataGroup, paramGroup, stream, events);
-            sample.candidate = Measure(r31b_v016::run_kernel_v016, buffers.candidateOutput, buffers,
+            sample.candidate = Measure(n04_v020::run_kernel_v020, buffers.candidateOutput, buffers,
                                        dataGroup, paramGroup, stream, events);
         } else {
-            sample.candidate = Measure(r31b_v016::run_kernel_v016, buffers.candidateOutput, buffers,
+            sample.candidate = Measure(n04_v020::run_kernel_v020, buffers.candidateOutput, buffers,
                                        dataGroup, paramGroup, stream, events);
-            sample.parent = Measure(r31b_v011::run_kernel_v011, buffers.parentOutput, buffers,
+            sample.parent = Measure(n04_v019::run_kernel_v019, buffers.parentOutput, buffers,
                                     dataGroup, paramGroup, stream, events);
         }
         sample.deltaUs = sample.candidate.deviceUs - sample.parent.deviceUs;
@@ -493,14 +493,14 @@ void RunCase(const CaseSpec& spec, aclrtStream stream, Events& events, RunMode m
                          ACL_MEMCPY_DEVICE_TO_HOST), "copy parent output");
     CheckAcl(aclrtMemcpy(candidateOutput.data(), dataBytes, buffers.candidateOutput, dataBytes,
                          ACL_MEMCPY_DEVICE_TO_HOST), "copy candidate output");
-    CheckOutput(spec, x, residual, gamma, bias, parentOutput, "R31B_V011");
+    CheckOutput(spec, x, residual, gamma, bias, parentOutput, "N04_V019");
     CheckOutput(spec, x, residual, gamma, bias, candidateOutput, "N04_V020");
 
-    PrintStats(spec.name, "device_us", "R31B_V011", parentDevice);
+    PrintStats(spec.name, "device_us", "N04_V019", parentDevice);
     PrintStats(spec.name, "device_us", "N04_V020", candidateDevice);
-    PrintStats(spec.name, "wall_us", "R31B_V011", parentWall);
+    PrintStats(spec.name, "wall_us", "N04_V019", parentWall);
     PrintStats(spec.name, "wall_us", "N04_V020", candidateWall);
-    PrintStats(spec.name, "paired_device_delta_us", "N04_V020_minus_R31B_V011", deltas);
+    PrintStats(spec.name, "paired_device_delta_us", "N04_V020_minus_N04_V019", deltas);
     std::printf("CASE_END name=%s correctness=PASS\n", spec.name);
     FreeCase(buffers);
 }
