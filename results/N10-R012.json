@@ -1,0 +1,41 @@
+{
+  "route": "N10",
+  "revision": "R012",
+  "mechanism": "row-to-core balance / reverse cyclic row ownership",
+  "hypothesis": "Reversing the mapping from physical blocks to cyclic row residues may change block dispatch/address alignment compared with R011 while preserving interleaved ownership and balanced row counts.",
+  "status": "exploratory_build_passed_performance_unknown",
+  "parent_candidate": "70c9e28aa70def0cad3fbff001ff9fef41e7e2cd",
+  "source_commit": "7b60002041d08c0be64bd0e77563cc60ef4191e0",
+  "source_sha256": "6d1dd6b8a076e3d2603542668585f939966d82aab3ee29c59075c0aaf96d40a1",
+  "change": "In ProcessWideLowPrecision, set logicalBlockIdx to blockCount - 1 - blockIdx. Keep cyclic row stride, per-block row count, batch visitation, arithmetic, and tile behavior unchanged.",
+  "ownership_validation": {
+    "command": "python3 inline reverse cyclic ownership, reversed batch visitation, and boundary checks",
+    "status": "passed",
+    "cases": 13299,
+    "output": "R012 reverse cyclic ownership, reversed batch visitation, and boundary checks passed: 13299 cases"
+  },
+  "build": {
+    "command": "./tools/run.sh build",
+    "status": "passed",
+    "return_code": 0,
+    "log": "build-20261013T052302437941178Z.log",
+    "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+    "cmake_sha256": "435cd84be945c1757159940c4c36fbab97fb06e9bf14e8a746a8121b42dda9fc",
+    "artifact_sha256": "0f806ad78c7df4e43485d33605750072ad9110a66726747cd56d23d4331cabf8"
+  },
+  "correctness": {
+    "status": "not_run",
+    "return_code": 127,
+    "log": "correctness-20261013T052401087127899Z.log",
+    "reason": "No correctness runner exists in the N10 sparse worktree."
+  },
+  "local": {
+    "status": "not_run",
+    "return_code": 127,
+    "log": "local-20261013T052401085468765Z.log",
+    "reason": "No Canonical Local runner exists in the N10 sparse worktree."
+  },
+  "performance_claim": null,
+  "device_id": null,
+  "free_hbm_mb": null
+}
