@@ -40,25 +40,27 @@ function keyValues(text) {
   }).filter(Boolean));
 }
 function parseArgs(argv) {
-  const out = {dryRun:false, resume:false, buildJobs:2, device:4, limit:Infinity, route:null, batchId:null};
+  const out = {dryRun:false, resume:false, buildJobs:2, devices:[0,1,2,3,4,5,7], limit:Infinity, route:null, batchId:null};
   for (let i=0; i<argv.length; i++) {
     const a=argv[i];
     if (a==='--dry-run') out.dryRun=true;
     else if (a==='--resume') out.resume=true;
     else if (a==='--batch-id') out.batchId=argv[++i];
     else if (a==='--build-jobs') out.buildJobs=Number(argv[++i]);
-    else if (a==='--device') out.device=Number(argv[++i]);
+    else if (a==='--device') out.devices=[Number(argv[++i])];
+    else if (a==='--devices') out.devices=String(argv[++i]).split(',').map(Number);
     else if (a==='--limit') out.limit=Number(argv[++i]);
     else if (a==='--route') out.route=argv[++i];
     else if (a==='--help' || a==='-h') out.help=true;
     else throw new Error('Unknown argument: '+a);
   }
-  if (!Number.isInteger(out.buildJobs)||out.buildJobs<1||!Number.isInteger(out.device)||out.device<0||
-      !(out.limit>0)) throw new Error('Invalid --build-jobs, --device or --limit');
+  if (!Number.isInteger(out.buildJobs)||out.buildJobs<1||out.devices.length<1||
+      out.devices.some(d=>!Number.isInteger(d)||d<0)||new Set(out.devices).size!==out.devices.length||!(out.limit>0))
+    throw new Error('Invalid --build-jobs, --devices, --device or --limit');
   return out;
 }
 function usage() {
-  return 'node 工具/n06-n10-canonical-sweep.mjs [--dry-run] [--route N06] [--limit N] [--build-jobs N] [--device N] [--batch-id ID] [--resume]';
+  return 'node 工具/n06-n10-canonical-sweep.mjs [--dry-run] [--route N06] [--limit N] [--build-jobs N] [--devices 0,1,2,3,4,5,7] [--batch-id ID] [--resume]';
 }
 function runGit(wt, args, encoding='utf8') {
   return execFileSync('git', args, {cwd:wt, encoding, maxBuffer:16*1024*1024, stdio:['ignore','pipe','pipe']});
@@ -225,6 +227,17 @@ function copyCanonicalSandbox(scratch) {
   },null,2)+'\n');
 }
 
+function recoverOwnStaleDeviceLocks(scratch) {
+  for(const name of fs.readdirSync(scratch).filter(n=>/^main2-canonical-d[0-7]\.lock$/.test(n))) {
+    const file=path.join(scratch,name), record=readJson(file);
+    if(record?.owner!=='MAIN-2'||!/^N0[6-9]|N10\//.test(record.version||'')||!Number.isInteger(Number(record.pid))) continue;
+    let live=true;
+    try { process.kill(Number(record.pid),0); }
+    catch(e) { if(e.code==='ESRCH') live=false; }
+    if(!live) fs.unlinkSync(file);
+  }
+}
+
 function atomicJson(file,value) {
   fs.mkdirSync(path.dirname(file),{recursive:true});
   const temp=file+'.tmp-'+process.pid;
@@ -265,6 +278,7 @@ async function workerMain(args) {
       if(!b||b.BUILD_STATUS!=='PASS') throw new Error('BUILD_NOT_PASS');
       const c=correctness(r,device);
       prev.correctness=c.CORRECTNESS_STATUS;
+      prev.device=device;
       prev.correctness_pass_count=c.PASS_COUNT??0;
       prev.correctness_case_count=c.CASE_COUNT??7;
       if(c.CORRECTNESS_STATUS==='PASS') {
@@ -334,15 +348,19 @@ function renderSummary(candidates,batchId) {
         source_status:c.sourceStatus,build:state.build||'NOT_RUN',correctness:state.correctness||'NOT_RUN',
         canonical_local_score:state.local_score??'NONE',local_status:state.local_status||'NOT_RUN',
         quality:state.local_quality||'NA',local_gain_fragile:state.local_gain_fragile||'NA',
+        reliable_local_gain:state.reliable_local_gain||'NO',
+        device:state.device??'NA',
         record_paths:c.recordPaths.join(';'),evidence_path:path.relative(ROOT,outFor(c,batchId))};
     });
     const dir=routeOutput(spec,batchId);
     writeTsv(path.join(dir,'summary.tsv'),routeRows,
-      ['route','revision','source_commit','source_sha256','source_status','build','correctness','canonical_local_score','local_status','quality','local_gain_fragile','record_paths','evidence_path']);
+      ['route','revision','source_commit','source_sha256','source_status','build','correctness','canonical_local_score','local_status','quality','local_gain_fragile','reliable_local_gain','device','record_paths','evidence_path']);
     const scored=routeRows.filter(r=>Number.isFinite(Number(r.canonical_local_score))).sort((a,b)=>Number(b.canonical_local_score)-Number(a.canonical_local_score));
+    const reliable=scored.filter(r=>r.reliable_local_gain==='YES'&&r.quality!=='POOR');
     atomicJson(path.join(dir,'best.json'),{route:spec.id,versions:routeRows.length,scored:scored.length,
-      best:scored[0]||null,unscored:routeRows.length-scored.length});
-    if(scored[0]) console.log(`BEST ${spec.id} ${scored[0].revision} ${scored[0].canonical_local_score}`);
+      best_numeric:scored[0]||null,best_reliable:reliable[0]||null,unscored:routeRows.length-scored.length});
+    if(scored[0]) console.log(`BEST_NUMERIC ${spec.id} ${scored[0].revision} ${scored[0].canonical_local_score}`);
+    if(reliable[0]) console.log(`BEST_RELIABLE ${spec.id} ${reliable[0].revision} ${reliable[0].canonical_local_score}`);
   }
 }
 
@@ -374,8 +392,25 @@ async function main(opts) {
     scratch=fs.mkdtempSync(path.join(os.tmpdir(),'cann-n06-n10-canonical-'));
     copyCanonicalSandbox(scratch);
   }
+  recoverOwnStaleDeviceLocks(scratch);
+  const devicePlan=new Map(); let nextDevice=0;
+  for(const c of candidates) {
+    const versionDir=path.join(scratch,'本地实验/MAIN2-CANONICAL-V1/versions',`${c.route}__${c.benchRevision}`);
+    const measurementFile=path.join(versionDir,'measurements.tsv');
+    let pinned=null;
+    if(fs.existsSync(measurementFile)) {
+      const lines=fs.readFileSync(measurementFile,'utf8').trim().split(/\r?\n/);
+      const headers=lines.shift()?.split('\t')||[], index=headers.indexOf('DEVICE');
+      if(index>=0) {
+        const devices=[...new Set(lines.map(line=>Number(line.split('\t')[index])).filter(Number.isInteger))];
+        if(devices.length===1) pinned=devices[0];
+      }
+    }
+    const device=pinned??opts.devices[nextDevice++%opts.devices.length];
+    devicePlan.set(c.route+'/'+c.benchRevision,device);
+  }
   const batchMeta={batch_id:batchId,created_at:new Date().toISOString(),scratch_root:scratch,
-    canonical_root:CANONICAL_ROOT,device:opts.device,build_jobs:opts.buildJobs,
+    canonical_root:CANONICAL_ROOT,devices:opts.devices,build_jobs:opts.buildJobs,
     canonical_suite:'CANONICAL_LOCAL_SUITE_V1',scorer:'MAIN2-CANONICAL-V1',
     source_inventory_count:candidates.length,execution_command:`node ${path.relative(ROOT,fileURLToPath(import.meta.url))} --batch-id ${batchId}`};
   for(const spec of activeRoutes) {
@@ -384,8 +419,8 @@ async function main(opts) {
     const rows=candidates.filter(c=>c.route===spec.id);
     writeTsv(path.join(dir,'manifest.tsv'),rows.map(c=>({route:c.route,revision:c.revision,bench_revision:c.benchRevision,
       source_commit:c.source?.commit||'UNKNOWN',source_sha256:c.sourceSha,source_status:c.sourceStatus,
-      source_origin:c.source?.origin||'UNKNOWN',record_paths:c.recordPaths.join(';')})),
-      ['route','revision','bench_revision','source_commit','source_sha256','source_status','source_origin','record_paths']);
+      source_origin:c.source?.origin||'UNKNOWN',device:devicePlan.get(c.route+'/'+c.benchRevision),record_paths:c.recordPaths.join(';')})),
+      ['route','revision','bench_revision','source_commit','source_sha256','source_status','source_origin','device','record_paths']);
   }
   atomicJson(path.join(scratch,'RUN.json'),batchMeta);
   const sourceDir=path.join(scratch,'本地实验/MAIN2-CANONICAL-V1/sources');
@@ -398,15 +433,26 @@ async function main(opts) {
   console.log(`BUILD_PHASE start versions=${runnable.length} jobs=${opts.buildJobs}`);
   await pool(runnable,opts.buildJobs,async c=>{
     const sourceFile=path.join(sourceDir,c.sourceSha+'.asc');
-    await runWorker([scratch,batchId,c.route,c.revision,c.benchRevision,c.sourceSha,sourceFile,outFor(c,batchId),'build',String(opts.device),c.source.commit]);
+    await runWorker([scratch,batchId,c.route,c.revision,c.benchRevision,c.sourceSha,sourceFile,outFor(c,batchId),
+      'build',String(devicePlan.get(c.route+'/'+c.benchRevision)),c.source.commit]);
   });
-  console.log(`CANONICAL_DEVICE_PHASE start device=${opts.device}; serial order to retain paired sampling`);
+  console.log(`CANONICAL_DEVICE_PHASE start devices=${opts.devices.join(',')} ; one serial lane per assigned device`);
+  const laneItems=new Map(opts.devices.map(device=>[device,[]]));
   for(const c of runnable) {
-    const state=readJson(path.join(outFor(c,batchId),'status.json'))||{};
-    if(state.build!=='PASS') continue;
-    const sourceFile=path.join(sourceDir,c.sourceSha+'.asc');
-    await runWorker([scratch,batchId,c.route,c.revision,c.benchRevision,c.sourceSha,sourceFile,outFor(c,batchId),'verify',String(opts.device),c.source.commit]);
+    const device=devicePlan.get(c.route+'/'+c.benchRevision);
+    if(!laneItems.has(device)) laneItems.set(device,[]);
+    laneItems.get(device).push(c);
   }
+  const lanes=[...laneItems.entries()].map(([device,items])=> (async()=>{
+    for(const c of items) {
+      const state=readJson(path.join(outFor(c,batchId),'status.json'))||{};
+      if(state.build!=='PASS') continue;
+      const sourceFile=path.join(sourceDir,c.sourceSha+'.asc');
+      await runWorker([scratch,batchId,c.route,c.revision,c.benchRevision,c.sourceSha,sourceFile,
+        outFor(c,batchId),'verify',String(device),c.source.commit]);
+    }
+  })());
+  await Promise.all(lanes);
   for(const c of candidates.filter(v=>v.sourceStatus!=='RESOLVED')) {
     atomicJson(path.join(outFor(c,batchId),'status.json'),{route:c.route,revision:c.revision,
       source_sha256:c.sourceSha,build:'NOT_RUN_SOURCE_MISSING',correctness:'NOT_RUN',
