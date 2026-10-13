@@ -1,0 +1,41 @@
+{
+  "route": "N10",
+  "revision": "R022",
+  "mechanism": "row-to-core balance / 1024-row cyclic stripes",
+  "hypothesis": "Assigning 1024 adjacent wide low-precision rows to each block per stripe may change ownership granularity compared with R021 while retaining balanced work across blocks.",
+  "status": "exploratory_build_passed_performance_unknown",
+  "parent_candidate": "e9aa1efb68c0eb2b6e12afd9eb13c3a509a162c5",
+  "source_commit": "2827d6ba5b8117c495d7fbbda2ef2a4bda36ca35",
+  "source_sha256": "37084904e181d09cef1bce22ce9522e0ef828865381cc4ecfc1c37d63eaf87da",
+  "change": "In ProcessWideLowPrecision, increase the grouped cyclic row stripe width from 512 to 1024 rows. Keep lane-wise tail distribution, row mapping helper, batch visitation, arithmetic, and tile behavior unchanged.",
+  "ownership_validation": {
+    "command": "python3 inline 1024-row stripe ownership, tail balance, visitation, and boundary checks",
+    "status": "passed",
+    "cases": 23647,
+    "output": "R022 1024-row stripe ownership, tail balance, visitation, and boundary checks passed: 23647 cases"
+  },
+  "build": {
+    "command": "./tools/run.sh build",
+    "status": "passed",
+    "return_code": 0,
+    "log": "build-20261013T114624355149297Z.log",
+    "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+    "cmake_sha256": "435cd84be945c1757159940c4c36fbab97fb06e9bf14e8a746a8121b42dda9fc",
+    "artifact_sha256": "5163ad28dc39a9b561a402afe9f5c2cf2ef64ef5a0c7ceca0bc00de91db48788"
+  },
+  "correctness": {
+    "status": "not_run",
+    "return_code": 127,
+    "log": "correctness-20261013T114743703679951Z.log",
+    "reason": "No correctness runner exists in the N10 sparse worktree."
+  },
+  "local": {
+    "status": "not_run",
+    "return_code": 127,
+    "log": "local-20261013T114743702812948Z.log",
+    "reason": "No Canonical Local runner exists in the N10 sparse worktree."
+  },
+  "performance_claim": null,
+  "device_id": null,
+  "free_hbm_mb": null
+}
