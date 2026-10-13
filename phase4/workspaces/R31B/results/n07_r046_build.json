@@ -1,0 +1,46 @@
+{
+  "route_id": "N07",
+  "revision": "R046",
+  "branch": "research/n07-parameter-tile-reuse",
+  "parent_sha": "43a1049a1e08e518c88e354a754fdebb85a96f99",
+  "source_commit": "d3b79523b5593571a97d24fe6edf9e3d25ddfb6a",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "66fb7dd46d9bbcdd4665cb3608ba107bec2df30a46aff84985b771277a361d61",
+  "hypothesis": "For the FP16 wide parameter-cache path, issuing full-row gamma/bias loads immediately after SetFlag(rd0) but before WaitFlag(rd0) may overlap parameter transfer with the first input tile's completion and Vector work. The event marker is placed before parameter loads so WaitFlag(rd0) does not wait on those parameter requests. MTE2 is shared and no performance gain is assumed.",
+  "change": "Moved only the initial FP16 full-row gamma/bias cache Load to immediately after the first x/residual Loads and SetFlag(rd0), before WaitFlag(rd0). Parameter destinations, loaded state, cache choice, arithmetic, tile schedule, and native/BF16 path are unchanged. The existing post-Pass1 SyncMTE2ToV remains before parameter consumption.",
+  "build": {
+    "status": "passed",
+    "entrypoint_command": "./tools/run.sh build",
+    "exit_code": 0,
+    "output": [
+      "-- Configuring done",
+      "-- Generating done",
+      "-- Build files have been written to: /home/data4t2/lelinfeng/cann/worktrees/n07-parameter-tile-reuse/phase4/workspaces/R31B/build-n07",
+      "Consolidate compiler generated dependencies of target r31b_submission_v011",
+      "[ 50%] Building ASC object CMakeFiles/r31b_submission_v011.dir/compile_adapter_v011.asc.o",
+      "[100%] Linking ASC executable r31b_submission_v011",
+      "[100%] Built target r31b_submission_v011"
+    ],
+    "target": "r31b_submission_v011",
+    "artifact_path": "phase4/workspaces/R31B/build-n07/r31b_submission_v011",
+    "artifact_sha256": "85d9bd69ad84072ce24df973106c5e99922d702b168ba359395cbd2941920c45"
+  },
+  "correctness": {
+    "status": "not_run",
+    "command": "./tools/run.sh correctness",
+    "exit_code": 3,
+    "output": "not_run: correctness harness is not present in this sparse worktree"
+  },
+  "local": {
+    "status": "not_run",
+    "command": "./tools/run.sh local",
+    "exit_code": 3,
+    "output": "not_run: canonical Local runner and scorer are not present in this sparse worktree"
+  },
+  "performance_measurement": {
+    "status": "not_run",
+    "reason": "Canonical Local runner/scorer is unavailable; no device performance measurement was collected."
+  },
+  "device_id": "NONE",
+  "evidence_note": "Local CANN compilation passed. No NPU runtime correctness test or performance measurement was run."
+}
