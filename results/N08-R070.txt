@@ -1,0 +1,31 @@
+route=N08
+revision=R070
+parent_sha=f8e215000f08777ce1592c0d2720dfbfc2e652be
+source_commit=78834310bc36ab816c1e50a0e38d087c5c3d97cf
+built_tree_head=78834310bc36ab816c1e50a0e38d087c5c3d97cf
+source=phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+source_sha256=7dc27dab3c70a1eaee10d695ee90e9d7bada5582d16e96c8f1a314cf75926cd2
+artifact=build/r31b_submission_v011
+artifact_sha256=0b7743ffba79ab6c463a09519f42e14f20993434c7e9bd4eadf5633c50776c49
+aicore_binary_section_sha256=d1960e50bcefe8ae5aa678fb356a47482616ef5cb7d5f4117181b420fbc2fe7f
+
+hypothesis=For in-bounds paired body-plus-suffix fallback reads, require an aligned body of at least four data blocks before splitting; preserve the historical out-of-bounds eligibility.
+evidence=The in-bounds split body gate is raised from 3B to 4B. For B=16,prefix=15,count=34, coveredCount=49, alignedBodyCount=48 (3B), exactTailCount=1, and roundedCount=64 with excess=30. The rounded-read budget rejects the window (34<60), and the split gate passes (34>15+3*1); R069 splits, while R070 falls back to exact DataCopyPad because body=3B<4B. A four-block in-bounds split remains possible: prefix=15,count=50 gives covered=65, body=64, tail=1, rounded=80 with excess=30; rounded is rejected (50<60), split eligibility passes (50>18), and body=4B. The out-of-bounds edge prefix=10,count=7 still bypasses the stricter body gate and retains historical split eligibility. Build succeeded with exit code 0; artifact and extracted .aicore_binary section hashes differ from the pre-build artifact, demonstrating generated-artifact changes only. No correctness or performance conclusion is supported.
+scope=Minimum aligned-body size for in-bounds paired body-plus-exact-suffix fallback in LoadTailPair only. Historical out-of-bounds eligibility, GM ranges, consumer count, arithmetic, reduction, scheduling, tile sizing, and UB placement are unchanged.
+
+build_command=./tools/run.sh build
+build_exit_code=0
+build_log=results/build-20261013T134711+0000.log
+cann=/usr/local/Ascend/ascend-toolkit/latest
+compile_target=ASCEND_COMPUTE_UNIT=ascend910b; --npu-arch=dav-2201
+previous_artifact_sha256=0cdac87195044468ef4d4441557273fd88cabb89787f3a16b9fb160db23dad0f
+previous_aicore_binary_section_sha256=ea22abb97b38fcde4ef58a5edde78852c0de19baf4699214a494b14ff5ccdfeb
+previous_artifact_note=The pre-build full artifact hash differs from the R069 record (827efb966612eb7f6ce07aaf81299d638da60e6287235751ebf000f81b5c51b6), while the extracted .aicore_binary section hash matches the R069 record; the measured pre-build file is used as the comparison baseline, and the cause of the full-file difference is unknown.
+artifact_changed=true
+
+correctness_status=NOT_RUN
+correctness_reason=The route worktree exposes no correctness runner or inputs.
+local_status=NOT_RUN
+local_reason=The route worktree exposes no Canonical Local runner, inputs, or scorer. No Local Score is claimed.
+device_status=NOT_USED
+remote_status=NOT_ATTEMPTED
