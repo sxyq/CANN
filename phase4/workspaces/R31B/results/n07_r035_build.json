@@ -1,0 +1,46 @@
+{
+  "route_id": "N07",
+  "revision": "R035",
+  "branch": "research/n07-parameter-tile-reuse",
+  "parent_sha": "53180bbad014541d6338cda4adf280f009436df8",
+  "source_commit": "26264cec739dbbb66d7b3c691aae780c62af3d15",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "8abe26e73117f1c74cded60e22fc69c0a17ceb42e50d2836b2f2e3bda8c4a712",
+  "hypothesis": "At the BF16 wide-row full-native parameter-cache chooser boundary, if caching both native gamma and bias preserves only the baseline row batch, the smaller gamma-only cache may preserve the same batch with a wider tile. The existing gamma-only output path streams each bias tile and reuses it across all rows in that batch.",
+  "change": "Changed only the BF16 native full-parameter cache acceptance comparison from nativeRows >= baselineRows to nativeRows > baselineRows. At equality, the existing gamma-only cache chooser is evaluated. FP16 and FP32 cache selection, arithmetic, tile policy, row scheduling, and output paths are otherwise unchanged.",
+  "build": {
+    "status": "passed",
+    "entrypoint_command": "./tools/run.sh build",
+    "exit_code": 0,
+    "output": [
+      "-- Configuring done",
+      "-- Generating done",
+      "-- Build files have been written to: /home/data4t2/lelinfeng/cann/worktrees/n07-parameter-tile-reuse/phase4/workspaces/R31B/build-n07",
+      "Consolidate compiler generated dependencies of target r31b_submission_v011",
+      "[ 50%] Building ASC object CMakeFiles/r31b_submission_v011.dir/compile_adapter_v011.asc.o",
+      "[100%] Linking ASC executable r31b_submission_v011",
+      "[100%] Built target r31b_submission_v011"
+    ],
+    "target": "r31b_submission_v011",
+    "artifact_path": "phase4/workspaces/R31B/build-n07/r31b_submission_v011",
+    "artifact_sha256": "2e69434cbdef77abdac6bf81e4232599fd3820fdc5de991357eb224f99228de3"
+  },
+  "correctness": {
+    "status": "not_run",
+    "command": "./tools/run.sh correctness",
+    "exit_code": 3,
+    "output": "not_run: correctness harness is not present in this sparse worktree"
+  },
+  "local": {
+    "status": "not_run",
+    "command": "./tools/run.sh local",
+    "exit_code": 3,
+    "output": "not_run: canonical Local runner and scorer are not present in this sparse worktree"
+  },
+  "performance_measurement": {
+    "status": "not_run",
+    "reason": "Canonical Local runner/scorer is unavailable; no device performance measurement was collected."
+  },
+  "device_id": "NONE",
+  "evidence_note": "Local CANN compilation passed. No NPU runtime correctness test or performance measurement was run."
+}
