@@ -1,0 +1,37 @@
+{
+  "route": "N06",
+  "revision": "R071",
+  "source_commit": "7d81c2701dacd4259dcf52cdf53e0a9e6d3b88e4",
+  "parent_source_commit": "6ff29d7aa5523f15ab5367679847321f794df305",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "d9123a99181a0d90da6cc8495e3071deaeffe06532fd7e1432c59381ce688f0c",
+  "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+  "cmake_sha256": "3a8bc9f92541f92fe403bd7a2c196cb9bf9008cea9c4d668c7b1d603c81b991f",
+  "runner_sha256": "23f6d76d82a7bf645559971d25ee46a6d2d02a59d0f17bf54fed33748196a787",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "Move only reduceFp32Buf_ after the wide FP16 GM input ping-pong buffers and before residualFp32Buf_/xFp32Buf_. The buffer sizes, offsets, arithmetic, indexing, and synchronization are unchanged.",
+  "hypothesis": "TPipe allocation order changes the reduction partial-array base relative to both MTE2 input buffers and vector conversion scratch. Placing it between those regions may change UB bank interaction; no bank mapping or performance gain is assumed.",
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "log": "results/build_071.log",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "4fd9cba356de1035f0afce168d740f3d86b098bdd4b5532a4951fbd3e3453fe8",
+    "artifact_sha256_file": "results/build-artifact_071.sha256"
+  },
+  "correctness": {
+    "command": "./tools/run.sh correctness",
+    "exit_code": 2,
+    "result": "Not run: runner accepts only build.",
+    "output": "usage: ./tools/run.sh build"
+  },
+  "local": {
+    "command": "./tools/run.sh local",
+    "exit_code": 2,
+    "result": "Not run: runner accepts only build.",
+    "output": "usage: ./tools/run.sh build"
+  },
+  "device": "None; compile only, no device work submitted.",
+  "workload": "CANN build only; no shape execution or Local workload ran.",
+  "performance_effect": "Unknown; compile only."
+}
