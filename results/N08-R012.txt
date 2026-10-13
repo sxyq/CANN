@@ -1,0 +1,30 @@
+route=N08
+revision=R012
+parent_sha=b2727a41292056ebffbfa380d5cc38dd5ec81d3e
+source_commit=fcd78948eabcdafbd49f299cbb0947519d4abce2
+built_tree_head=fcd78948eabcdafbd49f299cbb0947519d4abce2
+source=phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+source_sha256=76b28951246eb97cc7c69187dc540b87afff255441fc6144cfc44e3a77e72d31
+artifact=build/r31b_submission_v011
+artifact_sha256=ff359bf8c78fd0ebcb0b5a5e8b53b87ed8514d379f9411c6d1b105b02f683971
+aicore_binary_section_sha256=d4fd02336e1fe3d7d9f65aa922ebafc61a4a4b4be2bd6b6224b60c2c0f44ca66
+
+hypothesis=Hoist the per-row following-row test out of the active FP32 full-y tile loop and explicitly require a short tile before checking final-row endpoint alignment. This avoids recomputing row-stable transaction eligibility for every tile without changing valid GM windows.
+evidence=For each batch row, rowOffset and rowCount are invariant across tiles. The only no-following-row read-ahead case is the final partial tile ending exactly at rowWidth with a 32-byte-aligned global endpoint; a full tile cannot use the short-tail aligned-window helper because count equals tile capacity. The helper and both paired reads retain the same range and fallback behavior. The artifact and extracted .aicore_binary section hashes differ from R011; this is code-generation evidence only, not correctness or performance evidence.
+scope=Placement of row-stable tail read-ahead eligibility in ProcessWideFp32FullCacheRows. No GM ranges, arithmetic, reduction, scheduling, tile sizing, or UB placement changes.
+
+build_command=./tools/run.sh build
+build_exit_code=0
+build_log=results/build-20261013T034831+0000.log
+cann=/usr/local/Ascend/ascend-toolkit/latest (8.5.T8.0.B060)
+compile_target=ASCEND_COMPUTE_UNIT=ascend910b; --npu-arch=dav-2201
+previous_artifact_sha256=39a451d7bd1ca151135b0526865f228fcc6974e7fbf5e3b5f6932d266c471c6f
+previous_aicore_binary_section_sha256=ca75728ac6e0fd43235ad8496841d10bed209d2af84ad225eb371dce0b49fcc0
+artifact_changed=true
+
+correctness_status=NOT_RUN
+correctness_reason=The route worktree exposes no correctness runner or inputs.
+local_status=NOT_RUN
+local_reason=The route worktree exposes no Canonical Local runner, inputs, or scorer. No Local Score is claimed.
+device_status=NOT_USED
+remote_status=NOT_ATTEMPTED
