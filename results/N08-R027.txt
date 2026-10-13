@@ -1,0 +1,30 @@
+route=N08
+revision=R027
+parent_sha=fcd3336328517ffb9925df9d2debdb7d5034b1b0
+source_commit=df99e8a816e27403341d90ef2f641cad1161faba
+built_tree_head=df99e8a816e27403341d90ef2f641cad1161faba
+source=phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+source_sha256=124b8050833a37d6b57a26b782332c0dabdc69593a83536dae8ae57988a74f57
+artifact=build/r31b_submission_v011
+artifact_sha256=ab05572a006cda3b338e351da539e3468e157b44411d18ff6e8a46b4577562de
+aicore_binary_section_sha256=23cf58fd57ee22a0b163386165e084dd00aa5f44aca5094011c2fedcbaee7d24
+
+hypothesis=For the generic cached-row prefetch of the next row's short first tile, use an aligned-down paired x/residual copy when a following global row exists or the global endpoint is block aligned, and carry its UB prefix into the prefetched row's first-tile consumer.
+evidence=The prefetch occurs only when row+1 is inside this core's local row range. For a non-final global row, the flat input tensors have following data; for a final global row, read-ahead eligibility requires nextOffset+nextValid to be data-block aligned, so rounding the transfer ends exactly at the allocation boundary. LoadTailPair also bounds the aligned count by kTileElems. The returned prefix is saved alongside the prefetched input state and consumed only for col==0 on the next cached row; full tiles reset the prefix to zero. Artifact and extracted .aicore_binary section hashes differ from R026; this is code-generation evidence only, not correctness or performance evidence.
+scope=Bounded aligned-window transaction selection for generic cached-row first-tile input prefetch. No other GM transactions, arithmetic order, reduction, scheduling, tile sizing, or UB placement changes.
+
+build_command=./tools/run.sh build
+build_exit_code=0
+build_log=results/build-20261013T060347+0000.log
+cann=/usr/local/Ascend/ascend-toolkit/latest (8.5.T8.0.B060)
+compile_target=ASCEND_COMPUTE_UNIT=ascend910b; --npu-arch=dav-2201
+previous_artifact_sha256=30f7b4a7ed8959a62dfd059408fa4491bce1e57a713e453e7a3ce818d0fb317b
+previous_aicore_binary_section_sha256=7971565027ad58726d3d3638456c71947efa0e5247011bd70337b0009b099830
+artifact_changed=true
+
+correctness_status=NOT_RUN
+correctness_reason=The route worktree exposes no correctness runner or inputs.
+local_status=NOT_RUN
+local_reason=The route worktree exposes no Canonical Local runner, inputs, or scorer. No Local Score is claimed.
+device_status=NOT_USED
+remote_status=NOT_ATTEMPTED
