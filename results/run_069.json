@@ -1,0 +1,37 @@
+{
+  "route": "N06",
+  "revision": "R069",
+  "source_commit": "93e0c1cbcfbb1fe1beb72ab48f035833541ba561",
+  "parent_source_commit": "01fdf5bab4454b37d41d76f17d31b9956ded891d",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "467cad81b1c8b7aa46f27913d7726eb25a5103e1b986e72ef144daa33dc17a73",
+  "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+  "cmake_sha256": "3a8bc9f92541f92fe403bd7a2c196cb9bf9008cea9c4d668c7b1d603c81b991f",
+  "runner_sha256": "23f6d76d82a7bf645559971d25ee46a6d2d02a59d0f17bf54fed33748196a787",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "Move only the wide FP16 reduceFp32Buf_ InitBuffer call immediately after gammaBuf_ retained-y allocation, before GM input and conversion scratch. Size, offset, arithmetic, indexing, and synchronization are unchanged.",
+  "hypothesis": "TPipe allocation order changes the partial-array base relative to retained y, GM input, and conversion scratch. Placing partials adjacent to retained y may alter UB bank interaction; no bank mapping or performance gain is assumed.",
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "log": "results/build_069.log",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "fd07abb74330ef91218fc74cbc1bdd5839856844dff378c8cfd42096252ade4d",
+    "artifact_sha256_file": "results/build-artifact_069.sha256"
+  },
+  "correctness": {
+    "command": "./tools/run.sh correctness",
+    "exit_code": 2,
+    "result": "Not run: runner accepts only build.",
+    "output": "usage: ./tools/run.sh build"
+  },
+  "local": {
+    "command": "./tools/run.sh local",
+    "exit_code": 2,
+    "result": "Not run: runner accepts only build.",
+    "output": "usage: ./tools/run.sh build"
+  },
+  "device": "None; compile only, no device work submitted.",
+  "workload": "CANN build only; no shape execution or Local workload ran.",
+  "performance_effect": "Unknown; compile only."
+}
