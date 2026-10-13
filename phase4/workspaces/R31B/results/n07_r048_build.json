@@ -1,0 +1,52 @@
+{
+  "route_id": "N07",
+  "revision": "R048",
+  "branch": "research/n07-parameter-tile-reuse",
+  "parent_sha": "43a1049a1e08e518c88e354a754fdebb85a96f99",
+  "source_commit": "c5ffd1355aa198c7c5e31c1ddd20722488c3d2d1",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "f36dd5addbb08fefaf22215896d8bd0123bffb7841d01891c5a6222be31b2f30",
+  "hypothesis": "Gamma-only residency streams bias during output. Requiring it to reduce the estimated maximum per-block batch count to one, while the best available full-pair cache needs multiple batches, limits that bias streaming to one pass while reducing row-batch count. If neither full-pair format improves baseline, preserve the existing gamma-only fallback. Runtime benefit is unknown.",
+  "change": "Changed only the gamma-only-versus-full-pair chooser condition: when a full-pair candidate improves baseline, gamma-only wins only if gammaRows exceeds baseline, gammaBatchCount is exactly one, and bestFullBatchCount exceeds one. When neither full-pair candidate improves baseline, the prior gamma-only fallback remains. No runtime load, arithmetic, or tile scheduling code changed.",
+  "chooser_comparison": {
+    "rows_per_block": "maximumRowsPerBlock = ceil(rowCount / blockCount)",
+    "batch_count": "ceil(maximumRowsPerBlock / candidateCacheRows)",
+    "gamma_only_selection": "gammaRows > baselineRows and (no full-pair candidate improves baseline, or gammaBatchCount == 1 and bestFullBatchCount > 1)",
+    "tradeoff": "Gamma-only residency streams bias during output. Restricting its full-pair win to a one-batch result limits estimated bias reloads; measured benefit is unknown."
+  },
+  "build": {
+    "status": "passed",
+    "entrypoint_command": "./tools/run.sh build",
+    "exit_code": 0,
+    "output": [
+      "-- Configuring done",
+      "-- Generating done",
+      "-- Build files have been written to: /home/data4t2/lelinfeng/cann/worktrees/n07-parameter-tile-reuse/phase4/workspaces/R31B/build-n07",
+      "Consolidate compiler generated dependencies of target r31b_submission_v011",
+      "[ 50%] Building ASC object CMakeFiles/r31b_submission_v011.dir/compile_adapter_v011.asc.o",
+      "[100%] Linking ASC executable r31b_submission_v011",
+      "[100%] Built target r31b_submission_v011"
+    ],
+    "target": "r31b_submission_v011",
+    "artifact_path": "phase4/workspaces/R31B/build-n07/r31b_submission_v011",
+    "artifact_sha256": "7f6fc0616e9b32e190d35f1c3ce1e572c9a10ef1904565d5a6752e26969c4501"
+  },
+  "correctness": {
+    "status": "not_run",
+    "command": "./tools/run.sh correctness",
+    "exit_code": 3,
+    "output": "not_run: correctness harness is not present in this sparse worktree"
+  },
+  "local": {
+    "status": "not_run",
+    "command": "./tools/run.sh local",
+    "exit_code": 3,
+    "output": "not_run: canonical Local runner and scorer are not present in this sparse worktree"
+  },
+  "performance_measurement": {
+    "status": "not_run",
+    "reason": "Canonical Local runner/scorer is unavailable; no device performance measurement was collected."
+  },
+  "device_id": "NONE",
+  "evidence_note": "Local CANN compilation passed. No NPU runtime correctness test or performance measurement was run."
+}
