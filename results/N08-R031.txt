@@ -1,0 +1,30 @@
+route=N08
+revision=R031
+parent_sha=e664b355bb261cb9ac8d3cd3a586c6d8b149a3d2
+source_commit=a755e25ab308142eb2867d7bec07cfbae3754f91
+built_tree_head=a755e25ab308142eb2867d7bec07cfbae3754f91
+source=phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+source_sha256=4d61ec34802e76fe58bbfe43a41164f7eb7da5d641da5f4f310168f6d574cef3
+artifact=build/r31b_submission_v011
+artifact_sha256=fcf05e5c03cb128bb50e26db185205e5e9bfcde37086b7862cbc061160123504
+aicore_binary_section_sha256=06bae4c1e067b40a5e5fa76677eaa318c3d363118d483eb7d20c79a7b28e8b37
+
+hypothesis=When LoadTailPair's bounded-window path receives an already block-aligned GM offset and block-aligned valid count, issue the exact paired DataCopy immediately instead of computing prefix+count rounding and checking the rounded capacity.
+evidence=For prefix==0 and count%block==0, roundUp(prefix+count,block)==count, so the original aligned-window copy and returned UB prefix are exactly the same as the direct copy. The same GM start/count are used for both source tensors and count<tileCapacity still gates the branch. All other cases retain the existing aligned-window sizing and exact DataCopy/DataCopyPad fallback. Artifact and extracted .aicore_binary section hashes differ from R030; this is code-generation evidence only, not correctness or performance evidence.
+scope=Short-circuit the no-rounding case in the shared paired tail-load helper. No GM ranges, arithmetic, reduction, scheduling, tile sizing, or UB placement changes.
+
+build_command=./tools/run.sh build
+build_exit_code=0
+build_log=results/build-20261013T070207+0000.log
+cann=/usr/local/Ascend/ascend-toolkit/latest (8.5.T8.0.B060)
+compile_target=ASCEND_COMPUTE_UNIT=ascend910b; --npu-arch=dav-2201
+previous_artifact_sha256=4d1d9e8673d8c8cc09615bde862fbccc738202ce37dbfe4e12e83858bb00e6d4
+previous_aicore_binary_section_sha256=263d085b22f7d124d2d7ab8c8c1e448b0629f66e00d6e0eafa3e88c4c04c1536
+artifact_changed=true
+
+correctness_status=NOT_RUN
+correctness_reason=The route worktree exposes no correctness runner or inputs.
+local_status=NOT_RUN
+local_reason=The route worktree exposes no Canonical Local runner, inputs, or scorer. No Local Score is claimed.
+device_status=NOT_USED
+remote_status=NOT_ATTEMPTED
