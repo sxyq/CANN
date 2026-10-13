@@ -1,0 +1,30 @@
+route=N08
+revision=R021
+parent_sha=5586da891dbc20e81ee56f0873e0d2155368fb60
+source_commit=b9b02a10f5c290145182bbafa19e32fde83cb7b8
+built_tree_head=b9b02a10f5c290145182bbafa19e32fde83cb7b8
+source=phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+source_sha256=feb6897db69fa285baba10145a0f0aa866fb61e35fadda7d3cf556ff8970e26a
+artifact=build/r31b_submission_v011
+artifact_sha256=8fc2904c08ed3222de213eff61bf8774278e2d3e4c44eedb17da250e3cf72d4a
+aicore_binary_section_sha256=e384273f8c227b227aefd8609b47c151712be3f6f0b2fa1fe9ff222d11499bf3
+
+hypothesis=For partial rows in ProcessNarrowMidOverlap, pair x/residual reads through an aligned-down bounded DataCopy window when a later row exists in this core's local row range; use the returned UB prefix while consuming only rowWidth elements.
+evidence=The narrow/mid path handles rowWidth<=kTileElems. For any row with a following local row, rounded read-ahead remains within the flat x/residual tensors; the final local row conservatively retains the prior exact Load behavior. The helper also requires a fitting aligned length and otherwise falls back to exact DataCopy/DataCopyPad. The returned prefix is used as the input view for FP32, FP16, and BF16 operations; arithmetic and reduction counts remain rowWidth. Artifact and extracted .aicore_binary section hashes differ from R020; this is code-generation evidence only, not correctness or performance evidence.
+scope=Bounded aligned-window transaction selection for x/residual partial-row loads in ProcessNarrowMidOverlap. No parameter/output transactions, arithmetic order, reduction, scheduling, tile sizing, or UB placement changes.
+
+build_command=./tools/run.sh build
+build_exit_code=0
+build_log=results/build-20261013T051458+0000.log
+cann=/usr/local/Ascend/ascend-toolkit/latest (8.5.T8.0.B060)
+compile_target=ASCEND_COMPUTE_UNIT=ascend910b; --npu-arch=dav-2201
+previous_artifact_sha256=cebf542f2359fd50684b0100f3e1bf16931ed9d4cb650afbad2a55e4e9961998
+previous_aicore_binary_section_sha256=952d9836f6dac3b6e6f197d82edec66c715366cb0239afc58d0399075d80ce10
+artifact_changed=true
+
+correctness_status=NOT_RUN
+correctness_reason=The route worktree exposes no correctness runner or inputs.
+local_status=NOT_RUN
+local_reason=The route worktree exposes no Canonical Local runner, inputs, or scorer. No Local Score is claimed.
+device_status=NOT_USED
+remote_status=NOT_ATTEMPTED
