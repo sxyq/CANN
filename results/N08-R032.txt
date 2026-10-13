@@ -1,0 +1,30 @@
+route=N08
+revision=R032
+parent_sha=66f481f9daa3db87053eb6f49d64a117cb1c3468
+source_commit=2be71fb3f200f624373d626067e1b8a3f4ae7134
+built_tree_head=2be71fb3f200f624373d626067e1b8a3f4ae7134
+source=phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+source_sha256=0ed6dea1cf4af0e4229f55b0aeb21339969953cf04cc99714020565b43f8eaa1
+artifact=build/r31b_submission_v011
+artifact_sha256=f0d7ed5507cc946bf3c683837e8dc2badf935f3f899fc1fdba9779012ad40a34
+aicore_binary_section_sha256=0ef4dbdccdfc7cbd43fa34bb5a18d6f9da6a7e0a4545084f7a847278a2fee25d
+
+hypothesis=When LoadTailPair has an aligned GM start but a non-block-aligned short count, compute the bounded round-up using count alone; reserve count+prefix rounding for nonzero-prefix tails.
+evidence=For prefix==0, roundUp(prefix+count,block)==roundUp(count,block), and alignedOffset remains offset. The new branch issues the same paired DataCopy window when it fits tileCapacity and otherwise falls through to the same exact DataCopy/DataCopyPad fallback. Nonzero-prefix and already block-aligned branches retain their own existing behavior. Artifact and extracted .aicore_binary section hashes differ from R031; this is code-generation evidence only, not correctness or performance evidence.
+scope=Round-up expression selection for zero-prefix partial transfers in LoadTailPair. No GM ranges, arithmetic, reduction, scheduling, tile sizing, or UB placement changes.
+
+build_command=./tools/run.sh build
+build_exit_code=0
+build_log=results/build-20261013T071733+0000.log
+cann=/usr/local/Ascend/ascend-toolkit/latest (8.5.T8.0.B060)
+compile_target=ASCEND_COMPUTE_UNIT=ascend910b; --npu-arch=dav-2201
+previous_artifact_sha256=fcf05e5c03cb128bb50e26db185205e5e9bfcde37086b7862cbc061160123504
+previous_aicore_binary_section_sha256=06bae4c1e067b40a5e5fa76677eaa318c3d363118d483eb7d20c79a7b28e8b37
+artifact_changed=true
+
+correctness_status=NOT_RUN
+correctness_reason=The route worktree exposes no correctness runner or inputs.
+local_status=NOT_RUN
+local_reason=The route worktree exposes no Canonical Local runner, inputs, or scorer. No Local Score is claimed.
+device_status=NOT_USED
+remote_status=NOT_ATTEMPTED
