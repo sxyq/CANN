@@ -1,0 +1,30 @@
+route=N08
+revision=R035
+parent_sha=f057f837b59d37c5f19bea7dba31586ec532b471
+source_commit=7f78e3ff3cfa1a7332c9c45b2db42d2e62d2e1a7
+built_tree_head=7f78e3ff3cfa1a7332c9c45b2db42d2e62d2e1a7
+source=phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+source_sha256=e74e277d0d9ace6a8b9124c09750ffd1d53765de47de4428110b8fd4f6024078
+artifact=build/r31b_submission_v011
+artifact_sha256=882b9fe29447cb7e2e7a76f2ce134f81407edff259c99e53da7559b9f551da88
+aicore_binary_section_sha256=3f8c0a5d3c46790cdc7c19cba65c129d7360e944ec4131e8b98bade1b08cb74f
+
+hypothesis=Replace offset modulo by the 32-byte data-block element count with a low-bit mask in LoadTailPair, since the supported element sizes make that count a power of two.
+evidence=For supported T, kElementsPerDataBlock is 8 for float or 16 for half/BF16, and offset % block equals offset & (block-1). Build completed with exit code 0. The full artifact and extracted .aicore_binary hashes exactly match R034, so this edit caused no observed generated-binary change. No performance or correctness conclusion is supported.
+scope=Equivalent expression for deriving prefix in LoadTailPair only. No GM ranges, transfer choices, arithmetic, reduction, scheduling, tile sizing, or UB placement changes.
+
+build_command=./tools/run.sh build
+build_exit_code=0
+build_log=results/build-20261013T075352+0000.log
+cann=/usr/local/Ascend/ascend-toolkit/latest (8.5.T8.0.B060)
+compile_target=ASCEND_COMPUTE_UNIT=ascend910b; --npu-arch=dav-2201
+previous_artifact_sha256=882b9fe29447cb7e2e7a76f2ce134f81407edff259c99e53da7559b9f551da88
+previous_aicore_binary_section_sha256=3f8c0a5d3c46790cdc7c19cba65c129d7360e944ec4131e8b98bade1b08cb74f
+artifact_changed=false
+
+correctness_status=NOT_RUN
+correctness_reason=The route worktree exposes no correctness runner or inputs.
+local_status=NOT_RUN
+local_reason=The route worktree exposes no Canonical Local runner, inputs, or scorer. No Local Score is claimed.
+device_status=NOT_USED
+remote_status=NOT_ATTEMPTED
