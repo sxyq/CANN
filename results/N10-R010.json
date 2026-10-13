@@ -1,0 +1,41 @@
+{
+  "route": "N10",
+  "revision": "R010",
+  "mechanism": "row-to-core balance / cyclic wide low-precision row ownership",
+  "hypothesis": "Interleaving wide FP16/BF16 rows across blocks may distribute adjacent GM row regions more evenly than contiguous block ranges while keeping per-block row counts balanced.",
+  "status": "exploratory_build_passed_performance_unknown",
+  "parent_candidate": "1cda8a67dd796a056a8fd74b04093a649e40aa4f",
+  "source_commit": "85db934e3493ce78c26dd820231b75a8be9e9abc",
+  "source_sha256": "af0c921ed4fe7be1b2cf3be1d37b27f380bc4e3bda07edeb061934c886db687c",
+  "change": "In ProcessWideLowPrecision only, physical blocks retain the existing half-grid logicalBlockIdx rotation but own rows logicalBlockIdx + localOrdinal * blockCount. Replace the local contiguous range count with the exact cyclic row count. Input prefetch, row visitation reversal, reduction, output arithmetic, and tile behavior are unchanged.",
+  "ownership_validation": {
+    "command": "python3 inline cyclic row ownership, reversed batch visitation, and boundary checks",
+    "status": "passed",
+    "cases": 13299,
+    "output": "R010 cyclic row ownership, reversed batch visitation, and boundary checks passed: 13299 cases"
+  },
+  "build": {
+    "command": "./tools/run.sh build",
+    "status": "passed",
+    "return_code": 0,
+    "log": "build-20261013T042629726538663Z.log",
+    "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+    "cmake_sha256": "435cd84be945c1757159940c4c36fbab97fb06e9bf14e8a746a8121b42dda9fc",
+    "artifact_sha256": "62462feabd3b93d613499908ba65f860f0bb23ccdc17379825d5b5552a88d79d"
+  },
+  "correctness": {
+    "status": "not_run",
+    "return_code": 127,
+    "log": "correctness-20261013T042718119359303Z.log",
+    "reason": "No correctness runner exists in the N10 sparse worktree."
+  },
+  "local": {
+    "status": "not_run",
+    "return_code": 127,
+    "log": "local-20261013T042718120465703Z.log",
+    "reason": "No Canonical Local runner exists in the N10 sparse worktree."
+  },
+  "performance_claim": null,
+  "device_id": null,
+  "free_hbm_mb": null
+}
