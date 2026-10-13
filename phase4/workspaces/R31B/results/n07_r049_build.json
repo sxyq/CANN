@@ -1,0 +1,53 @@
+{
+  "route_id": "N07",
+  "revision": "R049",
+  "branch": "research/n07-parameter-tile-reuse",
+  "parent_sha": "43a1049a1e08e518c88e354a754fdebb85a96f99",
+  "source_commit": "073d319275425ca528174ae66e0290795d26d941",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "d5c4bccab9b8d4126f43b7e14cb8e1950c6ba953062f26c3b4353b18ee0d3773",
+  "hypothesis": "When gamma-only cache wins over a full-pair cache by reducing the estimated batch count to one, requiring its tile count to be no greater than the selected full-pair tile count may avoid extra bias-stream transactions from a smaller output tile. This guard may reject gamma-only cases whose larger row capacity could still help; no runtime gain is assumed.",
+  "change": "Added a gamma-only tile-count guard only when comparing against an available full-pair candidate: gamma-only must still fit more rows than baseline, reduce the estimated batch count to one while the best full-pair needs multiple batches, and use no more tiles than the best full-pair candidate. When neither full-pair candidate improves baseline, the existing gamma-only fallback is unchanged.",
+  "chooser_comparison": {
+    "rows_per_block": "maximumRowsPerBlock = ceil(rowCount / blockCount)",
+    "batch_count": "ceil(maximumRowsPerBlock / candidateCacheRows)",
+    "tile_count": "ceil(rowWidth / candidateTileElems)",
+    "gamma_only_selection": "gammaRows > baselineRows and (no full-pair candidate improves baseline, or gammaBatchCount == 1 and bestFullBatchCount > 1 and gammaTileCount <= bestFullTileCount)",
+    "tradeoff": "The tile-count guard may avoid additional streamed-bias tile transactions but can reject a gamma-only candidate with a batch-count reduction. Runtime effect is unknown."
+  },
+  "build": {
+    "status": "passed",
+    "entrypoint_command": "./tools/run.sh build",
+    "exit_code": 0,
+    "output": [
+      "-- Configuring done",
+      "-- Generating done",
+      "-- Build files have been written to: /home/data4t2/lelinfeng/cann/worktrees/n07-parameter-tile-reuse/phase4/workspaces/R31B/build-n07",
+      "Consolidate compiler generated dependencies of target r31b_submission_v011",
+      "[ 50%] Building ASC object CMakeFiles/r31b_submission_v011.dir/compile_adapter_v011.asc.o",
+      "[100%] Linking ASC executable r31b_submission_v011",
+      "[100%] Built target r31b_submission_v011"
+    ],
+    "target": "r31b_submission_v011",
+    "artifact_path": "phase4/workspaces/R31B/build-n07/r31b_submission_v011",
+    "artifact_sha256": "338ae0e77f8d79c1e20eb267bd6613b2e92d407b4f7ffa7ca436b7039f00e39a"
+  },
+  "correctness": {
+    "status": "not_run",
+    "command": "./tools/run.sh correctness",
+    "exit_code": 3,
+    "output": "not_run: correctness harness is not present in this sparse worktree"
+  },
+  "local": {
+    "status": "not_run",
+    "command": "./tools/run.sh local",
+    "exit_code": 3,
+    "output": "not_run: canonical Local runner and scorer are not present in this sparse worktree"
+  },
+  "performance_measurement": {
+    "status": "not_run",
+    "reason": "Canonical Local runner/scorer is unavailable; no device performance measurement was collected."
+  },
+  "device_id": "NONE",
+  "evidence_note": "Local CANN compilation passed. No NPU runtime correctness test or performance measurement was run."
+}
