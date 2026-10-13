@@ -1,0 +1,37 @@
+{
+  "route": "N06",
+  "revision": "R064",
+  "source_commit": "a6db98d445a2f7ee698329d48c8c97288524ae8c",
+  "parent_source_commit": "229dee8019f2425ffad163b5db8d80b1d2b62853",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "7d93c07aaa3067d859b00d9c027a7a8e6536ef9aaebcc6e7481a075d2c6aef8a",
+  "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+  "cmake_sha256": "3a8bc9f92541f92fe403bd7a2c196cb9bf9008cea9c4d668c7b1d603c81b991f",
+  "runner_sha256": "23f6d76d82a7bf645559971d25ee46a6d2d02a59d0f17bf54fed33748196a787",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "Swap only the wide FP16 full-y InitBuffer order of valueFp32Buf_ and gammaBuf_ retained-y. Allocation lengths, active offsets, arithmetic, indexing, and synchronization are unchanged.",
+  "hypothesis": "TPipe allocation order changes the fixed value-scratch base relative to the shape-sized retained-y region. Allocating value scratch first may change their UB bank interaction; no bank mapping or performance gain is assumed.",
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "log": "results/build_064.log",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "3efbe48a4e8d687d4fb4f6101ba0c8e337dc3f71195dfd0ce30c8405ba73211c",
+    "artifact_sha256_file": "results/build-artifact_064.sha256"
+  },
+  "correctness": {
+    "command": "./tools/run.sh correctness",
+    "exit_code": 2,
+    "result": "Not run: runner accepts only build.",
+    "output": "usage: ./tools/run.sh build"
+  },
+  "local": {
+    "command": "./tools/run.sh local",
+    "exit_code": 2,
+    "result": "Not run: runner accepts only build.",
+    "output": "usage: ./tools/run.sh build"
+  },
+  "device": "None; compile only, no device work submitted.",
+  "workload": "CANN build only; no shape execution or Local workload ran.",
+  "performance_effect": "Unknown; compile only."
+}
