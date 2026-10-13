@@ -1,0 +1,30 @@
+route=N08
+revision=R040
+parent_sha=88b525f8abae13028b36fe71301dde8571cffe23
+source_commit=4faa8cd18ae8d8e99e07f90a25d5a3ae18973276
+built_tree_head=4faa8cd18ae8d8e99e07f90a25d5a3ae18973276
+source=phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+source_sha256=9cccb3fd7fd03c659e322d27935659e0fb0d521902b4e02b58b3c6ba32fa296e
+artifact=build/r31b_submission_v011
+artifact_sha256=d8008ae64d1cfc4c74189598c35e0e1bc2d20c4defc12cacd3dff3a9b84041e1
+aicore_binary_section_sha256=24c24e097aead2cb4a1dd291e7aa237371bd64e9b8307cf64a4d9e1ae61d2207
+
+hypothesis=In ProcessNarrowMidOverlap, bound short-row aligned-window read-ahead by the global input tensor extent instead of the current core's row group; rows followed by another global row may safely read into it, and the final tensor row is eligible only when its endpoint is block aligned.
+evidence=Input rows are contiguous at row*rowWidth and the consumer still uses only valid elements from the returned UB prefix. When row+1<rowCount, the rounded read-ahead remains within the input allocation even if the next row belongs to another core. For the global final row, endpoint alignment makes the rounded window end exactly at the allocation boundary; otherwise DataCopyPad remains the fallback. Build succeeded with exit code 0; artifact and extracted .aicore_binary section hashes differ from R039. This is code-generation evidence only, not correctness or performance evidence.
+scope=Short-tail x/residual aligned-window eligibility in ProcessNarrowMidOverlap only. No GM output/parameter transactions, valid ranges, arithmetic, reduction, scheduling, tile sizing, or UB placement changes.
+
+build_command=./tools/run.sh build
+build_exit_code=0
+build_log=results/build-20261013T092108+0000.log
+cann=/usr/local/Ascend/ascend-toolkit/latest
+compile_target=ASCEND_COMPUTE_UNIT=ascend910b; --npu-arch=dav-2201
+previous_artifact_sha256=2718bfa49e8ebeb2fe92dc8db49258b07255fcbb870b52f77987800c611aee00
+previous_aicore_binary_section_sha256=c0ff39bc0ea1a6bfa77c4fa0e19317e255f7324dcc8562e6cbd5b1d4bb6fccea
+artifact_changed=true
+
+correctness_status=NOT_RUN
+correctness_reason=The route worktree exposes no correctness runner or inputs.
+local_status=NOT_RUN
+local_reason=The route worktree exposes no Canonical Local runner, inputs, or scorer. No Local Score is claimed.
+device_status=NOT_USED
+remote_status=NOT_ATTEMPTED
