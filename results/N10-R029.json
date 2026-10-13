@@ -1,0 +1,47 @@
+{
+  "route": "N10",
+  "revision": "R029",
+  "mechanism": "row-to-core balance / interleaved-end logical block mapping",
+  "hypothesis": "Mapping physical blocks in alternating order to the low and high logical block ends may disperse neighboring physical block IDs across the existing row stripes while preserving a one-to-one assignment.",
+  "status": "exploratory_build_passed_performance_unknown",
+  "parent_candidate": "71209f1bccb778c8832f8b08cfd3c18a7d7ac32c",
+  "source_commit": "e086fd168ebc201a60ebc004d003584d56537e59",
+  "source_sha256": "4023c6887e326266874833b122187614a461e8aa055ce18ea78cf42db247ef22",
+  "change": "In ProcessWideLowPrecision, map even physical block IDs to increasing logical IDs and odd IDs to decreasing IDs from blockCount - 1. Keep stripe width, row count formula, batch visitation, arithmetic, and tile behavior unchanged.",
+  "ownership_validation": {
+    "command": "python3 inline R029 interleaved-end block mapping and grouped-row ownership checks",
+    "status": "passed",
+    "block_count_cases": 4096,
+    "row_ownership_cases": 24640,
+    "outputs": [
+      "R029 interleaved block-map permutation checks passed: 4096 block counts",
+      "R029 grouped-row ownership balance checks passed: 24640 cases"
+    ],
+    "scope_note": "Static ownership checks only; not runtime correctness or performance validation."
+  },
+  "build": {
+    "command": "./tools/run.sh build",
+    "status": "passed",
+    "return_code": 0,
+    "log": "build-20261013T130017491950553Z.log",
+    "kernel_sha256": "4023c6887e326266874833b122187614a461e8aa055ce18ea78cf42db247ef22",
+    "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+    "cmake_sha256": "435cd84be945c1757159940c4c36fbab97fb06e9bf14e8a746a8121b42dda9fc",
+    "artifact_sha256": "9fe7ccb2c1a69829f8491e3f7fa977e12142b73acbdb761ef8ecddaf488efa43"
+  },
+  "correctness": {
+    "status": "not_run",
+    "return_code": 127,
+    "log": "correctness-20261013T130107635233334Z.log",
+    "reason": "No correctness runner exists in the N10 sparse worktree."
+  },
+  "local": {
+    "status": "not_run",
+    "return_code": 127,
+    "log": "local-20261013T130134736978999Z.log",
+    "reason": "No Canonical Local runner exists in the N10 sparse worktree."
+  },
+  "performance_claim": null,
+  "device_id": null,
+  "free_hbm_mb": null
+}
