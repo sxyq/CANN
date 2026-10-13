@@ -1,0 +1,46 @@
+{
+  "route_id": "N07",
+  "revision": "R029",
+  "branch": "research/n07-parameter-tile-reuse",
+  "parent_sha": "6eb742e2222713241e6bd3ac49b552af5f4e9c7e",
+  "source_commit": "bc3f2cee0b0c57ac206fb97efc0919f879c2b4f3",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "1e42be296ba8a1159248b8e0058aa7a3a73dac1e5ed234a7e2a8720f40fcda44",
+  "finding": "In the narrow BF16 resident-parameter setup for rowWidth > kTileElems, the second parameter tile was copied from xGm_/residualGm_ and then converted into gammaFp32/biasFp32. Corrected the two source tensors to gammaGm_/biasGm_. This is a source-level correctness risk identified by inspection; runtime impact and the fix are not confirmed because no correctness harness is available.",
+  "change": "Changed only the two second-tile DMA source tensors; the tile offsets, destination staging buffers, conversion sequence, arithmetic, and scheduling are unchanged.",
+  "build": {
+    "status": "passed",
+    "entrypoint_command": "./tools/run.sh build",
+    "exit_code": 0,
+    "output": [
+      "-- Configuring done",
+      "-- Generating done",
+      "-- Build files have been written to: /home/data4t2/lelinfeng/cann/worktrees/n07-parameter-tile-reuse/phase4/workspaces/R31B/build-n07",
+      "Consolidate compiler generated dependencies of target r31b_submission_v011",
+      "[ 50%] Building ASC object CMakeFiles/r31b_submission_v011.dir/compile_adapter_v011.asc.o",
+      "[100%] Linking ASC executable r31b_submission_v011",
+      "[100%] Built target r31b_submission_v011"
+    ],
+    "target": "r31b_submission_v011",
+    "artifact_path": "phase4/workspaces/R31B/build-n07/r31b_submission_v011",
+    "artifact_sha256": "26957a530452f97d3db3c1383a5352f4d9900cc504b68f8f522d4429d18d2b3f"
+  },
+  "correctness": {
+    "status": "not_run",
+    "command": "./tools/run.sh correctness",
+    "exit_code": 3,
+    "output": "not_run: correctness harness is not present in this sparse worktree"
+  },
+  "local": {
+    "status": "not_run",
+    "command": "./tools/run.sh local",
+    "exit_code": 3,
+    "output": "not_run: canonical Local runner and scorer are not present in this sparse worktree"
+  },
+  "performance_measurement": {
+    "status": "not_run",
+    "reason": "This revision corrects parameter sourcing; no device performance measurement was collected."
+  },
+  "device_id": "NONE",
+  "evidence_note": "Local CANN compilation passed. No NPU runtime correctness test or performance measurement was run."
+}
