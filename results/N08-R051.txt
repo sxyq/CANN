@@ -1,0 +1,30 @@
+route=N08
+revision=R051
+parent_sha=cf9e4565f511925099a2f1e63217c573ab318734
+source_commit=f192f872f660bda59c31a1de5c14ac318579322e
+built_tree_head=f192f872f660bda59c31a1de5c14ac318579322e
+source=phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+source_sha256=7be950d17a8633e3896ed4a8da3aa8b1840da8d9169830fdcbb9576343ff4cfc
+artifact=build/r31b_submission_v011
+artifact_sha256=e4d95ad4015311043b4553bec54f7390865633155ba19a7b5330ec0ac420b2d4
+aicore_binary_section_sha256=5402625ae3524a2d053f2ee5ec91753699947cf2dc303b3117fcd3f77ac3ca80
+
+hypothesis=Express the exact-body plus suffix read split threshold as count>2*exactTailCount, avoiding the prefix/body comparison terms in the prior predicate.
+evidence=With coveredCount=count+prefix and alignedBodyCount=coveredCount-exactTailCount, the prior condition alignedBodyCount>prefix+exactTailCount is algebraically equivalent to count>2*exactTailCount. This branch requires exactTailCount>0 and it is less than the block size B=32/sizeof(T), which is 8 for FP32 and 16 for FP16/BF16; therefore 2*exactTailCount<=30 and cannot overflow int32. All existing alignment, capacity, bounds, and suffix-nonempty conditions are unchanged. Build succeeded with exit code 0. Artifact and extracted .aicore_binary section SHA-256 values differ from R050, demonstrating generated-artifact change only; no correctness or performance conclusion is supported.
+scope=Eligibility predicate for the existing exact-body plus padded-suffix paired-read split in LoadTailPair only. No transaction size/range, output, arithmetic, reduction, scheduling, tile sizing, or UB placement changes.
+
+build_command=./tools/run.sh build
+build_exit_code=0
+build_log=results/build-20261013T112443+0000.log
+cann=/usr/local/Ascend/ascend-toolkit/latest
+compile_target=ASCEND_COMPUTE_UNIT=ascend910b; --npu-arch=dav-2201
+previous_artifact_sha256=ec57a969c706c51b5bc80c14de12f0b7a4b742eb228c90404e5d508fc8579c0c
+previous_aicore_binary_section_sha256=b970d11a1bd538d6604df320b83e42198f82abda41f84bb0f348b178a8b3be08
+artifact_changed=true
+
+correctness_status=NOT_RUN
+correctness_reason=The route worktree exposes no correctness runner or inputs.
+local_status=NOT_RUN
+local_reason=The route worktree exposes no Canonical Local runner, inputs, or scorer. No Local Score is claimed.
+device_status=NOT_USED
+remote_status=NOT_ATTEMPTED
