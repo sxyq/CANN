@@ -10,7 +10,7 @@ artifact_sha256=bc1fc5a502a7927d19e39d38d846b1e9b02cab738dc775714e505c44f44df3df
 aicore_binary_section_sha256=b47ec458413c91f1c6ff37bc0640d88a0ffa30eaa76284a5b1934a7c650798f3
 
 hypothesis=Simplify the exact output-tail split eligibility test from bodyCount>tailCount to bodyCount>0 when tailCount>0, using the data-block geometry to remove a scalar comparison.
-evidence=bodyCount is rounded down to a multiple of kElementsPerDataBlock, which is 8 elements for FP32 and 16 for FP16/BF16; tailCount is the remainder and therefore lies in [0,kElementsPerDataBlock-1]. Thus any nonzero bodyCount is strictly larger than tailCount, so the new guard is equivalent. Build succeeded with exit code 0; artifact and extracted .aicore_binary section hashes differ from R045, showing code-generation change only. No performance conclusion is supported.
+evidence=bodyCount is rounded down to a multiple of kElementsPerDataBlock, which is 8 elements for FP32 and 16 for FP16/BF16; tailCount is the remainder and therefore lies in [0,kElementsPerDataBlock-1]. Thus any nonzero bodyCount is strictly larger than tailCount, so the new guard is equivalent. The split-enabled active callers pass sourceBaseIsBlockAligned=true from ProcessNarrowMidOverlap, ProcessWideLowPrecision Pass 2, and ProcessWideFp32FullCacheRows. Build succeeded with exit code 0; artifact and extracted .aicore_binary section hashes differ from R045, showing code-generation change only. No correctness or performance conclusion is supported.
 scope=Split-store eligibility predicate in StoreTailFromAlignedRow only. No transaction ranges, output values, arithmetic, reduction, scheduling, tile sizing, or UB placement changes.
 
 build_command=./tools/run.sh build
