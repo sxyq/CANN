@@ -1,0 +1,37 @@
+{
+  "route": "N06",
+  "revision": "R062",
+  "source_commit": "bddf2e803f30268451b44669dc03227079eb8b27",
+  "parent_source_commit": "dfabb6c120bd2f2fa6d8dddd4425f15b6acd089c",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "56e816349be3a2ff45087301128dfb4998a1cd0082b16d2bf322ada57bd8958c",
+  "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+  "cmake_sha256": "3a8bc9f92541f92fe403bd7a2c196cb9bf9008cea9c4d668c7b1d603c81b991f",
+  "runner_sha256": "23f6d76d82a7bf645559971d25ee46a6d2d02a59d0f17bf54fed33748196a787",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "Reorder only the wide FP16 full-y InitBuffer calls for residualBuf_ and xBuf_. Allocation sizes, active second-slot offsets, arithmetic, tensor indexing, and event order are unchanged.",
+  "hypothesis": "TPipe allocation order changes the relative UB base phases of the simultaneously active x and residual input buffers. Reversing their allocation order may change MTE2/Vector bank interaction; no bank mapping or performance gain is assumed.",
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "log": "results/build_062.log",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "f7e21f679c9cf5886ebafba9c7520acc6d56f9fd06567c5a40aca2c959a122a7",
+    "artifact_sha256_file": "results/build-artifact_062.sha256"
+  },
+  "correctness": {
+    "command": "./tools/run.sh correctness",
+    "exit_code": 2,
+    "result": "Not run: runner accepts only build.",
+    "output": "usage: ./tools/run.sh build"
+  },
+  "local": {
+    "command": "./tools/run.sh local",
+    "exit_code": 2,
+    "result": "Not run: runner accepts only build.",
+    "output": "usage: ./tools/run.sh build"
+  },
+  "device": "None; compile only, no device work submitted.",
+  "workload": "CANN build only; no shape execution or Local workload ran.",
+  "performance_effect": "Unknown; compile only."
+}
