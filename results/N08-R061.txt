@@ -1,0 +1,31 @@
+route=N08
+revision=R061
+parent_sha=b1c46011ecea44c17eb0c2a4ebc9b26dfd3b0c6f
+source_commit=be1dcdbe8547be2af2367762eb319b4752efa4f7
+built_tree_head=be1dcdbe8547be2af2367762eb319b4752efa4f7
+source=phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+source_sha256=989c2eb66e55f49cb04f74b1d060468678012839769a265fa2976738dfa0c037
+artifact=build/r31b_submission_v011
+artifact_sha256=48ce81708af896e51189f0a28adc412faba2da2d50b6819ca1ca6ce1de8deea4
+aicore_binary_section_sha256=1b0118234fff13f3160861daf8d08650ec2be9da4cf092c43519fdc36c4c8241
+
+hypothesis=For nonzero-prefix in-bounds paired rounded tail reads, admit the aligned DataCopy window only when excess elements beyond the valid count are at most one third of the count; otherwise continue through the existing exact-range split or padded-copy fallback.
+evidence=For this branch, alignedCount is roundUp(prefix+count,B), and alignedCount-count is nonnegative (it includes the prefix and any rounded suffix). The previous test admitted up to 2x total elements because alignedCount-count<=count; R061 requires count>=3*(alignedCount-count), limiting total rounded transfer to at most 4/3 of valid count. Example B=16,prefix=1,count=16 gives alignedCount=32 and excess=16: R060's previous rounded gate accepted it (16<=16), while R061 rejects it. The unchanged R058 split gate accepts the exact body-plus-suffix fallback (16 > 1 + 3*1), which covers 17 elements including the required prefix instead of 32 rounded elements. For B=16,prefix=5,count=25, alignedCount=32 and excess=7, so the tightened gate accepts the rounded read (25>=21). These are path-selection calculations, not measured runtime. Build succeeded with exit code 0; full artifact and extracted .aicore_binary section hashes differ from the pre-build artifact, demonstrating generated-artifact changes only. No correctness or performance conclusion is supported.
+scope=Read-amplification gate for nonzero-prefix, in-bounds rounded paired tails in LoadTailPair only. Out-of-bounds behavior, exact fallback ranges, consumers, arithmetic, reduction, scheduling, tile sizing, and UB placement are unchanged.
+
+build_command=./tools/run.sh build
+build_exit_code=0
+build_log=results/build-20261013T125908+0000.log
+cann=/usr/local/Ascend/ascend-toolkit/latest
+compile_target=ASCEND_COMPUTE_UNIT=ascend910b; --npu-arch=dav-2201
+previous_artifact_sha256=23c02a7f4a365dbfdb41f1494cc11571b44a5daab5ce727084208ec7536298ee
+previous_aicore_binary_section_sha256=ee6d78f3490864dde913485d7772c629dd70c22bc423efe62fc5d311af582168
+previous_artifact_note=The pre-build full artifact hash differs from the R060 record (acdd5d7e3846a5b8491574ba3df78039319d6118a3c609fd2ac7a414f4ce0bc6), while the extracted .aicore_binary section hash matches the R060 record; the measured pre-build file is used as the comparison baseline, and the cause of the full-file difference is unknown.
+artifact_changed=true
+
+correctness_status=NOT_RUN
+correctness_reason=The route worktree exposes no correctness runner or inputs.
+local_status=NOT_RUN
+local_reason=The route worktree exposes no Canonical Local runner, inputs, or scorer. No Local Score is claimed.
+device_status=NOT_USED
+remote_status=NOT_ATTEMPTED
