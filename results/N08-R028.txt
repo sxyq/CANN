@@ -1,0 +1,30 @@
+route=N08
+revision=R028
+parent_sha=3e6e6b4efd71a096e695c0a364392167764cc8a0
+source_commit=cc970cb6b74a250bb9cf61b1bfd305309bd8d27c
+built_tree_head=cc970cb6b74a250bb9cf61b1bfd305309bd8d27c
+source=phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+source_sha256=9794ab44df6f0e6c4f581c6100e237a993274b8d3be8f4175f8a86ae797809f2
+artifact=build/r31b_submission_v011
+artifact_sha256=e8b751188b0d4209b3530c55a346fefffbdcfea0fbb2b3af8892fc345a704961
+aicore_binary_section_sha256=2bc3d1a007b0fcb9b55de6acd3dbfab35f2656268db527f0038217f8c6b2e7e3
+
+hypothesis=For cached generic gamma/bias partial tiles, share the exact DataCopy/DataCopyPad alignment decision for both parameter tensors while preserving the existing staging layout and exact valid range.
+evidence=The FP32 and FP16 resident-cache preload loops use identical col/valid for gamma and bias and destination views offset by tile-aligned col. The BF16 preload uses the same offset/count into separate base staging buffers before the existing FP32 conversion and synchronization. Each partial tail invokes LoadTailPair with aligned-window eligibility disabled, so no parameter read crosses the vector end; full tiles retain the original independent Load calls. Artifact and extracted .aicore_binary section hashes differ from R027; this is code-generation evidence only, not correctness or performance evidence.
+scope=Paired exact-range transaction selection for cached generic gamma/bias partial tiles across FP32, FP16, and BF16. No parameter values/layout, arithmetic, reduction, output stores, scheduling, tile sizing, or UB placement changes.
+
+build_command=./tools/run.sh build
+build_exit_code=0
+build_log=results/build-20261013T061745+0000.log
+cann=/usr/local/Ascend/ascend-toolkit/latest (8.5.T8.0.B060)
+compile_target=ASCEND_COMPUTE_UNIT=ascend910b; --npu-arch=dav-2201
+previous_artifact_sha256=ab05572a006cda3b338e351da539e3468e157b44411d18ff6e8a46b4577562de
+previous_aicore_binary_section_sha256=23cf58fd57ee22a0b163386165e084dd00aa5f44aca5094011c2fedcbaee7d24
+artifact_changed=true
+
+correctness_status=NOT_RUN
+correctness_reason=The route worktree exposes no correctness runner or inputs.
+local_status=NOT_RUN
+local_reason=The route worktree exposes no Canonical Local runner, inputs, or scorer. No Local Score is claimed.
+device_status=NOT_USED
+remote_status=NOT_ATTEMPTED
