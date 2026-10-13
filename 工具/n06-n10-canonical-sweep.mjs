@@ -132,11 +132,50 @@ function collectCandidates() {
       const v=keyValues(fs.readFileSync(f,'utf8'));
       add(v.revision||path.basename(f,'.txt').slice(4),v.source_sha256,f,v.source_commit||'');
     }
-    if(spec.id==='N09') for(const f of files.filter(p=>/^build_attempt_[0-9]+_state\.txt$/.test(path.basename(p)))) {
-      const v=keyValues(fs.readFileSync(f,'utf8'));
-      const attempt=path.basename(f).match(/([0-9]+)/)?.[1]||'unknown';
-      add(v.revision||`ATTEMPT-${attempt.padStart(3,'0')}`,v.kernel_sha256||v.source_sha256,f,
-        v.source_commit||v.parent_or_source_commit||'');
+    if(spec.id==='N09') {
+      const stateFiles=files.filter(p=>/^(?:build|correctness|local)_attempt_[0-9]+_state\.txt$/.test(path.basename(p)));
+      const sourceRows=new Map(), revisionBySha=new Map();
+      for(const f of stateFiles) {
+        const v=keyValues(fs.readFileSync(f,'utf8'));
+        const sha=String(v.kernel_sha256||v.source_sha256||'').toLowerCase();
+        if(!/^[a-f0-9]{64}$/.test(sha)) continue;
+        const filename=path.basename(f), attempt=Number(filename.match(/_([0-9]+)_state\.txt$/)?.[1]||0);
+        const stage=filename.split('_')[0];
+        const inferred=/^R[0-9]+$/.test(v.revision||'')?v.revision:
+          ((stage==='correctness'||stage==='local')&&attempt>=4&&attempt<=8?`R${String(attempt).padStart(3,'0')}`:'');
+        if(inferred && !revisionBySha.has(sha)) revisionBySha.set(sha,inferred);
+        const row=sourceRows.get(sha)||{sha,revision:inferred,paths:[],commit:v.source_commit||v.parent_or_source_commit||''};
+        if(inferred && (!row.revision||Number(inferred.slice(1))<Number(row.revision.slice(1)))) row.revision=inferred;
+        if(!row.commit) row.commit=v.source_commit||v.parent_or_source_commit||'';
+        row.paths.push(f); sourceRows.set(sha,row);
+      }
+      const history=runGit(index.wt,['log','--reverse','--format=%H','HEAD','--',KERNEL]).trim().split(/\r?\n/).filter(Boolean);
+      const historySources=[];
+      for(const commit of history) {
+        try {
+          const bytes=runGit(index.wt,['show',`${commit}:${KERNEL}`],'buffer'), sha=sha256(bytes);
+          if(sha===BASE_SHA) continue;
+          if(!historySources.some(r=>r.sha===sha)) historySources.push({sha,commit});
+          if(!sourceRows.has(sha)) sourceRows.set(sha,{sha,revision:'',paths:[],commit});
+        } catch {}
+      }
+      const maxRevision=Math.max(0,...[...revisionBySha.values()].map(v=>Number(v.slice(1))));
+      const assigned=new Set([...revisionBySha.values()].map(v=>Number(v.slice(1))));
+      const missing=[];
+      for(let n=1;n<=maxRevision;n++) if(!assigned.has(n)) missing.push(n);
+      for(const h of historySources) {
+        if(revisionBySha.has(h.sha)) continue;
+        const next=missing.shift(); if(next===undefined) continue;
+        const revision=`R${String(next).padStart(3,'0')}`;
+        revisionBySha.set(h.sha,revision);
+        const row=sourceRows.get(h.sha); if(row) row.revision=revision;
+      }
+      for(const row of sourceRows.values()) {
+        const revision=row.revision||revisionBySha.get(row.sha)||`ATTEMPT-${row.paths[0]?.match(/_([0-9]+)_state\.txt$/)?.[1]?.padStart(3,'0')||'UNKNOWN'}`;
+        add(revision,row.sha,row.paths[0]||`git:${row.commit}:${KERNEL}`,row.commit);
+        const created=found.at(-1);
+        created.recordPaths=[...new Set(row.paths.map(p=>path.relative(ROOT,p)))];
+      }
     }
     if(spec.id==='N10') for(const f of files.filter(p=>/^N10-R[0-9]+\.json$/.test(path.basename(p)))) {
       const j=readJson(f); if(!j) continue;
@@ -236,6 +275,25 @@ function recoverOwnStaleDeviceLocks(scratch) {
     catch(e) { if(e.code==='ESRCH') live=false; }
     if(!live) fs.unlinkSync(file);
   }
+  const leaseFile=path.join(scratch,'调度/服务器设备使用.tsv');
+  if(!fs.existsSync(leaseFile)) return;
+  const lines=fs.readFileSync(leaseFile,'utf8').trim().split(/\r?\n/), headers=lines.shift()?.split('\t')||[];
+  const rows=lines.map(line=>Object.fromEntries(headers.map((h,i)=>[h,line.split('\t')[i]||''])));
+  const ended=new Set(rows.filter(r=>r.status==='RELEASED').map(r=>r.lease_id));
+  const released=[];
+  for(const row of rows) {
+    if(row.status!=='LEASED'||ended.has(row.lease_id)||!/^N0[6-9]|N10$/.test(row.route||'')||
+       !String(row.lease_id||'').startsWith('M2-CANONICAL-')) continue;
+    const lock=path.join(scratch,`main2-canonical-d${row.device}.lock`), record=readJson(lock);
+    let live=false;
+    if(record?.owner==='MAIN-2'&&Number.isInteger(Number(record.pid))) {
+      try { process.kill(Number(record.pid),0); live=true; }
+      catch(e) { live=e.code==='EPERM'; }
+    }
+    if(!live) released.push({...row,status:'RELEASED',end_time:new Date().toISOString(),
+      note:'Interrupted local batch; owned worker PID absent during resume; stale temporary lease released.'});
+  }
+  if(released.length) fs.appendFileSync(leaseFile,released.map(row=>headers.map(h=>String(row[h]??'').replace(/[\r\n\t]+/g,' ')).join('\t')).join('\n')+'\n');
 }
 
 function atomicJson(file,value) {
