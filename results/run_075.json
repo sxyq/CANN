@@ -1,0 +1,37 @@
+{
+  "route": "N06",
+  "revision": "R075",
+  "source_commit": "e2785bb1672b099809806cb487a8293ea0d87418",
+  "parent_source_commit": "72443e858da9109065cdaf26741831498f7d6144",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "efb870040925297e850b57f4ad28c0fce553e052a02fead0fee8df70e5a3b5f6",
+  "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+  "cmake_sha256": "3a8bc9f92541f92fe403bd7a2c196cb9bf9008cea9c4d668c7b1d603c81b991f",
+  "runner_sha256": "23f6d76d82a7bf645559971d25ee46a6d2d02a59d0f17bf54fed33748196a787",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "Move valueFp32Buf_ after residualFp32Buf_ and xFp32Buf_ in wide FP16 initialization. The active offset, allocation length, arithmetic, indexing, and synchronization are unchanged.",
+  "hypothesis": "TPipe allocation order changes the value tile base relative to x/residual conversion scratch. Placing value after conversions may alter their UB bank interaction; no bank mapping or performance gain is assumed.",
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "log": "results/build_075.log",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "265b2c5db72e31b5bf264fe62d1e85fceb81a0782655e737d5b9c9669d4d043d",
+    "artifact_sha256_file": "results/build-artifact_075.sha256"
+  },
+  "correctness": {
+    "command": "./tools/run.sh correctness",
+    "exit_code": 2,
+    "result": "Not run: runner accepts only build.",
+    "output": "usage: ./tools/run.sh build"
+  },
+  "local": {
+    "command": "./tools/run.sh local",
+    "exit_code": 2,
+    "result": "Not run: runner accepts only build.",
+    "output": "usage: ./tools/run.sh build"
+  },
+  "device": "None; compile only, no device work submitted.",
+  "workload": "CANN build only; no shape execution or Local workload ran.",
+  "performance_effect": "Unknown; compile only."
+}
