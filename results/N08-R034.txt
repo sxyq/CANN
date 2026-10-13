@@ -1,0 +1,30 @@
+route=N08
+revision=R034
+parent_sha=5bfa309c3bfb261a0c6ca5f564cdb5126bed789b
+source_commit=a2f3f6af67d578e4902e6a2ba28d4c4d772fe0a4
+built_tree_head=a2f3f6af67d578e4902e6a2ba28d4c4d772fe0a4
+source=phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+source_sha256=12a9e7f1e78b17b0beb6430673c929fed84d82774ff0e2e8e119c58e3f90141f
+artifact=build/r31b_submission_v011
+artifact_sha256=882b9fe29447cb7e2e7a76f2ce134f81407edff259c99e53da7559b9f551da88
+aicore_binary_section_sha256=3f8c0a5d3c46790cdc7c19cba65c129d7360e944ec4131e8b98bade1b08cb74f
+
+hypothesis=When LoadTailPair has prefix==0, a short non-block-aligned count, and its round-up exceeds tile capacity, issue exact paired DataCopyPad rather than falling through to generic Load branch selection.
+evidence=This branch follows count>0, count<tileCapacity, aligned-window eligibility, and the failed alignedCount<=tileCapacity check. With zero prefix and a non-aligned count, DataCopy cannot be selected; exact-count DataCopyPad preserves the original [offset,offset+count) range and is equivalent to the previous fallback. Rounded windows that fit retain aligned DataCopy; other prefix cases are unchanged. Artifact and extracted .aicore_binary section hashes differ from R033; this is code-generation evidence only, not correctness or performance evidence.
+scope=Explicit exact-range fallback for zero-prefix tails whose aligned window exceeds UB capacity. No GM ranges, arithmetic, reduction, scheduling, tile sizing, or UB placement changes.
+
+build_command=./tools/run.sh build
+build_exit_code=0
+build_log=results/build-20261013T074246+0000.log
+cann=/usr/local/Ascend/ascend-toolkit/latest (8.5.T8.0.B060)
+compile_target=ASCEND_COMPUTE_UNIT=ascend910b; --npu-arch=dav-2201
+previous_artifact_sha256=d213debaac40bff8e4d9000303651f0dc03de957e540fc9ddea69a259dbb49c8
+previous_aicore_binary_section_sha256=58d868c6b0983eaebd5638638ec477239f2fc2fc3bc2a466018b4870b9d031ae
+artifact_changed=true
+
+correctness_status=NOT_RUN
+correctness_reason=The route worktree exposes no correctness runner or inputs.
+local_status=NOT_RUN
+local_reason=The route worktree exposes no Canonical Local runner, inputs, or scorer. No Local Score is claimed.
+device_status=NOT_USED
+remote_status=NOT_ATTEMPTED
