@@ -1,0 +1,31 @@
+route=N08
+revision=R060
+parent_sha=4b12d32261380a63ae635ef65aee58a037c941f7
+source_commit=11a43f22eb697d76abf1f31b65cb291a1ed837c6
+built_tree_head=11a43f22eb697d76abf1f31b65cb291a1ed837c6
+source=phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+source_sha256=6a3837d5476067df71916c035347c6e8666067f3e30be57c337ea135d5d3ac27
+artifact=build/r31b_submission_v011
+artifact_sha256=acdd5d7e3846a5b8491574ba3df78039319d6118a3c609fd2ac7a414f4ce0bc6
+aicore_binary_section_sha256=ee6d78f3490864dde913485d7772c629dd70c22bc423efe62fc5d311af582168
+
+hypothesis=For prefix-zero bounded paired tail reads, admit the rounded DataCopy window only when its excess read is at most one third of the valid count (alignedCount <= 4/3 * count); otherwise use exact-count DataCopyPad.
+evidence=This changes only the prefix==0 rounded-window gate after the exact block-aligned early return. For non-aligned count, roundedReadExcess = B - (count mod B) and alignedCount = count + roundedReadExcess, so count >= 3*roundedReadExcess is equivalent to an excess-read ratio <= 1/3. For B=16,count=5, excess=11 and the gate rejects the 16-element window, selecting the existing exact-count fallback; for B=16,count=12, excess=4 and the gate accepts the 16-element window. Existing tile capacity and in-bounds checks remain in force, and prefix-nonzero plus out-of-bounds cases are unchanged. Build succeeded with exit code 0; full artifact and extracted .aicore_binary section hashes differ from the pre-build artifact, demonstrating generated-artifact changes only. No correctness or performance conclusion is supported.
+scope=Rounded-window read-amplification threshold for prefix-zero paired short tails in LoadTailPair only. GM ranges, exact fallback transaction, consumer count, nonzero-prefix decisions, arithmetic, reduction, scheduling, tile sizing, and UB placement are unchanged.
+
+build_command=./tools/run.sh build
+build_exit_code=0
+build_log=results/build-20261013T125308+0000.log
+cann=/usr/local/Ascend/ascend-toolkit/latest
+compile_target=ASCEND_COMPUTE_UNIT=ascend910b; --npu-arch=dav-2201
+previous_artifact_sha256=a7151837386c5b8d89bdddd2a2fddb04bd810210fa788e2d105c6590651203a9
+previous_aicore_binary_section_sha256=2b804a29dcf98c8c2d7183428be90f3d96d666cee90f07ee9c05032f54897c28
+previous_artifact_note=The pre-build full artifact hash differs from the R059 record (0cef58e7afc38ccce5bca631d6b8dd0391516ee62a56d9024189fc9070c3f590), while the extracted .aicore_binary section hash matches the R059 record; the measured pre-build file is used as the comparison baseline, and the cause of the full-file difference is unknown.
+artifact_changed=true
+
+correctness_status=NOT_RUN
+correctness_reason=The route worktree exposes no correctness runner or inputs.
+local_status=NOT_RUN
+local_reason=The route worktree exposes no Canonical Local runner, inputs, or scorer. No Local Score is claimed.
+device_status=NOT_USED
+remote_status=NOT_ATTEMPTED
