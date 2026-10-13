@@ -1,0 +1,46 @@
+{
+  "route": "N10",
+  "revision": "R008",
+  "mechanism": "row-to-core balance / four-wave scheduling for widest rows",
+  "hypothesis": "For row widths above 32768 elements, four scheduling waves may expose smaller row groups to the cores and reduce long per-block tails while preserving the balanced contiguous row partition.",
+  "status": "exploratory_build_passed_performance_unknown",
+  "parent_candidate": "8e1e3313d8416456011dadc17c70287e020c9ae3",
+  "source_commit": "945b8ef131bdc34aa61fd60ea1ed6ac86bd2c6de",
+  "source_sha256": "27e5e6c09e1e1d0fbd6c86ccacbbf1cc25a300376bda4a3af5a30a68c3dc85f6",
+  "change": "For rowWidth > 32768 only, multiply the requested block count by four when safe, cap it at rowCount, and retain the final uint32 launch bound. Other widths keep one wave. No row ownership arithmetic or kernel math changed.",
+  "scheduler_validation": {
+    "command": "python3 inline four-wave scheduler bounds/balance check",
+    "status": "passed",
+    "cases": 94221,
+    "output": "R008 four-wave scheduler bounds/balance passed: 94221 cases",
+    "initial_attempt": {
+      "status": "failed",
+      "return_code": 1,
+      "reason": "The first checker asserted that sampled per-block sizes sum to rowCount when blockCount exceeded the sampling limit; this tested the checker approximation rather than the scheduler."
+    }
+  },
+  "build": {
+    "command": "./tools/run.sh build",
+    "status": "passed",
+    "return_code": 0,
+    "log": "build-20261013T032557188570375Z.log",
+    "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+    "cmake_sha256": "435cd84be945c1757159940c4c36fbab97fb06e9bf14e8a746a8121b42dda9fc",
+    "artifact_sha256": "904b7c4d7fefce2721e7c7659aaa17ab893810dd6568d7cd03357954a4b3851a"
+  },
+  "correctness": {
+    "status": "not_run",
+    "return_code": 127,
+    "log": "correctness-20261013T033109281702090Z.log",
+    "reason": "No correctness runner exists in the N10 sparse worktree."
+  },
+  "local": {
+    "status": "not_run",
+    "return_code": 127,
+    "log": "local-20261013T033109271637086Z.log",
+    "reason": "No Canonical Local runner exists in the N10 sparse worktree."
+  },
+  "performance_claim": null,
+  "device_id": null,
+  "free_hbm_mb": null
+}
