@@ -1,0 +1,37 @@
+{
+  "route": "N06",
+  "revision": "R149",
+  "source_commit": "4ee78ed3626a800e5b116420d9d7c8af3f71b645",
+  "parent_source_commit": "9efa58a8e71b4db90591d74ca4346742913877d0",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "2d0a381b99bef4ce82893eef6345c05e858efe1255e35107f7e3384fe6b792dc",
+  "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+  "cmake_sha256": "3a8bc9f92541f92fe403bd7a2c196cb9bf9008cea9c4d668c7b1d603c81b991f",
+  "runner_sha256": "23f6d76d82a7bf645559971d25ee46a6d2d02a59d0f17bf54fed33748196a787",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "Increase the FP16 x ping-pong second-buffer phase from 480 to 512 bytes. The same phase constant controls allocation size, second-buffer view offset, and the existing chooser I/O overhead term; other placements are unchanged.",
+  "hypothesis": "An adjacent aligned phase for the second FP16 x input tile may change its placement relative to the first tile and vector scratch. This is a placement probe, not a claimed bank-width or performance result.",
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "log": "results/build_149.log",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "fa6ba027c0d002a28b18bc9537e54b86c4cb48b3a882072e35f56305af269bd8",
+    "artifact_sha256_file": "results/build-artifact_149.sha256"
+  },
+  "correctness": {
+    "command": "./tools/run.sh correctness",
+    "exit_code": 2,
+    "result": "Not run: runner accepts only build.",
+    "output": "usage: ./tools/run.sh build"
+  },
+  "local": {
+    "command": "./tools/run.sh local",
+    "exit_code": 2,
+    "result": "Not run: runner accepts only build.",
+    "output": "usage: ./tools/run.sh build"
+  },
+  "device": "None; compile only, no device work submitted.",
+  "workload": "CANN build only; no shape execution or Local workload ran.",
+  "performance_effect": "Unknown; compile only."
+}
