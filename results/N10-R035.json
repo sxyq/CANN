@@ -1,0 +1,43 @@
+{
+  "route": "N10",
+  "revision": "R035",
+  "mechanism": "row-to-core balance / unified two-wave scheduling for wide rows",
+  "hypothesis": "For all dtypes, two waves above 32768 elements may balance row work with lower block scheduling overhead than using three waves for low-precision rows wider than 65536.",
+  "status": "exploratory_build_passed_performance_unknown",
+  "parent_candidate": "7747259f68af328b511daf8cc3ba77718cf09e9d",
+  "source_commit": "334125a133444e8f875655506029110736bfb6d5",
+  "source_sha256": "80856284e75139d7b6aa66a3ce4bab25a82e5ec857a21a3296fb5cdfeb57cd9b",
+  "change": "Use a single two-wave block-count rule for all dtypes when rowWidth > 32768, replacing the prior three-wave low-precision rule above 65536. Leave row mapping, kernel arithmetic, and tile processing unchanged.",
+  "scheduler_validation": {
+    "command": "python3 inline R035 all-dtype two-wave width and UINT32 checks",
+    "status": "passed",
+    "cases": 495363,
+    "output": "R035 all-dtype two-wave width and UINT32 checks passed: 495363 cases",
+    "scope_note": "Static scheduler bounds/balance checks only; not runtime correctness or performance validation."
+  },
+  "build": {
+    "command": "./tools/run.sh build",
+    "status": "passed",
+    "return_code": 0,
+    "log": "build-20261013T133816889525024Z.log",
+    "kernel_sha256": "80856284e75139d7b6aa66a3ce4bab25a82e5ec857a21a3296fb5cdfeb57cd9b",
+    "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+    "cmake_sha256": "435cd84be945c1757159940c4c36fbab97fb06e9bf14e8a746a8121b42dda9fc",
+    "artifact_sha256": "a180386623539f6f688244a3b6e0216faec862a55c7b5aea1e200b3ec6f20f20"
+  },
+  "correctness": {
+    "status": "not_run",
+    "return_code": 127,
+    "log": "correctness-20261013T133855942786319Z.log",
+    "reason": "No correctness runner exists in the N10 sparse worktree."
+  },
+  "local": {
+    "status": "not_run",
+    "return_code": 127,
+    "log": "local-20261013T133909119439081Z.log",
+    "reason": "No Canonical Local runner exists in the N10 sparse worktree."
+  },
+  "performance_claim": null,
+  "device_id": null,
+  "free_hbm_mb": null
+}
