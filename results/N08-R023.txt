@@ -1,0 +1,30 @@
+route=N08
+revision=R023
+parent_sha=df44c912524c896303dbfe9648ee6c0eec76cff3
+source_commit=53e3b6bbd4c6eef42f16d12a04f50082b73048de
+built_tree_head=53e3b6bbd4c6eef42f16d12a04f50082b73048de
+source=phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+source_sha256=186cb630a588784f3486c48f5848712be7911a096b9930bb6b454af39d95a192
+artifact=build/r31b_submission_v011
+artifact_sha256=7d155e8297c01d22bfb8b366440c925042f1cd4818d4cb5caddcea4eea3ae70d
+aicore_binary_section_sha256=76a63369975f0851e122b3220d7a07b61f8cee5caffa7f1c23dbd99f852ea7dc
+
+hypothesis=For ProcessNarrowMidOverlap's partial-row channel parameters, share one exact-count DataCopy/DataCopyPad decision for gamma and bias because both are loaded from offset zero with the same valid length.
+evidence=The helper is used only when valid<kTileElems and aligned-window eligibility is false. It therefore reads exactly the same [0,valid) range as the two prior Load calls and makes the same DataCopy-vs-DataCopyPad selection based on count and offset alignment. Both the resident-parameter preload and single-row path use this pair selection; full-tile parameter loads remain unchanged. Artifact and extracted .aicore_binary section hashes differ from R022; this is code-generation evidence only, not correctness or performance evidence.
+scope=Transfer decision sharing for partial-row gamma/bias loads in ProcessNarrowMidOverlap. No GM ranges, values, arithmetic order, reduction, scheduling, tile sizing, or UB placement changes.
+
+build_command=./tools/run.sh build
+build_exit_code=0
+build_log=results/build-20261013T053519+0000.log
+cann=/usr/local/Ascend/ascend-toolkit/latest (8.5.T8.0.B060)
+compile_target=ASCEND_COMPUTE_UNIT=ascend910b; --npu-arch=dav-2201
+previous_artifact_sha256=d6fe96cb72587f5d1bb9a78c12967c257300b64054e2a7de787e9da12ecdc4c0
+previous_aicore_binary_section_sha256=3a3c0be024e376e2dd2af5669fc398c6f57cb83102046d2ba52df71b4c8f467a
+artifact_changed=true
+
+correctness_status=NOT_RUN
+correctness_reason=The route worktree exposes no correctness runner or inputs.
+local_status=NOT_RUN
+local_reason=The route worktree exposes no Canonical Local runner, inputs, or scorer. No Local Score is claimed.
+device_status=NOT_USED
+remote_status=NOT_ATTEMPTED
