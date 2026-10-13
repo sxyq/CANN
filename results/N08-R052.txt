@@ -1,0 +1,30 @@
+route=N08
+revision=R052
+parent_sha=8e78abb6f76ef40100c7067a9bac12d62ab8648e
+source_commit=78d3b5d8459d650a14dcd29e6d298920c0ba00ec
+built_tree_head=78d3b5d8459d650a14dcd29e6d298920c0ba00ec
+source=phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+source_sha256=0d9fda38e1f7f3e1bcb520af12419abc6e8d787dd21065520ae3811e8408fb4e
+artifact=build/r31b_submission_v011
+artifact_sha256=e4d95ad4015311043b4553bec54f7390865633155ba19a7b5330ec0ac420b2d4
+aicore_binary_section_sha256=5402625ae3524a2d053f2ee5ec91753699947cf2dc303b3117fcd3f77ac3ca80
+
+hypothesis=Compute the exact suffix count with the data-block low-bit mask instead of subtracting the aligned body from coveredCount.
+evidence=For B=32/sizeof(T), alignedBodyCount=coveredCount with its low log2(B) bits cleared, so coveredCount-alignedBodyCount equals coveredCount&(B-1). The expression changes only the calculation of the exact suffix length; all transfer sizes and predicates consume the same value. Build succeeded with exit code 0. The artifact and extracted .aicore_binary section SHA-256 values are unchanged from R051, so no generated-artifact change was observed; no correctness or performance conclusion is supported.
+scope=Exact suffix-count expression in LoadTailPair only. No eligibility, alignment, transaction size/range, output, arithmetic, reduction, scheduling, tile sizing, or UB placement changes.
+
+build_command=./tools/run.sh build
+build_exit_code=0
+build_log=results/build-20261013T113532+0000.log
+cann=/usr/local/Ascend/ascend-toolkit/latest
+compile_target=ASCEND_COMPUTE_UNIT=ascend910b; --npu-arch=dav-2201
+previous_artifact_sha256=e4d95ad4015311043b4553bec54f7390865633155ba19a7b5330ec0ac420b2d4
+previous_aicore_binary_section_sha256=5402625ae3524a2d053f2ee5ec91753699947cf2dc303b3117fcd3f77ac3ca80
+artifact_changed=false
+
+correctness_status=NOT_RUN
+correctness_reason=The route worktree exposes no correctness runner or inputs.
+local_status=NOT_RUN
+local_reason=The route worktree exposes no Canonical Local runner, inputs, or scorer. No Local Score is claimed.
+device_status=NOT_USED
+remote_status=NOT_ATTEMPTED
