@@ -1,0 +1,37 @@
+{
+  "route": "N06",
+  "revision": "R068",
+  "source_commit": "01fdf5bab4454b37d41d76f17d31b9956ded891d",
+  "parent_source_commit": "a12cf513dee5f910a9d9c7a29898d63618c00e63",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "e3e9d74324258a89dc8bbde91db2a5097119237d9a1f4ff94ffc6dc7dd98d129",
+  "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+  "cmake_sha256": "3a8bc9f92541f92fe403bd7a2c196cb9bf9008cea9c4d668c7b1d603c81b991f",
+  "runner_sha256": "23f6d76d82a7bf645559971d25ee46a6d2d02a59d0f17bf54fed33748196a787",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "Move the wide FP16 residualBuf_ and xBuf_ allocations together before residualFp32Buf_ and xFp32Buf_. Their group order and every allocation length, active offset, index, and event order remain unchanged.",
+  "hypothesis": "TPipe allocation order changes the GM input ping-pong regions relative to FP32 conversion scratch. Placing the inputs first may alter interaction between MTE2 staging and vector conversion; no bank mapping or performance gain is assumed.",
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "log": "results/build_068.log",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "8a8335e22fff411b753f214c8214c327347e894e7c8eac0788f5c1d3b150307d",
+    "artifact_sha256_file": "results/build-artifact_068.sha256"
+  },
+  "correctness": {
+    "command": "./tools/run.sh correctness",
+    "exit_code": 2,
+    "result": "Not run: runner accepts only build.",
+    "output": "usage: ./tools/run.sh build"
+  },
+  "local": {
+    "command": "./tools/run.sh local",
+    "exit_code": 2,
+    "result": "Not run: runner accepts only build.",
+    "output": "usage: ./tools/run.sh build"
+  },
+  "device": "None; compile only, no device work submitted.",
+  "workload": "CANN build only; no shape execution or Local workload ran.",
+  "performance_effect": "Unknown; compile only."
+}
