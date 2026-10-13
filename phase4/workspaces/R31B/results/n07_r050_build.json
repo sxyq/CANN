@@ -1,0 +1,53 @@
+{
+  "route_id": "N07",
+  "revision": "R050",
+  "branch": "research/n07-parameter-tile-reuse",
+  "parent_sha": "43a1049a1e08e518c88e354a754fdebb85a96f99",
+  "source_commit": "f1c9c502129db0006435a2bc642650a084598924",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "a5555ca67f494ac03ecf8e1d4eeb8342588f5e0913891dd4913936c7d88ca60c",
+  "hypothesis": "When gamma-only cache reduces the estimated batch count to one while the best full-pair needs multiple batches, requiring strictly fewer parameter tiles may avoid equal-tile cases where streaming bias adds output-stage work without reducing tile count. This tie-break can reject a gamma-only candidate whose larger row capacity might still help; performance is unknown.",
+  "change": "Changed only the gamma-only tile-count comparison from less-than-or-equal to strict less-than against the selected full-pair tile count. The one-batch-vs-multi-batch condition and the no-full-pair-improvement fallback are unchanged.",
+  "chooser_comparison": {
+    "rows_per_block": "maximumRowsPerBlock = ceil(rowCount / blockCount)",
+    "batch_count": "ceil(maximumRowsPerBlock / candidateCacheRows)",
+    "tile_count": "ceil(rowWidth / candidateTileElems)",
+    "gamma_only_selection": "gammaRows > baselineRows and (no full-pair candidate improves baseline, or gammaBatchCount == 1 and bestFullBatchCount > 1 and gammaTileCount < bestFullTileCount)",
+    "tradeoff": "Strict tie-break avoids equal-tile gamma-only cases but may give up a batch-count reduction. Runtime effect is unknown."
+  },
+  "build": {
+    "status": "passed",
+    "entrypoint_command": "./tools/run.sh build",
+    "exit_code": 0,
+    "output": [
+      "-- Configuring done",
+      "-- Generating done",
+      "-- Build files have been written to: /home/data4t2/lelinfeng/cann/worktrees/n07-parameter-tile-reuse/phase4/workspaces/R31B/build-n07",
+      "Consolidate compiler generated dependencies of target r31b_submission_v011",
+      "[ 50%] Building ASC object CMakeFiles/r31b_submission_v011.dir/compile_adapter_v011.asc.o",
+      "[100%] Linking ASC executable r31b_submission_v011",
+      "[100%] Built target r31b_submission_v011"
+    ],
+    "target": "r31b_submission_v011",
+    "artifact_path": "phase4/workspaces/R31B/build-n07/r31b_submission_v011",
+    "artifact_sha256": "69b77f384acc1bdc43d15bc2ba7ebbb173fccde3dd1bf3bf3e4ed590443b8969"
+  },
+  "correctness": {
+    "status": "not_run",
+    "command": "./tools/run.sh correctness",
+    "exit_code": 3,
+    "output": "not_run: correctness harness is not present in this sparse worktree"
+  },
+  "local": {
+    "status": "not_run",
+    "command": "./tools/run.sh local",
+    "exit_code": 3,
+    "output": "not_run: canonical Local runner and scorer are not present in this sparse worktree"
+  },
+  "performance_measurement": {
+    "status": "not_run",
+    "reason": "Canonical Local runner/scorer is unavailable; no device performance measurement was collected."
+  },
+  "device_id": "NONE",
+  "evidence_note": "Local CANN compilation passed. No NPU runtime correctness test or performance measurement was run."
+}
