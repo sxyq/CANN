@@ -1,0 +1,30 @@
+route=N08
+revision=R016
+parent_sha=809fa1f3da7ae6169eb0af4444381e8571fe2861
+source_commit=45798ceeae576ca089503cf962328f55d46c254e
+built_tree_head=45798ceeae576ca089503cf962328f55d46c254e
+source=phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+source_sha256=ab72b901f94f7b5266f17762c5a90d4f870dc7ff55da1abeaa28808f67ab1f4f
+artifact=build/r31b_submission_v011
+artifact_sha256=035f364041faf7930d544ee0f2750feb2a3637d7e163cfc8b3e040ac225bf8c7
+aicore_binary_section_sha256=9005fad1293e43f5f1f33819d6412a5a99a93eccdeb880fb77cccd3b89191135
+
+hypothesis=For the prefetch of a partial final parameter tile in wide low-precision Pass 2, share the exact-count DataCopy/DataCopyPad alignment choice for gamma and bias, which use the same parameter offset and valid count.
+evidence=The shared helper is called only when nValid<tileWidth and aligned-window read-ahead is disabled. It reads the same exact [nCol,nCol+nValid) range for each tensor, using DataCopy only when the GM offset and byte length are 32-byte aligned and DataCopyPad otherwise. Full parameter tiles and all MTE2/V ping-pong scheduling remain unchanged. Artifact and extracted .aicore_binary section hashes differ from R015; this is code-generation evidence only, not correctness or performance evidence.
+scope=Alignment decision sharing for paired gamma/bias partial-tail prefetch in ProcessWideLowPrecision Pass 2. No parameter values/ranges, arithmetic, reduction, scheduling, tile sizing, or UB placement changes.
+
+build_command=./tools/run.sh build
+build_exit_code=0
+build_log=results/build-20261013T043104+0000.log
+cann=/usr/local/Ascend/ascend-toolkit/latest (8.5.T8.0.B060)
+compile_target=ASCEND_COMPUTE_UNIT=ascend910b; --npu-arch=dav-2201
+previous_artifact_sha256=d3f0fb8765ca0777b3fb2a6be94d5e4ee4028dda2a3a770e17be6cbc649ac8b3
+previous_aicore_binary_section_sha256=d483115f0d3b2b4b098b5e513e2b2228f1624bea6b47cef64e934f921a5eda12
+artifact_changed=true
+
+correctness_status=NOT_RUN
+correctness_reason=The route worktree exposes no correctness runner or inputs.
+local_status=NOT_RUN
+local_reason=The route worktree exposes no Canonical Local runner, inputs, or scorer. No Local Score is claimed.
+device_status=NOT_USED
+remote_status=NOT_ATTEMPTED
