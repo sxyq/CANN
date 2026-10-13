@@ -1,0 +1,30 @@
+route=N08
+revision=R014
+parent_sha=4d2a319f71a4a8072b02ad238e817cb08e1ad693
+source_commit=70331dd84406919fadc7f2834cadb5a62b673969
+built_tree_head=70331dd84406919fadc7f2834cadb5a62b673969
+source=phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+source_sha256=ea613508d8c20315dab9f9fcc9ed9f1e12de5cdd0e57e8c1c765b107c9e6f04c
+artifact=build/r31b_submission_v011
+artifact_sha256=1c1d45254a797b6316f21f8a0a9f4eccc7b99296648dada84cab724164f8a1e3
+aicore_binary_section_sha256=af2f3ef36685d3bc66db80303402c923ec4b5b0bd3a83082312ee3c77693b066
+
+hypothesis=For partial tiles in wide low-precision Pass 1, share the exact-count DataCopy/DataCopyPad alignment decision for x and residual, which use the same GM offset and valid count, while leaving full tiles on their existing pipelined Load calls.
+evidence=The shared helper is called only when valid<nValid<tileWidth for the current/next stream unit. It receives aligned-window eligibility=false, so it performs no read-ahead and returns the same offset/count DataCopy choice or exact-byte DataCopyPad fallback as two independent Load calls. Input ping-pong buffers, MTE2/V events, and vector operation counts are unchanged. The artifact and extracted .aicore_binary section hashes differ from R013; this is code-generation evidence only, not correctness or performance evidence.
+scope=Alignment decision sharing for paired x/residual partial-tail loads in ProcessWideLowPrecision Pass 1. No full-tile transactions, GM ranges, arithmetic, reduction, scheduling, tile sizing, or UB placement changes.
+
+build_command=./tools/run.sh build
+build_exit_code=0
+build_log=results/build-20261013T041909+0000.log
+cann=/usr/local/Ascend/ascend-toolkit/latest (8.5.T8.0.B060)
+compile_target=ASCEND_COMPUTE_UNIT=ascend910b; --npu-arch=dav-2201
+previous_artifact_sha256=b44d21196d151c8c7e18733413c3510bf4c6aebffa399fe25efc99a3f0ee28f5
+previous_aicore_binary_section_sha256=fe0eb4401bc7d538c70928391e6218bbe6129ded6280ddcce650861f25ee51b8
+artifact_changed=true
+
+correctness_status=NOT_RUN
+correctness_reason=The route worktree exposes no correctness runner or inputs.
+local_status=NOT_RUN
+local_reason=The route worktree exposes no Canonical Local runner, inputs, or scorer. No Local Score is claimed.
+device_status=NOT_USED
+remote_status=NOT_ATTEMPTED
