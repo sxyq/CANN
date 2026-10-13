@@ -1,0 +1,38 @@
+{
+  "route": "N06",
+  "revision": "R159",
+  "source_commit": "c19dd814c6206049e21d9da2b12ebd359b8545c6",
+  "parent_source_commit": "c82e29fd76cdc32f1ca4da7cb02f621ab71799a4",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "97b64683d9b147cbf7d78ba27b0a9ce20dad0f3fb7a70abecd76ea4ae4679eb5",
+  "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+  "cmake_sha256": "3a8bc9f92541f92fe403bd7a2c196cb9bf9008cea9c4d668c7b1d603c81b991f",
+  "runner_sha256": "23f6d76d82a7bf645559971d25ee46a6d2d02a59d0f17bf54fed33748196a787",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "Correct the FP16 residual conversion scratch active view from 96 to 64 bytes, the maximum in-bounds offset for its tileBytes+64-byte allocation. Allocation size, total UB use, BF16 view, chooser budget, and other placements are unchanged.",
+  "audit_finding": "R156 compiled with a 96-byte residual scratch view, but source allocation is only tileBytes+64 bytes, so the active tile exceeded that allocation by 32 bytes. Compile success did not establish bounds safety. R159 restores the in-bounds 64-byte phase; prior R156 evidence is compile-only and must not be treated as runtime-valid.",
+  "hypothesis": "The maximum in-bounds aligned residual-conversion scratch phase may change placement interaction while respecting its allocation. This remains a placement probe, not a performance conclusion.",
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "log": "results/build_159.log",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "4d9f7da7f2192a743395f6e91d36f6bbe4908ae15686e3dd010e451079f11a46",
+    "artifact_sha256_file": "results/build-artifact_159.sha256"
+  },
+  "correctness": {
+    "command": "./tools/run.sh correctness",
+    "exit_code": 2,
+    "result": "Not run: runner accepts only build.",
+    "output": "usage: ./tools/run.sh build"
+  },
+  "local": {
+    "command": "./tools/run.sh local",
+    "exit_code": 2,
+    "result": "Not run: runner accepts only build.",
+    "output": "usage: ./tools/run.sh build"
+  },
+  "device": "None; compile only, no device work submitted.",
+  "workload": "CANN build only; no shape execution or Local workload ran.",
+  "performance_effect": "Unknown; compile only."
+}
