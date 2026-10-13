@@ -1,0 +1,30 @@
+route=N08
+revision=R030
+parent_sha=9e7fd5d612569309a12046771faa8a32f38c26c4
+source_commit=693057dced0a752c13242f792c124e049436076b
+built_tree_head=693057dced0a752c13242f792c124e049436076b
+source=phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+source_sha256=cb1b16347792c983df4fe6a7afcc0a601e614429ede1403b26dcee1cecee0453
+artifact=build/r31b_submission_v011
+artifact_sha256=4d1d9e8673d8c8cc09615bde862fbccc738202ce37dbfe4e12e83858bb00e6d4
+aicore_binary_section_sha256=263d085b22f7d124d2d7ab8c8c1e448b0629f66e00d6e0eafa3e88c4c04c1536
+
+hypothesis=Precompute per-row GM output alignment once per Pass-2 batch for ProcessWideLowPrecision and reuse it for the partial-tile DataCopy decision, rather than taking a per-tail modulo for every row.
+evidence=The output offset is (batchBegin+batchRow)*rowWidth+col, and col advances in tileWidth increments where tileWidth is chosen in 512-element multiples, so col contributes zero modulo each supported element type's 32-byte block size. The recurrence starts at (batchBegin mod block)*(rowWidth mod block) and advances by rowWidth mod block per row, exactly matching outputOffset alignment. StoreTailFromAlignedRow still requires count>0 and the precomputed count-alignment flag before DataCopy; otherwise it retains Store/DataCopyPad. Other helper users retain per-offset checking through the original wrapper. Artifact and extracted .aicore_binary section hashes differ from R029; this is code-generation evidence only, not correctness or performance evidence.
+scope=Placement of the GM output row-alignment predicate in ProcessWideLowPrecision Pass 2. No GM ranges, output values, arithmetic, reduction, scheduling, tile sizing, or UB placement changes.
+
+build_command=./tools/run.sh build
+build_exit_code=0
+build_log=results/build-20261013T064327+0000.log
+cann=/usr/local/Ascend/ascend-toolkit/latest (8.5.T8.0.B060)
+compile_target=ASCEND_COMPUTE_UNIT=ascend910b; --npu-arch=dav-2201
+previous_artifact_sha256=19cbe630942f9bb4d39c6db61de86826ea7ed9a7eca048d80b7441317a4d9329
+previous_aicore_binary_section_sha256=5aeda84e39e918eeeb2dc257dc417fe808a56c6c2184b011de73d7867ea3edaa
+artifact_changed=true
+
+correctness_status=NOT_RUN
+correctness_reason=The route worktree exposes no correctness runner or inputs.
+local_status=NOT_RUN
+local_reason=The route worktree exposes no Canonical Local runner, inputs, or scorer. No Local Score is claimed.
+device_status=NOT_USED
+remote_status=NOT_ATTEMPTED
