@@ -1,0 +1,30 @@
+route=N08
+revision=R026
+parent_sha=7ce61dc100a2551ffe5d2ee82d8e08aa26d6d1b3
+source_commit=e5193a5be9d0e0fb6c0fdaf82f6a9144f39e3ab3
+built_tree_head=e5193a5be9d0e0fb6c0fdaf82f6a9144f39e3ab3
+source=phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+source_sha256=b29aea7d89bd6aa4233411367786592a490cb578914d57191bbed6ab5e82a78d
+artifact=build/r31b_submission_v011
+artifact_sha256=30f7b4a7ed8959a62dfd059408fa4491bce1e57a713e453e7a3ce818d0fb317b
+aicore_binary_section_sha256=7971565027ad58726d3d3638456c71947efa0e5247011bd70337b0009b099830
+
+hypothesis=For partial tiles in the generic cached-row second pass when parameters are not resident, share the exact transfer-alignment decision for gamma and bias, which use the same channel offset and valid count.
+evidence=The change is gated by !cacheParams and valid<kTileElems. Aligned-window eligibility is false, so the helper preserves the exact [col,col+valid) GM ranges and its return prefix is zero; the same DataCopy/DataCopyPad conditions as two Load calls are applied to each parameter tensor. Full tiles and resident-parameter paths remain unchanged. Artifact and extracted .aicore_binary section hashes differ from R025; this is code-generation evidence only, not correctness or performance evidence.
+scope=Transfer decision sharing for uncached gamma/bias partial tiles in the generic cached-row second pass. No parameter ranges/values, output transactions, arithmetic order, reduction, scheduling, tile sizing, or UB placement changes.
+
+build_command=./tools/run.sh build
+build_exit_code=0
+build_log=results/build-20261013T055716+0000.log
+cann=/usr/local/Ascend/ascend-toolkit/latest (8.5.T8.0.B060)
+compile_target=ASCEND_COMPUTE_UNIT=ascend910b; --npu-arch=dav-2201
+previous_artifact_sha256=3aa77812a019f59e47b1a7be5a68bc8d3795ac2a249204a3227b0214954d8138
+previous_aicore_binary_section_sha256=f07a64b55c967eef034eb889b8285d819c57a6ecbb6b07afb29b536bf0abe2d5
+artifact_changed=true
+
+correctness_status=NOT_RUN
+correctness_reason=The route worktree exposes no correctness runner or inputs.
+local_status=NOT_RUN
+local_reason=The route worktree exposes no Canonical Local runner, inputs, or scorer. No Local Score is claimed.
+device_status=NOT_USED
+remote_status=NOT_ATTEMPTED
