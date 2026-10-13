@@ -1,0 +1,42 @@
+{
+  "route": "N10",
+  "revision": "R025",
+  "mechanism": "row-to-core balance / two-wave scheduling for mid-wide rows",
+  "hypothesis": "For 8192 < rowWidth <= 16384, two waves may expose more parallel row work than one wave while using less overdecomposition than a three-wave grid.",
+  "status": "exploratory_build_passed_performance_unknown",
+  "parent_candidate": "3cd8b1203c9eb6364bd2d0ce78f59e7f90a3d4a4",
+  "source_commit": "4d32a38ad624e2537d0a63d9335877dcbeaba8e3",
+  "source_sha256": "3b698f2b3fe37cc38a262759a059031567ce9d92ffb095086a3a63e721a83a62",
+  "change": "Lower the two-wave scheduling threshold from rowWidth > 16384 to rowWidth > 8192. Keep the three-wave branch for rowWidth > 32768 and all row ownership, arithmetic, and tile behavior unchanged.",
+  "scheduler_validation": {
+    "command": "python3 inline R025 mid-wide threshold and grouped-row-balance checks",
+    "status": "passed",
+    "cases": 198144,
+    "output": "R025 mid-wide threshold and grouped-row-balance checks passed: 198144 cases"
+  },
+  "build": {
+    "command": "./tools/run.sh build",
+    "status": "passed",
+    "return_code": 0,
+    "log": "build-20261013T123030164032268Z.log",
+    "kernel_sha256": "3b698f2b3fe37cc38a262759a059031567ce9d92ffb095086a3a63e721a83a62",
+    "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+    "cmake_sha256": "435cd84be945c1757159940c4c36fbab97fb06e9bf14e8a746a8121b42dda9fc",
+    "artifact_sha256": "66228bf8bde2cd42c0c58acbeeb8db45e52c9de70849f3138325c16afa01ce65"
+  },
+  "correctness": {
+    "status": "not_run",
+    "return_code": 127,
+    "log": "correctness-20261013T123104133506851Z.log",
+    "reason": "No correctness runner exists in the N10 sparse worktree."
+  },
+  "local": {
+    "status": "not_run",
+    "return_code": 127,
+    "log": "local-20261013T123113769142687Z.log",
+    "reason": "No Canonical Local runner exists in the N10 sparse worktree."
+  },
+  "performance_claim": null,
+  "device_id": null,
+  "free_hbm_mb": null
+}
