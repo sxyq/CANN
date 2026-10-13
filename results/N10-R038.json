@@ -1,0 +1,43 @@
+{
+  "route": "N10",
+  "revision": "R038",
+  "mechanism": "row-to-core balance / one-wave extremely-wide FP16 scheduling",
+  "hypothesis": "Extremely wide FP16 rows may not need overdecomposition because the retained y rows use half storage; leave only BF16 at three waves above 65536.",
+  "status": "exploratory_build_passed_performance_unknown",
+  "parent_candidate": "6e174ce51f6a79c9df2bef563d8a63f866488c95",
+  "source_commit": "45b4d7824a753f137535821eeb4b187628552e60",
+  "source_sha256": "298d1a68ab0962c2eb8810ece3a1e156d49b063b6f7453279d9f09cfb37b5e3e",
+  "change": "Apply three waves above rowWidth 65536 only to BF16. FP32 and FP16 remain at one wave in that range; retain two waves for all dtypes when 32768 < rowWidth <= 65536. Row mapping, arithmetic, and tile processing are unchanged.",
+  "scheduler_validation": {
+    "command": "python3 inline R038 dtype/width and UINT32 scheduler checks",
+    "status": "passed",
+    "cases": 495366,
+    "output": "R038 dtype/width and UINT32 scheduler checks passed: 495366 cases",
+    "scope_note": "Static scheduler bounds/balance checks only; not runtime correctness or performance validation."
+  },
+  "build": {
+    "command": "./tools/run.sh build",
+    "status": "passed",
+    "return_code": 0,
+    "log": "build-20261013T135639856801591Z.log",
+    "kernel_sha256": "298d1a68ab0962c2eb8810ece3a1e156d49b063b6f7453279d9f09cfb37b5e3e",
+    "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+    "cmake_sha256": "435cd84be945c1757159940c4c36fbab97fb06e9bf14e8a746a8121b42dda9fc",
+    "artifact_sha256": "2d99e22a8d0b8304fa10d51215b2c49cc10626f4c26710c918503a0cc7d39916"
+  },
+  "correctness": {
+    "status": "not_run",
+    "return_code": 127,
+    "log": "correctness-20261013T135720430743073Z.log",
+    "reason": "No correctness runner exists in the N10 sparse worktree."
+  },
+  "local": {
+    "status": "not_run",
+    "return_code": 127,
+    "log": "local-20261013T135741174985218Z.log",
+    "reason": "No Canonical Local runner exists in the N10 sparse worktree."
+  },
+  "performance_claim": null,
+  "device_id": null,
+  "free_hbm_mb": null
+}
