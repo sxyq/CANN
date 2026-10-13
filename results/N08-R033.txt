@@ -1,0 +1,30 @@
+route=N08
+revision=R033
+parent_sha=5ef9003169c9ae559355bdf54cc9ddbab54fd46b
+source_commit=32062558a007e21a677d7ca2cfc980c6e32e8fbd
+built_tree_head=32062558a007e21a677d7ca2cfc980c6e32e8fbd
+source=phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+source_sha256=10adedb2f0e87724b9ca57a46037ced6b6894bf666254fc3e7ed4075fb924bb7
+artifact=build/r31b_submission_v011
+artifact_sha256=d213debaac40bff8e4d9000303651f0dc03de957e540fc9ddea69a259dbb49c8
+aicore_binary_section_sha256=58d868c6b0983eaebd5638638ec477239f2fc2fc3bc2a466018b4870b9d031ae
+
+hypothesis=When a short nonzero-prefix tail's aligned-down rounded window exceeds tile capacity, issue paired exact-count DataCopyPad directly instead of falling through to the generic Load alignment tests.
+evidence=This branch is reached only after count>0, count<tileCapacity, aligned-window eligibility, prefix>0, and alignedCount>tileCapacity. DataCopy is not valid at this known non-block-aligned GM offset, so the exact-count paired DataCopyPad operations are equivalent to the previous Load fallback and do not read beyond [offset,offset+count). Windows that fit still use the original bounded aligned DataCopy path. Artifact and extracted .aicore_binary section hashes differ from R032; this is code-generation evidence only, not correctness or performance evidence.
+scope=Explicit exact-range fallback for oversized aligned-window tails in LoadTailPair. No GM ranges, arithmetic, reduction, scheduling, tile sizing, or UB placement changes.
+
+build_command=./tools/run.sh build
+build_exit_code=0
+build_log=results/build-20261013T073237+0000.log
+cann=/usr/local/Ascend/ascend-toolkit/latest (8.5.T8.0.B060)
+compile_target=ASCEND_COMPUTE_UNIT=ascend910b; --npu-arch=dav-2201
+previous_artifact_sha256=f0d7ed5507cc946bf3c683837e8dc2badf935f3f899fc1fdba9779012ad40a34
+previous_aicore_binary_section_sha256=0ef4dbdccdfc7cbd43fa34bb5a18d6f9da6a7e0a4545084f7a847278a2fee25d
+artifact_changed=true
+
+correctness_status=NOT_RUN
+correctness_reason=The route worktree exposes no correctness runner or inputs.
+local_status=NOT_RUN
+local_reason=The route worktree exposes no Canonical Local runner, inputs, or scorer. No Local Score is claimed.
+device_status=NOT_USED
+remote_status=NOT_ATTEMPTED
