@@ -1,0 +1,31 @@
+route=N08
+revision=R066
+parent_sha=d064457571a83c431695d35a70da9fd8a9d76ea3
+source_commit=c6a2ff6dcfd8ae3cb2c4ecd67e4ad480fd23f19b
+built_tree_head=c6a2ff6dcfd8ae3cb2c4ecd67e4ad480fd23f19b
+source=phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+source_sha256=4f28f8b911735c05edf8ef63bb573e3956793ae78dd2a31d636f1bdfbd827d5f
+artifact=build/r31b_submission_v011
+artifact_sha256=85964667578b9c475f0ae34f8b9a6fdc4eb8546d9d706d79fde315f89397dd19
+aicore_binary_section_sha256=75260bee613cbdd95942c73aa5c4893f3180fa7db7e1eff3c63d0c7828d3d4ee
+
+hypothesis=Relax the nonzero-prefix, in-bounds paired-tail rounded-read excess budget from one third to one half of the valid count, allowing alignedCount up to 1.5 times count.
+evidence=The gate is count >= 2*(alignedCount-count). For B=16,prefix=5,count=22, the aligned window is 32 elements and its excess over the valid count is 10. R061's one-third budget rejected it (22<30); R066's one-half budget accepts it (22>=20). The exact split threshold is not reached for this case, but it is irrelevant after the rounded DataCopy path returns. For B=16,prefix=5,count=10, alignedCount=16 and excess=6; both one-third and one-half budgets reject because 10<12. The preexisting capacity and in-bounds predicates remain in force, and prefix-zero and out-of-bounds paths are unchanged. These are path-selection calculations, not measured runtime. Build succeeded with exit code 0; full artifact and extracted .aicore_binary section hashes differ from the pre-build artifact, demonstrating generated-artifact changes only. No correctness or performance conclusion is supported.
+scope=Read-amplification budget for nonzero-prefix, in-bounds paired short tails in LoadTailPair only. GM ranges, exact fallback behavior, consumer count, arithmetic, reduction, scheduling, tile sizing, and UB placement are unchanged.
+
+build_command=./tools/run.sh build
+build_exit_code=0
+build_log=results/build-20261013T132755+0000.log
+cann=/usr/local/Ascend/ascend-toolkit/latest
+compile_target=ASCEND_COMPUTE_UNIT=ascend910b; --npu-arch=dav-2201
+previous_artifact_sha256=c86c49d0919d740e9c30b23096a55beff2ed19c5a6354d21d3263047230f7fa3
+previous_aicore_binary_section_sha256=c9b841322527a8796e363041d3beeb9d32172f83b62475a0e3d4af25b08e18f9
+previous_artifact_note=The pre-build full artifact hash differs from the R065 record (84488a0a569f47e1dfec9bbe7758dda85a704bbfa63588270cd927561ad713b3), while the extracted .aicore_binary section hash matches the R065 record; the measured pre-build file is used as the comparison baseline, and the cause of the full-file difference is unknown.
+artifact_changed=true
+
+correctness_status=NOT_RUN
+correctness_reason=The route worktree exposes no correctness runner or inputs.
+local_status=NOT_RUN
+local_reason=The route worktree exposes no Canonical Local runner, inputs, or scorer. No Local Score is claimed.
+device_status=NOT_USED
+remote_status=NOT_ATTEMPTED
