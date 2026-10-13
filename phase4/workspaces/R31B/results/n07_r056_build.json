@@ -1,0 +1,52 @@
+{
+  "route_id": "N07",
+  "revision": "R056",
+  "branch": "research/n07-parameter-tile-reuse",
+  "parent_sha": "43a1049a1e08e518c88e354a754fdebb85a96f99",
+  "source_commit": "0c4c2af96955f57c661158c59227963df7d56ead",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "1980b533a3926cbcca4a179b07e504cc23954d106c54c95059dc8a1b9560f6a9",
+  "hypothesis": "For resident parameter-cache candidates, choosing fewer parameter tiles before maximizing rows may reduce parameter load/conversion loop count. It can reduce rows per batch and increase batch setup or cache reloads; runtime effect is unknown.",
+  "change": "Changed only the residentParameterBytes candidate scan ordering: prefer fewer candidate parameter tiles, then more rows at equal tile count, then larger tile width for a complete tie. For each candidate tile width, the scan still selects the largest row count that fits. This chooser is shared by FP16 and BF16 full-pair parameter-cache candidates.",
+  "chooser_comparison": {
+    "primary_key": "parameter tile count = ceil(rowWidth / candidateTileElems)",
+    "secondary_key": "maximum retained-y rows fitting the UB budget at that tile width",
+    "tie_break": "larger candidate tile width",
+    "tradeoff": "Fewer parameter tiles may increase row batches and repeated setup/cache residency work; no measurement is available."
+  },
+  "build": {
+    "status": "passed",
+    "entrypoint_command": "./tools/run.sh build",
+    "exit_code": 0,
+    "output": [
+      "-- Configuring done",
+      "-- Generating done",
+      "-- Build files have been written to: /home/data4t2/lelinfeng/cann/worktrees/n07-parameter-tile-reuse/phase4/workspaces/R31B/build-n07",
+      "Consolidate compiler generated dependencies of target r31b_submission_v011",
+      "[ 50%] Building ASC object CMakeFiles/r31b_submission_v011.dir/compile_adapter_v011.asc.o",
+      "[100%] Linking ASC executable r31b_submission_v011",
+      "[100%] Built target r31b_submission_v011"
+    ],
+    "target": "r31b_submission_v011",
+    "artifact_path": "phase4/workspaces/R31B/build-n07/r31b_submission_v011",
+    "artifact_sha256": "4249c608333c5cc07f47fce00f10fcf29d36e08a2d56c923f8ebce6187c18620"
+  },
+  "correctness": {
+    "status": "not_run",
+    "command": "./tools/run.sh correctness",
+    "exit_code": 3,
+    "output": "not_run: correctness harness is not present in this sparse worktree"
+  },
+  "local": {
+    "status": "not_run",
+    "command": "./tools/run.sh local",
+    "exit_code": 3,
+    "output": "not_run: canonical Local runner and scorer are not present in this sparse worktree"
+  },
+  "performance_measurement": {
+    "status": "not_run",
+    "reason": "Canonical Local runner/scorer is unavailable; no device performance measurement was collected."
+  },
+  "device_id": "NONE",
+  "evidence_note": "Local CANN compilation passed. No NPU runtime correctness test or performance measurement was run."
+}
