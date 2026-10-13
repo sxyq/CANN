@@ -13,4 +13,13 @@ V021 source commit `c50d6f4a7f466fbde2c2b92eb544082cf3a1a0b5`, source SHA256 `d4
 - d5 before FP32 build and Correctness showed HBM `91%`, AICore `0%`; existing VLLMWorker PID `3355594` remained at `56354 MB`. It was observed only and not changed. The Runner was absent before execution and exited after the failed Parent check.
 - Exact input identities, distributions, and raw evidence are in `RESULTS.md` and `results/`.
 
-NEXT_ACTION: keep the FP32 measurement chain marked invalid before Candidate comparison. Do not repeat the unchanged Correctness command or run paired Local until a concrete Parent/reference diagnosis is available. Keep completed low-precision evidence unchanged and do not start V022 yet.
+## FP32 Correctness Adapter Follow-Up
+
+- On 2026-10-13, only the existing V021 Runner adapter was changed. `CheckOutput` now evaluates both outputs, reports up to eight mismatches and the complete failure count for each, and returns a combined status. The FP32 CPU reference accumulates `y*y` and computes `invRms` in double. Tolerances and Candidate kernel source are unchanged.
+- The existing `paired_runner_v016` target was rebuilt in the existing V021 build directory. Build exit `0`; Runner source SHA256 `f077541d73c4819d8a8299c85fd489b70c26a44373e396880d1f1664ac9f979e`; executable SHA256 `b3bd4a4b852647893f74911b9ac6fa0fa00261172fbef9f0246879111675d9ab`. Parent SHA256 remains `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`; Candidate SHA256 remains `d4f9994b9eb43e75b454143cbdb3f2b8a2222545d6ad4496fc6022c1682e5134`.
+- One `--fp32-correctness` run on d5 for `[2,12288]` reached both comparisons. V011 Parent: FAIL, 15,144 elements, `max_abs=0.092312217`, `max_rel=111.43422`. V021 Candidate: FAIL, 16,698 elements, same `max_abs=0.092312217`, `max_rel=111.43422`. Runner exit `3`. The first eight mismatches for each are in the raw log.
+- The run shows a shared Parent/reference discrepancy and a Candidate/reference discrepancy; the cause remains unresolved. This does not support a V021 kernel verdict. FP32 Local was not run. Completed FP16/BF16 results were not repeated or changed.
+- The NPU5 pre-run snapshot showed AICore `0%`, HBM `59876/65536 MiB`, and VLLMWorker_TP PID `3355594` using `56354 MB`. The post-run snapshot shows the same NPU5 load and process. That process was observed only.
+- Current build, source identity, device snapshots, command records, and raw Correctness output are in `results/fp32-adapter-*attempt-04*`, `results/fp32-adapter-*attempt-02*`, and `results/fp32-correctness-v021-attempt-02.*`.
+
+NEXT_ACTION: retain the FP32 measurement as unresolved and do not run paired Local. Keep the attempt-01 failure log and completed low-precision evidence unchanged; do not start V022 yet.

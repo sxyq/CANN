@@ -238,7 +238,7 @@ TimedSample Measure(R31BRunKernel kernel, void* output, const DeviceBuffers& buf
 }
 
 template <typename Storage>
-void CheckOutput(const CaseSpec& spec, const std::vector<Storage>& x,
+bool CheckOutput(const CaseSpec& spec, const std::vector<Storage>& x,
                  const std::vector<Storage>& residual,
                  const std::vector<Storage>& gamma,
                  const std::vector<Storage>& bias,
@@ -250,8 +250,11 @@ void CheckOutput(const CaseSpec& spec, const std::vector<Storage>& x,
     float maxAbs = 0.0f;
     float maxRel = 0.0f;
     size_t failures = 0;
+    size_t printedMismatches = 0;
+    constexpr size_t kMaxMismatchExamples = 8;
     for (int row = 0; row < kRows; ++row) {
-        float squareSum = 0.0f;
+        float lowPrecisionSquareSum = 0.0f;
+        double fp32SquareSum = 0.0;
         std::vector<float> y(spec.width);
         for (int col = 0; col < spec.width; ++col) {
             const size_t index = static_cast<size_t>(row) * spec.width + col;
@@ -261,12 +264,25 @@ void CheckOutput(const CaseSpec& spec, const std::vector<Storage>& x,
                 value = Rounded(value, spec.dtype);
             }
             y[col] = value;
-            squareSum += value * value;
+            if (spec.dtype == 0) {
+                fp32SquareSum += static_cast<double>(value) * static_cast<double>(value);
+            } else {
+                lowPrecisionSquareSum += value * value;
+            }
         }
-        const float invRms = 1.0f / std::sqrt(squareSum / static_cast<float>(spec.width) + kEpsilon);
+        const double invRms = spec.dtype == 0
+                                  ? 1.0 / std::sqrt(fp32SquareSum /
+                                                        static_cast<double>(spec.width) +
+                                                    static_cast<double>(kEpsilon))
+                                  : static_cast<double>(1.0f / std::sqrt(
+                                        lowPrecisionSquareSum /
+                                            static_cast<float>(spec.width) +
+                                        kEpsilon));
         for (int col = 0; col < spec.width; ++col) {
             const size_t index = static_cast<size_t>(row) * spec.width + col;
-            float expected = y[col] * invRms;
+            float expected = spec.dtype == 0
+                                 ? static_cast<float>(static_cast<double>(y[col]) * invRms)
+                                 : y[col] * static_cast<float>(invRms);
             if (spec.dtype == 0) {
                 expected = expected * gamma[col] + bias[col];
             } else if (spec.dtype == 1) {
@@ -284,14 +300,19 @@ void CheckOutput(const CaseSpec& spec, const std::vector<Storage>& x,
             maxRel = std::max(maxRel, relError);
             if (absError > tolerance + tolerance * std::fabs(expected)) {
                 ++failures;
+                if (printedMismatches < kMaxMismatchExamples) {
+                    std::printf("MISMATCH case=%s binary=%s index=%zu expected=%.9g actual=%.9g absError=%.9g\n",
+                                spec.name, label, index, expected, actual, absError);
+                    ++printedMismatches;
+                }
             }
         }
     }
-    std::printf("CORRECTNESS case=%s binary=%s result=%s failures=%zu max_abs=%.8g max_rel=%.8g\n",
-                spec.name, label, failures == 0 ? "PASS" : "FAIL", failures, maxAbs, maxRel);
-    if (count == 0 || failures != 0) {
-        std::exit(3);
-    }
+    const bool passed = count != 0 && failures == 0;
+    std::printf("CORRECTNESS case=%s binary=%s result=%s failures=%zu max_abs=%.8g max_rel=%.8g mismatch_examples=%zu\n",
+                spec.name, label, passed ? "PASS" : "FAIL", failures, maxAbs, maxRel,
+                printedMismatches);
+    return passed;
 }
 
 double Quantile(const std::vector<double>& sorted, double fraction)
@@ -352,7 +373,7 @@ void PrintStats(const char* caseName, const char* metric, const char* binary,
 }
 
 template <typename Storage>
-void RunCase(const CaseSpec& spec, aclrtStream stream, Events& events, RunMode mode)
+bool RunCase(const CaseSpec& spec, aclrtStream stream, Events& events, RunMode mode)
 {
     const size_t elementCount = static_cast<size_t>(kRows) * spec.width;
     const size_t dataBytes = elementCount * sizeof(Storage);
@@ -410,11 +431,19 @@ void RunCase(const CaseSpec& spec, aclrtStream stream, Events& events, RunMode m
                              ACL_MEMCPY_DEVICE_TO_HOST), "copy parent correctness output");
         CheckAcl(aclrtMemcpy(candidateOutput.data(), dataBytes, buffers.candidateOutput, dataBytes,
                              ACL_MEMCPY_DEVICE_TO_HOST), "copy candidate correctness output");
-        CheckOutput(spec, x, residual, gamma, bias, parentOutput, "V011");
-        CheckOutput(spec, x, residual, gamma, bias, candidateOutput, "V001");
-        std::printf("CASE_END name=%s parent=PASS candidate=PASS\n", spec.name);
+        const bool parentPassed = CheckOutput(
+            spec, x, residual, gamma, bias, parentOutput, "V011_Parent");
+        const bool candidatePassed = CheckOutput(
+            spec, x, residual, gamma, bias, candidateOutput, "V021_Candidate");
+        const bool casePassed = parentPassed && candidatePassed;
+        std::printf("CORRECTNESS_SUMMARY case=%s parent=%s candidate=%s result=%s\n",
+                    spec.name, parentPassed ? "PASS" : "FAIL",
+                    candidatePassed ? "PASS" : "FAIL", casePassed ? "PASS" : "FAIL");
+        std::printf("CASE_END name=%s parent=%s candidate=%s\n", spec.name,
+                    parentPassed ? "PASS" : "FAIL",
+                    candidatePassed ? "PASS" : "FAIL");
         FreeCase(buffers);
-        return;
+        return casePassed;
     }
     if (mode == RunMode::kQualifyV011) {
         for (int i = 0; i < kWarmup; ++i) {
@@ -472,10 +501,12 @@ void RunCase(const CaseSpec& spec, aclrtStream stream, Events& events, RunMode m
 
         CheckAcl(aclrtMemcpy(parentOutput.data(), dataBytes, buffers.parentOutput, dataBytes,
                              ACL_MEMCPY_DEVICE_TO_HOST), "copy same-binary output");
-        CheckOutput(spec, x, residual, gamma, bias, parentOutput, "V011");
-        std::printf("CASE_END name=%s same_binary=V011 correctness=PASS\n", spec.name);
+        const bool correctnessPassed = CheckOutput(
+            spec, x, residual, gamma, bias, parentOutput, "V011_Parent");
+        std::printf("CASE_END name=%s same_binary=V011 correctness=%s\n", spec.name,
+                    correctnessPassed ? "PASS" : "FAIL");
         FreeCase(buffers);
-        return;
+        return correctnessPassed;
     }
 
     for (int i = 0; i < kWarmup; ++i) {
@@ -528,16 +559,22 @@ void RunCase(const CaseSpec& spec, aclrtStream stream, Events& events, RunMode m
                          ACL_MEMCPY_DEVICE_TO_HOST), "copy parent output");
     CheckAcl(aclrtMemcpy(candidateOutput.data(), dataBytes, buffers.candidateOutput, dataBytes,
                          ACL_MEMCPY_DEVICE_TO_HOST), "copy candidate output");
-    CheckOutput(spec, x, residual, gamma, bias, parentOutput, "V011");
-    CheckOutput(spec, x, residual, gamma, bias, candidateOutput, "V016");
+    const bool parentPassed = CheckOutput(
+        spec, x, residual, gamma, bias, parentOutput, "V011_Parent");
+    const bool candidatePassed = CheckOutput(
+        spec, x, residual, gamma, bias, candidateOutput, "V021_Candidate");
 
     PrintStats(spec.name, "device_us", "V011", parentDevice);
     PrintStats(spec.name, "device_us", "V016", candidateDevice);
     PrintStats(spec.name, "wall_us", "V011", parentWall);
     PrintStats(spec.name, "wall_us", "V016", candidateWall);
     PrintStats(spec.name, "paired_device_delta_us", "V016_minus_V011", deltas);
-    std::printf("CASE_END name=%s correctness=PASS\n", spec.name);
+    const bool casePassed = parentPassed && candidatePassed;
+    std::printf("CASE_END name=%s parent=%s candidate=%s\n", spec.name,
+                parentPassed ? "PASS" : "FAIL",
+                candidatePassed ? "PASS" : "FAIL");
     FreeCase(buffers);
+    return casePassed;
 }
 
 }  // namespace
@@ -578,12 +615,14 @@ int main(int argc, char** argv)
         {"bf16-tail-d12288", 2, 12288},
         {"bf16-wide-d32768", 2, 32768},
     };
+    bool correctnessPassed = true;
     if (mode == RunMode::kFp32Correctness || mode == RunMode::kFp32Paired) {
         const CaseSpec fp32Case{"fp32-wide-d12288", 0, 12288};
-        RunCase<float>(fp32Case, stream, events, mode);
+        correctnessPassed = RunCase<float>(fp32Case, stream, events, mode);
     } else {
         for (const CaseSpec& spec : cases) {
-            RunCase<uint16_t>(spec, stream, events, mode);
+            const bool casePassed = RunCase<uint16_t>(spec, stream, events, mode);
+            correctnessPassed = casePassed && correctnessPassed;
         }
     }
 
@@ -597,7 +636,7 @@ int main(int argc, char** argv)
                            mode == RunMode::kFp32Paired ? "FP32_PAIRED" : "PAIRED";
     const int caseCount = mode == RunMode::kFp32Correctness ||
                           mode == RunMode::kFp32Paired ? 1 : 4;
-    std::printf("RUNNER_COMPLETE mode=%s correctness=PASS cases=%d timing=DEVICE_EVENT_PRIMARY wall=DIAGNOSTIC\n",
-                modeName, caseCount);
-    return 0;
+    std::printf("RUNNER_COMPLETE mode=%s correctness=%s cases=%d timing=DEVICE_EVENT_PRIMARY wall=DIAGNOSTIC\n",
+                modeName, correctnessPassed ? "PASS" : "FAIL", caseCount);
+    return correctnessPassed ? 0 : 3;
 }

@@ -1,0 +1,11 @@
+REVISION=V021
+ATTEMPT=02
+HOST=hwnput3
+DEVICE_ID=5
+COMMAND=ssh cann-server3; date -Is; hostname; df -Pk /home/data4t2; npu-smi info; list VLLMWorker_TP and paired_runner_v016 processes
+SNAPSHOT=results/fp32-adapter-post-run-device-v021-attempt-02.txt
+NPU5_AICORE_PERCENT=0
+NPU5_HBM_USED_MIB=59876
+NPU5_HBM_TOTAL_MIB=65536
+EXISTING_PROCESS=VLLMWorker_TP PID 3355594, 56354 MB; observed only
+RUNNER_PRESENT=NO
