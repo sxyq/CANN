@@ -1,0 +1,30 @@
+route=N08
+revision=R046
+parent_sha=b7009623ffdc55cf78ec262f4b8d84aad811afba
+source_commit=df5b48818f639efd825a84f506f486b461f8b18c
+built_tree_head=df5b48818f639efd825a84f506f486b461f8b18c
+source=phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+source_sha256=61771740cb66f4a02b806a085c41fdf97e851e46683ff81e38df9aefa14f583e
+artifact=build/r31b_submission_v011
+artifact_sha256=bc1fc5a502a7927d19e39d38d846b1e9b02cab738dc775714e505c44f44df3df
+aicore_binary_section_sha256=b47ec458413c91f1c6ff37bc0640d88a0ffa30eaa76284a5b1934a7c650798f3
+
+hypothesis=Simplify the exact output-tail split eligibility test from bodyCount>tailCount to bodyCount>0 when tailCount>0, using the data-block geometry to remove a scalar comparison.
+evidence=bodyCount is rounded down to a multiple of kElementsPerDataBlock, which is 8 elements for FP32 and 16 for FP16/BF16; tailCount is the remainder and therefore lies in [0,kElementsPerDataBlock-1]. Thus any nonzero bodyCount is strictly larger than tailCount, so the new guard is equivalent. Build succeeded with exit code 0; artifact and extracted .aicore_binary section hashes differ from R045, showing code-generation change only. No performance conclusion is supported.
+scope=Split-store eligibility predicate in StoreTailFromAlignedRow only. No transaction ranges, output values, arithmetic, reduction, scheduling, tile sizing, or UB placement changes.
+
+build_command=./tools/run.sh build
+build_exit_code=0
+build_log=results/build-20261013T102503+0000.log
+cann=/usr/local/Ascend/ascend-toolkit/latest
+compile_target=ASCEND_COMPUTE_UNIT=ascend910b; --npu-arch=dav-2201
+previous_artifact_sha256=8a5a9492a908e354fb12098a3c466c1998c2cb8472f24ce52f0550192fb4595c
+previous_aicore_binary_section_sha256=8ccbd8706fb61c52e18bc2c3c69154667131145c93fc78f0e49e07ff67b11e9b
+artifact_changed=true
+
+correctness_status=NOT_RUN
+correctness_reason=The route worktree exposes no correctness runner or inputs.
+local_status=NOT_RUN
+local_reason=The route worktree exposes no Canonical Local runner, inputs, or scorer. No Local Score is claimed.
+device_status=NOT_USED
+remote_status=NOT_ATTEMPTED
