@@ -1,0 +1,30 @@
+route=N08
+revision=R055
+parent_sha=10c6851760e8629793323157f2f68024b888fbe1
+source_commit=4fe49f401235b9c6690bde5714df7b4f2a8e7bca
+built_tree_head=4fe49f401235b9c6690bde5714df7b4f2a8e7bca
+source=phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+source_sha256=086a2e67cfe3c0e0810c78cc13fb946c4e518b5e912d2d68e576be9cc64af689
+artifact=build/r31b_submission_v011
+artifact_sha256=2ce5a2ca50af1f91ae8c8925ae340a33e028aa21399dad395e2496ab88115cb6
+aicore_binary_section_sha256=13c84908c8feb85c0284798ef4f6f28de33fd1b641471f15ab1f97994769295f
+
+hypothesis=Enable the existing aligned-source output-tail body plus exact-suffix split for the three ProcessRow tail callers routed through StoreTailFromAlignedBuffer.
+evidence=The FP32 callsite passes valueTile, which is valueFp32Buf_ base or valueFp32Buf_[col]; col advances by kTileElems=4096, divisible by B=32/sizeof(T) (B=8 for FP32). The FP16 callsite passes outputBuf_ base. The BF16 callsite passes gammaBuf_ or xBuf_ base. No caller adds an unaligned source offset, so all three source bases are data-block aligned. The helper still checks GM offset alignment before DataCopy and writes a block-aligned body followed by the exact tail via Store; otherwise it uses the existing exact Store fallback. Build succeeded with exit code 0. Artifact and extracted .aicore_binary section hashes differ from R054, demonstrating generated-artifact change only; no correctness or performance conclusion is supported.
+scope=Enable source-aligned split-store eligibility for StoreTailFromAlignedBuffer callers only. No output values/range, arithmetic, reduction, scheduling, tile sizing, or UB placement changes.
+
+build_command=./tools/run.sh build
+build_exit_code=0
+build_log=results/build-20261013T120742+0000.log
+cann=/usr/local/Ascend/ascend-toolkit/latest
+compile_target=ASCEND_COMPUTE_UNIT=ascend910b; --npu-arch=dav-2201
+previous_artifact_sha256=b322bc94bd6a4083d9bb889d13afaab94f8e9de528e7511484e4703c993581a6
+previous_aicore_binary_section_sha256=ec7db6a5b2a35cf817881cf12b4a89feb0d1e3e3d97a27267078d8b51da923b5
+artifact_changed=true
+
+correctness_status=NOT_RUN
+correctness_reason=The route worktree exposes no correctness runner or inputs.
+local_status=NOT_RUN
+local_reason=The route worktree exposes no Canonical Local runner, inputs, or scorer. No Local Score is claimed.
+device_status=NOT_USED
+remote_status=NOT_ATTEMPTED
