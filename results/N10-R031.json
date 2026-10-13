@@ -1,0 +1,47 @@
+{
+  "route": "N10",
+  "revision": "R031",
+  "mechanism": "row-to-core balance / center-out logical block mapping",
+  "hypothesis": "Mapping physical blocks from the logical-grid center outward may alter locality of block-to-row-region dispatch while preserving one-to-one ownership and balanced row counts.",
+  "status": "exploratory_build_passed_performance_unknown",
+  "parent_candidate": "206eeaab2b2672808655bbbd2978739ed9861080",
+  "source_commit": "698cd67bee57b8c878a9d1d60af3d7da08d651c4",
+  "source_sha256": "b105fea19e8e12f610e84c84da89e10b08a5dc44afe4ede07bb281a9aad705b3",
+  "change": "Map physical block IDs center-out across logical block IDs in ProcessWideLowPrecision. Retain the adaptive batch-aligned stripe width, row count formula, batch visitation, arithmetic, and tile behavior.",
+  "ownership_validation": {
+    "command": "python3 inline R031 center-out block mapping and grouped-row ownership checks",
+    "status": "passed",
+    "block_count_cases": 4096,
+    "row_ownership_cases": 110976,
+    "outputs": [
+      "R031 center-out block-map permutation checks passed: 4096 block counts",
+      "R031 grouped-row ownership checks passed: 110976 cases"
+    ],
+    "scope_note": "Static ownership checks only; not runtime correctness or performance validation."
+  },
+  "build": {
+    "command": "./tools/run.sh build",
+    "status": "passed",
+    "return_code": 0,
+    "log": "build-20261013T131422991429742Z.log",
+    "kernel_sha256": "b105fea19e8e12f610e84c84da89e10b08a5dc44afe4ede07bb281a9aad705b3",
+    "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+    "cmake_sha256": "435cd84be945c1757159940c4c36fbab97fb06e9bf14e8a746a8121b42dda9fc",
+    "artifact_sha256": "53ddb8972747aae26fd0ce55f08ae84d611dc52146f274ae8a6758ab86312c99"
+  },
+  "correctness": {
+    "status": "not_run",
+    "return_code": 127,
+    "log": "correctness-20261013T131459653930910Z.log",
+    "reason": "No correctness runner exists in the N10 sparse worktree."
+  },
+  "local": {
+    "status": "not_run",
+    "return_code": 127,
+    "log": "local-20261013T131516991623919Z.log",
+    "reason": "No Canonical Local runner exists in the N10 sparse worktree."
+  },
+  "performance_claim": null,
+  "device_id": null,
+  "free_hbm_mb": null
+}
