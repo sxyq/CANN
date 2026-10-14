@@ -1,0 +1,26 @@
+route=N09
+revision=R060
+attempt=070
+parent_commit=50a6a7002c1e125afe53cc054fab86122a4f50d9
+source_commit=883fae8a5618c16cdb43f65ea3a4ebd41558fd02
+change=select a full-row FP32 tile when every active core owns at most one row and the existing one-row UB budget fits
+hypothesis=for rowWidth in (8192,11260] with rowCount==blockCount, replacing two 8192-based reduction tiles with one row-sized tile removes one per-tile reduction and the cross-tile merge without reducing an actually used row batch
+candidate_scope=incremental range is FP32 rowWidth 8193..11260 when rowCount==blockCount; host clamps blockCount<=rowCount, so this means one row per active core; widths above 11260 already used the full-row tile under the prior twoRowsNeed>176KiB condition
+candidate_distinction=tile-width selection only; no partial merge algorithm or final one-element ReduceSum implementation was changed
+command=./tools/run.sh build
+return_code=0
+device_id=NOT_USED_BUILD_ONLY
+device_load=NOT_APPLICABLE_BUILD_ONLY
+status=build_passed
+kernel_sha256=31d7b982d70532f21133c326968dd510b6eed159523bcc384dacf5d408ee4ae7
+adapter_sha256=9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce
+cmake_sha256=29ba67cdd75e68fe601d376418bd4d3f219284a87d60eac8f4a90fd169596513
+artifact=/home/data4t2/lelinfeng/cann/worktrees/n09-rms-reduction-topology/build/n09-v011/r31b_submission_v011
+artifact_sha256=735cfab2ec4245430507db8b8f8e5bd69e5d2d7b508b1d1b38a15a71507e088a
+raw_output=results/build_attempt_070.log
+raw_output_sha256=c2bdf019ca1f0326d535378993e069103fc87340db97e6cf439b2e4fd8ac0128
+correctness=NOT_EXECUTED; route-local entry is hardcoded to return 125 before kernel launch and NPU load is occupied; no device command was started
+local=NOT_EXECUTED; route-local Local runner is unavailable
+runtime_validation=NOT_EXECUTED
+performance_result=NOT_AVAILABLE; Build only, no correctness, Local, or profiling result
+c11_relation=not exercised; C11 width 8192 remains on the non-wide path, so this candidate supplies no evidence about the R052 mismatch or R054 runtime behavior
