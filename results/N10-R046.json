@@ -1,0 +1,74 @@
+{
+  "route": "N10",
+  "revision": "R046",
+  "mechanism": "row-to-core balance / evenly spaced sparse-tail owners",
+  "hypothesis": "Distributing one-row tasks from a sparse final stripe across evenly spaced logical block IDs may spread active block dispatch positions compared with assigning the same tasks to a contiguous block suffix.",
+  "status": "exploratory_build_passed_correctness_local_unavailable_score_unknown",
+  "parent_candidate": "f43e0b53945e3e753b57bfd603d96571884b9a2c",
+  "parent_record_commit": "bc4521f16a0354458da50e315e49c307e827c681",
+  "source_commit": "1d328647bccc3e2ce0909068c9a5022934a4e05c",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "96f1360cd7fa2064d29d84c9262fee518cd152f003c9cb083d4a128e8b7d76f9",
+  "change": "Only for a non-empty sparse tail after at least one full stripe when rowGroupWidth > 1, use owner positions owner(i) = floor(((i + 1) * blockCount - 1) / tailRows). Each active owner receives one tail row in increasing owner order; inactive owners use tailRows as the zero-row sentinel. All other cases retain prior ownership behavior.",
+  "distinction_check": {
+    "status": "passed",
+    "evidence": "For blockCount=8 and tailRows=3, R046 active owners are [2,5,7], while R043's suffix owners are [5,6,7]. The active-owner sets differed from the suffix policy in 7,875 of 8,128 enumerated blockCount/tailRows pairs. This changes which logical blocks own the tail, not just traversal order.",
+    "scope_note": "Hypothesis concerns active logical-block dispersion only; no device core topology or performance benefit is asserted."
+  },
+  "ownership_validation": {
+    "commands": [
+      "inline python3 -c inverse/owner-spacing enumeration for blockCount 2..128 and tailRows 1..blockCount-1",
+      "inline python3 -c exact row partition and per-block balance enumeration for blockCount 1..24, groupWidth 1..6, fullGroups 0..4, and every tail length"
+    ],
+    "status": "passed",
+    "sparse_tail_cases": 8128,
+    "full_partition_cases": 31500,
+    "invariants": [
+      "Each sparse-tail row maps to exactly one active logical block.",
+      "Sparse-tail owner positions are unique and gaps differ by at most one block ID.",
+      "Every row across full stripes and tail is assigned exactly once.",
+      "Per-block total row counts differ by at most one."
+    ],
+    "scope_note": "Static mapping validation only; not runtime correctness, performance, or Core-utilization validation."
+  },
+  "scope_check": {
+    "task_ownership_changed": true,
+    "full_stripe_row_ownership_changed": false,
+    "per_row_scalar_address_generation_changed": false,
+    "per_row_gm_offset_or_stride_formula_changed": false,
+    "gm_tile_transaction_changed": false,
+    "arithmetic_changed": false,
+    "details": "Only sparse tail row ownership among logical blocks changes. R045 full-stripe owner mapping, row group sizes, row counts, rowOffset = sourceRow * rowWidth, output row stride, GM transaction sizes, arithmetic, UB buffers, and reduction topology are unchanged."
+  },
+  "build": {
+    "command": "./tools/run.sh build",
+    "status": "passed",
+    "return_code": 0,
+    "log": "build-20261014T054208215981319Z.log",
+    "kernel_sha256": "96f1360cd7fa2064d29d84c9262fee518cd152f003c9cb083d4a128e8b7d76f9",
+    "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+    "cmake_sha256": "435cd84be945c1757159940c4c36fbab97fb06e9bf14e8a746a8121b42dda9fc",
+    "artifact_sha256": "09e17f25f1dd8b09cb2577ce855267beb2e9a51a1813f1a90eec00b598516bc4"
+  },
+  "correctness": {
+    "status": "unavailable",
+    "attempt_status": "not_run",
+    "command": "./tools/run.sh correctness",
+    "return_code": 127,
+    "log": "correctness-20261014T054253736956125Z.log",
+    "reason": "The N10 worktree contains no correctness runner; the existing entry reports not_run and RC 127. No kernel correctness test executed."
+  },
+  "local": {
+    "status": "unavailable",
+    "attempt_status": "not_run",
+    "command": "./tools/run.sh local",
+    "return_code": 127,
+    "log": "local-20261014T054355110144531Z.log",
+    "reason": "The N10 worktree contains no Canonical Local runner; the existing entry reports not_run and RC 127. No Local measurement or score was produced."
+  },
+  "local_score": "UNKNOWN",
+  "performance_claim": null,
+  "device_id": null,
+  "free_hbm_mb": null,
+  "isolation": "worktree-level soft isolation only; no OS-level filesystem or Git object boundary"
+}
