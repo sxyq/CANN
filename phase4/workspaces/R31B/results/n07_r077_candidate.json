@@ -1,0 +1,51 @@
+{
+  "route_id": "N07",
+  "revision": "R077",
+  "branch": "research/n07-parameter-tile-reuse",
+  "parent_revision": "R076",
+  "parent_sha": "0dd1d4c8ee41cc2773ef4b02c99ac0e71d5ecfd5",
+  "source_commit": "c976ce70a22d7024239f7f1dd93a9582848f90ce",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "a8526aef42f768d94aa870274f4d3edd7952630239b351aa692d60f4f160085c",
+  "hypothesis": "Wide FP16/BF16 full-parameter cache candidates that preserve rows per batch but increase tile count may regress latency. Requiring cache admission to preserve both row capacity and tile count should reject those candidates; no runtime gain is assumed.",
+  "change": {
+    "scope": "Wide FP16 and BF16 full-parameter cache admission",
+    "behavior": "FP16 direct admission now requires cached rows at least equal to baseline and cached tile count no greater than baseline, while retaining the existing work-shape-preserving path. BF16 FP32/native cache eligibility applies the same tile-count bound.",
+    "math_semantics_changed": false,
+    "output_order_changed": false,
+    "files_changed": [
+      "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc"
+    ]
+  },
+  "build": {
+    "status": "passed",
+    "entrypoint_command": "./tools/run.sh build",
+    "exit_code": 0,
+    "target": "r31b_submission_v011",
+    "artifact_path": "phase4/workspaces/R31B/build-n07/r31b_submission_v011",
+    "artifact_sha256": "f1be43ac2705cc7a9e712044ce3b50b4e91ac868430d60805a211b692172b5c3",
+    "output": [
+      "-- Configuring done",
+      "-- Generating done",
+      "-- Build files have been written to: /home/data4t2/lelinfeng/cann/worktrees/n07-parameter-tile-reuse/phase4/workspaces/R31B/build-n07",
+      "Consolidate compiler generated dependencies of target r31b_submission_v011",
+      "[ 50%] Building ASC object CMakeFiles/r31b_submission_v011.dir/compile_adapter_v011.asc.o",
+      "[100%] Linking ASC executable r31b_submission_v011",
+      "[100%] Built target r31b_submission_v011"
+    ]
+  },
+  "correctness": {
+    "status": "not_run",
+    "reason": "Deferred to Main-coordinated device validation; no device command was run by this Route Agent."
+  },
+  "local": {
+    "status": "not_run",
+    "reason": "Deferred to Main-coordinated Canonical Local validation; no device command was run by this Route Agent."
+  },
+  "device_id": "NONE",
+  "assessment": {
+    "candidate_status": "Build passed; correctness and Canonical Local remain unverified.",
+    "promotion": "none",
+    "performance_claim": "None; R077 has not been measured on device."
+  }
+}
