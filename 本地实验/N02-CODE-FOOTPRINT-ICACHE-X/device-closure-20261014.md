@@ -60,3 +60,34 @@
 - 依据：Parent/Candidate 在四个 shape/dtype 组合全部 Correctness PASS，且当前 Candidate 已完成一次 same-binary 与 paired 采集；但计时窗口开始前和全过程均有明显设备负载，故这些延迟只作原始观察，不能判定关闭展开是否改变了有效设备热点或性能。
 - 现有 Parent/Candidate 设备对象的 `.aicore_binary` 段各导出 `44,248` 字节，逐字节比较相同，记录见 `logs/n02-v2-local-20261014T083927Z/device-code-section-comparison.txt`。`#pragma clang loop unroll(disable)` 没有改变 AICore 二进制；当前 Candidate 作为设备代码布局优化予以 REJECT。Host 侧对象与动态库身份不同，但本轮负载不支持延迟归因。
 - 下一项 N02 研究应避开等价 unroll 写法，围绕 Pass2 热点代码寻找另一项能真实改变 AICore 指令布局的单因素假设，再做新的设备测量。当前源码不变。
+
+## N02 V016 — BF16 重复转换移除
+
+### 假设与源码身份
+
+- Direct Parent commit：`c68ce4ababde3c7472147549a9105e9f7311e398`；Parent source SHA-256：`45ab8784ab33d1c668c958fdf577084f7349e23bef37dce4d68368ee21fb2082`。
+- Candidate source SHA-256：`9abee2c9c4b296efd46a8b892c5fc873a8c9c2bd480cd5bd4c86aad3fd2676ab`。
+- 唯一源码变化：移除 BF16 Pass2 batch-row 循环前重复的两次 `ToFloat` 和一个 `PipeBarrier`；保留前一组相同转换。预期减少热路径 Vector 转换和等待，不把收益归因于 I-cache。
+
+### Build 与 Correctness
+
+- 复用 server3 上的 CANN 8.5 构建；Full-link PASS。依赖文件分别指向本轮 Parent/Candidate 输入，远端源码 SHA 与本地一致。
+- Runner SHA-256：`b2d686b0baf10555e8f832deda6863d86b91fceb89b387b630c8dbf342b90bde`。Parent/Candidate `.aicore_binary` 长度分别为 `44,248` / `44,336` 字节，二进制不同；Candidate 多 88 字节，不能据此声称设备指令段缩短。
+- `128x12288`、`128x32768` 的 FP16/BF16 Parent 与 Candidate 共 8 次 Correctness 均 PASS，mismatch=0、nonfinite=0。
+- 编译、对象、源码、Correctness 原始记录位于 `logs/n02-duplicate-cast-20261014/`。
+
+### Local
+
+- 设备：server3 NPU6 / Ascend 910B3。rows=128。每个 case 使用 45 warmups；same-binary 为 2x31，paired 为 4x31。每个配对 case 共 124 对 Parent/Candidate device-event 样本。
+- `BF16 128x12288`：same Parent median `19.05 us`，MAD/median `1.21%`，两块中位数漂移 `0.10%`；paired Parent/Candidate median `19.73/19.24 us`，配对比值中位数 `-2.528%`，4/4 块 Candidate 更快，88/124 对更快。
+- `BF16 128x32768`：same Parent median `50.39 us`，MAD/median `0.54%`，两块中位数漂移 `0.16%`；paired Parent/Candidate median `51.73/47.88 us`，配对比值中位数 `-7.766%`，4/4 块 Candidate 更快，108/124 对更快。
+- `FP16 128x32768` 对照：same Parent median `34.33 us`，MAD/median `0.79%`，两块中位数漂移 `0.06%`；paired Parent/Candidate median `34.89/35.00 us`，配对比值中位数 `0.000%`，4 块方向混合，Candidate/Parent 各快 62/124 对。
+- d6 preflight `2026-10-14T13:19:19Z`：HBM 94%，AICore 0%，AIVector 39%，HBM 带宽 12%；VLLMWorker_TP PID `3357697` 占用 `56,355 MB`，Python PID `3335972` 占用 `1,915 MB`，均未触碰。测量各阶段 AIVector 快照为 0–43%，原始样本有显著长尾。
+- Local 数字保留为负载下的观察值，`LOCAL_SCORE=NONE`。BF16 两形状的配对方向值得保留，但本轮不作为可晋升的 Local 成绩，也不据此推算 Official 分数。
+- 首次启动的六个 Runner 因 CANN 环境未在进程中生效而返回 `127`，缺少 `libruntime.so`，没有产生设备样本。改用普通 Bash 在同一进程加载现有 `set_env.sh` 后，仅完成一次有效测量；失败日志也保留。
+- 有效 Local 原始 TSV、标准输出/错误、逐阶段设备快照及返回码位于 `logs/n02-duplicate-cast-local-envfix-20261014/`；首次环境失败位于 `logs/n02-duplicate-cast-local-20261014T1313Z/`。
+
+### Result
+
+- 判断：`INVESTIGATE_NEXT`。BF16 配对样本显示同向改善，FP16 对照中位持平；共享负载与长尾使本轮 Local 仍记 `NONE`。Candidate 可交 N06 按当前 Judge 规则评估；当前未提交 Official，也没有新 SID。
+- 下一项 N02 假设应落在可解释的热点设备代码路径，并避免复测等价的 inline/unroll 写法。当前源码在本次结果提交后保持不变。
