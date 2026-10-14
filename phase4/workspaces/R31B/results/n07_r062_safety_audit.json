@@ -1,0 +1,26 @@
+{
+  "route_id": "N07",
+  "revision": "R062",
+  "audit_date": "2026-10-14",
+  "source_commit": "e4b45d5064502fc453550b87429742f74fd33868",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "4fd0c5b9fe285e82f7f0e60de906bff9ee4c110a3e4cf69171d9f6c6888a31e7",
+  "audit_scope": "ProcessBf16FullRowOutputPipelined xBuf_/residualBuf_ staging liveness and MTE2/Vector/MTE3 ownership",
+  "dispatch": "For BF16, rowWidth == kCacheElems (8192) is non-wide because Init selects widePath_ only when rowWidth > kCacheElems. Multi-row blocks dispatch directly to ProcessBf16FullRowOutputPipelined and return; no prior tile loads or stores execute in Process.",
+  "staging_buffers": {
+    "xBuf": "4096 BF16 elements; reused at offset 0 for gamma tile 1 and later input tiles.",
+    "residualBuf": "4096 BF16 elements; reused at offset 0 for bias tile 1 and later residual tiles.",
+    "gammaBuf_biasBuf": "Each holds one 4096-element BF16 tile; after parameter promotion, these are the alternating output staging tiles.",
+    "gammaFp32Buf_biasFp32Buf": "Each holds the complete 8192-element FP32 parameter row."
+  },
+  "liveness_and_sync": [
+    "At function entry, xBuf_/residualBuf_ have no live data: Process dispatches directly to this function, and Init only allocates buffers.",
+    "The first gamma/bias MTE2 loads target gammaBuf_/biasBuf_; SyncMTE2ToV waits for them before the first parameter conversion.",
+    "The second gamma/bias MTE2 loads target xBuf_/residualBuf_ while the first tile is converted into distinct gammaFp32Buf_/biasFp32Buf_ ranges. A second SyncMTE2ToV waits for those loads before their Vector conversion.",
+    "PipeBarrier<PIPE_V> and SyncVToMTE2 complete Vector reads of the second staging tiles before the row loop can overwrite xBuf_/residualBuf_ with input data.",
+    "Each input tile is consumed only after SyncMTE2ToV; SyncVToMTE2 follows its Vector processing before the same staging slots can be refilled. The next-row prefetch occurs after the last tile release and is consumed at the next row's SyncMTE2ToV.",
+    "The MTE3 stores read only gammaBuf_/biasBuf_ output tiles. Per-slot MTE3_V waits guard their reuse, and final waits drain both output slots; MTE3 has no source read from xBuf_/residualBuf_."
+  ],
+  "assessment": "No conflicting live data or missing source-level MTE2/Vector/MTE3 ownership edge was found in R062's second-parameter-tile staging path.",
+  "verification_limit": "Static source-order audit only; no runtime correctness is claimed. No Build was rerun because source did not change. Correctness/Local runners are absent and no NPU command was run."
+}
