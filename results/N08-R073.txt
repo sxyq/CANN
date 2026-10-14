@@ -1,0 +1,27 @@
+route=N08
+revision=R073
+parent_sha=69774f96a6e45475616cfbc20d9085327e6610fc
+source_commit=0d44ee5f691fdc9c343d61f715342ea787e04c98
+built_tree_head=0d44ee5f691fdc9c343d61f715342ea787e04c98
+source=phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+source_sha256=c3037ccab862f767d429949e976961ee55999beeb8ee6e79278200666a054b3d
+artifact=build/r31b_submission_v011
+artifact_sha256=584a3b4d65ac4f6b62fc912e03d22b18b57e29cfe3e011bd4857ce55629e765f
+
+hypothesis=For out-of-bounds paired tail reads, require at least a two-data-block aligned body before splitting it from an exact padded suffix. This avoids a four-transaction body-plus-suffix plan when a one-block body is small relative to the valid payload.
+evidence=For B=16,prefix=10,count=7, coveredCount=17, alignedBodyCount=16 (one block), exactTailCount=1, and count > 2*exactTailCount. The previous out-of-bounds gate selected one aligned DataCopy body plus one DataCopyPad suffix per input (four transactions total); R073 falls back to one exact-count DataCopyPad per input (two transactions, 7 valid elements each). The extra prefix range is no longer read. This is path-selection reasoning, not a performance result.
+scope=Minimum aligned-body size for the out-of-bounds body-plus-exact-suffix paired-read split in LoadTailPair only. In-bounds 5-block threshold, GM valid range, consumer count, arithmetic, reduction, scheduling, tile sizing, and UB placement are unchanged.
+
+build_command=./tools/run.sh build
+build_exit_code=0
+build_log=results/build-20261014T021132+0000.log
+build_log_sha256=9c1b4583de0eae36f414901f048c497d99607c58b44b45436d6e9e172313a41e
+cann=/usr/local/Ascend/ascend-toolkit/latest
+compile_target=ASCEND_COMPUTE_UNIT=ascend910b; --npu-arch=dav-2201
+
+correctness_status=NOT_RUN
+correctness_reason=This Route worktree's tools/run.sh exposes only the build command; no route-local correctness runner or inputs are present. The existing canonical sweep covers through R071, not R073.
+local_status=NOT_RUN
+local_reason=This Route worktree exposes no Canonical Local runner, inputs, or scorer for R073. No Local Score or performance conclusion is claimed.
+device_status=NOT_USED
+remote_status=NOT_ATTEMPTED
