@@ -17,3 +17,10 @@ cmake_sha256=29ba67cdd75e68fe601d376418bd4d3f219284a87d60eac8f4a90fd169596513
 artifact=/home/data4t2/lelinfeng/cann/worktrees/n09-rms-reduction-topology/build/n09-v011/r31b_submission_v011
 artifact_sha256=c8bd4a7b4b110da4f240bbf367bb5582a3a5d23e14f4896e3433db08a9c20e95
 raw_output=results/build_attempt_064.log
+source_contract_audit=C11 FP32 1x8192 reaches the generic path: widePath is false at rowWidth==kCacheElems, and the FP32 full-row shortcut requires localRows>1 while rowCount/blockCount=1
+source_contract_tile_count=ceil(8192/4096)=2
+source_contract_reduce_dst=tileIndex starts at 0 and increments once per tile; ReduceSum dst indices are reduceFp32[0] and reduceFp32[2], byte offsets from the LocalTensor base are 0 and 8
+source_contract_alignment=both FP32 Level-2 ReduceSum destinations are 8-byte aligned relative to the aligned VECCALC LocalTensor base
+source_contract_merge=tileCount==2 direct Add reads reduceFp32[0] and reduceFp32[2] and writes scalarLocal[0], a separate tensor
+candidate_classification=strong source-level correction candidate for the R052 C11 FP32 mismatch; R054 build passed but no kernel was launched to validate correctness or performance
+runtime_validation=NOT_EXECUTED; see results/correctness_attempt_055_state.txt and results/local_attempt_055_state.txt
