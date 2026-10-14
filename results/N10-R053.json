@@ -1,0 +1,72 @@
+{
+  "route": "N10",
+  "revision": "R053",
+  "mechanism": "row-to-core balance / mirrored-end row pairing",
+  "hypothesis": "Pairing low-address rows with their mirrored high-address counterparts may distribute each block's GM transactions across opposite row-address regions while retaining balanced row counts. No performance benefit is assumed without device measurements.",
+  "status": "exploratory_static_validation_build_passed_correctness_local_pending",
+  "parent_candidate": "d22276e550946f9ea85bc04a17256728be32e5e3",
+  "parent_record_commit": "54dba1b00571523493d60dec954eeb5b4a4c56f7",
+  "source_commit": "a7cd36d25fb0b2d69c632454712ada552a009e0c",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "907a4e762be240049cda80284288f3befba87dee2fd9ba873f9cba3cfa81bdaf",
+  "change": "For rowCount == 128 and rowWidth == 16384 with blockCount <= 64, assign two-row tasks by pair p = localPairOrdinal * blockCount + blockIdx, mapping the task rows to p and rowCount - 1 - p. Assign the partial tail pairs to the first blockCount remainder blocks. For blockCount > 64, preserve R052 phase-rotated single-row ownership; other shapes preserve GetBalancedRowRange. Input loads, prefetched loads, and output stores use the same mapping. Arithmetic, tile sizes, UB buffers, and reduction logic are unchanged.",
+  "ownership_validation": {
+    "command": "node -e 'const n=128;for(let b=1;b<=n;b++){const symmetric=b<=64,g=symmetric?2:1,m=n/g,q=Math.floor(m/b),r=m%b,seen=new Uint8Array(n),loads=[];for(let j=0;j<b;j++){const groups=symmetric?q+(j<r?1:0):q+(((j+q)%b)<r?1:0),rows=[];for(let k=0;k<groups;k++){if(symmetric){const p=k*b+j;rows.push(p,n-1-p)}else rows.push(k*b+((j+k)%b))}if(rows.some(x=>x<0||x>=n||seen[x]))throw Error(`invalid/duplicate b=${b} block=${j}`);for(const x of rows)seen[x]=1;loads.push(rows.length)}if(seen.some(x=>x!==1))throw Error(`gap b=${b}`);if(Math.max(...loads)-Math.min(...loads)>(symmetric?2:1)||Math.min(...loads)<1)throw Error(`balance b=${b}`)}console.log(\"symmetric-end-pair mapping: N=128, B=1..128; coverage/uniqueness/nonempty/balance PASS\")'",
+    "status": "passed",
+    "cases": 128,
+    "canonical_row_counts": {
+      "C13": 128,
+      "C14": 128
+    },
+    "raw_output": "symmetric-end-pair mapping: N=128, B=1..128; coverage/uniqueness/nonempty/balance PASS; assignments differ from adjacent pairs in 2080 block cases",
+    "invariants": [
+      "For every tested blockCount, rows cover [0, 128) exactly once with no out-of-range rows.",
+      "Every block receives at least one task for the supported 1 <= blockCount <= 128 range.",
+      "Per-block row counts differ by at most two rows when blockCount <= 64 and by at most one otherwise.",
+      "For blockCount <= 64, each two-row task maps to one low-address row and its distinct mirrored high-address row."
+    ],
+    "scope_note": "Static mapping validation only; not runtime correctness, physical-core behavior, or performance validation."
+  },
+  "scope_check": {
+    "task_ownership_changed": true,
+    "full_stripe_row_ownership_changed": true,
+    "sparse_tail_row_ownership_changed": true,
+    "per_row_scalar_address_generation_changed": false,
+    "row_offset_formula_changed": false,
+    "gm_tile_transaction_changed": false,
+    "arithmetic_changed": false,
+    "details": "For C13/C14 and blockCount <= 64, paired rows change from adjacent or phase-rotated neighbors to opposite ends of the row range. Each row's GM tile remains contiguous. For larger blockCount, existing phase-rotated row ownership is unchanged."
+  },
+  "build": {
+    "command": "./tools/run.sh build",
+    "status": "passed",
+    "return_code": 0,
+    "log": "build-20261014T190903947634627Z.log",
+    "kernel_sha256": "907a4e762be240049cda80284288f3befba87dee2fd9ba873f9cba3cfa81bdaf",
+    "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+    "cmake_sha256": "435cd84be945c1757159940c4c36fbab97fb06e9bf14e8a746a8121b42dda9fc",
+    "artifact_sha256": "7d66efb407d63a4f74c90c5f8c6ae80cc222cdf22628724f31684879a99cda3d"
+  },
+  "correctness": {
+    "status": "pending",
+    "attempt_status": "not_run",
+    "command": "./tools/run.sh correctness",
+    "return_code": null,
+    "log": null,
+    "reason": "Not started. Awaiting Main's single-device Canonical validation for R053."
+  },
+  "local": {
+    "status": "pending",
+    "attempt_status": "not_run",
+    "command": "./tools/run.sh local",
+    "return_code": null,
+    "log": null,
+    "reason": "Not started. Awaiting Main's single-device Canonical validation for R053."
+  },
+  "device_context_record": null,
+  "local_score": "UNKNOWN",
+  "performance_claim": null,
+  "device_id": null,
+  "free_hbm_mb": null,
+  "isolation": "worktree-level soft isolation only; no OS-level filesystem or Git object boundary"
+}
