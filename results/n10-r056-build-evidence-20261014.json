@@ -1,0 +1,71 @@
+{
+  "route": "N10",
+  "revision": "R056",
+  "parent": {
+    "source_commit": "52169adf9b1aa2893659118c9d43c89ab128f744",
+    "source_sha256": "7eac452b9620e9155aed53dcae370fca6d9081444af5bef763da1b655d9a839b",
+    "canonical_status_path": "results/canonical-sweep/n10-r055-live-main-20261014T2235Z/versions/R055-7eac452b96/status.json",
+    "correctness": "7/7 PASS",
+    "local_score": 69.805397,
+    "local_status": "LOCAL_NEUTRAL",
+    "local_quality": "POOR"
+  },
+  "candidate": {
+    "source_commit": "712d4125be2cb2e9b6dea57b1182c18f67f411d3",
+    "kernel_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+    "kernel_sha256": "0f50761df862790436f11796e9309ce2d307ffe2c11e653eca72992e4cf0eb77"
+  },
+  "hypothesis": {
+    "shape_selector": "rowCount == 128 && rowWidth == 16384 in ProcessWideLowPrecision",
+    "change": "Replace phase-rotated row ownership with GetBalancedRowRange contiguous per-block intervals; input prefetch and output stores use the local interval row ordinal directly.",
+    "single_factor": "Row ownership locality/order; per-block row counts remain balanced.",
+    "r055_observation": "Canonical C13/C14 command passes availableCoreNum=45. Harness stats 'blocks=1' means one benchmark block, not one kernel block. The kernel launch clamps availableCoreNum to rowCount and does not double it for D=16384, yielding 45 launched blocks.",
+    "expected_effect": "Preserve the 2/3-row per-block balance while changing strided/cyclic ownership into contiguous row intervals, reducing row-owner runs for C13/C14 from 126 to 45.",
+    "measurement_caveat": "R055 C13/C14 raw timing has strong outliers/variance; this source-only change tests row locality, not a claim that timing variance is caused by mapping."
+  },
+  "r055_canonical_shape_evidence": {
+    "device": 4,
+    "C13": {
+      "shape": [128, 16384],
+      "dtype_argument": 1,
+      "available_core_num_argument": 45,
+      "raw_candidate_path": "results/canonical-sweep/n10-r055-live-main-20261014T2235Z/versions/R055-7eac452b96/evidence/measurement/C13/attempt-3-candidate-raw.tsv",
+      "stats_path": "results/canonical-sweep/n10-r055-live-main-20261014T2235Z/versions/R055-7eac452b96/evidence/measurement/C13/attempt-3-candidate-stats.txt"
+    },
+    "C14": {
+      "shape": [128, 16384],
+      "dtype_argument": 2,
+      "available_core_num_argument": 45,
+      "raw_candidate_path": "results/canonical-sweep/n10-r055-live-main-20261014T2235Z/versions/R055-7eac452b96/evidence/measurement/C14/attempt-3-candidate-raw.tsv",
+      "stats_path": "results/canonical-sweep/n10-r055-live-main-20261014T2235Z/versions/R055-7eac452b96/evidence/measurement/C14/attempt-3-candidate-stats.txt"
+    }
+  },
+  "static_mapping_validation": {
+    "row_count": 128,
+    "block_count_range": [1, 128],
+    "complete_unique_coverage": true,
+    "no_empty_blocks": true,
+    "maximum_per_block_load_spread_rows": 1,
+    "canonical_block_count_45": {
+      "candidate_blocks_with_2_rows": 7,
+      "candidate_blocks_with_3_rows": 38,
+      "r055_blocks_with_2_rows": 7,
+      "r055_blocks_with_3_rows": 38,
+      "rows_reassigned_to_a_different_block": 125,
+      "r055_row_owner_runs": 126,
+      "candidate_row_owner_runs": 45
+    }
+  },
+  "build": {
+    "command": "./tools/run.sh build",
+    "toolkit": "/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002",
+    "soc": "Ascend910B3",
+    "npu_arch": "dav-2201",
+    "return_code": 0,
+    "status": "PASS",
+    "artifact": "/tmp/n10-row-core-balance-build/r31b_submission_v011",
+    "artifact_sha256": "12b18e9ee126f20c03071dc123d434178557c266b54055104ca5b454ba7e86b6",
+    "raw_output_path": "results/build-20261014T230844136011845Z.log"
+  },
+  "device_validation": "NOT_RUN; awaiting Main's serial Canonical validation"
+}
