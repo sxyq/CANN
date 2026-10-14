@@ -1,0 +1,63 @@
+{
+  "route": "N06",
+  "revision": "R197",
+  "run_id": "199",
+  "source_commit": "4a425d0b58798c778624650ae78533358280ebf6",
+  "git_parent_commit": "ba894f1e3366a03bcd18b0a7e1b841ea86c9c19b",
+  "parent_source_commit": "c6158cb578a4e367e591f0fb06f65394df07ee25",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "bd767bbb03890827964a03e6b2521f8a227d532da40a952d16c38604c9814e8d",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "Retain the R197 96B BF16 x/gamma second-slot phase. Add a Host metadata width guard rejecting widthSigned > 32768, matching the documented operator width bound. The guard prevents unsupported widths from reaching row/tile reduction paths whose partial allocations are sized for D<=32768; supported-shape device arithmetic and UB layout are unchanged.",
+  "static_safety": {
+    "scope": "All ReduceSum call paths reachable from current Process dispatch for supported rowWidth 1..32768; legacy helpers not called by Process are excluded.",
+    "tbuf_base_alignment_bytes": 32,
+    "reduce_destination_write_bytes": 4,
+    "reachable_destinations_8byte_aligned": true,
+    "non_wide": {
+      "direct_tile_partials": "reduceFp32Buf_ + 8*tileIndex bytes; generic path is only used through D<=8192, so tileIndex is 0..1.",
+      "batched_row_scalars": "reduceFp32Buf_ + 32*batchRow bytes (8-float stride); maximum batch row index is 7.",
+      "single_scalar_paths": "reduceFp32Buf_ base.",
+      "allocation_bytes": 16384,
+      "all_destinations_in_bounds": true
+    },
+    "wide_fp32": {
+      "destination_offset_bytes": "4*(batchRow*16 + 2*tile); supported D<=32768 gives tileCount<=8 and each tile-row range stays within its 16-float row stride.",
+      "allocation_bytes": "4*wideFullYRows_*16",
+      "all_destinations_in_bounds": true
+    },
+    "wide_low_precision": {
+      "destination_offset_bytes": "phaseBytes + 4*(batchRow*wideFullYReduceStride_ + 2*tile); phaseBytes is 224 for FP16 and 160 for BF16, both 32B aligned.",
+      "allocation_bytes": "phaseBytes + 4*wideFullYRows_*wideFullYReduceStride_",
+      "supported_tile_count_max": 16,
+      "stride_covers_two_float_slots_per_tile": true,
+      "all_destinations_in_bounds": true
+    },
+    "final_reduction_destinations": "Non-wide uses residualFp32Buf_+0; wide FP32 uses residualBuf_+0; wide FP16/BF16 uses residualFp32Buf_+64B/+96B. All are 8B-aligned and within their allocations.",
+    "alias_and_overwrite": "For active paths, per-tile ReduceSum destinations reside in reduceFp32Buf_; source and tmp tensors are separate x/residual scratch buffers. Final ReduceAlignedPartials reads strided partials into a distinct packed buffer before reducing into a distinct scalar destination. No partial is overwritten before it is read.",
+    "unsupported_width_guard": "run_kernel rejects widthSigned>32768 before launch. Without this guard, the FP32 wide path at D=32769 would produce tileCount=9 and write the ninth partial at reduceFp32Buf_+64B, beyond the 16-float per-row allocation.",
+    "dormant_helper_caveat": "Unreferenced legacy wide helpers contain contiguous tileIndex/panelCount destinations that are only 4B-spaced. ProcessWideFp32PanelResident may need up to 32 partial floats while its current FP32 full-y allocation has 16 floats at D=32768. These helpers are not reachable from current Process dispatch and were not changed."
+  },
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "status": "PASS",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "8d0a7c21bae02d7c342c709cf215f6a45274514ff5e88c980b2ae6643a0c0f14",
+    "log": "results/build_199.log",
+    "sha_file": "results/build-artifact_199.sha256"
+  },
+  "correctness": {
+    "status": "NOT_RUN",
+    "reason": "Deferred to Main's authorized Canonical Worker; no device test was started from this worktree."
+  },
+  "local": {
+    "status": "NOT_RUN",
+    "reason": "Deferred to Main's authorized Canonical Worker; no device timing was started."
+  },
+  "device": {
+    "status": "NO_WORKLOAD",
+    "reason": "This revision ran only the local CANN Build command; no device command was issued."
+  },
+  "performance_conclusion": "UNKNOWN: safety guard and R197 candidate compiled; Correctness and Canonical Local results are pending Main's worker."
+}
