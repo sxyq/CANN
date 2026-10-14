@@ -1,0 +1,29 @@
+route=N08
+revision=R075
+parent_sha=564862511b9f749d3d9948cc78b893e19c85dfce
+source_commit=9472649f97bce46c9c7cdc9a0f8192e81d8a4de1
+built_tree_head=9472649f97bce46c9c7cdc9a0f8192e81d8a4de1
+source=phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+source_sha256=e8a0255ce60ca82c7c26c22a075081c462d5b9c9248b5c124ad4d46ff6cdec69
+artifact=build/r31b_submission_v011
+artifact_sha256=b64f050ff3d6860e9e93d3fd0e9df8690bcd123fc50ff49946fa5f1ac843fa7c
+
+hypothesis=For exact-end aligned paired tail reads, use the aligned DataCopy only when the valid count is at least twice the nonzero aligned prefix, limiting total GM elements read to 1.5 times the valid payload; otherwise use the existing exact-count DataCopyPad calls.
+evidence=For B=16, prefix=8, count=8, coveredCount=16 and exactTailCount=0. The former prefix<=count gate selected a 16-element aligned DataCopy per input for 8 valid elements (2x); the new count>=2*prefix gate rejects that and falls back to one exact-count DataCopyPad per input. For prefix=4,count=12, the same exact-end case remains eligible because 12>=8 (16/12=1.33x). The GM endpoint and consumer range are unchanged. This is path-selection reasoning, not measured performance evidence.
+scope=Prefix-amplification threshold in the exact-end aligned paired-read branch of LoadTailPair only. All other rounded-read/split predicates, GM ranges, arithmetic, reduction, scheduling, tile sizing, and UB placement are unchanged.
+
+build_command=./tools/run.sh build
+build_exit_code=0
+build_log=results/build-20261014T032750+0000.log
+build_log_sha256=9c1b4583de0eae36f414901f048c497d99607c58b44b45436d6e9e172313a41e
+cann=/usr/local/Ascend/ascend-toolkit/latest
+compile_target=ASCEND_COMPUTE_UNIT=ascend910b; --npu-arch=dav-2201
+previous_artifact_sha256=bed72b118fff0c0d0c78408723f3916a5bef7975782c65bee63d3697e3e6eeb3
+artifact_changed=true
+
+correctness_status=NOT_RUN
+correctness_reason=This Route worktree's tools/run.sh exposes only build; no route-local correctness runner or inputs are present. Existing canonical correctness covers R001-R071 only and does not validate R075.
+local_status=NOT_RUN
+local_reason=This Route worktree exposes no Canonical Local runner, inputs, or scorer. No Local Score or performance conclusion is claimed.
+device_status=NOT_USED
+remote_status=NOT_ATTEMPTED
