@@ -1,0 +1,22 @@
+route=N09
+revision=R061
+baseline_revision=R060
+baseline_commit=aa63ff5ede8582a8ded3a69fb1f90986f925e0ef
+kernel_sha256=31d7b982d70532f21133c326968dd510b6eed159523bcc384dacf5d408ee4ae7
+candidate=skip per-tile Level-2 ReduceSum mask setup after a same-count Mul
+status=cancelled_before_source_change
+target_arch=dav-2201; observed_soc=Ascend910B3; build_attempt_070_was_build_only
+sdk=/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002
+mul_level2=kernel_operator_vec_binary_intf_impl.h:245-256 -> dav_c220/kernel_operator_vec_binary_impl.h:158-170
+mul_mask_behavior=set_mask_count; set_vector_mask(0,count); vmul; set_mask_norm; set_vector_mask(FULL_MASK,FULL_MASK)
+reduce_sum_level2=kernel_operator_vec_reduce_intf_impl.h:981-998 -> dav_c220/kernel_operator_vec_reduce_impl.h:145-168
+reduce_sum_mask_behavior=isSetMask_false_skips_count_mask_and_norm_restore; it consumes the current mask
+pipe_barrier_behavior=kernel_reg.h:99-107; no mask update on the 2201 PIPE_V path
+callsite=phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc:2678-2680 uses dynamic valid
+cancel_reason=Level-2 Mul restores FULL_MASK before ReduceSum; false would include invalid tail lanes when valid is partial
+source_change=none
+build=NOT_RUN
+correctness=NOT_RUN
+local=NOT_RUN
+performance=NOT_RUN
+device=NOT_USED
