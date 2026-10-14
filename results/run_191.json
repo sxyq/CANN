@@ -1,0 +1,35 @@
+{
+  "route": "N06",
+  "revision": "R191",
+  "source_commit": "42e337c6fd44cef2e1639e06119bc4e82a2080b5",
+  "git_parent_commit": "487d2944d8ebd6055a1fae83417646aa93528e95",
+  "parent_source_commit": "754816ef31b99078bdebed2318c8fb1336dc07f8",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "82a181da96e4db549252a216b7f911f123c23d9441ff9a206608656a1bb301c5",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "Change kWideBf16RetainedYRowAlignElems from 16 to 8 FP32 elements (64B to 32B row-pitch alignment). No arithmetic or event-order changes.",
+  "hypothesis": "For wide BF16 rows with D modulo 16 in 1..8, the previous rounded row stride advanced by a 64B multiple, preserving each retained-y row's relative phase. R191 advances by a 32B multiple, alternating adjacent row starts between two relative 32B phases. This may change vector-access UB bank interactions; no physical bank mapping or performance effect is inferred from compilation. Because the existing reduction-tail reuse guard uses the same pad size, some widths may also switch to a separate reduction buffer when tileCount exceeds the smaller tail pad; Canonical results must include that coupled placement effect.",
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "status": "PASS",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "ece43e41ae49994c462a21700cf22431657f149d04c51103618e671d4a7a00ee",
+    "log": "results/build_191.log",
+    "sha_file": "results/build-artifact_191.sha256"
+  },
+  "correctness": {
+    "status": "NOT_RUN",
+    "reason": "Deferred to Main's authorized test of this fixed candidate; this worktree entry provides build only."
+  },
+  "local": {
+    "status": "NOT_RUN",
+    "reason": "Deferred to Main's authorized Canonical Local test; this worktree entry provides build only."
+  },
+  "device": {
+    "device_id": null,
+    "status": "NOT_RUN",
+    "reason": "No device command was issued in this candidate-authoring step."
+  },
+  "performance_conclusion": "UNKNOWN: build passed, but no Correctness or Canonical Local measurement was captured in this worktree."
+}
