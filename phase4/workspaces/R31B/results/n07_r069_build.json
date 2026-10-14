@@ -1,0 +1,36 @@
+{
+  "route_id": "N07",
+  "revision": "R069",
+  "branch": "research/n07-parameter-tile-reuse",
+  "parent_sha": "642d95a4ed94a37150a3def335cc65014f4faf50",
+  "source_parent_revision": "2c1fb4f56abc7adb1285dba6f3f419d4055a401b",
+  "source_commit": "947daf9c79267876b2830b4dbe076eb056910834",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "8ff4239566c60c9c6afa6edc698dbb8e8f2fe4edfa4e644563dd36e15c92602e",
+  "hypothesis": "When row assignment is uneven, at least one block can have multiple rows even though the minimum rows per block is one. Allow the existing wide BF16 parameter-cache selection to evaluate that case so multi-row blocks can reuse cached channel parameters across batches without changing block count.",
+  "change": "In the BF16 wide-row initialization branch, replace the minimum-rows-per-block gate with a maximum-rows-per-block gate. Existing cache sizing and dispatch remain unchanged.",
+  "build": {
+    "status": "passed",
+    "entrypoint_command": "./tools/run.sh build",
+    "exit_code": 0,
+    "configure_command": "source /usr/local/Ascend/ascend-toolkit/set_env.sh && cmake -S <route>/phase4/workspaces/R31B -B <route>/phase4/workspaces/R31B/build-n07",
+    "compile_command": "source /usr/local/Ascend/ascend-toolkit/set_env.sh && cmake --build <route>/phase4/workspaces/R31B/build-n07 --target r31b_submission_v011 -j2",
+    "target": "r31b_submission_v011",
+    "artifact_path": "phase4/workspaces/R31B/build-n07/r31b_submission_v011",
+    "artifact_sha256": "6c65ae90f99016eb7546b15e6c6f2fa0d2f7df6ab79253c537df35b10ffe9146",
+    "log_path": "phase4/workspaces/R31B/results/n07_r069_build.log",
+    "log_sha256": "3928e36631f0ff69fd1c1ce4f2b3501f11607ed8b81f3bace07a725dc9a3fc53"
+  },
+  "correctness": {
+    "status": "not_run",
+    "reason": "No device test was started. The R005 BF16 D=8192 diagnostic is a known rejection case and must be included before any promotion decision."
+  },
+  "local": {
+    "status": "not_run",
+    "reason": "The sparse worktree has no Canonical Local runner or scorer; no score is claimed."
+  },
+  "device_id": "NONE",
+  "assessment": {
+    "candidate_status": "build passed; correctness and performance remain unverified; no promotion"
+  }
+}
