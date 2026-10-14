@@ -1,0 +1,38 @@
+{
+  "route": "N06",
+  "revision": "R167",
+  "source_commit": "5e0bfd3792a8d36b459183ad109a289d77272814",
+  "git_parent_commit": "b31abd09beaa200e2ba55145256d2a8f71b323f4",
+  "parent_source_commit": "48872a890af993bffa21b893853a2079cc35f634",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "f8c70e4551a0dbc463d13badc54c9cc1ab935bd68045b225d080ca26345a29a1",
+  "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+  "cmake_sha256": "3a8bc9f92541f92fe403bd7a2c196cb9bf9008cea9c4d668c7b1d603c81b991f",
+  "runner_sha256": "23f6d76d82a7bf645559971d25ee46a6d2d02a59d0f17bf54fed33748196a787",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "In the FP32 wide full-y branch only, swap the adjacent InitBuffer order of valueFp32Buf_ and reduceFp32Buf_. Allocation sizes, total UB use, row chooser inputs, arithmetic, indexing, and synchronization are unchanged.",
+  "hypothesis": "The shape-sized value buffer currently precedes reduction partials, so the reduction buffer base depends on rowWidth and row count. Allocating fixed-size partials before retained y makes their base follow the fixed input tiles; this placement probe does not change reduction topology or assert a bank width or performance gain.",
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "log": "results/build_167.log",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "4a3ad106ee955487e4a8b86baf4c6015850fe9882a1f3d201fc2f031a5d02a1a",
+    "artifact_sha256_file": "results/build-artifact_167.sha256"
+  },
+  "correctness": {
+    "status": "not_run",
+    "command_executed": null,
+    "intended_entry": "./tools/run.sh correctness",
+    "reason": "The route entry accepts only build; no Correctness runner or test files are available in this worktree."
+  },
+  "local": {
+    "status": "not_run",
+    "command_executed": null,
+    "intended_entry": "./tools/run.sh local",
+    "reason": "No Canonical Local runner or scorer is available in this worktree."
+  },
+  "device": "None; compile only, no device work submitted.",
+  "workload": "CANN build only; no shape execution or Local workload ran.",
+  "performance_effect": "Unknown; compile only."
+}
