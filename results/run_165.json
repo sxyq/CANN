@@ -1,0 +1,37 @@
+{
+  "route": "N06",
+  "revision": "R165",
+  "source_commit": "261ad9152bbc3fa509a4417169ff586b0391fc5a",
+  "parent_source_commit": "f4e22f6a4",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "ab66a5a79ed1333b49bc03a8ebeec4cefffea5eec5e462ddf0767188219f37df",
+  "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+  "cmake_sha256": "3a8bc9f92541f92fe403bd7a2c196cb9bf9008cea9c4d668c7b1d603c81b991f",
+  "runner_sha256": "23f6d76d82a7bf645559971d25ee46a6d2d02a59d0f17bf54fed33748196a787",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "Shift only the wide FP16 x conversion scratch view offset from 160B to 224B. The unchanged allocation is tileBytes + 32B + 192B, so the active tile view ends exactly at its existing boundary; total UB use, chooser budget, and other placements are unchanged.",
+  "hypothesis": "The maximum in-bounds transfer-aligned x-scratch phase may alter its placement interaction with neighboring vector and reduction scratch. This is a placement probe; no bank width or performance gain is assumed.",
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "log": "results/build_165.log",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "9567c1c797e43d9f9ba9c1a3f1d73929982194a3de4cf19e585bdd2930f560e8",
+    "artifact_sha256_file": "results/build-artifact_165.sha256"
+  },
+  "correctness": {
+    "status": "not_run",
+    "command_executed": null,
+    "intended_entry": "./tools/run.sh correctness",
+    "reason": "The route entry accepts only build; no Correctness runner or test files are available in this worktree."
+  },
+  "local": {
+    "status": "not_run",
+    "command_executed": null,
+    "intended_entry": "./tools/run.sh local",
+    "reason": "No Canonical Local runner or scorer is available in this worktree."
+  },
+  "device": "None; compile only, no device work submitted.",
+  "workload": "CANN build only; no shape execution or Local workload ran.",
+  "performance_effect": "Unknown; compile only."
+}
