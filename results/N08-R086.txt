@@ -1,0 +1,24 @@
+route=N08
+revision=R086
+parent_sha=4415cc869f685334146ec20c5f0df49484332d9f
+source_commit=4c3b0eca8394535dc467ae1da675f836825153a0
+source=phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+source_sha256=825680e5be3f59b4b5367e8f5441dfd1ebc15ac3657f83421e78ac4f9bf71c09
+
+hypothesis=Refine the wide full-y fallback tile search step from 512 to 256 elements. For the R084 C16 BF16 shape (9x32768), the 176 KiB budget then permits tileWidth=2816 instead of 2560, reducing tileCount from 13 to 12 while keeping every start and valid length 16-element aligned. The candidate leaves valid GM bytes and arithmetic unchanged; its unverified hypothesis is fewer DMA descriptors, not reduced byte traffic.
+scope=ChooseWideFullYRows fallback search step only. No shape dispatch, tail split threshold, valid GM range, output store policy, arithmetic, reduction, row schedule, or UB budget change.
+reference_result=R084 passed Canonical Correctness 7/7 and scored 97.774929 / LOCAL_NEUTRAL / POOR. R084 CORE data: C12 BF16 8x8192; C13 FP16 128x16384; C14 BF16 128x16384; C16 BF16 9x32768. Only C16 has a partial tile in the wide low-precision path; its R084 valid=2048 was already aligned and used exact DataCopy.
+
+build_command=./tools/run.sh build
+build_exit_code=0
+build_log=results/build-20261014T152840+0000.log
+build_log_sha256=9c1b4583de0eae36f414901f048c497d99607c58b44b45436d6e9e172313a41e
+artifact=build/r31b_submission_v011
+artifact_sha256=4aeb690d0c443975e93b0e014e4bfff25a7996020f956296dc167c9367e08b36
+cann=/usr/local/Ascend/ascend-toolkit/latest
+compile_target=ASCEND_COMPUTE_UNIT=ascend910b; --npu-arch=dav-2201
+
+correctness_status=WAITING_FOR_MAIN_CANONICAL_WORKER
+local_status=WAITING_FOR_MAIN_CANONICAL_WORKER
+device_status=NOT_RUN_BY_ROUTE
+performance_status=UNKNOWN
