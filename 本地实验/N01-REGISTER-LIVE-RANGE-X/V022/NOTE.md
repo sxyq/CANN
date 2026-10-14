@@ -34,3 +34,12 @@ ld.lld: undefined symbol: __origin__add_rms_norm_bias_custom<float/half/__bf16>
 - The current route-runner CMake source uses `RUNNER_ASCENDC_ARCH` for both architecture flags, so one value cannot represent the supported pair. This is a confirmed build-parameter mismatch and a plausible cause of the plugin registration error; it does not prove that it is the only cause. No build was rerun.
 - The installed toolkit reports `Version=8.5.T8.0.B060` from `8.5.0.alpha002`, consistent with the recorded N01 Full-link toolchain. The exact-source Runner has not linked Parent or Candidate; Correctness and Local remain unrun.
 - Next: separate the existing Runner's CCE and NPU architecture inputs in its source-controlled build entry, then retry the exact-source build with the same Parent/Candidate SHA values. Until that change is available locally and validated, V022 remains compile-only for the existing `w4r07_runner` path.
+
+## Architecture argument trial (2026-10-15)
+
+- Parent and Candidate were transferred to `/tmp/cann-n01-v022-archsplit-BVRYX2/`; remote SHA-256 values matched the identities above.
+- The existing `build_server3.sh` ran from the current tooling checkout with `RUNNER_BUILD_DIR` set to this N01 temporary directory. To separate the intended CCE and NPU values without editing the shared checkout, `RUNNER_ASCENDC_ARCH` was passed as `dav-c220 --npu-arch=dav-2201`.
+- The generated compile command placed `--cce-aicore-arch=dav-c220 --npu-arch=dav-2201` before `-Xaicore-start`, then emitted `--npu-arch=dav-c220 --npu-arch=dav-2201` again after `-Xhost-end`. Both Parent and Candidate compilation returned 2 with `Unsupported NPU architecture or soc`; no object or linked library was produced.
+- This trial did not run Correctness or Local and did not invoke the NPU. It confirms that the current CMake rule emits a device architecture option in the host-option position; an invocation-only override cannot reliably correct the existing rule.
+- The shared tooling checkout remains untouched and has pre-existing staged/unstaged changes. Its source is not present in this local repository; editing the server checkout would violate the local-development rule. V022 remains compile-only until the existing Runner source is available for a local change and rebuild.
+- The N01-only temporary build directory is removed after this record is committed.
