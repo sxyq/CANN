@@ -1,0 +1,94 @@
+{
+  "route_id": "N07",
+  "revision": "R065",
+  "parent_commit": "03a488cf2744a9978be657d787916822f1920ed0",
+  "source_commit": "fddb9bd9d6d4f61bfde182fae2629d6c53b5649b",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "c03ebd7ef3ca86e41064f05c8543fbf8996c51a539a172915e339f23f53b8d51",
+  "hypothesis": "For wide FP16 rows, a resident full-row gamma/bias cache can reduce repeated parameter GM reads even when it lowers rowsPerBatch, provided the exact per-block batch count and channel tile count do not increase. This targets shapes where the current maximum-row-capacity check rejects a cache configuration that preserves the actual work counts.",
+  "difference_from_recent_candidates": {
+    "r063": "R063 changes BF16 streaming-path tile and row-batch selection. R065 changes only FP16 resident-cache eligibility and leaves the baseline streamed chooser unchanged.",
+    "r064": "R064 reuses BF16 parameter Cast results in ProcessNarrowMidOverlap. R065 uses native FP16 parameter residency in the wide path; it adds no parameter Cast reuse."
+  },
+  "change": {
+    "scope": "FP16 wide parameter-cache eligibility only",
+    "old_condition": "cachedRows >= baselineRows",
+    "new_condition": "Keep the old condition, or admit the cache when baseline total batches exceed active blocks, exact candidate total batches equal baseline total batches, and candidate channel tile count is no greater.",
+    "batch_count": "Sum ceil(rowsOnBlock / rowsPerBatch) over the quotient/remainder row distribution.",
+    "math_or_sync_change": false,
+    "files_changed": [
+      "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc"
+    ]
+  },
+  "static_reachability": {
+    "dtype": "FP16",
+    "shape": [
+      224,
+      8193
+    ],
+    "assumed_available_core_count": 32,
+    "block_count": 32,
+    "dispatch": "rowWidth 8193 is greater than kCacheElems 8192 and enters the wide FP16 path; each block receives 7 rows.",
+    "baseline": {
+      "tile_elems": 3584,
+      "rows_per_batch": 6,
+      "tiles_per_row": 3,
+      "total_batches": 64
+    },
+    "resident_candidate": {
+      "tile_elems": 3584,
+      "rows_per_batch": 4,
+      "tiles_per_row": 3,
+      "total_batches": 64
+    },
+    "old_eligibility": "rejected because 4 < 6",
+    "new_eligibility": "accepted: 64 total batches equals baseline, 3 tiles equals baseline, and baseline has 64 batches across 32 active blocks.",
+    "estimated_parameter_bytes": {
+      "before_streamed_pairs": 2097408,
+      "after_full_row_pair_cache": 1048704,
+      "basis": "Each FP16 gamma+bias row is 8193 * 2 * sizeof(FP16) = 32772 bytes. The baseline streams it twice per block; the cache path loads it once per block. Static estimate only; no canonical shape match or device measurement is claimed."
+    }
+  },
+  "build": {
+    "status": "passed",
+    "entrypoint_command": "./tools/run.sh build",
+    "exit_code": 0,
+    "output": [
+      "-- Configuring done",
+      "-- Generating done",
+      "-- Build files have been written to: /home/data4t2/lelinfeng/cann/worktrees/n07-parameter-tile-reuse/phase4/workspaces/R31B/build-n07",
+      "Consolidate compiler generated dependencies of target r31b_submission_v011",
+      "[ 50%] Building ASC object CMakeFiles/r31b_submission_v011.dir/compile_adapter_v011.asc.o",
+      "[100%] Linking ASC executable r31b_submission_v011",
+      "[100%] Built target r31b_submission_v011"
+    ],
+    "artifact_path": "phase4/workspaces/R31B/build-n07/r31b_submission_v011",
+    "artifact_sha256": "f9288adfdf148dbbc2583a151e2340ea243cf754bcdebd1cf6e5e1b700056d44",
+    "object_sha256": "d4eafccf0fffed5b2a55ba3ef788d793fd01c27941411751bd1f8efa0a99dadb"
+  },
+  "correctness": {
+    "status": "not_run",
+    "command": "./tools/run.sh correctness",
+    "exit_code": 3,
+    "output": "not_run: correctness harness is not present in this sparse worktree"
+  },
+  "local": {
+    "status": "not_run",
+    "command": "./tools/run.sh local",
+    "exit_code": 3,
+    "output": "not_run: canonical Local runner and scorer are not present in this sparse worktree"
+  },
+  "performance_measurement": {
+    "status": "not_run",
+    "device_id": "NONE",
+    "reason": "No route-owned correctness/Local harness is present. No NPU or remote command was launched."
+  },
+  "assessment": {
+    "candidate_status": "build-only; correctness and performance unverified",
+    "promotion": "none",
+    "math_semantics_changed": false,
+    "synchronization_semantics_changed": false,
+    "performance_claim": "None. The traffic reduction is a chooser-level static estimate only.",
+    "next_evidence_needed": "Run correctness and canonical Local for FP16 (M=224, D=8193) or the nearest supported shape when route-owned entries and a coordinated device window are available."
+  }
+}
