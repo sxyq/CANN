@@ -26,3 +26,11 @@ ld.lld: undefined symbol: __origin__add_rms_norm_bias_custom<float/half/__bf16>
 - This is a shared-runner integration failure; the existing V022 full-link PASS remains valid. The exact-source runner never linked, so its device Correctness and Local stages were not run. `CORRECTNESS=NONE_FOR_EXACT_SOURCE_RUNNER`; `LOCAL=NONE`.
 - No route source or Candidate was changed by these attempts. The temporary server build tree and local CMake patch copy are removed after this record is committed.
 - Next: retain V022 as compile-only until an existing exact-source runner can link the two inputs; do not treat the runner plugin error as a Candidate failure or a performance result.
+
+## Runner argument diagnosis (2026-10-15)
+
+- The current server tool checkout is `/home/data4t2/lelinfeng/cann-tooling-runner`, branch `tooling/canonical-route-runner`. Its worktree has staged and unstaged changes in the existing route-runner files and smoke fixtures; Main did not modify them.
+- The retained `build-abi-smoke` Make flags pass `--npu-arch=dav-2201`, but the generated ASC compile rule passes `--cce-aicore-arch=dav-2201`. For this server's CANN 8.5 / Ascend910B3 setup, the CCE architecture is `dav-c220` and the NPU architecture is `dav-2201`.
+- The current route-runner CMake source uses `RUNNER_ASCENDC_ARCH` for both architecture flags, so one value cannot represent the supported pair. This is a confirmed build-parameter mismatch and a plausible cause of the plugin registration error; it does not prove that it is the only cause. No build was rerun.
+- The installed toolkit reports `Version=8.5.T8.0.B060` from `8.5.0.alpha002`, consistent with the recorded N01 Full-link toolchain. The exact-source Runner has not linked Parent or Candidate; Correctness and Local remain unrun.
+- Next: separate the existing Runner's CCE and NPU architecture inputs in its source-controlled build entry, then retry the exact-source build with the same Parent/Candidate SHA values. Until that change is available locally and validated, V022 remains compile-only for the existing `w4r07_runner` path.
