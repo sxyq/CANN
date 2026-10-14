@@ -1,0 +1,50 @@
+{
+  "route": "N06",
+  "revision": "R184",
+  "source_commit": "ae626d37b5a3e5743e290a35eb45f0cdab4ed599",
+  "git_parent_commit": "ec5fd234891f739f4892eb8b85f0d5696d5683a9",
+  "parent_source_commit": "70a075fb7179c2727f2aa0037724b4a15277e566",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "c3f410518e83d98fe21b182c6e861c37590aef13fba8d79e5e299020f949891b",
+  "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+  "cmake_sha256": "3a8bc9f92541f92fe403bd7a2c196cb9bf9008cea9c4d668c7b1d603c81b991f",
+  "runner_sha256": "23f6d76d82a7bf645559971d25ee46a6d2d02a59d0f17bf54fed33748196a787",
+  "mechanism": "UB-BANK-PLACEMENT-X; safety restoration only",
+  "change": "Restored the Kernel file exactly to the R182 source state in a new commit after the R183 alignment audit. No reduction destination layout or merge topology was changed.",
+  "alignment_audit": {
+    "failed_revision": "R183",
+    "failed_source_commit": "70a075fb7179c2727f2aa0037724b4a15277e566",
+    "failed_result_commit": "ec5fd234891f739f4892eb8b85f0d5696d5683a9",
+    "contract": "ReduceSum<float> destination start requires 8-byte alignment.",
+    "finding": "The R183 BF16 padding-reuse path starts partial output at valueFp32Buf_[valueOffsetElems + rowWidth]. For rowWidth=8193 and valueOffsetElems=16, this is float index 8209, which is only 4-byte aligned. With reduceStride=8208 and tileCount=3, tile destinations are at indices 8209, 8210, and 8211; tiles 0 and 2 violate the contract.",
+    "repair_scope": "A stride-2 destination plus serial accumulation would alter reduction topology/order and overlap N09; it was not applied.",
+    "restoration": "R184 restores the exact R182 Kernel source (same SHA-256) and reinstates the dedicated reduceFp32Buf_ path. This is a source restoration, not a safety certification.",
+    "baseline_follow_up": "The restored R182 path still indexes per-tile partial destinations as reduceLocal[batchRow * 16 + tile], so odd tile indices may also be only 4-byte aligned. Main must resolve this baseline-level risk separately; N06 did not change reduction layout."
+  },
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "log": "results/build_184.log",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "8e5e56eec329111edd4715c802b8128a938ac081f77461b1b65a7654b2e28bb6",
+    "artifact_sha256_file": "results/build-artifact_184.sha256"
+  },
+  "correctness": {
+    "status": "not_run",
+    "command_executed": "./tools/run.sh correctness",
+    "exit_code": 2,
+    "output": "usage: ./tools/run.sh build",
+    "reason": "The route entry accepts only build; no Correctness runner or test files are available in this worktree. No device execution occurred."
+  },
+  "local": {
+    "status": "not_run",
+    "command_executed": "./tools/run.sh local",
+    "exit_code": 2,
+    "output": "usage: ./tools/run.sh build",
+    "reason": "No Canonical Local runner or scorer is available in this worktree. No device execution occurred."
+  },
+  "device": "None; compile and runner capability probes only, no NPU work submitted.",
+  "workload": "CANN build only; Correctness and Local commands were rejected by the route entry before execution.",
+  "performance_effect": "Unknown; compile only.",
+  "timestamp_utc": "2026-10-14T09:17:16Z"
+}
