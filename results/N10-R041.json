@@ -8,6 +8,12 @@
   "source_commit": "ee016f70ed58ba87dfb947ac5ee04526c60c1098",
   "source_sha256": "c9b93e16379eeea7d0f9188a31e0bd42d8757d2606a07972ab5c7854f35123bf",
   "change": "In ProcessWideLowPrecision, map physical block b to logical block (b + floor(blockCount / 2)) % blockCount instead of the center-out order. Block count, row ownership set, per-block row count, arithmetic, UB buffers, tile sizes, and reduction topology are unchanged.",
+  "scope_check": {
+    "task_ownership_changed": true,
+    "per_row_scalar_address_generation_changed": false,
+    "per_row_gm_offset_or_stride_formula_changed": false,
+    "details": "Only the physical-block to logical-block ownership mapping changed. Per-row GM address generation, rowOffset/column stride formulas, and Scalar address-generation code remain untouched; no N05 mechanism is included."
+  },
   "scheduler_validation": {
     "command": "python3 -c 'for blocks in range(1,4097): mapping=[(idx+blocks//2)%blocks for idx in range(blocks)]; assert len(set(mapping))==blocks and min(mapping)==0 and max(mapping)==blocks-1; print(\"half-grid rotation bijection passed for blockCount=1..4096\")'",
     "status": "passed",
