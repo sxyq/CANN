@@ -1,0 +1,69 @@
+{
+  "route": "N10",
+  "revision": "R045",
+  "mechanism": "row-to-core balance / per-stripe row-group owner mirror",
+  "hypothesis": "Mirroring logical row-group owners on odd full stripes may alter physical-block to row-band ownership phase across successive stripes while preserving exact per-block row work.",
+  "status": "exploratory_build_passed_correctness_local_unavailable_score_unknown",
+  "parent_candidate": "b2f7390848f0e454d0daf6da0ad97c554f96cbc7",
+  "parent_record_commit": "5299dd683bd051e1be034141940122e3f4769b04",
+  "source_commit": "f43e0b53945e3e753b57bfd603d96571884b9a2c",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "528b02f1f28935f5572e577c9d46a3c02d9fd2a73f49b0c712c3a2290895593e",
+  "change": "In GetGroupedStripeRow for full stripes, compute stripeGroup = ordinal / groupWidth; even stripeGroup values retain logicalBlockIdx ownership and odd stripeGroup values use blockCount - 1 - logicalBlockIdx. Tail row mapping is unchanged.",
+  "distinction_check": {
+    "status": "passed",
+    "evidence": "For blockCount=4 and groupWidth=2, logical block 0 owns baseline rows [0,1,8,9] across two full stripes and R045 rows [0,1,14,15]. R044 only changes visit order and leaves owner sets unchanged; R043 changes only sparse-tail owners; R041 uses one static physical/logical block mapping. No prior N10 result record describes alternating full-stripe owner sets.",
+    "scope_note": "This is a changed row-ownership set, not a batch traversal permutation."
+  },
+  "ownership_validation": {
+    "command": "inline python3 -c enumeration of blockCount 1..24, groupWidth 1..6, fullGroups 0..4, and every possible tail length",
+    "status": "passed",
+    "cases": 31500,
+    "invariants": [
+      "Every row is assigned exactly once across full stripes and the tail.",
+      "Per-block total row counts differ by at most one.",
+      "Every full stripe assigns exactly one groupWidth-sized row group to each logical block."
+    ],
+    "scope_note": "Static ownership validation only; not runtime correctness, performance, or Core-utilization validation."
+  },
+  "scope_check": {
+    "task_ownership_changed": true,
+    "per_row_scalar_address_generation_changed": false,
+    "per_row_gm_offset_or_stride_formula_changed": false,
+    "gm_tile_transaction_changed": false,
+    "arithmetic_changed": false,
+    "tail_mapping_changed": false,
+    "details": "Only full-stripe logical block ownership of row groups alternates by stripe parity. Row group size, row counts, all tail ownership, rowOffset = sourceRow * rowWidth, output row stride, GM transaction sizes, arithmetic, UB buffers, reduction topology, and traversal order are otherwise unchanged."
+  },
+  "build": {
+    "command": "./tools/run.sh build",
+    "status": "passed",
+    "return_code": 0,
+    "log": "build-20261014T051853959414192Z.log",
+    "kernel_sha256": "528b02f1f28935f5572e577c9d46a3c02d9fd2a73f49b0c712c3a2290895593e",
+    "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+    "cmake_sha256": "435cd84be945c1757159940c4c36fbab97fb06e9bf14e8a746a8121b42dda9fc",
+    "artifact_sha256": "786969647270bb7a58c61f610e214153a15dfa31446a04cbb4b44cad571f37b7"
+  },
+  "correctness": {
+    "status": "unavailable",
+    "attempt_status": "not_run",
+    "command": "./tools/run.sh correctness",
+    "return_code": 127,
+    "log": "correctness-20261014T052005674317511Z.log",
+    "reason": "The N10 worktree contains no correctness runner; the existing entry reports not_run and RC 127. No kernel correctness test executed."
+  },
+  "local": {
+    "status": "unavailable",
+    "attempt_status": "not_run",
+    "command": "./tools/run.sh local",
+    "return_code": 127,
+    "log": "local-20261014T052046483754699Z.log",
+    "reason": "The N10 worktree contains no Canonical Local runner; the existing entry reports not_run and RC 127. No Local measurement or score was produced."
+  },
+  "local_score": "UNKNOWN",
+  "performance_claim": null,
+  "device_id": null,
+  "free_hbm_mb": null,
+  "isolation": "worktree-level soft isolation only; no OS-level filesystem or Git object boundary"
+}
