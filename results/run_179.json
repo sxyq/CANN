@@ -1,0 +1,42 @@
+{
+  "route": "N06",
+  "revision": "R179",
+  "source_commit": "acb7631da96dc223a0292cc5e6e9070137af6787",
+  "git_parent_commit": "41bf0a0fec4057bd9a78d87cb3000fd546a4be52",
+  "parent_source_commit": "17019efe8849ee6f70e575243d43bc95d29e6392",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "6a9b5b69a717b3fe8a5eb7d563355afd88ebceaa74aee4605381806167598a86",
+  "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+  "cmake_sha256": "3a8bc9f92541f92fe403bd7a2c196cb9bf9008cea9c4d668c7b1d603c81b991f",
+  "runner_sha256": "23f6d76d82a7bf645559971d25ee46a6d2d02a59d0f17bf54fed33748196a787",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "Increase the wide BF16 xFp32 view phase from 32B to 64B. Use that view phase for xFp32Buf_ capacity and account for the additional 32B in ChooseWideFullYRows work-scratch budgeting. Arithmetic and event order are unchanged.",
+  "hypothesis": "The wide BF16 xFp32 scratch currently starts at a 32B view phase. Moving the view to 64B may improve or worsen local UB interactions. Allocation and row-fit budgeting reflect the additional phase. No physical bank mapping or performance effect is inferred from compile output.",
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "log": "results/build_179.log",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "77e5c813363f14a9c4fc983169b841f01302dd40b444c09a21f8d8ad0bf3bfa7",
+    "artifact_sha256_file": "results/build-artifact_179.sha256"
+  },
+  "correctness": {
+    "status": "not_run",
+    "command_executed": "./tools/run.sh correctness",
+    "exit_code": 2,
+    "output": "usage: ./tools/run.sh build",
+    "reason": "The route entry accepts only build; no Correctness runner or test files are available in this worktree."
+  },
+  "local": {
+    "status": "not_run",
+    "command_executed": "./tools/run.sh local",
+    "exit_code": 2,
+    "output": "usage: ./tools/run.sh build",
+    "reason": "No Canonical Local runner or scorer is available in this worktree."
+  },
+  "device": "None; compile only, no NPU work submitted.",
+  "device_context": "No fresh host/NPU probe for R179. The most recent Main read-only snapshot and cann-server3 resolution failure are recorded in results/run_175.json.",
+  "workload": "CANN build only; no shape execution, Correctness, or Local workload ran.",
+  "performance_effect": "Unknown; compile only.",
+  "timestamp_utc": "2026-10-14T07:22:38Z"
+}
