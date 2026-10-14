@@ -41,17 +41,21 @@
 |---|---|---|---|---|
 | 128x12288 | FP16 | Parent/Candidate PASS，mismatch=0 | 未运行 | 原始输出见 `logs/corr-128x12288-fp16-*` |
 | 128x12288 | BF16 | Parent/Candidate PASS，mismatch=0 | 未运行 | 原始输出见 `logs/corr-128x12288-bf16-*` |
-| 128x32768 | FP16 | Parent/Candidate PASS，mismatch=0 | 未运行 | 原始输出见 `logs/corr-128x32768-fp16-*` |
-| 128x32768 | BF16 | Parent/Candidate PASS，mismatch=0 | 未运行 | 原始输出见 `logs/corr-128x32768-bf16-*` |
+| 128x32768 | FP16 | Parent/Candidate PASS，mismatch=0 | Parent same-binary 62 条，中位 67.47 µs、MAD/中位 8.17%；配对 Parent/Candidate 中位 66.45/66.59 µs，观测比值 +0.21%，受并发负载影响，不计 Local | 原始样本及统计见 `logs/n02-v2-local-20261014T083927Z/` |
+| 128x32768 | BF16 | Parent/Candidate PASS，mismatch=0 | Parent same-binary 62 条，中位 92.42 µs、MAD/中位 10.11%；配对 Parent/Candidate 中位 96.57/96.04 µs，观测比值 -0.55%，受并发负载影响，不计 Local | 原始样本及统计见 `logs/n02-v2-local-20261014T083927Z/` |
 
 - 每个 shape/dtype 的 Parent 与 Candidate 均单独运行既有 `w4r07_runner` 的 `correctness-only`，Runner 返回码均为 `0`，共 8 次；FP16 最大绝对误差 `0.001953125`，BF16 `0.0078125`，均为 0 mismatch、0 nonfinite。
 - Correctness 原始 stdout/stderr/TSV 和源码/对象身份记录均保存在 `本地实验/N02-CODE-FOOTPRINT-ICACHE-X/logs/`。
 - 开始快照 `2026-10-14T05:12:10Z`：NPU6 HBM `59876/65536 MB`（5660 MB 可用）、AICore `0%`；VLLMWorker_TP PID `3357697` 使用 `56355 MB`，未触碰。
 - 结束快照 `2026-10-14T05:20:23Z`：NPU6 HBM `59875/65536 MB`（5661 MB 可用）、AICore `0%`；同一 VLLMWorker 仍在，Runner 精确进程查询返回 `1`（无 w4r07_runner 运行）。
-- Same-binary 与 paired Local 未运行；其他用户的 VLLM Worker 持续占用 NPU6，故 `LOCAL_SCORE=NONE`，没有性能结论。
+- `2026-10-14T08:39:27Z` 开始一次有限 Local：复用既有 Runner，在 `rows=128,width=32768` 上测 FP16、BF16；每种 dtype Parent same-binary 为 45 warmups、31 samples×2 blocks，paired 为 45 warmups、31 pairs×4 blocks。四次 Runner 均返回 `0`；每个 dtype 保存 62 条 same-binary 及 124 对 Parent/Candidate 原始样本。结束时间 `08:43:35Z`。
+- 设备前快照 `08:43:03Z` 已显示 NPU6 HBM `91%`、AICore `41%`、AIVector `28%`、HBM 带宽 `44%`；VLLMWorker_TP PID `3357697` 使用 `56355 MB`。各阶段结束快照保持 AICore `41–42%`、AIVector `27–28%`、HBM 带宽 `44%`。该进程未触碰；测量受并发负载影响，不能作为 Candidate 性能结论。
+- FP16 配对样本中，Candidate 较快 55/124 对，Parent/Candidate 中位数比值 `+0.21%`；BF16 较快 67/124 对，中位数比值 `-0.55%`。PC/CP 次序的差异和高设备负载均保留在统计文件中；`LOCAL_SCORE=NONE`。
+- 本轮计时前直接调用 Runner `--help` 因未加载 CANN 环境返回 `127`（缺少 `libruntime.so`），未进入设备。随后按既有环境脚本顺序加载 CANN 后完成上述实验，没有重复该失败命令。
+- Local 原始 TSV、stdout/stderr、负载快照、命令返回码及统计汇总保存在 `logs/n02-v2-local-20261014T083927Z/`。本轮未重新编译，Parent、Candidate、动态库与 Runner 的 SHA 均与已保存构建身份相符。
 
 ## 当前判断
 
 - 建议：`INVESTIGATE_NEXT`。
-- 依据：Candidate 输入与编译依赖已确认，Parent/Candidate 在四个 shape/dtype 组合全部 Correctness PASS；尚无 same-binary 或 paired Local，不能判断关闭展开是否改变设备热点代码或性能。
-- 源码保持原样，未开始下一版。
+- 依据：Parent/Candidate 在四个 shape/dtype 组合全部 Correctness PASS，且当前 Candidate 已完成一次 same-binary 与 paired 采集；但计时窗口开始前和全过程均有明显设备负载，故这些延迟只作原始观察，不能判定关闭展开是否改变了有效设备热点或性能。
+- 不重复测量同一 Candidate。设备指令形态仍未确认：CANN 8.5 的 `llvm-objdump --show-aicore-bins` 对现有 `.o`/`.so` 未列出设备段；`readelf` 可见 `.aicore_binary`，但该工具的 `--disassemble-aicore --section=.aicore_binary` 返回段不存在。下一步沿 CANN 8.5 编译器的设备代码导出入口，比较现有 Parent/Candidate 的 Pass2 `batchRow` 循环；再据此选择不同的代码布局假设。Candidate 源码本轮未改动。
