@@ -1,0 +1,73 @@
+{
+  "route": "N10",
+  "revision": "R043",
+  "mechanism": "row-to-core balance / sparse tail owner alignment",
+  "hypothesis": "When at least one full row stripe precedes a tail shorter than blockCount, assigning the sparse tail to the logical-block suffix may reduce each active block's row-address gap from its final full-stripe group while preserving one row per active block.",
+  "status": "exploratory_build_passed_correctness_local_unavailable_score_unknown",
+  "parent_candidate": "4c297651a26fb549ef6bc7be2f2a70feac7ae520",
+  "parent_record_commit": "5a45f35416fb629dd339fea48f6d3604576d87e7",
+  "source_commits": [
+    "01728f2309ac996f4f22501841b228477cf106e5",
+    "04650eef51d89f4291409c0b7eeed08cc6d2a892"
+  ],
+  "source_commit": "04650eef51d89f4291409c0b7eeed08cc6d2a892",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "9f5013434b5aa821c060684d7ad6617cf75fdb03be9c6f659421316de36318a7",
+  "change": "In ProcessWideLowPrecision, only when fullGroups > 0, tailRows < blockCount, and rowGroupWidth > 1, shift the active one-row tail owners to the logical-block suffix and assign tail rows in increasing owner order. Inactive owners use a zero-row rank. All other cases retain R042 ownership.",
+  "scope_check": {
+    "task_ownership_changed": true,
+    "full_stripe_row_ownership_changed": false,
+    "physical_to_logical_block_mapping_changed": false,
+    "per_row_scalar_address_generation_changed": false,
+    "per_row_gm_offset_or_stride_formula_changed": false,
+    "gm_tile_transaction_changed": false,
+    "details": "Only sparse tail row ownership changes for low-precision wide rows with at least one complete stripe and rowGroupWidth > 1. Full stripes, row-group widths, chunk sizes, GM load/store sizes, rowOffset = sourceRow * rowWidth, output row stride, arithmetic, UB buffers, and reduction topology are unchanged. Correctness and performance are not inferred from static validation or Build."
+  },
+  "ownership_validation": {
+    "command": "inline python3 -c static enumeration (no file): blockCount 1..48, groupWidth 1..8, all tailRows within a stripe, and fullGroups 0, 1, 3",
+    "status": "passed",
+    "boundary_cases": 127008,
+    "invariants": [
+      "Every row is assigned exactly once.",
+      "Tail chunks form a contiguous partition of the incomplete stripe.",
+      "Per-block tail row counts differ by at most one.",
+      "The R043 owner shift is limited to fullGroups > 0, tailRows < blockCount, and groupWidth > 1."
+    ],
+    "sparse_tail_boundary_gap_model_rows": {
+      "maximum_before": 377,
+      "maximum_after": 369,
+      "note": "Static row-index model over eligible enumerated cases only; not runtime correctness, performance, or Core-utilization validation."
+    }
+  },
+  "build": {
+    "command": "./tools/run.sh build",
+    "status": "passed",
+    "return_code": 0,
+    "log": "build-20261014T044453009503278Z.log",
+    "kernel_sha256": "9f5013434b5aa821c060684d7ad6617cf75fdb03be9c6f659421316de36318a7",
+    "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+    "cmake_sha256": "435cd84be945c1757159940c4c36fbab97fb06e9bf14e8a746a8121b42dda9fc",
+    "artifact_sha256": "43a2d923bc23a5c7e289110bb885cecb39b029c9712e15652280797191e44651"
+  },
+  "correctness": {
+    "status": "unavailable",
+    "attempt_status": "not_run",
+    "command": "./tools/run.sh correctness",
+    "return_code": 127,
+    "log": "correctness-20261014T044540196299478Z.log",
+    "reason": "The N10 worktree contains no correctness runner; the existing entry reports not_run and RC 127. No kernel correctness test executed."
+  },
+  "local": {
+    "status": "unavailable",
+    "attempt_status": "not_run",
+    "command": "./tools/run.sh local",
+    "return_code": 127,
+    "log": "local-20261014T044607809894425Z.log",
+    "reason": "The N10 worktree contains no Canonical Local runner; the existing entry reports not_run and RC 127. No Local measurement or score was produced."
+  },
+  "local_score": "UNKNOWN",
+  "performance_claim": null,
+  "device_id": null,
+  "free_hbm_mb": null,
+  "isolation": "worktree-level soft isolation only; no OS-level filesystem or Git object boundary"
+}
