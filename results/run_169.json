@@ -1,0 +1,38 @@
+{
+  "route": "N06",
+  "revision": "R169",
+  "source_commit": "a2375a9184d160dde9111139dfb3581060ac2db1",
+  "git_parent_commit": "5ac20b7f8da4b69511577b731e314366b88e8deb",
+  "parent_source_commit": "db675f42709813e4a353ecfdf8b667aea63952cd",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "c9cc37d8e0e42a90f0ef83fde5573b02e357a20789ef2cf6312c85e3aeaee4c3",
+  "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+  "cmake_sha256": "3a8bc9f92541f92fe403bd7a2c196cb9bf9008cea9c4d668c7b1d603c81b991f",
+  "runner_sha256": "23f6d76d82a7bf645559971d25ee46a6d2d02a59d0f17bf54fed33748196a787",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "In the wide BF16 full-y branch, add a 32B tail phase to retained-y valueFp32Buf_ and start the active value view 32B into that allocation. Include the extra 32B in ChooseWideFullYRows budgeting. Allocation order, arithmetic, indexing, and synchronization are otherwise unchanged.",
+  "hypothesis": "A retained-y active-base phase may change its UB placement interaction with neighboring scratch independently of R166's BF16 x-conversion/output allocation order and R167-R168's FP32 retained-y allocation order. This is a placement probe, not a claimed bank-width or performance result.",
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "log": "results/build_169.log",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "eb8705ded04d6511576ad0fcbedfc3ca903649ff5e56fe06646180459cec3d3b",
+    "artifact_sha256_file": "results/build-artifact_169.sha256"
+  },
+  "correctness": {
+    "status": "not_run",
+    "command_executed": null,
+    "intended_entry": "./tools/run.sh correctness",
+    "reason": "The route entry accepts only build; no Correctness runner or test files are available in this worktree."
+  },
+  "local": {
+    "status": "not_run",
+    "command_executed": null,
+    "intended_entry": "./tools/run.sh local",
+    "reason": "No Canonical Local runner or scorer is available in this worktree."
+  },
+  "device": "None; compile only, no device work submitted.",
+  "workload": "CANN build only; no shape execution or Local workload ran.",
+  "performance_effect": "Unknown; compile only."
+}
