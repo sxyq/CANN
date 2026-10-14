@@ -1,0 +1,27 @@
+route=N08
+revision=R072
+parent_sha=bde40bf96cfaeabbe9be0640a729b8a6ec9b947d
+source_commit=ec4c60ee51443b82eec101a96d1e31c67c26002b
+built_tree_head=ec4c60ee51443b82eec101a96d1e31c67c26002b
+source=phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+source_sha256=b7779843269fe24504b5e96231de25f0186c45ab3ad376fc9cb3f8e2d4b492a2
+artifact=build/r31b_submission_v011
+artifact_sha256=b479341f5aef1bd1c4c7138f6fe85dfcb59c8ba59abc148c5c15799c0c57d435
+
+hypothesis=When a nonzero-prefix tail's covered range ends exactly on a data-block boundary, use the existing aligned DataCopy path even for an in-bounds GM window rejected by the rounded-read budget, provided prefix <= count and the exact aligned range fits tileCapacity. This may trade 1.5x-2x input bytes for an aligned transfer instead of an exact-range DataCopyPad per input.
+evidence=For B=16,prefix=12,count=20, coveredCount=32 and exactTailCount=0; the in-bounds rounded-read gate rejects the 32-element window because 20 < 2*(32-20)=24. The old guard then falls through to exact 20-element DataCopyPad calls, while R072 can issue aligned 32-element DataCopy calls from offset-prefix and returns prefix=12. This reads only the leading prefix before the valid range, ends exactly at offset+count, and is bounded by the existing tile-capacity check. The prefix <= count guard caps added bytes at the valid count. This is path-selection reasoning, not a performance result.
+scope=The exact-end aligned paired-read fallback in LoadTailPair only. Source endpoint, local tile capacity, returned prefix, consumer range, arithmetic, reduction, scheduling, tile sizing, UB placement, and out-of-bounds behavior are unchanged.
+
+build_command=./tools/run.sh build
+build_exit_code=0
+build_log=results/build-20261014T015844+0000.log
+build_log_sha256=9c1b4583de0eae36f414901f048c497d99607c58b44b45436d6e9e172313a41e
+cann=/usr/local/Ascend/ascend-toolkit/latest
+compile_target=ASCEND_COMPUTE_UNIT=ascend910b; --npu-arch=dav-2201
+
+correctness_status=NOT_RUN
+correctness_reason=This Route worktree's tools/run.sh exposes only the build command; no route-local correctness runner or inputs are present. The existing canonical sweep covers through R071, not R072.
+local_status=NOT_RUN
+local_reason=This Route worktree exposes no Canonical Local runner, inputs, or scorer for R072. No Local Score or performance conclusion is claimed.
+device_status=NOT_USED
+remote_status=NOT_ATTEMPTED
