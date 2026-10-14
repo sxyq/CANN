@@ -1,0 +1,34 @@
+{
+  "route": "N06",
+  "revision": "R196",
+  "source_commit": "e1428154875761acf52fd1f5a39f7172a79f3286",
+  "git_parent_commit": "507167b5e55df59f673aa119c8e401ae548ceaf0",
+  "parent_source_commit": "bf8a2261a6a08d7d82d48a3ff348c679830a0b30",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "9b0231146e636f2469a0ff245238317c71084dc9280fa09bbea3830dee45cb1e",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "Relative to R195, change kWideBf16ResidualFp32PhaseBytes from 64 to 96 bytes (3 * 32B). The shared constant controls the BF16 residualFp32Buf_ view prefix, allocation capacity, and ChooseWideFullYRows scratch budget. This is the final TBuf allocation, so the extra 32B does not shift later buffer bases. R195's 160B ReduceSum partial phase remains unchanged; no arithmetic or event order changed.",
+  "hypothesis": "Pass 1 uses residualFp32 scratch first as the widened residual destination, then overwrites it with y squared before ReduceSum consumes it. Moving this active view from 64B to 96B changes its phase relative to retained y and reduction workspaces and may change local UB interactions. It may help, hurt, or be neutral; no physical bank mapping is inferred. The added capacity is included in the row-fit budget and could change retained-row count for near-budget widths. This is distinct from R195's ReduceSum partial-view placement.",
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "status": "PASS",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "e53de211be1d38ca12d9df8fcd3ba9c291481d19fa7a07b994a68d43f944e90a",
+    "log": "results/build_196.log",
+    "sha_file": "results/build-artifact_196.sha256"
+  },
+  "correctness": {
+    "status": "NOT_RUN",
+    "reason": "Deferred to Main's authorized Canonical Worker; no device test was started from this worktree."
+  },
+  "local": {
+    "status": "NOT_RUN",
+    "reason": "Deferred to Main's authorized Canonical Worker; no device test was started from this worktree."
+  },
+  "device": {
+    "status": "NO_WORKLOAD",
+    "reason": "This revision ran only the local CANN Build command; no device command was issued."
+  },
+  "performance_conclusion": "UNKNOWN: build passed; Correctness and Canonical Local results are pending Main's worker."
+}
