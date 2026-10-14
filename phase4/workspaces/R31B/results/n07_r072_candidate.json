@@ -1,0 +1,57 @@
+{
+  "route_id": "N07",
+  "revision": "R072",
+  "branch": "research/n07-parameter-tile-reuse",
+  "parent_sha": "44a49d3bbdcb21cef4e639bbbeee940c6829d449",
+  "source_parent_commit": "df004893c84d308ab41964c717d5471a69052fc7",
+  "source_commit": "48b22722112d1416d405cb7bfc70d2819b51bae5",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "98adb7113d2408d1ba558823eef0148233dc6edba7f0cde9794e3a25fd6ec9fc",
+  "hypothesis": "Allow the resident-parameter-cache selector to consider wider aligned tiles, so a UB-feasible tile can reduce repeated parameter/output tile iterations on long rows. No runtime gain is assumed.",
+  "change": {
+    "scope": "ChooseWideFullYRows residentParameterBytes > 0 candidate search only",
+    "behavior": "Add an 8192-element search ceiling for parameter-cache selection. The baseline wide-row tile remains 4096; the existing UB budget, row-capacity calculation, tile-count limit, and ranking still govern selection.",
+    "math_semantics_changed": false,
+    "output_order_changed": false,
+    "files_changed": [
+      "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc"
+    ]
+  },
+  "static_reachability": {
+    "dtype": "FP32, FP16, BF16 parameter-cache paths",
+    "condition": "wide row and resident parameter-cache candidate with sufficient UB budget",
+    "example": "For width 8193, an 8192-element tile has 2 tiles versus 3 at 4096; the selector may choose it only when the existing budget and ranking permit.",
+    "parameter_tile_count_for_width_8193": {
+      "4096": 3,
+      "8192": 2
+    }
+  },
+  "build": {
+    "status": "passed",
+    "entrypoint_command": "./tools/run.sh build",
+    "exit_code": 0,
+    "target": "r31b_submission_v011",
+    "artifact_path": "phase4/workspaces/R31B/build-n07/r31b_submission_v011",
+    "artifact_sha256": "82b80a2840597a7aeb0b748f72eb2453fab34471ca6089387d1475db3f0a2530",
+    "log_path": "phase4/workspaces/R31B/results/n07_r072_build.log",
+    "log_sha256": "3928e36631f0ff69fd1c1ce4f2b3501f11607ed8b81f3bace07a725dc9a3fc53"
+  },
+  "correctness": {
+    "status": "not_run",
+    "entrypoint_command": "./tools/run.sh correctness",
+    "exit_code": 3,
+    "reason": "not_run: correctness harness is not present in this sparse worktree"
+  },
+  "local": {
+    "status": "not_run",
+    "entrypoint_command": "./tools/run.sh local",
+    "exit_code": 3,
+    "reason": "not_run: canonical Local runner and scorer are not present in this sparse worktree"
+  },
+  "device_id": "NONE",
+  "assessment": {
+    "candidate_status": "build passed; correctness and Canonical Local remain unverified",
+    "promotion": "none",
+    "performance_claim": "None; no device correctness, Local score, or profile was collected."
+  }
+}
