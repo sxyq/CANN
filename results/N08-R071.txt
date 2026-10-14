@@ -1,0 +1,31 @@
+route=N08
+revision=R071
+parent_sha=291861a37be133892759a452fd535aaea2fb0633
+source_commit=266f1f9246fca540c91f1f4ce3e1ef4112893706
+built_tree_head=266f1f9246fca540c91f1f4ce3e1ef4112893706
+source=phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+source_sha256=17f8d618b2c7e85ef6ee9e17e2541f8dd3adbe0a6181e84f77bb610ef3b0026d
+artifact=build/r31b_submission_v011
+artifact_sha256=47e052816390405644d175b1dd8d859366c60ddf3c601cf03b139e5413634064
+aicore_binary_section_sha256=6af0ce799918ba392f746fd755a0feabe6b0e5dfd8419912e8837119a583f9e4
+
+hypothesis=Disable in-bounds paired body-plus-suffix reads by requiring a body of at least five data blocks, while preserving historical out-of-bounds split eligibility; under the current 4096-element capacity and one-half read-excess / split-margin gates, this selects exact paired DataCopyPad for every in-bounds rejected rounded window.
+evidence=The current prefix-zero and nonzero-prefix rounded-read gates reject windows only when roundedCount-count > count/2. Since prefix<B and roundedCount-prefix-count<B, the resulting coveredCount=prefix+count is less than about 1.5*count and at most 1.5*4096; alignedBodyCount is therefore at most 4B for B=8/16. Enumeration of B=8/16, prefix in [0,B), count in [1,4095], capacity=4096 found maximum in-bounds split body 4B (32/64 elements), so the new 5B gate admits no in-bounds split. Consequently a rejected in-bounds rounded pair uses one exact-count DataCopyPad per input instead of a body DataCopy plus suffix DataCopyPad. The out-of-bounds edge prefix=10,count=7 (B=16) bypasses the body threshold and retains historical split eligibility (7>2). Build succeeded with exit code 0; full artifact and extracted .aicore_binary section hashes differ from the pre-build artifact, demonstrating generated-artifact changes only. No correctness or performance conclusion is supported.
+scope=Eligibility for in-bounds paired body-plus-suffix fallback reads in LoadTailPair only. Historical out-of-bounds eligibility, GM ranges, consumer count, arithmetic, reduction, scheduling, tile sizing, and UB placement are unchanged.
+
+build_command=./tools/run.sh build
+build_exit_code=0
+build_log=results/build-20261013T140412+0000.log
+cann=/usr/local/Ascend/ascend-toolkit/latest
+compile_target=ASCEND_COMPUTE_UNIT=ascend910b; --npu-arch=dav-2201
+previous_artifact_sha256=5f7a58da20db5c71e3ce2e0da3b5e43e285cff5f628fafa7cfa7876780f10037
+previous_aicore_binary_section_sha256=d1960e50bcefe8ae5aa678fb356a47482616ef5cb7d5f4117181b420fbc2fe7f
+previous_artifact_note=The pre-build full artifact hash differs from the R070 record (0b7743ffba79ab6c463a09519f42e14f20993434c7e9bd4eadf5633c50776c49), while the extracted .aicore_binary section hash matches the R070 record; the measured pre-build file is used as the comparison baseline, and the cause of the full-file difference is unknown.
+artifact_changed=true
+
+correctness_status=NOT_RUN
+correctness_reason=The route worktree exposes no correctness runner or inputs.
+local_status=NOT_RUN
+local_reason=The route worktree exposes no Canonical Local runner, inputs, or scorer. No Local Score is claimed.
+device_status=NOT_USED
+remote_status=NOT_ATTEMPTED
