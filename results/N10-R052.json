@@ -1,0 +1,72 @@
+{
+  "route": "N10",
+  "revision": "R052",
+  "mechanism": "row-to-core balance / phase-rotated row-group ownership",
+  "hypothesis": "Rotating the block owner by one lane on each row-group wave changes which rows each block processes while retaining balanced group counts. It may change inter-block GM access scheduling; no performance benefit is assumed without device measurements.",
+  "status": "exploratory_static_validation_build_passed_correctness_local_pending",
+  "parent_candidate": "c0768c41ae7413e33be4146c5471e682f3fed2f8",
+  "parent_record_commit": "d48e2a13eb83bec0ba4f7e585e5dde301405536a",
+  "source_commit": "d22276e550946f9ea85bc04a17256728be32e5e3",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "0ab55d6f50c194257a44d50ba033a40612a5899570b0c2e615ff30a6d1569b7c",
+  "change": "For rowCount == 128 and rowWidth == 16384 in ProcessWideLowPrecision, use group width 2 when blockCount <= 64 and width 1 otherwise. For local group ordinal t, map block j to global group t * blockCount + (j + t) % blockCount. Compute the partial-tail group count from the same phase-shifted owner formula. Input loads, prefetched loads, and output stores use the same row mapping. Other shapes retain GetBalancedRowRange. Arithmetic, tile sizes, UB buffers, and reduction logic are unchanged.",
+  "ownership_validation": {
+    "command": "node -e 'const n=128;let nonEquivalent=0;for(let b=1;b<=n;b++){const g=b<=64?2:1,m=n/g,q=Math.floor(m/b),r=m%b,seen=new Uint8Array(n),loads=[];for(let j=0;j<b;j++){const newGroups=q+(((j+q)%b)<r?1:0),oldGroups=q+(j<r?1:0),newRows=[],oldRows=[];for(let k=0;k<newGroups;k++){const group=k*b+((j+k)%b);for(let lane=0;lane<g;lane++){const row=group*g+lane;if(row>=n||seen[row])throw Error(`invalid b=${b} row=${row}`);seen[row]=1;newRows.push(row);}}for(let k=0;k<oldGroups;k++)for(let lane=0;lane<g;lane++)oldRows.push((k*b+j)*g+lane);loads.push(newRows.length);if(newRows.length!==oldRows.length||newRows.some((x,i)=>x!==oldRows[i]))nonEquivalent++;}if(seen.some(x=>x!==1))throw Error(`gap b=${b}`);if(Math.max(...loads)-Math.min(...loads)>g||Math.min(...loads)<1)throw Error(`balance b=${b}`)}if(nonEquivalent<1)throw Error(\"no per-block mapping difference from R051\");console.log(`phase-rotated mapping: N=128, B=1..128, coverage/uniqueness/nonempty/balance PASS; per-block assignments differ from R051 in ${nonEquivalent} cases`)'",
+    "status": "passed",
+    "cases": 128,
+    "canonical_row_counts": {
+      "C13": 128,
+      "C14": 128
+    },
+    "raw_output": "phase-rotated mapping: N=128, B=1..128, coverage/uniqueness/nonempty/balance PASS; per-block assignments differ from R051 in 3133 cases",
+    "invariants": [
+      "For every tested blockCount, row groups cover [0, 128) exactly once with no out-of-range rows.",
+      "Every block receives at least one group for the supported 1 <= blockCount <= 128 range.",
+      "Per-block row counts differ by at most the configured group width (two rows for blockCount <= 64; one row otherwise).",
+      "The block-to-row assignment differs from R051's fixed group-cyclic mapping for non-degenerate multi-wave cases."
+    ],
+    "scope_note": "Static mapping validation only; not runtime correctness, physical-core behavior, or performance validation."
+  },
+  "scope_check": {
+    "task_ownership_changed": true,
+    "full_stripe_row_ownership_changed": true,
+    "sparse_tail_row_ownership_changed": true,
+    "per_row_scalar_address_generation_changed": false,
+    "row_offset_formula_changed": false,
+    "gm_tile_transaction_changed": false,
+    "arithmetic_changed": false,
+    "details": "For exact C13/C14 dimensions, each row-group wave rotates block ownership by one lane. Tail-group ownership uses the same phase. Source, prefetch, and output mappings agree; each row's GM tile remains contiguous. No other shape or arithmetic, UB buffer, tile, or reduction logic changes."
+  },
+  "build": {
+    "command": "./tools/run.sh build",
+    "status": "passed",
+    "return_code": 0,
+    "log": "build-20261014T183007812870640Z.log",
+    "kernel_sha256": "0ab55d6f50c194257a44d50ba033a40612a5899570b0c2e615ff30a6d1569b7c",
+    "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+    "cmake_sha256": "435cd84be945c1757159940c4c36fbab97fb06e9bf14e8a746a8121b42dda9fc",
+    "artifact_sha256": "228720ad69cb484bdf2cd4a95bf9b44a7148f494d367f06d54e9e3ced394b0cd"
+  },
+  "correctness": {
+    "status": "pending",
+    "attempt_status": "not_run",
+    "command": "./tools/run.sh correctness",
+    "return_code": null,
+    "log": null,
+    "reason": "Not started. Awaiting Main's single-device Canonical validation for R052."
+  },
+  "local": {
+    "status": "pending",
+    "attempt_status": "not_run",
+    "command": "./tools/run.sh local",
+    "return_code": null,
+    "log": null,
+    "reason": "Not started. Awaiting Main's single-device Canonical validation for R052."
+  },
+  "device_context_record": null,
+  "local_score": "UNKNOWN",
+  "performance_claim": null,
+  "device_id": null,
+  "free_hbm_mb": null,
+  "isolation": "worktree-level soft isolation only; no OS-level filesystem or Git object boundary"
+}
