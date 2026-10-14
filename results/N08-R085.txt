@@ -1,0 +1,24 @@
+route=N08
+revision=R085
+parent_sha=cae4b01cd4e863f0bf550f2bbe0f139c5b56d645
+source_commit=cf23d4f72576696e72ba699c7b0ef4ab859a1744
+source=phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+source_sha256=6b24cf089029d0d6a254632860c1122fe573fb3fa9933372a3cb88b987c26a4a
+source_changed=false
+
+inspection_scope=Current N08 Kernel tail-output callsites and the current R084 record only. No history/ref scan.
+decision=NO_CANDIDATE_CURRENT_TAIL_TRANSACTION_MUTATION_SPACE_EXHAUSTED
+finding=StoreTailFromAlignedRow's aligned split emits a body over [offset, offset+bodyCount) and an exact suffix over [offset+bodyCount, offset+count); the ranges are adjacent and disjoint. Its fallback Store uses DataCopyPad blockLen=count*sizeof(T), so it specifies only valid output bytes. Callers provide aligned UB starts before a DataCopy split, while DataCopyPad handles the exact partial length. No repeated GM/UB element range or independently removable suffix descriptor was found.
+reachable_grouped_example=For FP32 rowWidth=8200, tileWidth=4096, col=8192, valid=8, B=8, and a local batchRows=4, ChooseWideFullYRows selects four rows within the 176 KiB budget (164224 bytes). The active ProcessWideFp32FullCacheRows grouped tail uses one DataCopyPad descriptor: GM start=batchBegin*8200+8192 floats, blockLen=32 bytes, dstStride=32768 bytes; UB start=valueLocal[8192], srcStride=1024 data blocks. Each row's block starts 32800 bytes apart (32-byte block plus stride), so the descriptor writes 4 distinct 8-float tails, 128 bytes total, without duplicated bytes. This is the already-grouped aligned path, not a new candidate.
+per_row_example=For FP32 rowWidth=8201, tileWidth=4096, row 0 tail starts at GM output index 8192 and UB valueLocal index 8192 with valid=9. When aligned, the helper's existing split is DataCopy 8 floats (32 bytes) over [8192,8200), then DataCopyPad 1 float (4 bytes) over [8200,8201); these are non-overlapping and total exactly 36 bytes. Other rows have distinct output values and are stored one at a time from a reused tile buffer, so combining them requires staging/lifetime changes rather than removing repeated copies of the same data.
+active_path_constraint=ProcessWideFp32 dispatches to ProcessWideFp32FullCacheRows. Its partial aligned row tails already use the grouped descriptor above. ProcessWideLowPrecision and ProcessNarrowMidOverlap reuse one output tile and drain/store per row; grouping those rows requires changing staging or synchronization. Other legacy per-row Store sites inspected have no active callsite from the current Process dispatch.
+
+build_status=NOT_RUN_SOURCE_UNCHANGED
+build_reason=No source candidate was justified, so no redundant Build was started. Current committed source was built successfully as R084 with artifact SHA 806524ffa88675d598f26367337907d0fd338ab874763a6bc818e44728536914.
+correctness_status=NOT_RUN
+correctness_reason=The worktree has no correctness runner or inputs; no device test was started.
+local_status=NOT_RUN
+local_reason=The worktree has no Canonical Local runner, inputs, or scorer.
+device_status=NOT_USED
+remote_status=NOT_ATTEMPTED
+performance_status=UNKNOWN
