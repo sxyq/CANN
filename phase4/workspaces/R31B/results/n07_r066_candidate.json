@@ -1,0 +1,105 @@
+{
+  "route_id": "N07",
+  "revision": "R066",
+  "parent_commit": "873bd7fc51e4360bdd341302c863893b0416c973",
+  "source_commit": "bc0c0f19578e9b391cd010315f971dbd4954c2fb",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "aa6a9fd57fda126f79ebf007b58d2ba7a33b8dfa2068fe2593fac95e13b4ec1a",
+  "hypothesis": "Wide FP32 output currently reloads gamma/bias for each full-y row batch. Reserving UB for one full FP32 parameter pair per core may halve parameter GM traffic when the baseline needs two batches, although the smaller y-row capacity can increase batch dispatch and associated overhead.",
+  "difference_from_r063_r065": {
+    "r063": "R063 changes the BF16 streaming parameter tile and row-batch chooser.",
+    "r064": "R064 reuses BF16 narrow-mid parameter Cast results across local rows.",
+    "r065": "R065 changes FP16 resident-cache admission while preserving total batch and tile counts.",
+    "r066": "Adds optional full-row FP32 gamma/bias residency for the separate wide FP32 implementation; no chooser, FP16 cache gate, or low-precision Cast reuse is changed."
+  },
+  "change": {
+    "scope": "Wide FP32 parameter residency and output-pass parameter source only",
+    "selection_condition": "The minimum rows per block exceeds one, a full FP32 gamma/bias pair fits under the existing UB chooser, and the baseline exact total batch count exceeds active block count.",
+    "parameter_cache_bytes": "2 * rowWidth * sizeof(float)",
+    "runtime_behavior": "Load complete gamma/bias once before the row-batch loop and use their resident tile views during every batch. If disabled, the original per-batch streamed loads remain unchanged.",
+    "math_or_sync_algorithm_change": false,
+    "files_changed": [
+      "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc"
+    ]
+  },
+  "static_reachability": {
+    "dtype": "FP32",
+    "shape": [
+      160,
+      8193
+    ],
+    "block_count": 32,
+    "availability_assumption": "availableCoreNum is 32, so run_kernel launches 32 blocks; the Kernel receives 5 rows per block.",
+    "dispatch": "rowWidth 8193 > kCacheElems 8192 enters the wide FP32 path.",
+    "baseline": {
+      "tile_elems": 4096,
+      "rows_per_batch": 4,
+      "tiles_per_row": 3,
+      "batches_per_block": 2,
+      "total_batches": 64,
+      "parameter_pair_reads_per_block": 2,
+      "parameter_bytes_per_block": 131088,
+      "ub_estimate_bytes": 164112
+    },
+    "candidate": {
+      "tile_elems": 4096,
+      "rows_per_batch": 2,
+      "tiles_per_row": 3,
+      "batches_per_block": 3,
+      "total_batches": 96,
+      "parameter_pair_reads_per_block": 1,
+      "parameter_bytes_per_block": 65544,
+      "ub_estimate_bytes": 163984
+    },
+    "all_blocks_parameter_bytes": {
+      "before": 4194816,
+      "after": 2097408
+    },
+    "conversion_count": {
+      "before": 0,
+      "after": 0,
+      "reason": "FP32 parameters are consumed natively; this candidate adds no parameter Cast."
+    },
+    "tradeoff": "Parameter pair reads are halved in the chooser-level estimate, while batches rise from 64 to 96. No latency or canonical-shape result is available."
+  },
+  "build": {
+    "status": "passed",
+    "entrypoint_command": "./tools/run.sh build",
+    "exit_code": 0,
+    "output": [
+      "-- Configuring done",
+      "-- Generating done",
+      "-- Build files have been written to: /home/data4t2/lelinfeng/cann/worktrees/n07-parameter-tile-reuse/phase4/workspaces/R31B/build-n07",
+      "Consolidate compiler generated dependencies of target r31b_submission_v011",
+      "[ 50%] Building ASC object CMakeFiles/r31b_submission_v011.dir/compile_adapter_v011.asc.o",
+      "[100%] Linking ASC executable r31b_submission_v011",
+      "[100%] Built target r31b_submission_v011"
+    ],
+    "artifact_path": "phase4/workspaces/R31B/build-n07/r31b_submission_v011",
+    "artifact_sha256": "ddd212e546bd2f896abf06ae15fb7e637df43b1e06e37ea8a1235eabc0e9bba4",
+    "object_sha256": "d12423f5a4232968d4bd5a9e96fda2813c3307b9b9ea557930c8d4709def7920"
+  },
+  "correctness": {
+    "status": "not_run",
+    "command": "./tools/run.sh correctness",
+    "exit_code": 3,
+    "output": "not_run: correctness harness is not present in this sparse worktree"
+  },
+  "local": {
+    "status": "not_run",
+    "command": "./tools/run.sh local",
+    "exit_code": 3,
+    "output": "not_run: canonical Local runner and scorer are not present in this sparse worktree"
+  },
+  "performance_measurement": {
+    "status": "not_run",
+    "device_id": "NONE",
+    "reason": "No NPU or remote command was launched; route-owned correctness/Local entries are absent."
+  },
+  "assessment": {
+    "candidate_status": "build-only; correctness and performance unverified",
+    "promotion": "none",
+    "performance_claim": "None. The parameter traffic reduction is a static estimate and ignores the cost of the additional batches.",
+    "next_evidence_needed": "Run FP32 correctness and canonical Local for shape [160, 8193] with the matching block count, if that shape is in the suite and the route-owned harness becomes available."
+  }
+}
