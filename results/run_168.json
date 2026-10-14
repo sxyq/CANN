@@ -1,0 +1,38 @@
+{
+  "route": "N06",
+  "revision": "R168",
+  "source_commit": "db675f42709813e4a353ecfdf8b667aea63952cd",
+  "git_parent_commit": "47443b8da8eec01db75e4bbfd938b6f9c54c016d",
+  "parent_source_commit": "5e0bfd3792a8d36b459183ad109a289d77272814",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "6d9cfabff7283e60793938fd644ddf0af4a2a4fbe3a479a1fc41d21af58f390f",
+  "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+  "cmake_sha256": "3a8bc9f92541f92fe403bd7a2c196cb9bf9008cea9c4d668c7b1d603c81b991f",
+  "runner_sha256": "23f6d76d82a7bf645559971d25ee46a6d2d02a59d0f17bf54fed33748196a787",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "In the FP32 wide full-y branch only, move the unchanged shape-sized valueFp32Buf_ allocation before the fixed x, residual, and reduction scratch allocations. Allocation sizes, total UB use, row chooser inputs, arithmetic, indexing, and synchronization are unchanged.",
+  "hypothesis": "This places retained y at the start of the FP32 wide-path UB allocation sequence and makes fixed scratch follow the shape-sized region, testing the converse of R167's fixed-scratch-before-y layout. No bank width or performance gain is assumed.",
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "log": "results/build_168.log",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "679bba18ae32023ab24e5ea5b9b9b14f71ce98dee297029c78e9decadedadf59",
+    "artifact_sha256_file": "results/build-artifact_168.sha256"
+  },
+  "correctness": {
+    "status": "not_run",
+    "command_executed": null,
+    "intended_entry": "./tools/run.sh correctness",
+    "reason": "The route entry accepts only build; no Correctness runner or test files are available in this worktree."
+  },
+  "local": {
+    "status": "not_run",
+    "command_executed": null,
+    "intended_entry": "./tools/run.sh local",
+    "reason": "No Canonical Local runner or scorer is available in this worktree."
+  },
+  "device": "None; compile only, no device work submitted.",
+  "workload": "CANN build only; no shape execution or Local workload ran.",
+  "performance_effect": "Unknown; compile only."
+}
