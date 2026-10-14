@@ -1,0 +1,28 @@
+route=N08
+revision=R084
+parent_sha=578028aeda5c576ba09f800ecc5de712c8be5b0e
+source_commit=cf23d4f72576696e72ba699c7b0ef4ab859a1744
+source=phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+source_sha256=6b24cf089029d0d6a254632860c1122fe573fb3fa9933372a3cb88b987c26a4a
+
+hypothesis=In ProcessNarrowMidOverlap, allow rounded aligned paired input reads only when the valid row endpoint is also data-block aligned. When a following row exists but the current row endpoint is unaligned, use an exact-end plan so bytes from the next row are not read and then loaded again for that row.
+evidence=Reachable FP32 case: rowWidth=410, rowCount>=2, row=0, kTileElems=4096, B=8. The current path has prefix=0, count=410, rounded excess=6, and 410>=2*6, so it issues two 416-element DataCopy reads (1664 bytes each) for 410 valid elements (1640 bytes each), reading 24 bytes from the next row per source. R084 disables that rounded path because endpoint 410 is not B-aligned. The existing split fallback covers exactly 408 aligned body elements plus 2 exact suffix elements per source, ending at offset+count=410; it saves 48 GM bytes across x/residual and adds one suffix transfer per source. The body and UB suffix offsets are B-aligned. This is address/transaction reasoning, not measured performance evidence.
+scope=Rounded-read permission at the ProcessNarrowMidOverlap x/residual tail callsite only, with a default-true helper argument for all other callsites. No exact-end fallback, body/suffix gate, consumer count, GM output, arithmetic, reduction, scheduling, tile sizing, or UB layout changes.
+historical_relation=Reproduces the isolated mechanism from N08 R081 (source commit 6628f19aacd7d470cc9ce2bf76cf68a937a5e118) on current R083-based source. R081 built successfully but did not run Correctness or Local; R082 reverted the input-read policy while isolating R077/R080 grouped output stores, not because of a correctness or performance failure. R084 is therefore explicitly unvalidated.
+
+build_command=./tools/run.sh build
+build_exit_code=0
+build_log=results/build-20261014T085703+0000.log
+build_log_sha256=9c1b4583de0eae36f414901f048c497d99607c58b44b45436d6e9e172313a41e
+artifact=build/r31b_submission_v011
+artifact_sha256=806524ffa88675d598f26367337907d0fd338ab874763a6bc818e44728536914
+cann=/usr/local/Ascend/ascend-toolkit/latest
+compile_target=ASCEND_COMPUTE_UNIT=ascend910b; --npu-arch=dav-2201
+
+correctness_status=NOT_RUN
+correctness_reason=The route worktree exposes no correctness runner or inputs; no substitute or device test was started.
+local_status=NOT_RUN
+local_reason=The route worktree exposes no Canonical Local runner, inputs, or scorer. No Local Score or performance conclusion is claimed.
+device_status=NOT_USED
+remote_status=NOT_ATTEMPTED
+performance_status=UNKNOWN
