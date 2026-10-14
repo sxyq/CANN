@@ -1,0 +1,53 @@
+{
+  "route_id": "N07",
+  "revision": "R074",
+  "branch": "research/n07-parameter-tile-reuse",
+  "parent_sha": "a27ac946371066fab7ca12f7ffbf7cb5e6245c1d",
+  "source_parent_commit": "394eebeaaad6656b9ed5251f80834faddb5e96072",
+  "source_commit": "4a041bcea8727f8523e2746e1aacd9b6d6b5e58a",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "406ebfd35fccca5b54e63e74d798ab05cd1db8152abafeb90518c17b8588818b",
+  "hypothesis": "In gamma-only cache mode gamma is loaded once per block but bias is streamed once per row batch. Ranking candidates by tile count alone can choose a smaller tile with more bias rereads. Counting gamma tiles once plus bias tiles per batch may reduce total parameter tile traffic. No runtime gain is assumed.",
+  "change": {
+    "scope": "resident-parameter candidate ranking for FP32 and BF16 gamma-only cache modes",
+    "behavior": "Add an optional streamed-bias cost to ChooseWideFullYRows. Gamma-only calls rank by tileCount * (1 + batchCount); all full-parameter-cache calls retain tile-count-first ranking.",
+    "math_semantics_changed": false,
+    "output_order_changed": false,
+    "files_changed": [
+      "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc"
+    ]
+  },
+  "static_reachability": {
+    "dtypes": ["FP32", "BF16"],
+    "condition": "The existing selector chooses a gamma-only cache candidate; gamma is resident once per block while bias remains streamed per batch.",
+    "cost_model": "gammaTileCount + biasTileCount * candidateBatchCount; both parameter vectors use the same tile count."
+  },
+  "build": {
+    "status": "passed",
+    "entrypoint_command": "./tools/run.sh build",
+    "exit_code": 0,
+    "target": "r31b_submission_v011",
+    "artifact_path": "phase4/workspaces/R31B/build-n07/r31b_submission_v011",
+    "artifact_sha256": "962470b2a7199e1f6db8931f3b2cd18eecc0a0cf304c1ea5f933c64c89afac2f",
+    "log_path": "phase4/workspaces/R31B/results/n07_r074_build.log",
+    "log_sha256": "3928e36631f0ff69fd1c1ce4f2b3501f11607ed8b81f3bace07a725dc9a3fc53"
+  },
+  "correctness": {
+    "status": "not_run",
+    "entrypoint_command": "./tools/run.sh correctness",
+    "exit_code": 3,
+    "reason": "not_run: correctness harness is not present in this sparse worktree"
+  },
+  "local": {
+    "status": "not_run",
+    "entrypoint_command": "./tools/run.sh local",
+    "exit_code": 3,
+    "reason": "not_run: canonical Local runner and scorer are not present in this sparse worktree"
+  },
+  "device_id": "NONE",
+  "assessment": {
+    "candidate_status": "build passed; correctness and Canonical Local remain unverified",
+    "promotion": "none",
+    "performance_claim": "None; no device correctness, Local score, or profile was collected."
+  }
+}
