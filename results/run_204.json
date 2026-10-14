@@ -1,0 +1,49 @@
+{
+  "route": "N06",
+  "revision": "R202",
+  "run_id": "204",
+  "source_commit": "ec7e6943d367d29e017372353217d026468b466b",
+  "git_parent_commit": "00a435276475cb21aaccb5dfe8134e6638f067dd",
+  "parent_source_commit": "fe8dbd7af5fc4ce820493f83c9e37c229a1e97df",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "d8f4b5618f066c70d2234fcf293ea16a708ca569868b22b9daa157c5f59bbbb9",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "Change only kWideBf16RetainedYPhaseBytes from 64B (2 * 32B) to 32B. This moves the retained-y FP32 view origin within valueFp32Buf_ and reduces the requested buffer tail by 32B. ChooseWideFullYRows accounts for the same phase. X-conversion view, reduce partial view, row stride, arithmetic, and synchronization are unchanged.",
+  "hypothesis": "A 32B retained-y view phase may improve, hurt, or be neutral by changing the relative address of the wide BF16 retained x+residual values while preserving the established 32B alignment granularity. No physical UB bank mapping is inferred.",
+  "static_address_validation": {
+    "view_and_allocation": "The retained-y view origin is phaseBytes/4 = 8 FP32 elements; allocation extent is wideFullYRows_ * rowStrideElems + 8 FP32 elements, where rowStrideElems = round_up(rowWidth, 8).",
+    "access_bound": "For batchRow < batchRows <= wideFullYRows_ and each tile, col + valid <= rowWidth <= rowStrideElems. The exclusive end of the last valid row access is 8 + (batchRows-1)*rowStrideElems + rowWidth, which is <= 8 + batchRows*rowStrideElems <= 8 + wideFullYRows_*rowStrideElems, the allocated extent.",
+    "relative_alignment": "The retained-y phase is 32B; the row stride is a multiple of 8 FP32 elements (32B); tile offsets use tileWidth selected from 4096 in 512-element steps, also multiples of 8 FP32 elements. Thus all relative view, row, and tile offsets preserve 32B alignment. Physical TBuf base placement is not inferred.",
+    "budget": "The retained-y phase contributes equally to ChooseWideFullYRows work-memory skew and valueFp32Buf_ InitBuffer size, both reduced by 32B. Exact formula sweep for supported BF16 wide widths 8193..32768 found no row-count/tile-width regression; 24 boundary widths improve the selected row count or tile width. Canonical-boundary widths 16384 and 32768 retain the same row/tile choices with computed need reduced by 32B."
+  },
+  "parent_canonical": {
+    "revision": "R201",
+    "correctness": "PASS 7/7",
+    "local_score": 94.225305,
+    "local_status": "LOCAL_NEUTRAL",
+    "quality": "POOR",
+    "core_gain_count": 0
+  },
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "status": "PASS",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "e02a0fdd1048c87680e6716401814a1b98bc183f703b856d1d5230c19083e936",
+    "log": "results/build_204.log",
+    "sha_file": "results/build-artifact_204.sha256"
+  },
+  "correctness": {
+    "status": "NOT_RUN",
+    "reason": "Not run per Main instruction; no device command was issued."
+  },
+  "local": {
+    "status": "NOT_RUN",
+    "reason": "Not run per Main instruction; no device timing was started."
+  },
+  "device": {
+    "status": "NO_WORKLOAD",
+    "reason": "This revision ran only the local CANN Build command; no device command was issued."
+  },
+  "performance_conclusion": "UNKNOWN: R202 compiled successfully; no candidate device correctness or performance measurement was run."
+}
