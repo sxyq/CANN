@@ -1,0 +1,64 @@
+{
+  "route": "N10",
+  "revision": "R044",
+  "mechanism": "row-to-core balance / batch traversal phase rotation",
+  "hypothesis": "Alternating the per-block row visitation direction across successive full-y batches may stagger GM row-address phases across blocks while keeping ownership and all per-row work unchanged.",
+  "status": "exploratory_build_passed_correctness_local_unavailable_score_unknown",
+  "parent_candidate": "04650eef51d89f4291409c0b7eeed08cc6d2a892",
+  "parent_record_commit": "be7b237e5fd2db5cc29eeccf80d43ea1cce0cd62",
+  "source_commit": "b2f7390848f0e454d0daf6da0ad97c554f96cbc7",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "bbe7db3d3d2eace928f894e446bf2817fc7ceb8a70729d3a30a8844abd171147",
+  "change": "Within ProcessWideLowPrecision, compute reverseBatchRows from physical block parity XOR the batch ordinal local to that block. Use the resulting existing flag for both input row visitation and output row visitation. Row ownership, batch size, tile traversal, synchronization, arithmetic, and GM offsets are unchanged.",
+  "scope_check": {
+    "task_ownership_changed": false,
+    "row_visitation_order_changed": true,
+    "per_row_scalar_address_generation_changed": false,
+    "per_row_gm_offset_or_stride_formula_changed": false,
+    "gm_tile_transaction_changed": false,
+    "arithmetic_changed": false,
+    "details": "Only batch-local row order changes. Each source row uses the existing GetGroupedStripeRow mapping, and output visits the same batch row order used by the y cache. No N05 or N08 mechanism is included."
+  },
+  "traversal_validation": {
+    "command": "inline python3 -c enumeration of block parity, batch limit, local row count, and tile count",
+    "status": "passed",
+    "cases": 225792,
+    "invariants": [
+      "Every batch source row/tile pair appears exactly once.",
+      "Every batch output row/tile pair appears exactly once.",
+      "Direction is constant within one batch and alternates with local batch ordinal for each block."
+    ],
+    "scope_note": "Static traversal permutation validation only; not runtime correctness or performance validation."
+  },
+  "build": {
+    "command": "./tools/run.sh build",
+    "status": "passed",
+    "return_code": 0,
+    "log": "build-20261014T050015932824149Z.log",
+    "kernel_sha256": "bbe7db3d3d2eace928f894e446bf2817fc7ceb8a70729d3a30a8844abd171147",
+    "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+    "cmake_sha256": "435cd84be945c1757159940c4c36fbab97fb06e9bf14e8a746a8121b42dda9fc",
+    "artifact_sha256": "f88191aa79207d227bc20640b8309304b1745d355d1b79874bb5a745bce12ccb"
+  },
+  "correctness": {
+    "status": "unavailable",
+    "attempt_status": "not_run",
+    "command": "./tools/run.sh correctness",
+    "return_code": 127,
+    "log": "correctness-20261014T050101727501691Z.log",
+    "reason": "The N10 worktree contains no correctness runner; the existing entry reports not_run and RC 127. No kernel correctness test executed."
+  },
+  "local": {
+    "status": "unavailable",
+    "attempt_status": "not_run",
+    "command": "./tools/run.sh local",
+    "return_code": 127,
+    "log": "local-20261014T050129072625498Z.log",
+    "reason": "The N10 worktree contains no Canonical Local runner; the existing entry reports not_run and RC 127. No Local measurement or score was produced."
+  },
+  "local_score": "UNKNOWN",
+  "performance_claim": null,
+  "device_id": null,
+  "free_hbm_mb": null,
+  "isolation": "worktree-level soft isolation only; no OS-level filesystem or Git object boundary"
+}
