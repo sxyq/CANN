@@ -1,0 +1,28 @@
+{
+  "route": "N06",
+  "revision": "R197",
+  "run_id": "198",
+  "source_commit": "c6158cb578a4e367e591f0fb06f65394df07ee25",
+  "git_parent_commit": "86fa595ad872d4783b06bb4ae4f0eb3ca6360fec",
+  "source_sha256": "fedc176b56af92745cc123121c057ce2515d4a5a5e9942153061f17cb400fdd6",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "status": "PASS",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "e39a64541b24760230c8438d8a019956659977938c9a6b5db04853dbbbf8e664",
+    "log": "results/build_198.log",
+    "sha_file": "results/build-artifact_198.sha256"
+  },
+  "audit_context": "This repeat build verified the exact pre-guard R197 source. Static audit then found the Host entry accepted widths above the source's documented maximum of 32768, allowing an FP32 wide partial destination to exceed its per-row reduction allocation at width 32769. A width guard was added in a follow-up safety commit; this artifact does not include that guard.",
+  "correctness": {
+    "status": "NOT_RUN",
+    "reason": "Build-only audit; no device test was started."
+  },
+  "local": {
+    "status": "NOT_RUN",
+    "reason": "Build-only audit; no device timing was started."
+  },
+  "performance_conclusion": "UNKNOWN: exact pre-guard R197 source compiled; device tests were not run."
+}
