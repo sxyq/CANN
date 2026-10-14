@@ -1,0 +1,42 @@
+{
+  "route": "N06",
+  "revision": "R199",
+  "run_id": "201",
+  "source_commit": "551695bdc9bb9decde0977bf09950c01050dd3a5",
+  "git_parent_commit": "7fd4b1c6f02b0dfab7786d11f61f42063a06efa9",
+  "parent_source_commit": "3998316c64ce04157ad8335bd752f5962f5b5993",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "34268bb42f568ea108a07c368623be4800c5ba7a8c127591a80e668c001cea9c",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "Change only kWideBf16RetainedYRowAlignElems from 24 FP32 elements (96B row-span quantum) to 8 elements (32B). Init allocation padding, ChooseWideFullYRows budget padding, and ProcessWideLowPrecision retained-y indexing all derive from this constant. Slot phases, tile width, arithmetic, and synchronization are unchanged.",
+  "hypothesis": "Reducing the retained-y row-span quantum to the existing 32B UB transfer-alignment granularity lowers or preserves per-row padding and changes row starts plus the following scratch-buffer base phases. This may improve, hurt, or be neutral for wide BF16 vector access. No physical UB bank mapping is inferred.",
+  "static_address_validation": {
+    "row_stride_elems": "round_up(rowWidth, 8); used consistently for valueFp32Buf_ allocation and both retained-y access passes.",
+    "allocation_elems": "wideFullYRows_ * rowStrideElems + 16 phase elements (64B).",
+    "access_bound": "For each batchRow < batchRows <= wideFullYRows_, tile col + valid <= rowWidth <= rowStrideElems. The highest accessed element is 16 + (batchRows - 1) * rowStrideElems + rowWidth - 1, strictly below 16 + wideFullYRows_ * rowStrideElems.",
+    "relative_alignment": "The retained-y phase is 64B, row stride is a multiple of 8 FP32 elements (32B), and full tile offsets are multiples of 4096 FP32 elements (16384B); all relative row/tile offsets preserve 32B alignment.",
+    "budget": "The same computed row padding is passed into ChooseWideFullYRows and used in InitBuffer allocation. For every supported wide width 8193..32768, alignment 8 has no more padding than alignment 24; simulated row-count/tile choices remain equal or improve. Canonical BF16 widths 16384 and 32768 keep their existing row/tile choices; budget footprints decrease by 32B and 64B respectively."
+  },
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "status": "PASS",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "26d640484a6187dd6b504cd7a729205341f0d92e61cdf30260ddf40cd64f4a28",
+    "log": "results/build_201.log",
+    "sha_file": "results/build-artifact_201.sha256"
+  },
+  "correctness": {
+    "status": "NOT_RUN",
+    "reason": "Deferred to Main's authorized Canonical Worker; no device test was started from this worktree."
+  },
+  "local": {
+    "status": "NOT_RUN",
+    "reason": "Deferred to Main's authorized Canonical Worker; no device timing was started from this worktree."
+  },
+  "device": {
+    "status": "NO_WORKLOAD",
+    "reason": "This revision ran only the local CANN Build command; no device command was issued."
+  },
+  "performance_conclusion": "UNKNOWN: build passed; Correctness and Canonical Local results are pending Main's worker."
+}
