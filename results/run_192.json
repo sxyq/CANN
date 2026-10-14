@@ -1,0 +1,42 @@
+{
+  "route": "N06",
+  "revision": "R192",
+  "source_commit": "8b8792aa3a280f9bcb935e7023e0ba76a14aa705",
+  "git_parent_commit": "31fb5dc25706696d1a1a113dfe0c7a15457936d2",
+  "parent_source_commit": "42e337c6fd44cef2e1639e06119bc4e82a2080b5",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "0fc630553f6492d7e73f3ddbdda1962357d7f425cb39a436d31c004ccabcb119",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "In the wide BF16 path, allocate residualBuf_ before xBuf_. Capacities, slot offsets, arithmetic, reduction destinations, and event order are unchanged.",
+  "hypothesis": "The x and residual GM streams are loaded into distinct ping-pong TBufs and consumed together by conversion/add operations. Reversing which logical stream occupies the first allocated TBuf may alter operand-to-address placement interactions. This is an order-only probe; it does not claim a particular physical UB bank mapping. Both buffers have equal extents and transfer phase constants, so the effect may be neutral.",
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "status": "PASS",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "88db0cffc30b9a74e1e4c9a8c00ee758b894f1bef01d95a5838cc02146988e26",
+    "log": "results/build_192.log",
+    "sha_file": "results/build-artifact_192.sha256"
+  },
+  "correctness": {
+    "status": "NOT_RUN",
+    "reason": "Deferred to Main's authorized Canonical Worker; no device test was started from this worktree."
+  },
+  "local": {
+    "status": "NOT_RUN",
+    "reason": "Deferred to Main's authorized Canonical Worker; no device test was started from this worktree."
+  },
+  "device": {
+    "device_id": 4,
+    "status": "NO_WORKLOAD",
+    "free_hbm_mb_approx": 6323,
+    "snapshot_command": "npu-smi info",
+    "snapshot_context": "NPU 4 showed 59213/65536 MB HBM used. The smallest free capacity among eight listed devices was approximately 871 MB, above the 100 MB stop threshold. No test workload was submitted.",
+    "server_probe": {
+      "command": "ssh -o BatchMode=yes -o ConnectTimeout=5 cann-server3 'npu-smi info'",
+      "exit_code": 255,
+      "reason": "Temporary hostname resolution failure."
+    }
+  },
+  "performance_conclusion": "UNKNOWN: compilation passed; Correctness and Canonical Local results are pending Main's worker."
+}
