@@ -1,0 +1,38 @@
+{
+  "route": "N06",
+  "revision": "R170",
+  "source_commit": "7d67b63584f1199d2f6611fa904bd82d59329581",
+  "git_parent_commit": "115a1bea22f2f68641f9a17d7c9a1090a5561a2c",
+  "parent_source_commit": "a2375a9184d160dde9111139dfb3581060ac2db1",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "c2b7c6ff63eead35d9b796697c472171ceebacb61c480ca8e3ad72964e470f65",
+  "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+  "cmake_sha256": "3a8bc9f92541f92fe403bd7a2c196cb9bf9008cea9c4d668c7b1d603c81b991f",
+  "runner_sha256": "23f6d76d82a7bf645559971d25ee46a6d2d02a59d0f17bf54fed33748196a787",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "In the wide BF16 full-y branch, offset the active xFp32Buf_ view by 32B into its existing 32B allocation tail. The allocation size, total UB use, row chooser budget, allocation order, arithmetic, indexing, and synchronization are unchanged.",
+  "hypothesis": "A BF16 x-conversion scratch active-base phase may change placement interaction with neighboring scratch. Route-local history R021 says BF16 used offset zero; R165's 224B phase was FP16-only. This is distinct from the R169 retained-y phase and is a placement probe, not a claimed bank-width or performance result.",
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "log": "results/build_170.log",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "9ac7d0a81e6d9b507f19f726a8f9725ff463ba87f46ea520be0df16bec3535dc",
+    "artifact_sha256_file": "results/build-artifact_170.sha256"
+  },
+  "correctness": {
+    "status": "not_run",
+    "command_executed": null,
+    "intended_entry": "./tools/run.sh correctness",
+    "reason": "The route entry accepts only build; no Correctness runner or test files are available in this worktree."
+  },
+  "local": {
+    "status": "not_run",
+    "command_executed": null,
+    "intended_entry": "./tools/run.sh local",
+    "reason": "No Canonical Local runner or scorer is available in this worktree."
+  },
+  "device": "None; compile only, no device work submitted.",
+  "workload": "CANN build only; no shape execution or Local workload ran.",
+  "performance_effect": "Unknown; compile only."
+}
