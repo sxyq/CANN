@@ -1,0 +1,59 @@
+{
+  "route_id": "N07",
+  "revision": "R071",
+  "branch": "research/n07-parameter-tile-reuse",
+  "parent_commit": "a2fb58fcd3e53785ade5b056f54b2efbb0fb0c8f",
+  "source_commit": "df004893c84d308ab41964c717d5471a69052fc7",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "f709f4ed60484d5ab95d2ff0c492c32f2e96fb0ad6ce0e4f317fb6b4db2946e5",
+  "hypothesis": "For multi-row BF16 D=8192 blocks, caching gamma as FP32 while retaining bias in BF16 may reduce repeated parameter promotions with less UB growth than a full FP32 pair cache. No runtime gain is assumed.",
+  "difference_from_recent_candidates": {
+    "r070": "R070 retains both full-row parameter caches in BF16 and promotes both tiles for every output row. R071 promotes gamma once during cache fill and retains bias in BF16.",
+    "r064": "R064 reuses both promoted parameter tiles in the narrow-mid path without additional UB. R071 changes only the D=8192 full-row representation and adds one FP32 parameter row."
+  },
+  "change": {
+    "scope": "BF16 rowWidth == 8192 multi-row ProcessBf16FullRowOutputPipelined path",
+    "behavior": "Allocate gammaFp32Buf_ as FP32 and biasFp32Buf_ as native T. Promote each gamma tile once during preloading; promote each bias tile at output use. gammaBuf_/biasBuf_ remain output staging, and xBuf_/residualBuf_ are not used for parameter staging.",
+    "math_semantics_changed": false,
+    "output_order_changed": false,
+    "files_changed": [
+      "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc"
+    ]
+  },
+  "static_reachability": {
+    "dtype": "BF16",
+    "condition": "rowWidth == 8192 and localRows > 1",
+    "canonical_shape": "C12: rows=8, width=8192, dtype=2",
+    "known_boundary_check": "BF16 rows=128, width=8192 exercises the same full-row path; use it as an R071 correctness case, not as a rerun of the old R005 candidate."
+  },
+  "static_cost": {
+    "gamma_cache_bytes": 32768,
+    "bias_cache_bytes": 16384,
+    "total_kernel_ub_bytes_estimate": 163840,
+    "r070_total_kernel_ub_bytes_estimate": 147456,
+    "parameter_cast_calls_for_8_rows": {
+      "r070": 32,
+      "r071": 18
+    },
+    "basis": "Two 4096-element tiles; R070 casts gamma and bias per row, while R071 casts gamma during two-tile preload and bias per output row. Allocation total is a static buffer-size sum, not a compiler or runtime UB measurement."
+  },
+  "build": {
+    "status": "not_run",
+    "entrypoint_command": "./tools/run.sh build",
+    "reason": "Awaiting Main candidate build/test; no local or remote build command was started."
+  },
+  "correctness": {
+    "status": "not_run",
+    "reason": "Awaiting Main. Include canonical BF16 8x8192 and the BF16 128x8192 boundary check for this R071 source."
+  },
+  "local": {
+    "status": "not_run",
+    "reason": "Awaiting Main canonical Local measurement."
+  },
+  "device_id": "NONE",
+  "assessment": {
+    "candidate_status": "source committed; build, correctness, and performance unverified",
+    "promotion": "none",
+    "performance_claim": "None. Cast-call reduction and UB usage are static estimates only."
+  }
+}
