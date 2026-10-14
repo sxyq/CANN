@@ -1,0 +1,38 @@
+{
+  "route": "N06",
+  "revision": "R171",
+  "source_commit": "85a91febf7cc6e68c20f6c888ad1158a4956ec14",
+  "git_parent_commit": "24d0220c7619c16c6544931cc607bc37df7b0ec9",
+  "parent_source_commit": "7d67b63584f1199d2f6611fa904bd82d59329581",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "d4a46a28a89f6dcb5e91ed8cefd7aca88bb5badab5c31b5a5d237f5c5b267a2a",
+  "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+  "cmake_sha256": "3a8bc9f92541f92fe403bd7a2c196cb9bf9008cea9c4d668c7b1d603c81b991f",
+  "runner_sha256": "23f6d76d82a7bf645559971d25ee46a6d2d02a59d0f17bf54fed33748196a787",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "In the wide BF16 full-y branch, move the unchanged reduceFp32Buf_ allocation after xBuf_/residualBuf_ and before xFp32Buf_/outputBuf_/residualFp32Buf_. Sizes, total UB use, retained-y allocation, arithmetic, indexing, and synchronization are unchanged.",
+  "hypothesis": "ReduceSum partial writes share the pass-1 lifetime with conversion scratch. Moving partials ahead of conversion/output scratch changes their relative UB bases without changing their contents or lifetime. This is distinct from retained-y placement and active-view phase probes; no bank width or performance gain is assumed.",
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "log": "results/build_171.log",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "06cd5fd83851ee7ec5833e99c0dfcba7092edc70a040d7fedad2c55fba1a3093",
+    "artifact_sha256_file": "results/build-artifact_171.sha256"
+  },
+  "correctness": {
+    "status": "not_run",
+    "command_executed": null,
+    "intended_entry": "./tools/run.sh correctness",
+    "reason": "The route entry accepts only build; no Correctness runner or test files are available in this worktree."
+  },
+  "local": {
+    "status": "not_run",
+    "command_executed": null,
+    "intended_entry": "./tools/run.sh local",
+    "reason": "No Canonical Local runner or scorer is available in this worktree."
+  },
+  "device": "None; compile only, no device work submitted.",
+  "workload": "CANN build only; no shape execution or Local workload ran.",
+  "performance_effect": "Unknown; compile only."
+}
