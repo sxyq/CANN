@@ -1,0 +1,76 @@
+{
+  "route": "N10",
+  "revision": "R048",
+  "mechanism": "row-to-core balance / contiguous row assignment",
+  "hypothesis": "Assigning contiguous balanced row ranges to blocks in the wide low-precision path may avoid the cross-stripe GM row jumps of the stripe-owner mapping while retaining exact row coverage. No performance benefit is assumed without device measurements.",
+  "status": "exploratory_build_and_static_validation_passed_correctness_local_unavailable_score_unknown",
+  "parent_candidate": "8e651d833e981faed3ece676e218174587bbedae",
+  "parent_record_commit": "18e4cb78332537b352d8fd8f900d4887a986636f",
+  "source_commit": "1c8fa7f282f9aff6deecf22414f70dc3b4f730da",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "2cbbab687728121fea69cffaa70c03495cedbb94631ac81e66fcdce4ad55ba1c",
+  "change": "In the wide low-precision path, replace stripe-owner and tail-row remapping with GetBalancedRowRange(rowCount, blockCount, blockIdx, beginRow, localRows). Input and output GM offsets now use the contiguous row ordinal times rowWidth. Arithmetic, tile sizes, UB buffers, and reduction logic are unchanged.",
+  "ownership_validation": {
+    "command": "python3 -c canonical-shape enumeration of GetBalancedRowRange for blockCount 1..rowCount; assert contiguous ranges, nonempty blocks, exact row coverage, and row-count imbalance <= 1",
+    "status": "passed",
+    "cases": 283,
+    "canonical_row_counts": {
+      "C01": 1,
+      "C08": 8,
+      "C11": 1,
+      "C12": 8,
+      "C13": 128,
+      "C14": 128,
+      "C16": 9
+    },
+    "raw_output": "canonical_shapes=7 block_count_cases=283 partition=passed nonempty_blocks=passed max_row_imbalance=1",
+    "invariants": [
+      "Each block receives a contiguous row range and ranges cover every row exactly once without overlap.",
+      "Every tested block receives at least one row because blockCount is bounded by rowCount.",
+      "Per-block row counts differ by at most one."
+    ],
+    "scope_note": "Static mapping validation only. Canonical metadata does not record each case's availableCoreNum, so this does not establish runtime launch counts, correctness, physical-core utilization, or performance."
+  },
+  "scope_check": {
+    "task_ownership_changed": true,
+    "full_stripe_row_ownership_changed": true,
+    "sparse_tail_row_ownership_changed": true,
+    "per_row_scalar_address_generation_changed": false,
+    "row_offset_formula_changed": false,
+    "gm_tile_transaction_changed": false,
+    "arithmetic_changed": false,
+    "details": "The mapping from logical block work to rows changes to balanced contiguous ranges. The row offset remains rowOrdinal * rowWidth; tile transactions, arithmetic, UB buffers, and reduction topology are unchanged."
+  },
+  "build": {
+    "command": "./tools/run.sh build",
+    "status": "passed",
+    "return_code": 0,
+    "log": "build-20261014T073549728528876Z.log",
+    "kernel_sha256": "2cbbab687728121fea69cffaa70c03495cedbb94631ac81e66fcdce4ad55ba1c",
+    "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+    "cmake_sha256": "435cd84be945c1757159940c4c36fbab97fb06e9bf14e8a746a8121b42dda9fc",
+    "artifact_sha256": "12b18e9ee126f20c03071dc123d434178557c266b54055104ca5b454ba7e86b6"
+  },
+  "correctness": {
+    "status": "unavailable",
+    "attempt_status": "not_run",
+    "command": "./tools/run.sh correctness",
+    "return_code": 127,
+    "log": "correctness-20261014T074407104774195Z.log",
+    "reason": "The existing entry reports that no correctness runner is present and exits before any kernel test. The shared-device status record also reports cann-server3 hostname resolution failure and other processes on NPU 0-7; no device test was started."
+  },
+  "local": {
+    "status": "unavailable",
+    "attempt_status": "not_run",
+    "command": "./tools/run.sh local",
+    "return_code": 127,
+    "log": "local-20261014T074438646647717Z.log",
+    "reason": "The existing entry reports that no Canonical Local runner is present and exits before measurement. The shared-device status record also reports cann-server3 hostname resolution failure and other processes on NPU 0-7; no device or Local load was started."
+  },
+  "device_context_record": "N10-device-context-20261014T065216Z.json",
+  "local_score": "UNKNOWN",
+  "performance_claim": null,
+  "device_id": null,
+  "free_hbm_mb": null,
+  "isolation": "worktree-level soft isolation only; no OS-level filesystem or Git object boundary"
+}
