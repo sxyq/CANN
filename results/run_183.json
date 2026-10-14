@@ -1,0 +1,38 @@
+{
+  "route": "N06",
+  "revision": "R183",
+  "source_commit": "70a075fb7179c2727f2aa0037724b4a15277e566",
+  "git_parent_commit": "ad766969936c6444a344eb84b45ad08b55a5b8be",
+  "parent_source_commit": "eaecf16309d70b957e1a9423cbf5b85eddc14a73",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "3f2d89411dd2dc3a7fe5a0b4231e057a3070528a49327ce5ab7091875d25cfc2",
+  "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+  "cmake_sha256": "3a8bc9f92541f92fe403bd7a2c196cb9bf9008cea9c4d668c7b1d603c81b991f",
+  "runner_sha256": "23f6d76d82a7bf645559971d25ee46a6d2d02a59d0f17bf54fed33748196a787",
+  "mechanism": "UB-BANK-PLACEMENT-X; per-row live-range reuse",
+  "change": "For wide BF16 rows where tileCount fits the retained-y alignment padding, do not initialize reduceFp32Buf_. Store each row's tile reduction partials in that row's unwritten retained-y tail. Use valueRowStrideElems as the partial-row stride. Other shapes and FP16 retain the original reduction buffer.",
+  "lifetime_evidence": "For BF16 row r, pass 1 writes retained y only in [valueOffsetElems + r*valueRowStrideElems, valueOffsetElems + r*valueRowStrideElems + rowWidth). The candidate writes tileCount scalar partials in [valueOffsetElems + r*valueRowStrideElems + rowWidth, valueOffsetElems + r*valueRowStrideElems + rowWidth + tileCount). It is enabled only when tileCount <= valueRowStrideElems-rowWidth. Final ReduceSum reads exactly tileCount partials per row before pass 2. Pass 2 reads retained y only through rowWidth, leaving padding unused. The retained-y allocation already includes all row padding.",
+  "reachable_shape_example": "rowWidth=8193 gives 15 BF16 retained-y padding floats. With tileWidth=4096, tileCount=3, so the branch condition is satisfied. Under the existing conservative tiling budget this shape selects three rows; the separate reduction allocation would be 3*24*sizeof(float)=288 bytes. This is a code-derived example, not a runtime test.",
+  "tiling_note": "ChooseWideFullYRows continues to budget the original reduction scratch even on the reuse branch. This is conservative and may leave some available UB unused; it does not under-account memory.",
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "log": "results/build_183.log",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "96e59e752fdc37c78b3bb0b0c4868a8ff34082df367c091a256d6b6c465776f5",
+    "artifact_sha256_file": "results/build-artifact_183.sha256"
+  },
+  "correctness": {
+    "status": "not_run",
+    "reason": "The route worktree has no Correctness runner or test files; the existing tools/run.sh entry accepts only build."
+  },
+  "local": {
+    "status": "not_run",
+    "reason": "The route worktree has no Canonical Local runner or scorer; the existing tools/run.sh entry accepts only build."
+  },
+  "device": "None; compile only, no NPU work submitted.",
+  "workload": "CANN build only; no shape execution, Correctness, Local, or Profile ran.",
+  "layout_safety": "Statically disjoint intervals under the branch condition; runtime correctness remains unverified.",
+  "performance_effect": "Unknown; compile only.",
+  "timestamp_utc": "2026-10-14T08:49:30Z"
+}
