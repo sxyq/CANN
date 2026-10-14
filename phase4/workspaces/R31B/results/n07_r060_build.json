@@ -1,0 +1,46 @@
+{
+  "route_id": "N07",
+  "revision": "R060",
+  "branch": "research/n07-parameter-tile-reuse",
+  "parent_sha": "5492131050900abffa7e7894a973cc5e31041be0",
+  "source_commit": "5a4987506327525403956d0faf70a77f49872d89",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "6168f39cfc366a9d0a1b9e6ae9da79a256f9c96b9e17eac3736ee65a01a6534d",
+  "hypothesis": "The BF16 full-row parameter cache already has full-row native staging buffers. Loading each complete gamma/bias row once, then converting the two tiles from those buffers, may reduce parameter DMA descriptor and loop overhead while keeping the converted parameters resident.",
+  "change": "Replaced the two-tile special case and fallback with one full-row gamma load, one full-row bias load, one MTE2-to-Vector wait, and two tile conversions. Removed reads of x/residual into the parameter cache path. UB allocation, tile selection, reduction topology, arithmetic, and correctness thresholds are unchanged.",
+  "build": {
+    "status": "passed",
+    "entrypoint_command": "./tools/run.sh build",
+    "exit_code": 0,
+    "target": "r31b_submission_v011",
+    "artifact_path": "phase4/workspaces/R31B/build-n07/r31b_submission_v011",
+    "artifact_sha256": "14e81d59339c91a8b2d39f7979442cdccf6fee18741b9efd6f66fbdb99a0a41d"
+  },
+  "correctness": {
+    "status": "not_run",
+    "command": "./tools/run.sh correctness",
+    "exit_code": 3,
+    "output": "not_run: correctness harness is not present in this sparse worktree"
+  },
+  "local": {
+    "status": "not_run",
+    "command": "./tools/run.sh local",
+    "exit_code": 3,
+    "output": "not_run: canonical Local runner and scorer are not present in this sparse worktree"
+  },
+  "performance_measurement": {
+    "status": "not_run",
+    "reason": "No canonical Local runner/scorer is present; no device performance command was run."
+  },
+  "device_id": "NONE",
+  "r005_audit": {
+    "recorded_score": 102.386672,
+    "quality": "POOR",
+    "fragile": true,
+    "reliable_gain": false,
+    "promotion": "none",
+    "controlled_rerun": "unavailable: sparse-worktree correctness and Local runners are absent",
+    "correctness_note": "Stored 7/7 PASS metadata is not independently verified. Static inspection found the R005 BF16 8192-wide cache path converted x/residual staging values into the second gamma/bias cache tile; the stored C12 preflight is dtype=2, rows=8, width=8192 and reports BAD=0. Generated inputs and a fresh execution are unavailable here."
+  },
+  "evidence_note": "Build passed locally. R005's existing canonical score and poor/fragile quality classification are retained without promotion; this revision has no runtime correctness or performance result."
+}
