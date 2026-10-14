@@ -1,0 +1,41 @@
+{
+  "route": "N06",
+  "revision": "R200",
+  "run_id": "202",
+  "source_commit": "f83bdbcc1b0858d532937ae9245cb0993b68df32",
+  "git_parent_commit": "ad63f8c81470122198ea6a40148b19db5f4269a1",
+  "parent_source_commit": "551695bdc9bb9decde0977bf09950c01050dd3a5",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "2ec6e3e9db18fc342ba86ea0b2a4c76c3bd90ce2da06e147ee6271bfdba940e6",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "Change only kWideBf16XViewOffsetBytes from 64B (2 * 32B) to 32B. This moves the BF16 x-to-FP32 scratch LocalTensor view and reduces its allocation tail by 32B; ChooseWideFullYRows includes the same offset in its work-memory budget. Ping-pong phases, retained-y stride, arithmetic, and synchronization are unchanged.",
+  "hypothesis": "A 32B x-conversion scratch view offset may improve, hurt, or be neutral by changing the view address and the following residual-FP32 scratch base phase while retaining one 32B alignment unit. No physical UB bank mapping is inferred.",
+  "static_address_validation": {
+    "view_and_allocation": "The BF16 xFp32 view offset is 32B = 8 FP32 elements; xFp32Buf_ allocation is tileElems * 4 + 32 bytes = tileElems + 8 elements.",
+    "access_bound": "For valid <= tileElems, the exclusive highest accessed element is viewOffsetElems + valid <= 8 + tileElems, equal to or below the allocation element count.",
+    "alignment": "The view offset and allocation tail are multiples of 32B. tileElems is selected from 4096 downward in 512-element steps; each tile allocation component remains a multiple of 32B. The requested x scratch allocation shrinks by 32B; actual subsequent buffer placement is determined by the CANN local-buffer allocator.",
+    "budget": "The same X view offset is included in ChooseWideFullYRows work-memory skew and in InitBuffer size. Formula sweep across supported BF16 wide widths 8193..32768 found no row-count or tile-width regression; 32 boundary widths select more rows or a larger tile. Canonical widths 16384 and 32768 retain their row/tile choices, with calculated need reduced by 32B."
+  },
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "status": "PASS",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "3510efaaae1734ba865b7377a827387e2041c21120972b6afd9f9637d91edd05",
+    "log": "results/build_202.log",
+    "sha_file": "results/build-artifact_202.sha256"
+  },
+  "correctness": {
+    "status": "NOT_RUN",
+    "reason": "Deferred to Main's authorized Canonical Worker; no device test was started from this worktree."
+  },
+  "local": {
+    "status": "NOT_RUN",
+    "reason": "Deferred to Main's authorized Canonical Worker; no device timing was started from this worktree."
+  },
+  "device": {
+    "status": "NO_WORKLOAD",
+    "reason": "This revision ran only the local CANN Build command; no device command was issued."
+  },
+  "performance_conclusion": "UNKNOWN: build passed; Correctness and Canonical Local results are pending Main's worker."
+}
