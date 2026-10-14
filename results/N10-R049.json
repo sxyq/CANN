@@ -1,0 +1,85 @@
+{
+  "route": "N10",
+  "revision": "R049",
+  "mechanism": "row-to-core balance / C13-C14 range-owner permutation (static workload-equivalent control)",
+  "hypothesis": "Test whether a one-block range-owner rotation changes row/core workload balance for C13/C14. Static comparison shows the same per-block row-count multiset as R048; only block-to-row identity changes. Runtime or performance effect is unknown.",
+  "status": "exploratory_no_effect_static_equivalent_build_passed_correctness_local_unavailable_score_unknown",
+  "parent_candidate": "1c8fa7f282f9aff6deecf22414f70dc3b4f730da",
+  "parent_record_commit": "57823b38ba868ecdaaecfcd85a4acaf0ddea06a8",
+  "source_commit": "c62565936797f57a27d50122d343831fe5a88579",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "e4875b184c487da6b14d2de20288b1cc5042dc3d6f022db8d9d42aecf9e2061b",
+  "change": "In ProcessWideLowPrecision, when rowCount == 128 and rowWidth == 16384, map blockIdx to (blockIdx + 1) % blockCount before calling the existing GetBalancedRowRange. This rotates contiguous row-range ownership by one logical block only for Canonical C13/C14. The range formula, row counts, row offsets, tiles, UB buffers, arithmetic, and reduction logic are unchanged.",
+  "trigger_scope": {
+    "condition": "rowCount == 128 && rowWidth == 16384",
+    "canonical_shapes": ["C13", "C14"],
+    "canonical_shapes_detail": {
+      "C13": "128x16384 FP16",
+      "C14": "128x16384 BF16"
+    },
+    "path": "ProcessWideLowPrecision; these low-precision widths exceed kN10RowCacheElems=8192",
+    "trigger_block_count_cases": 256,
+    "scope_note": "The predicate is evaluated only in ProcessWideLowPrecision; other canonical shapes do not satisfy both dimensions. For blockCount=1 the permutation is necessarily identity."
+  },
+  "ownership_validation": {
+    "command": "python3 -c enumeration of all seven canonical rowCount/rowWidth/dtype tuples and blockCount 1..rowCount, applying the R049 block permutation and GetBalancedRowRange formula; assert permutation, exact coverage, uniqueness, nonempty ranges, and imbalance <= 1",
+    "status": "passed",
+    "canonical_shape_cases": 283,
+    "trigger_block_count_cases": 256,
+    "raw_output": "canonical_shape_cases=283 trigger=C13,C14 trigger_block_count_cases=256 partition=passed unique=passed balance<=1=passed",
+    "invariants": [
+      "The block-index map is a permutation for every tested blockCount.",
+      "The resulting ranges cover every row exactly once without overlap.",
+      "Every tested block receives at least one row and per-block row counts differ by at most one."
+    ],
+    "comparison_to_R048": {
+      "status": "static_workload_equivalent_no_row_count_effect",
+      "evidence": "For every legal blockCount, R049 permutes the same GetBalancedRowRange intervals across block IDs. The per-block interval-length multiset and row work are identical to R048; the row-range identity associated with each block changes.",
+      "performance_effect": "UNKNOWN; no correctness or device performance test ran."
+    },
+    "scope_note": "Static mapping validation only; not runtime correctness, physical-core behavior, or performance validation."
+  },
+  "scope_check": {
+    "task_ownership_changed": true,
+    "shape_specific_to_C13_C14": true,
+    "per_block_row_counts_changed": false,
+    "range_partition_formula_changed": false,
+    "per_row_scalar_address_generation_changed": false,
+    "row_offset_formula_changed": false,
+    "gm_tile_transaction_changed": false,
+    "arithmetic_changed": false,
+    "details": "Only block-to-range identity is rotated for the exact C13/C14 dimensions. The same set of balanced intervals is assigned, so per-block row-count distribution and total row work are statically equivalent to R048. Address formula rowOrdinal * rowWidth, tile transactions, arithmetic, UB buffers, and reduction topology remain unchanged."
+  },
+  "build": {
+    "command": "./tools/run.sh build",
+    "status": "passed",
+    "return_code": 0,
+    "log": "build-20261014T080001660882955Z.log",
+    "kernel_sha256": "e4875b184c487da6b14d2de20288b1cc5042dc3d6f022db8d9d42aecf9e2061b",
+    "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+    "cmake_sha256": "435cd84be945c1757159940c4c36fbab97fb06e9bf14e8a746a8121b42dda9fc",
+    "artifact_sha256": "47ca8b6823d4831c2fd2615eead093755cb9603f1d76886be62fa152e96017dd"
+  },
+  "correctness": {
+    "status": "unavailable",
+    "attempt_status": "not_run",
+    "command": "./tools/run.sh correctness",
+    "return_code": 127,
+    "log": "correctness-20261014T080115415959575Z.log",
+    "reason": "The existing entry reports no correctness runner and exits before any kernel test or device interaction."
+  },
+  "local": {
+    "status": "unavailable",
+    "attempt_status": "not_run",
+    "command": "./tools/run.sh local",
+    "return_code": 127,
+    "log": "local-20261014T080140136907539Z.log",
+    "reason": "The existing entry reports no Canonical Local runner and exits before measurement or device interaction."
+  },
+  "local_score": "UNKNOWN",
+  "performance_claim": null,
+  "device_test_started": false,
+  "device_id": null,
+  "free_hbm_mb": null,
+  "isolation": "worktree-level soft isolation only; no OS-level filesystem or Git object boundary"
+}
