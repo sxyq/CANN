@@ -1,0 +1,38 @@
+{
+  "route": "N06",
+  "revision": "R166",
+  "source_commit": "48872a890af993bffa21b893853a2079cc35f634",
+  "git_parent_commit": "d3fddfb1b16e810c19da8d3c8b55e7d949fa0b2e",
+  "parent_source_commit": "261ad9152bbc3fa509a4417169ff586b0391fc5a",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "904b6afa985caff0aa17ad7ccbf4e8ddf8af4edc508b7791d69ab376d2296571",
+  "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+  "cmake_sha256": "3a8bc9f92541f92fe403bd7a2c196cb9bf9008cea9c4d668c7b1d603c81b991f",
+  "runner_sha256": "23f6d76d82a7bf645559971d25ee46a6d2d02a59d0f17bf54fed33748196a787",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "In the wide BF16 full-y branch, swap only the InitBuffer order of outputBuf_ and xFp32Buf_. Allocation sizes, total UB use, chooser budget, processing order, arithmetic, indexing, and synchronization are unchanged.",
+  "hypothesis": "For tileElems=4096, xFp32Buf_ has a 16,416B allocation (32B modulo 64) and the BF16 output tile is 8,192B (0 modulo 64). Reordering their allocations shifts the output tile base by 32B modulo 64 while preserving the x scratch phase; this tests placement interaction without asserting a bank width or performance gain.",
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "log": "results/build_166.log",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "b8dd1da4de983df185b7c59c3cd531befab4572a87af19b973bd42adba5f4671",
+    "artifact_sha256_file": "results/build-artifact_166.sha256"
+  },
+  "correctness": {
+    "status": "not_run",
+    "command_executed": null,
+    "intended_entry": "./tools/run.sh correctness",
+    "reason": "The route entry accepts only build; no Correctness runner or test files are available in this worktree."
+  },
+  "local": {
+    "status": "not_run",
+    "command_executed": null,
+    "intended_entry": "./tools/run.sh local",
+    "reason": "No Canonical Local runner or scorer is available in this worktree."
+  },
+  "device": "None; compile only, no device work submitted.",
+  "workload": "CANN build only; no shape execution or Local workload ran.",
+  "performance_effect": "Unknown; compile only."
+}
