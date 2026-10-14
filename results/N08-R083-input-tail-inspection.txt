@@ -1,0 +1,27 @@
+route=N08
+record_type=BOUNDED_INPUT_TAIL_FACTOR_INSPECTION
+basis_revision=R083
+source_commit=d9680b4d284fe602f7290838f1649b988cc54b92
+inspection_tree=2053089b1c7e0ddb096bc5db14ad05c6deef7359
+source=phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+source_sha256=72110967ac53e0d3b6dd4504f255ac22f8fd9088436d1d017e0c1425b1462efb
+source_changed=false
+
+factor_examined=LoadTailPair.splitBodyLargeEnough
+bounded_finding=LoadTailPair has three input transaction plans: aligned/rounded DataCopy per source, aligned-body plus exact DataCopyPad suffix per source, and exact-count DataCopyPad per source. The standalone Load helper has only aligned DataCopy versus exact-count DataCopyPad and no independent split choice.
+in_bounds_split_evidence=The in-bounds split requires alignedBodyCount>=5 data blocks. If prefix==0, the earlier rounded DataCopy gate necessarily passes at this body size. If prefix>0, any split-eligible window already satisfies prefix<=count and count+prefix<=tileCapacity; with alignedBodyCount>=5 blocks, count is at least 4 blocks plus 1 element while the rounded excess is at most 2 blocks minus 2 elements, so the earlier count>=2*(alignedCount-count) gate also passes and returns first. Thus the in-bounds split threshold does not select an additional reachable plan under these conditions.
+out_of_bounds_split_evidence=The active split threshold is alignedBodyCount>=2 data blocks, gated by count>2*exactTailCount. Changing that threshold selects the same aligned-body plus exact-suffix plan versus exact-count DataCopyPad plan already exercised by R074 (prefix/read-amplification eligibility) and R076 (zero-prefix split eligibility). For example, FP32 rowWidth=4107 gives final count=11, prefix=0, body=8, exactTail=3; reducing the body minimum to one block would add two copy calls for the same 11 elements, repeating the zero-prefix transaction-count assumption rather than isolating a new factor.
+other_input_tail_paths=Load uses one aligned DataCopy when both offset and count are block-aligned, otherwise one exact-count DataCopyPad. LoadTailPair's rounded-window permission/cross-row behavior was changed by R081. No separate input GM tail transaction mechanism was identified in the inspected callsites.
+
+output_comparison=R077 changes two aligned row stores into one strided descriptor with blockCount=2; R080 extends that grouped output descriptor to active batchRows. R083 changes per-row, non-block-aligned output tail decomposition from one exact DataCopyPad to aligned body plus exact tail. These are distinct code paths but all are unmeasured transaction-count hypotheses; none is promoted as a performance result.
+decision=NO_NEW_CANDIDATE
+build_status=NOT_RUN_SOURCE_UNCHANGED
+last_build_source_commit=d9680b4d284fe602f7290838f1649b988cc54b92
+last_build_exit_code=0
+last_build_log=results/build-20261014T055700+0000.log
+correctness_status=UNAVAILABLE
+correctness_reason=This Route worktree's tools/run.sh exposes only build; no route-local correctness runner or inputs are present.
+local_status=UNAVAILABLE
+local_reason=This Route worktree exposes no Canonical Local runner, inputs, or scorer.
+score=UNKNOWN
+performance_status=UNKNOWN
