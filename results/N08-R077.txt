@@ -1,0 +1,29 @@
+route=N08
+revision=R077
+parent_sha=5778b4c048b6b0b369793d305d9e535507314cc6
+source_commit=a0ecffe64df588a51d7aa214edafc1b97c31cb9e
+built_tree_head=a0ecffe64df588a51d7aa214edafc1b97c31cb9e
+source=phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+source_sha256=e0134bdc3c4f01d894e13cabef46c7e0bb1a38797531839a0ebec6e6098dd744
+artifact=build/r31b_submission_v011
+artifact_sha256=3ffde633f7d83dbcbfa46153073aacead83985b89e8fab59a88fb4bcc91810fa
+
+hypothesis=For a two-row FP32 full-cache batch whose partial output tail length and both row starts are 32-byte aligned, issue one strided two-block DataCopyPad copy instead of one aligned DataCopy call per row.
+evidence=For rowWidth=8200, tileWidth=4096, and a two-row batch, the last tile has valid=8 FP32 elements (32 bytes), and rowWidth-valid=8192 FP32 elements, a 32-byte-aligned gap. When both rowDataCopyAligned flags are true, the existing path issues two exact aligned DataCopy calls, each copying 8 elements. The new DataCopyPad Ext descriptor has blockCount=2, blockLen=32 bytes, UB srcStride=(rowWidth-valid)*4/32 data blocks, and GM dstStride=(rowWidth-valid)*4 bytes; it covers the same two output ranges. This is descriptor/stride reasoning, not measured performance evidence.
+scope=Grouping only the block-aligned partial-tail stores of two rows in ProcessWideFp32FullCacheRows. Other batch sizes, non-aligned tails/rows, all input/parameter transactions, arithmetic, reduction, row/core scheduling, tile sizing, and UB layout remain unchanged.
+
+build_command=./tools/run.sh build
+build_exit_code=0
+build_log=results/build-20261014T041548+0000.log
+build_log_sha256=9c1b4583de0eae36f414901f048c497d99607c58b44b45436d6e9e172313a41e
+cann=/usr/local/Ascend/ascend-toolkit/latest
+compile_target=ASCEND_COMPUTE_UNIT=ascend910b; --npu-arch=dav-2201
+previous_artifact_sha256=04726bb72636ce7e0f9cad0d18ad939e1e7adc6c6d3dea26dd592062755d3cdd
+artifact_changed=true
+
+correctness_status=NOT_RUN
+correctness_reason=This Route worktree's tools/run.sh exposes only build; no route-local correctness runner or inputs are present. The new strided two-block tail-copy path has compile and static stride/alignment evidence only.
+local_status=NOT_RUN
+local_reason=This Route worktree exposes no Canonical Local runner, inputs, or scorer. No Local Score or performance conclusion is claimed.
+device_status=NOT_USED
+remote_status=NOT_ATTEMPTED
