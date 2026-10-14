@@ -1,0 +1,78 @@
+{
+  "route_id": "N07",
+  "revision": "R064",
+  "parent_commit": "c49e4f8890d3d348c34e1dfcf038992a729a3a1c",
+  "source_commit": "6802e0278cdf1f5058baf37b88e73b5d5613c8c4",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "9c6cb435f0a1b29ff8f906c109afb2d2e0bc91c55245fac7e50f928b91c92d02",
+  "hypothesis": "In ProcessNarrowMidOverlap, BF16 gamma and bias native tiles are resident across local rows, but each row currently converts both tiles to FP32 again. Reusing the already allocated FP32 parameter buffers after the first row's parameter-ready wait reduces repeated vector conversions without adding UB or changing arithmetic.",
+  "difference_from_r063": {
+    "r063": "Changes wide-row streaming parameter GM tile traffic by selecting row batching using ceil(maximumRowsPerBlock / rows) times tile count.",
+    "r064": "Changes mid-width BF16 parameter promotion reuse: native GM loads remain once per resident parameter tile, while FP32 Cast operations are reused across local rows."
+  },
+  "change": {
+    "scope": "ProcessNarrowMidOverlap BF16 output branch only",
+    "source_location": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc:641",
+    "behavior": "The first row loads and waits for native gamma/bias, promotes them into gammaFp32Buf_/biasFp32Buf_, and later local rows reuse these FP32 caches. Single-row blocks retain one promotion per row as before.",
+    "existing_buffers": "BF16 Init allocates gammaFp32Buf_ and biasFp32Buf_ at kCacheElems floats each; rowWidth in this path is at most kTileElems, so the cached parameter vectors fit without increasing allocation.",
+    "math_semantics_changed": false,
+    "synchronization_semantics_changed": false,
+    "files_changed": [
+      "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc"
+    ]
+  },
+  "shape_reachability": {
+    "dtype": "BF16",
+    "row_width_base_condition": "128 < rowWidth <= 4096",
+    "row_count_condition": "The specific block must have localRows > 1 for parameter reuse; localRows is derived from rowCount and blockCount.",
+    "excluded_by_earlier_dispatch": [
+      "For localRows > 1, rowWidth == 4096 dispatches to ProcessBf16FullTileBatchedOutputPipelined.",
+      "For localRows > 1, rowWidth <= 2048 and rowWidth % 16 == 0 dispatches to ProcessSmallLowPrecisionContiguousBatched."
+    ],
+    "effective_multirow_domain": "129 <= rowWidth <= 2048 with rowWidth % 16 != 0, or 2048 < rowWidth < 4096, and a block has localRows > 1.",
+    "canonical_shape_match": "Unknown; this sparse worktree contains no canonical Local runner/scorer or complete shape inventory."
+  },
+  "static_operation_estimate": {
+    "per_block_promotions_before": "2 * localRows vector casts (one gamma and one bias cast per row).",
+    "per_block_promotions_after": "2 vector casts when localRows > 1; unchanged when localRows == 1.",
+    "performance_claim": "None. Reduced Cast count is source-level only; Local/profile data is unavailable."
+  },
+  "build": {
+    "status": "passed",
+    "entrypoint_command": "./tools/run.sh build",
+    "exit_code": 0,
+    "output": [
+      "-- Configuring done",
+      "-- Generating done",
+      "Build files have been written to: /home/data4t2/lelinfeng/cann/worktrees/n07-parameter-tile-reuse/phase4/workspaces/R31B/build-n07",
+      "[ 50%] Building ASC object CMakeFiles/r31b_submission_v011.dir/compile_adapter_v011.asc.o",
+      "[100%] Linking ASC executable r31b_submission_v011",
+      "[100%] Built target r31b_submission_v011"
+    ],
+    "artifact_path": "phase4/workspaces/R31B/build-n07/r31b_submission_v011",
+    "artifact_sha256": "f87b780a733609ce5bce145209c0efa8f83bebb1098376396bfebfca266efef1",
+    "object_sha256": "871cf1d5d3ddc44dc5df452a37ee323e97a7220896cf27985a72cb00b937a9b2"
+  },
+  "correctness": {
+    "status": "not_run",
+    "command": "./tools/run.sh correctness",
+    "exit_code": 3,
+    "output": "not_run: correctness harness is not present in this sparse worktree"
+  },
+  "local": {
+    "status": "not_run",
+    "command": "./tools/run.sh local",
+    "exit_code": 3,
+    "output": "not_run: canonical Local runner and scorer are not present in this sparse worktree"
+  },
+  "performance_measurement": {
+    "status": "not_run",
+    "device_id": "NONE",
+    "reason": "Correctness and Local entrypoints are absent; no NPU or remote command was launched. Main reported cann-server3 name resolution failure and shared NPU activity."
+  },
+  "assessment": {
+    "candidate_status": "build-only; correctness and performance unverified",
+    "promotion": "none",
+    "next_evidence_needed": "Check whether the canonical suite includes BF16 rows in the effective multirow domain, then run correctness and canonical Local/profile when route-owned runners and a coordinated stable device window are available."
+  }
+}
