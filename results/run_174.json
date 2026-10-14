@@ -1,0 +1,38 @@
+{
+  "route": "N06",
+  "revision": "R174",
+  "source_commit": "4d0741e5ca553e22b0dbe25cdc8d77401c5f5c7b",
+  "git_parent_commit": "979ca0f1f84cbb5e20fd7e7293aa8031cbf78c77",
+  "parent_source_commit": "965f07fe6318b5ca5e28af26e8d44986bca83f2e",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "9592040f402530fc7a3622fc4803858ac8ddd572c6d409eacf05f193e3500794",
+  "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+  "cmake_sha256": "3a8bc9f92541f92fe403bd7a2c196cb9bf9008cea9c4d668c7b1d603c81b991f",
+  "runner_sha256": "23f6d76d82a7bf645559971d25ee46a6d2d02a59d0f17bf54fed33748196a787",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "In the wide BF16 full-y path, move the xBuf_ second-slot base 32B after its contiguous first slot. Apply the offset to both pass-1 x input and pass-2 gamma parameter ping-pong accesses, and add the same 32B to xBuf_ capacity and ChooseWideFullYRows I/O budgeting. Residual slots, allocation order, active buffer base, row strides, arithmetic, and event order are unchanged.",
+  "hypothesis": "Route-local history scanned FP16 x second-slot phases (R047-R061, R149-R152), while R012 explicitly kept BF16 slots unchanged. BF16 xBuf_ currently places its second slot immediately after the first; a 32B inter-slot gap changes the two-slot relative placement without shifting the TBuf base or other scratch. This extends a known slot-phase family to BF16 and is not an independently proven mechanism or performance claim.",
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "log": "results/build_174.log",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "aa7a8ffa8e985bca5d44a4a4df7930f2827326aa4bb009210be291416b4ad1aa",
+    "artifact_sha256_file": "results/build-artifact_174.sha256"
+  },
+  "correctness": {
+    "status": "not_run",
+    "command_executed": null,
+    "intended_entry": "./tools/run.sh correctness",
+    "reason": "The route entry accepts only build; no Correctness runner or test files are available in this worktree."
+  },
+  "local": {
+    "status": "not_run",
+    "command_executed": null,
+    "intended_entry": "./tools/run.sh local",
+    "reason": "No Canonical Local runner or scorer is available in this worktree."
+  },
+  "device": "None; compile only, no device work submitted.",
+  "workload": "CANN build only; no shape execution or Local workload ran.",
+  "performance_effect": "Unknown; compile only."
+}
