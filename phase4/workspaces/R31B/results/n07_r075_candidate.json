@@ -1,0 +1,46 @@
+{
+  "route_id": "N07",
+  "revision": "R075",
+  "branch": "research/n07-parameter-tile-reuse",
+  "parent_revision": "R074",
+  "source_parent_commit": "4a041bcea8727f8523e2746e1aacd9b6d6b5e58a",
+  "source_commit": "d18e8e1a1470ff4a94f4c43c398bb31b09edb299",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "9b133ed833c087190e9cc0d64550d325a1a67e6e5c1d1117f408adfe5ad9bdee",
+  "hypothesis": "The D=8192 BF16 full-row path reuses bias across local rows but currently converts each bias tile to FP32 again for every output row. Promoting bias once into a persistent FP32 cache should remove those repeated conversions. This is independent of R074's wide-path tile ranking cost model; no runtime gain is assumed.",
+  "change": {
+    "scope": "BF16 D=8192 ProcessBf16FullRowOutputPipelined parameter cache",
+    "behavior": "Load each bias tile through the existing BF16 staging buffer, convert once to FP32, retain it beside the FP32 gamma cache, and use it directly for each row's output tile.",
+    "math_semantics_changed": false,
+    "output_order_changed": false,
+    "additional_ub_bytes": 16384,
+    "files_changed": [
+      "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc"
+    ]
+  },
+  "build": {
+    "status": "passed",
+    "entrypoint_command": "./tools/run.sh build",
+    "exit_code": 0,
+    "target": "r31b_submission_v011",
+    "artifact_path": "phase4/workspaces/R31B/build-n07/r31b_submission_v011",
+    "artifact_sha256": "054bcd2897c0d4f5c7b7a6716799cd2591b91fae2f25b478e58e35bd98274e4b",
+    "log_path": "phase4/workspaces/R31B/results/n07_r075_build.log",
+    "log_sha256": "3928e36631f0ff69fd1c1ce4f2b3501f11607ed8b81f3bace07a725dc9a3fc53"
+  },
+  "correctness": {
+    "status": "not_run",
+    "entrypoint_command": "Main serial Canonical validation",
+    "reason": "Not run in the Route worktree; awaiting Main-coordinated device verification."
+  },
+  "local": {
+    "status": "not_run",
+    "reason": "Not run in the Route worktree; awaiting Main-coordinated Canonical Local measurement."
+  },
+  "device_id": "NONE",
+  "assessment": {
+    "candidate_status": "Build passed; correctness and Canonical Local remain unverified.",
+    "promotion": "none",
+    "performance_claim": "None; no device correctness or Local score was collected for R075."
+  }
+}
