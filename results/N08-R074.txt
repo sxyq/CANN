@@ -1,0 +1,29 @@
+route=N08
+revision=R074
+parent_sha=a52acb9ac2b80bb8eae0f6a1a28064bd44652dfd
+source_commit=7e9d5c4bd38632ce4dfd1a43cd3899426121a038
+built_tree_head=7e9d5c4bd38632ce4dfd1a43cd3899426121a038
+source=phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+source_sha256=0a915f87a38765dc265b95964c45b13576f51715430037c919753542599cec4f
+artifact=build/r31b_submission_v011
+artifact_sha256=bed72b118fff0c0d0c78408723f3916a5bef7975782c65bee63d3697e3e6eeb3
+
+hypothesis=For out-of-bounds paired tail reads, account for the aligned prefix in the existing split read-amplification gate by requiring count > prefix + 2 * exactTailCount. This avoids splitting a small valid tail when the aligned body also reads a substantial prefix.
+evidence=For B=16, prefix=15, count=19: coveredCount=34, alignedBodyCount=32 (two blocks), exactTailCount=2. R073's count > 2*exactTailCount gate admits a 32-element DataCopy body plus a 2-element DataCopyPad suffix for each input pair; R074 rejects it because 19 is not greater than 15+4 and uses one exact-count DataCopyPad per input. The candidate preserves the GM valid range and changes only split eligibility. This is path-selection reasoning, not a measured performance result.
+scope=Out-of-bounds paired body-plus-exact-suffix split read-amplification threshold in LoadTailPair only. No GM endpoint, consumer count, arithmetic, reduction, scheduling, tile sizing, or UB placement changes.
+
+build_command=./tools/run.sh build
+build_exit_code=0
+build_log=results/build-20261014T030144+0000.log
+build_log_sha256=9c1b4583de0eae36f414901f048c497d99607c58b44b45436d6e9e172313a41e
+cann=/usr/local/Ascend/ascend-toolkit/latest
+compile_target=ASCEND_COMPUTE_UNIT=ascend910b; --npu-arch=dav-2201
+previous_artifact_sha256=584a3b4d65ac4f6b62fc912e03d22b18b57e29cfe3e011bd4857ce55629e765f
+artifact_changed=true
+
+correctness_status=NOT_RUN
+correctness_reason=This Route worktree's tools/run.sh exposes only build; no route-local correctness runner or inputs are present. Existing canonical correctness covers R001-R071 only and does not validate R074.
+local_status=NOT_RUN
+local_reason=This Route worktree exposes no Canonical Local runner, inputs, or scorer. No Local Score or performance conclusion is claimed.
+device_status=NOT_USED
+remote_status=NOT_ATTEMPTED
