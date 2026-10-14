@@ -1,0 +1,42 @@
+{
+  "route": "N06",
+  "revision": "R201",
+  "run_id": "203",
+  "source_commit": "fe8dbd7af5fc4ce820493f83c9e37c229a1e97df",
+  "git_parent_commit": "07869e04dbc7ddeddc147ea86730ae4b61f28a1f",
+  "parent_source_commit": "f83bdbcc1b0858d532937ae9245cb0993b68df32",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "f8f451c7de5e6fca3be62bbd551193ccfa2ba6311ede49a292a89c8d7131bd38",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "Change only kWideBf16ReducePhaseBytes from 160B (5 * 32B) to 128B (4 * 32B). The BF16 ReduceSum partial view and allocated reduceFp32Buf_ tail use this phase; ChooseWideFullYRows includes the same phase in its work-memory budget. Reduce stride, partial slots, arithmetic, and synchronization are unchanged.",
+  "hypothesis": "Moving the BF16 partial-array view 32B earlier may improve, hurt, or be neutral by changing reduction-buffer placement while retaining the API's 8B destination alignment. No physical UB bank mapping is inferred.",
+  "static_address_validation": {
+    "view_and_allocation": "The view offset is 128B / 4B = 32 FP32 elements. Allocation is wideFullYRows_ * wideFullYReduceStride_ FP32 elements plus these 32 phase elements.",
+    "reduce_stride": "WideFp16ReduceStride returns ceil(tileCount*2/16)*16+8 FP32 elements; this is divisible by 8 FP32 elements (32B) and exceeds the two-float slot span for all tiles.",
+    "destination_alignment": "ReduceSum partial starts are phaseElems + batchRow*reduceStride + tile*2. Phase is a 32B multiple, row stride is a 32B multiple, and tile*2 floats is an 8B multiple, satisfying the documented 8B ReduceSum destination requirement.",
+    "partial_bounds": "With batchRows <= wideFullYRows_ and tileCount = ceil(rowWidth/tileWidth), each ReduceSum writes one float at the partial start and ReduceAlignedPartials reads offsets 2*i. Since reduceStride >= 2*tileCount+8, the last partial write/read is strictly before phaseElems + wideFullYRows_*reduceStride_, the allocation end.",
+    "budget": "The same reduce phase is used in ChooseWideFullYRows and InitBuffer, both decreasing by 32B. Formula sweep across supported BF16 wide widths 8193..32768 found no row-count or tile-width regression; 32 boundary widths select more rows or a larger tile. Canonical widths 16384 and 32768 keep their row/tile choices; calculated need decreases by 32B."
+  },
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "status": "PASS",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "f5881930c1e97aa12a659c53d7757393dc18efce10ca5a436d5936a02cdde66b",
+    "log": "results/build_203.log",
+    "sha_file": "results/build-artifact_203.sha256"
+  },
+  "correctness": {
+    "status": "NOT_RUN",
+    "reason": "Deferred to Main's authorized Canonical Worker; device validation is paused while Main runs N09."
+  },
+  "local": {
+    "status": "NOT_RUN",
+    "reason": "Deferred to Main's authorized Canonical Worker; device timing is paused while Main runs N09."
+  },
+  "device": {
+    "status": "NO_WORKLOAD",
+    "reason": "This revision ran only the local CANN Build command; no device command was issued."
+  },
+  "performance_conclusion": "UNKNOWN: build passed; Correctness and Canonical Local results are pending device availability and Main's worker."
+}
