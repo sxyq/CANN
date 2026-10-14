@@ -1,0 +1,30 @@
+route=N08
+revision=R079
+parent_sha=18a2d948d7b242e40660131a0101f492a4531a56
+source_commit=d16ebc3fc1eeecf89a9b8df44109edfcf666d990
+built_tree_head=d16ebc3fc1eeecf89a9b8df44109edfcf666d990
+source=phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+source_sha256=e0134bdc3c4f01d894e13cabef46c7e0bb1a38797531839a0ebec6e6098dd744
+artifact=build/r31b_submission_v011
+artifact_sha256=3ffde633f7d83dbcbfa46153073aacead83985b89e8fab59a88fb4bcc91810fa
+
+hypothesis=No new optimization hypothesis. Restore the R077 reachable aligned-tail grouping after R078 analysis proved its unaligned split-tail extension unreachable under rowWidthAlignment==0 and the block-aligned tile-width invariant.
+evidence=The exact-tail extension was removed without changing R077's two-row aligned-tail path. Build succeeded with exit code 0; source and artifact SHA-256 values exactly match the R077 candidate. This is cleanup evidence only, not a separate performance experiment.
+scope=Remove only the unreachable body-plus-suffix extension introduced by R078. No other code or result history changed.
+
+build_command=./tools/run.sh build
+build_exit_code=0
+build_log=results/build-20261014T043239+0000.log
+build_log_sha256=9c1b4583de0eae36f414901f048c497d99607c58b44b45436d6e9e172313a41e
+cann=/usr/local/Ascend/ascend-toolkit/latest
+compile_target=ASCEND_COMPUTE_UNIT=ascend910b; --npu-arch=dav-2201
+previous_artifact_sha256=b6a4f8ebc419341f814e7030e7fdc30cdec5a4bd58347c18339ba9bc238935be
+artifact_changed=true
+artifact_matches_revision=R077
+
+correctness_status=NOT_RUN
+correctness_reason=No route-local correctness runner or inputs are present. R079 restores the exact R077 source that built successfully; no correctness result is claimed for either revision.
+local_status=NOT_RUN
+local_reason=This Route worktree exposes no Canonical Local runner, inputs, or scorer. No Local Score or performance conclusion is claimed.
+device_status=NOT_USED
+remote_status=NOT_ATTEMPTED
