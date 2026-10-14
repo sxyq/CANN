@@ -58,4 +58,5 @@
 
 - 建议：`INVESTIGATE_NEXT`。
 - 依据：Parent/Candidate 在四个 shape/dtype 组合全部 Correctness PASS，且当前 Candidate 已完成一次 same-binary 与 paired 采集；但计时窗口开始前和全过程均有明显设备负载，故这些延迟只作原始观察，不能判定关闭展开是否改变了有效设备热点或性能。
-- 不重复测量同一 Candidate。设备指令形态仍未确认：CANN 8.5 的 `llvm-objdump --show-aicore-bins` 对现有 `.o`/`.so` 未列出设备段；`readelf` 可见 `.aicore_binary`，但该工具的 `--disassemble-aicore --section=.aicore_binary` 返回段不存在。下一步沿 CANN 8.5 编译器的设备代码导出入口，比较现有 Parent/Candidate 的 Pass2 `batchRow` 循环；再据此选择不同的代码布局假设。Candidate 源码本轮未改动。
+- 现有 Parent/Candidate 设备对象的 `.aicore_binary` 段各导出 `44,248` 字节，逐字节比较相同，记录见 `logs/n02-v2-local-20261014T083927Z/device-code-section-comparison.txt`。`#pragma clang loop unroll(disable)` 没有改变 AICore 二进制；当前 Candidate 作为设备代码布局优化予以 REJECT。Host 侧对象与动态库身份不同，但本轮负载不支持延迟归因。
+- 下一项 N02 研究应避开等价 unroll 写法，围绕 Pass2 热点代码寻找另一项能真实改变 AICore 指令布局的单因素假设，再做新的设备测量。当前源码不变。
