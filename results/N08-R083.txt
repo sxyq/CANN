@@ -1,0 +1,31 @@
+route=N08
+revision=R083
+parent_sha=bcb6e39ddb464da132d895a5c0cdee0635c17864
+source_commit=d9680b4d284fe602f7290838f1649b988cc54b92
+built_tree_head=d9680b4d284fe602f7290838f1649b988cc54b92
+source=phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+source_sha256=72110967ac53e0d3b6dd4504f255ac22f8fd9088436d1d017e0c1425b1462efb
+artifact=build/r31b_submission_v011
+artifact_sha256=ac8cb3f9beac9c00eef7b7cb35cf9fa4caae7791e392df156602681453499229
+
+hypothesis=Lower the single-row tail split ratio from 3:1 to 2:1 so borderline tails can use an aligned body DataCopy plus an exact DataCopyPad tail. This may improve the bulk transfer path but adds a GM store transaction; no performance benefit is assumed.
+evidence=With kTileElems=4096, a legal FP32 rowWidth=4107 reaches the ordinary multi-tile row path with final valid=11. The final GM offset is 4096 elements and block-aligned; StoreTailFromAlignedBuffer passes sourceBaseIsBlockAligned=true. For 32-byte blocks, bodyCount=8 and tailCount=3: the old 3* threshold selects one exact 11-element DataCopyPad, while 2* selects DataCopy of 8 elements plus DataCopyPad of 3. Both write the same exact 11-element range. Since valid=11 is not block-aligned, this example does not enter the grouped aligned-tail store branch. This is static reachability/transaction reasoning only.
+scope=Only the body-to-tail ratio predicate in StoreTailFromAlignedRow. GM addresses and bytes, grouped-store descriptor count, input traffic, arithmetic, reductions, scheduling, tile sizing, and UB placement are unchanged.
+
+build_command=./tools/run.sh build
+build_exit_code=0
+build_log=results/build-20261014T055700+0000.log
+build_log_sha256=9c1b4583de0eae36f414901f048c497d99607c58b44b45436d6e9e172313a41e
+cann=/usr/local/Ascend/ascend-toolkit/latest
+compile_target=ASCEND_COMPUTE_UNIT=ascend910b; --npu-arch=dav-2201
+previous_artifact_sha256=c6abc0d237c669469ac3bac39ba6406d1ca7faaf4620ae525f165926c9f071ff
+artifact_changed=true
+
+correctness_status=UNAVAILABLE
+correctness_reason=This Route worktree's tools/run.sh exposes only build; no route-local correctness runner or inputs are present.
+local_status=UNAVAILABLE
+local_reason=This Route worktree exposes no Canonical Local runner, inputs, or scorer.
+score=UNKNOWN
+performance_status=UNKNOWN
+device_status=NOT_USED
+remote_status=NOT_ATTEMPTED
