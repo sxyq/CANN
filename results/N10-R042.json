@@ -1,0 +1,54 @@
+{
+  "route": "N10",
+  "revision": "R042",
+  "mechanism": "row-to-core balance / partial row-stripe task partition",
+  "hypothesis": "When a partial stripe contains multiple tail rows per logical block, contiguous balanced chunks may reduce each block's row-address jumps relative to cyclic tail lanes while preserving per-block work balance.",
+  "status": "exploratory_build_passed_correctness_and_performance_unknown",
+  "parent_candidate": "ee016f70ed58ba87dfb947ac5ee04526c60c1098",
+  "parent_record_commit": "f068dbda0",
+  "source_commit": "4c297651a26fb549ef6bc7be2f2a70feac7ae520",
+  "source_sha256": "85740bb9249ea22a571cf3da657d55bffed8093f8b815c5297af0961f7669df1",
+  "change": "In ProcessWideLowPrecision, keep full-stripe row ownership unchanged and assign the final partial stripe as contiguous balanced row chunks. Each logical block receives floor(tailRows / blockCount) rows plus one for the first tailRows % blockCount owners. Per-block counts remain balanced to at most one row.",
+  "scope_check": {
+    "task_ownership_changed": true,
+    "physical_to_logical_block_mapping_changed": false,
+    "per_row_scalar_address_generation_changed": false,
+    "per_row_gm_offset_or_stride_formula_changed": false,
+    "gm_tile_transaction_changed": false,
+    "details": "Only logical-block ownership of rows in the incomplete final row stripe changes when tailRows > blockCount. Full stripes, column tiles, GM load/store sizes, rowOffset = sourceRow * rowWidth, output row stride, arithmetic, UB buffers, and reduction topology remain unchanged. No N05 or N08 mechanism is included."
+  },
+  "ownership_validation": {
+    "command": "bounded inline Python ownership check: blockCount 1..64, groupWidth 1..8, and rowCount around block/stripe boundaries; compare cyclic and contiguous tail assignments",
+    "status": "passed",
+    "boundary_cases": 5405,
+    "changed_block_tail_pairs": 58210,
+    "invariants": [
+      "Every row is assigned exactly once.",
+      "Per-block row counts differ by at most one.",
+      "For tailRows <= blockCount, cyclic and contiguous tail row sets are identical."
+    ],
+    "scope_note": "Static ownership validation only; not runtime correctness, performance, or Core-utilization validation."
+  },
+  "build": {
+    "command": "./tools/run.sh build",
+    "status": "passed",
+    "return_code": 0,
+    "log": "build-20261014T041541942799131Z.log",
+    "kernel_sha256": "85740bb9249ea22a571cf3da657d55bffed8093f8b815c5297af0961f7669df1",
+    "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+    "cmake_sha256": "435cd84be945c1757159940c4c36fbab97fb06e9bf14e8a746a8121b42dda9fc",
+    "artifact_sha256": "fd8ec4324fd24b0403bd3a31e9192a24b00d0b4f0bc3ccbc91a65787145f4b74"
+  },
+  "correctness": {
+    "status": "not_run",
+    "reason": "Build-only verification was requested for R042; no correctness command was run."
+  },
+  "local": {
+    "status": "not_run",
+    "reason": "Build-only verification was requested for R042; no Local command was run. The current N10 sparse worktree has no Canonical Local runner."
+  },
+  "performance_claim": null,
+  "device_id": null,
+  "free_hbm_mb": null,
+  "isolation": "worktree-level soft isolation only; no OS-level filesystem or Git object boundary"
+}
