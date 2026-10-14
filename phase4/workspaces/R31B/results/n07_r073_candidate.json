@@ -1,0 +1,54 @@
+{
+  "route_id": "N07",
+  "revision": "R073",
+  "branch": "research/n07-parameter-tile-reuse",
+  "parent_sha": "52c795e493e8cce1ebc2dd1d19f21d888dd46206",
+  "source_parent_commit": "48b22722112d1416d405cb7bfc70d2819b51bae5",
+  "source_commit": "394eebeaad6656b9ed5251f80834faddb5e96072",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "a42313e74853cd1218fbcc2296bea5e6046ae3e538136b84b2e32b1c6e27a238",
+  "hypothesis": "For uneven wide-BF16 row distributions, only a subset of blocks may own a second row while all blocks still load full parameter caches. Requiring every block to own multiple rows may avoid cache overhead on one-row blocks. No runtime gain is assumed.",
+  "change": {
+    "scope": "BF16 wide-path parameter-cache enable gate only",
+    "behavior": "Require minimumRowsPerBlock > 1 instead of maximumRowsPerBlock > 1 before attempting the full parameter-cache choices. A mixed one/two-row block distribution remains on the baseline streaming path.",
+    "math_semantics_changed": false,
+    "output_order_changed": false,
+    "files_changed": [
+      "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc"
+    ]
+  },
+  "static_reachability": {
+    "dtype": "BF16",
+    "condition": "rowCount / blockCount == 1 and rowCount % blockCount > 0 on a wide row",
+    "before": "maximumRowsPerBlock > 1 enabled full parameter-cache selection for every block",
+    "after": "minimumRowsPerBlock == 1 disables full parameter-cache selection for every block"
+  },
+  "build": {
+    "status": "passed",
+    "entrypoint_command": "./tools/run.sh build",
+    "exit_code": 0,
+    "target": "r31b_submission_v011",
+    "artifact_path": "phase4/workspaces/R31B/build-n07/r31b_submission_v011",
+    "artifact_sha256": "a4e4a1e88ffdab40a4dcdf93de6d401a43058ac08ac1d1ca763ddcd0304cf6a4",
+    "log_path": "phase4/workspaces/R31B/results/n07_r073_build.log",
+    "log_sha256": "3928e36631f0ff69fd1c1ce4f2b3501f11607ed8b81f3bace07a725dc9a3fc53"
+  },
+  "correctness": {
+    "status": "not_run",
+    "entrypoint_command": "./tools/run.sh correctness",
+    "exit_code": 3,
+    "reason": "not_run: correctness harness is not present in this sparse worktree"
+  },
+  "local": {
+    "status": "not_run",
+    "entrypoint_command": "./tools/run.sh local",
+    "exit_code": 3,
+    "reason": "not_run: canonical Local runner and scorer are not present in this sparse worktree"
+  },
+  "device_id": "NONE",
+  "assessment": {
+    "candidate_status": "build passed; correctness and Canonical Local remain unverified",
+    "promotion": "none",
+    "performance_claim": "None; no device correctness, Local score, or profile was collected."
+  }
+}
