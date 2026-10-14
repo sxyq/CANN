@@ -1,0 +1,22 @@
+route=N08
+record_type=BOUNDED_OUTPUT_TAIL_FACTOR_INSPECTION
+basis_revision=R083
+source_commit=d9680b4d284fe602f7290838f1649b988cc54b92
+inspection_tree=2053089b1c7e0ddb096bc5db14ad05c6deef7359
+source=phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+source_changed=false
+
+grouped_store_comparison=R077 changed eligible aligned two-row tails from two per-row DataCopy operations to one strided DataCopyPad descriptor with blockCount=2. R080 changed only that descriptor blockCount from 2 to active batchRows. The code's remaining independent transaction factor in this grouped path is therefore descriptor/block count, already covered by R077/R080.
+r083_threshold_comparison=R083 changes StoreTailFromAlignedRow's per-row body-to-exact-tail split ratio from 3:1 to 2:1. Its static example is FP32 rowWidth=4107 with final valid=11, body=8, tail=3. Since valid=11 is not block-aligned, it does not satisfy the grouped-store validBlockAligned condition and exercises a different output path. It is a transaction-decomposition probe, not evidence for changing grouped descriptor count or stride.
+bounded_finding=For grouped tails, blockLen is the semantic valid tail size and row stride is fixed by rowWidth-valid. No other independently adjustable output GM transaction factor was identified without changing covered GM ranges or repeating descriptor-count/body-tail split mechanisms.
+decision=NO_NEW_CANDIDATE
+build_status=NOT_RUN_SOURCE_UNCHANGED
+last_build_source_commit=d9680b4d284fe602f7290838f1649b988cc54b92
+last_build_exit_code=0
+last_build_log=results/build-20261014T055700+0000.log
+correctness_status=UNAVAILABLE
+correctness_reason=This Route worktree's tools/run.sh exposes only build; no route-local correctness runner or inputs are present.
+local_status=UNAVAILABLE
+local_reason=This Route worktree exposes no Canonical Local runner, inputs, or scorer.
+score=UNKNOWN
+performance_status=UNKNOWN
