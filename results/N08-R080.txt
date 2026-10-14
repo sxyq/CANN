@@ -1,0 +1,29 @@
+route=N08
+revision=R080
+parent_sha=7b3c6ed15b445234aab2579a7d8c14e4f94588d2
+source_commit=79c7a3f369bb4c1775dd69c84c4071065b8492af
+built_tree_head=79c7a3f369bb4c1775dd69c84c4071065b8492af
+source=phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+source_sha256=af1912f93b8b4277a7f559eaf9196f99172c397555a37e4d1f73f1ebca6fe1c6
+artifact=build/r31b_submission_v011
+artifact_sha256=2863c19ff6df44677dc1e3d9ca80aa5eaeb1f07f5a37d47af4d599e1bccfeeb4
+
+hypothesis=Extend the grouped aligned-tail DataCopyPad descriptor from exactly two rows to the active batchRows count, so every eligible FP32 full-cache batch uses one strided descriptor for all aligned partial-row tails.
+evidence=For rowWidth=8200, tileWidth=4096, rowWidthAlignment=0, and rowCount>=4, ChooseWideFullYRows selects 4 rows: y storage is 4*8200*4=131200 bytes, two input tiles use 32768 bytes, and four reduction partials use 256 bytes, totaling 164224 <= 176*1024. The last tile has valid=8 FP32 elements. All four GM/local row starts are block-aligned. R077's exact-two-row condition would use the per-row path for batchRows=4; R080 sets blockCount=4 with UB srcStride=(rowWidth-valid)*4/32 and GM dstStride=(rowWidth-valid)*4 bytes, covering the same four tails. This is reachability/stride reasoning, not measured performance evidence.
+scope=Broaden only the grouped aligned-tail output copy in ProcessWideFp32FullCacheRows from batchRows==2 to batchRows>=2. Non-aligned tails/rows, all input/parameter transactions, arithmetic, reduction, row/core scheduling, tile sizing, and UB layout remain unchanged.
+
+build_command=./tools/run.sh build
+build_exit_code=0
+build_log=results/build-20261014T044044+0000.log
+build_log_sha256=9c1b4583de0eae36f414901f048c497d99607c58b44b45436d6e9e172313a41e
+cann=/usr/local/Ascend/ascend-toolkit/latest
+compile_target=ASCEND_COMPUTE_UNIT=ascend910b; --npu-arch=dav-2201
+previous_artifact_sha256=3ffde633f7d83dbcbfa46153073aacead83985b89e8fab59a88fb4bcc91810fa
+artifact_changed=true
+
+correctness_status=NOT_RUN
+correctness_reason=This Route worktree's tools/run.sh exposes only build; no route-local correctness runner or inputs are present. The generalized strided blockCount path has compile and static reachability/stride evidence only.
+local_status=NOT_RUN
+local_reason=This Route worktree exposes no Canonical Local runner, inputs, or scorer. No Local Score or performance conclusion is claimed.
+device_status=NOT_USED
+remote_status=NOT_ATTEMPTED
