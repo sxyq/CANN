@@ -1,0 +1,71 @@
+{
+  "route": "N10",
+  "revision": "R050",
+  "mechanism": "row-to-core balance / block-cyclic row ownership for C13-C14",
+  "hypothesis": "Assigning each block every blockCount-th row preserves the minimum q/q+1 row-work distribution while interleaving block-owned row streams. It may change global-memory scheduling across blocks; no performance benefit is assumed without device measurements.",
+  "status": "exploratory_build_passed_correctness_local_pending",
+  "parent_candidate": "c62565936797f57a27d50122d343831fe5a88579",
+  "parent_record_commit": "25c2b6c95a781e07fef70ba6d70c1812d4d0b3f7",
+  "source_commit": "62f506da65fb8a5d5ddf14c3e94aa6a89a297fbf",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "df4c6f2997acd41dbe24c06202e788e68864a619d15ed6799e78aa2a6cf14216",
+  "change": "For rowCount == 128 and rowWidth == 16384 in ProcessWideLowPrecision, distribute q+1 rows to blockIdx < rowCount % blockCount and q rows to other blocks. Map each block-local row ordinal k to global row blockIdx + k * blockCount for input loads, prefetched loads, and output stores. Other shapes retain GetBalancedRowRange. Arithmetic, tile sizes, UB buffers, and reduction logic are unchanged.",
+  "ownership_validation": {
+    "command": "node -e 'for (let n=1;n<=128;n++) for(let b=1;b<=n;b++){const seen=new Uint8Array(n); for(let j=0;j<b;j++){const count=Math.floor(n/b)+(j<n%b?1:0); for(let k=0;k<count;k++){const i=j+k*b;if(i>=n||seen[i])throw Error(`invalid n=${n} b=${b} row=${i}`);seen[i]=1;}} if(seen.some(x=>x!==1))throw Error(`gap n=${n} b=${b}`)} console.log(\"block-cyclic partition exhaustive: N=1..128, B=1..N; coverage and uniqueness PASS\")'",
+    "status": "passed",
+    "cases": 8256,
+    "canonical_row_counts": {
+      "C13": 128,
+      "C14": 128
+    },
+    "raw_output": "block-cyclic partition exhaustive: N=1..128, B=1..N; coverage and uniqueness PASS",
+    "invariants": [
+      "For every tested N and B, each row maps to exactly one block-local row ordinal.",
+      "The generated row indices cover [0, N) without gaps or out-of-range indices.",
+      "Per-block row counts differ by at most one."
+    ],
+    "scope_note": "Static partition validation only; not runtime correctness, physical-core behavior, or performance validation."
+  },
+  "scope_check": {
+    "task_ownership_changed": true,
+    "full_stripe_row_ownership_changed": true,
+    "sparse_tail_row_ownership_changed": false,
+    "per_row_scalar_address_generation_changed": false,
+    "row_offset_formula_changed": false,
+    "gm_tile_transaction_changed": false,
+    "arithmetic_changed": false,
+    "details": "For the exact C13/C14 dimensions, block ownership changes from contiguous row ranges to interleaved row ordinals while preserving the q/q+1 row-count multiset. Input, prefetch, and output use the same mapping. Each individual GM tile remains contiguous with the same tile transaction size; arithmetic, UB buffers, and reduction topology are unchanged."
+  },
+  "build": {
+    "command": "./tools/run.sh build",
+    "status": "passed",
+    "return_code": 0,
+    "log": "build-20261014T152439366991135Z.log",
+    "kernel_sha256": "df4c6f2997acd41dbe24c06202e788e68864a619d15ed6799e78aa2a6cf14216",
+    "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+    "cmake_sha256": "435cd84be945c1757159940c4c36fbab97fb06e9bf14e8a746a8121b42dda9fc",
+    "artifact_sha256": "861a8cc5e1773ac3404f67512a018c6dad612820ac7adc0cb6a16969eb3b2ced"
+  },
+  "correctness": {
+    "status": "pending",
+    "attempt_status": "not_run",
+    "command": "./tools/run.sh correctness",
+    "return_code": null,
+    "log": null,
+    "reason": "Not started. Main will coordinate a single-device Canonical Worker for R050."
+  },
+  "local": {
+    "status": "pending",
+    "attempt_status": "not_run",
+    "command": "./tools/run.sh local",
+    "return_code": null,
+    "log": null,
+    "reason": "Not started. Main will coordinate a single-device Canonical Worker for R050."
+  },
+  "device_context_record": null,
+  "local_score": "UNKNOWN",
+  "performance_claim": null,
+  "device_id": null,
+  "free_hbm_mb": null,
+  "isolation": "worktree-level soft isolation only; no OS-level filesystem or Git object boundary"
+}
