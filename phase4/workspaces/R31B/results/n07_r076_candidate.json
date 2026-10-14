@@ -1,0 +1,66 @@
+{
+  "route_id": "N07",
+  "revision": "R076",
+  "branch": "research/n07-parameter-tile-reuse",
+  "parent_sha": "d9fd7eb2c89ae52710d717a1ad4dee5e9007d85f",
+  "source_commit": "6dbc7101038fe8264df55b2b08f13181f70264f2",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "0e4a3cafb62ea95890b3940fb54d28225ac5682b6ab01276e96fccadb4c171f2",
+  "hypothesis": "Wide low-precision block grouping only enables parameter reuse when at least one resident cache configuration fits UB. Avoid reducing active blocks when even the smallest cache working set is infeasible. This may preserve C16 parallelism if its availableCoreNum exceeds four; no latency gain is assumed.",
+  "change": {
+    "scope": "Host-side block-count gate for wide FP16/BF16 rows",
+    "behavior": "Before capping requestedBlocks at floor(rowCount / 2), check the selector's minimum 2048-element tile and one-row resident-parameter working set against the existing 176 KiB UB budget. The test includes gamma-only residency for BF16 and full gamma/bias residency for FP16.",
+    "math_semantics_changed": false,
+    "device_kernel_data_path_changed": false,
+    "files_changed": [
+      "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc"
+    ]
+  },
+  "static_reachability": {
+    "dtype": "BF16",
+    "condition": "rowWidth > 8192, requestedBlocks > 1, and minimum resident parameter set fits the 176 KiB selector budget",
+    "C16": {
+      "shape": "9x32768",
+      "path": "widePath_ -> ProcessWideLowPrecision",
+      "baseline_rows_per_batch": 1,
+      "baseline_tile_elems": 2560,
+      "minimum_gamma_only_working_set_bytes": 233600,
+      "native_gamma_bias_working_set_bytes": 299072,
+      "ub_budget_bytes": 180224,
+      "cache_fit": false,
+      "effect": "If run_kernel receives availableCoreNum > 4, the old row-grouping cap could reduce C16 from up to 9 blocks to 4 despite no parameter cache being selected; R076 leaves requestedBlocks uncapped for this cache-infeasible width."
+    },
+    "measurement_mapping_uncertainty": "The canonical probe records blocks=1, but this sparse Route worktree does not establish whether that outer probe field is passed as run_kernel availableCoreNum. Therefore the R068 block cap is a falsifiable explanation, not a proven cause of the recorded latency delta."
+  },
+  "build": {
+    "status": "passed",
+    "entrypoint_command": "./tools/run.sh build",
+    "exit_code": 0,
+    "output": [
+      "-- Configuring done",
+      "-- Generating done",
+      "-- Build files have been written to: /home/data4t2/lelinfeng/cann/worktrees/n07-parameter-tile-reuse/phase4/workspaces/R31B/build-n07",
+      "Consolidate compiler generated dependencies of target r31b_submission_v011",
+      "[ 50%] Building ASC object CMakeFiles/r31b_submission_v011.dir/compile_adapter_v011.asc.o",
+      "[100%] Linking ASC executable r31b_submission_v011",
+      "[100%] Built target r31b_submission_v011"
+    ],
+    "target": "r31b_submission_v011",
+    "artifact_path": "phase4/workspaces/R31B/build-n07/r31b_submission_v011",
+    "artifact_sha256": "a9fc56c7cf96d189e0ba7f07ad20fd72fcd42a2793aa137bc2da2db4d47c175c"
+  },
+  "correctness": {
+    "status": "not_run",
+    "reason": "Deferred to Main's serial device validation; no device command was run."
+  },
+  "local": {
+    "status": "not_run",
+    "reason": "Deferred to Main's Canonical Local validation; no device command was run."
+  },
+  "device_id": "NONE",
+  "assessment": {
+    "candidate_status": "Build passed; correctness and Canonical Local remain unverified.",
+    "promotion": "none",
+    "performance_claim": "None; R076 has not been measured on device."
+  }
+}
