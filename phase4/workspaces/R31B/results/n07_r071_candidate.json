@@ -38,22 +38,37 @@
     "basis": "Two 4096-element tiles; R070 casts gamma and bias per row, while R071 casts gamma during two-tile preload and bias per output row. Allocation total is a static buffer-size sum, not a compiler or runtime UB measurement."
   },
   "build": {
-    "status": "not_run",
+    "status": "passed",
     "entrypoint_command": "./tools/run.sh build",
-    "reason": "Awaiting Main candidate build/test; no local or remote build command was started."
+    "exit_code": 0,
+    "artifact_sha256": "8ef1fe58e40c2bfaa4545adcca2e98a1c4155ff8c3f924cf41f1f2cd80c501bf",
+    "reason": "Main performed a fresh exact-source Canonical build; details are in the n07-r071-live-20261014 evidence directory."
   },
   "correctness": {
-    "status": "not_run",
-    "reason": "Awaiting Main. Include canonical BF16 8x8192 and the BF16 128x8192 boundary check for this R071 source."
+    "status": "passed",
+    "canonical_pass_count": 7,
+    "canonical_case_count": 7,
+    "targeted_bf16_128x8192": {
+      "device": 4,
+      "harness_result": "PASS",
+      "bad": 0,
+      "max_abs": 0.015625,
+      "process_return_code": "UNKNOWN"
+    },
+    "reason": "Canonical correctness passed 7/7. The targeted diagnostic result and missing shell RC are recorded separately; the old R005 candidate was not rerun."
   },
   "local": {
-    "status": "not_run",
-    "reason": "Awaiting Main canonical Local measurement."
+    "status": "completed",
+    "score": 73.756795,
+    "quality": "POOR",
+    "local_status": "LOCAL_NEUTRAL",
+    "core_gain_count": 0,
+    "reason": "Canonical Local completed with no core gains; no promotion."
   },
-  "device_id": "NONE",
+  "device_id": 4,
   "assessment": {
-    "candidate_status": "source committed; build, correctness, and performance unverified",
+    "candidate_status": "build and correctness passed; Canonical Local is neutral/poor with zero core gains",
     "promotion": "none",
-    "performance_claim": "None. Cast-call reduction and UB usage are static estimates only."
+    "performance_claim": "None. The single targeted sample is diagnostic only; Canonical Local showed no core gains."
   }
 }
