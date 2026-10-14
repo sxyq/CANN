@@ -16,6 +16,8 @@
 
 ## Correctness 与 Local
 
-N05 的 d2 设备快照 `2026-10-14T05:52:38Z`：HBM `63413/65536 MB`，AICore `12%`；Python PID `278936` 使用 `60043 MB`，并与其它卡上的进程同时运行。该设备有用户任务在执行，因此本轮未运行 NPU Correctness，也未做 Same-binary 或 paired Local。`CORRECTNESS=NONE`、`LOCAL_SCORE=NONE`；无性能结论。快照、构建日志和源码/对象身份记录保存在 `本地实验/N05-SCALAR-ADDRESS-GENERATION-X/logs/`。
+N05 的 d2 设备快照 `2026-10-14T05:52:38Z`：HBM `63413/65536 MB`，AICore `12%`；Python PID `278936` 使用 `60043 MB`，并与其它卡上的进程同时运行。
+
+再次准备 Correctness 前的快照 `2026-10-14T06:37:54Z`：HBM `63412/65536 MB`（2124 MB 可用），AICore `11%`；同一 Python PID `278936` 使用 `60043 MB`，Runner 精确进程查询返回 1。由于设备已有计算负载，本轮没有启动 NPU Runner。Same-binary 与 paired Local 也未运行。`CORRECTNESS=NONE`、`LOCAL_SCORE=NONE`；无性能结论。两份快照、构建日志和源码/对象身份记录保存在 `本地实验/N05-SCALAR-ADDRESS-GENERATION-X/logs/`。
 
 本路线记录显示旧 Cursor 变体主要改地址推导；当前 Candidate 预计算尾 tile 有效长度，机制不同。但旧版本源码未包含在本 Clone，不能逐版本排除所有相同实现。当前状态：`INVESTIGATE_NEXT`，待设备可用后先完成 Candidate Correctness，再决定是否做 Local。
