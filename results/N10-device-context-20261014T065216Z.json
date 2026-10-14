@@ -1,0 +1,21 @@
+{
+  "route": "N10",
+  "observed_at_utc": "20261014T065216Z",
+  "source": "Main-provided read-only host status check; not re-queried by the N10 route",
+  "server_connectivity": {
+    "command": "ssh -o BatchMode=yes -o ConnectTimeout=8 cann-server3 true",
+    "return_code": 255,
+    "status": "unavailable",
+    "reason": "Temporary hostname resolution failure for cann-server3"
+  },
+  "device_context": {
+    "devices": "NPU 0-7 each had other processes",
+    "free_hbm_mb_range": [700, 9200],
+    "reported_aicore_utilization_percent": {
+      "NPU0": 77,
+      "NPU4": 59
+    }
+  },
+  "action": "Do not start NPU correctness or Local load while the shared devices are occupied and the configured server entry is unresolved; continue safe source and local-build work.",
+  "scope_note": "These are shared-device availability observations, not N10 kernel utilization or performance measurements. No other user's process was modified."
+}
