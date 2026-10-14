@@ -1,0 +1,44 @@
+{
+  "route": "N10",
+  "revision": "R041",
+  "mechanism": "row-to-core balance / low-precision wide-row block-index ownership mapping",
+  "hypothesis": "A half-grid cyclic logical-block rotation may reduce the distant row-band jumps created by center-out block mapping, without changing row ownership counts or work per block. Rows fewer than available cores remain inherently underutilized because each block must own a complete normalization row.",
+  "status": "exploratory_build_passed_performance_unknown",
+  "parent_candidate": "0d08a835f405df424a1c346a9e53aaa611875568",
+  "source_commit": "ee016f70ed58ba87dfb947ac5ee04526c60c1098",
+  "source_sha256": "c9b93e16379eeea7d0f9188a31e0bd42d8757d2606a07972ab5c7854f35123bf",
+  "change": "In ProcessWideLowPrecision, map physical block b to logical block (b + floor(blockCount / 2)) % blockCount instead of the center-out order. Block count, row ownership set, per-block row count, arithmetic, UB buffers, tile sizes, and reduction topology are unchanged.",
+  "scheduler_validation": {
+    "command": "python3 -c 'for blocks in range(1,4097): mapping=[(idx+blocks//2)%blocks for idx in range(blocks)]; assert len(set(mapping))==blocks and min(mapping)==0 and max(mapping)==blocks-1; print(\"half-grid rotation bijection passed for blockCount=1..4096\")'",
+    "status": "passed",
+    "cases": 4096,
+    "output": "half-grid rotation bijection passed for blockCount=1..4096",
+    "scope_note": "Static permutation coverage only; not runtime correctness or performance validation."
+  },
+  "build": {
+    "command": "./tools/run.sh build",
+    "status": "passed",
+    "return_code": 0,
+    "log": "build-20261014T032930520635539Z.log",
+    "kernel_sha256": "c9b93e16379eeea7d0f9188a31e0bd42d8757d2606a07972ab5c7854f35123bf",
+    "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+    "cmake_sha256": "435cd84be945c1757159940c4c36fbab97fb06e9bf14e8a746a8121b42dda9fc",
+    "artifact_sha256": "8c2c5be2e6c9962d0b6a1a250047172eabfcec9dc66c9c74ad572858bcc74c96"
+  },
+  "correctness": {
+    "status": "not_run",
+    "return_code": 127,
+    "log": "correctness-20261014T033212597957834Z.log",
+    "reason": "No correctness runner exists in the N10 sparse worktree."
+  },
+  "local": {
+    "status": "not_run",
+    "return_code": 127,
+    "log": "local-20261014T033345695405557Z.log",
+    "reason": "No Canonical Local runner exists in the N10 sparse worktree."
+  },
+  "performance_claim": null,
+  "device_id": null,
+  "free_hbm_mb": null,
+  "isolation": "worktree-level soft isolation only; no OS-level filesystem or Git object boundary"
+}
