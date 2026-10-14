@@ -1,0 +1,38 @@
+{
+  "route": "N06",
+  "revision": "R173",
+  "source_commit": "965f07fe6318b5ca5e28af26e8d44986bca83f2e",
+  "git_parent_commit": "7c2b3d2c232fb6c08ed8e5a2961a639645f33abd",
+  "parent_source_commit": "3dd2b2e1954c8219f3c45ae128eece37495d410d",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "677d0516d2473142e40c72a3a102c320a4b766154ede02a1f825ecd3c3725441",
+  "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+  "cmake_sha256": "3a8bc9f92541f92fe403bd7a2c196cb9bf9008cea9c4d668c7b1d603c81b991f",
+  "runner_sha256": "23f6d76d82a7bf645559971d25ee46a6d2d02a59d0f17bf54fed33748196a787",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "Enable the existing staggered row stride for BF16 wide full-y reduction partials: AlignUp(tileCount, 16) + 8 FP32 elements. The existing chooser uses the selected stride in both row-budget calculations and allocation; InitBuffer order, active views, retained-y pitch, arithmetic, and synchronization are unchanged.",
+  "hypothesis": "BF16 reduction rows previously used a fixed 16-float stride, so each row began at the same 64B-relative phase. The selected stride shifts successive row starts by 32B modulo 64B while retaining contiguous tile partials. R008 used this stride rule for FP16; R173 extends it to the BF16 path, whose reduction partial accesses share the pass-1 lifetime with conversion scratch. No bank mapping or performance gain is assumed.",
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "log": "results/build_173.log",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "67e007c96482203f0ff7c583d95338004b0b3602a18a6019f771586fe3511579",
+    "artifact_sha256_file": "results/build-artifact_173.sha256"
+  },
+  "correctness": {
+    "status": "not_run",
+    "command_executed": null,
+    "intended_entry": "./tools/run.sh correctness",
+    "reason": "The route entry accepts only build; no Correctness runner or test files are available in this worktree."
+  },
+  "local": {
+    "status": "not_run",
+    "command_executed": null,
+    "intended_entry": "./tools/run.sh local",
+    "reason": "No Canonical Local runner or scorer is available in this worktree."
+  },
+  "device": "None; compile only, no device work submitted.",
+  "workload": "CANN build only; no shape execution or Local workload ran.",
+  "performance_effect": "Unknown; compile only."
+}
