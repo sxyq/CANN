@@ -1,0 +1,29 @@
+route=N08
+revision=R082
+parent_sha=db4aa1f8fd73b08e22b155e44b4690ddbdf6b99a
+source_commit=6ae35a9572e1e45d50503f6353abaa0d726ba266
+built_tree_head=6ae35a9572e1e45d50503f6353abaa0d726ba266
+source=phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+source_sha256=bbda00c5ff65d6257bfade27e4691b76440ddfe8089aacfb010682aef4bed297
+artifact=build/r31b_submission_v011
+artifact_sha256=c6abc0d237c669469ac3bac39ba6406d1ca7faaf4620ae525f165926c9f071ff
+
+hypothesis=Preserve R077/R080 grouped aligned-tail output stores while reverting only the input-tail read-amplification and cross-row window policy changes from R074/R075/R076/R081, isolating the grouped output transaction mechanism.
+evidence=The diff is limited to LoadTailPair read eligibility/thresholds and its ProcessNarrowMidOverlap callsite; the grouped aligned-tail output store path is unchanged. Build proves compilation only. No current-version correctness or performance conclusion is supported.
+scope=LoadTailPair input-tail read policy and the ProcessNarrowMidOverlap callsite only. Grouped aligned-tail output stores, arithmetic, reductions, scheduling, tile sizing, and UB placement remain unchanged.
+
+build_command=./tools/run.sh build
+build_exit_code=0
+build_log=results/build-20261014T054741+0000.log
+build_log_sha256=9c1b4583de0eae36f414901f048c497d99607c58b44b45436d6e9e172313a41e
+cann=/usr/local/Ascend/ascend-toolkit/latest
+compile_target=ASCEND_COMPUTE_UNIT=ascend910b; --npu-arch=dav-2201
+previous_artifact_sha256=c027131b811e0fe127ffc01cd2841d23c97c9ee344b47a29808f326d5b3f5cf0
+artifact_changed=true
+
+correctness_status=NOT_RUN
+correctness_reason=This Route worktree's tools/run.sh exposes only build; no route-local correctness runner or inputs are present. R082 has compile evidence only.
+local_status=NOT_RUN
+local_reason=This Route worktree exposes no Canonical Local runner, inputs, or scorer. No Local Score or performance conclusion is claimed.
+device_status=NOT_USED
+remote_status=NOT_ATTEMPTED
