@@ -1,0 +1,58 @@
+{
+  "route_id": "N07",
+  "revision": "R062",
+  "branch": "research/n07-parameter-tile-reuse",
+  "parent_sha": "4e8b74df09a64a583121104fcf7f7509fe2555f4",
+  "source_commit": "e4b45d5064502fc453550b87429742f74fd33868",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "4fd0c5b9fe285e82f7f0e60de906bff9ee4c110a3e4cf69171d9f6c6888a31e7",
+  "hypothesis": "R060's full-row BF16 native staging loads exceed the allocated gamma/bias staging buffers for the 8192-wide full-row path. Reusing the existing x/residual staging buffers for the second parameter tile removes the out-of-bounds accesses without enlarging UB or changing arithmetic and thresholds.",
+  "change": "For the two-tile BF16 path, load tile 0 into gammaBuf_/biasBuf_ and tile 1 from gammaGm_/biasGm_ into xBuf_/residualBuf_. Convert both tiles into the existing full-row FP32 gamma/bias caches and drain Vector reads before x/residual staging is reused. The generic multi-tile fallback is unchanged.",
+  "memory_safety_audit": {
+    "dispatch": "rowWidth == kCacheElems (8192) takes the non-wide path because Init selects widePath_ only for rowWidth > kCacheElems; BF16/low-precision multi-row blocks dispatch to ProcessBf16FullRowOutputPipelined.",
+    "native_gamma_buffer": "4096 BF16 elements (8192 bytes); tile 0 writes 4096 elements at offset 0.",
+    "native_bias_buffer": "4096 BF16 elements (8192 bytes); tile 0 writes 4096 elements at offset 0.",
+    "second_tile_staging": "xBuf_ and residualBuf_ each hold 4096 BF16 elements (8192 bytes); tile 1 writes 4096 elements at offset 0, sourcing GM offset 4096.",
+    "promoted_parameter_caches": "gammaFp32Buf_ and biasFp32Buf_ each hold 8192 FP32 elements; converted tiles write offsets 0 and 4096, each for 4096 elements.",
+    "math_or_threshold_change": false
+  },
+  "build": {
+    "status": "passed",
+    "entrypoint_command": "./tools/run.sh build",
+    "exit_code": 0,
+    "output": [
+      "-- Configuring done",
+      "-- Generating done",
+      "-- Build files have been written to: /home/data4t2/lelinfeng/cann/worktrees/n07-parameter-tile-reuse/phase4/workspaces/R31B/build-n07",
+      "Consolidate compiler generated dependencies of target r31b_submission_v011",
+      "[ 50%] Building ASC object CMakeFiles/r31b_submission_v011.dir/compile_adapter_v011.asc.o",
+      "[100%] Linking ASC executable r31b_submission_v011",
+      "[100%] Built target r31b_submission_v011"
+    ],
+    "target": "r31b_submission_v011",
+    "artifact_path": "phase4/workspaces/R31B/build-n07/r31b_submission_v011",
+    "artifact_sha256": "12f0c1870126b4343649ea66fe8f77e0740dedeb7e0c42322864ccc6899b3b87"
+  },
+  "correctness": {
+    "status": "not_run",
+    "command": "./tools/run.sh correctness",
+    "exit_code": 3,
+    "output": "not_run: correctness harness is not present in this sparse worktree"
+  },
+  "local": {
+    "status": "not_run",
+    "command": "./tools/run.sh local",
+    "exit_code": 3,
+    "output": "not_run: canonical Local runner and scorer are not present in this sparse worktree"
+  },
+  "performance_measurement": {
+    "status": "not_run",
+    "reason": "No canonical Local runner/scorer is present; no device performance command was run."
+  },
+  "device_id": "NONE",
+  "assessment": {
+    "r060_status": "historical commit preserved; its original 8192-element Load into 4096-element native buffers was out of bounds",
+    "candidate_status": "build-only memory-safety correction; correctness unverified; no performance result; no promotion"
+  },
+  "evidence_note": "Build passed locally on 2026-10-14. Correctness/Local entrypoints returned RC 3 without launching device work. No NPU command was run. R060 and R061 result records are unchanged."
+}
