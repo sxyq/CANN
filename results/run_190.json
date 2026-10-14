@@ -30,5 +30,36 @@
     "status": "NOT_RUN",
     "reason": "The latest authorized cann-server3 preflight failed hostname resolution with exit code 255."
   },
+  "static_safety": {
+    "scope": "ReduceSum call paths reachable from Process in this candidate",
+    "tbuf_base_alignment_bytes": 32,
+    "reduce_destination_write_bytes": 4,
+    "reachable_destinations_8byte_aligned": true,
+    "non_wide": {
+      "reduce_buffer_bytes": 16384,
+      "destination_offsets_bytes": "0 for scalar rows; 8*tileIndex for tiled rows; 32*batchRow for batched rows",
+      "maximum_live_write_end_offset_bytes": 228
+    },
+    "wide_fp32": {
+      "reduce_buffer_bytes": "4*R*16, where R=wideFullYRows_",
+      "destination_offset_bytes": "4*(row*16 + 2*tile), where row<R and tileCount<=8",
+      "write_within_allocation": true
+    },
+    "wide_fp16": {
+      "reduce_buffer_bytes": "224 + 4*R*S, where R=wideFullYRows_ and S=wideFullYReduceStride_",
+      "view_prefix_bytes": 224,
+      "destination_offset_bytes": "224 + 4*(row*S + 2*tile)",
+      "write_within_allocation": true
+    },
+    "wide_bf16": {
+      "reduce_buffer_bytes": "128 + 4*R*S, where R=wideFullYRows_ and S=wideFullYReduceStride_",
+      "view_prefix_bytes": 128,
+      "destination_offset_bytes": "128 + 4*(row*S + 2*tile)",
+      "write_within_allocation": true
+    },
+    "final_reduction_destinations": "Non-wide helper writes residualFp32Buf_+0; wide FP32 writes residualBuf_+0; wide FP16/BF16 writes residualFp32Buf_+64B. Packed values and partials reside in distinct x/reduce TBufs.",
+    "reachable_no_alias": true,
+    "dormant_helper_caveat": "Unreferenced wide helpers contain contiguous tileIndex/panelCount destinations that are 4B-spaced. ProcessWideFp32PanelResident can require up to 32 partial floats while current FP32 full-y reduce allocation can be 16 floats at D=32768; it is not reachable from current Process dispatch."
+  },
   "performance_conclusion": "UNKNOWN: no Correctness or Canonical Local measurement was available."
 }
