@@ -1,0 +1,36 @@
+{
+  "route_id": "N07",
+  "revision": "R070",
+  "branch": "research/n07-parameter-tile-reuse",
+  "parent_sha": "75a4f6b83166a1a6c733462d09bb1bbcf43c510c",
+  "source_parent_revision": "947daf9c79267876b2830b4dbe076eb056910834",
+  "source_commit": "a2fb58fcd3e53785ade5b056f54b2efbb0fb0c8f",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "81cd6743b2fa1637a51ea405dbefff5b44801c2be14ece87043f4acf64ff3f5e",
+  "hypothesis": "For BF16 D=8192 multi-row blocks, keeping the once-loaded gamma/bias parameters in their native BF16 representation reduces UB use while preserving per-block GM parameter reuse. Widening only the consumed tile avoids using input staging buffers as parameter storage, the source of the R005 overwrite failure.",
+  "change": "Allocate the D=8192 full-row parameter caches in native T and cast each gamma/bias tile into the existing FP32 work buffers during output. Non-full-row shapes retain the existing FP32 cache allocation and path.",
+  "build": {
+    "status": "passed",
+    "entrypoint_command": "./tools/run.sh build",
+    "exit_code": 0,
+    "configure_command": "source /usr/local/Ascend/ascend-toolkit/set_env.sh && cmake -S <route>/phase4/workspaces/R31B -B <route>/phase4/workspaces/R31B/build-n07",
+    "compile_command": "source /usr/local/Ascend/ascend-toolkit/set_env.sh && cmake --build <route>/phase4/workspaces/R31B/build-n07 --target r31b_submission_v011 -j2",
+    "target": "r31b_submission_v011",
+    "artifact_path": "phase4/workspaces/R31B/build-n07/r31b_submission_v011",
+    "artifact_sha256": "80c4406c56e57b970a13b8f8a0648386fa31319a9b07fe886731e45eb2833ebb",
+    "log_path": "phase4/workspaces/R31B/results/n07_r070_build.log",
+    "log_sha256": "3928e36631f0ff69fd1c1ce4f2b3501f11607ed8b81f3bace07a725dc9a3fc53"
+  },
+  "correctness": {
+    "status": "not_run",
+    "reason": "No device test was started. R005 BF16 128x8192 is a known failing counterexample and remains a required rejection check before promotion."
+  },
+  "local": {
+    "status": "not_run",
+    "reason": "No Canonical Local run was started for R070."
+  },
+  "device_id": "NONE",
+  "assessment": {
+    "candidate_status": "build passed; correctness and performance remain unverified; no promotion"
+  }
+}
