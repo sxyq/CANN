@@ -1,0 +1,53 @@
+{
+  "route_id": "N07",
+  "revision": "R079",
+  "branch": "research/n07-parameter-tile-reuse",
+  "parent_revision": "R078",
+  "parent_sha": "851d6cb1cc32137b39ffefdcdae8f2b4c1a5ca74",
+  "source_commit": "a06fb77610a76174e0cf5692bcac1e6918d619a1",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "c15732b0896a161f89fc85c0bf5d5e5adc238cebd1e2ab891d7d1d17efa4cac9",
+  "hypothesis": "The BF16 native full-parameter cache loads gamma/bias once per block but widens them again for every output batch. Scoring its row/tile candidates by tileCount multiplied by batchCount may prefer configurations with less repeated parameter conversion work; no runtime gain is assumed.",
+  "change": {
+    "scope": "BF16 native full-parameter cache candidate ranking",
+    "behavior": "The selector now accounts for per-batch native-parameter widening by ranking native cache candidates on parameter tile operations (tile count times batch count). Other cache paths retain their existing scoring behavior.",
+    "math_semantics_changed": false,
+    "output_order_changed": false,
+    "files_changed": [
+      "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc"
+    ]
+  },
+  "build": {
+    "status": "passed",
+    "entrypoint_command": "./tools/run.sh build",
+    "exit_code": 0,
+    "target": "r31b_submission_v011",
+    "artifact_path": "phase4/workspaces/R31B/build-n07/r31b_submission_v011",
+    "artifact_sha256": "23b86c715ee9a3f71350f880ac9f20cda238031f4c2ce2eb33599f53a6f5a25d",
+    "log_path": "NONE",
+    "log_source": "Live command output captured from the actual ./tools/run.sh build invocation in this run; no separate build log file was written.",
+    "output": [
+      "-- Configuring done",
+      "-- Generating done",
+      "-- Build files have been written to: /home/data4t2/lelinfeng/cann/worktrees/n07-parameter-tile-reuse/phase4/workspaces/R31B/build-n07",
+      "Consolidate compiler generated dependencies of target r31b_submission_v011",
+      "[ 50%] Building ASC object CMakeFiles/r31b_submission_v011.dir/compile_adapter_v011.asc.o",
+      "[100%] Linking ASC executable r31b_submission_v011",
+      "[100%] Built target r31b_submission_v011"
+    ]
+  },
+  "correctness": {
+    "status": "not_run",
+    "reason": "No device command was run by this Route Agent; Main's R078 Canonical result does not validate R079."
+  },
+  "local": {
+    "status": "not_run",
+    "reason": "Performance testing was deferred because the BF16 D=8192 correctness risk from R005 remains unresolved."
+  },
+  "device_id": "NONE",
+  "assessment": {
+    "candidate_status": "Build passed; R079 correctness and performance remain unverified.",
+    "promotion": "none",
+    "performance_claim": "None; no R079 device measurement was collected."
+  }
+}
