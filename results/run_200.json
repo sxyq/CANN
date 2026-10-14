@@ -1,0 +1,35 @@
+{
+  "route": "N06",
+  "revision": "R198",
+  "run_id": "200",
+  "source_commit": "3998316c64ce04157ad8335bd752f5962f5b5993",
+  "git_parent_commit": "95e692e207139caf6c3f29a52bf71210c7f496c2",
+  "parent_source_commit": "4a425d0b58798c778624650ae78533358280ebf6",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "87435dc774cd6296fdcfe21d171154a838b6d3236e7b923cdc991dd1acf46955",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "Change only kWideBf16ResidualSecondPhaseBytes from 64 to 96 bytes (3 * 32B). This changes the wide BF16 residualBuf_ allocation tail, ChooseWideFullYRows I/O budget, and second-slot offsets for pass-1 residual input and pass-2 bias ping-pong. The x/gamma phase, first-slot bases, allocation order, retained-y pitch, arithmetic, and event order are unchanged.",
+  "hypothesis": "The 96B residual/bias second-slot gap changes the relative UB layout of pass-1 residual and pass-2 bias ping-pong buffers compared with 64B. It may alter local interactions during overlapped input loads and vector consumption; it may help, hurt, or be neutral. No physical UB bank mapping is inferred. The extra 32B is included in the I/O and row-fit budget and can affect retained rows for near-budget widths.",
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "status": "PASS",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "0d00f984f07c0a883469b388352783b1677282b5bbc739724332e544c2ca43f9",
+    "log": "results/build_200.log",
+    "sha_file": "results/build-artifact_200.sha256"
+  },
+  "correctness": {
+    "status": "NOT_RUN",
+    "reason": "Deferred to Main's authorized Canonical Worker; no device test was started from this worktree."
+  },
+  "local": {
+    "status": "NOT_RUN",
+    "reason": "Deferred to Main's authorized Canonical Worker; no device timing was started from this worktree."
+  },
+  "device": {
+    "status": "NO_WORKLOAD",
+    "reason": "This revision ran only the local CANN Build command; no device command was issued."
+  },
+  "performance_conclusion": "UNKNOWN: build passed; Correctness and Canonical Local results are pending Main's worker."
+}
