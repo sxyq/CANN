@@ -1,0 +1,42 @@
+{
+  "route_id": "N07",
+  "audit_id": "R067_BRANCH_AUDIT",
+  "inspected_head": "4aa043cea0a5",
+  "source_commit": "bc0c0f19578e9b391cd010315f971dbd4954c2fb",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "aa6a9fd57fda126f79ebf007b58d2ba7a33b8dfa2068fe2593fac95e13b4ec1a",
+  "scope": "Read-only review of ProcessWideLowPrecision pass2 and BF16 parameter-cache selection for a distinct R067 hypothesis.",
+  "dispatch_and_pass2": {
+    "wide_dispatch": "rowWidth > kCacheElems (8192) enters ProcessWideLowPrecision for FP16/BF16.",
+    "streaming_reachability": "The repeated parameter-load path is reached when the applicable FP16/full-row/native/gamma-only parameter cache flags are false.",
+    "within_batch_reuse": "The streamed pass2 loads one gamma/bias tile pair, converts BF16 parameters once, then applies that pair to every retained batch row before advancing to the next tile.",
+    "across_batch_behavior": "A later row batch repeats the same parameter tile reads. Full-row cache modes preload parameters before the batch loop; gamma-only mode retains gamma and still streams bias per batch."
+  },
+  "candidate_exclusions": [
+    {
+      "proposal": "Change BF16 streamed row-batch/tile selection using ceil(maximumRowsPerBlock / rowsPerBatch).",
+      "reason": "This is the existing R063 BF16 streamed chooser in ChooseWideFullYRows; using an exact block-distribution count would refine the same selection mechanism rather than create a distinct parameter-reuse mechanism."
+    },
+    {
+      "proposal": "Admit a BF16 full-row parameter cache when it has fewer rows than the baseline but preserves exact batch and tile counts, analogous to R065.",
+      "reason": "This is the R065 cache-admission mechanism applied to the BF16 branch. The BF16 branch already evaluates FP32-pair, native-pair, and gamma-only full-row caches; no separate mechanism was identified."
+    },
+    {
+      "proposal": "Reuse parameter Cast results for the wide BF16 path.",
+      "reason": "The streamed pass2 already converts each parameter tile once per batch and reuses it across that batch's rows; retaining it across batches requires a cache-selection or new persistent-buffer mechanism already represented by the existing full-row cache choices. R064 targets the distinct narrow/mid path."
+    },
+    {
+      "proposal": "Change FP32 full-row parameter residency.",
+      "reason": "FP32 dispatches to ProcessWideFp32, not ProcessWideLowPrecision; R066 already covers full-row FP32 parameter residency."
+    }
+  ],
+  "next_distinct_direction": "A partial multi-tile persistent parameter cache would require new UB allocation and a different lifetime/selection design. No supported canonical shape inventory or performance harness is present in this sparse worktree to justify that additional buffer and tradeoff, so no source change was made in this audit.",
+  "verification": {
+    "source_changed": false,
+    "build_run": false,
+    "correctness": "not run; no source change, and ./tools/run.sh correctness has no harness in this sparse worktree",
+    "local": "not run; no source change, and ./tools/run.sh local has no canonical runner/scorer in this sparse worktree",
+    "npu_or_remote_command": false,
+    "performance_claim": "None"
+  }
+}
