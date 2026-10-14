@@ -1,0 +1,21 @@
+route=N09
+revision=R062
+base_source_commit=883fae8a5618c16cdb43f65ea3a4ebd41558fd02
+record_parent_commit=1a418419d12b61ac01346d5daf7d52d12db5ba7b
+kernel_sha256=31d7b982d70532f21133c326968dd510b6eed159523bcc384dacf5d408ee4ae7
+target_arch=dav-2201; observed_soc=Ascend910B3
+status=source_review_only_no_supported_candidate
+scope=generic row reduction at kernel lines 288-383; wide FP32 cached row at 1904-1954; wide FP32 full-cache row at 2112-2340
+wide_call_chain=2173 Add(valueTile,xLocal,residualLocal,valid) -> 2175 Mul(xLocal,valueTile,valueTile,valid) -> 2181 ReduceSum(reduceLocal[partialIndex],xLocal,residualLocal,valid) -> 2235 Pattern::Reduce::AR final reduction when not a specialized merge -> 2239-2249 normalize/extract invRms -> 2293-2322 scale cached y, apply gamma/bias, Store
+generic_call_chain=325/336 Add(valueTile,x,residual,valid) -> 339 Mul(xFp32,valueTile,valueTile,valid) -> 343 ReduceSum(reduceFp32[tileIndex*2],xFp32,residualFp32,valid) -> 367-380 finalize scalar -> 387-478 output from cached y or reload path
+excluded_mechanisms=partial merge; single-partial final-reduce bypass; full-row tile geometry; dynamic-mask changes
+live_values=valueLocal/y must survive from first-pass Add at 2173 through Muls at 2293 and Store at 2320-2322; xBuf/xLocal is overwritten by y^2 at 2175 and serves as Pattern ReduceSum tmp at 2234-2236; residualBuf/residualLocal receives reduction/finalization output at 2217-2249 and then becomes bias staging at 2275-2289; reduceFp32 partial slots written at 2181 remain live until merge/finalization at 2216-2251
+candidate_result=none; no distinct dataflow change was supported without aliasing live y/partials, changing reduction grouping/order, or adding a data reread/buffer
+evidence_gap=correctness and Local runners return RC125 before launch; no current-candidate profiling; no precision evidence for an alternate partial grouping/order; no measured evidence that a new dataflow saves work on the target
+device_commands=NOT_RUN; no device load issued
+source_change=none
+build=NOT_RUN
+correctness=NOT_RUN
+local=NOT_RUN
+performance=NOT_RUN
+c11_static_address_audit=NOT_PERFORMED
