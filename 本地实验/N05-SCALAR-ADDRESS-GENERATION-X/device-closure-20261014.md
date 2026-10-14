@@ -20,4 +20,14 @@ N05 的 d2 设备快照 `2026-10-14T05:52:38Z`：HBM `63413/65536 MB`，AICore `
 
 再次准备 Correctness 前的快照 `2026-10-14T06:37:54Z`：HBM `63412/65536 MB`（2124 MB 可用），AICore `11%`；同一 Python PID `278936` 使用 `60043 MB`，Runner 精确进程查询返回 1。由于设备已有计算负载，本轮没有启动 NPU Runner。Same-binary 与 paired Local 也未运行。`CORRECTNESS=NONE`、`LOCAL_SCORE=NONE`；无性能结论。两份快照、构建日志和源码/对象身份记录保存在 `本地实验/N05-SCALAR-ADDRESS-GENERATION-X/logs/`。
 
-本路线记录显示旧 Cursor 变体主要改地址推导；当前 Candidate 预计算尾 tile 有效长度，机制不同。但旧版本源码未包含在本 Clone，不能逐版本排除所有相同实现。当前状态：`INVESTIGATE_NEXT`，待设备可用后先完成 Candidate Correctness，再决定是否做 Local。
+本路线记录显示旧 Cursor 变体主要改地址推导；当前 Candidate 预计算尾 tile 有效长度，机制不同。但旧版本源码未包含在本 Clone，不能逐版本排除所有相同实现。当前状态：`INVESTIGATE_NEXT`；诊断 Shape Correctness 已通过，Official Shape 映射仍未知，Local 为 `NONE`。
+
+### 2026-10-14 07:24Z Correctness follow-up
+
+- 使用已编译的 N05 Runner，未重编译。Parent/Candidate 的编译输入、对象与链接库身份沿用上方记录；Candidate 源码仍为 `3346b12b7f14e88e5188080f5810ec6327cd25338354f709435e4d676e58d817`。
+- 先前一次直接启动返回 `127`：Shell 未载入 CANN 运行库，`libruntime.so` 找不到；Runner 未进入 NPU。随后沿用 `build_server3.sh` 中的 CANN 环境初始化和库路径，`ldd` 已解析全部依赖。
+- 同一输入生成器 `R4_MULTIROW_PROXY_128XWIDTH_SEED0`，`rows=128,width=12416`，分别验证 FP16 与 BF16 的 Parent/Candidate。该宽度为 4096 元素 tile 的非整除尾块，尾块有效长度为 128；用例是诊断输入，不代表 Official Shape。
+- FP16 Parent/Candidate 均 `PASS`，`max_abs_error=0.001953125`、`mismatches=0`、`nonfinite=0`；BF16 Parent/Candidate 均 `PASS`，`max_abs_error=0.0078125`、`mismatches=0`、`nonfinite=0`。完整原始 TSV 分别保存在 `logs/n05-corr-20261014T0724Z-width12416-fp16-parent.tsv`、`logs/n05-corr-20261014T0724Z-width12416-fp16-candidate.tsv`、`logs/n05-corr-20261014T0724Z-width12416-bf16-parent.tsv`、`logs/n05-corr-20261014T0724Z-width12416-bf16-candidate.tsv`。
+- 测量前 d2：HBM 使用率 96%（约 2621 MB 可用）、AICore 8%、AIVector 7%、HBM 带宽 2%；Python PID `278936` 占用约 `60043 MB`。测量后该进程仍在，HBM 使用率 96%（约 2125 MB 可用）、AICore/AIVector 0%、HBM 带宽 14%；Runner 已退出。未触碰该进程。
+- Same-binary 与 paired Local 未运行。Local 保持 `NONE`：设备有其他用户的长期 HBM 占用，未取得可解释本 Candidate 的配对计时。Official Shape 映射仍为 `UNKNOWN`，这些诊断正确性数据不计为 Official 结果。
+- 后续考虑 Local 时 d2 仍为 HBM 使用率 96%、AICore 9%、AIVector 7%、HBM 带宽 30%，Runner 进程查询为 1；因此没有启动配对计时。详细设备快照见 `logs/n05-d2-corr-load-20261014T0724Z.txt`。

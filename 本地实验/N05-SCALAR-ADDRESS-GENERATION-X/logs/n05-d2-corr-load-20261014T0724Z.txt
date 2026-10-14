@@ -1,0 +1,38 @@
+N05 d2 correctness load context; diagnostic-only, no performance score
+
+Earlier full process snapshot, 2026-10-14T07:17:06Z:
+NPU=2, model=910B3, HBM=63412/65536 MB, AICore=6%
+PID=278936, process=python, process_memory=60043 MB
+
+Immediately before the correctness batch:
+Command: npu-smi info -t usages -i 2
+NPU ID=2
+HBM Capacity=65536 MB
+HBM Usage Rate=96%
+AICore Usage Rate=8%
+AIVector Usage Rate=7%
+HBM Bandwidth Usage Rate=2%
+Runner process query: pgrep -af /tmp/cann-n05-v2-20261014.sIM7dE/build/w4r07_runner
+Runner process query exit code=1 (not running)
+
+After the correctness batch:
+Command: npu-smi info -t usages -i 2
+NPU ID=2
+HBM Capacity=65536 MB
+HBM Usage Rate=96%
+AICore Usage Rate=0%
+AIVector Usage Rate=0%
+HBM Bandwidth Usage Rate=14%
+Full npu-smi process listing still showed PID=278936, process=python, process_memory=60043 MB
+Runner process query exit code=1 (not running)
+
+Later snapshot before deciding on Local:
+Command: npu-smi info -t usages -i 2
+NPU ID=2
+HBM Capacity=65536 MB
+HBM Usage Rate=96%
+AICore Usage Rate=9%
+AIVector Usage Rate=7%
+HBM Bandwidth Usage Rate=30%
+Runner process query exit code=1 (not running)
+Paired Local was not started; sustained external HBM use and unknown Official Shape mapping made this measurement low-value.
