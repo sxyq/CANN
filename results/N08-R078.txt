@@ -1,0 +1,29 @@
+route=N08
+revision=R078
+parent_sha=d17b8a81400595c75aee866d506cc5311878577d
+source_commit=e42d9c6b9d32c8b4e32ea63b6cf3e046c8a2966e
+built_tree_head=e42d9c6b9d32c8b4e32ea63b6cf3e046c8a2966e
+source=phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+source_sha256=604be3cb16be5d5e8d9c76724921420b45d9aaa083dec0653bcde9664c5884a3
+artifact=build/r31b_submission_v011
+artifact_sha256=b6a4f8ebc419341f814e7030e7fdc30cdec5a4bd58347c18339ba9bc238935be
+
+hypothesis=For an unaligned two-row FP32 tail whose existing 3:1 store gate allows an aligned body plus exact suffix, group the aligned bodies into one strided two-block copy and retain one exact suffix store per row.
+evidence=The source builds successfully, but the proposed non-aligned suffix case is unreachable under the merge guard. rowWidthAlignment==0 implies rowWidth%8==0 for FP32; ChooseWideFullYRows selects tileWidth in 512-element decrements, hence tileWidth%8==0; for the final partial tile, col is a tileWidth multiple and valid=rowWidth-col, so valid%8==0. Therefore exactTailCount is zero whenever the merge branch is eligible, and this revision does not implement the intended grouped body-plus-suffix case. The changed artifact hash is compile output evidence only, not a performance result. Mark this hypothesis INVALID_REACHABILITY.
+scope=Attempted grouped aligned-body plus exact-suffix stores for two-row FP32 tails. No intended behavior change is reachable; R079 cleanup will remove the dead split-tail extension while preserving R077's aligned-tail grouping.
+
+build_command=./tools/run.sh build
+build_exit_code=0
+build_log=results/build-20261014T042512+0000.log
+build_log_sha256=9c1b4583de0eae36f414901f048c497d99607c58b44b45436d6e9e172313a41e
+cann=/usr/local/Ascend/ascend-toolkit/latest
+compile_target=ASCEND_COMPUTE_UNIT=ascend910b; --npu-arch=dav-2201
+previous_artifact_sha256=3ffde633f7d83dbcbfa46153073aacead83985b89e8fab59a88fb4bcc91810fa
+artifact_changed=true
+
+correctness_status=NOT_RUN
+correctness_reason=No route-local correctness runner or inputs are present; static reachability analysis shows the intended new branch is unreachable under its guard.
+local_status=NOT_RUN
+local_reason=This Route worktree exposes no Canonical Local runner, inputs, or scorer. No Local Score or performance conclusion is claimed.
+device_status=NOT_USED
+remote_status=NOT_ATTEMPTED
