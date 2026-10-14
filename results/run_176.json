@@ -1,0 +1,42 @@
+{
+  "route": "N06",
+  "revision": "R176",
+  "source_commit": "7d8db7c908fb9a015f5fef322fa890172500ad96",
+  "git_parent_commit": "d7b2be3d3d14c29338a4147d7bae17b9b09e1d1d",
+  "parent_source_commit": "f6bb4ebd7060fd7e91e9e1402c8b2b875d7e5468",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "b679781c12b954ca402f0cc7f63030dea50a79c36beac05f83541ef40fbe3818",
+  "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+  "cmake_sha256": "3a8bc9f92541f92fe403bd7a2c196cb9bf9008cea9c4d668c7b1d603c81b991f",
+  "runner_sha256": "23f6d76d82a7bf645559971d25ee46a6d2d02a59d0f17bf54fed33748196a787",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "In the wide BF16 full-y path, add a 32B phase to the residualBuf_ second slot and use that offset for both pass-1 residual input and pass-2 bias parameter ping-pong. Include the phase in residualBuf_ capacity and ChooseWideFullYRows I/O budgeting. Arithmetic, first-slot bases, and event order are unchanged; FP16 offsets are unchanged.",
+  "hypothesis": "The BF16 residual/bias second slot was contiguous while the corresponding x/gamma slot had a 32B phase. Giving the residual/bias second slot the same candidate transfer-aligned phase may improve or worsen local UB interactions. The compiler output does not expose physical bank mapping, and no performance effect is inferred.",
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "log": "results/build_176.log",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "63a9e2b9dfa85bdfd5cee08f44c25c0281cf680cc6cba63702301c77e05219eb",
+    "artifact_sha256_file": "results/build-artifact_176.sha256"
+  },
+  "correctness": {
+    "status": "not_run",
+    "command_executed": "./tools/run.sh correctness",
+    "exit_code": 2,
+    "output": "usage: ./tools/run.sh build",
+    "reason": "The route entry accepts only build; no Correctness runner or test files are available in this worktree."
+  },
+  "local": {
+    "status": "not_run",
+    "command_executed": "./tools/run.sh local",
+    "exit_code": 2,
+    "output": "usage: ./tools/run.sh build",
+    "reason": "No Canonical Local runner or scorer is available in this worktree."
+  },
+  "device": "None; compile only, no NPU work submitted.",
+  "device_context": "No fresh host/NPU probe for R176. The most recent Main read-only snapshot and cann-server3 resolution failure are recorded in results/run_175.json.",
+  "workload": "CANN build only; no shape execution, Correctness, or Local workload ran.",
+  "performance_effect": "Unknown; compile only.",
+  "timestamp_utc": "2026-10-14T06:59:28Z"
+}
