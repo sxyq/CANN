@@ -17,9 +17,12 @@
 | 输入 | Parent | Candidate | 说明 |
 |---|---|---|---|
 | rows=128、D=12288、FP32 | FAIL，max abs `8.46536255`，1,258,202 mismatches | FAIL，max abs `4.97458458`，1,258,856 mismatches | 两者 nonfinite=0，Runner rc=1 |
+| rows=128、D=8192、FP32 | PASS，max abs `4.76837158e-07`，0 mismatch | 未运行 | Parent-only 参考诊断，Runner rc=0 |
 
-该 Runner 固定 Rows=128；N01 已知 Official 目标为 Rows=2、D=12288，因此这次只覆盖相同 D 与 FP32 路径，不能替代 Rows=2 的正确性证明。Parent 与 Candidate 均未通过该诊断参考，当前无法据此把误差归因到单因素变化。N01 V021 留存资料也报告 Rows=2、D=12288 的 Parent/Candidate 对参考比较失败；需先确认既有正确性参考与设备实现差异。
+该 Runner 固定 Rows=128；N01 已知 Official 目标为 Rows=2、D=12288，因此这些结果不能替代 Rows=2 的正确性证明。D=8192 的 Parent 通过，D=12288 的 Parent 与 Candidate 均失败；目前证据指向 D=12288 的宽行路径或输入情形，无法把误差归因到单因素变化。N01 V021 留存资料也报告 Rows=2、D=12288 的 Parent/Candidate 对参考比较失败；需先确认既有正确性参考与设备实现差异。
 
 设备前快照 `2026-10-14T05:57:11Z`：NPU5 HBM `59876/65536 MB`，AICore `0%`；VLLMWorker_TP PID `3355594` 使用 `56354 MB`。结束快照 `2026-10-14T06:00:16Z`：HBM `59877/65536 MB`，AICore `0%`，同一进程仍在；Runner 精确进程查询返回 1。进程未被触碰。
+
+Parent-only D=8192 诊断前后：`2026-10-14T06:21:08Z` 至 `06:23:47Z`，NPU5 HBM 约 `59877/65536 MB`、AICore `0%`，同一 VLLMWorker_TP PID `3355594` 仍在；Runner 结束后精确进程查询返回 1。只运行一次 Correctness-only，没有计时。
 
 Correctness 原始 stdout/stderr/TSV、设备前后快照、构建日志和身份记录均保存在 `本地实验/N01-REGISTER-LIVE-RANGE-X/logs/`。Same-binary 与 paired Local 未运行；`LOCAL_SCORE=NONE`，没有性能结论。当前状态：`INVESTIGATE_NEXT`。
