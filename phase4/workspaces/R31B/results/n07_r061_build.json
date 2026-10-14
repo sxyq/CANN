@@ -1,0 +1,51 @@
+{
+  "route_id": "N07",
+  "revision": "R061",
+  "branch": "research/n07-parameter-tile-reuse",
+  "parent_sha": "5a4987506327525403956d0faf70a77f49872d89",
+  "parent_record_commit": "dd9e8c5af8a05f2c3d29ac235dc86e80679430b7",
+  "source_commit": "aa8b8e15a6946769163b6b8147fb1631b5ce9b9e",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "5868ed23111a117586048f558aa913ec5370c0bb6cc09b2e5a8c872f462477e9",
+  "hypothesis": "Loading complete FP32 gamma/bias rows once may reduce parameter DMA descriptor and loop overhead compared with per-tile loads. This is the FP32-path counterpart to R060's BF16 full-row loads, so it repeats the same load-granularity mechanism and is not an independent optimization direction.",
+  "change": "Changed the FP32 direct-cache path from per-tile gamma/bias loads to full-row loads. Arithmetic, UB allocation, tile selection, reduction topology, and row/core scheduling are unchanged.",
+  "build": {
+    "status": "passed",
+    "entrypoint_command": "./tools/run.sh build",
+    "exit_code": 0,
+    "output": [
+      "-- Configuring done",
+      "-- Generating done",
+      "-- Build files have been written to: /home/data4t2/lelinfeng/cann/worktrees/n07-parameter-tile-reuse/phase4/workspaces/R31B/build-n07",
+      "Consolidate compiler generated dependencies of target r31b_submission_v011",
+      "[ 50%] Building ASC object CMakeFiles/r31b_submission_v011.dir/compile_adapter_v011.asc.o",
+      "[100%] Linking ASC executable r31b_submission_v011",
+      "[100%] Built target r31b_submission_v011"
+    ],
+    "target": "r31b_submission_v011",
+    "artifact_path": "phase4/workspaces/R31B/build-n07/r31b_submission_v011",
+    "artifact_sha256": "df2da148382f5333239119b7946cc9f55cab267a6234af400c42db42d9e14832"
+  },
+  "correctness": {
+    "status": "not_run",
+    "command": "./tools/run.sh correctness",
+    "exit_code": 3,
+    "output": "not_run: correctness harness is not present in this sparse worktree"
+  },
+  "local": {
+    "status": "not_run",
+    "command": "./tools/run.sh local",
+    "exit_code": 3,
+    "output": "not_run: canonical Local runner and scorer are not present in this sparse worktree"
+  },
+  "performance_measurement": {
+    "status": "not_run",
+    "reason": "No canonical Local runner/scorer is present; no device performance command was run."
+  },
+  "device_id": "NONE",
+  "assessment": {
+    "mechanism_relation": "duplicate-granularity-exploration-with-R060",
+    "candidate_status": "build-only; not correctness-qualified; no performance result; no promotion"
+  },
+  "evidence_note": "Local CANN compilation passed on 2026-10-14. No correctness run, Local score, or device performance measurement was obtained."
+}
