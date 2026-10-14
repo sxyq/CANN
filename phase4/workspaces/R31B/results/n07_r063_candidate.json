@@ -1,0 +1,111 @@
+{
+  "route_id": "N07",
+  "revision": "R063",
+  "parent_commit": "d0062f47a6c8259241ec4e05c5b156d3cac73474",
+  "source_commit": "e12e3430a8075420a5f5cf17360155d73a794da7",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "c936ea7349e88b95210bd1ecdb7807f8ea35287ea33e991c8ac8681771bb67dd",
+  "hypothesis": "For the BF16 wide generic path without a full parameter cache, choose the UB row batch and tile width by the estimated number of streamed parameter tile pairs across all per-core batches, including the ceil effect. This may lower repeated gamma/bias GM reads for row counts that do not divide evenly by the row batch, at the cost of potentially increasing per-row tile iterations.",
+  "change": {
+    "scope": "BF16 wide generic Init baseline row/tile selection only",
+    "selector": "When maximumRowsPerBlock is provided, minimize candidateTileCount * ceil(maximumRowsPerBlock / candidateRows); tie-break by fewer tiles, more rows, then larger tile. Callers without a row count retain the prior ratio heuristic.",
+    "math_or_sync_change": false,
+    "files_changed": [
+      "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc"
+    ]
+  },
+  "static_estimate": {
+    "dtype": "BF16",
+    "row_width": 8193,
+    "maximum_rows_per_block": 4,
+    "ub_budget_bytes": 180224,
+    "current_selection": {
+      "tile_elems": 4096,
+      "rows_per_batch": 3,
+      "tiles_per_row": 3,
+      "batches_per_block": 2,
+      "parameter_tile_pairs_read": 6,
+      "gamma_plus_bias_bytes_read": 65544
+    },
+    "candidate_selection": {
+      "tile_elems": 2560,
+      "rows_per_batch": 4,
+      "tiles_per_row": 4,
+      "batches_per_block": 1,
+      "parameter_tile_pairs_read": 4,
+      "gamma_plus_bias_bytes_read": 32772
+    },
+    "cache_check": "Full FP32, native BF16, and gamma-only parameter-cache row capacities are below the baseline row capacity for this example, so the example remains on the streaming-parameter branch.",
+    "tradeoff": "The estimate halves gamma/bias input bytes for this example, while tile iterations per row rise from 3 to 4. This is a falsifiable traffic hypothesis, not a latency result; no canonical shape match or performance improvement is claimed."
+  },
+  "build": {
+    "status": "passed",
+    "entrypoint_command": "./tools/run.sh build",
+    "exit_code": 0,
+    "output": [
+      "-- Configuring done",
+      "-- Generating done",
+      "-- Build files have been written to: /home/data4t2/lelinfeng/cann/worktrees/n07-parameter-tile-reuse/phase4/workspaces/R31B/build-n07",
+      "[ 50%] Building ASC object CMakeFiles/r31b_submission_v011.dir/compile_adapter_v011.asc.o",
+      "[100%] Linking ASC executable r31b_submission_v011",
+      "[100%] Built target r31b_submission_v011"
+    ],
+    "artifact_path": "phase4/workspaces/R31B/build-n07/r31b_submission_v011",
+    "artifact_sha256": "2b3f7e571bb3611d3719f7367b9cea98ed9e4de34a6d52c33c48151bb81818dc",
+    "object_sha256": "35d06af0924c844ac316d3897f4ec255d69c212c369a1c62a5073a873cd43027"
+  },
+  "correctness": {
+    "status": "not_run",
+    "command": "./tools/run.sh correctness",
+    "exit_code": 3,
+    "output": "not_run: correctness harness is not present in this sparse worktree"
+  },
+  "local": {
+    "status": "not_run",
+    "command": "./tools/run.sh local",
+    "exit_code": 3,
+    "output": "not_run: canonical Local runner and scorer are not present in this sparse worktree"
+  },
+  "performance_measurement": {
+    "status": "not_run",
+    "device_id": "NONE",
+    "reason": "Canonical Local runner/scorer are absent. No NPU command was launched."
+  },
+  "r005_revalidation": {
+    "status": "unavailable",
+    "rerun": false,
+    "reason": "The current route correctness and Local entrypoints both return RC 3 because their harness/scorer are absent. The configured cann-server3 hostname check reported by Main returned RC 255 due to temporary name resolution failure. No equivalent controlled revalidation command is present in this worktree.",
+    "historical_result_preserved": {
+      "source_commit": "464e3cbbed60299f74f818d08eb46bcfb929b1e8",
+      "source_sha256": "6ba4ad69c0a0bd0ae10bd00239990f2c530e3e131ddd0d342fb838995decbb84",
+      "canonical_correctness": "7/7 recorded PASS; not independently revalidated in this revision",
+      "local_score": 102.386672,
+      "local_status": "LOCAL_NEUTRAL",
+      "quality": "POOR",
+      "local_gain_fragile": true,
+      "reliable_gain": false,
+      "promotion": "none",
+      "record_path": "phase4/workspaces/R31B/results/canonical-sweep/all-versions-20261013/versions/R005-6ba4ad69c0/status.json",
+      "note": "The historical result remains unchanged. The R060 audit identified an invalid BF16 D=8192 second-parameter-tile staging path in R005, so the prior pass metadata does not settle correctness of that path. No same-condition measurement was repeated."
+    }
+  },
+  "environment_context_reported_by_main": {
+    "ssh_command": "ssh -o BatchMode=yes -o ConnectTimeout=8 cann-server3 true",
+    "ssh_exit_code": 255,
+    "ssh_output_summary": "Temporary hostname resolution failure",
+    "devices": "NPU 0-7 reported as running other processes",
+    "free_hbm_gb_approx": "0.7-9.2",
+    "aicore_utilization_percent": {
+      "npu0": 77,
+      "npu4": 59
+    },
+    "action": "No remote or shared-device command was launched by this route agent; no device switching was attempted."
+  },
+  "assessment": {
+    "candidate_status": "build-only; correctness and performance unverified",
+    "promotion": "none",
+    "math_semantics_changed": false,
+    "synchronization_semantics_changed": false,
+    "next_evidence_needed": "Run the existing correctness and canonical Local protocols when their route-owned entries and a coordinated stable device window are available; test shapes where ceil(maximumRowsPerBlock / candidateRows) changes the selector choice."
+  }
+}
