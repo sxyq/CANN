@@ -1,0 +1,58 @@
+{
+  "route": "N06",
+  "revision": "R175",
+  "source_commit": "f6bb4ebd7060fd7e91e9e1402c8b2b875d7e5468",
+  "git_parent_commit": "ccabdff49438b43716eba2ca9897dd35394a0f65",
+  "parent_source_commit": "4d0741e5ca553e22b0dbe25cdc8d77401c5f5c7b",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "b07e51b2866db389370197a3f51dbb0009e196c1169dcad4a981edc061d5817c",
+  "adapter_sha256": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+  "cmake_sha256": "3a8bc9f92541f92fe403bd7a2c196cb9bf9008cea9c4d668c7b1d603c81b991f",
+  "runner_sha256": "23f6d76d82a7bf645559971d25ee46a6d2d02a59d0f17bf54fed33748196a787",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "In the wide BF16 full-y pass 2, reuse the current xBuf_ gamma parameter slot as the final BF16 output tile after gamma/bias are widened into FP32 scratch. Remove the separate 4096-element BF16 outputBuf_ allocation. Tiling, arithmetic, offsets, and synchronization order are otherwise unchanged.",
+  "hypothesis": "The current gamma tile is dead as a parameter after conversion to xFp32/residualFp32. Reusing its slot for output removes one 4096-element BF16 UB tile and may change local bank interactions. No physical bank mapping or performance effect is inferred from the available compiler output.",
+  "lifetime_evidence": "Pass 2 converts gammaLocal and biasLocal to FP32, then executes PipeBarrier<PIPE_V> before output writes. Each output Store is preceded by SyncVToMTE3 and followed by SyncMTE3ToV. After all batch rows for the tile, V_MTE2 release is signaled; before that slot is loaded again two tiles later, the matching V_MTE2 event is waited. The next gamma tile is prefetched into the opposite ping-pong slot.",
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "log": "results/build_175.log",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "6fa14a7d564314701ea2ecd240e3caf845135dc2511f527295f99b22d95d9fba",
+    "artifact_sha256_file": "results/build-artifact_175.sha256"
+  },
+  "correctness": {
+    "status": "not_run",
+    "command_executed": "./tools/run.sh correctness",
+    "exit_code": 2,
+    "output": "usage: ./tools/run.sh build",
+    "reason": "The route entry accepts only build; no Correctness runner or test files are available in this worktree."
+  },
+  "local": {
+    "status": "not_run",
+    "command_executed": "./tools/run.sh local",
+    "exit_code": 2,
+    "output": "usage: ./tools/run.sh build",
+    "reason": "No Canonical Local runner or scorer is available in this worktree."
+  },
+  "device": "None; compile only, no NPU work submitted.",
+  "device_context": {
+    "reported_by": "Main read-only host check",
+    "remote_probe": {
+      "command": "ssh -o BatchMode=yes -o ConnectTimeout=8 cann-server3 true",
+      "exit_code": 255,
+      "result": "Temporary hostname resolution failure."
+    },
+    "npu_snapshot": {
+      "devices": "NPU 0-7 had other processes",
+      "free_hbm_gb_approx_range": "0.7-9.2",
+      "aicore_utilization_percent": {
+        "NPU0": 77,
+        "NPU4": 59
+      }
+    }
+  },
+  "workload": "CANN build only; no shape execution, Correctness, or Local workload ran.",
+  "performance_effect": "Unknown; compile only.",
+  "timestamp_utc": "2026-10-14T06:48:07Z"
+}
