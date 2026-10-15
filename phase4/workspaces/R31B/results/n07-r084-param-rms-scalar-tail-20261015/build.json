@@ -1,0 +1,39 @@
+{
+  "route": "N07",
+  "revision": "R084",
+  "branch": "research/n07-parameter-tile-reuse",
+  "parent_commit": "051832f347581167465f6ebef51aef30978edabc",
+  "parent_source_commit": "312f30e05a085bafb238232e79dacdb025d0ddc5",
+  "source_commit": "1c9dc567dc7d7168c8ab394259bd729b01251f9c",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "d9e7b7ef80fe6288d0647e48c4c52378630890b2cae3a1a1a9ce33269852ace4",
+  "hypothesis": "For the BF16 8192-wide path, stage the second gamma/bias tile in the released x/residual UB tiles after pass-one input arithmetic, so its MTE2 transfer overlaps the row-wide RMS reduction and scalar tail.",
+  "change": "Moved only the second parameter-tile loads and FP32 promotion in ProcessBf16FullRowOutputPipelined; the loads read gammaGm_/biasGm_ and next-row prefetch resumes after the staging tiles are released.",
+  "build": {
+    "status": "passed",
+    "entrypoint_command": "./tools/run.sh build",
+    "exit_code": 0,
+    "output": [
+      "-- Configuring done",
+      "-- Generating done",
+      "-- Build files have been written to: /home/data4t2/lelinfeng/cann/worktrees/n07-parameter-tile-reuse/phase4/workspaces/R31B/build-n07",
+      "Consolidate compiler generated dependencies of target r31b_submission_v011",
+      "[ 50%] Building ASC object CMakeFiles/r31b_submission_v011.dir/compile_adapter_v011.asc.o",
+      "[100%] Linking ASC executable r31b_submission_v011",
+      "[100%] Built target r31b_submission_v011"
+    ],
+    "target": "r31b_submission_v011",
+    "artifact_path": "phase4/workspaces/R31B/build-n07/r31b_submission_v011",
+    "artifact_sha256": "b07980f92122a3fc3c0b191e0912fa1038eb1aab7b4e0e246eca2871e6a2fd9c"
+  },
+  "correctness": {
+    "status": "not_run",
+    "reason": "Deferred to Main's serial device-test queue; no device command was run."
+  },
+  "local": {
+    "status": "not_run",
+    "reason": "Deferred to Main's serial device-test queue; no device command was run."
+  },
+  "device_id": "NONE",
+  "assessment": "Build passed; correctness and performance remain unverified."
+}
