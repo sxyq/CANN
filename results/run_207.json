@@ -1,0 +1,58 @@
+{
+  "route": "N06",
+  "revision": "R205",
+  "run_id": "207",
+  "source_commit": "e96c1907efaa36cb2217fad33a66acc54f10e2dd",
+  "git_parent_commit": "2554a3d523ad4a7561a545977243f516fb6417a7",
+  "parent_source_commit": "b8079283060e34f66ff3f1b32d89dc7891699981",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "ddb5062ecbdff041bfb59fb895953d9064a50a327d4359086a0a8ef7ffd927c3",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "In the wide BF16 branch only, request residualFp32Buf_ before xFp32Buf_ from InitBuffer. Both scratch allocations retain their existing sizes and view offsets. The host UB budget, arithmetic, loads, compute order, and synchronization are unchanged. This isolates allocation request order, distinct from R200-R203 phase/row-layout changes and R204 reduction stride.",
+  "hypothesis": "Changing the request order of the two simultaneously live BF16 FP32 conversion scratch buffers may change their relative UB base placement and vector access interaction. It may improve, hurt, or be neutral. No physical UB bank mapping or allocator placement guarantee is inferred.",
+  "static_address_validation": {
+    "allocations": "xFp32Buf_ requests tileElems * sizeof(float) + kWideBf16XViewOffsetBytes; residualFp32Buf_ requests tileElems * sizeof(float) + kWideBf16ResidualFp32PhaseBytes. Neither size nor phase changed; only the two adjacent InitBuffer calls were reordered.",
+    "views": "ProcessWideLowPrecision retains xFp32OffsetElems = kWideBf16XViewOffsetBytes / sizeof(float) and residualFp32OffsetElems = kWideBf16ResidualFp32PhaseBytes / sizeof(float). For valid <= tileElems, each offset plus valid remains within its corresponding unchanged allocation extent.",
+    "budget": "ChooseWideFullYRows continues to account for both phase constants and is unchanged. Total UB allocation bytes are unchanged, so row/tile selection is unchanged by this source edit.",
+    "liveness": "Both scratch buffers are independently addressed and simultaneously used by the BF16 pass-1 conversion/add/reduction. No pointer alias, buffer reuse, arithmetic, or event ordering was changed."
+  },
+  "parent_canonical": {
+    "revision": "R204",
+    "source_commit": "b8079283060e34f66ff3f1b32d89dc7891699981",
+    "source_sha256": "782e47fd13222dba9a5209846f1d014abab7a4026849ec5606622cd5c57247bc",
+    "correctness": "PASS 7/7",
+    "local_score": 93.526681,
+    "local_status": "LOCAL_NEUTRAL",
+    "quality": "POOR",
+    "core_gain_count": 0,
+    "core_medians_us": {
+      "C12": {"candidate": 7.30, "parent": 7.52, "anchor": 6.58},
+      "C13": {"candidate": 20.98, "parent": 20.92, "anchor": 20.80},
+      "C14": {"candidate": 27.54, "parent": 26.18, "anchor": 25.96},
+      "C16": {"candidate": 16.58, "parent": 15.42, "anchor": 15.06}
+    },
+    "evidence": "results/canonical-sweep/live-n06-r204-20261015/versions/R204-782e47fd/evidence"
+  },
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "status": "PASS",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "22e468a74f93a7b45bbe3724f5ca15e6d91369198bd1db5f698868af1b7a2dda",
+    "log": "results/build_207.log",
+    "sha_file": "results/build-artifact_207.sha256"
+  },
+  "correctness": {
+    "status": "NOT_RUN",
+    "reason": "Not run per Main instruction; N07 owns the exclusive NPU lane."
+  },
+  "local": {
+    "status": "NOT_RUN",
+    "reason": "Not run per Main instruction; N07 owns the exclusive NPU lane."
+  },
+  "device": {
+    "status": "NO_WORKLOAD",
+    "reason": "This revision ran only the local CANN Build command; device validation waits for Main to release the exclusive lane."
+  },
+  "performance_conclusion": "UNKNOWN: R205 compiled successfully; candidate correctness and performance remain unmeasured."
+}
