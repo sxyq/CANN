@@ -36,6 +36,60 @@ RAW_DELTA_US=+55.701 (V016-V011; LOAD_CONTAMINATED; no conclusion)
 
 PROBE_DECISION=Raw paired evidence only; no performance claim; stop at Main Review
 
+--- N04 DMA-PIPELINE-OVERLAP-X V002 ---
+ROUTE=N04-DMA-PIPELINE-OVERLAP-X
+REVISION=V002
+DIRECT_PARENT=R31B-V011 plus V001 DMA writeback protocol
+PARENT_SOURCE_SHA=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
+CANDIDATE_SOURCE_SHA=7a3124031d263bb3f22d3e9728fabbd37cfa5ae9b4faf61b56e77d00d2a6effa
+HOST=cann-server3 (remote hostname hwnput3)
+DEVICE=4
+ROWS=2
+WARMUP=45
+PAIRS=21
+PAIRING=V011 parent and V002 Candidate interleaved P,C then C,P; same device and stream
+TIMING=device event primary; wall clock diagnostic
+LOAD_LABEL=LOAD_CONTAMINATED
+LOAD_BEFORE=2026-10-15T21:03:29+00:00 UTC; HBM=90%; AICore=64%; AIVector=28%; CtrlCPU=4%; HBM bandwidth=60%; VLLM/python processes present
+LOAD_AFTER=2026-10-15T21:03:34+00:00 UTC; HBM=90%; AICore=57%; AIVector=33%; CtrlCPU=10%; HBM bandwidth=58%; VLLM/python processes present
+RAW_LOG=本地实验/R31B/V016/V002/server3-paired.log
+
+PAIR=fp16-tail-d12288
+PARENT_MEDIAN_US=12.660
+CANDIDATE_MEDIAN_US=12.380
+MEDIAN_DIFF_US=-0.280
+PAIRED_DELTA_MEDIAN_US=-0.100
+PARENT_MAD_US=2.080
+CANDIDATE_MAD_US=1.220
+
+PAIR=fp16-wide-d32768
+PARENT_MEDIAN_US=18.200
+CANDIDATE_MEDIAN_US=16.340
+MEDIAN_DIFF_US=-1.860
+PAIRED_DELTA_MEDIAN_US=+0.600
+PARENT_MAD_US=4.460
+CANDIDATE_MAD_US=4.020
+
+PAIR=bf16-tail-d12288
+PARENT_MEDIAN_US=13.600
+CANDIDATE_MEDIAN_US=12.140
+MEDIAN_DIFF_US=-1.460
+PAIRED_DELTA_MEDIAN_US=-1.740
+PARENT_MAD_US=3.220
+CANDIDATE_MAD_US=2.840
+
+PAIR=bf16-wide-d32768
+PARENT_MEDIAN_US=20.400
+CANDIDATE_MEDIAN_US=21.900
+MEDIAN_DIFF_US=+1.500
+PAIRED_DELTA_MEDIAN_US=+0.220
+PARENT_MAD_US=3.040
+CANDIDATE_MAD_US=3.020
+
+LOCAL_SCORE=NONE
+INTERPRETATION=one paired run completed with correctness PASS, but HBM stayed at 90%, AICore/AIVector were active, VLLM/python processes remained present, and multiple device-event outliers occurred; no stable performance conclusion
+SNAPSHOTS=本地实验/R31B/V016/V002/server3-before-paired.txt,本地实验/R31B/V016/V002/server3-after-paired.txt,本地实验/R31B/V016/V002/server3-artifact-identities.txt
+
 --- N04 DMA-PIPELINE-OVERLAP-X V001 ---
 ROUTE=N04-DMA-PIPELINE-OVERLAP-X
 REVISION=V001

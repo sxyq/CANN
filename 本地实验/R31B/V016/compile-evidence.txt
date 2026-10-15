@@ -48,3 +48,30 @@ ARTIFACT_RUNNER_SIZE=581448
 CANN_PARENT_SHA_REMOTE=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
 CANN_CANDIDATE_SHA_REMOTE=b3fc584e0848e61077d26b91597ff23fe9f2dbc0658bb908818563cae6973064
 RAW_COMPILE_LOGS=本地实验/R31B/V016/V001/server3-compile.log,本地实验/R31B/V016/V001/server3-compile-retry.log
+
+--- N04 DMA-PIPELINE-OVERLAP-X V002 ---
+ROUTE=N04-DMA-PIPELINE-OVERLAP-X
+REVISION=V002
+DIRECT_PARENT=R31B-V011 plus V001 DMA writeback protocol
+PARENT_SOURCE_SHA=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
+CANDIDATE_SOURCE_SHA=7a3124031d263bb3f22d3e9728fabbd37cfa5ae9b4faf61b56e77d00d2a6effa
+HOST=cann-server3 (remote hostname hwnput3)
+CANN=/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002
+SOC=Ascend910B3
+NPU_ARCH=dav-2201
+REMOTE_ROOT=/tmp/cann-n04-dma-pipeline-overlap-20261016
+COMPILE_ATTEMPT_1=FAIL; CONFIGURE_RC=0; BUILD_RC=2; Candidate.asc:3320:42 use of undeclared identifier batchRow; raw=本地实验/R31B/V016/V002/server3-compile.log
+COMPILE_REPAIR=move the existing V001 double-slot selection and outputLocal declaration into the existing batchRow loop; no API or arithmetic change
+COMPILE_RETRY_COMMAND=source /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/script/set_env.sh; cmake --build /tmp/cann-n04-dma-pipeline-overlap-20261016/本地实验/R31B/V016/V002/build --target paired_runner_v016 --parallel 1 --verbose
+COMPILE_RETRY_RC=0
+CONFIGURE_RC_RETRY=not rerun; existing V002 build directory and CMake configuration reused
+BUILD_RC_RETRY=0
+COMPILE_DEFINE=-DN04_DMA_PIPELINE_OVERLAP_X
+ARTIFACT_RUNNER=/tmp/cann-n04-dma-pipeline-overlap-20261016/本地实验/R31B/V016/V002/build/paired_runner_v016
+ARTIFACT_RUNNER_SHA=b08b0e94a57bae60d9a47f12f8c867d38b41a18e42432a47ad1f033838964227
+ARTIFACT_RUNNER_FORMAT=ELF 64-bit LSB pie executable, ARM aarch64
+ARTIFACT_RUNNER_SIZE=583464
+CANN_PARENT_SHA_REMOTE=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
+CANN_CANDIDATE_SHA_REMOTE=7a3124031d263bb3f22d3e9728fabbd37cfa5ae9b4faf61b56e77d00d2a6effa
+API_SET=TPipe::AllocEventID, SetFlag, WaitFlag, ReleaseEventID, HardEvent::V_MTE3, HardEvent::MTE3_V; all are present in the existing V001 source and the V002 Compile command completed
+RAW_COMPILE_LOGS=本地实验/R31B/V016/V002/server3-compile.log,本地实验/R31B/V016/V002/server3-compile-retry.log

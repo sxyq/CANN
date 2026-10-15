@@ -22,13 +22,13 @@ set(CMAKE_ASC_COMPILE_OBJECT
     "<CMAKE_ASC_COMPILER> ${CMAKE_COMPILE_AS_ASC_FLAG} <DEFINES> <INCLUDES> ${R31B_PAIRED_COMPILE_INCLUDES_STR} --cce-aicore-arch=dav-c220 -Xaicore-start -O3 -std=c++17 -Xaicore-end -Xhost-start ${R31B_PAIRED_COMPILE_INCLUDES_STR} -fPIC -O2 -std=c++17 -Xhost-end <FLAGS> -o <OBJECT> -c -x asc <SOURCE>")
 
 set(R31B_V011_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/../../../../../线上结果/R31B/V011")
-set(R31B_V016_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/../../V001")
+set(R31B_V002_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/../../V002")
 
 add_executable(paired_runner_v016 paired_runner_v016.asc)
 target_include_directories(paired_runner_v016 PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}
     ${R31B_V011_SOURCE_DIR}
-    ${R31B_V016_SOURCE_DIR}
+    ${R31B_V002_SOURCE_DIR}
     ${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include
     ${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include
     ${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl
@@ -39,6 +39,7 @@ target_include_directories(paired_runner_v016 PRIVATE
     /usr/include/aarch64-linux-gnu)
 target_compile_options(paired_runner_v016 PRIVATE
     $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=dav-2201>)
+target_compile_definitions(paired_runner_v016 PRIVATE N04_DMA_PIPELINE_OVERLAP_X)
 target_link_directories(paired_runner_v016 PRIVATE
     /usr/lib/aarch64-linux-gnu
     ${ASCEND_CANN_PACKAGE_PATH}/lib64

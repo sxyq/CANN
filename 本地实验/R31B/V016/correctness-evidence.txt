@@ -52,6 +52,28 @@ TARGETED_SOURCE_SHA_AFTER=9f5c353e65a13a740fe97dc7e6415df032d27560831a3ad142c775
 DIAGNOSIS=Both V011 and V016 fail D=16384 under the same correctness runner; this does not establish an isolated V016 regression. Root cause remains unresolved between the shared FP32 path/runtime and the reference runner.
 TIMING=NOT_RUN
 
+--- N04 DMA-PIPELINE-OVERLAP-X V002 ---
+ROUTE=N04-DMA-PIPELINE-OVERLAP-X
+REVISION=V002
+DIRECT_PARENT=R31B-V011 plus V001 DMA writeback protocol
+PARENT_SOURCE_SHA=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
+CANDIDATE_SOURCE_SHA=7a3124031d263bb3f22d3e9728fabbd37cfa5ae9b4faf61b56e77d00d2a6effa
+HOST=cann-server3 (remote hostname hwnput3)
+DEVICE=4
+RUNNER_BUILD=/tmp/cann-n04-dma-pipeline-overlap-20261016/本地实验/R31B/V016/V002/build
+RUNNER_SHA=b08b0e94a57bae60d9a47f12f8c867d38b41a18e42432a47ad1f033838964227
+CORRECTNESS_MODE=paired runner; warmup_each=45; pairs_each=21; rows=2; one correctness result per binary and case
+RUNTIME_ENV=/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/script/set_env.sh; LD_LIBRARY_PATH begins /usr/lib/aarch64-linux-gnu
+COMMAND=/tmp/cann-n04-dma-pipeline-overlap-20261016/本地实验/R31B/V016/V002/build/paired_runner_v016 --paired
+RUNNER_RC=0
+CORRECTNESS_RAW=本地实验/R31B/V016/V002/server3-paired.log
+CASE=fp16-tail-d12288; PARENT=PASS failures=0 max_abs=0.0009765625 max_rel=0.0015923567; CANDIDATE=PASS failures=0 max_abs=0.0009765625 max_rel=0.0015923567
+CASE=fp16-wide-d32768; PARENT=PASS failures=0 max_abs=0.001953125 max_rel=0.010989011; CANDIDATE=PASS failures=0 max_abs=0.001953125 max_rel=0.010989011
+CASE=bf16-tail-d12288; PARENT=PASS failures=0 max_abs=0.0078125 max_rel=0.0073529412; CANDIDATE=PASS failures=0 max_abs=0.0078125 max_rel=0.0073529412
+CASE=bf16-wide-d32768; PARENT=PASS failures=0 max_abs=0.0078125 max_rel=0.01754386; CANDIDATE=PASS failures=0 max_abs=0.0078125 max_rel=0.01754386
+CORRECTNESS_RESULT=PASS; parent_cases=4/4; candidate_cases=4/4; failures=0
+SNAPSHOTS=本地实验/R31B/V016/V002/server3-before-paired.txt,本地实验/R31B/V016/V002/server3-after-paired.txt
+
 --- N04 DMA-PIPELINE-OVERLAP-X V001 ---
 ROUTE=N04-DMA-PIPELINE-OVERLAP-X
 REVISION=V001
