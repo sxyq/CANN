@@ -1,0 +1,41 @@
+{
+  "route": "N08",
+  "status": "NO_SAFE_SECOND_FACTOR_FOUND",
+  "scope": "R095 remains the active candidate; no source modification or device command was made.",
+  "active_candidate": {
+    "commit": "155b170b0a2c43e47d098846951c83c622afe749",
+    "source_sha256": "03c64af58698aee859d33a8db8c2c836ef20d1d0e68a2b72ee09e41465e38147"
+  },
+  "case_path_review": {
+    "C12": "BF16 D=8192; width is divisible by 4096 and has no tile tail.",
+    "C13": "FP16 D=16384; width is divisible by 4096 and has no tile tail.",
+    "C14": "BF16 D=16384; width is divisible by 4096 and has no tile tail.",
+    "C16": "BF16 D=32768; wide low-precision path has an aligned 1792-element tail."
+  },
+  "C16_tile_calculation": {
+    "chooser_budget_bytes": 180224,
+    "chooser_formula": "D*4 + tileElems*(4*2 + 2*4) + 16*4",
+    "at_tile_3072_bytes": 180288,
+    "at_tile_3072_exceeds_budget_bytes": 64,
+    "at_tile_2816_bytes": 176192,
+    "chosen_tile_elems": 2816,
+    "tile_count": 12,
+    "full_tile_count": 11,
+    "tail_elems": 1792,
+    "tail_bytes": 3584,
+    "bf16_elements_per_32_byte_block": 16,
+    "tail_offset_elems": 30976,
+    "tail_offset_mod_16": 0
+  },
+  "C16_tail_transactions": {
+    "input_x": "one exact aligned DataCopy of 1792 elements",
+    "input_residual": "one exact aligned DataCopy of 1792 elements",
+    "gamma": "one exact aligned DataCopy of 1792 elements",
+    "bias": "one exact aligned DataCopy of 1792 elements",
+    "output": "one exact aligned DataCopy of 1792 elements",
+    "read_amplification": "none"
+  },
+  "reason_no_second_factor": "C16 tail reads and output already use exact one-command aligned copies; C12-C14 do not execute a tail path. The next larger chooser tile (3072) exceeds the existing 176 KiB chooser budget, so changing tile geometry is not justified. Splitting aligned tails would increase transaction count.",
+  "build": "NOT_RUN_NO_SOURCE_CHANGE",
+  "device": "NOT_RUN; R095 remains queued after N09 R081."
+}
