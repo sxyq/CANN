@@ -1,0 +1,41 @@
+{
+  "route": "N07",
+  "revision": "R096",
+  "branch": "research/n07-parameter-tile-reuse",
+  "parent_commit": "6d41d81dcdf10481efb7508e01a39effa41ab24c",
+  "parent_source_commit": "2d5031bbb8d5b2efc81d9ccd6a24ebf01e088117",
+  "source_commit": "7d3541ef6b0301c11a86471ecdd69b4ef47fc59b",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_path_absolute": "/home/data4t2/lelinfeng/cann/worktrees/n07-parameter-tile-reuse/phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "38aac2438d220b66c08d1ba65f92ee9e5c2ceaf02b2dac6e055f0bb2b15e3cf6",
+  "hypothesis": "Gamma-only cache also loads a full parameter row but was exempt from the block-local multi-batch gate. Its repeated-load benefit applies only to blocks whose local row count exceeds the selected gamma-only batch capacity.",
+  "change": "The block-local cache gate now uniformly requires localRows > wideFullYRows_ for FP32, native, and gamma-only full parameter cache modes. The gamma-only output path now follows the effective gate; buffers, selection, and arithmetic are unchanged.",
+  "changed_kernel_location": "ProcessWideLowPrecision block-local parameter cache gate and gamma-only output dispatch",
+  "build": {
+    "status": "passed",
+    "entrypoint_command": "./tools/run.sh build",
+    "exit_code": 0,
+    "output": [
+      "-- Configuring done",
+      "-- Generating done",
+      "-- Build files have been written to: /home/data4t2/lelinfeng/cann/worktrees/n07-parameter-tile-reuse/phase4/workspaces/R31B/build-n07",
+      "Consolidate compiler generated dependencies of target r31b_submission_v011",
+      "[ 50%] Building ASC object CMakeFiles/compile_adapter_v011.asc.o",
+      "[100%] Linking ASC executable r31b_submission_v011",
+      "[100%] Built target r31b_submission_v011"
+    ],
+    "target": "r31b_submission_v011",
+    "artifact_path": "phase4/workspaces/R31B/build-n07/r31b_submission_v011",
+    "artifact_sha256": "19d798b612b4643307dbc43497ec6c63f412b5747a8f91040c8b6fa309cfffc2"
+  },
+  "correctness": {
+    "status": "not_run",
+    "reason": "NPU3 is assigned to N10 R061; no device command was run for R096."
+  },
+  "local": {
+    "status": "not_run",
+    "reason": "Awaiting serial NPU3 Correctness and Canonical Local; no device command was run."
+  },
+  "device_id": "NONE",
+  "assessment": "Local Build passed; correctness and performance remain unverified. No promotion or performance claim."
+}
