@@ -1,0 +1,41 @@
+{
+  "route": "N07",
+  "revision": "R090",
+  "branch": "research/n07-parameter-tile-reuse",
+  "parent_commit": "7308b2164b6947f63fd993ee4aced635fbf8c201",
+  "parent_source_commit": "e845e3cefa14d677f0c39dd02a263bc477fd178f",
+  "source_commit": "b95a5615a76440bf395f916986d7a0c9499f899d",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_path_absolute": "/home/data4t2/lelinfeng/cann/worktrees/n07-parameter-tile-reuse/phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "01a26c25bb0b3f1a74b91bb59298fd643b289fd8c7a7d59992f51183250335fa",
+  "hypothesis": "BF16 native full-parameter cache reuse only benefits blocks that process multiple rows. With uneven row distribution, blocks assigned one row still take the native-cache route despite having no inter-row reuse; use the existing streamed parameter path on those blocks.",
+  "change": "Only the BF16 native full-parameter cache execution gate is now block-local: it is enabled when localRows > 1. Gamma-only caching, FP32 parameter cache, FP16 cache, cache selection, buffers, and arithmetic remain unchanged.",
+  "changed_kernel_location": "ProcessWideLowPrecision block-local cache path selection",
+  "build": {
+    "status": "passed",
+    "entrypoint_command": "./tools/run.sh build",
+    "exit_code": 0,
+    "output": [
+      "-- Configuring done",
+      "-- Generating done",
+      "-- Build files have been written to: /home/data4t2/lelinfeng/cann/worktrees/n07-parameter-tile-reuse/phase4/workspaces/R31B/build-n07",
+      "Consolidate compiler generated dependencies of target r31b_submission_v011",
+      "[ 50%] Building ASC object CMakeFiles/r31b_submission_v011.dir/compile_adapter_v011.asc.o",
+      "[100%] Linking ASC executable r31b_submission_v011",
+      "[100%] Built target r31b_submission_v011"
+    ],
+    "target": "r31b_submission_v011",
+    "artifact_path": "phase4/workspaces/R31B/build-n07/r31b_submission_v011",
+    "artifact_sha256": "94bf80072ac5386ccc36da645d154d28b088375ae45cdbfb65f09af887fa42c8"
+  },
+  "correctness": {
+    "status": "not_run",
+    "reason": "NPU3 Canonical queue is occupied by N08 R095; no device command was run."
+  },
+  "local": {
+    "status": "not_run",
+    "reason": "Awaiting serial NPU3 Correctness and Canonical Local; no device command was run."
+  },
+  "device_id": "NONE",
+  "assessment": "Local Build passed; correctness and performance remain unverified. No promotion or performance claim."
+}
