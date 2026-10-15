@@ -51,3 +51,59 @@ PUSH=NO
 Use the existing paired CMake/Runner entry when a host with the recorded Ascend toolchain is available. Do not add another Runner or measurement script.
 
 ISOLATION_NOT_ENFORCED=YES
+
+## REMOTE_ENV
+
+HOST=cann-server3
+REMOTE_TEMP=/tmp/n05-param-residency-epilogue-v001.aBcsbv
+TOOLCHAIN_SOURCE=/usr/local/Ascend/ascend-toolkit/set_env.sh
+ASCEND_HOME_PATH=/usr/local/Ascend/ascend-toolkit/latest
+CANN_PACKAGE=/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002
+SOC=Ascend910B3
+DEVICE_ID=4
+RUNNER_DEVICE_PROCESS=VLLMEngineCor
+RUNNER_DEVICE_PROCESS_MEMORY_MB=55686
+RAW_LOG_DIR=本地实验/PARAM-RESIDENCY-EPILOGUE-X/V001/remote
+
+## REMOTE_COMPILE
+
+CONFIG_COMMAND=`cmake -S /tmp/n05-param-residency-epilogue-v001.aBcsbv/paired -B /tmp/n05-param-residency-epilogue-v001.aBcsbv/build -DASCEND_CANN_PACKAGE_PATH=/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002 -DR31B_V011_SOURCE_DIR=/tmp/n05-param-residency-epilogue-v001.aBcsbv/parent -DR31B_V016_SOURCE_DIR=/tmp/n05-param-residency-epilogue-v001.aBcsbv/candidate`
+CONFIG_RETURN_CODE=0
+BUILD_COMMAND=`cmake --build /tmp/n05-param-residency-epilogue-v001.aBcsbv/build --target paired_runner_v016 --parallel 1`
+BUILD_ATTEMPT_1_RETURN_CODE=2
+BUILD_ATTEMPT_1_EVIDENCE=`fatal error: vector file not found`
+BUILD_ATTEMPT_2_ENV=`CPLUS_INCLUDE_PATH=system-c++11 plus CANN hcc c++7.3.0 headers`
+BUILD_ATTEMPT_2_RETURN_CODE=0
+REMOTE_BINARY=/tmp/n05-param-residency-epilogue-v001.aBcsbv/build/paired_runner_v016
+
+## REMOTE_CORRECTNESS
+
+QUALIFY_ATTEMPT_1_RETURN_CODE=1
+QUALIFY_ATTEMPT_1_EVIDENCE=`toolchain libstdc++ lacked GLIBCXX_3.4.29`
+QUALIFY_RUNTIME_ENV=`LD_LIBRARY_PATH puts /usr/lib/aarch64-linux-gnu before CANN libraries`
+QUALIFY_ATTEMPT_2_RETURN_CODE=0
+QUALIFY_V011_CORRECTNESS=PASS_ALL_4_CASES
+PAIRED_RETURN_CODE=0
+PAIRED_CORRECTNESS=PASS_PARENT_AND_CANDIDATE_ALL_4_CASES
+
+## REMOTE_LOCAL
+
+METHOD=`existing paired_runner_v016 --paired; 45 warmups per binary; 21 interleaved pairs per case; device event primary; wall time diagnostic`
+DEVICE_LOAD_NOTE=`device 4 retained VLLMEngineCor during snapshots`
+LOCAL_SCORE=NONE
+LOCAL_INTERPRETATION=`raw samples retained; existing device process and outliers make a stable performance claim unavailable`
+
+| CASE | PARENT_MEDIAN_US | CANDIDATE_MEDIAN_US | PAIRED_DELTA_US | CORRECTNESS |
+|---|---:|---:|---:|---|
+| fp16-tail-d12288 | 10.700 | 10.960 | -0.100 | PASS/PASS |
+| fp16-wide-d32768 | 19.540 | 22.000 | 0.720 | PASS/PASS |
+| bf16-tail-d12288 | 12.540 | 14.160 | 1.080 | PASS/PASS |
+| bf16-wide-d32768 | 22.880 | 20.020 | -1.180 | PASS/PASS |
+
+## REMOTE_EVIDENCE
+
+The remote directory was used only for this V001 run. Its configuration, build attempts, runtime failures, runner output, and pre/post device snapshots were copied without filtering into `RAW_LOG_DIR`.
+
+## NEXT
+
+V001 proves Compile and Correctness. Local timing is recorded as unqualified due to the observed device load. No second Runner or measurement script was created.
