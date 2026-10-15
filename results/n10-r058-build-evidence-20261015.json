@@ -1,0 +1,56 @@
+{
+  "route": "N10",
+  "revision": "R058",
+  "parent": {
+    "source_commit": "e6a0d9381e5cc01edb671771980c83e013b60db4",
+    "source_sha256": "7176d524c94eaa74d1cc3d90ca12789201fac14a5566062c02ddcca03c4fcb8e",
+    "canonical_evidence": "results/canonical-sweep/n10-r057-live-main-20261015T0230Z/versions/R057-7176d524c9/evidence/canonical-score.json",
+    "local_score": 97.559120,
+    "local_status": "LOCAL_NEUTRAL",
+    "quality": "POOR",
+    "core_gain_count": 1,
+    "case_medians_candidate_vs_parent_us": {
+      "C12": [7.02, 6.88],
+      "C13": [20.44, 20.90],
+      "C14": [26.12, 26.12],
+      "C16": [15.76, 15.70]
+    },
+    "interpretation": "Only C13 showed a small change; C12, C14, and C16 showed no benefit. Timing samples were noisy."
+  },
+  "candidate": {
+    "source_commit": "7320fb25c2cc17f7cfec0882fadaab394f9511d2",
+    "kernel_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+    "kernel_sha256": "36028c6fc88e121c0cf10725c807c82f17abf58194257142bacf795ade6fc18a"
+  },
+  "change": {
+    "shape_selector": "ProcessWideLowPrecision with rowCount=128 and rowWidth=16384",
+    "mechanism": "Assign rows cyclically by physical block: local ordinal k maps to row blockIdx + k*blockCount. This replaces R057's block-ID phase shift for the selected shape; other shapes retain the R056 balanced contiguous mapping.",
+    "hypothesis": "Test row-strided core ownership as a distinct allocation factor from contiguous row ranges and block-ID phase shifts. It preserves balanced row counts but changes per-core GM row locality; no per-core telemetry establishes a root cause, so this is exploratory."
+  },
+  "static_mapping_validation": {
+    "row_count": 128,
+    "block_count_range": [1, 128],
+    "complete_unique_coverage": true,
+    "no_empty_blocks": true,
+    "maximum_per_block_load_spread_rows": 1,
+    "canonical_block_count_45": {
+      "rows_per_block": {"two_rows": 7, "three_rows": 38},
+      "r056_two_row_block_ids": [0, 6, 12, 19, 25, 32, 38],
+      "r057_two_row_block_ids": [3, 10, 16, 23, 29, 35, 42],
+      "r058_two_row_block_ids": [38, 39, 40, 41, 42, 43, 44]
+    }
+  },
+  "build": {
+    "command": "./tools/run.sh build",
+    "toolkit": "/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002",
+    "soc": "Ascend910B3",
+    "npu_arch": "dav-2201",
+    "return_code": 0,
+    "status": "PASS",
+    "artifact": "/tmp/n10-row-core-balance-build/r31b_submission_v011",
+    "artifact_sha256": "e4a6624871322342870ee38e6fc7455052cdbe156bb11de08d5784c201054865",
+    "raw_output_path": "results/build-20261015T005259788004526Z.log"
+  },
+  "correctness": "NOT_RUN; no device invocation per instruction",
+  "device_validation": "NOT_RUN; frozen awaiting device window"
+}
