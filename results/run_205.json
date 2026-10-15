@@ -1,0 +1,55 @@
+{
+  "route": "N06",
+  "revision": "R203",
+  "run_id": "205",
+  "source_commit": "bab1b43e77070d1476a8636b5d0c34e98a4b4a31",
+  "git_parent_commit": "c194fae1f0c3254c690b0d818cbd6f5d18fbdc8d",
+  "parent_source_commit": "ec7e6943d367d29e017372353217d026468b466b",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "d4ab6c2ad483efa43d25a99c85425d962a046ec5a0e6103d0fe804597c88951d",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "Change only kWideBf16ResidualFp32PhaseBytes from 96B (3 * 32B) to 64B (2 * 32B). This moves the wide BF16 residual-to-FP32 scratch view and reduces its requested buffer tail by 32B. ChooseWideFullYRows includes the same phase in its work-memory budget. X-conversion, reduction-partial and retained-y phases, arithmetic, and synchronization are unchanged.",
+  "hypothesis": "Changing the residual conversion/square scratch view by one 32B unit may improve, hurt, or be neutral for the wide BF16 UB layout and vector access. It is distinct from R200's x-conversion scratch, R201's reduction partials, and R202's retained-y buffer. No physical UB bank mapping is inferred.",
+  "static_address_validation": {
+    "view_and_allocation": "The candidate view offset is 64B / 4B = 16 FP32 elements; residualFp32Buf_ requests tileElems * 4 + 64 bytes = tileElems + 16 FP32 elements.",
+    "access_bound": "Every conversion, square, or reduction temporary access uses a valid count <= tileElems. Thus viewOffsetElems + valid <= 16 + tileElems, equal to the allocation element count; no view access exceeds the buffer end.",
+    "alignment": "Both the 64B view offset and allocation tail are multiples of 32B. tileElems is 4096 reduced in 512-element steps, also a 32B multiple. No GM transfer alignment contract is changed; GM input loads continue through the existing Load path.",
+    "budget": "The same phase contributes to ChooseWideFullYRows work-memory skew and InitBuffer size, both reduced by 32B. Formula sweep over wide BF16 widths 8193..32768 found no row-count/tile-width regression; 40 boundary widths permit more rows or a larger tile. Canonical widths 16384 and 32768 retain their row/tile choices with calculated need reduced by 32B."
+  },
+  "parent_canonical": {
+    "revision": "R202",
+    "correctness": "PASS 7/7",
+    "local_score": 93.696812,
+    "local_status": "LOCAL_NEUTRAL",
+    "quality": "POOR",
+    "core_gain_count": 0,
+    "core_medians_us": {
+      "C12": {"candidate": 7.26, "parent": 6.94},
+      "C13": {"candidate": 21.02, "parent": 20.98},
+      "C14": {"candidate": 27.74, "parent": 26.36},
+      "C16": {"candidate": 16.4, "parent": 15.88}
+    }
+  },
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "status": "PASS",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "ffadd5778f6b7226383ce5efdf7ed9ab4da6be3c4a6faf26d65ab55f38a5d5bc",
+    "log": "results/build_205.log",
+    "sha_file": "results/build-artifact_205.sha256"
+  },
+  "correctness": {
+    "status": "NOT_RUN",
+    "reason": "Not run per Main instruction; no device command was issued."
+  },
+  "local": {
+    "status": "NOT_RUN",
+    "reason": "Not run per Main instruction; no device timing was started."
+  },
+  "device": {
+    "status": "NO_WORKLOAD",
+    "reason": "This revision ran only the local CANN Build command; no device command was issued."
+  },
+  "performance_conclusion": "UNKNOWN: R203 compiled successfully; candidate correctness and performance remain unmeasured."
+}
