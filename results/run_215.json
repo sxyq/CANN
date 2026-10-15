@@ -1,0 +1,41 @@
+{
+  "route": "N06",
+  "revision": "R213",
+  "run_id": "215",
+  "source_commit": "9c5489878b9477951926707634b0dabc2836985b",
+  "git_parent_commit": "a50b66394b2c707cdec94cb63b8b4ad517a363ac",
+  "parent_source_commit": "a3d3e23c526681f36f9212dea0a055c32c0604c9",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "04efd0bdbcc6e5935d3991136bcf9cd086a200fafdea4155549ba511b6915c5a",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "In the wide BF16 path only, increase kWideBf16ResidualSecondPhaseBytes from 96B to 128B. The residualBuf_ capacity, residualSecondBufferOffset, and ChooseWideFullYRows IO-skew estimate use this constant; x ping-pong phase and allocation request order are unchanged.",
+  "hypothesis": "Moving only the second residual/bias ping-pong view by an additional 32B phase may change relative UB placement and performance. No physical UB bank mapping is asserted.",
+  "static_validation": {
+    "alignment": "The 128B phase becomes a 64-element BF16 offset and preserves 32B alignment.",
+    "bounds": "residualBuf_ capacity is 2*tileElems*sizeof(T)+phase. With tileWidth<=tileElems, the second view starts at tileWidth+phase/sizeof(T); a full-tile view ends exactly at 2*tileWidth+phase/sizeof(T) elements, within the allocation, and tail views end earlier.",
+    "budget": "ChooseWideFullYRows adds kWideBf16XSecondPhaseBytes + kWideBf16ResidualSecondPhaseBytes to the IO allocation estimate; the extra 32B is counted.",
+    "scope": "Only the BF16 wide residual/bias ping-pong phase changes; x phase, arithmetic, and synchronization are unchanged."
+  },
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "status": "PASS",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "c7032cc580080d672be2cdc883729eda41ed6bfb029e3e95b0a70f7a27bd2c00",
+    "log": "results/build_215.log",
+    "sha_file": "results/build-artifact_215.sha256"
+  },
+  "correctness": {
+    "status": "NOT_RUN",
+    "reason": "No device queue assignment was provided for this revision."
+  },
+  "local": {
+    "status": "NOT_RUN",
+    "reason": "Awaiting a future device queue assignment; Local requires Canonical verify PASS."
+  },
+  "device": {
+    "status": "NO_WORKLOAD",
+    "reason": "This revision ran only the local CANN Build command; no device workload was launched."
+  },
+  "performance_conclusion": "UNKNOWN: R213 compiled successfully; candidate correctness and performance remain unmeasured."
+}
