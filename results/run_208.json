@@ -1,0 +1,58 @@
+{
+  "route": "N06",
+  "revision": "R206",
+  "run_id": "208",
+  "source_commit": "5e46a962f97c1d72c8a1d870e62d70ec49dc4879",
+  "git_parent_commit": "d4d1de19a5ef66aae703bc7ebba4c97426607518",
+  "parent_source_commit": "e96c1907efaa36cb2217fad33a66acc54f10e2dd",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "e5e5bb16b2ebe461a47ee671a86545a890c07e0e52c3af789ee90be236329642",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "In the wide BF16 branch only, request xBuf_ before residualBuf_. Both GM input ping-pong allocations retain their existing sizes and second-buffer offsets. The host UB budget, arithmetic, loads, compute order, and synchronization are unchanged. This tests a different allocation pair/order from R205's conversion-scratch reorder.",
+  "hypothesis": "The simultaneously accessed BF16 x/residual input buffers may receive different relative UB base placement when their allocation request order is swapped. This may improve, hurt, or be neutral. No physical UB bank mapping or allocator placement guarantee is inferred.",
+  "static_address_validation": {
+    "allocations": "xBuf_ remains 2 * tileElems * sizeof(T) + kWideBf16XSecondPhaseBytes; residualBuf_ remains 2 * tileElems * sizeof(T) + kWideBf16ResidualSecondPhaseBytes. Only the adjacent InitBuffer request order changed.",
+    "views": "ProcessWideLowPrecision retains xSecondBufferOffset = tileWidth + kWideBf16XSecondPhaseBytes / sizeof(T) and residualSecondBufferOffset = tileWidth + kWideBf16ResidualSecondPhaseBytes / sizeof(T). For valid <= tileWidth, the second view ends within its unchanged double-buffer allocation.",
+    "budget": "ChooseWideFullYRows still accounts for the same sum of both phase constants. Total UB allocation bytes and row/tile selection are unchanged.",
+    "liveness": "xBuf_ and residualBuf_ remain distinct and simultaneously used as ping-pong MTE2 destinations. No pointer alias, buffer reuse, arithmetic, or event ordering was changed."
+  },
+  "parent_canonical": {
+    "revision": "R205",
+    "source_commit": "e96c1907efaa36cb2217fad33a66acc54f10e2dd",
+    "source_sha256": "ddb5062ecbdff041bfb59fb895953d9064a50a327d4359086a0a8ef7ffd927c3",
+    "correctness": "PASS 7/7",
+    "local_score": 68.615478,
+    "local_status": "LOCAL_NEUTRAL",
+    "quality": "POOR",
+    "core_gain_count": 0,
+    "core_medians_us": {
+      "C12": {"candidate": 18.20, "parent": 20.16, "anchor": 6.58},
+      "C13": {"candidate": 23.38, "parent": 23.72, "anchor": 20.80},
+      "C14": {"candidate": 28.14, "parent": 28.28, "anchor": 25.96},
+      "C16": {"candidate": 20.16, "parent": 18.82, "anchor": 15.06}
+    },
+    "evidence": "results/canonical-sweep/n06-r205-verified-20261015/versions/R205-ddb5062ecb/evidence"
+  },
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "status": "PASS",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "a67b562f3398dffc4633e0d11642cb2f2a566dc6c2bb6263470202dfcc7376d5",
+    "log": "results/build_208.log",
+    "sha_file": "results/build-artifact_208.sha256"
+  },
+  "correctness": {
+    "status": "NOT_RUN",
+    "reason": "Not run per Main instruction; device validation awaits the exclusive NPU lane."
+  },
+  "local": {
+    "status": "NOT_RUN",
+    "reason": "Not run per Main instruction; device validation awaits the exclusive NPU lane."
+  },
+  "device": {
+    "status": "NO_WORKLOAD",
+    "reason": "This revision ran only the local CANN Build command; no device workload was launched."
+  },
+  "performance_conclusion": "UNKNOWN: R206 compiled successfully; candidate correctness and performance remain unmeasured."
+}
