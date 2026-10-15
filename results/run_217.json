@@ -1,0 +1,41 @@
+{
+  "route": "N06",
+  "revision": "R215",
+  "run_id": "217",
+  "source_commit": "1c53b81f89f51d62c022193db98a2acb20327b4b",
+  "git_parent_commit": "6916579e1051bbed0ac8ede0e05e6eb00e189337",
+  "parent_source_commit": "f018b8a69a6bb19e7965077553f1799117597466",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "f3a1d56c08619bed52331fe5bcdc3502acc785afecab968056f8073b81631a9e",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "In the wide BF16 path only, increase kWideBf16ResidualFp32PhaseBytes from 96B to 128B. The residual FP32 scratch capacity, active view offset, and ChooseWideFullYRows work-bank estimate all consume this constant; arithmetic and synchronization are unchanged.",
+  "hypothesis": "A 128B phase for the active residual FP32 scratch view may change its relative UB placement and performance. No physical bank mapping is asserted.",
+  "static_validation": {
+    "alignment": "The 128B phase maps to 32 FP32 elements and is 8B/32B aligned.",
+    "bounds": "residualFp32Buf_ allocates tileElems*4 + phase bytes and the active view begins at the same phase. Since valid <= tileWidth <= tileElems, full and tail accesses remain in bounds.",
+    "budget": "ChooseWideFullYRows accounts for kWideBf16ResidualFp32PhaseBytes; the additional 32B is included in its work-bank estimate.",
+    "scope": "Only the BF16 wide residual FP32 scratch phase changes; other dtype paths are unaffected."
+  },
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "status": "PASS",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "26e7ec2be86442525d4b74fac1d97bc157099ebee215bf89adfd18478b527801",
+    "log": "results/build_217.log",
+    "sha_file": "results/build-artifact_217.sha256"
+  },
+  "correctness": {
+    "status": "NOT_RUN",
+    "reason": "No device queue assignment was provided for this revision."
+  },
+  "local": {
+    "status": "NOT_RUN",
+    "reason": "Awaiting a future device queue assignment; Local requires Canonical verify PASS."
+  },
+  "device": {
+    "status": "NO_WORKLOAD",
+    "reason": "This revision ran only the local CANN Build command; no device workload was launched."
+  },
+  "performance_conclusion": "UNKNOWN: R215 compiled successfully; candidate correctness and performance remain unmeasured."
+}
