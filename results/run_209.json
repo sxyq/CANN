@@ -1,0 +1,46 @@
+{
+  "route": "N06",
+  "revision": "R207",
+  "run_id": "209",
+  "source_commit": "876a28cc273b820b314cf405b9647810d57dfe5a",
+  "git_parent_commit": "7253066e30ab6ae124ec0a9dc7ebc58bbda3928e",
+  "parent_source_commit": "5e46a962f97c1d72c8a1d870e62d70ec49dc4879",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "32d04d9f0c6f0f4ab64c661f9415d987118d445e025cd672b72de9184beb61b7",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "In the wide BF16 branch only, request residualFp32Buf_ before reduceFp32Buf_. Both buffer sizes and the UB budget are unchanged; arithmetic, tiling, pointer views, and synchronization are unchanged. This tests relative TBuf base placement for the active reduction destination and FP32 scratch pair.",
+  "hypothesis": "Changing the allocation request order for two concurrently used FP32 workspaces may change their relative UB address phase and performance. No physical UB bank mapping or placement guarantee is inferred.",
+  "parent_canonical": {
+    "revision": "R206",
+    "source_commit": "5e46a962f97c1d72c8a1d870e62d70ec49dc4879",
+    "source_sha256": "e5e5bb16b2ebe461a47ee671a86545a890c07e0e52c3af789ee90be236329642",
+    "correctness": "PASS 7/7",
+    "local_score": 85.127302,
+    "local_status": "LOCAL_NEUTRAL",
+    "quality": "POOR",
+    "core_gain_count": 0,
+    "evidence": "results/canonical-sweep/live-n06-r206-resume-20261015/versions/R206-e5e5bb16b2/evidence"
+  },
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "status": "PASS",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "4e0261e5385c72c5f732d8046b634197e78dbd455bd8682a472ec460e4e8e5dc",
+    "log": "results/build_209.log",
+    "sha_file": "results/build-artifact_209.sha256"
+  },
+  "correctness": {
+    "status": "NOT_RUN",
+    "reason": "Not run per Main instruction; no NPU command was authorized for this revision."
+  },
+  "local": {
+    "status": "NOT_RUN",
+    "reason": "Not run per Main instruction; no NPU command was authorized for this revision."
+  },
+  "device": {
+    "status": "NO_WORKLOAD",
+    "reason": "This revision ran only the local CANN Build command; no device workload was launched."
+  },
+  "performance_conclusion": "UNKNOWN: R207 compiled successfully; candidate correctness and performance remain unmeasured."
+}
