@@ -54,5 +54,22 @@
     "status": "NO_WORKLOAD",
     "reason": "This revision ran only the local CANN Build command; no device workload was launched."
   },
-  "performance_conclusion": "UNKNOWN: R206 compiled successfully; candidate correctness and performance remain unmeasured."
+  "performance_conclusion": "UNKNOWN: R206 compiled successfully; candidate correctness and performance remain unmeasured.",
+  "source_diff_audit": {
+    "baseline_r204": {
+      "source_commit": "b8079283060e34f66ff3f1b32d89dc7891699981",
+      "source_sha256": "782e47fd13222dba9a5209846f1d014abab7a4026849ec5606622cd5c57247bc"
+    },
+    "r205": {
+      "source_commit": "e96c1907efaa36cb2217fad33a66acc54f10e2dd",
+      "source_sha256": "ddb5062ecbdff041bfb59fb895953d9064a50a327d4359086a0a8ef7ffd927c3",
+      "exact_change": "Within the wide BF16 branch, swaps residualFp32Buf_ and xFp32Buf_ InitBuffer requests. These are FP32 conversion scratch allocations with 64B and 32B phase extensions, respectively."
+    },
+    "r206": {
+      "source_commit": "5e46a962f97c1d72c8a1d870e62d70ec49dc4879",
+      "source_sha256": "e5e5bb16b2ebe461a47ee671a86545a890c07e0e52c3af789ee90be236329642",
+      "exact_change_from_r205": "Within the same wide BF16 branch, swaps xBuf_ and residualBuf_ InitBuffer requests. These are distinct GM input ping-pong allocations, each with the same 96B phase extension."
+    },
+    "assessment": "DISTINCT_BUFFER_PAIR_SAME_BROAD_PLACEMENT_MECHANISM. Each pair retains its total allocation bytes; R206 changes only relative base assignment of the GM input pair and leaves subsequent reduction/conversion allocation starts unchanged. R206 remains the sole pending candidate; no performance independence or gain is claimed before device validation."
+  }
 }
