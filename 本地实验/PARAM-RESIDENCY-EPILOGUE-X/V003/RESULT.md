@@ -99,7 +99,7 @@ Files include `env-snapshot.log`, `source-sha256.log`, compile configure/build l
 
 ## COMMIT
 
-COMMIT=PENDING
+COMMIT=e05c8e4e
 PUSH=NO
 OFFICIAL=NO
 
