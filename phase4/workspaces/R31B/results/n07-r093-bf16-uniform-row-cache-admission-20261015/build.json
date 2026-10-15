@@ -1,0 +1,41 @@
+{
+  "route": "N07",
+  "revision": "R093",
+  "branch": "research/n07-parameter-tile-reuse",
+  "parent_commit": "d9d0e81aa3ce389617e35b4d1894ef754cc117b0",
+  "parent_source_commit": "092bea38f5ab1969e2fdd443a61e963157a1833e",
+  "source_commit": "dba91ad072365fbd9926e0ddd4b247f52d10baca",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_path_absolute": "/home/data4t2/lelinfeng/cann/worktrees/n07-parameter-tile-reuse/phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "3823d543f68553c3acd4268b23a56643f8a9324d3c6cbc97841495440bfbeb56",
+  "hypothesis": "R087's partial-row BF16 cache admission produced LOCAL_NEUTRAL/POOR and zero Core gains. Avoid globally selecting that cache mode when only remainder blocks receive a second row; admit BF16 full caches only when every block has multiple rows.",
+  "change": "Only the BF16 full-cache admission guard changed from maximumRowsPerBlock > 1 to minimumRowsPerBlock > 1. Per-block cache execution gates and all cache sizing and arithmetic remain unchanged.",
+  "changed_kernel_location": "Init BF16 wide-path cache admission guard",
+  "build": {
+    "status": "passed",
+    "entrypoint_command": "./tools/run.sh build",
+    "exit_code": 0,
+    "output": [
+      "-- Configuring done",
+      "-- Generating done",
+      "-- Build files have been written to: /home/data4t2/lelinfeng/cann/worktrees/n07-parameter-tile-reuse/phase4/workspaces/R31B/build-n07",
+      "Consolidate compiler generated dependencies of target r31b_submission_v011",
+      "[ 50%] Building ASC object CMakeFiles/r31b_submission_v011.dir/compile_adapter_v011.asc.o",
+      "[100%] Linking ASC executable r31b_submission_v011",
+      "[100%] Built target r31b_submission_v011"
+    ],
+    "target": "r31b_submission_v011",
+    "artifact_path": "phase4/workspaces/R31B/build-n07/r31b_submission_v011",
+    "artifact_sha256": "583444bc45afc10b28308d6a4e19fd7ffc7113b14464fc3357b63f0a5c6fab85"
+  },
+  "correctness": {
+    "status": "not_run",
+    "reason": "NPU3 is assigned to N10 R061; no device command was run for R093."
+  },
+  "local": {
+    "status": "not_run",
+    "reason": "Awaiting serial NPU3 Correctness and Canonical Local; no device command was run."
+  },
+  "device_id": "NONE",
+  "assessment": "Local Build passed; correctness and performance remain unverified. No promotion or performance claim."
+}
