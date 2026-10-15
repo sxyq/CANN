@@ -1,0 +1,41 @@
+{
+  "route": "N07",
+  "revision": "R092",
+  "branch": "research/n07-parameter-tile-reuse",
+  "parent_commit": "a93a49122330c6e0bb4b50160a0c3d2c7544ed8d",
+  "parent_source_commit": "5673acdc89c92ff133159015dbb86bfcefa0c441",
+  "source_commit": "092bea38f5ab1969e2fdd443a61e963157a1833e",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_path_absolute": "/home/data4t2/lelinfeng/cann/worktrees/n07-parameter-tile-reuse/phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "2411b536de4e85b60455ddcc19c8811ef0898ca1cfbb9af37bbac061ba8360de",
+  "hypothesis": "Full BF16 parameter caches primarily amortize parameter work across batches. When a block's rows all fit in one selected batch, the cache has no inter-batch reuse; retain the existing streamed parameter path for that block.",
+  "change": "The BF16 full-parameter cache is now enabled per block only when localRows exceeds wideFullYRows_, implying at least two row batches. Gamma-only cache remains exempt; cache selection and arithmetic are unchanged.",
+  "changed_kernel_location": "ProcessWideLowPrecision block-local full-parameter cache gate",
+  "build": {
+    "status": "passed",
+    "entrypoint_command": "./tools/run.sh build",
+    "exit_code": 0,
+    "output": [
+      "-- Configuring done",
+      "-- Generating done",
+      "-- Build files have been written to: /home/data4t2/lelinfeng/cann/worktrees/n07-parameter-tile-reuse/phase4/workspaces/R31B/build-n07",
+      "Consolidate compiler generated dependencies of target r31b_submission_v011",
+      "[ 50%] Building ASC object CMakeFiles/r31b_submission_v011.dir/compile_adapter_v011.asc.o",
+      "[100%] Linking ASC executable r31b_submission_v011",
+      "[100%] Built target r31b_submission_v011"
+    ],
+    "target": "r31b_submission_v011",
+    "artifact_path": "phase4/workspaces/R31B/build-n07/r31b_submission_v011",
+    "artifact_sha256": "c2f71f4545043e3999783dfaa3c4eded6c277dd8d8e271200379862316127091"
+  },
+  "correctness": {
+    "status": "not_run",
+    "reason": "NPU3 Canonical slot is assigned to N10 R061; no device command was run for R092."
+  },
+  "local": {
+    "status": "not_run",
+    "reason": "Awaiting serial NPU3 Correctness and Canonical Local; no device command was run."
+  },
+  "device_id": "NONE",
+  "assessment": "Local Build passed; correctness and performance remain unverified. No promotion or performance claim."
+}
