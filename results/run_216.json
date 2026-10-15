@@ -1,0 +1,41 @@
+{
+  "route": "N06",
+  "revision": "R214",
+  "run_id": "216",
+  "source_commit": "f018b8a69a6bb19e7965077553f1799117597466",
+  "git_parent_commit": "9241045b31a763d483d9384e153e32bf3d813d4c",
+  "parent_source_commit": "9c5489878b9477951926707634b0dabc2836985b",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "4e656cfddf8380d63062998cdd03b936f428ed481c9daec5e125239212450dd3",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "In the wide BF16 path only, increase kWideBf16XViewOffsetBytes from 64B to 96B. The xFp32Buf_ capacity, active FP32 view offset, and ChooseWideFullYRows work-bank estimate all use this constant; arithmetic and synchronization are unchanged.",
+  "hypothesis": "Testing a 96B phase for the active x FP32 scratch view may change its relative UB placement and performance. No physical UB bank mapping is asserted.",
+  "static_validation": {
+    "alignment": "The 96B phase maps to 24 FP32 elements and remains 8B and 32B aligned.",
+    "bounds": "xFp32Buf_ allocates tileElems*4 + phase bytes and ProcessWideLowPrecision begins the active view at the same phase. Since valid <= tileWidth <= tileElems, the view remains in bounds for full and tail tiles.",
+    "budget": "ChooseWideFullYRows includes kWideBf16XViewOffsetBytes in the scratch-work estimate; the additional 32B is accounted for.",
+    "scope": "Only the BF16 wide x FP32 scratch phase changes; other data types and paths remain unchanged."
+  },
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "status": "PASS",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "8cf74d8f6d911a31a4be9c0ca0e6e80922f3779912561ab6f883355b85f5a2f9",
+    "log": "results/build_216.log",
+    "sha_file": "results/build-artifact_216.sha256"
+  },
+  "correctness": {
+    "status": "NOT_RUN",
+    "reason": "No device queue assignment was provided for this revision."
+  },
+  "local": {
+    "status": "NOT_RUN",
+    "reason": "Awaiting a future device queue assignment; Local requires Canonical verify PASS."
+  },
+  "device": {
+    "status": "NO_WORKLOAD",
+    "reason": "This revision ran only the local CANN Build command; no device workload was launched."
+  },
+  "performance_conclusion": "UNKNOWN: R214 compiled successfully; candidate correctness and performance remain unmeasured."
+}
