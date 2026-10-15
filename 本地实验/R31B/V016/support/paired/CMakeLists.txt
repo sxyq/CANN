@@ -25,8 +25,8 @@ set(R31B_V011_SOURCE_DIR
     "${CMAKE_CURRENT_LIST_DIR}/../../../../../线上结果/R31B/V011"
     CACHE PATH "R31B V011 Champion source directory")
 set(R31B_V016_SOURCE_DIR
-    "${CMAKE_CURRENT_LIST_DIR}/../../../../../本地实验/REDUCTION-TOPOLOGY-X/V001"
-    CACHE PATH "N03 REDUCTION-TOPOLOGY-X V001 candidate source directory")
+    "${CMAKE_CURRENT_LIST_DIR}/../../../../../本地实验/REDUCTION-TOPOLOGY-X/V002"
+    CACHE PATH "N03 REDUCTION-TOPOLOGY-X V002 candidate source directory")
 
 add_executable(paired_runner_v016 paired_runner_v016.asc)
 target_include_directories(paired_runner_v016 PRIVATE
