@@ -101,3 +101,34 @@ CANN_PARENT_SHA_REMOTE=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c28
 CANN_CANDIDATE_SHA_REMOTE=2e287d08b7488d58515a74bb0fa6a3882d1b0be83f5deb3caf8773c9a9808bab
 API_SET=TPipe::AllocEventID, SetFlag, WaitFlag, ReleaseEventID, HardEvent::V_MTE3, HardEvent::MTE3_V; existing API set reused and Compile passed
 RAW_COMPILE_LOG=本地实验/R31B/V016/V003/server3-compile.log
+
+--- N04 DMA-PIPELINE-OVERLAP-X V004 ---
+ROUTE=N04-DMA-PIPELINE-OVERLAP-X
+REVISION=V004
+DIRECT_PARENT=V003 commit cc075b23998018690cf86909c92acb4409d5ceb0
+PARENT_SOURCE_SHA=2e287d08b7488d58515a74bb0fa6a3882d1b0be83f5deb3caf8773c9a9808bab
+CANDIDATE_SOURCE_SHA=0c2f51c854cf427904c12e6a4a3cc2ea147dbe16c7d6e2c106a5bbe5f64a7850
+HOST=cann-server3 (remote hostname hwnput3)
+DEVICE=4
+CANN=/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002
+SOC=Ascend910B3
+NPU_ARCH=dav-2201
+REMOTE_ROOT=/tmp/cann-n04-dma-pipeline-overlap-20261016/V004
+CHANGE=ProcessWideLowPrecision uses one logical output slot; the existing MTE3-to-V completion wait stays after current-row vector math and immediately before the next first output write. Parameter loading, reduction, arithmetic, and block geometry are unchanged.
+COMPILE_COMMAND=source /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/script/set_env.sh; cmake -S /tmp/cann-n04-dma-pipeline-overlap-20261016/V004/本地实验/R31B/V016/support/paired -B /tmp/cann-n04-dma-pipeline-overlap-20261016/V004/本地实验/R31B/V016/V004/build -DCMAKE_BUILD_TYPE=Release; cmake --build /tmp/cann-n04-dma-pipeline-overlap-20261016/V004/本地实验/R31B/V016/V004/build --target paired_runner_v016 --verbose
+FIRST_CONFIGURE_RC=0
+FIRST_BUILD_RC=2
+FIRST_FAILURE=/tmp/asc_plugin_binary_register_code-3a8ea8.c:3:10: fatal error: 'vector' file not found; raw=本地实验/R31B/V016/V004/server3-compile.log
+COMPILE_RETRY_COMMAND=source /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/script/set_env.sh; export LD_LIBRARY_PATH=/usr/lib/aarch64-linux-gnu:$LD_LIBRARY_PATH; export CPLUS_INCLUDE_PATH=/usr/include/c++/11:/usr/include/aarch64-linux-gnu/c++/11:/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0:/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0/aarch64-target-linux-gnu:/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0/backward; cmake --build /tmp/cann-n04-dma-pipeline-overlap-20261016/V004/本地实验/R31B/V016/V004/build --target paired_runner_v016 --verbose
+RETRY_BUILD_RC=0
+RETRY_SSH_RC=0
+COMPILE_DEFINE=-DN04_DMA_PIPELINE_OVERLAP_X
+ARTIFACT_RUNNER=/tmp/cann-n04-dma-pipeline-overlap-20261016/V004/本地实验/R31B/V016/V004/build/paired_runner_v016
+ARTIFACT_RUNNER_SHA=59e493ca804d9083f4fcd8e5c79c8405b49eb3b369534f4e115a3a23c527f337
+ARTIFACT_RUNNER_FORMAT=ELF 64-bit LSB pie executable, ARM aarch64
+ARTIFACT_RUNNER_SIZE=583464
+CANN_CHAMPION_SOURCE_SHA_REMOTE=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
+CANN_CANDIDATE_SOURCE_SHA_REMOTE=0c2f51c854cf427904c12e6a4a3cc2ea147dbe16c7d6e2c106a5bbe5f64a7850
+API_SET=TPipe::AllocEventID, SetFlag, WaitFlag, ReleaseEventID, HardEvent::V_MTE3, HardEvent::MTE3_V; existing API set reused and Compile passed after the include environment from the existing paired build record
+RAW_COMPILE_LOG=本地实验/R31B/V016/V004/server3-compile.log
+ARTIFACT_IDENTITIES=本地实验/R31B/V016/V004/server3-artifact-identities.txt

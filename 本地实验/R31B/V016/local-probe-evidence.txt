@@ -231,3 +231,35 @@ DELTA_MAD_US=11.740
 
 LOCAL_SCORE=NONE
 INTERPRETATION=raw paired samples retained; HBM 90% with VLLMEngineCor present and large outliers in several groups, so this run does not establish a stable performance conclusion
+
+--- N04 DMA-PIPELINE-OVERLAP-X V004 ---
+ROUTE=N04-DMA-PIPELINE-OVERLAP-X
+REVISION=V004
+PARENT=V003 commit cc075b23998018690cf86909c92acb4409d5ceb0
+CHANGE=single logical output slot in ProcessWideLowPrecision with late MTE3-to-V retirement before the next first write; V001/V002/V003 double-slot ownership is not reused
+PARENT_SOURCE_SHA=2e287d08b7488d58515a74bb0fa6a3882d1b0be83f5deb3caf8773c9a9808bab
+CANDIDATE_SOURCE_SHA=0c2f51c854cf427904c12e6a4a3cc2ea147dbe16c7d6e2c106a5bbe5f64a7850
+HOST=cann-server3 (remote hostname hwnput3)
+DEVICE_ID=4
+ROWS=2
+WARMUP=45
+PAIRS=21
+PAIRING=V011 parent and V004 Candidate interleaved P,C then C,P; same device and stream
+TIMING=device event primary; wall clock diagnostic
+RUN_1_RAW=本地实验/R31B/V016/V004/server3-paired.log
+RUN_1_LOAD_BEFORE=HBM=90%; AICore=50%; AIVector=40%; CtrlCPU=3%; HBM bandwidth=22%; host processes included VLLM and Python workloads
+RUN_1_LOAD_AFTER=HBM=90%; AICore=55%; AIVector=40%; CtrlCPU=5%; HBM bandwidth=59%
+RUN_1_PAIR_MEDIANS_US=fp16-tail:+0.180; fp16-wide:-0.620; bf16-tail:-1.220; bf16-wide:-1.480
+RUN_1_OUTLIERS=paired delta maxima included +1647.240 us, +1787.940 us, and -1639.480 us across the four cases
+RUN_2_RAW=本地实验/R31B/V016/V004/server3-paired-a2.log
+RUN_2_LOAD_BEFORE=HBM=90%; AICore=59%; AIVector=69%; CtrlCPU=5%; HBM bandwidth=36%; host processes present
+RUN_2_LOAD_AFTER=HBM=90%; AICore=52%; AIVector=41%; CtrlCPU=10%; HBM bandwidth=58%; host processes present
+RUN_2_PAIR_MEDIANS_US=fp16-tail:-0.560; fp16-wide:-2.320; bf16-tail:-1.340; bf16-wide:-1.140
+RUN_2_OUTLIERS=paired delta maxima included +376.200 us, +298.620 us, and -767.900 us across the four cases
+CORRECTNESS_RESULT=PASS in both paired runs; parent_cases=4/4; candidate_cases=4/4; failures=0
+LOCAL_SCORE=NONE
+INTERPRETATION=The first run had one positive paired median and both runs had high device load and large timing outliers; the two runs do not establish a stable performance result for V004.
+SNAPSHOTS=本地实验/R31B/V016/V004/server3-before-paired.txt,本地实验/R31B/V016/V004/server3-after-paired.txt,本地实验/R31B/V016/V004/server3-before-paired-a2.txt,本地实验/R31B/V016/V004/server3-after-paired-a2.txt,本地实验/R31B/V016/V004/server3-artifact-identities.txt
+RAW_SAMPLE_LOGS=本地实验/R31B/V016/V004/server3-paired.log,本地实验/R31B/V016/V004/server3-paired-a2.log
+NO_LOCAL_COMMIT=YES; LOCAL_SCORE=NONE
+OFFICIAL=NOT_RUN
