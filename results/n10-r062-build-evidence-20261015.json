@@ -1,0 +1,58 @@
+{
+  "route": "N10",
+  "revision": "R062",
+  "parent_commit": "6cb6eb9d65052faf19d4450c8c1c3ab27de87c14",
+  "candidate_commit": "2357dd44f67a9171d66c74521632245b2cc5fb61",
+  "kernel_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "kernel_sha256": "2d28ad3ee95d96f4556cfba67a440a9db82f5216114337481870e7c82d44227e",
+  "change": {
+    "shape_selector": "ProcessWideLowPrecision with rowCount=128 and rowWidth=16384",
+    "mechanism": "Retain R061 pair-striped row ownership and lower only the Host active-block cap from 32 to 16 for this Shape.",
+    "hypothesis": "At the capped launch, 16 blocks own eight rows each rather than R061's four rows per block at 32 blocks. This tests whether larger per-core row groups improve row/Core balance without changing the kernel mapping or other Shapes.",
+    "source_diff": "requestedBlocks cap: 32U -> 16U; no other source lines changed.",
+    "static_validation": {
+      "method": "Enumerate each block's pair-group ownership and verify all 128 rows are covered exactly once.",
+      "block_count_range": [
+        1,
+        16
+      ],
+      "complete_unique_coverage": true,
+      "no_empty_blocks": true,
+      "rows_at_cap": 8,
+      "static_check_return_code": 0,
+      "diff_check_return_code": 0
+    }
+  },
+  "build": {
+    "configure_command": "cmake -S /home/data4t2/lelinfeng/cann/worktrees/n10-row-core-balance/phase4/workspaces/R31B -B /tmp/n10-row-core-balance-r062-build -DASCEND_CANN_PACKAGE_PATH=/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002",
+    "build_command": "cmake --build /tmp/n10-row-core-balance-r062-build --target r31b_submission_v011 --parallel 2",
+    "environment": "source /usr/local/Ascend/ascend-toolkit/set_env.sh; ASCEND_HOME_PATH=/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002; export matching HCC 7.3.0 include directories to CPLUS_INCLUDE_PATH and C_INCLUDE_PATH",
+    "toolkit": "/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002",
+    "soc": "Ascend910B3",
+    "npu_arch": "dav-2201",
+    "return_code": 0,
+    "status": "PASS",
+    "artifact": "/tmp/n10-row-core-balance-r062-build/r31b_submission_v011",
+    "artifact_sha256": "0e0ba4331574318ce1e6e9645f138d3245d2409571548b1b20a5c4ebf7d66d28",
+    "input_sha256": {
+      "kernel": "2d28ad3ee95d96f4556cfba67a440a9db82f5216114337481870e7c82d44227e",
+      "compile_adapter_v011.asc": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+      "CMakeLists.txt": "435cd84be945c1757159940c4c36fbab97fb06e9bf14e8a746a8121b42dda9fc"
+    },
+    "raw_output_path": "results/build-n10-r062-correct-env-20261015.log"
+  },
+  "prior_candidate_identity": {
+    "revision": "R061",
+    "candidate_commit": "0565357ee62e38ced13c4d0746b8934b523130e5",
+    "kernel_sha256": "070639fb89ee59757598805ab9aadcb2e44c5c3d1fd79fd8c79c7413d6e33a82",
+    "commit_exists_verified": true,
+    "source_sha256_verified_from_commit": true,
+    "evidence_path": "results/n10-r061-build-evidence-20261015.json"
+  },
+  "correctness": "NOT_RUN",
+  "canonical_local": "NOT_RUN",
+  "profile": "NOT_RUN",
+  "device_id": "NONE",
+  "free_hbm_mb": "NOT_QUERIED",
+  "device_commands": "NOT_RUN_PER_TASK_SCOPE"
+}
