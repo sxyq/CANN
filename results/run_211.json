@@ -1,0 +1,41 @@
+{
+  "route": "N06",
+  "revision": "R209",
+  "run_id": "211",
+  "source_commit": "e2e56ac497a2db3332a4d13459f021a0fcd226c2",
+  "git_parent_commit": "9de4f46d6a6f13d5af4981aeef748173f41a68bc",
+  "parent_source_commit": "a871df97c3446174299992aa7a865906d020f903",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "b91a359a5f0a016db9e5e4f366024f3f7437a8651e2cba5fc7d1898279c7ea1e",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "In the wide BF16 path only, increase kWideBf16XSecondPhaseBytes from 96B to 128B. The xBuf_ capacity and xSecondBufferOffset both use this constant; residual ping-pong phase and allocation request order are unchanged.",
+  "hypothesis": "Moving only the second x/gamma ping-pong view by one additional 32B transfer-aligned phase may change relative UB placement and performance. No physical UB bank mapping is asserted.",
+  "static_validation": {
+    "alignment": "The added phase is 32B; the BF16 second-view element offset remains aligned because bytes are divided by sizeof(T)=2.",
+    "bounds": "For tileElems == tileWidth, the second view begins at tileWidth + phaseBytes/2 elements and its tile ends exactly at the allocation end 2*tileElems*sizeof(T)+phaseBytes. For a tail, valid <= tileWidth, so the view remains within capacity.",
+    "budget": "ChooseWideFullYRows includes kWideBf16XSecondPhaseBytes + kWideBf16ResidualSecondPhaseBytes, so the additional x phase is counted in the UB budget.",
+    "scope": "Only the BF16 wide-path x ping-pong phase changes; the residual phase, arithmetic, tiling, and synchronization are unchanged."
+  },
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "status": "PASS",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "09dceeb3f395b4947516706d426d5aa78baf99991d71d59a5dff5612bf098b26",
+    "log": "results/build_211.log",
+    "sha_file": "results/build-artifact_211.sha256"
+  },
+  "correctness": {
+    "status": "NOT_RUN",
+    "reason": "Not run per Main's device queue assignment; NPU3 was assigned to N09 after R208 completed."
+  },
+  "local": {
+    "status": "NOT_RUN",
+    "reason": "Awaiting a future device queue assignment; Local requires Canonical verify PASS."
+  },
+  "device": {
+    "status": "NO_WORKLOAD",
+    "reason": "This revision ran only the local CANN Build command; no device workload was launched."
+  },
+  "performance_conclusion": "UNKNOWN: R209 compiled successfully; candidate correctness and performance remain unmeasured."
+}
