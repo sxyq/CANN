@@ -1,0 +1,41 @@
+{
+  "route": "N07",
+  "revision": "R098",
+  "branch": "research/n07-parameter-tile-reuse",
+  "parent_commit": "30a9c0862c2254496d66ef3140189f08baaa19c5",
+  "parent_source_commit": "42eced1f81110e9eadbe325bf3b3bb5788060525",
+  "source_commit": "0569cdd7d13a32b611d99e6a9c0d628e77cdc03b",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_path_absolute": "/home/data4t2/lelinfeng/cann/worktrees/n07-parameter-tile-reuse/phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "b877cbdc6d57a3ed5df1764398853d0dee2e2a8f9acb70a67e6296dc9503581a",
+  "hypothesis": "Require actual grid-level parameter tile work to decrease before admitting a full cache, and allow a cache whose smaller row capacity increases batch count when its total parameter tile work still beats the baseline streaming path.",
+  "change": "FP32 and native full-cache eligibility now requires a positive cached row capacity, no higher tile count than baseline, and strict reduction in total parameter tile ops versus baselineTileCount * baselineBatchCount. Cache type selection continues to compare each full-cache total cost.",
+  "changed_kernel_location": "Init BF16 wide-path full-cache eligibility and total operation estimates",
+  "build": {
+    "status": "passed",
+    "entrypoint_command": "./tools/run.sh build",
+    "exit_code": 0,
+    "output": [
+      "-- Configuring done",
+      "-- Generating done",
+      "-- Build files have been written to: /home/data4t2/lelinfeng/cann/worktrees/n07-parameter-tile-reuse/phase4/workspaces/R31B/build-n07",
+      "Consolidate compiler generated dependencies of target r31b_submission_v011",
+      "[ 50%] Building ASC object CMakeFiles/compile_adapter_v011.asc.o",
+      "[100%] Linking ASC executable r31b_submission_v011",
+      "[100%] Built target r31b_submission_v011"
+    ],
+    "target": "r31b_submission_v011",
+    "artifact_path": "phase4/workspaces/R31B/build-n07/r31b_submission_v011",
+    "artifact_sha256": "c385189e4892123bc883a0ee8cc647d53f7a701d82479f8c81c108b86ef88cae"
+  },
+  "correctness": {
+    "status": "not_run",
+    "reason": "NPU3 Canonical slot is assigned to N10 R061; no device command was run for R098."
+  },
+  "local": {
+    "status": "not_run",
+    "reason": "Awaiting serial NPU3 Canonical verification; no device command was run."
+  },
+  "device_id": "NONE",
+  "assessment": "Local Build passed; correctness and performance remain unverified. No promotion or performance claim."
+}
