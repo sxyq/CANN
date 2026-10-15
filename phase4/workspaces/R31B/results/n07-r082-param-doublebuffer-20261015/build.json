@@ -1,0 +1,96 @@
+{
+  "route": "N07",
+  "revision": "R082",
+  "source_commit": "eea083f6a07e23bf587e637633755d92fd0be38b",
+  "parent_commit": "f439b85ea505eaf8cbb1ccc2d866d05b590be80e",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "298fcea6e65b73b12dcdd781ad62a461060ff0aea91cb8909d6b50e6b3bbb808",
+  "artifact_path": "phase4/workspaces/R31B/build-n07/r31b_submission_v011",
+  "artifact_sha256": "c9f63002e8aeb79b19ff991ad65c57e35f054fadb69aeec1e34b072cd49adecf",
+  "hypothesis": "In the BF16 D=8192 full-row path, use the idle x/residual UB tiles to stage the second gamma/bias GM tile while the first parameter pair is promoted to FP32, overlapping MTE2 parameter DMA with vector conversion without additional UB allocation.",
+  "changed_kernel_location": "ProcessBf16FullRowOutputPipelined parameter-cache preload block only",
+  "static_range_proof": {
+    "constants": {
+      "kTileElems": 4096,
+      "kCacheElems": 8192,
+      "sizeof_bfloat16": 2,
+      "sizeof_float": 4
+    },
+    "gm_parameter_indices": {
+      "first_gamma_bias_tile": "[0, 4096)",
+      "second_gamma_bias_tile": "[4096, 8192)"
+    },
+    "ub_ranges": {
+      "gammaStage_gammaBuf": "[0, 4096) BF16 = 8192 bytes",
+      "biasStage_biasBuf": "[0, 4096) BF16 = 8192 bytes",
+      "gammaNextStage_xBuf": "[0, 4096) BF16 = 8192 bytes",
+      "biasNextStage_residualBuf": "[0, 4096) BF16 = 8192 bytes",
+      "gammaCache": "[0, 8192) FP32 = 32768 bytes; writes [0,4096) then [4096,8192)",
+      "biasCache": "[0, 8192) FP32 = 32768 bytes; writes [0,4096) then [4096,8192)"
+    },
+    "non_overlap": "Each stage/cache pair is allocated from a distinct TBuf; the second parameter DMAs target xBuf/residualBuf while the first casts read gammaBuf/biasBuf.",
+    "reuse_order": "After second-tile MTE2-to-V wait and casts, SyncVToMTE2 completes before row processing reuses xBuf/residualBuf for input data."
+  },
+  "build": {
+    "status": "passed",
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "log": "phase4/workspaces/R31B/results/n07-r082-param-doublebuffer-20261015/build.log"
+  },
+  "canonical_worker": {
+    "batch_id": "live-n07-r082-20261015",
+    "worker": "/home/data4t2/lelinfeng/cann/工具/n06-n10-canonical-sweep.mjs",
+    "runner": "/tmp/cann-n06-n10-canonical-LmKAZ0/本地实验/MAIN2-CANONICAL-V1/builds/N07__R082-298fcea6/build/clx_ref_candidate_probe",
+    "runner_sha256": "d6a4a9a7c33984a6369ea1e9bb90ed5d5a18cc308180ae74fe1b917d3c1228de",
+    "harness_sha256": "2aa1aa3b2801a9202de01946ff079ec3b580c6ee7218dc03a772a87a4a4467e7",
+    "verify_return_code": 0,
+    "worker_build_command": "node /home/data4t2/lelinfeng/cann/工具/n06-n10-canonical-sweep.mjs --worker /tmp/cann-n06-n10-canonical-LmKAZ0 live-n07-r082-20261015 N07 R082 R082-298fcea6 298fcea6e65b73b12dcdd781ad62a461060ff0aea91cb8909d6b50e6b3bbb808 /home/data4t2/lelinfeng/cann/worktrees/n07-parameter-tile-reuse/phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc /home/data4t2/lelinfeng/cann/worktrees/n07-parameter-tile-reuse/phase4/workspaces/R31B/results/canonical-sweep/live-n07-r082-20261015/versions/R082-298fcea6 build 4 eea083f6a07e23bf587e637633755d92fd0be38b",
+    "worker_verify_command": "node /home/data4t2/lelinfeng/cann/工具/n06-n10-canonical-sweep.mjs --worker /tmp/cann-n06-n10-canonical-LmKAZ0 live-n07-r082-20261015 N07 R082 R082-298fcea6 298fcea6e65b73b12dcdd781ad62a461060ff0aea91cb8909d6b50e6b3bbb808 /home/data4t2/lelinfeng/cann/worktrees/n07-parameter-tile-reuse/phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc /home/data4t2/lelinfeng/cann/worktrees/n07-parameter-tile-reuse/phase4/workspaces/R31B/results/canonical-sweep/live-n07-r082-20261015/versions/R082-298fcea6 verify 4 eea083f6a07e23bf587e637633755d92fd0be38b",
+    "evidence_original": "/tmp/cann-n06-n10-canonical-LmKAZ0/本地实验/MAIN2-CANONICAL-V1/versions/N07__R082-298fcea6",
+    "evidence_copy": "phase4/workspaces/R31B/results/canonical-sweep/live-n07-r082-20261015/versions/R082-298fcea6/canonical-evidence",
+    "measurements_tsv_sha256": "b1712e5b7a4b17a012cd4de3391596697622efee0f868f7fbd4640b9b4c2bd1e",
+    "correctness_json_sha256": "a7c4891fbae37b9180b02c297b8e2159de120058285658e183f4dd60688bee52",
+    "canonical_score_json_sha256": "c9420c0e8349f48064cb971372fe184f2d647cd3d8e3153736787c4d617b5ca8"
+  },
+  "parent_binding": {
+    "git_parent_commit": "f439b85ea505eaf8cbb1ccc2d866d05b590be80e",
+    "canonical_parent_source_sha256": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+    "candidate_source_sha256": "298fcea6e65b73b12dcdd781ad62a461060ff0aea91cb8909d6b50e6b3bbb808",
+    "identity_records_checked": 42,
+    "identity_status": "PASS"
+  },
+  "device_context": {
+    "device": 4,
+    "soc": "Ascend910B3",
+    "npu_arch": "dav-2201",
+    "hbm_capacity_mib": 65536,
+    "pre_verify_hbm_usage_percent": 90,
+    "pre_verify_aicore_usage_percent": 0,
+    "pre_measurement_free_hbm_lower_bound_mib": 5898.24,
+    "snapshot": "phase4/workspaces/R31B/results/canonical-sweep/live-n07-r082-20261015/versions/R082-298fcea6/device-before-verify.txt",
+    "measurement_resource_evidence": "phase4/workspaces/R31B/results/canonical-sweep/live-n07-r082-20261015/versions/R082-298fcea6/canonical-evidence/measurement/before-resource.json",
+    "measurement_host_load_evidence": "phase4/workspaces/R31B/results/canonical-sweep/live-n07-r082-20261015/versions/R082-298fcea6/canonical-evidence/measurement/before-host.txt",
+    "measurement_npu_process_evidence": "phase4/workspaces/R31B/results/canonical-sweep/live-n07-r082-20261015/versions/R082-298fcea6/canonical-evidence/measurement/before-npu.txt"
+  },
+  "correctness": {
+    "status": "passed",
+    "device": 4,
+    "pass_count": 7,
+    "case_count": 7,
+    "all_cases_bad_zero": true,
+    "evidence": "phase4/workspaces/R31B/results/canonical-sweep/live-n07-r082-20261015/versions/R082-298fcea6/canonical-evidence/correctness.json"
+  },
+  "local": {
+    "status": "LOCAL_NEUTRAL",
+    "score": 91.357983,
+    "quality": "POOR",
+    "core_gain_count": 0,
+    "local_gain_fragile": "NO",
+    "reliable_local_gain": "NO",
+    "core_cases": ["C12", "C13", "C14", "C16"],
+    "paired_diagnostic_score": 94.31592003938505,
+    "evidence": "phase4/workspaces/R31B/results/canonical-sweep/live-n07-r082-20261015/versions/R082-298fcea6/canonical-evidence/canonical-score.json",
+    "raw_measurements": "phase4/workspaces/R31B/results/canonical-sweep/live-n07-r082-20261015/versions/R082-298fcea6/canonical-evidence/measurements.tsv"
+  },
+  "resource_rule": "Stopped after the existing verify worker exited successfully; HBM 小于 100 才停止."
+}
