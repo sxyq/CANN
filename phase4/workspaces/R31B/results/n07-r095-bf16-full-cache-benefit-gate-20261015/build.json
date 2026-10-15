@@ -1,0 +1,41 @@
+{
+  "route": "N07",
+  "revision": "R095",
+  "branch": "research/n07-parameter-tile-reuse",
+  "parent_commit": "576d9afc787282e92586d238abb6cc454880b4e8",
+  "parent_source_commit": "f1c13b206315119184127e530fd4cedb78f619f2",
+  "source_commit": "2d5031bbb8d5b2efc81d9ccd6a24ebf01e088117",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_path_absolute": "/home/data4t2/lelinfeng/cann/worktrees/n07-parameter-tile-reuse/phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "88228ad9cddf7cecc9518522fd111ab02080d8c7e3f1b4a5af71b4c6769cbe18",
+  "hypothesis": "A full BF16 parameter cache should be admitted only when it either reduces the parameter tile count or avoids repeated baseline batches. Otherwise it has no clear parameter reuse benefit over streaming.",
+  "change": "Both FP32 and native full-cache eligibility now require cachedRows >= baselineRows, no greater tile count, and either a strictly lower tile count or baselineBatchCount > activeBlockCount. Gamma-only cache selection is unchanged.",
+  "changed_kernel_location": "Init BF16 wide-path hasFp32CacheRows/hasNativeCacheRows eligibility",
+  "build": {
+    "status": "passed",
+    "entrypoint_command": "./tools/run.sh build",
+    "exit_code": 0,
+    "output": [
+      "-- Configuring done",
+      "-- Generating done",
+      "-- Build files have been written to: /home/data4t2/lelinfeng/cann/worktrees/n07-parameter-tile-reuse/phase4/workspaces/R31B/build-n07",
+      "Consolidate compiler generated dependencies of target r31b_submission_v011",
+      "[ 50%] Building ASC object CMakeFiles/compile_adapter_v011.asc.o",
+      "[100%] Linking ASC executable r31b_submission_v011",
+      "[100%] Built target r31b_submission_v011"
+    ],
+    "target": "r31b_submission_v011",
+    "artifact_path": "phase4/workspaces/R31B/build-n07/r31b_submission_v011",
+    "artifact_sha256": "32e6cb5a0460844343b4616f73cdb11457a5ef6803f6d12b8bf4ad9a5a3db58a"
+  },
+  "correctness": {
+    "status": "not_run",
+    "reason": "NPU3 is assigned to N10 R061; no device command was run for R095."
+  },
+  "local": {
+    "status": "not_run",
+    "reason": "Awaiting serial NPU3 Correctness and Canonical Local; no device command was run."
+  },
+  "device_id": "NONE",
+  "assessment": "Local Build passed; correctness and performance remain unverified. No promotion or performance claim."
+}
