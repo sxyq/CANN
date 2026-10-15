@@ -1,0 +1,71 @@
+{
+  "route_id": "N07",
+  "revision": "R081",
+  "branch": "research/n07-parameter-tile-reuse",
+  "parent_revision": "R080",
+  "parent_sha": "744db2a3097600e4bbb338513740970b180d3a08",
+  "source_commit": "cf12a53d83c0d59fe0bd8f4ee1b2c639842eac4a",
+  "intermediate_source_commit": "744957fad70d8416d545a63cdb461e330a644af4",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "93095807eadb3b35d688a3fe8ed6455c8e7a3ec757c42284e660116e9031aa25",
+  "hypothesis": "R080 Canonical remained LOCAL_NEUTRAL/POOR at 92.156524, with C13 at 22.26 us versus 21.14 us parent and C14 at 31.22 us versus 25.86 us parent. In the BF16 wide path, a gamma-only cache is rejected when it preserves baseline rows even if it preserves tile count and the block performs multiple batches. Allowing that equal-capacity case can reuse gamma across batches without reducing row capacity or increasing tile count; no runtime gain is assumed.",
+  "change": {
+    "scope": "BF16 wide gamma-only parameter reuse",
+    "behavior": "When no full parameter cache is eligible, gamma-only cache may activate with equal baseline row capacity if its tile count does not increase and the baseline performs more batches than active blocks. The existing row-increasing gamma-only selection remains unchanged.",
+    "math_semantics_changed": false,
+    "output_order_changed": false,
+    "files_changed": [
+      "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc"
+    ]
+  },
+  "build": {
+    "status": "passed_after_compile_fix",
+    "target": "r31b_submission_v011",
+    "artifact_path": "phase4/workspaces/R31B/build-n07/r31b_submission_v011",
+    "artifact_sha256": "ca6b5234702dab9d46977ff1965b63967c4bf968c5a2c629a7ccdb5ddf0d9087",
+    "attempts": [
+      {
+        "source_commit": "744957fad70d8416d545a63cdb461e330a644af4",
+        "command": "./tools/run.sh build",
+        "exit_code": 2,
+        "status": "failed",
+        "output": [
+          "[ 50%] Building ASC object CMakeFiles/r31b_submission_v011.dir/compile_adapter_v011.asc.o",
+          "R31B-V011-LP-ROW-PIPELINE_kernel.asc:306:25: error: use of undeclared identifier 'baselineBatchCount'",
+          "gmake: *** [Makefile:124: r31b_submission_v011] Error 2"
+        ]
+      },
+      {
+        "source_commit": "cf12a53d83c0d59fe0bd8f4ee1b2c639842eac4a",
+        "command": "./tools/run.sh build",
+        "exit_code": 0,
+        "status": "passed",
+        "log_path": "NONE",
+        "log_source": "Live command output captured from the actual ./tools/run.sh build invocation in this run; no separate build log file was written.",
+        "output": [
+          "-- Configuring done",
+          "-- Generating done",
+          "-- Build files have been written to: /home/data4t2/lelinfeng/cann/worktrees/n07-parameter-tile-reuse/phase4/workspaces/R31B/build-n07",
+          "Consolidate compiler generated dependencies of target r31b_submission_v011",
+          "[ 50%] Building ASC object CMakeFiles/r31b_submission_v011.dir/compile_adapter_v011.asc.o",
+          "[100%] Linking ASC executable r31b_submission_v011",
+          "[100%] Built target r31b_submission_v011"
+        ]
+      }
+    ]
+  },
+  "correctness": {
+    "status": "not_run",
+    "reason": "Main is serially handling N09 C16; no device call was made. R080 correctness passed 7/7 but does not validate R081."
+  },
+  "local": {
+    "status": "not_run",
+    "reason": "No device performance call was made. R005 D=8192's recorded correctness risk remains unresolved, so no R005 Local test was run."
+  },
+  "device_id": "NONE",
+  "assessment": {
+    "candidate_status": "Build passed after a source compile fix; R081 correctness and performance remain unverified.",
+    "promotion": "none",
+    "performance_claim": "None; no R081 device measurement was collected."
+  }
+}
