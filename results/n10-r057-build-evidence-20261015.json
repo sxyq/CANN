@@ -1,0 +1,54 @@
+{
+  "route": "N10",
+  "revision": "R057",
+  "parent": {
+    "source_commit": "712d4125be2cb2e9b6dea57b1182c18f67f411d3",
+    "source_sha256": "0f50761df862790436f11796e9309ce2d307ffe2c11e653eca72992e4cf0eb77",
+    "canonical_evidence": "results/canonical-sweep/n10-r056-live-main-20261014T2350Z/versions/R056-0f50761df8/evidence/canonical-score.json",
+    "local_score": 95.489426,
+    "local_status": "LOCAL_NEUTRAL",
+    "quality": "POOR",
+    "core_gain_count": 1,
+    "case_medians_candidate_vs_parent_us": {
+      "C12": [7.62, 6.88],
+      "C13": [20.46, 20.8],
+      "C14": [26.36, 25.72]
+    }
+  },
+  "candidate": {
+    "source_commit": "e6a0d9381e5cc01edb671771980c83e013b60db4",
+    "kernel_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+    "kernel_sha256": "7176d524c94eaa74d1cc3d90ca12789201fac14a5566062c02ddcca03c4fcb8e"
+  },
+  "change": {
+    "shape_selector": "ProcessWideLowPrecision with rowCount=128 and rowWidth=16384",
+    "mechanism": "Rotate physical block to balanced contiguous row-range assignment by rangePhase=blockCount/2; non-selected shapes use phase 0 and retain R056 mapping.",
+    "hypothesis": "Keep range contiguity and per-block row counts unchanged, but shift which physical block receives each range/remainder position. No per-core timing telemetry identifies a slow core, so this tests core-to-range placement rather than asserting a root cause."
+  },
+  "static_mapping_validation": {
+    "row_count": 128,
+    "block_count_range": [1, 128],
+    "complete_unique_coverage": true,
+    "no_empty_blocks": true,
+    "maximum_per_block_load_spread_rows": 1,
+    "canonical_block_count_45": {
+      "phase": 22,
+      "rows_per_block": {"two_rows": 7, "three_rows": 38},
+      "r056_two_row_block_ids": [0, 6, 12, 19, 25, 32, 38],
+      "r057_two_row_block_ids": [3, 10, 16, 23, 29, 35, 42],
+      "two_row_block_id_overlap": 0
+    }
+  },
+  "build": {
+    "command": "./tools/run.sh build",
+    "toolkit": "/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002",
+    "soc": "Ascend910B3",
+    "npu_arch": "dav-2201",
+    "return_code": 0,
+    "status": "PASS",
+    "artifact": "/tmp/n10-row-core-balance-build/r31b_submission_v011",
+    "artifact_sha256": "b45904a8c6d0fee4f34245321ddc14a5f211e1a1ef7c125dacaaf0f41036d851",
+    "raw_output_path": "results/build-20261015T000336876663672Z.log"
+  },
+  "device_validation": "NOT_RUN; waiting for Main serial device window"
+}
