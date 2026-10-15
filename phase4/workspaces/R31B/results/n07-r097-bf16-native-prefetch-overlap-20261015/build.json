@@ -1,0 +1,41 @@
+{
+  "route": "N07",
+  "revision": "R097",
+  "branch": "research/n07-parameter-tile-reuse",
+  "parent_commit": "589f64889764134854f31c8ab27d170fff806ece",
+  "parent_source_commit": "7d3541ef6b0301c11a86471ecdd69b4ef47fc59b",
+  "source_commit": "42eced1f81110e9eadbe325bf3b3bb5788060525",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_path_absolute": "/home/data4t2/lelinfeng/cann/worktrees/n07-parameter-tile-reuse/phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "8451f1bc75b1947b1d747313fce286d027612b6e6ba8713afe6156c3baeee97e",
+  "hypothesis": "The first native gamma/bias cache DMA is currently enqueued only after waiting for the first x/residual DMA event. Enqueuing the independent parameter copy immediately after setting that event may overlap it with the input DMA while preserving the later pass-end MTE2 barrier before consumption.",
+  "change": "Only native full-parameter prefetch scheduling moved earlier within the first row/tile unit: gamma/bias loads are queued after the first x/residual loads and their completion flag, before waiting on the input flag. Parameter data remains consumed only after the existing pass-end barrier.",
+  "changed_kernel_location": "ProcessWideLowPrecision first-unit native parameter preload ordering",
+  "build": {
+    "status": "passed",
+    "entrypoint_command": "./tools/run.sh build",
+    "exit_code": 0,
+    "output": [
+      "-- Configuring done",
+      "-- Generating done",
+      "-- Build files have been written to: /home/data4t2/lelinfeng/cann/worktrees/n07-parameter-tile-reuse/phase4/workspaces/R31B/build-n07",
+      "Consolidate compiler generated dependencies of target r31b_submission_v011",
+      "[ 50%] Building ASC object CMakeFiles/compile_adapter_v011.asc.o",
+      "[100%] Linking ASC executable r31b_submission_v011",
+      "[100%] Built target r31b_submission_v011"
+    ],
+    "target": "r31b_submission_v011",
+    "artifact_path": "phase4/workspaces/R31B/build-n07/r31b_submission_v011",
+    "artifact_sha256": "e22ddfe1357ef7e2511814520a20925ac52cb658154addf7ebcfeae887cb55e6"
+  },
+  "correctness": {
+    "status": "not_run",
+    "reason": "NPU3 Canonical device window is reserved for N10 R061; no device command was run for R097."
+  },
+  "local": {
+    "status": "not_run",
+    "reason": "Awaiting serial NPU3 Canonical verification; no device command was run."
+  },
+  "device_id": "NONE",
+  "assessment": "Local Build passed; correctness and performance remain unverified. No promotion or performance claim."
+}
