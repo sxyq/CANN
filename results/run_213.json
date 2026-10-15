@@ -1,0 +1,41 @@
+{
+  "route": "N06",
+  "revision": "R211",
+  "run_id": "213",
+  "source_commit": "21997edb39f8e2bafdc8a7cfbc14a98aa0e743a0",
+  "git_parent_commit": "6d9cc79e8c0b6ba5bf6a83ee700b85edf7d3bfb0",
+  "parent_source_commit": "0ec5a5d1e6fdb05e5a1523ec705932c3908f5e59",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "6ab0e414129b37772d28b2b8c2f41c078e49af32c7c53cf307b52f6194cfe045",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "In the wide BF16 path only, increase kWideBf16RetainedYPhaseBytes from 32B to 64B. The retained-y TBuf capacity, active view offset, and ChooseWideFullYRows work-bank estimate all use this constant; row arithmetic and synchronization are unchanged.",
+  "hypothesis": "Moving the retained-y region by one additional 32B transfer-aligned phase may change its relative UB placement and affect performance. No physical bank mapping guarantee is asserted.",
+  "static_validation": {
+    "alignment": "The 64B phase maps to a 16-FP32-element view offset and remains 8B and 32B aligned.",
+    "bounds": "valueFp32Buf_ allocates paddedRowElems*wideFullYRows_*4 + phase bytes; ProcessWideLowPrecision starts at the same phase and indexes rows by paddedRowElems. For each row, col+valid <= rowWidth <= paddedRowElems, so retained-y accesses remain within the allocated region.",
+    "budget": "ChooseWideFullYRows includes kWideBf16RetainedYPhaseBytes in its work-bank skew term; the added 32B is included in the UB budget estimate.",
+    "scope": "Only the BF16 wide retained-y phase changes; other paths and buffer arithmetic are unchanged."
+  },
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "status": "PASS",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "e5c0bed286f23b29e93ecfdc8813c3fc8a93c5aa48fa7b934012f55edd07b51e",
+    "log": "results/build_213.log",
+    "sha_file": "results/build-artifact_213.sha256"
+  },
+  "correctness": {
+    "status": "NOT_RUN",
+    "reason": "Not run per Main's device queue assignment; device 3 was assigned to N10 R061."
+  },
+  "local": {
+    "status": "NOT_RUN",
+    "reason": "Awaiting a future device queue assignment; Local requires Canonical verify PASS."
+  },
+  "device": {
+    "status": "NO_WORKLOAD",
+    "reason": "This revision ran only the local CANN Build command; no device workload was launched."
+  },
+  "performance_conclusion": "UNKNOWN: R211 compiled successfully; candidate correctness and performance remain unmeasured."
+}
