@@ -1,0 +1,41 @@
+{
+  "route": "N07",
+  "revision": "R094",
+  "branch": "research/n07-parameter-tile-reuse",
+  "parent_commit": "f189094decdcff7d9c15c38ec78a97da04bc4ca0",
+  "parent_source_commit": "dba91ad072365fbd9926e0ddd4b247f52d10baca",
+  "source_commit": "f1c13b206315119184127e530fd4cedb78f619f2",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_path_absolute": "/home/data4t2/lelinfeng/cann/worktrees/n07-parameter-tile-reuse/phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "e8d5648a9debcd806df8ce73f954ed0ea91737a8c659d5eac2ad49a265077f1d",
+  "hypothesis": "The BF16 FP32-versus-native full-cache comparison currently uses the maximum per-block batch count. Since the selected cache applies across the full grid, total FP32 conversions are one per block and native conversions are one per tile per block batch; aggregate counts should better reflect uneven row distributions.",
+  "change": "Only the cross-type full-cache comparison now uses grid-level operation counts: FP32 tile count times blockCount versus native tile count times EstimateWideFullYBatchCount(rowCount, blockCount, nativeRows). Capacity gates and gamma-only selection are unchanged.",
+  "changed_kernel_location": "Init BF16 wide-path FP32/native cache preference comparison",
+  "build": {
+    "status": "passed",
+    "entrypoint_command": "./tools/run.sh build",
+    "exit_code": 0,
+    "output": [
+      "-- Configuring done",
+      "-- Generating done",
+      "-- Build files have been written to: /home/data4t2/lelinfeng/cann/worktrees/n07-parameter-tile-reuse/phase4/workspaces/R31B/build-n07",
+      "Consolidate compiler generated dependencies of target r31b_submission_v011",
+      "[ 50%] Building ASC object CMakeFiles/r31b_submission_v011.dir/compile_adapter_v011.asc.o",
+      "[100%] Linking ASC executable r31b_submission_v011",
+      "[100%] Built target r31b_submission_v011"
+    ],
+    "target": "r31b_submission_v011",
+    "artifact_path": "phase4/workspaces/R31B/build-n07/r31b_submission_v011",
+    "artifact_sha256": "3e49f2c6f4fba805059747664d11c448c9b35758082a1ab6d8c888dd8ad4fb30"
+  },
+  "correctness": {
+    "status": "not_run",
+    "reason": "NPU3 is assigned to N10 R061; no device command was run for R094."
+  },
+  "local": {
+    "status": "not_run",
+    "reason": "Awaiting serial NPU3 Correctness and Canonical Local; no device command was run."
+  },
+  "device_id": "NONE",
+  "assessment": "Local Build passed; correctness and performance remain unverified. No promotion or performance claim."
+}
