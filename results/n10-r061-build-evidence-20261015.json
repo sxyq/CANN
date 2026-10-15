@@ -1,0 +1,54 @@
+{
+  "route": "N10",
+  "revision": "R061",
+  "parent_commit": "d91366ac44cf6372b3b4470f75bbf6e7a1de1a56",
+  "candidate_commit": "0565357ee62e38ced13c4d0746b8934b523130e5",
+  "kernel_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "kernel_sha256": "070639fb89ee59757598805ab9aadcb2e44c5c3d1fd79fd8c79c7413d6e33a82",
+  "change": {
+    "shape_selector": "ProcessWideLowPrecision with rowCount=128 and rowWidth=16384",
+    "mechanism": "Assign rows in adjacent pairs with row = (localPair * blockCount + blockIdx) * 2 + pairOffset; each block receives a contiguous range of local pairs, while the global row pairs are striped across blocks.",
+    "hypothesis": "Pair-stripe ownership keeps each two-row unit adjacent while spreading successive row pairs across blocks. It differs from R058 single-row stride ownership and R059/R060 contiguous per-block rows; active block count remains unchanged from R060.",
+    "static_validation": {
+      "block_count_range": [1, 32],
+      "complete_unique_coverage": true,
+      "no_empty_blocks": true,
+      "canonical_block_count": 32,
+      "rows_per_block": 4,
+      "block_0_rows": [0, 1, 64, 65],
+      "block_31_rows": [62, 63, 126, 127]
+    }
+  },
+  "build": {
+    "command": "source /usr/local/Ascend/ascend-toolkit/set_env.sh >/dev/null 2>&1 && export ASCEND_HOME_PATH=/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002 && export CPLUS_INCLUDE_PATH=${ASCEND_HOME_PATH}/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0:${ASCEND_HOME_PATH}/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0/aarch64-target-linux-gnu:${ASCEND_HOME_PATH}/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0/backward:${ASCEND_HOME_PATH}/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include:${CPLUS_INCLUDE_PATH:-} && export C_INCLUDE_PATH=${ASCEND_HOME_PATH}/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0:${ASCEND_HOME_PATH}/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0/aarch64-target-linux-gnu:${ASCEND_HOME_PATH}/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0/backward:${ASCEND_HOME_PATH}/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include:${C_INCLUDE_PATH:-} && cmake --build /tmp/n10-row-core-balance-build --target r31b_submission_v011 --parallel 2",
+    "configure_command": "cmake -S /home/data4t2/lelinfeng/cann/worktrees/n10-row-core-balance/phase4/workspaces/R31B -B /tmp/n10-row-core-balance-build -DASCEND_CANN_PACKAGE_PATH=/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002",
+    "toolkit": "/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002",
+    "soc": "Ascend910B3",
+    "npu_arch": "dav-2201",
+    "return_code": 0,
+    "status": "PASS",
+    "artifact": "/tmp/n10-row-core-balance-build/r31b_submission_v011",
+    "artifact_sha256": "6f7317e94347c3742a9ca8ed61b834e3c1fd6bfca33b4158a16c3fba9e930868",
+    "input_sha256": {
+      "kernel": "070639fb89ee59757598805ab9aadcb2e44c5c3d1fd79fd8c79c7413d6e33a82",
+      "compile_adapter_v011.asc": "9a6df884ff9b30078c38fd9190a227e1926a7954cbb0694b1a8ac09fbdd680ce",
+      "CMakeLists.txt": "435cd84be945c1757159940c4c36fbab97fb06e9bf14e8a746a8121b42dda9fc"
+    },
+    "raw_output_path": "results/build-n10-r061-correct-env-20261015.log"
+  },
+  "prior_build_attempts": [
+    {
+      "return_code": 2,
+      "reason": "ASCEND_HOME_PATH unset; kernel_operator.h not found",
+      "raw_output": "NOT_SAVED; command output retained in execution transcript"
+    },
+    {
+      "return_code": 2,
+      "reason": "set_env selected latest but HCC host frontend could not find <vector>",
+      "raw_output_path": "results/build-n10-r061-attempt-2-20261015.log"
+    }
+  ],
+  "correctness": "NOT_RUN",
+  "canonical_local": "NOT_RUN",
+  "device_id": "NONE"
+}
