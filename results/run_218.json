@@ -1,0 +1,35 @@
+{
+  "route": "N06",
+  "revision": "R216",
+  "run_id": "218",
+  "source_commit": "b609941ce3d77b3825789f19ac9a7dcf0c22bdc7",
+  "git_parent_commit": "d71db500de3134de6932e161a2aeb6a7ca356d59",
+  "parent_source_commit": "1c53b81f89f51d62c022193db98a2acb20327b4b",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "9ed5693693e31e11e522e444aaf56bd8aa86056e940562d36c62002867795342",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "For BF16 wide rows, increase retained-y row alignment from 8 FP32 elements (32B) to 16 elements (64B). The existing row padding, TBuf allocation, access stride, and UB-budget logic use this alignment; arithmetic and synchronization are unchanged.",
+  "hypothesis": "A 64B row alignment may change UB placement and performance. No physical bank mapping is asserted.",
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "status": "PASS",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "ee5f20cc10e0dd687eabddd78ab2bf2814c60aa154f4582d27d98703c2eaaae9",
+    "log": "results/build_218.log",
+    "sha_file": "results/build-artifact_218.sha256"
+  },
+  "correctness": {
+    "status": "NOT_RUN",
+    "reason": "No device queue assignment was provided for this revision."
+  },
+  "local": {
+    "status": "NOT_RUN",
+    "reason": "Awaiting a future device queue assignment; Local requires Canonical verify PASS."
+  },
+  "device": {
+    "status": "NO_WORKLOAD",
+    "reason": "This revision ran only the local CANN Build command; no device workload was launched."
+  },
+  "performance_conclusion": "UNKNOWN: R216 compiled successfully; candidate correctness and performance remain unmeasured."
+}
