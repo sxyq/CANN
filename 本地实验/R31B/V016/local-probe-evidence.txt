@@ -90,6 +90,95 @@ LOCAL_SCORE=NONE
 INTERPRETATION=one paired run completed with correctness PASS, but HBM stayed at 90%, AICore/AIVector were active, VLLM/python processes remained present, and multiple device-event outliers occurred; no stable performance conclusion
 SNAPSHOTS=本地实验/R31B/V016/V002/server3-before-paired.txt,本地实验/R31B/V016/V002/server3-after-paired.txt,本地实验/R31B/V016/V002/server3-artifact-identities.txt
 
+--- N04 DMA-PIPELINE-OVERLAP-X V003 ---
+ROUTE=N04-DMA-PIPELINE-OVERLAP-X
+REVISION=V003
+DIRECT_PARENT=V002
+PARENT_SOURCE_SHA=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
+CANDIDATE_SOURCE_SHA=2e287d08b7488d58515a74bb0fa6a3882d1b0be83f5deb3caf8773c9a9808bab
+HOST=cann-server3 (remote hostname hwnput3)
+DEVICE=4
+ROWS=2
+WARMUP=45
+PAIRS=21
+PAIRING=V011 parent and V003 Candidate interleaved P,C then C,P; same device and stream
+TIMING=device event primary; wall clock diagnostic
+LOAD_LABEL=LOAD_CONTAMINATED
+LOAD_BEFORE=2026-10-15T21:41:05+00:00 UTC; HBM=90%; AICore=0%; AIVector=0%; CtrlCPU=4%; HBM bandwidth=0%; VLLM/python processes present
+LOAD_AFTER=2026-10-15T21:41:11+00:00 UTC; HBM=90%; AICore=0%; AIVector=0%; CtrlCPU=4%; HBM bandwidth=0%; VLLM/python processes present
+RAW_LOG=本地实验/R31B/V016/V003/server3-paired.log
+
+PAIR=fp16-tail-d12288
+PARENT_MEDIAN_US=6.120
+CANDIDATE_MEDIAN_US=5.740
+MEDIAN_DIFF_US=-0.380
+PAIRED_DELTA_MEDIAN_US=-0.340
+PARENT_MAD_US=0.520
+CANDIDATE_MAD_US=0.360
+
+PAIR=fp16-wide-d32768
+PARENT_MEDIAN_US=10.180
+CANDIDATE_MEDIAN_US=9.400
+MEDIAN_DIFF_US=-0.780
+PAIRED_DELTA_MEDIAN_US=-1.380
+PARENT_MAD_US=0.420
+CANDIDATE_MAD_US=0.700
+
+PAIR=bf16-tail-d12288
+PARENT_MEDIAN_US=7.240
+CANDIDATE_MEDIAN_US=6.560
+MEDIAN_DIFF_US=-0.680
+PAIRED_DELTA_MEDIAN_US=-0.520
+PARENT_MAD_US=0.500
+CANDIDATE_MAD_US=0.420
+
+PAIR=bf16-wide-d32768
+PARENT_MEDIAN_US=14.000
+CANDIDATE_MEDIAN_US=12.140
+MEDIAN_DIFF_US=-1.860
+PAIRED_DELTA_MEDIAN_US=-1.940
+PARENT_MAD_US=0.260
+CANDIDATE_MAD_US=0.160
+
+LOCAL_SCORE=SUPPORTED_DIRECTIONAL
+INTERPRETATION=two independent paired runs completed with correctness PASS and all four paired medians favored V003 in both attempts; HBM stayed at 90% with resident VLLM/python processes, so support is directional for this observed load window and is not a general performance claim
+SNAPSHOTS=本地实验/R31B/V016/V003/server3-before-paired.txt,本地实验/R31B/V016/V003/server3-after-paired.txt,本地实验/R31B/V016/V003/server3-artifact-identities.txt
+
+SECOND_ATTEMPT=V003 paired a2; device=4; warmup=45; pairs=21; raw=本地实验/R31B/V016/V003/server3-paired-a2.log
+SECOND_LOAD_BEFORE=2026-10-15T21:44:58+00:00 UTC; HBM=90%; AICore=0%; AIVector=0%; CtrlCPU=4%; HBM bandwidth=0%; VLLM/python processes present
+SECOND_LOAD_AFTER=2026-10-15T21:45:04+00:00 UTC; HBM=90%; AICore=0%; AIVector=0%; CtrlCPU=9%; HBM bandwidth=0%; VLLM/python processes present
+SECOND_RUNNER_RC=0
+
+SECOND_PAIR=fp16-tail-d12288
+SECOND_PARENT_MEDIAN_US=6.160
+SECOND_CANDIDATE_MEDIAN_US=5.700
+SECOND_MEDIAN_DIFF_US=-0.460
+SECOND_PAIRED_DELTA_MEDIAN_US=-0.460
+
+SECOND_PAIR=fp16-wide-d32768
+SECOND_PARENT_MEDIAN_US=10.040
+SECOND_CANDIDATE_MEDIAN_US=8.780
+SECOND_MEDIAN_DIFF_US=-1.260
+SECOND_PAIRED_DELTA_MEDIAN_US=-1.460
+
+SECOND_PAIR=bf16-tail-d12288
+SECOND_PARENT_MEDIAN_US=6.840
+SECOND_CANDIDATE_MEDIAN_US=6.460
+SECOND_MEDIAN_DIFF_US=-0.380
+SECOND_PAIRED_DELTA_MEDIAN_US=-0.340
+
+SECOND_PAIR=bf16-wide-d32768
+SECOND_PARENT_MEDIAN_US=13.980
+SECOND_CANDIDATE_MEDIAN_US=12.100
+SECOND_MEDIAN_DIFF_US=-1.880
+SECOND_PAIRED_DELTA_MEDIAN_US=-1.840
+
+COMBINED_ATTEMPTS=2
+COMBINED_PAIRED_DELTA_MEDIANS_US=fp16-tail:-0.340,-0.460; fp16-wide:-1.380,-1.460; bf16-tail:-0.520,-0.340; bf16-wide:-1.940,-1.840
+COMBINED_LOCAL_SCORE=SUPPORTED_DIRECTIONAL
+COMBINED_INTERPRETATION=two independent paired attempts have negative candidate-minus-parent medians on all four cases with no correctness failures or shape regression; HBM remained 90% and VLLM/python processes were present, so support is limited to this observed load window
+SECOND_SNAPSHOTS=本地实验/R31B/V016/V003/server3-before-paired-a2.txt,本地实验/R31B/V016/V003/server3-after-paired-a2.txt
+
 --- N04 DMA-PIPELINE-OVERLAP-X V001 ---
 ROUTE=N04-DMA-PIPELINE-OVERLAP-X
 REVISION=V001
