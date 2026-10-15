@@ -1,0 +1,51 @@
+{
+  "route": "N10",
+  "revision": "R060",
+  "parent": {
+    "source_commit": "c1e3890943e4d50374c6f983a09ed37497884a9b",
+    "source_sha256": "a542c9eab89b7e8a4db9c351dbe795964c54f3d8b5c4a295a401cdc3c41dbbc6",
+    "canonical_status": "NOT_RUN; awaiting device authorization",
+    "nearest_measured_parent": {
+      "source_commit": "7320fb25c2cc17f7cfec0882fadaab394f9511d2",
+      "source_sha256": "36028c6fc88e121c0cf10725c807c82f17abf58194257142bacf795ade6fc18a",
+      "local_score": 73.188762,
+      "local_status": "LOCAL_NEUTRAL",
+      "quality": "POOR",
+      "reliable_local_gain": false
+    }
+  },
+  "candidate": {
+    "source_commit": "2924003f79b4c97d388bdddd3020e5d05eb86476",
+    "kernel_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+    "kernel_sha256": "c4dd161934cf0e2515b53a914e42b575a7662ac6fb08a223da6465c0ad2fa2c5"
+  },
+  "change": {
+    "shape_selector": "Host launch for rowCount=128, rowWidth=16384 and non-FP32 dtype",
+    "mechanism": "Cap requestedBlocks at 32 when more than 32 cores are available; other shapes and lower availableCoreNum values retain the existing launch count.",
+    "hypothesis": "Test active-core count as an independent row/core factor: 32 blocks assign four rows per block for this 128-row shape and may reduce per-block scheduling overhead, while arithmetic and the R059 mapping rule remain unchanged."
+  },
+  "static_mapping_validation": {
+    "row_count": 128,
+    "requested_blocks": 32,
+    "rows_per_block": 4,
+    "complete_unique_coverage": true,
+    "no_empty_blocks": true,
+    "maximum_per_block_load_spread_rows": 0
+  },
+  "build": {
+    "command": "./tools/run.sh build",
+    "toolkit": "/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002",
+    "soc": "Ascend910B3",
+    "npu_arch": "dav-2201",
+    "return_code": 0,
+    "status": "PASS",
+    "artifact": "/tmp/n10-row-core-balance-build/r31b_submission_v011",
+    "artifact_sha256": "f8f6e3038d48ffe1b4ffe062d6767a0f844d0a6f121e4fd0f8f85ac18589c35e",
+    "raw_output_path": "results/build-20261015T050738535665486Z.log"
+  },
+  "correctness": "NOT_RUN; Main requested NPU testing remain paused",
+  "canonical_local": "NOT_RUN; Main requested NPU testing remain paused",
+  "device_validation": "NOT_RUN; frozen pending Main device release",
+  "device_id": "NONE",
+  "free_hbm_mb": "NONE; no device query performed for R060"
+}
