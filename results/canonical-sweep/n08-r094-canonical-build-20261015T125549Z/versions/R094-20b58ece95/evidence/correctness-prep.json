@@ -1,7 +1,7 @@
 {
   "ROUTE": "N08",
   "REVISION": "R094",
-  "STATUS": "PREPARED_NOT_RUN",
+  "STATUS": "QUEUED_WAITING_FOR_N07_R086",
   "SOURCE_COMMIT": "39f90be9d36a86160543db2f636025636dcb3573",
   "SOURCE_SHA256": "20b58ece95f31dee75742626aea1974bb5697acc1e8bf824c86273d7fb139342",
   "CANONICAL_BUILD_STATUS": "PASS",
@@ -30,6 +30,14 @@
     "3",
     "39f90be9d36a86160543db2f636025636dcb3573"
   ],
-  "EXECUTION_CONDITION": "Run only after Main confirms the N09 R078 and N06 alignment-safety rechecks are complete, then take a fresh NPU3 process/HBM preflight. Abort device launch if FREE_HBM_MB is below 100 or an external process appears.",
-  "RUNNER_SEMANTICS": "The existing verify phase runs the full correctness suite first and only measures/scores Canonical Local when correctness passes."
+  "QUEUE": {
+    "DEVICE_ID": 3,
+    "BLOCKER": "N07 R086 currently owns the device queue.",
+    "PRIORITY": "After N07 R086 and before N10 R060.",
+    "NPU_COMMAND_STARTED": false
+  },
+  "EXECUTION_CONDITION": "After N07 R086 releases the device, take a fresh NPU3 HBM preflight. Do not stop or alter other users' processes; stop the N08 device command only if FREE_HBM_MB is below 100.",
+  "REQUESTED_NEXT_TESTS": "Run all 7 Correctness cases, then the complete 7-case Canonical Local protocol.",
+  "LOCAL_CASE_ROLES": "C12/C13/C14/C16 are the 4 Core main scenarios; C01/C08/C11 diagnostic cases are also measured and retained per the existing protocol.",
+  "RUNNER_SEMANTICS": "The existing verify phase runs the full correctness suite first and only measures/scores the complete Canonical Local suite when correctness passes."
 }
