@@ -1,0 +1,41 @@
+{
+  "route": "N07",
+  "revision": "R086",
+  "branch": "research/n07-parameter-tile-reuse",
+  "parent_commit": "e92083c77f3ab3342b6778a99f4b2ee8a377aa73",
+  "parent_source_commit": "aba3e16076b033f3c46dc6d68e27ec154463df29",
+  "source_commit": "d9d99275745d13d3f9acc0ce36f1b95740c18786",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_path_absolute": "/home/data4t2/lelinfeng/cann/worktrees/n07-parameter-tile-reuse/phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "839a3579cb61eb71f8958181a1e51023f980f29656c7dcdf0f8ce5c6d00b7ca7",
+  "hypothesis": "In the BF16 full-row cached path, reuse the output staging tiles for the second gamma/bias parameter tile and promote it while the next row's x/residual DMA is in flight, shortening the inter-row handoff before pass two.",
+  "change": "Only the row-0 second-parameter staging and promotion order in ProcessBf16FullRowOutputPipelined changed. The second parameter tile now uses gammaStage/biasStage; after its DMA completes, next-row x/residual loads are issued before FP32 promotion. The first-parameter preload, arithmetic, row mapping, and output order are unchanged.",
+  "changed_kernel_location": "ProcessBf16FullRowOutputPipelined row-0 second-parameter staging/promotion block",
+  "build": {
+    "status": "passed",
+    "entrypoint_command": "./tools/run.sh build",
+    "exit_code": 0,
+    "output": [
+      "-- Configuring done",
+      "-- Generating done",
+      "-- Build files have been written to: /home/data4t2/lelinfeng/cann/worktrees/n07-parameter-tile-reuse/phase4/workspaces/R31B/build-n07",
+      "Consolidate compiler generated dependencies of target r31b_submission_v011",
+      "[ 50%] Building ASC object CMakeFiles/r31b_submission_v011.dir/compile_adapter_v011.asc.o",
+      "[100%] Linking ASC executable r31b_submission_v011",
+      "[100%] Built target r31b_submission_v011"
+    ],
+    "target": "r31b_submission_v011",
+    "artifact_path": "phase4/workspaces/R31B/build-n07/r31b_submission_v011",
+    "artifact_sha256": "032dbe2d0d4cb30c2218c389bc14ce4a2673d6b241306ff1812bd811d5169d24"
+  },
+  "correctness": {
+    "status": "not_run",
+    "reason": "Queued behind the active NPU3 route; no device command was run."
+  },
+  "local": {
+    "status": "not_run",
+    "reason": "Queued behind the active NPU3 route; no device command was run."
+  },
+  "device_id": "NONE",
+  "assessment": "Local Build passed; correctness and performance remain unverified. No promotion or performance claim."
+}
