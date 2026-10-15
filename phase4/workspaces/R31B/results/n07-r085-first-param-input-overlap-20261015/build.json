@@ -1,0 +1,41 @@
+{
+  "route": "N07",
+  "revision": "R085",
+  "branch": "research/n07-parameter-tile-reuse",
+  "parent_commit": "64b8c0ebd132f9f089c7bb4b1930492209649569",
+  "parent_source_commit": "1c9dc567dc7d7168c8ab394259bd729b01251f9c",
+  "source_commit": "aba3e16076b033f3c46dc6d68e27ec154463df29",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_path_absolute": "/home/data4t2/lelinfeng/cann/worktrees/n07-parameter-tile-reuse/phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "09d89bc9d9d7282d9e7b91ba2ba89fe3670a1c426faba9ff84c25eabf386c066",
+  "hypothesis": "In the BF16 full-row cached path, promote the first gamma/bias parameter tile while the first row's x/residual MTE2 copies are in flight, reducing the startup tail before pass one.",
+  "change": "Only the initial first-parameter preload/synchronization point in ProcessBf16FullRowOutputPipelined changed. The first parameter loads complete before first-row input loads start; parameter promotion then overlaps those input copies. R084 second-tile staging is unchanged.",
+  "changed_kernel_location": "ProcessBf16FullRowOutputPipelined initial parameter preload block",
+  "build": {
+    "status": "passed",
+    "entrypoint_command": "./tools/run.sh build",
+    "exit_code": 0,
+    "output": [
+      "-- Configuring done",
+      "-- Generating done",
+      "-- Build files have been written to: /home/data4t2/lelinfeng/cann/worktrees/n07-parameter-tile-reuse/phase4/workspaces/R31B/build-n07",
+      "Consolidate compiler generated dependencies of target r31b_submission_v011",
+      "[ 50%] Building ASC object CMakeFiles/r31b_submission_v011.dir/compile_adapter_v011.asc.o",
+      "[100%] Linking ASC executable r31b_submission_v011",
+      "[100%] Built target r31b_submission_v011"
+    ],
+    "target": "r31b_submission_v011",
+    "artifact_path": "phase4/workspaces/R31B/build-n07/r31b_submission_v011",
+    "artifact_sha256": "bf3be20be58cd4b5622ed4aea9ac282a3f38b7300aa908e2255fe224670304b6"
+  },
+  "correctness": {
+    "status": "not_run",
+    "reason": "Deferred to the serial device-test queue; no device command was run."
+  },
+  "local": {
+    "status": "not_run",
+    "reason": "Deferred to the serial device-test queue; this Build is not performance evidence."
+  },
+  "device_id": "NONE",
+  "assessment": "Build passed; correctness and performance remain unverified. No promotion or performance claim."
+}
