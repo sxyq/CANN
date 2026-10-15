@@ -1,0 +1,56 @@
+{
+  "route": "N06",
+  "revision": "R204",
+  "run_id": "206",
+  "source_commit": "b8079283060e34f66ff3f1b32d89dc7891699981",
+  "git_parent_commit": "bab1b43e77070d1476a8636b5d0c34e98a4b4a31",
+  "parent_source_commit": "bab1b43e77070d1476a8636b5d0c34e98a4b4a31",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "782e47fd13222dba9a5209846f1d014abab7a4026849ec5606622cd5c57247bc",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "Change only WideFp16ReduceStride to return alignedPartialSlots instead of alignedPartialSlots + kWideFullYReduceStride / 2. This removes 8 FP32 elements (32B) of per-row padding from the wide low-precision reduction-partial stride. The same stride is used by row/tile budget selection and the reduce buffer allocation; partial offsets, arithmetic, and synchronization are unchanged. The helper is shared by wide FP16 and BF16 paths.",
+  "hypothesis": "Reducing the per-row partial stride to its existing 64B-aligned minimum may improve, hurt, or be neutral by changing the placement of adjacent reduction rows while reducing the requested partial buffer footprint. This tests row-stride layout rather than changing an FP32 phase constant. No physical UB bank mapping is inferred.",
+  "static_address_validation": {
+    "stride_formula": "partialSlots = 2 * tileCount; alignedPartialSlots = ceil(partialSlots / 16) * 16 FP32 elements. With kWideFullYReduceStride = 16, the candidate row stride is a multiple of 16 FP32 elements (64B), and is at least partialSlots.",
+    "partial_bounds": "Each tile writes at tile * 2 and ReduceAlignedPartials reads offsets 2 * i for i in [0, tileCount). The final accessed index is 2 * (tileCount - 1), which is less than partialSlots and therefore within the candidate row stride.",
+    "destination_alignment": "Each row begins at a stride multiple of 64B; tile partial offsets are tile * 2 FP32 elements, or 8B multiples. The helper's existing FP32 reduction destination alignment is retained.",
+    "budget": "The helper result feeds both ChooseWideFullYRows and reduceFp32Buf_ sizing, so both calculations use the same smaller stride. For the handoff's BF16 width sweep over 8193..32768, no row-count/tile-width choice regressed; 40 boundary widths allowed more rows or a larger tile. Widths 16384 and 32768 retained their row/tile choices, with calculated need reduced by 32B."
+  },
+  "parent_canonical": {
+    "revision": "R203",
+    "batch": "n06-r203-live-main-20261015T0120Z",
+    "correctness": "PASS 7/7",
+    "local_score": 92.88024,
+    "local_status": "LOCAL_NEUTRAL",
+    "quality": "POOR",
+    "core_gain_count": 0,
+    "core_medians_us": {
+      "C12": {"candidate": 7.44, "parent": 7.06},
+      "C13": {"candidate": 21.36, "parent": 20.76},
+      "C14": {"candidate": 27.42, "parent": 26.3},
+      "C16": {"candidate": 16.5, "parent": 15.24}
+    }
+  },
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "status": "PASS",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "5577705ba895d967278c7ad46525a49eb942c6f44f87a47bfccb14846c55df8a",
+    "log": "results/build_206.log",
+    "sha_file": "results/build-artifact_206.sha256"
+  },
+  "correctness": {
+    "status": "NOT_RUN",
+    "reason": "Not run per Main instruction; no device command was issued."
+  },
+  "local": {
+    "status": "NOT_RUN",
+    "reason": "Not run per Main instruction; no device timing was started."
+  },
+  "device": {
+    "status": "NO_WORKLOAD",
+    "reason": "This revision ran only the local CANN Build command; no device command was issued."
+  },
+  "performance_conclusion": "UNKNOWN: R204 compiled successfully; candidate correctness and performance remain unmeasured."
+}
