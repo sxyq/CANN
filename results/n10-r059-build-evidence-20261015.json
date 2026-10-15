@@ -1,0 +1,60 @@
+{
+  "route": "N10",
+  "revision": "R059",
+  "parent": {
+    "source_commit": "7320fb25c2cc17f7cfec0882fadaab394f9511d2",
+    "source_sha256": "36028c6fc88e121c0cf10725c807c82f17abf58194257142bacf795ade6fc18a",
+    "canonical_evidence": "results/canonical-sweep/live-n10-r058-20261015/versions/R058-36028c6fc8/evidence/canonical-score.json",
+    "local_score": 73.188762,
+    "local_status": "LOCAL_NEUTRAL",
+    "quality": "POOR",
+    "core_gain_count": 0,
+    "reliable_local_gain": false,
+    "device_id": 2,
+    "free_hbm_lower_bound_mb_before_after": [47841.28, 61603.84],
+    "aicore_percent_before_after": [0, 0]
+  },
+  "candidate": {
+    "source_commit": "c1e3890943e4d50374c6f983a09ed37497884a9b",
+    "kernel_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+    "kernel_sha256": "a542c9eab89b7e8a4db9c351dbe795964c54f3d8b5c4a295a401cdc3c41dbbc6"
+  },
+  "change": {
+    "shape_selector": "ProcessWideLowPrecision with rowCount=128 and rowWidth=16384",
+    "mechanism": "Assign each block a contiguous baseRows band, then assign its optional remainder row from a separate tail wave using row = baseRows * blockCount + blockIdx. The non-selected shapes retain their existing balanced contiguous mapping.",
+    "hypothesis": "Test a base-band plus separate remainder-wave ownership scheme, distinct from contiguous balanced ranges, block-ID phase shift, and full row-stride ownership. Preserve per-block row counts while limiting the non-contiguous portion to at most one row per eligible block; leave arithmetic and pipeline unchanged."
+  },
+  "static_mapping_validation": {
+    "row_count": 128,
+    "block_count_range": [1, 128],
+    "complete_unique_coverage": true,
+    "no_empty_blocks": true,
+    "maximum_per_block_load_spread_rows": 1,
+    "canonical_block_count_45": {
+      "base_rows": 2,
+      "extra_rows": 38,
+      "three_row_block_ids": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37],
+      "two_row_block_ids": [38, 39, 40, 41, 42, 43, 44],
+      "sample_rows": {
+        "block_0": [0, 1, 90],
+        "block_37": [74, 75, 127],
+        "block_38": [76, 77],
+        "block_44": [88, 89]
+      }
+    }
+  },
+  "build": {
+    "command": "./tools/run.sh build",
+    "toolkit": "/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002",
+    "soc": "Ascend910B3",
+    "npu_arch": "dav-2201",
+    "return_code": 0,
+    "status": "PASS",
+    "artifact": "/tmp/n10-row-core-balance-build/r31b_submission_v011",
+    "artifact_sha256": "d89fa12cdeb8a0c58251547ad8ec908d6b4cac66970dcba854bb6f9eda1b21cd",
+    "raw_output_path": "results/build-20261015T044444733072874Z.log"
+  },
+  "correctness": "NOT_RUN; waiting for device authorization",
+  "canonical_local": "NOT_RUN; waiting for device authorization",
+  "device_validation": "NOT_RUN; R059 frozen pending a new serial device slot"
+}
