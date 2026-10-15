@@ -1,0 +1,41 @@
+{
+  "route": "N07",
+  "revision": "R099",
+  "branch": "research/n07-parameter-tile-reuse",
+  "parent_commit": "aad6334bf6f97092afd0434aad2f6feb53497f7f",
+  "parent_source_commit": "0569cdd7d13a32b611d99e6a9c0d628e77cdc03b",
+  "source_commit": "847e02600b8cc228f1d97af4135bfd93fcdae900",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_path_absolute": "/home/data4t2/lelinfeng/cann/worktrees/n07-parameter-tile-reuse/phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "bb8fef2a06354be73c165c3bba3e16b3b35c9e643e77b67f921fa7df11930a25",
+  "hypothesis": "Using the actual grid row and block counts to estimate each resident parameter cache candidate's batch count, and charging cache initialization once per block, should rank cache options by full-grid work rather than per-block capacity alone.",
+  "change": "Pass gridRowCount and gridBlockCount into ChooseWideFullYRows at full/gamma/native cache call sites. Candidate parameter tile work now uses the full-grid batch count, with one cache-initialization charge per block for cached parameters and per-batch conversion for native parameters.",
+  "changed_kernel_location": "Init wide full/gamma/native parameter cache selection and ChooseWideFullYRows candidate cost estimation",
+  "build": {
+    "status": "passed",
+    "entrypoint_command": "./tools/run.sh build",
+    "exit_code": 0,
+    "output": [
+      "-- Configuring done",
+      "-- Generating done",
+      "-- Build files have been written to: /home/data4t2/lelinfeng/cann/worktrees/n07-parameter-tile-reuse/phase4/workspaces/R31B/build-n07",
+      "Consolidate compiler generated dependencies of target r31b_submission_v011",
+      "[ 50%] Building ASC object CMakeFiles/r31b_submission_v011.dir/compile_adapter_v011.asc.o",
+      "[100%] Linking ASC executable r31b_submission_v011",
+      "[100%] Built target r31b_submission_v011"
+    ],
+    "target": "r31b_submission_v011",
+    "artifact_path": "phase4/workspaces/R31B/build-n07/r31b_submission_v011",
+    "artifact_sha256": "931686e17c0484633d25072f1c452e02b97afd52223b6326e16184b34e189f71"
+  },
+  "correctness": {
+    "status": "not_run",
+    "reason": "The N07 correctness entrypoint is a stub in this sparse worktree; no Canonical Worker result has been run for R099."
+  },
+  "local": {
+    "status": "not_run",
+    "reason": "The N07 Local entrypoint and scorer are stubs in this sparse worktree; no device Local measurement was run for R099."
+  },
+  "device_id": "NONE",
+  "assessment": "Local Build passed; correctness and performance remain unverified. No promotion or performance claim."
+}
