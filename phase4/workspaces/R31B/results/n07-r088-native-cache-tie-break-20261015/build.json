@@ -1,0 +1,41 @@
+{
+  "route": "N07",
+  "revision": "R088",
+  "branch": "research/n07-parameter-tile-reuse",
+  "parent_commit": "78c144c249d201b52042fae18ac304bd4ae45cc1",
+  "parent_source_commit": "f187e0c54f661622d12b77f84822c114bd1240d3",
+  "source_commit": "aa5c6fa6e25d14f55bd58f73364c1a699dc701b6",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_path_absolute": "/home/data4t2/lelinfeng/cann/worktrees/n07-parameter-tile-reuse/phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "4baaf0083969446feb5ccc9d0c2764a91e0e2f0e174be7bb49578ed5f101e216",
+  "hypothesis": "When full BF16 and FP32 parameter caches preserve identical tile count and batch count, the current tie-break selects the larger FP32 cache. Prefer the compact native BF16 cache on an exact tie to reduce UB footprint without changing row/tile work geometry.",
+  "change": "Only the FP32-versus-native full-parameter cache tie-break changed: FP32 is preferred on equal tile count only when its batch count is strictly lower. All capacity tests, cache layouts, and execution math are unchanged.",
+  "changed_kernel_location": "Init BF16 wide-path preferFp32FullCache comparison",
+  "build": {
+    "status": "passed",
+    "entrypoint_command": "./tools/run.sh build",
+    "exit_code": 0,
+    "output": [
+      "-- Configuring done",
+      "-- Generating done",
+      "-- Build files have been written to: /home/data4t2/lelinfeng/cann/worktrees/n07-parameter-tile-reuse/phase4/workspaces/R31B/build-n07",
+      "Consolidate compiler generated dependencies of target r31b_submission_v011",
+      "[ 50%] Building ASC object CMakeFiles/r31b_submission_v011.dir/compile_adapter_v011.asc.o",
+      "[100%] Linking ASC executable r31b_submission_v011",
+      "[100%] Built target r31b_submission_v011"
+    ],
+    "target": "r31b_submission_v011",
+    "artifact_path": "phase4/workspaces/R31B/build-n07/r31b_submission_v011",
+    "artifact_sha256": "baf9b3951242df6f490b94bd9ed9a6b55693dd94d57b81af05496a3536ea4ce5"
+  },
+  "correctness": {
+    "status": "not_run",
+    "reason": "Queued for serial NPU3 Correctness; no device command was run."
+  },
+  "local": {
+    "status": "not_run",
+    "reason": "Queued for serial NPU3 Canonical Local after Correctness; no device command was run."
+  },
+  "device_id": "NONE",
+  "assessment": "Local Build passed; correctness and performance remain unverified. No promotion or performance claim."
+}
