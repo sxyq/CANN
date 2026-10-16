@@ -245,3 +245,30 @@ POSTFLIGHT_UTC=2026-10-16T09:34:37Z; HEALTH=OK; HBM_USAGE=5%; AICORE=0%; PROCESS
 RUN_RAW=本地实验/R31B/V016/V007/server3-v007-device3-paired-20261016.txt
 PRE_SNAPSHOT=本地实验/R31B/V016/V007/server3-before-paired-device3-20261016-window.txt
 RAW_LOGS=本地实验/R31B/V016/V007/server3-configure.log,本地实验/R31B/V016/V007/server3-compile.log
+
+--- N04 DMA-PIPELINE-OVERLAP-X V008 COMPILE ---
+REVISION=V008
+PARENT=V006; PARENT_SOURCE_COMMIT=0dd0d828
+SOURCE_COMMIT=20ba6b60
+CHANGE=In ProcessWideLowPrecision Pass 2, submit the next gamma/bias tile into the alternate slot before waiting for the current tile's MTE2_V completion; retain the alternate slot's V_MTE2 release wait and the current tile's MTE2_V wait before Vector reads.
+SINGLE_FACTOR=Pass 2 parameter-copy submission point; no new UB allocation, tile geometry, arithmetic, or V007 first-parameter prefetch.
+DIFFERENCE_FROM_V005=V005 moved the next x/residual input submission in Pass 1; V008 changes gamma/bias parameter submission in Pass 2.
+HARDWARE_HYPOTHESIS=Queue the next asynchronous MTE2 parameter pair while the current pair may still be in flight, hiding request-submission latency without relaxing buffer ownership or data-ready waits.
+SHAPE_SCOPE=ProcessWideLowPrecision; paired runner covers rows=40 FP16/BF16 D=12288/32768.
+HOST=cann-server3 (remote hostname hwnput3)
+CANN=/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002
+SOC=Ascend910B3
+LOCAL_SOURCE=本地实验/R31B/V016/V008/Candidate.asc
+CMAKE_ENTRY=本地实验/R31B/V016/support/paired/CMakeLists.txt; include path selects V008
+REMOTE_CANDIDATE=/tmp/cann-n04-dma-pipeline-overlap-20261016/V008/本地实验/R31B/V016/V008/Candidate.asc
+REMOTE_BUILD_DIR=/tmp/cann-n04-dma-pipeline-overlap-20261016/V008/build
+CONFIGURE_COMMAND=source /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/script/set_env.sh; export CPLUS_INCLUDE_PATH=/usr/include/c++/11:/usr/include/aarch64-linux-gnu/c++/11:/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0:/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0/aarch64-target-linux-gnu:/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0/backward; cmake -S /tmp/cann-n04-dma-pipeline-overlap-20261016/V008/本地实验/R31B/V016/support/paired -B /tmp/cann-n04-dma-pipeline-overlap-20261016/V008/build -DCMAKE_BUILD_TYPE=Release
+CONFIGURE_RC=0; raw=本地实验/R31B/V016/V008/server3-configure.log
+BUILD_COMMAND=source /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/script/set_env.sh; export CPLUS_INCLUDE_PATH=/usr/include/c++/11:/usr/include/aarch64-linux-gnu/c++/11:/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0:/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0/aarch64-target-linux-gnu:/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0/backward; cmake --build /tmp/cann-n04-dma-pipeline-overlap-20261016/V008/build --target paired_runner_v016 --parallel 1 --verbose
+COMPILE_RC=0; COMPILE=PASS; raw=本地实验/R31B/V016/V008/server3-compile.log
+ARTIFACT=/tmp/cann-n04-dma-pipeline-overlap-20261016/V008/build/paired_runner_v016
+ARTIFACT_FORMAT=ELF 64-bit LSB pie executable, ARM aarch64
+CONFIGURE_NOTE=Runtime search-path warning for libstdc++.so.6; configure/generate completed and target linked successfully.
+CORRECTNESS=NOT_RUN; LOCAL=NOT_RUN; OFFICIAL=NOT_RUN; DEVICE_WINDOW=NOT_ASSIGNED; no NPU preflight or device runner was started.
+RESOURCE_RECORD=调度/服务器设备使用.tsv; no active N04 V008 device allocation found in this clone's current copy.
+RAW_LOGS=本地实验/R31B/V016/V008/server3-configure.log,本地实验/R31B/V016/V008/server3-compile.log
