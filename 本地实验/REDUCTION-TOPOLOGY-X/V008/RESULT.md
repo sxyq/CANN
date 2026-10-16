@@ -49,4 +49,6 @@ Main 于 `2026-10-16T11:45:19Z` 成功 SSH 取得新的只读快照：NPU3 `Heal
 
 Main 于 `2026-10-16T12:18:39Z` 再次取得 server3 快照：NPU3 `Health=OK`，HBM 使用 `5298/65536 MiB`，`AICore=29%`，存在 Python PID `1714635`（1921 MiB）。快照时没有 Route lease 或 Runner；该进程未被干预。NPU3 在该时点仍为 `occupied`，不适合 V008 Correctness，因此未运行 V008。状态记录时间顺序为：首次 SSH 失败后 `UNKNOWN`，`11:45:19Z` 更新为 `occupied`，`12:18:39Z` 仍为 `occupied`。
 
+Main 约于 `2026-10-16T12:39Z` 的只读快照仍显示 NPU3 有 Python PID `1714635`（约 1921 MiB），故该时点仍为 `occupied`。本轮只做本地源码与日志分析，未连接设备、未启动 Runner；V008 Correctness 与 Local 仍为 `NONE`。
+
 V008 Candidate Correctness 与 Local 结果均为 `NONE`。待后续空闲窗口由 Main 分配后，再执行首组 FP16 D12288 Parent/Candidate Correctness-only 验证。V007 的 `RUNTIME_CAUSE=UNKNOWN` 仍未变化；V008 本轮没有运行时输出。
