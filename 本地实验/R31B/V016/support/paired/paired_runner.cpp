@@ -24,6 +24,7 @@ constexpr float kEpsilon = 1.0e-5f;
 
 enum class RunMode {
     kQualifyV011,
+    kCorrectnessOnly,
     kPaired,
 };
 
@@ -359,9 +360,31 @@ void RunCase(const CaseSpec& spec, aclrtStream stream, Events& events, RunMode m
     const TensorGroupInfo dataGroup{&dataInfo, 1};
     const TensorGroupInfo paramGroup{&paramInfo, 1};
 
-    std::printf("CASE_BEGIN name=%s dtype=%s rows=%d width=%d device=%d warmup_each=%d pairs=%d samples_per_binary=%d\n",
-                spec.name, spec.dtype == 1 ? "fp16" : "bf16", kRows, spec.width,
-                gDevice, kWarmup, kPairs, kPairs);
+    if (mode == RunMode::kCorrectnessOnly) {
+        std::printf("CASE_BEGIN name=%s dtype=%s rows=%d width=%d device=%d stage=CORRECTNESS_ONLY warmup_each=0 pairs=0 samples_per_binary=0\n",
+                    spec.name, spec.dtype == 1 ? "fp16" : "bf16", kRows, spec.width,
+                    gDevice);
+    } else {
+        std::printf("CASE_BEGIN name=%s dtype=%s rows=%d width=%d device=%d warmup_each=%d pairs=%d samples_per_binary=%d\n",
+                    spec.name, spec.dtype == 1 ? "fp16" : "bf16", kRows, spec.width,
+                    gDevice, kWarmup, kPairs, kPairs);
+    }
+    if (mode == RunMode::kCorrectnessOnly) {
+        Launch(r31b_v011::run_kernel_v011, buffers.parentOutput, buffers,
+               dataGroup, paramGroup, stream);
+        CheckAcl(aclrtSynchronizeStream(stream), "parent correctness synchronize");
+        Launch(r31b_v016::run_kernel_v016, buffers.candidateOutput, buffers,
+               dataGroup, paramGroup, stream);
+        CheckAcl(aclrtSynchronizeStream(stream), "candidate correctness synchronize");
+        CheckAcl(aclrtMemcpy(parentOutput.data(), dataBytes, buffers.parentOutput, dataBytes,
+                             ACL_MEMCPY_DEVICE_TO_HOST), "copy parent correctness output");
+        CheckAcl(aclrtMemcpy(candidateOutput.data(), dataBytes, buffers.candidateOutput, dataBytes,
+                             ACL_MEMCPY_DEVICE_TO_HOST), "copy candidate correctness output");
+        CheckOutput(spec, x, residual, gamma, bias, parentOutput, "V011");
+        CheckOutput(spec, x, residual, gamma, bias, candidateOutput, "V016");
+        FreeCase(buffers);
+        return;
+    }
     if (mode == RunMode::kQualifyV011) {
         for (int i = 0; i < kWarmup; ++i) {
             Launch(r31b_v011::run_kernel_v011, buffers.parentOutput, buffers,
@@ -527,6 +550,11 @@ int main(int argc, char** argv)
         {"bf16-tail-d12288", 2, 12288},
         {"bf16-wide-d32768", 2, 32768},
     };
+    if (mode == RunMode::kPaired) {
+        for (const CaseSpec& spec : cases) {
+            RunCase(spec, stream, events, RunMode::kCorrectnessOnly);
+        }
+    }
     for (const CaseSpec& spec : cases) {
         RunCase(spec, stream, events, mode);
     }
