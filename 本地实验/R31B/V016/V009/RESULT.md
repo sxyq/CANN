@@ -33,12 +33,24 @@
 
 ## Correctness 与 Local
 
-- Main 分配 NPU3 lease：`N04-V009-D3-CORR-LOCAL-20261016T124459Z`；本路线未改共享调度记录。
-- 运行前快照 `2026-10-16T12:57:53Z`：NPU3 Health=OK，HBM=65536 MiB、Usage Rate=5%，AICore=0%；`proc-mem` 返回 `No process in device.` 原始记录：[server3-before-npu3-20261016.txt](server3-before-npu3-20261016.txt)。此前 `npu-smi info proc -i 3` 返回设备不支持该查询，随后使用 `proc-mem` 获取进程状态；未据不支持的查询推断空闲。
-- CANN 环境来自 `/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/script/set_env.sh`；复用构建目录 `/tmp/cann-n04-dma-pipeline-overlap-20261016/V008/build` 中的 `paired_runner_v016`。
-- Correctness 命令：`./paired_runner_v016 --correctness --device 3`。开始/结束：`2026-10-16T12:58:34Z`；Runner RC=1。动态加载器在 Runner 进入测试前报错：`/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/toolkit/toolchain/hcc/aarch64-target-linux-gnu/lib64/libstdc++.so.6: version 'GLIBCXX_3.4.29' not found (required by ./paired_runner_v016)`。完整原始输出：[server3-v009-correctness-device3-20261016.txt](server3-v009-correctness-device3-20261016.txt)。
-- 四组 Correctness 均未开始，结果为 NONE；未重跑失败命令。Local 未启动，结果为 NONE。
-- Postflight `2026-10-16T12:59:19Z`：NPU3 Health=OK、HBM Usage Rate=5%、AICore=0%，`No process in device.` 原始记录：[server3-after-npu3-20261016.txt](server3-after-npu3-20261016.txt)。未调用设备 Reset，未触碰其他进程。
+- 首轮 lease：`N04-V009-D3-CORR-LOCAL-20261016T124459Z`。`./paired_runner_v016 --correctness --device 3` 于 `2026-10-16T12:58:34Z` 以 RC=1 在动态加载阶段退出，所需 `GLIBCXX_3.4.29` 未从 CANN 工具链 `libstdc++.so.6` 找到；四组测试未开始，Local 未运行。首轮输出：[server3-v009-correctness-device3-20261016.txt](server3-v009-correctness-device3-20261016.txt)；运行前快照：[server3-before-npu3-20261016.txt](server3-before-npu3-20261016.txt)；postflight：[server3-after-npu3-20261016.txt](server3-after-npu3-20261016.txt)。
+- 本轮 lease：`N04-V009-D3-ENVFIX-20261016T130447Z`。运行前快照 `2026-10-16T13:07:57Z`：NPU3 Health=OK、HBM 容量=65536 MiB、Usage Rate=5%、AICore=0%；`proc-mem` 返回 `No process in device.` 原始记录：[server3-before-npu3-envfix-20261016.txt](server3-before-npu3-envfix-20261016.txt)。
+- source `/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/script/set_env.sh` 后，将 `/usr/lib/aarch64-linux-gnu` 前置到 `LD_LIBRARY_PATH`；复用 `/tmp/cann-n04-dma-pipeline-overlap-20261016/V008/build/paired_runner_v016`，源码未修改。
+- 单次命令：`./paired_runner_v016 --paired --device 3`。开始 `2026-10-16T13:08:37Z`，结束 `2026-10-16T13:08:45Z`，RC=0；每组 45 次 warmup、21 对。完整 Correctness/Local 原始输出：[server3-v009-paired-device3-envfix-20261016.txt](server3-v009-paired-device3-envfix-20261016.txt)。
+- Runner 每组先执行配对采样，再做该组 Correctness；若比对失败会退出，不再运行后续 shape。本轮四组均通过。
+- Parent 与 Candidate 的 Correctness：4/4 shape PASS，failures=0。
+
+Local delta 为 Candidate−V011，单位 μs；负值表示 Candidate 用时较短。
+
+| Shape / dtype | Parent median | Candidate median | Delta median | Delta P10–P90 |
+|---|---:|---:|---:|---:|
+| rows=40, D=12288 / FP16 | 20.540 | 20.900 | -0.040 | -1.800–4.820 |
+| rows=40, D=32768 / FP16（目标） | 49.060 | 42.780 | -6.520 | -7.160–-5.240 |
+| rows=40, D=12288 / BF16 | 29.500 | 27.180 | -2.180 | -5.780–7.560 |
+| rows=40, D=32768 / BF16 | 69.600 | 61.540 | -8.260 | -10.940–2.300 |
+
+- 目标 FP16 D=32768 的 P10–P90 全负；21 对全样本 min/max 为 -24.500/+16.960 μs。其余三组 P10–P90 跨零。此次目标 shape 显示负向中位数和负向 P10–P90，但样本尾部有较大波动；未运行 Official。
+- Postflight `2026-10-16T13:09:48Z`：NPU3 Health=OK、HBM Usage Rate=5%、AICore=0%，`No process in device.` 原始记录：[server3-after-npu3-envfix-20261016.txt](server3-after-npu3-envfix-20261016.txt)。未调用设备 Reset，未触碰其他进程；未修改共享调度记录。
 
 ## 设备资源快照
 
