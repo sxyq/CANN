@@ -37,14 +37,39 @@ The first build attempt returned 2 because `ASCEND_HOME_PATH` was unset. The nex
 
 Evidence: `remote/compile-config.log`, `remote/compile-build.log`.
 
-## CORRECTNESS AND LOCAL
+## CORRECTNESS AND PAIRED LOCAL
 
-CORRECTNESS=NOT_RUN_WAITING_FOR_MAIN_DEVICE_ASSIGNMENT
-LOCAL=NOT_RUN_WAITING_FOR_MAIN_DEVICE_ASSIGNMENT
-LOCAL_SCORE=NONE
+HOST=cann-server3
+DEVICE_ID=3
+RUN_COMMAND=paired_runner_v016 --paired 3
+RUNNER_EXIT_CODE=0
+END_UTC=2026-10-16T08:42:23Z
+CORRECTNESS=PASS (8/8: V011 and V016 passed in all four cases)
+LOCAL=COMPLETE (21 paired samples per case; 84 pairs total)
+LOCAL_SCORE=NONE (per-case paired measurements recorded; no combined scalar computed)
 OFFICIAL=NOT_RUN
 
-No NPU Runner was started. Continue only after Main assigns a device; first run Correctness, then record any Local result separately.
+Runner mode: paired; 45 warmups per binary/case; device events are primary timing and wall times are diagnostic. Parent is V011 and candidate is V016. Paired delta is V016 minus V011; negative values favor V016.
+
+| Case | V011 median (us) | V016 median (us) | Paired delta median (us) | Paired delta P10 (us) | Paired delta P90 (us) | Correctness |
+|---|---:|---:|---:|---:|---:|---|
+| fp16-tail-d12288 | 16.980 | 19.460 | +0.160 | -10.520 | +15.720 | PASS |
+| fp16-wide-d32768 | 11.060 | 11.840 | -0.200 | -5.440 | +10.860 | PASS |
+| bf16-tail-d12288 | 8.300 | 7.800 | -0.200 | -11.860 | +2.200 | PASS |
+| bf16-wide-d32768 | 20.500 | 18.160 | -1.240 | -9.800 | +6.220 | PASS |
+
+All four paired-delta P10–P90 ranges cross zero. The medians are +0.160, -0.200, -0.200, and -1.240 us, with mixed direction and ranges much wider than the medians. Although both BF16 unpaired candidate medians are lower, paired samples do not show a consistent separation; the measurements do not establish a stable Local gain. Record this as a negative/inconclusive Local result and retain LOCAL_SCORE=NONE. No Official result was run.
+
+QUALIFICATION_ATTEMPT=paired_runner_v016 --qualify-v011 3
+QUALIFICATION_EXIT_CODE=127
+QUALIFICATION_RESULT=Loader could not find libgraph.so; Runner did not start and no NPU work occurred. The qualification command was not repeated.
+
+PRE_RUN_SNAPSHOT_UTC=2026-10-16T08:41:42Z; Health=OK; HBM=3429/65536 MiB; AICore=0%; NPU3 processes=none.
+RUNNER_END_UTC=2026-10-16T08:42:23Z; RUNNER_EXIT_CODE=0.
+MAIN_ENVFIX_LEASE_TIME=2026-10-16T08:42:33Z (reported by Main; 10 seconds after Runner end; timestamp retained as reported).
+POST_RUN_SNAPSHOT_UTC=2026-10-16T08:42:55Z; Health=OK; HBM=3429/65536 MiB; AICore=0%; NPU3 processes=none.
+
+Evidence: `remote/compile-config-runner-npu3.log`, `remote/compile-build-runner-npu3.log`, `remote/npu3-qualify-v011.log`, `remote/pre-npu3-paired-snapshot-run.log`, `remote/npu3-paired.log`, `remote/post-npu3-paired-snapshot.log`.
 
 ## RUNNER DEVICE ARGUMENT UPDATE
 
