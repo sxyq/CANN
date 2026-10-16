@@ -61,8 +61,33 @@ EVIDENCE: `configure.log`, `compile.log`, and `ldd.log`.
 REMOTE_BUILD_DIR: `/tmp/wide-ub-residency-x-v006-build.bh1s3Ux7` (retained for
 the future allocated run).
 
-CORRECTNESS: NOT_RUN.
-LOCAL_SCORE: NOT_MEASURED.
-DEVICE: NOT_RUN; request Main allocation before the V006 paired run.
+## PAIRED RUN ATTEMPT
+
+DEVICE_ID: 7.
+PREFLIGHT_UTC: `2026-10-16T09:41:38,612710092+00:00`; NPU7 Health=OK,
+HBM=3430/65536 MiB, AICore=0%, and no running process. The full device and
+process listing is in `device-before-run.snapshot`.
+ENVIRONMENT: sourced `/usr/local/Ascend/ascend-toolkit/set_env.sh`.
+COMMAND: `paired_runner_v016 --paired --device 7`.
+START_UTC: `2026-10-16T09:43:21,610950406+00:00`.
+RETURN_CODE: 1.
+FAILURE: the dynamic loader selected
+`/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/toolkit/toolchain/hcc/aarch64-target-linux-gnu/lib64/libstdc++.so.6`,
+which does not provide required symbol version `GLIBCXX_3.4.29`. The Runner
+did not enter its cases; all four Correctness runs and paired Local timings
+remain unexecuted. No retry was made.
+END_UTC: `2026-10-16T09:43:21,619123167+00:00`.
+POSTFLIGHT_UTC: `2026-10-16T09:43:21,621860021+00:00`; NPU7 Health=OK,
+HBM=3430/65536 MiB, AICore=0%, and no running process. Full output is in
+`device-after-run.snapshot` and `paired-run.log`.
+DEVICE_RELEASED_UTC: `2026-10-16T09:43:21,621860021+00:00` (postflight found no
+Runner process on NPU7).
+EVIDENCE: `paired-run.log`, `paired-run.rc`, `paired-run-start.time`,
+`paired-run-end.time`, `device-before-run.snapshot`, and
+`device-after-run.snapshot`.
+
+CORRECTNESS: NOT_RUN (Runner failed to load).
+LOCAL_SCORE: NONE.
+LOCAL_DELTA: NOT_MEASURED.
 DEVICE_RESET: NO.
 PUSH: NO.
