@@ -52,17 +52,32 @@ COMMAND: existing `paired_runner_v016` CMake configure and build on `cann-server
 ENVIRONMENT: CANN 8.5.0.alpha002; `ASCEND_HOME_PATH`, `CPATH`, and
 `CPLUS_INCLUDE_PATH` set to the recorded system/toolkit paths.
 RETURN_CODE: 0
-RESULT: PASS; `[100%] Built target paired_runner_v016`.
-EVIDENCE: `configure.log`, `compile-final.log`. The initial missing
-`ASCEND_HOME_PATH` failure and the following missing `<vector>` failure remain
-in `compile.log` and `compile-rerun.log`.
+RESULT: PASS; `[100%] Built target paired_runner_v016` after the Runner change.
+EVIDENCE: `configure-device7.log`, `compile-device7.log`. The earlier build
+attempts and their environment failures remain in `compile.log`,
+`compile-rerun.log`, and `compile-final.log`.
+
+## PAIRED RUNNER
+
+- Added the optional `--device N` argument; the default remains device 4.
+- Removed `aclrtResetDevice`; exit destroys events and stream, then calls
+  `aclFinalize` without resetting any device.
+- The requested command was `paired_runner_v016 --paired --device 7`; it was
+  not started because the live NPU7 snapshot listed a pre-existing process.
 
 ## CORRECTNESS / LOCAL
 
-STATUS: NOT_RUN; NPU execution waits for Main's device arrangement.
+| Case | Correctness | Local samples | Reason |
+|---|---|---|---|
+| fp16-tail-d12288 | NOT_RUN | NONE | Pre-existing NPU7 process |
+| fp16-wide-d32768 | NOT_RUN | NONE | Pre-existing NPU7 process |
+| bf16-tail-d12288 | NOT_RUN | NONE | Pre-existing NPU7 process |
+| bf16-wide-d32768 | NOT_RUN | NONE | Pre-existing NPU7 process |
+
+EVIDENCE: `device.log`; no Runner output or raw timing samples exist.
 
 ## RESULT
 
-STATUS: COMPILE_PASS_DEVICE_DATA_PENDING
+STATUS: COMPILE_PASS_DEVICE_RUN_NOT_STARTED
 OFFICIAL: NOT_RUN
 PUSH: NO

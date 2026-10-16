@@ -13,7 +13,7 @@ namespace {
 
 using R31BRunKernel = decltype(&r31b_v011::run_kernel_v011);
 
-constexpr int kDevice = 4;
+int kDevice = 4;
 constexpr int kRows = 2;
 constexpr int kWarmup = 45;
 constexpr int kPairs = 21;
@@ -490,9 +490,16 @@ void RunCase(const CaseSpec& spec, aclrtStream stream, Events& events, RunMode m
 
 int main(int argc, char** argv)
 {
-    if (argc != 2) {
-        std::fprintf(stderr, "usage: paired_runner_v016 --qualify-v011|--paired\n");
+    if (argc != 2 && argc != 4) {
+        std::fprintf(stderr, "usage: paired_runner_v016 --qualify-v011|--paired [--device N]\n");
         return 1;
+    }
+    if (argc == 4 && std::strcmp(argv[2], "--device") != 0) {
+        std::fprintf(stderr, "usage: paired_runner_v016 --qualify-v011|--paired [--device N]\n");
+        return 1;
+    }
+    if (argc == 4) {
+        kDevice = std::atoi(argv[3]);
     }
     RunMode mode;
     if (std::strcmp(argv[1], "--qualify-v011") == 0) {
@@ -525,7 +532,6 @@ int main(int argc, char** argv)
     CheckAcl(aclrtDestroyEvent(events.stop), "destroy stop event");
     CheckAcl(aclrtDestroyEvent(events.start), "destroy start event");
     CheckAcl(aclrtDestroyStream(stream), "destroy stream");
-    CheckAcl(aclrtResetDevice(kDevice), "reset device");
     CheckAcl(aclFinalize(), "aclFinalize");
     std::printf("RUNNER_COMPLETE mode=%s correctness=PASS cases=4 warmup_each=45 pairs_each=21 timing=DEVICE_EVENT_PRIMARY wall=DIAGNOSTIC\n",
                 mode == RunMode::kQualifyV011 ? "QUALIFY_V011" : "PAIRED");
