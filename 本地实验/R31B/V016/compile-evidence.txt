@@ -210,3 +210,30 @@ RUNNER_END=本地实验/R31B/V016/V006/server3-run-end.txt
 PRE_SNAPSHOT=本地实验/R31B/V016/V006/server3-before-paired-envfix.txt
 POST_SNAPSHOT=本地实验/R31B/V016/V006/server3-after-paired.txt
 RAW_LOGS=本地实验/R31B/V016/V006/server3-configure.log,本地实验/R31B/V016/V006/server3-compile.log,本地实验/R31B/V016/V006/server3-configure-retry.log,本地实验/R31B/V016/V006/server3-compile-retry.log,本地实验/R31B/V016/V006/server3-runner-rows40-compile.log,本地实验/R31B/V016/V006/server3-launch-failure.log,本地实验/R31B/V016/V006/server3-paired.log
+
+--- N04 DMA-PIPELINE-OVERLAP-X V007 COMPILE ---
+REVISION=V007
+PARENT=V006; PARENT_SOURCE_COMMIT=0dd0d828
+SOURCE_COMMIT=3204fc84
+MAIN_REPORT=V006 Official 41.11; V005 Official 41.65; V003 Official 41.79
+CHANGE=For FP16 rows=40 D=32768 only, submit the first Pass 2 gamma/bias tile into the released x/residual buffers after Pass 1 input release and before per-row RMS finalization; Pass 2 still waits for MTE2_V before reading the tile.
+SINGLE_FACTOR=First gamma/bias GM-to-UB submission point; Pass 1 next-input submission, V004 output wait location, V006 MTE3 completion lifetime, arithmetic, and tile geometry stay unchanged.
+HARDWARE_HYPOTHESIS=Overlap the first parameter tile's MTE2 copies with Vector/Scalar RMS finalization for the selected shape; reuse existing buffers and add no UB allocation.
+SHAPE_SCOPE=FP16 rows=40 D=32768; all other Runner shapes retain V006 ordering.
+HOST=cann-server3 (remote hostname hwnput3)
+CANN=/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002
+SOC=Ascend910B3
+LOCAL_SOURCE=本地实验/R31B/V016/V007/Candidate.asc
+CMAKE_ENTRY=本地实验/R31B/V016/support/paired/CMakeLists.txt; include path selects V007
+REMOTE_CANDIDATE=/tmp/cann-n04-dma-pipeline-overlap-20261016/V006/本地实验/R31B/V016/V007/Candidate.asc
+REMOTE_BUILD_DIR=/tmp/cann-n04-dma-pipeline-overlap-20261016/V007/build
+CONFIGURE_COMMAND=ssh cann-server3 'source /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/script/set_env.sh; export CPLUS_INCLUDE_PATH=/usr/include/c++/11:/usr/include/aarch64-linux-gnu/c++/11:/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0:/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0/aarch64-target-linux-gnu:/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0/backward; cmake -S /tmp/cann-n04-dma-pipeline-overlap-20261016/V006/本地实验/R31B/V016/support/paired -B /tmp/cann-n04-dma-pipeline-overlap-20261016/V007/build -DCMAKE_BUILD_TYPE=Release'
+CONFIGURE_RC=0; raw=本地实验/R31B/V016/V007/server3-configure.log
+BUILD_COMMAND=ssh cann-server3 'source /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/script/set_env.sh; export CPLUS_INCLUDE_PATH=/usr/include/c++/11:/usr/include/aarch64-linux-gnu/c++/11:/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0:/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0/aarch64-target-linux-gnu:/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0/backward; cmake --build /tmp/cann-n04-dma-pipeline-overlap-20261016/V007/build --target paired_runner_v016 --parallel 1 --verbose'
+COMPILE_RC=0; COMPILE=PASS; raw=本地实验/R31B/V016/V007/server3-compile.log
+ARTIFACT=/tmp/cann-n04-dma-pipeline-overlap-20261016/V007/build/paired_runner_v016
+ARTIFACT_FORMAT=ELF 64-bit LSB pie executable, ARM aarch64
+CONFIGURE_WARNING=Runtime search-path warning for system/toolchain libstdc++.so.6 directories; compile and link succeeded; runtime not executed
+CORRECTNESS=NOT_RUN; LOCAL=NOT_RUN; OFFICIAL=NOT_RUN; DEVICE=NONE
+DEVICE_NEXT=Await Main device allocation; no device command was issued.
+RAW_LOGS=本地实验/R31B/V016/V007/server3-configure.log,本地实验/R31B/V016/V007/server3-compile.log
