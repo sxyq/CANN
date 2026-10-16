@@ -24,6 +24,7 @@ constexpr float kEpsilon = 1.0e-5f;
 
 enum class RunMode {
     kQualifyV011,
+    kCorrectness,
     kPaired,
 };
 
@@ -360,9 +361,32 @@ void RunCase(const CaseSpec& spec, aclrtStream stream, Events& events, RunMode m
     const TensorGroupInfo dataGroup{&dataInfo, 1};
     const TensorGroupInfo paramGroup{&paramInfo, 1};
 
+    const int caseWarmup = mode == RunMode::kCorrectness ? 0 : kWarmup;
+    const int casePairs = mode == RunMode::kPaired ? kPairs : 0;
+    const int caseSamples = mode == RunMode::kPaired ? kPairs :
+                            mode == RunMode::kCorrectness ? 0 :
+                            kQualificationBlocks * kQualificationSamplesPerBlock;
     std::printf("CASE_BEGIN name=%s dtype=%s rows=%d width=%d device=%d warmup_each=%d pairs=%d samples_per_binary=%d\n",
                 spec.name, spec.dtype == 1 ? "fp16" : "bf16", kRows, spec.width,
-                deviceId, kWarmup, kPairs, kPairs);
+                deviceId, caseWarmup, casePairs, caseSamples);
+    if (mode == RunMode::kCorrectness) {
+        Launch(r31b_v011::run_kernel_v011, buffers.parentOutput, buffers,
+               dataGroup, paramGroup, stream);
+        CheckAcl(aclrtSynchronizeStream(stream), "parent correctness synchronize");
+        Launch(r31b_v016::run_kernel_v016, buffers.candidateOutput, buffers,
+               dataGroup, paramGroup, stream);
+        CheckAcl(aclrtSynchronizeStream(stream), "candidate correctness synchronize");
+
+        CheckAcl(aclrtMemcpy(parentOutput.data(), dataBytes, buffers.parentOutput, dataBytes,
+                             ACL_MEMCPY_DEVICE_TO_HOST), "copy parent correctness output");
+        CheckAcl(aclrtMemcpy(candidateOutput.data(), dataBytes, buffers.candidateOutput, dataBytes,
+                             ACL_MEMCPY_DEVICE_TO_HOST), "copy candidate correctness output");
+        CheckOutput(spec, x, residual, gamma, bias, parentOutput, "V011");
+        CheckOutput(spec, x, residual, gamma, bias, candidateOutput, "V016");
+        std::printf("CASE_END name=%s correctness=PASS mode=CORRECTNESS_ONLY\n", spec.name);
+        FreeCase(buffers);
+        return;
+    }
     if (mode == RunMode::kQualifyV011) {
         for (int i = 0; i < kWarmup; ++i) {
             Launch(r31b_v011::run_kernel_v011, buffers.parentOutput, buffers,
@@ -492,12 +516,14 @@ void RunCase(const CaseSpec& spec, aclrtStream stream, Events& events, RunMode m
 int main(int argc, char** argv)
 {
     if (argc != 2 && argc != 4) {
-        std::fprintf(stderr, "usage: paired_runner_v016 --qualify-v011|--paired [--device ID]\n");
+        std::fprintf(stderr, "usage: paired_runner_v016 --qualify-v011|--correctness|--paired [--device ID]\n");
         return 1;
     }
     RunMode mode;
     if (std::strcmp(argv[1], "--qualify-v011") == 0) {
         mode = RunMode::kQualifyV011;
+    } else if (std::strcmp(argv[1], "--correctness") == 0) {
+        mode = RunMode::kCorrectness;
     } else if (std::strcmp(argv[1], "--paired") == 0) {
         mode = RunMode::kPaired;
     } else {
@@ -532,7 +558,11 @@ int main(int argc, char** argv)
     CheckAcl(aclrtDestroyEvent(events.start), "destroy start event");
     CheckAcl(aclrtDestroyStream(stream), "destroy stream");
     CheckAcl(aclFinalize(), "aclFinalize");
-    std::printf("RUNNER_COMPLETE mode=%s correctness=PASS cases=4 warmup_each=45 pairs_each=21 timing=DEVICE_EVENT_PRIMARY wall=DIAGNOSTIC\n",
-                mode == RunMode::kQualifyV011 ? "QUALIFY_V011" : "PAIRED");
+    const char* modeName = mode == RunMode::kQualifyV011 ? "QUALIFY_V011" :
+                           mode == RunMode::kCorrectness ? "CORRECTNESS" : "PAIRED";
+    const int warmupEach = mode == RunMode::kCorrectness ? 0 : kWarmup;
+    const int pairsEach = mode == RunMode::kPaired ? kPairs : 0;
+    std::printf("RUNNER_COMPLETE mode=%s correctness=PASS cases=4 warmup_each=%d pairs_each=%d timing=DEVICE_EVENT_PRIMARY wall=DIAGNOSTIC\n",
+                modeName, warmupEach, pairsEach);
     return 0;
 }

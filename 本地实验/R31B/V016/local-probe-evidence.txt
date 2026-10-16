@@ -339,11 +339,22 @@ OFFICIAL=NOT_RUN
 --- N04 DMA-PIPELINE-OVERLAP-X V008 LOCAL ---
 SOURCE_COMMIT=20ba6b60; PARENT=V006
 CHANGE=Pass 2 next gamma/bias GM-to-UB submission before current MTE2_V wait; current tile still waits before Vector read and alternate slot still waits for V_MTE2 release.
-DEVICE=NOT_ASSIGNED; RUNNER=/tmp/cann-n04-dma-pipeline-overlap-20261016/V008/build/paired_runner_v016
-RUN_COMMAND=NOT_RUN; RUNNER_RC=NOT_APPLICABLE
-PAIRS_PER_CASE=21 planned; ACTUAL_SAMPLES=0
-CORRECTNESS=NOT_RUN
+DEVICE=7; SOC=Ascend910B3; LEASE=N04-V008-D7-CORR-LOCAL-20261016T102551Z
+RUNNER=/tmp/cann-n04-dma-pipeline-overlap-20261016/V008/build/paired_runner_v016; rows=40; timing=device event primary
+CORRECTNESS_COMMAND=./paired_runner_v016 --correctness --device 7; RUNNER_RC=0; RUN_START_UTC=2026-10-16T10:38:09Z; CORRECTNESS=PASS for all four shapes
+RUN_COMMAND=./paired_runner_v016 --paired --device 7; RUNNER_RC=0; RUN_START_UTC=2026-10-16T10:39:23Z; RUN_END_UTC=2026-10-16T10:39:31Z
+PAIRS_PER_CASE=21; ACTUAL_SAMPLES=84 paired samples per binary across four cases
+PARENT_MEDIANS_US=fp16-tail-d12288:22.440; fp16-wide-d32768:38.820; bf16-tail-d12288:27.000; bf16-wide-d32768:70.460
+CANDIDATE_MEDIANS_US=fp16-tail-d12288:22.000; fp16-wide-d32768:33.700; bf16-tail-d12288:23.160; bf16-wide-d32768:61.140
+PAIRED_DELTA_MEDIANS_US=fp16-tail-d12288:+0.340; fp16-wide-d32768:-5.280; bf16-tail-d12288:-5.580; bf16-wide-d32768:-8.960
+PAIRED_DELTA_P10_P90_US=fp16-tail-d12288:-8.440/+9.060; fp16-wide-d32768:-5.740/+9.100; bf16-tail-d12288:-14.900/+5.080; bf16-wide-d32768:-28.100/+1.960
 LOCAL_SCORE=NONE
+INTERPRETATION=All four paired delta P10-P90 intervals cross zero; this run does not establish a stable performance effect for the V008 parameter-copy submission timing.
 OFFICIAL=NOT_RUN
-REASON=No active N04 V008 device window exists in the current route allocation-record copy; no device snapshot or runner launch was made.
-COMPILE_LOGS=本地实验/R31B/V016/V008/server3-configure.log,本地实验/R31B/V016/V008/server3-compile.log
+PRE_SNAPSHOT_UTC=2026-10-16T10:37:31Z; HEALTH=OK; HBM_USAGE=5%; AICORE=0%; PROCESS=NONE
+PRE_LOCAL_SNAPSHOT_UTC=2026-10-16T10:38:43Z; HEALTH=OK; HBM_USAGE=5%; AICORE=0%; PROCESS=NONE
+POSTFLIGHT_UTC=2026-10-16T10:39:50Z; HEALTH=OK; HBM_USAGE=5%; AICORE=0%; PROCESS=NONE
+SNAPSHOTS=本地实验/R31B/V016/V008/server3-before-paired-device7-20261016.txt,本地实验/R31B/V016/V008/server3-before-local-device7-20261016.txt,本地实验/R31B/V016/V008/server3-after-paired-device7-20261016.txt
+CORRECTNESS_RAW=本地实验/R31B/V016/V008/server3-v008-correctness-device7-20261016.txt
+LOCAL_RAW=本地实验/R31B/V016/V008/server3-v008-paired-device7-20261016.txt
+COMPILE_LOGS=本地实验/R31B/V016/V008/server3-configure.log,本地实验/R31B/V016/V008/server3-compile.log,本地实验/R31B/V016/V008/server3-runner-compile.log
