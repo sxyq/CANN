@@ -119,7 +119,8 @@ gmake[1]: Leaving directory '/home/data4t2/lelinfeng/cann/server_runs/N01-ROW-CO
   - `npu1-preflight-usages-20261016T134503Z.txt`：`npu-smi info -t usages -i 1`，返回码 `0`。
   - `npu1-preflight-health-20261016T134503Z.txt`：`npu-smi info -t health -i 1`，返回码 `0`。
   - `npu1-preflight-proc-mem-20261016T134503Z.txt`：`npu-smi info -t proc-mem -i 1`，返回码 `0`。
-- 输出文件本地时间（Asia/Taipei）：依次为 `2026-10-16 21:45:32`、`21:47:01`、`21:47:38`、`21:48:16`。本轮没有 Runner 后置采样。
+- 按要求补存完整快照：`npu1-preflight-full-20261016T135523Z.txt`，命令 `npu-smi info`，返回码 `0`。NPU1 Health=`OK`、HBM=`3480/65536 MiB`、AICore=`0%`，进程表为 `No running processes found in NPU 1`。
+- 输出文件本地时间（Asia/Taipei）：依次为 `2026-10-16 21:45:32`、`21:47:01`、`21:47:38`、`21:48:16`；完整快照为 `21:55:47`。本轮没有 Runner 后置采样。
 - 停止原因：`V003/paired/paired_runner.cpp:16` 固定 `kDevice=0`；第 542 行在所有 case 结束后无条件调用 `aclrtResetDevice(kDevice)`。这与本轮“不 Reset”要求冲突，因此没有执行该 Runner。当前记录也未确认 runtime device 0 到物理 NPU1 的映射。
 - 未 source CANN `set_env.sh` 或启动 Runner；用户给出的 `LD_LIBRARY_PATH=/usr/lib/aarch64-linux-gnu:${LD_LIBRARY_PATH-}` 顺序尚未用于运行，故没有观察到 loader 错误。
 
