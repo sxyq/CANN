@@ -2,7 +2,7 @@
 
 日期：2026-10-16  
 父版本：V007（Candidate 提交 `988c4f28`）  
-状态：Compile PASS；设备 Correctness 未运行；507035 的硬件触发点仍为 UNKNOWN。
+状态：Compile PASS；V008 设备 Correctness 未运行；V007 的 507035 硬件触发点仍为 UNKNOWN。
 
 ## 已有运行证据
 
@@ -41,4 +41,8 @@ V008 从 V007 复制 Candidate，只删除该残留 `ReduceSum` 及其紧邻的 
 
 ## 设备状态
 
-本轮未运行设备。V008 尚无 Correctness 结果；待 Main 分配 NPU3 短窗口后，只针对首个 FP16 D12288 Candidate 做一次 Correctness，以确认源码改动结果并观察 507035 是否仍出现。当前 `RUNTIME_CAUSE=UNKNOWN`；本地日志缺少设备侧指令位置与 plog，不能把上述数值错误写成硬件异常根因。
+Main 分配 NPU3 lease `N03-V008-D3-CORRECTNESS-20261016T105012Z`，起始时间为 `2026-10-16T10:50:12Z`。Main 随后将 lease 记为 `RELEASED`，结束时间 `2026-10-16T10:54:55Z`（UTC）。
+
+设备启动前 SSH banner 连续两次连接失败，原始记录保存在 `本地实验/REDUCTION-TOPOLOGY-X/V008/device3-correctness-20261016.log`。未取得本轮实时设备快照或 postflight，远端 NPU3 状态为 `UNKNOWN`；Runner 未启动。因此本轮没有 V008 Candidate Correctness 结果，也没有 Local 结果。保留 Compile PASS 记录，不据此推断设备验证结果。
+
+待 Main 确认 server3 可达并分配新窗口后，再执行首组 FP16 D12288 Parent/Candidate Correctness-only 验证。V007 的 `RUNTIME_CAUSE=UNKNOWN` 仍未变化；V008 本轮没有运行时输出。
