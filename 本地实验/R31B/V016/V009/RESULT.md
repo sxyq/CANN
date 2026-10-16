@@ -34,4 +34,11 @@
 ## Correctness 与 Local
 
 - 未运行；本次只 Compile，未启动 Runner，也未使用设备。Correctness 和 Local 结果仍为 NONE。
-- 后续实测由 Main 分配空闲设备窗口后再进行。
+- 未申请设备；本轮没有可用设备窗口。
+
+## 设备资源快照
+
+- Main 于 `2026-10-16T12:18:39Z` 报告 NPU0–7 均有现存 Python/VLLM 进程，其中 NPU3 AICore=29%。
+- NPU7：Health=OK，HBM=5298/65536 MiB，AICore=8%；Python PID 1712355 使用 1921 MiB。
+- 因设备均有现存进程，V009 的 Correctness 与 Local 未运行；没有启动 Runner，也没有申请设备。
+- 等 Main 后续分配空闲设备窗口后再进行设备测量。
