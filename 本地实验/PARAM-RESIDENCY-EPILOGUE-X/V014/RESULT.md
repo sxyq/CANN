@@ -98,3 +98,47 @@ PUSH=NO
 ## NEXT EXPERIMENT
 
 Repeat V014 with the same paired Runner and four cases on NPU3, keeping the parameter-wait relocation unchanged. Use BF16-wide as the primary signal and retain FP16-wide plus both D=12288 cases as controls. Do not continue V013.
+
+## REPEAT SERVER TRANSACTION 2026-10-17
+
+REPEAT_REMOTE_WORKDIR=/home/data4t2/lelinfeng/cann/server_runs/C2C-V2-N05/V014
+REPEAT_DEVICE_ID=3
+REPEAT_RUNNER_COMMAND=`/home/data4t2/lelinfeng/cann/server_runs/C2C-V2-N05/V014/build/paired_runner_v016 --paired 3`
+REPEAT_RUNNER_RC=0
+REPEAT_METHOD=`existing paired_runner_v016; same V014 binary; warmup_each=45; pairs_each=21; device-event timing primary; wall time diagnostic`
+REPEAT_CORRECTNESS=PASS_8_OF_8
+REPEAT_LOCAL=MEASURED
+REPEAT_SAMPLE_COUNT=21 pairs per case
+REPEAT_LOCAL_SCORE=BF16_WIDE_REPEAT_SIGNAL_WITH_OUTLIER
+
+| Case | Parent median us | Candidate median us | Paired delta median us | Paired delta P10 us | Paired delta P90 us |
+|---|---:|---:|---:|---:|---:|
+| fp16-tail-d12288 | 8.160 | 7.220 | -0.580 | -23.220 | 7.760 |
+| fp16-wide-d32768 | 10.740 | 10.460 | -0.320 | -14.360 | 0.420 |
+| bf16-tail-d12288 | 7.380 | 7.360 | -0.020 | -0.980 | 13.220 |
+| bf16-wide-d32768 | 14.440 | 13.700 | -0.840 | -11.820 | -0.220 |
+
+REPEAT_INTERPRETATION=All four cases again passed Parent and Candidate correctness. BF16-wide again stayed below zero at the paired median and its P10-P90 interval remained below zero, but the Parent stream contained a 119.840 us device-time outlier and the paired delta range was -106.640 to +10.220 us. FP16-wide remained near neutral; the two tail controls were noisy. The repeat supports retaining BF16-wide as the next observation target, but does not support a broad performance claim.
+
+REPEAT_PRE_HBM_USAGE=5% of 65536 MiB
+REPEAT_POST_HBM_USAGE=5% of 65536 MiB
+REPEAT_PRE_AICORE=0%
+REPEAT_POST_AICORE=0%
+REPEAT_PRE_AIVECTOR=0%
+REPEAT_POST_AIVECTOR=0%
+REPEAT_PRE_TEMPERATURE=29 C
+REPEAT_POST_TEMPERATURE=30 C
+REPEAT_DISK_AVAIL_PRE=259G on /home/data4t2
+REPEAT_DISK_AVAIL_POST=259G on /home/data4t2
+REPEAT_PROCESS_QUERY_NOTE=`npu-smi info proc -i 3` is unsupported by this npu-smi version; raw output retained.
+
+REPEAT_EVIDENCE=`remote/pre-rerun-v014.log`, `remote/pre-rerun-v014.rc`, `remote/rerun-20261017T123900Z.stdout.log`, `remote/rerun-20261017T123900Z.stderr.log`, `remote/rerun-20261017T123900Z.rc`, `remote/rerun-20261017T123900Z-pre-device.txt`, `remote/rerun-20261017T123900Z-post-device.txt`, `remote/rerun-20261017T123900Z-pre-processes.txt`, `remote/rerun-20261017T123900Z-post-processes.txt`, `remote/rerun-20261017T123900Z-env.txt`
+
+## UPDATED RESULT
+
+STATUS=COMPILE_PASS_CORRECTNESS_PASS_LOCAL_REPEAT_MEASURED_OFFICIAL_NOT_RUN
+ONLINE_SUBMIT=NOT_RUN
+
+## NEXT EXPERIMENT
+
+Repeat the unchanged V014 binary once more only if NPU3 has a comparable idle window; keep BF16 D32768 primary and retain all four paired controls. Preserve both previous raw runs. Do not continue V013.
