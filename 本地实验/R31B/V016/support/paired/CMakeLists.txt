@@ -22,13 +22,13 @@ set(CMAKE_ASC_COMPILE_OBJECT
     "<CMAKE_ASC_COMPILER> ${CMAKE_COMPILE_AS_ASC_FLAG} <DEFINES> <INCLUDES> ${R31B_PAIRED_COMPILE_INCLUDES_STR} --cce-aicore-arch=dav-c220 -Xaicore-start -O3 -std=c++17 -Xaicore-end -Xhost-start ${R31B_PAIRED_COMPILE_INCLUDES_STR} -fPIC -O2 -std=c++17 -Xhost-end <FLAGS> -o <OBJECT> -c -x asc <SOURCE>")
 
 set(R31B_V011_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/../../../../../线上结果/R31B/V011")
-set(R31B_V016_CANDIDATE_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/../../V016")
+set(R31B_V017_CANDIDATE_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/../../V017")
 
 add_executable(paired_runner_v016 paired_runner_v016.asc)
 target_include_directories(paired_runner_v016 PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}
     ${R31B_V011_SOURCE_DIR}
-    ${R31B_V016_CANDIDATE_SOURCE_DIR}
+    ${R31B_V017_CANDIDATE_SOURCE_DIR}
     /usr/include/c++/11
     /usr/include/aarch64-linux-gnu/c++/11
     ${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include
