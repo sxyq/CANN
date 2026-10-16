@@ -40,5 +40,6 @@
 
 - Main 于 `2026-10-16T12:18:39Z` 报告 NPU0–7 均有现存 Python/VLLM 进程，其中 NPU3 AICore=29%。
 - NPU7：Health=OK，HBM=5298/65536 MiB，AICore=8%；Python PID 1712355 使用 1921 MiB。
+- Main 约于 `2026-10-16T12:39Z` 的最新只读快照仍显示 NPU0–7 均有现存进程；该状态来自 Main 报告，本路线未连接服务器或采样设备。
 - 因设备均有现存进程，V009 的 Correctness 与 Local 未运行；没有启动 Runner，也没有申请设备。
 - 等 Main 后续分配空闲设备窗口后再进行设备测量。
