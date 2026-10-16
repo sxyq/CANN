@@ -60,23 +60,49 @@ gain.
 
 ## COMPILE / DEVICE
 
-COMPILE: NOT_RUN.
-CORRECTNESS: NOT_RUN.
-LOCAL: NOT_RUN.
-OFFICIAL: NOT_RUN.
-REASON: Current scope permits local files under the project only. No
-server3/NPU operation was started; user confirmation is required before using
-those resources. No toolchain outside the project directory was accessed.
-LOCAL_SCORE: NONE.
-LOCAL_DELTA: NOT_MEASURED.
-PUSH: NO.
+COMPILE: PASS after one recorded environment failure.
+COMPILE_CONFIGURE_RETURN_CODE: 0
+COMPILE_BUILD_RETURN_CODE: 0
+COMPILE_ENV: CANN `/usr/local/Ascend/ascend-toolkit/set_env.sh`; CPLUS_INCLUDE_PATH restored from the successful V010 transaction.
+COMPILE_BINDING: existing `paired_runner_v016` includes V011 and CMake cache `R31B_V016_SOURCE_DIR` points to V011.
+COMPILE_LOG_FIRST_FAILURE: `本地实验/WIDE-UB-RESIDENCY-X/V011/server-transaction-20261017/compile-rerun-20261016T192350Z.log`; `fatal error: 'vector' file not found`.
+COMPILE_LOG_FINAL: `本地实验/WIDE-UB-RESIDENCY-X/V011/server-transaction-20261017/compile-rerun-20261016T192500Z-envfix.log`.
+CORRECTNESS: PASS; Parent and Candidate passed all 4/4 paired cases; runner return code 0.
+LOCAL: COMPLETED; 4 cases, 45 warmups, 21 paired samples per case.
+LOCAL_LOG: `本地实验/WIDE-UB-RESIDENCY-X/V011/server-transaction-20261017/paired-run-rerun-20261016T192650Z-envfix.log`.
+HOST: `hwnput3`
+SOC_VERSION: `Ascend910B3`
+DEVICE_ID: 2
+PREFLIGHT_HBM_USAGE: 5%; `npu-smi info -t proc-mem -i 2` reported no process.
+POSTFLIGHT_HBM_USAGE: 5%; `npu-smi info -t proc-mem -i 2` reported no process.
+DEVICE_RESET: NO
+
+## SERVER EVIDENCE
+
+REMOTE_SOURCE_PATH: `/home/data4t2/lelinfeng/cann/server_runs/C2C-V2-N02/WIDE-UB-RESIDENCY-X/server-txn-20261017/project/本地实验/WIDE-UB-RESIDENCY-X/V011/submission.asc`
+SOURCE_SHA256: `f11d1399be4a00c8ebecd7c21cbfc057f26ec6c0b244995793f4beaad2e5e0b5`
+CANDIDATE_COMMIT: `e591b3ffe1f83f1e47b169be7cb03cda7f77d999`
+REMOTE_COMPILE_LOG_FIRST_FAILURE: `/home/data4t2/lelinfeng/cann/server_runs/C2C-V2-N02/WIDE-UB-RESIDENCY-X/server-txn-20261017/V011/compile-rerun-20261016T192350Z.log`
+REMOTE_COMPILE_LOG_FINAL: `/home/data4t2/lelinfeng/cann/server_runs/C2C-V2-N02/WIDE-UB-RESIDENCY-X/server-txn-20261017/V011/compile-rerun-20261016T192500Z-envfix.log`
+REMOTE_RUN_LOG: `/home/data4t2/lelinfeng/cann/server_runs/C2C-V2-N02/WIDE-UB-RESIDENCY-X/server-txn-20261017/V011/paired-run-rerun-20261016T192650Z-envfix.log`
+
+## LOCAL SUMMARY
+
+| case | Parent median us | Candidate median us | paired delta median us | P10-P90 us |
+|---|---:|---:|---:|---:|
+| fp16-tail-d12288 | 6.640 | 7.240 | 0.020 | -1.920..14.480 |
+| fp16-wide-d32768 | 10.940 | 10.180 | -0.620 | -5.660..3.860 |
+| bf16-tail-d12288 | 8.020 | 7.920 | -0.160 | -1.520..0.980 |
+| bf16-wide-d32768 | 14.480 | 12.920 | -1.520 | -2.100..13.900 |
+
+LOCAL_SCORE: NONE
+LOCAL_DELTA: NONE; all four P10-P90 intervals cross zero.
+ONLINE_RECOMMENDATION: NONE; V011 has no stable local improvement, and no online submission was made.
 
 ## NEXT DEVICE ENTRY
 
-Reuse the existing `paired_runner_v016` CMake target under
-`本地实验/R31B/V016/support/paired`. Supply
-`-DR31B_V016_SOURCE_DIR=<V011 source path>` so the existing Runner selects this
-candidate, then run `paired_runner_v016 --paired --device 2` after the user
-confirms server3/NPU access. The current CMake default remains V010.
+V011 Compile, Correctness, and Local are complete. No next version is started;
+the existing paired runner and V011 server evidence remain available for later
+read-only comparison with a separately defined mechanism.
 
-STATUS: SOURCE_CANDIDATE_UNVALIDATED
+STATUS: SERVER_VALIDATED_LOCAL_NO_CLEAR_GAIN
