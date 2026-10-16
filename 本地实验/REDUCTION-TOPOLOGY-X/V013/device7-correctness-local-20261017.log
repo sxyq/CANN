@@ -1,0 +1,259 @@
+ROUTE=N03-REDUCTION-TOPOLOGY-X
+REVISION=V013
+PARENT=V011
+HOST=hwnput3
+USER=lelinfeng
+DEVICE=7
+CANN_ENV_SOURCE_RC=0
+LD_LIBRARY_PATH_FRONT=/usr/lib/aarch64-linux-gnu
+START=2026-10-16T21:23:40Z
+CANDIDATE_SHA256=8de2702dcf23211d45c58ae53a5ccca9fdb1ee8d6ac3348f9af2703212a40353  ../Candidate.asc
+RUNNER_SHA256=73d1fdfae22b89104753a2b7d90585073c8a6eba33cc02d3977cbe6819d73386  paired_runner_v016
+
+===== PRE-CORRECTNESS DEVICE SNAPSHOT =====
++------------------------------------------------------------------------------------------------+
+| npu-smi 25.0.rc1.1               Version: 25.0.rc1.1                                           |
++---------------------------+---------------+----------------------------------------------------+
+| NPU   Name                | Health        | Power(W)    Temp(C)           Hugepages-Usage(page)|
+| Chip                      | Bus-Id        | AICore(%)   Memory-Usage(MB)  HBM-Usage(MB)        |
++===========================+===============+====================================================+
+| 0     910B3               | OK            | 92.6        34                0    / 0             |
+| 0                         | 0000:C1:00.0  | 0           0    / 0          39043/ 65536         |
++===========================+===============+====================================================+
+| 1     910B3               | OK            | 89.6        33                0    / 0             |
+| 0                         | 0000:C2:00.0  | 0           0    / 0          3485 / 65536         |
++===========================+===============+====================================================+
+| 2     910B3               | OK            | 87.5        34                0    / 0             |
+| 0                         | 0000:81:00.0  | 0           0    / 0          3427 / 65536         |
++===========================+===============+====================================================+
+| 3     910B3               | OK            | 91.8        34                0    / 0             |
+| 0                         | 0000:82:00.0  | 0           0    / 0          3428 / 65536         |
++===========================+===============+====================================================+
+| 4     910B3               | OK            | 90.4        39                0    / 0             |
+| 0                         | 0000:01:00.0  | 0           0    / 0          59234/ 65536         |
++===========================+===============+====================================================+
+| 5     910B3               | OK            | 92.2        36                0    / 0             |
+| 0                         | 0000:02:00.0  | 0           0    / 0          59877/ 65536         |
++===========================+===============+====================================================+
+| 6     910B3               | OK            | 95.1        39                0    / 0             |
+| 0                         | 0000:41:00.0  | 0           0    / 0          59875/ 65536         |
++===========================+===============+====================================================+
+| 7     910B3               | OK            | 95.6        38                0    / 0             |
+| 0                         | 0000:42:00.0  | 0           0    / 0          3434 / 65536         |
++===========================+===============+====================================================+
++---------------------------+---------------+----------------------------------------------------+
+| NPU     Chip              | Process id    | Process name             | Process memory(MB)      |
++===========================+===============+====================================================+
+| 0       0                 | 2711593       | VLLMEngineCor            | 35520                   |
++===========================+===============+====================================================+
+| No running processes found in NPU 1                                                            |
++===========================+===============+====================================================+
+| No running processes found in NPU 2                                                            |
++===========================+===============+====================================================+
+| No running processes found in NPU 3                                                            |
++===========================+===============+====================================================+
+| 4       0                 | 2999855       | VLLMEngineCor            | 55706                   |
++===========================+===============+====================================================+
+| 5       0                 | 3355594       | VLLMWorker_TP            | 56354                   |
++===========================+===============+====================================================+
+| 6       0                 | 3357697       | VLLMWorker_TP            | 56355                   |
++===========================+===============+====================================================+
+| No running processes found in NPU 7                                                            |
++===========================+===============+====================================================+
+
+===== COMMAND =====
+./paired_runner_v016 --paired --device 7
+CASE_BEGIN name=fp16-tail-d12288 dtype=fp16 rows=2 width=12288 device=7 stage=CORRECTNESS_ONLY warmup_each=0 pairs=0 samples_per_binary=0
+CORRECTNESS case=fp16-tail-d12288 binary=V011 result=PASS failures=0 max_abs=0.0009765625 max_rel=0.0015923567
+CORRECTNESS case=fp16-tail-d12288 binary=V016 result=PASS failures=0 max_abs=0.0009765625 max_rel=0.0015923567
+CASE_BEGIN name=fp16-wide-d32768 dtype=fp16 rows=2 width=32768 device=7 stage=CORRECTNESS_ONLY warmup_each=0 pairs=0 samples_per_binary=0
+CORRECTNESS case=fp16-wide-d32768 binary=V011 result=PASS failures=0 max_abs=0.001953125 max_rel=0.010989011
+CORRECTNESS case=fp16-wide-d32768 binary=V016 result=PASS failures=0 max_abs=0.001953125 max_rel=0.010989011
+CASE_BEGIN name=bf16-tail-d12288 dtype=bf16 rows=2 width=12288 device=7 stage=CORRECTNESS_ONLY warmup_each=0 pairs=0 samples_per_binary=0
+CORRECTNESS case=bf16-tail-d12288 binary=V011 result=PASS failures=0 max_abs=0.0078125 max_rel=0.0073529412
+CORRECTNESS case=bf16-tail-d12288 binary=V016 result=PASS failures=0 max_abs=0.0078125 max_rel=0.0073529412
+CASE_BEGIN name=bf16-wide-d32768 dtype=bf16 rows=2 width=32768 device=7 stage=CORRECTNESS_ONLY warmup_each=0 pairs=0 samples_per_binary=0
+CORRECTNESS case=bf16-wide-d32768 binary=V011 result=PASS failures=0 max_abs=0.0078125 max_rel=0.01754386
+CORRECTNESS case=bf16-wide-d32768 binary=V016 result=PASS failures=0 max_abs=0.0078125 max_rel=0.01754386
+CASE_BEGIN name=fp16-tail-d12288 dtype=fp16 rows=2 width=12288 device=7 warmup_each=45 pairs=21 samples_per_binary=21
+SAMPLE case=fp16-tail-d12288 pair=01 order=P,C parent_device_us=8.180 candidate_device_us=30.640 parent_wall_us=125.891 candidate_wall_us=103.411 paired_device_delta_us=22.460
+SAMPLE case=fp16-tail-d12288 pair=02 order=C,P parent_device_us=8.520 candidate_device_us=7.560 parent_wall_us=87.121 candidate_wall_us=73.171 paired_device_delta_us=-0.960
+SAMPLE case=fp16-tail-d12288 pair=03 order=P,C parent_device_us=6.420 candidate_device_us=28.840 parent_wall_us=72.941 candidate_wall_us=74.061 paired_device_delta_us=22.420
+SAMPLE case=fp16-tail-d12288 pair=04 order=C,P parent_device_us=7.820 candidate_device_us=48.140 parent_wall_us=70.861 candidate_wall_us=104.861 paired_device_delta_us=40.320
+SAMPLE case=fp16-tail-d12288 pair=05 order=P,C parent_device_us=6.200 candidate_device_us=31.880 parent_wall_us=75.151 candidate_wall_us=80.271 paired_device_delta_us=25.680
+SAMPLE case=fp16-tail-d12288 pair=06 order=C,P parent_device_us=8.080 candidate_device_us=24.820 parent_wall_us=68.971 candidate_wall_us=78.191 paired_device_delta_us=16.740
+SAMPLE case=fp16-tail-d12288 pair=07 order=P,C parent_device_us=6.300 candidate_device_us=7.680 parent_wall_us=62.100 candidate_wall_us=69.521 paired_device_delta_us=1.380
+SAMPLE case=fp16-tail-d12288 pair=08 order=C,P parent_device_us=32.440 candidate_device_us=7.320 parent_wall_us=81.811 candidate_wall_us=70.871 paired_device_delta_us=-25.120
+SAMPLE case=fp16-tail-d12288 pair=09 order=P,C parent_device_us=26.820 candidate_device_us=35.600 parent_wall_us=79.881 candidate_wall_us=88.211 paired_device_delta_us=8.780
+SAMPLE case=fp16-tail-d12288 pair=10 order=C,P parent_device_us=29.860 candidate_device_us=7.640 parent_wall_us=90.401 candidate_wall_us=62.851 paired_device_delta_us=-22.220
+SAMPLE case=fp16-tail-d12288 pair=11 order=P,C parent_device_us=7.680 candidate_device_us=6.020 parent_wall_us=79.891 candidate_wall_us=70.581 paired_device_delta_us=-1.660
+SAMPLE case=fp16-tail-d12288 pair=12 order=C,P parent_device_us=33.260 candidate_device_us=5.900 parent_wall_us=81.431 candidate_wall_us=73.971 paired_device_delta_us=-27.360
+SAMPLE case=fp16-tail-d12288 pair=13 order=P,C parent_device_us=27.640 candidate_device_us=6.240 parent_wall_us=80.381 candidate_wall_us=69.471 paired_device_delta_us=-21.400
+SAMPLE case=fp16-tail-d12288 pair=14 order=C,P parent_device_us=6.560 candidate_device_us=6.760 parent_wall_us=82.531 candidate_wall_us=85.541 paired_device_delta_us=0.200
+SAMPLE case=fp16-tail-d12288 pair=15 order=P,C parent_device_us=6.460 candidate_device_us=28.660 parent_wall_us=65.111 candidate_wall_us=79.781 paired_device_delta_us=22.200
+SAMPLE case=fp16-tail-d12288 pair=16 order=C,P parent_device_us=8.100 candidate_device_us=6.280 parent_wall_us=70.021 candidate_wall_us=72.741 paired_device_delta_us=-1.820
+SAMPLE case=fp16-tail-d12288 pair=17 order=P,C parent_device_us=27.920 candidate_device_us=6.180 parent_wall_us=71.761 candidate_wall_us=70.310 paired_device_delta_us=-21.740
+SAMPLE case=fp16-tail-d12288 pair=18 order=C,P parent_device_us=34.040 candidate_device_us=6.900 parent_wall_us=89.131 candidate_wall_us=80.951 paired_device_delta_us=-27.140
+SAMPLE case=fp16-tail-d12288 pair=19 order=P,C parent_device_us=6.120 candidate_device_us=30.880 parent_wall_us=60.710 candidate_wall_us=82.011 paired_device_delta_us=24.760
+SAMPLE case=fp16-tail-d12288 pair=20 order=C,P parent_device_us=31.540 candidate_device_us=25.760 parent_wall_us=82.940 candidate_wall_us=80.500 paired_device_delta_us=-5.780
+SAMPLE case=fp16-tail-d12288 pair=21 order=P,C parent_device_us=6.900 candidate_device_us=5.980 parent_wall_us=69.990 candidate_wall_us=60.421 paired_device_delta_us=-0.920
+PAIR_BLOCK case=fp16-tail-d12288 block=1 pairs=21 parent_median_us=8.100 candidate_median_us=7.640 paired_delta_median_us=-0.920
+CORRECTNESS case=fp16-tail-d12288 binary=V011 result=PASS failures=0 max_abs=0.0009765625 max_rel=0.0015923567
+CORRECTNESS case=fp16-tail-d12288 binary=V016 result=PASS failures=0 max_abs=0.0009765625 max_rel=0.0015923567
+SUMMARY case=fp16-tail-d12288 metric=device_us binary=V011 n=21 median=8.100 mean=16.041 stdev=11.710 cv=0.73003 min=6.120 max=34.040 max_min=5.562 mad=1.800 p10=6.300 p90=32.440 spread=27.920 core_cv=0.08684
+SUMMARY case=fp16-tail-d12288 metric=device_us binary=V016 n=21 median=7.640 mean=17.413 stdev=13.423 cv=0.77083 min=5.900 max=48.140 max_min=8.159 mad=1.660 p10=6.020 p90=31.880 spread=42.240 core_cv=0.08959
+SUMMARY case=fp16-tail-d12288 metric=wall_us binary=V011 n=21 median=79.881 mean=78.525 stdev=13.754 cv=0.17515 min=60.710 max=125.891 max_min=2.074 mad=8.120 p10=65.111 p90=89.131 spread=65.181 core_cv=0.09575
+SUMMARY case=fp16-tail-d12288 metric=wall_us binary=V016 n=21 median=74.061 mean=77.700 stdev=11.173 cv=0.14380 min=60.421 max=104.861 max_min=1.736 mad=5.720 p10=69.471 p90=88.211 spread=44.440 core_cv=0.09701
+SUMMARY case=fp16-tail-d12288 metric=paired_device_delta_us binary=V016_minus_V011 n=21 median=-0.920 mean=1.372 stdev=20.371 cv=14.84359 min=-27.360 max=40.320 max_min=-1.474 mad=20.820 p10=-25.120 p90=24.760 spread=67.680 core_cv=0.00000
+CASE_END name=fp16-tail-d12288 correctness=PASS
+CASE_BEGIN name=fp16-wide-d32768 dtype=fp16 rows=2 width=32768 device=7 warmup_each=45 pairs=21 samples_per_binary=21
+SAMPLE case=fp16-wide-d32768 pair=01 order=P,C parent_device_us=11.200 candidate_device_us=15.800 parent_wall_us=69.941 candidate_wall_us=62.471 paired_device_delta_us=4.600
+SAMPLE case=fp16-wide-d32768 pair=02 order=C,P parent_device_us=12.520 candidate_device_us=11.280 parent_wall_us=69.910 candidate_wall_us=63.311 paired_device_delta_us=-1.240
+SAMPLE case=fp16-wide-d32768 pair=03 order=P,C parent_device_us=18.720 candidate_device_us=9.700 parent_wall_us=62.470 candidate_wall_us=62.471 paired_device_delta_us=-9.020
+SAMPLE case=fp16-wide-d32768 pair=04 order=C,P parent_device_us=20.920 candidate_device_us=21.420 parent_wall_us=63.611 candidate_wall_us=77.971 paired_device_delta_us=0.500
+SAMPLE case=fp16-wide-d32768 pair=05 order=P,C parent_device_us=10.300 candidate_device_us=9.760 parent_wall_us=61.351 candidate_wall_us=64.530 paired_device_delta_us=-0.540
+SAMPLE case=fp16-wide-d32768 pair=06 order=C,P parent_device_us=12.060 candidate_device_us=31.260 parent_wall_us=61.021 candidate_wall_us=80.540 paired_device_delta_us=19.200
+SAMPLE case=fp16-wide-d32768 pair=07 order=P,C parent_device_us=17.920 candidate_device_us=9.960 parent_wall_us=62.211 candidate_wall_us=71.741 paired_device_delta_us=-7.960
+SAMPLE case=fp16-wide-d32768 pair=08 order=C,P parent_device_us=11.540 candidate_device_us=11.620 parent_wall_us=101.981 candidate_wall_us=64.151 paired_device_delta_us=0.080
+SAMPLE case=fp16-wide-d32768 pair=09 order=P,C parent_device_us=10.600 candidate_device_us=17.240 parent_wall_us=65.441 candidate_wall_us=59.840 paired_device_delta_us=6.640
+SAMPLE case=fp16-wide-d32768 pair=10 order=C,P parent_device_us=29.940 candidate_device_us=13.000 parent_wall_us=68.241 candidate_wall_us=64.230 paired_device_delta_us=-16.940
+SAMPLE case=fp16-wide-d32768 pair=11 order=P,C parent_device_us=28.140 candidate_device_us=27.060 parent_wall_us=69.991 candidate_wall_us=68.921 paired_device_delta_us=-1.080
+SAMPLE case=fp16-wide-d32768 pair=12 order=C,P parent_device_us=21.640 candidate_device_us=9.540 parent_wall_us=58.160 candidate_wall_us=62.451 paired_device_delta_us=-12.100
+SAMPLE case=fp16-wide-d32768 pair=13 order=P,C parent_device_us=22.360 candidate_device_us=22.420 parent_wall_us=66.690 candidate_wall_us=66.571 paired_device_delta_us=0.060
+SAMPLE case=fp16-wide-d32768 pair=14 order=C,P parent_device_us=22.820 candidate_device_us=22.600 parent_wall_us=66.131 candidate_wall_us=66.421 paired_device_delta_us=-0.220
+SAMPLE case=fp16-wide-d32768 pair=15 order=P,C parent_device_us=22.320 candidate_device_us=22.700 parent_wall_us=66.551 candidate_wall_us=65.620 paired_device_delta_us=0.380
+SAMPLE case=fp16-wide-d32768 pair=16 order=C,P parent_device_us=15.220 candidate_device_us=22.940 parent_wall_us=57.171 candidate_wall_us=67.040 paired_device_delta_us=7.720
+SAMPLE case=fp16-wide-d32768 pair=17 order=P,C parent_device_us=14.520 candidate_device_us=19.780 parent_wall_us=60.741 candidate_wall_us=58.741 paired_device_delta_us=5.260
+SAMPLE case=fp16-wide-d32768 pair=18 order=C,P parent_device_us=22.860 candidate_device_us=22.960 parent_wall_us=67.291 candidate_wall_us=67.890 paired_device_delta_us=0.100
+SAMPLE case=fp16-wide-d32768 pair=19 order=P,C parent_device_us=22.600 candidate_device_us=22.120 parent_wall_us=67.161 candidate_wall_us=66.951 paired_device_delta_us=-0.480
+SAMPLE case=fp16-wide-d32768 pair=20 order=C,P parent_device_us=23.340 candidate_device_us=20.300 parent_wall_us=64.180 candidate_wall_us=65.371 paired_device_delta_us=-3.040
+SAMPLE case=fp16-wide-d32768 pair=21 order=P,C parent_device_us=56.020 candidate_device_us=24.120 parent_wall_us=106.721 candidate_wall_us=67.511 paired_device_delta_us=-31.900
+PAIR_BLOCK case=fp16-wide-d32768 block=1 pairs=21 parent_median_us=20.920 candidate_median_us=20.300 paired_delta_median_us=-0.220
+CORRECTNESS case=fp16-wide-d32768 binary=V011 result=PASS failures=0 max_abs=0.001953125 max_rel=0.010989011
+CORRECTNESS case=fp16-wide-d32768 binary=V016 result=PASS failures=0 max_abs=0.001953125 max_rel=0.010989011
+SUMMARY case=fp16-wide-d32768 metric=device_us binary=V011 n=21 median=20.920 mean=20.360 stdev=10.044 cv=0.49332 min=10.300 max=56.020 max_min=5.439 mad=5.700 p10=11.200 p90=28.140 spread=45.720 core_cv=0.08539
+SUMMARY case=fp16-wide-d32768 metric=device_us binary=V016 n=21 median=20.300 mean=18.456 stdev=6.439 cv=0.34888 min=9.540 max=31.260 max_min=3.277 mad=3.820 p10=9.760 p90=24.120 spread=21.720 core_cv=0.08880
+SUMMARY case=fp16-wide-d32768 metric=wall_us binary=V011 n=21 median=66.131 mean=68.427 stdev=12.519 cv=0.18295 min=57.171 max=106.721 max_min=1.867 mad=3.779 p10=60.741 p90=69.991 spread=49.550 core_cv=0.05995
+SUMMARY case=fp16-wide-d32768 metric=wall_us binary=V016 n=21 median=65.620 mean=66.416 stdev=5.223 cv=0.07864 min=58.741 max=80.540 max_min=1.371 mad=2.270 p10=62.451 p90=71.741 spread=21.799 core_cv=0.06401
+SUMMARY case=fp16-wide-d32768 metric=paired_device_delta_us binary=V016_minus_V011 n=21 median=-0.220 mean=-1.904 stdev=10.133 cv=-5.32265 min=-31.900 max=19.200 max_min=-0.602 mad=2.820 p10=-12.100 p90=6.640 spread=51.100 core_cv=0.00000
+CASE_END name=fp16-wide-d32768 correctness=PASS
+CASE_BEGIN name=bf16-tail-d12288 dtype=bf16 rows=2 width=12288 device=7 warmup_each=45 pairs=21 samples_per_binary=21
+SAMPLE case=bf16-tail-d12288 pair=01 order=P,C parent_device_us=27.480 candidate_device_us=19.700 parent_wall_us=73.451 candidate_wall_us=62.301 paired_device_delta_us=-7.780
+SAMPLE case=bf16-tail-d12288 pair=02 order=C,P parent_device_us=8.260 candidate_device_us=8.020 parent_wall_us=62.361 candidate_wall_us=73.191 paired_device_delta_us=-0.240
+SAMPLE case=bf16-tail-d12288 pair=03 order=P,C parent_device_us=21.020 candidate_device_us=19.380 parent_wall_us=66.801 candidate_wall_us=69.000 paired_device_delta_us=-1.640
+SAMPLE case=bf16-tail-d12288 pair=04 order=C,P parent_device_us=18.880 candidate_device_us=20.200 parent_wall_us=68.111 candidate_wall_us=68.480 paired_device_delta_us=1.320
+SAMPLE case=bf16-tail-d12288 pair=05 order=P,C parent_device_us=19.760 candidate_device_us=18.960 parent_wall_us=68.131 candidate_wall_us=68.031 paired_device_delta_us=-0.800
+SAMPLE case=bf16-tail-d12288 pair=06 order=C,P parent_device_us=20.840 candidate_device_us=19.820 parent_wall_us=68.270 candidate_wall_us=62.491 paired_device_delta_us=-1.020
+SAMPLE case=bf16-tail-d12288 pair=07 order=P,C parent_device_us=20.540 candidate_device_us=19.640 parent_wall_us=68.740 candidate_wall_us=67.331 paired_device_delta_us=-0.900
+SAMPLE case=bf16-tail-d12288 pair=08 order=C,P parent_device_us=19.340 candidate_device_us=19.820 parent_wall_us=66.071 candidate_wall_us=58.461 paired_device_delta_us=0.480
+SAMPLE case=bf16-tail-d12288 pair=09 order=P,C parent_device_us=20.040 candidate_device_us=20.540 parent_wall_us=66.981 candidate_wall_us=66.620 paired_device_delta_us=0.500
+SAMPLE case=bf16-tail-d12288 pair=10 order=C,P parent_device_us=19.860 candidate_device_us=20.300 parent_wall_us=66.321 candidate_wall_us=66.750 paired_device_delta_us=0.440
+SAMPLE case=bf16-tail-d12288 pair=11 order=P,C parent_device_us=19.500 candidate_device_us=20.360 parent_wall_us=66.351 candidate_wall_us=66.361 paired_device_delta_us=0.860
+SAMPLE case=bf16-tail-d12288 pair=12 order=C,P parent_device_us=20.980 candidate_device_us=20.080 parent_wall_us=65.560 candidate_wall_us=66.271 paired_device_delta_us=-0.900
+SAMPLE case=bf16-tail-d12288 pair=13 order=P,C parent_device_us=20.700 candidate_device_us=20.460 parent_wall_us=66.421 candidate_wall_us=65.951 paired_device_delta_us=-0.240
+SAMPLE case=bf16-tail-d12288 pair=14 order=C,P parent_device_us=20.800 candidate_device_us=44.820 parent_wall_us=66.231 candidate_wall_us=102.571 paired_device_delta_us=24.020
+SAMPLE case=bf16-tail-d12288 pair=15 order=P,C parent_device_us=21.580 candidate_device_us=20.760 parent_wall_us=66.091 candidate_wall_us=64.961 paired_device_delta_us=-0.820
+SAMPLE case=bf16-tail-d12288 pair=16 order=C,P parent_device_us=20.520 candidate_device_us=21.000 parent_wall_us=65.020 candidate_wall_us=65.861 paired_device_delta_us=0.480
+SAMPLE case=bf16-tail-d12288 pair=17 order=P,C parent_device_us=21.120 candidate_device_us=41.280 parent_wall_us=65.620 candidate_wall_us=90.421 paired_device_delta_us=20.160
+SAMPLE case=bf16-tail-d12288 pair=18 order=C,P parent_device_us=7.260 candidate_device_us=24.120 parent_wall_us=70.671 candidate_wall_us=78.901 paired_device_delta_us=16.860
+SAMPLE case=bf16-tail-d12288 pair=19 order=P,C parent_device_us=20.840 candidate_device_us=21.600 parent_wall_us=66.591 candidate_wall_us=65.881 paired_device_delta_us=0.760
+SAMPLE case=bf16-tail-d12288 pair=20 order=C,P parent_device_us=20.340 candidate_device_us=20.480 parent_wall_us=66.191 candidate_wall_us=65.901 paired_device_delta_us=0.140
+SAMPLE case=bf16-tail-d12288 pair=21 order=P,C parent_device_us=20.620 candidate_device_us=19.980 parent_wall_us=66.260 candidate_wall_us=64.920 paired_device_delta_us=-0.640
+PAIR_BLOCK case=bf16-tail-d12288 block=1 pairs=21 parent_median_us=20.540 candidate_median_us=20.300 paired_delta_median_us=0.140
+CORRECTNESS case=bf16-tail-d12288 binary=V011 result=PASS failures=0 max_abs=0.0078125 max_rel=0.0073529412
+CORRECTNESS case=bf16-tail-d12288 binary=V016 result=PASS failures=0 max_abs=0.0078125 max_rel=0.0073529412
+SUMMARY case=bf16-tail-d12288 metric=device_us binary=V011 n=21 median=20.540 mean=19.537 stdev=4.260 cv=0.21805 min=7.260 max=27.480 max_min=3.785 mad=0.500 p10=18.880 p90=21.120 spread=20.220 core_cv=0.03451
+SUMMARY case=bf16-tail-d12288 metric=device_us binary=V016 n=21 median=20.300 mean=21.968 stdev=7.599 cv=0.34593 min=8.020 max=44.820 max_min=5.589 mad=0.480 p10=19.380 p90=24.120 spread=36.800 core_cv=0.05446
+SUMMARY case=bf16-tail-d12288 metric=wall_us binary=V011 n=21 median=66.351 mean=66.964 stdev=2.197 cv=0.03281 min=62.361 max=73.451 max_min=1.178 mad=0.630 p10=65.560 p90=68.740 spread=11.090 core_cv=0.03281
+SUMMARY case=bf16-tail-d12288 metric=wall_us binary=V016 n=21 median=66.361 mean=69.555 stdev=9.985 cv=0.14355 min=58.461 max=102.571 max_min=1.755 mad=1.441 p10=62.491 p90=78.901 spread=44.110 core_cv=0.06276
+SUMMARY case=bf16-tail-d12288 metric=paired_device_delta_us binary=V016_minus_V011 n=21 median=0.140 mean=2.430 stdev=7.795 cv=3.20726 min=-7.780 max=24.020 max_min=-3.087 mad=0.940 p10=-1.020 p90=16.860 spread=31.800 core_cv=0.00000
+CASE_END name=bf16-tail-d12288 correctness=PASS
+CASE_BEGIN name=bf16-wide-d32768 dtype=bf16 rows=2 width=32768 device=7 warmup_each=45 pairs=21 samples_per_binary=21
+SAMPLE case=bf16-wide-d32768 pair=01 order=P,C parent_device_us=14.900 candidate_device_us=39.220 parent_wall_us=87.781 candidate_wall_us=83.211 paired_device_delta_us=24.320
+SAMPLE case=bf16-wide-d32768 pair=02 order=C,P parent_device_us=15.400 candidate_device_us=38.560 parent_wall_us=70.161 candidate_wall_us=93.501 paired_device_delta_us=23.160
+SAMPLE case=bf16-wide-d32768 pair=03 order=P,C parent_device_us=15.940 candidate_device_us=15.520 parent_wall_us=67.681 candidate_wall_us=75.310 paired_device_delta_us=-0.420
+SAMPLE case=bf16-wide-d32768 pair=04 order=C,P parent_device_us=15.620 candidate_device_us=19.280 parent_wall_us=75.231 candidate_wall_us=66.560 paired_device_delta_us=3.660
+SAMPLE case=bf16-wide-d32768 pair=05 order=P,C parent_device_us=18.820 candidate_device_us=22.240 parent_wall_us=65.781 candidate_wall_us=73.581 paired_device_delta_us=3.420
+SAMPLE case=bf16-wide-d32768 pair=06 order=C,P parent_device_us=14.820 candidate_device_us=16.420 parent_wall_us=73.941 candidate_wall_us=65.021 paired_device_delta_us=1.600
+SAMPLE case=bf16-wide-d32768 pair=07 order=P,C parent_device_us=38.460 candidate_device_us=22.160 parent_wall_us=94.431 candidate_wall_us=69.551 paired_device_delta_us=-16.300
+SAMPLE case=bf16-wide-d32768 pair=08 order=C,P parent_device_us=25.400 candidate_device_us=57.920 parent_wall_us=63.881 candidate_wall_us=106.791 paired_device_delta_us=32.520
+SAMPLE case=bf16-wide-d32768 pair=09 order=P,C parent_device_us=28.420 candidate_device_us=26.540 parent_wall_us=73.981 candidate_wall_us=63.841 paired_device_delta_us=-1.880
+SAMPLE case=bf16-wide-d32768 pair=10 order=C,P parent_device_us=15.840 candidate_device_us=26.500 parent_wall_us=63.180 candidate_wall_us=74.931 paired_device_delta_us=10.660
+SAMPLE case=bf16-wide-d32768 pair=11 order=P,C parent_device_us=26.040 candidate_device_us=27.300 parent_wall_us=74.331 candidate_wall_us=74.331 paired_device_delta_us=1.260
+SAMPLE case=bf16-wide-d32768 pair=12 order=C,P parent_device_us=25.720 candidate_device_us=29.560 parent_wall_us=71.931 candidate_wall_us=74.241 paired_device_delta_us=3.840
+SAMPLE case=bf16-wide-d32768 pair=13 order=P,C parent_device_us=25.780 candidate_device_us=16.780 parent_wall_us=71.001 candidate_wall_us=61.171 paired_device_delta_us=-9.000
+SAMPLE case=bf16-wide-d32768 pair=14 order=C,P parent_device_us=16.000 candidate_device_us=32.820 parent_wall_us=61.840 candidate_wall_us=73.521 paired_device_delta_us=16.820
+SAMPLE case=bf16-wide-d32768 pair=15 order=P,C parent_device_us=25.600 candidate_device_us=27.940 parent_wall_us=63.830 candidate_wall_us=73.371 paired_device_delta_us=2.340
+SAMPLE case=bf16-wide-d32768 pair=16 order=C,P parent_device_us=25.800 candidate_device_us=27.100 parent_wall_us=62.211 candidate_wall_us=72.731 paired_device_delta_us=1.300
+SAMPLE case=bf16-wide-d32768 pair=17 order=P,C parent_device_us=26.860 candidate_device_us=26.520 parent_wall_us=71.831 candidate_wall_us=72.281 paired_device_delta_us=-0.340
+SAMPLE case=bf16-wide-d32768 pair=18 order=C,P parent_device_us=26.420 candidate_device_us=27.340 parent_wall_us=61.930 candidate_wall_us=73.311 paired_device_delta_us=0.920
+SAMPLE case=bf16-wide-d32768 pair=19 order=P,C parent_device_us=25.500 candidate_device_us=25.460 parent_wall_us=72.451 candidate_wall_us=61.391 paired_device_delta_us=-0.040
+SAMPLE case=bf16-wide-d32768 pair=20 order=C,P parent_device_us=24.240 candidate_device_us=25.780 parent_wall_us=64.361 candidate_wall_us=65.801 paired_device_delta_us=1.540
+SAMPLE case=bf16-wide-d32768 pair=21 order=P,C parent_device_us=28.540 candidate_device_us=26.280 parent_wall_us=72.151 candidate_wall_us=61.390 paired_device_delta_us=-2.260
+PAIR_BLOCK case=bf16-wide-d32768 block=1 pairs=21 parent_median_us=25.500 candidate_median_us=26.520 paired_delta_median_us=1.540
+CORRECTNESS case=bf16-wide-d32768 binary=V011 result=PASS failures=0 max_abs=0.0078125 max_rel=0.01754386
+CORRECTNESS case=bf16-wide-d32768 binary=V016 result=PASS failures=0 max_abs=0.0078125 max_rel=0.01754386
+SUMMARY case=bf16-wide-d32768 metric=device_us binary=V011 n=21 median=25.500 mean=22.863 stdev=6.285 cv=0.27492 min=14.820 max=38.460 max_min=2.595 mad=2.920 p10=15.400 p90=28.420 spread=23.640 core_cv=0.04720
+SUMMARY case=bf16-wide-d32768 metric=device_us binary=V016 n=21 median=26.520 mean=27.488 stdev=9.313 cv=0.33879 min=15.520 max=57.920 max_min=3.732 mad=3.040 p10=16.780 p90=38.560 spread=42.400 core_cv=0.07841
+SUMMARY case=bf16-wide-d32768 metric=wall_us binary=V011 n=21 median=71.001 mean=70.663 stdev=8.275 cv=0.11710 min=61.840 max=94.431 max_min=1.527 mad=4.230 p10=62.211 p90=75.231 spread=32.591 core_cv=0.07080
+SUMMARY case=bf16-wide-d32768 metric=wall_us binary=V016 n=21 median=73.311 mean=73.135 stdev=10.821 cv=0.14796 min=61.171 max=106.791 max_min=1.746 mad=3.760 p10=61.391 p90=83.211 spread=45.620 core_cv=0.08489
+SUMMARY case=bf16-wide-d32768 metric=paired_device_delta_us binary=V016_minus_V011 n=21 median=1.540 mean=4.625 stdev=11.276 cv=2.43809 min=-16.300 max=32.520 max_min=-1.995 mad=2.120 p10=-2.260 p90=23.160 spread=48.820 core_cv=0.11930
+CASE_END name=bf16-wide-d32768 correctness=PASS
+RUNNER_COMPLETE mode=PAIRED device=7 correctness=PASS cases=4 warmup_each=45 pairs_each=21 timing=DEVICE_EVENT_PRIMARY wall=DIAGNOSTIC
+
+===== POST-CORRECTNESS DEVICE SNAPSHOT =====
++------------------------------------------------------------------------------------------------+
+| npu-smi 25.0.rc1.1               Version: 25.0.rc1.1                                           |
++---------------------------+---------------+----------------------------------------------------+
+| NPU   Name                | Health        | Power(W)    Temp(C)           Hugepages-Usage(page)|
+| Chip                      | Bus-Id        | AICore(%)   Memory-Usage(MB)  HBM-Usage(MB)        |
++===========================+===============+====================================================+
+| 0     910B3               | OK            | 92.9        34                0    / 0             |
+| 0                         | 0000:C1:00.0  | 0           0    / 0          39043/ 65536         |
++===========================+===============+====================================================+
+| 1     910B3               | OK            | 89.6        33                0    / 0             |
+| 0                         | 0000:C2:00.0  | 0           0    / 0          3485 / 65536         |
++===========================+===============+====================================================+
+| 2     910B3               | OK            | 87.6        34                0    / 0             |
+| 0                         | 0000:81:00.0  | 0           0    / 0          3428 / 65536         |
++===========================+===============+====================================================+
+| 3     910B3               | OK            | 91.9        34                0    / 0             |
+| 0                         | 0000:82:00.0  | 0           0    / 0          3429 / 65536         |
++===========================+===============+====================================================+
+| 4     910B3               | OK            | 90.4        39                0    / 0             |
+| 0                         | 0000:01:00.0  | 0           0    / 0          59234/ 65536         |
++===========================+===============+====================================================+
+| 5     910B3               | OK            | 92.5        36                0    / 0             |
+| 0                         | 0000:02:00.0  | 0           0    / 0          59877/ 65536         |
++===========================+===============+====================================================+
+| 6     910B3               | OK            | 95.3        39                0    / 0             |
+| 0                         | 0000:41:00.0  | 0           0    / 0          59876/ 65536         |
++===========================+===============+====================================================+
+| 7     910B3               | OK            | 95.6        38                0    / 0             |
+| 0                         | 0000:42:00.0  | 0           0    / 0          3434 / 65536         |
++===========================+===============+====================================================+
++---------------------------+---------------+----------------------------------------------------+
+| NPU     Chip              | Process id    | Process name             | Process memory(MB)      |
++===========================+===============+====================================================+
+| 0       0                 | 2711593       | VLLMEngineCor            | 35520                   |
++===========================+===============+====================================================+
+| No running processes found in NPU 1                                                            |
++===========================+===============+====================================================+
+| No running processes found in NPU 2                                                            |
++===========================+===============+====================================================+
+| No running processes found in NPU 3                                                            |
++===========================+===============+====================================================+
+| 4       0                 | 2999855       | VLLMEngineCor            | 55706                   |
++===========================+===============+====================================================+
+| 5       0                 | 3355594       | VLLMWorker_TP            | 56354                   |
++===========================+===============+====================================================+
+| 6       0                 | 3357697       | VLLMWorker_TP            | 56355                   |
++===========================+===============+====================================================+
+| No running processes found in NPU 7                                                            |
++===========================+===============+====================================================+
+
+===== RUNNER PROCESSES =====
+1135902 bash -c set +e; cd /home/data4t2/lelinfeng/cann/server_runs/C2C-V2-N03/V013; source /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/script/set_env.sh; env_rc=$?; export LD_LIBRARY_PATH=/usr/lib/aarch64-linux-gnu:${LD_LIBRARY_PATH:-}; cd build; { printf "ROUTE=N03-REDUCTION-TOPOLOGY-X\nREVISION=V013\nPARENT=V011\nHOST=%s\nUSER=%s\nDEVICE=7\nCANN_ENV_SOURCE_RC=%s\nLD_LIBRARY_PATH_FRONT=/usr/lib/aarch64-linux-gnu\nSTART=%s\n" "$(hostname -f)" "$(id -un)" "$env_rc" "$(date -u +%Y-%m-%dT%H:%M:%SZ)"; printf "CANDIDATE_SHA256="; sha256sum ../Candidate.asc; printf "RUNNER_SHA256="; sha256sum paired_runner_v016; printf "\n===== PRE-CORRECTNESS DEVICE SNAPSHOT =====\n"; npu-smi info; printf "\n===== COMMAND =====\n./paired_runner_v016 --paired --device 7\n"; ./paired_runner_v016 --paired --device 7; runner_rc=$?; printf "\n===== POST-CORRECTNESS DEVICE SNAPSHOT =====\n"; npu-smi info; printf "\n===== RUNNER PROCESSES =====\n"; pgrep -af paired_runner_v016 || true; printf "RUNNER_RC=%s\nEND=%s\n" "$runner_rc" "$(date -u +%Y-%m-%dT%H:%M:%SZ)"; exit "$runner_rc"; } 2>&1 | tee ../device7-correctness-local-20261017.log; exit ${PIPESTATUS[0]}
+1135904 bash -c set +e; cd /home/data4t2/lelinfeng/cann/server_runs/C2C-V2-N03/V013; source /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/script/set_env.sh; env_rc=$?; export LD_LIBRARY_PATH=/usr/lib/aarch64-linux-gnu:${LD_LIBRARY_PATH:-}; cd build; { printf "ROUTE=N03-REDUCTION-TOPOLOGY-X\nREVISION=V013\nPARENT=V011\nHOST=%s\nUSER=%s\nDEVICE=7\nCANN_ENV_SOURCE_RC=%s\nLD_LIBRARY_PATH_FRONT=/usr/lib/aarch64-linux-gnu\nSTART=%s\n" "$(hostname -f)" "$(id -un)" "$env_rc" "$(date -u +%Y-%m-%dT%H:%M:%SZ)"; printf "CANDIDATE_SHA256="; sha256sum ../Candidate.asc; printf "RUNNER_SHA256="; sha256sum paired_runner_v016; printf "\n===== PRE-CORRECTNESS DEVICE SNAPSHOT =====\n"; npu-smi info; printf "\n===== COMMAND =====\n./paired_runner_v016 --paired --device 7\n"; ./paired_runner_v016 --paired --device 7; runner_rc=$?; printf "\n===== POST-CORRECTNESS DEVICE SNAPSHOT =====\n"; npu-smi info; printf "\n===== RUNNER PROCESSES =====\n"; pgrep -af paired_runner_v016 || true; printf "RUNNER_RC=%s\nEND=%s\n" "$runner_rc" "$(date -u +%Y-%m-%dT%H:%M:%SZ)"; exit "$runner_rc"; } 2>&1 | tee ../device7-correctness-local-20261017.log; exit ${PIPESTATUS[0]}
+RUNNER_RC=0
+END=2026-10-16T21:23:50Z
