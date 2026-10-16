@@ -2,7 +2,7 @@
 
 日期：2026-10-16  
 父版本：V005  
-状态：Compile PASS；Correctness 与 Local 未运行。NPU3 当前分配给 N05。
+状态：Compile PASS；四组 Correctness PASS，四组 paired Local 已完成。
 
 ## HYPOTHESIS
 
@@ -31,7 +31,20 @@ V006 改变归约发生的维度顺序：每个 tile 得到 FP32 平方向量后
 
 ## DEVICE EXPERIMENT
 
-- Correctness：未运行。
-- Local：未运行，`LOCAL_SCORE=NONE`。
-- `DEVICE_ID=NONE`；未查询或使用 NPU3，等待 Main 后续分配设备窗口。
-- V005 的 507035 仍为 UNKNOWN；本轮只完成 V006 编译，未试图复现该运行时问题。
+- 主机：`hwnput3`；设备：NPU3；命令：`./paired_runner_v016 --paired --device 3`；CANN `set_env.sh` 返回 0。
+- 执行前快照：`2026-10-16T09:13:03Z`，Health=OK、HBM usage=5%、AICore=0%、`No process in device`。Main 提供的窗口预检时间为 `2026-10-16T09:10:19Z`。
+- 每组 warmup=45，Parent/Candidate 交错配对 21 组，device-event 为主指标，wall time 仅作诊断。Runner 输出的 `V011` 对应 Parent，`V016` 对应 V006 Candidate。
+
+| Shape | Parent median (us) | V006 median (us) | paired delta median (us) | Correctness | max_abs | max_rel |
+|---|---:|---:|---:|---|---:|---:|
+| FP16 D12288 | 14.900 | 15.200 | -0.040 | PASS | 0.0009765625 | 0.0015923567 |
+| FP16 D32768 | 11.380 | 12.060 | +0.080 | PASS | 0.001953125 | 0.010989011 |
+| BF16 D12288 | 7.760 | 7.600 | -0.080 | PASS | 0.0078125 | 0.0073529412 |
+| BF16 D32768 | 14.260 | 13.300 | -1.160 | PASS | 0.0078125 | 0.01754386 |
+
+四组 paired delta 方向不一致；本轮结果显示 BF16 D32768 有较明显的中位改善，FP16 D32768 略有回退，其余两组变化较小。暂不归纳跨 dtype 的统一收益。
+
+- Runner 完成：`2026-10-16T09:14:02Z`；`RUNNER_EXIT_CODE=0`；输出 `correctness=PASS cases=4`。
+- Postflight：`2026-10-16T09:14:02Z`，Health=OK、HBM usage=5%、AICore=0%、`No process in device`。Main 随后提供的 `2026-10-16T09:14:17Z` 快照也为空闲。
+- 前后快照、全部 Runner 输出与返回码：`本地实验/REDUCTION-TOPOLOGY-X/V006/device3-paired-20261016.log`。
+- 全程未 Reset；Runner 仅启动一次，未重试。V005 的 507035 仍为 UNKNOWN，本轮 V006 结果不解读为其根因证据。
