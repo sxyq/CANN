@@ -24,7 +24,7 @@
 
 - `COMPILE=PASS`；Configure 返回码 `0`，Build 返回码 `0`。
 - 工具链：cann-server3，CMake 3.22.1，Ascend Toolkit `/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002`。
-- 远端 N01 V005 复用 V003 的 Parent、CMakeLists、Runner wrapper、ABI 和 C++ Runner 符号链接；H3 include 别名解析到 V005 H4 源码。生成的 include 目录指向 V005，V003 源文件未改。
+- 远端 N01 V005 通过符号链接复用本路线 V003 的 Parent、CMakeLists、Runner wrapper、ABI 和 C++ Runner；H3 include 别名解析到 V005 H4 Candidate。共享 Runner 改为使用 runtime device 1，并移除 `aclrtResetDevice`；事件、流销毁及 `aclFinalize` 仍保留。
 - 沿用历史记录中的 `/home/data4t2/lelinfeng/cann/server_runs/N01-ROW-CORE-GEOMETRY-X` 构建区。其 Git 根目录是 `/home/data4t2/lelinfeng/cann` 的 `main` 工作副本，不是单独登记的 Git worktree；远端仅产生 N01/V005 文件，状态为未跟踪，没有远端提交。
 - Configure 保留两条原始 Warning：安装路径采用默认值；运行时搜索路径中的 `libstdc++.so.6` 目录可能冲突。Build 最终通过。Compile 未提供寄存器占用数据。
 - 产物：`/home/data4t2/lelinfeng/cann/server_runs/N01-ROW-CORE-GEOMETRY-X/V005/paired/build/paired_runner_n01`。
@@ -112,22 +112,46 @@ gmake[1]: Leaving directory '/home/data4t2/lelinfeng/cann/server_runs/N01-ROW-CO
 
 ## CORRECTNESS / LOCAL
 
-- `CORRECTNESS=NOT_RUN`；`LOCAL_SCORE=NONE`；Runner 未启动，Correctness/Local 返回码为 `N/A`。
-- NPU1 只读预采样已完成。有效查询结果：Health=`OK`；HBM Capacity=`65536 MB`、Usage Rate=`5%`；AICore=`0%`；进程查询返回 `No process in device.`。
-- 原始输出及返回码：
-  - `npu1-preflight-20261016T134503Z.txt`：`npu-smi info -i 1`，返回码 `215`，CLI 提示必须指定 `-t type`；原始 usage 输出保留。
-  - `npu1-preflight-usages-20261016T134503Z.txt`：`npu-smi info -t usages -i 1`，返回码 `0`。
-  - `npu1-preflight-health-20261016T134503Z.txt`：`npu-smi info -t health -i 1`，返回码 `0`。
-  - `npu1-preflight-proc-mem-20261016T134503Z.txt`：`npu-smi info -t proc-mem -i 1`，返回码 `0`。
-- 按要求补存完整快照：`npu1-preflight-full-20261016T135523Z.txt`，命令 `npu-smi info`，返回码 `0`。NPU1 Health=`OK`、HBM=`3480/65536 MiB`、AICore=`0%`，进程表为 `No running processes found in NPU 1`。
-- 输出文件本地时间（Asia/Taipei）：依次为 `2026-10-16 21:45:32`、`21:47:01`、`21:47:38`、`21:48:16`；完整快照为 `21:55:47`。本轮没有 Runner 后置采样。
-- 停止原因：`V003/paired/paired_runner.cpp:16` 固定 `kDevice=0`；第 542 行在所有 case 结束后无条件调用 `aclrtResetDevice(kDevice)`。这与本轮“不 Reset”要求冲突，因此没有执行该 Runner。当前记录也未确认 runtime device 0 到物理 NPU1 的映射。
-- 未 source CANN `set_env.sh` 或启动 Runner；用户给出的 `LD_LIBRARY_PATH=/usr/lib/aarch64-linux-gnu:${LD_LIBRARY_PATH-}` 顺序尚未用于运行，故没有观察到 loader 错误。
+- 本节依据既有 V005 输出和快照记录；本次更新没有运行 NPU 命令，也没有生成新样本。
+- Candidate 源码为 V005 H4。复用的 `paired_runner_n01.asc` 仍以 `N01-ROW-CORE-GEOMETRY-H3_kernel.asc` 名称包含 Candidate，因此 Runner 输出中的 `binary=N01-H3` 指向 V005 H4，不代表运行了 V003 Candidate。
+- 环境记录：`correctness-v005-npu1-20261016T140830Z.log` 保留了错误路径 `/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/set_env.sh` 不存在的原始输出；该次返回码 `1`，Runner 未启动。后续成功输出使用通用入口 `/usr/local/Ascend/ascend-toolkit/set_env.sh`，并在其后将 `/usr/lib/aarch64-linux-gnu` 前置到 `LD_LIBRARY_PATH`。指定的 `/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/script/set_env.sh` 没有用于下述既有运行，本次也未尝试。
+- Parent 资格运行：日志时间 `2026-10-16T14:11:16Z`，模式 `--qualify-v011`，返回码 `0`；18/18 Parent Correctness=PASS。原始输出：`correctness-v005-npu1-corrected-env-20261016T141116Z.log`。
+- 配对 Local 运行：日志时间 `2026-10-16T14:13:20Z`，模式 `--paired`，返回码 `0`；18 个用例各有 21 对交错采样，共 378 对。18/18 Parent 与 18/18 V005 H4 Candidate Correctness=PASS，最终输出 `RUNNER_COMPLETE mode=PAIRED correctness=PASS cases=18`。原始逐样本输出：`local-v005-npu1-corrected-env-20261016T141320Z.log`。Runner 在每个用例采完 21 对后才输出该用例的正确性结果；因此 Candidate Correctness 与 Local 来自同一次配对运行，不能记成 Candidate Correctness 先于该用例的 Local。
+
+设备事件中位数及配对差值（H4 Candidate - V011，单位 us；正值表示 Candidate 较慢）：
+
+| 用例 | Parent | H4 Candidate | 配对差值中位数 |
+|---|---:|---:|---:|
+| fp16-tail-d12288-r2 | 6.000 | 7.560 | +0.200 |
+| fp16-tail-d12288-r8 | 16.600 | 6.820 | -0.640 |
+| fp16-wide-d32768-r1 | 10.040 | 16.980 | +2.100 |
+| fp16-wide-d32768-r2 | 20.540 | 16.800 | -2.900 |
+| fp16-wide-d32768-r3 | 17.820 | 17.560 | +0.380 |
+| fp16-wide-d32768-r4 | 21.100 | 17.260 | -4.600 |
+| fp16-wide-d32768-r6 | 17.700 | 21.780 | +3.960 |
+| fp16-wide-d32768-r8 | 18.520 | 19.640 | +1.760 |
+| fp16-wide-d32768-r12 | 31.180 | 30.980 | -0.240 |
+| bf16-tail-d12288-r2 | 17.880 | 17.700 | +0.640 |
+| bf16-tail-d12288-r8 | 15.880 | 14.840 | +0.200 |
+| bf16-wide-d32768-r1 | 14.220 | 19.480 | +0.660 |
+| bf16-wide-d32768-r2 | 21.180 | 24.540 | -0.020 |
+| bf16-wide-d32768-r3 | 18.620 | 14.300 | -2.500 |
+| bf16-wide-d32768-r4 | 14.220 | 14.420 | +0.240 |
+| bf16-wide-d32768-r6 | 14.560 | 14.740 | +0.140 |
+| bf16-wide-d32768-r8 | 26.520 | 27.260 | +1.600 |
+| bf16-wide-d32768-r12 | 25.320 | 26.060 | +0.820 |
+
+18 个用例的配对差值中位数有 12 个为正、6 个为负，其算术平均为 `+0.100 us`。`LOCAL_SCORE=NONE`：当前结果没有形成稳定的整体性能收益证据。
+
+- NPU1 运行前快照：`npu1-preflight-correctness-20261016T141116Z.txt` 与 `npu1-preflight-local-20261016T141320Z.txt`；两次均记录 Health=`OK`、HBM=`3480/65536 MiB`、AICore=`0%`、无进程。
+- Postflight：`2026-10-16T14:15:30Z`，见 `npu1-postflight-local-20261016T141530Z.txt`；NPU1 Health=`OK`、HBM=`3480/65536 MiB`、AICore=`0%`、无进程。
+- 分配记录留空：Main 登记的新 lease 时间为 `14:16:49Z`，晚于 Local 与 postflight 文件时间；本结果不把该 lease 记作这次运行的设备分配，Main 将按实际时间更新设备记录。
+- 更早的采样记录原样保留：`npu1-preflight-20261016T134503Z.txt` 中 `npu-smi info -i 1` 返回 `215` 并提示需指定 `-t type`；同一时段的 usages、health、proc-mem 查询均返回 `0`。完整快照 `npu1-preflight-full-20261016T135523Z.txt` 使用 `npu-smi info`，返回 `0`；`npu1-preflight-run-20261016T140719Z.txt` 也保留为后续失败环境尝试前的快照。此前采样文件未覆盖，`V003/parent/` 数据保持原样。
 
 ## NEXT DEVICE ENTRY
 
-Compile 已通过，数值正确性和性能尚未验证。继续前需有本路线既有且不调用 Reset 的执行入口，并确认其运行时设备映射到物理 NPU1；源码与 Runner 未改。随后沿用 `/home/data4t2/lelinfeng/cann/server_runs/N01-ROW-CORE-GEOMETRY-X/V005/paired/build/paired_runner_n01`，先跑既有 Parent/H4 Correctness，再运行配对 Local。CANN 环境命令按用户要求先 source `set_env.sh`，再设置 `LD_LIBRARY_PATH=/usr/lib/aarch64-linux-gnu:${LD_LIBRARY_PATH-}`。
+本次只整理既有记录，没有新增设备验证。正确性与 Local 现有输出均完成；`LOCAL_SCORE=NONE`。指定 alpha002 `aarch64-linux/script/set_env.sh` 路径尚无运行记录，本次未作设备重跑。
 
 ## COMMIT
 
-候选源码提交：`33494f43`；Compile 记录提交：`7b0a5262`；本轮只保存 V005 预采样与状态记录，`PUSH=NO`。
+候选源码提交：`33494f43`；Compile 记录提交：`7b0a5262`。本地仅提交 N01 Runner 修改和 V005 结果/原始记录，`PUSH=NO`。

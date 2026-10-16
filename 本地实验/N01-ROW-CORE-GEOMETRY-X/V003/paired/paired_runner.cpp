@@ -13,7 +13,7 @@ namespace {
 
 using R31BRunKernel = decltype(&r31b_v011::run_kernel_v011);
 
-constexpr int kDevice = 0;
+constexpr int kDevice = 1;
 constexpr int kWarmup = 45;
 constexpr int kPairs = 21;
 constexpr int kQualificationBlocks = 2;
@@ -539,7 +539,6 @@ int main(int argc, char** argv)
     CheckAcl(aclrtDestroyEvent(events.stop), "destroy stop event");
     CheckAcl(aclrtDestroyEvent(events.start), "destroy start event");
     CheckAcl(aclrtDestroyStream(stream), "destroy stream");
-    CheckAcl(aclrtResetDevice(kDevice), "reset device");
     CheckAcl(aclFinalize(), "aclFinalize");
     std::printf("RUNNER_COMPLETE mode=%s correctness=PASS cases=18 warmup_each=45 pairs_each=21 timing=DEVICE_EVENT_PRIMARY wall=DIAGNOSTIC\n",
                 mode == RunMode::kQualifyV011 ? "QUALIFY_V011" : "PAIRED");
