@@ -22,7 +22,7 @@ set(CMAKE_ASC_COMPILE_OBJECT
     "<CMAKE_ASC_COMPILER> ${CMAKE_COMPILE_AS_ASC_FLAG} <DEFINES> <INCLUDES> ${R31B_PAIRED_COMPILE_INCLUDES_STR} --cce-aicore-arch=dav-c220 -Xaicore-start -O3 -std=c++17 -Xaicore-end -Xhost-start ${R31B_PAIRED_COMPILE_INCLUDES_STR} -fPIC -O2 -std=c++17 -Xhost-end <FLAGS> -o <OBJECT> -c -x asc <SOURCE>")
 
 set(R31B_V011_SOURCE_DIR "/Users/sunyiyang/Desktop/Project/cann/worktrees/new-n05-param-residency-epilogue/线上结果/R31B/V011" CACHE PATH "R31B V011 source directory")
-set(R31B_V016_SOURCE_DIR "/Users/sunyiyang/Desktop/Project/cann/worktrees/new-n05-param-residency-epilogue/本地实验/PARAM-RESIDENCY-EPILOGUE-X/V013" CACHE PATH "R31B V016 source directory")
+set(R31B_V016_SOURCE_DIR "/Users/sunyiyang/Desktop/Project/cann/worktrees/new-n05-param-residency-epilogue/本地实验/PARAM-RESIDENCY-EPILOGUE-X/V014" CACHE PATH "R31B V016 source directory")
 
 add_executable(paired_runner_v016 paired_runner_v016.asc)
 target_include_directories(paired_runner_v016 PRIVATE
