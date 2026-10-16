@@ -62,12 +62,15 @@ introduced.
 
 ## COMPILE / DEVICE
 
-COMPILE: NOT_RUN. The local host has no `cmake`, `bisheng`, or `ccec` on PATH.
-The prior successful CANN build ran on `cann-server3`; this round explicitly
-prohibits connecting there, so no remote build was attempted. The existing
-local compile input was updated to V008, but the target remains uncompiled.
+COMPILE: NOT_RUN.
 CORRECTNESS: NOT_RUN.
-LOCAL_SCORE: NOT_MEASURED.
-DEVICE: NOT_REQUESTED; this candidate has not compiled.
+LOCAL: NOT_RUN.
+NOT_RUN_REASON: Main's cross-route read-only comparison found that V008 changes
+`blockCount` from two to one for rows=2, making each core process two rows to
+reuse Gamma/Bias. N01 V001-V003 already explored reducing blocks and increasing
+rows per core, so this is the same row-to-core mapping mechanism. V008 remains
+preserved as an unvalidated record; no build or device run was started.
+LOCAL_SCORE: NONE.
+DEVICE: NOT_REQUESTED.
 DEVICE_RESET: NO.
 PUSH: NO.
