@@ -42,9 +42,12 @@
 
 ## 线上状态
 
-- Official：未执行；线上提交由主代理随后使用既有工具处理。
+- Official：`Pass 15/15`；SID=`6ad2a90d193e507d8ee9a04f`；Official score=`41.40`。
+- Official 回执：[result.json](线上结果/NEW-N04-DMA-PIPELINE-OVERLAP-X/V018/result.json)；提交日志：[submit.log](线上结果/NEW-N04-DMA-PIPELINE-OVERLAP-X/V018/submit.log)；源码元数据：[source-meta.json](线上结果/NEW-N04-DMA-PIPELINE-OVERLAP-X/V018/source-meta.json)。
+- source identity：`LOCAL_SHA_EQ_REMOTE_SHA`。
+- Official 比较：V003=`41.79`；Champion=`45.16`；V018 Official=`41.40`。
 - 共享 TSV、V009/V010 未提交 `RESULT.md` 和其他版本未修改。
 
-STATUS: COMPILE_PASS_CORRECTNESS_PASS_LOCAL_MEASURED_OFFICIAL_PENDING
+STATUS: COMPILE_PASS_CORRECTNESS_PASS_LOCAL_MEASURED_OFFICIAL_PASS
 LOCAL_SCORE: NONE
-OFFICIAL_SCORE: NONE
+OFFICIAL_SCORE: 41.40
