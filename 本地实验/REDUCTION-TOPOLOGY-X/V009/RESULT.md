@@ -2,7 +2,7 @@
 
 日期：2026-10-16  
 父版本：V008 Candidate `d82d8fc4`  
-状态：Compile PASS；Correctness=NONE；Local=NONE。本轮未运行 Runner 或设备命令。
+状态：Compile PASS；Correctness PASS（4/4）；paired Local=NONE（四组 P10–P90 均跨零）。
 
 ## 依据
 
@@ -25,4 +25,22 @@
 - Configure：`cmake -S /tmp/cann-n03-reduction-topology-v009-20261016/本地实验/R31B/V016/support/paired -B /tmp/cann-n03-reduction-topology-v009-20261016/build -DASCEND_CANN_PACKAGE_PATH=/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002 -DR31B_V011_SOURCE_DIR=/tmp/cann-n03-reduction-topology-v009-20261016/线上结果/R31B/V011 -DR31B_V016_SOURCE_DIR=/tmp/cann-n03-reduction-topology-v009-20261016/本地实验/REDUCTION-TOPOLOGY-X/V009`
 - Build：`cmake --build /tmp/cann-n03-reduction-topology-v009-20261016/build --target paired_runner_v016 --parallel 1`。
 - Configure 和 Build 返回码均为 0；Build 输出 `[100%] Built target paired_runner_v016`。Runner 为 AArch64 ELF，586992 bytes；Ascend object 为 AArch64 ELF，278616 bytes。
-- 完整构建输出：`build_out/n03-reduction-topology/compile-v009-server3.log`。只构建了 Runner；没有执行二进制、Correctness、Local 或设备命令。Main 后续分配 Correctness lease 后再做设备验证。
+- 完整构建输出：`build_out/n03-reduction-topology/compile-v009-server3.log`。本次 Compile 只构建了 Runner；设备验证与测量见下节。
+
+## 设备 Correctness 与 paired Local
+
+- Lease：`N03-V009-D2-CORR-LOCAL-20261016T144504Z`。设备 NPU2，主机 `hwnput3`，CANN 8.5.0.alpha002。
+- 14:55:05Z 预采样：Health=OK，HBM 3427/65536 MiB，AICore=0%，NPU2 无运行进程。
+- 指定目录 `/tmp/n03-reduction-topology-v009-20261016/build` 于 14:53:15Z 不存在。沿用本文件 Compile 部分记录的实际构建目录 `/tmp/cann-n03-reduction-topology-v009-20261016/build`；其 `paired_runner_v016` 为 AArch64 ELF、586992 bytes，与已记录 Compile 产物一致。
+- 执行前 source `/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/script/set_env.sh`；设置 `LD_LIBRARY_PATH=/usr/lib/aarch64-linux-gnu:${LD_LIBRARY_PATH-}` 与 `ASCEND_SLOG_PRINT_TO_STDOUT=1`。命令：`./paired_runner_v016 --paired --device 2`。Runner 输出记录的启动时间为 14:58:02Z，RC=0。
+- 四组 Correctness 均 PASS；四组各完成 21 对设备计时。配对差值为 Candidate−Parent：
+
+| Shape | Parent median (us) | Candidate median (us) | 配对差值 median (us) | 配对差值 P10–P90 (us) |
+|---|---:|---:|---:|---:|
+| FP16 D12288 | 6.860 | 6.680 | -0.040 | [-0.880, 0.640] |
+| FP16 D32768 | 10.660 | 10.220 | -0.220 | [-3.300, 0.180] |
+| BF16 D12288 | 7.180 | 7.260 | 0.140 | [-2.460, 5.080] |
+| BF16 D32768 | 13.920 | 14.100 | 0.260 | [-0.100, 0.720] |
+
+- 四组配对差值区间都跨零，Local 记 NONE。14:58:40Z postflight：Health=OK，HBM 3428/65536 MiB，AICore=0%，NPU2 无运行进程。未 Reset，未触碰其他进程。
+- 原始预采样：`N03-V009-D2-CORR-LOCAL-20261016T144504Z-preflight.txt`；Runner stdout/stderr 与 SLOG：`N03-V009-D2-CORR-LOCAL-20261016T144504Z-runner-slog.log`；postflight：`N03-V009-D2-CORR-LOCAL-20261016T144504Z-postflight.txt`。
