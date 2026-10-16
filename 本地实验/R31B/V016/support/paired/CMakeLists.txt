@@ -23,7 +23,7 @@ set(CMAKE_ASC_COMPILE_OBJECT
 
 get_filename_component(R31B_REPO_ROOT "${CMAKE_CURRENT_LIST_DIR}/../../../../.." ABSOLUTE)
 set(R31B_V011_SOURCE_DIR "${R31B_REPO_ROOT}/线上结果/R31B/V011" CACHE PATH "R31B V011 source directory")
-set(R31B_V016_SOURCE_DIR "${R31B_REPO_ROOT}/本地实验/WIDE-UB-RESIDENCY-X/V008" CACHE PATH "WIDE-UB-RESIDENCY-X source directory")
+set(R31B_V016_SOURCE_DIR "${R31B_REPO_ROOT}/本地实验/WIDE-UB-RESIDENCY-X/V009" CACHE PATH "WIDE-UB-RESIDENCY-X source directory")
 
 add_executable(paired_runner_v016 paired_runner_v016.asc)
 target_include_directories(paired_runner_v016 PRIVATE
