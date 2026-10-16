@@ -41,12 +41,14 @@
 
 ## Official
 
-- 未执行线上提交；没有 SID、Official score 或线上回执。
-- 已知对照仅作记录：V018 Official=`41.40`，V003=`41.79`，Champion=`45.16`；本轮不由 Local 推断 Official。
+- Official：`Pass 15/15`；SID=`6ad2b167193e507d8eefbbb7`；Official score=`41.21`。
+- Official 回执：[result.json](线上结果/NEW-N04-DMA-PIPELINE-OVERLAP-X/V020/result.json)；提交日志：[submit.log](线上结果/NEW-N04-DMA-PIPELINE-OVERLAP-X/V020/submit.log)；源码元数据：[source-meta.json](线上结果/NEW-N04-DMA-PIPELINE-OVERLAP-X/V020/source-meta.json)。
+- source identity：`LOCAL_SHA_EQ_REMOTE_SHA`。
+- Official 比较：V003=`41.79`；Champion=`45.16`；V018 Official=`41.40`；V020 Official=`41.21`。
 
-STATUS: COMPILE_PASS_CORRECTNESS_PASS_LOCAL_MEASURED_OFFICIAL_NOT_EXECUTED
+STATUS: COMPILE_PASS_CORRECTNESS_PASS_LOCAL_MEASURED_OFFICIAL_PASS
 LOCAL_SCORE: NONE
-OFFICIAL: NOT_EXECUTED
+OFFICIAL_SCORE: 41.21
 
 ## 下一步
 
