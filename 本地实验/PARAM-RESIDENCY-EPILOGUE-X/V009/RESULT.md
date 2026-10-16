@@ -45,16 +45,37 @@ CONFIGURE_WARNING=Existing CMake runtime search-path warning involving libstdc++
 
 Evidence: `remote/compile-config.log`, `remote/compile-build.log`. The compiled Runner remains at `REMOTE_BINARY` for the requested follow-up device entry.
 
-## DEVICE EXECUTION
+## CORRECTNESS AND LOCAL
 
-CORRECTNESS=NOT_RUN_BY_REQUEST
+HOST=cann-server3 (hwnput3)
+TOOLCHAIN=CANN 8.5.0.alpha002
+SOC_TARGET=Ascend910B3 / DAV-C220
+DEVICE_ID=7
+LEASE=N05-V009-D7-CORR-LOCAL-20261016T130447Z
+PRE_SNAPSHOT_UTC=2026-10-16T13:14:05Z
+PRE_STATE=Health:OK; HBM usage rate:5% of 65536 MiB; AICore:0%; no NPU7 process
+RUN_COMMAND=`source /usr/local/Ascend/ascend-toolkit/set_env.sh; export LD_LIBRARY_PATH=/usr/lib/aarch64-linux-gnu:${LD_LIBRARY_PATH-}; /tmp/n05-param-residency-epilogue-v009.biWkFE/build/paired_runner_v016 --paired 7`
+RUNNER_RC=0
+POST_SNAPSHOT_UTC=2026-10-16T13:15:45Z
+POST_STATE=Health:OK; HBM usage rate:5% of 65536 MiB; AICore:0%; no NPU7 process
+
+CORRECTNESS=PASS 8/8 (Parent and Candidate passed all four cases)
+LOCAL=COMPLETE (4 cases x 21 paired samples; warmup_each=45; device-event timing primary)
 LOCAL_SCORE=NONE
-DEVICE_EXECUTION=NOT_RUN_BY_REQUEST
 OFFICIAL=NOT_RUN
 
-FOLLOWUP_DEVICE_ENTRY=`source /usr/local/Ascend/ascend-toolkit/set_env.sh; export LD_LIBRARY_PATH=/usr/lib/aarch64-linux-gnu:${LD_LIBRARY_PATH-}; /tmp/n05-param-residency-epilogue-v009.biWkFE/build/paired_runner_v016 --paired 3`
+| Case | V011 median (us) | V016 median (us) | Paired delta median (us) | Paired delta P10 (us) | Paired delta P90 (us) |
+|---|---:|---:|---:|---:|---:|
+| fp16-tail-d12288 | 16.400 | 16.880 | +1.620 | -2.720 | +3.220 |
+| fp16-wide-d32768 | 22.080 | 21.760 | -0.320 | -1.180 | +0.060 |
+| bf16-tail-d12288 | 18.120 | 18.560 | +0.680 | -6.240 | +5.900 |
+| bf16-wide-d32768 | 21.960 | 21.040 | -0.500 | -7.700 | +2.980 |
 
-The follow-up `--paired 3` entry runs the existing Parent/Candidate correctness cases and paired local timing. It was not launched in this task.
+Paired delta is V016 minus V011; negative favors V016. All four paired-delta P10–P90 intervals cross zero. The two D=12,288 medians are positive and the two D=32,768 medians are negative, so the results are mixed and do not establish a stable Local gain. The fp16-tail case also has large timing outliers (V011 max 35.660 us; V016 max 69.020 us). Keep LOCAL_SCORE=NONE.
+
+The first pre-run snapshot request was malformed and returned 215 before Runner launch; its raw output is retained. The corrected 13:10:51Z and fresh 13:14:05Z samples showed NPU7 healthy and idle. The post-run sample at 13:15:45Z also showed Health OK, 5% HBM usage rate, 0% AICore use, and no NPU7 process. These `npu-smi` samples report HBM usage as a rounded percentage; they do not provide an exact used-MiB value in this output.
+
+Evidence: `remote/pre-npu7-corr-local-snapshot.log`, `remote/pre-npu7-corr-local-snapshot-valid.log`, `remote/pre-npu7-corr-local-snapshot-rerun.log`, `remote/paired-npu7-v009-20261016T131405Z.log`, `remote/paired-npu7-v009-20261016T131405Z.rc`, `remote/post-npu7-corr-local-snapshot-20261016T131405Z.log`. The Runner raw output contains all Parent/Candidate correctness results, 21 interleaved pairs per case, and the per-case summaries.
 
 ## COMMIT
 
