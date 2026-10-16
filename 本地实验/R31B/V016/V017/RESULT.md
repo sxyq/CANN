@@ -27,8 +27,12 @@
 - FP16 D32768 的 P10–P90 全为负，目标形状稳定改善；BF16 D32768 和两个 D12288 区间跨零。按当前路线约定保留 `LOCAL_SCORE=NONE`。
 - Correctness 运行前快照：[server3-before-v017-correctness-device1-20261017.txt](server3-before-v017-correctness-device1-20261017.txt)；运行后快照：[server3-after-v017-correctness-device1-20261017.txt](server3-after-v017-correctness-device1-20261017.txt)。
 - Local 运行前快照：[server3-before-v017-paired-device1-20261017.txt](server3-before-v017-paired-device1-20261017.txt)；运行后快照：[server3-after-v017-paired-device1-20261017.txt](server3-after-v017-paired-device1-20261017.txt)；收尾快照：[server3-final-v017-device1-20261017.txt](server3-final-v017-device1-20261017.txt)。
-- Official：不执行；未线上提交；未修改共享记录。
+- Official：`Pass 15/15`；score `41.19`；Submission ID `6ad2a20a193e507d8ee4e83c`。
+- Official 回执：`线上结果/NEW-N04-DMA-PIPELINE-OVERLAP-X/V017/result.json`；提交日志：`线上结果/NEW-N04-DMA-PIPELINE-OVERLAP-X/V017/submit.log`；源码元数据：`线上结果/NEW-N04-DMA-PIPELINE-OVERLAP-X/V017/source-meta.json`。
+- source identity：`LOCAL_SHA_EQ_REMOTE_SHA`。
+- Official 比较：V003=`41.79`；Champion=`45.16`；V017 Official=`41.19`。
 - 设备范围：沿用 NPU1/3/7 等安全入口，本轮使用 NPU1；不使用会 Reset NPU4 的 Runner。
 
-STATUS: COMPILE_PASS_CORRECTNESS_PASS_LOCAL_MEASURED
+STATUS: COMPILE_PASS_CORRECTNESS_PASS_LOCAL_MEASURED_OFFICIAL_PASS
 LOCAL_SCORE: NONE
+OFFICIAL_SCORE: 41.19
