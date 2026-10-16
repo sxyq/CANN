@@ -59,4 +59,13 @@ Main 约于 `2026-10-16T12:39Z` 的只读快照仍显示 NPU3 有 Python PID `17
 - Postflight `2026-10-16T12:54:01Z`：NPU2 Health=OK、HBM 使用率 5%、AICore=0%、无进程。Lease 由 Main 负责释放。
 - 预检、Runner 原始输出及 postflight：`本地实验/REDUCTION-TOPOLOGY-X/V008/device2-correctness-20261016.log`。
 
+## V007/V008 507035 共同路径判断
+
+- V007 NPU3 与 V008 NPU2 的原始日志都记录首个 `fp16-tail-d12288` 在 `candidate correctness synchronize` 返回 `507035 (null)`、Runner RC=2。Runner 的 `RunCase(..., kCorrectnessOnly)` 先启动并同步 Parent，再启动并同步 Candidate，之后才拷回和比较输出；两次错误都定位到 Candidate kernel 的 stream 同步阶段，未到输出比较。
+- V007 的 `--paired` 在首个 case 先走 `kCorrectnessOnly`；V008 的 `--correctness-first` 直接选择同一 case。两次都进入 Candidate 的 FP16 `ProcessWideLowPrecision` 路径：D=12288、tileWidth=4096、tileCount=3，共用 `Load`/DataCopyPad 和 tile 循环内 pair-level ReduceSum（部分结果槽 0、2）。
+- V007 另有循环后的 ReduceSum 写回槽 0；V008 只删除了这次调用及其紧邻 barrier，保留上述共同路径。V008 仍在 Candidate 同步处报错，说明这个末尾调用不是本次 507035 必需的触发条件。它覆盖了已确认的 partial 数值覆写，但没有证据表明它覆盖了向量核异常根因。
+- 构建记录中 V007 与 V008 最终均出现 `[100%] Built target paired_runner_v016`；V007 编译日志先记录一次前端退出 139，随后目标构建成功。构建记录未提供设备异常指令位置。文件：`build_out/n03-reduction-topology/compile-v007-server3.log`、`build_out/n03-reduction-topology/compile-v008-server3.log`、`build_out/n03-reduction-topology/compile-v008-targeted-server3.log`。
+- **根因仍为 UNKNOWN。唯一缺失证据**是 Vector Core 异常报告中的故障 PC/指令位置，能够映射到本次 Candidate kernel；两次运行日志只有 `(null)`，现有 V008 记录没有对应 plog/异常位置。
+- **最小后续诊断动作**：等待 Main 分配设备窗口后，用现有 `paired_runner_v016 --correctness-first --device <分配设备号>` 单跑首组，同时启用现有 SLOG/PLOG 输出并保存故障 PC/异常记录，再映射到已编译 Candidate。当前不执行此动作。
+
 V008 Candidate Correctness 与 Local 结果均为 `NONE`。V007/V008 的 `RUNTIME_CAUSE=UNKNOWN` 仍未变化；V008 本次 Candidate 同步异常没有设备侧指令位置或 plog 可用于定位。
