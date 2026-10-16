@@ -190,15 +190,23 @@ COMPILE=PASS; raw=本地实验/R31B/V016/V006/server3-compile-retry.log
 ARTIFACT_RUNNER=/tmp/cann-n04-dma-pipeline-overlap-20261016/V006/build/paired_runner_v016
 ARTIFACT_FORMAT=ELF 64-bit LSB pie executable, ARM aarch64
 ARTIFACT_SIZE=584344
-CORRECTNESS=NOT_RUN; LOCAL=NOT_RUN; DEVICE=NOT_RUN
-DEVICE_NEXT=Wait for Main's NPU3 allocation; no device command was run in this turn.
-PAIRED_RUNNER_LIMIT=Existing source hardcodes rows=2 and blockCount=8; each block gets at most one row, so it cannot exercise this cross-batch window.
+CORRECTNESS=PASS; LOCAL=COMPLETED; DEVICE=3
+DEVICE_NEXT=V006 paired run completed; Main to record RELEASED.
+PAIRED_RUNNER_SHAPE=Existing route-local source now hardcodes rows=40 and blockCount=8; each block processes 5 rows and crosses the per-dtype/width batch boundary.
 RECOMMENDED_TEST_SHAPE=rows=40; FP16/BF16 x D=12288/32768; blockCount=8 gives 5 rows per block, crossing each dtype/width batchLimit (FP16 D=12288: 3; BF16 D=12288: 2; D=32768: 1).
 RUNNER_UPDATE=Existing route-local paired_runner.cpp kRows changed from 2 to 40; no Runner implementation or command path was added.
 RUNNER_RECOMPILE_RC=0; COMPILE=PASS; raw=本地实验/R31B/V016/V006/server3-runner-rows40-compile.log
 ARTIFACT_RUNNER=/tmp/cann-n04-dma-pipeline-overlap-20261016/V006/build/paired_runner_v016
 ARTIFACT_FORMAT=ELF 64-bit LSB pie executable, ARM aarch64
 ARTIFACT_SIZE=584344
-RUNNER_TIMING_REQUEST=45 warmups and 21 paired samples for each of four shapes; estimate 4-6 minutes, subject to actual device load.
-DEVICE_REQUEST=NPU3 after N03 releases it; four paired cases, rows=40, FP16/BF16 x D=12288/32768, estimate 4-6 minutes. Rerun npu-smi immediately before launch and do not run if a new process is present.
-RAW_LOGS=本地实验/R31B/V016/V006/server3-configure.log,本地实验/R31B/V016/V006/server3-compile.log,本地实验/R31B/V016/V006/server3-configure-retry.log,本地实验/R31B/V016/V006/server3-compile-retry.log,本地实验/R31B/V016/V006/server3-runner-rows40-compile.log
+RUNNER_TIMING=45 warmups and 21 paired samples per shape; start=2026-10-16T08:24:07Z; end observed=2026-10-16T08:25:10Z.
+DEVICE_REQUEST=Fulfilled on NPU3; rows=40, FP16/BF16 x D=12288/32768; RUNNER_RC=0; RUN_START_UTC=2026-10-16T08:24:07Z; RUN_END_OBSERVED_UTC=2026-10-16T08:25:10Z.
+INITIAL_LAUNCH_COMMAND=/tmp/cann-n04-dma-pipeline-overlap-20261016/V006/build/paired_runner_v016 --paired --device 3; RUN_START_UTC=2026-10-16T08:15:14Z; RC=127; CANN runtime environment was omitted and loader could not find libgraph.so; raw=本地实验/R31B/V016/V006/server3-launch-failure.log.
+INITIAL_LAUNCH_PRE_SNAPSHOT=本地实验/R31B/V016/V006/server3-before-paired.txt; POST_FAILURE_RECHECK=本地实验/R31B/V016/V006/server3-before-paired-retry.txt; Main reported a fresh 2026-10-16T08:17:57Z snapshot with Health=OK and no process.
+RUNTIME_ENV=source /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/script/set_env.sh; export LD_LIBRARY_PATH=/usr/lib/aarch64-linux-gnu:$LD_LIBRARY_PATH; ldd then resolved libgraph.so and system libstdc++.so.6.
+RAW_RUN_LOG=本地实验/R31B/V016/V006/server3-paired.log
+RUNNER_START=本地实验/R31B/V016/V006/server3-run-start-envfix.txt
+RUNNER_END=本地实验/R31B/V016/V006/server3-run-end.txt
+PRE_SNAPSHOT=本地实验/R31B/V016/V006/server3-before-paired-envfix.txt
+POST_SNAPSHOT=本地实验/R31B/V016/V006/server3-after-paired.txt
+RAW_LOGS=本地实验/R31B/V016/V006/server3-configure.log,本地实验/R31B/V016/V006/server3-compile.log,本地实验/R31B/V016/V006/server3-configure-retry.log,本地实验/R31B/V016/V006/server3-compile-retry.log,本地实验/R31B/V016/V006/server3-runner-rows40-compile.log,本地实验/R31B/V016/V006/server3-launch-failure.log,本地实验/R31B/V016/V006/server3-paired.log

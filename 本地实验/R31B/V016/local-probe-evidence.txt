@@ -264,6 +264,24 @@ RAW_SAMPLE_LOGS=本地实验/R31B/V016/V004/server3-paired.log,本地实验/R31B
 NO_LOCAL_COMMIT=YES; LOCAL_SCORE=NONE
 OFFICIAL=NOT_RUN
 
+--- N04 DMA-PIPELINE-OVERLAP-X V006 LOCAL ---
+DEVICE=3; SOC=Ascend910B3; ROWS=40; DTYPE/WIDTH=FP16,BF16 x 12288,32768
+COMMAND=source CANN set_env.sh; LD_LIBRARY_PATH=/usr/lib/aarch64-linux-gnu:$LD_LIBRARY_PATH; paired_runner_v016 --paired --device 3
+RUNNER_RC=0; WARMUP_EACH=45; PAIRS_EACH=21; SAMPLES_PER_BINARY=21; TIMING=device event primary; wall-clock diagnostic
+LOAD_BEFORE_UTC=2026-10-16T08:22:43Z; HEALTH=OK; HBM_USAGE=5%; AICORE=0%; AIVECTOR=0%; PROCESS=NONE
+LOAD_AFTER_UTC=2026-10-16T08:25:35Z; HEALTH=OK; HBM_USAGE=5%; AICORE=0%; AIVECTOR=0%; PROCESS=NONE
+PARENT_MEDIANS_US=fp16-tail-d12288:17.740; fp16-wide-d32768:39.320; bf16-tail-d12288:21.080; bf16-wide-d32768:58.960
+CANDIDATE_MEDIANS_US=fp16-tail-d12288:16.380; fp16-wide-d32768:33.620; bf16-tail-d12288:19.300; bf16-wide-d32768:49.900
+PAIRED_DELTA_MEDIANS_US=fp16-tail-d12288:-1.600; fp16-wide-d32768:-5.540; bf16-tail-d12288:-1.860; bf16-wide-d32768:-8.920
+PAIRED_DELTA_P10_P90_US=fp16-tail-d12288:-7.720/+2.920; fp16-wide-d32768:-6.680/-4.260; bf16-tail-d12288:-3.580/+1.660; bf16-wide-d32768:-10.140/-6.460
+PAIRED_DELTA_MAD_US=fp16-tail-d12288:0.960; fp16-wide-d32768:0.520; bf16-tail-d12288:0.760; bf16-wide-d32768:0.700
+LOCAL_SCORE=SUPPORTED_DIRECTIONAL_FOR_D32768; D12288 intervals cross zero; one pair had an outlier on BF16 D32768, so this single run does not establish all-shape repeatability.
+INTERPRETATION=All four paired medians favored V006; both D32768 P10-P90 intervals remained negative, while D12288 intervals crossed zero. Directional evidence is limited to this clean observed load and is not Official.
+RAW_SAMPLES_AND_SUMMARIES=本地实验/R31B/V016/V006/server3-paired.log
+SNAPSHOTS=本地实验/R31B/V016/V006/server3-before-paired-envfix.txt,本地实验/R31B/V016/V006/server3-after-paired.txt
+INITIAL_LAUNCH_FAILURE=RC 127 before ACL initialization because libgraph.so was unavailable; corrected invocation loaded the recorded CANN environment and system library path. Failure raw=本地实验/R31B/V016/V006/server3-launch-failure.log
+OFFICIAL=NOT_RUN
+
 --- N04 DMA-PIPELINE-OVERLAP-X V005 ---
 REVISION=V005
 PARENT=V004

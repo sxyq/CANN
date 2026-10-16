@@ -180,6 +180,23 @@ RUN_COMMAND=NOT_RUN; the runner exit would reset the device currently used by th
 RAW_CORRECTNESS=NONE; no runner process was launched
 
 POST_RUN_NOTE=The earlier NOT_RUN state above predates the NPU3 assignment and device-selectable runner rebuild.
+
+--- N04 DMA-PIPELINE-OVERLAP-X V006 CORRECTNESS ---
+DEVICE=3; HOST=cann-server3 (remote hostname hwnput3); SOC=Ascend910B3
+RUNNER=/tmp/cann-n04-dma-pipeline-overlap-20261016/V006/build/paired_runner_v016
+COMMAND=source CANN set_env.sh; LD_LIBRARY_PATH=/usr/lib/aarch64-linux-gnu:$LD_LIBRARY_PATH; paired_runner_v016 --paired --device 3
+RUNNER_RC=0; CORRECTNESS_RESULT=PASS; parent_cases=4/4; candidate_cases=4/4; failures=0
+RUN_START_UTC=2026-10-16T08:24:07Z
+RUN_END_OBSERVED_UTC=2026-10-16T08:25:10Z
+CASE=fp16-tail-d12288 rows=40; PARENT=PASS failures=0 max_abs=0.001953125 max_rel=0.052631579; CANDIDATE=PASS failures=0 max_abs=0.001953125 max_rel=0.052631579
+CASE=fp16-wide-d32768 rows=40; PARENT=PASS failures=0 max_abs=0.001953125 max_rel=0.07692308; CANDIDATE=PASS failures=0 max_abs=0.001953125 max_rel=0.07692308
+CASE=bf16-tail-d12288 rows=40; PARENT=PASS failures=0 max_abs=0.0078125 max_rel=0.096857548; CANDIDATE=PASS failures=0 max_abs=0.0078125 max_rel=0.096857548
+CASE=bf16-wide-d32768 rows=40; PARENT=PASS failures=0 max_abs=0.0078125 max_rel=0.045045044; CANDIDATE=PASS failures=0 max_abs=0.0078125 max_rel=0.045045044
+PRE_SNAPSHOT=本地实验/R31B/V016/V006/server3-before-paired-envfix.txt
+POST_SNAPSHOT=本地实验/R31B/V016/V006/server3-after-paired.txt
+RAW_OUTPUT=本地实验/R31B/V016/V006/server3-paired.log
+INITIAL_LAUNCH_FAILURE=RC 127 before ACL initialization; libgraph.so missing because CANN runtime environment was not loaded; preserved at 本地实验/R31B/V016/V006/server3-launch-failure.log
+NO_DEVICE_RESET=YES
 --- N04 DMA-PIPELINE-OVERLAP-X V005 CORRECTNESS ---
 DEVICE=3; HOST=cann-server3 (remote hostname hwnput3); SOC=Ascend910B3
 RUNNER=/tmp/cann-n04-dma-pipeline-overlap-20261016/V005/build/paired_runner_v016
