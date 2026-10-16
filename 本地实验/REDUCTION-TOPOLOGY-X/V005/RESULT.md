@@ -56,3 +56,17 @@ V004 将每个 4096-element tile 的 FP32 部分和交给一次最长 8 项的 `
 ## RESULT
 
 Candidate 编译成功。设备运行在 FP16 D12288 首个 Candidate warmup 同步处返回 507035，未取得 Correctness 或 Local 结果。进程已退出，NPU3 于 `2026-10-16T08:01:42Z` 释放；未 Reset。
+
+## V005 507035 源码诊断
+
+- 触发位置：现有 Runner 先完成 Parent warmup，再启动 Candidate 并调用 `aclrtSynchronizeStream`；原始日志在 `candidate warmup synchronize failed: 507035 (null)` 处结束。没有 kernel 指令位置或设备侧错误详情，不能从此调用点确定 Candidate 内部哪条操作失败。
+- 目标样例为 FP16、rows=2、D=12288。宽行路径 tileWidth=4096、tileCount=3，每个输入 tile 的 `valid=4096`。
+- `Load` 实际构造 `DataCopyExtParams(1, count * sizeof(T), 0, 0, 0)`，再传入默认构造的 `DataCopyPadExtParams<T>`。FP16 全 tile 的 blockLen 为 8192 字节，src/dst stride 均为 0；此样例没有尾 tile。pad 参数字段在 `Load` 中没有显式赋值。该 helper 与 V004 相同；缺少本 Clone 内 API 定义，不能进一步确认默认字段值。
+- 按 V005 的 `ChooseWideFullYRows` 计算，FP16 D12288 取 3 行，tileWidth=4096。`reduceFp32Buf_` 容量为 `3 * 16` 个 FP32，即 192 字节；每行 stride 为 16 个 FP32。V005 的三项 tile 部分和写入当前行的 offset 0、2、4，最大写入 index 为 4；若处理到第三行，最大 index 为 36，小于 48 个 FP32 的总容量。
+- FP16 的 `xBuf_`、`residualBuf_` 各有 2 个 4096-half 子块，第二块偏移为 4096 个 half；`xFp32Buf_`、`residualFp32Buf_`、`valueFp32Buf_` 各为 4096 个 float。完整 y 的 `gammaBuf_` 为 `12288 * 3` 个 half。所见 tile 与 batchRow 子张量的最大访问都落在对应分配范围内。
+- V005 的每个 `ReduceSum<float>` 临时区是独立的 4096-float scratch。dst offset 为 `batchRow * 16 + tile * 2`，均为 2-float 倍数，满足 8 字节对齐；源和临时区类型均为 FP32。V004 对应调用使用 `batchRow * 16 + tile`，奇数 tile 的 dst 只有 4 字节偏移，存在对齐风险；V005 已改成 2-float 槽，这项不能说明 V005 的同步错误。
+- 汇总阶段 `reduceFp32Buf_` 与 `xFp32Buf_` 是分别初始化的 TBuf；前者保留 tile 部分和，后者只用 index 0 和 2 作双链累加。输入循环结束前等待挂起的 V_MTE2 事件，汇总阶段在 Duplicate、每对 Add、尾项 Add 和最终 Add 之后均有 `PipeBarrier<PIPE_V>()`。从源码可见的槽位与 scratch 生命周期没有交叉覆盖。
+- V005 相对 V004 的代码差异集中在 tile 部分和 dst 间距及最终双链 Add 图。后者是唯一新的算术路径，但当前源码没有显示越界、未对齐 dst 或 scratch 重叠的直接证据。
+- 本 Clone 的 `.agents/skills` 中没有 `ascendc-runtime-debug/SKILL.md` 与 `references/debug_workflow.md`；本次未读取其他 Clone。故无法依据该工作流进一步映射 507035 的设备侧语义。
+
+诊断结论：`RUNTIME_CAUSE=UNKNOWN`。DataCopyPad 默认 pad 字段的具体初始化语义及双链 Add 对应的设备执行位置仍未确认。未找到支持 Candidate 源码修改的明确问题；Candidate 未改、未重编、未重跑设备。
