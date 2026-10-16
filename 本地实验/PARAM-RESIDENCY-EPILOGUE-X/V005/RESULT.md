@@ -94,4 +94,4 @@ PUSH=NO
 ISOLATION_NOT_ENFORCED=YES
 COMMIT=fe97fc2e
 
-NEXT=Keep the measured result and source locally. Do not claim a Local gain; add this distinct, correctness-passing version to the existing Official queue for N06 when that owner is available.
+NEXT=Queued as READY_FOR_N06 in 调度/线上候选.tsv. N06 should submit it and save the real SID and 15-case receipt when available; keep LOCAL_SCORE=NONE.
