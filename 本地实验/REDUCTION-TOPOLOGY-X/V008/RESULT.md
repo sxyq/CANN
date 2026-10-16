@@ -2,7 +2,7 @@
 
 日期：2026-10-16  
 父版本：V007（Candidate 提交 `988c4f28`）  
-状态：Compile PASS；V008 设备 Correctness 未运行；V007 的 507035 硬件触发点仍为 UNKNOWN。
+状态：Compile PASS；NPU2 首组 Candidate Correctness 在同步时返回 507035（Runner RC=2），未得到 Correctness 结果；Local=NONE；V007/V008 的 507035 硬件触发点仍为 UNKNOWN。
 
 ## 已有运行证据
 
@@ -43,12 +43,20 @@ V008 从 V007 复制 Candidate，只删除该残留 `ReduceSum` 及其紧邻的 
 
 Main 分配 NPU3 lease `N03-V008-D3-CORRECTNESS-20261016T105012Z`，起始时间为 `2026-10-16T10:50:12Z`。Main 随后将 lease 记为 `RELEASED`，结束时间 `2026-10-16T10:54:55Z`（UTC）。
 
-设备启动前 SSH banner 连续两次连接失败，原始记录保存在 `本地实验/REDUCTION-TOPOLOGY-X/V008/device3-correctness-20261016.log`。未取得本轮实时设备快照或 postflight，远端 NPU3 状态为 `UNKNOWN`；Runner 未启动。因此本轮没有 V008 Candidate Correctness 结果，也没有 Local 结果。保留 Compile PASS 记录，不据此推断设备验证结果。
+该次 NPU3 lease 启动前 SSH banner 连续两次连接失败，原始记录保存在 `本地实验/REDUCTION-TOPOLOGY-X/V008/device3-correctness-20261016.log`。未取得该次实时设备快照或 postflight，远端 NPU3 状态为 `UNKNOWN`；Runner 未启动，因此该次尝试没有 Candidate Correctness 或 Local 结果。此记录不代表后续 NPU2 测试状态。
 
 Main 于 `2026-10-16T11:45:19Z` 成功 SSH 取得新的只读快照：NPU3 `Health=OK`，HBM 使用 `5297/65536 MiB`，设备上有既存 Python PID `1496374`。该时点 NPU3 状态更新为 `occupied`；未干预该进程。Main 未再分配 V008 Correctness lease，本轮不得运行 V008。此前因连接失败而缺失的 postflight 仍未补齐。
 
 Main 于 `2026-10-16T12:18:39Z` 再次取得 server3 快照：NPU3 `Health=OK`，HBM 使用 `5298/65536 MiB`，`AICore=29%`，存在 Python PID `1714635`（1921 MiB）。快照时没有 Route lease 或 Runner；该进程未被干预。NPU3 在该时点仍为 `occupied`，不适合 V008 Correctness，因此未运行 V008。状态记录时间顺序为：首次 SSH 失败后 `UNKNOWN`，`11:45:19Z` 更新为 `occupied`，`12:18:39Z` 仍为 `occupied`。
 
-Main 约于 `2026-10-16T12:39Z` 的只读快照仍显示 NPU3 有 Python PID `1714635`（约 1921 MiB），故该时点仍为 `occupied`。本轮只做本地源码与日志分析，未连接设备、未启动 Runner；V008 Correctness 与 Local 仍为 `NONE`。
+Main 约于 `2026-10-16T12:39Z` 的只读快照仍显示 NPU3 有 Python PID `1714635`（约 1921 MiB），故该时点仍为 `occupied`。截至该次快照，V008 Correctness 与 Local 均为 `NONE`；该时点未连接设备或启动 Runner。
 
-V008 Candidate Correctness 与 Local 结果均为 `NONE`。待后续空闲窗口由 Main 分配后，再执行首组 FP16 D12288 Parent/Candidate Correctness-only 验证。V007 的 `RUNTIME_CAUSE=UNKNOWN` 仍未变化；V008 本轮没有运行时输出。
+### NPU2 首组 Correctness-only
+
+- Main 分配 lease `N03-V008-D2-CORRECTNESS-20261016T125019Z`。预检快照 `2026-10-16T12:52:55Z`：NPU2 Health=OK、HBM 使用率 5%（总量 65536 MiB）、AICore=0%、无进程；SSH 返回码 0。
+- 使用 Candidate 提交 `d82d8fc4` 与 Runner 入口提交 `c9d2a88f`。source `/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/script/set_env.sh` 返回码 0。复用构建目录 `/tmp/cann-n03-reduction-topology-v008-20261016/build` 中的 `paired_runner_v016`，命令：`./paired_runner_v016 --correctness-first --device 2`。
+- Runner 开始于 `2026-10-16T12:53:54Z`，结束于 `2026-10-16T12:54:01Z`。首个 `fp16-tail-d12288` 的 Candidate 同步返回 `507035 (null)`；Runner RC=2，SSH 返回码 2。未到输出比较步骤，Candidate Correctness 结果为 `NONE`；未运行 Local，也未重试或 Reset。
+- Postflight `2026-10-16T12:54:01Z`：NPU2 Health=OK、HBM 使用率 5%、AICore=0%、无进程。Lease 由 Main 负责释放。
+- 预检、Runner 原始输出及 postflight：`本地实验/REDUCTION-TOPOLOGY-X/V008/device2-correctness-20261016.log`。
+
+V008 Candidate Correctness 与 Local 结果均为 `NONE`。V007/V008 的 `RUNTIME_CAUSE=UNKNOWN` 仍未变化；V008 本次 Candidate 同步异常没有设备侧指令位置或 plog 可用于定位。
