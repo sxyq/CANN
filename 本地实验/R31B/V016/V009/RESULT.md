@@ -10,11 +10,28 @@
 
 ## Compile
 
-- 状态：未运行。
-- 当前本机为 Darwin；PATH 中没有 `cmake`，路线配置的 CANN `bisheng` 不存在于本机。已有 CMake 入口要求 CANN 8.5.0.alpha002 的 Linux/AArch64 编译器；Clone 中没有 V008 本地构建缓存。
-- 未连接 cann-server3；未运行任何设备。当前环境没有可用的本地 Ascend C 编译入口，因此没有编译返回码或编译日志。
+- 状态：PASS，CANN 8.5.0.alpha002，目标配置 Ascend910B3。
+- 主机：`hwnput3`，通过 `cann-server3` 访问。
+- 复用远端 paired 源目录 `/tmp/cann-n04-dma-pipeline-overlap-20261016/V008/本地实验/R31B/V016/support/paired` 和已有构建目录 `/tmp/cann-n04-dma-pipeline-overlap-20261016/V008/build`。源目录中的 `V009/Candidate.asc` 已对应本地版本；paired CMake include 指向 `../../V009`。
+- 环境：`set +u` 后 source `/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/script/set_env.sh`，再恢复 `set -u`；`CPLUS_INCLUDE_PATH=/usr/include/c++/11:/usr/include/aarch64-linux-gnu/c++/11:/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0:/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0/aarch64-target-linux-gnu:/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0/backward`。`LD_LIBRARY_PATH` 将 `/usr/lib/aarch64-linux-gnu` 放在工具链路径前。
+- 开始：`2026-10-16T12:11:27Z`；结束：`2026-10-16T12:11:54Z`。
+- 配置命令：
+
+  ```sh
+  /usr/bin/cmake -S /tmp/cann-n04-dma-pipeline-overlap-20261016/V008/本地实验/R31B/V016/support/paired -B /tmp/cann-n04-dma-pipeline-overlap-20261016/V008/build
+  ```
+
+  配置 RC=0。
+- 构建命令：
+
+  ```sh
+  /usr/bin/cmake --build /tmp/cann-n04-dma-pipeline-overlap-20261016/V008/build --target paired_runner_v016 --parallel 1 -- -B
+  ```
+
+  Build RC=0，Compile RC=0；构建产物为 `/tmp/cann-n04-dma-pipeline-overlap-20261016/V008/build/paired_runner_v016`。
+- CMake 输出 `libstdc++.so.6` runtime search-path warning；目标完成编译与链接。完整命令记录和原始输出：[server3-compile.log](server3-compile.log)。
 
 ## Correctness 与 Local
 
-- 未运行；候选尚未 Compile。
-- 当前不需要设备。若编译环境恢复且需要实测，再由 Main 分配设备窗口。
+- 未运行；本次只 Compile，未启动 Runner，也未使用设备。Correctness 和 Local 结果仍为 NONE。
+- 后续实测由 Main 分配空闲设备窗口后再进行。
