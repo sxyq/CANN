@@ -165,3 +165,16 @@ RUN_2_CASES=fp16-tail PASS/PASS failures=0; fp16-wide PASS/PASS failures=0; bf16
 RUN_2_RESULT=PASS; parent_cases=4/4; candidate_cases=4/4; failures=0
 SNAPSHOTS=本地实验/R31B/V016/V004/server3-before-paired.txt,本地实验/R31B/V016/V004/server3-after-paired.txt,本地实验/R31B/V016/V004/server3-before-paired-a2.txt,本地实验/R31B/V016/V004/server3-after-paired-a2.txt
 FIRST_BEFORE_SNAPSHOT=NOT_SAVED; the first wrapper printed the observed pre-run output to the command stream before exiting early; the marker is retained in server3-before-paired.txt
+
+--- N04 DMA-PIPELINE-OVERLAP-X V005 ---
+REVISION=V005
+CORRECTNESS=NOT_RUN
+RUNNER=/tmp/cann-n04-dma-pipeline-overlap-20261016/V005/build/paired_runner_v016
+RUNNER_DEVICE=4 (compile-time constant in the existing paired_runner.cpp)
+RUNNER_EXIT_ACTION=aclrtResetDevice(4)
+DEVICE_STATE_AT=2026-10-16 05:02:15 UTC
+DEVICE_SNAPSHOT=本地实验/R31B/V016/V005/server3-before-run.txt
+DEVICE_4_LOAD=AICore=0%; HBM=59214/65536 MiB
+DEVICE_4_PROCESS=PID 2999855 VLLMEngineCor, process memory 55686 MiB
+RUN_COMMAND=NOT_RUN; the runner exit would reset the device currently used by that process
+RAW_CORRECTNESS=NONE; no runner process was launched

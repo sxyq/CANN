@@ -132,3 +132,41 @@ CANN_CANDIDATE_SOURCE_SHA_REMOTE=0c2f51c854cf427904c12e6a4a3cc2ea147dbe16c7d6e2c
 API_SET=TPipe::AllocEventID, SetFlag, WaitFlag, ReleaseEventID, HardEvent::V_MTE3, HardEvent::MTE3_V; existing API set reused and Compile passed after the include environment from the existing paired build record
 RAW_COMPILE_LOG=本地实验/R31B/V016/V004/server3-compile.log
 ARTIFACT_IDENTITIES=本地实验/R31B/V016/V004/server3-artifact-identities.txt
+
+--- N04 DMA-PIPELINE-OVERLAP-X V005 ---
+ROUTE=N04-DMA-PIPELINE-OVERLAP-X
+REVISION=V005
+DIRECT_PARENT=V004
+DIRECT_PARENT_SOURCE_PATH=本地实验/R31B/V016/V004/Candidate.asc
+DIRECT_PARENT_SOURCE_SHA=0c2f51c854cf427904c12e6a4a3cc2ea147dbe16c7d6e2c106a5bbe5f64a7850
+CHAMPION_SOURCE_PATH=线上结果/R31B/V011/submission.asc
+CHAMPION_SOURCE_SHA=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
+CANDIDATE_SOURCE_PATH=本地实验/R31B/V016/V005/Candidate.asc
+CANDIDATE_SOURCE_SHA=3a40efd9155a47e91fa398cac87967ee04762d1a8e4e9d5838208fdbb55be75e
+CHANGE=In ProcessWideLowPrecision Pass 1, submit next x/residual DataCopyPad copies to the other input slot and set its MTE2_V event before waiting for the current slot; the current slot still waits before Vector reads it.
+DIFFERENCE_FROM_V001_V004=Changes Pass 1 input-prefetch submission order; does not change V001-V003 output-slot double buffering or V004 output-retirement wait position.
+API_SET=Existing Load/DataCopyPad, SetFlag<HardEvent::MTE2_V>, WaitFlag<HardEvent::MTE2_V>, WaitFlag<HardEvent::V_MTE2>; all present in Candidate and server Compile PASS
+PAIRED_CMAKE_SHA=faccdfa4ac29fff54df983b543de5a8af9a32aad1fcbbc288e60c38f831b0c00
+PAIRED_RUNNER_CPP_SHA=670ba116f04348ba442aa5717a9afe5d724a358c777483404629838ba76b65f3
+PAIRED_WRAPPER_SHA=8a4489c960415039fb4f6cfd601fb8929de3ee6617b8a2f84ba63cbb8068c9b6
+PAIRED_ABI_SHA=096c0229f5d9e6fa37460808387517280cb0f2e4296e07b8c37f75cd73c89617
+REMOTE_ROOT=/tmp/cann-n04-dma-pipeline-overlap-20261016/V005
+HOST=cann-server3 (remote hostname hwnput3)
+CANN=/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002
+SOC=Ascend910B3
+NPU_ARCH=dav-2201
+DEVICE_FOR_EXISTING_RUNNER=4
+SHELL_SETUP=set +u; source /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/script/set_env.sh; set -u
+BUILD_ENV=CPLUS_INCLUDE_PATH=/usr/include/c++/11:/usr/include/aarch64-linux-gnu/c++/11:/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0:/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0/aarch64-target-linux-gnu:/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0/backward; LD_LIBRARY_PATH=/usr/lib/aarch64-linux-gnu:$LD_LIBRARY_PATH
+CONFIGURE_COMMAND=source /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/script/set_env.sh; export CPLUS_INCLUDE_PATH=/usr/include/c++/11:/usr/include/aarch64-linux-gnu/c++/11:/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0:/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0/aarch64-target-linux-gnu:/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0/backward; cmake -S /tmp/cann-n04-dma-pipeline-overlap-20261016/V005/本地实验/R31B/V016/support/paired -B /tmp/cann-n04-dma-pipeline-overlap-20261016/V005/build -DCMAKE_BUILD_TYPE=Release
+CONFIGURE_RC=0
+BUILD_COMMAND=source /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/script/set_env.sh; export CPLUS_INCLUDE_PATH=/usr/include/c++/11:/usr/include/aarch64-linux-gnu/c++/11:/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0:/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0/aarch64-target-linux-gnu:/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0/backward; cmake --build /tmp/cann-n04-dma-pipeline-overlap-20261016/V005/build --target paired_runner_v016 --parallel 1 --verbose
+BUILD_RC=0
+COMPILE=PASS
+ARTIFACT_RUNNER=/tmp/cann-n04-dma-pipeline-overlap-20261016/V005/build/paired_runner_v016
+ARTIFACT_RUNNER_SHA=84434b0672ba9d9890afca7b7d5a0ac7298a949c09fde6ce9b3bf26b9dfde107
+ARTIFACT_RUNNER_FORMAT=ELF 64-bit LSB pie executable, ARM aarch64
+ARTIFACT_RUNNER_SIZE=584048
+RAW_CONFIGURE_LOG=本地实验/R31B/V016/V005/server3-configure.log
+RAW_COMPILE_LOG=本地实验/R31B/V016/V005/server3-compile.log
+ARTIFACT_IDENTITIES=本地实验/R31B/V016/V005/server3-artifact-identities.txt
