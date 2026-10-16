@@ -35,6 +35,20 @@ RUNNER_CANDIDATE_LABEL=V016; include explicitly points to V005 Candidate
 
 Evidence: `remote/compile-config.log`, `remote/compile-build.log`, `remote/source-identities.log`.
 
+## DEVICE OBJECT COMPARISON
+
+V004 was rebuilt with the same CANN 8.5.0.alpha002 package, Ascend910B3 target, CMake project, and paired Runner. The temporary Runner copy included the V004 Candidate. The Runner was not launched.
+
+The first build attempt stopped because the compiler-generated registration source could not locate the system `vector` header. A single rebuild supplied the existing system C++ include directories through `CPLUS_INCLUDE_PATH` and completed successfully.
+
+| Artifact | V004 | V005 | Byte comparison |
+|---|---:|---:|---|
+| `.asc.o` | 267,672 bytes | 268,480 bytes | different whole objects |
+| `.aicore_binary` | 87,584 bytes | 87,336 bytes | different; first differing byte 41 |
+| `__aicore_rel_binary` | 91,369 bytes | 91,121 bytes | different; first differing byte 41 |
+
+This confirms the compiled device sections differ between V004 and V005. It does not establish a performance gain. The section extraction sizes and comparisons are recorded in `remote/device-object-compare.log`.
+
 ## CORRECTNESS
 
 Parent-only `--qualify-v011`: 4/4 cases PASS.
