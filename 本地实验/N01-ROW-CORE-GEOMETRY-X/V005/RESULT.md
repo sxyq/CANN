@@ -112,13 +112,21 @@ gmake[1]: Leaving directory '/home/data4t2/lelinfeng/cann/server_runs/N01-ROW-CO
 
 ## CORRECTNESS / LOCAL
 
-- `CORRECTNESS=NOT_RUN`；`LOCAL_SCORE=NONE`。
-- 本轮没有执行任何 NPU 正确性或性能运行，符合任务范围。
+- `CORRECTNESS=NOT_RUN`；`LOCAL_SCORE=NONE`；Runner 未启动，Correctness/Local 返回码为 `N/A`。
+- NPU1 只读预采样已完成。有效查询结果：Health=`OK`；HBM Capacity=`65536 MB`、Usage Rate=`5%`；AICore=`0%`；进程查询返回 `No process in device.`。
+- 原始输出及返回码：
+  - `npu1-preflight-20261016T134503Z.txt`：`npu-smi info -i 1`，返回码 `215`，CLI 提示必须指定 `-t type`；原始 usage 输出保留。
+  - `npu1-preflight-usages-20261016T134503Z.txt`：`npu-smi info -t usages -i 1`，返回码 `0`。
+  - `npu1-preflight-health-20261016T134503Z.txt`：`npu-smi info -t health -i 1`，返回码 `0`。
+  - `npu1-preflight-proc-mem-20261016T134503Z.txt`：`npu-smi info -t proc-mem -i 1`，返回码 `0`。
+- 输出文件本地时间（Asia/Taipei）：依次为 `2026-10-16 21:45:32`、`21:47:01`、`21:47:38`、`21:48:16`。本轮没有 Runner 后置采样。
+- 停止原因：`V003/paired/paired_runner.cpp:16` 固定 `kDevice=0`；第 542 行在所有 case 结束后无条件调用 `aclrtResetDevice(kDevice)`。这与本轮“不 Reset”要求冲突，因此没有执行该 Runner。当前记录也未确认 runtime device 0 到物理 NPU1 的映射。
+- 未 source CANN `set_env.sh` 或启动 Runner；用户给出的 `LD_LIBRARY_PATH=/usr/lib/aarch64-linux-gnu:${LD_LIBRARY_PATH-}` 顺序尚未用于运行，故没有观察到 loader 错误。
 
 ## NEXT DEVICE ENTRY
 
-需要设备验证：Compile 只确认构建通过，尚未确认数值正确性或性能。后续沿用 `V003/paired/paired_runner.cpp` 与 `paired/CMakeLists.txt`，使用本轮生成的 `/home/data4t2/lelinfeng/cann/server_runs/N01-ROW-CORE-GEOMETRY-X/V005/paired/build/paired_runner_n01`，先跑既有 Parent/H4 Correctness 用例，再按既有 FP16 宽行 shape 集合做配对 Local；本轮未启动 Runner。
+Compile 已通过，数值正确性和性能尚未验证。继续前需有本路线既有且不调用 Reset 的执行入口，并确认其运行时设备映射到物理 NPU1；源码与 Runner 未改。随后沿用 `/home/data4t2/lelinfeng/cann/server_runs/N01-ROW-CORE-GEOMETRY-X/V005/paired/build/paired_runner_n01`，先跑既有 Parent/H4 Correctness，再运行配对 Local。CANN 环境命令按用户要求先 source `set_env.sh`，再设置 `LD_LIBRARY_PATH=/usr/lib/aarch64-linux-gnu:${LD_LIBRARY_PATH-}`。
 
 ## COMMIT
 
-候选源码提交：`33494f43`；本轮 Compile 记录只提交 V005 的 `RESULT.md`，`PUSH=NO`。
+候选源码提交：`33494f43`；Compile 记录提交：`7b0a5262`；本轮只保存 V005 预采样与状态记录，`PUSH=NO`。
