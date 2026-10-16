@@ -45,3 +45,16 @@ LOCAL_SCORE=NONE
 OFFICIAL=NOT_RUN
 
 No NPU Runner was started. Continue only after Main assigns a device; first run Correctness, then record any Local result separately.
+
+## RUNNER DEVICE ARGUMENT UPDATE
+
+Updated the existing `本地实验/R31B/V016/support/paired/paired_runner.cpp` only. Device ID is now the required second argument after the mode, for example `paired_runner_v016 --paired 7` or `paired_runner_v016 --qualify-v011 7`. The case output reports that ID, `aclrtSetDevice` uses it, and the `aclrtResetDevice` call was removed. The V006 kernel source was not changed.
+
+CONFIGURE_RC=0
+BUILD_TARGET=paired_runner_v016
+BUILD_RC=0
+BUILD_OBJECT_BYTES=269896
+RUNNER_BYTES=581248
+NPU_RUN=NOT_RUN
+
+Evidence: `remote/compile-config-runner-device-arg.log`, `remote/compile-build-runner-device-arg.log`.
