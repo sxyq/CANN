@@ -1,7 +1,7 @@
 # N03 REDUCTION-TOPOLOGY-X V005
 
 日期：2026-10-16
-状态：Compile PASS；设备实验未执行，等待用户分配设备。
+状态：Compile PASS；NPU3 配对运行在首个 Candidate warmup 同步处返回 507035，四组配对未完成；未 Reset。
 
 ## HYPOTHESIS
 
@@ -34,18 +34,25 @@ V004 将每个 4096-element tile 的 FP32 部分和交给一次最长 8 项的 `
 
 ## DEVICE EXPERIMENT
 
-由用户后续分配设备后执行。沿用现有 Runner 的 `--paired --device ID`，覆盖 `rows=2` 的 FP16/BF16 × D12288/D32768 四个 shape；每个 shape warmup 45 次、21 组 Parent/Candidate 配对。V004 同模式设备运行约 9 秒，设备窗口按 5 分钟估算以覆盖启动和前后快照。不得 reset 设备或干预其他进程。
+用户分配 NPU3。沿用现有 Runner `--paired --device 3`；目标为 `rows=2` 的 FP16/BF16 × D12288/D32768 四个 shape，每个 shape warmup 45 次、21 组 Parent/Candidate 配对。Runner 在首个 Candidate warmup 阶段退出，后续 shape 和配对采样均未运行。全过程未 Reset。
 
-状态：NOT_RUN。NPU2 与 NPU3 均未使用。
+- 主机：`hwnput3`；SoC：Ascend910B3；设备：NPU3。
+- 运行窗口：开始前采样 `2026-10-16T08:00:19Z`；Runner 启动 `2026-10-16T08:00:52Z`；退出及 post 快照 `2026-10-16T08:01:00Z`；精确进程名确认无 Runner、NPU 无进程 `2026-10-16T08:01:42Z`。本次设备窗口结束时间：`2026-10-16T08:01:42Z`。
+- Pre：Health=OK；HBM usage rate=5%；AICore=0%；AIVector=0%；`proc-mem` 显示 `No process in device`。
+- 命令：`./paired_runner_v016 --paired --device 3`；CANN 环境 source 返回 0。
+- Runner 返回码：2。stderr：`candidate warmup synchronize failed: 507035 (null)`。stdout 仅进入 `fp16-tail-d12288` 的 `CASE_BEGIN`，没有 Correctness 行、配对样本或后续 shape。
+- Post：Health=OK；HBM usage rate=5%；AICore=0%；AIVector=0%；`proc-mem` 显示 `No process in device`；`pgrep -x paired_runner_v016` 确认为 ABSENT。
+- 原始 stdout/stderr、命令、时间和前后快照：`本地实验/REDUCTION-TOPOLOGY-X/V005/device3-paired-20261016T0800Z.log`。
+- 未重跑、未 Reset、未触碰其他进程。NPU2 未使用。
 
 ## CORRECTNESS
 
-状态：NOT_RUN。
+状态：未完成。首个 FP16 D12288 Candidate warmup 同步失败，Correctness 未产生结果；其他三组未执行。
 
 ## LOCAL
 
-状态：NOT_RUN；`LOCAL_SCORE=NONE`。
+状态：未产生配对样本；`LOCAL_SCORE=NONE`。
 
 ## RESULT
 
-Candidate 编译成功。精度与性能结果尚未产生；设备验证等待用户分配资源。
+Candidate 编译成功。设备运行在 FP16 D12288 首个 Candidate warmup 同步处返回 507035，未取得 Correctness 或 Local 结果。进程已退出，NPU3 于 `2026-10-16T08:01:42Z` 释放；未 Reset。
