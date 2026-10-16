@@ -59,13 +59,38 @@ RUNTIME_LINK: `ldd` resolves system `libstdc++.so.6` and CANN libraries;
 evidence is in `ldd.log`. CMake emitted its existing RPATH ordering warning.
 EVIDENCE: `configure.log`, `compile.log`, and `ldd.log`.
 
-RUNNER_STARTED: NO.
-CORRECTNESS: NOT_RUN BY REQUEST.
-LOCAL: NOT_RUN BY REQUEST.
-DEVICE: NOT_REQUESTED.
+LEASE: `N02-V009-D2-CORR-LOCAL-20261016T130447Z` (registered by Main; shared
+scheduling table unchanged).
+DEVICE: NPU2, Ascend910B3.
+PREFLIGHT_UTC: `2026-10-16T13:10:04Z`; Health=OK, HBM usage=5% of 65536 MiB,
+AICore=0%, and `proc-mem` reported no process.
+COMMAND: `paired_runner_v016 --paired --device 2` from the existing build
+directory, after sourcing `/usr/local/Ascend/ascend-toolkit/set_env.sh` and
+placing `/usr/lib/aarch64-linux-gnu` first in `LD_LIBRARY_PATH`.
+START_UTC: `2026-10-16T13:11:38.486607499Z`.
+RETURN_CODE: 3.
+END_UTC: `2026-10-16T13:11:45.530066401Z`.
+
+The Runner completed only `fp16-tail-d12288`. R31B V011 correctness passed;
+V009 correctness failed with 24044 failures, max_abs=0.44140625, and
+max_rel=26.85. The Runner stopped before the remaining three cases. This was
+the only invocation; the same command was not rerun.
+
+The Runner had emitted timing samples for the first case before reporting the
+correctness failure: Parent median=7.500 us, Candidate median=7.540 us, and
+paired delta median=-0.300 us. These timings are retained as raw output but are
+not treated as a performance result because Candidate correctness failed.
+LOCAL_SCORE: NONE.
+LOCAL_DELTA: NOT_INTERPRETED.
+CORRECTNESS: FAIL_FIRST_CASE.
+DEVICE_RESET: NO.
+OTHER_PROCESS_ACTION: NONE.
+POSTFLIGHT_UTC: `2026-10-16T13:12:32Z`; Health=OK, HBM usage=5% of 65536 MiB,
+AICore=0%, and `proc-mem` reported no process.
+EVIDENCE: `paired-run-npu2.log`, `paired-run.rc`, the `device-before-run-npu2-*.snapshot`
+files, and the `device-after-run-npu2-*.snapshot` files.
 V008: NOT_COMPILED; NOT_RUN.
 PUSH: NO.
 
-The existing `paired_runner_v016` CMake target remains the compile entry. After
-compilation, the device entry remains `paired_runner_v016 --paired --device N`
-with the existing CANN environment; this task does not start the Runner.
+The existing `paired_runner_v016` CMake target remains the compile entry. No
+source, Runner, or shared scheduling-table changes were made for this run.
