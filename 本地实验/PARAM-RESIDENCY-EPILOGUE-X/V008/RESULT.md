@@ -31,15 +31,39 @@ CONFIGURE_RC=0
 BUILD_COMMAND=`source /usr/local/Ascend/ascend-toolkit/set_env.sh; CPLUS_INCLUDE_PATH=/usr/include/c++/11:/usr/include/aarch64-linux-gnu/c++/11 cmake --build ${REMOTE_TEMP}/build --target paired_runner_v016 --parallel 1`
 BUILD_RC=0
 REMOTE_BINARY=${REMOTE_TEMP}/build/paired_runner_v016
-DEVICE_EXECUTION=NOT_RUN_NO_CURRENT_N05_ALLOCATION_RECORD
+DEVICE_EXECUTION=COMPLETED_ON_NPU3
 
 Evidence: `remote/compile-config.log`, `remote/compile-build.log`.
 
 ## CORRECTNESS AND LOCAL
 
-CORRECTNESS=NOT_RUN
-LOCAL=NOT_RUN
+HOST=cann-server3
+TOOLCHAIN=CANN 8.5.0.alpha002
+SOC_TARGET=Ascend910B3 / DAV-C220
+DEVICE_ID=3
+LEASE=N05-V008-D3-CORR-LOCAL-20261016T102932Z
+LEASE_START_UTC=2026-10-16T10:29:32Z
+PRE_SNAPSHOT_UTC=2026-10-16T10:33:17Z
+PRE_STATE=Health:OK; HBM:3428/65536 MiB; AICore:0; no NPU3 process
+RUN_COMMAND=`source /usr/local/Ascend/ascend-toolkit/set_env.sh; export LD_LIBRARY_PATH=/usr/lib/aarch64-linux-gnu:${LD_LIBRARY_PATH-}; cd /tmp/n05-param-residency-epilogue-v008.MGLmq5/build; ./paired_runner_v016 --paired 3`
+RUNNER_START_UTC=2026-10-16T10:34:06Z
+RUNNER_END_UTC=2026-10-16T10:34:12Z
+RUNNER_RC=0
+POST_SNAPSHOT_UTC=2026-10-16T10:34:24Z
+POST_STATE=Health:OK; HBM:3429/65536 MiB; AICore:0; no NPU3 process
+
+CORRECTNESS=PASS 8/8 (Parent and Candidate for four cases)
+LOCAL=RUN 4 cases x 21 paired samples; warmup_each=45
 LOCAL_SCORE=NONE
 OFFICIAL=NOT_RUN
 
-The existing paired Runner compares V011 with the full V008 candidate; its Local delta therefore includes inherited V001-V006 changes and is not an isolated V006-versus-V008 measurement. The device record available inside this Clone contains no current N05 V006/V007/V008 allocation entry, so no device was selected or sampled. Before a later run, use a current route allocation record and capture a fresh device snapshot; paired mode performs all four Parent/Candidate correctness checks before starting any Local timing.
+| Case | Parent median (us) | Candidate median (us) | Paired median V016-V011 (us) | P10 (us) | P90 (us) | P10-P90 observation |
+|---|---:|---:|---:|---:|---:|---|
+| fp16-tail-d12288 | 6.600 | 8.840 | +2.300 | +1.760 | +3.460 | positive; Candidate slower |
+| fp16-wide-d32768 | 11.960 | 9.960 | -0.540 | -7.280 | -0.080 | negative central interval; wide spread and outliers |
+| bf16-tail-d12288 | 14.060 | 9.700 | +2.080 | -6.860 | +9.160 | crosses zero |
+| bf16-wide-d32768 | 13.880 | 13.320 | -0.620 | -0.780 | -0.340 | negative central interval |
+
+The targeted width-12,288 cases do not establish a stable benefit from grouping two rows per block: FP16 is consistently slower in the central interval, while BF16 is noisy and crosses zero. The width-32,768 cases are outside the grouping branch; their timing cannot support that mechanism. BF16 wide has a small negative paired interval, while FP16 wide has substantial spread and outliers. Overall directions are mixed, so no Local gain is claimed and LOCAL_SCORE remains NONE. This Runner compares V011 with the full V008 candidate, including inherited V001-V006 changes, and is not an isolated V006-versus-V008 measurement.
+
+Evidence: `remote/pre-npu3-corr-local-snapshot.log`, `remote/npu3-paired.log`, `remote/post-npu3-corr-local-snapshot.log`. The raw output contains all four Parent/Candidate correctness results and all 21 interleaved pairs per case. Other cards showed unrelated processes in both snapshots; they were not used or touched.
