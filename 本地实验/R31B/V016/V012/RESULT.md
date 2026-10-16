@@ -23,7 +23,7 @@
 | rows=40, D=32768 / BF16 | 72.960 | 63.280 | -9.600 | -11.940–-2.320 |
 
 - 完整 Local 原始样本：[server3-v012-paired-device1-slotfix-20261017.txt](server3-v012-paired-device1-slotfix-20261017.txt)。
-- 早期两次事件顺序尝试在 `fp16-wide-d32768` 停止，均只保留到该 case 开始，返回 `143`；对应原始日志仍保留：[server3-v012-correctness-device1-20261017.txt](server3-v012-correctness-device1-20261017.txt)、[server3-v012-correctness-device1-retry-20261017.txt](server3-v012-correctness-device1-retry-20261017.txt)、[server3-v012-correctness-device1-eventfix-20261017.txt](server3-v012-correctness-device1-eventfix-20261017.txt)。这些进程均为本次事务启动，结束时未调用设备 Reset。
+- 早期三次事件顺序尝试在 `fp16-wide-d32768` 停止，均只保留到该 case 开始，返回 `143` 或由 SSH 中止；对应原始日志仍保留：[server3-v012-correctness-device1-20261017.txt](server3-v012-correctness-device1-20261017.txt)、[server3-v012-correctness-device1-retry-20261017.txt](server3-v012-correctness-device1-retry-20261017.txt)、[server3-v012-correctness-device1-eventfix-20261017.txt](server3-v012-correctness-device1-eventfix-20261017.txt)。这些进程均为本次事务启动，结束时未调用设备 Reset。
 - Official：不执行。
 
 STATUS: COMPILE_PASS_CORRECTNESS_PASS_LOCAL_MEASURED
