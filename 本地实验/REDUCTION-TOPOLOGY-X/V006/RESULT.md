@@ -2,7 +2,7 @@
 
 日期：2026-10-16  
 父版本：V005  
-状态：Compile PASS；四组 Correctness PASS，四组 paired Local 已完成。
+状态：Compile PASS；四组 Correctness PASS；四组 paired 样本完成，P10–P90 均跨零，LOCAL_SCORE=NONE。
 
 ## HYPOTHESIS
 
@@ -35,14 +35,14 @@ V006 改变归约发生的维度顺序：每个 tile 得到 FP32 平方向量后
 - 执行前快照：`2026-10-16T09:13:03Z`，Health=OK、HBM usage=5%、AICore=0%、`No process in device`。Main 提供的窗口预检时间为 `2026-10-16T09:10:19Z`。
 - 每组 warmup=45，Parent/Candidate 交错配对 21 组，device-event 为主指标，wall time 仅作诊断。Runner 输出的 `V011` 对应 Parent，`V016` 对应 V006 Candidate。
 
-| Shape | Parent median (us) | V006 median (us) | paired delta median (us) | Correctness | max_abs | max_rel |
-|---|---:|---:|---:|---|---:|---:|
-| FP16 D12288 | 14.900 | 15.200 | -0.040 | PASS | 0.0009765625 | 0.0015923567 |
-| FP16 D32768 | 11.380 | 12.060 | +0.080 | PASS | 0.001953125 | 0.010989011 |
-| BF16 D12288 | 7.760 | 7.600 | -0.080 | PASS | 0.0078125 | 0.0073529412 |
-| BF16 D32768 | 14.260 | 13.300 | -1.160 | PASS | 0.0078125 | 0.01754386 |
+| Shape | Parent median (us) | V006 median (us) | paired delta median (us) | paired delta P10–P90 (us) | Correctness | max_abs | max_rel |
+|---|---:|---:|---:|---:|---|---:|---:|
+| FP16 D12288 | 14.900 | 15.200 | -0.040 | -2.040–10.480 | PASS | 0.0009765625 | 0.0015923567 |
+| FP16 D32768 | 11.380 | 12.060 | +0.080 | -1.540–7.780 | PASS | 0.001953125 | 0.010989011 |
+| BF16 D12288 | 7.760 | 7.600 | -0.080 | -7.140–11.040 | PASS | 0.0078125 | 0.0073529412 |
+| BF16 D32768 | 14.260 | 13.300 | -1.160 | -8.180–2.740 | PASS | 0.0078125 | 0.01754386 |
 
-四组 paired delta 方向不一致；本轮结果显示 BF16 D32768 有较明显的中位改善，FP16 D32768 略有回退，其余两组变化较小。暂不归纳跨 dtype 的统一收益。
+四组 paired delta 的 P10–P90 均跨零。BF16 D32768 的中位数为 -1.160 us，但区间仍跨零；四组统一记为 `LOCAL_SCORE=NONE`，不据中位数单独判断收益。
 
 - Runner 完成：`2026-10-16T09:14:02Z`；`RUNNER_EXIT_CODE=0`；输出 `correctness=PASS cases=4`。
 - Postflight：`2026-10-16T09:14:02Z`，Health=OK、HBM usage=5%、AICore=0%、`No process in device`。Main 随后提供的 `2026-10-16T09:14:17Z` 快照也为空闲。
