@@ -47,4 +47,6 @@ Main 分配 NPU3 lease `N03-V008-D3-CORRECTNESS-20261016T105012Z`，起始时间
 
 Main 于 `2026-10-16T11:45:19Z` 成功 SSH 取得新的只读快照：NPU3 `Health=OK`，HBM 使用 `5297/65536 MiB`，设备上有既存 Python PID `1496374`。该时点 NPU3 状态更新为 `occupied`；未干预该进程。Main 未再分配 V008 Correctness lease，本轮不得运行 V008。此前因连接失败而缺失的 postflight 仍未补齐。
 
+Main 于 `2026-10-16T12:18:39Z` 再次取得 server3 快照：NPU3 `Health=OK`，HBM 使用 `5298/65536 MiB`，`AICore=29%`，存在 Python PID `1714635`（1921 MiB）。快照时没有 Route lease 或 Runner；该进程未被干预。NPU3 在该时点仍为 `occupied`，不适合 V008 Correctness，因此未运行 V008。状态记录时间顺序为：首次 SSH 失败后 `UNKNOWN`，`11:45:19Z` 更新为 `occupied`，`12:18:39Z` 仍为 `occupied`。
+
 V008 Candidate Correctness 与 Local 结果均为 `NONE`。待后续空闲窗口由 Main 分配后，再执行首组 FP16 D12288 Parent/Candidate Correctness-only 验证。V007 的 `RUNTIME_CAUSE=UNKNOWN` 仍未变化；V008 本轮没有运行时输出。
