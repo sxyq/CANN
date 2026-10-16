@@ -515,22 +515,26 @@ int main(int argc, char** argv)
 {
     if (argc != 2 && argc != 4) {
         std::fprintf(stderr,
-                     "usage: paired_runner_v016 --qualify-v011|--paired [--device ID]\n");
+                     "usage: paired_runner_v016 --qualify-v011|--paired|--correctness-first [--device ID]\n");
         return 1;
     }
     if (argc == 4) {
         if (std::strcmp(argv[2], "--device") != 0) {
             std::fprintf(stderr,
-                         "usage: paired_runner_v016 --qualify-v011|--paired [--device ID]\n");
+                         "usage: paired_runner_v016 --qualify-v011|--paired|--correctness-first [--device ID]\n");
             return 1;
         }
         gDevice = std::atoi(argv[3]);
     }
+    const bool correctnessFirst =
+        std::strcmp(argv[1], "--correctness-first") == 0;
     RunMode mode;
     if (std::strcmp(argv[1], "--qualify-v011") == 0) {
         mode = RunMode::kQualifyV011;
     } else if (std::strcmp(argv[1], "--paired") == 0) {
         mode = RunMode::kPaired;
+    } else if (correctnessFirst) {
+        mode = RunMode::kCorrectnessOnly;
     } else {
         std::fprintf(stderr, "unknown runner mode: %s\n", argv[1]);
         return 1;
@@ -555,16 +559,25 @@ int main(int argc, char** argv)
             RunCase(spec, stream, events, RunMode::kCorrectnessOnly);
         }
     }
-    for (const CaseSpec& spec : cases) {
-        RunCase(spec, stream, events, mode);
+    if (correctnessFirst) {
+        RunCase(cases[0], stream, events, RunMode::kCorrectnessOnly);
+    } else {
+        for (const CaseSpec& spec : cases) {
+            RunCase(spec, stream, events, mode);
+        }
     }
 
     CheckAcl(aclrtDestroyEvent(events.stop), "destroy stop event");
     CheckAcl(aclrtDestroyEvent(events.start), "destroy start event");
     CheckAcl(aclrtDestroyStream(stream), "destroy stream");
     CheckAcl(aclFinalize(), "aclFinalize");
-    std::printf("RUNNER_COMPLETE mode=%s device=%d correctness=PASS cases=4 warmup_each=45 pairs_each=21 timing=DEVICE_EVENT_PRIMARY wall=DIAGNOSTIC\n",
-                mode == RunMode::kQualifyV011 ? "QUALIFY_V011" : "PAIRED",
-                gDevice);
+    if (correctnessFirst) {
+        std::printf("RUNNER_COMPLETE mode=CORRECTNESS_FIRST device=%d correctness=PASS cases=1 warmup_each=0 pairs_each=0\n",
+                    gDevice);
+    } else {
+        std::printf("RUNNER_COMPLETE mode=%s device=%d correctness=PASS cases=4 warmup_each=45 pairs_each=21 timing=DEVICE_EVENT_PRIMARY wall=DIAGNOSTIC\n",
+                    mode == RunMode::kQualifyV011 ? "QUALIFY_V011" : "PAIRED",
+                    gDevice);
+    }
     return 0;
 }

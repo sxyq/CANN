@@ -24,7 +24,9 @@
 
 V007 在 tile 循环内新增 pair-level `ReduceSum`，把各 pair 的结果写入 0、2、… 槽位，但循环结束后保留了 V006 的整行 `ReduceSum(reduceLocal[batchRow * reduceStride], xFp32, ...)`。对 FP16 D12288，循环先把 tile 0+1 写到槽 0、tile 2 写到槽 2；残留调用随后用最后一个 tile 的向量覆盖槽 0。平衡合并因而把 tile 2 的平方和计入两次，并丢掉 tile 0+1 的部分和。这是已执行路径里的明确数值错误，但不能单独证明它导致 507035。
 
-V008 从 V007 复制 Candidate，只删除该残留 `ReduceSum` 及其紧邻的 barrier；pair-level 归约、平衡合并、搬运、buffer 分配和 Runner 均未改变。V007 源码、已提交 Runner 与原始日志保持原样。
+V008 从 V007 复制 Candidate，只删除该残留 `ReduceSum` 及其紧邻的 barrier；pair-level 归约、平衡合并、搬运和 buffer 分配未改变。V007 源码、V007 提交中的 Runner 与原始日志保持原样。
+
+为下一轮只运行首组 Correctness，在 `本地实验/R31B/V016/support/paired/paired_runner.cpp` 增加 `--correctness-first` 模式。它复用原有 `RunCase(..., kCorrectnessOnly)`，只选现有 case 列表首项 `fp16-tail-d12288`，跳过其他 shape 与全部配对计时；原 `--paired` 和 `--qualify-v011` 行为保持不变。没有新增 Runner 或脚本。
 
 ## Compile
 
@@ -34,7 +36,9 @@ V008 从 V007 复制 Candidate，只删除该残留 `ReduceSum` 及其紧邻的 
 - Build 命令：`cmake --build /tmp/cann-n03-reduction-topology-v008-20261016/build --target paired_runner_v016 --parallel 1`；已 source 同一 Toolkit 的 `set_env.sh`。
 - 两条命令完成，返回码 0；输出 `[100%] Built target paired_runner_v016`。产物 Runner 为 AArch64 ELF、584720 bytes；Ascend object 为 274992 bytes。
 - 完整构建输出：`build_out/n03-reduction-topology/compile-v008-server3.log`。
+- `paired_runner.cpp` 加入 `--correctness-first` 后，复用同一构建目录重新运行 `cmake --build /tmp/cann-n03-reduction-topology-v008-20261016/build --target paired_runner_v016 --parallel 1`，返回码 0。更新后的 Runner 为 AArch64 ELF、584976 bytes；Ascend object 为 275304 bytes。日志：`build_out/n03-reduction-topology/compile-v008-targeted-server3.log`。
+- Main 分配设备后所用命令：`./paired_runner_v016 --correctness-first --device 3`。该模式仅对 Parent 与 V008 Candidate 执行一次首组 Correctness，不进行 warmup 或 Local。
 
 ## 设备状态
 
-本轮未运行设备。V008 尚无 Correctness 结果；待 Main 分配设备窗口后，只针对首个 FP16 D12288 Candidate 做一次 Correctness，以确认源码改动结果并观察 507035 是否仍出现。当前 `RUNTIME_CAUSE=UNKNOWN`；本地日志缺少设备侧指令位置与 plog，不能把上述数值错误写成硬件异常根因。
+本轮未运行设备。V008 尚无 Correctness 结果；待 Main 分配 NPU3 短窗口后，只针对首个 FP16 D12288 Candidate 做一次 Correctness，以确认源码改动结果并观察 507035 是否仍出现。当前 `RUNTIME_CAUSE=UNKNOWN`；本地日志缺少设备侧指令位置与 plog，不能把上述数值错误写成硬件异常根因。
