@@ -170,3 +170,35 @@ ARTIFACT_RUNNER_SIZE=584048
 RAW_CONFIGURE_LOG=本地实验/R31B/V016/V005/server3-configure.log
 RAW_COMPILE_LOG=本地实验/R31B/V016/V005/server3-compile.log
 ARTIFACT_IDENTITIES=本地实验/R31B/V016/V005/server3-artifact-identities.txt
+
+--- N04 DMA-PIPELINE-OVERLAP-X V006 ---
+REVISION=V006
+PARENT=V005
+CHANGE=Keep the last MTE3 output-store completion outstanding across the next batch Pass 1; retain the existing wait before reusing the single output slot and drain the final store after the batch loop.
+SINGLE_FACTOR=Output-store completion wait lifetime only; V005 input-prefetch order, math, tile geometry, and buffer sizes are unchanged.
+HOST=cann-server3 (remote hostname hwnput3)
+CANN=/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002
+SOC=Ascend910B3
+REMOTE_ROOT=/tmp/cann-n04-dma-pipeline-overlap-20261016/V006
+CONFIGURE_RC_FIRST=0
+COMPILE_RC_FIRST=2; C++ header selection mixed GCC 11 traits with the HCC GCC 7.3 config; raw=本地实验/R31B/V016/V006/server3-compile.log
+COMPILE_ENV_CHANGE=Place the existing GCC 11 include directories before CANN includes in the paired CMake target include list.
+CONFIGURE_RC=0; raw=本地实验/R31B/V016/V006/server3-configure-retry.log
+COMPILE_COMMAND=source /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/script/set_env.sh; export CPLUS_INCLUDE_PATH=/usr/include/c++/11:/usr/include/aarch64-linux-gnu/c++/11:/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0:/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0/aarch64-target-linux-gnu:/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0/backward; cmake --build /tmp/cann-n04-dma-pipeline-overlap-20261016/V006/build --target paired_runner_v016 --parallel 1 --verbose
+COMPILE_RC=0
+COMPILE=PASS; raw=本地实验/R31B/V016/V006/server3-compile-retry.log
+ARTIFACT_RUNNER=/tmp/cann-n04-dma-pipeline-overlap-20261016/V006/build/paired_runner_v016
+ARTIFACT_FORMAT=ELF 64-bit LSB pie executable, ARM aarch64
+ARTIFACT_SIZE=584344
+CORRECTNESS=NOT_RUN; LOCAL=NOT_RUN; DEVICE=NOT_RUN
+DEVICE_NEXT=Wait for Main's NPU3 allocation; no device command was run in this turn.
+PAIRED_RUNNER_LIMIT=Existing source hardcodes rows=2 and blockCount=8; each block gets at most one row, so it cannot exercise this cross-batch window.
+RECOMMENDED_TEST_SHAPE=rows=40; FP16/BF16 x D=12288/32768; blockCount=8 gives 5 rows per block, crossing each dtype/width batchLimit (FP16 D=12288: 3; BF16 D=12288: 2; D=32768: 1).
+RUNNER_UPDATE=Existing route-local paired_runner.cpp kRows changed from 2 to 40; no Runner implementation or command path was added.
+RUNNER_RECOMPILE_RC=0; COMPILE=PASS; raw=本地实验/R31B/V016/V006/server3-runner-rows40-compile.log
+ARTIFACT_RUNNER=/tmp/cann-n04-dma-pipeline-overlap-20261016/V006/build/paired_runner_v016
+ARTIFACT_FORMAT=ELF 64-bit LSB pie executable, ARM aarch64
+ARTIFACT_SIZE=584344
+RUNNER_TIMING_REQUEST=45 warmups and 21 paired samples for each of four shapes; estimate 4-6 minutes, subject to actual device load.
+DEVICE_REQUEST=NPU3 after N03 releases it; four paired cases, rows=40, FP16/BF16 x D=12288/32768, estimate 4-6 minutes. Rerun npu-smi immediately before launch and do not run if a new process is present.
+RAW_LOGS=本地实验/R31B/V016/V006/server3-configure.log,本地实验/R31B/V016/V006/server3-compile.log,本地实验/R31B/V016/V006/server3-configure-retry.log,本地实验/R31B/V016/V006/server3-compile-retry.log,本地实验/R31B/V016/V006/server3-runner-rows40-compile.log
