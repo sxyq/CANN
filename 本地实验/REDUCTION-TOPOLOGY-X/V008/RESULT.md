@@ -45,4 +45,6 @@ Main 分配 NPU3 lease `N03-V008-D3-CORRECTNESS-20261016T105012Z`，起始时间
 
 设备启动前 SSH banner 连续两次连接失败，原始记录保存在 `本地实验/REDUCTION-TOPOLOGY-X/V008/device3-correctness-20261016.log`。未取得本轮实时设备快照或 postflight，远端 NPU3 状态为 `UNKNOWN`；Runner 未启动。因此本轮没有 V008 Candidate Correctness 结果，也没有 Local 结果。保留 Compile PASS 记录，不据此推断设备验证结果。
 
-待 Main 确认 server3 可达并分配新窗口后，再执行首组 FP16 D12288 Parent/Candidate Correctness-only 验证。V007 的 `RUNTIME_CAUSE=UNKNOWN` 仍未变化；V008 本轮没有运行时输出。
+Main 于 `2026-10-16T11:45:19Z` 成功 SSH 取得新的只读快照：NPU3 `Health=OK`，HBM 使用 `5297/65536 MiB`，设备上有既存 Python PID `1496374`。该时点 NPU3 状态更新为 `occupied`；未干预该进程。Main 未再分配 V008 Correctness lease，本轮不得运行 V008。此前因连接失败而缺失的 postflight 仍未补齐。
+
+V008 Candidate Correctness 与 Local 结果均为 `NONE`。待后续空闲窗口由 Main 分配后，再执行首组 FP16 D12288 Parent/Candidate Correctness-only 验证。V007 的 `RUNTIME_CAUSE=UNKNOWN` 仍未变化；V008 本轮没有运行时输出。
