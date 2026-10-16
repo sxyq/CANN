@@ -2,7 +2,7 @@
 
 日期：2026-10-16  
 父版本：V007（Candidate 提交 `988c4f28`）  
-状态：Compile PASS；NPU2 首组 Candidate Correctness 在同步时返回 507035（Runner RC=2），未得到 Correctness 结果；Local=NONE；V007/V008 的 507035 硬件触发点仍为 UNKNOWN。
+状态：Compile PASS；NPU2 首组 Candidate Correctness 在同步时返回 507035（Runner RC=2），Correctness=NONE；环境变量调整后的 SLOG 运行记录了 VEC 访问未对齐 UB 地址及故障 PC；具体指令与源码表达式尚未映射；Local=NONE。
 
 ## 已有运行证据
 
@@ -61,11 +61,29 @@ Main 约于 `2026-10-16T12:39Z` 的只读快照仍显示 NPU3 有 Python PID `17
 
 ## V007/V008 507035 共同路径判断
 
-- V007 NPU3 与 V008 NPU2 的原始日志都记录首个 `fp16-tail-d12288` 在 `candidate correctness synchronize` 返回 `507035 (null)`、Runner RC=2。Runner 的 `RunCase(..., kCorrectnessOnly)` 先启动并同步 Parent，再启动并同步 Candidate，之后才拷回和比较输出；两次错误都定位到 Candidate kernel 的 stream 同步阶段，未到输出比较。
+- V007 NPU3 与最初 V008 NPU2 的原始日志记录首个 `fp16-tail-d12288` 在 `candidate correctness synchronize` 返回 `507035 (null)`、Runner RC=2。新的 SLOG 记录同一 Candidate 同步失败，并给出 Vector PC 和 UB 未对齐信息。Runner 的 `RunCase(..., kCorrectnessOnly)` 先启动并同步 Parent，再启动并同步 Candidate，之后才拷回和比较输出；错误发生在 Candidate kernel 的 stream 同步阶段，未到输出比较。
 - V007 的 `--paired` 在首个 case 先走 `kCorrectnessOnly`；V008 的 `--correctness-first` 直接选择同一 case。两次都进入 Candidate 的 FP16 `ProcessWideLowPrecision` 路径：D=12288、tileWidth=4096、tileCount=3，共用 `Load`/DataCopyPad 和 tile 循环内 pair-level ReduceSum（部分结果槽 0、2）。
 - V007 另有循环后的 ReduceSum 写回槽 0；V008 只删除了这次调用及其紧邻 barrier，保留上述共同路径。V008 仍在 Candidate 同步处报错，说明这个末尾调用不是本次 507035 必需的触发条件。它覆盖了已确认的 partial 数值覆写，但没有证据表明它覆盖了向量核异常根因。
 - 构建记录中 V007 与 V008 最终均出现 `[100%] Built target paired_runner_v016`；V007 编译日志先记录一次前端退出 139，随后目标构建成功。构建记录未提供设备异常指令位置。文件：`build_out/n03-reduction-topology/compile-v007-server3.log`、`build_out/n03-reduction-topology/compile-v008-server3.log`、`build_out/n03-reduction-topology/compile-v008-targeted-server3.log`。
-- **根因仍为 UNKNOWN。唯一缺失证据**是 Vector Core 异常报告中的故障 PC/指令位置，能够映射到本次 Candidate kernel；两次运行日志只有 `(null)`，现有 V008 记录没有对应 plog/异常位置。
-- **最小后续诊断动作**：等待 Main 分配设备窗口后，用现有 `paired_runner_v016 --correctness-first --device <分配设备号>` 单跑首组，同时启用现有 SLOG/PLOG 输出并保存故障 PC/异常记录，再映射到已编译 Candidate。当前不执行此动作。
+- 新 SLOG 记录明确报告 `The UB address accessed by the VEC instruction is not aligned`。core 13 的 current PC 为 `0x12440000e0a4`，core 14 为 `0x12440000e0b4`，两者的 PC start 均为 `0x12440000d28c`；故障 kernel 名为 `_ZN9r31b_v01624add_rms_norm_bias_customIDhEEvPhS1_S1_S1_S1_mmjff`。
+- **尚未确认**的是这些 PC 对应的具体指令及 Candidate 源码表达式。V007 和首次 V008 日志只有 `(null)`；新增 PC 只来自本次 SLOG 输出。本轮未运行反汇编或其他设备命令。
 
-V008 Candidate Correctness 与 Local 结果均为 `NONE`。V007/V008 的 `RUNTIME_CAUSE=UNKNOWN` 仍未变化；V008 本次 Candidate 同步异常没有设备侧指令位置或 plog 可用于定位。
+V008 Candidate Correctness 与 Local 结果均为 `NONE`。运行时异常类别现有明确记录为 VEC 访问 UB 地址未对齐；将 PC 映射到具体指令和源码表达式仍未完成。
+
+## 2026-10-16 NPU2 单次 SLOG 诊断尝试
+
+- Lease：`N03-V008-D2-DEBUG-CORRECTNESS-20261016T132830Z`，本路线原始输出：`本地实验/REDUCTION-TOPOLOGY-X/V008/device2-slog-correctness-20261016T132830Z.log`。
+- 首次快照命令的换行引号写法有误，远端返回 `date: extra operand 'info'`，没有执行 `npu-smi`；该输出保留在日志开头。随后有效快照时间为 `2026-10-16T13:36:22Z`：NPU2 Health=OK、HBM 使用 `3429/65536 MiB`、AICore=0%、无进程。其它设备的现有进程未触碰。
+- source `/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/script/set_env.sh` 返回码 0，并在启动前设置 `ASCEND_SLOG_PRINT_TO_STDOUT=1`。使用既有 build 目录和命令 `./paired_runner_v016 --correctness-first --device 2`，启动时刻 `2026-10-16T13:37:27Z`。
+- 动态加载器在 Runner 主程序运行前报错：`/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/toolkit/toolchain/hcc/aarch64-target-linux-gnu/lib64/libstdc++.so.6: version GLIBCXX_3.4.29 not found`。Runner RC=1；没有 `CASE_BEGIN`，Candidate 未启动，未产生 SLOG 记录、507035 或故障 PC；Correctness=NONE，Local=NONE。未再次启动 Runner，也未 Reset。
+- source CANN 环境后对既有 Runner 执行的只读 `ldd` 显示其 `libstdc++.so.6` 解析到上述 Toolkit HCC 路径，并缺少所需版本。未改动 CANN 环境文件或编译产物。
+- Postflight `2026-10-16T13:37:27Z`：NPU2 Health=OK、HBM 使用 `3428/65536 MiB`、AICore=0%、无进程；`npu-smi` 返回码 0。设备 lease 后续状态由 Main 更新。
+
+## 2026-10-16 NPU2 SLOG 环境调整后单次运行
+
+- Lease：`N03-V008-D2-DEBUG-ENVFIX-20261016T133929Z`，原始快照、Runner stdout/SLOG 和 postflight 保存在 `本地实验/REDUCTION-TOPOLOGY-X/V008/device2-slog-envfix-correctness-20261016T133929Z.log`。此前加载失败记录保留于 `device2-slog-correctness-20261016T132830Z.log`。
+- 启动前快照 `2026-10-16T13:43:41Z`：NPU2 Health=OK、HBM 使用 `3429/65536 MB`、AICore=0%、无进程。NPU7 有既存 PID `2370853`（104 MiB），未触碰。
+- CANN `set_env.sh` 返回码 0；随后设置 `LD_LIBRARY_PATH=/usr/lib/aarch64-linux-gnu:${LD_LIBRARY_PATH-}` 和 `ASCEND_SLOG_PRINT_TO_STDOUT=1`。复用既有 Runner，命令 `./paired_runner_v016 --correctness-first --device 2`，开始于 `2026-10-16T13:44:25Z`；只进入首个 `fp16-tail-d12288`。
+- Candidate 在同步时返回 `507035 (null)`，Runner/SSH RC=2，结束于 `2026-10-16T13:44:32Z`；没有 Correctness PASS/FAIL 结果，Correctness=NONE；未运行 Local、未 Reset、未重试。
+- SLOG 记录 chip 2、die 0 的 aivec exception。core 13：PC start `0x12440000d28c`、current PC `0x12440000e0a4`；core 14：PC start 相同、current PC `0x12440000e0b4`。两条记录均包含 `errcode:(0, 0x800, 0)` 和 `The UB address accessed by the VEC instruction is not aligned`。日志还记录 fault kernel `_ZN9r31b_v01624add_rms_norm_bias_customIDhEEvPhS1_S1_S1_S1_mmjff`。
+- Postflight `2026-10-16T13:44:32Z`：NPU2 Health=OK、HBM 使用 `3431/65536 MB`、AICore=0%、无进程；`npu-smi` 返回码 0。lease 后续状态由 Main 更新。
