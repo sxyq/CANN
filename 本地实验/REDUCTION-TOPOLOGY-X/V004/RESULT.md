@@ -15,8 +15,8 @@ V004 将局部块宽从 4 个 tile 改为 8 个。对 D32768，八个 tile parti
 - Candidate：`本地实验/REDUCTION-TOPOLOGY-X/V004/Candidate.asc`。
 - 配对工程：`本地实验/R31B/V016/support/paired/CMakeLists.txt`，绑定到 V004。
 - Runner：沿用 `paired_runner_v016`；移除退出时的设备 reset，新增可选 `--device ID` 参数，默认值仍为 4。
-- NPU：尚未启动。启动前需 Main 分配设备并确认运行窗口。拟先验证 FP16 rows=2,D32768；若同步通过，再跑其余配对样例。现有 Runner 每个模式固定覆盖 FP16/BF16 的 D12288、D32768 四个样例，warmup=45；配对模式另有每样例 21 对测量。预计完整配对运行约 10–20 分钟，受设备负载影响。
-- Correctness / Local：NONE，尚未执行。
+- NPU2：本轮配对运行已结束，并于 `2026-10-16T06:37:21Z` 释放。现有 Runner 每个模式覆盖 FP16/BF16 的 D12288、D32768 四个样例，warmup=45；配对模式每个样例最多 21 对测量。
+- Correctness：前三个 shape PASS；BF16 D32768 未完成，退出原因 UNKNOWN。Local：采样已做但受设备负载影响，`LOCAL_SCORE=NONE`。
 
 ## Compile
 
@@ -37,6 +37,7 @@ V004 将局部块宽从 4 个 tile 改为 8 个。对 D32768，八个 tile parti
 - Runner：`/tmp/cann-n03-reduction-topology-v004-20261016/build/paired_runner_v016`，由现有 V004 编译输出运行；代码执行 `aclrtSetDevice(2)`，不调用设备 reset。
 - 命令：`./paired_runner_v016 --paired --device 2`。
 - Runner 返回码：2。执行器完成前三种 shape，在 `bf16-wide-d32768` 输出 `CASE_BEGIN` 后退出；未重跑、未 reset。
+- Lease：使用本工作树现有设备表记录为 `N03-V004-D2-PAIRED-20261016T062543Z`，于 `2026-10-16T06:37:21Z` 结束；post 快照确认 N03 Runner 已退出，Python PID 1583166 保持运行且未触碰。
 - 原始 stdout（含逐样本输出、命令、返回码和前后设备快照）：[`correctness-local-device2-20261016T0635Z.log`](correctness-local-device2-20261016T0635Z.log)。Runner 的 stderr 未进入该文件，故保存记录无法确认具体 ACL 错误码；本轮不据此声称再次出现 507035。
 
 ### 设备负载
