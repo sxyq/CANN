@@ -51,8 +51,8 @@ CANN: 8.5.0.alpha002.
 RUNNER: existing `paired_runner_v016`; the candidate include and CMake source
 directory both point to V009.
 REMOTE_BUILD_DIR: reused `/tmp/wide-ub-residency-x-v006-build.bh1s3Ux7/build`.
-CONFIGURE: RC=0 with `R31B_V016_SOURCE_DIR` set to the remote V009 directory.
-BUILD: `cmake --build .../build --target paired_runner_v016 --parallel 1 -- -B`;
+CONFIGURE_COMMAND: `cmake -S /tmp/wide-ub-residency-x-v006-build.bh1s3Ux7/本地实验/R31B/V016/support/paired -B /tmp/wide-ub-residency-x-v006-build.bh1s3Ux7/build -DCMAKE_BUILD_TYPE=Release -DR31B_V016_SOURCE_DIR=/tmp/wide-ub-residency-x-v006-build.bh1s3Ux7/本地实验/WIDE-UB-RESIDENCY-X/V009`; RC=0.
+BUILD_COMMAND: `cmake --build /tmp/wide-ub-residency-x-v006-build.bh1s3Ux7/build --target paired_runner_v016 --parallel 1 -- -B`;
 RC=0; `[100%] Built target paired_runner_v016`.
 COMPILE: PASS.
 RUNTIME_LINK: `ldd` resolves system `libstdc++.so.6` and CANN libraries;
