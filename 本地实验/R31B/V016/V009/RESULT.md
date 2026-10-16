@@ -33,13 +33,16 @@
 
 ## Correctness 与 Local
 
-- 未运行；本次只 Compile，未启动 Runner，也未使用设备。Correctness 和 Local 结果仍为 NONE。
-- 未申请设备；本轮没有可用设备窗口。
+- Main 分配 NPU3 lease：`N04-V009-D3-CORR-LOCAL-20261016T124459Z`；本路线未改共享调度记录。
+- 运行前快照 `2026-10-16T12:57:53Z`：NPU3 Health=OK，HBM=65536 MiB、Usage Rate=5%，AICore=0%；`proc-mem` 返回 `No process in device.` 原始记录：[server3-before-npu3-20261016.txt](server3-before-npu3-20261016.txt)。此前 `npu-smi info proc -i 3` 返回设备不支持该查询，随后使用 `proc-mem` 获取进程状态；未据不支持的查询推断空闲。
+- CANN 环境来自 `/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/script/set_env.sh`；复用构建目录 `/tmp/cann-n04-dma-pipeline-overlap-20261016/V008/build` 中的 `paired_runner_v016`。
+- Correctness 命令：`./paired_runner_v016 --correctness --device 3`。开始/结束：`2026-10-16T12:58:34Z`；Runner RC=1。动态加载器在 Runner 进入测试前报错：`/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/toolkit/toolchain/hcc/aarch64-target-linux-gnu/lib64/libstdc++.so.6: version 'GLIBCXX_3.4.29' not found (required by ./paired_runner_v016)`。完整原始输出：[server3-v009-correctness-device3-20261016.txt](server3-v009-correctness-device3-20261016.txt)。
+- 四组 Correctness 均未开始，结果为 NONE；未重跑失败命令。Local 未启动，结果为 NONE。
+- Postflight `2026-10-16T12:59:19Z`：NPU3 Health=OK、HBM Usage Rate=5%、AICore=0%，`No process in device.` 原始记录：[server3-after-npu3-20261016.txt](server3-after-npu3-20261016.txt)。未调用设备 Reset，未触碰其他进程。
 
 ## 设备资源快照
 
 - Main 于 `2026-10-16T12:18:39Z` 报告 NPU0–7 均有现存 Python/VLLM 进程，其中 NPU3 AICore=29%。
 - NPU7：Health=OK，HBM=5298/65536 MiB，AICore=8%；Python PID 1712355 使用 1921 MiB。
 - Main 约于 `2026-10-16T12:39Z` 的最新只读快照仍显示 NPU0–7 均有现存进程；该状态来自 Main 报告，本路线未连接服务器或采样设备。
-- 因设备均有现存进程，V009 的 Correctness 与 Local 未运行；没有启动 Runner，也没有申请设备。
-- 等 Main 后续分配空闲设备窗口后再进行设备测量。
+- 上述为历史快照；本次 lease 和运行前/后状态见“Correctness 与 Local”。
