@@ -178,3 +178,20 @@ DEVICE_4_LOAD=AICore=0%; HBM=59214/65536 MiB
 DEVICE_4_PROCESS=PID 2999855 VLLMEngineCor, process memory 55686 MiB
 RUN_COMMAND=NOT_RUN; the runner exit would reset the device currently used by that process
 RAW_CORRECTNESS=NONE; no runner process was launched
+
+POST_RUN_NOTE=The earlier NOT_RUN state above predates the NPU3 assignment and device-selectable runner rebuild.
+--- N04 DMA-PIPELINE-OVERLAP-X V005 CORRECTNESS ---
+DEVICE=3; HOST=cann-server3 (remote hostname hwnput3); SOC=Ascend910B3
+RUNNER=/tmp/cann-n04-dma-pipeline-overlap-20261016/V005/build/paired_runner_v016
+COMMAND=/tmp/cann-n04-dma-pipeline-overlap-20261016/V005/build/paired_runner_v016 --paired --device 3
+RUNNER_RC=0
+RUN_START_UTC=2026-10-16T06:33:35Z
+RUN_END_UTC=2026-10-16T06:33:42Z
+CORRECTNESS_RESULT=PASS; parent_cases=4/4; candidate_cases=4/4; failures=0
+CASE=fp16-tail-d12288; PARENT=PASS failures=0 max_abs=0.0009765625 max_rel=0.0015923567; CANDIDATE=PASS failures=0 max_abs=0.0009765625 max_rel=0.0015923567
+CASE=fp16-wide-d32768; PARENT=PASS failures=0 max_abs=0.001953125 max_rel=0.010989011; CANDIDATE=PASS failures=0 max_abs=0.001953125 max_rel=0.010989011
+CASE=bf16-tail-d12288; PARENT=PASS failures=0 max_abs=0.0078125 max_rel=0.0073529412; CANDIDATE=PASS failures=0 max_abs=0.0078125 max_rel=0.0073529412
+CASE=bf16-wide-d32768; PARENT=PASS failures=0 max_abs=0.0078125 max_rel=0.01754386; CANDIDATE=PASS failures=0 max_abs=0.0078125 max_rel=0.01754386
+RAW_OUTPUT=本地实验/R31B/V016/V005/server3-paired.log
+PRE_SNAPSHOT=本地实验/R31B/V016/V005/server3-before-paired.txt
+POST_SNAPSHOT=本地实验/R31B/V016/V005/server3-after-paired.txt

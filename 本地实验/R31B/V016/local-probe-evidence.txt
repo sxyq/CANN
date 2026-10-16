@@ -280,3 +280,21 @@ RAW_SAMPLES=NONE; no timed invocation was started
 SNAPSHOT=本地实验/R31B/V016/V005/server3-before-run.txt
 INTERPRETATION=Correctness and Local were not started because the existing runner resets its fixed NPU4 while VLLMEngineCor is using that device; there are no V005 timing samples or performance conclusion.
 OFFICIAL=NOT_RUN
+POST_RUN_UPDATE=The earlier NOT_RUN state above predates the NPU3 assignment and device-selectable runner rebuild.
+
+--- N04 DMA-PIPELINE-OVERLAP-X V005 LOCAL ---
+DEVICE=3; SOC=Ascend910B3; ROWS=2; DTYPE/WIDTH=FP16,BF16 x 12288,32768
+COMMAND=/tmp/cann-n04-dma-pipeline-overlap-20261016/V005/build/paired_runner_v016 --paired --device 3
+RUNNER_RC=0; WARMUP_EACH=45; PAIRS_EACH=21; SAMPLES_PER_BINARY=21; TIMING=device event primary
+LOAD_BEFORE_UTC=2026-10-16T06:32:19Z; HEALTH=OK; HBM_USAGE=5%; AICORE=0%; AIVECTOR=0%; PROCESS=NONE
+LOAD_AFTER_UTC=2026-10-16T06:34:59Z; HEALTH=OK; HBM_USAGE=5%; AICORE=0%; AIVECTOR=0%; PROCESS=NONE
+PARENT_MEDIANS_US=fp16-tail-d12288:14.620; fp16-wide-d32768:15.840; bf16-tail-d12288:16.020; bf16-wide-d32768:15.500
+CANDIDATE_MEDIANS_US=fp16-tail-d12288:7.740; fp16-wide-d32768:10.940; bf16-tail-d12288:7.620; bf16-wide-d32768:13.560
+PAIRED_DELTA_MEDIANS_US=fp16-tail-d12288:-0.060; fp16-wide-d32768:-1.160; bf16-tail-d12288:-1.480; bf16-wide-d32768:-1.800
+PAIRED_DELTA_MAD_US=fp16-tail-d12288:2.620; fp16-wide-d32768:2.300; bf16-tail-d12288:7.560; bf16-wide-d32768:0.740
+PAIRED_DELTA_P10_P90_US=fp16-tail-d12288:-10.620/+5.440; fp16-wide-d32768:-11.780/+4.380; bf16-tail-d12288:-14.520/+1.140; bf16-wide-d32768:-2.980/+10.660
+LOCAL_SCORE=NONE
+INTERPRETATION=All four paired median deltas are non-positive, but each P10-P90 interval crosses zero and several cases have high sample variability; this single run is directional only and does not establish a stable performance result.
+RAW_SAMPLES_AND_SUMMARIES=本地实验/R31B/V016/V005/server3-paired.log
+SNAPSHOTS=本地实验/R31B/V016/V005/server3-before-paired.txt,本地实验/R31B/V016/V005/server3-after-paired.txt
+OFFICIAL=NOT_RUN
