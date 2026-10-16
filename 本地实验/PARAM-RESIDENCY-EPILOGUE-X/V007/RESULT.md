@@ -41,9 +41,29 @@ Evidence: `remote/compile-config.log`, `remote/compile-build.log`.
 
 ## CORRECTNESS AND LOCAL
 
-CORRECTNESS=NOT_RUN_WAITING_FOR_MAIN_DEVICE_ASSIGNMENT
-LOCAL=NOT_RUN_WAITING_FOR_MAIN_DEVICE_ASSIGNMENT
+HOST=cann-server3
+DEVICE_ID=3
+PRE_SNAPSHOT_UTC=2026-10-16T09:25:51Z
+PRE_STATE=Health:OK; HBM:3429/65536 MiB; AICore:0; no NPU3 process
+RUN_COMMAND=`source /usr/local/Ascend/ascend-toolkit/set_env.sh; export LD_LIBRARY_PATH=/usr/lib/aarch64-linux-gnu:${LD_LIBRARY_PATH-}; /tmp/n05-param-residency-epilogue-v007.HfMXDc/build/paired_runner_v016 --paired 3`
+RUNNER_START_UTC=2026-10-16T09:28:47Z
+RUNNER_END_UTC=2026-10-16T09:28:53Z
+RUNNER_RC=0
+POST_SNAPSHOT_UTC=2026-10-16T09:29:15Z
+POST_STATE=Health:OK; HBM:3429/65536 MiB; AICore:0; no NPU3 process
+
+CORRECTNESS=PASS 8/8 (Parent and Candidate for four cases)
+LOCAL=RUN 4 cases x 21 paired samples
 LOCAL_SCORE=NONE
 OFFICIAL=NOT_RUN
 
-No NPU Runner was started. Await Main's device allocation before Correctness or Local.
+| Case | Paired median (V016-V011, us) | P10 (us) | P90 (us) | P10-P90 |
+|---|---:|---:|---:|---|
+| fp16-tail-d12288 | -0.840 | -9.800 | 7.220 | crosses zero |
+| fp16-wide-d32768 | -0.220 | -8.600 | 7.080 | crosses zero |
+| bf16-tail-d12288 | +0.240 | -9.780 | 9.700 | crosses zero |
+| bf16-wide-d32768 | -0.080 | -6.900 | 4.400 | crosses zero |
+
+All four P10-P90 intervals cross zero. The paired medians are small and mixed in direction, so the data show no stable latency gain for deferred output-store synchronization. Correctness passed, but this local run does not support advancing a performance claim; LOCAL_SCORE remains NONE. Official was not run.
+
+Evidence: `remote/pre-npu3-paired-snapshot.log`, `remote/npu3-paired.log`, `remote/post-npu3-paired-snapshot.log`. The raw paired output records all 21 pairs per case and both Parent/Candidate correctness results. The post snapshot also shows a process on NPU7; it was not used or touched.
