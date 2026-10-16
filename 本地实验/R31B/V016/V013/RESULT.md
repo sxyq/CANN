@@ -10,11 +10,21 @@
 
 ## 服务器事务
 
-- Compile：待执行。
-- Correctness：待执行。
-- Local：待执行。
-- Official：不执行。
-- 设备：沿用已有 paired Runner；不调用设备 Reset，不使用 NPU4。
+- 主机：`hwnput3`，登录入口：`cann-server3`。最终使用 NPU1；运行前后 HBM Usage Rate=5%，运行后 `No process in device.`。
+- Compile：PASS。沿用 CANN 8.5.0.alpha002、既有 paired Runner 和 C++ 头文件路径；`CONFIGURE_RC=0`、`BUILD_RC=0`。日志：[server3-compile-v013-20261017.log](server3-compile-v013-20261017.log)。
+- Correctness：PASS，四组均通过，Parent/Candidate `failures=0`，`CORRECTNESS_RC=0`。日志：[server3-v013-correctness-device1-20261017.txt](server3-v013-correctness-device1-20261017.txt)。
+- Local：PASS，四组各 45 warmup、21 对，计时为 `DEVICE_EVENT_PRIMARY`；配对 device-event 中位差（Candidate−V011）如下。
 
-STATUS: SOURCE_READY_COMPILE_PENDING
+| Shape / dtype | Parent median (us) | Candidate median (us) | Delta median (us) | Delta P10–P90 (us) |
+|---|---:|---:|---:|---:|
+| rows=40, D=12288 / FP16 | 28.360 | 27.200 | -0.960 | -2.460–0.740 |
+| rows=40, D=32768 / FP16 | 43.700 | 38.620 | -4.400 | -21.700–6.000 |
+| rows=40, D=12288 / BF16 | 26.140 | 24.060 | -1.820 | -10.180–5.340 |
+| rows=40, D=32768 / BF16 | 68.300 | 58.720 | -9.360 | -11.260–-7.660 |
+
+- 完整 Local 原始样本：[server3-v013-paired-device1-20261017.txt](server3-v013-paired-device1-20261017.txt)。目标 FP16 D32768 区间跨零，按路线保留 `LOCAL_SCORE=NONE`。
+- Official：不执行；不修改共享记录，不使用 NPU4，不调用设备 Reset。
+
+STATUS: COMPILE_PASS_CORRECTNESS_PASS_LOCAL_MEASURED
+LOCAL_SCORE: NONE
 LOCAL_SCORE: NONE
