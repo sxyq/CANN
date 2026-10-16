@@ -67,12 +67,39 @@ RUNTIME_LINK: PASS. The new executable resolves
 `libgraph.so` to the CANN toolkit; see `ldd.log`.
 REMOTE_BUILD_DIR: `/tmp/wide-ub-residency-x-v006-build.bh1s3Ux7` (existing
 build directory reused for V007).
-DEVICE: NOT_RUN; request a 2-minute NPU7 window from Main before execution.
-REQUESTED_WORK: rows=2, FP16/BF16, D=12288/32768; four Parent/Candidate
-Correctness cases and 21 paired Local measurements per case. Expected device
-execution is under one minute based on V006's 6.6-second run, with time for
-preflight and postflight.
-CORRECTNESS: NOT_RUN.
-LOCAL_SCORE: NOT_MEASURED.
+DEVICE: NPU2, Ascend910B3; lease `N02-V007-D2-CORR-LOCAL-20261016T103707Z`.
+PREFLIGHT_UTC: `2026-10-16T10:42:23.431129309Z`; Health=OK,
+HBM=3428/65536 MiB, AICore=0%, and no running process on NPU2. The earlier
+10:38:26Z sample remains in `device-before-run-npu2.snapshot`; 10:42:23Z is
+the immediate pre-run reading. Current preflight readings are in
+`device-before-run-npu2-current.snapshot`,
+`device-before-run-npu2-process.snapshot`, and
+`device-before-run-npu2-list.snapshot`. The installed `npu-smi` rejected
+`info -t process` and reported that per-device `info proc` is unsupported;
+the supported all-device `npu-smi info` output showed NPU2 had no process.
+ENVIRONMENT: sourced `/usr/local/Ascend/ascend-toolkit/set_env.sh` and put
+`/usr/lib/aarch64-linux-gnu` before toolkit libraries in `LD_LIBRARY_PATH`,
+using the route's V006 runtime resolution.
+COMMAND: `paired_runner_v016 --paired --device 2` from the existing build
+directory; one invocation, no retry.
+START_UTC: `2026-10-16T10:43:00.483959436Z`.
+RETURN_CODE: 0; the Runner reports four cases, 45 warmups per binary, 21
+pairs per case, and Parent/Candidate Correctness results all PASS.
+| Case | Correctness | Parent median (us) | Candidate median (us) | Delta median (us) | Delta P10-P90 (us) |
+|---|---|---:|---:|---:|---:|
+| FP16 D=12288 | PASS/PASS | 14.180 | 14.900 | +0.140 | -1.520 to +7.480 |
+| FP16 D=32768 | PASS/PASS | 13.080 | 12.880 | -0.160 | -2.500 to +3.600 |
+| BF16 D=12288 | PASS/PASS | 16.020 | 15.700 | -0.480 | -10.040 to +2.220 |
+| BF16 D=32768 | PASS/PASS | 22.100 | 18.640 | -1.500 | -7.160 to +2.280 |
+
+Delta is Candidate minus Parent. All four P10-P90 intervals cross zero;
+`LOCAL_SCORE=NONE`.
+END_UTC: `2026-10-16T10:43:07.216700643Z`.
+POSTFLIGHT_UTC: `2026-10-16T10:43:07.218872809Z`; NPU2 Health=OK,
+HBM=3430/65536 MiB, AICore=0%, and no running process. Full raw output,
+including preflight, every sample, Correctness, and postflight, is preserved in
+`paired-run-npu2.log`.
 DEVICE_RESET: NO.
+LEASE_RELEASE: report postflight to Main for shared lease release; the shared
+scheduling table was not changed by this route.
 PUSH: NO.
