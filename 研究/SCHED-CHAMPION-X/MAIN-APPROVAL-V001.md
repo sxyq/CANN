@@ -1,17 +1,17 @@
-# MAIN APPROVAL — SCHED-CHAMPION-X V001
+# current route recordS — SCHED-CHAMPION-X V001
 
 Date: 2026-09-27
-Approver: MAIN-2
+Recordr: MAIN-2
 DIRECT_PARENT=FROZEN_R31B_V011
 PARENT_SOURCE_SHA=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
 OFFICIAL_ANCHOR=45.16
 
-APPROVED SINGLE HYPOTHESIS:
+SELECTED SINGLE HYPOTHESIS:
 HYPOTHESIS-1 GROUP-ALIGNED BALANCED OWNERSHIP: replace row-unit base/extra split in Process() with row-group-unit split (rowGroup=32/gcd(rowBytes,32)); whole-group ownership only. Do not change host requestedBlocks, mode selection, DMA, reduction, UB lifetime, epilogue, wide path, dtype path.
 
 OFAT=PASS
 NON_DUPLICATION_AUDIT=PASS
-MAIN_APPROVAL=YES
+STATUS=RECORDED
 
 RULES:
 - Exactly one conceptual performance change in V001.

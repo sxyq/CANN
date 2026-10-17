@@ -5,9 +5,9 @@ CONTEXT: C2C overnight qualification, VECTOR-MATH-X V002 (SOURCE_SHA 06095762…
 
 ## Finding
 
-**5–6 µs kernels cannot meet the same-binary MAD/median ≤ 0.10 gate** on devices d4, d5, d6. Observed MAD/med 0.10–0.39 across 3 serious independent attempts, all calibration modes, and both block orders. Sparse host-interference outliers (VLLM resident, HBM ~60/65 GB) inflate full-distribution MAD regardless of sample count.
+**5–6 µs kernels do not meet the same-binary MAD/median ≤ 0.10 threshold** on devices d4, d5, d6. Observed MAD/med 0.10–0.39 across 3 serious independent attempts, all calibration modes, and both block orders. Sparse host-interference outliers (VLLM resident, HBM ~60/65 GB) inflate full-distribution MAD regardless of sample count.
 
-| kernel length | best MAD/med | gate | devices |
+| kernel length | best MAD/med | threshold | devices |
 |---|---:|---|---|
 | 5–6 µs (4×2048, 8×1024, 8×256) | 0.104 | FAIL | d4/d5/d6 |
 | 12 µs (1×32768) | 0.019 | PASS | d4/d5/d6 |
@@ -22,6 +22,6 @@ CONTEXT: C2C overnight qualification, VECTOR-MATH-X V002 (SOURCE_SHA 06095762…
 
 ## Recommendation for Main policy
 
-1. **Length-stratified same-binary thresholds**: e.g. MAD/med ≤ 0.25 for kernels < 10 µs, ≤ 0.10 for ≥ 10 µs. The current flat ≤ 0.10 gate is unachievable in the 5–6 µs regime under shared-VLLM load.
+1. **Length-stratified same-binary thresholds**: e.g. MAD/med ≤ 0.25 for kernels < 10 µs, ≤ 0.10 for ≥ 10 µs. The current flat ≤ 0.10 threshold is unachievable in the 5–6 µs regime under shared-VLLM load.
 2. **Alternative measurement layer**: per-shape noise floor via trimmed-MAD (protocol already allows as secondary) or interquartile-based statistic, promoted to primary for short kernels only.
 3. **Do not use repeat-batch** for short kernels on this hardware — it worsens noise.

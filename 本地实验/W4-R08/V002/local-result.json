@@ -1,0 +1,71 @@
+{
+  "route": "W4-R08",
+  "route_name": "CROSSROW-PREFETCH-X",
+  "revision": "V002",
+  "direct_parent": "R31B V011",
+  "parent_source_sha256": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "candidate_source_path": "本地实验/W4-R08/V002/submission.asc",
+  "candidate_source_sha256": "656dc5a58818fe58c1d2a38a8db303599049134f888c077683051523e1569579",
+  "single_change": "In ProcessNarrowMidOverlap, prefetch the next row residual together with x into the existing input buffers after the current Add; reuse crossRowReady and the existing next-row wait.",
+  "hypothesis": "Prefetching both inputs may reduce MTE2 input work left at the start of the next FP32 row. Row ownership, parameter residency, arithmetic order, and total copy bytes are unchanged.",
+  "compile": {
+    "status": "PASS",
+    "attempt": "compile-20261009T184500Z",
+    "configure_rc": 0,
+    "build_link_rc": 0,
+    "remote_source_identity": "PASS",
+    "source_sha256": "656dc5a58818fe58c1d2a38a8db303599049134f888c077683051523e1569579",
+    "evidence": "本地实验/W4-R08/V002/logs/compile-20261009T184500Z-status.txt"
+  },
+  "correctness": {
+    "status": "PASS",
+    "device": 2,
+    "free_hbm_mb": 62259,
+    "cases": 12,
+    "failures": 0,
+    "max_abs_error": 0.0000026226044,
+    "evidence": "本地实验/W4-R08/V002/logs/correctness-20261009T185200Z-correctness.log"
+  },
+  "local_measurement": {
+    "status": "NO_CANDIDATE_TIMING_SAMPLES",
+    "score": null,
+    "delta_percent": null,
+    "device": 2,
+    "free_hbm_mb": 62259,
+    "shape": "17x257 FP32",
+    "parent_probe": {
+      "status": "NEEDS_VALIDATION",
+      "samples": 62,
+      "block_medians_us": [27.380001, 25.739999],
+      "block_mad_over_median": [0.084003, 0.132090],
+      "block_median_drift": 0.061747,
+      "raw": "本地实验/W4-R08/V002/logs/local-v002-20261009T152233Z-17x257-device2-parent.raw.tsv",
+      "jitter": "本地实验/W4-R08/V002/logs/local-v002-20261009T152233Z-17x257-device2-parent.jitter.txt"
+    },
+    "paired_attempt": {
+      "status": "FAILED_BEFORE_TIMED_LAUNCH",
+      "return_code": 2,
+      "reason": "The inherited paired runner embeds the V001 candidate source SHA and rejected the V002 candidate source SHA.",
+      "evidence": "本地实验/W4-R08/V002/logs/local-v002-20261009T152233Z-17x257-device2-paired.log"
+    },
+    "attempts": [
+      "local-20261009T150419Z: paired runner binary absent; no kernel launch",
+      "local-v002-20261009T150903Z: inherited qualifier required revision V001; no Candidate timed launch",
+      "local-v002-20261009T152233Z: parent probe retained; paired runner rejected embedded V001 source identity before timed launch"
+    ],
+    "candidate_samples": 0,
+    "interpretation": "No Parent/Candidate score or delta was produced. Parent-only samples are retained as context and do not establish Candidate performance."
+  },
+  "official_reference": {
+    "revision": "V001",
+    "submission_id": "6ac8c1d9694b590c3c99a9a7",
+    "status": "PASS",
+    "pass_count": 15,
+    "testcase_count": 15,
+    "score": 42.75,
+    "result_path": "/Users/sunyiyang/Desktop/Project/cann/线上结果/W4-R08/V001/result.json",
+    "note": "Cases 7 and 14 have 52.32/11.26 us and 16687.73/3628.15 us; the JSON has no shape/dtype mapping, so these figures do not identify the affected dispatch path."
+  },
+  "official_score": null,
+  "push": "NO"
+}

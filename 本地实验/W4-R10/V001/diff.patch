@@ -1,0 +1,70 @@
+--- 归档/历史工作区/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc	2026-10-08 01:07:54
++++ 本地实验/W4-R10/V001/submission.asc	2026-10-08 01:32:51
+@@ -3476,6 +3476,31 @@
+ }
+ 
+ #if !defined(ASCENDC_CPU_DEBUG)
++// W4-R10 V001: Host mirror of AddRmsNormBiasKernel::ChooseWideFullYRows().
++// It reproduces the resident complete-y row count the wide full-y path picks
++// inside the kernel, so the launch width can be capped by how many rows one
++// active core can actually hold.  Host-side only; kernel code unchanged.
++static uint64_t HostWideFullYRows(uint64_t rowWidth, uint32_t yTypeBytes,
++                                 uint32_t ioTiles, uint32_t ioTypeBytes,
++                                 uint32_t workTiles)
++{
++    const uint64_t tileElems = 4096;
++    const uint64_t reduceStride = 16;
++    const uint64_t budgetBytes = 176 * 1024;
++    const uint64_t yBytesPerRow = rowWidth * static_cast<uint64_t>(yTypeBytes);
++    const uint64_t ioBytes = static_cast<uint64_t>(ioTiles) * tileElems *
++                             static_cast<uint64_t>(ioTypeBytes);
++    const uint64_t workBytes = static_cast<uint64_t>(workTiles) * tileElems *
++                               static_cast<uint64_t>(sizeof(float));
++    for (uint64_t rows = 8; rows > 1; --rows) {
++        const uint64_t reduceBytes = rows * reduceStride * sizeof(float);
++        if (yBytesPerRow * rows + ioBytes + workBytes + reduceBytes <= budgetBytes) {
++            return rows;
++        }
++    }
++    return 1;
++}
++
+ extern "C" void run_kernel(GM_ADDR x, const TensorGroupInfo& info_x, GM_ADDR residual, const TensorGroupInfo& info_residual, GM_ADDR gamma, const TensorGroupInfo& info_gamma, GM_ADDR bias, const TensorGroupInfo& info_bias, GM_ADDR output, const TensorGroupInfo& info_output, int64_t availableCoreNum, aclrtStream stream,
+     float epsilon)
+ {
+@@ -3536,6 +3561,35 @@
+     // Kernel launch dimensions are uint32_t in the direct-call ABI.
+     if (requestedBlocks > UINT32_MAX) {
+         requestedBlocks = UINT32_MAX;
++    }
++    // W4-R10 V001: one D-dependent cap on the active-core count.  The parent
++    // launch width is min(availableCoreNum, rowCount) and ignores D entirely.
++    // On the wide full-y path every active core already keeps `residentRows`
++    // complete y rows in UB, and that resident count shrinks as D grows, so a
++    // device-saturated wide launch runs more cores than there are resident
++    // batches.  Cap the width at the number of cores that still give each core
++    // one full resident batch.
++    //
++    // The cap only binds when the parent is already core-saturated
++    // (requestedBlocks < rowCount after the min() above); a shape whose row
++    // count does not exceed the available cores keeps the parent launch width,
++    // so no shape loses cores without a resident-batch reason.  The cap is a
++    // pure upper bound: it never raises blockCount above the parent value and
++    // never drops below one block.  Row ownership order and per-row kernel
++    // math are untouched.
++    if (rowWidth > static_cast<uint64_t>(8192) && requestedBlocks < rowCount) {
++        uint64_t residentRows = 1;
++        if (xInfo.dtype == 0) {
++            residentRows = HostWideFullYRows(rowWidth, 4, 2, 4, 0);
++        } else if (xInfo.dtype == 1) {
++            residentRows = HostWideFullYRows(rowWidth, 2, 4, 2, 3);
++        } else if (xInfo.dtype == 2) {
++            residentRows = HostWideFullYRows(rowWidth, 4, 4, 2, 2);
++        }
++        const uint64_t batchCores = rowCount / residentRows;
++        if (batchCores < requestedBlocks) {
++            requestedBlocks = batchCores > 1 ? batchCores : 1;
++        }
+     }
+     const uint32_t blockCount = static_cast<uint32_t>(requestedBlocks);
+     const float invRowWidth = 1.0f / static_cast<float>(widthSigned);

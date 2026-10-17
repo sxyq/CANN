@@ -1,13 +1,13 @@
-# MAIN APPROVAL — EPILOGUE-FUSE-X V002
+# current route recordS — EPILOGUE-FUSE-X V002
 
 Date: 2026-09-27
-Approver: MAIN-2
+Recordr: MAIN-2
 DIRECT_PARENT=FROZEN_R31B_V011
 PARENT_SOURCE_SHA=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
 OFFICIAL_ANCHOR=45.16
 V001_DISPOSITION=NEEDS_ONE_MORE_LOCAL (SCALE-FOLD within ±5% noise band)
 
-## APPROVED SINGLE HYPOTHESIS
+## SELECTED SINGLE HYPOTHESIS
 
 V002-1 VMLA FUSED AFFINE.
 
@@ -20,7 +20,7 @@ No dtype-specific path. No sync/fence change. No reduction/scheduling/mode/DMA c
 
 Expected: V passes 6→4 on 2-tile rows; per-tile UB writeback 3→1; est. 10–20%.
 
-FORBIDDEN: V002-2 (BF16 output-domain affine) and V002-3 (row-wide issue width) are NOT in this revision.
+DEFERRED: V002-2 (BF16 output-domain affine) and V002-3 (row-wide issue width) are NOT in this revision.
 
 ## After implementation
 

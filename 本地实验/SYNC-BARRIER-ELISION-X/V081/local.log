@@ -1,0 +1,272 @@
+ROUTE=SYNC-BARRIER-ELISION-X
+REVISION=V081
+DIRECT_PARENT=R31B-V011
+HOST=
+DEVICE=3
+SHAPE=128x256
+DTYPE=BF16
+WARMUP=60
+PAIRS=31
+PARENT=PARENT_R31B_V011
+CANDIDATE=CANDIDATE_V081
+LOCAL_SCORE_TYPE=SINGLE_SHAPE_DEVICE_EVENT_LOCAL
+LOCAL_SCORE_COMPARABLE_TO_OFFICIAL=NO
+CANDIDATE_SOURCE_SHA256=f62c2692d8303288387a33501fa1a54ca8a57b7fbcf29ac8483e027063de570e
+PARENT_SOURCE_SHA256=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
+RUNNER_SHA256=73ced6716fce8a03e15448b15098dbc10c68c348aa74612ea869d81ea3bcef3f
+LOCAL_START_UTC=2026-10-08T20:33:50Z
+
+=== PRE UPTIME ===
+ 20:33:50 up 243 days,  8:09, 36 users,  load average: 72.79, 70.26, 69.34
+
+=== PRE NPU ===
++------------------------------------------------------------------------------------------------+
+| npu-smi 25.0.rc1.1               Version: 25.0.rc1.1                                           |
++---------------------------+---------------+----------------------------------------------------+
+| NPU   Name                | Health        | Power(W)    Temp(C)           Hugepages-Usage(page)|
+| Chip                      | Bus-Id        | AICore(%)   Memory-Usage(MB)  HBM-Usage(MB)        |
++===========================+===============+====================================================+
+| 0     910B3               | OK            | 154.3       32                0    / 0             |
+| 0                         | 0000:C1:00.0  | 20          0    / 0          10497/ 65536         |
++===========================+===============+====================================================+
+| 1     910B3               | OK            | 95.7        30                0    / 0             |
+| 0                         | 0000:C2:00.0  | 0           0    / 0          18378/ 65536         |
++===========================+===============+====================================================+
+| 2     910B3               | OK            | 94.0        30                0    / 0             |
+| 0                         | 0000:81:00.0  | 0           0    / 0          6435 / 65536         |
++===========================+===============+====================================================+
+| 3     910B3               | OK            | 89.1        29                0    / 0             |
+| 0                         | 0000:82:00.0  | 0           0    / 0          3428 / 65536         |
++===========================+===============+====================================================+
+| 4     910B3               | OK            | 197.6       57                0    / 0             |
+| 0                         | 0000:01:00.0  | 64          0    / 0          59193/ 65536         |
++===========================+===============+====================================================+
+| 5     910B3               | OK            | 170.3       51                0    / 0             |
+| 0                         | 0000:02:00.0  | 46          0    / 0          60222/ 65536         |
++===========================+===============+====================================================+
+| 6     910B3               | OK            | 166.8       47                0    / 0             |
+| 0                         | 0000:41:00.0  | 45          0    / 0          60221/ 65536         |
++===========================+===============+====================================================+
+| 7     910B3               | OK            | 179.1       42                0    / 0             |
+| 0                         | 0000:42:00.0  | 14          0    / 0          28952/ 65536         |
++===========================+===============+====================================================+
++---------------------------+---------------+----------------------------------------------------+
+| NPU     Chip              | Process id    | Process name             | Process memory(MB)      |
++===========================+===============+====================================================+
+| 0       0                 | 4183472       | python                   | 1416                    |
+| 0       0                 | 251901        | python                   | 5754                    |
++===========================+===============+====================================================+
+| 1       0                 | 4066169       | python                   | 14948                   |
++===========================+===============+====================================================+
+| 2       0                 | 2055832       | python                   | 3066                    |
++===========================+===============+====================================================+
+| No running processes found in NPU 3                                                            |
++===========================+===============+====================================================+
+| 4       0                 | 2999855       | VLLMEngineCor            | 55666                   |
++===========================+===============+====================================================+
+| 5       0                 | 89602         | VLLMWorker_TP            | 56700                   |
++===========================+===============+====================================================+
+| 6       0                 | 91228         | VLLMWorker_TP            | 56701                   |
++===========================+===============+====================================================+
+| 7       0                 | 439848        | python3                  | 21260                   |
+| 7       0                 | 2055831       | python                   | 4082                    |
++===========================+===============+====================================================+
+
+=== PRE ROUTE PROCESSES ===
+    PID    PPID STAT     ELAPSED COMMAND         COMMAND
+ 713643 1833615 Ss         00:02 bash            /bin/bash -lc set -o pipefail; { REV_DIR='本地实验/SYNC-BARRIER-ELISION-X/V081'; BUILD_DIR='/tmp/sync-v081-build.20261008'; TOOLKIT='/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002'; export ASCEND_HOME_PATH="$TOOLKIT"; export LD_LIBRARY_PATH="$TOOLKIT/aarch64-linux/lib64:$TOOLKIT/lib64:/usr/local/Ascend/driver/lib64/driver:/usr/local/Ascend/driver/lib64/common${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"; printf 'ROUTE=SYNC-BARRIER-ELISION-X\nREVISION=V081\nDIRECT_PARENT=R31B-V011\nHOST=%s\nDEVICE=3\nSHAPE=128x256\nDTYPE=BF16\nWARMUP=60\nPAIRS=31\nPARENT=PARENT_R31B_V011\nCANDIDATE=CANDIDATE_V081\nLOCAL_SCORE_TYPE=SINGLE_SHAPE_DEVICE_EVENT_LOCAL\nLOCAL_SCORE_COMPARABLE_TO_OFFICIAL=NO\nCANDIDATE_SOURCE_SHA256='; sha256sum "$REV_DIR/submission.asc" | awk '{print $1}'; printf 'PARENT_SOURCE_SHA256='; sha256sum "$REV_DIR/parent.asc" | awk '{print $1}'; printf 'RUNNER_SHA256='; sha256sum "$BUILD_DIR/sync_barrier_elision_correctness" | awk '{print $1}'; printf 'LOCAL_START_UTC=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"; printf '\n=== PRE UPTIME ===\n'; uptime; printf '\n=== PRE NPU ===\n'; npu-smi info || true; printf '\n=== PRE ROUTE PROCESSES ===\n'; ps -eo pid,ppid,stat,etime,comm,args | rg '[s]ync_barrier_elision|[c]orrectness_runner|PID' || true; RUN_RC=0; for LOCAL_RUN in 1 2 3; do printf '\n=== LOCAL_RUN_%s_START=%s ===\n' "$LOCAL_RUN" "$(date -u +%Y-%m-%dT%H:%M:%SZ)"; "$BUILD_DIR/sync_barrier_elision_correctness" 3 --local --bf16; RUN_RC=$?; printf 'LOCAL_RUN_%s_RC=%s\nLOCAL_RUN_%s_END=%s\n' "$LOCAL_RUN" "$RUN_RC" "$LOCAL_RUN" "$(date -u +%Y-%m-%dT%H:%M:%SZ)"; if [ "$RUN_RC" -ne 0 ]; then break; fi; done; printf '\n=== POST NPU ===\n'; npu-smi info || true; printf '\n=== POST UPTIME ===\n'; uptime; printf '\n=== POST ROUTE PROCESSES ===\n'; ps -eo pid,ppid,stat,etime,comm,args | rg '[s]ync_barrier_elision|[c]orrectness_runner|PID' || true; printf 'LOCAL_END_UTC=%s\nRESULT_RC=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$RUN_RC"; exit "$RUN_RC"; } 2>&1 | tee '本地实验/SYNC-BARRIER-ELISION-X/V081/local.log'; exit ${PIPESTATUS[0]}
+ 713647  713643 S          00:02 bash            /bin/bash -lc set -o pipefail; { REV_DIR='本地实验/SYNC-BARRIER-ELISION-X/V081'; BUILD_DIR='/tmp/sync-v081-build.20261008'; TOOLKIT='/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002'; export ASCEND_HOME_PATH="$TOOLKIT"; export LD_LIBRARY_PATH="$TOOLKIT/aarch64-linux/lib64:$TOOLKIT/lib64:/usr/local/Ascend/driver/lib64/driver:/usr/local/Ascend/driver/lib64/common${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"; printf 'ROUTE=SYNC-BARRIER-ELISION-X\nREVISION=V081\nDIRECT_PARENT=R31B-V011\nHOST=%s\nDEVICE=3\nSHAPE=128x256\nDTYPE=BF16\nWARMUP=60\nPAIRS=31\nPARENT=PARENT_R31B_V011\nCANDIDATE=CANDIDATE_V081\nLOCAL_SCORE_TYPE=SINGLE_SHAPE_DEVICE_EVENT_LOCAL\nLOCAL_SCORE_COMPARABLE_TO_OFFICIAL=NO\nCANDIDATE_SOURCE_SHA256='; sha256sum "$REV_DIR/submission.asc" | awk '{print $1}'; printf 'PARENT_SOURCE_SHA256='; sha256sum "$REV_DIR/parent.asc" | awk '{print $1}'; printf 'RUNNER_SHA256='; sha256sum "$BUILD_DIR/sync_barrier_elision_correctness" | awk '{print $1}'; printf 'LOCAL_START_UTC=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"; printf '\n=== PRE UPTIME ===\n'; uptime; printf '\n=== PRE NPU ===\n'; npu-smi info || true; printf '\n=== PRE ROUTE PROCESSES ===\n'; ps -eo pid,ppid,stat,etime,comm,args | rg '[s]ync_barrier_elision|[c]orrectness_runner|PID' || true; RUN_RC=0; for LOCAL_RUN in 1 2 3; do printf '\n=== LOCAL_RUN_%s_START=%s ===\n' "$LOCAL_RUN" "$(date -u +%Y-%m-%dT%H:%M:%SZ)"; "$BUILD_DIR/sync_barrier_elision_correctness" 3 --local --bf16; RUN_RC=$?; printf 'LOCAL_RUN_%s_RC=%s\nLOCAL_RUN_%s_END=%s\n' "$LOCAL_RUN" "$RUN_RC" "$LOCAL_RUN" "$(date -u +%Y-%m-%dT%H:%M:%SZ)"; if [ "$RUN_RC" -ne 0 ]; then break; fi; done; printf '\n=== POST NPU ===\n'; npu-smi info || true; printf '\n=== POST UPTIME ===\n'; uptime; printf '\n=== POST ROUTE PROCESSES ===\n'; ps -eo pid,ppid,stat,etime,comm,args | rg '[s]ync_barrier_elision|[c]orrectness_runner|PID' || true; printf 'LOCAL_END_UTC=%s\nRESULT_RC=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$RUN_RC"; exit "$RUN_RC"; } 2>&1 | tee '本地实验/SYNC-BARRIER-ELISION-X/V081/local.log'; exit ${PIPESTATUS[0]}
+ 713977  713647 S          00:00 rg              rg [s]ync_barrier_elision|[c]orrectness_runner|PID
+
+=== LOCAL_RUN_1_START=2026-10-08T20:33:51Z ===
+LOCAL_SAMPLE case=bf16-128x256 pair=01 order=P,C parent_device_us=24.6200 candidate_device_us=18.9400 parent_gelem_s=1.330950 candidate_gelem_s=1.730095 parent_wall_us=184.7420 candidate_wall_us=89.3310 paired_delta_us=-5.6800
+LOCAL_SAMPLE case=bf16-128x256 pair=02 order=C,P parent_device_us=17.9000 candidate_device_us=21.6600 parent_gelem_s=1.830615 candidate_gelem_s=1.512835 parent_wall_us=68.8600 candidate_wall_us=76.4810 paired_delta_us=3.7600
+LOCAL_SAMPLE case=bf16-128x256 pair=03 order=P,C parent_device_us=19.4800 candidate_device_us=17.6400 parent_gelem_s=1.682136 candidate_gelem_s=1.857596 parent_wall_us=74.7700 candidate_wall_us=66.0810 paired_delta_us=-1.8400
+LOCAL_SAMPLE case=bf16-128x256 pair=04 order=C,P parent_device_us=7.6400 candidate_device_us=8.1200 parent_gelem_s=4.289005 candidate_gelem_s=4.035468 parent_wall_us=80.7510 candidate_wall_us=69.0810 paired_delta_us=0.4800
+LOCAL_SAMPLE case=bf16-128x256 pair=05 order=P,C parent_device_us=7.6000 candidate_device_us=21.4000 parent_gelem_s=4.311579 candidate_gelem_s=1.531215 parent_wall_us=68.4310 candidate_wall_us=71.0010 paired_delta_us=13.8000
+LOCAL_SAMPLE case=bf16-128x256 pair=06 order=C,P parent_device_us=19.8800 candidate_device_us=20.4400 parent_gelem_s=1.648290 candidate_gelem_s=1.603131 parent_wall_us=66.9800 candidate_wall_us=68.5500 paired_delta_us=0.5600
+LOCAL_SAMPLE case=bf16-128x256 pair=07 order=P,C parent_device_us=7.8000 candidate_device_us=7.3800 parent_gelem_s=4.201026 candidate_gelem_s=4.440108 parent_wall_us=67.7110 candidate_wall_us=66.6110 paired_delta_us=-0.4200
+LOCAL_SAMPLE case=bf16-128x256 pair=08 order=C,P parent_device_us=18.9800 candidate_device_us=15.3400 parent_gelem_s=1.726449 candidate_gelem_s=2.136115 parent_wall_us=68.5210 candidate_wall_us=67.3310 paired_delta_us=-3.6400
+LOCAL_SAMPLE case=bf16-128x256 pair=09 order=P,C parent_device_us=18.3200 candidate_device_us=18.2800 parent_gelem_s=1.788646 candidate_gelem_s=1.792560 parent_wall_us=70.7400 candidate_wall_us=68.6100 paired_delta_us=-0.0400
+LOCAL_SAMPLE case=bf16-128x256 pair=10 order=C,P parent_device_us=7.5600 candidate_device_us=8.3600 parent_gelem_s=4.334392 candidate_gelem_s=3.919617 parent_wall_us=68.8610 candidate_wall_us=72.2410 paired_delta_us=0.8000
+LOCAL_SAMPLE case=bf16-128x256 pair=11 order=P,C parent_device_us=7.7000 candidate_device_us=6.9400 parent_gelem_s=4.255584 candidate_gelem_s=4.721614 parent_wall_us=68.3210 candidate_wall_us=62.2110 paired_delta_us=-0.7600
+LOCAL_SAMPLE case=bf16-128x256 pair=12 order=C,P parent_device_us=7.4200 candidate_device_us=7.7200 parent_gelem_s=4.416172 candidate_gelem_s=4.244560 parent_wall_us=73.9500 candidate_wall_us=69.4410 paired_delta_us=0.3000
+LOCAL_SAMPLE case=bf16-128x256 pair=13 order=P,C parent_device_us=7.5000 candidate_device_us=18.6800 parent_gelem_s=4.369067 candidate_gelem_s=1.754176 parent_wall_us=72.2200 candidate_wall_us=70.2410 paired_delta_us=11.1800
+LOCAL_SAMPLE case=bf16-128x256 pair=14 order=C,P parent_device_us=18.8000 candidate_device_us=19.8800 parent_gelem_s=1.742979 candidate_gelem_s=1.648290 parent_wall_us=64.9910 candidate_wall_us=67.6710 paired_delta_us=1.0800
+LOCAL_SAMPLE case=bf16-128x256 pair=15 order=P,C parent_device_us=18.0600 candidate_device_us=19.8000 parent_gelem_s=1.814396 candidate_gelem_s=1.654950 parent_wall_us=65.8210 candidate_wall_us=66.7400 paired_delta_us=1.7400
+LOCAL_SAMPLE case=bf16-128x256 pair=16 order=C,P parent_device_us=29.5000 candidate_device_us=20.1200 parent_gelem_s=1.110780 candidate_gelem_s=1.628628 parent_wall_us=75.3710 candidate_wall_us=65.2700 paired_delta_us=-9.3800
+LOCAL_SAMPLE case=bf16-128x256 pair=17 order=P,C parent_device_us=7.0600 candidate_device_us=6.8800 parent_gelem_s=4.641360 candidate_gelem_s=4.762791 parent_wall_us=68.3410 candidate_wall_us=70.3710 paired_delta_us=-0.1800
+LOCAL_SAMPLE case=bf16-128x256 pair=18 order=C,P parent_device_us=7.6400 candidate_device_us=20.3400 parent_gelem_s=4.289005 candidate_gelem_s=1.611013 parent_wall_us=70.7100 candidate_wall_us=72.1110 paired_delta_us=12.7000
+LOCAL_SAMPLE case=bf16-128x256 pair=19 order=P,C parent_device_us=7.3200 candidate_device_us=20.0800 parent_gelem_s=4.476503 candidate_gelem_s=1.631872 parent_wall_us=72.1400 candidate_wall_us=68.8010 paired_delta_us=12.7600
+LOCAL_SAMPLE case=bf16-128x256 pair=20 order=C,P parent_device_us=18.5800 candidate_device_us=26.2000 parent_gelem_s=1.763617 candidate_gelem_s=1.250687 parent_wall_us=74.9400 candidate_wall_us=100.5720 paired_delta_us=7.6200
+LOCAL_SAMPLE case=bf16-128x256 pair=21 order=P,C parent_device_us=18.5400 candidate_device_us=20.2400 parent_gelem_s=1.767422 candidate_gelem_s=1.618972 parent_wall_us=75.7700 candidate_wall_us=68.3710 paired_delta_us=1.7000
+LOCAL_SAMPLE case=bf16-128x256 pair=22 order=C,P parent_device_us=17.5800 candidate_device_us=23.6800 parent_gelem_s=1.863936 candidate_gelem_s=1.383784 parent_wall_us=67.8810 candidate_wall_us=67.6110 paired_delta_us=6.1000
+LOCAL_SAMPLE case=bf16-128x256 pair=23 order=P,C parent_device_us=21.2400 candidate_device_us=18.1400 parent_gelem_s=1.542750 candidate_gelem_s=1.806395 parent_wall_us=64.2010 candidate_wall_us=67.3600 paired_delta_us=-3.1000
+LOCAL_SAMPLE case=bf16-128x256 pair=24 order=C,P parent_device_us=20.6400 candidate_device_us=21.6600 parent_gelem_s=1.587597 candidate_gelem_s=1.512835 parent_wall_us=76.8210 candidate_wall_us=65.3000 paired_delta_us=1.0200
+LOCAL_SAMPLE case=bf16-128x256 pair=25 order=P,C parent_device_us=8.0000 candidate_device_us=7.6400 parent_gelem_s=4.096000 candidate_gelem_s=4.289005 parent_wall_us=69.6910 candidate_wall_us=69.4910 paired_delta_us=-0.3600
+LOCAL_SAMPLE case=bf16-128x256 pair=26 order=C,P parent_device_us=21.6800 candidate_device_us=19.4600 parent_gelem_s=1.511439 candidate_gelem_s=1.683864 parent_wall_us=69.0710 candidate_wall_us=68.3710 paired_delta_us=-2.2200
+LOCAL_SAMPLE case=bf16-128x256 pair=27 order=P,C parent_device_us=21.3600 candidate_device_us=16.6000 parent_gelem_s=1.534082 candidate_gelem_s=1.973976 parent_wall_us=67.1600 candidate_wall_us=72.5210 paired_delta_us=-4.7600
+LOCAL_SAMPLE case=bf16-128x256 pair=28 order=C,P parent_device_us=18.1400 candidate_device_us=8.5000 parent_gelem_s=1.806395 candidate_gelem_s=3.855059 parent_wall_us=80.0310 candidate_wall_us=79.2710 paired_delta_us=-9.6400
+LOCAL_SAMPLE case=bf16-128x256 pair=29 order=P,C parent_device_us=19.7600 candidate_device_us=7.2200 parent_gelem_s=1.658300 candidate_gelem_s=4.538504 parent_wall_us=67.9510 candidate_wall_us=66.5410 paired_delta_us=-12.5400
+LOCAL_SAMPLE case=bf16-128x256 pair=30 order=C,P parent_device_us=7.7000 candidate_device_us=19.1200 parent_gelem_s=4.255584 candidate_gelem_s=1.713808 parent_wall_us=70.1300 candidate_wall_us=67.5110 paired_delta_us=11.4200
+LOCAL_SAMPLE case=bf16-128x256 pair=31 order=P,C parent_device_us=19.5200 candidate_device_us=16.5600 parent_gelem_s=1.678689 candidate_gelem_s=1.978744 parent_wall_us=73.5300 candidate_wall_us=67.6910 paired_delta_us=-2.9600
+LOCAL_STATS case=bf16-128x256 metric=device_us binary=PARENT_R31B_V011 n=31 median=18.1400 mean=15.2748 stdev=6.5974 cv=0.43192 min=7.0600 max=29.5000 mad=3.2200 p10=7.5000 p90=21.3600
+LOCAL_STATS case=bf16-128x256 metric=device_us binary=CANDIDATE_V080 n=31 median=18.6800 mean=16.2265 stdev=5.9364 cv=0.36585 min=6.8800 max=26.2000 mad=2.1200 p10=7.3800 p90=21.6600
+LOCAL_STATS case=bf16-128x256 metric=wall_us binary=PARENT_R31B_V011 n=31 median=69.6910 mean=74.4971 stdev=20.8731 cv=0.28019 min=64.2010 max=184.7420 mad=2.5290 p10=66.9800 p90=76.8210
+LOCAL_STATS case=bf16-128x256 metric=wall_us binary=CANDIDATE_V080 n=31 median=68.5500 mean=70.6060 stdev=7.4060 cv=0.10489 min=62.2110 max=100.5720 mad=1.8100 p10=66.0810 p90=76.4810
+LOCAL_STATS case=bf16-128x256 metric=gelem_s binary=PARENT_R31B_V011 n=31 median=1.8064 mean=2.6879 stdev=1.3355 cv=0.49687 min=1.1108 max=4.6414 mad=0.2723 p10=1.5341 p90=4.3691
+LOCAL_STATS case=bf16-128x256 metric=gelem_s binary=CANDIDATE_V080 n=31 median=1.7542 mean=2.4459 stdev=1.2364 cv=0.50552 min=1.2507 max=4.7628 mad=0.2230 p10=1.5128 p90=4.4401
+LOCAL_STATS case=bf16-128x256 metric=paired_delta_us binary=CANDIDATE_MINUS_PARENT n=31 median=0.3000 mean=0.9516 stdev=6.5692 cv=6.90323 min=-12.5400 max=13.8000 mad=3.2600 p10=-5.6800 p90=11.4200
+LOCAL_RESULT route=SYNC-BARRIER-ELISION-X revision=V080 device=3 shape=128x256 dtype=bf16 samples=31 parent_median_us=18.1400 candidate_median_us=18.6800 parent_median_gelem_s=1.806395 candidate_median_gelem_s=1.754176 local_delta_us=0.3000 local_score_percent=-1.653804 candidate_minus_parent_percent=1.653804
+LOCAL_RUN_1_RC=0
+LOCAL_RUN_1_END=2026-10-08T20:33:55Z
+
+=== LOCAL_RUN_2_START=2026-10-08T20:33:56Z ===
+LOCAL_SAMPLE case=bf16-128x256 pair=01 order=P,C parent_device_us=20.1400 candidate_device_us=23.4000 parent_gelem_s=1.627011 candidate_gelem_s=1.400342 parent_wall_us=154.2820 candidate_wall_us=84.0210 paired_delta_us=3.2600
+LOCAL_SAMPLE case=bf16-128x256 pair=02 order=C,P parent_device_us=20.9000 candidate_device_us=22.6200 parent_gelem_s=1.567847 candidate_gelem_s=1.448630 parent_wall_us=93.9110 candidate_wall_us=77.0710 paired_delta_us=1.7200
+LOCAL_SAMPLE case=bf16-128x256 pair=03 order=P,C parent_device_us=24.7200 candidate_device_us=15.7200 parent_gelem_s=1.325566 candidate_gelem_s=2.084478 parent_wall_us=74.0610 candidate_wall_us=61.2010 paired_delta_us=-9.0000
+LOCAL_SAMPLE case=bf16-128x256 pair=04 order=C,P parent_device_us=14.4800 candidate_device_us=19.1400 parent_gelem_s=2.262983 candidate_gelem_s=1.712017 parent_wall_us=59.2100 candidate_wall_us=58.9010 paired_delta_us=4.6600
+LOCAL_SAMPLE case=bf16-128x256 pair=05 order=P,C parent_device_us=7.0400 candidate_device_us=18.9000 parent_gelem_s=4.654545 candidate_gelem_s=1.733757 parent_wall_us=68.9500 candidate_wall_us=58.9710 paired_delta_us=11.8600
+LOCAL_SAMPLE case=bf16-128x256 pair=06 order=C,P parent_device_us=7.2800 candidate_device_us=14.8800 parent_gelem_s=4.501099 candidate_gelem_s=2.202151 parent_wall_us=62.8000 candidate_wall_us=59.5110 paired_delta_us=7.6000
+LOCAL_SAMPLE case=bf16-128x256 pair=07 order=P,C parent_device_us=19.6800 candidate_device_us=7.0200 parent_gelem_s=1.665041 candidate_gelem_s=4.667806 parent_wall_us=70.3300 candidate_wall_us=62.0210 paired_delta_us=-12.6600
+LOCAL_SAMPLE case=bf16-128x256 pair=08 order=C,P parent_device_us=15.3400 candidate_device_us=16.9400 parent_gelem_s=2.136115 candidate_gelem_s=1.934357 parent_wall_us=59.3210 candidate_wall_us=60.4610 paired_delta_us=1.6000
+LOCAL_SAMPLE case=bf16-128x256 pair=09 order=P,C parent_device_us=8.4400 candidate_device_us=16.7600 parent_gelem_s=3.882464 candidate_gelem_s=1.955131 parent_wall_us=61.5600 candidate_wall_us=67.1410 paired_delta_us=8.3200
+LOCAL_SAMPLE case=bf16-128x256 pair=10 order=C,P parent_device_us=16.4800 candidate_device_us=14.9000 parent_gelem_s=1.988349 candidate_gelem_s=2.199195 parent_wall_us=69.2710 candidate_wall_us=59.3310 paired_delta_us=-1.5800
+LOCAL_SAMPLE case=bf16-128x256 pair=11 order=P,C parent_device_us=17.6800 candidate_device_us=14.0400 parent_gelem_s=1.853394 candidate_gelem_s=2.333903 parent_wall_us=59.2400 candidate_wall_us=58.0410 paired_delta_us=-3.6400
+LOCAL_SAMPLE case=bf16-128x256 pair=12 order=C,P parent_device_us=17.3200 candidate_device_us=14.4800 parent_gelem_s=1.891917 candidate_gelem_s=2.262983 parent_wall_us=57.4810 candidate_wall_us=59.6810 paired_delta_us=-2.8400
+LOCAL_SAMPLE case=bf16-128x256 pair=13 order=P,C parent_device_us=17.0800 candidate_device_us=15.7600 parent_gelem_s=1.918501 candidate_gelem_s=2.079188 parent_wall_us=58.7300 candidate_wall_us=67.4110 paired_delta_us=-1.3200
+LOCAL_SAMPLE case=bf16-128x256 pair=14 order=C,P parent_device_us=39.1600 candidate_device_us=17.4000 parent_gelem_s=0.836772 candidate_gelem_s=1.883218 parent_wall_us=85.9910 candidate_wall_us=58.2410 paired_delta_us=-21.7600
+LOCAL_SAMPLE case=bf16-128x256 pair=15 order=P,C parent_device_us=16.4200 candidate_device_us=19.7600 parent_gelem_s=1.995615 candidate_gelem_s=1.658300 parent_wall_us=59.0010 candidate_wall_us=66.3000 paired_delta_us=3.3400
+LOCAL_SAMPLE case=bf16-128x256 pair=16 order=C,P parent_device_us=8.0000 candidate_device_us=7.2200 parent_gelem_s=4.096000 candidate_gelem_s=4.538504 parent_wall_us=70.2310 candidate_wall_us=52.3610 paired_delta_us=-0.7800
+LOCAL_SAMPLE case=bf16-128x256 pair=17 order=P,C parent_device_us=7.8000 candidate_device_us=7.4800 parent_gelem_s=4.201026 candidate_gelem_s=4.380749 parent_wall_us=61.9510 candidate_wall_us=60.7500 paired_delta_us=-0.3200
+LOCAL_SAMPLE case=bf16-128x256 pair=18 order=C,P parent_device_us=8.3600 candidate_device_us=8.6200 parent_gelem_s=3.919617 candidate_gelem_s=3.801392 parent_wall_us=59.8510 candidate_wall_us=69.1510 paired_delta_us=0.2600
+LOCAL_SAMPLE case=bf16-128x256 pair=19 order=P,C parent_device_us=7.9200 candidate_device_us=22.2400 parent_gelem_s=4.137374 candidate_gelem_s=1.473381 parent_wall_us=62.6310 candidate_wall_us=66.2300 paired_delta_us=14.3200
+LOCAL_SAMPLE case=bf16-128x256 pair=20 order=C,P parent_device_us=7.7800 candidate_device_us=9.0600 parent_gelem_s=4.211825 candidate_gelem_s=3.616777 parent_wall_us=62.5810 candidate_wall_us=57.1400 paired_delta_us=1.2800
+LOCAL_SAMPLE case=bf16-128x256 pair=21 order=P,C parent_device_us=32.6800 candidate_device_us=8.3400 parent_gelem_s=1.002693 candidate_gelem_s=3.929017 parent_wall_us=83.0310 candidate_wall_us=69.4210 paired_delta_us=-24.3400
+LOCAL_SAMPLE case=bf16-128x256 pair=22 order=C,P parent_device_us=8.9800 candidate_device_us=8.8600 parent_gelem_s=3.648998 candidate_gelem_s=3.698420 parent_wall_us=67.5400 candidate_wall_us=68.3510 paired_delta_us=-0.1200
+LOCAL_SAMPLE case=bf16-128x256 pair=23 order=P,C parent_device_us=8.2000 candidate_device_us=7.3400 parent_gelem_s=3.996098 candidate_gelem_s=4.464305 parent_wall_us=67.0400 candidate_wall_us=66.6410 paired_delta_us=-0.8600
+LOCAL_SAMPLE case=bf16-128x256 pair=24 order=C,P parent_device_us=6.9000 candidate_device_us=16.4400 parent_gelem_s=4.748986 candidate_gelem_s=1.993187 parent_wall_us=67.0210 candidate_wall_us=65.8410 paired_delta_us=9.5400
+LOCAL_SAMPLE case=bf16-128x256 pair=25 order=P,C parent_device_us=21.7000 candidate_device_us=8.0200 parent_gelem_s=1.510046 candidate_gelem_s=4.085786 parent_wall_us=66.5210 candidate_wall_us=76.3700 paired_delta_us=-13.6800
+LOCAL_SAMPLE case=bf16-128x256 pair=26 order=C,P parent_device_us=13.6000 candidate_device_us=19.0600 parent_gelem_s=2.409412 candidate_gelem_s=1.719202 parent_wall_us=64.9310 candidate_wall_us=65.4400 paired_delta_us=5.4600
+LOCAL_SAMPLE case=bf16-128x256 pair=27 order=P,C parent_device_us=7.2600 candidate_device_us=7.6200 parent_gelem_s=4.513499 candidate_gelem_s=4.300263 parent_wall_us=66.8610 candidate_wall_us=57.3400 paired_delta_us=0.3600
+LOCAL_SAMPLE case=bf16-128x256 pair=28 order=C,P parent_device_us=7.8800 candidate_device_us=7.2600 parent_gelem_s=4.158375 candidate_gelem_s=4.513499 parent_wall_us=67.3910 candidate_wall_us=67.3600 paired_delta_us=-0.6200
+LOCAL_SAMPLE case=bf16-128x256 pair=29 order=P,C parent_device_us=20.7800 candidate_device_us=8.3400 parent_gelem_s=1.576901 candidate_gelem_s=3.929017 parent_wall_us=65.6010 candidate_wall_us=97.3110 paired_delta_us=-12.4400
+LOCAL_SAMPLE case=bf16-128x256 pair=30 order=C,P parent_device_us=8.3000 candidate_device_us=7.8200 parent_gelem_s=3.947952 candidate_gelem_s=4.190281 parent_wall_us=58.1210 candidate_wall_us=70.9310 paired_delta_us=-0.4800
+LOCAL_SAMPLE case=bf16-128x256 pair=31 order=P,C parent_device_us=15.7000 candidate_device_us=7.6400 parent_gelem_s=2.087134 candidate_gelem_s=4.289005 parent_wall_us=65.0900 candidate_wall_us=68.4510 paired_delta_us=-8.0600
+LOCAL_STATS case=bf16-128x256 metric=device_us binary=PARENT_R31B_V011 n=31 median=14.4800 mean=14.6452 stdev=7.9351 cv=0.54183 min=6.9000 max=39.1600 mad=6.2800 p10=7.2800 p90=21.7000
+LOCAL_STATS case=bf16-128x256 metric=device_us binary=CANDIDATE_V080 n=31 median=14.4800 mean=13.3252 stdev=5.4566 cv=0.40950 min=7.0200 max=23.4000 mad=5.6200 p10=7.3400 p90=19.7600
+LOCAL_STATS case=bf16-128x256 metric=wall_us binary=PARENT_R31B_V011 n=31 median=65.6010 mean=69.3720 stdev=17.8145 cv=0.25680 min=57.4810 max=154.2820 mad=4.0410 p10=59.0010 p90=83.0310
+LOCAL_STATS case=bf16-128x256 metric=wall_us binary=CANDIDATE_V080 n=31 median=65.8410 mean=65.7224 stdev=8.9123 cv=0.13560 min=52.3610 max=97.3110 mad=5.0910 p10=58.0410 p90=76.3700
+LOCAL_STATS case=bf16-128x256 metric=gelem_s binary=PARENT_R31B_V011 n=31 median=2.2630 mean=2.8475 stdev=1.2904 cv=0.45317 min=0.8368 max=4.7490 mad=1.2603 p10=1.5100 p90=4.5011
+LOCAL_STATS case=bf16-128x256 metric=gelem_s binary=CANDIDATE_V080 n=31 median=2.2630 mean=2.9187 stdev=1.1959 cv=0.40975 min=1.4003 max=4.6678 mad=0.8144 p10=1.6583 p90=4.4643
+LOCAL_STATS case=bf16-128x256 metric=paired_delta_us binary=CANDIDATE_MINUS_PARENT n=31 median=-0.3200 mean=-1.3200 stdev=8.8168 cv=-6.67938 min=-24.3400 max=14.3200 mad=3.5800 p10=-12.6600 p90=8.3200
+LOCAL_RESULT route=SYNC-BARRIER-ELISION-X revision=V080 device=3 shape=128x256 dtype=bf16 samples=31 parent_median_us=14.4800 candidate_median_us=14.4800 parent_median_gelem_s=2.262983 candidate_median_gelem_s=2.262983 local_delta_us=-0.3200 local_score_percent=2.209942 candidate_minus_parent_percent=-2.209942
+LOCAL_RUN_2_RC=0
+LOCAL_RUN_2_END=2026-10-08T20:34:00Z
+
+=== LOCAL_RUN_3_START=2026-10-08T20:34:00Z ===
+LOCAL_SAMPLE case=bf16-128x256 pair=01 order=P,C parent_device_us=19.7800 candidate_device_us=37.6800 parent_gelem_s=1.656623 candidate_gelem_s=0.869639 parent_wall_us=163.1320 candidate_wall_us=83.9110 paired_delta_us=17.9000
+LOCAL_SAMPLE case=bf16-128x256 pair=02 order=C,P parent_device_us=17.7400 candidate_device_us=19.4600 parent_gelem_s=1.847125 candidate_gelem_s=1.683864 parent_wall_us=72.9510 candidate_wall_us=80.4410 paired_delta_us=1.7200
+LOCAL_SAMPLE case=bf16-128x256 pair=03 order=P,C parent_device_us=13.4400 candidate_device_us=16.2800 parent_gelem_s=2.438095 candidate_gelem_s=2.012777 parent_wall_us=74.9410 candidate_wall_us=69.9810 paired_delta_us=2.8400
+LOCAL_SAMPLE case=bf16-128x256 pair=04 order=C,P parent_device_us=19.3800 candidate_device_us=21.2200 parent_gelem_s=1.690815 candidate_gelem_s=1.544204 parent_wall_us=69.9810 candidate_wall_us=75.7310 paired_delta_us=1.8400
+LOCAL_SAMPLE case=bf16-128x256 pair=05 order=P,C parent_device_us=7.7000 candidate_device_us=17.2000 parent_gelem_s=4.255584 candidate_gelem_s=1.905116 parent_wall_us=69.0810 candidate_wall_us=68.9300 paired_delta_us=9.5000
+LOCAL_SAMPLE case=bf16-128x256 pair=06 order=C,P parent_device_us=17.1800 candidate_device_us=19.1000 parent_gelem_s=1.907334 candidate_gelem_s=1.715602 parent_wall_us=70.3810 candidate_wall_us=70.9110 paired_delta_us=1.9200
+LOCAL_SAMPLE case=bf16-128x256 pair=07 order=P,C parent_device_us=7.4800 candidate_device_us=16.5200 parent_gelem_s=4.380749 candidate_gelem_s=1.983535 parent_wall_us=71.9410 candidate_wall_us=69.9610 paired_delta_us=9.0400
+LOCAL_SAMPLE case=bf16-128x256 pair=08 order=C,P parent_device_us=22.9800 candidate_device_us=20.9600 parent_gelem_s=1.425936 candidate_gelem_s=1.563359 parent_wall_us=70.4600 candidate_wall_us=69.7610 paired_delta_us=-2.0200
+LOCAL_SAMPLE case=bf16-128x256 pair=09 order=P,C parent_device_us=11.4200 candidate_device_us=8.1800 parent_gelem_s=2.869352 candidate_gelem_s=4.005868 parent_wall_us=72.3500 candidate_wall_us=69.1810 paired_delta_us=-3.2400
+LOCAL_SAMPLE case=bf16-128x256 pair=10 order=C,P parent_device_us=20.8000 candidate_device_us=16.8200 parent_gelem_s=1.575385 candidate_gelem_s=1.948157 parent_wall_us=69.7310 candidate_wall_us=73.2710 paired_delta_us=-3.9800
+LOCAL_SAMPLE case=bf16-128x256 pair=11 order=P,C parent_device_us=6.9200 candidate_device_us=23.3200 parent_gelem_s=4.735260 candidate_gelem_s=1.405146 parent_wall_us=69.3610 candidate_wall_us=67.8110 paired_delta_us=16.4000
+LOCAL_SAMPLE case=bf16-128x256 pair=12 order=C,P parent_device_us=19.2600 candidate_device_us=8.0200 parent_gelem_s=1.701350 candidate_gelem_s=4.085786 parent_wall_us=68.1900 candidate_wall_us=71.3900 paired_delta_us=-11.2400
+LOCAL_SAMPLE case=bf16-128x256 pair=13 order=P,C parent_device_us=17.3400 candidate_device_us=17.5400 parent_gelem_s=1.889735 candidate_gelem_s=1.868187 parent_wall_us=70.1510 candidate_wall_us=68.1310 paired_delta_us=0.2000
+LOCAL_SAMPLE case=bf16-128x256 pair=14 order=C,P parent_device_us=20.5800 candidate_device_us=19.0400 parent_gelem_s=1.592226 candidate_gelem_s=1.721008 parent_wall_us=68.5810 candidate_wall_us=67.5410 paired_delta_us=-1.5400
+LOCAL_SAMPLE case=bf16-128x256 pair=15 order=P,C parent_device_us=16.6400 candidate_device_us=19.9800 parent_gelem_s=1.969231 candidate_gelem_s=1.640040 parent_wall_us=70.1600 candidate_wall_us=67.1900 paired_delta_us=3.3400
+LOCAL_SAMPLE case=bf16-128x256 pair=16 order=C,P parent_device_us=33.7800 candidate_device_us=7.2800 parent_gelem_s=0.970041 candidate_gelem_s=4.501099 parent_wall_us=85.3010 candidate_wall_us=69.8810 paired_delta_us=-26.5000
+LOCAL_SAMPLE case=bf16-128x256 pair=17 order=P,C parent_device_us=7.0000 candidate_device_us=7.2800 parent_gelem_s=4.681143 candidate_gelem_s=4.501099 parent_wall_us=71.6410 candidate_wall_us=71.9410 paired_delta_us=0.2800
+LOCAL_SAMPLE case=bf16-128x256 pair=18 order=C,P parent_device_us=7.5800 candidate_device_us=16.3600 parent_gelem_s=4.322955 candidate_gelem_s=2.002934 parent_wall_us=69.3510 candidate_wall_us=70.6710 paired_delta_us=8.7800
+LOCAL_SAMPLE case=bf16-128x256 pair=19 order=P,C parent_device_us=7.7000 candidate_device_us=16.0600 parent_gelem_s=4.255584 candidate_gelem_s=2.040349 parent_wall_us=70.0400 candidate_wall_us=70.9610 paired_delta_us=8.3600
+LOCAL_SAMPLE case=bf16-128x256 pair=20 order=C,P parent_device_us=7.2600 candidate_device_us=17.6400 parent_gelem_s=4.513499 candidate_gelem_s=1.857596 parent_wall_us=72.3810 candidate_wall_us=70.2010 paired_delta_us=10.3800
+LOCAL_SAMPLE case=bf16-128x256 pair=21 order=P,C parent_device_us=7.7400 candidate_device_us=17.9200 parent_gelem_s=4.233592 candidate_gelem_s=1.828571 parent_wall_us=62.1110 candidate_wall_us=69.3410 paired_delta_us=10.1800
+LOCAL_SAMPLE case=bf16-128x256 pair=22 order=C,P parent_device_us=25.5000 candidate_device_us=15.8200 parent_gelem_s=1.285020 candidate_gelem_s=2.071302 parent_wall_us=79.7500 candidate_wall_us=73.2110 paired_delta_us=-9.6800
+LOCAL_SAMPLE case=bf16-128x256 pair=23 order=P,C parent_device_us=8.1400 candidate_device_us=7.9400 parent_gelem_s=4.025553 candidate_gelem_s=4.126952 parent_wall_us=61.1300 candidate_wall_us=70.1810 paired_delta_us=-0.2000
+LOCAL_SAMPLE case=bf16-128x256 pair=24 order=C,P parent_device_us=16.1200 candidate_device_us=7.9400 parent_gelem_s=2.032754 candidate_gelem_s=4.126952 parent_wall_us=68.2310 candidate_wall_us=71.7810 paired_delta_us=-8.1800
+LOCAL_SAMPLE case=bf16-128x256 pair=25 order=P,C parent_device_us=7.0000 candidate_device_us=18.1000 parent_gelem_s=4.681143 candidate_gelem_s=1.810387 parent_wall_us=76.2110 candidate_wall_us=71.4910 paired_delta_us=11.1000
+LOCAL_SAMPLE case=bf16-128x256 pair=26 order=C,P parent_device_us=15.7400 candidate_device_us=16.7000 parent_gelem_s=2.081830 candidate_gelem_s=1.962156 parent_wall_us=69.0810 candidate_wall_us=70.3000 paired_delta_us=0.9600
+LOCAL_SAMPLE case=bf16-128x256 pair=27 order=P,C parent_device_us=21.1400 candidate_device_us=18.0400 parent_gelem_s=1.550047 candidate_gelem_s=1.816408 parent_wall_us=68.3810 candidate_wall_us=69.6310 paired_delta_us=-3.1000
+LOCAL_SAMPLE case=bf16-128x256 pair=28 order=C,P parent_device_us=16.2800 candidate_device_us=17.1600 parent_gelem_s=2.012777 candidate_gelem_s=1.909557 parent_wall_us=71.6410 candidate_wall_us=72.2410 paired_delta_us=0.8800
+LOCAL_SAMPLE case=bf16-128x256 pair=29 order=P,C parent_device_us=20.9000 candidate_device_us=8.0600 parent_gelem_s=1.567847 candidate_gelem_s=4.065509 parent_wall_us=69.7900 candidate_wall_us=71.5500 paired_delta_us=-12.8400
+LOCAL_SAMPLE case=bf16-128x256 pair=30 order=C,P parent_device_us=15.6400 candidate_device_us=7.2400 parent_gelem_s=2.095141 candidate_gelem_s=4.525967 parent_wall_us=68.2310 candidate_wall_us=69.7610 paired_delta_us=-8.4000
+LOCAL_SAMPLE case=bf16-128x256 pair=31 order=P,C parent_device_us=7.4000 candidate_device_us=17.0600 parent_gelem_s=4.428108 candidate_gelem_s=1.920750 parent_wall_us=69.3310 candidate_wall_us=67.5610 paired_delta_us=9.6600
+LOCAL_STATS case=bf16-128x256 metric=device_us binary=PARENT_R31B_V011 n=31 median=16.1200 mean=14.9535 stdev=6.8129 cv=0.45560 min=6.9200 max=33.7800 mad=4.7800 p10=7.2600 p90=21.1400
+LOCAL_STATS case=bf16-128x256 metric=device_us binary=CANDIDATE_V080 n=31 median=17.0600 mean=16.0619 stdev=6.3022 cv=0.39237 min=7.2400 max=37.6800 mad=1.9800 p10=7.9400 p90=20.9600
+LOCAL_STATS case=bf16-128x256 metric=wall_us binary=PARENT_R31B_V011 n=31 median=70.0400 mean=73.6772 stdev=17.1602 cv=0.23291 min=61.1300 max=163.1320 mad=1.6010 p10=68.2310 p90=76.2110
+LOCAL_STATS case=bf16-128x256 metric=wall_us binary=CANDIDATE_V080 n=31 median=70.2010 mean=71.1241 stdev=3.5062 cv=0.04930 min=67.1900 max=83.9110 mad=1.2710 p10=67.8110 p90=73.2710
+LOCAL_STATS case=bf16-128x256 metric=gelem_s binary=PARENT_R31B_V011 n=31 median=2.0328 mean=2.7313 stdev=1.3137 cv=0.48096 min=0.9700 max=4.7353 mad=0.4827 p10=1.5500 p90=4.5135
+LOCAL_STATS case=bf16-128x256 metric=gelem_s binary=CANDIDATE_V080 n=31 median=1.9208 mean=2.4200 stdev=1.1210 cv=0.46323 min=0.8696 max=4.5260 mad=0.1997 p10=1.5634 p90=4.1270
+LOCAL_STATS case=bf16-128x256 metric=paired_delta_us binary=CANDIDATE_MINUS_PARENT n=31 median=0.9600 mean=1.1084 stdev=9.3028 cv=8.39311 min=-26.5000 max=17.9000 mad=7.4000 p10=-9.6800 p90=10.3800
+LOCAL_RESULT route=SYNC-BARRIER-ELISION-X revision=V080 device=3 shape=128x256 dtype=bf16 samples=31 parent_median_us=16.1200 candidate_median_us=17.0600 parent_median_gelem_s=2.032754 candidate_median_gelem_s=1.920750 local_delta_us=0.9600 local_score_percent=-5.955334 candidate_minus_parent_percent=5.955334
+LOCAL_RUN_3_RC=0
+LOCAL_RUN_3_END=2026-10-08T20:34:04Z
+
+=== POST NPU ===
++------------------------------------------------------------------------------------------------+
+| npu-smi 25.0.rc1.1               Version: 25.0.rc1.1                                           |
++---------------------------+---------------+----------------------------------------------------+
+| NPU   Name                | Health        | Power(W)    Temp(C)           Hugepages-Usage(page)|
+| Chip                      | Bus-Id        | AICore(%)   Memory-Usage(MB)  HBM-Usage(MB)        |
++===========================+===============+====================================================+
+| 0     910B3               | OK            | 135.7       31                0    / 0             |
+| 0                         | 0000:C1:00.0  | 12          0    / 0          10497/ 65536         |
++===========================+===============+====================================================+
+| 1     910B3               | OK            | 108.5       30                0    / 0             |
+| 0                         | 0000:C2:00.0  | 0           0    / 0          18381/ 65536         |
++===========================+===============+====================================================+
+| 2     910B3               | OK            | 97.1        31                0    / 0             |
+| 0                         | 0000:81:00.0  | 1           0    / 0          6436 / 65536         |
++===========================+===============+====================================================+
+| 3     910B3               | OK            | 90.3        29                0    / 0             |
+| 0                         | 0000:82:00.0  | 0           0    / 0          3430 / 65536         |
++===========================+===============+====================================================+
+| 4     910B3               | OK            | 199.7       57                0    / 0             |
+| 0                         | 0000:01:00.0  | 64          0    / 0          59193/ 65536         |
++===========================+===============+====================================================+
+| 5     910B3               | OK            | 171.3       50                0    / 0             |
+| 0                         | 0000:02:00.0  | 47          0    / 0          60221/ 65536         |
++===========================+===============+====================================================+
+| 6     910B3               | OK            | 172.5       48                0    / 0             |
+| 0                         | 0000:41:00.0  | 46          0    / 0          60221/ 65536         |
++===========================+===============+====================================================+
+| 7     910B3               | OK            | 135.7       37                0    / 0             |
+| 0                         | 0000:42:00.0  | 4           0    / 0          28952/ 65536         |
++===========================+===============+====================================================+
++---------------------------+---------------+----------------------------------------------------+
+| NPU     Chip              | Process id    | Process name             | Process memory(MB)      |
++===========================+===============+====================================================+
+| 0       0                 | 4183472       | python                   | 1416                    |
+| 0       0                 | 251901        | python                   | 5754                    |
++===========================+===============+====================================================+
+| 1       0                 | 4066169       | python                   | 14952                   |
++===========================+===============+====================================================+
+| 2       0                 | 2055832       | python                   | 3066                    |
++===========================+===============+====================================================+
+| No running processes found in NPU 3                                                            |
++===========================+===============+====================================================+
+| 4       0                 | 2999855       | VLLMEngineCor            | 55666                   |
++===========================+===============+====================================================+
+| 5       0                 | 89602         | VLLMWorker_TP            | 56700                   |
++===========================+===============+====================================================+
+| 6       0                 | 91228         | VLLMWorker_TP            | 56701                   |
++===========================+===============+====================================================+
+| 7       0                 | 439848        | python3                  | 21260                   |
+| 7       0                 | 2055831       | python                   | 4082                    |
++===========================+===============+====================================================+
+
+=== POST UPTIME ===
+ 20:34:05 up 243 days,  8:10, 36 users,  load average: 77.07, 71.54, 69.79
+
+=== POST ROUTE PROCESSES ===
+    PID    PPID STAT     ELAPSED COMMAND         COMMAND
+ 713643 1833615 Ss         00:16 bash            /bin/bash -lc set -o pipefail; { REV_DIR='本地实验/SYNC-BARRIER-ELISION-X/V081'; BUILD_DIR='/tmp/sync-v081-build.20261008'; TOOLKIT='/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002'; export ASCEND_HOME_PATH="$TOOLKIT"; export LD_LIBRARY_PATH="$TOOLKIT/aarch64-linux/lib64:$TOOLKIT/lib64:/usr/local/Ascend/driver/lib64/driver:/usr/local/Ascend/driver/lib64/common${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"; printf 'ROUTE=SYNC-BARRIER-ELISION-X\nREVISION=V081\nDIRECT_PARENT=R31B-V011\nHOST=%s\nDEVICE=3\nSHAPE=128x256\nDTYPE=BF16\nWARMUP=60\nPAIRS=31\nPARENT=PARENT_R31B_V011\nCANDIDATE=CANDIDATE_V081\nLOCAL_SCORE_TYPE=SINGLE_SHAPE_DEVICE_EVENT_LOCAL\nLOCAL_SCORE_COMPARABLE_TO_OFFICIAL=NO\nCANDIDATE_SOURCE_SHA256='; sha256sum "$REV_DIR/submission.asc" | awk '{print $1}'; printf 'PARENT_SOURCE_SHA256='; sha256sum "$REV_DIR/parent.asc" | awk '{print $1}'; printf 'RUNNER_SHA256='; sha256sum "$BUILD_DIR/sync_barrier_elision_correctness" | awk '{print $1}'; printf 'LOCAL_START_UTC=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"; printf '\n=== PRE UPTIME ===\n'; uptime; printf '\n=== PRE NPU ===\n'; npu-smi info || true; printf '\n=== PRE ROUTE PROCESSES ===\n'; ps -eo pid,ppid,stat,etime,comm,args | rg '[s]ync_barrier_elision|[c]orrectness_runner|PID' || true; RUN_RC=0; for LOCAL_RUN in 1 2 3; do printf '\n=== LOCAL_RUN_%s_START=%s ===\n' "$LOCAL_RUN" "$(date -u +%Y-%m-%dT%H:%M:%SZ)"; "$BUILD_DIR/sync_barrier_elision_correctness" 3 --local --bf16; RUN_RC=$?; printf 'LOCAL_RUN_%s_RC=%s\nLOCAL_RUN_%s_END=%s\n' "$LOCAL_RUN" "$RUN_RC" "$LOCAL_RUN" "$(date -u +%Y-%m-%dT%H:%M:%SZ)"; if [ "$RUN_RC" -ne 0 ]; then break; fi; done; printf '\n=== POST NPU ===\n'; npu-smi info || true; printf '\n=== POST UPTIME ===\n'; uptime; printf '\n=== POST ROUTE PROCESSES ===\n'; ps -eo pid,ppid,stat,etime,comm,args | rg '[s]ync_barrier_elision|[c]orrectness_runner|PID' || true; printf 'LOCAL_END_UTC=%s\nRESULT_RC=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$RUN_RC"; exit "$RUN_RC"; } 2>&1 | tee '本地实验/SYNC-BARRIER-ELISION-X/V081/local.log'; exit ${PIPESTATUS[0]}
+ 713647  713643 S          00:16 bash            /bin/bash -lc set -o pipefail; { REV_DIR='本地实验/SYNC-BARRIER-ELISION-X/V081'; BUILD_DIR='/tmp/sync-v081-build.20261008'; TOOLKIT='/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002'; export ASCEND_HOME_PATH="$TOOLKIT"; export LD_LIBRARY_PATH="$TOOLKIT/aarch64-linux/lib64:$TOOLKIT/lib64:/usr/local/Ascend/driver/lib64/driver:/usr/local/Ascend/driver/lib64/common${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"; printf 'ROUTE=SYNC-BARRIER-ELISION-X\nREVISION=V081\nDIRECT_PARENT=R31B-V011\nHOST=%s\nDEVICE=3\nSHAPE=128x256\nDTYPE=BF16\nWARMUP=60\nPAIRS=31\nPARENT=PARENT_R31B_V011\nCANDIDATE=CANDIDATE_V081\nLOCAL_SCORE_TYPE=SINGLE_SHAPE_DEVICE_EVENT_LOCAL\nLOCAL_SCORE_COMPARABLE_TO_OFFICIAL=NO\nCANDIDATE_SOURCE_SHA256='; sha256sum "$REV_DIR/submission.asc" | awk '{print $1}'; printf 'PARENT_SOURCE_SHA256='; sha256sum "$REV_DIR/parent.asc" | awk '{print $1}'; printf 'RUNNER_SHA256='; sha256sum "$BUILD_DIR/sync_barrier_elision_correctness" | awk '{print $1}'; printf 'LOCAL_START_UTC=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"; printf '\n=== PRE UPTIME ===\n'; uptime; printf '\n=== PRE NPU ===\n'; npu-smi info || true; printf '\n=== PRE ROUTE PROCESSES ===\n'; ps -eo pid,ppid,stat,etime,comm,args | rg '[s]ync_barrier_elision|[c]orrectness_runner|PID' || true; RUN_RC=0; for LOCAL_RUN in 1 2 3; do printf '\n=== LOCAL_RUN_%s_START=%s ===\n' "$LOCAL_RUN" "$(date -u +%Y-%m-%dT%H:%M:%SZ)"; "$BUILD_DIR/sync_barrier_elision_correctness" 3 --local --bf16; RUN_RC=$?; printf 'LOCAL_RUN_%s_RC=%s\nLOCAL_RUN_%s_END=%s\n' "$LOCAL_RUN" "$RUN_RC" "$LOCAL_RUN" "$(date -u +%Y-%m-%dT%H:%M:%SZ)"; if [ "$RUN_RC" -ne 0 ]; then break; fi; done; printf '\n=== POST NPU ===\n'; npu-smi info || true; printf '\n=== POST UPTIME ===\n'; uptime; printf '\n=== POST ROUTE PROCESSES ===\n'; ps -eo pid,ppid,stat,etime,comm,args | rg '[s]ync_barrier_elision|[c]orrectness_runner|PID' || true; printf 'LOCAL_END_UTC=%s\nRESULT_RC=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$RUN_RC"; exit "$RUN_RC"; } 2>&1 | tee '本地实验/SYNC-BARRIER-ELISION-X/V081/local.log'; exit ${PIPESTATUS[0]}
+ 717269  713647 S          00:00 rg              rg [s]ync_barrier_elision|[c]orrectness_runner|PID
+LOCAL_END_UTC=2026-10-08T20:34:06Z
+RESULT_RC=0

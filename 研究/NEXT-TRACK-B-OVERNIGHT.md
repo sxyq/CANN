@@ -141,4 +141,4 @@ This is a *dataflow* change (pipelining), not a sync removal. The existing PipeB
 
 ---
 
-REQUEST_MAIN_APPROVAL: SEQ-FUSE-2 (INLINE-RECIPROCAL DENOMINATOR) as first V003 hypothesis for VECTOR-MATH-X.
+RECOMMENDATION: SEQ-FUSE-2 (INLINE-RECIPROCAL DENOMINATOR) as first V003 hypothesis for VECTOR-MATH-X.

@@ -1,0 +1,69 @@
+{
+  "route": "W4-R15-SAFE-MULTIROW-DMA-X",
+  "revision": "V002",
+  "direct_parent": "W4-R15-V001",
+  "parent_commit": "5249837a179f58596b75a2637d4b2944d15234e1",
+  "parent_source_sha256": "90b295ab3c0bceff011ffadd780b1abfc2d412146e2f20bb025158b40889a7f4",
+  "candidate_source": "本地实验/W4-R15/V002/submission.asc",
+  "candidate_source_sha256": "10b73716c806ff41dbe27bf6b7200d8dde4fa4953053e29add1d412445b7604b",
+  "single_change": "In ProcessWideLowPrecision Pass 2, move SyncVToMTE2 from each batch-row iteration to once after the batch-row loop for each tile; retain the tile-level V_MTE2 release event and all MTE3 synchronization.",
+  "compile": {
+    "status": "PASS",
+    "soc": "Ascend910B3",
+    "npu_arch": "dav-2201",
+    "cann": "8.5.0.alpha002",
+    "device": 2,
+    "free_hbm_mb": 62259,
+    "other_process_present": true,
+    "load_note": "HBM usage 5%; AICore/AIVector usage 0%; load fields are observational.",
+    "log": "本地实验/W4-R15/V002/compile.log",
+    "prior_script_attempt": "本地实验/W4-R15/V002/compile-script-attempt-1.log"
+  },
+  "correctness": {
+    "status": "PASS",
+    "proxy_cases": [
+      {"rows": 2, "width": 12288, "dtype": "fp16", "parent": "PASS", "candidate": "PASS"},
+      {"rows": 2, "width": 32768, "dtype": "fp16", "parent": "PASS", "candidate": "PASS"},
+      {"rows": 2, "width": 12288, "dtype": "bf16", "parent": "PASS", "candidate": "PASS"},
+      {"rows": 2, "width": 32768, "dtype": "bf16", "parent": "PASS", "candidate": "PASS"}
+    ],
+    "device": 2,
+    "free_hbm_mb": 62259,
+    "log": "本地实验/W4-R15/V002/correctness.log"
+  },
+  "local": {
+    "status": "OBSERVED_NOISY",
+    "case": {"rows": 2, "width": 12288, "dtype": "fp16", "name": "local-proxy-fp16-d12288"},
+    "method": "21 interleaved Parent/Candidate pairs, alternating P,C and C,P; device event primary, wall time diagnostic; warmup 45 each.",
+    "device": 2,
+    "free_hbm_mb": 62259,
+    "device_load": {"hbm_usage_percent": 5, "aicore_usage_percent": 0, "aivector_usage_percent": 0, "other_process_present": true},
+    "parent_raw_device_us": [27.920, 7.860, 20.720, 8.220, 6.120, 8.980, 20.860, 22.100, 20.040, 8.460, 19.840, 20.000, 6.300, 20.420, 6.340, 21.260, 6.420, 20.960, 19.280, 6.160, 21.560],
+    "candidate_raw_device_us": [25.620, 26.520, 26.820, 8.280, 24.500, 19.140, 21.260, 7.820, 7.000, 22.260, 21.420, 6.620, 23.940, 7.180, 5.840, 5.920, 24.960, 7.160, 6.240, 21.960, 6.480],
+    "parent_raw_wall_us": [174.842, 59.860, 65.251, 67.810, 65.501, 66.940, 68.341, 75.021, 63.810, 65.830, 66.000, 76.831, 67.070, 73.801, 66.590, 75.031, 58.300, 74.941, 74.230, 67.031, 64.890],
+    "candidate_raw_wall_us": [86.180, 77.491, 73.310, 68.771, 73.600, 73.211, 82.630, 66.120, 76.001, 63.760, 81.891, 69.030, 72.761, 73.040, 64.481, 73.040, 77.231, 70.640, 66.551, 74.910, 66.291],
+    "parent_median_us": 19.840,
+    "candidate_median_us": 19.140,
+    "local_score_candidate_median_us": 19.140,
+    "marginal_median_delta_candidate_minus_parent_us": -0.700,
+    "marginal_median_delta_percent": -3.5282,
+    "paired_delta_raw_us": [-2.300, 18.660, 6.100, 0.060, 18.380, 10.160, 0.400, -14.280, -13.040, 13.800, 1.580, -13.380, 17.640, -13.240, -0.500, -15.340, 18.540, -13.800, -13.040, 15.800, -15.080],
+    "paired_delta_median_candidate_minus_parent_us": 0.060,
+    "paired_delta_mad_us": 13.440,
+    "parent_cv": 0.48247,
+    "candidate_cv": 0.55917,
+    "wall_parent_median_us": 67.031,
+    "wall_candidate_median_us": 73.040,
+    "interpretation": "No stable performance direction is established. Candidate marginal median is 0.700 us lower, while median paired Candidate-minus-Parent delta is +0.060 us; paired MAD is 13.440 us, and the device-time samples are widely dispersed. Do not promote V002 to Local Best.",
+    "log": "本地实验/W4-R15/V002/local.log"
+  },
+  "official": "NOT_SUBMITTED",
+  "current_local_best": "NONE",
+  "evidence": [
+    "本地实验/W4-R15/V002/REVISION-DECLARATION.md",
+    "本地实验/W4-R15/V002/compile.log",
+    "本地实验/W4-R15/V002/compile-script-attempt-1.log",
+    "本地实验/W4-R15/V002/correctness.log",
+    "本地实验/W4-R15/V002/local.log"
+  ]
+}

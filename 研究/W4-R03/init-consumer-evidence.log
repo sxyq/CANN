@@ -1,0 +1,992 @@
+R03 Init consumer study: original read-only command output
+SOURCE_REF=712e47230287182bc65ab433a3ce714e6fdafd9f
+DEVICE_OPERATION=NONE
+These are source/SDK observations, not generated device instructions or timing.
+
+[SOURCE_AUDIT]
+SOURCE=712e47230287182bc65ab433a3ce714e6fdafd9f:线上结果/R31B/V011/submission.asc
+MODE=LEXICAL_SOURCE_AUDIT; DOES_NOT_MODEL_COMPILER_OR_DEVICE_EXECUTION
+METHOD_COUNT=45
+SYNTACTICALLY_REACHABLE=29
+CALLS Init L49-L157: ChooseWideFullYRows
+CALLS Process L162-L494: FromFloat,Load,ProcessBf16FullRowOutputPipelined,ProcessBf16FullTileBatchedOutputPipelined,ProcessFp16FullRowOutputPipelined,ProcessFp16FullTileBatchedOutputPipelined,ProcessFp32FullRowOutputPipelined,ProcessNarrowMidOverlap,ProcessSmallFp32Batched,ProcessSmallFp32ContiguousBatched,ProcessSmallLowPrecisionContiguousBatched,ProcessWideFp32,ProcessWideLowPrecision,Store,SyncMTE2ToV,SyncMTE3ToV,SyncSToV,SyncVToMTE2,SyncVToMTE3,SyncVToS,TileLength,ToFloat
+CALLS ProcessWideFp32 L1850-L1854: ProcessWideFp32FullCacheRows
+CALLS ProcessWideLowPrecision L3079-L3365: FromFloat,Load,Store,SyncMTE3ToV,SyncSToV,SyncVToMTE2,SyncVToMTE3,SyncVToS,ToFloat
+CALLS ProcessNarrowMidOverlap L502-L620: FromFloat,Load,Store,SyncMTE2ToV,SyncMTE3ToV,SyncSToV,SyncVToMTE3,SyncVToS,ToFloat
+UNREACHABLE_METHODS_FROM_ENTRY=ComputeWideFp32InvRms,ComputeWideFp32InvRmsPipelined,ComputeWideLowPrecisionInvRms,ComputeWideLowPrecisionInvRmsPipelined,ProcessWideBf16CachedRows,ProcessWideFp16BatchedOutputPipelined,ProcessWideFp16CachedRows,ProcessWideFp32Batched,ProcessWideFp32CachedRows,ProcessWideFp32PanelResident,WideFp16BatchOutputTileLength,WideFp16CachedTileLength,WideFp32BatchTileLength,WideFp32CachedTileLength,WideFp32TileLength,WideTileLength
+INITBUFFER_SITES
+L75: xBuf_ SIZE=tileElems * sizeof(float)
+L76: residualBuf_ SIZE=tileElems * sizeof(float)
+L77: valueFp32Buf_ SIZE=yElemsPerRow * wideFullYRows_ * sizeof(float)
+L79: reduceFp32Buf_ SIZE=wideFullYRows_ * reduceStride * sizeof(float)
+L86: xBuf_ SIZE=2 * tileElems * sizeof(half)
+L87: residualBuf_ SIZE=2 * tileElems * sizeof(half)
+L88: outputBuf_ SIZE=tileElems * sizeof(half)
+L91: gammaBuf_ SIZE=yElemsPerRow * wideFullYRows_ * sizeof(half)
+L93: valueFp32Buf_ SIZE=tileElems * sizeof(float)
+L94: xFp32Buf_ SIZE=tileElems * sizeof(float)
+L95: residualFp32Buf_ SIZE=tileElems * sizeof(float)
+L96: reduceFp32Buf_ SIZE=wideFullYRows_ * reduceStride * sizeof(float)
+L103: xBuf_ SIZE=2 * tileElems * sizeof(T)
+L104: residualBuf_ SIZE=2 * tileElems * sizeof(T)
+L105: outputBuf_ SIZE=tileElems * sizeof(T)
+L106: valueFp32Buf_ SIZE=yElemsPerRow * wideFullYRows_ * sizeof(float)
+L108: xFp32Buf_ SIZE=tileElems * sizeof(float)
+L109: residualFp32Buf_ SIZE=tileElems * sizeof(float)
+L110: reduceFp32Buf_ SIZE=wideFullYRows_ * reduceStride * sizeof(float)
+L116: xBuf_ SIZE=kTileElems * sizeof(T)
+L117: residualBuf_ SIZE=kTileElems * sizeof(T)
+L121: gammaBuf_ SIZE=kCacheElems * sizeof(T)
+L122: biasBuf_ SIZE=kCacheElems * sizeof(T)
+L126: gammaBuf_ SIZE=kCacheElems * sizeof(T)
+L127: biasBuf_ SIZE=kCacheElems * sizeof(T)
+L132: outputBuf_ SIZE=fp16OutputElems * sizeof(T)
+L137: gammaBuf_ SIZE=kTileElems * sizeof(T)
+L138: biasBuf_ SIZE=kTileElems * sizeof(T)
+L141: xFp32Buf_ SIZE=kTileElems * sizeof(float)
+L142: residualFp32Buf_ SIZE=kTileElems * sizeof(float)
+L146: valueFp32Buf_ SIZE=kCacheElems * sizeof(float)
+L149: reduceFp32Buf_ SIZE=kTileElems * sizeof(float)
+L154: gammaFp32Buf_ SIZE=kCacheElems * sizeof(float)
+L155: biasFp32Buf_ SIZE=kCacheElems * sizeof(float)
+REACHABLE_TBUF_GET_CONSUMERS; branch predicates require the accompanying study
+xBuf_ -> Process:301,344,372,383; ProcessNarrowMidOverlap:528,606; ProcessBf16FullTileBatchedOutputPipelined:665; ProcessFp16FullTileBatchedOutputPipelined:788; ProcessBf16FullRowOutputPipelined:911; ProcessFp16FullRowOutputPipelined:1030; ProcessFp32FullRowOutputPipelined:1165,1183; ProcessSmallFp32Batched:1404; ProcessSmallFp32FullTileBatched:1503; ProcessSmallFp32ContiguousBatched:1597; ProcessSmallLowPrecisionContiguousBatched:1699; ProcessWideFp32FullCacheRows:2121,2140,2179; ProcessWideLowPrecision:3117,3256
+residualBuf_ -> Process:302,345,373; ProcessNarrowMidOverlap:529; ProcessBf16FullTileBatchedOutputPipelined:666; ProcessFp16FullTileBatchedOutputPipelined:789; ProcessBf16FullRowOutputPipelined:912; ProcessFp16FullRowOutputPipelined:1031; ProcessFp32FullRowOutputPipelined:1166,1184; ProcessSmallFp32Batched:1405; ProcessSmallFp32FullTileBatched:1504; ProcessSmallFp32ContiguousBatched:1598; ProcessSmallLowPrecisionContiguousBatched:1700; ProcessWideFp32FullCacheRows:2122,2141,2180; ProcessWideLowPrecision:3118,3257
+gammaBuf_ -> Process:251,259,267,374,383; ProcessNarrowMidOverlap:511; ProcessBf16FullTileBatchedOutputPipelined:629; ProcessFp16FullTileBatchedOutputPipelined:759; ProcessBf16FullRowOutputPipelined:883; ProcessFp16FullRowOutputPipelined:1009; ProcessFp32FullRowOutputPipelined:1127; ProcessSmallFp32Batched:1380; ProcessSmallFp32FullTileBatched:1465; ProcessSmallFp32ContiguousBatched:1580; ProcessSmallLowPrecisionContiguousBatched:1674,1778; ProcessWideLowPrecision:3177,3315
+biasBuf_ -> Process:252,260,268,375; ProcessNarrowMidOverlap:512; ProcessBf16FullTileBatchedOutputPipelined:630; ProcessFp16FullTileBatchedOutputPipelined:760; ProcessBf16FullRowOutputPipelined:884; ProcessFp16FullRowOutputPipelined:1010; ProcessFp32FullRowOutputPipelined:1128; ProcessSmallFp32Batched:1381; ProcessSmallFp32FullTileBatched:1466; ProcessSmallFp32ContiguousBatched:1581; ProcessSmallLowPrecisionContiguousBatched:1675
+outputBuf_ -> Process:378; ProcessNarrowMidOverlap:589; ProcessFp16FullTileBatchedOutputPipelined:842; ProcessFp16FullRowOutputPipelined:1089; ProcessSmallLowPrecisionContiguousBatched:1751; ProcessWideLowPrecision:3299
+xFp32Buf_ -> Process:309,356,397; ProcessNarrowMidOverlap:531; ProcessBf16FullTileBatchedOutputPipelined:667; ProcessFp16FullTileBatchedOutputPipelined:790; ProcessBf16FullRowOutputPipelined:913; ProcessFp16FullRowOutputPipelined:1032; ProcessFp32FullRowOutputPipelined:1161; ProcessSmallLowPrecisionContiguousBatched:1701; ProcessWideLowPrecision:3120,3225,3301
+residualFp32Buf_ -> Process:310,354,398; ProcessNarrowMidOverlap:532; ProcessBf16FullTileBatchedOutputPipelined:668; ProcessFp16FullTileBatchedOutputPipelined:791; ProcessBf16FullRowOutputPipelined:914; ProcessFp16FullRowOutputPipelined:1033; ProcessFp32FullRowOutputPipelined:1162; ProcessSmallLowPrecisionContiguousBatched:1702; ProcessWideLowPrecision:3121,3226,3302
+valueFp32Buf_ -> Process:311,399; ProcessNarrowMidOverlap:530; ProcessBf16FullTileBatchedOutputPipelined:659; ProcessFp16FullTileBatchedOutputPipelined:782; ProcessBf16FullRowOutputPipelined:915; ProcessFp16FullRowOutputPipelined:1034; ProcessFp32FullRowOutputPipelined:1159; ProcessSmallFp32Batched:1396; ProcessSmallFp32FullTileBatched:1497; ProcessSmallFp32ContiguousBatched:1599; ProcessSmallLowPrecisionContiguousBatched:1703; ProcessWideFp32FullCacheRows:2108; ProcessWideLowPrecision:3119,3300
+reduceFp32Buf_ -> Process:312,355; ProcessNarrowMidOverlap:533; ProcessBf16FullTileBatchedOutputPipelined:660; ProcessFp16FullTileBatchedOutputPipelined:783; ProcessBf16FullRowOutputPipelined:916; ProcessFp16FullRowOutputPipelined:1035; ProcessFp32FullRowOutputPipelined:1160; ProcessSmallFp32Batched:1397; ProcessSmallFp32FullTileBatched:1498; ProcessSmallFp32ContiguousBatched:1600; ProcessSmallLowPrecisionContiguousBatched:1704; ProcessWideFp32FullCacheRows:2109; ProcessWideLowPrecision:3103,3227
+gammaFp32Buf_ -> Process:269,452; ProcessBf16FullTileBatchedOutputPipelined:631; ProcessBf16FullRowOutputPipelined:885; ProcessSmallLowPrecisionContiguousBatched:1682
+biasFp32Buf_ -> Process:270,453; ProcessBf16FullTileBatchedOutputPipelined:632; ProcessBf16FullRowOutputPipelined:886; ProcessSmallLowPrecisionContiguousBatched:1683
+SCALAR_FIELD_OCCURRENCES
+widePath_ L56: widePath_ = false;
+widePath_ L61: widePath_ = true;
+widePath_ L163: if (widePath_) {
+widePath_ L3462: bool widePath_;
+wideFp32FullYPath_ L57: wideFp32FullYPath_ = false;
+wideFp32FullYPath_ L70: wideFp32FullYPath_ = true;
+wideFp32FullYPath_ L3463: bool wideFp32FullYPath_;
+wideFullYRows_ L58: wideFullYRows_ = 1;
+wideFullYRows_ L71: wideFullYRows_ = ChooseWideFullYRows(rowWidth, sizeof(float),
+wideFullYRows_ L78: yElemsPerRow * wideFullYRows_ * sizeof(float));
+wideFullYRows_ L80: wideFullYRows_ * reduceStride * sizeof(float));
+wideFullYRows_ L82: wideFullYRows_ = ChooseWideFullYRows(rowWidth, sizeof(half),
+wideFullYRows_ L92: yElemsPerRow * wideFullYRows_ * sizeof(half));
+wideFullYRows_ L97: wideFullYRows_ * reduceStride * sizeof(float));
+wideFullYRows_ L99: wideFullYRows_ = ChooseWideFullYRows(rowWidth, sizeof(float),
+wideFullYRows_ L107: yElemsPerRow * wideFullYRows_ * sizeof(float));
+wideFullYRows_ L111: wideFullYRows_ * reduceStride * sizeof(float));
+wideFullYRows_ L2096: const int32_t batchLimit = wideFullYRows_;
+wideFullYRows_ L3090: const int32_t batchLimit = wideFullYRows_;
+wideFullYRows_ L3464: int32_t wideFullYRows_;
+wideFullYTileElems_ L59: wideFullYTileElems_ = kWideFullYTileElems;
+wideFullYTileElems_ L73: wideFullYTileElems_ = tileElems;
+wideFullYTileElems_ L84: wideFullYTileElems_ = tileElems;
+wideFullYTileElems_ L101: wideFullYTileElems_ = tileElems;
+wideFullYTileElems_ L2095: const int32_t tileWidth = wideFullYTileElems_;
+wideFullYTileElems_ L3089: const int32_t tileWidth = wideFullYTileElems_;
+wideFullYTileElems_ L3465: int32_t wideFullYTileElems_;
+SOURCE_ASSERTIONS=PASS
+NEW_PERFORMANCE_REVISIONS=0; COMPILER_ELIMINATION_CONFIRMED=NONE; DEVICE_OPERATION=NONE
+
+[SDK_INIT_EXCERPTS]
+2026-10-08T06:46:50.555655+00:00
+SOURCE=/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/tikcpp/tikcfw/impl/kernel_tpipe_impl.h:25-116
+25: #include "kernel_tquesync_impl.h"
+26: #include "kernel_tbufpool_impl.h"
+27: #include "kernel_tbuf_impl.h"
+28: #include "kernel_struct_data_copy.h"
+29: #include "kernel_utils.h"
+30: namespace AscendC {
+31: __aicore__ inline void PrintTimeStamp(uint32_t descId);
+32: #if defined(ASCENDC_CPU_DEBUG) && ASCENDC_CPU_DEBUG == 1
+33: inline uint8_t* GetBaseAddrCpu(int8_t logicPos)
+34: {
+35:     auto positionHardMap = ConstDefiner::Instance().positionHardMap;
+36:     ASCENDC_ASSERT((positionHardMap.find((TPosition)logicPos) != positionHardMap.end()),
+37:                     { KERNEL_LOG(KERNEL_ERROR, "illegal logicPos %d ", int32_t(logicPos)); });
+38:     Hardware hardType = positionHardMap.at((TPosition)logicPos);
+39:     ASCENDC_ASSERT((hardType != Hardware::GM),
+40:                     { KERNEL_LOG(KERNEL_ERROR, "hardware position can not be gm"); });
+41:     return ConstDefiner::Instance().GetHardwareBaseAddr(hardType);
+42: }
+43: #endif
+44: 
+45: // begin impl of tpipe
+46: __aicore__ inline TPipe::TPipe()
+47: {
+48:     InitSocState();
+49:     Init();
+50: #ifdef ASCENDC_TIME_STAMP_ON
+51:     PrintTimeStamp(static_cast<uint32_t>(TimeStampId::TIME_STAMP_TPIPE));
+52: #endif
+53: }
+54: 
+55: __aicore__ inline TPipe::~TPipe()
+56: {
+57:     if (g_tpipeImpl.isDestroy) {
+58:         return;
+59:     }
+60:     Destroy();
+61: };
+62: 
+63: __aicore__ inline void TPipe::Init()
+64: {
+65:     ResetPool();
+66:     // for matmul macro, set flag M_MTE1 at the begining of operator, and also wait flag at the end.
+67:     // matmul macro only use M_MTE1 event id 0 1 currently.
+68: #if __NPU_ARCH__ == 2201
+69:     if ASCEND_IS_AIC {
+70:         auto enQueEvtID = this->AllocEventID<HardEvent::M_MTE1>();
+71:         ASCENDC_ASSERT((enQueEvtID == 0), { KERNEL_LOG(KERNEL_ERROR, "enQueEvtID should be 0"); });
+72:         SetFlag<HardEvent::M_MTE1>(static_cast<event_t>(enQueEvtID));
+73:         enQueEvtID = this->AllocEventID<HardEvent::M_MTE1>();
+74:         ASCENDC_ASSERT((enQueEvtID == 1), { KERNEL_LOG(KERNEL_ERROR, "enQueEvtID should be 1"); });
+75:         SetFlag<HardEvent::M_MTE1>(static_cast<event_t>(enQueEvtID));
+76:         // For load Bias
+77:         enQueEvtID = this->AllocEventID<HardEvent::M_MTE1>();
+78:         ASCENDC_ASSERT((enQueEvtID == 2), { KERNEL_LOG(KERNEL_ERROR, "enQueEvtID should be 2"); });
+79: 
+80:         SetFlag<HardEvent::M_MTE1>(static_cast<event_t>(enQueEvtID));
+81:     }
+82: #elif __NPU_ARCH__ == 3002 || (__NPU_ARCH__ == 5102)
+83:     auto enQueEvtID = this->AllocEventID<HardEvent::M_MTE1>();
+84:     ASCENDC_ASSERT((enQueEvtID == 0), { KERNEL_LOG(KERNEL_ERROR, "enQueEvtID should be 0"); });
+85:     SetFlag<HardEvent::M_MTE1>(static_cast<event_t>(enQueEvtID));
+86: 
+87:     enQueEvtID = this->AllocEventID<HardEvent::M_MTE1>();
+88:     ASCENDC_ASSERT((enQueEvtID == 1), { KERNEL_LOG(KERNEL_ERROR, "enQueEvtID should be 1"); });
+89:     SetFlag<HardEvent::M_MTE1>(static_cast<event_t>(enQueEvtID));
+90:     // For load Bias
+91:     enQueEvtID = this->AllocEventID<HardEvent::M_MTE1>();
+92:     ASCENDC_ASSERT((enQueEvtID == 2),
+93:         { KERNEL_LOG(KERNEL_ERROR, "enQueEvtID should be 2"); });
+94:     SetFlag<HardEvent::M_MTE1>(static_cast<event_t>(enQueEvtID));
+95: #endif
+96: 
+97: #if defined(ASCENDC_CPU_DEBUG) && ASCENDC_CPU_DEBUG == 1
+98:     auto bufferInitLen = ConstDefiner::Instance().bufferInitLen;
+99:     for (int32_t i = 0; i < static_cast<int32_t>(Hardware::MAX); i++) {
+100:         if (bufferInitLen.find((Hardware)i) != bufferInitLen.end()) {
+101:             SetBufferCtx((Hardware)i, &g_tpipeImpl.bufPoolBaseAddr_[i]);
+102:         }
+103:     }
+104:     AscendCBufAbsAddr(uint8_t(Hardware::UB),
+105:         static_cast<uint64_t>(reinterpret_cast<uintptr_t>(ConstDefiner::Instance().cpuUB)),
+106:         bufferInitLen.at(Hardware::UB));
+107:     AscendCBufAbsAddr(uint8_t(Hardware::L1),
+108:         static_cast<uint64_t>(reinterpret_cast<uintptr_t>(ConstDefiner::Instance().cpuL1)),
+109:         bufferInitLen.at(Hardware::L1));
+110:     AscendCBufAbsAddr(uint8_t(Hardware::L0A),
+111:         static_cast<uint64_t>(reinterpret_cast<uintptr_t>(ConstDefiner::Instance().cpuL0A)),
+112:         bufferInitLen.at(Hardware::L0A));
+113:     AscendCBufAbsAddr(uint8_t(Hardware::L0B),
+114:         static_cast<uint64_t>(reinterpret_cast<uintptr_t>(ConstDefiner::Instance().cpuL0B)),
+115:         bufferInitLen.at(Hardware::L0B));
+116:     AscendCBufAbsAddr(uint8_t(Hardware::L0C),
+SOURCE=/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/tikcpp/tikcfw/impl/kernel_tpipe_impl.h:289-347
+289: template <TPosition pos> __aicore__ inline bool TPipe::InitBuffer(TBuf<pos>& buf, uint32_t len)
+290: {
+291:     constexpr auto pool = GetPhyType(pos);
+292: #if defined(ASCENDC_CPU_DEBUG) && ASCENDC_CPU_DEBUG == 1
+293:     auto bufferInitLen = ConstDefiner::Instance().bufferInitLen;
+294:     auto currentPoolSize = bufferInitLen.at(pool);
+295:     ASCENDC_ASSERT((len > 0 && len <= currentPoolSize), {
+296:         KERNEL_LOG(KERNEL_ERROR,
+297:             "buffer length is %u, which should be larger than 0, and at least less than or equal to %u",
+298:             len,
+299:             currentPoolSize);
+300:     });
+301: #endif
+302: 
+303:     len = (len + ONE_BLK_SIZE - MIN_BLOCK_LEN) / ONE_BLK_SIZE * ONE_BLK_SIZE;
+304: #if defined(__NPU_ARCH__) && ((__NPU_ARCH__ == 2103) || (__NPU_ARCH__ == 3003) || (__NPU_ARCH__ == 3103) || \
+305:     (__NPU_ARCH__ == 3113))
+306:     if constexpr (pos == TPosition::C2) {
+307:         len = (len + TWO_BLK_SIZE - MIN_BLOCK_LEN) / TWO_BLK_SIZE * TWO_BLK_SIZE;
+308:     }
+309: #endif
+310:     constexpr int32_t bufHandleSize = 1;
+311:     buf.bufStart = this->g_tpipeImpl.buf_ + this->g_tpipeImpl.curBufSize_;
+312:     buf.bufLen = len;
+313:     buf.offset = 0;
+314: 
+315:     ASCENDC_ASSERT((pool != Hardware::GM), { KERNEL_LOG(KERNEL_ERROR, "buffer pos can not be Hardware::GM"); });
+316: 
+317:     auto curPoolAddr = g_tpipeImpl.bufPool_[static_cast<uint8_t>(pool)].maxAddr;
+318:     auto ptr = buf.bufStart;
+319: #if defined(ASCENDC_CPU_DEBUG) && ASCENDC_CPU_DEBUG == 1
+320:     ASCENDC_ASSERT((len <= currentPoolSize),
+321:                    { KERNEL_LOG(KERNEL_ERROR, "len is %u, exceed limits %u", len, currentPoolSize); });
+322:     auto absAddr = GetBaseAddr(static_cast<int8_t>(pos));
+323:     AscendCBufInit(static_cast<uint8_t>(pos), 1, 1, reinterpret_cast<uint64_t>(curPoolAddr + absAddr), len);
+324: #endif
+325:     for (uint8_t i = 0; i < bufHandleSize; i++, ptr++) {
+326:         ptr->state = TBufState::FREE;
+327:         ptr->enQueEvtID = INVALID_TEVENTID;
+328:         ptr->freeBufEvtID = INVALID_TEVENTID;
+329:         ptr->address = curPoolAddr;
+330:         ptr->dataLen = len;
+331:         ptr->usertag = -1;
+332:         curPoolAddr += len;
+333:     }
+334:     ASCENDC_ASSERT((curPoolAddr <= bufferInitLen.at(pool)), {
+335:         KERNEL_LOG(KERNEL_ERROR, "curPoolAddr is %d, exceed limits %d", curPoolAddr, bufferInitLen.at(pool));
+336:     });
+337:     this->g_tpipeImpl.bufPool_[static_cast<uint8_t>(pool)].maxAddr = curPoolAddr;
+338:     this->g_tpipeImpl.curBufSize_ += bufHandleSize;
+339:     // total buffer num created by InitBuffer must be <= 64
+340:     ASCENDC_DEBUG_ASSERT((this->g_tpipeImpl.curBufSize_ <= QBUF_MAX_LEN && this->g_tpipeImpl.curBufSize_ > 0),
+341:         "Total buffer num managed by TPipe is %d, should be in range (0, %d]\n", this->g_tpipeImpl.curBufSize_,
+342:         QBUF_MAX_LEN);
+343: #ifdef ASCENDC_TIME_STAMP_ON
+344:     PrintTimeStamp(static_cast<uint32_t>(TimeStampId::TIME_STAMP_BUFFER));
+345: #endif
+346:     return true;
+347: }
+SOURCE=/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/tikcpp/tikcfw/impl/kernel_tpipe_impl.h:470-551
+470:     return lastId;
+471: }
+472: 
+473: template <HardEvent evt> __aicore__ inline TEventID TPipe::FetchEventID()
+474: {
+475:     auto ptr = this->g_tpipeImpl.eventPool_ + EventToIndex(evt);
+476:     auto lastId = sff0(ptr->eventOccupy);
+477:     ASCENDC_ASSERT((lastId < QUE_MAX_EVENT && lastId >= 0), {
+478:         KERNEL_LOG(KERNEL_ERROR, "current id is %ld, max buffer number in same queue position is %d", lastId,
+479:             QUE_MAX_EVENT);
+480:     });
+481:     return lastId;
+482: }
+483: 
+484: template <TPosition pos> __aicore__ inline uint64_t TPipe::GetQueueEndAddress()
+485: {
+486:     Hardware hardType = GetPhyType(pos);
+487:     ASCENDC_ASSERT((hardType == Hardware::UB), { KERNEL_LOG(KERNEL_ERROR, "hardType should be UB"); });
+488:     return this->g_tpipeImpl.bufPool_[static_cast<uint8_t>(hardType)].maxAddr;
+489: }
+490: 
+491: __aicore__ inline void TPipe::Destroy()
+492: {
+493:     g_tpipeImpl.isDestroy = true;
+494:     auto ptr = this->g_tpipeImpl.buf_;
+495:     for (uint8_t i = 0; i < this->g_tpipeImpl.curBufSize_; i++, ptr++) {
+496:         if (ptr->freeBufEvtID != INVALID_TEVENTID && ptr->state == TBufState::FREE) {
+497:             WaitFlagImpl(ptr->freeBufEvt, ptr->freeBufEvtID);
+498:             ptr->freeBufEvtID = INVALID_TEVENTID;
+499:         }
+500:     }
+501:     // for matmul macro, release M_MTE1 0 1 event id.
+502: #if __NPU_ARCH__ == 2201
+503:     if ASCEND_IS_AIC {
+504:         WaitFlag<HardEvent::M_MTE1>(0);
+505:         ReleaseEventID<HardEvent::M_MTE1>(0);
+506:         WaitFlag<HardEvent::M_MTE1>(1);
+507:         ReleaseEventID<HardEvent::M_MTE1>(1);
+508:         // For Bias
+509:         WaitFlag<HardEvent::M_MTE1>(2);
+510:         ReleaseEventID<HardEvent::M_MTE1>(2);
+511:     }
+512: #elif __NPU_ARCH__ == 3002 || (__NPU_ARCH__ == 5102)
+513:     WaitFlag<HardEvent::M_MTE1>(0);
+514:     ReleaseEventID<HardEvent::M_MTE1>(0);
+515:     WaitFlag<HardEvent::M_MTE1>(1);
+516:     ReleaseEventID<HardEvent::M_MTE1>(1);
+517:     WaitFlag<HardEvent::M_MTE1>(2);
+518:     ReleaseEventID<HardEvent::M_MTE1>(2);
+519: #endif
+520: #ifndef __ASCENDC_ENABLE_SUPER_KERNEL__
+521:     pipe_barrier(PIPE_ALL);
+522: #endif
+523: #if __NPU_ARCH__ == 2002
+524:     dcci((__gm__ int64_t*)0, cache_line_t::ENTIRE_DATA_CACHE);
+525: #endif
+526: }
+527: 
+528: __aicore__ inline void TPipe::Reset()
+529: {
+530:     auto ptr = this->g_tpipeImpl.buf_;
+531:     for (uint8_t i = 0; i < this->g_tpipeImpl.curBufSize_; i++, ptr++) {
+532:         if (ptr->freeBufEvtID != INVALID_TEVENTID && ptr->state == TBufState::FREE) {
+533:             WaitFlagImpl(ptr->freeBufEvt, ptr->freeBufEvtID);
+534:             ptr->freeBufEvtID = INVALID_TEVENTID;
+535:         }
+536:     }
+537:     InitSocState();
+538:     ResetPool();
+539: #if defined(ASCENDC_CPU_DEBUG) && ASCENDC_CPU_DEBUG == 1
+540:     auto bufferInitLen = ConstDefiner::Instance().bufferInitLen;
+541:     for (int32_t i = 0; i < static_cast<int32_t>(Hardware::MAX); i++) {
+542:         if (bufferInitLen.find((Hardware)i) != bufferInitLen.end()) {
+543:             SetBufferCtx((Hardware)i, &g_tpipeImpl.bufPoolBaseAddr_[i]);
+544:         }
+545:     }
+546: #endif
+547: }
+548: 
+549: __aicore__ inline void InitShareBufStart(TPipe* tpipe, uint32_t mode, uint32_t* shareLens,
+550:     uint32_t lens, uint8_t subBlockIdx)
+551: {
+SOURCE=/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/tikcpp/tikcfw/impl/kernel_tpipe_impl.h:897-936
+897:         ptr = ConstDefiner::Instance().cpuGM;
+898:     } else {
+899:         ptr = ConstDefiner::Instance().hardwareCpuBufferMap.at(hard);
+900:     }
+901:     {
+902:         // init memory with random value
+903:         std::default_random_engine e;
+904:         int32_t* p = reinterpret_cast<int32_t*>(ptr);
+905:         for (uint64_t i = 0; i < bufferInitLen.at(hard) / sizeof(int32_t); i++) {
+906:             p[i] = e();
+907:         }
+908:     }
+909:     bufPool->phySpace = bufferInitLen.at(hard);
+910:     bufPool->absAddr = ptr;
+911:     return;
+912: }
+913: #endif
+914: 
+915: __aicore__ inline void TPipe::InitSocState() const
+916: {
+917:     AscendCUtils::InitSocStateImpl();
+918: }
+919: 
+920: __aicore__ inline void TPipe::ResetPool()
+921: {
+922:     g_tpipeImpl.tscmBufferPtr_ = TOTAL_L1_SIZE;
+923:     g_tpipeImpl.curBufSize_ = 0;
+924:     auto buf = g_tpipeImpl.bufPool_;
+925:     for (int32_t i = 0; i < static_cast<int32_t>(Hardware::MAX); i++, buf++) {
+926:         buf->maxAddr = 0;
+927:     }
+928:     auto evt = g_tpipeImpl.eventPool_;
+929:     for (int32_t i = 0; i < EVENT_NUM; i++, evt++) {
+930:         evt->eventOccupy = 0;
+931:     }
+932:     g_tpipeImpl.shareBufPool_.start[static_cast<uint8_t>(TShareBuf::ShareHard::L1)] = -1;
+933:     g_tpipeImpl.shareBufPool_.start[static_cast<uint8_t>(TShareBuf::ShareHard::UB)] = -1;
+934:     g_tpipeImpl.shareBufPool_.start[static_cast<uint8_t>(TShareBuf::ShareHard::L0C)] = -1;
+935: }
+936: 
+SOURCE=/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/tikcpp/tikcfw/impl/kernel_tbuf_impl.h:1-105
+1: /**
+2: * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+3: * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+4: * CANN Open Software License Agreement Version 2.0 (the "License").
+5: * Please refer to the License for details. You may not use this file except in compliance with the License.
+6: * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+7: * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+8: * See LICENSE in the root of the software repository for the full text of the License.
+9: */
+10: 
+11: /*!
+12:  * \file kernel_tbuf_impl.h
+13:  * \brief
+14:  */
+15: #ifndef ASCENDC_MODULE_TBUF_IMPL_H
+16: #define ASCENDC_MODULE_TBUF_IMPL_H
+17: 
+18: namespace AscendC {
+19: // begin impl of tbuf
+20: template <TPosition pos>
+21: template <typename T>
+22: __aicore__ inline __sync_alias__ LocalTensor<T> TBuf<pos>::Get(uint32_t len)
+23: {
+24:     using PrimType = PrimT<T>;
+25:     uint32_t dataLen;
+26:     if constexpr (IsSameType<PrimType, int4b_t>::value) {
+27:         dataLen = len / INT4_TWO;
+28: #if (__NPU_ARCH__ == 5102)
+29:     } else if constexpr (IsSameType<T, int2b_t>::value) {
+30:         dataLen = len / INT2_FOUR;
+31: #endif
+32:     } else {
+33:         dataLen = len * sizeof(PrimType);
+34:     }
+35: #if defined(ASCENDC_CPU_DEBUG) && ASCENDC_CPU_DEBUG == 1
+36:     ASCENDC_ASSERT((len > 0), { KERNEL_LOG(KERNEL_ERROR, "buffer length is %u, which should be larger than 0", len); });
+37:     ASCENDC_DEBUG_ASSERT((dataLen % ONE_BLK_SIZE == 0), "buffer length is %u, which should be times of 32 Bytes \n",
+38:         len);
+39:     ASCENDC_ASSERT((dataLen <= bufLen),
+40:                    { KERNEL_LOG(KERNEL_ERROR, "len is %u, max buffer len is %u", dataLen, bufLen); });
+41: #endif
+42:     auto ptr = this->bufStart;
+43:     ptr->dataLen = dataLen;
+44:     TBuffAddr addr;
+45:     addr.logicPos = static_cast<uint8_t>(pos);
+46:     addr.bufferHandle = reinterpret_cast<TBufHandle>(ptr);
+47:     addr.bufferAddr = ptr->address;
+48:     addr.dataLen = ptr->dataLen;
+49: #if defined(ASCENDC_CPU_DEBUG) && ASCENDC_CPU_DEBUG == 1
+50:     auto absAddr = GetTPipePtr()->g_tpipeImpl.bufPoolBaseAddr_[static_cast<uint8_t>(GetPhyType(pos))].absAddr;
+51:     addr.absAddr = absAddr + addr.bufferAddr;
+52:     AscendCBufGet(addr.logicPos, static_cast<uint8_t>(GetPhyType(pos)), reinterpret_cast<uint64_t>(addr.absAddr), len);
+53:     if (this->bufPoolHandle != 0U) {
+54:         AscendCUpdateTbufPoolStatus(this->bufPoolHandle, false);
+55:         AscendCTBufPoolResetCheck(static_cast<uint8_t>(GetPhyType(pos)),
+56:             reinterpret_cast<uint64_t>(absAddr + ptr->address),
+57:             static_cast<uint64_t>(ptr->dataLen),
+58:             this->bufPoolHandle);
+59:     }
+60: #endif
+61:     LocalTensor<T> output;
+62:     output.SetAddr(addr);
+63:     return output;
+64: }
+65: 
+66: template <TPosition pos> template <typename T> __aicore__ inline __sync_alias__ LocalTensor<T> TBuf<pos>::Get()
+67: {
+68:     using PrimType = PrimT<T>;
+69:     if constexpr (IsSameType<PrimType, int4b_t>::value) {
+70:         return Get<T>(bufLen * INT4_TWO);
+71: #if (__NPU_ARCH__ == 5102)
+72:     } else if constexpr (IsSameType<T, int2b_t>::value) {
+73:         return Get<T>(bufLen * INT2_FOUR);
+74: #endif
+75:     } else {
+76:         return Get<T>(bufLen / sizeof(PrimType));
+77:     }
+78: }
+79: 
+80: template <TPosition pos>
+81: template <typename T>
+82: __aicore__ inline __sync_alias__ LocalTensor<T> TBuf<pos>::GetWithOffset(uint32_t size, uint32_t bufOffset)
+83: {
+84:     auto ptr = this->bufStart;
+85:     ptr->dataLen = size * sizeof(T);
+86:     TBuffAddr addr;
+87:     addr.logicPos = static_cast<uint8_t>(pos);
+88:     addr.bufferHandle = reinterpret_cast<TBufHandle>(ptr);
+89:     addr.bufferAddr = ptr->address + bufOffset;
+90:     addr.dataLen = ptr->dataLen;
+91: #if defined(ASCENDC_CPU_DEBUG) && ASCENDC_CPU_DEBUG == 1
+92:     auto absAddr = GetTPipePtr()->GetBaseAddr(static_cast<int8_t>(pos));
+93:     addr.absAddr = absAddr + addr.bufferAddr;
+94: #endif
+95:     LocalTensor<T> output;
+96:     output.SetAddr(addr);
+97:     return output;
+98: }
+99: 
+100: template <TPosition pos> __aicore__ inline void TBuf<pos>::SetTpipeBuf(TBufType* bufStartIn, uint32_t bufLenIn)
+101: {
+102:     this->bufStart = bufStartIn;
+103:     this->bufLen = bufLenIn;
+104:     this->offset = 0;
+105: }
+SOURCE=/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/tikcpp/tikcfw/impl/kernel_tbuf_impl.h:156-206
+156: template <TPosition pos> __aicore__ inline void TBuf<pos>::FreeBuffer(TBufHandle buf)
+157: {
+158:     (void)(0);
+159: }
+160: 
+161: template <TPosition pos> __aicore__ inline TBuffAddr TBuf<pos>::GetBufferAddr(TBufHandle buf)
+162: {
+163:     auto ptr = reinterpret_cast<TBufType*>(buf);
+164:     TBuffAddr addr;
+165:     addr.logicPos = static_cast<uint8_t>(pos);
+166:     addr.bufferHandle = buf;
+167:     addr.bufferAddr = ptr->address;
+168:     addr.dataLen = ptr->dataLen;
+169: #if defined(ASCENDC_CPU_DEBUG) && ASCENDC_CPU_DEBUG == 1
+170:     auto absAddr = GetTPipePtr()->g_tpipeImpl.bufPoolBaseAddr_[static_cast<uint8_t>(GetPhyType(pos))].absAddr;
+171:     addr.absAddr = absAddr + addr.bufferAddr;
+172: #endif
+173:     return addr;
+174: }
+175: 
+176: template <TPosition pos> __aicore__ inline void TBuf<pos>::InitStartBufHandle(
+177:     TBufHandle startBufhandle, uint8_t num, uint32_t len)
+178: {
+179:     static_assert(!isTQue, "InitTBufAddr only support TBuf class");
+180:     ASCENDC_ASSERT((num == 1), { KERNEL_LOG(KERNEL_ERROR, "param num must be one for TBuf, current num is %d", num); });
+181:     auto ptr = reinterpret_cast<TBufType*>(startBufhandle);
+182:     this->bufStart = ptr;
+183:     this->bufLen = len;
+184:     this->offset = 0;
+185:     return;
+186: }
+187: 
+188: template <TPosition pos> __aicore__ inline TBufHandle TBuf<pos>::Get(uint32_t len)
+189: {
+190: #if defined(ASCENDC_CPU_DEBUG) && ASCENDC_CPU_DEBUG == 1
+191:     ASCENDC_ASSERT((len <= bufLen), { KERNEL_LOG(KERNEL_ERROR, "len is %u, max buffer len is %u", len, bufLen); });
+192: #endif
+193:     this->bufStart->dataLen = len;
+194:     return reinterpret_cast<TBufHandle>(this->bufStart);
+195: }
+196: 
+197: template <TPosition pos> __aicore__ inline TBufHandle TBuf<pos>::Get()
+198: {
+199:     return Get(bufLen);
+200: }
+201: 
+202: template <TPosition pos> __aicore__ inline uint32_t TBuf<pos>::GetBufLen() const
+203: {
+204:     return bufLen;
+205: }
+206: 
+SOURCE=/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/tikcpp/tikcfw/interface/kernel_tpipe.h:145-193
+145: class TQue : public TQueBind<GetBufferLogicPos(pos, true), GetBufferLogicPos(pos, false), depth, mask> {
+146: public:
+147:     __aicore__ inline TQue() = default;
+148: private:
+149:     friend class TPipe;
+150:     template<TPosition bufPos, uint32_t bufIDSize> friend class TBufPool;
+151:     static constexpr bool isTQue = true;
+152: #if defined(__NPU_ARCH__) && (__NPU_ARCH__ == 3101)
+153:     template<TPosition bufPos, uint32_t bufIDSize> friend class TBufPoolExtImpl;
+154:     template <typename T>
+155:     friend __aicore__ inline uint64_t GetTQueHeadAddr(const T& que);
+156: #endif
+157: };
+158: 
+159: template <TPosition pos = TPosition::LCM> class TBuf : public TQueBind<pos, pos, 0, 0> {
+160: public:
+161:     __aicore__ inline TBuf() = default;
+162:     template <typename T> __aicore__ inline LocalTensor<T> Get();
+163:     template <typename T> __aicore__ inline LocalTensor<T> Get(uint32_t len);
+164:     template <typename T> __aicore__ inline LocalTensor<T> GetWithOffset(uint32_t size, uint32_t bufOffset);
+165:     // inheritance function from Class TQueBind
+166:     template <typename T> __aicore__ inline void EnQue(const LocalTensor<T>& tensor);
+167:     template <typename T> __aicore__ inline LocalTensor<T> DeQue();
+168:     template <typename T> __aicore__ inline LocalTensor<T> AllocTensor();
+169:     template <typename T> __aicore__ inline void FreeTensor(LocalTensor<T>& tensor);
+170:     template <typename T> __aicore__ inline TBufState GetState(const LocalTensor<T>& tensor) const;
+171:     __aicore__ inline bool EnQue(TBufHandle buf);
+172:     __aicore__ inline TBufHandle DeQue();
+173:     __aicore__ inline void FreeBuffer(TBufHandle buf);
+174:     __aicore__ inline TBuffAddr GetBufferAddr(TBufHandle buf);
+175:     __aicore__ inline void InitStartBufHandle(TBufHandle startBufhandle, uint8_t num, uint32_t len);
+176: 
+177: private:
+178:     __aicore__ inline TBufHandle Get();
+179:     __aicore__ inline TBufHandle Get(uint32_t len);
+180:     __aicore__ inline uint32_t GetBufLen() const;
+181:     __aicore__ inline void SetTpipeBuf(TBufType* bufStartIn, uint32_t bufLenIn);
+182:     template <TPosition posPopBuffer>
+183:     friend __aicore__ inline bool PopStackBuffer(TBuf<posPopBuffer> &popBuffer, TBufType &bufStart);
+184:     __aicore__ inline TBufHandle AllocBuffer();
+185: 
+186: private:
+187:     struct TBufType* bufStart;
+188:     uint32_t bufLen;
+189:     uint32_t offset;
+190:     friend class TPipe;
+191:     template<TPosition bufPos, uint32_t bufIDSize> friend class TBufPool;
+192: #if defined(__NPU_ARCH__) && (__NPU_ARCH__ == 3101)
+193:     template<TPosition bufPos, uint32_t bufIDSize> friend class TBufPoolExtImpl;
+SOURCE=/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/tikcpp/tikcfw/interface/kernel_tpipe.h:377-455
+377:     template <AscendC::TPosition bufPos, int32_t depth, auto mask>                           \
+378:     friend class AscendC::TQue;                                                              \
+379:     template <AscendC::TPosition bufPos> friend class AscendC::TBuf
+380: 
+381: #endif
+382: 
+383: class TPipe : public TPipeBase {
+384: public:
+385:     __aicore__ inline TPipe();
+386:     __aicore__ inline ~TPipe();
+387:     __aicore__ inline void Init();
+388:     template <class T> __aicore__ inline bool InitBuffer(T& que, uint8_t num, uint32_t len);
+389:     template <class T, class U, class V, class... Addrs>
+390:     __aicore__ inline bool InitBuffer(T& que, const Std::tuple<U, V>& addr0, const Addrs&... addrs);
+391:     template <TPosition pos> __aicore__ inline bool InitBuffer(TBuf<pos>& buf, uint32_t len);
+392:     template <class T> __aicore__ inline bool InitBufPool(T& bufPool, uint32_t len);
+393:     template <class T, class U> __aicore__ inline bool InitBufPool(T& bufPool, uint32_t len, U& shareBuf);
+394:     template <HardEvent evt> __aicore__ inline TEventID AllocEventID();
+395:     template <HardEvent evt> __aicore__ inline void ReleaseEventID(TEventID id);
+396:     template <HardEvent evt> __aicore__ inline TEventID FetchEventID();
+397:     __aicore__ inline TEventID FetchEventID(HardEvent evt);
+398:     template <TPosition pos, typename T>
+399:     __aicore__ inline LocalTensor<T> GetAbsAddr(int32_t offset, int32_t size) const;
+400:     template <TPosition pos> __aicore__ inline TBuffAddr GetAbsAddr(int32_t offset, int32_t len) const;
+401: #if defined(__NPU_ARCH__) && (__NPU_ARCH__ == 3101)
+402:     __aicore__ inline MutexID AllocMutexID();
+403:     __aicore__ inline void ReleaseMutexID(MutexID id);
+404: #endif
+405:     /*
+406:      * brief: these functions are used to use spm buffer;
+407:      * demo case:
+408:      * GlobalTensor<T> workTensor;
+409:      * tpipe.InitSpmBuffer(workTensor, size);
+410:      * LocalTensor<T> calcTensor = tpip.Get<T>(size);
+411:      * // when local buffer is not enough, spill local to spm buffer;
+412:      * tpipe.WriteSpmBuffer(calcTensor, size);
+413:      * // ...
+414:      * // read buffer from spm buffer into local
+415:      * tpipe.ReadSpmBuffer(calcTensor, size);
+416:      */
+417:     template <typename T>
+418:     __aicore__ inline void InitSpmBuffer(const GlobalTensor<T>& workspace, const int32_t bufferSize);
+419:     __aicore__ inline void InitSpmBuffer(const int32_t bufferSize);
+420:     template <typename T>
+421:     __aicore__ inline void WriteSpmBuffer(const LocalTensor<T>& writeBuffer, const DataCopyParams& copyParams,
+422:         int32_t writeOffset = 0);
+423:     template <typename T>
+424:     __aicore__ inline void ReadSpmBuffer(const LocalTensor<T>& readBuffer, const DataCopyParams& copyParams,
+425:         int32_t readOffset = 0);
+426:     template <typename T>
+427:     __aicore__ inline void WriteSpmBuffer(const LocalTensor<T>& writeBuffer, const int32_t writeSize,
+428:         int32_t writeOffset = 0);
+429:     template <typename T>
+430:     __aicore__ inline void ReadSpmBuffer(const LocalTensor<T>& readBuffer, const int32_t readSize,
+431:         int32_t readOffset = 0);
+432:     __aicore__ inline void Destroy();
+433:     __aicore__ inline void Reset();
+434: #if defined(ASCENDC_CPU_DEBUG) && ASCENDC_CPU_DEBUG == 1
+435:     template <typename T> inline uint64_t GetAbsAddr(const LocalTensor<T>& tensor);
+436:     inline uint8_t* GetBaseAddr(int8_t logicPos);
+437: #endif
+438: 
+439: protected:
+440:     template <TPosition src, TPosition dst, int32_t depth, auto mask> friend class TQueBind;
+441:     template <TPosition pos, int32_t depth, auto mask> friend class TQue;
+442:     template <TPosition pos> friend class TBuf;
+443:     template<TPosition pos, uint32_t bufIDSize> friend class TBufPool;
+444:     template <TPosition pos> friend __aicore__ inline bool PopStackBuffer(TBuf<pos>& popBuffer, TBufType& bufStart);
+445:     template <typename T, TPosition pos> friend __aicore__ inline bool PopStackBuffer(LocalTensor<T>& popBuffer);
+446: #if defined(ASCENDC_CPU_DEBUG) && ASCENDC_CPU_DEBUG == 1
+447:     void inline SetBufferCtx(Hardware hard, struct BufPoolExtra* bufPool);
+448: #endif
+449: 
+450: private:
+451: #if defined(ASCENDC_CPU_DEBUG) && ASCENDC_CPU_DEBUG == 1
+452:     template <typename T> friend inline uint64_t GetAbsAddr(TPipe* tpipe, const LocalTensor<T>& tensor);
+453: #endif
+454:     friend __aicore__ inline void InitShareBufStart(TPipe* tpipe, uint32_t mode, uint32_t* shareLens,
+455:         uint32_t lens, uint8_t subBlockIdx);
+SDK_READ_ONLY_COMPLETE; DEVICE_OPERATION=NONE
+
+[SDK_GLOBAL_AND_SOC_EXCERPTS]
+2026-10-08T06:48:46.428374+00:00
+SOURCE=/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/tikcpp/tikcfw/impl/kernel_tensor_impl.h
+1095: 
+1096: template <typename T> __aicore__ inline void
+1097:     GlobalTensor<T>::SetGlobalBuffer(__gm__ typename GlobalTensor<T>::PrimType* buffer, uint64_t bufferSize)
+1098: {
+1099: #if (__NPU_ARCH__ == 3101) || (__NPU_ARCH__ == 5102)
+1100:     this->oriAddress_ = buffer;
+1101:     // For the case GlobalTensor set through KFC message, origin cacheMode is lost.
+1102:     if (this->cacheMode_ == CacheMode::CACHE_MODE_NORMAL) {
+1103:         this->cacheMode_ = ToCacheModeEnum(ExtractCacheMode(buffer));
+1104:         this->oriAddress_ = ExtractL2CacheGmAddr(buffer);
+1105:         this->address_ = buffer;
+1106:     } else {
+1107:         this->address_ = L2CacheAlter<PrimType, CacheRwMode::RW>(buffer, this->cacheMode_);
+1108:     }
+1109: #else
+1110:     if (this->cacheMode_ == CacheMode::CACHE_MODE_NORMAL) {
+1111:         this->address_ = buffer;
+1112:     } else {
+1113:         this->address_ = L2CacheAlter<PrimType, CacheRwMode::RW>(buffer, cacheMode_);
+1114:     }
+1115:     this->oriAddress_ = buffer;
+1116: #endif
+1117:     bufferSize_ = bufferSize;
+1118: }
+1119: 
+1120: template <typename T>
+1121: __aicore__ inline void GlobalTensor<T>::SetGlobalBuffer(__gm__ typename GlobalTensor<T>::PrimType* buffer)
+1122: {
+1119: 
+1120: template <typename T>
+1121: __aicore__ inline void GlobalTensor<T>::SetGlobalBuffer(__gm__ typename GlobalTensor<T>::PrimType* buffer)
+1122: {
+1123: #if (__NPU_ARCH__ == 3101) || (__NPU_ARCH__ == 5102)
+1124:     this->oriAddress_ = buffer;
+1125:     // For the case GlobalTensor set through KFC message, origin cacheMode is lost.
+1126:     if (this->cacheMode_ == CacheMode::CACHE_MODE_NORMAL) {
+1127:         this->cacheMode_ = ToCacheModeEnum(ExtractCacheMode(buffer));
+1128:         this->oriAddress_ = ExtractL2CacheGmAddr(buffer);
+1129:         this->address_ = buffer;
+1130:     } else {
+1131:         this->address_ = L2CacheAlter<PrimType, CacheRwMode::RW>(buffer, this->cacheMode_);
+1132:     }
+1133: #else
+1134:     if (this->cacheMode_ == CacheMode::CACHE_MODE_NORMAL) {
+1135:         this->address_ = buffer;
+1136:     } else {
+1137:         this->address_ = L2CacheAlter<PrimType, CacheRwMode::RW>(buffer, cacheMode_);
+1138:     }
+1139:     this->oriAddress_ = buffer;
+1140: #endif
+1141: #if ASCENDC_CPU_DEBUG
+1142:     bufferSize_ = 0;
+1143: #endif
+1144: }
+1145: 
+1146: template <typename T> __aicore__ inline
+SOURCE=/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/tikcpp/tikcfw/impl/kernel_tpipe_impl.h
+915: __aicore__ inline void TPipe::InitSocState() const
+916: {
+917:     AscendCUtils::InitSocStateImpl();
+918: }
+919: 
+920: __aicore__ inline void TPipe::ResetPool()
+921: {
+922:     g_tpipeImpl.tscmBufferPtr_ = TOTAL_L1_SIZE;
+923:     g_tpipeImpl.curBufSize_ = 0;
+924:     auto buf = g_tpipeImpl.bufPool_;
+925:     for (int32_t i = 0; i < static_cast<int32_t>(Hardware::MAX); i++, buf++) {
+926:         buf->maxAddr = 0;
+927:     }
+928:     auto evt = g_tpipeImpl.eventPool_;
+929:     for (int32_t i = 0; i < EVENT_NUM; i++, evt++) {
+930:         evt->eventOccupy = 0;
+931:     }
+932:     g_tpipeImpl.shareBufPool_.start[static_cast<uint8_t>(TShareBuf::ShareHard::L1)] = -1;
+933:     g_tpipeImpl.shareBufPool_.start[static_cast<uint8_t>(TShareBuf::ShareHard::UB)] = -1;
+934:     g_tpipeImpl.shareBufPool_.start[static_cast<uint8_t>(TShareBuf::ShareHard::L0C)] = -1;
+935: }
+936: 
+937: template <class T> __aicore__ inline bool TPipe::TscmInitBuffer(T& que, uint8_t num, uint32_t len)
+938: {
+939:     ASCENDC_ASSERT((len > 0), { KERNEL_LOG(KERNEL_ERROR, "buffer length is %u, which should be larger than 0", len); });
+940:     ASCENDC_ASSERT(((num * len) < TOTAL_L1_SIZE), {
+941:         KERNEL_LOG(KERNEL_ERROR, "tscm buffer length is %u bytes, which is larger than total l1 size %u bytes",
+942:             len * num, TOTAL_L1_SIZE);
+SOURCE=/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/tikcpp/tikcfw/impl/kernel_utils.h
+79:     }
+80: 
+81:     __aicore__ static inline void InitSocStateImpl()
+82:     {
+83:     #if defined(__NPU_ARCH__) && (((__NPU_ARCH__ == 3113)) || (__NPU_ARCH__ == 3103))
+84:     #else
+85:         set_atomic_none();
+86:     #endif
+87:     #if __NPU_ARCH__ == 2201
+88:         set_mask_norm();
+89:         if ASCEND_IS_AIC {
+90:             set_l1_3d_size(static_cast<uint64_t>(0));
+91:             set_padding(static_cast<uint64_t>(0));
+92:         } else {
+93:             set_vector_mask(static_cast<uint64_t>(-1), static_cast<uint64_t>(-1));
+94:         }
+95:     #elif __NPU_ARCH__ == 3101
+96:         set_mask_norm();
+97:         uint64_t prevCtrl = get_ctrl() & 0x1000000000000;
+98:         uint64_t val = 0x1000000000000008 | prevCtrl;
+99:         set_ctrl(val);
+100:         if ASCEND_IS_AIC {
+101:             set_padding(static_cast<uint64_t>(0));
+102:         } else {
+103:             set_vector_mask(static_cast<uint64_t>(-1), static_cast<uint64_t>(-1));
+104:             uint64_t loopSizePara = (1uL << 21) | 1uL;
+105:             set_loop_size_ubtoout(loopSizePara);
+106:             set_loop_size_outtoub(loopSizePara);
+SOURCE=/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/tikcpp/tikcfw/impl/kernel_tpipe_impl.h:117-174
+117:         static_cast<uint64_t>(reinterpret_cast<uintptr_t>(ConstDefiner::Instance().cpuL0C)),
+118:         bufferInitLen.at(Hardware::L0C));
+119:     AscendCBufAbsAddr(uint8_t(Hardware::BIAS),
+120:         static_cast<uint64_t>(reinterpret_cast<uintptr_t>(ConstDefiner::Instance().cpuBIAS)),
+121:         bufferInitLen.at(Hardware::BIAS));
+122:     AscendCBufAbsAddr(uint8_t(Hardware::FIXBUF),
+123:         static_cast<uint64_t>(reinterpret_cast<uintptr_t>(ConstDefiner::Instance().cpuFIXBUF)),
+124:         bufferInitLen.at(Hardware::FIXBUF));
+125: #endif
+126: #if __NPU_ARCH__ == 2201
+127: #ifdef __DAV_C220_CUBE__
+128:     g_cubeTPipePtr = this;
+129: #elif defined(__DAV_C220_VEC__)
+130:     g_vecTPipePtr = this;
+131: #else
+132:     g_tPipePtr = this;
+133: #endif
+134: #else
+135:     g_tPipePtr = this;
+136: #endif
+137:     g_tpipeImpl.isDestroy = false;
+138: }
+139: 
+140: template <class T, class First, class... Rest>
+141: __aicore__ inline void TPipe::AllocAddrs(TBufType* ptr, const First& addr, const Rest&... addrs)
+142: {
+143:     static_assert(Std::is_tuple_v<First> && Std::tuple_size_v<First> == 2,
+144:             "input Addrs must be Std::tuple type and tuple_size must be 2");
+145:     constexpr bool useAltBufId = T::config.consumerSize > 1;
+146:     ptr->state = TBufState::FREE;
+147:     ptr->freeBufEvt = T::freeBufEvt;
+148:     if constexpr (T::queDepth == 0) {
+149:         ptr->enQueEvtID = AllocEventID<T::enQueEvt>();
+150:         ptr->freeBufEvtID = AllocEventID<T::freeBufEvt>();
+151:         SetFlag<T::freeBufEvt>(ptr->freeBufEvtID);
+152:     } else {
+153:         ptr->enQueEvtID = INVALID_TEVENTID;
+154:         ptr->freeBufEvtID = INVALID_TEVENTID;
+155:     }
+156:     // process specifically for better static_assert message
+157:     if constexpr ((Std::tuple_size_v<First>) > 1) {
+158:         ptr->address = Std::get<0>(addr);
+159:         ptr->dataLen = Std::get<1>(addr);
+160:     }
+161: 
+162: #ifdef ASCENDC_CPU_DEBUG
+163:     int32_t maxLen = ptr->address + ptr->dataLen;
+164:     Hardware pool = GetBufferPos(T::srcPosition, T::dstPosition);
+165:     int32_t currentPoolSize = ConstDefiner::Instance().bufferInitLen.at(pool);
+166:     ASCENDC_ASSERT(maxLen <= currentPoolSize, {
+167:         KERNEL_LOG(KERNEL_ERROR, "current buffer access buffer at %d, exceed limits %d", maxLen, currentPoolSize);
+168:     });
+169: #endif
+170:     ptr->usertag = -1;
+171:     if constexpr (sizeof...(addrs) > 0) {
+172:         AllocAddrs<T>(++ptr, addrs...);
+173:     }
+174: }
+DEVICE_OPERATION=NONE
+
+[HISTORY_AUDIT]
+HISTORY_MECHANISMS m1/r31a-exploit
+MIX-A	V001	Replace narrow/mid in-gate with A001 FastKernel: param-once, single GetValue, full-u one-pass
+MIX-A	V002	ReduceSum/V/S correctness repair using independent workspace and vector mean/epsilon/sqrt
+MIX-A	V003	FastKernel multi-row buffer fix: add V_MTE2 release sync and constrain dispatch to localRows==1
+MIX-A	V004	Extend FastKernel into D<=128 tiny and aligned multi-row SmallFp32; expand tiny dtype dispatch
+MIX-A	V005	Only switch in-gate tiny D<=128 path to FastKernel; retain SmallFp32 multi-row path
+MIX-A	V006	Enable ProcessNarrowMidFast only for FP32, localRows==1, D<=128, in-gate
+MIX-A	V007	Remove the first SyncVToMTE2 before Load while keeping localRows==1 dispatch unchanged
+R31A	V001	Full multimode rewrite
+R31A	V002	Remove Judge ABI type definitions; preserve compute body
+R31A	V003	FP32 batch tile 6112 to 5760
+R31A	V004	Same 5760 tile; no distinct compute mechanism
+R31A	V005	FP32 wide D<=32768 full-y cache
+R31A	V006	Narrow-row per-row V/S fold mean-eps-sqrt
+R31A	V007	BF16 wide dual-buffer pipeline
+R31A	V008	Narrow-row single-tile setup collapse
+R31A	V009	FP32 tiny R1-only setup collapse
+R31A	V010	Mid-size MTE2 overlap
+R31A	V011	FP32 few-row wide D-slice
+R31A	V012	Merge tiny-mid paths
+R31A	V013	BF16 wide PIPE2
+R31A	V014	FP32 wide PIPE3 depth 3
+R31A	V015	Low-precision wide PIPE3 depth 3
+R31A	V016	FP32 D32768 full-y dispatch
+R31A	V017	FP32 cached-row dispatch boundary D24576..32768
+R31A	V018	FP16 multi-row D16384 cached rows
+R31A	V019	FP32 CachedRows tile 7680 to 8192
+R31A	V020	FP32 RMS first pass with dual-slot MTE2/V prefetch
+R31A	V021	Delay output MTE3-to-V wait until end of row in FP32 CachedRows loop
+EPILOGUE-FUSE-X	V001	H1 SCALE-FOLD (post-RMS invRms/normalize/gamma/bias/store dataflow)
+EPILOGUE-FUSE-X	V002	VMLA fusion (in-place accumulator)
+STORE-EPILOGUE-X	V001	STORE-H2B single-row resident writeback merge (one row contiguous finished output run written back in one DataCopyPad instead of per-tile)
+STORE-EPILOGUE-X	V002	STORE-H2B-GATED: single-row resident writeback merge with condition mergeRowRuns = tileCount>=4 && (rowWidth%8==0) in ProcessWideFp32FullCacheRows only
+HISTORY_MECHANISMS m1/r31b-exploit
+R31B	V001	FP32 wide channel-panel residency; stage x+residual through output GM
+R31B	V002	Cache full y on wide rows to avoid rereading x/residual
+R31B	V003	UB-budgeted full-y multi-row residency and parameter reuse
+R31B	V004	Deep batch full-y retention for narrow rows, shared reduction and V/S handoff
+R31B	V005	Repair V004 UB accounting and buffers; fallback to V003 path when unavailable
+R31B	V006	Increase wide full-y and generic store MTE3 queue depth to 2
+R31B	V007	Shrink full-y tile to favor at least two resident rows
+R31B	V008	Split D across cores for small row count, stage partials with multiple launches
+R31B	V009	Two-deep MTE2 input queue for FP32 wide full-y pass
+R31B	V010	Add parallel input/parameter MTE2 groups for D in (128,4096]
+R31B	V011	Add low-precision wide-row pipeline to V010; preserve math order
+R31B	V012	Add two-deep MTE2 input and parameter pipeline for FP32 wide rows
+R31B	V013	Add midwide generic overlap stream; retain parameter residency
+R31B	V014	Raise aligned high-row small-D batch cap 8 to 32 within value-cache bound
+R31B	V015	Add FP32 single-row mid-width dispatch branch using ProcessNarrowMidOverlap
+R31B	V016	FP16/BF16 wide-row initial full-y tile 4096 to 8192; FP32 unchanged
+FLAG_SOURCE	归档/历史工作区/R31B/R31B-V003-WIDE-FULL-Y-MULTIROW_kernel.asc	occurrences=3	non_store=0
+FLAG_SOURCE	归档/历史工作区/R31B/R31B-V004-NARROW-DEEP-BATCH_kernel.asc	occurrences=3	non_store=0
+FLAG_SOURCE	归档/历史工作区/R31B/R31B-V005-NARROW-DEEP-BATCH-FIXED_kernel.asc	occurrences=3	non_store=0
+FLAG_SOURCE	归档/历史工作区/R31B/R31B-V006-MTE3-QUEUE-DEPTH_kernel.asc	occurrences=3	non_store=0
+FLAG_SOURCE	归档/历史工作区/R31B/R31B-V007-FULLY-N2-TILE_kernel.asc	occurrences=3	non_store=0
+FLAG_SOURCE	归档/历史工作区/R31B/R31B-V008-DSLICE-SMALL-R_kernel.asc	occurrences=3	non_store=0
+FLAG_SOURCE	归档/历史工作区/R31B/R31B-V009-MTE2-QUEUE-DEPTH_kernel.asc	occurrences=3	non_store=0
+FLAG_SOURCE	归档/历史工作区/R31B/R31B-V010-N-MID-OVERLAP_kernel.asc	occurrences=3	non_store=0
+FLAG_SOURCE	归档/历史工作区/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc	occurrences=3	non_store=0
+FLAG_SOURCE	归档/历史工作区/R31B/R31B-V012-FP32-ROW-PIPELINE_kernel.asc	occurrences=3	non_store=0
+FLAG_SOURCE	归档/历史工作区/R31B/R31B-V013-MIDWIDE-OVERLAP_kernel.asc	occurrences=3	non_store=0
+FLAG_SOURCE	归档/历史工作区/R31B/R31B-V014-TINY-DEEP-BATCH_kernel.asc	occurrences=3	non_store=0
+FLAG_SOURCE	归档/历史工作区/R31B/R31B-V015-AGGRESSIVE-FP32-MIDMODE_kernel.asc	occurrences=3	non_store=0
+FLAG_SOURCE	归档/历史工作区/STORE-EPILOGUE-X/V001/parent.asc	occurrences=3	non_store=0
+FLAG_SOURCE	归档/历史工作区/STORE-EPILOGUE-X/V001/submission.asc	occurrences=3	non_store=0
+FLAG_SOURCE	归档/历史工作区/STORE-EPILOGUE-X/V002/parent.asc	occurrences=3	non_store=0
+FLAG_SOURCE	归档/历史工作区/STORE-EPILOGUE-X/V002/submission.asc	occurrences=3	non_store=0
+FLAG_SOURCE	归档/历史工作区/STORE-EPILOGUE-X/frozen-seed/R31B-V011-LP-ROW-PIPELINE_kernel.asc	occurrences=3	non_store=0
+FLAG_SOURCE	线上结果/EPILOGUE-ARITH-CHAMPION-X/V001/submission.asc	occurrences=3	non_store=0
+FLAG_SOURCE	线上结果/EPILOGUE-ARITH-CHAMPION-X/V002/submission.asc	occurrences=3	non_store=0
+FLAG_SOURCE	线上结果/R31B/V011/submission.asc	occurrences=3	non_store=0
+FLAG_SOURCE	线上结果/R31B/V016/submission.asc	occurrences=3	non_store=0
+FLAG_SOURCE	线上结果/R31B/V017/submission.asc	occurrences=3	non_store=0
+FLAG_SOURCE	线上结果/STORE-EPILOGUE-X/V002/submission.asc	occurrences=3	non_store=0
+FLAG_SOURCE	线上结果/STORE-EPILOGUE-X/V003/submission.asc	occurrences=3	non_store=0
+HISTORY_SOURCE_COPIES=64; WITH_FIELD=25; WITH_FIELD_READS=0
+SOURCE_COPIES_ARE_NOT_REVISION_COUNTS
+W3_REUSED=R12@e697ddf3/R05@1a31a3b5 Init comparisons: R2 V001-V040; R4 V001-V031; R5 V001-V028
+W4_REUSED=R03@712e4723; R05@1a31a3b5; R12@e697ddf3; R09@ec24f3ac; their cited R01/R02/R08/R10/R11 evidence
+
+[R31B_FIELD_HISTORY]
+归档/历史工作区/R31B/R31B-V003-WIDE-FULL-Y-MULTIROW_kernel.asc:55:        wideFp32FullYPath_ = false;
+归档/历史工作区/R31B/R31B-V003-WIDE-FULL-Y-MULTIROW_kernel.asc:56:        wideFullYRows_ = 1;
+归档/历史工作区/R31B/R31B-V003-WIDE-FULL-Y-MULTIROW_kernel.asc:57:        wideFullYTileElems_ = kWideFullYTileElems;
+归档/历史工作区/R31B/R31B-V003-WIDE-FULL-Y-MULTIROW_kernel.asc:68:                wideFp32FullYPath_ = true;
+归档/历史工作区/R31B/R31B-V003-WIDE-FULL-Y-MULTIROW_kernel.asc:69:                wideFullYRows_ = ChooseWideFullYRows(rowWidth, sizeof(float),
+归档/历史工作区/R31B/R31B-V003-WIDE-FULL-Y-MULTIROW_kernel.asc:71:                wideFullYTileElems_ = tileElems;
+归档/历史工作区/R31B/R31B-V003-WIDE-FULL-Y-MULTIROW_kernel.asc:76:                                 yElemsPerRow * wideFullYRows_ * sizeof(float));
+归档/历史工作区/R31B/R31B-V003-WIDE-FULL-Y-MULTIROW_kernel.asc:78:                                 wideFullYRows_ * reduceStride * sizeof(float));
+归档/历史工作区/R31B/R31B-V003-WIDE-FULL-Y-MULTIROW_kernel.asc:80:                wideFullYRows_ = ChooseWideFullYRows(rowWidth, sizeof(half),
+归档/历史工作区/R31B/R31B-V003-WIDE-FULL-Y-MULTIROW_kernel.asc:82:                wideFullYTileElems_ = tileElems;
+归档/历史工作区/R31B/R31B-V003-WIDE-FULL-Y-MULTIROW_kernel.asc:90:                                 yElemsPerRow * wideFullYRows_ * sizeof(half));
+归档/历史工作区/R31B/R31B-V003-WIDE-FULL-Y-MULTIROW_kernel.asc:95:                                 wideFullYRows_ * reduceStride * sizeof(float));
+归档/历史工作区/R31B/R31B-V003-WIDE-FULL-Y-MULTIROW_kernel.asc:97:                wideFullYRows_ = ChooseWideFullYRows(rowWidth, sizeof(float),
+归档/历史工作区/R31B/R31B-V003-WIDE-FULL-Y-MULTIROW_kernel.asc:99:                wideFullYTileElems_ = tileElems;
+归档/历史工作区/R31B/R31B-V003-WIDE-FULL-Y-MULTIROW_kernel.asc:105:                                 yElemsPerRow * wideFullYRows_ * sizeof(float));
+归档/历史工作区/R31B/R31B-V003-WIDE-FULL-Y-MULTIROW_kernel.asc:109:                                 wideFullYRows_ * reduceStride * sizeof(float));
+归档/历史工作区/R31B/R31B-V003-WIDE-FULL-Y-MULTIROW_kernel.asc:1953:        const int32_t tileWidth = wideFullYTileElems_;
+归档/历史工作区/R31B/R31B-V003-WIDE-FULL-Y-MULTIROW_kernel.asc:1954:        const int32_t batchLimit = wideFullYRows_;
+归档/历史工作区/R31B/R31B-V003-WIDE-FULL-Y-MULTIROW_kernel.asc:2900:        const int32_t tileWidth = wideFullYTileElems_;
+归档/历史工作区/R31B/R31B-V003-WIDE-FULL-Y-MULTIROW_kernel.asc:2901:        const int32_t batchLimit = wideFullYRows_;
+归档/历史工作区/R31B/R31B-V003-WIDE-FULL-Y-MULTIROW_kernel.asc:3146:    bool wideFp32FullYPath_;
+归档/历史工作区/R31B/R31B-V003-WIDE-FULL-Y-MULTIROW_kernel.asc:3147:    int32_t wideFullYRows_;
+归档/历史工作区/R31B/R31B-V003-WIDE-FULL-Y-MULTIROW_kernel.asc:3148:    int32_t wideFullYTileElems_;
+归档/历史工作区/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc:57:        wideFp32FullYPath_ = false;
+归档/历史工作区/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc:58:        wideFullYRows_ = 1;
+归档/历史工作区/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc:59:        wideFullYTileElems_ = kWideFullYTileElems;
+归档/历史工作区/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc:70:                wideFp32FullYPath_ = true;
+归档/历史工作区/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc:71:                wideFullYRows_ = ChooseWideFullYRows(rowWidth, sizeof(float),
+归档/历史工作区/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc:73:                wideFullYTileElems_ = tileElems;
+归档/历史工作区/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc:78:                                 yElemsPerRow * wideFullYRows_ * sizeof(float));
+归档/历史工作区/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc:80:                                 wideFullYRows_ * reduceStride * sizeof(float));
+归档/历史工作区/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc:82:                wideFullYRows_ = ChooseWideFullYRows(rowWidth, sizeof(half),
+归档/历史工作区/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc:84:                wideFullYTileElems_ = tileElems;
+归档/历史工作区/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc:92:                                 yElemsPerRow * wideFullYRows_ * sizeof(half));
+归档/历史工作区/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc:97:                                 wideFullYRows_ * reduceStride * sizeof(float));
+归档/历史工作区/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc:99:                wideFullYRows_ = ChooseWideFullYRows(rowWidth, sizeof(float),
+归档/历史工作区/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc:101:                wideFullYTileElems_ = tileElems;
+归档/历史工作区/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc:107:                                 yElemsPerRow * wideFullYRows_ * sizeof(float));
+归档/历史工作区/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc:111:                                 wideFullYRows_ * reduceStride * sizeof(float));
+归档/历史工作区/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc:2095:        const int32_t tileWidth = wideFullYTileElems_;
+归档/历史工作区/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc:2096:        const int32_t batchLimit = wideFullYRows_;
+归档/历史工作区/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc:3089:        const int32_t tileWidth = wideFullYTileElems_;
+归档/历史工作区/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc:3090:        const int32_t batchLimit = wideFullYRows_;
+归档/历史工作区/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc:3463:    bool wideFp32FullYPath_;
+归档/历史工作区/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc:3464:    int32_t wideFullYRows_;
+归档/历史工作区/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc:3465:    int32_t wideFullYTileElems_;
+
+[R05_RUNNER_SOURCE]
+19:const Case cases[] = {{"on-16x2048",16,2048,true}, {"on-16x2056",16,2056,true},
+21:    {"upper-16x4096",16,4096,false}, {"resident-80x2056",80,2056,false}};
+22:struct Call { int ordinal; std::string shape, phase, side; int blocks; };
+76:void Launch(Kernel kernel, Data& d, int64_t cores, aclrtStream stream,
+78:    kernel(d.dev[0],d.dg,d.dev[1],d.dg,d.dev[2],d.pg,d.dev[3],d.pg,d.dev[4],d.dg,cores,stream,kEpsilon);
+79:    calls.push_back({int(calls.size()+1),d.spec.name,phase,side,int(std::min<int64_t>(cores,d.spec.rows))});
+81:bool Reference(Kernel kernel,Data& d,int64_t cores,aclrtStream stream,const char* side,FILE* f) {
+84:    Launch(kernel,d,cores,stream,"reference",side);
+101:void Measure(Kernel p,Kernel c,bool same,Data& d,int64_t cores,aclrtStream stream,aclrtEvent start,aclrtEvent stop) {
+104:    for(int i=0;i<kWarmup;++i) { Launch(funcs[i%2],d,cores,stream,"warmup",labels[i%2]); Require(aclrtSynchronizeStream(stream),"warmup sync"); }
+109:        Launch(funcs[side],d,cores,stream,"timed",labels[side]);
+129:    Kernel parent=Load(folder,"libr05_parent.so","r05_parent_run_kernel");
+130:    Kernel candidate=mode=="parent"?parent:Load(folder,"libr05_candidate.so","r05_candidate_run_kernel");
+132:    int64_t cores=0; Require(aclrtGetDeviceInfo(device,ACL_DEV_ATTR_VECTOR_CORE_NUM,&cores),"core count");
+133:    if(cores<=0) return 2;
+138:    std::printf("RUN mode=%s device=%d cores=%ld warmup_total=%d blocks=%d pairs=%d one_output_address=YES raw_in_memory=YES\n",mode.c_str(),device,cores,kWarmup,kBlocks,kPairs);
+145:            Data d(spec); pass=Reference(parent,d,cores,stream,"P",ref)&&pass;
+146:            if(mode=="correctness") pass=Reference(candidate,d,cores,stream,"C",ref)&&pass;
+154:            std::printf("TIMING case=%s rows=%d width=%d blocks=%ld guard=%s\n",spec.name,spec.rows,spec.width,std::min<int64_t>(cores,spec.rows),spec.width>128?"ON":"OFF");
+155:            Measure(parent,candidate,mode=="parent",d,cores,stream,start,stop);
+164:    for(const auto& c:calls) std::fprintf(trace,"%d\t%s\t%s\t%s\t%d\n",c.ordinal,c.shape.c_str(),c.phase.c_str(),c.side.c_str(),c.blocks);

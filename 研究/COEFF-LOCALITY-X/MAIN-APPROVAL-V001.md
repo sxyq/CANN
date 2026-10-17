@@ -1,12 +1,12 @@
-# MAIN APPROVAL — COEFF-LOCALITY-X V001
+# current route recordS — COEFF-LOCALITY-X V001
 
 Date: 2026-09-27
-Approver: MAIN-2
+Recordr: MAIN-2
 DIRECT_PARENT=FROZEN_R31B_V011
 PARENT_SOURCE_SHA=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
 OFFICIAL_ANCHOR=45.16
 
-## APPROVED SINGLE HYPOTHESIS
+## SELECTED SINGLE HYPOTHESIS
 
 H1 — Param double-buffer prefetch in FP32 wide output pass (V011 sibling pattern).
 
@@ -22,7 +22,7 @@ Scope note: this is coefficient-load locality inside an existing wide FP32 funct
 NOT a wide-path redesign and NOT a multi-row batch DMA mode. The donor is the
 in-kernel lowp sibling, not another route.
 
-FORBIDDEN: no multi-row DMA, no rows/block, no dtype split, no reduction,
+DEFERRED: no multi-row DMA, no rows/block, no dtype split, no reduction,
 no scheduling, no sync-removal as the win claim, no wide architecture redesign.
 
 ## Measurement

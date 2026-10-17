@@ -1,0 +1,169 @@
+Source: server3 CANN 8.5.0.alpha002; read-only SDK excerpts.
+Reference pattern: TPipe::ReadSpmBuffer issues V_MTE2 before overwriting UB via MTE2.
+
+FILE /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/compiler/tikcpp/tikcfw/interface/kernel_operator_common_intf.h
+FILE /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/compiler/tikcpp/tikcfw/impl/kernel_operator_common_intf_impl.h
+FILE /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/compiler/tikcpp/tikcfw/impl/dav_c220/kernel_operator_common_impl.h
+FILE /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/compiler/tikcpp/tikcfw/impl/kernel_tpipe_impl.h
+648:         SetFlag<HardEvent::MTE3_MTE1>(eventIDMTE3ToMTE1);
+649:         WaitFlag<HardEvent::MTE3_MTE1>(eventIDMTE3ToMTE1);
+650:     }
+651:     event_t eventIDMTE3ToV = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE3_V));
+652:     SetFlag<HardEvent::MTE3_V>(eventIDMTE3ToV);
+653:     WaitFlag<HardEvent::MTE3_V>(eventIDMTE3ToV);
+654: }
+655: 
+656: template <typename T>
+657: __aicore__ inline void TPipe::ReadSpmBuffer(const LocalTensor<T>& read, const DataCopyParams& copyParams,
+658:     int32_t readOffset)
+659: {
+660:     /*
+661:      * before read, the local may be calculate, so need insert MTE wait V
+662:      * after read, the local may used to compute or copy out, need insert V/MTE2 wait MTE3
+663:      */
+664:     if (g_tpipeImpl.spmInfo_.spmBufType == static_cast<uint8_t>(Hardware::GM)) {
+665:         event_t eventIDVToMTE2 = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::V_MTE2));
+666:         event_t eventIDMTE2ToV = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE2_V));
+667:         event_t eventIDMTE2ToMTE3 = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE2_MTE3));
+668:         SetFlag<HardEvent::V_MTE2>(eventIDVToMTE2);
+669:         WaitFlag<HardEvent::V_MTE2>(eventIDVToMTE2);
+670:         DataCopyGM2UBImpl(reinterpret_cast<__ubuf__ T*>(read.GetPhyAddr()),
+671:             reinterpret_cast<__gm__ T*>(g_tpipeImpl.spmInfo_.spmAddr) + readOffset, copyParams);
+672:         SetFlag<HardEvent::MTE2_V>(eventIDMTE2ToV);
+673:         WaitFlag<HardEvent::MTE2_V>(eventIDMTE2ToV);
+674: 
+675:         SetFlag<HardEvent::MTE2_MTE3>(eventIDMTE2ToMTE3);
+676:         WaitFlag<HardEvent::MTE2_MTE3>(eventIDMTE2ToMTE3);
+677:     } else if (g_tpipeImpl.spmInfo_.spmBufType == static_cast<uint8_t>(Hardware::L1)) {
+678:         ASCENDC_DEBUG_ASSERT((readOffset % ONE_BLK_SIZE == 0), "readOffset is %d, which must be 32B aligned \n",
+679:             readOffset);
+680:         event_t eventIDVToMTE1 = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::V_MTE1));
+681:         event_t eventIDMTE1ToV = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE1_V));
+682:         event_t eventIDMTE1ToMTE3 = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE1_MTE3));
+706:     repeatParams.blockLen = computeSize / AscendCUtils::GetC0Count(sizeof(T));
+707:     event_t eventIDVToMTE3 = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::V_MTE3));
+708:     event_t eventIDMTE2ToMTE3 = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE2_MTE3));
+709:     event_t eventIDMTE3ToV = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE3_V));
+710:     SetFlag<HardEvent::V_MTE3>(eventIDVToMTE3);
+711:     WaitFlag<HardEvent::V_MTE3>(eventIDVToMTE3);
+712: 
+713:     SetFlag<HardEvent::MTE2_MTE3>(eventIDMTE2ToMTE3);
+714:     WaitFlag<HardEvent::MTE2_MTE3>(eventIDMTE2ToMTE3);
+715:     if (g_tpipeImpl.spmInfo_.spmBufType == static_cast<uint8_t>(Hardware::GM)) {
+716:         DataCopyUB2GMImpl(reinterpret_cast<__gm__ T*>(g_tpipeImpl.spmInfo_.spmAddr) + writeOffset,
+717:             reinterpret_cast<__ubuf__ T*>(write.GetPhyAddr()), repeatParams);
+718:         event_t eventIDMTE3ToMTE2 = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE3_MTE2));
+719:         SetFlag<HardEvent::MTE3_MTE2>(eventIDMTE3ToMTE2);
+720:         WaitFlag<HardEvent::MTE3_MTE2>(eventIDMTE3ToMTE2);
+721:     } else if (g_tpipeImpl.spmInfo_.spmBufType == static_cast<uint8_t>(Hardware::L1)) {
+722:         ASCENDC_DEBUG_ASSERT((writeOffset % ONE_BLK_SIZE == 0), "writeOffset is %d, which must be 32B aligned \n",
+730:         WaitFlag<HardEvent::MTE3_MTE1>(eventIDMTE3ToMTE1);
+731:     }
+732: 
+733:     SetFlag<HardEvent::MTE3_V>(eventIDMTE3ToV);
+734:     WaitFlag<HardEvent::MTE3_V>(eventIDMTE3ToV);
+735: }
+736: 
+737: template <typename T>
+738: __aicore__ inline void TPipe::ReadSpmBuffer(const LocalTensor<T>& read, const int32_t readSize, int32_t readOffset)
+739: {
+740:     /*
+741:      * before read, the local may be calculate, so need insert MTE wait V
+742:      * after read, the local may used to compute or copy out, need insert V/MTE2 wait MTE3
+743:      */
+744:     int computeSize = readSize != 0 ? readSize : GetShapeSize(read.GetShapeInfo());
+745:     struct DataCopyParams repeatParams;
+746:     repeatParams.blockLen = computeSize / AscendCUtils::GetC0Count(sizeof(T));
+747:     if (g_tpipeImpl.spmInfo_.spmBufType == static_cast<uint8_t>(Hardware::GM)) {
+748:         event_t eventIDVToMTE2 = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::V_MTE2));
+749:         event_t eventIDMTE2ToV = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE2_V));
+750:         event_t eventIDMTE2ToMTE3 = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::MTE2_MTE3));
+751:         SetFlag<HardEvent::V_MTE2>(eventIDVToMTE2);
+752:         WaitFlag<HardEvent::V_MTE2>(eventIDVToMTE2);
+753:         DataCopyGM2UBImpl(reinterpret_cast<__ubuf__ T*>(read.GetPhyAddr()),
+754:             reinterpret_cast<__gm__ T*>(g_tpipeImpl.spmInfo_.spmAddr) + readOffset, repeatParams);
+755: 
+756:         SetFlag<HardEvent::MTE2_V>(eventIDMTE2ToV);
+757:         WaitFlag<HardEvent::MTE2_V>(eventIDMTE2ToV);
+758: 
+759:         SetFlag<HardEvent::MTE2_MTE3>(eventIDMTE2ToMTE3);
+760:         WaitFlag<HardEvent::MTE2_MTE3>(eventIDMTE2ToMTE3);
+761:     } else if (g_tpipeImpl.spmInfo_.spmBufType == static_cast<uint8_t>(Hardware::L1)) {
+762:         ASCENDC_DEBUG_ASSERT((readOffset % ONE_BLK_SIZE == 0), "readOffset is %d, which must be 32B aligned \n",
+763:             readOffset);
+764:         ASCENDC_DEBUG_ASSERT((readSize % ONE_BLK_SIZE == 0), "readSize is %d, which must be 32B aligned \n", readSize);
+765:         event_t eventIDVToMTE1 = static_cast<event_t>(GetTPipePtr()->FetchEventID(HardEvent::V_MTE1));
+
+Source: interface/kernel_operator_block_sync_intf.h lines 18-90
+
+#include "kernel_reg.h"
+#include "kernel_tensor_base.h"
+
+namespace AscendC {
+
+template <HardEvent event>
+__aicore__ inline void SetFlag(int32_t eventID)
+{
+    if ASCEND_IS_AIC {
+        if constexpr (event == HardEvent::MTE2_V || event == HardEvent::V_MTE2 || event == HardEvent::MTE3_V
+                      || event == HardEvent::V_MTE3 || event == HardEvent::V_V || event == HardEvent::S_V ||
+#if defined(__NPU_ARCH__) && (__NPU_ARCH__ == 3101)
+                      event == HardEvent::V_S || event == HardEvent::MTE2_MTE3 || event == HardEvent::MTE3_MTE2
+                      || event == HardEvent::MTE3_S || event == HardEvent::S_MTE3) {
+#else
+                      event == HardEvent::V_S) {
+#endif
+            return;
+        }
+    }
+    if ASCEND_IS_AIV {
+        if constexpr ((event == HardEvent::MTE2_MTE1) || (event == HardEvent::MTE1_MTE2) ||
+                      (event == HardEvent::MTE1_M) || (event == HardEvent::M_MTE1) || (event == HardEvent::M_FIX) ||
+                      (event == HardEvent::FIX_M)) {
+            return;
+        }
+    }
+    SetFlagImpl<event>(eventID);
+}
+
+template <HardEvent event>
+__aicore__ inline void WaitFlag(int32_t eventID)
+{
+    if ASCEND_IS_AIC {
+        if constexpr (event == HardEvent::MTE2_V || event == HardEvent::V_MTE2 || event == HardEvent::MTE3_V
+                      || event == HardEvent::V_MTE3 || event == HardEvent::V_V || event == HardEvent::S_V ||
+#if defined(__NPU_ARCH__) && (__NPU_ARCH__ == 3101)
+                      event == HardEvent::V_S || event == HardEvent::MTE2_MTE3 || event == HardEvent::MTE3_MTE2
+                      || event == HardEvent::MTE3_S || event == HardEvent::S_MTE3) {
+#else
+                      event == HardEvent::V_S) {
+#endif
+            return;
+        }
+    }
+    if ASCEND_IS_AIV {
+        if constexpr ((event == HardEvent::MTE2_MTE1) || (event == HardEvent::MTE1_MTE2) ||
+                      (event == HardEvent::MTE1_M) || (event == HardEvent::M_MTE1) || (event == HardEvent::M_FIX) ||
+                      (event == HardEvent::FIX_M)) {
+            return;
+        }
+    }
+    WaitFlagImpl(event, eventID);
+}
+
+template <pipe_t pipe>
+__aicore__ inline void PipeBarrier()
+{
+    PipeBarrierImpl<pipe>();
+}
+
+#if defined(__NPU_ARCH__) && ((__NPU_ARCH__ == 2201) || (__NPU_ARCH__ == 3002) ||       \
+    (__NPU_ARCH__ == 3102) || (__NPU_ARCH__ == 3101) || (__NPU_ARCH__ == 5102) ||       \
+    (__NPU_ARCH__ == 3003) || (__NPU_ARCH__ == 3103) ||                                 \
+    (__NPU_ARCH__ == 3113))
+template <MemDsbT arg0>
+__aicore__ inline void DataSyncBarrier()
+{
+    DataSyncBarrierImpl<arg0>();
+}
+#endif

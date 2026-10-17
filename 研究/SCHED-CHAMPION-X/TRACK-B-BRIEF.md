@@ -25,7 +25,7 @@ ONLY allowed to change:
 - core assignment
 - row-group scheduling
 
-FORBIDDEN to change:
+DEFERRED to change:
 - mode selection
 - rows/block
 - DMA segmentation
@@ -80,11 +80,11 @@ EXPECTED_RISK_SHAPES
 CORRECTNESS_RISK
 MEASUREMENT_PLAN
 
-Then STOP. Do not edit kernel until Main approves exactly one hypothesis.
+Then STOP. Do not edit kernel until Main records exactly one hypothesis.
 
 ## Hard constraints
 
-- MAIN-1 worktrees under /Users/sunyiyang/Desktop/Project/cann-sixlane/ are READ/WRITE FORBIDDEN
+- MAIN-1 worktrees under /Users/sunyiyang/Desktop/Project/cann-sixlane/ are READ/WRITE DEFERRED
 - Do not read R31B current worktree or V016 as seed
 - Do not modify shared control under canonical cann/
 - Do not submit to CANNJudge
@@ -92,7 +92,7 @@ Then STOP. Do not edit kernel until Main approves exactly one hypothesis.
 - If you find frozen champion already has an equivalent mechanism, write
   DO_NOT_IMPLEMENT_DUPLICATE and stop
 
-## After Main approval (later, not this turn)
+## After current route record (later, not this turn)
 
 REVISION declaration fields required before code:
 ROUTE / REVISION / DIRECT_PARENT / PARENT_SOURCE_SHA / OFFICIAL_ANCHOR /

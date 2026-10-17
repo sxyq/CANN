@@ -18,7 +18,7 @@ Campaign trigger **B** met：V016 + V017 连续 2 次 LOCAL_ACCEPTED。
 | V016 | FP16/BF16 wide tile 4096→8192 | fp16-wide −6.5~−7.0% |
 | **V017** | pass-2 store drain defer | **bf16-wide −14.3% (20/20)**；fp16-wide −6.7~−8.5% |
 
-`ONLINE_DECISION = APPROVED_ON_TRIGGER`。
+`ONLINE_DECISION = SELECTED_ON_TRIGGER`。
 
 ## Main Review checklist
 

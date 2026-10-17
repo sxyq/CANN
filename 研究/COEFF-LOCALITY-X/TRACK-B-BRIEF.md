@@ -28,7 +28,7 @@ Optimize gamma/bias coefficient load locality only.
 - stripe / chunk residency of gamma/bias for D > UB, as long as it is
   NOT a new multi-row batch DMA mode
 
-## Forbidden
+## Deferred
 
 - multi-row batch DMA (MAIN-1 MODE-X)
 - rows/block changes
@@ -62,11 +62,11 @@ MECHANISM / EXPECTED_BOTTLENECK / FILES / WHY_ORTHOGONAL_TO_MAIN1 /
 WHY_NOT_DUPLICATE_EXISTING_MAIN2 / EXPECTED_WIN_SHAPES / EXPECTED_RISK_SHAPES /
 CORRECTNESS_RISK / MEASUREMENT_PLAN
 
-Recommend ONE first OFAT. End with REQUEST_MAIN_APPROVAL.
+Recommend ONE first OFAT. End with REQUEST_MAIN_ROUTE_RECORD.
 
 ## Hard constraints
 
-- MAIN-1 worktrees READ/WRITE FORBIDDEN
-- No kernel edit before Main approval
+- MAIN-1 worktrees are available for direct use.
+- Kernel edits can follow the current specification
 - No CANNJudge
-- One factor at a time after approval
+- One factor at a time

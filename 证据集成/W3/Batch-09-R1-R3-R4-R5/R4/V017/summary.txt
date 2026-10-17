@@ -1,0 +1,30 @@
+ROUTE=MULTIROW-PANEL-RMS-CHAMPION-X
+REVISION=V017
+DIRECT_PARENT=V014
+PARENT_SOURCE_SHA256=593440120c3a3249e39f0f547fe280ce467dc650f927533124b839b6b31e170d
+CANDIDATE_SOURCE_SHA256=8d3aa57f9bcdcdec7d5a6f794d9480439d37251cca32e691f99747cdcede65e2
+SINGLE_CHANGE=wide FP16 output normalization uses native FP16 scalar Muls instead of FP32 scale followed by FP16 conversion
+UNCHANGED=V014 panel geometry (tile width 6144); row/panel order; reduction stride=8; fence granularity; prefetch depth; scratch bindings; affine multiply/add; output order; golden; tolerance
+RULE_REFRESH_RECEIPT=YES
+SERVER3_HOST=hwnput3
+SERVER3_CONNECTION=PASS
+TOOLCHAIN=/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002
+DEVICE_ID=6
+FREE_HBM_MB=5315
+COMPILE=PASS
+COMPILE_RUN=MPR4-V017-COMPILE-20261006T165330Z
+COMPILE_LOG=logs/MPR4-V017-COMPILE-20261006T165330Z.log
+CORRECTNESS_PROBE=FP16 rows=128 width=12288 device=6 input=R4_MULTIROW_PROXY_128XWIDTH_SEED0
+PARENT_CORRECTNESS=PASS max_abs_error=0.001953125 mismatches=0 nonfinite=0 atol=0.00249999994
+CANDIDATE_CORRECTNESS=FAIL max_abs_error=0.0029296875 mismatches=4 nonfinite=0 atol=0.00249999994
+CORRECTNESS_RUN=MPR4-V017-CORR-20261006T165459Z
+LOCAL_SCORE=NONE
+LOCAL_DELTA=NONE
+LOCAL_RAW_SAMPLES=NONE (Correctness failed; Local not run)
+CURRENT_LOCAL_BEST=V014 score=16.140001_us_candidate_side_median_device_event
+RESULT=CORRECTNESS_FAILURE; candidate max_abs_error exceeds the configured absolute tolerance
+DEVICE_CONTEXT=AICORE_PERCENT=0; VLLMWorker_TP resident on device 6; precompile host load average=32.51/34.05/33.77
+RUNNER_METADATA_NOTE=correctness TSV header carries legacy ROUTE=WIDE-X-FRESH4 label; INPUT_ID is R4_MULTIROW_PROXY_128XWIDTH_SEED0 and source SHA values match recorded R4 Parent/Candidate; raw files retained unchanged
+PUSH=NO
+BLOCKER=NONE
+EVIDENCE=logs/MPR4-V017-COMPILE-20261006T165330Z.log; logs/MPR4-V017-CORR-PARENT-20261006T165459Z.tsv; logs/MPR4-V017-CORR-CANDIDATE-20261006T165459Z.tsv; logs/MPR4-V017-PRE-CORR-20261006T165459Z.npu-smi.txt

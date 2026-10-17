@@ -1,0 +1,319 @@
+MODE=SOURCE_MODEL_AND_ARCHIVED_SAMPLE_RECOMPUTATION
+DEVICE_EXECUTION=NONE; NEW_PERFORMANCE_REVISIONS=0; LOCAL_SCORE=NONE
+PARENT=de70b634813dea80783fc57716d6e95c158edeec:线上结果/R31B/V011/submission.asc
+DOC_MODEL address=0x00000 bank=0 group=0 row=0
+DOC_MODEL address=0x00020 bank=1 group=1 row=0
+DOC_MODEL address=0x10000 bank=16 group=0 row=0
+DOC_MODEL address=0x10020 bank=17 group=1 row=0
+DOC_MODEL address=0x10e20 bank=17 group=1 row=7
+DOC_MODEL address=0x1fe00 bank=16 group=0 row=127
+DOC_MODEL address=0x1ff00 bank=24 group=8 row=127
+DOC_MODEL address=0x20000 bank=32 group=0 row=0
+DOC_MODEL address=0x20020 bank=33 group=1 row=0
+DOC_MODEL address=0x20200 bank=32 group=0 row=1
+DOC_MODEL_EXAMPLES=PASS count=10; not empirical hardware validation
+SOURCE_LAYOUT revision=PARENT dtype=FP16 width=32768 tile_elems=4096 allocated_y_rows=1 total_ub_bytes=155712
+  xBuf_ address=0x00000 requested=16384 allocated=16384 bank=0 group=0 bank_row=0
+  residualBuf_ address=0x04000 requested=16384 allocated=16384 bank=0 group=0 bank_row=32
+  outputBuf_ address=0x08000 requested=8192 allocated=8192 bank=0 group=0 bank_row=64
+  gammaBuf_ address=0x0a000 requested=65536 allocated=65536 bank=0 group=0 bank_row=80
+  valueFp32Buf_ address=0x1a000 requested=16384 allocated=16384 bank=16 group=0 bank_row=80
+  xFp32Buf_ address=0x1e000 requested=16384 allocated=16384 bank=16 group=0 bank_row=112
+  residualFp32Buf_ address=0x22000 requested=16384 allocated=16384 bank=32 group=0 bank_row=16
+  reduceFp32Buf_ address=0x26000 requested=64 allocated=64 bank=32 group=0 bank_row=48
+SOURCE_READ_GROUP_OVERLAP revision=PARENT per_256B_repeat_unique_counts=[8]; no cycle prediction
+SOURCE_LAYOUT revision=V001 dtype=FP16 width=32768 tile_elems=4096 allocated_y_rows=1 total_ub_bytes=155712
+  residualBuf_ address=0x00000 requested=16384 allocated=16384 bank=0 group=0 bank_row=0
+  xBuf_ address=0x04000 requested=16384 allocated=16384 bank=0 group=0 bank_row=32
+  outputBuf_ address=0x08000 requested=8192 allocated=8192 bank=0 group=0 bank_row=64
+  gammaBuf_ address=0x0a000 requested=65536 allocated=65536 bank=0 group=0 bank_row=80
+  valueFp32Buf_ address=0x1a000 requested=16384 allocated=16384 bank=16 group=0 bank_row=80
+  xFp32Buf_ address=0x1e000 requested=16384 allocated=16384 bank=16 group=0 bank_row=112
+  residualFp32Buf_ address=0x22000 requested=16384 allocated=16384 bank=32 group=0 bank_row=16
+  reduceFp32Buf_ address=0x26000 requested=64 allocated=64 bank=32 group=0 bank_row=48
+SOURCE_READ_GROUP_OVERLAP revision=V001 per_256B_repeat_unique_counts=[8]; no cycle prediction
+EXACT_SOURCE_DIFF V001
+--- R31B-V011
++++ V001
+@@ -84,6 +84,6 @@
+                 wideFullYTileElems_ = tileElems;
+                 const int32_t reduceStride = kWideFullYReduceStride;
++                pipe_.InitBuffer(residualBuf_, 2 * tileElems * sizeof(half));
+                 pipe_.InitBuffer(xBuf_, 2 * tileElems * sizeof(half));
+-                pipe_.InitBuffer(residualBuf_, 2 * tileElems * sizeof(half));
+                 pipe_.InitBuffer(outputBuf_, tileElems * sizeof(half));
+                 // gammaBuf_ holds the complete half y rows during pass one.
+
+RAW_SOURCE=64e32f535348cdde1828cd8a8fd89fad100aaa33:本地实验/UB-BANK-LAYOUT-CHAMPION-X/V001/support/logs/local-20261005T052532Z-runtime-fixed.log
+OLD_LOCAL revision=V001 case=fp16-mid-control-d8192 pairs=21 parent_median_us=25.840 candidate_median_us=13.900 median_ratio_delta_pct=-46.207430 paired_delta_median_us=-7.480 parent_cv=0.69073 candidate_cv=0.88488 parent_mad_us=15.280 candidate_mad_us=7.260
+OLD_LOCAL revision=V001 case=fp16-wide-d32768 pairs=21 parent_median_us=21.600 candidate_median_us=23.400 median_ratio_delta_pct=+8.333333 paired_delta_median_us=+1.300 parent_cv=0.86633 candidate_cv=0.85993 parent_mad_us=10.620 candidate_mad_us=12.720
+OLD_RUNNER CORRECTNESS case=fp16-mid-control-d8192 binary=V011 result=PASS failures=0 max_abs=0.0009765625 max_rel=0.0012618296
+OLD_RUNNER CORRECTNESS case=fp16-mid-control-d8192 binary=UB_BANK_V001 result=PASS failures=0 max_abs=0.0009765625 max_rel=0.0012618296
+OLD_RUNNER CORRECTNESS case=fp16-wide-d32768 binary=V011 result=PASS failures=0 max_abs=0.001953125 max_rel=0.010989011
+OLD_RUNNER CORRECTNESS case=fp16-wide-d32768 binary=UB_BANK_V001 result=PASS failures=0 max_abs=0.001953125 max_rel=0.010989011
+OLD_RUNNER RUNNER_COMPLETE mode=PAIRED correctness=PASS cases=2 device=7 warmup_each=45 pairs_each=21 timing=DEVICE_EVENT_PRIMARY wall=DIAGNOSTIC
+SOURCE_LAYOUT revision=V002 dtype=FP16 width=32768 tile_elems=4096 allocated_y_rows=1 total_ub_bytes=163904
+  xBuf_ address=0x00000 requested=16384 allocated=16384 bank=0 group=0 bank_row=0
+  residualBuf_ address=0x04000 requested=16384 allocated=16384 bank=0 group=0 bank_row=32
+  outputBuf_ address=0x08000 requested=16384 allocated=16384 bank=0 group=0 bank_row=64
+  gammaBuf_ address=0x0c000 requested=65536 allocated=65536 bank=0 group=0 bank_row=96
+  valueFp32Buf_ address=0x1c000 requested=16384 allocated=16384 bank=16 group=0 bank_row=96
+  xFp32Buf_ address=0x20000 requested=16384 allocated=16384 bank=32 group=0 bank_row=0
+  residualFp32Buf_ address=0x24000 requested=16384 allocated=16384 bank=32 group=0 bank_row=32
+  reduceFp32Buf_ address=0x28000 requested=64 allocated=64 bank=32 group=0 bank_row=64
+SOURCE_READ_GROUP_OVERLAP revision=V002 per_256B_repeat_unique_counts=[8]; no cycle prediction
+EXACT_SOURCE_DIFF V002
+--- R31B-V011
++++ V002
+@@ -86,5 +86,5 @@
+                 pipe_.InitBuffer(xBuf_, 2 * tileElems * sizeof(half));
+                 pipe_.InitBuffer(residualBuf_, 2 * tileElems * sizeof(half));
+-                pipe_.InitBuffer(outputBuf_, tileElems * sizeof(half));
++                pipe_.InitBuffer(outputBuf_, 2 * tileElems * sizeof(half));
+                 // gammaBuf_ holds the complete half y rows during pass one.
+                 // Pass two loads gamma/bias into xBuf_/residualBuf_.
+
+RAW_SOURCE=64e32f535348cdde1828cd8a8fd89fad100aaa33:本地实验/UB-BANK-LAYOUT-CHAMPION-X/V002/support/logs/local-20261005T055123Z-runtime-fixed.log
+OLD_LOCAL revision=V002 case=fp16-mid-control-d8192 pairs=21 parent_median_us=24.680 candidate_median_us=28.280 median_ratio_delta_pct=+14.586710 paired_delta_median_us=-0.180 parent_cv=0.65669 candidate_cv=0.85740 parent_mad_us=12.800 candidate_mad_us=18.100
+OLD_LOCAL revision=V002 case=fp16-wide-d32768 pairs=21 parent_median_us=17.700 candidate_median_us=23.940 median_ratio_delta_pct=+35.254237 paired_delta_median_us=+1.720 parent_cv=0.62054 candidate_cv=0.58143 parent_mad_us=6.560 candidate_mad_us=10.800
+OLD_RUNNER CORRECTNESS case=fp16-mid-control-d8192 binary=V011 result=PASS failures=0 max_abs=0.0009765625 max_rel=0.0012618296
+OLD_RUNNER CORRECTNESS case=fp16-mid-control-d8192 binary=UB_BANK_V002 result=PASS failures=0 max_abs=0.0009765625 max_rel=0.0012618296
+OLD_RUNNER CORRECTNESS case=fp16-wide-d32768 binary=V011 result=PASS failures=0 max_abs=0.001953125 max_rel=0.010989011
+OLD_RUNNER CORRECTNESS case=fp16-wide-d32768 binary=UB_BANK_V002 result=PASS failures=0 max_abs=0.001953125 max_rel=0.010989011
+OLD_RUNNER RUNNER_COMPLETE mode=PAIRED correctness=PASS cases=2 device=7 warmup_each=45 pairs_each=21 timing=DEVICE_EVENT_PRIMARY wall=DIAGNOSTIC
+SOURCE_LAYOUT revision=V003 dtype=FP16 width=32768 tile_elems=4096 allocated_y_rows=1 total_ub_bytes=155744
+  xBuf_ address=0x00000 requested=16384 allocated=16384 bank=0 group=0 bank_row=0
+  residualBuf_ address=0x04000 requested=16384 allocated=16384 bank=0 group=0 bank_row=32
+  outputBuf_ address=0x08000 requested=8192 allocated=8192 bank=0 group=0 bank_row=64
+  gammaBuf_ address=0x0a000 requested=65568 allocated=65568 bank=0 group=0 bank_row=80
+  valueFp32Buf_ address=0x1a020 requested=16384 allocated=16384 bank=17 group=1 bank_row=80
+  xFp32Buf_ address=0x1e020 requested=16384 allocated=16384 bank=17 group=1 bank_row=112
+  residualFp32Buf_ address=0x22020 requested=16384 allocated=16384 bank=33 group=1 bank_row=16
+  reduceFp32Buf_ address=0x26020 requested=64 allocated=64 bank=33 group=1 bank_row=48
+SOURCE_READ_GROUP_OVERLAP revision=V003 per_256B_repeat_unique_counts=[8]; no cycle prediction
+EXACT_SOURCE_DIFF V003
+--- R31B-V011
++++ V003
+@@ -90,5 +90,5 @@
+                 // Pass two loads gamma/bias into xBuf_/residualBuf_.
+                 pipe_.InitBuffer(gammaBuf_,
+-                                 yElemsPerRow * wideFullYRows_ * sizeof(half));
++                                 yElemsPerRow * wideFullYRows_ * sizeof(half) + 32);
+                 pipe_.InitBuffer(valueFp32Buf_, tileElems * sizeof(float));
+                 pipe_.InitBuffer(xFp32Buf_, tileElems * sizeof(float));
+
+RAW_SOURCE=64e32f535348cdde1828cd8a8fd89fad100aaa33:本地实验/UB-BANK-LAYOUT-CHAMPION-X/V003/support/logs/local-20261005T061046Z-runtime-fixed.log
+OLD_LOCAL revision=V003 case=fp16-mid-control-d8192 pairs=21 parent_median_us=33.320 candidate_median_us=44.780 median_ratio_delta_pct=+34.393758 paired_delta_median_us=+8.340 parent_cv=0.89612 candidate_cv=0.85669 parent_mad_us=14.340 candidate_mad_us=23.940
+OLD_LOCAL revision=V003 case=fp16-wide-d32768 pairs=21 parent_median_us=58.580 candidate_median_us=38.440 median_ratio_delta_pct=-34.380335 paired_delta_median_us=-20.660 parent_cv=0.77501 candidate_cv=1.01706 parent_mad_us=32.400 candidate_mad_us=18.500
+OLD_RUNNER CORRECTNESS case=fp16-mid-control-d8192 binary=V011 result=PASS failures=0 max_abs=0.0009765625 max_rel=0.0012618296
+OLD_RUNNER CORRECTNESS case=fp16-mid-control-d8192 binary=UB_BANK_V003 result=PASS failures=0 max_abs=0.0009765625 max_rel=0.0012618296
+OLD_RUNNER CORRECTNESS case=fp16-wide-d32768 binary=V011 result=PASS failures=0 max_abs=0.001953125 max_rel=0.010989011
+OLD_RUNNER CORRECTNESS case=fp16-wide-d32768 binary=UB_BANK_V003 result=PASS failures=0 max_abs=0.001953125 max_rel=0.010989011
+OLD_RUNNER RUNNER_COMPLETE mode=PAIRED correctness=PASS cases=2 device=7 warmup_each=45 pairs_each=21 timing=DEVICE_EVENT_PRIMARY wall=DIAGNOSTIC
+SOURCE_LAYOUT revision=V004 dtype=FP16 width=32768 tile_elems=4096 allocated_y_rows=1 total_ub_bytes=155776
+  xBuf_ address=0x00000 requested=16384 allocated=16384 bank=0 group=0 bank_row=0
+  residualBuf_ address=0x04000 requested=16384 allocated=16384 bank=0 group=0 bank_row=32
+  outputBuf_ address=0x08000 requested=8192 allocated=8192 bank=0 group=0 bank_row=64
+  gammaBuf_ address=0x0a000 requested=65536 allocated=65536 bank=0 group=0 bank_row=80
+  valueFp32Buf_ address=0x1a000 requested=16384 allocated=16384 bank=16 group=0 bank_row=80
+  xFp32Buf_ address=0x1e000 requested=16384 allocated=16384 bank=16 group=0 bank_row=112
+  residualFp32Buf_ address=0x22000 requested=16384 allocated=16384 bank=32 group=0 bank_row=16
+  reduceFp32Buf_ address=0x26000 requested=128 allocated=128 bank=32 group=0 bank_row=48
+SOURCE_READ_GROUP_OVERLAP revision=V004 per_256B_repeat_unique_counts=[8]; no cycle prediction
+EXACT_SOURCE_DIFF V004
+--- R31B-V011
++++ V004
+@@ -1282,5 +1282,5 @@
+     static constexpr int32_t kWideFullYMaxRows = 8;
+     static constexpr int32_t kWideFullYTileElems = 4096;
+-    static constexpr int32_t kWideFullYReduceStride = 16;
++    static constexpr int32_t kWideFullYReduceStride = 32;
+     // 910B3 has 192 KB UB with an 8 KB system reservation.  FP32 avoids the
+     // redundant output staging buffer above, leaving enough room for three
+
+RAW_SOURCE=64e32f535348cdde1828cd8a8fd89fad100aaa33:本地实验/UB-BANK-LAYOUT-CHAMPION-X/V004/support/logs/local-20261005T063648Z-runtime-fixed.log
+OLD_LOCAL revision=V004 case=fp16-mid-control-d8192 pairs=21 parent_median_us=35.200 candidate_median_us=40.320 median_ratio_delta_pct=+14.545455 paired_delta_median_us=+1.340 parent_cv=0.80201 candidate_cv=0.58098 parent_mad_us=9.040 candidate_mad_us=12.040
+OLD_LOCAL revision=V004 case=fp16-wide-d32768 pairs=21 parent_median_us=23.520 candidate_median_us=34.120 median_ratio_delta_pct=+45.068027 paired_delta_median_us=-0.140 parent_cv=0.71358 candidate_cv=0.60812 parent_mad_us=12.180 candidate_mad_us=22.020
+OLD_RUNNER CORRECTNESS case=fp16-mid-control-d8192 binary=V011 result=PASS failures=0 max_abs=0.0009765625 max_rel=0.0012618296
+OLD_RUNNER CORRECTNESS case=fp16-mid-control-d8192 binary=UB_BANK_V004 result=PASS failures=0 max_abs=0.0009765625 max_rel=0.0012618296
+OLD_RUNNER CORRECTNESS case=fp16-wide-d32768 binary=V011 result=PASS failures=0 max_abs=0.001953125 max_rel=0.010989011
+OLD_RUNNER CORRECTNESS case=fp16-wide-d32768 binary=UB_BANK_V004 result=PASS failures=0 max_abs=0.001953125 max_rel=0.010989011
+OLD_RUNNER RUNNER_COMPLETE mode=PAIRED correctness=PASS cases=2 device=7 warmup_each=45 pairs_each=21 timing=DEVICE_EVENT_PRIMARY wall=DIAGNOSTIC
+SOURCE_LAYOUT revision=V005 dtype=FP16 width=32768 tile_elems=4096 allocated_y_rows=1 total_ub_bytes=155744
+  xBuf_ address=0x00000 requested=16384 allocated=16384 bank=0 group=0 bank_row=0
+  residualBuf_ address=0x04000 requested=16384 allocated=16384 bank=0 group=0 bank_row=32
+  outputBuf_ address=0x08000 requested=8192 allocated=8192 bank=0 group=0 bank_row=64
+  gammaBuf_ address=0x0a000 requested=65536 allocated=65536 bank=0 group=0 bank_row=80
+  valueFp32Buf_ address=0x1a000 requested=16416 allocated=16416 bank=16 group=0 bank_row=80
+  xFp32Buf_ address=0x1e020 requested=16384 allocated=16384 bank=17 group=1 bank_row=112
+  residualFp32Buf_ address=0x22020 requested=16384 allocated=16384 bank=33 group=1 bank_row=16
+  reduceFp32Buf_ address=0x26020 requested=64 allocated=64 bank=33 group=1 bank_row=48
+SOURCE_READ_GROUP_OVERLAP revision=V005 per_256B_repeat_unique_counts=[8]; no cycle prediction
+EXACT_SOURCE_DIFF V005
+--- R31B-V011
++++ V005
+@@ -91,5 +91,5 @@
+                 pipe_.InitBuffer(gammaBuf_,
+                                  yElemsPerRow * wideFullYRows_ * sizeof(half));
+-                pipe_.InitBuffer(valueFp32Buf_, tileElems * sizeof(float));
++                pipe_.InitBuffer(valueFp32Buf_, tileElems * sizeof(float) + 32);
+                 pipe_.InitBuffer(xFp32Buf_, tileElems * sizeof(float));
+                 pipe_.InitBuffer(residualFp32Buf_, tileElems * sizeof(float));
+
+RAW_SOURCE=64e32f535348cdde1828cd8a8fd89fad100aaa33:本地实验/UB-BANK-LAYOUT-CHAMPION-X/V005/support/logs/local-20261005T070253Z-runtime-fixed.log
+OLD_LOCAL revision=V005 case=fp16-mid-control-d8192 pairs=21 parent_median_us=29.560 candidate_median_us=20.360 median_ratio_delta_pct=-31.123139 paired_delta_median_us=-6.940 parent_cv=0.81341 candidate_cv=0.86998 parent_mad_us=16.560 candidate_mad_us=13.740
+OLD_LOCAL revision=V005 case=fp16-wide-d32768 pairs=21 parent_median_us=34.620 candidate_median_us=37.960 median_ratio_delta_pct=+9.647603 paired_delta_median_us=+1.740 parent_cv=0.64302 candidate_cv=0.66200 parent_mad_us=18.000 candidate_mad_us=18.960
+OLD_RUNNER CORRECTNESS case=fp16-mid-control-d8192 binary=V011 result=PASS failures=0 max_abs=0.0009765625 max_rel=0.0012618296
+OLD_RUNNER CORRECTNESS case=fp16-mid-control-d8192 binary=UB_BANK_V005 result=PASS failures=0 max_abs=0.0009765625 max_rel=0.0012618296
+OLD_RUNNER CORRECTNESS case=fp16-wide-d32768 binary=V011 result=PASS failures=0 max_abs=0.001953125 max_rel=0.010989011
+OLD_RUNNER CORRECTNESS case=fp16-wide-d32768 binary=UB_BANK_V005 result=PASS failures=0 max_abs=0.001953125 max_rel=0.010989011
+OLD_RUNNER RUNNER_COMPLETE mode=PAIRED correctness=PASS cases=2 device=7 warmup_each=45 pairs_each=21 timing=DEVICE_EVENT_PRIMARY wall=DIAGNOSTIC
+SOURCE_LAYOUT revision=V006 dtype=FP16 width=32768 tile_elems=4096 allocated_y_rows=1 total_ub_bytes=155744
+  xBuf_ address=0x00000 requested=16384 allocated=16384 bank=0 group=0 bank_row=0
+  residualBuf_ address=0x04000 requested=16384 allocated=16384 bank=0 group=0 bank_row=32
+  outputBuf_ address=0x08000 requested=8192 allocated=8192 bank=0 group=0 bank_row=64
+  gammaBuf_ address=0x0a000 requested=65536 allocated=65536 bank=0 group=0 bank_row=80
+  valueFp32Buf_ address=0x1a000 requested=16384 allocated=16384 bank=16 group=0 bank_row=80
+  xFp32Buf_ address=0x1e000 requested=16416 allocated=16416 bank=16 group=0 bank_row=112
+  residualFp32Buf_ address=0x22020 requested=16384 allocated=16384 bank=33 group=1 bank_row=16
+  reduceFp32Buf_ address=0x26020 requested=64 allocated=64 bank=33 group=1 bank_row=48
+SOURCE_READ_GROUP_OVERLAP revision=V006 per_256B_repeat_unique_counts=[8]; no cycle prediction
+EXACT_SOURCE_DIFF V006
+--- R31B-V011
++++ V006
+@@ -92,5 +92,5 @@
+                                  yElemsPerRow * wideFullYRows_ * sizeof(half));
+                 pipe_.InitBuffer(valueFp32Buf_, tileElems * sizeof(float));
+-                pipe_.InitBuffer(xFp32Buf_, tileElems * sizeof(float));
++                pipe_.InitBuffer(xFp32Buf_, tileElems * sizeof(float) + 32);
+                 pipe_.InitBuffer(residualFp32Buf_, tileElems * sizeof(float));
+                 pipe_.InitBuffer(reduceFp32Buf_,
+
+RAW_SOURCE=64e32f535348cdde1828cd8a8fd89fad100aaa33:本地实验/UB-BANK-LAYOUT-CHAMPION-X/V006/support/logs/local-20261005T074704Z-runtime-fixed.log
+OLD_LOCAL revision=V006 case=fp16-mid-control-d8192 pairs=21 parent_median_us=40.300 candidate_median_us=16.660 median_ratio_delta_pct=-58.660050 paired_delta_median_us=-10.940 parent_cv=0.76832 candidate_cv=1.25901 parent_mad_us=12.040 candidate_mad_us=9.120
+OLD_LOCAL revision=V006 case=fp16-wide-d32768 pairs=21 parent_median_us=42.780 candidate_median_us=41.780 median_ratio_delta_pct=-2.337541 paired_delta_median_us=-1.540 parent_cv=2.01047 candidate_cv=0.37783 parent_mad_us=4.840 candidate_mad_us=9.700
+OLD_RUNNER CORRECTNESS case=fp16-mid-control-d8192 binary=V011 result=PASS failures=0 max_abs=0.0009765625 max_rel=0.0012618296
+OLD_RUNNER CORRECTNESS case=fp16-mid-control-d8192 binary=UB_BANK_V006 result=PASS failures=0 max_abs=0.0009765625 max_rel=0.0012618296
+OLD_RUNNER CORRECTNESS case=fp16-wide-d32768 binary=V011 result=PASS failures=0 max_abs=0.001953125 max_rel=0.010989011
+OLD_RUNNER CORRECTNESS case=fp16-wide-d32768 binary=UB_BANK_V006 result=PASS failures=0 max_abs=0.001953125 max_rel=0.010989011
+OLD_RUNNER RUNNER_COMPLETE mode=PAIRED correctness=PASS cases=2 device=7 warmup_each=45 pairs_each=21 timing=DEVICE_EVENT_PRIMARY wall=DIAGNOSTIC
+SOURCE_LAYOUT revision=V007 dtype=FP16 width=32768 tile_elems=4096 allocated_y_rows=1 total_ub_bytes=155744
+  xBuf_ address=0x00000 requested=16384 allocated=16384 bank=0 group=0 bank_row=0
+  residualBuf_ address=0x04000 requested=16384 allocated=16384 bank=0 group=0 bank_row=32
+  outputBuf_ address=0x08000 requested=8192 allocated=8192 bank=0 group=0 bank_row=64
+  gammaBuf_ address=0x0a000 requested=65536 allocated=65536 bank=0 group=0 bank_row=80
+  valueFp32Buf_ address=0x1a000 requested=16384 allocated=16384 bank=16 group=0 bank_row=80
+  xFp32Buf_ address=0x1e000 requested=16384 allocated=16384 bank=16 group=0 bank_row=112
+  residualFp32Buf_ address=0x22000 requested=16416 allocated=16416 bank=32 group=0 bank_row=16
+  reduceFp32Buf_ address=0x26020 requested=64 allocated=64 bank=33 group=1 bank_row=48
+SOURCE_READ_GROUP_OVERLAP revision=V007 per_256B_repeat_unique_counts=[8]; no cycle prediction
+EXACT_SOURCE_DIFF V007
+--- R31B-V011
++++ V007
+@@ -93,5 +93,5 @@
+                 pipe_.InitBuffer(valueFp32Buf_, tileElems * sizeof(float));
+                 pipe_.InitBuffer(xFp32Buf_, tileElems * sizeof(float));
+-                pipe_.InitBuffer(residualFp32Buf_, tileElems * sizeof(float));
++                pipe_.InitBuffer(residualFp32Buf_, tileElems * sizeof(float) + 32);
+                 pipe_.InitBuffer(reduceFp32Buf_,
+                                  wideFullYRows_ * reduceStride * sizeof(float));
+
+RAW_SOURCE=64e32f535348cdde1828cd8a8fd89fad100aaa33:本地实验/UB-BANK-LAYOUT-CHAMPION-X/V007/support/logs/local-20261005T081337Z.log
+OLD_LOCAL revision=V007 case=fp16-mid-control-d8192 pairs=21 parent_median_us=12.680 candidate_median_us=18.920 median_ratio_delta_pct=+49.211356 paired_delta_median_us=+6.660 parent_cv=0.60471 candidate_cv=0.60776 parent_mad_us=5.740 candidate_mad_us=7.080
+OLD_LOCAL revision=V007 case=fp16-wide-d32768 pairs=21 parent_median_us=14.200 candidate_median_us=18.520 median_ratio_delta_pct=+30.422535 paired_delta_median_us=-0.020 parent_cv=0.79511 candidate_cv=0.69495 parent_mad_us=3.600 candidate_mad_us=7.480
+OLD_RUNNER CORRECTNESS case=fp16-mid-control-d8192 binary=V011 result=PASS failures=0 max_abs=0.0009765625 max_rel=0.0012618296
+OLD_RUNNER CORRECTNESS case=fp16-mid-control-d8192 binary=UB_BANK_V007 result=PASS failures=0 max_abs=0.0009765625 max_rel=0.0012618296
+OLD_RUNNER CORRECTNESS case=fp16-wide-d32768 binary=V011 result=PASS failures=0 max_abs=0.001953125 max_rel=0.010989011
+OLD_RUNNER CORRECTNESS case=fp16-wide-d32768 binary=UB_BANK_V007 result=PASS failures=0 max_abs=0.001953125 max_rel=0.010989011
+OLD_RUNNER RUNNER_COMPLETE mode=PAIRED correctness=PASS cases=2 device=7 warmup_each=45 pairs_each=21 timing=DEVICE_EVENT_PRIMARY wall=DIAGNOSTIC
+SOURCE_LAYOUT revision=V008 dtype=FP16 width=32768 tile_elems=4096 allocated_y_rows=1 total_ub_bytes=155744
+  xBuf_ address=0x00000 requested=16384 allocated=16384 bank=0 group=0 bank_row=0
+  residualBuf_ address=0x04000 requested=16384 allocated=16384 bank=0 group=0 bank_row=32
+  outputBuf_ address=0x08000 requested=8192 allocated=8192 bank=0 group=0 bank_row=64
+  gammaBuf_ address=0x0a000 requested=65536 allocated=65536 bank=0 group=0 bank_row=80
+  valueFp32Buf_ address=0x1a000 requested=16384 allocated=16384 bank=16 group=0 bank_row=80
+  xFp32Buf_ address=0x1e000 requested=16384 allocated=16384 bank=16 group=0 bank_row=112
+  residualFp32Buf_ address=0x22000 requested=16384 allocated=16384 bank=32 group=0 bank_row=16
+  reduceFp32Buf_ address=0x26000 requested=96 allocated=96 bank=32 group=0 bank_row=48
+SOURCE_READ_GROUP_OVERLAP revision=V008 per_256B_repeat_unique_counts=[8]; no cycle prediction
+EXACT_SOURCE_DIFF V008
+--- R31B-V011
++++ V008
+@@ -95,5 +95,5 @@
+                 pipe_.InitBuffer(residualFp32Buf_, tileElems * sizeof(float));
+                 pipe_.InitBuffer(reduceFp32Buf_,
+-                                 wideFullYRows_ * reduceStride * sizeof(float));
++                                 wideFullYRows_ * reduceStride * sizeof(float) + 32);
+             } else {
+                 wideFullYRows_ = ChooseWideFullYRows(rowWidth, sizeof(float),
+
+RAW_SOURCE=64e32f535348cdde1828cd8a8fd89fad100aaa33:本地实验/UB-BANK-LAYOUT-CHAMPION-X/V008/support/logs/local-20261005T083514Z.log
+OLD_LOCAL revision=V008 case=fp16-mid-control-d8192 pairs=21 parent_median_us=12.500 candidate_median_us=11.260 median_ratio_delta_pct=-9.920000 paired_delta_median_us=-0.220 parent_cv=0.85594 candidate_cv=0.77147 parent_mad_us=6.500 candidate_mad_us=5.360
+OLD_LOCAL revision=V008 case=fp16-wide-d32768 pairs=21 parent_median_us=13.160 candidate_median_us=18.100 median_ratio_delta_pct=+37.537994 paired_delta_median_us=-0.300 parent_cv=0.68651 candidate_cv=0.58409 parent_mad_us=1.420 candidate_mad_us=7.280
+OLD_RUNNER CORRECTNESS case=fp16-mid-control-d8192 binary=V011 result=PASS failures=0 max_abs=0.0009765625 max_rel=0.0012618296
+OLD_RUNNER CORRECTNESS case=fp16-mid-control-d8192 binary=UB_BANK_V008 result=PASS failures=0 max_abs=0.0009765625 max_rel=0.0012618296
+OLD_RUNNER CORRECTNESS case=fp16-wide-d32768 binary=V011 result=PASS failures=0 max_abs=0.001953125 max_rel=0.010989011
+OLD_RUNNER CORRECTNESS case=fp16-wide-d32768 binary=UB_BANK_V008 result=PASS failures=0 max_abs=0.001953125 max_rel=0.010989011
+OLD_RUNNER RUNNER_COMPLETE mode=PAIRED correctness=PASS cases=2 device=7 warmup_each=45 pairs_each=21 timing=DEVICE_EVENT_PRIMARY wall=DIAGNOSTIC
+SOURCE_LAYOUT revision=V009 dtype=FP16 width=32768 tile_elems=4096 allocated_y_rows=1 total_ub_bytes=155776
+  xBuf_ address=0x00000 requested=16384 allocated=16384 bank=0 group=0 bank_row=0
+  residualBuf_ address=0x04000 requested=16384 allocated=16384 bank=0 group=0 bank_row=32
+  outputBuf_ address=0x08000 requested=8256 allocated=8256 bank=0 group=0 bank_row=64
+  gammaBuf_ address=0x0a040 requested=65536 allocated=65536 bank=2 group=2 bank_row=80
+  valueFp32Buf_ address=0x1a040 requested=16384 allocated=16384 bank=18 group=2 bank_row=80
+  xFp32Buf_ address=0x1e040 requested=16384 allocated=16384 bank=18 group=2 bank_row=112
+  residualFp32Buf_ address=0x22040 requested=16384 allocated=16384 bank=34 group=2 bank_row=16
+  reduceFp32Buf_ address=0x26040 requested=64 allocated=64 bank=34 group=2 bank_row=48
+SOURCE_READ_GROUP_OVERLAP revision=V009 per_256B_repeat_unique_counts=[8]; no cycle prediction
+EXACT_SOURCE_DIFF V009
+--- R31B-V011
++++ V009
+@@ -86,5 +86,5 @@
+                 pipe_.InitBuffer(xBuf_, 2 * tileElems * sizeof(half));
+                 pipe_.InitBuffer(residualBuf_, 2 * tileElems * sizeof(half));
+-                pipe_.InitBuffer(outputBuf_, tileElems * sizeof(half));
++                pipe_.InitBuffer(outputBuf_, tileElems * sizeof(half) + 64);
+                 // gammaBuf_ holds the complete half y rows during pass one.
+                 // Pass two loads gamma/bias into xBuf_/residualBuf_.
+
+RAW_SOURCE=64e32f535348cdde1828cd8a8fd89fad100aaa33:本地实验/UB-BANK-LAYOUT-CHAMPION-X/V009/support/logs/local-20261005T090701Z.log
+OLD_LOCAL revision=V009 case=fp16-mid-control-d8192 pairs=21 parent_median_us=24.140 candidate_median_us=29.020 median_ratio_delta_pct=+20.215410 paired_delta_median_us=-0.800 parent_cv=0.68155 candidate_cv=0.70315 parent_mad_us=17.260 candidate_mad_us=18.060
+OLD_LOCAL revision=V009 case=fp16-wide-d32768 pairs=21 parent_median_us=45.280 candidate_median_us=22.260 median_ratio_delta_pct=-50.839223 paired_delta_median_us=-3.860 parent_cv=0.46451 candidate_cv=0.63990 parent_mad_us=14.920 candidate_mad_us=12.140
+OLD_RUNNER CORRECTNESS case=fp16-mid-control-d8192 binary=V011 result=PASS failures=0 max_abs=0.0009765625 max_rel=0.0012618296
+OLD_RUNNER CORRECTNESS case=fp16-mid-control-d8192 binary=UB_BANK_V009 result=PASS failures=0 max_abs=0.0009765625 max_rel=0.0012618296
+OLD_RUNNER CORRECTNESS case=fp16-wide-d32768 binary=V011 result=PASS failures=0 max_abs=0.001953125 max_rel=0.010989011
+OLD_RUNNER CORRECTNESS case=fp16-wide-d32768 binary=UB_BANK_V009 result=PASS failures=0 max_abs=0.001953125 max_rel=0.010989011
+OLD_RUNNER RUNNER_COMPLETE mode=PAIRED correctness=PASS cases=2 device=7 warmup_each=45 pairs_each=21 timing=DEVICE_EVENT_PRIMARY wall=DIAGNOSTIC
+SOURCE_LAYOUT revision=V010 dtype=FP16 width=32768 tile_elems=4096 allocated_y_rows=1 total_ub_bytes=155776
+  xBuf_ address=0x00000 requested=16448 allocated=16448 bank=0 group=0 bank_row=0
+  residualBuf_ address=0x04040 requested=16384 allocated=16384 bank=2 group=2 bank_row=32
+  outputBuf_ address=0x08040 requested=8192 allocated=8192 bank=2 group=2 bank_row=64
+  gammaBuf_ address=0x0a040 requested=65536 allocated=65536 bank=2 group=2 bank_row=80
+  valueFp32Buf_ address=0x1a040 requested=16384 allocated=16384 bank=18 group=2 bank_row=80
+  xFp32Buf_ address=0x1e040 requested=16384 allocated=16384 bank=18 group=2 bank_row=112
+  residualFp32Buf_ address=0x22040 requested=16384 allocated=16384 bank=34 group=2 bank_row=16
+  reduceFp32Buf_ address=0x26040 requested=64 allocated=64 bank=34 group=2 bank_row=48
+SOURCE_READ_GROUP_OVERLAP revision=V010 per_256B_repeat_unique_counts=[6]; no cycle prediction
+EXACT_SOURCE_DIFF V010
+--- R31B-V011
++++ V010
+@@ -84,5 +84,5 @@
+                 wideFullYTileElems_ = tileElems;
+                 const int32_t reduceStride = kWideFullYReduceStride;
+-                pipe_.InitBuffer(xBuf_, 2 * tileElems * sizeof(half));
++                pipe_.InitBuffer(xBuf_, 2 * tileElems * sizeof(half) + 64);
+                 pipe_.InitBuffer(residualBuf_, 2 * tileElems * sizeof(half));
+                 pipe_.InitBuffer(outputBuf_, tileElems * sizeof(half));
+
+RAW_SOURCE=64e32f535348cdde1828cd8a8fd89fad100aaa33:本地实验/UB-BANK-LAYOUT-CHAMPION-X/V010/support/logs/local-20261005T093232Z.log
+OLD_LOCAL revision=V010 case=fp16-mid-control-d8192 pairs=21 parent_median_us=17.140 candidate_median_us=26.260 median_ratio_delta_pct=+53.208868 paired_delta_median_us=+4.880 parent_cv=0.60609 candidate_cv=0.49064 parent_mad_us=3.800 candidate_mad_us=10.000
+OLD_LOCAL revision=V010 case=fp16-wide-d32768 pairs=21 parent_median_us=15.060 candidate_median_us=23.540 median_ratio_delta_pct=+56.308101 paired_delta_median_us=+1.380 parent_cv=2.54152 candidate_cv=1.81497 parent_mad_us=3.240 candidate_mad_us=10.560
+OLD_RUNNER CORRECTNESS case=fp16-mid-control-d8192 binary=V011 result=PASS failures=0 max_abs=0.0009765625 max_rel=0.0012618296
+OLD_RUNNER CORRECTNESS case=fp16-mid-control-d8192 binary=UB_BANK_V010 result=PASS failures=0 max_abs=0.0009765625 max_rel=0.0012618296
+OLD_RUNNER CORRECTNESS case=fp16-wide-d32768 binary=V011 result=PASS failures=0 max_abs=0.001953125 max_rel=0.010989011
+OLD_RUNNER CORRECTNESS case=fp16-wide-d32768 binary=UB_BANK_V010 result=PASS failures=0 max_abs=0.001953125 max_rel=0.010989011
+OLD_RUNNER RUNNER_COMPLETE mode=PAIRED correctness=PASS cases=2 device=7 warmup_each=45 pairs_each=21 timing=DEVICE_EVENT_PRIMARY wall=DIAGNOSTIC
+R1_REFERENCE_FUNCTIONS_EQUAL=PASS count=10
+R1_ARCHIVED_SAMPLE_MEDIANS=PASS cases=20 pairs=420 side_samples=840
+R1_V008_USED_START_ADDRESSES_UNCHANGED=PASS
+RESULT=RESEARCH_ONLY; CURRENT_LOCAL_BEST=NONE; OFFICIAL_SCORE=NONE; ONLINE_STATE=PAUSED

@@ -1,0 +1,36 @@
+ROUTE=MULTIROW-PANEL-RMS-CHAMPION-X
+REVISION=V027
+DIRECT_PARENT=V020
+PARENT_SOURCE_SHA256=d9cf609280990526650e8962476f22e06beb7d8ea11e2914f86d33eb43ae96bb
+CANDIDATE_SOURCE_SHA256=4976857a2ced172fa34f4728199b99d6c3744f5040ef1e7e5e75111fe2b9e920
+SINGLE_CHANGE=kWideFullYReduceStride 8 -> 12
+UNCHANGED=wide full-y tile width=6144; budget=176*1024; tile-major retained-y traversal; panel geometry; fence granularity; input and parameter prefetch; arithmetic; output conversion and order; golden; tolerance
+PATH_ASSERTION=rowWidth=12288 > kCacheElems=8192; ProcessWideLowPrecision entered; tileCount=2; second-row reduction scratch offset is 12 FP32 elements = 48 bytes
+RULE_REFRESH_RECEIPT=YES; six required rule paths reread before V027 edit
+SERVER3_HOST=hwnput3
+SERVER3_CONNECTION=PASS
+TOOLCHAIN=/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002
+DEVICE_ID=6
+FREE_HBM_PRE_MB=5315
+FREE_HBM_POST_MB=5314
+COMPILE=PASS
+COMPILE_RUN=MPR4-V027-COMPILE-20261006T193701Z
+COMPILE_PARENT_SOURCE_SHA256=d9cf609280990526650e8962476f22e06beb7d8ea11e2914f86d33eb43ae96bb
+COMPILE_CANDIDATE_SOURCE_SHA256=4976857a2ced172fa34f4728199b99d6c3744f5040ef1e7e5e75111fe2b9e920
+COMPILE_LOG=logs/MPR4-V027-COMPILE-20261006T193701Z.log
+CORRECTNESS=FAIL
+CORRECTNESS_RUN=MPR4-V027-CORR-20261006T193831Z
+PARENT_CORRECTNESS=PASS max_abs_error=0.001953125 mismatches=0 nonfinite=0 atol=0.00249999994
+CANDIDATE_CORRECTNESS=FAIL aclrtSynchronizeStream(correctness) ACL status 507035; vector core exception before output comparison
+CORRECTNESS_PARENT_LOG=logs/MPR4-V027-CORR-20261006T193831Z.parent.tsv
+CORRECTNESS_CANDIDATE_LOG=logs/MPR4-V027-CORR-20261006T193831Z.candidate.tsv
+CORRECTNESS_CANDIDATE_STDERR=logs/MPR4-V027-CORR-20261006T193831Z.candidate.stderr.log
+LOCAL_RUN=NONE
+LOCAL_SCORE=NONE
+LOCAL_DELTA=NONE
+CURRENT_LOCAL_BEST=V020 candidate median 15.920000 us
+RESULT=CORRECTNESS_FAILURE; no performance measurement permitted
+PUSH=NO
+BLOCKER=NONE
+FAILURE_INTERPRETATION=12 FP32 elements produce a 48-byte row stride, which is not 32-byte aligned for the UB sub-tensor; V027 is retained as a failed correctness experiment
+EVIDENCE=logs/MPR4-V027-COMPILE-20261006T193701Z.log; logs/MPR4-V027-CORR-20261006T193831Z.parent.tsv; logs/MPR4-V027-CORR-20261006T193831Z.candidate.tsv; logs/MPR4-V027-CORR-20261006T193831Z.candidate.stderr.log; logs/MPR4-V027-CORR-20261006T193831Z.pre.npu-smi.txt; logs/MPR4-V027-CORR-20261006T193831Z.post.npu-smi.txt

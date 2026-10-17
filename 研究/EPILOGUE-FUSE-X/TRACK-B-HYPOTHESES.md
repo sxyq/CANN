@@ -430,7 +430,7 @@ only risk is a wrong `calCount` on the row-wide issue (must be exactly
 **MEASUREMENT_PLAN**
 1. Same-binary Parent qualification on the 8192 full-row shape (the only shape
    where the variable acts) and on a 4096 shape as zero-delta control.
-2. One revision: only affine issue width. Diff must not move any store or event
+2. One revision: only affine issue width. Diff does not move any store or event
    line; `SINGLE_CHANGE_AUDIT` checks that literally.
 3. Interleaved P/C on 8192 FP32 and 8192 BF16; 4096 control.
 4. Falsifier: if 8192 regresses and 4096 is flat, the per-tile order was hiding
@@ -503,16 +503,16 @@ Add (valueTile, valueTile, biasSlice, valid);
 
 ---
 
-## 6. REQUEST_MAIN_APPROVAL
+## 6. REQUEST_MAIN_ROUTE_RECORD
 
-REQUEST_MAIN_APPROVAL: **HYPOTHESIS-1 — SCALE-FOLD (fuse normalize into a
+REQUEST_MAIN_ROUTE_RECORD: **HYPOTHESIS-1 — SCALE-FOLD (fuse normalize into a
 per-row scale tile; value-tile epilogue becomes Mul + Add).**
 
-Requested disposition: approve H1 as the single hypothesis for the first
+Requested disposition: record H1 as the single hypothesis for the first
 performance revision of EPILOGUE-FUSE-X on DIRECT_PARENT FROZEN_R31B_V011
 (PARENT_SOURCE_SHA
 a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3).
-No kernel edit until Main approves exactly one hypothesis. H2 / H3 / H4 stay in
+kernel edit follows the selected hypothesis in the current specification. H2 / H3 / H4 stay in
 backlog with their stated prerequisites.
 
 ---

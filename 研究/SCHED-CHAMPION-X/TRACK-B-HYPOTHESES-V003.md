@@ -84,20 +84,20 @@ costs (partial tail group). Cyclic spreads evenly.
 
 ---
 
-## H3: GATE THRESHOLD TUNING
+## H3: THRESHOLD TUNING TUNING
 
-**MECHANISM**: Change gate from `totalGroups * 2 >= activeRowUnits` to
+**MECHANISM**: Change threshold from `totalGroups * 2 >= activeRowUnits` to
 `totalGroups * 1.5 >= activeRowUnits` (or other multiplier). Activates group
 split on more intermediate shapes.
 
-**EXPECTED_BOTTLENECK**: Gate sensitivity. Current 2x threshold is calibrated
+**EXPECTED_BOTTLENECK**: Threshold sensitivity. Current 2x threshold is calibrated
 so 33×100 (ratio 0.515) activates and 17×257 FP16 (ratio 0.118) does not.
 
-**FILES/FUNCTIONS TO TOUCH**: `Process()` gate constant.
+**FILES/FUNCTIONS TO TOUCH**: `Process()` threshold constant.
 
-**WHY_ORTHOGONAL_TO_MAIN1**: Gate parameter. No MAIN-1 access.
+**WHY_ORTHOGONAL_TO_MAIN1**: Threshold parameter. No MAIN-1 access.
 
-**WHY_NOT_DUPLICATE_EXISTING_MAIN2**: V002's gate is 2x. Tuning is parameter
+**WHY_NOT_DUPLICATE_EXISTING_MAIN2**: V002's threshold is 2x. Tuning is parameter
 sweep, not new mechanism.
 
 **EXPECTED_WIN_SHAPES**: Shapes with ratio between 0.5 and 0.67 (e.g.,
@@ -108,7 +108,7 @@ if tightened below 0.118 (won't happen with 1.5x).
 
 **CORRECTNESS_RISK**: None. Pure parameter change.
 
-**MEASUREMENT_PLAN**: Same shapes. Expect ≈0 delta (gate already correct for
+**MEASUREMENT_PLAN**: Same shapes. Expect ≈0 delta (threshold already correct for
 probes).
 
 **EXPECTED_GAIN**: ~0 on current shapes.
@@ -122,10 +122,10 @@ compute requires `width%8==0`) means ownership's win channel is param residency
 only, already captured at −4.4%. H1 (tail folding) is the only remaining
 single-variable ownership change with a plausible (though marginal) effect.
 H2/H3 have no probeable surface. The big lever (batched compute on unaligned
-shapes) requires mode-selection changes (forbidden in this lane).
+shapes) requires mode-selection changes (deferred in this lane).
 
 **Recommend**: Implement H1 as one final OFAT (expected ≤1% gain). If it shows
 no improvement, PARK the ownership lane and redirect to mode/DMA lanes where
 the batched-compute headroom lives.
 
-REQUEST_MAIN_APPROVAL: HYPOTHESIS-H1 (TAIL-GROUP FOLDING) as final ownership OFAT before PARK evaluation.
+REQUEST_MAIN_ROUTE_RECORD: HYPOTHESIS-H1 (TAIL-GROUP FOLDING) as final ownership OFAT before PARK evaluation.

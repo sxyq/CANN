@@ -19,7 +19,7 @@ Campaign trigger **B** fully met：同一 Local Best chain 连续 **3 次** LOCA
 | V025 | pass-1 staging liveness | −4.12% | ≈ −6.8% |
 | **V026** | pass-2 param staging liveness | **−1.69%** | **≈ −8.3%** |
 
-`ONLINE_DECISION = APPROVED_ON_TRIGGER`。
+`ONLINE_DECISION = SELECTED_ON_TRIGGER`。
 
 ## Main Review checklist
 

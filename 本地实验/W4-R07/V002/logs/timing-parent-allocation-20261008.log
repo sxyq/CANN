@@ -1,0 +1,100 @@
+
+build/libw4r07_parent.so:     file format elf64-littleaarch64
+
+
+Disassembly of section .text:
+
+000000000004ce04 <AllocAscendMemDevice>:
+   4ce04:	d10103ff 	sub	sp, sp, #0x40
+   4ce08:	a9017bfd 	stp	x29, x30, [sp, #16]
+   4ce0c:	910043fd 	add	x29, sp, #0x10
+   4ce10:	f9000fa0 	str	x0, [x29, #24]
+   4ce14:	f9000ba1 	str	x1, [x29, #16]
+   4ce18:	52800003 	mov	w3, #0x0                   	// #0
+   4ce1c:	52800082 	mov	w2, #0x4                   	// #4
+   4ce20:	f9400ba1 	ldr	x1, [x29, #16]
+   4ce24:	f9400fa0 	ldr	x0, [x29, #24]
+   4ce28:	94005662 	bl	627b0 <rtMalloc@plt>
+   4ce2c:	b9002fa0 	str	w0, [x29, #44]
+   4ce30:	b9402fa0 	ldr	w0, [x29, #44]
+   4ce34:	7100001f 	cmp	w0, #0x0
+   4ce38:	540003a0 	b.eq	4ceac <AllocAscendMemDevice+0xa8>  // b.none
+   4ce3c:	52800061 	mov	w1, #0x3                   	// #3
+   4ce40:	528008a0 	mov	w0, #0x45                  	// #69
+   4ce44:	94005617 	bl	626a0 <AlogCheckDebugLevel@plt>
+   4ce48:	7100041f 	cmp	w0, #0x1
+   4ce4c:	1a9f17e0 	cset	w0, eq  // eq = none
+   4ce50:	12001c00 	and	w0, w0, #0xff
+   4ce54:	7100001f 	cmp	w0, #0x0
+   4ce58:	54000260 	b.eq	4cea4 <AllocAscendMemDevice+0xa0>  // b.none
+   4ce5c:	94005615 	bl	626b0 <mmGetTid@plt>
+   4ce60:	2a0003e4 	mov	w4, w0
+   4ce64:	d0fffea0 	adrp	x0, 22000 <_ZSt19piecewise_construct+0x21f8>
+   4ce68:	912bc003 	add	x3, x0, #0xaf0
+   4ce6c:	b0fffea0 	adrp	x0, 21000 <_ZSt19piecewise_construct+0x11f8>
+   4ce70:	91236002 	add	x2, x0, #0x8d8
+   4ce74:	b0fffea0 	adrp	x0, 21000 <_ZSt19piecewise_construct+0x11f8>
+   4ce78:	912ca001 	add	x1, x0, #0xb28
+   4ce7c:	b9402fa0 	ldr	w0, [x29, #44]
+   4ce80:	b90003e0 	str	w0, [sp]
+   4ce84:	aa0303e7 	mov	x7, x3
+   4ce88:	52803206 	mov	w6, #0x190                 	// #400
+   4ce8c:	aa0203e5 	mov	x5, x2
+   4ce90:	aa0103e3 	mov	x3, x1
+   4ce94:	52800062 	mov	w2, #0x3                   	// #3
+   4ce98:	52800001 	mov	w1, #0x0                   	// #0
+   4ce9c:	528008a0 	mov	w0, #0x45                  	// #69
+   4cea0:	94005608 	bl	626c0 <AlogRecord@plt>
+   4cea4:	b9402fa0 	ldr	w0, [x29, #44]
+   4cea8:	14000002 	b	4ceb0 <AllocAscendMemDevice+0xac>
+   4ceac:	52800000 	mov	w0, #0x0                   	// #0
+   4ceb0:	a9417bfd 	ldp	x29, x30, [sp, #16]
+   4ceb4:	910103ff 	add	sp, sp, #0x40
+   4ceb8:	d65f03c0 	ret
+
+000000000004cebc <FreeAscendMemDevice>:
+   4cebc:	d10103ff 	sub	sp, sp, #0x40
+   4cec0:	a9017bfd 	stp	x29, x30, [sp, #16]
+   4cec4:	910043fd 	add	x29, sp, #0x10
+   4cec8:	f9000fa0 	str	x0, [x29, #24]
+   4cecc:	f9400fa0 	ldr	x0, [x29, #24]
+   4ced0:	9400563c 	bl	627c0 <aclrtFree@plt>
+   4ced4:	b9002fa0 	str	w0, [x29, #44]
+   4ced8:	b9402fa0 	ldr	w0, [x29, #44]
+   4cedc:	7100001f 	cmp	w0, #0x0
+   4cee0:	540003a0 	b.eq	4cf54 <FreeAscendMemDevice+0x98>  // b.none
+   4cee4:	52800061 	mov	w1, #0x3                   	// #3
+   4cee8:	528008a0 	mov	w0, #0x45                  	// #69
+   4ceec:	940055ed 	bl	626a0 <AlogCheckDebugLevel@plt>
+   4cef0:	7100041f 	cmp	w0, #0x1
+   4cef4:	1a9f17e0 	cset	w0, eq  // eq = none
+   4cef8:	12001c00 	and	w0, w0, #0xff
+   4cefc:	7100001f 	cmp	w0, #0x0
+   4cf00:	54000260 	b.eq	4cf4c <FreeAscendMemDevice+0x90>  // b.none
+   4cf04:	940055eb 	bl	626b0 <mmGetTid@plt>
+   4cf08:	2a0003e4 	mov	w4, w0
+   4cf0c:	d0fffea0 	adrp	x0, 22000 <_ZSt19piecewise_construct+0x21f8>
+   4cf10:	912c2003 	add	x3, x0, #0xb08
+   4cf14:	b0fffea0 	adrp	x0, 21000 <_ZSt19piecewise_construct+0x11f8>
+   4cf18:	91236002 	add	x2, x0, #0x8d8
+   4cf1c:	b0fffea0 	adrp	x0, 21000 <_ZSt19piecewise_construct+0x11f8>
+   4cf20:	912dc001 	add	x1, x0, #0xb70
+   4cf24:	b9402fa0 	ldr	w0, [x29, #44]
+   4cf28:	b90003e0 	str	w0, [sp]
+   4cf2c:	aa0303e7 	mov	x7, x3
+   4cf30:	52803346 	mov	w6, #0x19a                 	// #410
+   4cf34:	aa0203e5 	mov	x5, x2
+   4cf38:	aa0103e3 	mov	x3, x1
+   4cf3c:	52800062 	mov	w2, #0x3                   	// #3
+   4cf40:	52800001 	mov	w1, #0x0                   	// #0
+   4cf44:	528008a0 	mov	w0, #0x45                  	// #69
+   4cf48:	940055de 	bl	626c0 <AlogRecord@plt>
+   4cf4c:	b9402fa0 	ldr	w0, [x29, #44]
+   4cf50:	14000002 	b	4cf58 <FreeAscendMemDevice+0x9c>
+   4cf54:	52800000 	mov	w0, #0x0                   	// #0
+   4cf58:	a9417bfd 	ldp	x29, x30, [sp, #16]
+   4cf5c:	910103ff 	add	sp, sp, #0x40
+   4cf60:	d65f03c0 	ret
+   4cf64:	d10283ff 	sub	sp, sp, #0xa0
+   4cf68:	a9017bfd 	stp	x29, x30, [sp, #16]
+   4cf6c:	910043fd 	add	x29, sp, #0x10

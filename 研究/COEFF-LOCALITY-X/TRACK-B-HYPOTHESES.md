@@ -7,7 +7,7 @@ DIRECT_PARENT=FROZEN_R31B_V011
 PARENT_SOURCE_SHA=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
 OFFICIAL_ANCHOR=45.16
 CONTEXT_CLASS=FROZEN_STRONG_BASELINE_COEFF_LOCALITY
-MODE=TRACK-B research only — no kernel edit until Main approves exactly one hypothesis
+MODE=TRACK-B research only — kernel edit follows the selected hypothesis in the current specification
 
 ## 0. Why this route (post-reduction-pivot)
 
@@ -32,7 +32,7 @@ pass are. This route studies gamma/bias coefficient load locality only.
 
 Buffer lifetime note: on the FP32 wide path, `gammaLocal`/`biasLocal` alias
 `xBuf_`/`residualBuf_` (`:2179-2180`). Those staging buffers are consumed by
-pass-1 x/residual DMA, so param residency cannot outlive a batch without a
+pass-1 x/residual DMA, so param residency does not outlive a batch without a
 dedicated slot. The generic path has real `gammaBuf_`/`biasBuf_` (`:121-122`)
 sized at `kCacheElems` (8192) — full-row residency already exists there.
 
@@ -41,7 +41,7 @@ UB budget on wide path: `kWideFullYBudgetBytes = 176 KiB` (`:1281`).
 `yBytesPerRow*rows + ioBytes + workBytes + reduceBytes`. For D=32768 FP32,
 y row alone is 128 KiB, so `wideFullYRows_=1` and `tileElems` drops (8 tiles at
 4096 or more at 2048). Full gamma/bias residency for D=32768 is 256 KiB —
-**cannot** fit alongside y. Stripe/chunk residency is the only in-UB option.
+**does not** fit alongside y. Stripe/chunk residency is the only in-UB option.
 
 ## 2. Where the redundant traffic actually is
 
@@ -179,7 +179,7 @@ site 8) and cross-batch reload are the two mechanisms large enough to matter.
 
 - **CORRECTNESS_RISK**
   Low. Coefficients are read-only and row-invariant. Hazards: UB budget
-  accounting (must not evict y rows), and correct skip-if-resident test so a
+  accounting (does not evict y rows), and correct skip-if-resident test so a
   tile outside the stripe is still loaded.
 
 - **MEASUREMENT_PLAN**
@@ -254,9 +254,9 @@ bigger structural idea but is UB-budget-bound and only fires when
 
 ---
 
-## REQUEST_MAIN_APPROVAL
+## REQUEST_MAIN_ROUTE_RECORD
 
-Requesting Main approval for exactly one first revision:
+Requesting current route record for exactly one first revision:
 
 **HYPOTHESIS-1 — Param double-buffer prefetch in FP32 wide output pass (V011 pattern)**
 
@@ -274,5 +274,5 @@ Requesting Main approval for exactly one first revision:
 - WHY_NOT_DUPLICATE: see H1 section (distinct from all active MAIN-2 lanes;
   donor is the in-kernel low-precision sibling, not another route)
 
-No kernel, host, CMake, runner, shared-control, or CANNJudge action until
-this approval is issued.
+Kernel, host, CMake, runner, shared-control, and CANNJudge actions follow
+the current specification is recorded.

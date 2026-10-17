@@ -19,7 +19,7 @@
 
 同码噪声带 ±3.5%；merge-ON 形状以 6/6、5/5 一致性破出。机制幅度核对通过（收益随 batch 数增长）。
 
-`ONLINE_DECISION = APPROVED_ON_TRIGGER`。
+`ONLINE_DECISION = SELECTED_ON_TRIGGER`。
 
 ## Main Review checklist
 

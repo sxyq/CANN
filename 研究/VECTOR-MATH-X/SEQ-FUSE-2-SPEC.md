@@ -2,8 +2,8 @@
 
 Date: 2026-09-27 (C2C overnight; research/spec only — NOT implemented)
 Route: VECTOR-MATH-X (Track-B spec)
-Status: approval-ready specification. Kernel edit forbidden until the
-DIV_FEASIBILITY_PROBE below passes and Main approves a revision.
+Status: implementation-ready specification. Kernel edit follows the
+DIV_FEASIBILITY_PROBE below passes.
 Parent of record: FROZEN R31B-V011 (`R31B-V011-LP-ROW-PIPELINE_kernel.asc`)
 PARENT_SOURCE_SHA=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
 OFFICIAL_ANCHOR=45.16
@@ -156,14 +156,14 @@ per-row handoff region only — orthogonal to STORE-H2B's wide-store win
 
 ## FILES/FUNCTIONS
 
-`R31B-V011-LP-ROW-PIPELINE_kernel.asc` only (when approved):
+`R31B-V011-LP-ROW-PIPELINE_kernel.asc` only (when selected):
 
 1. `Init`: add 4 aligned 8-float UB slots (`onesSlot` init-once with
    `Duplicate(onesSlot, 1.0f, 8)` — compile-time constant, no pull;
    `meanSqSlot`, `invRmsSlot`, `bcastSlot` reuse existing dead-after-
    reduction scratch where lifetimes allow — `reduceFp32Buf_` tail or
    `xFp32Buf_` after the reduction chain, per V002's finding that
-   `xFp32Buf_` holds BF16 gamma in some paths and must not be aliased).
+   `xFp32Buf_` holds BF16 gamma in some paths and is not aliased).
 2. Per-row denominator tails listed in the evidence table — replace the
    scalar chain with the pure-V chain and the apply form settled by the
    probe.
@@ -198,8 +198,8 @@ per-row handoff region only — orthogonal to STORE-H2B's wide-store win
 - **VECTOR-MATH-X V002** (VM-H3a partial, MEASUREMENT_BLOCKED): replaced
   scalar `Muls` with `Duplicate`+vector `Mul` and **reverted** the V-side
   `Div` after 507035. SEQ-FUSE-2's apply step is a sub-part of the fused
-  tail; the `Div` form is the new element and must clear the probe first.
-- **STORE-H2B / STORE-H2B-GATED** (FUTURE_CANDIDATE): UB→GM writeback
+  tail; the `Div` form is the new element and records the probe result first.
+- **STORE-H2B / STORE-H2B-THRESHOLD** (FUTURE_CANDIDATE): UB→GM writeback
   organization; SEQ-FUSE-2 touches no store site.
 - **EPILOGUE VMLA / SCALE-FOLD**: post-RMS affine arithmetic, closed by
   BOTTLENECK-NOTE; SEQ-FUSE-2 stops at invRms production + normalize
@@ -214,8 +214,8 @@ per-row handoff region only — orthogonal to STORE-H2B's wide-store win
   but the probe proves it before any kernel edit.
 - **507035 form**: probe P2/P3 pin the failing forms; the kernel uses
   only distinct, base-aligned slots (P1 form). Any 1-element V op on a
-  4B-offset address is forbidden in the edit (V001's alignment finding).
-- **Slot lifetime**: `bcastSlot`/`invRmsSlot` must not alias buffers
+  4B-offset address is deferred in the edit (V001's alignment finding).
+- **Slot lifetime**: `bcastSlot`/`invRmsSlot` does not alias buffers
   live during the apply (V002 note: `xFp32Buf_` holds BF16 gamma in
   lowp paths). The edit audits each site's scratch liveness before
   choosing the slot.
@@ -226,12 +226,12 @@ Protocol: same-binary + interleaved P/C, warmup=45, samples=41,
 blocks=2, 6 pairs, device-event primary, one d6/d5 window.
 
 **Short-kernel measurement constraint (open item for Main):**
-SHORT-KERNEL-MEASUREMENT-NOTE.md established that 5–6 µs kernels cannot
+SHORT-KERNEL-MEASUREMENT-NOTE.md established that 5–6 µs kernels do not
 pass the flat same-binary MAD/median ≤ 0.10 rule (best observed 0.104
 over 3 devices, 3 calibration modes; 12 µs kernels pass at 0.02). The
 primary shapes (4x2048/8x1024/2x4096) sit in that band. The plan
 therefore runs the protocol as-is and records the same-binary statistic
-per shape; where the flat rule cannot pass, the paired direction is
+per shape; where the flat rule fails, the paired direction is
 reported as **directional evidence** under the note's proposed
 length-stratified threshold (≤ 0.25 for < 10 µs) — Main must either
 adopt that threshold as policy or treat medium-band P/C as
@@ -295,7 +295,7 @@ WHY_NOT_DUPLICATE_MAIN2=VECTOR-MATH V001/V002 are partials of this axis
   (superseded by the fused chain); STORE-H2B untouched (writeback);
   EPILOGUE VMLA/SCALE-FOLD closed (affine arithmetic).
 SINGLE_CHANGE_AUDIT=PENDING (one variable: denominator-tail placement)
-MAIN_APPROVAL=PENDING
+STATUS=OPEN
 CORRECTNESS_FIX=NONE REQUIRED (Div is IEEE-equivalent to scalar within
   1 ulp; probe proves before edit)
 SOURCE_SHA=PENDING
@@ -306,6 +306,6 @@ LOCAL_VERDICT=PENDING
 MEASUREMENT=PENDING
 ```
 
-Awaits: DIV_FEASIBILITY_PROBE execution, Main approval, and the
+Next: DIV_FEASIBILITY_PROBE execution, current route record, and the
 short-kernel measurement-threshold policy decision. No kernel edit, no
 worktree, no timing lease.

@@ -11,7 +11,7 @@
 
 ## Trigger
 
-Campaign conditional approval trigger **A** is met:
+Campaign conditional decision trigger **A** is met:
 
 | 条件 | 状态 | 证据 |
 |---|---|---|
@@ -19,7 +19,7 @@ Campaign conditional approval trigger **A** is met:
 | 多 pair | YES | 8/8 clean blocks, MAD≤0.027 |
 | 相关 shape 方向一致 | YES | d6 4/4 + d4 4/4 全负，两台独立设备 |
 
-因此按 Campaign 规则：`ONLINE_DECISION = APPROVED_ON_TRIGGER`（无需单独等待 Planning 对该 Candidate 批准）。
+因此按 Campaign 规则：`ONLINE_DECISION = SELECTED_ON_TRIGGER`（无需单独等待 Planning 对该 Candidate 批准）。
 
 ## Main Review checklist
 

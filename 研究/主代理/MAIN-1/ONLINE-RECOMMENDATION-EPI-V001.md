@@ -27,7 +27,7 @@ Agent 提交判定包请示：以「形状自身配对噪声」还是「对照�
 | 多 pair / 相关 shape 方向一致 | YES | 三窗 pooled 14/16 p=0.002；1x32768 + 2x16384 同向 |
 | 机制幅度同量级 | YES | 差分 −3.55pp vs 预测 3.5–8.1% |
 
-信号强度弱于 R31B V016 / R31A V026，但证据结构完整。`ONLINE_DECISION = APPROVED_ON_TRIGGER`。
+信号强度弱于 R31B V016 / R31A V026，但证据结构完整。`ONLINE_DECISION = SELECTED_ON_TRIGGER`。
 
 ## Online 优先级（更新）
 

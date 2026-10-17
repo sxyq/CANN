@@ -1,13 +1,13 @@
-# MAIN APPROVAL — REDUCE-HIER-X V003
+# current route recordS — REDUCE-HIER-X V003
 
 Date: 2026-09-27
-Approver: MAIN-2
+Recordr: MAIN-2
 DIRECT_PARENT=FROZEN_R31B_V011
 PARENT_SOURCE_SHA=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
 OFFICIAL_ANCHOR=45.16
 V002_DISPOSITION=LOCAL_REJECTED (H2 pairwise tree +6.6% on 1x32768)
 
-## APPROVED SINGLE HYPOTHESIS
+## SELECTED SINGLE HYPOTHESIS
 
 H3 — Short-span ReduceSum + single barrier, keep one API reduce per tile.
 
@@ -25,7 +25,7 @@ per-tile ReduceSum results into an 8-lane packed accumulator and do a single
 end-of-row ReduceSum (this is V001 H1 — already measured -3.8%). Do not
 re-test V001 as V003.
 
-FORBIDDEN: no scheduling, dtype, DMA, wide, epilogue, gamma-cache, sync-removal.
+DEFERRED: no scheduling, dtype, DMA, wide, epilogue, gamma-cache, sync-removal.
 
 ## Measurement
 

@@ -49,7 +49,6 @@ N01-N10 均已结束，不存在当前活动优化路线。路线源码与实验
 - 用户明确要求远端操作时，仍沿用已有对象和入口，不创建同类替代实现。
 
 ## 资料入口
-
 - Main：`.agents/skills/cann-main-orchestrator/SKILL.md`
 - Route：`.agents/skills/cann-route-executor/SKILL.md`
 - Support：`.agents/skills/cann-support-research/SKILL.md`

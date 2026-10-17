@@ -1,0 +1,113 @@
+{
+  "route": "ROW-SCALE-HOIST-X",
+  "revision": "V051",
+  "direct_parent": "V026",
+  "stage": "LOCAL_PAIRED_INTERLEAVED",
+  "verdict": "MEASUREMENT_BLOCKED",
+  "measurement_quality": "HIGH_VARIANCE_EXTREME_SPIKE_AND_MEAN_MEDIAN_DISAGREEMENT",
+  "validity": "VALID_DISPATCH_EXECUTED_DESCRIPTIVE_ONLY",
+  "local_score": 102.446639770953,
+  "local_score_type": "descriptive single-shape route-local speedup index",
+  "local_score_formula": "100 * parent pooled median device_us / candidate pooled median device_us",
+  "local_score_comparable_to_official": false,
+  "local_delta_percent_candidate_vs_parent_positive_is_slower": -2.388208902139,
+  "pooled_mean_delta_percent_candidate_vs_parent_positive_is_slower": 16.896410709656,
+  "sample_count_per_arm": 128,
+  "all_primary_window_samples_included": true,
+  "sample_exclusion": "NONE",
+  "shape_dtype": {
+    "dtype": "fp32",
+    "shape": [128, 128],
+    "branch": "ProcessSmallFp32ContiguousBatched",
+    "subcase": "rowWidth <= kFp32RepeatMaxWidth",
+    "vector_cores": 40,
+    "launch_blocks": 40,
+    "local_rows_min": 3,
+    "local_rows_max": 4
+  },
+  "method": {
+    "device": 0,
+    "warmups_per_process": 20,
+    "samples_per_process": 32,
+    "timer": "ACL device events",
+    "block_order": [
+      "PARENT_BLOCK1",
+      "CANDIDATE_BLOCK1",
+      "PARENT_BLOCK2",
+      "CANDIDATE_BLOCK2",
+      "PARENT_BLOCK3",
+      "CANDIDATE_BLOCK3",
+      "PARENT_BLOCK4",
+      "CANDIDATE_BLOCK4"
+    ],
+    "runner_build_dir": "/tmp/cann-row-scale-hoist-x-v051-runners-retry.XDwor6"
+  },
+  "parent": {
+    "n": 128,
+    "median_device_us": 19.6799995,
+    "mean_device_us": 20.34640621875,
+    "sample_stdev_device_us": 9.1175088659,
+    "cv": 0.4481139700,
+    "median_mad_device_us": 5.8199995,
+    "p10_device_us": 8.644,
+    "p90_device_us": 31.9219993,
+    "min_device_us": 6.4,
+    "max_device_us": 61.66,
+    "block_medians_us": [18.18, 18.110001, 28.060001, 17.119999],
+    "block_means_us": [19.48625, 16.16625, 28.670624, 17.0625]
+  },
+  "candidate": {
+    "n": 128,
+    "median_device_us": 19.21,
+    "mean_device_us": 23.784218578125,
+    "sample_stdev_device_us": 30.2510315578,
+    "cv": 1.2718951206,
+    "median_mad_device_us": 5.0100005,
+    "p10_device_us": 7.8740007,
+    "p90_device_us": 30.7059991,
+    "min_device_us": 6.92,
+    "max_device_us": 289.679993,
+    "block_medians_us": [20.040001, 21.26, 17.129999, 17.400002],
+    "block_means_us": [22.321873, 33.963123, 16.886873, 21.965]
+  },
+  "paired_blocks": {
+    "candidate_vs_parent_delta_percent_positive_is_slower": [
+      10.2310286029,
+      17.3936986530,
+      -38.9522509283,
+      1.6355316376
+    ],
+    "candidate_faster_median_blocks": 1,
+    "candidate_slower_median_blocks": 3,
+    "paired_median_delta_percent": 5.9332801202,
+    "parent_medians_us": [18.18, 18.110001, 28.060001, 17.119999],
+    "candidate_medians_us": [20.040001, 21.26, 17.129999, 17.400002]
+  },
+  "interpretation": "Pooled medians descriptively favor Candidate by 2.388208902139%, while pooled means show Candidate 16.896410709656% slower. Candidate CV is 1.2718951206 and max latency is 289.679993 us; three of four paired block medians are slower. Treat as MEASUREMENT_BLOCKED, not reliable acceptance/rejection or promotion.",
+  "device_load_before": {
+    "snapshot_utc": "2026-10-08T05:36:59Z",
+    "health": "OK",
+    "hbm_used_mb": 12367,
+    "hbm_capacity_mb": 65536,
+    "hbm_free_mb": 53169,
+    "aicore_percent_table": 22,
+    "aicore_percent_detailed_query": 0,
+    "npu0_processes": "python PID 3167028, 8988 MB; left undisturbed",
+    "host_load_average": "66.64, 67.90, 63.41",
+    "evidence_log": "device-snapshot-before-local.log"
+  },
+  "device_load_after": {
+    "snapshot_utc": "2026-10-08T05:38:02Z",
+    "health": "OK",
+    "hbm_used_mb": 12368,
+    "hbm_capacity_mb": 65536,
+    "aicore_percent_table": 9,
+    "aicore_percent_detailed_query": 0,
+    "npu0_processes": "python PID 3167028, 8988 MB; left undisturbed; no V051 runner remains",
+    "evidence_log": "device-release.log"
+  },
+  "device_release_receipt": "device-release.log",
+  "current_local_best": "V026",
+  "official_score": null,
+  "online": "NOT_RUN"
+}

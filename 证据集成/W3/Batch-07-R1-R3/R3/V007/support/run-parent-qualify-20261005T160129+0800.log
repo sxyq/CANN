@@ -1,0 +1,254 @@
+ROUTE=TINY-MINIMAL-KERNEL-CHAMPION-X
+REVISION=V007
+MODE=--parent-qualify
+DEVICE=7
+MIN_FREE_HBM_MB=100
+ADMISSION=RULE=FREE_HBM_GE_100MB
+LEASE_METADATA=NONE
+LOAD_METADATA=UNSET
+NOTE=lease and load are recorded context only, not admission gates
+REMOTE_HOST=hwnput3
+REMOTE_PARENT_SOURCE_SHA=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
+REMOTE_CANDIDATE_SOURCE_SHA=fed255502b5d59b1c454da1d2c2d1d5b4fa9f60a88bac99a7042bcc3e431ff9c
+RUNNER_SHA=0790f97ad301ba5049b7ba3f61fd01131ff7b0e7b6c48653e10d671374bec100
+LOAD_SNAPSHOT=BEFORE_RUN
+2026-10-05T16:01:30+0800
+	NPU ID                         : 7
+	Chip Count                     : 1
+
+	DDR Capacity(MB)               : 0
+	DDR Usage Rate(%)              : 0
+	DDR Hugepages Total(page)      : 0
+	DDR Hugepages Usage Rate(%)    : 0
+	HBM Capacity(MB)               : 65536
+	HBM Usage Rate(%)              : 54
+	Aicore Usage Rate(%)           : 37
+	Aivector Usage Rate(%)         : 79
+	Aicpu Usage Rate(%)            : 0
+	Ctrlcpu Usage Rate(%)          : 7
+	DDR Bandwidth Usage Rate(%)    : 0
+	HBM Bandwidth Usage Rate(%)    : 33
+	Chip ID                        : 0
+
+PROCESSES_BEGIN
+  82397 vllm            /usr/local/python3.12.13/bin/python3 /usr/local/python3.12.13/bin/vllm serve /models/Qwen3.8-27B-w8a8 --host 0.0.0.0 --port 9001 --tensor-parallel-size 4 --quantization ascend --served-model-name qwen3.8 --max-model-len 256000 --max-num-seqs 8 --max-num-batched-tokens 8192 --gpu-memory-utilization 0.90 --enable-prefix-caching --trust-remote-code --reasoning-parser qwen3 --enable-auto-tool-choice --tool-call-parser qwen3_coder
+  83352 vllm            /usr/local/python3.12.13/bin/python3 /usr/local/python3.12.13/bin/vllm serve /models/Qwen3.8-27B-w8a8 --host 0.0.0.0 --port 9002 --tensor-parallel-size 2 --quantization ascend --served-model-name qwen3.8 --max-model-len 256000 --max-num-seqs 8 --max-num-batched-tokens 8192 --gpu-memory-utilization 0.90 --enable-prefix-caching --trust-remote-code --reasoning-parser qwen3 --enable-auto-tool-choice --tool-call-parser qwen3_coder
+  87336 VLLM::EngineCor VLLM::EngineCore
+  87670 VLLM::EngineCor VLLM::EngineCore
+  89395 VLLM::Worker_TP VLLM::Worker_TP0
+  89602 VLLM::Worker_TP VLLM::Worker_TP0
+  91055 VLLM::Worker_TP VLLM::Worker_TP1
+  91228 VLLM::Worker_TP VLLM::Worker_TP1
+  92813 VLLM::Worker_TP VLLM::Worker_TP2
+  94498 VLLM::Worker_TP VLLM::Worker_TP3
+1608662 ray::vLLMHttpSe ray::vLLMHttpServer
+1614472 VLLM::EngineCor VLLM::EngineCore
+1617353 VLLM::Worker    VLLM::Worker
+2992910 vllm            /home/data4t1/zhangkaijie/conda/envs/qwen38_a2/bin/python3.12 /home/data4t1/zhangkaijie/conda/envs/qwen38_a2/bin/vllm serve /home/data4t2/models/Qwen3.8-27B-w8a8 --host 0.0.0.0 --port 9000 --tensor-parallel-size 1 --max-model-len 200000 --max-num-seqs 8 --max-num-batched-tokens 16384 --enable-prefix-caching --trust-remote-code --speculative-config {"method":"mtp","num_speculative_tokens":4} --enable-auto-tool-choice --tool-call-parser qwen3_coder --gpu-memory-utilization 0.85
+2999855 VLLM::EngineCor VLLM::EngineCore
+PROCESSES_END
+LOAD_NOTE=measurement context only, not an admission gate
+RUNNER_COMMAND=/home/data4t2/lelinfeng/cann/server_runs/TINY-MINIMAL-KERNEL-CHAMPION-X/V007/20261005T075904Z-92941/build/tiny_runner_v007 --parent-qualify 7
+RUN_BEGIN mode=--parent-qualify device=7 parent=R31B-V011 cases=3
+PARENT_SAMPLE case=target-r1-d64-fp32 block=1 sample=01 device_us=65.140 wall_us=183.254
+PARENT_SAMPLE case=target-r1-d64-fp32 block=1 sample=02 device_us=37.340 wall_us=102.543
+PARENT_SAMPLE case=target-r1-d64-fp32 block=1 sample=03 device_us=39.640 wall_us=104.442
+PARENT_SAMPLE case=target-r1-d64-fp32 block=1 sample=04 device_us=35.420 wall_us=90.442
+PARENT_SAMPLE case=target-r1-d64-fp32 block=1 sample=05 device_us=31.380 wall_us=94.492
+PARENT_SAMPLE case=target-r1-d64-fp32 block=1 sample=06 device_us=66.080 wall_us=143.493
+PARENT_SAMPLE case=target-r1-d64-fp32 block=1 sample=07 device_us=38.740 wall_us=99.772
+PARENT_SAMPLE case=target-r1-d64-fp32 block=1 sample=08 device_us=7.500 wall_us=90.962
+PARENT_SAMPLE case=target-r1-d64-fp32 block=1 sample=09 device_us=27.940 wall_us=78.281
+PARENT_SAMPLE case=target-r1-d64-fp32 block=1 sample=10 device_us=29.660 wall_us=85.151
+PARENT_SAMPLE case=target-r1-d64-fp32 block=1 sample=11 device_us=24.460 wall_us=85.942
+PARENT_SAMPLE case=target-r1-d64-fp32 block=1 sample=12 device_us=7.520 wall_us=89.132
+PARENT_SAMPLE case=target-r1-d64-fp32 block=1 sample=13 device_us=22.640 wall_us=88.802
+PARENT_SAMPLE case=target-r1-d64-fp32 block=1 sample=14 device_us=24.300 wall_us=96.932
+PARENT_SAMPLE case=target-r1-d64-fp32 block=1 sample=15 device_us=28.000 wall_us=110.733
+PARENT_SAMPLE case=target-r1-d64-fp32 block=1 sample=16 device_us=25.260 wall_us=102.112
+PARENT_SAMPLE case=target-r1-d64-fp32 block=1 sample=17 device_us=54.100 wall_us=120.793
+PARENT_SAMPLE case=target-r1-d64-fp32 block=1 sample=18 device_us=4.740 wall_us=82.302
+PARENT_SAMPLE case=target-r1-d64-fp32 block=1 sample=19 device_us=22.480 wall_us=87.841
+PARENT_SAMPLE case=target-r1-d64-fp32 block=1 sample=20 device_us=4.740 wall_us=95.302
+PARENT_SAMPLE case=target-r1-d64-fp32 block=1 sample=21 device_us=4.560 wall_us=145.983
+PARENT_SAMPLE case=target-r1-d64-fp32 block=1 sample=22 device_us=62.720 wall_us=112.862
+PARENT_SAMPLE case=target-r1-d64-fp32 block=1 sample=23 device_us=26.500 wall_us=87.372
+PARENT_SAMPLE case=target-r1-d64-fp32 block=1 sample=24 device_us=29.720 wall_us=105.212
+PARENT_SAMPLE case=target-r1-d64-fp32 block=1 sample=25 device_us=31.060 wall_us=104.092
+PARENT_SAMPLE case=target-r1-d64-fp32 block=1 sample=26 device_us=6.900 wall_us=106.202
+PARENT_SAMPLE case=target-r1-d64-fp32 block=1 sample=27 device_us=23.020 wall_us=93.742
+PARENT_SAMPLE case=target-r1-d64-fp32 block=1 sample=28 device_us=37.000 wall_us=96.722
+PARENT_SAMPLE case=target-r1-d64-fp32 block=1 sample=29 device_us=55.060 wall_us=114.573
+PARENT_SAMPLE case=target-r1-d64-fp32 block=1 sample=30 device_us=30.740 wall_us=91.932
+PARENT_SAMPLE case=target-r1-d64-fp32 block=1 sample=31 device_us=8.120 wall_us=223.935
+SUMMARY case=target-r1-d64-fp32 metric=device_us binary=PARENT_BLOCK_1 n=31 median=28.000 mean=29.435 stdev=17.630 cv=0.59894 min=4.560 max=66.080 mad=9.000 p10=6.900 p90=55.060
+PARENT_SAMPLE case=target-r1-d64-fp32 block=2 sample=01 device_us=62.760 wall_us=147.093
+PARENT_SAMPLE case=target-r1-d64-fp32 block=2 sample=02 device_us=4.840 wall_us=108.572
+PARENT_SAMPLE case=target-r1-d64-fp32 block=2 sample=03 device_us=78.480 wall_us=139.783
+PARENT_SAMPLE case=target-r1-d64-fp32 block=2 sample=04 device_us=14.600 wall_us=100.902
+PARENT_SAMPLE case=target-r1-d64-fp32 block=2 sample=05 device_us=34.780 wall_us=109.162
+PARENT_SAMPLE case=target-r1-d64-fp32 block=2 sample=06 device_us=37.240 wall_us=121.683
+PARENT_SAMPLE case=target-r1-d64-fp32 block=2 sample=07 device_us=44.020 wall_us=110.383
+PARENT_SAMPLE case=target-r1-d64-fp32 block=2 sample=08 device_us=36.960 wall_us=98.632
+PARENT_SAMPLE case=target-r1-d64-fp32 block=2 sample=09 device_us=4.860 wall_us=100.782
+PARENT_SAMPLE case=target-r1-d64-fp32 block=2 sample=10 device_us=54.880 wall_us=112.063
+PARENT_SAMPLE case=target-r1-d64-fp32 block=2 sample=11 device_us=14.660 wall_us=95.262
+PARENT_SAMPLE case=target-r1-d64-fp32 block=2 sample=12 device_us=16.700 wall_us=96.983
+PARENT_SAMPLE case=target-r1-d64-fp32 block=2 sample=13 device_us=6.060 wall_us=95.242
+PARENT_SAMPLE case=target-r1-d64-fp32 block=2 sample=14 device_us=29.560 wall_us=99.602
+PARENT_SAMPLE case=target-r1-d64-fp32 block=2 sample=15 device_us=31.960 wall_us=96.622
+PARENT_SAMPLE case=target-r1-d64-fp32 block=2 sample=16 device_us=47.320 wall_us=109.632
+PARENT_SAMPLE case=target-r1-d64-fp32 block=2 sample=17 device_us=5.560 wall_us=107.663
+PARENT_SAMPLE case=target-r1-d64-fp32 block=2 sample=18 device_us=4.880 wall_us=111.993
+PARENT_SAMPLE case=target-r1-d64-fp32 block=2 sample=19 device_us=18.140 wall_us=101.932
+PARENT_SAMPLE case=target-r1-d64-fp32 block=2 sample=20 device_us=29.680 wall_us=108.473
+PARENT_SAMPLE case=target-r1-d64-fp32 block=2 sample=21 device_us=42.000 wall_us=113.223
+PARENT_SAMPLE case=target-r1-d64-fp32 block=2 sample=22 device_us=4.940 wall_us=115.063
+PARENT_SAMPLE case=target-r1-d64-fp32 block=2 sample=23 device_us=14.420 wall_us=99.582
+PARENT_SAMPLE case=target-r1-d64-fp32 block=2 sample=24 device_us=8.240 wall_us=99.403
+PARENT_SAMPLE case=target-r1-d64-fp32 block=2 sample=25 device_us=6.640 wall_us=101.112
+PARENT_SAMPLE case=target-r1-d64-fp32 block=2 sample=26 device_us=4.760 wall_us=105.072
+PARENT_SAMPLE case=target-r1-d64-fp32 block=2 sample=27 device_us=19.080 wall_us=107.253
+PARENT_SAMPLE case=target-r1-d64-fp32 block=2 sample=28 device_us=4.760 wall_us=116.152
+PARENT_SAMPLE case=target-r1-d64-fp32 block=2 sample=29 device_us=26.180 wall_us=111.102
+PARENT_SAMPLE case=target-r1-d64-fp32 block=2 sample=30 device_us=20.060 wall_us=97.902
+PARENT_SAMPLE case=target-r1-d64-fp32 block=2 sample=31 device_us=29.620 wall_us=113.313
+SUMMARY case=target-r1-d64-fp32 metric=device_us binary=PARENT_BLOCK_2 n=31 median=19.080 mean=24.472 stdev=19.250 cv=0.78661 min=4.760 max=78.480 mad=13.520 p10=4.860 p90=47.320
+SUMMARY case=target-r1-d64-fp32 metric=device_us binary=PARENT_ALL n=62 median=26.340 mean=26.954 stdev=18.476 cv=0.68547 min=4.560 max=78.480 mad=11.830 p10=4.862 p90=54.802
+SUMMARY case=target-r1-d64-fp32 metric=wall_us binary=PARENT_ALL n=62 median=102.328 mean=107.532 stdev=22.936 cv=0.21330 min=78.281 max=223.935 mad=7.945 p10=88.835 p90=121.594
+PARENT_QUAL case=target-r1-d64-fp32 result=MEASUREMENT_PROTOCOL_BLOCKED samples=62 median_us=26.340 mad_over_median=0.44913 block_drift=0.33865
+PARENT_SAMPLE case=control-r2-d64-fp32 block=1 sample=01 device_us=7.100 wall_us=100.802
+PARENT_SAMPLE case=control-r2-d64-fp32 block=1 sample=02 device_us=5.300 wall_us=90.992
+PARENT_SAMPLE case=control-r2-d64-fp32 block=1 sample=03 device_us=46.940 wall_us=114.433
+PARENT_SAMPLE case=control-r2-d64-fp32 block=1 sample=04 device_us=5.400 wall_us=92.972
+PARENT_SAMPLE case=control-r2-d64-fp32 block=1 sample=05 device_us=24.500 wall_us=77.712
+PARENT_SAMPLE case=control-r2-d64-fp32 block=1 sample=06 device_us=10.460 wall_us=96.872
+PARENT_SAMPLE case=control-r2-d64-fp32 block=1 sample=07 device_us=52.280 wall_us=161.653
+PARENT_SAMPLE case=control-r2-d64-fp32 block=1 sample=08 device_us=5.620 wall_us=87.142
+PARENT_SAMPLE case=control-r2-d64-fp32 block=1 sample=09 device_us=39.460 wall_us=90.252
+PARENT_SAMPLE case=control-r2-d64-fp32 block=1 sample=10 device_us=20.460 wall_us=77.042
+PARENT_SAMPLE case=control-r2-d64-fp32 block=1 sample=11 device_us=36.180 wall_us=87.302
+PARENT_SAMPLE case=control-r2-d64-fp32 block=1 sample=12 device_us=21.480 wall_us=73.982
+PARENT_SAMPLE case=control-r2-d64-fp32 block=1 sample=13 device_us=68.320 wall_us=135.363
+PARENT_SAMPLE case=control-r2-d64-fp32 block=1 sample=14 device_us=9.500 wall_us=87.472
+PARENT_SAMPLE case=control-r2-d64-fp32 block=1 sample=15 device_us=38.280 wall_us=91.982
+PARENT_SAMPLE case=control-r2-d64-fp32 block=1 sample=16 device_us=20.140 wall_us=76.461
+PARENT_SAMPLE case=control-r2-d64-fp32 block=1 sample=17 device_us=8.220 wall_us=74.552
+PARENT_SAMPLE case=control-r2-d64-fp32 block=1 sample=18 device_us=39.960 wall_us=99.043
+PARENT_SAMPLE case=control-r2-d64-fp32 block=1 sample=19 device_us=18.720 wall_us=74.681
+PARENT_SAMPLE case=control-r2-d64-fp32 block=1 sample=20 device_us=31.420 wall_us=108.112
+PARENT_SAMPLE case=control-r2-d64-fp32 block=1 sample=21 device_us=22.200 wall_us=81.802
+PARENT_SAMPLE case=control-r2-d64-fp32 block=1 sample=22 device_us=17.940 wall_us=82.041
+PARENT_SAMPLE case=control-r2-d64-fp32 block=1 sample=23 device_us=66.200 wall_us=152.783
+PARENT_SAMPLE case=control-r2-d64-fp32 block=1 sample=24 device_us=48.300 wall_us=100.132
+PARENT_SAMPLE case=control-r2-d64-fp32 block=1 sample=25 device_us=5.040 wall_us=77.841
+PARENT_SAMPLE case=control-r2-d64-fp32 block=1 sample=26 device_us=46.900 wall_us=146.703
+PARENT_SAMPLE case=control-r2-d64-fp32 block=1 sample=27 device_us=59.920 wall_us=107.873
+PARENT_SAMPLE case=control-r2-d64-fp32 block=1 sample=28 device_us=107.660 wall_us=169.043
+PARENT_SAMPLE case=control-r2-d64-fp32 block=1 sample=29 device_us=38.680 wall_us=91.772
+PARENT_SAMPLE case=control-r2-d64-fp32 block=1 sample=30 device_us=38.860 wall_us=92.452
+PARENT_SAMPLE case=control-r2-d64-fp32 block=1 sample=31 device_us=63.380 wall_us=118.423
+SUMMARY case=control-r2-d64-fp32 metric=device_us binary=PARENT_BLOCK_1 n=31 median=31.420 mean=33.059 stdev=23.974 cv=0.72519 min=5.040 max=107.660 mad=15.520 p10=5.620 p90=63.380
+PARENT_SAMPLE case=control-r2-d64-fp32 block=2 sample=01 device_us=59.460 wall_us=129.353
+PARENT_SAMPLE case=control-r2-d64-fp32 block=2 sample=02 device_us=30.300 wall_us=78.852
+PARENT_SAMPLE case=control-r2-d64-fp32 block=2 sample=03 device_us=38.840 wall_us=99.623
+PARENT_SAMPLE case=control-r2-d64-fp32 block=2 sample=04 device_us=28.140 wall_us=75.782
+PARENT_SAMPLE case=control-r2-d64-fp32 block=2 sample=05 device_us=35.280 wall_us=82.512
+PARENT_SAMPLE case=control-r2-d64-fp32 block=2 sample=06 device_us=30.680 wall_us=85.132
+PARENT_SAMPLE case=control-r2-d64-fp32 block=2 sample=07 device_us=22.920 wall_us=75.182
+PARENT_SAMPLE case=control-r2-d64-fp32 block=2 sample=08 device_us=31.980 wall_us=82.882
+PARENT_SAMPLE case=control-r2-d64-fp32 block=2 sample=09 device_us=19.460 wall_us=73.681
+PARENT_SAMPLE case=control-r2-d64-fp32 block=2 sample=10 device_us=7.200 wall_us=116.522
+PARENT_SAMPLE case=control-r2-d64-fp32 block=2 sample=11 device_us=7.000 wall_us=98.382
+PARENT_SAMPLE case=control-r2-d64-fp32 block=2 sample=12 device_us=7.940 wall_us=116.293
+PARENT_SAMPLE case=control-r2-d64-fp32 block=2 sample=13 device_us=7.120 wall_us=98.122
+PARENT_SAMPLE case=control-r2-d64-fp32 block=2 sample=14 device_us=6.360 wall_us=76.192
+PARENT_SAMPLE case=control-r2-d64-fp32 block=2 sample=15 device_us=29.540 wall_us=144.173
+PARENT_SAMPLE case=control-r2-d64-fp32 block=2 sample=16 device_us=69.720 wall_us=128.732
+PARENT_SAMPLE case=control-r2-d64-fp32 block=2 sample=17 device_us=29.060 wall_us=79.191
+PARENT_SAMPLE case=control-r2-d64-fp32 block=2 sample=18 device_us=21.400 wall_us=75.661
+PARENT_SAMPLE case=control-r2-d64-fp32 block=2 sample=19 device_us=5.300 wall_us=105.402
+PARENT_SAMPLE case=control-r2-d64-fp32 block=2 sample=20 device_us=5.740 wall_us=110.213
+PARENT_SAMPLE case=control-r2-d64-fp32 block=2 sample=21 device_us=45.080 wall_us=90.502
+PARENT_SAMPLE case=control-r2-d64-fp32 block=2 sample=22 device_us=22.120 wall_us=73.462
+PARENT_SAMPLE case=control-r2-d64-fp32 block=2 sample=23 device_us=34.060 wall_us=84.132
+PARENT_SAMPLE case=control-r2-d64-fp32 block=2 sample=24 device_us=24.280 wall_us=73.362
+PARENT_SAMPLE case=control-r2-d64-fp32 block=2 sample=25 device_us=35.120 wall_us=80.522
+PARENT_SAMPLE case=control-r2-d64-fp32 block=2 sample=26 device_us=21.840 wall_us=71.171
+PARENT_SAMPLE case=control-r2-d64-fp32 block=2 sample=27 device_us=35.520 wall_us=79.371
+PARENT_SAMPLE case=control-r2-d64-fp32 block=2 sample=28 device_us=22.580 wall_us=73.311
+PARENT_SAMPLE case=control-r2-d64-fp32 block=2 sample=29 device_us=30.080 wall_us=77.762
+PARENT_SAMPLE case=control-r2-d64-fp32 block=2 sample=30 device_us=22.640 wall_us=69.142
+PARENT_SAMPLE case=control-r2-d64-fp32 block=2 sample=31 device_us=42.060 wall_us=83.162
+SUMMARY case=control-r2-d64-fp32 metric=device_us binary=PARENT_BLOCK_2 n=31 median=28.140 mean=26.736 stdev=15.274 cv=0.57128 min=5.300 max=69.720 mad=6.980 p10=7.000 p90=42.060
+SUMMARY case=control-r2-d64-fp32 metric=device_us binary=PARENT_ALL n=62 median=28.600 mean=29.897 stdev=20.188 cv=0.67524 min=5.040 max=107.660 mad=10.460 p10=6.424 p90=58.742
+SUMMARY case=control-r2-d64-fp32 metric=wall_us binary=PARENT_ALL n=62 median=87.387 mean=95.282 stdev=23.811 cv=0.24990 min=69.142 max=169.043 mad=11.631 p10=74.039 p90=129.291
+PARENT_QUAL case=control-r2-d64-fp32 result=MEASUREMENT_PROTOCOL_BLOCKED samples=62 median_us=28.600 mad_over_median=0.36573 block_drift=0.11469
+PARENT_SAMPLE case=control-r1-d129-fp32 block=1 sample=01 device_us=34.520 wall_us=93.122
+PARENT_SAMPLE case=control-r1-d129-fp32 block=1 sample=02 device_us=4.720 wall_us=85.342
+PARENT_SAMPLE case=control-r1-d129-fp32 block=1 sample=03 device_us=50.400 wall_us=150.134
+PARENT_SAMPLE case=control-r1-d129-fp32 block=1 sample=04 device_us=61.500 wall_us=116.432
+PARENT_SAMPLE case=control-r1-d129-fp32 block=1 sample=05 device_us=29.000 wall_us=79.442
+PARENT_SAMPLE case=control-r1-d129-fp32 block=1 sample=06 device_us=4.900 wall_us=73.261
+PARENT_SAMPLE case=control-r1-d129-fp32 block=1 sample=07 device_us=41.100 wall_us=90.982
+PARENT_SAMPLE case=control-r1-d129-fp32 block=1 sample=08 device_us=6.220 wall_us=78.062
+PARENT_SAMPLE case=control-r1-d129-fp32 block=1 sample=09 device_us=57.020 wall_us=114.242
+PARENT_SAMPLE case=control-r1-d129-fp32 block=1 sample=10 device_us=50.660 wall_us=116.612
+PARENT_SAMPLE case=control-r1-d129-fp32 block=1 sample=11 device_us=9.840 wall_us=88.282
+PARENT_SAMPLE case=control-r1-d129-fp32 block=1 sample=12 device_us=20.920 wall_us=76.991
+PARENT_SAMPLE case=control-r1-d129-fp32 block=1 sample=13 device_us=4.100 wall_us=84.742
+PARENT_SAMPLE case=control-r1-d129-fp32 block=1 sample=14 device_us=53.380 wall_us=116.422
+PARENT_SAMPLE case=control-r1-d129-fp32 block=1 sample=15 device_us=47.060 wall_us=96.182
+PARENT_SAMPLE case=control-r1-d129-fp32 block=1 sample=16 device_us=4.340 wall_us=73.691
+PARENT_SAMPLE case=control-r1-d129-fp32 block=1 sample=17 device_us=59.880 wall_us=115.562
+PARENT_SAMPLE case=control-r1-d129-fp32 block=1 sample=18 device_us=21.800 wall_us=73.822
+PARENT_SAMPLE case=control-r1-d129-fp32 block=1 sample=19 device_us=11.520 wall_us=95.782
+PARENT_SAMPLE case=control-r1-d129-fp32 block=1 sample=20 device_us=47.680 wall_us=100.682
+PARENT_SAMPLE case=control-r1-d129-fp32 block=1 sample=21 device_us=71.160 wall_us=130.743
+PARENT_SAMPLE case=control-r1-d129-fp32 block=1 sample=22 device_us=46.000 wall_us=108.083
+PARENT_SAMPLE case=control-r1-d129-fp32 block=1 sample=23 device_us=56.080 wall_us=99.842
+PARENT_SAMPLE case=control-r1-d129-fp32 block=1 sample=24 device_us=4.700 wall_us=72.262
+PARENT_SAMPLE case=control-r1-d129-fp32 block=1 sample=25 device_us=39.980 wall_us=92.672
+PARENT_SAMPLE case=control-r1-d129-fp32 block=1 sample=26 device_us=4.360 wall_us=68.802
+PARENT_SAMPLE case=control-r1-d129-fp32 block=1 sample=27 device_us=52.160 wall_us=118.743
+PARENT_SAMPLE case=control-r1-d129-fp32 block=1 sample=28 device_us=34.860 wall_us=88.562
+PARENT_SAMPLE case=control-r1-d129-fp32 block=1 sample=29 device_us=33.340 wall_us=90.362
+PARENT_SAMPLE case=control-r1-d129-fp32 block=1 sample=30 device_us=19.580 wall_us=72.401
+PARENT_SAMPLE case=control-r1-d129-fp32 block=1 sample=31 device_us=69.080 wall_us=130.063
+SUMMARY case=control-r1-d129-fp32 metric=device_us binary=PARENT_BLOCK_1 n=31 median=34.860 mean=33.931 stdev=22.003 cv=0.64848 min=4.100 max=71.160 mad=18.520 p10=4.700 p90=59.880
+PARENT_SAMPLE case=control-r1-d129-fp32 block=2 sample=01 device_us=26.740 wall_us=84.682
+PARENT_SAMPLE case=control-r1-d129-fp32 block=2 sample=02 device_us=19.660 wall_us=79.912
+PARENT_SAMPLE case=control-r1-d129-fp32 block=2 sample=03 device_us=68.480 wall_us=126.973
+PARENT_SAMPLE case=control-r1-d129-fp32 block=2 sample=04 device_us=39.020 wall_us=85.652
+PARENT_SAMPLE case=control-r1-d129-fp32 block=2 sample=05 device_us=6.080 wall_us=98.182
+PARENT_SAMPLE case=control-r1-d129-fp32 block=2 sample=06 device_us=61.700 wall_us=121.223
+PARENT_SAMPLE case=control-r1-d129-fp32 block=2 sample=07 device_us=27.580 wall_us=80.282
+PARENT_SAMPLE case=control-r1-d129-fp32 block=2 sample=08 device_us=5.440 wall_us=114.393
+PARENT_SAMPLE case=control-r1-d129-fp32 block=2 sample=09 device_us=82.120 wall_us=145.914
+PARENT_SAMPLE case=control-r1-d129-fp32 block=2 sample=10 device_us=40.160 wall_us=108.312
+PARENT_SAMPLE case=control-r1-d129-fp32 block=2 sample=11 device_us=66.600 wall_us=177.964
+PARENT_SAMPLE case=control-r1-d129-fp32 block=2 sample=12 device_us=7.280 wall_us=91.082
+PARENT_SAMPLE case=control-r1-d129-fp32 block=2 sample=13 device_us=11.040 wall_us=73.971
+PARENT_SAMPLE case=control-r1-d129-fp32 block=2 sample=14 device_us=67.040 wall_us=137.993
+PARENT_SAMPLE case=control-r1-d129-fp32 block=2 sample=15 device_us=44.580 wall_us=96.542
+PARENT_SAMPLE case=control-r1-d129-fp32 block=2 sample=16 device_us=27.620 wall_us=78.152
+PARENT_SAMPLE case=control-r1-d129-fp32 block=2 sample=17 device_us=80.920 wall_us=150.394
+PARENT_SAMPLE case=control-r1-d129-fp32 block=2 sample=18 device_us=51.400 wall_us=103.712
+PARENT_SAMPLE case=control-r1-d129-fp32 block=2 sample=19 device_us=19.620 wall_us=71.712
+PARENT_SAMPLE case=control-r1-d129-fp32 block=2 sample=20 device_us=41.300 wall_us=98.412
+PARENT_SAMPLE case=control-r1-d129-fp32 block=2 sample=21 device_us=13.880 wall_us=94.482
+PARENT_SAMPLE case=control-r1-d129-fp32 block=2 sample=22 device_us=37.460 wall_us=79.772
+PARENT_SAMPLE case=control-r1-d129-fp32 block=2 sample=23 device_us=20.940 wall_us=78.732
+PARENT_SAMPLE case=control-r1-d129-fp32 block=2 sample=24 device_us=53.620 wall_us=101.012
+PARENT_SAMPLE case=control-r1-d129-fp32 block=2 sample=25 device_us=16.340 wall_us=71.572
+PARENT_SAMPLE case=control-r1-d129-fp32 block=2 sample=26 device_us=17.200 wall_us=70.702
+PARENT_SAMPLE case=control-r1-d129-fp32 block=2 sample=27 device_us=78.200 wall_us=141.133
+PARENT_SAMPLE case=control-r1-d129-fp32 block=2 sample=28 device_us=22.800 wall_us=75.942
+PARENT_SAMPLE case=control-r1-d129-fp32 block=2 sample=29 device_us=5.520 wall_us=86.822
+PARENT_SAMPLE case=control-r1-d129-fp32 block=2 sample=30 device_us=54.120 wall_us=150.114
+PARENT_SAMPLE case=control-r1-d129-fp32 block=2 sample=31 device_us=29.820 wall_us=82.102
+SUMMARY case=control-r1-d129-fp32 metric=device_us binary=PARENT_BLOCK_2 n=31 median=29.820 mean=36.912 stdev=23.915 cv=0.64789 min=5.440 max=82.120 mad=15.940 p10=7.280 p90=68.480
+SUMMARY case=control-r1-d129-fp32 metric=device_us binary=PARENT_ALL n=62 median=34.690 mean=35.422 stdev=22.840 cv=0.64479 min=4.100 max=82.120 mad=18.520 p10=5.448 p90=66.996
+SUMMARY case=control-r1-d129-fp32 metric=wall_us binary=PARENT_ALL n=62 median=92.897 mean=99.196 stdev=24.897 cv=0.25099 min=68.802 max=177.964 mad=15.301 p10=73.304 p90=137.268
+PARENT_QUAL case=control-r1-d129-fp32 result=MEASUREMENT_PROTOCOL_BLOCKED samples=62 median_us=34.690 mad_over_median=0.53387 block_drift=0.14529
+RUNNER_COMPLETE mode=PARENT_QUALIFY status=NOT_QUALIFIED cases=3 thresholds=mad_median<=0.10,drift<=0.10

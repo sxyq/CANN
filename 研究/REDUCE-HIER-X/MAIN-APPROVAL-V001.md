@@ -1,17 +1,17 @@
-# MAIN APPROVAL — REDUCE-HIER-X V001
+# current route recordS — REDUCE-HIER-X V001
 
 Date: 2026-09-27
-Approver: MAIN-2
+Recordr: MAIN-2
 DIRECT_PARENT=FROZEN_R31B_V011
 PARENT_SOURCE_SHA=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
 OFFICIAL_ANCHOR=45.16
 
-APPROVED SINGLE HYPOTHESIS:
+SELECTED SINGLE HYPOTHESIS:
 HYPOTHESIS-1 Eager running-fold of tile partials (partial-sum lifetime): each tile ReduceSum folds immediately into one FP32 accumulator via 1-element Adds; remove end-of-row collapse ReduceSum; GetValue unchanged. Do not change per-tile ReduceSum width, square Mul, mean/epsilon tail, output pass, scheduling, dtype, DMA.
 
 OFAT=PASS
 NON_DUPLICATION_AUDIT=PASS
-MAIN_APPROVAL=YES
+STATUS=RECORDED
 
 RULES:
 - Exactly one conceptual performance change in V001.

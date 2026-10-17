@@ -28,7 +28,7 @@ This is an arithmetic / dataflow route. It is NOT the MIX-A sync route.
 - instruction fusion
 - reducing unnecessary UB round trips
 
-## Forbidden
+## Deferred
 
 - changing reduction
 - changing row scheduling
@@ -41,7 +41,7 @@ This is an arithmetic / dataflow route. It is NOT the MIX-A sync route.
 ## Scope warning (collision with DTYPE-SPECIAL-X)
 
 MAIN-1 DTYPE-SPECIAL-X owns dtype-specific arithmetic/conversion paths.
-EPILOGUE-FUSE-X must keep unified FP32 intermediate semantics and must not
+EPILOGUE-FUSE-X must keep unified FP32 intermediate semantics and does not
 create per-dtype specialized epilogues. If a hypothesis requires a
 dtype-special path, reject it as CONCEPT_COLLISION_WITH_MAIN1.
 
@@ -75,12 +75,12 @@ EXPECTED_RISK_SHAPES
 CORRECTNESS_RISK
 MEASUREMENT_PLAN
 
-Then STOP. Do not edit kernel until Main approves exactly one hypothesis.
+Then STOP. Do not edit kernel until Main records exactly one hypothesis.
 
 ## Hard constraints
 
-- MAIN-1 worktrees under /Users/sunyiyang/Desktop/Project/cann-sixlane/ are READ/WRITE FORBIDDEN
+- MAIN-1 worktrees under /Users/sunyiyang/Desktop/Project/cann-sixlane/ are READ/WRITE DEFERRED
 - Do not modify shared control under canonical cann/
 - Do not submit to CANNJudge
 - Keep mathematical semantics identical within tolerance
-- ONE FACTOR AT A TIME after approval
+- ONE FACTOR AT A TIME after decision

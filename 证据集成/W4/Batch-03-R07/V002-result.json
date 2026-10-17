@@ -1,0 +1,517 @@
+{
+  "route": "W4-R07",
+  "route_name": "MTE3-STORE-QUEUE-X",
+  "revision": "V002",
+  "classification": "REAL_EXECUTED_REVISION",
+  "agent_id": "01a119d4-5351-7f41-a83e-3fe6ca27d181",
+  "date": "2026-10-08",
+  "branch": "w4/r07-mte3-store-queue-x",
+  "worktree": "/Users/sunyiyang/Desktop/Project/cann/worktrees/w4/R07-mte3-store-queue-x",
+  "direct_parent": "R31B-V011",
+  "parent_source_object": "de70b634:线上结果/R31B/V011/submission.asc",
+  "single_change": "ProcessWideLowPrecision FP16 valid=4096: one DataCopyPad descriptor changes from (1,8192,0,0,0) to (2,4096,0,0,0); all other output sizes stay single-block.",
+  "unchanged": [
+    "input DMA",
+    "arithmetic and rounding",
+    "tile dimensions",
+    "row ownership",
+    "UB buffers",
+    "output issue position",
+    "event order",
+    "queue depth",
+    "multi-row transfer form"
+  ],
+  "compile": {
+    "status": "PASS",
+    "rc": 0,
+    "started_utc": "2026-10-08T05:08:35Z",
+    "ended_utc": "2026-10-08T05:08:54Z",
+    "log": "logs/compile-a1.log",
+    "toolchain": "CANN 8.5.0.alpha002",
+    "soc": "Ascend910B3",
+    "arch": "dav-c220 / dav-2201"
+  },
+  "correctness": {
+    "status": "PASS_BOTH_CPU_REFERENCE",
+    "rc": 0,
+    "started_utc": "2026-10-08T05:09:57Z",
+    "ended_utc": "2026-10-08T05:10:44Z",
+    "cases": [
+      {
+        "side": "parent",
+        "source": "R31B-V011",
+        "device": "0",
+        "rows": "128",
+        "width": "12288",
+        "dtype": "fp16",
+        "max_abs_error": "0.001953125",
+        "atol": "0.00249999994",
+        "mismatches": "0",
+        "nonfinite": "0",
+        "status": "PASS"
+      },
+      {
+        "side": "candidate",
+        "source": "W4-R07-V002",
+        "device": "0",
+        "rows": "128",
+        "width": "12288",
+        "dtype": "fp16",
+        "max_abs_error": "0.001953125",
+        "atol": "0.00249999994",
+        "mismatches": "0",
+        "nonfinite": "0",
+        "status": "PASS"
+      },
+      {
+        "side": "parent",
+        "source": "R31B-V011",
+        "device": "0",
+        "rows": "128",
+        "width": "12304",
+        "dtype": "fp16",
+        "max_abs_error": "0.001953125",
+        "atol": "0.00249999994",
+        "mismatches": "0",
+        "nonfinite": "0",
+        "status": "PASS"
+      },
+      {
+        "side": "candidate",
+        "source": "W4-R07-V002",
+        "device": "0",
+        "rows": "128",
+        "width": "12304",
+        "dtype": "fp16",
+        "max_abs_error": "0.001953125",
+        "atol": "0.00249999994",
+        "mismatches": "0",
+        "nonfinite": "0",
+        "status": "PASS"
+      },
+      {
+        "side": "parent",
+        "source": "R31B-V011",
+        "device": "0",
+        "rows": "128",
+        "width": "8192",
+        "dtype": "fp16",
+        "max_abs_error": "0.001953125",
+        "atol": "0.00249999994",
+        "mismatches": "0",
+        "nonfinite": "0",
+        "status": "PASS"
+      },
+      {
+        "side": "candidate",
+        "source": "W4-R07-V002",
+        "device": "0",
+        "rows": "128",
+        "width": "8192",
+        "dtype": "fp16",
+        "max_abs_error": "0.001953125",
+        "atol": "0.00249999994",
+        "mismatches": "0",
+        "nonfinite": "0",
+        "status": "PASS"
+      }
+    ],
+    "reference": "CPU FP32 x+residual and affine operations, FP64 sum of squares, final dtype rounding; R4 V031 runner reference.",
+    "atol": 0.0025,
+    "rtol": 0,
+    "required_mismatches": 0,
+    "nonfinite_is_failure": true,
+    "official_validation": false,
+    "log": "logs/correctness-a1.log"
+  },
+  "local": {
+    "status": "MEASUREMENT_BLOCKED",
+    "rc": 0,
+    "started_utc": "2026-10-08T05:11:45Z",
+    "ended_utc": "2026-10-08T05:12:15Z",
+    "observed_local_score_us": 20.64,
+    "observed_local_delta_percent": -4.133769063312376,
+    "delta_definition": "100*(candidate side median / parent side median - 1); negative means lower observed latency.",
+    "observed_median_paired_delta_us": -0.45999950000000034,
+    "observed_median_paired_percent": -2.614211686135559,
+    "accepted_improvement": false,
+    "current_local_best": null,
+    "reason": "Parent same-binary MAD/median is 19.03% on target and 20.25% on control. Target PC and CP groups have opposite directions (+18.91% and -24.89%); unchanged control also has a strong order effect. Observed medians do not establish an independent effect of the output descriptor.",
+    "target": {
+      "rows": 128,
+      "width": 12288,
+      "dtype": "fp16",
+      "block_count": 40,
+      "tile_width": 4096,
+      "tile_count": 3,
+      "batch_limit": 3,
+      "store_api_calls_per_launch": 384,
+      "output_bytes_per_launch": 3145728,
+      "statistics": {
+        "parent_same_binary": {
+          "n": 62,
+          "median_us": 21.6499995,
+          "mean_us": 26.98322583870968,
+          "stdev_us": 18.28365273297696,
+          "cv": 0.6775932885958929,
+          "mad_us": 4.120000000000001,
+          "mad_over_median": 0.19030023534180687,
+          "min_us": 16.7,
+          "max_us": 145.060003,
+          "p10_us": 17.4620001,
+          "p90_us": 34.228001
+        },
+        "same_blocks": [
+          {
+            "block": 1,
+            "n": 31,
+            "median_us": 22.019999,
+            "mean_us": 25.403870903225805,
+            "stdev_us": 11.297529148534169,
+            "cv": 0.4447168382948915,
+            "mad_us": 4.5,
+            "mad_over_median": 0.2043596823051627,
+            "min_us": 16.7,
+            "max_us": 64.199999,
+            "p10_us": 17.16,
+            "p90_us": 34.400001
+          },
+          {
+            "block": 2,
+            "n": 31,
+            "median_us": 21.28,
+            "mean_us": 28.56258077419355,
+            "stdev_us": 23.38670135087301,
+            "cv": 0.8187881037697765,
+            "mad_us": 3.740000000000002,
+            "mad_over_median": 0.17575187969924821,
+            "min_us": 16.74,
+            "max_us": 145.060003,
+            "p10_us": 17.54,
+            "p90_us": 32.680001
+          }
+        ],
+        "paired": {
+          "parent": {
+            "device": {
+              "n": 124,
+              "median_us": 21.5300005,
+              "mean_us": 23.49161295967742,
+              "stdev_us": 7.67007652205118,
+              "cv": 0.3265027622929347,
+              "mad_us": 4.590000499999999,
+              "mad_over_median": 0.21319091469598428,
+              "min_us": 16.179999,
+              "max_us": 59.719998,
+              "p10_us": 16.792,
+              "p90_us": 31.915999600000003
+            },
+            "wall": {
+              "n": 124,
+              "median_us": 70.80000000000001,
+              "mean_us": 70.93204838709677,
+              "stdev_us": 9.412556353261888,
+              "cv": 0.13269821705831525,
+              "mad_us": 4.085999999999984,
+              "mad_over_median": 0.05771186440677943,
+              "min_us": 60.591,
+              "max_us": 119.021,
+              "p10_us": 62.0767,
+              "p90_us": 78.747
+            }
+          },
+          "candidate": {
+            "device": {
+              "n": 124,
+              "median_us": 20.64,
+              "mean_us": 22.844838758064515,
+              "stdev_us": 9.6016816438183,
+              "cv": 0.4202998211326304,
+              "mad_us": 3.599999500000001,
+              "mad_over_median": 0.17441858042635663,
+              "min_us": 16.179999,
+              "max_us": 108.520001,
+              "p10_us": 16.6260007,
+              "p90_us": 30.848000300000002
+            },
+            "wall": {
+              "n": 124,
+              "median_us": 70.43,
+              "mean_us": 69.96057258064516,
+              "stdev_us": 9.835329357985684,
+              "cv": 0.14058388882750028,
+              "mad_us": 4.9055000000000035,
+              "mad_over_median": 0.0696507170239955,
+              "min_us": 60.85,
+              "max_us": 151.151,
+              "p10_us": 62.3433,
+              "p90_us": 75.319
+            }
+          }
+        },
+        "paired_blocks": [
+          {
+            "block": "1",
+            "parent_median_us": 21.42,
+            "candidate_median_us": 20.46,
+            "delta_ratio_percent": -4.481792717086841
+          },
+          {
+            "block": "2",
+            "parent_median_us": 25.38,
+            "candidate_median_us": 20.84,
+            "delta_ratio_percent": -17.888100866824264
+          },
+          {
+            "block": "3",
+            "parent_median_us": 18.8,
+            "candidate_median_us": 18.619999,
+            "delta_ratio_percent": -0.9574521276595749
+          },
+          {
+            "block": "4",
+            "parent_median_us": 21.640001,
+            "candidate_median_us": 20.98,
+            "delta_ratio_percent": -3.049912058691684
+          }
+        ],
+        "paired_orders": [
+          {
+            "order": "CP",
+            "parent_median_us": 25.1099995,
+            "candidate_median_us": 18.86,
+            "delta_ratio_percent": -24.890480384119485
+          },
+          {
+            "order": "PC",
+            "parent_median_us": 18.560001,
+            "candidate_median_us": 22.07,
+            "delta_ratio_percent": 18.91163152415778
+          }
+        ],
+        "delta_ratio_of_medians_percent": -4.133769063312376,
+        "median_paired_delta_us": -0.45999950000000034,
+        "median_paired_percent": -2.614211686135559,
+        "candidate_faster_pairs": 68,
+        "parent_faster_pairs": 56,
+        "tie_pairs": 0
+      }
+    },
+    "control": {
+      "rows": 128,
+      "width": 8192,
+      "dtype": "fp16",
+      "activation": false,
+      "source": "synthetic dispatch-boundary control",
+      "statistics": {
+        "parent_same_binary": {
+          "n": 62,
+          "median_us": 14.469999999999999,
+          "mean_us": 18.56290329032258,
+          "stdev_us": 7.818148644289073,
+          "cv": 0.42117057456011836,
+          "mad_us": 2.929999999999999,
+          "mad_over_median": 0.20248790601243946,
+          "min_us": 11.48,
+          "max_us": 49.180001,
+          "p10_us": 12.172,
+          "p90_us": 29.221999999999998
+        },
+        "same_blocks": [
+          {
+            "block": 1,
+            "n": 31,
+            "median_us": 13.3,
+            "mean_us": 17.272258161290324,
+            "stdev_us": 6.162511839777517,
+            "cv": 0.3567866912497067,
+            "mad_us": 1.4400000000000013,
+            "mad_over_median": 0.10827067669172942,
+            "min_us": 11.48,
+            "max_us": 31.500001,
+            "p10_us": 12.02,
+            "p90_us": 25.86
+          },
+          {
+            "block": 2,
+            "n": 31,
+            "median_us": 17.94,
+            "mean_us": 19.853548419354837,
+            "stdev_us": 9.103033113144814,
+            "cv": 0.4585091249617849,
+            "mad_us": 5.040000000000001,
+            "mad_over_median": 0.28093645484949836,
+            "min_us": 12.14,
+            "max_us": 49.180001,
+            "p10_us": 12.3,
+            "p90_us": 30.94
+          }
+        ],
+        "paired": {
+          "parent": {
+            "device": {
+              "n": 124,
+              "median_us": 19.910000500000002,
+              "mean_us": 20.133709741935483,
+              "stdev_us": 8.077331332281467,
+              "cv": 0.40118445312925133,
+              "mad_us": 7.410000500000002,
+              "mad_over_median": 0.372174802306007,
+              "min_us": 11.06,
+              "max_us": 51.84,
+              "p10_us": 11.41,
+              "p90_us": 31.060000000000006
+            },
+            "wall": {
+              "n": 124,
+              "median_us": 70.06049999999999,
+              "mean_us": 72.5917258064516,
+              "stdev_us": 6.764956158516157,
+              "cv": 0.0931918353415827,
+              "mad_us": 2.4699999999999918,
+              "mad_over_median": 0.035255243682245946,
+              "min_us": 64.95,
+              "max_us": 100.411,
+              "p10_us": 66.87570000000001,
+              "p90_us": 79.859
+            }
+          },
+          "candidate": {
+            "device": {
+              "n": 124,
+              "median_us": 20.0300005,
+              "mean_us": 20.838225798387096,
+              "stdev_us": 9.73964949548545,
+              "cv": 0.46739341389799655,
+              "mad_us": 5.010000499999999,
+              "mad_over_median": 0.2501248314996297,
+              "min_us": 11.06,
+              "max_us": 93.840003,
+              "p10_us": 11.644,
+              "p90_us": 29.586000000000002
+            },
+            "wall": {
+              "n": 124,
+              "median_us": 70.6405,
+              "mean_us": 73.43876612903226,
+              "stdev_us": 9.633793619219027,
+              "cv": 0.13118131100258965,
+              "mad_us": 2.2194999999999965,
+              "mad_over_median": 0.03141965303190091,
+              "min_us": 65.26,
+              "max_us": 152.681,
+              "p10_us": 67.6447,
+              "p90_us": 80.49499999999999
+            }
+          }
+        },
+        "paired_blocks": [
+          {
+            "block": "1",
+            "parent_median_us": 20.52,
+            "candidate_median_us": 20.12,
+            "delta_ratio_percent": -1.9493177387914118
+          },
+          {
+            "block": "2",
+            "parent_median_us": 17.08,
+            "candidate_median_us": 20.04,
+            "delta_ratio_percent": 17.33021077283372
+          },
+          {
+            "block": "3",
+            "parent_median_us": 20.08,
+            "candidate_median_us": 19.66,
+            "delta_ratio_percent": -2.091633466135445
+          },
+          {
+            "block": "4",
+            "parent_median_us": 21.360001,
+            "candidate_median_us": 20.62,
+            "delta_ratio_percent": -3.464423995111232
+          }
+        ],
+        "paired_orders": [
+          {
+            "order": "CP",
+            "parent_median_us": 21.119999999999997,
+            "candidate_median_us": 19.6199995,
+            "delta_ratio_percent": -7.102275094696964
+          },
+          {
+            "order": "PC",
+            "parent_median_us": 15.66,
+            "candidate_median_us": 20.4499995,
+            "delta_ratio_percent": 30.587480842911873
+          }
+        ],
+        "delta_ratio_of_medians_percent": 0.6027121897862253,
+        "median_paired_delta_us": 0.1200000000000001,
+        "median_paired_percent": 1.0308282371581212,
+        "candidate_faster_pairs": 61,
+        "parent_faster_pairs": 63,
+        "tie_pairs": 0
+      }
+    },
+    "method": {
+      "runner": "support/runner_main.cpp",
+      "reused_source": "ce6c6dc5:本地实验/MULTIROW-PANEL-RMS-CHAMPION-X/V031/support/runner_main.cpp",
+      "available_core_argument": 40,
+      "epsilon": 0.00001,
+      "warmups": 45,
+      "samples_per_block": 31,
+      "same_binary_blocks": 2,
+      "paired_blocks": 4,
+      "pair_order": "alternating PC/CP using (block+sample)%2",
+      "timing": "ACL device events; wall time also retained",
+      "allocation_and_h2d_timed": false,
+      "total_raw_samples": 620,
+      "raw_samples_removed": 0,
+      "raw_paths": [
+        "logs/local-a1-12288-same.tsv",
+        "logs/local-a1-12288-paired.tsv",
+        "logs/local-a1-8192-same.tsv",
+        "logs/local-a1-8192-paired.tsv"
+      ]
+    },
+    "log": "logs/local-a1.log"
+  },
+  "resources": {
+    "host": "hwnput3",
+    "ssh_entry": "cann-server3",
+    "device": 0,
+    "free_hbm_mb_estimate_pre": 53739,
+    "free_hbm_mb_estimate_post": 53739,
+    "free_hbm_method": "65536 MB * (100 - 18 percent) / 100, integer truncation; usage percentage is rounded by npu-smi",
+    "host_load1_pre": 87.19,
+    "host_load1_post": 68.13,
+    "aicore_percent_pre": 1,
+    "aicore_percent_post": 0,
+    "aivector_percent_pre": 4,
+    "aivector_percent_post": 0,
+    "other_process_present": true,
+    "other_process_pre": {
+      "pid": 3167028,
+      "name": "python",
+      "memory_mb": 8988
+    },
+    "load_note": "Measurements ran with the existing process and host load; no process or lease was modified.",
+    "resource_blocker": null
+  },
+  "counts": {
+    "new_performance_revisions": 1,
+    "valid_numeric_local_results": 0,
+    "consecutive_valid_no_improvement": 0,
+    "stagnation_3": false
+  },
+  "official_score": null,
+  "online": "PAUSED",
+  "push": "NO",
+  "route_lifecycle_changed": false,
+  "remote_directory": "/home/data4t2/lelinfeng/w4-r07/V002",
+  "research_event": "W4-R07-STORE-BLOCK-FORM-20261008",
+  "research_evidence": "研究/W4-R07/STORE-BLOCK-FORM-20261008.md",
+  "next_action": "Keep V002 and reuse the retained binaries and samples. For the same 128x12288 FP16 / 40-block target, distinguish kernel-task duration from the current device-event interval and analyze first/second execution position before another performance change.",
+  "running_device_operation": "NONE",
+  "atomic_commands_returned": true
+}

@@ -315,13 +315,13 @@ MulAddDst(biasLocal, valueTile, gammaLocal, valid);
 
 ---
 
-## 6. REQUEST_MAIN_APPROVAL
+## 6. REQUEST_MAIN_ROUTE_RECORD
 
-REQUEST_MAIN_APPROVAL: **HYPOTHESIS-V003-1 — VMLA-INPLACE-UNCACHED.**
+REQUEST_MAIN_ROUTE_RECORD: **HYPOTHESIS-V003-1 — VMLA-INPLACE-UNCACHED.**
 
-Requested disposition: approve V003-1 as the single hypothesis for performance
+Requested disposition: record V003-1 as the single hypothesis for performance
 revision V003 of EPILOGUE-FUSE-X, parent FROZEN_R31B_V011 (roll back from V002;
 PARENT_SOURCE_SHA `a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`).
 Scope: `cacheParams == false` second-pass arms only (per-tile-loaded bias).
-No kernel edit until Main approves exactly one hypothesis. V003-2 and V003-3
+kernel edit follows the selected hypothesis in the current specification. V003-2 and V003-3
 stay in backlog with their stated prerequisites.

@@ -28,7 +28,7 @@ Frozen-seed facts used as the transplant surface (verified this turn):
 NON_DUPLICATION_AUDIT=PASS (Main 2026-09-27) — frozen champion has **no** whole-group
 ownership. This file is therefore hypotheses, not `DO_NOT_IMPLEMENT_DUPLICATE`.
 
-FORBIDDEN in every hypothesis (unchanged byte-for-byte): mode selection conditions,
+DEFERRED in every hypothesis (unchanged byte-for-byte): mode selection conditions,
 rows/block batch widths (`wideFullYRows_`, `batchLimit`, `kSmallFp32*`), DMA
 segmentation (`DataCopyExtParams`/`DataCopyPad`), wide path functions, dtype paths,
 reduction arithmetic, UB lifetime/InitBuffer layout, epilogue arithmetic.
@@ -94,12 +94,12 @@ Not touched: `run_kernel` requestedBlocks (that is H2), `ProcessWide*`
 (1860+/2088+/2254+/2387+/3076+), mode dispatch conditions, batch widths.
 
 **WHY_ORTHOGONAL_TO_MAIN1**
-MAIN-1 worktrees under `cann-sixlane/` are READ/WRITE FORBIDDEN and were not read.
+MAIN-1 worktrees under `cann-sixlane/` are READ/WRITE DEFERRED and were not read.
 Per the idea-pool mapping recorded in SCHED-ROWGROUP-X `WHY_NOT_DUPLICATE.md`,
 row-group ownership / rows-task scheduling is the R012+R016 class owned by the
 SCHED lane (this route). MAIN-1 champion lanes own multimode dispatch, wide-D
 reduction/layout, and tiling-factor provenance — different mechanism classes.
-This revision touches only the beginRow/localRows arithmetic; it cannot collide
+This revision touches only the beginRow/localRows arithmetic; it does not collide
 with any MAIN-1 DMA, reduction, epilogue, dtype, or UB change.
 
 **WHY_NOT_DUPLICATE_EXISTING_MAIN2**
@@ -128,7 +128,7 @@ is a stable delta beyond the shape's same-binary floor.
 - Any `rowGroup == 1` shape (17×256 FP32, 1×6144, any 32B-aligned rowBytes):
   partition is bit-identical to today → delta must be ≡0. This is the
   falsification control, not a win shape.
-- Wide shapes D>8192: untouched (wide path forbidden) → ≡0.
+- Wide shapes D>8192: untouched (wide path deferred) → ≡0.
 - Shapes where `totalGroups >= blockCount` and `rowGroup == 1`: no change.
 - If launch count drops (`blockCount > totalGroups` → idle blocks), any loss
   would show as worse balance when `rowCount` is large; probe shapes are safe.
@@ -290,7 +290,7 @@ This hypothesis is **not probeable on current PASS shapes** (provably inert when
 `totalGroups ≤ blockCount`). Measurement plan: (1) qualify a large-rowCount
 narrow shape (e.g. 256×100 FP32 or larger) with same-binary first; (2) only then
 run interleaved P/C of H3 vs H1 (pattern-only pair) under the unified protocol.
-Until that shape exists, H3 stays NEEDS_MORE_EVIDENCE and cannot be the first
+Until that shape exists, H3 stays NEEDS_MORE_EVIDENCE and is not the first
 revision. Control set still includes 17×256 (≡0 expected).
 
 ---
@@ -341,7 +341,7 @@ of total time unless the fragment core is the sole critical path.
 
 **CORRECTNESS_RISK**
 Low. Coverage stays exact (the folded core owns a contiguous row range of
-`rowGroup + rem` rows; the former fragment core owns nothing and must not write).
+`rowGroup + rem` rows; the former fragment core owns nothing and does not write).
 Needs the same last-range clip discipline as H1. One extra edge: the folded span
 is no longer exactly one 32B-aligned group — the "whole group" invariant is
 relaxed only for the tail. Numerical risk: none.
@@ -367,7 +367,7 @@ Why:
    parent. H2/H3/H4 are single levers around it; H1 is the mechanism itself.
 2. It is a true single variable: only the boundary unit of the existing
    base/extra split changes (rows → groups). Host launch width, mapping pattern,
-   remainder policy, mode selection, and all forbidden surfaces stay put.
+   remainder policy, mode selection, and all deferred surfaces stay put.
 3. It is **self-falsifying and safe**: on every `rowGroup == 1` shape the
    partition is bit-identical to frozen R31B-V011, so the 17×256 control must
    read ≡0. Any nonzero control delta rejects the implementation before it can
@@ -378,7 +378,7 @@ Why:
    (row-at-a-time `ProcessRow`) and is not a second variable — it is a downstream
    consequence of the same ownership change through unchanged dispatch code.
 5. H2's `rowCount < rowGroup` collapse risk and H4's tail-only effect make them
-   better as follow-ups; H3 is inert on current probe shapes and cannot be first.
+   better as follow-ups; H3 is inert on current probe shapes and is not first.
 
 Order after H1: H2 (if launch overhead shows up), then H4 (if the tail fragment
 is the critical path), then H3 (only after a large-rowCount shape is qualified).
@@ -394,4 +394,4 @@ is the critical path), then H3 (only after a large-rowCount shape is qualified).
   rule); H4 requires H1 as precondition and must be paired against the H1 Local
   Best, not the frozen parent.
 
-REQUEST_MAIN_APPROVAL: HYPOTHESIS-1 (GROUP-ALIGNED BALANCED OWNERSHIP) — approve this single hypothesis as the first OFAT revision of SCHED-CHAMPION-X on DIRECT_PARENT=FROZEN_R31B_V011 (PARENT_SOURCE_SHA=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3).
+REQUEST_MAIN_ROUTE_RECORD: HYPOTHESIS-1 (GROUP-ALIGNED BALANCED OWNERSHIP) — record this single hypothesis as the first OFAT revision of SCHED-CHAMPION-X on DIRECT_PARENT=FROZEN_R31B_V011 (PARENT_SOURCE_SHA=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3).

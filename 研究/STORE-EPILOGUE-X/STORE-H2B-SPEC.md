@@ -2,7 +2,7 @@
 
 Date: 2026-09-27 (C2C overnight; research/spec only — NOT implemented)
 Route: EPILOGUE-FUSE-X
-Status: approval-ready specification for Main review.
+Status: implementation-ready specification for Main review.
 Parent of record: R31B-V011 (`R31B-V011-LP-ROW-PIPELINE_kernel.asc`)
 PARENT_SOURCE_SHA=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
 Predecessor audit: `STORE-H1-COLLISION-AUDIT.md` (STORE-H1 =
@@ -155,7 +155,7 @@ placement (e.g. the 2-deep ring at `:1218`'s site and the
 STORE-H2B keeps each site's ring and flag discipline **verbatim** —
 same events, same waits, same outstanding policy; only the number of
 `Store()` calls inside one row changes. Border rule for V001: if a
-site's ring cannot express a merged writeback without changing flag
+site's ring does not express a merged writeback without changing flag
 count, depth, or wait placement, that site is excluded (this is why
 `:1218` is last in FILES/FUNCTIONS and may be dropped). No sync removal
 claim is part of this hypothesis.
@@ -252,7 +252,7 @@ WHY_NOT_DUPLICATE_MAIN2=VECTOR-MATH owns denominator; EPILOGUE V001-3
   owned epilogue arithmetic (closed); STORE-H2(a) inter-row merge
   dropped (R015); ASYNC-TRIPLE-X owns store rings — rings kept verbatim
 SINGLE_CHANGE_AUDIT=PENDING (one variable: writeback run length per row)
-MAIN_APPROVAL=PENDING
+STATUS=OPEN
 CORRECTNESS_FIX=NONE REQUIRED (values bit-identical by construction)
 SOURCE_SHA=PENDING
 COMPILE_RC=PENDING
@@ -262,6 +262,6 @@ LOCAL_VERDICT=PENDING
 MEASUREMENT=PENDING
 ```
 
-Awaits: Main approval, VECTOR-MATH V002 disposition, WIDE-X-FRESH4 lane
+Next: current route record, VECTOR-MATH V002 disposition, WIDE-X-FRESH4 lane
 acknowledgement (wide callers touched, no wide structure change),
 block-length cap confirmation on d4 hardware. No worktree created.

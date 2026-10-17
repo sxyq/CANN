@@ -1,5 +1,7 @@
 # OFFICIAL-CASE-ANALYSIS — R31B-V011 vs improvement potential
 
+2026-10-12 update: the current six-version per-case matrix and ten latest valid receipts are appended below. Earlier Tiny/Small/Wide labels based on elapsed time are unverified hypotheses; they are not workload shape, dtype, or mechanism evidence.
+
 Measurement-independent analysis of Official per-case data.
 Source: `phase4/online/R31B/V011/result.json` (15/15 Pass, Official 45.16).
 
@@ -23,7 +25,9 @@ Source: `phase4/online/R31B/V011/result.json` (15/15 Pass, Official 45.16).
 | 14 | 16486.82 | 3750.12 | 4.40x | 21.50 | **HIGHEST** (4.4x gap) |
 | 15 | 9637.47 | 8321.94 | 1.16x | 73.42 | LOW |
 
-## Case class identification (inferred from time magnitudes)
+## Historical timing groups (unverified workload mapping)
+
+The following groups were inferred only from elapsed-time magnitude. Judge and repository receipts do not map these cases to dtype, Rows, D, dispatch, or tile configuration.
 
 | class | cases | characteristics | score range |
 |---|---|---|---|
@@ -33,7 +37,7 @@ Source: `phase4/online/R31B/V011/result.json` (15/15 Pass, Official 45.16).
 | Large (100–600 µs) | 13 | Long rows; compute-dominated | 53 |
 | Wide/Very large (>1 ms) | 14, 15 | Very wide D or many rows | 21–73 |
 
-## Most improvable classes
+## Historical time-scale hypotheses (not current route priorities)
 
 1. **Class 14 (ratio 4.4x, score 21.5)**: Largest absolute gap. Likely wide-D multi-row shape. R31B-V011 wide path (cached-y / full-y) may have a structural bottleneck vs the best implementation. This is where epilogue/pipeline improvements would matter most.
 
@@ -41,9 +45,156 @@ Source: `phase4/online/R31B/V011/result.json` (15/15 Pass, Official 45.16).
 
 3. **Class 1 (ratio 3.2x, score 25.8)**: Tiny kernel where launch+Init overhead is a large fraction. Ownership/scheduling changes (SCHED-CHAMPION-X) target this class.
 
-## Implications for VECTOR-MATH-X
+## Historical VECTOR-MATH-X discussion (not a current route instruction)
 
 - Cases 14 and 7 are the highest-value targets (together worth ~2.5 points of Official score if improved to ratio 1.5x).
-- Case 14 likely needs wide-path improvements (forbidden in current scope) or epilogue pipelining (EPI-PIPE-3).
+- Case 14 likely needs wide-path improvements (deferred in current scope) or epilogue pipelining (EPI-PIPE-3).
 - Case 7 is well-suited to SEQ-FUSE-2 (denominator handoff reduction on short rows).
 - Cases 9, 15 are near best — low ROI.
+
+## 2026-10-13 Nine-Version Receipt Matrix
+
+Sources are Judge result.json and source metadata for each version. All nine receipts are Pass 15/15. Each cell is timeUs / bestTimeUs / case score. The official formula is s_i = 100 / (1 + log_1.5(timeUs / bestTimeUs)); the total is the arithmetic mean of the 15 case scores. The implementation is in 工具/cannjudge-submit.mjs, and the public problem description states the same rule.
+
+| Case | testcase_id | dtype / Rows / D | R31B V011 | N01 V013 | N02 V010 | N02 V015 | N03 V003 | N03 V012 | N04 V017 | N04 V018 | N05 V018 |
+|---:|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | 6a9a9a99bf41025d6013eb8a | UNKNOWN | 5.44/1.70/25.849 | 5.25/1.12/20.789 | 4.88/1.12/21.599 | 5.12/1.14/21.255 | 5.16/1.14/21.169 | 5.36/1.12/20.570 | 4.91/1.12/21.528 | 4.64/1.14/22.412 | 4.87/1.12/21.622 |
+| 2 | 6a9a9a99bf41025d6013eb8e | UNKNOWN | 3.34/2.16/48.193 | 3.21/1.63/37.434 | 3.24/1.63/37.115 | 3.36/1.68/36.907 | 3.25/1.68/38.060 | 3.24/1.63/37.115 | 3.28/1.63/36.703 | 3.18/1.68/38.854 | 3.39/1.63/35.639 |
+| 3 | 6a9a9a99bf41025d6013eb92 | UNKNOWN | 5.16/2.47/35.499 | 5.33/2.10/30.329 | 5.46/2.10/29.792 | 5.76/2.12/28.859 | 5.36/2.12/30.417 | 5.45/2.10/29.832 | 5.11/2.10/31.317 | 5.44/2.12/30.083 | 4.97/2.10/32.003 |
+| 4 | 6a9a9a99bf41025d6013eb96 | UNKNOWN | 16.55/6.66/30.817 | 16.76/4.42/23.325 | 17.14/4.42/23.028 | 18.45/4.34/21.886 | 16.89/4.34/22.981 | 17.82/4.42/22.530 | 16.60/4.42/23.455 | 16.44/4.34/23.339 | 16.41/4.42/23.612 |
+| 5 | 6a9a9a99bf41025d6013eb9a | UNKNOWN | 9.93/5.20/38.529 | 9.90/4.91/36.636 | 9.82/4.91/36.907 | 9.97/4.52/33.887 | 9.93/4.52/34.001 | 10.01/5.03/37.075 | 10.02/4.91/36.242 | 10.01/4.52/33.774 | 9.86/4.91/36.771 |
+| 6 | 6a9a9a99bf41025d6013eb9e | UNKNOWN | 28.46/10.86/29.620 | 28.60/7.95/24.053 | 28.55/7.95/24.078 | 30.36/8.03/23.364 | 28.25/8.03/24.376 | 29.78/7.95/23.490 | 28.36/7.95/24.174 | 28.68/8.03/24.157 | 28.41/7.95/24.149 |
+| 7 | 6a9a9a99bf41025d6013eba2 | UNKNOWN | 52.34/13.99/23.507 | 52.92/10.50/20.044 | 51.77/10.50/20.264 | 52.53/10.68/20.289 | 52.00/10.68/20.392 | 51.90/10.61/20.345 | 51.80/10.50/20.258 | 52.30/10.68/20.333 | 51.75/10.61/20.374 |
+| 8 | 6a9a9a99bf41025d6013eba6 | UNKNOWN | 69.21/30.16/32.802 | 69.86/29.72/32.176 | 69.82/29.72/32.191 | 70.42/29.72/31.974 | 69.67/29.72/32.246 | 69.72/29.72/32.228 | 69.80/29.72/32.198 | 70.02/29.72/32.118 | 69.62/29.72/32.264 |
+| 9 | 6a9a9a99bf41025d6013ebaa | UNKNOWN | 71.85/68.20/88.607 | 72.10/67.81/86.859 | 71.22/67.81/89.206 | 72.61/67.81/85.567 | 72.12/67.81/86.807 | 70.92/67.81/90.042 | 71.10/67.81/89.538 | 72.73/67.81/85.270 | 72.92/67.81/84.804 |
+| 10 | 6a9a9a99bf41025d6013ebae | UNKNOWN | 74.82/47.05/46.641 | 74.92/45.87/45.249 | 75.15/45.87/45.095 | 75.33/45.87/44.975 | 74.42/45.87/45.590 | 74.92/45.87/45.249 | 75.00/45.87/45.195 | 75.51/45.87/44.856 | 74.49/45.87/45.542 |
+| 11 | 6a9a9a99bf41025d6013ebb2 | UNKNOWN | 160.26/131.38/67.111 | 163.27/129.65/63.749 | 161.40/129.65/64.925 | 161.65/131.05/65.895 | 161.77/131.05/65.816 | 159.90/129.65/65.911 | 162.12/129.65/64.466 | 164.99/131.05/63.775 | 161.59/129.65/64.803 |
+| 12 | 6a9a9a99bf41025d6013ebb6 | UNKNOWN | 97.69/76.43/62.294 | 97.88/75.96/61.527 | 98.77/75.96/60.694 | 97.87/75.96/61.537 | 97.63/75.96/61.767 | 99.15/75.96/60.347 | 97.86/75.96/61.546 | 98.28/75.96/61.149 | 97.64/75.96/61.757 |
+| 13 | 6a9a9a99bf41025d6013ebba | UNKNOWN | 563.74/393.51/53.005 | 563.51/394.15/53.147 | 567.25/394.15/52.690 | 564.39/397.00/53.543 | 565.11/397.00/53.453 | 563.63/394.15/53.132 | 566.93/394.15/52.728 | 566.85/397.00/53.237 | 561.92/394.15/53.344 |
+| 14 | 6a9a9a99bf41025d6013ebbe | UNKNOWN | 16486.82/3750.12/21.496 | 16473.23/3532.25/20.844 | 16532.60/3532.25/20.805 | 16412.46/3532.25/20.883 | 16504.92/3532.25/20.823 | 16592.98/3532.25/20.766 | 16698.10/3532.25/20.699 | 16688.63/3532.25/20.705 | 16498.84/3532.25/20.827 |
+| 15 | 6a9a9a99bf41025d6013ebc2 | UNKNOWN | 9637.47/8321.94/73.423 | 9643.96/7961.18/67.892 | 9662.81/7961.18/67.671 | 9654.24/7961.18/67.771 | 9652.64/7961.18/67.790 | 9646.12/7961.18/67.867 | 9663.82/7961.18/67.659 | 9661.21/7961.18/67.690 | 9677.15/7961.18/67.504 |
+
+### 2026-10-13 Three More Route Receipts
+
+The following columns extend the per-case matrix for the latest device-validated candidates. Together with the nine-version table above, these provide a 15-case record for all current-route receipts; testcase shape and dtype remain UNKNOWN.
+
+| Case | N03 V021 | N04 V020 | N05 V028 |
+|---:|---:|---:|---:|
+| 1 | 5.34/1.14/20.797 | 5.08/1.14/21.343 | 5.14/1.14/21.212 |
+| 2 | 3.30/1.68/37.522 | 3.45/1.68/36.040 | 3.32/1.68/37.314 |
+| 3 | 5.04/2.12/31.890 | 5.86/2.12/28.510 | 5.16/2.12/31.310 |
+| 4 | 16.77/4.34/23.075 | 16.56/4.34/23.241 | 17.01/4.34/22.890 |
+| 5 | 9.99/4.52/33.830 | 10.08/4.52/33.579 | 9.95/4.52/33.944 |
+| 6 | 28.24/8.03/24.381 | 28.98/8.03/24.008 | 28.43/8.03/24.283 |
+| 7 | 51.75/10.68/20.442 | 52.11/10.68/20.371 | 52.01/10.68/20.390 |
+| 8 | 69.57/29.72/32.283 | 70.57/29.72/31.920 | 69.68/29.72/32.242 |
+| 9 | 71.04/67.81/89.705 | 73.03/67.81/84.538 | 74.19/67.81/81.849 |
+| 10 | 74.89/45.87/45.269 | 76.20/45.87/44.409 | 74.75/45.87/45.364 |
+| 11 | 160.20/130.55/66.455 | 162.42/130.55/64.989 | 162.38/130.55/65.015 |
+| 12 | 98.63/75.96/60.823 | 99.17/75.96/60.329 | 97.87/75.96/61.537 |
+| 13 | 566.25/397.00/53.311 | 565.96/397.00/53.347 | 566.22/397.00/53.315 |
+| 14 | 16619.40/3532.25/20.749 | 16700.01/3532.25/20.698 | 16779.33/3532.25/20.648 |
+| 15 | 9661.42/7961.18/67.687 | 9671.94/7961.18/67.564 | 9662.94/7961.18/67.669 |
+
+### Version Identity
+
+| Version | Official | SID | Source SHA |
+|---|---:|---|---|
+| R31B V011 | 45.16 | 6ab2c10c0304f72a56a0c5cb | a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3 |
+| N01 V013 | 41.60 | 6acc0cd4694b590c3c875250 | 3499280f91cd2a3069d72b08fde4cc865a99bf84238c73168e34d6847076ca32 |
+| N02 V010 | 41.74 | 6acc167c694b590c3c89c48d | 22cb1a23baa96a4864913f8c8189cd3ab8ae2df0fd361d456c3e65d17185845a |
+| N02 V015 | 41.24 | 6acda72fe76989292707a7aa | 531751ef88ca63ec4adb4da24b2089b6b429a4b08cb4ee1da88f826479c468a4 |
+| N03 V012 | 41.77 | 6acbfef2694b590c3c83b7a6 | 1be243a51dd7a7f45d051051b766549d3a71f302f5de7ff596d2b91c59259c66 |
+| N03 V003 / V009 (same SHA) | 41.71 | 6acdb033e769892927109487 | faac3b1c85969849782400528a333d9235fa1ec5813a2ccaeb772b81743e9d26 |
+| N03 V021 | 41.88 | 6acdb2bce76989292713288f | 3742d0979b631cc3b4b174161bc72c5bec4b9fa32331bb5c101250b295793927 |
+| N04 V017 | 41.85 | 6acc2d65694b590c3c919bc8 | 786b0100c88adb232219fd221c4ffeea68ee393dc692405a41cbaf3cb97e646f |
+| N04 V018 | 41.45 | 6acdad35e7698929270d9b44 | 8f3f547622f39667fe0de8b527db617332577688722c4beab3b621e9833d77bc |
+| N04 V020 | 40.99 | 6acdb51ee7698929271588e6 | d17d17335443581bcdb64cb8c1625f8d2f1b1e9295c5cabea95b8d726e3ed5c4 |
+| N05 V018 | 41.67 | 6acc07c4694b590c3c85ffcf | 9cfa3d8367be47e467a3afde1f8aebb9dda6c28341d452e6f63717b451246703 |
+| N05 V028 | 41.27 | 6acdb708e769892927177151 | 0e0f0a7bbf6417404175818800d07b892702c563acde9710de9a9d82549949d6 |
+
+### Score Changes and Confidence
+
+Comparing the case scores returned in each receipt with Champion, the largest negative differences are Case 2 (-10.76 to -12.55), Case 4 (-7.21 to -8.29), Case 15 (-5.53 to -5.92), Case 6 (-5.45 to -6.13), Case 1 (-4.23 to -5.28), and Case 3 (-3.50 to -5.71). Positive differences appear at Case 9 for N02/N03/N04 (+0.60/+1.43/+0.93), and Case 13 for N01/N03/N05 (+0.14/+0.13/+0.34).
+
+The new N03 V003/V009 receipt has one shared Source SHA and is counted once. Its score deltas versus Champion include Case 2 -10.133, Case 4 -7.836, Case 6 -5.244, and Case 15 -5.633; Case 13 is +0.448. N04 V018 deltas include Case 2 -9.339, Case 4 -7.478, Case 6 -5.463, and Case 15 -5.733; Case 13 is +0.232. On returned latency, N03 V003 is faster on Cases 1, 2, 6, 7, 10, and 12; N04 V018 is faster on Cases 1, 2, and 4. Both are single Judge observations, and the Case shape mapping remains unknown.
+
+Latest route receipts add these score deltas versus Champion: N03 V021 has Case 2 -10.671, Case 4 -7.742, Case 6 -5.239, Case 15 -5.736, Case 9 +1.098, and Case 13 +0.306; N04 V020 has Case 2 -12.153, Case 3 -6.989, Case 4 -7.576, Case 6 -5.612, Case 9 -4.069, and Case 13 +0.342; N05 V028 has Case 2 -10.879, Case 4 -7.927, Case 6 -5.337, Case 9 -6.758, Case 15 -5.754, and Case 13 +0.310. No new route exceeded the Champion.
+
+N02 V015 returned case-score deltas against Champion of -4.594 (Case 1), -11.286 (Case 2), -6.640 (Case 3), -8.931 (Case 4), -6.256 (Case 6), and -5.652 (Case 15); Case 13 is +0.538. On returned `timeUs`, it is faster on Case 1 by 5.88%, while Cases 3, 4, and 6 are slower by 11.63%, 11.48%, and 6.68%. Its Local result remains `NONE` under concurrent load, so this single Judge run does not establish a repeatable device effect.
+
+These are actual case scores returned by Judge, but they are not pure Candidate latency changes. All 15 bestTimeUs values differ from the Champion receipt. Raw timeUs values across Route receipts are mostly close to Champion. All five routes are lower on Case 1 (4.87–5.36 us versus 5.44 us); on Case 4, N03/N02/N01/N04 are slower by about 7.7%/3.6%/1.3%/0.3%, while N05 is about 0.8% faster. N02/N03/N04 are about 0.9%–1.3% faster on Case 9. Each Official receipt contains one Judge timeUs value, with no repeated-sample distribution for significance analysis.
+
+The following table isolates the returned `timeUs` ratio from each route's one-shot result against Champion: `(route timeUs / Champion timeUs - 1) * 100`. Negative means the returned latency is lower. It does not identify input shape or establish statistical significance.
+
+| Case | N01 V013 | N02 V010 | N02 V015 | N03 V003 | N03 V012 | N03 V021 | N04 V017 | N04 V018 | N04 V020 | N05 V018 | N05 V028 |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 1 | -3.49% | -10.29% | -5.88% | -5.15% | -1.47% | -1.84% | -9.74% | -14.71% | -6.62% | -10.48% | -5.51% |
+| 2 | -3.89% | -2.99% | +0.60% | -2.69% | -2.99% | -1.20% | -1.80% | -4.79% | +3.29% | +1.50% | -0.60% |
+| 3 | +3.29% | +5.81% | +11.63% | +3.88% | +5.62% | -2.33% | -0.97% | +5.43% | +13.57% | -3.68% | 0.00% |
+| 4 | +1.27% | +3.56% | +11.48% | +2.05% | +7.67% | +1.33% | +0.30% | -0.66% | +0.06% | -0.85% | +2.78% |
+| 5 | -0.30% | -1.11% | +0.40% | 0.00% | +0.81% | +0.60% | +0.91% | +0.81% | +1.51% | -0.70% | +0.20% |
+| 6 | +0.49% | +0.32% | +6.68% | -0.74% | +4.64% | -0.77% | -0.35% | +0.77% | +1.83% | -0.18% | -0.11% |
+| 7 | +1.11% | -1.09% | +0.36% | -0.65% | -0.84% | -1.13% | -1.03% | -0.08% | -0.44% | -1.13% | -0.63% |
+| 8 | +0.94% | +0.88% | +1.75% | +0.66% | +0.74% | +0.52% | +0.85% | +1.17% | +1.97% | +0.59% | +0.68% |
+| 9 | +0.35% | -0.88% | +1.06% | +0.38% | -1.29% | -1.13% | -1.04% | +1.22% | +1.64% | +1.49% | +3.26% |
+| 10 | +0.13% | +0.44% | +0.68% | -0.53% | +0.13% | +0.09% | +0.24% | +0.92% | +1.84% | -0.44% | -0.09% |
+| 11 | +1.88% | +0.71% | +0.87% | +0.94% | -0.22% | -0.04% | +1.16% | +2.95% | +1.35% | +0.83% | +1.32% |
+| 12 | +0.19% | +1.11% | +0.18% | -0.06% | +1.49% | +0.96% | +0.17% | +0.60% | +1.51% | -0.05% | +0.18% |
+| 13 | -0.04% | +0.62% | +0.12% | +0.24% | -0.02% | +0.45% | +0.57% | +0.55% | +0.39% | -0.32% | +0.44% |
+| 14 | -0.08% | +0.28% | -0.45% | +0.11% | +0.64% | +0.80% | +1.28% | +1.22% | +1.29% | +0.07% | +1.77% |
+| 15 | +0.07% | +0.26% | +0.17% | +0.16% | +0.09% | +0.25% | +0.27% | +0.25% | +0.36% | +0.41% | +0.26% |
+
+On returned latency, the clearest shared regression signal is Case 3 for N01/N02/N03, followed by Case 4 for N02/N03 and Case 6 for N03. These are route-specific one-shot deltas, not a proven cross-route workload class. Case 1 is faster in all five route receipts; Case 7 is within roughly -1.13% to +1.11%; Case 14 and 15 returned times are within about 1.3% and 0.5% of Champion respectively. The largest negative *case-score* changes (especially Case 2) should not be used as a raw-latency ranking because the `bestTimeUs` denominator changed between receipts.
+
+The public Judge problem data exposes the 15 testcase IDs and type=default, but no per-case dtype, Rows, D, dispatch, or tile mapping. Keep all of these input fields UNKNOWN; do not infer shape from elapsed time. The Route Official results establish full-score behavior for each submitted source, but do not directly bind a case score to a particular mechanism or Local shape.
+
+### Ten Latest Valid Receipts
+
+Ordered by source-meta terminal_at descending. Times are UTC. Each is Pass 15/15 with 15 unique testcase IDs.
+
+| Time | Version | SID | Official |
+|---|---|---|---:|
+| 2026-10-13 04:45:15.416 | N05 V028 | 6acdb708e769892927177151 | 41.27 |
+| 2026-10-13 04:37:01.141 | N04 V020 | 6acdb51ee7698929271588e6 | 40.99 |
+| 2026-10-13 04:26:50.039 | N03 V021 | 6acdb2bce76989292713288f | 41.88 |
+| 2026-10-13 04:16:03.350 | N03 V003 / V009 | 6acdb033e769892927109487 | 41.71 |
+| 2026-10-13 04:03:16.345 | N04 V018 | 6acdad35e7698929270d9b44 | 41.45 |
+| 2026-10-13 03:37:35.839 | N02 V015 | 6acda72fe76989292707a7aa | 41.24 |
+| 2026-10-12 00:45:37.527 | N04 V017 | 6acc2d65694b590c3c919bc8 | 41.85 |
+| 2026-10-12 00:39:39.877 | N03 V018 | 6acc2bfc694b590c3c90fdf2 | 41.00 |
+| 2026-10-12 00:33:59.749 | N01 V018 | 6acc2aab694b590c3c906872 | 41.21 |
+| 2026-10-12 00:28:18.186 | N05 V025 | 6acc2953694b590c3c8fd733 | 41.18 |
+
+N04 V018's earlier HTTP 429 returned no SID and is not a valid receipt; the later successful submission appears above.
+
+## 2026-10-13 Current Route Source Audit
+
+The following identities are the latest route sources observed during this audit. Similarity uses the existing `归档/历史控制文件/code_similarity.py` normalization and metrics. Its self-test passed all 10 assertions. The script's default file set still points to historical sources, so the current values below were calculated from the current source files with its existing functions; its historical output TSV was not overwritten.
+
+| Route | Version / route commit | Candidate source SHA-256 | Direct parent source SHA-256 | Build evidence |
+|---|---|---|---|---|
+| N01 | V021 / `64b9b6e9` | `d4f9994b9eb43e75b454143cbdb3f2b8a2222545d6ad4496fc6022c1682e5134` | V020: `2add7f609bb93ffb84bed7040f1526ce02aab2b1049eed14ad12ef867d1cf7dc` | Candidate input matches. FP32 Parent had 15,144 reference mismatches and Candidate 16,698; both max_abs `0.092312217`, so FP32 Local was not run. |
+| N02 | V015 / `5831bcdba` | `531751ef88ca63ec4adb4da24b2089b6b429a4b08cb4ee1da88f826479c468a4` | V014: `697b2f181763300a05207df7e9bff373e86e5844b272a99a74fe67a6541b44d6` | Candidate full-link and paired Runner built; device object SHA `1b5866c6b19331718c20608b4e7e71fc21205d13e75be4925efb3cca5f1f2478`; Judge source identity matches. |
+| N03 | V021 / `24d46505` | `3742d0979b631cc3b4b174161bc72c5bec4b9fa32331bb5c101250b295793927` | V020: `f7c5cade4ee68dedb456ee1f05a27c315456c86d8e067a4f1516853503637722` | Candidate local/remote identity matches. The Local comparison reference is R31B V011; it differs from the direct source parent. Local is NONE because latest same-binary controls blocked the two relevant shapes. |
+| N04 | V020 / `ce26465c` | `d17d17335443581bcdb64cb8c1625f8d2f1b1e9295c5cabea95b8d726e3ed5c4` | V019: `13435a1b4b14e5094f99931cfe99647a4cf43603bea8592cf580743870cbcaf5` | Candidate identity matches. Direct V019/V020 paired Runner adaptation is committed but not built or run; Local remains NOT RUN. |
+| N05 | V028 / `8c230cf7` | `0e0f0a7bbf6417404175818800d07b892702c563acde9710de9a9d82549949d6` | V027: `adb2c54017dc1ee120ddb8037939e44512eb63c02d4dd939932d3be2e17e7229` | Separate Parent/Candidate inputs and matching local/remote identities are recorded; 4x21 Local validity is NONE. No matching scalar profile exists. |
+
+| Source pair | Line | Token | 8-token Shingle | Identical long blocks |
+|---|---:|---:|---:|---:|
+| N01 V021 / N02 V015 | 0.954633 | 0.976269 | 0.941136 | 9 |
+| N01 V021 / N03 V021 | 0.984979 | 0.995950 | 0.965416 | 13 |
+| N01 V021 / N04 V020 | 0.990149 | 0.997653 | 0.977106 | 8 |
+| N01 V021 / N05 V028 | 0.976080 | 0.995230 | 0.922063 | 7 |
+| N02 V015 / N03 V021 | 0.956507 | 0.978054 | 0.942152 | 13 |
+| N02 V015 / N04 V020 | 0.961512 | 0.977157 | 0.953386 | 8 |
+| N02 V015 / N05 V028 | 0.950305 | 0.977176 | 0.902983 | 6 |
+| N03 V021 / N04 V020 | 0.993034 | 0.996828 | 0.978272 | 8 |
+| N03 V021 / N05 V028 | 0.978640 | 0.995721 | 0.921794 | 15 |
+| N04 V020 / N05 V028 | 0.983776 | 0.996229 | 0.932779 | 10 |
+
+All ten pairs exceed 80% on all three complete-source metrics. Effective-change similarity is not measured for these exact identities: the earlier `Line/Shingle=0`, `Token max=0.410256` values have no matching Source SHA record, and the existing script does not extract effective-change regions. Do not treat those earlier values as current results.
+
+The observed mechanisms remain distinct: N01 reuses a dead FP32 reduction temporary; N02 V015 changes hot-loop/control-flow layout; N03 widens the BF16 affine issue wave to two rows; N04 changes the wide low-precision bias cache hint; N05 changes pass-one retained-y tile address calculation. No mechanism overlap was observed in the current source diffs.
+
+Recent visible commits show N01, N03, N04, and N05 touching their route evidence/source paths. N02 also changed shared R31B V016 test-support files (`adapter.cpp`, `device.cpp`, `paired_runner.cpp`, and `paired_runner_v016.asc`); no visible commit path writes another route's private kernel source. Cross-route access remains inconclusive because per-agent file-read logs are unavailable: `AUDIT_VISIBILITY_LIMITED=YES`.

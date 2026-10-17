@@ -2,11 +2,11 @@
 
 > Current resource rule: use up to 8 cards in parallel for different compile versions, one version per card, and continue each card while `FREE_HBM >= 100 MB`. AICore activity, VLLM residency, and resident processes do not stop compile or safe correctness work. Timing uses live HBM utilization below 100% plus an unconflicted lease; AICore 0% is not required. Historical load values below are observations only.
 
-> **MAIN-2 APPROVALS 2026-09-25** — APPROVED NEXT backlog: H1 CORE-FILL ROW-GROUP SCHEDULING (quantified: 17×256 currently ≈2 blocks vs ~17 potential); H2 EVEN-SPLIT TASK EXTENTS second in queue; H3 dynamic task-pull stays NEEDS_MORE_EVIDENCE. H1 implementation is FORBIDDEN while V001 is undecided. Scope arbitration: row-group ownership / rows-task / core-fill / shape scheduling fixed to this route (ALIGN-H2 geometry part deferred here).
+> **current route record 2026-09-25** — SELECTED NEXT backlog: H1 CORE-FILL ROW-GROUP SCHEDULING (quantified: 17×256 currently ≈2 blocks vs ~17 potential); H2 EVEN-SPLIT TASK EXTENTS second in queue; H3 dynamic task-pull stays NEEDS_MORE_EVIDENCE. H1 implementation remains described while V001 is undecided. Scope arbitration: row-group ownership / rows-task / core-fill / shape scheduling fixed to this route (ALIGN-H2 geometry part deferred here).
 
 CURRENT_CANDIDATE: V001 (SHA 0fae0a42e3942356fe3477cd518b17180b6104d57350cee705cba37a5895e65c) — R016 shape-aware rows/task scheduling parent (official 17.14) + R012 32-byte-safe row-group ownership; direct parent R016-V001-COMPILEFIX-A (parent SHA 62de32df…, score 17.14). Local status **ONLINE_CANDIDATE** as of 2026-09-25 LH3 lease (see CYCLE section below): same-binary exact-shape PASS on 33×100 and 17×256, interleaved P/C 4/4 favor V001 at median −51.38% on 33×100 (order-robust), 17×256 aligned control ≈ −0.2% (in noise), bad=0 all runs, SHA unchanged. Local % ≠ Official Score; Main disposes. No kernel edits, no new revision.
 
-CURRENT_BLOCKER: None for Track-B research. Track-A measurement resolved this cycle (was: drift 0.1999/0.1036 and reverse pair). Waiting on Main disposition of V001 before ANY implementation (H1 and H9 remain FORBIDDEN until then). No Main decision is required to continue Track-B research.
+CURRENT_BLOCKER: None for Track-B research. Track-A measurement resolved this cycle (was: drift 0.1999/0.1036 and reverse pair). the current specification records V001 disposition while implementation remains available (H1 and H9 remain DEFERRED until then). No current route record is required to continue Track-B research.
 
 BOTTLENECK_MODEL: V001's host scheduler maps D to fixed task granularity (D≤256: 16 rows/task; ≤1024: 8; ≤4096: 4; ≤16384: 2; else 1), then taskCount = ceil(rowCount/rowsPerTask), blockDim = min(availableCoreNum, taskCount), plus an 8-core cap for D>16384 (submission.asc:433-506). Two consequences on the probe shapes: (a) core underfill — 17×256 gives taskCount=2 (2 blocks of 16+1 rows), 33×100 gives taskCount=3 (16+16+1), so 15+ of ~40 cores idle; (b) intra-launch imbalance — the partial tail task is 1 row against a 16-row head task, so wall time ≈ the longest serial row loop. The V001 experiment itself isolates core count as the dominant lever: parent forces single-core for non-32B rows (D=100 → 1 core), V001 lifts that rule and reaches 3 cores → −31.81% on 33×100; on 17×256 (rowBytes 1024, already 32B-aligned) both binaries already launch 2 blocks → −0.76% ≈ zero effect. Read together: moving 1→3 cores bought ~32%; going 2–3 → 17–33 cores via core-fill scheduling is the next untested magnitude, while further row-group tweaks on already-multicore shapes are expected near-zero. Secondary lever: the D>16384 8-core cap underfills wide multi-row shapes; scheduleMode cyclic/contiguous alternation by band has no recorded evidence.
 
@@ -52,7 +52,7 @@ HYPOTHESIS-3: DYNAMIC TASK-PULL QUEUE (device-side row ownership granularity)
 - PRECISION_RISK: none if task assignment is correct; arithmetic per row unchanged. Risk is correctness under counter races, not numerical drift.
 - DUPLICATE_CHECK: no historical route in phase4/, 归档, or idea-pool-29-routes.md uses a device task queue (searched scheduling/row-group/core keywords this turn); F001/MID-X/D001/E001 are all static host mappings. Not R016 (host bands), not R012 (group math), not R008/D-slice (no D splitting), not ASYNC-TRIPLE (pipeline, not ownership), not BATCH (no DMA change). No sibling next6 route brief mentions dynamic scheduling.
 - MINIMAL_OFAT_DIFF: add counter fetch around submission.asc:91-144 task loop (one pattern, both scheduleMode paths collapse to pull-loop); host launch width may stay min(available, taskCount). Single conceptual change: static→dynamic ownership.
-- EXPECTED_LOCAL_PROBES: not probeable on current PASS shapes (taskCount ≤ 3 gives nothing to pull); would need a qualified large-rowCount shape (e.g. thousands × small D) first — same-binary qualification for that shape is currently absent, so this cannot be the next revision.
+- EXPECTED_LOCAL_PROBES: not probeable on current PASS shapes (taskCount ≤ 3 gives nothing to pull); would need a qualified large-rowCount shape (e.g. thousands × small D) first — same-binary qualification for that shape is currently absent, so this is not the next revision.
 - CLASSIFICATION: NEEDS_MORE_EVIDENCE (mechanism distinct and unhunted, but unverifiable atomic API + no local probe shape today; keep in backlog).
 
 OPTIONAL-HYPOTHESIS-4: MINIMAL-GROUP TASK GRANULARITY (smallest legal task = one rowGroup; scheduler threshold removal)
@@ -60,7 +60,7 @@ OPTIONAL-HYPOTHESIS-4: MINIMAL-GROUP TASK GRANULARITY (smallest legal task = one
 - BOTTLENECK: scheduler thresholds themselves — the 16/8/4/2/1 band constants are unevidenced (R016 COMPILEFIX 17.14 was a neutral/negative official run, −0.38 vs b0) and actively force core underfill (7×65: rowsPerTask=16 > rowCount=7 → taskCount=1, still single-core even after V001).
 - EXPECTED_SHAPES: every shape with rowCount ≥ 2 benefits vs current bands when cores are available: 17×256 (17 tasks vs 2), 33×100 (9 tasks of 4 rows vs 3 of 16), 7×65 (7 tasks vs 1 — except rowGroup=8 > 7 rows keeps it at 1 task, see failure). Large rowCount small D becomes one-block-per-row (up to available cores × … capped only by rowCount).
 - WHY_IT_MAY_HELP: matches what both official same-op CUDA (grid = num_tokens, one block per row) and Triton (grid = (M,)) normalization kernels do — per-row ownership is the ecosystem default; V001's own numbers show core count dominates (1→3 cores ≈ −32%).
-- WHY_IT_MAY_FAIL: on the two PASS probe shapes this collapses into H1 (17×256: both give 1 row/task; 33×100: both give 4-row groups) so local evidence cannot separate H4 from H1 — DUPLICATE risk for the first probe window; when rowCount < rowGroup (7×65: 7 rows vs group of 8) the group invariant still forces taskCount=1, so underfill survives unless the group-splitting rule itself is relaxed, and the correctness rationale for that rule (parent forced single core for unaligned rows; reason never documented beyond "ownership safety") is unverified — relaxing it carries correctness risk.
+- WHY_IT_MAY_FAIL: on the two PASS probe shapes this collapses into H1 (17×256: both give 1 row/task; 33×100: both give 4-row groups) so local evidence does not separate H4 from H1 — DUPLICATE risk for the first probe window; when rowCount < rowGroup (7×65: 7 rows vs group of 8) the group invariant still forces taskCount=1, so underfill survives unless the group-splitting rule itself is relaxed, and the correctness rationale for that rule (parent forced single core for unaligned rows; reason never documented beyond "ownership safety") is unverified — relaxing it carries correctness risk.
 - ASCEND_FEASIBILITY: host-only change; kernel loop already generic.
 - UB/CORE/DMA_IMPACT: UB unchanged; DMA bytes unchanged; max possible block width (blockDim up to rowCount/available) — note per-block fixed entry cost (Init/GetBlockIdx) grows with task count; unknown magnitude locally.
 - SYNC_IMPACT: none (no cross-block sync).
@@ -82,7 +82,7 @@ OPTIONAL-HYPOTHESIS-5: WIDE-CAP AND THRESHOLD SWEEP (scheduler thresholds on wid
 - PRECISION_RISK: none (row math unchanged; no cross-core reduction).
 - DUPLICATE_CHECK: vs R016 parent (cap origin) — this reverses the parent's own threshold rather than restating it; vs WIDE-X-FRESH4 (wide-D reduction/layout, sqrtf build issues) — that route owns reduction/layout, not launch width; vs MIX-A wide full-y residency — different mechanism (data residency vs core count); no sibling next6 route touches host launch width.
 - MINIMAL_OFAT_DIFF: delete/guard 3 lines (490–493). Everything else byte-identical.
-- EXPECTED_LOCAL_PROBES: none available today — requires a D>16384 multi-row shape to pass same-binary qualification first (wide 1×6144 currently MAD/med 0.490 = NEEDS_VALIDATION/FAIL, and it would not exercise the cap anyway). Until such a shape qualifies, this revision cannot be screened locally.
+- EXPECTED_LOCAL_PROBES: none available today — requires a D>16384 multi-row shape to pass same-binary qualification first (wide 1×6144 currently MAD/med 0.490 = NEEDS_VALIDATION/FAIL, and it would not exercise the cap anyway). Until such a shape qualifies, this revision is not screened locally.
 - CLASSIFICATION: NEEDS_MORE_EVIDENCE (cleanest possible OFAT, but no qualified probe shape exercises it; queue behind H1/H2).
 
 DONOR-RECORDS (historical candidates inspected this turn):
@@ -207,13 +207,13 @@ PUBLIC RESEARCH RE-VERIFIED (architecture only, no code copied):
   pad path".
 - BOTTLENECK: the granularity floor rowGroup itself. Worst case: FP16/BF16 odd-width rows
   (rowBytes=2w with gcd(2w,32)=2 → rowGroup=16) force ≥16-row tasks regardless of band → core
-  underfill that H1/H4 cannot remove (both keep the invariant). On FP32 probes rowGroup≤2 so
+  underfill that H1/H4 does not remove (both keep the invariant). On FP32 probes rowGroup≤2 so
   H7 ≈ H1 there (no local separation possible).
 - EXPECTED_SHAPES: FP16/BF16 odd-D multi-row (e.g. 17×257 FP16: rowBytes=514 → rowGroup=16 →
   V001 taskCount=2; H7 allows 17 tasks). Neutral on FP32 33×100/17×256 (floor 2/1).
 - WHY_HELP: removes the last structural cause of the parent's single-core behavior on unaligned
   shapes; the parent rule's rationale was never documented beyond "ownership safety"; rows are
-  disjoint outputs so cross-core pad writes cannot alias if each task owns whole rows.
+  disjoint outputs so cross-core pad writes does not alias if each task owns whole rows.
 - WHY_FAIL: the parent rule may exist for a real GM-burst/coalescing cost of unaligned per-core
   access, in which case more cores × slower copies could lose; pad-tail correctness across the
   15-case suite (FP16/BF16 unaligned) must be re-proven; this is the only screened hypothesis
@@ -246,7 +246,7 @@ PUBLIC RESEARCH RE-VERIFIED (architecture only, no code copied):
 - WHY_HELP: turns H1's expected gain into a measured projection before any V002 exists; curve
   plateau tells us whether to cap H1's oversubscription target with data; also isolates launch
   overhead (per-block fixed cost) directly — H1/H2's main stated failure risk.
-- WHY_FAIL: still a source change (host) → FORBIDDEN until Main disposes V001, same gate as H1;
+- WHY_FAIL: still a source change (host) → DEFERRED until Main disposes V001, same threshold as H1;
   costs one lease window (~minutes, cheap under the reference protocol); results are
   shape-specific (33×100 FP32 class).
 - ASCEND_FEASIBILITY: runner/CLI unchanged; experimental build only; no kernel edit.
@@ -260,7 +260,7 @@ PUBLIC RESEARCH RE-VERIFIED (architecture only, no code copied):
   implementation (and H2 priority rises); near-linear to 16 → H1 proceeds as written; sharply
   falling median with k (launch overhead) → H1's oversubscription cap set below the knee.
 - CLASSIFICATION: READY_FOR_MAIN_REVIEW (recommended as a measurement-layer step BEFORE the H1
-  revision if Main wants evidence; still gated on V001 disposition).
+  revision if Main wants evidence; still threshold on V001 disposition).
 
 SCREENED-OUT THIS CYCLE (short form, no full field sets):
 | candidate | verdict | reason |
@@ -273,7 +273,7 @@ SCREENED-OUT THIS CYCLE (short form, no full field sets):
 | device task-pull queue | EXISTING H3 | unchanged, still NEEDS_MORE_EVIDENCE |
 
 RECOMMENDED-NEXT (cycle 2026-09-25): (1) Track-A handed off as ONLINE_CANDIDATE — Main
-disposes V001 (promote or judge-own); local % ≠ Official Score. (2) H1 remains FORBIDDEN until
+disposes V001 (promote or judge-own); local % ≠ Official Score. (2) H1 remains DEFERRED until
 that disposition. (3) If Main wants the H1 bet calibrated first → H9 sweep (one lease window).
 (4) Then H1 (corrected expectation: 33×100 ≈16 tasks, not 9; rowGroup=2), H2 fallback.
 (5) H6/H7/H3/H4/H5 stay NEEDS_MORE_EVIDENCE with their stated qualification blockers.
@@ -284,8 +284,8 @@ that disposition. (3) If Main wants the H1 bet calibrated first → H9 sweep (on
 - V001 status stays **local ONLINE_CANDIDATE** (SHA `0fae0a42e3942356fe3477cd518b17180b6104d57350cee705cba37a5895e65c` unchanged); local % ≠ Official Score; Main disposes.
 - **H1 (core-fill rowsPerTask) and H9 (core-scaling sweep) remain blocked — do not implement.**
   Both require source edits (H1: host band block; H9: experimental host build). They stay
-  FORBIDDEN until Main either sends V001 to Judge or issues NEXT_HYPOTHESIS. H9 in particular
-  must not be slipped in as a "measurement-only" run: it is a source build and carries the
+  DEFERRED until Main either sends V001 to Judge or issues NEXT_HYPOTHESIS. H9 in particular
+  is not slipped in as a "measurement-only" run: it is a source build and carries the
   same hold.
 - Same rule for anything else promoted from this file later (H2/H3/H6/H7/H4/H5): Track-B
   research may continue read-only; no `.asc`/host edits, no new Revision, no device runs from

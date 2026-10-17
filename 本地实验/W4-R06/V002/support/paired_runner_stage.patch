@@ -1,0 +1,58 @@
+--- a/paired_runner.cpp
++++ b/paired_runner.cpp
+@@ -16,1 +16,1 @@
+-constexpr int kDevice = 4;
++constexpr int kDevice = 3;
+@@ -25,4 +25,5 @@
+ enum class RunMode {
++    kCorrectnessOnly,
+     kQualifyV011,
+     kPaired,
+ };
+@@ -222,3 +223,4 @@
+     const size_t count = static_cast<size_t>(kRows) * spec.width;
+-    const float tolerance = spec.dtype == 1 ? 0.004f : 0.02f;
++    const float tolerance = spec.dtype == 1 ? 0.001953125f : 0.015625f;
++    const float maxAbsErrorLimit = spec.dtype == 1 ? 0.1f : 1.0f;
+     float maxAbs = 0.0f;
+@@ -263,3 +265,3 @@
+-    if (count == 0 || failures != 0) {
++    if (count == 0 || failures != 0 || maxAbs > maxAbsErrorLimit) {
+         std::exit(3);
+     }
+@@ -365,1 +367,24 @@
++    if (mode == RunMode::kCorrectnessOnly) {
++        Launch(r31b_v011::run_kernel_v011, buffers.parentOutput, buffers,
++               dataGroup, paramGroup, stream);
++        CheckAcl(aclrtSynchronizeStream(stream), "correctness parent synchronize");
++        Launch(r31b_v016::run_kernel_v016, buffers.candidateOutput, buffers,
++               dataGroup, paramGroup, stream);
++        CheckAcl(aclrtSynchronizeStream(stream), "correctness candidate synchronize");
++        CheckAcl(aclrtMemcpy(parentOutput.data(), dataBytes, buffers.parentOutput, dataBytes,
++                             ACL_MEMCPY_DEVICE_TO_HOST), "copy correctness parent output");
++        CheckAcl(aclrtMemcpy(candidateOutput.data(), dataBytes, buffers.candidateOutput, dataBytes,
++                             ACL_MEMCPY_DEVICE_TO_HOST), "copy correctness candidate output");
++        CheckOutput(spec, x, residual, gamma, bias, parentOutput, "V011");
++        CheckOutput(spec, x, residual, gamma, bias, candidateOutput, "V002");
++        const bool exactMatch = std::memcmp(parentOutput.data(), candidateOutput.data(),
++                                            dataBytes) == 0;
++        std::puts(exactMatch ? "PARENT_CANDIDATE_EXACT=YES" :
++                              "PARENT_CANDIDATE_EXACT=NO");
++        if (!exactMatch) {
++            std::exit(3);
++        }
++        FreeCase(buffers);
++        return;
++    }
+     if (mode == RunMode::kQualifyV011) {
+@@ -498,2 +522,4 @@
+-    if (std::strcmp(argv[1], "--qualify-v011") == 0) {
++    if (std::strcmp(argv[1], "--correctness-only") == 0) {
++        mode = RunMode::kCorrectnessOnly;
++    } else if (std::strcmp(argv[1], "--qualify-v011") == 0) {
+         mode = RunMode::kQualifyV011;
+@@ -531,2 +558,3 @@
+-                mode == RunMode::kQualifyV011 ? "QUALIFY_V011" : "PAIRED");
++                mode == RunMode::kQualifyV011 ? "QUALIFY_V011" :
++                mode == RunMode::kCorrectnessOnly ? "CORRECTNESS_ONLY" : "PAIRED");
+     return 0;

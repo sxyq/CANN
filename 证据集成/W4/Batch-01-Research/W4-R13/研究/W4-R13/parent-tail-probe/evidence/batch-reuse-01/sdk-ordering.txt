@@ -1,0 +1,95 @@
+2026-10-08T06:51:26.426939+00:00
+FILE /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/compiler/tikcpp/tikcfw/impl/kernel_tpipe_impl.h
+446:     ptr->eventOccupy = sbitset1(ptr->eventOccupy, lastId);
+447:     return lastId;
+448: }
+449: 
+450: template <HardEvent evt> __aicore__ inline void TPipe::ReleaseEventID(TEventID id)
+451: {
+452:     ASCENDC_ASSERT((id >= 0 && id < QUE_MAX_EVENT), {
+453:         KERNEL_LOG(KERNEL_ERROR, "current id is %d, which should be larger than 0, and smaller than %d",
+454:             static_cast<int32_t>(id), QUE_MAX_EVENT);
+455:     });
+456:     ASCENDC_ASSERT((evt != HardEvent::MAX), { KERNEL_LOG(KERNEL_ERROR, "evt cannot be HardEvent::MAX"); });
+457:     auto ptr = this->g_tpipeImpl.eventPool_ + EventToIndex(evt);
+458:     ptr->eventOccupy = sbitset0(ptr->eventOccupy, id);
+459:     return;
+460: }
+461: 
+462: __aicore__ inline TEventID TPipe::FetchEventID(HardEvent evt)
+463: {
+464:     auto ptr = this->g_tpipeImpl.eventPool_ + EventToIndex(evt);
+465:     auto lastId = sff0(ptr->eventOccupy);
+466:     ASCENDC_ASSERT((lastId < QUE_MAX_EVENT && lastId >= 0), {
+467:         KERNEL_LOG(KERNEL_ERROR, "current id is %ld, max buffer number in same queue position is %d", lastId,
+468:             QUE_MAX_EVENT);
+469:     });
+470:     return lastId;
+471: }
+472: 
+FILE /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/compiler/tikcpp/tikcfw/impl/kernel_operator_common_intf_impl.h
+393: {
+394:     if (g_coreType == AIV) {
+395:         return;
+396:     }
+397:     HSetFlagImpl<event, memT, isVirtual>(eventID);
+398: }
+399: 
+400: template <HardEvent event, MemoryT memT, bool isVirtual> __aicore__ inline void HWaitFlag(int32_t eventID)
+401: {
+402:     if (g_coreType == AIV) {
+403:         return;
+404:     }
+405:     HWaitFlagImpl<event, memT, isVirtual>(eventID);
+406: }
+407: #endif
+408: 
+409: #if (__NPU_ARCH__ == 3101) || (__NPU_ARCH__ == 5102)
+410: template <SpecialPurposeReg spr>
+411: __aicore__ inline int64_t GetSpr(){
+412:  
+413:     return GetSprImpl<spr>();
+414: }
+415:  
+416: template <SpecialPurposeReg spr>
+417: __aicore__ inline void ClearSpr(){
+418:     ClearSprImpl<spr>();
+419: }
+420: 
+421: template <int8_t startBit, int8_t endBit>
+422: __aicore__ static inline void SetCtrlSpr(int64_t value){
+423:     SetCtrlSprImpl<startBit, endBit>(value);
+424: }
+425: 
+426: template <int8_t startBit, int8_t endBit>
+427: __aicore__ static inline int64_t GetCtrlSpr(){
+FILE /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/compiler/tikcpp/tikcfw/impl/dav_c220/kernel_operator_common_impl.h
+FILE /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/include/acl/acl_rt.h
+414: 
+415: typedef enum {
+416:     ACL_DEV_ATTR_AICPU_CORE_NUM  = 1,    // aicpu number
+417:     ACL_DEV_ATTR_AICORE_CORE_NUM = 101,  // aicore number
+418:     ACL_DEV_ATTR_VECTOR_CORE_NUM = 201,  // vector core number
+419: } aclrtDevAttr;
+420: 
+421: typedef enum {
+422:     ACL_FEATURE_TSCPU_TASK_UPDATE_SUPPORT_AIC_AIV = 1,
+423:     ACL_FEATURE_SYSTEM_MEMQ_EVENT_CROSS_DEV       = 21,
+424: } aclrtDevFeatureType;
+425: 
+426: typedef enum {
+427:     ACL_RT_MEMCPY_SDMA_AUTOMATIC_SUM   = 10,
+428:     ACL_RT_MEMCPY_SDMA_AUTOMATIC_MAX   = 11,
+429:     ACL_RT_MEMCPY_SDMA_AUTOMATIC_MIN   = 12,
+430:     ACL_RT_MEMCPY_SDMA_AUTOMATIC_EQUAL = 13,
+431: } aclrtReduceKind;
+432: 
+433: typedef enum {
+434:     ACL_RT_DEV_RES_CUBE_CORE = 0,
+435:     ACL_RT_DEV_RES_VECTOR_CORE,
+436: } aclrtDevResLimitType;
+437: 
+438: typedef enum {
+439:     ACL_RT_EQUAL = 0,
+440:     ACL_RT_NOT_EQUAL,
+FILE /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/include/acl/acl_base.h

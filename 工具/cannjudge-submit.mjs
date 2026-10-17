@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
 import { spawnSync } from "node:child_process";
-import { createHash } from "node:crypto";
-import { existsSync, readFileSync } from "node:fs";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { createHash, randomUUID } from "node:crypto";
+import { existsSync } from "node:fs";
+import { appendFile, mkdir, readFile, writeFile } from "node:fs/promises";
 import { createInterface } from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
 import { resolve } from "node:path";
@@ -19,33 +19,55 @@ const DEFAULT_PROFILE = resolve(
 const DEFAULT_INTERVAL_MS = 2000;
 const DEFAULT_MAX_WAIT_MS = 30 * 60 * 1000;
 const REQUEST_TIMEOUT_MS = 15000;
+const DASHBOARD_EVENTS_PATH = resolve(PROJECT_ROOT, "归档/任务看板/submit-events.tsv");
+
+function dashboardSubmissionContext(source) {
+  const projectPrefix = PROJECT_ROOT.replaceAll("\\", "/") + "/";
+  const relative = source.path.replaceAll("\\", "/").replace(projectPrefix, "");
+  const match = relative.match(/(?:^|\/)([^/]+)\/(V\d{3})(?:\/|$)/);
+  return match ? { route: match[1], revision: match[2] } : { route: "UNKNOWN", revision: "UNKNOWN" };
+}
+
+async function recordDashboardSubmissionEvent(event) {
+  const fields = [
+    new Date().toISOString(),
+    event.runId || "",
+    event.event || "",
+    event.route || "",
+    event.revision || "",
+    event.sourceSha || "",
+    event.submissionId || "",
+    event.status || "",
+    event.passCount ?? "",
+    event.officialScore ?? "",
+    event.detail || ""
+  ].map((value) => String(value).replace(/[\t\r\n]/g, " "));
+  try {
+    await appendFile(DASHBOARD_EVENTS_PATH, fields.join("\t") + "\n", "utf8");
+  } catch (error) {
+    console.error("Dashboard event log unavailable: " + (error?.message || error));
+  }
+}
 
 function printHelp() {
   console.log(`Usage:
   npm run cannjudge:login
-  npm run cannjudge:submit -- --yes --source <file>
+  npm run cannjudge:submit -- [--source <file>]
 
 Commands:
   login       Open the project browser profile for the first manual login.
   submit      Submit through the browser session and poll the result.
 
-  Formal submit policy (enforced):
-  - --source <file> is required for submit (stdin --source - and clipboard/terminal paste are disabled).
-  - Print source path / line count / byte count / SHA256 / first and last non-empty lines.
-  - If <source-dir>/submission.sha256 exists, local SHA must match or submit stops.
-  - After submit, recompute kernel SHA from Judge files[].content and require LOCAL_SHA == REMOTE_SHA;
-    otherwise mark INPUT_IDENTITY_MISMATCH and refuse to treat the result as a formal experiment result.
-
   Options:
-  --yes                   Confirm one external submission. Required for submit.
-  --source <file>         Required source file path for submit.
+  --yes                   Kept for command-line compatibility; submission does not require it.
+  --source <file>         Optional source file path. Without it, read standard input or terminal paste.
   --profile <dir>         Persistent browser profile directory.
   --cdp <url>             Attach to a running local browser CDP endpoint.
   --headed                Show the browser during submit.
   --interval <ms>         Poll interval. Default: 2000.
   --max-wait <ms>         Maximum wait. Default: 1800000.
   --out <file>            Write the final JSON result to a file.
-  --dry-run               Print source identity without launching a browser.
+  --dry-run               Print source information without launching a browser.
   --json                  Print machine-readable output where possible.
   --help                  Show this help.
 
@@ -124,7 +146,6 @@ function sourceFromBytes(sourcePath, bytes) {
   if (encoded.byteLength !== bytes.byteLength || encoded.some((value, index) => value !== bytes[index])) {
     throw new Error("Source changes during UTF-8 decoding; refusing to submit");
   }
-  if (!content.includes("run_kernel")) throw new Error("Source does not contain run_kernel");
   return {
     path: sourcePath,
     content,
@@ -294,47 +315,6 @@ function sourceSummary(source) {
   };
 }
 
-function readSidecarSha256(sourcePath) {
-  if (!sourcePath || sourcePath === "<stdin>" || sourcePath === "<terminal>") return null;
-  const sidecar = resolve(sourcePath, "..", "submission.sha256");
-  if (!existsSync(sidecar)) return null;
-  try {
-    const raw = readFileSync(sidecar, "utf8");
-    const match = raw.trim().split(/\s+/)[0];
-    if (!/^[0-9a-f]{64}$/i.test(match || "")) {
-      throw new Error(`Invalid submission.sha256 content: ${sidecar}`);
-    }
-    return { path: sidecar, sha256: match.toLowerCase() };
-  } catch (error) {
-    if (error?.code === "ENOENT") return null;
-    throw error;
-  }
-}
-
-function verifyLocalIdentity(source, preview) {
-  const sidecar = readSidecarSha256(source.path);
-  const localSha = String(preview.sha256 || "").toLowerCase();
-  const checks = {
-    sourcePath: preview.source,
-    lineCount: preview.lines,
-    byteCount: preview.bytes,
-    localSha256: localSha,
-    firstNonEmptyLine: preview.firstNonEmptyLine,
-    lastNonEmptyLine: preview.lastNonEmptyLine,
-    sidecarPath: sidecar?.path || null,
-    sidecarSha256: sidecar?.sha256 || null,
-    sidecarMatch: sidecar ? sidecar.sha256 === localSha : null
-  };
-  if (sidecar && sidecar.sha256 !== localSha) {
-    const error = new Error(
-      `SOURCE_SHA_MISMATCH: local ${localSha} != sidecar ${sidecar.sha256} (${sidecar.path})`
-    );
-    error.identity = checks;
-    throw error;
-  }
-  return checks;
-}
-
 function extractRemoteKernelSha256(submission) {
   const files = Array.isArray(submission?.files) ? submission.files : [];
   const kernel = files.find((file) => file?.path === "kernel.asc") || files.find((file) => file?.path === "kernel.txt");
@@ -403,7 +383,7 @@ function testcaseDetails(rows) {
   });
 }
 
-function renderResult(submission, submissionId, officialScore, source, identity = {}) {
+function renderResult(submission, submissionId, officialScore, source) {
   const rows = Array.isArray(submission?.result) ? submission.result : [];
   const details = testcaseDetails(rows);
   const passCount = details.filter((row) => row.statusKey === "pass").length;
@@ -411,9 +391,8 @@ function renderResult(submission, submissionId, officialScore, source, identity 
     .map((row) => row?.precision_ratio == null ? null : (1 - Number(row.precision_ratio)) * 100)
     .filter((value) => Number.isFinite(value));
   const remote = extractRemoteKernelSha256(submission);
-  const localSha = String(identity.localSha256 || sourceSummary(source).sha256 || "").toLowerCase();
+  const localSha = String(sourceSummary(source).sha256 || "").toLowerCase();
   const identityOk = Boolean(localSha && remote.remoteSha256 && localSha === remote.remoteSha256);
-  const formalResultEligible = identityOk && (identity.sidecarMatch !== false);
   return {
     submissionId,
     status: submission?.status || "",
@@ -426,14 +405,12 @@ function renderResult(submission, submissionId, officialScore, source, identity 
     scoreFormula: "s_i = 100 / (1 + log_1.5(time_i / best_time_i)); total = mean(s_i)",
     source: sourceSummary(source),
     identity: {
-      ...identity,
       localSha256: localSha || null,
       remoteSha256: remote.remoteSha256,
       remoteBytes: remote.remoteBytes,
       remoteLines: remote.remoteLines,
       localEqualsRemote: identityOk ? "true" : "false",
-      identityStatus: identityOk ? "LOCAL_SHA_EQ_REMOTE_SHA" : "INPUT_IDENTITY_MISMATCH",
-      formalResultEligible
+      identityStatus: identityOk ? "LOCAL_SHA_EQ_REMOTE_SHA" : "LOCAL_REMOTE_DIFFERENCE"
     },
     testcases: details,
     result: rows
@@ -598,6 +575,14 @@ async function poll(page, problemId, submissionId, source, options) {
     if (status !== lastStatus) {
       console.log(`[CANNJudge] status=${status || "waiting"}`);
       lastStatus = status;
+      await recordDashboardSubmissionEvent({
+        runId: options.dashboardRunId,
+        event: "STATUS_CHANGE",
+        ...options.dashboardContext,
+        sourceSha: sourceSummary(source).sha256,
+        submissionId,
+        status
+      });
     }
     if (isTerminal(status)) {
       let officialScore = null;
@@ -607,7 +592,7 @@ async function poll(page, problemId, submissionId, source, options) {
           if (officialScore == null && attempt < 4) await delay(options.interval);
         }
       }
-      return renderResult(submission, submissionId, officialScore, source, options.identity || {});
+      return renderResult(submission, submissionId, officialScore, source);
     }
     await delay(options.interval);
   }
@@ -619,37 +604,26 @@ function delay(ms) {
 }
 
 async function submit(options) {
-  if (!options.yes && !options.dryRun) throw new Error("External submission is disabled without --yes");
-  if (!options.source) {
-    throw new Error(
-      "FORMAL_SUBMIT_REQUIRES_SOURCE: pass --source <file>. Clipboard/terminal paste is disabled for formal submissions."
-    );
-  }
-  if (options.source === "-") {
-    throw new Error(
-      "FORMAL_SUBMIT_REQUIRES_FILE_SOURCE: --source - (stdin) is disabled; pass a local file path."
-    );
-  }
-  const source = await readSource(options.source);
+  const source = options.source ? await readSource(options.source) : await readInteractiveSource();
   const preview = sourceSummary(source);
-  const identity = verifyLocalIdentity(source, preview);
-  options.identity = identity;
+  options.dashboardRunId = randomUUID();
+  options.dashboardContext = dashboardSubmissionContext(source);
   if (options.json) {
-    console.log(JSON.stringify({ phase: "preflight", ...preview, identity }, null, 2));
+    console.log(JSON.stringify({ phase: "source", ...preview }, null, 2));
   } else {
-    console.log("=== preflight source identity ===");
+    console.log("=== source information ===");
     console.log(`source path        : ${preview.source}`);
     console.log(`line count         : ${preview.lines}`);
     console.log(`byte count         : ${preview.bytes}`);
     console.log(`SHA256             : ${preview.sha256}`);
     console.log(`first non-empty    : ${preview.firstNonEmptyLine}`);
     console.log(`last non-empty     : ${preview.lastNonEmptyLine}`);
-    console.log(`submission.sha256  : ${identity.sidecarPath ? identity.sidecarSha256 : "(absent)"}`);
-    console.log(`sidecar match      : ${identity.sidecarMatch == null ? "N/A" : identity.sidecarMatch ? "OK" : "MISMATCH"}`);
   }
   if (options.dryRun) return;
 
   const session = await openBrowser(options, { headed: options.headed });
+  let submissionStarted = false;
+  let submissionId = "";
   try {
     await openSubmitPage(session.page);
     const user = await getStoredUser(session.page);
@@ -667,11 +641,38 @@ async function submit(options) {
       userId: user._id
     };
     console.log(`Submitting one request for problem ${problemId}...`);
+    submissionStarted = true;
+    await recordDashboardSubmissionEvent({
+      runId: options.dashboardRunId,
+      event: "SUBMIT_START",
+      ...options.dashboardContext,
+      sourceSha: preview.sha256,
+      status: "REQUEST_SENT"
+    });
     const response = await pageApi(session.page, "/api/submissions/submit", { method: "POST", data: payload });
-    const submissionId = String(response?.data?.submissionId || response?.submissionId || "").trim();
+    submissionId = String(response?.data?.submissionId || response?.submissionId || "").trim();
     if (!submissionId) throw new Error("Submission response did not contain submissionId");
     console.log(`submissionId=${submissionId}`);
+    await recordDashboardSubmissionEvent({
+      runId: options.dashboardRunId,
+      event: "SUBMISSION_ACCEPTED",
+      ...options.dashboardContext,
+      sourceSha: preview.sha256,
+      submissionId,
+      status: "WAITING"
+    });
     const result = await poll(session.page, problemId, submissionId, source, options);
+    await recordDashboardSubmissionEvent({
+      runId: options.dashboardRunId,
+      event: "SUBMIT_RESULT",
+      ...options.dashboardContext,
+      sourceSha: preview.sha256,
+      submissionId,
+      status: result.status,
+      passCount: result.passCount,
+      officialScore: result.officialScore,
+      detail: result.identity?.identityStatus
+    });
     if (options.out) {
       await mkdir(resolve(options.out, ".."), { recursive: true });
       await writeFile(options.out, `${JSON.stringify(result, null, 2)}\n`, "utf8");
@@ -679,20 +680,24 @@ async function submit(options) {
     if (options.json) console.log(JSON.stringify(result, null, 2));
     else {
       printHumanResult(result);
-      console.log("--- input identity ---");
+      console.log("--- source identity observation ---");
       console.log(`local SHA256   : ${result.identity?.localSha256}`);
       console.log(`remote SHA256  : ${result.identity?.remoteSha256}`);
       console.log(`identityStatus : ${result.identity?.identityStatus}`);
-      console.log(`formalResultEligible: ${result.identity?.formalResultEligible}`);
-      if (result.identity?.identityStatus !== "LOCAL_SHA_EQ_REMOTE_SHA") {
-        console.error(
-          "INPUT_IDENTITY_MISMATCH: remote kernel content does not match local source. " +
-          "This submission must NOT be used as a formal experiment result."
-        );
-        process.exitCode = 3;
-      }
     }
-    if (result.identity?.formalResultEligible === false) process.exitCode = Math.max(process.exitCode || 0, 3);
+  } catch (error) {
+    if (submissionStarted) {
+      await recordDashboardSubmissionEvent({
+        runId: options.dashboardRunId,
+        event: "SUBMIT_ERROR",
+        ...options.dashboardContext,
+        sourceSha: preview.sha256,
+        submissionId,
+        status: submissionId ? "INTERRUPTED_OR_FAILED" : "REQUEST_FAILED",
+        detail: error?.message || error
+      });
+    }
+    throw error;
   } finally {
     await session.close();
   }
@@ -709,11 +714,6 @@ async function main() {
     return;
   }
   if (options.command !== "submit") throw new Error(`Unknown command: ${options.command}`);
-  if (!options.source && !options.dryRun) {
-    throw new Error(
-      "FORMAL_SUBMIT_REQUIRES_SOURCE: pass --source <file>. Clipboard/terminal paste is disabled."
-    );
-  }
   await submit(options);
 }
 

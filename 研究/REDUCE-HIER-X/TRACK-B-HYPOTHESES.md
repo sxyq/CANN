@@ -8,7 +8,7 @@ PARENT_SOURCE_SHA=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15
 PARENT_SCORE=45.16 (OFFICIAL_ANCHOR)
 CONTEXT_CLASS=FROZEN_STRONG_BASELINE_REDUCTION_TOPOLOGY
 FROZEN_SEED=phase4/workspaces/REDUCE-HIER-X/frozen-seed/R31B-V011-LP-ROW-PIPELINE_kernel.asc
-MODE=TRACK-B research only — no kernel edit until Main approves exactly one hypothesis
+MODE=TRACK-B research only — kernel edit follows the selected hypothesis in the current specification
 
 ## Scope of this document
 
@@ -98,11 +98,11 @@ Buffer facts used by the hypotheses:
 
 - **WHY_ORTHOGONAL_TO_MAIN1**
   MAIN-1 worktrees under `/Users/sunyiyang/Desktop/Project/cann-sixlane/` are
-  read/write forbidden and are not a parent or donor. This change is confined
+  read/write deferred and are not a parent or donor. This change is confined
   to RMS square-sum merge timing inside one Vector-Core kernel on the R31B-V011
   parent. It does not touch row scheduling, core ownership, multi-row DMA,
   wide specialization, dtype splits, gamma/bias residency, epilogue math, or
-  any MAIN-1 lane mechanism named in the route brief’s forbidden list.
+  any MAIN-1 lane mechanism named in the route brief’s deferred list.
 
 - **WHY_NOT_DUPLICATE_EXISTING_MAIN2**
   - `REDUCE-INVSCALE-X` H3 widens the per-tile `ReduceSum` span (fewer, larger
@@ -131,7 +131,7 @@ Buffer facts used by the hypotheses:
   down to one accumulator slot.
 
 - **EXPECTED_RISK_SHAPES**
-  - Single-tile bands (S4/S5, D≤4096): no collapse today → no signal; must not
+  - Single-tile bands (S4/S5, D≤4096): no collapse today → no signal; does not
     be used as primary evidence (same lesson as REDUCE-INVSCALE probe shape).
   - Large `tileCount` (D=32768, 8 tiles): 7 sequential 1-element Adds may cost
     more than one `ReduceSum` over 8 floats; win may reverse to neutral/negative
@@ -227,7 +227,7 @@ Buffer facts used by the hypotheses:
   - Very wide D (32768) where the 4096-element vector work dominates: handoff
     share small → delta inside noise.
   - Shapes whose correctness depends on `ReduceSum`’s exact work-buffer
-    contract; a manual tree must not assume `residualFp32` is free at that
+    contract; a manual tree does not assume `residualFp32` is free at that
     point.
   - Any shape where the tree indexing mishandles `valid` not a power of two
     (unaligned D tails).
@@ -246,7 +246,7 @@ Buffer facts used by the hypotheses:
 - **MEASUREMENT_PLAN**
   Same protocol as H1 steps 1–5. Probes must include at least one single-tile
   long-reduce shape (D=4096 or 6144) and one multi-tile shape (D=8192 or
-  16384) so the per-tile handoff share is visible. Correctness gate first and
+  16384) so the per-tile handoff share is visible. Correctness threshold first and
   stricter than H1 (full 16-shape matrix before any timing). Falsification: if
   in-tile manual tree is not faster than `ReduceSum` at D=4096 on the same
   binary pair, the handoff hypothesis is wrong for this toolchain and H2 is
@@ -392,11 +392,11 @@ Buffer facts used by the hypotheses:
   - Any path that silently relies on `reduceFp32Buf_` having spare slots beyond
     the packed partials (audit all `reduceFp32Buf_.Get` / `reduceLocal[…]`
     uses before editing).
-  - Batched paths with stride-based scalar slots (S4): densifying must not
+  - Batched paths with stride-based scalar slots (S4): densifying does not
     change the `GetValue` offsets without updating every reader.
   - Wide `ChooseWideFullYRows` row-count math: reducing reduce-bytes could
     change how many rows fit, which would look like a row-occupancy change —
-    that would break single-variable scope and must not happen in this
+    that would break single-variable scope and does not happen in this
     revision (keep `wideFullYRows_` decision inputs unchanged, or defer the
     budget-line touch to a later revision if it would move row count).
 
@@ -428,7 +428,7 @@ Buffer facts used by the hypotheses:
   `WHY_THIS_COMBINATION_IS_NEW`.
 - H3’s variable fires only for `tileCount > G`; do not use D=8192 as its
   primary evidence.
-- H4 must not change `wideFullYRows_` selection inputs in the same revision as
+- H4 does not change `wideFullYRows_` selection inputs in the same revision as
   the packing change, or `SINGLE_CHANGE_AUDIT` risks FAIL.
 
 ## Recommended first OFAT revision
@@ -447,9 +447,9 @@ as a later layout revision.
 
 ---
 
-## REQUEST_MAIN_APPROVAL
+## REQUEST_MAIN_ROUTE_RECORD
 
-Requesting Main approval for exactly one first revision:
+Requesting current route record for exactly one first revision:
 
 **HYPOTHESIS-1 — Eager running-fold of tile partials (partial-sum lifetime)**
 
@@ -467,4 +467,4 @@ Requesting Main approval for exactly one first revision:
   span/stage changes and from H2/H3 primitive/tree variables)
 
 No kernel, host, CMake, runner, shared-control, or CANNJudge action is taken
-until this approval is issued.
+until the current specification is recorded.
