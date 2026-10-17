@@ -1,0 +1,95 @@
+hwnput3
+lelinfeng
+2026-10-16T19:32:56+00:00
+Must input parameter of type.
+Usage: npu-smi info <watch|proc|-h|-m|-l|-t type> [Options...]
+
+Commands:
+       watch          Show all device's status in scrolling format
+       proc           Show device's matrix process status in scrolling format
+       -h, --help     Show this help text and exit
+       -m             Show all device's mapping information
+       -l             Show all device's topology information
+       -t type        Show information for type
+                      type: board, flash, memory, usages, sensors, temp, power, volt, mac-addr,
+                            common, health, product, ecc, ip, sys-time, i2c_check, work-mode,
+                            ecc-enable, p2p-enable, ssh-enable, license, customized-info,
+                            device-share, nve-level, aicpu-config, pcie-err, mcu-monitor,
+                            err-count, boot-area, vnpu-mode, info-vnpu, vnpu-svm, cpu-num-cfg,
+                            first-power-on-date, proc-mem, phyid-remap, vnpu-cfg-recover, key-manage,
+                            template-info, pkcs-enable, p2p-mem-cfg, pwm-mode, pwm-duty-ratio,
+                            boot-select, topo, hccs, sio-info, spod-info, tls-csr-get, tls-cert,
+                            tls-cert-period, rootkey, hccs-bw, cpu-freq-up, hccs-credit.
+
+Options:
+       -i %d          Card ID
+       -c %d          Chip ID
+       -p %d          Chip Physical ID
+	NPU ID                         : 3
+	Chip Count                     : 1
+
+	DDR Capacity(MB)               : 0
+	DDR Usage Rate(%)              : 0
+	DDR Hugepages Total(page)      : 0
+	DDR Hugepages Usage Rate(%)    : 0
+	HBM Capacity(MB)               : 65536
+	HBM Usage Rate(%)              : 5
+	Aicore Usage Rate(%)           : 0
+	Aivector Usage Rate(%)         : 0
+	Aicpu Usage Rate(%)            : 0
+	Ctrlcpu Usage Rate(%)          : 9
+	DDR Bandwidth Usage Rate(%)    : 0
+	HBM Bandwidth Usage Rate(%)    : 0
+	Chip ID                        : 0
+
+	NPU ID                         : 3
+	Chip Count                     : 1
+
+	DDR Capacity(MB)               : 0
+	DDR Clock Speed(MHz)           : 0
+	HBM Capacity(MB)               : 65536
+	HBM Clock Speed(MHz)           : 1600
+	HBM Temperature(C)             : 29
+	HBM Manufacturer ID            : 0x57
+	Chip ID                        : 0
+
+Error parameter of -t
+Usage: npu-smi info <watch|proc|-h|-m|-l|-t type> [Options...]
+
+Commands:
+       watch          Show all device's status in scrolling format
+       proc           Show device's matrix process status in scrolling format
+       -h, --help     Show this help text and exit
+       -m             Show all device's mapping information
+       -l             Show all device's topology information
+       -t type        Show information for type
+                      type: board, flash, memory, usages, sensors, temp, power, volt, mac-addr,
+                            common, health, product, ecc, ip, sys-time, i2c_check, work-mode,
+                            ecc-enable, p2p-enable, ssh-enable, license, customized-info,
+                            device-share, nve-level, aicpu-config, pcie-err, mcu-monitor,
+                            err-count, boot-area, vnpu-mode, info-vnpu, vnpu-svm, cpu-num-cfg,
+                            first-power-on-date, proc-mem, phyid-remap, vnpu-cfg-recover, key-manage,
+                            template-info, pkcs-enable, p2p-mem-cfg, pwm-mode, pwm-duty-ratio,
+                            boot-select, topo, hccs, sio-info, spod-info, tls-csr-get, tls-cert,
+                            tls-cert-period, rootkey, hccs-bw, cpu-freq-up, hccs-credit.
+
+Options:
+       -i %d          Card ID
+       -c %d          Chip ID
+       -p %d          Chip Physical ID
+hxw         8992 2937312  0 Aug17 pts/14   02:41:36 watch -n 2 npu-smi info
+hxw       510786 2033118  4 19:32 pts/32   00:00:00 npu-smi info
+wangyu    510859 2483105  0 19:32 pts/13   00:00:00 watch -n 1 npu-smi info
+wangyu    510860  510859  0 19:32 pts/13   00:00:00 sh -c npu-smi info
+wangyu    510861  510860  0 19:32 pts/13   00:00:00 npu-smi info
+lelinfe+  510882  510858  0 19:32 ?        00:00:00 python3 -c import concurrent.futures,json,re,subprocess def read(card):  try:   p=subprocess.run(["npu-smi","info","-t","common","-i",str(card)],capture_output=True,text=True,timeout=2)   if p.returncode: return card,None   fields={}   for line in p.stdout.splitlines():    m=re.match(r"\s*([^:]+?)\s*:\s*([-+]?\d+(?:\.\d+)?)\s*$",line)    if m: fields[re.sub(r"\s+"," ",m.group(1).strip()).lower()]=float(m.group(2))   return card,fields  except Exception:   return card,None cards=(4,5,6) with concurrent.futures.ThreadPoolExecutor(max_workers=3) as pool:  result=dict(pool.map(read,cards)) print(json.dumps({str(k):v for k,v in result.items()},separators=(",",":"))) 
+lelinfe+  510904  510882  0 19:32 ?        00:00:00 npu-smi info -t common -i 4
+lelinfe+  510908  510882  0 19:32 ?        00:00:00 npu-smi info -t common -i 5
+lelinfe+  510909  510882  0 19:32 ?        00:00:00 npu-smi info -t common -i 6
+wangyu   2483105 2915079  0 Apr09 pts/13   10:49:43 watch -n 1 npu-smi info
+zhangka+ 2706448       1  0 Oct13 ?        00:00:00 bash -c source /home/data4t1/zhangkaijie/conda/etc/profile.d/conda.sh && conda activate qwen38_a2 && source $CONDA_PREFIX/Ascend/ascend-toolkit/set_env.sh && export LD_LIBRARY_PATH=$CONDA_PREFIX/Ascend/nnal/atb/9.1.0/atb/cxx_abi_1/lib:$LD_LIBRARY_PATH && export ASCEND_RT_VISIBLE_DEVICES=0 && export VLLM_USE_V1=1 && nohup /home/data4t1/zhangkaijie/conda/envs/qwen38_a2/bin/vllm serve /home/data4t1/zhangkaijie/models/Qwen3.5-9B --host 0.0.0.0 --port 8000 --tensor-parallel-size 1 --gpu-memory-utilization 0.6 --max-model-len 200000 --max-num-seqs 8 --max-num-batched-tokens 16384 --enable-prefix-caching --trust-remote-code --speculative-config '{"method":"mtp","num_speculative_tokens":2}' --enable-auto-tool-choice --tool-call-parser qwen3_coder > /home/data4t1/zhangkaijie/qwen35_vllm.log 2>&1 & echo $!
+zhangka+ 2711593 2706556  8 Oct13 ?        07:24:46 VLLM::EngineCore
+zhangka+ 2999855 2992910 39 Sep13 pts/79   13-04:18:49 VLLM::EngineCore
+root     3351964 3341865  6 Oct09 ?        10:36:11 VLLM::EngineCore
+root     3355594 3351964 22 Oct09 ?        1-14:42:08 VLLM::Worker_TP0
+root     3357697 3351964 15 Oct09 ?        1-02:55:39 VLLM::Worker_TP1

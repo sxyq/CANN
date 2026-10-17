@@ -1,0 +1,61 @@
+hwnput3
+lelinfeng
+/home/data4t2/lelinfeng
+ASCEND_TOOLKIT=present
+	NPU ID                         : 3
+	Chip Count                     : 1
+
+	DDR Capacity(MB)               : 0
+	DDR Usage Rate(%)              : 0
+	DDR Hugepages Total(page)      : 0
+	DDR Hugepages Usage Rate(%)    : 0
+	HBM Capacity(MB)               : 65536
+	HBM Usage Rate(%)              : 5
+	Aicore Usage Rate(%)           : 0
+	Aivector Usage Rate(%)         : 0
+	Aicpu Usage Rate(%)            : 0
+	Ctrlcpu Usage Rate(%)          : 4
+	DDR Bandwidth Usage Rate(%)    : 0
+	HBM Bandwidth Usage Rate(%)    : 0
+	Chip ID                        : 0
+
+	NPU ID                         : 3
+	Chip Count                     : 1
+
+	DDR Capacity(MB)               : 0
+	DDR Clock Speed(MHz)           : 0
+	HBM Capacity(MB)               : 65536
+	HBM Clock Speed(MHz)           : 1600
+	HBM Temperature(C)             : 26
+	HBM Manufacturer ID            : 0x57
+	Chip ID                        : 0
+
+This device does not support querying proc info.
+ 20:16:14 up 251 days,  7:52, 48 users,  load average: 10.55, 10.64, 13.63
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/nvme1n1p1  3.5T  3.1T  259G  93% /home/data4t2
+    PID     ELAPSED STAT COMMAND         COMMAND
+ 599469       27:50 S    sshd            sshd: lelinfeng@notty
+ 599538       27:50 Ssl  codex           codex app-server proxy
+ 740895       00:02 S    sshd            sshd: lelinfeng@notty
+ 740907       00:02 Rs   ps              ps -u lelinfeng -o pid,etime,stat,comm,args
+ 741040       00:01 S    sshd            sshd: lelinfeng@notty
+ 741090       00:00 Ssl  python3         python3 -c import concurrent.futures,json,re,subprocess def read(card):  try:   p=subprocess.run(["npu-smi","info","-t","common","-i",str(card)],capture_output=True,text=True,timeout=2)   if p.returncode: return card,None   fields={}   for line in p.stdout.splitlines():    m=re.match(r"\s*([^:]+?)\s*:\s*([-+]?\d+(?:\.\d+)?)\s*$",line)    if m: fields[re.sub(r"\s+"," ",m.group(1).strip()).lower()]=float(m.group(2))   return card,fields  except Exception:   return card,None cards=(4,5,6) with concurrent.futures.ThreadPoolExecutor(max_workers=3) as pool:  result=dict(pool.map(read,cards)) print(json.dumps({str(k):v for k,v in result.items()},separators=(",",":"))) 
+ 741114       00:00 Sl   npu-smi         npu-smi info -t common -i 4
+ 741117       00:00 Sl   npu-smi         npu-smi info -t common -i 5
+ 741118       00:00 Sl   npu-smi         npu-smi info -t common -i 6
+ 741128       00:00 S    sshd            sshd: lelinfeng@notty
+ 741178       00:00 Ss   bash            bash -c npu-smi info -l; echo ---; npu-smi info -t common -i 0; echo ---; npu-smi info -t common -i 1; echo ---; npu-smi info -t common -i 2; echo ---; npu-smi info -t common -i 3; echo ---; npu-smi info -t common -i 4; echo ---; npu-smi info -t common -i 5; echo ---; npu-smi info -t common -i 6; echo ---; npu-smi info -t common -i 7; echo ---; for d in 0 1 2 3 4 5 6 7; do echo DEVICE=$d; npu-smi info -t proc-mem -i $d | sed -n "1,24p"; done
+ 741180       00:00 Sl   npu-smi         npu-smi info -l
+ 994143 40-11:36:10 Ssl  code-a5b5009513 /home/data4t2/lelinfeng/.vscode-server/code-a5b500951314efd502d07465bd138dfbd714a960 --cli-data-dir /home/data4t2/lelinfeng/.vscode-server/cli agent host
+1269966    09:14:52 S    sshd            sshd: lelinfeng
+1833615 13-08:58:22 Sl   codex           codex -c features.code_mode_host=true app-server --listen unix://
+1968642 13-08:43:09 Sl   codex-code-mode /home/data4t2/lelinfeng/.codex/packages/standalone/releases/0.160.0-aarch64-unknown-linux-musl/bin/codex-code-mode-host
+2598259 40-14:17:06 Ss   systemd         /lib/systemd/systemd --user
+2598260 40-14:17:06 S    (sd-pam)        (sd-pam)
+2598270 40-14:17:06 Ssl  pipewire        /usr/bin/pipewire
+2598271 40-14:17:06 Ssl  pipewire-media- /usr/bin/pipewire-media-session
+2598296 40-14:17:06 Ss   dbus-daemon     /usr/bin/dbus-daemon --session --address=systemd: --nofork --nopidfile --systemd-activation --syslog-only
+4020010 24-04:03:09 Ssl  gvfsd           /usr/libexec/gvfsd
+4020016 24-04:03:09 Ssl  gvfsd-metadata  /usr/libexec/gvfsd-metadata
+4183295 24-03:38:56 Sl   gvfsd-trash     /usr/libexec/gvfsd-trash --spawner :1.7 /org/gtk/gvfs/exec_spaw/0
