@@ -52,6 +52,13 @@ Local delta 为 Candidate−V011，单位 μs；负值表示 Candidate 用时较
 - 目标 FP16 D=32768 的 P10–P90 全负；21 对全样本 min/max 为 -24.500/+16.960 μs。其余三组 P10–P90 跨零。此次目标 shape 显示负向中位数和负向 P10–P90，但样本尾部有较大波动；未运行 Official。
 - Postflight `2026-10-16T13:09:48Z`：NPU3 Health=OK、HBM Usage Rate=5%、AICore=0%，`No process in device.` 原始记录：[server3-after-npu3-envfix-20261016.txt](server3-after-npu3-envfix-20261016.txt)。未调用设备 Reset，未触碰其他进程；未修改共享调度记录。
 
+## Official 服务器事务结果
+
+- 线上提交使用既有 `工具/cannjudge-submit.mjs`，结果文件：`线上结果/NEW-N04-DMA-PIPELINE-OVERLAP-X/V009/result.json`。
+- 状态：`Pass 15/15`；Official score：`41.49`；Submission ID：`6ad26cb2193e507d8eba094f`。
+- 源码身份：本地 SHA256 `8020e6964ca1cf98db6edabd349dc57f718a74571df82fafa01c402a0e1f8fee`，平台返回 `LOCAL_SHA_EQ_REMOTE_SHA`。
+- 该 Official 分数低于 R31B V011 的 `45.16`，保留为真实服务器事务结果，不替换冠军记录。
+
 ## 设备资源快照
 
 - Main 于 `2026-10-16T12:18:39Z` 报告 NPU0–7 均有现存 Python/VLLM 进程，其中 NPU3 AICore=29%。
