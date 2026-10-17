@@ -1,0 +1,1 @@
+ssh cann-server3 'printf "HOST="; hostname; date -Is; npu-smi info -t usages -i 3; printf "V013_TARGET\n"; if [ -e "$HOME/cann/server_runs/N03-VECTOR-ILP-DUALCHAIN-X-RESET-20261011/V013/6ec7cd1d" ]; then find "$HOME/cann/server_runs/N03-VECTOR-ILP-DUALCHAIN-X-RESET-20261011/V013/6ec7cd1d" -maxdepth 2 -type f -print; else printf "ABSENT\n"; fi'

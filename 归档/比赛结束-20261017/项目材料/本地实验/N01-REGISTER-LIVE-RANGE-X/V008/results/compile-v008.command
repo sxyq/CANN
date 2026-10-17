@@ -1,0 +1,31 @@
+REVISION=V008
+PARENT_REVISION_COMMIT=a22a9fb37de40f64f3087106ceda534888897242
+SOURCE_COMMIT=f0394703
+SOURCE_SHA256=51bc4acda94997c76fdf5926371b120e5dd1efc0e955a95b6441f0a2089a3463
+SOURCE_LOCAL=本地实验/N01-REGISTER-LIVE-RANGE-X/V008/submission.asc
+SOURCE_REMOTE=/home/data4t2/lelinfeng/cann/server_runs/N01-REGISTER-LIVE-RANGE-X-RESET-20261011/V008/f0394703/candidate/R31B-V016-WIDE-TILE-SEED_kernel.asc
+PARENT_SOURCE=/home/data4t2/lelinfeng/cann/server_runs/N01-REGISTER-LIVE-RANGE-X-RESET-20261011/V004/e833b161/parent/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+REMOTE_RUN=/home/data4t2/lelinfeng/cann/server_runs/N01-REGISTER-LIVE-RANGE-X-RESET-20261011/V008/f0394703
+CANN=8.5.0.alpha002
+SOC=Ascend910B3
+DEVICE_ID=5
+RUNNER_TARGET=paired_runner_v016
+RUNNER_SOURCE_SHA256=4f6701ea7edbbcfd3e410e22c0c3ea39a25bc4996b9bf05be4c422827c56f789
+ENV_COMMAND=set +u; source /usr/local/Ascend/ascend-toolkit/set_env.sh
+CONFIGURE_COMMAND=cmake -S /home/data4t2/lelinfeng/cann/server_runs/N01-REGISTER-LIVE-RANGE-X-RESET-20261011/V008/f0394703/support/paired -B /home/data4t2/lelinfeng/cann/server_runs/N01-REGISTER-LIVE-RANGE-X-RESET-20261011/V008/f0394703/build -DCMAKE_BUILD_TYPE=Release -DR31B_V011_SOURCE_DIR=/home/data4t2/lelinfeng/cann/server_runs/N01-REGISTER-LIVE-RANGE-X-RESET-20261011/V004/e833b161/parent -DR31B_V016_SOURCE_DIR=/home/data4t2/lelinfeng/cann/server_runs/N01-REGISTER-LIVE-RANGE-X-RESET-20261011/V008/f0394703/candidate
+BUILD_COMMAND=set +u; source /usr/local/Ascend/ascend-toolkit/set_env.sh; export CPLUS_INCLUDE_PATH=/usr/include/c++/11:/usr/include/aarch64-linux-gnu/c++/11:/usr/include/aarch64-linux-gnu; export CPATH=/usr/include/aarch64-linux-gnu; cmake --build /home/data4t2/lelinfeng/cann/server_runs/N01-REGISTER-LIVE-RANGE-X-RESET-20261011/V008/f0394703/build --target paired_runner_v016 -- -j1
+CONFIGURE_EXIT_CODE=0
+COMPILE_EXIT_CODE=0
+BUILD_LOG=build-v008.log
+RUNNER_BINARY_SHA256=1dde0235b347b59f6ef62d6937051b0f7191a618fe37a0a9e32249bcc6d30811
+DEVICE_OBJECT=/home/data4t2/lelinfeng/cann/server_runs/N01-REGISTER-LIVE-RANGE-X-RESET-20261011/V008/f0394703/build/CMakeFiles/paired_runner_v016.dir/paired_runner_v016.asc.o
+DEVICE_CODE_EXTRACT_COMMAND=objcopy --dump-section .aicore_binary=results/aicore_binary_v008.bin paired_runner_v016.asc.o
+DEVICE_CODE_EXTRACT_EXIT_CODE=0
+DEVICE_CODE_ELF_SHA256=22d7aad2c4c88ba876887dc46765e78907ce83cef502398b53137584a9383e4a
+DEVICE_TEXT_SIZE=0x14158
+FP32_CANDIDATE_FUNCTION_SIZE=12840
+FP16_CANDIDATE_FUNCTION_SIZE=13804
+BF16_CANDIDATE_FUNCTION_SIZE=14560
+REGISTER_COUNT=UNKNOWN
+DEVICE_CODE_POSTPROCESS_EXIT_CODE=127
+DEVICE_CODE_POSTPROCESS_ERROR=bash: line 1: rg: command not found

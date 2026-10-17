@@ -1,0 +1,252 @@
+#include "kernel_operator.h"
+
+using namespace AscendC;
+
+template <typename T>
+__aicore__ inline void RmsNormBiasBody(GM_ADDR xAddr,
+                                       GM_ADDR residualAddr,
+                                       GM_ADDR gammaAddr,
+                                       GM_ADDR biasAddr,
+                                       GM_ADDR outputAddr,
+                                       uint64_t rows,
+                                       uint32_t width,
+                                       float inverseWidth,
+                                       uint64_t gammaElements,
+                                       uint64_t biasElements,
+                                       uint64_t outputElements,
+                                       float epsilon)
+{
+    __gm__ T *x = reinterpret_cast<__gm__ T *>(xAddr);
+    __gm__ T *residual = reinterpret_cast<__gm__ T *>(residualAddr);
+    __gm__ T *gamma = reinterpret_cast<__gm__ T *>(gammaAddr);
+    __gm__ T *bias = reinterpret_cast<__gm__ T *>(biasAddr);
+    __gm__ T *output = reinterpret_cast<__gm__ T *>(outputAddr);
+
+    uint32_t core = GetBlockIdx();
+    uint32_t coreCount = GetBlockNum();
+    if (coreCount == 0) {
+        return;
+    }
+
+    for (uint64_t row = core; row < rows; row += coreCount) {
+        uint64_t rowBase = row * static_cast<uint64_t>(width);
+        float squareSum = 0.0f;
+        for (uint32_t col = 0; col < width; ++col) {
+            uint64_t index = rowBase + col;
+            float value = static_cast<float>(x[index]) + static_cast<float>(residual[index]);
+            squareSum += value * value;
+        }
+
+        float inverseRms = 1.0f / sqrt(squareSum * inverseWidth + epsilon);
+        for (uint32_t col = 0; col < width; ++col) {
+            uint64_t index = rowBase + col;
+            uint64_t gammaIndex = (gammaElements == 1) ? 0 :
+                                  (gammaElements == width) ? col :
+                                  (gammaElements == outputElements) ? index :
+                                  ((gammaElements % width == 0) ?
+                                   ((row % (gammaElements / width)) * width + col) : (col % gammaElements));
+            uint64_t biasIndex = (biasElements == 1) ? 0 :
+                                 (biasElements == width) ? col :
+                                 (biasElements == outputElements) ? index :
+                                 ((biasElements % width == 0) ?
+                                  ((row % (biasElements / width)) * width + col) : (col % biasElements));
+            float value = (static_cast<float>(x[index]) + static_cast<float>(residual[index])) * inverseRms;
+            value = value * static_cast<float>(gamma[gammaIndex]) + static_cast<float>(bias[biasIndex]);
+            output[index] = static_cast<T>(value);
+        }
+    }
+}
+
+extern "C" __global__ __aicore__ __vector__ void rms_norm_bias_f32(GM_ADDR x,
+                                                          GM_ADDR residual,
+                                                          GM_ADDR gamma,
+                                                          GM_ADDR bias,
+                                                          GM_ADDR output,
+                                                          uint64_t rows,
+                                                          uint32_t width,
+                                                          float inverseWidth,
+                                                          uint64_t gammaElements,
+                                                          uint64_t biasElements,
+                                                          uint64_t outputElements,
+                                                          float epsilon)
+{
+    RmsNormBiasBody<float>(x, residual, gamma, bias, output, rows, width, inverseWidth,
+                           gammaElements, biasElements, outputElements, epsilon);
+}
+
+extern "C" __global__ __aicore__ __vector__ void rms_norm_bias_f16(GM_ADDR x,
+                                                          GM_ADDR residual,
+                                                          GM_ADDR gamma,
+                                                          GM_ADDR bias,
+                                                          GM_ADDR output,
+                                                          uint64_t rows,
+                                                          uint32_t width,
+                                                          float inverseWidth,
+                                                          uint64_t gammaElements,
+                                                          uint64_t biasElements,
+                                                          uint64_t outputElements,
+                                                          float epsilon)
+{
+    RmsNormBiasBody<half>(x, residual, gamma, bias, output, rows, width, inverseWidth,
+                          gammaElements, biasElements, outputElements, epsilon);
+}
+
+__aicore__ inline float Bf16ToFloat(uint16_t raw)
+{
+    union FloatBits {
+        uint32_t bits;
+        float value;
+    } converted;
+    converted.bits = static_cast<uint32_t>(raw) << 16;
+    return converted.value;
+}
+
+__aicore__ inline uint16_t FloatToBf16(float value)
+{
+    union FloatBits {
+        uint32_t bits;
+        float value;
+    } converted;
+    converted.value = value;
+    return static_cast<uint16_t>(converted.bits >> 16);
+}
+
+__aicore__ inline void RmsNormBiasBf16Body(GM_ADDR xAddr,
+                                           GM_ADDR residualAddr,
+                                           GM_ADDR gammaAddr,
+                                           GM_ADDR biasAddr,
+                                           GM_ADDR outputAddr,
+                                           uint64_t rows,
+                                           uint32_t width,
+                                           float inverseWidth,
+                                           uint64_t gammaElements,
+                                           uint64_t biasElements,
+                                           uint64_t outputElements,
+                                           float epsilon)
+{
+    __gm__ uint16_t *x = reinterpret_cast<__gm__ uint16_t *>(xAddr);
+    __gm__ uint16_t *residual = reinterpret_cast<__gm__ uint16_t *>(residualAddr);
+    __gm__ uint16_t *gamma = reinterpret_cast<__gm__ uint16_t *>(gammaAddr);
+    __gm__ uint16_t *bias = reinterpret_cast<__gm__ uint16_t *>(biasAddr);
+    __gm__ uint16_t *output = reinterpret_cast<__gm__ uint16_t *>(outputAddr);
+
+    uint32_t core = GetBlockIdx();
+    uint32_t coreCount = GetBlockNum();
+    if (coreCount == 0) {
+        return;
+    }
+    for (uint64_t row = core; row < rows; row += coreCount) {
+        uint64_t rowBase = row * static_cast<uint64_t>(width);
+        float squareSum = 0.0f;
+        for (uint32_t col = 0; col < width; ++col) {
+            uint64_t index = rowBase + col;
+            float value = Bf16ToFloat(x[index]) + Bf16ToFloat(residual[index]);
+            squareSum += value * value;
+        }
+        float inverseRms = 1.0f / sqrt(squareSum * inverseWidth + epsilon);
+        for (uint32_t col = 0; col < width; ++col) {
+            uint64_t index = rowBase + col;
+            uint64_t gammaIndex = (gammaElements == 1) ? 0 :
+                                  (gammaElements == width) ? col :
+                                  (gammaElements == outputElements) ? index :
+                                  ((gammaElements % width == 0) ?
+                                   ((row % (gammaElements / width)) * width + col) : (col % gammaElements));
+            uint64_t biasIndex = (biasElements == 1) ? 0 :
+                                 (biasElements == width) ? col :
+                                 (biasElements == outputElements) ? index :
+                                 ((biasElements % width == 0) ?
+                                  ((row % (biasElements / width)) * width + col) : (col % biasElements));
+            float value = (Bf16ToFloat(x[index]) + Bf16ToFloat(residual[index])) * inverseRms;
+            value = value * Bf16ToFloat(gamma[gammaIndex]) + Bf16ToFloat(bias[biasIndex]);
+            output[index] = FloatToBf16(value);
+        }
+    }
+}
+
+extern "C" __global__ __aicore__ __vector__ void rms_norm_bias_bf16(GM_ADDR x,
+                                                                     GM_ADDR residual,
+                                                                     GM_ADDR gamma,
+                                                                     GM_ADDR bias,
+                                                                     GM_ADDR output,
+                                                                     uint64_t rows,
+                                                                     uint32_t width,
+                                                                     float inverseWidth,
+                                                                     uint64_t gammaElements,
+                                                                     uint64_t biasElements,
+                                                                     uint64_t outputElements,
+                                                                     float epsilon)
+{
+    RmsNormBiasBf16Body(x, residual, gamma, bias, output, rows, width, inverseWidth,
+                        gammaElements, biasElements, outputElements, epsilon);
+}
+
+inline uint64_t TensorElements(const TensorGroupInfo &group)
+{
+    if (group.tensors == nullptr || group.numTensors <= 0) {
+        return 0;
+    }
+    const TensorInfo &tensor = group.tensors[0];
+    uint64_t elements = 1;
+    for (int64_t dim = 0; dim < tensor.numDims; ++dim) {
+        elements *= static_cast<uint64_t>(tensor.shape[dim]);
+    }
+    return elements;
+}
+
+inline uint64_t OuterElements(const TensorGroupInfo &group)
+{
+    if (group.tensors == nullptr || group.numTensors <= 0) {
+        return 0;
+    }
+    const TensorInfo &tensor = group.tensors[0];
+    if (tensor.numDims <= 1) {
+        return 1;
+    }
+    uint64_t rows = 1;
+    for (int64_t dim = 0; dim + 1 < tensor.numDims; ++dim) {
+        rows *= static_cast<uint64_t>(tensor.shape[dim]);
+    }
+    return rows;
+}
+
+void run_kernel(GM_ADDR x,
+                TensorGroupInfo infoX,
+                GM_ADDR residual,
+                TensorGroupInfo infoResidual,
+                GM_ADDR gamma,
+                TensorGroupInfo infoGamma,
+                GM_ADDR bias,
+                TensorGroupInfo infoBias,
+                GM_ADDR output,
+                TensorGroupInfo infoOutput,
+                int64_t availableCoreNum,
+                aclrtStream stream,
+                float epsilon)
+{
+    if (availableCoreNum <= 0 || infoX.tensors == nullptr || infoResidual.tensors == nullptr ||
+        infoGamma.tensors == nullptr || infoBias.tensors == nullptr || infoOutput.tensors == nullptr) {
+        return;
+    }
+    uint64_t rows = OuterElements(infoX);
+    uint64_t outputElements = TensorElements(infoOutput);
+    uint32_t width = static_cast<uint32_t>(infoX.tensors[0].shape[infoX.tensors[0].numDims - 1]);
+    float inverseWidth = 1.0f / static_cast<float>(width);
+    uint64_t gammaElements = TensorElements(infoGamma);
+    uint64_t biasElements = TensorElements(infoBias);
+    uint32_t blockDim = static_cast<uint32_t>(availableCoreNum);
+
+    int32_t dtype = infoX.tensors[0].dtype;
+    if (dtype == 0) {
+        rms_norm_bias_f32<<<blockDim, nullptr, stream>>>(x, residual, gamma, bias, output,
+                                                          rows, width, inverseWidth, gammaElements,
+                                                          biasElements, outputElements, epsilon);
+    } else if (dtype == 1) {
+        rms_norm_bias_f16<<<blockDim, nullptr, stream>>>(x, residual, gamma, bias, output,
+                                                          rows, width, inverseWidth, gammaElements,
+                                                          biasElements, outputElements, epsilon);
+    } else if (dtype == 2) {
+        rms_norm_bias_bf16<<<blockDim, nullptr, stream>>>(x, residual, gamma, bias, output,
+                                                           rows, width, inverseWidth, gammaElements,
+                                                           biasElements, outputElements, epsilon);
+    }
+}

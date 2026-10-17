@@ -1,0 +1,881 @@
+#include <cmath>
+#include <cstdint>
+#include "kernel_operator.h"
+
+/*
+ * AddRmsNormBias - FULL-R002-V001-RETAINED-Y
+ *
+ * Semantics:
+ *   y   = x + residual
+ *   rms = sqrt(mean(y * y) + epsilon)
+ *   out = y / rms * gamma + bias
+ *
+ * The route is organized around a retained-y cache with two explicit phases:
+ *
+ *   Phase 1: load x/residual once per D segment, form FP32 y in UB, retain y,
+ *            and accumulate y*y into one row scalar.
+ *   Phase 2: consume the retained y segment from UB, normalize it, load
+ *            gamma/bias, and write the final output.
+ *
+ * A row that is wider than the UB retained-y window reuses one UB segment.
+ * Each formed y segment is then kept in the output allocation as a temporary
+ * retained-y backing store.  Phase 2 reads only that backing y into UB before
+ * consuming it; x and residual are never read in Phase 2.
+ *
+ * This is a single-owner row/segment design.  It does not use input ping-pong,
+ * cross-row batching, parameter residency, reciprocal normalization, or
+ * alignment-specific row grouping as its route mechanism.
+ */
+
+template <typename T>
+class R002RetainedYKernel {
+public:
+    static constexpr int32_t kTileElems = 4096;
+    static constexpr uint32_t kRetainedYElems = 24576;
+    static constexpr int32_t kScalarElems = 16;
+    static constexpr int32_t kRmsOffset = 8;
+
+    __aicore__ inline void Init(
+        GM_ADDR x,
+        GM_ADDR residual,
+        GM_ADDR gamma,
+        GM_ADDR bias,
+        GM_ADDR output)
+    {
+        xGm_.SetGlobalBuffer((__gm__ T *)x);
+        residualGm_.SetGlobalBuffer((__gm__ T *)residual);
+        gammaGm_.SetGlobalBuffer((__gm__ T *)gamma);
+        biasGm_.SetGlobalBuffer((__gm__ T *)bias);
+        outputGm_.SetGlobalBuffer((__gm__ T *)output);
+
+        /*
+         * Input native slots are reused for gamma/bias and final conversion.
+         * The two FP32 slots are reused for square/reduce work and then for
+         * gamma/bias conversion.  retainedY_ is the only y value held in UB
+         * across the phases; wide rows additionally use outputGm_ as backing.
+         */
+        pipe_.InitBuffer(
+            xNative_,
+            kTileElems * sizeof(T));
+        pipe_.InitBuffer(
+            residualNative_,
+            kTileElems * sizeof(T));
+        pipe_.InitBuffer(
+            xFp32_,
+            kTileElems * sizeof(float));
+        pipe_.InitBuffer(
+            residualFp32_,
+            kTileElems * sizeof(float));
+        pipe_.InitBuffer(
+            retainedY_,
+            kRetainedYElems * sizeof(float));
+        pipe_.InitBuffer(
+            scalar_,
+            kScalarElems * sizeof(float));
+    }
+
+    __aicore__ inline void Process(
+        uint64_t rowCount,
+        uint64_t rowWidth,
+        float invRowWidth,
+        float epsilon)
+    {
+        const uint64_t coreIdx =
+            static_cast<uint64_t>(AscendC::GetBlockIdx());
+        const uint64_t coreNum =
+            static_cast<uint64_t>(AscendC::GetBlockNum());
+
+        if (coreNum == 0ULL) {
+            return;
+        }
+
+        /* One core owns a whole row, so no row is split across cores. */
+        for (uint64_t row = coreIdx;
+             row < rowCount;
+             row += coreNum) {
+            ProcessRow(
+                row,
+                rowWidth,
+                invRowWidth,
+                epsilon);
+        }
+    }
+
+private:
+    __aicore__ inline int32_t TileLength(
+        uint64_t remaining) const
+    {
+        return static_cast<int32_t>(
+            remaining > static_cast<uint64_t>(kTileElems)
+                ? kTileElems
+                : remaining);
+    }
+
+    __aicore__ inline uint64_t TileCount(
+        uint64_t rowWidth) const
+    {
+        return rowWidth /
+                static_cast<uint64_t>(kTileElems) +
+            ((rowWidth % static_cast<uint64_t>(kTileElems)) == 0ULL
+                 ? 0ULL
+                 : 1ULL);
+    }
+
+    __aicore__ inline bool WholeRowInCache(
+        uint64_t rowWidth) const
+    {
+        return rowWidth <=
+            static_cast<uint64_t>(kRetainedYElems);
+    }
+
+    __aicore__ inline uint32_t CacheOffset(
+        uint64_t col,
+        bool wholeRowInCache) const
+    {
+        return wholeRowInCache
+            ? static_cast<uint32_t>(col)
+            : 0U;
+    }
+
+    __aicore__ inline AscendC::LocalTensor<float> RetainedYSlice(
+        uint32_t cacheOffset)
+    {
+        AscendC::LocalTensor<float> cache =
+            retainedY_.Get<float>();
+        return cache[cacheOffset];
+    }
+
+    __aicore__ inline void LoadNative(
+        AscendC::LocalTensor<T> dst,
+        AscendC::GlobalTensor<T>& src,
+        uint64_t offset,
+        int32_t valid)
+    {
+        const AscendC::DataCopyExtParams copyParams{
+            1,
+            static_cast<uint32_t>(
+                valid * static_cast<int32_t>(sizeof(T))),
+            0,
+            0,
+            0};
+
+        const AscendC::DataCopyPadExtParams<T> padParams{
+            false,
+            0,
+            0,
+            0};
+
+        AscendC::DataCopyPad<T>(
+            dst,
+            src[offset],
+            copyParams,
+            padParams);
+    }
+
+    __aicore__ inline void StoreNative(
+        AscendC::GlobalTensor<T>& dst,
+        uint64_t offset,
+        AscendC::LocalTensor<T> src,
+        int32_t valid)
+    {
+        const AscendC::DataCopyExtParams copyParams{
+            1,
+            static_cast<uint32_t>(
+                valid * static_cast<int32_t>(sizeof(T))),
+            0,
+            0,
+            0};
+
+        AscendC::DataCopyPad<T>(
+            dst[offset],
+            src,
+            copyParams);
+    }
+
+    __aicore__ inline void ToFp32(
+        AscendC::LocalTensor<float> dst,
+        AscendC::LocalTensor<T> src,
+        int32_t valid)
+    {
+        if constexpr (AscendC::IsSameType<T, float>::value) {
+            AscendC::Adds(
+                dst,
+                src,
+                0.0f,
+                valid);
+        } else {
+            AscendC::Cast(
+                dst,
+                src,
+                AscendC::RoundMode::CAST_NONE,
+                valid);
+        }
+    }
+
+    __aicore__ inline void FromFp32(
+        AscendC::LocalTensor<T> dst,
+        AscendC::LocalTensor<float> src,
+        int32_t valid)
+    {
+        if constexpr (AscendC::IsSameType<T, float>::value) {
+            AscendC::Adds(
+                dst,
+                src,
+                0.0f,
+                valid);
+        } else {
+            AscendC::Cast(
+                dst,
+                src,
+                AscendC::RoundMode::CAST_RINT,
+                valid);
+        }
+    }
+
+    __aicore__ inline void LoadInputSegment(
+        uint64_t rowOffset,
+        uint64_t col,
+        int32_t valid)
+    {
+        AscendC::LocalTensor<T> xLocal =
+            xNative_.Get<T>();
+        AscendC::LocalTensor<T> residualLocal =
+            residualNative_.Get<T>();
+
+        LoadNative(
+            xLocal,
+            xGm_,
+            rowOffset + col,
+            valid);
+        LoadNative(
+            residualLocal,
+            residualGm_,
+            rowOffset + col,
+            valid);
+
+        AscendC::SetFlag<AscendC::HardEvent::MTE2_V>(0);
+        AscendC::WaitFlag<AscendC::HardEvent::MTE2_V>(0);
+    }
+
+    __aicore__ inline void FormRetainedY(
+        AscendC::LocalTensor<float> y,
+        int32_t valid)
+    {
+        AscendC::LocalTensor<T> xLocal =
+            xNative_.Get<T>();
+        AscendC::LocalTensor<T> residualLocal =
+            residualNative_.Get<T>();
+        AscendC::LocalTensor<float> xFp32 =
+            xFp32_.Get<float>();
+        AscendC::LocalTensor<float> residualFp32 =
+            residualFp32_.Get<float>();
+
+        ToFp32(
+            xFp32,
+            xLocal,
+            valid);
+        ToFp32(
+            residualFp32,
+            residualLocal,
+            valid);
+
+        AscendC::PipeBarrier<PIPE_V>();
+
+        /* y is the only value that survives into Phase 2. */
+        AscendC::Add(
+            y,
+            xFp32,
+            residualFp32,
+            valid);
+
+        AscendC::PipeBarrier<PIPE_V>();
+    }
+
+    __aicore__ inline void AccumulateYSquare(
+        AscendC::LocalTensor<float> y,
+        AscendC::LocalTensor<float> rowSum,
+        int32_t valid)
+    {
+        AscendC::LocalTensor<float> square =
+            xFp32_.Get<float>();
+        AscendC::LocalTensor<float> reduceWork =
+            residualFp32_.Get<float>();
+        AscendC::LocalTensor<float> partial =
+            scalar_.Get<float>();
+
+        AscendC::Mul(
+            square,
+            y,
+            y,
+            valid);
+        AscendC::PipeBarrier<PIPE_V>();
+
+        AscendC::ReduceSum(
+            partial,
+            square,
+            reduceWork,
+            valid);
+        AscendC::PipeBarrier<PIPE_V>();
+
+        AscendC::Add(
+            rowSum,
+            rowSum,
+            partial,
+            1);
+        AscendC::PipeBarrier<PIPE_V>();
+    }
+
+    __aicore__ inline void StoreWideRetainedY(
+        uint64_t gmOffset,
+        AscendC::LocalTensor<float> y,
+        int32_t valid)
+    {
+        AscendC::LocalTensor<T> native =
+            xNative_.Get<T>();
+
+        if constexpr (AscendC::IsSameType<T, float>::value) {
+            AscendC::SetFlag<AscendC::HardEvent::V_MTE3>(0);
+            AscendC::WaitFlag<AscendC::HardEvent::V_MTE3>(0);
+            StoreNative(
+                outputGm_,
+                gmOffset,
+                y,
+                valid);
+            AscendC::SetFlag<AscendC::HardEvent::MTE3_V>(0);
+            AscendC::WaitFlag<AscendC::HardEvent::MTE3_V>(0);
+            AscendC::SetFlag<AscendC::HardEvent::V_MTE2>(0);
+            AscendC::WaitFlag<AscendC::HardEvent::V_MTE2>(0);
+        } else {
+            /* The native input slot is dead after y formation. */
+            FromFp32(
+                native,
+                y,
+                valid);
+            AscendC::PipeBarrier<PIPE_V>();
+            AscendC::SetFlag<AscendC::HardEvent::V_MTE3>(0);
+            AscendC::WaitFlag<AscendC::HardEvent::V_MTE3>(0);
+            StoreNative(
+                outputGm_,
+                gmOffset,
+                native,
+                valid);
+            AscendC::SetFlag<AscendC::HardEvent::MTE3_V>(0);
+            AscendC::WaitFlag<AscendC::HardEvent::MTE3_V>(0);
+            AscendC::SetFlag<AscendC::HardEvent::V_MTE2>(0);
+            AscendC::WaitFlag<AscendC::HardEvent::V_MTE2>(0);
+        }
+    }
+
+    __aicore__ inline float ReadRms(
+        AscendC::LocalTensor<float> rms)
+    {
+        AscendC::SetFlag<AscendC::HardEvent::V_S>(0);
+        AscendC::WaitFlag<AscendC::HardEvent::V_S>(0);
+        const float value = rms.GetValue(0);
+        AscendC::SetFlag<AscendC::HardEvent::S_V>(0);
+        AscendC::WaitFlag<AscendC::HardEvent::S_V>(0);
+        return value;
+    }
+
+    __aicore__ inline float FirstPhase(
+        uint64_t rowOffset,
+        uint64_t rowWidth,
+        float invRowWidth,
+        float epsilon,
+        bool wholeRowInCache)
+    {
+        AscendC::LocalTensor<float> scalarSlots =
+            scalar_.Get<float>();
+        AscendC::LocalTensor<float> rowSum =
+            scalarSlots[kRmsOffset];
+
+        AscendC::Duplicate(
+            rowSum,
+            0.0f,
+            1);
+        AscendC::PipeBarrier<PIPE_V>();
+
+        for (uint64_t col = 0;
+             col < rowWidth;
+             col += static_cast<uint64_t>(kTileElems)) {
+            const int32_t valid =
+                TileLength(rowWidth - col);
+            const uint32_t cacheOffset =
+                CacheOffset(col, wholeRowInCache);
+            AscendC::LocalTensor<float> y =
+                RetainedYSlice(cacheOffset);
+
+            LoadInputSegment(
+                rowOffset,
+                col,
+                valid);
+            FormRetainedY(
+                y,
+                valid);
+            AccumulateYSquare(
+                y,
+                rowSum,
+                valid);
+
+            if (!wholeRowInCache) {
+                /* outputGm_ is the retained-y backing store for wide rows. */
+                StoreWideRetainedY(
+                    rowOffset + col,
+                    y,
+                    valid);
+            }
+        }
+
+        AscendC::Muls(
+            rowSum,
+            rowSum,
+            invRowWidth,
+            1);
+        AscendC::PipeBarrier<PIPE_V>();
+
+        AscendC::Adds(
+            rowSum,
+            rowSum,
+            epsilon,
+            1);
+        AscendC::PipeBarrier<PIPE_V>();
+
+        AscendC::Sqrt(
+            rowSum,
+            rowSum,
+            1);
+        AscendC::PipeBarrier<PIPE_V>();
+
+        return ReadRms(rowSum);
+    }
+
+    __aicore__ inline void LoadRetainedYSegment(
+        AscendC::LocalTensor<float> y,
+        uint64_t gmOffset,
+        int32_t valid,
+        bool wholeRowInCache)
+    {
+        if (wholeRowInCache) {
+            return;
+        }
+
+        AscendC::LocalTensor<T> native =
+            xNative_.Get<T>();
+
+        if constexpr (AscendC::IsSameType<T, float>::value) {
+            LoadNative(
+                y,
+                outputGm_,
+                gmOffset,
+                valid);
+            AscendC::SetFlag<AscendC::HardEvent::MTE2_V>(0);
+            AscendC::WaitFlag<AscendC::HardEvent::MTE2_V>(0);
+        } else {
+            LoadNative(
+                native,
+                outputGm_,
+                gmOffset,
+                valid);
+            AscendC::SetFlag<AscendC::HardEvent::MTE2_V>(0);
+            AscendC::WaitFlag<AscendC::HardEvent::MTE2_V>(0);
+            ToFp32(
+                y,
+                native,
+                valid);
+            AscendC::PipeBarrier<PIPE_V>();
+        }
+    }
+
+    __aicore__ inline void ApplyParametersAndStore(
+        uint64_t rowOffset,
+        uint64_t col,
+        int32_t valid,
+        float rmsValue,
+        bool wholeRowInCache)
+    {
+        AscendC::LocalTensor<float> y =
+            RetainedYSlice(
+                CacheOffset(
+                    col,
+                    wholeRowInCache));
+        AscendC::LocalTensor<float> denominator =
+            residualFp32_.Get<float>();
+        AscendC::LocalTensor<T> xLocal =
+            xNative_.Get<T>();
+        AscendC::LocalTensor<T> residualLocal =
+            residualNative_.Get<T>();
+        AscendC::LocalTensor<float> gammaFp32 =
+            xFp32_.Get<float>();
+        AscendC::LocalTensor<float> biasFp32 =
+            residualFp32_.Get<float>();
+
+        AscendC::Duplicate(
+            denominator,
+            rmsValue,
+            valid);
+        AscendC::PipeBarrier<PIPE_V>();
+
+        AscendC::Div(
+            y,
+            y,
+            denominator,
+            valid);
+        AscendC::PipeBarrier<PIPE_V>();
+
+        LoadNative(
+            xLocal,
+            gammaGm_,
+            col,
+            valid);
+        LoadNative(
+            residualLocal,
+            biasGm_,
+            col,
+            valid);
+        AscendC::SetFlag<AscendC::HardEvent::MTE2_V>(0);
+        AscendC::WaitFlag<AscendC::HardEvent::MTE2_V>(0);
+
+        ToFp32(
+            gammaFp32,
+            xLocal,
+            valid);
+        ToFp32(
+            biasFp32,
+            residualLocal,
+            valid);
+        AscendC::PipeBarrier<PIPE_V>();
+
+        AscendC::Mul(
+            y,
+            y,
+            gammaFp32,
+            valid);
+        AscendC::PipeBarrier<PIPE_V>();
+
+        AscendC::Add(
+            y,
+            y,
+            biasFp32,
+            valid);
+        AscendC::PipeBarrier<PIPE_V>();
+
+        if constexpr (AscendC::IsSameType<T, float>::value) {
+            AscendC::SetFlag<AscendC::HardEvent::V_MTE3>(0);
+            AscendC::WaitFlag<AscendC::HardEvent::V_MTE3>(0);
+            StoreNative(
+                outputGm_,
+                rowOffset + col,
+                y,
+                valid);
+            AscendC::SetFlag<AscendC::HardEvent::MTE3_V>(0);
+            AscendC::WaitFlag<AscendC::HardEvent::MTE3_V>(0);
+            AscendC::SetFlag<AscendC::HardEvent::V_MTE2>(0);
+            AscendC::WaitFlag<AscendC::HardEvent::V_MTE2>(0);
+        } else {
+            /* xNative_ is dead after gamma conversion. */
+            FromFp32(
+                xLocal,
+                y,
+                valid);
+            AscendC::PipeBarrier<PIPE_V>();
+            AscendC::SetFlag<AscendC::HardEvent::V_MTE3>(0);
+            AscendC::WaitFlag<AscendC::HardEvent::V_MTE3>(0);
+            StoreNative(
+                outputGm_,
+                rowOffset + col,
+                xLocal,
+                valid);
+            AscendC::SetFlag<AscendC::HardEvent::MTE3_V>(0);
+            AscendC::WaitFlag<AscendC::HardEvent::MTE3_V>(0);
+            AscendC::SetFlag<AscendC::HardEvent::V_MTE2>(0);
+            AscendC::WaitFlag<AscendC::HardEvent::V_MTE2>(0);
+        }
+    }
+
+    __aicore__ inline void SecondPhase(
+        uint64_t rowOffset,
+        uint64_t rowWidth,
+        float rmsValue,
+        bool wholeRowInCache)
+    {
+        for (uint64_t col = 0;
+             col < rowWidth;
+             col += static_cast<uint64_t>(kTileElems)) {
+            const int32_t valid =
+                TileLength(rowWidth - col);
+            const uint32_t cacheOffset =
+                CacheOffset(col, wholeRowInCache);
+            AscendC::LocalTensor<float> y =
+                RetainedYSlice(cacheOffset);
+
+            LoadRetainedYSegment(
+                y,
+                rowOffset + col,
+                valid,
+                wholeRowInCache);
+            ApplyParametersAndStore(
+                rowOffset,
+                col,
+                valid,
+                rmsValue,
+                wholeRowInCache);
+        }
+    }
+
+    __aicore__ inline void ProcessRow(
+        uint64_t row,
+        uint64_t rowWidth,
+        float invRowWidth,
+        float epsilon)
+    {
+        const uint64_t rowOffset = row * rowWidth;
+        const bool wholeRowInCache =
+            WholeRowInCache(rowWidth);
+
+        const float rmsValue = FirstPhase(
+            rowOffset,
+            rowWidth,
+            invRowWidth,
+            epsilon,
+            wholeRowInCache);
+
+        SecondPhase(
+            rowOffset,
+            rowWidth,
+            rmsValue,
+            wholeRowInCache);
+    }
+
+private:
+    AscendC::TPipe pipe_;
+
+    AscendC::TBuf<AscendC::TPosition::VECCALC> xNative_;
+    AscendC::TBuf<AscendC::TPosition::VECCALC> residualNative_;
+    AscendC::TBuf<AscendC::TPosition::VECCALC> xFp32_;
+    AscendC::TBuf<AscendC::TPosition::VECCALC> residualFp32_;
+    AscendC::TBuf<AscendC::TPosition::VECCALC> retainedY_;
+    AscendC::TBuf<AscendC::TPosition::VECCALC> scalar_;
+
+    AscendC::GlobalTensor<T> xGm_;
+    AscendC::GlobalTensor<T> residualGm_;
+    AscendC::GlobalTensor<T> gammaGm_;
+    AscendC::GlobalTensor<T> biasGm_;
+    AscendC::GlobalTensor<T> outputGm_;
+
+};
+
+template <typename T>
+__global__ __vector__ void add_rms_norm_bias_r002(
+    GM_ADDR x,
+    GM_ADDR residual,
+    GM_ADDR gamma,
+    GM_ADDR bias,
+    GM_ADDR output,
+    uint64_t rowCount,
+    uint64_t rowWidth,
+    float invRowWidth,
+    float epsilon)
+{
+    R002RetainedYKernel<T> kernel;
+
+    kernel.Init(
+        x,
+        residual,
+        gamma,
+        bias,
+        output);
+
+    kernel.Process(
+        rowCount,
+        rowWidth,
+        invRowWidth,
+        epsilon);
+}
+
+#if !defined(ASCENDC_CPU_DEBUG)
+
+extern "C" void run_kernel(
+    GM_ADDR x,
+    const TensorGroupInfo& info_x,
+    GM_ADDR residual,
+    const TensorGroupInfo& info_residual,
+    GM_ADDR gamma,
+    const TensorGroupInfo& info_gamma,
+    GM_ADDR bias,
+    const TensorGroupInfo& info_bias,
+    GM_ADDR output,
+    const TensorGroupInfo& info_output,
+    int64_t availableCoreNum,
+    aclrtStream stream,
+    float epsilon)
+{
+    if (x == nullptr ||
+        residual == nullptr ||
+        gamma == nullptr ||
+        bias == nullptr ||
+        output == nullptr ||
+        info_x.tensors == nullptr ||
+        info_residual.tensors == nullptr ||
+        info_gamma.tensors == nullptr ||
+        info_bias.tensors == nullptr ||
+        info_output.tensors == nullptr ||
+        info_x.numTensors < 1 ||
+        info_residual.numTensors < 1 ||
+        info_gamma.numTensors < 1 ||
+        info_bias.numTensors < 1 ||
+        info_output.numTensors < 1) {
+        return;
+    }
+
+    const TensorInfo& xInfo =
+        info_x.tensors[0];
+    const TensorInfo& residualInfo =
+        info_residual.tensors[0];
+    const TensorInfo& gammaInfo =
+        info_gamma.tensors[0];
+    const TensorInfo& biasInfo =
+        info_bias.tensors[0];
+    const TensorInfo& outputInfo =
+        info_output.tensors[0];
+
+    if (xInfo.shape == nullptr ||
+        residualInfo.shape == nullptr ||
+        gammaInfo.shape == nullptr ||
+        biasInfo.shape == nullptr ||
+        outputInfo.shape == nullptr ||
+        xInfo.numDims < 1 ||
+        residualInfo.numDims != xInfo.numDims ||
+        outputInfo.numDims != xInfo.numDims ||
+        gammaInfo.numDims != 1 ||
+        biasInfo.numDims != 1 ||
+        xInfo.dtype != residualInfo.dtype ||
+        xInfo.dtype != gammaInfo.dtype ||
+        xInfo.dtype != biasInfo.dtype ||
+        xInfo.dtype != outputInfo.dtype) {
+        return;
+    }
+
+    if (xInfo.dtype != 0 &&
+        xInfo.dtype != 1 &&
+        xInfo.dtype != 2) {
+        return;
+    }
+
+    const int64_t widthSigned =
+        xInfo.shape[xInfo.numDims - 1];
+
+    if (widthSigned <= 0 ||
+        gammaInfo.shape[0] != widthSigned ||
+        biasInfo.shape[0] != widthSigned ||
+        residualInfo.shape[xInfo.numDims - 1] != widthSigned ||
+        outputInfo.shape[xInfo.numDims - 1] != widthSigned) {
+        return;
+    }
+
+    const uint64_t maxU64 =
+        ~static_cast<uint64_t>(0);
+    uint64_t rowCount = 1ULL;
+
+    for (int64_t dim = 0;
+         dim < xInfo.numDims - 1;
+         ++dim) {
+        const int64_t extentSigned =
+            xInfo.shape[dim];
+
+        if (extentSigned <= 0 ||
+            residualInfo.shape[dim] != extentSigned ||
+            outputInfo.shape[dim] != extentSigned) {
+            return;
+        }
+
+        const uint64_t extent =
+            static_cast<uint64_t>(extentSigned);
+
+        if (rowCount > maxU64 / extent) {
+            return;
+        }
+        rowCount *= extent;
+    }
+
+    if (rowCount == 0ULL) {
+        return;
+    }
+
+    const uint64_t rowWidth =
+        static_cast<uint64_t>(widthSigned);
+
+    if (rowCount > maxU64 / rowWidth) {
+        return;
+    }
+
+    const uint64_t elementBytes =
+        xInfo.dtype == 0 ? 4ULL : 2ULL;
+
+    if (rowWidth > maxU64 / elementBytes) {
+        return;
+    }
+
+    uint64_t requestedBlocks =
+        availableCoreNum > 0
+            ? static_cast<uint64_t>(availableCoreNum)
+            : 1ULL;
+
+    if (requestedBlocks > rowCount) {
+        requestedBlocks = rowCount;
+    }
+
+    if (requestedBlocks >
+        static_cast<uint64_t>(0xffffffffU)) {
+        requestedBlocks =
+            static_cast<uint64_t>(0xffffffffU);
+    }
+
+    if (requestedBlocks == 0ULL) {
+        requestedBlocks = 1ULL;
+    }
+
+    const uint32_t blockCount =
+        static_cast<uint32_t>(requestedBlocks);
+    const float invRowWidth =
+        1.0f / static_cast<float>(widthSigned);
+
+    if (xInfo.dtype == 0) {
+        add_rms_norm_bias_r002<float>
+            <<<blockCount, nullptr, stream>>>(
+                x,
+                residual,
+                gamma,
+                bias,
+                output,
+                rowCount,
+                rowWidth,
+                invRowWidth,
+                epsilon);
+    } else if (xInfo.dtype == 1) {
+        add_rms_norm_bias_r002<half>
+            <<<blockCount, nullptr, stream>>>(
+                x,
+                residual,
+                gamma,
+                bias,
+                output,
+                rowCount,
+                rowWidth,
+                invRowWidth,
+                epsilon);
+    } else {
+        add_rms_norm_bias_r002<bfloat16_t>
+            <<<blockCount, nullptr, stream>>>(
+                x,
+                residual,
+                gamma,
+                bias,
+                output,
+                rowCount,
+                rowWidth,
+                invRowWidth,
+                epsilon);
+    }
+}
+
+#endif

@@ -1,0 +1,8 @@
+2026-10-14 V014 Local preparation attempts
+
+Attempt 1 used one N05-root Codex CLI session with multi_agent_v2 enabled and workspace-write sandboxing. The session did not spawn children or read sibling Clone data. SSH returned 255 before device access: Connection closed by UNKNOWN port 65535. The same session could not create .git/index.lock; no commit was made there.
+
+Attempt 2 used Main SSH access. The first remote shell returned 1 before device access because set -u was enabled before sourcing CANN set_env.sh:
+  /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/script/set_env.sh: line 1: LD_LIBRARY_PATH: unbound variable
+
+The CANN environment was then sourced before enabling set -u. The four Runner stages completed with RC=0. No kernel source was changed and no rebuild was performed.

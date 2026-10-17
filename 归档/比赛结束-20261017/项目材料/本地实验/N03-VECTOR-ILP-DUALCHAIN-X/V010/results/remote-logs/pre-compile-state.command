@@ -1,0 +1,1 @@
+ssh cann-server3 'set -e; printf "HOST="; hostname; date -Is; printf "N03_V009_DIRS\n"; find "$HOME/cann/server_runs/N03-VECTOR-ILP-DUALCHAIN-X-RESET-20261011/V009/8dd29687" -maxdepth 3 -type d -print; printf "D3_USAGE\n"; npu-smi info -t usages -i 3'

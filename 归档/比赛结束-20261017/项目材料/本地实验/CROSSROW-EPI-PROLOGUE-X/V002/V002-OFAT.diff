@@ -1,0 +1,40 @@
+--- V001-Candidate.asc
++++ V002-Candidate.asc
+@@ -354,19 +354,6 @@
+             const float invRms = 1.0f / xFp32.GetValue(0);
+             SyncSToV();
+
+-            // The output path uses the cached y row and valueFp32Buf_ rather
+-            // than the input staging pair.  Issue the next row's first tile
+-            // here so MTE2 can overlap the current row's epilogue without
+-            // changing the input or retained-y lifetimes.
+-            if (cacheRow && row + 1 < beginRow + localRows) {
+-                const int32_t nextValid = TileLength(rowWidth);
+-                AscendC::LocalTensor<T> nextXLocal = xBuf_.Get<T>();
+-                AscendC::LocalTensor<T> nextResidualLocal = residualBuf_.Get<T>();
+-                const uint64_t nextOffset = (row + 1) * rowWidth;
+-                Load(nextXLocal, xGm_, nextOffset, nextValid);
+-                Load(nextResidualLocal, residualGm_, nextOffset, nextValid);
+-            }
+-
+             // Second pass: y * inv_rms * gamma + bias.
+             for (uint64_t col = 0; col < rowWidth; col += kTileElems) {
+                 const int32_t valid = TileLength(rowWidth - col);
+@@ -490,6 +477,17 @@
+                     Store(outputGm_, rowOffset + col, outputLocal, valid);
+                     SyncMTE3ToV();
+                 }
++
++                // Issue the existing successor prologue after tile zero has
++                // completed, leaving tile one to cover the input DMA.
++                if (cacheRow && col == 0 && row + 1 < beginRow + localRows) {
++                    const int32_t nextValid = TileLength(rowWidth);
++                    AscendC::LocalTensor<T> nextXLocal = xBuf_.Get<T>();
++                    AscendC::LocalTensor<T> nextResidualLocal = residualBuf_.Get<T>();
++                    const uint64_t nextOffset = (row + 1) * rowWidth;
++                    Load(nextXLocal, xGm_, nextOffset, nextValid);
++                    Load(nextResidualLocal, residualGm_, nextOffset, nextValid);
++                }
+             }
+         }
+     }

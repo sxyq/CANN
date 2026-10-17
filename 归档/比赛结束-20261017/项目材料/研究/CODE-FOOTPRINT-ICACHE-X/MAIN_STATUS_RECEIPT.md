@@ -1,0 +1,12 @@
+ROUTE = CODE-FOOTPRINT-ICACHE-X
+AGENT_ID = NOT_ASSIGNED_BY_MAIN (not invented)
+BRANCH = research/w5-r03-code-footprint
+WORKTREE = /home/data4t2/lelinfeng/cann-w5-r03-icache
+BASE_COMMIT = ef272e8ce2424c8f70ff373498d7fea7cc336726
+HYPOTHESIS = A compiler-level hot/cold, inlining/outlining, or section-layout change may reduce generated instruction footprint/fetch pressure on the exact Champion path without changing kernel behavior; this requires target artifact evidence first.
+ORTHOGONALITY_STATUS = PASS / ORTHOGONAL; no material overlap found with W3, W4, R001-R029, or listed Main-1 mechanisms.
+FEASIBILITY_STATUS = UNPROVEN / TOOLING_ARTIFACT_BLOCKED; no target object/disassembly/code-size report and no `bisheng`, `clang++`, or `llvm-objdump` available.
+EXPERIMENT_STAGE = R3_READ_ONLY_FEASIBILITY
+CURRENT_REVISION = NONE (V001 not created)
+CURRENT_RESULT = Static source evidence recorded; generated-code change and same-path effect are not proven; no Candidate edit, compile, correctness, local, device experiment, or online submission performed.
+NEXT_STEP = Obtain read-only Champion target artifact through the existing execution chain; only after same-path generated-code evidence passes may one compiler/layout OFAT be proposed.

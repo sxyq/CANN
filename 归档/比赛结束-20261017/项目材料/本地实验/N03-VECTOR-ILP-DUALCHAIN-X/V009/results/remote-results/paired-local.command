@@ -1,0 +1,1 @@
+source /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/script/set_env.sh && ASCEND_RT_VISIBLE_DEVICES=3 LD_PRELOAD=/usr/lib/aarch64-linux-gnu/libstdc++.so.6 /home/data4t2/lelinfeng/cann/server_runs/N03-VECTOR-ILP-DUALCHAIN-X-RESET-20261011/V009/8dd29687/build-paired/paired_runner_v016 --paired

@@ -1,0 +1,1 @@
+ssh cann-server3 'set -e; ROOT="$HOME/cann/server_runs/N03-VECTOR-ILP-DUALCHAIN-X-RESET-20261011"; SOURCE="$ROOT/V016/a8da9ab6/adapter"; TARGET="$ROOT/V017/87d4af6d"; test ! -e "$TARGET"; mkdir -p "$TARGET/logs"; cp -a "$SOURCE" "$TARGET/adapter"; mkdir -p "$TARGET/candidate" "$TARGET/results"; printf "TARGET=%s\\n" "$TARGET"'

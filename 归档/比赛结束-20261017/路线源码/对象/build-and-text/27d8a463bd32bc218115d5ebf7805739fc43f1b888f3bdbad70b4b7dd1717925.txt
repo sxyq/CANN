@@ -1,0 +1,252 @@
+#include <acl/acl.h>
+#include "kernel_operator.h"
+
+#ifndef TENSOR_GROUP_INFO_DEFINED
+#define TENSOR_GROUP_INFO_DEFINED
+struct TensorInfo {
+    const int64_t *shape;
+    int64_t numDims;
+    int32_t dtype;
+};
+
+struct TensorGroupInfo {
+    const TensorInfo *tensors;
+    int64_t numTensors;
+};
+#endif
+
+using namespace AscendC;
+
+namespace full_r022_i001 {
+
+struct RmsNormBiasConfig {
+    uint32_t outer;
+    uint32_t dim;
+    uint32_t dtype;
+    float epsilon;
+};
+
+struct FloatBits {
+    uint32_t u;
+    float f;
+};
+
+__aicore__ inline float BitsToFloat(uint32_t bits)
+{
+    FloatBits value;
+    value.u = bits;
+    return value.f;
+}
+
+__aicore__ inline uint32_t FloatToBits(float value)
+{
+    FloatBits bits;
+    bits.f = value;
+    return bits.u;
+}
+
+__aicore__ inline float DecodeHalf(uint16_t bits)
+{
+    const uint32_t sign = static_cast<uint32_t>(bits >> 15);
+    const uint32_t exponent = static_cast<uint32_t>((bits >> 10) & 0x1fU);
+    const uint32_t fraction = static_cast<uint32_t>(bits & 0x03ffU);
+    if (exponent == 0U) {
+        if (fraction == 0U) {
+            return BitsToFloat(sign << 31);
+        }
+        uint32_t mantissa = fraction;
+        int32_t exponentValue = -14;
+        while ((mantissa & 0x0400U) == 0U) {
+            mantissa <<= 1;
+            --exponentValue;
+        }
+        mantissa &= 0x03ffU;
+        const uint32_t fp32Exponent = static_cast<uint32_t>(exponentValue + 127);
+        return BitsToFloat((sign << 31) | (fp32Exponent << 23) | (mantissa << 13));
+    }
+    if (exponent == 0x1fU) {
+        return BitsToFloat((sign << 31) | 0x7f800000U | (fraction << 13));
+    }
+    const uint32_t fp32Exponent = exponent - 15U + 127U;
+    return BitsToFloat((sign << 31) | (fp32Exponent << 23) | (fraction << 13));
+}
+
+__aicore__ inline uint16_t EncodeHalf(float value)
+{
+    const uint32_t bits = FloatToBits(value);
+    const uint32_t sign = (bits >> 16) & 0x8000U;
+    const uint32_t exponent = (bits >> 23) & 0xffU;
+    uint32_t mantissa = bits & 0x7fffffU;
+    if (exponent == 0xffU) {
+        return static_cast<uint16_t>(sign | 0x7c00U | (mantissa >> 13));
+    }
+    int32_t halfExponent = static_cast<int32_t>(exponent) - 127 + 15;
+    if (halfExponent >= 0x1f) {
+        return static_cast<uint16_t>(sign | 0x7c00U);
+    }
+    if (halfExponent <= 0) {
+        if (halfExponent < -10) {
+            return static_cast<uint16_t>(sign);
+        }
+        mantissa |= 0x800000U;
+        const uint32_t shift = static_cast<uint32_t>(14 - halfExponent);
+        uint32_t rounded = mantissa >> shift;
+        const uint32_t remainder = mantissa & ((1U << shift) - 1U);
+        const uint32_t halfway = 1U << (shift - 1U);
+        if (remainder > halfway || (remainder == halfway && (rounded & 1U) != 0U)) {
+            ++rounded;
+        }
+        return static_cast<uint16_t>(sign | rounded);
+    }
+    const uint32_t rounding = 0x1000U;
+    if ((mantissa & 0x1fffU) > rounding ||
+        ((mantissa & 0x1fffU) == rounding && ((mantissa >> 13) & 1U) != 0U)) {
+        mantissa += rounding;
+        if ((mantissa & 0x800000U) != 0U) {
+            mantissa = 0U;
+            ++halfExponent;
+            if (halfExponent >= 0x1f) {
+                return static_cast<uint16_t>(sign | 0x7c00U);
+            }
+        }
+    }
+    return static_cast<uint16_t>(sign | (static_cast<uint32_t>(halfExponent) << 10) | (mantissa >> 13));
+}
+
+__aicore__ inline float LoadValue(GM_ADDR base, uint32_t index, uint32_t dtype)
+{
+    if (dtype == 2U) {
+        __gm__ const uint32_t *ptr = reinterpret_cast<__gm__ const uint32_t *>(base);
+        return BitsToFloat(ptr[index]);
+    }
+    __gm__ const uint16_t *ptr = reinterpret_cast<__gm__ const uint16_t *>(base);
+    const uint16_t bits = ptr[index];
+    if (dtype == 1U) {
+        return BitsToFloat(static_cast<uint32_t>(bits) << 16);
+    }
+    return DecodeHalf(bits);
+}
+
+__aicore__ inline void StoreValue(GM_ADDR base, uint32_t index, uint32_t dtype, float value)
+{
+    if (dtype == 2U) {
+        __gm__ uint32_t *ptr = reinterpret_cast<__gm__ uint32_t *>(base);
+        ptr[index] = FloatToBits(value);
+        return;
+    }
+    __gm__ uint16_t *ptr = reinterpret_cast<__gm__ uint16_t *>(base);
+    if (dtype == 1U) {
+        const uint32_t bits = FloatToBits(value);
+        const uint32_t rounded = bits + 0x7fffU + ((bits >> 16) & 1U);
+        ptr[index] = static_cast<uint16_t>(rounded >> 16);
+        return;
+    }
+    ptr[index] = EncodeHalf(value);
+}
+
+__aicore__ inline void ProcessRows(GM_ADDR x, GM_ADDR residual, GM_ADDR gamma, GM_ADDR bias, GM_ADDR y,
+                                   uint32_t outer, uint32_t dim, uint32_t dtype, float epsilon)
+{
+    const uint32_t block = GetBlockIdx();
+    const uint32_t blockCount = GetBlockNum();
+    for (uint32_t row = block; row < outer; row += blockCount) {
+        const uint32_t rowStart = row * dim;
+        float squareSum = 0.0f;
+        for (uint32_t col = 0U; col < dim; ++col) {
+            const uint32_t index = rowStart + col;
+            const float value = LoadValue(x, index, dtype) + LoadValue(residual, index, dtype);
+            squareSum += value * value;
+        }
+        const float dimension = AscendC::Cast<uint32_t, float, RoundMode::CAST_RINT>(dim);
+        const float meanSquare = squareSum / dimension;
+        const float inverseRms = 1.0f / sqrt(meanSquare + epsilon);
+        for (uint32_t col = 0U; col < dim; ++col) {
+            const uint32_t index = rowStart + col;
+            const float value = LoadValue(x, index, dtype) + LoadValue(residual, index, dtype);
+            const float scale = LoadValue(gamma, col, dtype);
+            const float offset = LoadValue(bias, col, dtype);
+            StoreValue(y, index, dtype, value * inverseRms * scale + offset);
+        }
+    }
+}
+
+__aicore__ inline void ProcessRowsFromTiling(GM_ADDR x, GM_ADDR residual, GM_ADDR gamma, GM_ADDR bias, GM_ADDR y,
+                                             GM_ADDR tiling)
+{
+    __gm__ const RmsNormBiasConfig *config = reinterpret_cast<__gm__ const RmsNormBiasConfig *>(tiling);
+    ProcessRows(x, residual, gamma, bias, y, config->outer, config->dim, config->dtype, config->epsilon);
+}
+
+}  // namespace full_r022_i001
+
+extern "C" __global__ __aicore__ void AddRmsNormBias(GM_ADDR x, GM_ADDR residual, GM_ADDR gamma, GM_ADDR bias,
+                                                      GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
+{
+    (void)workspace;
+    full_r022_i001::ProcessRowsFromTiling(x, residual, gamma, bias, y, tiling);
+}
+
+extern "C" __global__ __aicore__ void add_rms_norm_bias(GM_ADDR x, GM_ADDR residual, GM_ADDR gamma, GM_ADDR bias,
+                                                         GM_ADDR y, GM_ADDR workspace, GM_ADDR tiling)
+{
+    (void)workspace;
+    full_r022_i001::ProcessRowsFromTiling(x, residual, gamma, bias, y, tiling);
+}
+
+extern "C" __global__ __vector__ void add_rms_norm_bias_custom(GM_ADDR x, GM_ADDR residual, GM_ADDR gamma,
+                                                                GM_ADDR bias, GM_ADDR output, uint32_t outer,
+                                                                uint32_t dim, uint32_t dtype, float epsilon)
+{
+    full_r022_i001::ProcessRows(x, residual, gamma, bias, output, outer, dim, dtype, epsilon);
+}
+
+extern "C" void run_kernel(GM_ADDR x, const TensorGroupInfo& info_x, GM_ADDR residual,
+                            const TensorGroupInfo& info_residual, GM_ADDR gamma, const TensorGroupInfo& info_gamma,
+                            GM_ADDR bias, const TensorGroupInfo& info_bias, GM_ADDR output,
+                            const TensorGroupInfo& info_output, int64_t availableCoreNum, aclrtStream stream,
+                            float epsilon)
+{
+    (void)info_residual;
+    (void)info_gamma;
+    (void)info_bias;
+    (void)info_output;
+    if (info_x.tensors == nullptr || info_x.numTensors <= 0 || info_x.tensors[0].shape == nullptr ||
+        info_x.tensors[0].numDims <= 0 || availableCoreNum <= 0) {
+        return;
+    }
+
+    const int64_t *shape = info_x.tensors[0].shape;
+    const int64_t dimValue = shape[info_x.tensors[0].numDims - 1];
+    if (dimValue <= 0) {
+        return;
+    }
+
+    int64_t outerValue = 1;
+    for (int64_t axis = 0; axis + 1 < info_x.tensors[0].numDims; ++axis) {
+        if (shape[axis] <= 0) {
+            return;
+        }
+        outerValue *= shape[axis];
+    }
+    if (outerValue <= 0) {
+        return;
+    }
+
+    uint32_t internalDtype = 0U;
+    if (info_x.tensors[0].dtype == 0) {
+        internalDtype = 2U;
+    } else if (info_x.tensors[0].dtype == 1) {
+        internalDtype = 0U;
+    } else if (info_x.tensors[0].dtype == 2) {
+        internalDtype = 1U;
+    } else {
+        return;
+    }
+
+    const uint32_t outer = static_cast<uint32_t>(outerValue);
+    const uint32_t dim = static_cast<uint32_t>(dimValue);
+    const uint32_t available = static_cast<uint32_t>(availableCoreNum);
+    const uint32_t blockNum = outer < available ? outer : available;
+    add_rms_norm_bias_custom<<<blockNum, nullptr, stream>>>(x, residual, gamma, bias, output, outer, dim,
+                                                             internalDtype, epsilon);
+}

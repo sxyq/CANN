@@ -1,0 +1,37 @@
+V009_ADAPTER_LINKS
+total 60
+drwxrwxr-x 2 lelinfeng lelinfeng  4096 Oct 11 05:22 .
+drwxrwxr-x 8 lelinfeng lelinfeng  4096 Oct 11 16:29 ..
+-rw-r--r-- 1 lelinfeng lelinfeng  5490 Oct 11 05:20 CMakeLists.txt
+lrwxrwxrwx 1 lelinfeng lelinfeng    48 Oct 11 05:21 R31B-V016-WIDE-TILE-SEED_kernel.asc -> ../candidate/R31B-V016-WIDE-TILE-SEED_kernel.asc
+-rw-r--r-- 1 lelinfeng lelinfeng   974 Oct 11 05:20 adapter.cpp
+-rw-r--r-- 1 lelinfeng lelinfeng   373 Oct 11 05:20 compile_adapter_v016.asc
+-rw-r--r-- 1 lelinfeng lelinfeng   949 Oct 11 05:20 device.cpp
+-rw-r--r-- 1 lelinfeng lelinfeng   345 Oct 11 05:20 link_one.sh
+-rw-r--r-- 1 lelinfeng lelinfeng 10466 Oct 11 05:22 runtime_probe.cpp
+-rw-r--r-- 1 lelinfeng lelinfeng    34 Oct 11 05:22 runtime_probe_fp32.asc
+-rw-r--r-- 1 lelinfeng lelinfeng  5577 Oct 11 05:22 runtime_probe_fp32.cpp
+-rw-r--r-- 1 lelinfeng lelinfeng    29 Oct 11 05:22 runtime_probe_v016.asc
+/home/data4t2/lelinfeng/cann/server_runs/N03-VECTOR-ILP-DUALCHAIN-X-RESET-20261011/V009/8dd29687/candidate/R31B-V016-WIDE-TILE-SEED_kernel.asc
+RUNNER_SOURCE_HEAD
+#include <cmath>
+#include <cstdint>
+#include "kernel_operator.h"
+#include "paired_runner_abi.h"
+
+namespace r31b_v011 {
+#define run_kernel run_kernel_v011
+#include "R31B-V011-LP-ROW-PIPELINE_kernel.asc"
+#undef run_kernel
+}
+
+namespace r31b_v016 {
+#define run_kernel run_kernel_v016
+#include "R31B-V016-WIDE-TILE-SEED_kernel.asc"
+#undef run_kernel
+}
+
+using r31b_v011::run_kernel_v011;
+using r31b_v016::run_kernel_v016;
+
+#include "paired_runner.cpp"

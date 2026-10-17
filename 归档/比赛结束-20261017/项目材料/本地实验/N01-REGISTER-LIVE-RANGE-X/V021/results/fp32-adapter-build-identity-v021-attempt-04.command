@@ -1,0 +1,8 @@
+REVISION=V021
+ATTEMPT=04
+COMMAND=ssh cann-server3; date -Is; hostname; df -Pk /home/data4t2; stat and sha256sum the V021 Runner source, executable, Candidate source, and V004 Parent source
+RUNNER_SOURCE_SHA256=f077541d73c4819d8a8299c85fd489b70c26a44373e396880d1f1664ac9f979e
+RUNNER_BINARY_SHA256=b3bd4a4b852647893f74911b9ac6fa0fa00261172fbef9f0246879111675d9ab
+CANDIDATE_SOURCE_SHA256=d4f9994b9eb43e75b454143cbdb3f2b8a2222545d6ad4496fc6022c1682e5134
+PARENT_SOURCE_SHA256=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
+SNAPSHOT=results/fp32-adapter-build-identity-v021-attempt-04.txt

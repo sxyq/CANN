@@ -1,0 +1,9 @@
+V005 ATTEMPT FACTS
+
+The first local output redirection used a misspelled directory name and failed before SSH execution; no remote files changed.
+
+The initial attempt to extract the internal Device ELF .text section with host objcopy failed with "Unable to recognise the format". readelf reported .text file offset 0xb0 and size 0x140dc; dd extracted the text and six functions using those recorded offsets and sizes. The raw error and successful command output are retained in results/device-code-extract-v005.log and results/device-code-extract-v005-retry-01.log.
+
+The first disassembly path contained a repeated results component and exited 1. The corrected path exited 0; llvm-objdump still emitted <not available> for instruction words. Both raw outputs remain in results/device-disassembly-v005.txt and results/device-disassembly-v005-retry-01.txt.
+
+One local artifact identity command used the same misspelled directory component and failed locally. The corrected local/server SHA256 comparison matched for the Candidate source, Runner source, Runner executable, Device ELF/text, and all six function extracts.
