@@ -1,6 +1,6 @@
 # CANN 比赛结束归档
 
-状态：比赛已结束，N01-N10 十条源码路线及 W5-R01-R05 五条研究路线均已归档。全部本地支线历史已并入 `main`；79 个非 `main` 本地分支名和五份重复路线克隆已清理。随后本地 `main` 通过 `126c0c15bd94d5b5954ef89377dfc296ce82e830` 接入 `origin/main` 的完整历史，远端分支未修改，也未推送。
+状态：比赛已结束，N01-N10 十条源码路线及 W5-R01-R05 五条研究路线均已归档。全部本地支线历史已并入 `main`；79 个非 `main` 本地分支名和五份重复路线克隆已清理。随后 `main` 接入并推送 `origin/main` 的完整历史；原有 96 条非 `main` 远端分支尖端均由 `main` 保留，远端现在只保留 `main`。
 
 ## 统一基础源码
 
@@ -51,7 +51,7 @@ W5-R01 CROSSROW-EPI-PROLOGUE-X、W5-R02 REGISTER-SPILL-ELIMINATION-X、W5-R03 CO
 
 ## 全阶段路线目录
 
-项目根目录的 `技术路线/路线主线/` 有 123 个路线目录，按路线汇集 phase3、phase4、历史工作区和比赛结束材料。phase3 R001–R029 与 FULL-R001–FULL-R029 的对应实现可逐条查看；phase3 H001 与 phase4 Fresh Small-D 的 H001 分开列出。N01–N10、W5-R01–R05 各有独立入口；N01–N05 的旧名和新名仍按原账目区分。SHAPE-TILING、EPILOGUE-FUSE 和 EPILOGUE-ARITH 也各自保留路线目录。
+项目根目录的 `技术路线/路线主线/` 有 132 个路线目录和 846 个版本说明页，按路线汇集 phase3、phase4、历史工作区和比赛结束材料。phase3 R001–R029 与 FULL-R001–FULL-R029 的对应实现可逐条查看；phase3 H001 与 phase4 Fresh Small-D 的 H001 分开列出。N01–N10、W5-R01–R05 各有独立入口；N01–N05 的旧名和新名仍按原账目区分。SHAPE-TILING、EPILOGUE-FUSE 和 EPILOGUE-ARITH 也各自保留路线目录。
 
 外部 ChatGPT 轨道的 R029 V003/V004 单独归入 `LEGACY-R029-WIDE-CACHED-ROW-EXTERNAL/`；phase3 MIX-A、MIX-B、R006、R017 与 R031 reconstruction 各自保留路线入口，原始材料仍位于 `归档/phase3-before-reset-20260920/`。
 
