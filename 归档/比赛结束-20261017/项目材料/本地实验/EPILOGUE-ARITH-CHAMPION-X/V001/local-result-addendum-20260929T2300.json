@@ -1,0 +1,97 @@
+{
+  "route": "EPILOGUE-ARITH-CHAMPION-X",
+  "revision": "V001",
+  "addendum": "v001b re-measurement after MAIN-1 direction 2026-09-29",
+  "note": "Same binaries as first window; no source change. This file supplements (does not overwrite) local-result.json.",
+  "binaries_unchanged": {
+    "candidate_sha": "eda335d16e7e311b279e8918c6405c622bb7022e040459143f19a6240a546dbf",
+    "parent_sha": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+    "se_ref_parent_probe": "390bed78872317f28bb9de00670c9fd56b1c97193b600b1ec62f97c6c93a71ed",
+    "se_ref_candidate_probe": "9c22a52e2cdcdffdf1c82d1ca9d22b3ff139b6e8d1031ddca1ab1ce7efa82416"
+  },
+  "window2": {
+    "device": 4,
+    "gap_sec": 5,
+    "protocol": "warmup=45, samples=41, same-binary blocks=2, 6 interleaved P/C pairs, DEVICE_EVENT primary",
+    "note": "d6 skipped: shared ledger still shows an active STORE-EPILOGUE-X lease on d6; d4 used instead (AICore 0%).",
+    "same_binary": {
+      "1x32768_fp32": {"B1_med": 12.20, "B2_med": 12.88, "ALL_MAD": 0.69, "ALL_med": 12.43, "MAD_over_med_pct": 5.55, "drift_pct": 5.47, "verdict": "PASS"},
+      "2x16384_fp32": {"B1_med": 8.24, "B2_med": 8.54, "ALL_MAD": 0.46, "ALL_med": 8.43, "MAD_over_med_pct": 5.46, "drift_pct": 3.56, "verdict": "PASS"},
+      "2x32768_fp32": {"B1_med": 12.38, "B2_med": 12.12, "ALL_MAD": 0.44, "ALL_med": 12.34, "MAD_over_med_pct": 3.57, "drift_pct": 2.11, "verdict": "PASS"},
+      "8x16384_fp32": {"B1_med": 8.76, "B2_med": 8.56, "ALL_MAD": 0.22, "ALL_med": 8.70, "MAD_over_med_pct": 2.53, "drift_pct": 2.30, "verdict": "PASS (tightest)"},
+      "2x8192_fp32_control": {"B1_med": 6.14, "B2_med": 6.48, "ALL_MAD": 0.59, "ALL_med": 6.35, "MAD_over_med_pct": 9.29, "drift_pct": 5.35, "verdict": "PASS (borderline)"},
+      "3x6144_fp32_control": {"B1_med": 5.86, "B2_med": 6.80, "ALL_MAD": 0.54, "ALL_med": 6.18, "MAD_over_med_pct": 8.74, "drift_pct": 15.21, "verdict": "FAIL block-drift >10% (control only)"}
+    },
+    "contamination_marking": "Rule applied: mark any pair-side with MAD/median > 0.25 as CONTAMINATED, keep in raw record, exclude only from clean median. 7 pair-sides marked across 72 runs (all extreme host-side stalls, median_us jumps 2-3x with MAD 8-19us). No silent deletion.",
+    "paired_delta_pct": {
+      "1x32768_fp32": {
+        "band": "change-domain primary",
+        "per_pair": [[1, 191.28, "CONTAM C_MAD/med=0.55"], [-4.74, "clean"], [-2.32, "clean"], [3.09, "clean"], [105.74, "CONTAM C_MAD/med=0.56"], [-11.16, "clean (P_MAD/med=0.18)"]],
+        "all_med": 0.39,
+        "clean_n": 4,
+        "clean_med": -3.53,
+        "favor_c_clean": 3
+      },
+      "2x16384_fp32": {
+        "band": "change-domain",
+        "per_pair": [[-57.79, "CONTAM P_MAD/med=0.57"], [-3.02, "clean"], [2.81, "clean"], [-4.21, "clean"], [-8.99, "clean"], [101.53, "CONTAM C_MAD/med=0.49"]],
+        "all_med": -3.62,
+        "clean_n": 4,
+        "clean_med": -3.61,
+        "favor_c_clean": 3
+      },
+      "2x32768_fp32": {
+        "band": "change-domain extended (batchRows=2, tileCount=8)",
+        "per_pair": [-0.84, 1.70, -0.51, -1.86, 0.83, -3.24],
+        "clean_n": 6,
+        "clean_med": -0.67,
+        "favor_c_clean": 4
+      },
+      "8x16384_fp32": {
+        "band": "change-domain extended (batchRows=2, tileCount=4)",
+        "per_pair": [[-2.74, "clean"], [2.54, "clean"], [-3.86, "clean"], [90.13, "CONTAM C_MAD/med=0.48"], [-5.19, "clean"], [-5.01, "clean"]],
+        "all_med": -3.30,
+        "clean_n": 5,
+        "clean_med": -3.86,
+        "favor_c_clean": 4
+      },
+      "2x8192_fp32_control": {
+        "band": "identical-code control",
+        "per_pair": [[-12.84, "clean"], [-13.84, "CONTAM P_MAD/med=0.26"], [-65.01, "CONTAM P_MAD/med=0.61"], [4.41, "clean"], [186.23, "CONTAM C_MAD/med=0.69"], [11.95, "CONTAM both ~0.26"]],
+        "clean_n": 2,
+        "clean_med": -4.22,
+        "reading": "too contaminated to bound the band this window"
+      },
+      "3x6144_fp32_control": {
+        "band": "identical-code control (all clean)",
+        "per_pair": [-3.18, 1.43, 3.99, 10.11, 4.39, 18.98],
+        "clean_n": 6,
+        "clean_med": 4.19,
+        "favor_c": 1,
+        "reading": "short-kernel control skews +4.2% (favor P); band half-width ~3-5% plus tail outliers to +19%"
+      }
+    },
+    "cross_window": {
+      "1x32768_pooled": {"n": 10, "median": -1.92, "favor_c": 9},
+      "2x16384_pooled": {"n": 10, "median": -2.35, "favor_c": 7},
+      "sign_test_all_clean_pairs": "24/31 favor C, P(>=24|p=0.5)=0.0017",
+      "window2_change_domain_pooled": {"n": 19, "median": -2.74, "favor_c": 14}
+    },
+    "mechanism_amplitude_check_v2": {
+      "1x32768_fp32": "predicted 3.5-8.1% (7 Muls + 7 barriers removed on 12.4us); measured clean -3.53% = low end of prediction. Window-1 was -1.51% (half). Amplitude check now PASSES at order-of-magnitude.",
+      "8x16384_fp32": "predicted 4.5-10.5% (6 Muls + 7 barriers on 8.7us); measured -3.86% = just below low end, same order.",
+      "2x32768_fp32": "predicted larger (tileCount=8, batchRows=2 -> 16 Muls+8 barriers -> 2+1); measured only -0.67%. Weak outlier of the set — possible cause: this shape's two rows split into two batches of 1 row each at width 32768 (budget-bound), so hoist saves less per batch than the2-row batch case; needs mechanism recount before V002 claims."
+    },
+    "differential_reading": {
+      "note": "Both windows' identical-code controls skew the same way (window1 2x8192 +3.31% favor P; window2 3x6144 +4.19% favor P). Change-domain shapes in the same windows skew favor C. Control-bias-corrected separation in window2 is ~7-8pp on 1x32768/2x16384/8x16384. Raw deltas are therefore conservative under a P-favoring measurement bias. This is an analytical reading, not the protocol's formal noise-band test."
+    }
+  },
+  "local_verdict": "NEEDS_ONE_MORE_LOCAL",
+  "local_verdict_reason": "MAIN-1 rule: direction-consistent but still inside the noise band -> maintain. Direction is now statistically established (24/31 pairs, p=0.0017; 4/4 window-2 change-domain shapes negative medians) and mechanism amplitude matches prediction in window 2. However the stated goal (compress same-code band below +/-1.5%) was NOT achieved: short-kernel controls still show half-width 3-5% with tails to +19%, and raw change-domain medians (-0.67% to -3.86%) sit inside that band. Only 8x16384 exceeds its own same-binary noise scale (2.53%). Keep Candidate, do not stack changes.",
+  "decision_package_for_main": [
+    "Option A (formal): one more window with a tighter control set (change-domain shapes themselves as their own same-binary reference; or protocol-approved REPEAT_BATCH_N calibration after same-binary validation) to push the band below the effect size.",
+    "Option B (differential): accept on differential grounds — controls skew +3-4% favor P in both windows while change-domain skews favor C in the same runs; bias-corrected effect is ~-7.7pp with amplitude match. If Main accepts this reading, LOCAL_ACCEPTED is defensible now.",
+    "Do NOT open V002/EA-H2 until V001 closes."
+  ],
+  "verdict_if_main_accepts_differential": "LOCAL_ACCEPTED (scope: wide-FP32 change-domain; 1x32768 + 2x16384 + 8x16384; 2x32768 recorded weak)"
+}

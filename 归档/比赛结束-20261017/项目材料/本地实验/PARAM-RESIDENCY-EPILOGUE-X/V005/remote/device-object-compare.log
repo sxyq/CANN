@@ -1,0 +1,33 @@
+TASK=V004_V005_DEVICE_SECTION_COMPARISON
+REMOTE_HOST=cann-server3
+REMOTE_TEMP=/tmp/n05-param-residency-epilogue-v005.85A8gB
+CANN_PACKAGE=/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002
+SOC=Ascend910B3
+RUNNER=existing paired_runner_v016
+V004_RUNNER_INCLUDE=R31B-V016-WIDE-TILE-SEED-V004_kernel.asc
+V005_RUNNER_INCLUDE=R31B-V016-WIDE-TILE-SEED-V005_kernel.asc
+RUNNER_EXECUTED=NO
+V004_CONFIGURE_COMMAND=`cmake -S ${REMOTE_TEMP}/comparison-v004/paired -B ${REMOTE_TEMP}/comparison-v004/build -DASCEND_CANN_PACKAGE_PATH=${CANN_PACKAGE} -DR31B_V011_SOURCE_DIR=${REMOTE_TEMP}/parent -DR31B_V016_SOURCE_DIR=${REMOTE_TEMP}/comparison-v004/candidate`
+V004_BUILD_COMMAND=`CPLUS_INCLUDE_PATH=/usr/include/c++/11:/usr/include/aarch64-linux-gnu/c++/11 cmake --build ${REMOTE_TEMP}/comparison-v004/build --target paired_runner_v016 --parallel 1`
+V004_ASC_OBJECT=${REMOTE_TEMP}/comparison-v004/build/CMakeFiles/paired_runner_v016.dir/paired_runner_v016.asc.o
+V005_ASC_OBJECT=${REMOTE_TEMP}/build/CMakeFiles/paired_runner_v016.dir/paired_runner_v016.asc.o
+
+V004_CONFIGURE_RC=0
+V004_BUILD_FIRST_ATTEMPT_RC=2
+V004_BUILD_FIRST_ATTEMPT_ERROR=compiler-generated registration source could not locate system vector header
+V004_BUILD_RETRY_CPLUS_INCLUDE_PATH=/usr/include/c++/11:/usr/include/aarch64-linux-gnu/c++/11
+V004_BUILD_RETRY_RC=0
+
+COMPARE_METHOD=llvm-objcopy section extraction followed by cmp
+V004_ASC_OBJECT_BYTES=267672
+V005_ASC_OBJECT_BYTES=268480
+V004_AICORE_BINARY_BYTES=87584
+V005_AICORE_BINARY_BYTES=87336
+AICORE_BINARY_BYTE_COMPARISON=DIFFERENT
+AICORE_BINARY_FIRST_DIFFERING_BYTE=41
+V004_AICORE_REL_BINARY_BYTES=91369
+V005_AICORE_REL_BINARY_BYTES=91121
+AICORE_REL_BINARY_BYTE_COMPARISON=DIFFERENT
+AICORE_REL_BINARY_FIRST_DIFFERING_BYTE=41
+
+INTERPRETATION=The compiled device sections differ; this establishes artifact change, not performance gain.

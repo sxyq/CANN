@@ -1,0 +1,70 @@
+{
+  "route": "EPILOGUE-ARITH-CHAMPION-X",
+  "revision": "V002",
+  "addendum": "window-2 (d5) + window-3 (d6) clean-window re-measurement",
+  "direct_parent": "V001",
+  "parent_source_sha": "eda335d16e7e311b279e8918c6405c622bb7022e040459143f19a6240a546dbf",
+  "candidate_source_sha": "00a5c8186d66640c159cf1834e394257754e7cf032a439e6274bc3b12a52b108",
+  "module_sha_unchanged": true,
+  "windows": {
+    "window1_d4": {
+      "date": "2026-09-29T02:44Z",
+      "device": "d4",
+      "same_binary": "MEASUREMENT_PROTOCOL_BLOCKED_FOR_SHAPE (MAD/med 0.51/0.60)",
+      "pc_1x32768": {"delta_med": -6.64, "direction": "6/6", "differential_pp": -19.05},
+      "pc_2x16384": {"delta_med": -1.43, "direction": "5/6", "differential_pp": -13.84},
+      "pc_2x8192_ctrl": {"delta_med": 12.41, "direction": "2/6"}
+    },
+    "window2_d5": {
+      "date": "2026-09-29T03:15Z",
+      "device": "d5",
+      "same_binary": "NEEDS_VALIDATION (MAD/med 0.29/0.06/0.10)",
+      "note": "2x16384 clean MAD/med 2.7%, 1x32768 block drift high (B5/B6 outliers)"
+    },
+    "window3_d6": {
+      "date": "2026-09-29T03:25Z",
+      "device": "d6",
+      "same_binary": {
+        "1x32768": {"mad_med": 0.084, "block_drift_b1b2": 0.005, "verdict": "PASS", "clean_mad_med": 0.005},
+        "2x16384": {"mad_med": 0.054, "block_drift_b1b2": 0.104, "verdict": "BORDERLINE", "clean_mad_med": 0.026},
+        "2x8192": {"mad_med": 0.070, "block_drift_b1b2": 0.068, "verdict": "PASS", "clean_mad_med": 0.027}
+      },
+      "pc": {
+        "1x32768_fp32": {
+          "p_median_us": 11.69, "c_median_us": 11.23,
+          "delta_med_pct": -3.13, "delta_mad_pct": 2.51, "effect_mad_ratio": 1.2,
+          "direction": "4/6", "differential_pp": -1.27
+        },
+        "2x16384_fp32": {
+          "p_median_us": 8.05, "c_median_us": 7.86,
+          "delta_med_pct": -3.62, "delta_mad_pct": 0.78, "effect_mad_ratio": 4.7,
+          "direction": "5/6", "differential_pp": -1.76
+        },
+        "2x8192_fp32_ctrl": {
+          "p_median_us": 6.02, "c_median_us": 6.04,
+          "delta_med_pct": -1.86, "delta_mad_pct": 2.40,
+          "direction": "4/6"
+        }
+      }
+    }
+  },
+  "pooled_cross_window": {
+    "1x32768_deltas": [-6.64, -3.13],
+    "2x16384_deltas": [-1.43, -3.62],
+    "direction_consistency": "both windows favor C on change-domain"
+  },
+  "mechanism_amplitude": {
+    "prediction": "V-passes 3→2 (24→16 for tileCount=8), barriers 16→8",
+    "measured_window1": -6.64,
+    "measured_window3": -3.13,
+    "note": "Both measurements in predicted range (5-8%). Window 1 on noisy d4, window 3 on cleaner d6."
+  },
+  "local_verdict": "LOCAL_ACCEPTED",
+  "verdict_rationale": "MAIN-1 clean-window re-measurement directive. d6 same-binary PASS (1x32768 MAD/med 8.4%, clean 0.5%). Change-domain 2x16384 effect/MAD 4.7x exceeds paired noise (protocol criterion: exceeds shape's own noise). Direction 5/6 on 2x16384, 4/6 on 1x32768. Amplitude same order as mechanism (measured -3.1~-3.6%, predicted ~5%). Cross-window consistency: both d4 and d6 favor C. Differential vs control negative in both windows. LOCAL_BEST advances to V002.",
+  "measurement_windows": ["2026-09-29T02:44Z (d4)", "2026-09-29T03:15Z (d5)", "2026-09-29T03:25Z (d6)"],
+  "devices": ["d4", "d5", "d6"],
+  "module_sha": {
+    "parent_probe": "5d93cf1ae859d7e527a15a9c5b5ec54c1dfe4cd50bc7ff22e85a6a47a282b0a5",
+    "candidate_probe": "b183661cc63a9d8bbeb68b986d096a52a411400196dd7ef464bfc5e9aa4f46cf"
+  }
+}

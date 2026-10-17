@@ -1,0 +1,92 @@
+HOST=hwnput3
+TIME=2026-10-16T23:15:24+00:00
+ROOT=/home/data4t2/lelinfeng/cann/server_runs/C2C-V2-N04/V020
+PARENT_SOURCE=/home/data4t2/lelinfeng/cann/server_runs/C2C-V2-N04/V020/paired-runner-src/submission.asc
+#include <cmath>
+#include <cstdint>
+#include "kernel_operator.h"
+/*
+ * R31B-V018-LP-ROW-PIPELINE
+ *
+ * V018 keeps V017's split completion events and V015's slot-C trigger, but
+ * submits x before residual.  The next batch waits on the residual event,
+CANDIDATE_SOURCE=/home/data4t2/lelinfeng/cann/server_runs/C2C-V2-N04/V020/Candidate.asc
+#include <cmath>
+#include <cstdint>
+#include "kernel_operator.h"
+/*
+ * R31B-V020-LP-ROW-PIPELINE
+ *
+ * V020 keeps V018's x-first/residual-second input DMA, split completion
+ * events, slot-C trigger, and next-batch consumption.  It changes only the
+ * wide FP16 output path so the two existing output slots use separate
+ * Vector-to-MTE3 ready events; the final A/B parameter sequence remains
+ * unchanged.  V012's
+ * inter-phase parameter prefetch and V010/V011 output and parameter slots
+ * remain intact.
+ * For D in (128, 4096] that miss the aligned multi-row specials,
+ * ProcessNarrowMidOverlap issues x/residual and gamma/bias as two parallel
+ * MTE2 groups so the param DMA overlaps pass-1 compute and the V/S tail.
+ * Math order is unchanged.  Wide paths and tiny-D generic stay V006.
+ *
+ * Purpose: test whether per-output-slot V_MTE3 ready events remove the
+ * shared ready-event serialization while retaining V018's input DMA timing.
+ */
+
+CMAKE_BINDING
+string(JOIN " " R31B_PAIRED_COMPILE_INCLUDES_STR ${R31B_PAIRED_COMPILE_INCLUDES})
+set(CMAKE_ASC_COMPILE_OBJECT
+    "<CMAKE_ASC_COMPILER> ${CMAKE_COMPILE_AS_ASC_FLAG} <DEFINES> <INCLUDES> ${R31B_PAIRED_COMPILE_INCLUDES_STR} --cce-aicore-arch=dav-c220 -Xaicore-start -O3 -std=c++17 -Xaicore-end -Xhost-start ${R31B_PAIRED_COMPILE_INCLUDES_STR} -fPIC -O2 -std=c++17 -Xhost-end <FLAGS> -o <OBJECT> -c -x asc <SOURCE>")
+
+set(R31B_V011_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/../../../../../线上结果/R31B/V011")
+set(R31B_V020_CANDIDATE_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/../../V020")
+
+add_executable(paired_runner_v016 paired_runner_v016.asc)
+target_include_directories(paired_runner_v016 PRIVATE
+    ${CMAKE_CURRENT_LIST_DIR}
+    ${R31B_V011_SOURCE_DIR}
+    ${R31B_V020_CANDIDATE_SOURCE_DIR}
+    /usr/include/c++/11
+    /usr/include/aarch64-linux-gnu/c++/11
+    ${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include
+    ${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include
+    ${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl
+    ${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/include/basic_api
+    ${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/include
+    ${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc
+    ${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/include/interface
+    /usr/include/aarch64-linux-gnu)
+target_compile_options(paired_runner_v016 PRIVATE
+    $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=dav-2201>)
+target_compile_definitions(paired_runner_v016 PRIVATE N04_DMA_PIPELINE_OVERLAP_X)
+target_link_directories(paired_runner_v016 PRIVATE
+RUNNER_WRAPPER
+#include <cmath>
+#include <cstdint>
+#include "kernel_operator.h"
+#include "paired_runner_abi.h"
+
+namespace r31b_v011 {
+#define run_kernel run_kernel_v011
+#include "submission.asc"
+#undef run_kernel
+}
+
+namespace r31b_v016 {
+#define run_kernel run_kernel_v016
+#include "Candidate.asc"
+#undef run_kernel
+}
+
+using r31b_v011::run_kernel_v011;
+using r31b_v016::run_kernel_v016;
+
+#include "paired_runner.cpp"
+FILES
+/home/data4t2/lelinfeng/cann/server_runs/C2C-V2-N04/V020/Candidate.asc
+/home/data4t2/lelinfeng/cann/server_runs/C2C-V2-N04/V020/paired-runner-src/CMakeLists.txt
+/home/data4t2/lelinfeng/cann/server_runs/C2C-V2-N04/V020/paired-runner-src/paired_runner.cpp
+/home/data4t2/lelinfeng/cann/server_runs/C2C-V2-N04/V020/paired-runner-src/paired_runner_abi.h
+/home/data4t2/lelinfeng/cann/server_runs/C2C-V2-N04/V020/paired-runner-src/paired_runner_v016.asc
+/home/data4t2/lelinfeng/cann/server_runs/C2C-V2-N04/V020/paired-runner-src/submission.asc
+/home/data4t2/lelinfeng/cann/server_runs/C2C-V2-N04/V020/server3-staging-v020-20261017.txt

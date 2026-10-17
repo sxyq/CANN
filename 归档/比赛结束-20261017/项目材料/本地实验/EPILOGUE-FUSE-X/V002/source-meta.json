@@ -1,0 +1,34 @@
+{
+  "ROUTE": "EPILOGUE-FUSE-X",
+  "REVISION": "V002",
+  "DIRECT_PARENT": "FROZEN_R31B_V011",
+  "PARENT_SOURCE_SHA": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "PARENT_SCORE": "OFFICIAL_ANCHOR 45.16 (15/15)",
+  "SINGLE_HYPOTHESIS": "V002-1 VMLA FUSED AFFINE: replace Mul+Add epilogue pair with AscendC::MulAddDst (dst += src0*src1 / vmla). Per-row bias accumulator reload for multi-row cores. Arithmetic identity unchanged. Uniform across T. No dtype split.",
+  "CONTEXT_CLASS": "FROZEN_STRONG_BASELINE_EPILOGUE_DATAFLOW",
+  "SOURCE_SHA": "3d10417497b387d42969a2980d2bf4b4ffbb7ad3a86767c081fdb1d08324030d",
+  "SOURCE_PATH": "phase4/workspaces/EPILOGUE-FUSE-X/EPILOGUE-FUSE-X-V002-VMLA_kernel.asc",
+  "BUILD_HOST": "cann-server3:/home/data4t2/lelinfeng/phase4-workspaces/EPILOGUE-FUSE-X",
+  "COMPILE": "PASS (link adapter: epilogue_fuse_x_v002_link; RC=0)",
+  "LINK": "PASS (epilogue_fuse_x_v002_link SHA256 4558932c55291c27fe37a4760196eba5a0150033e589958b9ca83f918cf16955)",
+  "CORRECTNESS_EXECUTABLE_SHA": "22363e3b27f26fb8366eacd6487d2aca20e33c4972245bcefa9f3215c142ef41",
+  "CORRECTNESS": "53/54 PASS; 1 FAIL resident_wide_colsplit FP32 D=16384 is PRE_EXISTING_PARENT_FAILURE (identical max_abs 0.44175 on frozen parent control). V002 PASS cases match parent within FP32 rounding tolerance.",
+  "CORRECTNESS_DEVICE": "server3 d4",
+  "SINGLE_CHANGE_AUDIT": "PASS",
+  "ARCHITECTURE": "MulAddDst (vmla: dst += src0*src1) replaces Mul+Add at ProcessFp32FullRowOutputPipelined second pass. In-place accumulator: biasLocal[col] is the vmla destination (holds bias, accumulates y_norm*gamma). Per-row bias reload with SyncVToMTE2+SyncMTE2ToV for multi-row cores. 2 V ops per tile (Muls + vmla) vs 3 (Muls + Mul + Add).",
+  "ISOLATION": [
+    "One mechanism: MulAddDst replaces Mul+Add (same arithmetic identity)",
+    "Applied at ProcessFp32FullRowOutputPipelined (primary target shape 4x8192)",
+    "Per-row bias reload is a correctness requirement of the in-place accumulator, not a separate DMA mechanism",
+    "SyncVToMTE2 before bias reload closes V-pipe/MTE2 race on the accumulator buffer",
+    "No reduction, row scheduling, mode, or wide-path change"
+  ],
+  "RISKS": [
+    "V002 applied at 1 of 11 Mul+Add sites (FP32 full-row path). Other sites remain Mul+Add. Extension is a follow-up.",
+    "Per-row bias reload adds 1 MTE2 per row on multi-row cores (may overlap with compute)",
+    "Wide FP32 D=16384 harness case fails on parent and V002 alike; out of scope"
+  ],
+  "DECISION": "CORRECTNESS_PASS_PENDING_TIMING",
+  "NEXT": "Await device timing (Main: after REDUCE V002). Extend vmla to remaining Mul+Add sites as follow-up if signal is positive.",
+  "MAIN_APPROVAL_DOC": "phase4/research/EPILOGUE-FUSE-X/MAIN-APPROVAL-V002.md"
+}

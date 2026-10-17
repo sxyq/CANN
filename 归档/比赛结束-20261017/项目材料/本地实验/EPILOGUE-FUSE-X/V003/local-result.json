@@ -1,0 +1,33 @@
+{
+  "ROUTE": "EPILOGUE-FUSE-X",
+  "REVISION": "V003",
+  "SINGLE_HYPOTHESIS": "V003-1 VMLA-INPLACE-UNCACHED",
+  "LOCAL_VERDICT": "NEEDS_ONE_MORE_LOCAL",
+  "VERDICT_REASON": "Correctness 53/54 (1 pre-existing). Timing: 4 shapes x 6 pairs, deltas mixed within noise (median +0.7% to +2% on VMLA-active shapes, control noisy). Copy-back pattern keeps V-op count at 3/tile — only 1 fewer valueTile writeback. No measurable performance signal.",
+  "BUILD": {
+    "host": "cann-server3",
+    "compile_rc": 0,
+    "link_rc": 0,
+    "link_executable_sha": "1b51f5bd7e4659a2b50cc856114295a5845f0e15c53a648c1ef01bc2ba77eec0",
+    "probe_executable_sha": "89ba5b6b2e71470be5fe84c3f4ad17e91d57c073189f676e64fdb3b1cbe53d12"
+  },
+  "CORRECTNESS": {
+    "device": "server3 d4",
+    "total_cases": 54,
+    "passed": 53,
+    "failed": 1,
+    "failed_case_class": "PRE_EXISTING_PARENT_FAILURE"
+  },
+  "MEASUREMENT": {
+    "status": "COMPLETE",
+    "device": "server3 d5",
+    "shapes": ["2x8192 FP32", "4x8192 FP32", "8x8192 FP32", "64x8192 FP32 control"],
+    "pairs_per_shape": 6,
+    "vmla_active_median_delta_pct": {"2x8192": 1.5, "4x8192": 2.0, "8x8192": 0.7},
+    "control_64x8192_note": "Very noisy (P and C outliers); no systematic signal",
+    "interpretation": "All deltas within noise band. Copy-back pattern = no net V-op reduction. 1 fewer valueTile writeback insufficient for measurable gain.",
+    "summary_path": "support/results-timing-v003/paired-deltas.csv",
+    "raw_path": "support/results-timing-v003/"
+  },
+  "ONLINE_WORTHY": "NO"
+}

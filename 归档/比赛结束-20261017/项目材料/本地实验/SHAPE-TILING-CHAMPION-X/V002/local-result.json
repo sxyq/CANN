@@ -1,0 +1,104 @@
+{
+  "route": "SHAPE-TILING-CHAMPION-X",
+  "revision": "V002",
+  "direct_parent": "R31B-V011",
+  "parent_source_sha": "a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3",
+  "candidate_source_sha256": "aed967513cf9c284f8a3226c790dca57a1a6f2fd19048830469291f924ea704b",
+  "single_hypothesis": "FP32 D=32768 wide rows seed the full-y process tile at 6112 instead of 4096 so the UB budget buys fewer tile rounds (8 to 6).",
+  "selected_by": "MAIN-1 SELECTION 2026-09-29 (H2)",
+  "BUILD": "PASS",
+  "build_host": "cann-server3 (hwnput3)",
+  "build_cann": "/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002",
+  "build_soc": "Ascend910B3 / dav-2201",
+  "device_used": 4,
+  "EXECUTABLE_IDENTITY": {
+    "status": "PASS",
+    "local_sha256": "aed967513cf9c284f8a3226c790dca57a1a6f2fd19048830469291f924ea704b",
+    "remote_sha256": "aed967513cf9c284f8a3226c790dca57a1a6f2fd19048830469291f924ea704b",
+    "local_equals_remote": true
+  },
+  "CORRECTNESS": "COMMON_MODE_WITH_PARENT",
+  "OFAT_NUMERIC_SAFETY": "PASS",
+  "SHARED_BASELINE_LIMITATION": "wide-FP32 invRms nondeterminism (~0.8% run-to-run) in ProcessWideFp32FullCacheRows",
+  "correctness_detail": {
+    "cases_total": 10,
+    "candidate_failures": 7,
+    "parent_failures": 7,
+    "classification": "COMMON_MODE_WITH_PARENT",
+    "log": "logs/build_and_test.log",
+    "untouched_deterministic_cells_delta_zero": ["fp32 D=8192", "fp16 D=32768", "fp16 D=16384", "bf16 D=32768", "bf16 D=16384"],
+    "untouched_fp32_wide_cells_show_baseline_noise": ["fp32 D=16384 delta~0.096", "fp32 D=12288 delta~0.089"],
+    "change_domain_fp32_D32768": "delta ~0.09 inside the parent run-to-run noise floor",
+    "note": "Untouched FP32 wide cells (D=12288/16384) also show ~0.09 parent-vs-candidate delta even though V002 does not touch them; this confirms the delta is shared-baseline nondeterminism, not a V002 effect."
+  },
+  "timing": {
+    "status": "COMPLETE",
+    "method": "DEVICE_EVENT_PRIMARY (aclrtRecordEvent start/stop), wall_us diagnostic only",
+    "warmup": 45,
+    "pairs_per_shape": 21,
+    "device": 4,
+    "device_load": "HBM 59212/65536 (~90%, <100%), AICore 0%, no active lease on d4",
+    "same_binary_qualification": {
+      "result": "PASS 7_OF_7",
+      "log": "logs/same-binary.log",
+      "detail": {
+        "fp32-change-d32768-r2": "PASS mad/median=0.023 block_drift=0.012 median=11.340us",
+        "fp32-change-d32768-r8": "PASS mad/median=0.029 block_drift=0.000 median=12.220us",
+        "fp32-blank-d16384": "PASS mad/median=0.026 block_drift=0.003 median=7.370us",
+        "fp32-blank-d8192": "PASS mad/median=0.039 block_drift=0.045 median=5.320us",
+        "fp32-blank-d12288": "PASS mad/median=0.041 block_drift=0.041 median=6.370us",
+        "fp16-blank-d32768": "PASS mad/median=0.023 block_drift=0.026 median=10.020us",
+        "bf16-blank-d32768": "PASS mad/median=0.019 block_drift=0.010 median=14.020us"
+      }
+    },
+    "paired_results": {
+      "log": "logs/paired.log",
+      "noise_floor_from_blank_controls": "paired_delta_median in [-0.14, +0.18] us on bit-identical code (d16384 +0.100, d8192 -0.140, d12288 +0.120, fp16-d32768 -0.140, bf16-d32768 +0.180)",
+      "shapes": {
+        "fp32-change-d32768-r2": "paired_delta_median=+0.140us; direction 6 neg / 14 pos; trimmed_median=+0.140; last10_median=+0.220",
+        "fp32-change-d32768-r8": "paired_delta_median=+0.080us; direction 9 neg / 11 pos; trimmed_median=+0.080; last10_median=+0.080",
+        "fp32-blank-d16384": "paired_delta_median=+0.100us (expect 0; noise)",
+        "fp32-blank-d8192": "paired_delta_median=-0.140us (expect 0; noise)",
+        "fp32-blank-d12288": "paired_delta_median=+0.120us (expect 0; noise)",
+        "fp16-blank-d32768": "paired_delta_median=-0.140us (expect 0; noise)",
+        "bf16-blank-d32768": "paired_delta_median=+0.180us (expect 0; noise)"
+      }
+    }
+  },
+  "MULTISCALE_TIMING": {
+    "added_at": "2026-09-29",
+    "reason": "MAIN-1 instruction A: multi-row supplement on the same V002 binary and parent. Measurement completion, not a new revision. Original closed-loop timing record above is preserved unchanged.",
+    "method": "DEVICE_EVENT_PRIMARY, warmup=45, 21 interleaved pairs, device 4",
+    "same_binary": {
+      "result": "PASS 5_OF_5",
+      "log": "logs/multiscale-same-binary.log",
+      "parent_medians_us": {
+        "fp32-change-d32768-r2": 11.43,
+        "fp32-change-d32768-r8": 12.18,
+        "fp32-change-d32768-r16": 20.46,
+        "fp32-blank-d16384-r8": 8.28,
+        "fp32-blank-d16384-r2": 7.23
+      }
+    },
+    "paired": {
+      "log": "logs/multiscale-paired.log",
+      "noise_floor_from_blank_controls": "paired_delta_median in [-0.08, -0.06] us (fp32-blank-d16384-r8 -0.060, fp32-blank-d16384-r2 -0.080). Tighter than the closed-loop round; band must be re-measured every round.",
+      "shapes": {
+        "fp32-change-d32768-r2": "paired_delta_median=-0.080us; direction 13 neg / 8 pos; last10=-0.080; at blank band edge",
+        "fp32-change-d32768-r8": "paired_delta_median=-0.060us; direction 11 neg / 10 pos; last10=+0.020; inside blank band",
+        "fp32-change-d32768-r16": "paired_delta_median=-0.160us; direction 12 neg / 9 pos; first10=-0.260 last10=+0.080; median outside blank band but DIRECTION UNSTABLE (late pairs flip positive) and magnitude far below the mechanism prediction"
+      }
+    },
+    "mechanism_magnitude_check": {
+      "per_row_d32768_cost_us": "approx 8.3 (from 16x minus 8x same-binary medians: 20.46-12.18)",
+      "tile_rounds_parent_vs_candidate": "8 vs 6 (25 percent fewer)",
+      "predicted_saving_if_tile_rounds_dominated": "order 2 us per row if each tile round cost about 1 us; even at 0.1 us per round it would be 0.2 us per row",
+      "observed_r16_delta_us": -0.16,
+      "conclusion": "observed delta is 2 percent of the per-row cost while tile rounds drop 25 percent; the effect size is 10x smaller than the mechanism predicts. The r16 poke-out is therefore not attributable to the tile-tier change. Tile rounds are not the bottleneck at D=32768."
+    }
+  },
+  "local_verdict": "NEEDS_ONE_MORE_LOCAL",
+  "local_verdict_reason": "Closed loop: change-domain paired medians (+0.140/+0.080us) inside blank band [-0.14,+0.18]us. Multi-row supplement (MAIN-1 instruction A): r2 -0.080 and r8 -0.060 sit inside the blank band [-0.08,-0.06]us; r16 -0.160 pokes outside but direction is unstable (12/9, last10 flips +0.080) and the magnitude is ~2% of per-row cost while tile rounds drop 25%, so it is not attributable to the tile-tier mechanism. No stable improvement. Keep current Candidate; do not stack further performance changes. NEXT: case 14 bottleneck attribution (read-only), per MAIN-1 instruction B.",
+  "child_decision": "NEEDS_ONE_MORE_LOCAL",
+  "online_submission": false
+}

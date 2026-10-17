@@ -1,0 +1,84 @@
+{
+  "route": "EPILOGUE-ARITH-CHAMPION-X",
+  "revision": "V002",
+  "hypothesis_id": "EA-H2-GAMMA-FIRST-AXPY",
+  "direct_parent": "V001",
+  "parent_source_sha": "eda335d16e7e311b279e8918c6405c622bb7022e040459143f19a6240a546dbf",
+  "candidate_source_sha": "00a5c8186d66640c159cf1834e394257754e7cf032a439e6274bc3b12a52b108",
+  "build": {
+    "status": "PASS",
+    "cmake_rc": 0,
+    "obj_rc": 0,
+    "link_rc": 0,
+    "probe_rc": 0,
+    "executable_sha": "50bb4425521c609bb53499fb8558d53498eab2e67e72fb4c959015ee59721ec7"
+  },
+  "correctness": {
+    "status": "PASS_WITH_KNOWN_GOLDEN_ISSUES",
+    "shapes_passed": 24,
+    "shapes_total": 26,
+    "known_golden_issues": ["1x16384_fp32", "1x32768_fp32"],
+    "note": "24/26 shapes parent-child max_abs bit-identical; 2 shapes COMMON_MODE_WITH_PARENT (wide FP32 invRms non-determinism, golden wrong). Candidate max_abs higher than V001 on golden-issue shapes (precision regression from association order change)."
+  },
+  "same_binary": {
+    "status": "MEASUREMENT_PROTOCOL_BLOCKED_FOR_SHAPE",
+    "change_domain_shapes": {
+      "1x32768_fp32": {"mad_median_ratio": 0.507, "block_drift": "high", "verdict": "MEASUREMENT_PROTOCOL_BLOCKED_FOR_SHAPE"},
+      "2x16384_fp32": {"mad_median_ratio": 0.599, "block_drift": "high", "verdict": "MEASUREMENT_PROTOCOL_BLOCKED_FOR_SHAPE"}
+    },
+    "control_shape": {
+      "2x8192_fp32": {"mad_median_ratio": 0.101, "verdict": "NEEDS_VALIDATION"}
+    },
+    "note": "High variance due to measurement environment (HBM 90%). V001 window 3 had MAD/med 4.2% on same shapes with same recipe."
+  },
+  "pc_timing": {
+    "recipe": "d6+gap=5s+6blocks x 11samples, 6 pairs interleaved",
+    "shapes": {
+      "1x32768_fp32": {
+        "role": "change-domain (EA-H2 active, batchRows=1)",
+        "p_median_us": 11.98,
+        "c_median_us": 11.37,
+        "delta_median_pct": -6.64,
+        "delta_median_us": -0.790,
+        "direction": "6/6 favor C",
+        "differential_vs_control_pp": -19.05
+      },
+      "2x16384_fp32": {
+        "role": "change-domain (EA-H2 active, batchRows=1 per batch)",
+        "p_median_us": 8.09,
+        "c_median_us": 8.01,
+        "delta_median_pct": -1.43,
+        "delta_median_us": -0.115,
+        "direction": "5/6 favor C",
+        "differential_vs_control_pp": -13.84
+      },
+      "2x8192_fp32": {
+        "role": "control (EA-H2 NOT active, batchRows=2)",
+        "p_median_us": 6.10,
+        "c_median_us": 6.88,
+        "delta_median_pct": 12.41,
+        "delta_median_us": 0.755,
+        "direction": "2/6 favor C"
+      }
+    }
+  },
+  "mechanism_amplitude": {
+    "prediction": "V-passes 3→2 per tile (24→16 for 1x32768 tileCount=8); barriers 16→8",
+    "measured_1x32768": -6.64,
+    "measured_2x16384": -1.43,
+    "note": "Measured improvement consistent with mechanism (33% V-op reduction → ~6.6% wall-clock). 2x16384 weaker because 2 batches of 1 row amortize differently."
+  },
+  "precision_risk": {
+    "status": "REGRESSION_ON_GOLDEN_ISSUE_SHAPES",
+    "detail": "Candidate max_abs 5.51 vs parent 1.19 on 1x16384; 9.13 vs 1.20 on 1x32768. Association order change (y·g)·s vs (y·s)·g causes larger-than-predicted divergence on shapes with wrong golden. 24/26 shapes bit-identical (gate protects batchRows>1)."
+  },
+  "local_verdict": "NEEDS_ONE_MORE_LOCAL",
+  "verdict_rationale": "Strong P/C signal (6/6 direction on 1x32768, differential -19pp) but same-binary MEASUREMENT_PROTOCOL_BLOCKED_FOR_SHAPE (MAD/med >0.25) prevents LOCAL_ACCEPTED per protocol. Precision regression on golden-issue shapes needs Main review. Recommend re-measurement in cleaner window.",
+  "measurement_window": "2026-09-29T02:44Z to 2026-09-29T03:20Z",
+  "device": "d4",
+  "load_quality": "HBM 90%, AICore 0%, no lease conflict",
+  "module_sha": {
+    "parent_probe": "5d93cf1ae859d7e527a15a9c5b5ec54c1dfe4cd50bc7ff22e85a6a47a282b0a5",
+    "candidate_probe": "b183661cc63a9d8bbeb68b986d096a52a411400196dd7ef464bfc5e9aa4f46cf"
+  }
+}

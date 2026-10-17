@@ -1,0 +1,62 @@
+HOST=hwnput3
+DEVICE=1
+END=2026-10-16T22:06:11+00:00
+	NPU ID                         : 1
+	Chip Count                     : 1
+
+	Chip ID                        : 0
+	Memory Usage Rate(%)           : 0
+	HBM Usage Rate(%)              : 5
+	Aicore Usage Rate(%)           : 0
+	Aicore Freq(MHZ)               : 1800
+	Aicore curFreq(MHZ)            : 800
+	Aicore Count                   : 20
+	Temperature(C)                 : 33
+	NPU Real-time Power(W)         : 89.8
+
+	Chip Name                      : mcu
+	Temperature(C)                 : 30
+	NPU ID                         : 1
+	Chip Count                     : 1
+
+	DDR Capacity(MB)               : 0
+	DDR Usage Rate(%)              : 0
+	DDR Hugepages Total(page)      : 0
+	DDR Hugepages Usage Rate(%)    : 0
+	HBM Capacity(MB)               : 65536
+	HBM Usage Rate(%)              : 5
+	Aicore Usage Rate(%)           : 0
+	Aivector Usage Rate(%)         : 0
+	Aicpu Usage Rate(%)            : 0
+	Ctrlcpu Usage Rate(%)          : 10
+	DDR Bandwidth Usage Rate(%)    : 0
+	HBM Bandwidth Usage Rate(%)    : 0
+	Chip ID                        : 0
+
+Must input parameter of type.
+Usage: npu-smi info <watch|proc|-h|-m|-l|-t type> [Options...]
+
+Commands:
+       watch          Show all device's status in scrolling format
+       proc           Show device's matrix process status in scrolling format
+       -h, --help     Show this help text and exit
+       -m             Show all device's mapping information
+       -l             Show all device's topology information
+       -t type        Show information for type
+                      type: board, flash, memory, usages, sensors, temp, power, volt, mac-addr,
+                            common, health, product, ecc, ip, sys-time, i2c_check, work-mode,
+                            ecc-enable, p2p-enable, ssh-enable, license, customized-info,
+                            device-share, nve-level, aicpu-config, pcie-err, mcu-monitor,
+                            err-count, boot-area, vnpu-mode, info-vnpu, vnpu-svm, cpu-num-cfg,
+                            first-power-on-date, proc-mem, phyid-remap, vnpu-cfg-recover, key-manage,
+                            template-info, pkcs-enable, p2p-mem-cfg, pwm-mode, pwm-duty-ratio,
+                            boot-select, topo, hccs, sio-info, spod-info, tls-csr-get, tls-cert,
+                            tls-cert-period, rootkey, hccs-bw, cpu-freq-up, hccs-credit.
+
+Options:
+       -i %d          Card ID
+       -c %d          Chip ID
+       -p %d          Chip Physical ID
+RUNNER_PROCESSES
+1392391 bash -c remote=/home/data4t2/lelinfeng/cann/server_runs/C2C-V2-N04/V017 before="$remote/server3-before-v017-correctness-device1-20261017.txt" log="$remote/server3-v017-correctness-device1-20261017.txt" after="$remote/server3-after-v017-correctness-device1-20261017.txt" runner="$remote/build-v017/paired_runner_v016" {   echo HOST=hwnput3   echo DEVICE=1   echo START=$(date -Is)   npu-smi info -t common -i 1   npu-smi info -t usages -i 1   npu-smi info -i 1   echo RUNNER_PROCESSES   pgrep -af paired_runner_v016 } > "$before" 2>&1 source /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/script/set_env.sh export LD_LIBRARY_PATH=/usr/lib/aarch64-linux-gnu:$LD_LIBRARY_PATH echo HOST=hwnput3 > "$log" echo DEVICE=1 >> "$log" echo RUNNER_COMMAND=$runner --correctness --device 1 >> "$log" echo START=$(date -Is) >> "$log" "$runner" --correctness --device 1 >> "$log" 2>&1 rc=$? echo CORRECTNESS_RC=$rc >> "$log" {   echo HOST=hwnput3   echo DEVICE=1   echo END=$(date -Is)   npu-smi info -t common -i 1   npu-smi info -t usages -i 1   npu-smi info -i 1   echo RUNNER_PROCESSES   pgrep -af paired_runner_v016   echo RUNNER_RC=$rc } > "$after" 2>&1 cat "$log" exit $rc
+RUNNER_RC=0
