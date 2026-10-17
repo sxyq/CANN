@@ -1,0 +1,43 @@
+{
+  "route": "N07",
+  "revision": "R100",
+  "branch": "research/n07-parameter-tile-reuse",
+  "parent_commit": "2b9e898dc3d00a7cb4fcd69ec0c7c008882219d8",
+  "parent_source_commit": "847e02600b8cc228f1d97af4135bfd93fcdae900",
+  "source_commit": "d1dc64669d4eaac792c99c7c3223e256ad8b6704",
+  "source_path": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "2c38138842713e5fde7a2e9b9925f380ccfe5d2b20996f41336b140277fbf34e",
+  "hypothesis": "Parameter-cache initialization is paid only by active grid blocks; using min(gridRowCount, gridBlockCount) instead of all available blocks can admit reuse for low-row grids without charging inactive cores.",
+  "change": "ChooseWideFullYRows now derives activeGridBlockCount from gridRowCount/gridBlockCount and uses it for cacheInitCount.",
+  "changed_kernel_location": "ChooseWideFullYRows resident-parameter cache cost model",
+  "build": {
+    "status": "passed",
+    "entrypoint_command": "./tools/run.sh build",
+    "exit_code": 0,
+    "output": [
+      "-- Configuring done",
+      "-- Generating done",
+      "-- Build files have been written to: /home/data4t2/lelinfeng/cann/worktrees/n07-parameter-tile-reuse/phase4/workspaces/R31B/build-n07",
+      "Consolidate compiler generated dependencies of target r31b_submission_v011",
+      "[ 50%] Building ASC object CMakeFiles/compile_adapter_v011.dir/compile_adapter_v011.asc.o",
+      "[100%] Linking ASC executable r31b_submission_v011",
+      "[100%] Built target r31b_submission_v011"
+    ],
+    "target": "r31b_submission_v011",
+    "artifact_path": "phase4/workspaces/R31B/build-n07/r31b_submission_v011",
+    "artifact_sha256": "36327779a087f802b9166e35fb1db186430127d39da35832a89259fba7ae4200"
+  },
+  "correctness": {
+    "status": "not_run",
+    "exit_code": 3,
+    "reason": "./tools/run.sh correctness reports: correctness harness is not present in this sparse worktree. No device Correctness result was run for R100."
+  },
+  "local": {
+    "status": "not_run",
+    "exit_code": 3,
+    "reason": "./tools/run.sh local reports: canonical Local runner and scorer are not present in this sparse worktree. No device Local measurement was run for R100."
+  },
+  "device_id": "NONE",
+  "free_hbm_mb": "UNKNOWN",
+  "assessment": "Build passed; Correctness and Local are unverified. No promotion or performance claim."
+}
