@@ -1,0 +1,23 @@
+route=N08
+revision=R099
+parent_version=R098
+parent_sha=b91f15f256d918c6f81ef14941397c655b04e97e
+source_commit=4fd9367ac12b99dcfd5bf0b8978b8c8fba92cbb6
+source=phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc
+source_sha256=6ec8515b39bbf13ec31d336c92aa71996f1e9185ac4a998c4cdfdfa979746c28
+
+hypothesis=The merged FP32 full-cache tail branch already proves block-aligned GM and UB starts and a block-aligned valid length. Replace its 2D DataCopyPad transaction with the native 2D DataCopyParams form to remove padding-path setup while preserving identical block count, block length, and row stride. Other partial tails remain on DataCopyPad.
+scope=Only ProcessWideFp32FullCacheRows mergeAlignedTailRows output transaction. No valid range, offsets, row grouping predicate, UB layout, arithmetic, or synchronization changes.
+
+build_command=./tools/run.sh build
+build_return_code=0
+build_status=PASS
+build_log=results/build-20261017T050705+0000.log
+build_log_sha256=9c1b4583de0eae36f414901f048c497d99607c58b44b45436d6e9e172313a41e
+artifact=build/r31b_submission_v011
+artifact_sha256=93beeaa97005edb4040b56733e9480f336a8e00ef3247608f11b373d9195de0e
+
+correctness_status=WAITING_FOR_MAIN_CANONICAL_WORKER
+local_status=WAITING_FOR_MAIN_CANONICAL_WORKER
+device_status=NOT_RUN_BY_ROUTE
+performance_status=UNKNOWN
