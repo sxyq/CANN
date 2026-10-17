@@ -105,4 +105,13 @@ V011 Compile, Correctness, and Local are complete. No next version is started;
 the existing paired runner and V011 server evidence remain available for later
 read-only comparison with a separately defined mechanism.
 
+## EVIDENCE AUDIT
+
+- SUPPLIED_COMPILE_LOG: `本地实验/WIDE-UB-RESIDENCY-X/V011/server-transaction-20261017/compile.log`; configure return code `0`, build return code `0`, `COMPILE_RESULT=PASS`.
+- SUPPLIED_PAIRED_LOG: `本地实验/WIDE-UB-RESIDENCY-X/V011/server-transaction-20261017/paired-run.log`; four cases completed with Correctness PASS and `RUNNER_RETURN_CODE=0`.
+- FINAL_COMPILE_LOG: `本地实验/WIDE-UB-RESIDENCY-X/V011/server-transaction-20261017/compile-rerun-20261016T192500Z-envfix.log`; configure return code `0`, build return code `0`.
+- FINAL_PAIRED_LOG: `本地实验/WIDE-UB-RESIDENCY-X/V011/server-transaction-20261017/paired-run-rerun-20261016T192650Z-envfix.log`; four cases completed with Correctness PASS and `RUNNER_RETURN_CODE=0`. The table above uses this later environment-fixed run for Local statistics.
+- V008 remains unvalidated according to its existing `RESULT.md`; its raw transaction files remain preserved and are not counted as a valid candidate. V009 Correctness failure and V010 Official Wrong Answer remain excluded from candidate handoff.
+- N06_CANDIDATE: `NO`; V011 has no stable Local improvement because all four final P10-P90 intervals cross zero.
+
 STATUS: SERVER_VALIDATED_LOCAL_NO_CLEAR_GAIN
