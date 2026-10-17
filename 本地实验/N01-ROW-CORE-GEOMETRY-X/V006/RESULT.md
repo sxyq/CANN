@@ -39,3 +39,41 @@
 ## NEXT
 
 后续在用户允许访问设备后，沿用 N01 已有 paired CMake/Runner 入口接入 V006 Candidate，先 Compile，再对 FP16/BF16 的 D=32768、Rows=1/2 做 Correctness 和配对 Local。其余 D、Rows>2、FP32，以及非 paired Runner 调用者的 alias/对齐约束仍不在本版本已确认范围内。
+
+## SERVER TRANSACTION 2026-10-17
+
+本节追加真实服务器事务结果，覆盖并更新上文“未执行”的 Compile、Correctness 和 Local 状态。
+
+### COMPILE
+
+- `COMPILE=PASS`。远端 Configure 返回码 `0`，Build 返回码 `0`。
+- 复用远端既有入口：
+  - 工作目录：`/home/data4t2/lelinfeng/cann/server_runs/C2C-V2-N01/V006`。
+  - CMake：`/home/data4t2/lelinfeng/cann/server_runs/C2C-V2-N01/V006/paired/CMakeLists.txt`。
+  - Runner：`/home/data4t2/lelinfeng/cann/server_runs/C2C-V2-N01/V006/paired/paired_runner_n01.asc`、`paired_runner.cpp`、`paired_runner_abi.h`。
+  - 构建产物：`/home/data4t2/lelinfeng/cann/server_runs/C2C-V2-N01/V006/paired/build/paired_runner_n01`。
+- Candidate SHA-256：`26b787baea9f54dd6e44d8676604d43d5280b349b8865bbcc57f5a0f4242aa8`。
+- Parent SHA-256：`a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`。
+- 最终 Runner SHA-256：`9774d29a584ba2c60063558d4fd7b0255355749da4d431a59ea4839208bbebf6`。
+- 远端 V006 目录未找到名为 `compile.log` 的文件；本轮 Compile 原始输出保存于本地 `server-tx-20261017/compile-npu3-20261017.log`，此前失败与重跑输出仍保留在 `build-raw.log`、`build-rerun-raw.log`。
+
+### CORRECTNESS / LOCAL
+
+- 设备：NPU3；前置状态为 Health=`OK`、HBM 使用率 `5%`、AICore `0%`、Aivector `0%`、无进程。运行结束后仍为 Health=`OK`、HBM 使用率 `5%`、无进程。未触碰其他设备进程。
+- 既有 Runner 的资格模式 `--qualify-v011` 返回码 `0`，18/18 Parent Correctness 通过；原始结果仍保留，部分高 Rows 形状出现已有采样波动记录。
+- 既有 Runner 的配对模式 `--paired` 返回码 `3`，在首个宽行用例停止：
+  - `fp16-tail-d12288-r2`：Parent/Candidate Correctness 均通过；21 对 Local，Parent 中位 `7.540 us`，Candidate 中位 `7.100 us`，配对差值中位 `-0.080 us`。
+  - `fp16-tail-d12288-r8`：Parent/Candidate Correctness 均通过；21 对 Local，Parent 中位 `8.500 us`，Candidate 中位 `7.740 us`，配对差值中位 `-0.220 us`。
+  - `fp16-wide-d32768-r1`：Parent Correctness 通过；Candidate Correctness 失败，`failures=28841`、`max_abs=6.2617188`、`max_rel=16699.234`。Runner 随后返回 `RC=3`，后续宽行和 BF16 用例未执行。
+- `LOCAL=INCOMPLETE`。已生成的两组尾行 Local 仅作为原始观测保存，不形成 V006 总体 Local 结论，也不据此认定相对 R31B V011 有效改善。
+- 服务器事务原始日志：
+  - `server-tx-20261017/compile-npu3-20261017.log`
+  - `server-tx-20261017/qualify-npu3-20261017.log`
+  - `server-tx-20261017/paired-npu3-20261017.log`
+  - 对应远端运行对象：`/home/data4t2/lelinfeng/cann/server_runs/C2C-V2-N01/V006/paired/build/paired_runner_n01`。
+
+### COMMIT
+
+- `GIT_COMMIT=NONE`；本轮没有新增候选提交。
+- `Official=NO`；未执行线上提交。
+- 由于 Candidate Correctness 在 `fp16-wide-d32768-r1` 失败且 Local 未完成，本版本不返回线上候选路径。
