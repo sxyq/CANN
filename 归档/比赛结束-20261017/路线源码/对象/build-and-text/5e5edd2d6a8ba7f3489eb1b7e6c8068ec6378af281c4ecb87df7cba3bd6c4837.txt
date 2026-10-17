@@ -1,0 +1,110 @@
+#include "kernel_operator.h"
+
+using namespace AscendC;
+
+namespace {
+
+template <typename T>
+__aicore__ inline float ToFloat(const T value)
+{
+    return static_cast<float>(value);
+}
+
+template <typename T>
+__aicore__ inline T FromFloat(const float value)
+{
+    return static_cast<T>(value);
+}
+
+template <typename T>
+__aicore__ inline void AddRmsNormBiasImpl(
+    GM_ADDR x,
+    GM_ADDR residual,
+    GM_ADDR gamma,
+    GM_ADDR bias,
+    GM_ADDR y,
+    const uint32_t outer,
+    const uint32_t dim,
+    const float epsilon)
+{
+    GlobalTensor<T> xGm;
+    GlobalTensor<T> residualGm;
+    GlobalTensor<T> gammaGm;
+    GlobalTensor<T> biasGm;
+    GlobalTensor<T> yGm;
+
+    xGm.SetGlobalBuffer(reinterpret_cast<__gm__ T *>(x));
+    residualGm.SetGlobalBuffer(reinterpret_cast<__gm__ T *>(residual));
+    gammaGm.SetGlobalBuffer(reinterpret_cast<__gm__ T *>(gamma));
+    biasGm.SetGlobalBuffer(reinterpret_cast<__gm__ T *>(bias));
+    yGm.SetGlobalBuffer(reinterpret_cast<__gm__ T *>(y));
+
+    const uint32_t blockIdx = GetBlockIdx();
+    const uint32_t blockNum = GetBlockNum();
+
+    for (uint32_t row = blockIdx; row < outer; row += blockNum) {
+        const uint64_t rowBase = static_cast<uint64_t>(row) * dim;
+        float sumSquares = 0.0f;
+
+        // The reduction is deliberately accumulated in FP32 before sqrt.
+        for (uint32_t col = 0; col < dim; ++col) {
+            const uint64_t offset = rowBase + col;
+            const float value = ToFloat(xGm.GetValue(offset)) + ToFloat(residualGm.GetValue(offset));
+            sumSquares += value * value;
+        }
+
+        const float meanSquare = sumSquares / static_cast<float>(dim);
+        const float rms = sqrtf(meanSquare + epsilon);
+        const float inverseRms = 1.0f / rms;
+
+        for (uint32_t col = 0; col < dim; ++col) {
+            const uint64_t offset = rowBase + col;
+            const float value = ToFloat(xGm.GetValue(offset)) + ToFloat(residualGm.GetValue(offset));
+            const float scale = ToFloat(gammaGm.GetValue(col));
+            const float shift = ToFloat(biasGm.GetValue(col));
+            const float normalized = value * inverseRms;
+            yGm.SetValue(offset, FromFloat<T>(normalized * scale + shift));
+        }
+    }
+}
+
+} // namespace
+
+extern "C" __global__ __aicore__ void add_rms_norm_bias_fp16(
+    GM_ADDR x,
+    GM_ADDR residual,
+    GM_ADDR gamma,
+    GM_ADDR bias,
+    GM_ADDR y,
+    uint32_t outer,
+    uint32_t dim,
+    float epsilon)
+{
+    AddRmsNormBiasImpl<half>(x, residual, gamma, bias, y, outer, dim, epsilon);
+}
+
+extern "C" __global__ __aicore__ void add_rms_norm_bias_bf16(
+    GM_ADDR x,
+    GM_ADDR residual,
+    GM_ADDR gamma,
+    GM_ADDR bias,
+    GM_ADDR y,
+    uint32_t outer,
+    uint32_t dim,
+    float epsilon)
+{
+    AddRmsNormBiasImpl<bfloat16_t>(x, residual, gamma, bias, y, outer, dim, epsilon);
+}
+
+extern "C" __global__ __aicore__ void add_rms_norm_bias_fp32(
+    GM_ADDR x,
+    GM_ADDR residual,
+    GM_ADDR gamma,
+    GM_ADDR bias,
+    GM_ADDR y,
+    uint32_t outer,
+    uint32_t dim,
+    float epsilon)
+{
+    AddRmsNormBiasImpl<float>(x, residual, gamma, bias, y, outer, dim, epsilon);
+}

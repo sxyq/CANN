@@ -1,0 +1,302 @@
+#include <cmath>
+#include "kernel_operator.h"
+
+using namespace AscendC;
+
+struct TensorInfo;
+struct TensorGroupInfo;
+
+#ifndef INPUT_T
+#define INPUT_T half
+#endif
+
+using InputT = INPUT_T;
+
+struct AddRmsNormBiasTilingData {
+    uint32_t outer;
+    uint32_t dim;
+    uint32_t rowStride;
+    uint32_t tileRows;
+    float epsilon;
+    float invDim;
+    uint32_t blockCount;
+};
+
+template <typename T>
+class AddRmsNormBiasLargeTile {
+public:
+    __aicore__ inline void Init(GM_ADDR x, GM_ADDR residual, GM_ADDR gamma, GM_ADDR bias,
+        GM_ADDR y, const AddRmsNormBiasTilingData& tiling)
+    {
+        xGm_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(x));
+        residualGm_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(residual));
+        gammaGm_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(gamma));
+        biasGm_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(bias));
+        yGm_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(y));
+
+        outer_ = tiling.outer;
+        dim_ = tiling.dim;
+        rowStride_ = tiling.rowStride;
+        tileRows_ = tiling.tileRows;
+        epsilon_ = tiling.epsilon;
+        invDim_ = tiling.invDim;
+        blockCount_ = tiling.blockCount;
+
+        tileInputBytes_ = tileRows_ * rowStride_ * sizeof(T);
+        tileFloatBytes_ = tileRows_ * rowStride_ * sizeof(float);
+        rowFloatBytes_ = rowStride_ * sizeof(float);
+
+        pipe_.InitBuffer(xQueue_, 2, tileInputBytes_);
+        pipe_.InitBuffer(residualQueue_, 2, tileInputBytes_);
+        pipe_.InitBuffer(gammaQueue_, 1, rowStride_ * sizeof(T));
+        pipe_.InitBuffer(biasQueue_, 1, rowStride_ * sizeof(T));
+        pipe_.InitBuffer(workBuf_, 2 * tileFloatBytes_);
+        pipe_.InitBuffer(gammaFloatBuf_, rowFloatBytes_);
+        pipe_.InitBuffer(biasFloatBuf_, rowFloatBytes_);
+        pipe_.InitBuffer(reduceBuf_, rowFloatBytes_);
+        pipe_.InitBuffer(scalarBuf_, 32);
+    }
+
+    __aicore__ inline void Process()
+    {
+        if (outer_ == 0 || dim_ == 0 || tileRows_ == 0) {
+            return;
+        }
+
+        LoadScaleVectors();
+
+        uint32_t blockCount = blockCount_;
+        uint32_t blockIdx = GetBlockIdx();
+        if (blockCount == 0 || blockIdx >= blockCount) {
+            return;
+        }
+
+        uint32_t rowBegin = (outer_ * blockIdx) / blockCount;
+        uint32_t rowEnd = (outer_ * (blockIdx + 1)) / blockCount;
+        for (uint32_t rowBase = rowBegin; rowBase < rowEnd; rowBase += tileRows_) {
+            uint32_t rowsThisTile = rowEnd - rowBase;
+            if (rowsThisTile > tileRows_) {
+                rowsThisTile = tileRows_;
+            }
+            CopyIn(rowBase, rowsThisTile);
+            ComputeAndCopyOut(rowBase, rowsThisTile);
+        }
+    }
+
+private:
+    __aicore__ inline uint32_t AlignBytes(uint32_t bytes) const
+    {
+        return (bytes + 31U) & ~31U;
+    }
+
+    __aicore__ inline DataCopyExtParams MakeInputParams(uint32_t rows) const
+    {
+        DataCopyExtParams params;
+        params.blockCount = static_cast<uint16_t>(rows);
+        params.blockLen = dim_ * sizeof(T);
+        params.srcStride = 0;
+        params.dstStride = (rowStride_ * sizeof(T) - AlignBytes(dim_ * sizeof(T))) / 32U;
+        params.rsv = 0;
+        return params;
+    }
+
+    __aicore__ inline DataCopyPadExtParams<T> MakeInputPadParams() const
+    {
+        DataCopyPadExtParams<T> params;
+        params.isPad = true;
+        params.leftPadding = 0;
+        params.rightPadding = static_cast<uint8_t>(rowStride_ - dim_);
+        params.paddingValue = static_cast<T>(0);
+        return params;
+    }
+
+    __aicore__ inline DataCopyExtParams MakeOutputParams(uint32_t rows) const
+    {
+        DataCopyExtParams params;
+        params.blockCount = static_cast<uint16_t>(rows);
+        params.blockLen = dim_ * sizeof(T);
+        params.srcStride = (rowStride_ * sizeof(T) - AlignBytes(dim_ * sizeof(T))) / 32U;
+        params.dstStride = 0;
+        params.rsv = 0;
+        return params;
+    }
+
+    __aicore__ inline void LoadScaleVectors()
+    {
+        auto gamma = gammaQueue_.AllocTensor<T>();
+        auto bias = biasQueue_.AllocTensor<T>();
+
+        DataCopyExtParams params;
+        params.blockCount = 1;
+        params.blockLen = dim_ * sizeof(T);
+        params.srcStride = 0;
+        params.dstStride = 0;
+        params.rsv = 0;
+
+        DataCopyPadExtParams<T> padParams;
+        padParams.isPad = true;
+        padParams.leftPadding = 0;
+        padParams.rightPadding = static_cast<uint8_t>(rowStride_ - dim_);
+        padParams.paddingValue = static_cast<T>(0);
+
+        DataCopyPad(gamma, gammaGm_, params, padParams);
+        DataCopyPad(bias, biasGm_, params, padParams);
+        gammaQueue_.EnQue(gamma);
+        biasQueue_.EnQue(bias);
+
+        auto gammaIn = gammaQueue_.DeQue<T>();
+        auto biasIn = biasQueue_.DeQue<T>();
+        auto gammaFloat = gammaFloatBuf_.Get<float>();
+        auto biasFloat = biasFloatBuf_.Get<float>();
+        Cast(gammaFloat, gammaIn, RoundMode::CAST_NONE, dim_);
+        Cast(biasFloat, biasIn, RoundMode::CAST_NONE, dim_);
+        gammaQueue_.FreeTensor(gammaIn);
+        biasQueue_.FreeTensor(biasIn);
+    }
+
+    __aicore__ inline void CopyIn(uint32_t rowBase, uint32_t rows)
+    {
+        auto x = xQueue_.AllocTensor<T>();
+        auto residual = residualQueue_.AllocTensor<T>();
+        auto inputParams = MakeInputParams(rows);
+        auto padParams = MakeInputPadParams();
+        DataCopyPad(x, xGm_[rowBase * dim_], inputParams, padParams);
+        DataCopyPad(residual, residualGm_[rowBase * dim_], inputParams, padParams);
+        xQueue_.EnQue(x);
+        residualQueue_.EnQue(residual);
+    }
+
+    __aicore__ inline void ComputeAndCopyOut(uint32_t rowBase, uint32_t rows)
+    {
+        auto x = xQueue_.DeQue<T>();
+        auto residual = residualQueue_.DeQue<T>();
+        auto work = workBuf_.Get<float>();
+        auto sum = work;
+        auto square = work[tileRows_ * rowStride_];
+        auto reduceTmp = reduceBuf_.Get<float>();
+        auto scalar = scalarBuf_.Get<float>();
+        auto gammaFloat = gammaFloatBuf_.Get<float>();
+        auto biasFloat = biasFloatBuf_.Get<float>();
+
+        for (uint32_t row = 0; row < rows; ++row) {
+            uint32_t offset = row * rowStride_;
+            Cast(sum[offset], x[offset], RoundMode::CAST_NONE, dim_);
+            Cast(square[offset], residual[offset], RoundMode::CAST_NONE, dim_);
+            Add(sum[offset], sum[offset], square[offset], dim_);
+            Mul(square[offset], sum[offset], sum[offset], dim_);
+            ReduceSum<float, true>(scalar, square[offset], reduceTmp, static_cast<int32_t>(dim_));
+            Muls(scalar, scalar, invDim_, 1);
+            Adds(scalar, scalar, epsilon_, 1);
+            Sqrt(scalar, scalar, 1);
+            Muls(sum[offset], sum[offset], 1.0f / scalar.GetValue(0), dim_);
+            Mul(sum[offset], sum[offset], gammaFloat, dim_);
+            Add(sum[offset], sum[offset], biasFloat, dim_);
+            Cast(residual[offset], sum[offset], RoundMode::CAST_ROUND, dim_);
+        }
+
+        DataCopyPad(yGm_[rowBase * dim_], residual, MakeOutputParams(rows));
+        xQueue_.FreeTensor(x);
+        residualQueue_.FreeTensor(residual);
+    }
+
+private:
+    TPipe pipe_;
+    TQue<QuePosition::VECIN, 1> xQueue_;
+    TQue<QuePosition::VECIN, 1> residualQueue_;
+    TQue<QuePosition::VECIN, 1> gammaQueue_;
+    TQue<QuePosition::VECIN, 1> biasQueue_;
+    TBuf<QuePosition::VECCALC> workBuf_;
+    TBuf<QuePosition::VECCALC> gammaFloatBuf_;
+    TBuf<QuePosition::VECCALC> biasFloatBuf_;
+    TBuf<QuePosition::VECCALC> reduceBuf_;
+    TBuf<QuePosition::VECCALC> scalarBuf_;
+
+    GlobalTensor<T> xGm_;
+    GlobalTensor<T> residualGm_;
+    GlobalTensor<T> gammaGm_;
+    GlobalTensor<T> biasGm_;
+    GlobalTensor<T> yGm_;
+
+    uint32_t outer_ = 0;
+    uint32_t dim_ = 0;
+    uint32_t rowStride_ = 0;
+    uint32_t tileRows_ = 0;
+    uint32_t tileInputBytes_ = 0;
+    uint32_t tileFloatBytes_ = 0;
+    uint32_t rowFloatBytes_ = 0;
+    float epsilon_ = 0.0f;
+    float invDim_ = 0.0f;
+    uint32_t blockCount_ = 1;
+};
+
+template <typename T>
+__global__ __vector__ void add_rms_norm_bias_large_tile(
+    GM_ADDR x, GM_ADDR residual, GM_ADDR gamma, GM_ADDR bias, GM_ADDR y,
+    uint32_t outer, uint32_t dim, uint32_t rowStride, uint32_t tileRows,
+    uint32_t blockCount, float epsilon, float invDim)
+{
+    AddRmsNormBiasTilingData tilingData;
+    tilingData.outer = outer;
+    tilingData.dim = dim;
+    tilingData.rowStride = rowStride;
+    tilingData.tileRows = tileRows;
+    tilingData.epsilon = epsilon;
+    tilingData.invDim = invDim;
+    tilingData.blockCount = blockCount;
+    AddRmsNormBiasLargeTile<T> op;
+    op.Init(x, residual, gamma, bias, y, tilingData);
+    op.Process();
+}
+
+extern "C" void run_kernel(
+    GM_ADDR x, const TensorGroupInfo& info_x,
+    GM_ADDR residual, const TensorGroupInfo& info_residual,
+    GM_ADDR gamma, const TensorGroupInfo& info_gamma,
+    GM_ADDR bias, const TensorGroupInfo& info_bias,
+    GM_ADDR output, const TensorGroupInfo& info_output,
+    int64_t availableCoreNum, aclrtStream stream, float epsilon)
+{
+    (void)info_residual;
+    (void)info_gamma;
+    (void)info_bias;
+    (void)info_output;
+
+    const TensorInfo& xInfo = info_x.tensors[0];
+    uint32_t dim = static_cast<uint32_t>(xInfo.shape[xInfo.numDims - 1]);
+    uint64_t outer64 = 1;
+    for (int64_t i = 0; i + 1 < xInfo.numDims; ++i) {
+        outer64 *= static_cast<uint64_t>(xInfo.shape[i]);
+    }
+    uint32_t outer = static_cast<uint32_t>(outer64);
+    uint32_t elementBytes = (xInfo.dtype == 0) ? 4U : 2U;
+    uint32_t rowBytes = ((dim * elementBytes + 31U) / 32U) * 32U;
+    uint32_t rowStride = rowBytes / elementBytes;
+    uint32_t tileRows = (xInfo.dtype == 0) ? 4U : 8U;
+    if (dim >= 8192U) {
+        tileRows = 1U;
+    } else if (dim >= 2048U) {
+        tileRows = (xInfo.dtype == 0) ? 2U : 4U;
+    }
+    uint32_t blockCount = static_cast<uint32_t>(availableCoreNum);
+    if (blockCount > outer) {
+        blockCount = outer;
+    }
+    if (blockCount == 0) {
+        blockCount = 1;
+    }
+    float invDim = 1.0f / static_cast<float>(dim);
+
+    if (xInfo.dtype == 0) {
+        add_rms_norm_bias_large_tile<float><<<blockCount, nullptr, stream>>>(
+            x, residual, gamma, bias, output, outer, dim, rowStride, tileRows,
+            blockCount, epsilon, invDim);
+    } else if (xInfo.dtype == 2) {
+        add_rms_norm_bias_large_tile<bfloat16_t><<<blockCount, nullptr, stream>>>(
+            x, residual, gamma, bias, output, outer, dim, rowStride, tileRows,
+            blockCount, epsilon, invDim);
+    } else {
+        add_rms_norm_bias_large_tile<half><<<blockCount, nullptr, stream>>>(
+            x, residual, gamma, bias, output, outer, dim, rowStride, tileRows,
+            blockCount, epsilon, invDim);
+    }
+}

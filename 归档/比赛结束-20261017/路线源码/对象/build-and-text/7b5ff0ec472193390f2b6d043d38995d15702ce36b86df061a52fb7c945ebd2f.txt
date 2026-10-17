@@ -1,0 +1,113 @@
+#include "kernel_operator.h"
+
+using namespace AscendC;
+
+namespace {
+
+template <typename T>
+__aicore__ inline float ReadValue(const __gm__ T *pointer, uint64_t index) {
+    return static_cast<float>(pointer[index]);
+}
+
+template <typename T>
+__aicore__ inline void WriteValue(__gm__ T *pointer, uint64_t index, float value) {
+    pointer[index] = static_cast<T>(value);
+}
+
+__aicore__ inline float ReadValue(const __gm__ uint16_t *pointer, uint64_t index) {
+    const uint32_t bits = static_cast<uint32_t>(pointer[index]) << 16;
+    return __builtin_bit_cast(float, bits);
+}
+
+__aicore__ inline void WriteValue(__gm__ uint16_t *pointer, uint64_t index, float value) {
+    const uint32_t bits = __builtin_bit_cast(uint32_t, value);
+    const uint32_t rounded = bits + 0x7FFFu + ((bits >> 16) & 1u);
+    pointer[index] = static_cast<uint16_t>(rounded >> 16);
+}
+
+inline uint64_t ProductBeforeLast(const TensorGroupInfo &info) {
+    uint64_t outer = 1;
+    const int32_t rank = info.rank < 1 ? 1 : info.rank;
+    for (int32_t axis = 0; axis + 1 < rank; ++axis) {
+        outer *= static_cast<uint64_t>(info.shape[axis]);
+    }
+    return outer;
+}
+
+template <typename T>
+__global__ __vector__ void AddRmsNormBiasKernel(
+    GM_ADDR x,
+    GM_ADDR residual,
+    GM_ADDR gamma,
+    GM_ADDR bias,
+    GM_ADDR output,
+    uint64_t outer,
+    uint32_t dim,
+    float dim_as_float,
+    float epsilon) {
+    const __gm__ T *x_ptr = reinterpret_cast<const __gm__ T *>(x);
+    const __gm__ T *residual_ptr = reinterpret_cast<const __gm__ T *>(residual);
+    const __gm__ T *gamma_ptr = reinterpret_cast<const __gm__ T *>(gamma);
+    const __gm__ T *bias_ptr = reinterpret_cast<const __gm__ T *>(bias);
+    __gm__ T *output_ptr = reinterpret_cast<__gm__ T *>(output);
+
+    for (uint64_t row = 0; row < outer; ++row) {
+        const uint64_t row_base = row * static_cast<uint64_t>(dim);
+        float square_sum = 0.0f;
+        for (uint32_t column = 0; column < dim; ++column) {
+            const uint64_t offset = row_base + static_cast<uint64_t>(column);
+            const float value = ReadValue(x_ptr, offset) + ReadValue(residual_ptr, offset);
+            square_sum += value * value;
+        }
+
+        float mean_square = square_sum / dim_as_float;
+        float rms = sqrt(mean_square + epsilon);
+        for (uint32_t column = 0; column < dim; ++column) {
+            const uint64_t offset = row_base + static_cast<uint64_t>(column);
+            const float value = ReadValue(x_ptr, offset) + ReadValue(residual_ptr, offset);
+            const float normalized = value / rms;
+            const float result = normalized * ReadValue(gamma_ptr, column) +
+                                 ReadValue(bias_ptr, column);
+            WriteValue(output_ptr, offset, result);
+        }
+    }
+}
+
+}  // namespace
+
+extern "C" void run_kernel(
+    GM_ADDR x,
+    const TensorGroupInfo &info_x,
+    GM_ADDR residual,
+    const TensorGroupInfo &info_residual,
+    GM_ADDR gamma,
+    const TensorGroupInfo &info_gamma,
+    GM_ADDR bias,
+    const TensorGroupInfo &info_bias,
+    GM_ADDR output,
+    const TensorGroupInfo &info_output,
+    int64_t availableCoreNum,
+    aclrtStream stream,
+    float epsilon) {
+    (void)info_residual;
+    (void)info_gamma;
+    (void)info_bias;
+    (void)info_output;
+    (void)availableCoreNum;
+
+    const uint64_t outer = ProductBeforeLast(info_x);
+    const int32_t rank = info_x.rank < 1 ? 1 : info_x.rank;
+    const uint32_t dim = static_cast<uint32_t>(info_x.shape[rank - 1]);
+    const float dim_as_float = static_cast<float>(dim);
+
+    if (info_x.dtype == 0) {
+        AddRmsNormBiasKernel<float><<<1, nullptr, stream>>>(
+            x, residual, gamma, bias, output, outer, dim, dim_as_float, epsilon);
+    } else if (info_x.dtype == 1) {
+        AddRmsNormBiasKernel<half><<<1, nullptr, stream>>>(
+            x, residual, gamma, bias, output, outer, dim, dim_as_float, epsilon);
+    } else {
+        AddRmsNormBiasKernel<uint16_t><<<1, nullptr, stream>>>(
+            x, residual, gamma, bias, output, outer, dim, dim_as_float, epsilon);
+    }
+}

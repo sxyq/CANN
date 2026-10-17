@@ -1,0 +1,33 @@
+cmake_minimum_required(VERSION 3.16)
+
+find_package(ASC REQUIRED)
+
+project(multimode_r031_d001 LANGUAGES ASC CXX)
+
+set(CMAKE_CXX_STANDARD 14)
+
+if(DEFINED NPU_ARCH)
+    set(SOC_ARCH ${NPU_ARCH})
+else()
+    set(SOC_ARCH "dav-2201")
+endif()
+
+add_executable(multimode_r031_d001 main.asc)
+
+target_link_libraries(multimode_r031_d001 PRIVATE
+    tiling_api
+    register
+    platform
+    unified_dlog
+    dl
+    m
+    graph_base
+)
+
+target_include_directories(multimode_r031_d001 PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+target_compile_options(multimode_r031_d001 PRIVATE
+    $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=${SOC_ARCH}>
+)
