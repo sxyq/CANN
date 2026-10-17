@@ -87,3 +87,10 @@ V008 Candidate Correctness 与 Local 结果均为 `NONE`。运行时异常类别
 - Candidate 在同步时返回 `507035 (null)`，Runner/SSH RC=2，结束于 `2026-10-16T13:44:32Z`；没有 Correctness PASS/FAIL 结果，Correctness=NONE；未运行 Local、未 Reset、未重试。
 - SLOG 记录 chip 2、die 0 的 aivec exception。core 13：PC start `0x12440000d28c`、current PC `0x12440000e0a4`；core 14：PC start 相同、current PC `0x12440000e0b4`。两条记录均包含 `errcode:(0, 0x800, 0)` 和 `The UB address accessed by the VEC instruction is not aligned`。日志还记录 fault kernel `_ZN9r31b_v01624add_rms_norm_bias_customIDhEEvPhS1_S1_S1_S1_mmjff`。
 - Postflight `2026-10-16T13:44:32Z`：NPU2 Health=OK、HBM 使用 `3431/65536 MB`、AICore=0%、无进程；`npu-smi` 返回码 0。lease 后续状态由 Main 更新。
+
+## 2026-10-17 服务器事务
+
+- Compile：PASS；远端目录：`/home/data4t2/lelinfeng/cann/server_runs/C2C-V2-N03/V008`。
+- Correctness：首个 FP16 D12288 Candidate 同步返回 `507035`，Runner RC=2；其余形状未执行。
+- Local：NONE；未采集完整配对样本。
+- 原始日志：`server-device7-correctness-local-20261017.log`；NPU7 前后 Health=OK、HBM 约 5%、无进程，未 Reset。

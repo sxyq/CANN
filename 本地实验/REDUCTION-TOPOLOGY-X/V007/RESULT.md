@@ -51,3 +51,10 @@ BF16 D32768 的自适应 tileWidth 按现有预算计算为 2560，tileCount=13�
 ## RESULT
 
 V007 Candidate 编译成功。NPU3 上首个 FP16 D12288 Candidate 同步返回 507035（RC=2）；未执行 paired Local。根因仍未知；未重试、未 Reset，postflight 确认设备无进程。
+
+## 2026-10-17 服务器事务
+
+- Compile：PASS；远端目录：`/home/data4t2/lelinfeng/cann/server_runs/C2C-V2-N03/V007`。
+- Correctness：首个 FP16 D12288 Candidate 同步返回 `507035`，Runner RC=2；其余形状未执行。
+- Local：NONE；未采集完整配对样本。
+- 原始日志：`server-device7-correctness-local-20261017.log`；NPU7 前后 Health=OK、HBM 约 5%、无进程，未 Reset。

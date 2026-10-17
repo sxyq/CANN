@@ -69,3 +69,10 @@ Parent SHA-256：`a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15
 ## NEXT
 
 在可取得 HIIPU 指令回溯或其他直接设备故障定位资料前，暂停新归约拓扑设计。不要重跑相同 V003 Candidate。
+
+## 2026-10-17 服务器事务
+
+- Compile：PASS；远端目录：`/home/data4t2/lelinfeng/cann/server_runs/C2C-V2-N03/V003`。
+- Correctness：FP16 D32768 Candidate 在 warmup 同步返回 `507035`，Runner RC=2；本轮未完成完整矩阵。
+- Local：NONE；仅有未完整的首个形状材料，不作性能结论。
+- 原始日志：`server-device7-correctness-local-20261017.log`；NPU7 前后 Health=OK、HBM 约 5%、无进程，未 Reset。

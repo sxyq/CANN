@@ -91,3 +91,10 @@ H2 已形成不同于 V001 的局部块长度归约实现，并通过 server3 Co
 ## NEXT
 
 停止继续扩大 V002 修改范围。后续若继续，应先解决设备同步错误或获得可解析的 AICore 指令证据，再提出新的单因素归约组织假设。
+
+## 2026-10-17 服务器事务
+
+- Compile：PASS；远端目录：`/home/data4t2/lelinfeng/cann/server_runs/C2C-V2-N03/V002`。
+- Correctness：FP16 D32768 Candidate 在 warmup 同步返回 `507035`，Runner RC=2；本轮未完成完整矩阵。
+- Local：NONE；未产生完整配对样本。
+- 原始日志：`server-device7-correctness-local-20261017.log`；NPU7 前后 Health=OK、HBM 约 5%、无进程，未 Reset。

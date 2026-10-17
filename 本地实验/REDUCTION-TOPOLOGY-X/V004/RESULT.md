@@ -59,3 +59,10 @@ V004 将局部块宽从 4 个 tile 改为 8 个。对 D32768，八个 tile parti
 | BF16 D32768 | 未完成；进入 shape 后 Runner 返回 2，未见样本或 Correctness 行 | NONE | NONE | NONE | 未完成，NONE |
 
 前三种 shape 均按每个 kernel 45 次 warmup、21 组 P/C 配对执行。逐样本 device/wall 时间及完整统计见上述 stdout 日志。BF16 D32768 的退出错误细节未保存在 stdout 日志中，具体 ACL 状态为 UNKNOWN；设备健康在 post 快照仍为 OK。没有性能结论。
+
+## 2026-10-17 服务器事务
+
+- Compile：PASS；远端目录：`/home/data4t2/lelinfeng/cann/server_runs/C2C-V2-N03/V004`。
+- Correctness：前三组通过；BF16 D32768 在 Candidate 运行时返回 `507035`，Runner RC=2，完整矩阵未完成。
+- Local：NONE；只保留前三组配对材料，未形成完整版本结论。
+- 原始日志：`server-device7-correctness-local-20261017.log`；NPU7 前后 Health=OK、HBM 约 5%、无进程，未 Reset。

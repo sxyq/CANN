@@ -70,3 +70,10 @@ Candidate 编译成功。设备运行在 FP16 D12288 首个 Candidate warmup 同
 - 本 Clone 的 `.agents/skills` 中没有 `ascendc-runtime-debug/SKILL.md` 与 `references/debug_workflow.md`；本次未读取其他 Clone。故无法依据该工作流进一步映射 507035 的设备侧语义。
 
 诊断结论：`RUNTIME_CAUSE=UNKNOWN`。DataCopyPad 默认 pad 字段的具体初始化语义及双链 Add 对应的设备执行位置仍未确认。未找到支持 Candidate 源码修改的明确问题；Candidate 未改、未重编、未重跑设备。
+
+## 2026-10-17 服务器事务
+
+- Compile：PASS；远端目录：`/home/data4t2/lelinfeng/cann/server_runs/C2C-V2-N03/V005`。
+- Correctness：首个 FP16 D12288 Candidate 同步返回 `507035`，Runner RC=2；其余形状未执行。
+- Local：NONE；没有完整配对样本。
+- 原始日志：`server-device7-correctness-local-20261017.log`；NPU7 前后 Health=OK、HBM 约 5%、无进程，未 Reset。
