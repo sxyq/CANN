@@ -5,7 +5,7 @@
 
 ## V001_READBACK
 
-V001 的 [RESULT.md](/Users/sunyiyang/Desktop/Project/cann/worktrees/new-n03-reduction-topology/本地实验/REDUCTION-TOPOLOGY-X/V001/RESULT.md) 和源码 diff 已读取并确认：
+V001 的 [RESULT.md](../V001/RESULT.md) 和 [Candidate.asc](../V001/Candidate.asc) 已读取并确认：
 
 - V001 把低精度宽行 partial 槽步长设为 8 个 FP32 元素，reduce stride 设为 128。
 - 每个 tile 仍先做 FP32 `ReduceSum`，随后用 `Add` 循环做全 tile 的平衡二叉合并。

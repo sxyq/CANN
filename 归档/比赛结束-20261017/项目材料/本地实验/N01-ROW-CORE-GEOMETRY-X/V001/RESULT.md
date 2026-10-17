@@ -27,7 +27,7 @@
 - 用例：FP16/BF16；D=12288 控制组 Rows=2/8；D=32768 宽行组 Rows=1/2/4/8。
 - Parent 资格：12/12 `SAME_BINARY_QUAL=PASS`，12/12 Parent Correctness=PASS。
 - 配对运行：12/12 Parent Correctness=PASS，12/12 Candidate Correctness=PASS，进程返回码 0。
-- 原始日志：[qualify-v011.log](/Users/sunyiyang/Desktop/Project/cann/worktrees/new-n01-row-core-geometry/本地实验/N01-ROW-CORE-GEOMETRY-X/V001/qualify-v011.log)、[paired.log](/Users/sunyiyang/Desktop/Project/cann/worktrees/new-n01-row-core-geometry/本地实验/N01-ROW-CORE-GEOMETRY-X/V001/paired.log)。
+- 原始日志：[qualify-v011.log](qualify-v011.log)、[paired.log](paired.log)。
 
 ## LOCAL
 
@@ -48,7 +48,7 @@
 | bf16-wide-d32768-r4 | 14.220 | 24.820 | +10.620 | +74.54% |
 | bf16-wide-d32768-r8 | 17.300 | 25.340 | +9.660 | +46.47% |
 
-负载上下文：device 0；开测前 HBM 使用 59%、AICore 0%、Aivector 0%、HBM 带宽 0%；结束后 HBM 使用 59%、AICore 0%、Aivector 0%、HBM 带宽 0%；两次均存在其他进程。原始结束快照：[load-after-device0.txt](/Users/sunyiyang/Desktop/Project/cann/worktrees/new-n01-row-core-geometry/本地实验/N01-ROW-CORE-GEOMETRY-X/V001/load-after-device0.txt)。
+负载上下文：device 0；开测前 HBM 使用 59%、AICore 0%、Aivector 0%、HBM 带宽 0%；结束后 HBM 使用 59%、AICore 0%、Aivector 0%、HBM 带宽 0%；两次均存在其他进程。原始结束快照：[load-after-device0.txt](load-after-device0.txt)。
 
 ## RESULT
 

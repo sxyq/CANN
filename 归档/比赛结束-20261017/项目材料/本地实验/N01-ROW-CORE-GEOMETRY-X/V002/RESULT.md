@@ -6,7 +6,7 @@ V001 的两行/核在 D32768、Rows=2/4/8 均出现正的配对设备时间差�
 
 ## V001 INPUT
 
-- 已读取 [V001 RESULT](/Users/sunyiyang/Desktop/Project/cann/worktrees/new-n01-row-core-geometry/本地实验/N01-ROW-CORE-GEOMETRY-X/V001/RESULT.md)。
+- 已读取 [V001 RESULT](../V001/RESULT.md)。
 - 已读取 V001 Parent/Candidate diff：唯一变化为 `D>=16384` 时目标两行/核的 `blockCount` 计算。
 - V001 提交：`4c4fe193`。
 
@@ -31,7 +31,7 @@ V001 的两行/核在 D32768、Rows=2/4/8 均出现正的配对设备时间差�
 - 用例：FP16/BF16；D=12288 控制组 Rows=2/8；D=32768 宽行组 Rows=1/2/4/8。
 - Parent 资格：12 组均完成 Correctness=PASS；其中多组同二进制稳定性受负载影响，原始状态保留。
 - 配对运行：12/12 Parent Correctness=PASS，12/12 Candidate Correctness=PASS，进程返回码 0。
-- 原始日志：[qualify-v011.log](/Users/sunyiyang/Desktop/Project/cann/worktrees/new-n01-row-core-geometry/本地实验/N01-ROW-CORE-GEOMETRY-X/V002/qualify-v011.log)、[paired.log](/Users/sunyiyang/Desktop/Project/cann/worktrees/new-n01-row-core-geometry/本地实验/N01-ROW-CORE-GEOMETRY-X/V002/paired.log)。
+- 原始日志：[qualify-v011.log](qualify-v011.log)、[paired.log](paired.log)。
 
 ## LOCAL
 
@@ -52,7 +52,7 @@ V001 的两行/核在 D32768、Rows=2/4/8 均出现正的配对设备时间差�
 | bf16-wide-d32768-r4 | 29.440 | 56.680 | +30.840 | +92.53% |
 | bf16-wide-d32768-r8 | 16.240 | 46.940 | +31.520 | +189.04% |
 
-负载上下文：device 0；开测前 HBM 使用 59%、AICore 0%、Aivector 0%、HBM 带宽 0%；结束快照已保存；两次均存在其他进程。[开测负载](/Users/sunyiyang/Desktop/Project/cann/worktrees/new-n01-row-core-geometry/本地实验/N01-ROW-CORE-GEOMETRY-X/V002/load-before-device0.txt)、[结束负载](/Users/sunyiyang/Desktop/Project/cann/worktrees/new-n01-row-core-geometry/本地实验/N01-ROW-CORE-GEOMETRY-X/V002/load-after-device0.txt)。
+负载上下文：device 0；开测前 HBM 使用 59%、AICore 0%、Aivector 0%、HBM 带宽 0%；结束快照已保存；两次均存在其他进程。[开测负载](load-before-device0.txt)、[结束负载](load-after-device0.txt)。
 
 ## RESULT
 
