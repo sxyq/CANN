@@ -1,0 +1,38 @@
+{
+  "route": "N06",
+  "revision": "R217",
+  "run_id": "219",
+  "source_commit": "bf3c5b71e88d3cb6e753824abbdfadba3b8590c9",
+  "git_parent_commit": "fc05601e375e64860534f3031c867c1b29d02085",
+  "parent_source_commit": "b609941ce3d77b3825789f19ac9a7dcf0c22bdc7",
+  "source": "phase4/workspaces/R31B/R31B-V011-LP-ROW-PIPELINE_kernel.asc",
+  "source_sha256": "13e18e018e6ecae617cac2ba7498708a5c947807ce1d8a79932ef00236a11ddc",
+  "mechanism": "UB-BANK-PLACEMENT-X",
+  "change": "For BF16 wide rows, increase retained-y row alignment from 16 FP32 elements (64B) to 32 elements (128B). The existing row padding, TBuf allocation, access stride, and UB-budget logic use this alignment; arithmetic and synchronization are unchanged.",
+  "hypothesis": "A 128B retained-y row phase may reduce repeated UB bank aliasing after the prior 64B alignment. The padding and capacity calculation remain coupled, so no valid GM range or reduction target is changed.",
+  "build": {
+    "command": "./tools/run.sh build",
+    "exit_code": 0,
+    "status": "PASS",
+    "artifact": "build/r31b_submission_v011",
+    "artifact_sha256": "9a1003c9129c7a40dfb143c453d176e110a80bb716d334f5d3aa0f22d8d0829a",
+    "log": "results/build_219.log",
+    "sha_file": "results/build-artifact_219.sha256"
+  },
+  "correctness": {
+    "status": "NOT_RUN",
+    "reason": "No safe Canonical device window: selected server-3 devices were occupied by existing processes/leases; d7 preflight reported HBM usage 92% and AICore usage 17%. No device workload was launched or interrupted."
+  },
+  "local": {
+    "status": "NOT_RUN",
+    "reason": "Canonical Local requires Correctness PASS and an exclusive existing device lease; deferred to the existing --worker verify entry when a safe window is available."
+  },
+  "device": {
+    "status": "NO_WORKLOAD",
+    "device": 7,
+    "hbm_usage_percent": 92,
+    "aicore_usage_percent": 17,
+    "reason": "Observed-only preflight; no other process was stopped, paused, migrated, or modified."
+  },
+  "performance_conclusion": "UNKNOWN: R217 compiled successfully; Correctness and Canonical Local remain unmeasured because no safe device lease was available."
+}
