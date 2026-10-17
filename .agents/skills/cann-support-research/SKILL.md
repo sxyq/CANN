@@ -7,6 +7,8 @@ description: CANN AddRmsNormBias Support Agent Skill。汇总项目资料、公�
 
 Support Agent 负责研究资料、API 资料、硬件信息、群聊记录和历史实验。研究结论写入已有资料位置，不修改 Candidate，不创建新的路线执行链。
 
+比赛已结束，研究资料已分类归入比赛结束归档的研究资料目录；当前只保留来源与事实，不启动新研究 Agent、资料提取或设备采集。
+
 ## 研究记录
 
 推荐使用以下结构整理事实：

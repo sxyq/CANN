@@ -1,38 +1,19 @@
-# CANNJudge 工具
+# 保留工具（比赛结束）
 
-本页记录已有本地工具的使用入口、资源信息和结果保存位置。
+工具目录仅保留已有源码和最小配置，不包含编译产物；比赛已结束，不自动运行实验、Sweep 或 Judge。
 
-## server3 资源
+| 入口 | 历史用途 |
+|---|---|
+| `cannjudge-submit.mjs`、`cannjudge.py` | 原平台提交、查询与真实回执保存 |
+| `n06-n10-canonical-sweep.mjs` | 原 Candidate Build → Correctness → Canonical Local 调用链 |
+| `server3-resource-policy.sh` | 原设备资源选择，历史 MIN_FREE_HBM_MB=100 |
+| `提取/` | 原資料提取工具及其测试、配置 |
+| `package.json`、`package-lock.json`（根目录） | 原依赖与入口定义 |
 
-server3-resource-policy.sh 是活动 server3 脚本使用的设备选择 helper，设备资源参考值为 MIN_FREE_HBM_MB=100。
+本次没有新增 Runner、Scorer、调度器或第二套执行链，也没有改评分公式；Kernel 和既有工具正文保持来源身份。历史工作树内的 Runner 源码、CMake 与适配输入保存在比赛结束归档的源码对象索引中，Runner ELF 和构建缓存已移到仓外恢复目录。
 
-FREE_HBM >= 100 MB 时，Compile、Correctness、Local、Profile 可以直接执行。AICore utilization、VLLM、其他用户进程、device 非 idle、system load 和 lease 作为上下文保存。lease 只用于协调和记录，不删除、覆盖、伪造或重写他人的 lease。
+原脚本内的 `本地实验/`、`线上结果/`、`worktrees/` 等路径是比赛期间的执行约定，不代表归档后可直接复跑；如未来用户另行明确授权实验，应先核实已有入口与必要依赖，不自行批量测试。
 
-示例：
+归档结果现在位于 `归档/比赛结束-20261017/实验记录/`。登录凭据和浏览器会话不纳入仓库，不输出 Token，不在 server3 上发起 Official 提交。
 
-    source 工具/server3-resource-policy.sh
-    DEVICE="$(choose_eligible_device 0 1 2 3 4 5 6 7)" || echo "所有可用 NPU FREE_HBM < 100MB"
-    record_load_context "$DEVICE"
-
-## 登录
-
-    npm run cannjudge:login
-
-首次使用时，在打开的浏览器窗口中完成登录。浏览器会话由项目运行环境管理，工具不读取或导出登录凭据。
-
-## 线上提交
-
-使用已有入口：
-
-    npm run cannjudge:submit -- --yes --source /absolute/path/kernel.asc
-
-提交响应、源码路径、源码身份、平台状态和结果文件保存到既有线上结果目录。平台实际要求和脚本返回值按原样记录。
-
-## 只读查询
-
-    python3 工具/cannjudge.py poll <submissionId> --once
-    python3 工具/cannjudge.py problem
-
-## 帮助
-
-    npm run cannjudge:submit -- --help
+查看 [比赛结束归档说明](../归档/比赛结束-20261017/README.md) 与 [项目结构](../项目结构.md) 获取保存和恢复位置。

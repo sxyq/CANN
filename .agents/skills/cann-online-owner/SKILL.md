@@ -5,7 +5,7 @@ description: CANN AddRmsNormBias Online Owner Skill。使用现有工具提交�
 
 # Online Owner
 
-Online Owner 负责调用已有的 工具/cannjudge-submit.mjs，保存平台响应，并把结果写入既有的 线上结果/<ROUTE>/<REVISION>/ 位置。
+比赛已结束，本次归档不提交 Judge；以下条款仅为历史约定。原 `线上结果/<ROUTE>/<REVISION>/` 已移至 `归档/比赛结束-20261017/实验记录/线上结果/<ROUTE>/<REVISION>/`，回执原文保留。未来如有明确提交授权，仍使用既有 工具/cannjudge-submit.mjs，不创建替代工具。
 
 ## 范围
 
