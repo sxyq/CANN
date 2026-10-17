@@ -1,0 +1,19 @@
+SNAPSHOT_UTC=2026-10-11T10:51:36+0000
+	NPU ID                         : 4
+	Chip Count                     : 1
+
+	DDR Capacity(MB)               : 0
+	DDR Usage Rate(%)              : 0
+	DDR Hugepages Total(page)      : 0
+	DDR Hugepages Usage Rate(%)    : 0
+	HBM Capacity(MB)               : 65536
+	HBM Usage Rate(%)              : 90
+	Aicore Usage Rate(%)           : 0
+	Aivector Usage Rate(%)         : 0
+	Aicpu Usage Rate(%)            : 0
+	Ctrlcpu Usage Rate(%)          : 13
+	DDR Bandwidth Usage Rate(%)    : 0
+	HBM Bandwidth Usage Rate(%)    : 0
+	Chip ID                        : 0
+
+1399933 bash -c set -u; ROOT=/home/data4t2/lelinfeng/cann/server_runs/N05-SCALAR-ADDRESS-GENERATION-X-RESET-20261011/V008/direct-parent-v007-20261011; BUILD=$ROOT/build-parent-v007; export ASCEND_HOME_PATH=/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002; export CPLUS_INCLUDE_PATH=/usr/include/c++/11:/usr/include/aarch64-linux-gnu/c++/11; export LD_LIBRARY_PATH=/usr/lib/aarch64-linux-gnu:/usr/lib/gcc/aarch64-linux-gnu/11:/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/opp/lib64:/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/tools/ncs/lib64:/usr/local/Ascend/ascend-toolkit/latest/toolkit/tools/adump/lib64/:/usr/local/Ascend/ascend-toolkit/latest/toolkit/tools/profiler/lib64:/usr/local/Ascend/ascend-toolkit/latest/toolkit/tools/profiler/lib64/plugin:/usr/local/Ascend/ascend-toolkit/latest/toolkit/tools/aml/lib64:/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/hccl/lib64:/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/hccl/lib64/plugin/opskernel:/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/hccl/lib64/plugin/nnengine:/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/compiler/lib64:/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/compiler/lib64/plugin/opskernel:/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/compiler/lib64/plugin/nnengine:/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/runtime/lib64:/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/compiler/lib64/stub:/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/hccl/lib64/stub; { printf "SNAPSHOT_UTC="; date -u +%FT%T%z; npu-smi info -t usages -i 4; pgrep -af "paired_runner_v001" || true; } > "$ROOT/results/pre-paired-device.txt" 2>&1; printf "COMMAND=%s/paired_runner_v001 --paired\n" "$BUILD" > "$ROOT/results/paired-local.raw.log"; printf "START_UTC=" >> "$ROOT/results/paired-local.raw.log"; date -u +%FT%T%z >> "$ROOT/results/paired-local.raw.log"; printf "PARENT_SOURCE_SHA256=" >> "$ROOT/results/paired-local.raw.log"; sha256sum "$ROOT/source/parent/parent_submission.asc" | cut -d" " -f1 >> "$ROOT/results/paired-local.raw.log"; printf "CANDIDATE_SOURCE_SHA256=" >> "$ROOT/results/paired-local.raw.log"; sha256sum "$ROOT/source/candidate/candidate_submission.asc" | cut -d" " -f1 >> "$ROOT/results/paired-local.raw.log"; printf "RUNNER_SHA256=" >> "$ROOT/results/paired-local.raw.log"; sha256sum "$BUILD/paired_runner_v001" | cut -d" " -f1 >> "$ROOT/results/paired-local.raw.log"; "$BUILD/paired_runner_v001" --paired >> "$ROOT/results/paired-local.raw.log" 2>&1; rc=$?; printf "LOCAL_RC=%s\nEND_UTC=" "$rc" >> "$ROOT/results/paired-local.raw.log"; date -u +%FT%T%z >> "$ROOT/results/paired-local.raw.log"; { printf "SNAPSHOT_UTC="; date -u +%FT%T%z; npu-smi info -t usages -i 4; pgrep -af "paired_runner_v001" || true; } > "$ROOT/results/post-paired-device.txt" 2>&1; printf "LOCAL_RC=%s\n" "$rc"; exit "$rc"

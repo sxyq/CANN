@@ -1,0 +1,104 @@
+GenKernelResult.hostStub
+template<typename  T> void add_rms_norm_bias_custom(uint32_t __ascendc_blockDim, void* __ascendc_hold, void* __ascendc_stream, uint8_t * x, uint8_t * residual, uint8_t * gamma, uint8_t * bias, uint8_t * output, uint64_t rowCount, uint64_t rowWidth, uint32_t blockCount, float invRowWidth, float epsilon)
+{
+    struct {
+        alignas(((alignof(void*) + 3) >> 2) << 2) void* x;
+        alignas(((alignof(void*) + 3) >> 2) << 2) void* residual;
+        alignas(((alignof(void*) + 3) >> 2) << 2) void* gamma;
+        alignas(((alignof(void*) + 3) >> 2) << 2) void* bias;
+        alignas(((alignof(void*) + 3) >> 2) << 2) void* output;
+        alignas(((alignof(uint64_t) + 3) >> 2) << 2) uint64_t rowCount;
+        alignas(((alignof(uint64_t) + 3) >> 2) << 2) uint64_t rowWidth;
+        alignas(((alignof(uint32_t) + 3) >> 2) << 2) uint32_t blockCount;
+        alignas(((alignof(float) + 3) >> 2) << 2) float invRowWidth;
+        alignas(((alignof(float) + 3) >> 2) << 2) float epsilon;
+        alignas(((alignof(void*) + 3) >> 2) << 2) void* __ascendc_overflow;
+    } __ascendc_args {x, residual, gamma, bias, output, rowCount, rowWidth, blockCount, invRowWidth, epsilon, };
+    uint32_t __ascendc_ret;
+    constexpr uint32_t __ascendc_overflow_status_size = 8;
+    AllocAscendMemDevice(&(__ascendc_args.__ascendc_overflow), __ascendc_overflow_status_size);
+    const char* __ascendc_name = "add_rms_norm_bias_custom";
+    const char* __ascendc_manglingName = nullptr;
+    uint32_t __ascendc_kType = 5;
+    if constexpr (AscendC::Std::is_same<T, float>::value) {
+        __ascendc_manglingName = "_Z24add_rms_norm_bias_customIfEvPhS0_S0_S0_S0_mmjff";
+        __ascendc_kType = 5;
+    }
+    if constexpr (AscendC::Std::is_same<T, half>::value) {
+        __ascendc_manglingName = "_Z24add_rms_norm_bias_customIDhEvPhS0_S0_S0_S0_mmjff";
+        __ascendc_kType = 5;
+    }
+    if constexpr (AscendC::Std::is_same<T, bfloat16_t>::value) {
+        __ascendc_manglingName = "_Z24add_rms_norm_bias_customIu6__bf16EvPhS0_S0_S0_S0_mmjff";
+        __ascendc_kType = 5;
+    }
+    if (__ascendc_manglingName == nullptr) {
+        ASC_PLUGIN_LAUNCH_LOGE(__ascendc_name, __ascendc_stream, __ascendc_blockDim, "call kernel function failure!");
+        return;
+    }
+    __ascendc_ret = AscPluginGenerator::LaunchAndProfiling(__ascendc_manglingName, __ascendc_blockDim, __ascendc_stream, (void **)&__ascendc_args, sizeof(__ascendc_args), __ascendc_kType);
+    if(__ascendc_ret != 0) {
+        ASC_PLUGIN_LAUNCH_LOGE(__ascendc_name, __ascendc_stream, __ascendc_blockDim, "kernel launch failure!");
+        return;
+    }
+    AscPluginGenerator::GetHandleUnregisterInst();
+    FreeAscendMemDevice(__ascendc_args.__ascendc_overflow);
+}
+
+
+GenKernelResult.deviceStub
+inline __gm__ struct OpSystemRunCfg g_opSystemRunCfg = {0};
+extern "C" __attribute__((aiv)) __global__ __aicore__ void __device_stub___Z24add_rms_norm_bias_customIfEvPhS0_S0_S0_S0_mmjff(__attribute__((cce_global)) unsigned char * x, __attribute__((cce_global)) unsigned char * residual, __attribute__((cce_global)) unsigned char * gamma, __attribute__((cce_global)) unsigned char * bias, __attribute__((cce_global)) unsigned char * output, unsigned long rowCount, unsigned long rowWidth, unsigned int blockCount, float invRowWidth, float epsilon, __attribute__((cce_global)) uint8_t * __ascendc_overflow_status)
+{
+    __origin__add_rms_norm_bias_custom<float>(x, residual, gamma, bias, output, rowCount, rowWidth, blockCount, invRowWidth, epsilon);
+}
+extern "C" __attribute__((aiv)) __global__ __aicore__ void __device_stub___Z24add_rms_norm_bias_customIDhEvPhS0_S0_S0_S0_mmjff(__attribute__((cce_global)) unsigned char * x, __attribute__((cce_global)) unsigned char * residual, __attribute__((cce_global)) unsigned char * gamma, __attribute__((cce_global)) unsigned char * bias, __attribute__((cce_global)) unsigned char * output, unsigned long rowCount, unsigned long rowWidth, unsigned int blockCount, float invRowWidth, float epsilon, __attribute__((cce_global)) uint8_t * __ascendc_overflow_status)
+{
+    __origin__add_rms_norm_bias_custom<half>(x, residual, gamma, bias, output, rowCount, rowWidth, blockCount, invRowWidth, epsilon);
+}
+extern "C" __attribute__((aiv)) __global__ __aicore__ void __device_stub___Z24add_rms_norm_bias_customIu6__bf16EvPhS0_S0_S0_S0_mmjff(__attribute__((cce_global)) unsigned char * x, __attribute__((cce_global)) unsigned char * residual, __attribute__((cce_global)) unsigned char * gamma, __attribute__((cce_global)) unsigned char * bias, __attribute__((cce_global)) unsigned char * output, unsigned long rowCount, unsigned long rowWidth, unsigned int blockCount, float invRowWidth, float epsilon, __attribute__((cce_global)) uint8_t * __ascendc_overflow_status)
+{
+    __origin__add_rms_norm_bias_custom<bfloat16_t>(x, residual, gamma, bias, output, rowCount, rowWidth, blockCount, invRowWidth, epsilon);
+}
+
+
+GenKernelResult.metaInfo
+
+#if defined(__DAV_C220_VEC__)
+static const struct FunLevelKType _Z24add_rms_norm_bias_customIfEvPhS0_S0_S0_S0_mmjff_meta_section __attribute__((used, section(".ascend.meta._Z24add_rms_norm_bias_customIfEvPhS0_S0_S0_S0_mmjff"))) = { {{F_TYPE_KTYPE, sizeof(unsigned int)}, K_TYPE_AIV},  };
+#endif
+
+#if defined(__DAV_C220_VEC__)
+static const struct FunLevelKType _Z24add_rms_norm_bias_customIDhEvPhS0_S0_S0_S0_mmjff_meta_section __attribute__((used, section(".ascend.meta._Z24add_rms_norm_bias_customIDhEvPhS0_S0_S0_S0_mmjff"))) = { {{F_TYPE_KTYPE, sizeof(unsigned int)}, K_TYPE_AIV},  };
+#endif
+
+#if defined(__DAV_C220_VEC__)
+static const struct FunLevelKType _Z24add_rms_norm_bias_customIu6__bf16EvPhS0_S0_S0_S0_mmjff_meta_section __attribute__((used, section(".ascend.meta._Z24add_rms_norm_bias_customIu6__bf16EvPhS0_S0_S0_S0_mmjff"))) = { {{F_TYPE_KTYPE, sizeof(unsigned int)}, K_TYPE_AIV},  };
+#endif
+#ifdef __ASC_FEATURE_META_INFO1
+namespace {
+struct AscendCBinaryVersion {
+	uint16_t type = 0;
+	uint16_t len = 4;
+	uint32_t version = 0;
+};
+
+struct AscendCFeatureFlag {
+	uint16_t type = 4;
+	uint16_t len = 8;
+	uint32_t flag = 0;
+	uint32_t resv = 0;
+};
+
+struct AscendCMetaInfo {
+	AscendCBinaryVersion version;
+	AscendCFeatureFlag feature;
+};
+}
+static const struct AscendCMetaInfo __ascendc_meta_info__ __attribute__ ((used, section (".ascend.meta"))) = {{0, 4, 0x01}, {4, 8, 4, 0}};
+#endif
+
+
+GenKernelResult.kernelType
+AIV
+

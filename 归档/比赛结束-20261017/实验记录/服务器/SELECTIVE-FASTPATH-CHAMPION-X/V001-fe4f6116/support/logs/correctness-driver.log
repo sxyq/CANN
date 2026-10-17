@@ -1,0 +1,18 @@
+--- 8x16384 FP32: FAIL; Parent rc=3; Candidate rc=3; dispatch=STORE_V003; tileWidth=4096; tileCount=4; mergeRowRuns=true ---
+variant=candidate rank=2 rows=8 width=16384 dtype=FP32 path=STORE_V003 tileWidth=4096 tileCount=4 mergeRowRuns=true
+golden_max_abs=1.22844582161 golden_bad=79935 matched_ratio=0.390144348 max_abs_limit=0.01 status=FAIL
+--- 1x32768 FP32: FAIL; Parent rc=3; Candidate rc=3; dispatch=STORE_V003; tileWidth=4096; tileCount=8; mergeRowRuns=true ---
+variant=candidate rank=2 rows=1 width=32768 dtype=FP32 path=STORE_V003 tileWidth=4096 tileCount=8 mergeRowRuns=true
+golden_max_abs=0.849926312425 golden_bad=22759 matched_ratio=0.305450439 max_abs_limit=0.01 status=FAIL
+--- 1x16384 FP32: FAIL; Parent rc=3; Candidate rc=3; dispatch=STORE_V003; tileWidth=4096; tileCount=4; mergeRowRuns=true ---
+variant=candidate rank=2 rows=1 width=16384 dtype=FP32 path=STORE_V003 tileWidth=4096 tileCount=4 mergeRowRuns=true
+golden_max_abs=1.27257662153 golden_bad=12151 matched_ratio=0.258361816 max_abs_limit=0.01 status=FAIL
+--- 2x16384 FP32: FAIL; Parent rc=3; Candidate rc=3; dispatch=R31B_V011; tileWidth=4096; tileCount=4; mergeRowRuns=false ---
+variant=candidate rank=2 rows=2 width=16384 dtype=FP32 path=R31B_V011 tileWidth=4096 tileCount=4 mergeRowRuns=false
+golden_max_abs=1.1895977981 golden_bad=24562 matched_ratio=0.250427246 max_abs_limit=0.01 status=FAIL
+summary=/home/data4t2/lelinfeng/cann/server_runs/SELECTIVE-FASTPATH-CHAMPION-X/V001-fe4f6116/support/logs/correctness-run-001/correctness-summary.tsv
+rows	width	dtype	parent_rc	candidate_rc	parent_max_abs	candidate_max_abs	parent_bad	candidate_bad	byte_equal	dispatch	tile_width	tile_count	mergeRowRuns	status
+8	16384	0	3	3	1.23984	1.22845	91058	79935	no	STORE_V003	4096	4	true	FAIL
+1	32768	0	3	3	1.2031	0.849926	27048	22759	no	STORE_V003	4096	8	true	FAIL
+1	16384	0	3	3	1.2596	1.27258	11257	12151	no	STORE_V003	4096	4	true	FAIL
+2	16384	0	3	3	1.23599	1.1896	26604	24562	no	R31B_V011	4096	4	false	FAIL

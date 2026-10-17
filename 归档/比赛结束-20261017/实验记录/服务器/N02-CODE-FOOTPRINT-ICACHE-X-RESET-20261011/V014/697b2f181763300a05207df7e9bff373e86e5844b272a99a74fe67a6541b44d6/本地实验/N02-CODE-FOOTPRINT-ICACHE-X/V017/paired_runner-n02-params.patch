@@ -1,0 +1,32 @@
+diff --git a/paired_runner.cpp b/paired_runner.cpp
+--- a/paired_runner.cpp
++++ b/paired_runner.cpp
+@@ -1,2 +1,9 @@
+ #include "paired_runner_abi.h"
+ 
++#ifndef N02_CANDIDATE_NAME
++#define N02_CANDIDATE_NAME "N02-V014"
++#endif
++#ifndef N02_ROWS
++#define N02_ROWS 2
++#endif
++
+@@ -17 +24 @@
+-constexpr int kRows = 2;
++constexpr int kRows = N02_ROWS;
+@@ -378 +385 @@
+-        CheckOutput(spec, x, residual, gamma, bias, candidateOutput, "N02-V014");
++        CheckOutput(spec, x, residual, gamma, bias, candidateOutput, N02_CANDIDATE_NAME);
+@@ -497 +504 @@
+-    CheckOutput(spec, x, residual, gamma, bias, candidateOutput, "N02-V014");
++    CheckOutput(spec, x, residual, gamma, bias, candidateOutput, N02_CANDIDATE_NAME);
+@@ -500 +507 @@
+-    PrintStats(spec.name, "device_us", "N02-V014", candidateDevice);
++    PrintStats(spec.name, "device_us", N02_CANDIDATE_NAME, candidateDevice);
+@@ -502 +509 @@
+-    PrintStats(spec.name, "wall_us", "N02-V014", candidateWall);
++    PrintStats(spec.name, "wall_us", N02_CANDIDATE_NAME, candidateWall);
+@@ -503 +510,2 @@
+-    PrintStats(spec.name, "paired_device_delta_us", "N02-V014_minus_PARENT-V011", deltas);
++    PrintStats(spec.name, "paired_device_delta_us",
++               N02_CANDIDATE_NAME "_minus_PARENT-V011", deltas);

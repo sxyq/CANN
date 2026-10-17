@@ -1,0 +1,16 @@
+RUN: cmake -S /home/data4t2/lelinfeng/cann/STORE-EPILOGUE-W2-X/V001 -B /home/data4t2/lelinfeng/cann/STORE-EPILOGUE-W2-X/V001/build -DCMAKE_MODULE_PATH=/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/tikcpp/ascendc_kernel_cmake/ASC_CMake\;/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/tikcpp/ascendc_kernel_cmake -DASC_DIR=/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/tikcpp/ascendc_kernel_cmake -DCMAKE_PREFIX_PATH=/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/tikcpp/ascendc_kernel_cmake -DCMAKE_CXX_FLAGS=-I/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0\ -I/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0/aarch64-target-linux-gnu\ -I/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0/backward -DCMAKE_C_FLAGS=-I/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0\ -I/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/toolkit/toolchain/hcc/aarch64-target-linux-gnu/include/c++/7.3.0/aarch64-target-linux-gnu -DSOC_VERSION=Ascend910B3 -DNPU_ARCH=dav-2201
+LOG=/home/data4t2/lelinfeng/cann/STORE-EPILOGUE-W2-X/V001/logs/cmake-configure.log
+RC=0
+RUN: cmake --build /home/data4t2/lelinfeng/cann/STORE-EPILOGUE-W2-X/V001/build --target store_v001_submission -j192
+LOG=/home/data4t2/lelinfeng/cann/STORE-EPILOGUE-W2-X/V001/logs/build-submission-object.log
+RC=0
+RUN: cmake --build /home/data4t2/lelinfeng/cann/STORE-EPILOGUE-W2-X/V001/build --target store_v001_parent_correctness -j192
+LOG=/home/data4t2/lelinfeng/cann/STORE-EPILOGUE-W2-X/V001/logs/build-parent-correctness.log
+RC=0
+RUN: cmake --build /home/data4t2/lelinfeng/cann/STORE-EPILOGUE-W2-X/V001/build --target store_v001_candidate_correctness -j192
+LOG=/home/data4t2/lelinfeng/cann/STORE-EPILOGUE-W2-X/V001/logs/build-candidate-correctness.log
+RC=0
+CANDIDATE_SHA=48b9428dc2fc97c7c9d95f03ad8cec8e758c88e1197aa2328b1b1edebc018f88
+PARENT_SHA=59fb8eada4da0b2b83cccffa4fb89fb97b7503ba3dcb08d5e0fe348e3caeb839
+a55a4859dd22970216405826c7cb7f37fef4678c491979631505b0aac3f573a7  /home/data4t2/lelinfeng/cann/STORE-EPILOGUE-W2-X/V001/build/store_v001_parent_correctness
+469522ba548c001e4ba223eb069d170fa0e73a8285f9f5aaaab696a5edd45328  /home/data4t2/lelinfeng/cann/STORE-EPILOGUE-W2-X/V001/build/store_v001_candidate_correctness

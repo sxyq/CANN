@@ -1,0 +1,60 @@
+HOST=hwnput3
+USER=lelinfeng
+DIR=/home/data4t2/lelinfeng/cann/server_runs/C2C-V2-N05/V014
+	NPU ID                         : 3
+	Chip Count                     : 1
+
+	DDR Capacity(MB)               : 0
+	DDR Usage Rate(%)              : 0
+	DDR Hugepages Total(page)      : 0
+	DDR Hugepages Usage Rate(%)    : 0
+	HBM Capacity(MB)               : 65536
+	HBM Usage Rate(%)              : 5
+	Aicore Usage Rate(%)           : 0
+	Aivector Usage Rate(%)         : 0
+	Aicpu Usage Rate(%)            : 0
+	Ctrlcpu Usage Rate(%)          : 1
+	DDR Bandwidth Usage Rate(%)    : 0
+	HBM Bandwidth Usage Rate(%)    : 0
+	Chip ID                        : 0
+
+	NPU ID                         : 3
+	Chip Count                     : 1
+
+	DDR Capacity(MB)               : 0
+	DDR Clock Speed(MHz)           : 0
+	HBM Capacity(MB)               : 65536
+	HBM Clock Speed(MHz)           : 1600
+	HBM Temperature(C)             : 29
+	HBM Manufacturer ID            : 0x57
+	Chip ID                        : 0
+
+This device does not support querying proc info.
+ 20:38:41 up 251 days,  8:14, 48 users,  load average: 12.31, 11.57, 11.75
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/nvme1n1p1  3.5T  3.1T  259G  93% /home/data4t2
+    PID     ELAPSED STAT COMMAND         COMMAND
+ 599469       50:18 S    sshd            sshd: lelinfeng@notty
+ 599538       50:18 Ssl  codex           codex app-server proxy
+ 842345       05:04 Ss+  bash            /bin/bash -c SCR=/tmp/cann-n06-n10-canonical-QApWfl; BATCH=all-n06-20261016; ROOT=worktrees/n06-ub-bank-placement/results/canonical-sweep/all-n06-20261016; tail -n +2 "$ROOT/manifest.tsv" | while IFS=$'\t' read -r route rev bench commit sha srcstatus origin device recordpaths; do statusfile="$ROOT/versions/$bench/status.json"; vals=$(node -e 'const fs=require("fs");const p=process.argv[1];let j={};try{j=JSON.parse(fs.readFileSync(p))}catch{};process.stdout.write([j.build||"NOT_RUN",j.correctness||"NOT_RUN",j.local_status||"NOT_RUN"].join("\t"))' "$statusfile"); IFS=$'\t' read -r build corr local <<< "$vals"; case "$corr:$local" in PASS:NOT_RUN|PASS:ERROR|PASS:UNSCORED*) ;; *) if [ "$corr" = PASS ]; then continue; fi ;; esac; if [ "$build" != PASS ]; then continue; fi; src="$SCR/本地实验/MAIN2-CANONICAL-V1/sources/$sha.asc"; out="$ROOT/versions/$bench"; printf 'START N06 %s corr=%s local=%s\n' "$rev" "$corr" "$local"; node 工具/n06-n10-canonical-sweep.mjs --worker "$SCR" "$BATCH" N06 "$rev" "$bench" "$sha" "$src" "$out" verify 7 "$commit"; rc=$?; printf 'DONE N06 %s rc=%s\n' "$rev" "$rc"; done
+ 842347       05:04 S+   bash            /bin/bash -c SCR=/tmp/cann-n06-n10-canonical-QApWfl; BATCH=all-n06-20261016; ROOT=worktrees/n06-ub-bank-placement/results/canonical-sweep/all-n06-20261016; tail -n +2 "$ROOT/manifest.tsv" | while IFS=$'\t' read -r route rev bench commit sha srcstatus origin device recordpaths; do statusfile="$ROOT/versions/$bench/status.json"; vals=$(node -e 'const fs=require("fs");const p=process.argv[1];let j={};try{j=JSON.parse(fs.readFileSync(p))}catch{};process.stdout.write([j.build||"NOT_RUN",j.correctness||"NOT_RUN",j.local_status||"NOT_RUN"].join("\t"))' "$statusfile"); IFS=$'\t' read -r build corr local <<< "$vals"; case "$corr:$local" in PASS:NOT_RUN|PASS:ERROR|PASS:UNSCORED*) ;; *) if [ "$corr" = PASS ]; then continue; fi ;; esac; if [ "$build" != PASS ]; then continue; fi; src="$SCR/本地实验/MAIN2-CANONICAL-V1/sources/$sha.asc"; out="$ROOT/versions/$bench"; printf 'START N06 %s corr=%s local=%s\n' "$rev" "$corr" "$local"; node 工具/n06-n10-canonical-sweep.mjs --worker "$SCR" "$BATCH" N06 "$rev" "$bench" "$sha" "$src" "$out" verify 7 "$commit"; rc=$?; printf 'DONE N06 %s rc=%s\n' "$rev" "$rc"; done
+ 842813       05:02 Sl+  MainThread      node 工具/n06-n10-canonical-sweep.mjs --worker /tmp/cann-n06-n10-canonical-QApWfl all-n06-20261016 N06 R042 R042-e329c211f5 e329c211f5f39ce30a9ef83bb60b152b8d7802108accf3e00fdbb75f393f20fd /tmp/cann-n06-n10-canonical-QApWfl/本地实验/MAIN2-CANONICAL-V1/sources/e329c211f5f39ce30a9ef83bb60b152b8d7802108accf3e00fdbb75f393f20fd.asc worktrees/n06-ub-bank-placement/results/canonical-sweep/all-n06-20261016/versions/R042-e329c211f5 verify 7 23c4e5d210ad9f703b649bc013301d54dfb73d5a
+ 873912       00:03 S    sshd            sshd: lelinfeng@notty
+ 873923       00:02 Sl+  clx_ref_parent_ /home/data4t2/lelinfeng/cann-w2-main2-control/研究/主代理/MAIN-2/calibration-v4/runs/20261005-v4-candidates/stages/HOTLOOP-ADDR-HOIST-CHAMPION-X__V002/build-v4/clx_ref_parent_probe 7 1 128 1 /tmp/cann-n06-n10-canonical-QApWfl/本地实验/MAIN2-CANONICAL-V1/versions/N06__R042-e329c211f5/measurement/C01/attempt-3-parent 45 31 1 0 1
+ 873953       00:02 Ss   bash            bash -c d=/home/data4t2/lelinfeng/cann/server_runs/C2C-V2-N05/V014; { printf "HOST=%s\nUSER=%s\nDIR=%s\n" "$(hostname)" "$(id -un)" "$d"; npu-smi info -t usages -i 3; npu-smi info -t memory -i 3; npu-smi info proc -i 3; uptime; df -h /home/data4t2; ps -u "$(id -un)" -o pid,etime,stat,comm,args; stat -c "%n %s bytes %y" "$d/build/paired_runner_v016"; sha256sum "$d/build/paired_runner_v016" "$d/src/R31B-V016-WIDE-TILE-SEED-V014_kernel.asc"; } > "$d/logs/pre-rerun-v014.log" 2>&1; rc=$?; printf "%s\n" "$rc" > "$d/logs/pre-rerun-v014.rc"; printf "PRE_RERUN_RC=%s\n" "$rc"; sed -n "1,220p" "$d/logs/pre-rerun-v014.log"; exit "$rc"
+ 874162       00:00 R    ps              ps -u lelinfeng -o pid,etime,stat,comm,args
+ 994143 40-11:58:38 Ssl  code-a5b5009513 /home/data4t2/lelinfeng/.vscode-server/code-a5b500951314efd502d07465bd138dfbd714a960 --cli-data-dir /home/data4t2/lelinfeng/.vscode-server/cli agent host
+1269966    09:37:20 S    sshd            sshd: lelinfeng
+1833615 13-09:20:50 Sl   codex           codex -c features.code_mode_host=true app-server --listen unix://
+1968642 13-09:05:37 Sl   codex-code-mode /home/data4t2/lelinfeng/.codex/packages/standalone/releases/0.160.0-aarch64-unknown-linux-musl/bin/codex-code-mode-host
+2598259 40-14:39:34 Ss   systemd         /lib/systemd/systemd --user
+2598260 40-14:39:34 S    (sd-pam)        (sd-pam)
+2598270 40-14:39:34 Ssl  pipewire        /usr/bin/pipewire
+2598271 40-14:39:34 Ssl  pipewire-media- /usr/bin/pipewire-media-session
+2598296 40-14:39:34 Ss   dbus-daemon     /usr/bin/dbus-daemon --session --address=systemd: --nofork --nopidfile --systemd-activation --syslog-only
+4020010 24-04:25:37 Ssl  gvfsd           /usr/libexec/gvfsd
+4020016 24-04:25:37 Ssl  gvfsd-metadata  /usr/libexec/gvfsd-metadata
+4183295 24-04:01:24 Sl   gvfsd-trash     /usr/libexec/gvfsd-trash --spawner :1.7 /org/gtk/gvfs/exec_spaw/0
+/home/data4t2/lelinfeng/cann/server_runs/C2C-V2-N05/V014/build/paired_runner_v016 582472 bytes 2026-10-16 20:29:27.633949058 +0000
+c1cfa117bf7be8752b04edb789aca2b68db36e7d267e723515cb98afb5ac5613  /home/data4t2/lelinfeng/cann/server_runs/C2C-V2-N05/V014/build/paired_runner_v016
+37569e24a4dc097944d0ead11f6a1140477052f607d0d5471db5b06de61bb0f4  /home/data4t2/lelinfeng/cann/server_runs/C2C-V2-N05/V014/src/R31B-V016-WIDE-TILE-SEED-V014_kernel.asc

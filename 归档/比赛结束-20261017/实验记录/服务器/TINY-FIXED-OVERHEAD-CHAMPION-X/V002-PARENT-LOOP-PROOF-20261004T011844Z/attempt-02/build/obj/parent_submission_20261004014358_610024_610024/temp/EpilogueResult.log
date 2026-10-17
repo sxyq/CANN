@@ -1,0 +1,78 @@
+EpilogueResult.functionRegisterCode
+#include <stdio.h>
+#include <cstdint>
+extern "C" {
+uint32_t AllocAscendMemDevice(void **devMem, uint64_t size);
+uint32_t FreeAscendMemDevice(void *devMem);
+int32_t AscendFunctionRegister(void *handle, const char *stubFunc);
+uint32_t GetAscendCoreSyncAddr(void **addr);
+}
+namespace Adx {
+void AdumpPrintWorkSpace(const void *workSpaceAddr, const size_t dumpWorkSpaceSize,
+    void *stream, const char *opType);
+} // namespace Adx
+namespace AscPluginGenerator {
+typedef void (*KernelFuncRegister)(void*);
+int32_t BindKernelRegisterFunc(KernelFuncRegister func);
+uint32_t LaunchAndProfiling(
+    const char *stubFunc, uint32_t blockDim, void *stream, void **args, uint32_t size, uint32_t ktype);
+void GetHandleUnregisterInst();
+uint32_t ascendc_set_exception_dump_info(uint32_t dumpSize);
+} // namespace AscPluginGenerator
+
+#define ASC_PLUGIN_LAUNCH_LOGE(kernelName, stream, blockDim, fmt, ...)                      \
+    ::printf("[ERROR] [AscPlugin] Kernel: [%s] Stream: [%p] BlockDim: [%u] " fmt "\n",      \
+        kernelName,                                                                         \
+        stream,                                                                             \
+        blockDim,                                                                           \
+        ##__VA_ARGS__)
+
+static void AscFunctionRegister(void* g_kernel_handle)
+{
+    int32_t retRegister = 0;
+    const char *kernelFuncMangling = nullptr;
+}
+static const int32_t g_regiter_regfunc_ret = AscPluginGenerator::BindKernelRegisterFunc(AscFunctionRegister);
+
+EpilogueResult.hostExtraCompileOptions
+    [0] -std=c++17
+    [1] -O2
+    [2] -D__NPU_HOST__
+    [3] -DTILING_KEY_VAR=0
+
+EpilogueResult.deviceCubeExtraCompileOptions
+    [0] -std=c++17
+    [1] -O2
+    [2] -D__NPU_DEVICE__
+    [3] -DTILING_KEY_VAR=0
+    [4] -mllvm
+    [5] -cce-aicore-stack-size=0x8000
+    [6] -mllvm
+    [7] -cce-aicore-function-stack-size=0x8000
+    [8] -mllvm
+    [9] -cce-aicore-dcci-insert-for-scalar=false
+    [10] -DL2_CACHE_HINT
+    [11] --cce-auto-sync
+    [12] -include
+    [13] /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/include/version/cann_version.h
+    [14] -D__ASC_FEATURE_META_INFO0
+    [15] --cce-aicore-arch=dav-c220-cube
+
+EpilogueResult.deviceVecExtraCompileOptions
+    [0] -std=c++17
+    [1] -O2
+    [2] -D__NPU_DEVICE__
+    [3] -DTILING_KEY_VAR=0
+    [4] -mllvm
+    [5] -cce-aicore-stack-size=0x8000
+    [6] -mllvm
+    [7] -cce-aicore-function-stack-size=0x8000
+    [8] -mllvm
+    [9] -cce-aicore-dcci-insert-for-scalar=false
+    [10] -DL2_CACHE_HINT
+    [11] --cce-auto-sync
+    [12] -include
+    [13] /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/include/version/cann_version.h
+    [14] -D__ASC_FEATURE_META_INFO0
+    [15] --cce-aicore-arch=dav-c220-vec
+

@@ -1,0 +1,18 @@
+RUN: cmake -S /home/data4t2/lelinfeng/cann/server_runs/SELECTIVE-FASTPATH-CHAMPION-X/V001-fe4f6116/support -B /home/data4t2/lelinfeng/cann/server_runs/SELECTIVE-FASTPATH-CHAMPION-X/V001-fe4f6116/support/build -DCMAKE_MODULE_PATH=/usr/local/Ascend/ascend-toolkit/latest/aarch64-linux/tikcpp/ascendc_kernel_cmake/ASC_CMake\;/usr/local/Ascend/ascend-toolkit/latest/aarch64-linux/tikcpp/ascendc_kernel_cmake -DASC_DIR=/usr/local/Ascend/ascend-toolkit/latest/aarch64-linux/tikcpp/ascendc_kernel_cmake -DCMAKE_PREFIX_PATH=/usr/local/Ascend/ascend-toolkit/latest/aarch64-linux/tikcpp/ascendc_kernel_cmake -DSOC_VERSION=Ascend910B3 -DNPU_ARCH=dav-2201
+LOG=/home/data4t2/lelinfeng/cann/server_runs/SELECTIVE-FASTPATH-CHAMPION-X/V001-fe4f6116/support/logs/cmake-configure.log
+RC=0
+RUN: cmake --build /home/data4t2/lelinfeng/cann/server_runs/SELECTIVE-FASTPATH-CHAMPION-X/V001-fe4f6116/support/build --target selective_v001_submission -j2
+LOG=/home/data4t2/lelinfeng/cann/server_runs/SELECTIVE-FASTPATH-CHAMPION-X/V001-fe4f6116/support/logs/build-submission-object.log
+RC=0
+RUN: cmake --build /home/data4t2/lelinfeng/cann/server_runs/SELECTIVE-FASTPATH-CHAMPION-X/V001-fe4f6116/support/build --target selective_v001_parent_correctness -j2
+LOG=/home/data4t2/lelinfeng/cann/server_runs/SELECTIVE-FASTPATH-CHAMPION-X/V001-fe4f6116/support/logs/build-parent-correctness.log
+RC=0
+RUN: cmake --build /home/data4t2/lelinfeng/cann/server_runs/SELECTIVE-FASTPATH-CHAMPION-X/V001-fe4f6116/support/build --target selective_v001_candidate_correctness -j2
+LOG=/home/data4t2/lelinfeng/cann/server_runs/SELECTIVE-FASTPATH-CHAMPION-X/V001-fe4f6116/support/logs/build-candidate-correctness.log
+RC=0
+SOURCE_COMMIT=fe4f61166c5fd356b216b32d1a8ac55b5d2f3275
+CANDIDATE_SHA=7098d7330fa1c29af8928be66c41eb48f0d2310c2d7746c7902c31e58cce25fb
+PARENT_SHA=a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3
+891de1056372a512941117fc953f59395df70da818b7c8f510d5d16300928c76  /home/data4t2/lelinfeng/cann/server_runs/SELECTIVE-FASTPATH-CHAMPION-X/V001-fe4f6116/support/build/CMakeFiles/selective_v001_submission.dir/submission_shim.asc.o
+1e4561b0693c92504884f76a2af3c227f3ccd1cdb6a9bdfa23c231b1f3ac6916  /home/data4t2/lelinfeng/cann/server_runs/SELECTIVE-FASTPATH-CHAMPION-X/V001-fe4f6116/support/build/selective_v001_parent_correctness
+e48dd8b96f55fda3a9e9481f379627e5ee559dab89a9dbe9e2c4a3621e92fda6  /home/data4t2/lelinfeng/cann/server_runs/SELECTIVE-FASTPATH-CHAMPION-X/V001-fe4f6116/support/build/selective_v001_candidate_correctness
