@@ -1,0 +1,40 @@
+# CANN 比赛结束归档
+
+状态：比赛已结束，五条路线已收口并归档。本次文件整理仅在本地仓库进行，没有使用 `cann-server3`。
+
+## 统一基础源码
+
+五条当前技术路线统一回到同一份基础源码：
+
+- 基础源码：`基础源码/submission.asc`
+- 基础源码记录：`技术路线/冠军/R31B-V011/RESULT_REF.txt`
+- 源码 SHA256：`a8c19a1972207acc67e3fb0cd393cc70b0a4b183d1eaf5610edf80c2879b15e3`
+- Official：`15/15`，`45.16`
+- Submission ID：`6ab2c10c0304f72a56a0c5cb`
+
+实验路线的候选源码、参数变化、构建文件和 Runner 不合入基础源码，完整保留在 `项目材料/`、`路线工作树/` 及 Git 历史中。原路径 `线上结果/R31B/V011/submission.asc` 仍解析到这唯一源码实体。
+
+## 当前五路线收口
+
+| 路线 | 最后版本 | 收口事实 | Official |
+|---|---|---|---|
+| N01 REGISTER-LIVE-RANGE-X | V007 | Compile、Correctness、Local 完成；18 组 Local 无稳定收益 | 未提交 |
+| N02 CODE-FOOTPRINT-ICACHE-X | V017 | Compile、ldd 完成；八张 NPU 均有既有进程，Correctness/Local 未启动 | 未提交 |
+| N03 VECTOR-ILP-DUALCHAIN-X | V011 | Compile、Correctness、Local 完成；四组区间跨零 | 未提交 |
+| N04 GM-CACHE-STREAMING-X | V020 | Compile、Correctness、Local、Official 完成；Local 无稳定收益 | 41.21 |
+| N05 SCALAR-ADDRESS-GENERATION-X | V013 | Compile、Preflight 完成；Correctness/Local 未完成；V011/V012 回执另存 | V011 41.25；V012 41.12 |
+
+上述路线的逐版本事实仍以 `技术路线/全版本记录.tsv` 和本归档内的来源材料为准。
+
+## 归档对象
+
+- `路线工作树/`：五个路线的完整 Git 克隆，包含源码、版本记录、构建日志、设备日志、线上材料和未提交修改。
+- `项目材料/本地实验/`：各路线每个版本的源码和实验材料。
+- `项目材料/线上结果/`：比赛线上结果与回执；`R31B/V011/submission.asc` 为指向 `基础源码/submission.asc` 的符号链接。
+- `项目材料/研究/`、`项目材料/调度/`、`项目材料/管理/`、`项目材料/证据集成/`、`项目材料/工具/`：原目录完整归档。
+- `材料索引/`：从仓库根目录移入的比赛沟通文档、讨论记录及整合说明。
+- `../历史阶段/`、`../历史工作区/`、`../历史整理记录/`：既有历史归档，保持原位置。
+- 根目录原路径通过符号链接指向 `项目材料/`，保留文档中已有的相对引用。
+
+带 `attempt` 字样的日志是实际构建或运行记录，作为证据保留。没有发现可明确识别为临时副本的独立文件；名称含义不清的对象未删除。
+
