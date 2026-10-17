@@ -1,10 +1,10 @@
 # CANN 比赛结束归档
 
-状态：比赛已结束，五条路线已收口并归档。全部本地支线历史已并入 `main`；79 个非 `main` 本地分支名和五份重复路线克隆已清理，远端分支未操作。候选源码按路线版本保存在项目材料中。
+状态：比赛已结束，N01-N10 十条源码路线及 W5-R01-R05 五条研究路线均已归档。全部本地支线历史已并入 `main`；79 个非 `main` 本地分支名和五份重复路线克隆已清理。随后本地 `main` 通过 `126c0c15bd94d5b5954ef89377dfc296ce82e830` 接入 `origin/main` 的完整历史，远端分支未修改，也未推送。
 
 ## 统一基础源码
 
-五条当前技术路线统一回到同一份基础源码：
+所有代码路线均以同一份基础源码作为归档参照：
 
 - 基础源码：`基础源码/submission.asc`
 - 基础源码记录：`技术路线/冠军/R31B-V011/RESULT_REF.txt`
@@ -26,7 +26,7 @@
 
 五条路线末端提交均是主仓 `main` 的祖先。路线源码和实验记录已按版本归入项目材料；没有将候选拼入基础源码。
 
-## 当前五路线收口
+## N01-N10 路线结果
 
 | 路线 | 最新归档记录 | 收口事实 | Official |
 |---|---|---|---|
@@ -35,8 +35,15 @@
 | N03 REDUCTION-TOPOLOGY-X（原 VECTOR-ILP-DUALCHAIN-X） | V016 源码查阅；V015 最近执行 | V015 Local 无稳定收益；V016 未创建候选或运行设备 | 未提交 |
 | N04 DMA-PIPELINE-OVERLAP-X（原 GM-CACHE-STREAMING-X） | V020 | Compile、Correctness、Local、Official 完成；Local 无稳定收益 | 41.21 |
 | N05 PARAM-RESIDENCY-EPILOGUE-X（原 SCALAR-ADDRESS-GENERATION-X） | V016 | Correctness 8/8；四组 Local 区间跨零；Official 未运行 | V011 41.25；V012 41.12 |
+| N06 UB-BANK-PLACEMENT-X | R217 | 最高实测 Local 96.815574（R008，POOR）；没有可靠 Local Best | 未提交 |
+| N07 PARAMETER-TILE-REUSE-X | R100 | 最高实测 Local 102.610179（R005，POOR）；复验未证明可复现收益；R100 Local 20.681914（POOR） | 未提交 |
+| N08 TAIL-GM-TRANSACTION-X | R099 | 最高实测 Local 99.440183（R087，POOR）；R099 Local 19.399426（POOR） | 未提交 |
+| N09 RMS-REDUCTION-TOPOLOGY-X | R105 | 最高实测 Local 99.257867（R067，POOR）；R105 Correctness 7/7、C11 bad=0，Local 29.254252（POOR） | 未提交 |
+| N10 ROW-CORE-BALANCE-X | R064 | 最高实测 Local 99.089207（R049，POOR）；R064 Local 17.482701（POOR） | 未提交 |
 
 上述路线的逐版本事实仍以 `技术路线/全版本记录.tsv` 和本归档内的来源材料为准。
+
+W5-R01 CROSSROW-EPI-PROLOGUE-X、W5-R02 REGISTER-SPILL-ELIMINATION-X、W5-R03 CODE-FOOTPRINT-ICACHE-X、W5-R04 GM-L2-CACHE-POLICY-X、W5-R05 VECTOR-ILP-DUALCHAIN-X 均按独立研究路线保存，没有新增 Official 成绩。N06-N10 的最高实测值属于 Canonical Local 记录，不等于 Official 分数；五条路线均没有可靠 Local Best。
 
 本地实验源码入口：N01 `项目材料/本地实验/N01-ROW-CORE-GEOMETRY-X/`；N02 `WIDE-UB-RESIDENCY-X/`；N03 `REDUCTION-TOPOLOGY-X/`；N04 `DMA-PIPELINE-OVERLAP-X/`；N05 `PARAM-RESIDENCY-EPILOGUE-X/`。每个目录按原 `Vxxx` 保存版本文件和实验记录。
 
@@ -44,13 +51,16 @@
 
 ## 全阶段路线目录
 
-项目根目录的 `技术路线/路线主线/` 按路线汇集 phase3、phase4、历史工作区和本次比赛结束材料的入口。phase3 R001–R029 与 FULL-R001–FULL-R029 的对应实现可逐条查看；phase3 H001 与 phase4 Fresh Small-D 的 H001 分开列出。N01–N05 的旧名和收口后名称共用路线入口，版本顺序仍按原账目区分；新增归档的 SHAPE-TILING、EPILOGUE-FUSE 和 EPILOGUE-ARITH 也有各自路线目录。
+项目根目录的 `技术路线/路线主线/` 有 123 个路线目录，按路线汇集 phase3、phase4、历史工作区和比赛结束材料。phase3 R001–R029 与 FULL-R001–FULL-R029 的对应实现可逐条查看；phase3 H001 与 phase4 Fresh Small-D 的 H001 分开列出。N01–N10、W5-R01–R05 各有独立入口；N01–N05 的旧名和新名仍按原账目区分。SHAPE-TILING、EPILOGUE-FUSE 和 EPILOGUE-ARITH 也各自保留路线目录。
 
 外部 ChatGPT 轨道的 R029 V003/V004 单独归入 `LEGACY-R029-WIDE-CACHED-ROW-EXTERNAL/`；phase3 MIX-A、MIX-B、R006、R017 与 R031 reconstruction 各自保留路线入口，原始材料仍位于 `归档/phase3-before-reset-20260920/`。
 
 ## 归档对象
 
 - `项目材料/本地实验/`：全路线每个版本的源码和实验材料，包括 N01–N05、EPILOGUE-FUSE、EPILOGUE-ARITH 和 SHAPE-TILING。
+- `路线源码/对象/`：4,006 个去重源码及构建输入对象；`索引/` 保存 22,198 条来源路径映射、3,480 个 Git 源码对象和 9,414 条版本变更。
+- `实验记录/结果摘要/N06..N10/`：2,156 份逐版本结果摘要；11 个原始工作区记录包覆盖 288,730 个文件，清单和读取方式见索引。
+- `项目材料/研究/`：W5-R01-R05 研究记录及各路线原始来源。
 - `项目材料/线上结果/`：比赛线上结果与回执；`R31B/V011/submission.asc` 为指向 `基础源码/submission.asc` 的符号链接。
 - `项目材料/研究/`、`项目材料/调度/`、`项目材料/管理/`、`项目材料/证据集成/`、`项目材料/工具/`：原目录及补入的路线研究和 W2 文档。
 - `项目材料/管理/提交队列/runtime/` 中的本机浏览器会话资料保留在当前工作区，按原忽略规则不写入 Git；目录说明见 `项目材料/管理/README.md`。
@@ -59,5 +69,5 @@
 - `../../技术路线/路线主线/`：按路线进入现有材料的统一目录索引，不复制源码和记录。
 - 根目录原路径通过符号链接指向 `项目材料/`，保留文档中已有的相对引用。
 
-按版本归档的编译、运行和测量日志作为实验记录保留。历史 MIX-A Runner 目录中的两个已编译可执行文件及空构建目录已移除；W4-R14 的 CMake 生成文件与空构建目录也已移除，编译日志保留。路线源码、性能与正确性数据仍在原分类中。线上回执中的提交时源码路径作为历史记录保留；当前材料入口以 `项目材料/` 与 `技术路线/路线主线/` 为准。
+按版本归档的编译、运行和测量日志作为实验记录保留，临时可执行文件与 CMake 生成目录不作为源码版本保存。本轮从当前工作区移除 7 个确认的 ELF 构建文件；归档源码与成绩记录保留。旧提交历史中的二进制对象仍由 Git 历史保存，未改写历史。线上回执里的提交时路径按原文保留；当前材料入口以 `路线源码/`、`实验记录/`、`项目材料/` 和 `技术路线/路线主线/` 为准。
 
