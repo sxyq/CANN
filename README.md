@@ -37,6 +37,6 @@
 ## Git 状态
 
 本地 `main` 已包含此前的本地路线历史和 `origin/main` 历史，并已推送到 GitHub。原有 96 条非 `main` 远端分支尖端均可从 `main` 追溯，远端现只保留 `main`。
-截至 2026-10-18，归档主线为 `c2514d859403e8b61a7e2a8059e8d4aee37721ab`；`origin/main` 最后核验为 `0e42a293f3c0f68dc9d4b4fed920bf2de8a24ea9`，两者之间的文档提交因 GitHub 网络超时待推送。归档 Git 元数据当前登记 7 个活动 worktree（主线、N02、N07、N08、N09、N10 和 hotloop-addr）；另有 19 个外部路线目录作为普通文件快照保存在 `worktrees-current-20261018/`，不再作为活动 linked worktree。主仓完整副本及恢复入口为 `/home/data4t2/lelinfeng/cann-archive-20261017.Gz8SZ7/worktrees-current-20261018/cann/`；原 `/home/data4t2/lelinfeng/cann` 主工作目录已在 bundle 验证后移除。最终 refs bundle 位于 `/home/data4t2/lelinfeng/cann-archive-20261017.Gz8SZ7/cann-all-refs-final-20261018.bundle`，当前 SHA256 以仓外 `FINAL_HANDOFF-20261018.txt` 为准。
+截至 2026-10-18，归档主线和 `origin/main` 均为 `dd1a85bb1e56a00ccfb41a9af8eb8a86b8cf78b5`。归档 Git 元数据当前登记 7 个活动 worktree（主线、N02、N07、N08、N09、N10 和 hotloop-addr）；另有 19 个外部路线目录作为普通文件快照保存在 `worktrees-current-20261018/`，不再作为活动 linked worktree。主仓完整副本及恢复入口为 `/home/data4t2/lelinfeng/cann-archive-20261017.Gz8SZ7/worktrees-current-20261018/cann/`；原 `/home/data4t2/lelinfeng/cann` 主工作目录已在 bundle 验证后移除。最终 refs bundle 位于 `/home/data4t2/lelinfeng/cann-archive-20261017.Gz8SZ7/cann-all-refs-final-20261018.bundle`，当前 SHA256 以仓外 `FINAL_HANDOFF-20261018.txt` 为准。
 
 历史兼容入口 `本地实验/`、`线上结果/`、`研究/`、`调度/`、`管理/`、`证据集成/`、`工具/` 仍指向归档内容。目录细节见 [`项目结构.md`](项目结构.md)，归档事实见 [`归档/比赛结束-20261017/README.md`](归档/比赛结束-20261017/README.md)。
