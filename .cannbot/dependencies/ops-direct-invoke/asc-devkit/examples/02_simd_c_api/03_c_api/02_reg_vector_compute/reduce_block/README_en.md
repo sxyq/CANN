@@ -1,0 +1,93 @@
+# reduce_block Example
+
+## Overview
+This example implements the ReduceDataBlock operation based on the C API programming interface, primarily calling the [asc_reduce_sum_datablock](../../../../../docs/zh/api/SIMD-API/c_api/reg_compute/reg_reduce/asc_reduce_sum_datablock.md) API (SUM mode).
+- The asc_reduce_sum_datablock API supports SUM/MAX/MIN reduction modes. This example uses the SUM mode.
+
+## Supported Products and CANN Versions
+
+| Product | CANN Version |
+| --- | --- |
+| Ascend 950PR/Ascend 950DT | >= CANN 9.2.0 |
+
+## Directory Structure
+```
+├── reduce_block
+│   ├── scripts
+│   │   ├── gen_data.py                // Input data and ground truth generation script
+│   ├── CMakeLists.txt                 // Build configuration file
+│   ├── data_utils.h                   // Data read/write functions
+│   ├── reduce_block.asc               // Ascend C example implementation & invocation example
+│   ├── README.md                      // Example description
+│   └── README_en.md                   // Example description (English)
+```
+
+## Example Description
+- Example functionality:
+  Performs ReduceDataBlock reduction sum on the input vector. The vector shape is [1, 256] and the data type is float.
+  Every 8 floats (one DataBlock = 32B) produce one sum result, outputting 32 results in total.
+- In each `one_rep_size` block (for example, 64 elements for float type):
+  - The first `blocks_per_repeat` (8) positions store valid reduction results
+  - The remaining `one_rep_size - blocks_per_repeat` (56) positions contain invalid data (undefined values)
+
+- Example specifications:
+
+| Example Type (OpType) | AIV Example |  |  |
+| --- | --- | --- | --- |
+| Example Input | name | shape | data type |
+| x | [1, 256] | float |  |
+| Example Output | name | shape | data type |
+| y | [1, 32] | float |  |
+| Kernel Function Name | reduce_block_custom |  |  |
+
+- Example implementation:
+   The reduce_block_vf function calls the asc_reduce_sum_datablock API for reduction computation:
+   - Uses asc_loadalign to load data into registers
+   - Uses asc_reduce_sum_datablock to sum elements within each DataBlock (32B)
+   - Results are stored in dst vector data register with an interleaved layout; the first 8 positions of each repeat are valid results
+   - Uses asc_storealign to write results back to UB, with offset using one_rep_size
+  - Invocation implementation
+    Uses the kernel invocation syntax <<<>>> to call the kernel function.
+
+## Build and Run
+Run the following steps in the root directory of this example to build and run it.
+- Configure environment variables
+  Configure environment variables based on the [installation method](../../../../../docs/en/quick_start.md#prepare&install) of the CANN development kit on the current environment.
+  ```bash
+  source ${install_path}/cann/set_env.sh
+  ```
+
+  > **Note:** `${install_path}` is the CANN package installation directory. The default is `/usr/local/Ascend` for the root user and `${HOME}/Ascend` for non-root users.
+
+- Run the example
+
+  Run the following commands in the example directory.
+  ```bash
+  mkdir -p build && cd build;                                               # Create and enter the build directory
+  cmake -DCMAKE_ASC_ARCHITECTURES=dav-3510 ..;make -j;                      # Build the project (default npu mode)
+  python3 ../scripts/gen_data.py                                            # Generate test input data
+  ./demo                                                                    # Run the compiled executable to execute the example
+  ```
+
+  To use NPU simulation mode, add the `-DCMAKE_ASC_RUN_MODE=sim` parameter.
+
+  Examples:
+  ```bash
+  cmake -DCMAKE_ASC_RUN_MODE=sim -DCMAKE_ASC_ARCHITECTURES=dav-3510 ..;make -j; # NPU simulation mode
+  ```
+
+  > **Notice:** Clear the cmake cache before switching build modes. Run `rm CMakeCache.txt` in the build directory and re-run cmake.
+
+- Build option description
+
+  | Option | Values | Description |
+  | --- | --- | --- |
+  | `CMAKE_ASC_RUN_MODE` | `npu` (default), `sim` | Run mode: NPU execution, NPU simulation |
+  | `CMAKE_ASC_ARCHITECTURES` | `dav-3510` | NPU architecture: dav-3510 corresponds to Ascend 950PR/Ascend 950DT |
+
+- Execution result
+
+  The following execution result indicates that the precision comparison is successful.
+  ```bash
+  test pass!
+  ```

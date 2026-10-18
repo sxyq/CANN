@@ -1,0 +1,64 @@
+# GetTensorCountInQue
+
+## 产品支持情况
+
+<!-- npu="950" id1 -->
+- Ascend 950PR/Ascend 950DT：支持
+<!-- end id1 -->
+<!-- npu="A3" id2 -->
+- Atlas A3 训练系列产品/Atlas A3 推理系列产品：支持
+<!-- end id2 -->
+<!-- npu="910b" id3 -->
+- Atlas A2 训练系列产品/Atlas A2 推理系列产品：支持
+<!-- end id3 -->
+<!-- npu="310b" id4 -->
+- Atlas 200I/500 A2 推理产品：支持
+<!-- end id4 -->
+<!-- npu="310p" id5 -->
+- Atlas 推理系列产品AI Core：支持
+<!-- end id5 -->
+<!-- npu="310p" id6 -->
+- Atlas 推理系列产品Vector Core：不支持
+<!-- end id6 -->
+<!-- npu="910" id7 -->
+- Atlas 训练系列产品：支持
+<!-- end id7 -->
+<!-- @ref: asc-devkit/res/docs/zh/api/SIMD-API/basic_api/resource_management/TQueBind/GetTensorCountInQue_res.md#id1 -->
+
+## 功能说明
+
+头文件路径为：`"basic_api/kernel_tpipe.h"`。
+
+查询Que中已入队的Tensor数量。
+
+## 函数原型
+
+```cpp
+__aicore__ inline int32_t GetTensorCountInQue()
+```
+
+## 参数说明
+
+无
+
+## 约束说明
+
+该接口不支持[Tensor原地操作](../../../../../guide/programming_guide/appendix/common_operations/tensor_inplace_performance.md)，即TQue的depth设置为0的场景。
+
+## 返回值说明
+
+Que中已入队的Tensor数量
+
+## 调用示例
+
+```cpp
+// 通过GetTensorCountInQue查询que中已入队的Tensor数量，当前通过AllocTensor接口分配了内存，并加入que中，num为1。
+AscendC::TPipe pipe;
+AscendC::TQueBind<AscendC::TPosition::VECOUT, AscendC::TPosition::GM, 4> que;
+int num = 4;
+int len = 1024;
+pipe.InitBuffer(que, num, len);
+AscendC::LocalTensor<half> tensor1 = que.AllocTensor<half>();
+que.EnQue(tensor1);// 将tensor加入VECOUT的Queue中
+int32_t numb = que.GetTensorCountInQue();
+```

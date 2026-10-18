@@ -1,0 +1,57 @@
+# GetLength
+
+## 产品支持情况
+
+<!-- npu="950" id1 -->
+- Ascend 950PR/Ascend 950DT：支持
+<!-- end id1 -->
+<!-- npu="A3" id2 -->
+- Atlas A3 训练系列产品/Atlas A3 推理系列产品：支持
+<!-- end id2 -->
+<!-- npu="910b" id3 -->
+- Atlas A2 训练系列产品/Atlas A2 推理系列产品：支持
+<!-- end id3 -->
+<!-- npu="310b" id4 -->
+- Atlas 200I/500 A2 推理产品：支持
+<!-- end id4 -->
+<!-- npu="310p" id5 -->
+- Atlas 推理系列产品AI Core：支持
+<!-- end id5 -->
+<!-- npu="310p" id6 -->
+- Atlas 推理系列产品Vector Core：支持
+<!-- end id6 -->
+<!-- npu="910" id7 -->
+- Atlas 训练系列产品：支持
+<!-- end id7 -->
+<!-- @ref: asc-devkit/res/docs/zh/api/SIMD-API/basic_api/data_structures/LocalTensor/GetLength_res.md#id1 -->
+
+## 功能说明
+
+获取LocalTensor数据长度。
+
+## 函数原型
+
+```cpp
+__aicore__ inline uint32_t GetLength() const
+```
+
+## 参数说明
+
+无
+
+## 返回值说明
+
+LocalTensor数据长度，单位为字节。
+
+## 约束说明
+
+无
+
+## 调用示例
+
+```cpp
+// 获取localTensor的长度(单位为Byte)，数据类型为int32_t，所以是16*sizeof(int32_t)
+uint32_t len = inputLocal.GetLength();
+// inputLocal:0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15
+// len: 64
+```

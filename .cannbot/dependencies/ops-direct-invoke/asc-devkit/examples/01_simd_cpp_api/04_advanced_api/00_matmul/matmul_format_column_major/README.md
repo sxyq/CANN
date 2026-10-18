@@ -1,0 +1,112 @@
+# Matmul实现ColumnMajor直调样例
+
+## 概述
+
+输入输出矩阵为COLUMN_MAJOR（列优先）格式排布的Matmul样例。不同于ND（行优先）格式排布的矩阵乘计算，对于COLUMN_MAJOR（列优先）格式排布的矩阵，Matmul API支持将矩阵设置为COLUMN_MAJOR格式。
+
+## 本样例支持的产品及CANN软件版本
+
+| 产品 | CANN软件版本 |
+|------|-------------|
+| Ascend 950PR/Ascend 950DT | >= CANN 9.1.0 |
+
+## 目录结构介绍
+
+```
+├── matmul_format_column_major
+│   ├── scripts
+│   │   ├── gen_data.py                    // 输入数据和真值数据生成脚本文件
+│   │   └── verify_result.py               // 真值对比文件
+│   ├── CMakeLists.txt                     // 编译工程文件
+│   ├── data_utils.h                       // 数据读入写出函数
+│   ├── matmul_format_column_major.asc     // Ascend C样例实现 & 调用样例
+│   └── README.md                          // 样例说明文档
+```
+
+## 样例描述
+
+- 样例功能：
+  MatmulColumnMajorCustom样例调用Matmul API计算时，将列方向上的元素在内存连续的A、B、C矩阵的Format参数设置为CubeFormat::COLUMN_MAJOR，实现列优先排布的矩阵乘法。样例实现了对输入的A、B矩阵做矩阵乘、加bias偏置的功能。
+
+- 样例规格：
+    本样例中：M = 428, N = 479, K = 528。
+
+| 样例类型(OpType) | MatmulColumnMajor |  |  |  |  |
+| --- | --- | --- | --- | --- | --- |
+| 样例输入 | name | shape | data type | format | isTrans |
+| a | [M, K] | half | COLUMN_MAJOR | false |  |
+| b | [K, N] | half | COLUMN_MAJOR | false |  |
+| bias | [1, N] | float | ND | - |  |
+| 样例输出 | c | [M, N] | float | COLUMN_MAJOR | - |
+| 核函数名 | matmulColumnMajorCustom |  |  |  |  |
+
+- 样例实现：
+  - Kernel关键步骤
+    - 创建Matmul对象：C矩阵的Format设置为COLUMN_MAJOR。
+      ```cpp
+      AscendC::Matmul<
+        AscendC::MatmulType<AscendC::TPosition::GM, CubeFormat::COLUMN_MAJOR, ATYPE>,
+        AscendC::MatmulType<AscendC::TPosition::GM, CubeFormat::COLUMN_MAJOR, BType>,
+        AscendC::MatmulType<AscendC::TPosition::GM, CubeFormat::COLUMN_MAJOR, CType>,
+        AscendC::MatmulType<AscendC::TPosition::GM, CubeFormat::ND, BiasType>> matmulObj;
+      ```
+
+  - Tiling关键步骤
+    - 设置A、B、C、Bias的参数类型信息，其中A、B、C矩阵的Format设置为COLUMN_MAJOR。
+      ```cpp
+      cubeTiling.SetAType(matmul_tiling::TPosition::GM, matmul_tiling::CubeFormat::COLUMN_MAJOR,
+          matmul_tiling::DataType::DT_FLOAT16, isAtrans);
+      cubeTiling.SetBType(matmul_tiling::TPosition::GM, matmul_tiling::CubeFormat::COLUMN_MAJOR,
+          matmul_tiling::DataType::DT_FLOAT16, isBtrans);
+      cubeTiling.SetCType(matmul_tiling::TPosition::GM, matmul_tiling::CubeFormat::COLUMN_MAJOR,
+          matmul_tiling::DataType::DT_FLOAT);
+      ```
+
+  - 调用实现
+    使用内核调用符<<<>>>调用核函数。
+
+## 编译运行
+
+在本样例根目录下执行如下步骤，编译并执行样例。
+- 配置环境变量
+  请根据当前环境上CANN开发套件包的[安装方式](../../../../../docs/zh/quick_start.md#prepare&install)，配置环境变量。
+  ```bash
+  source ${install_path}/cann/set_env.sh
+  ```
+
+  > **说明：** `${install_path}` 为CANN包安装目录，未指定安装目录时默认安装至 `/usr/local/Ascend` 下。
+
+- 样例执行
+
+  在本样例目录下执行如下命令。
+  ```bash
+  mkdir -p build && cd build;    # 创建并进入build目录
+  cmake -DCMAKE_ASC_ARCHITECTURES=dav-3510 ..;make -j;    # 编译工程，默认npu模式
+  python3 ../scripts/gen_data.py    # 生成测试输入数据
+  ./demo                        # 执行编译生成的可执行程序，执行样例
+  python3 ../scripts/verify_result.py output/output.bin output/golden.bin    # 验证输出结果是否正确，确认算法逻辑正确
+  ```
+
+  使用 CPU调试 或 NPU仿真 模式时，添加 `-DCMAKE_ASC_RUN_MODE=cpu` 或 `-DCMAKE_ASC_RUN_MODE=sim` 参数即可。
+
+  示例如：
+  ```bash
+  cmake -DCMAKE_ASC_RUN_MODE=cpu -DCMAKE_ASC_ARCHITECTURES=dav-3510 ..;make -j; # cpu调试模式
+  cmake -DCMAKE_ASC_RUN_MODE=sim -DCMAKE_ASC_ARCHITECTURES=dav-3510 ..;make -j; # NPU仿真模式
+  ```
+
+  > **注意：** 切换编译模式前需清理 cmake 缓存，可在 build 目录下执行 `rm CMakeCache.txt` 后重新 cmake。
+
+- 编译选项说明
+
+  | 选项　　　　　 | 可选值　　　　　　　　　　　| 说明　　　　　　　　　　　　　　　　　　　　　　　|
+  | ----------------| -----------------------------| ---------------------------------------------------|
+  | `CMAKE_ASC_RUN_MODE` | `npu`（默认）、`cpu`、`sim` | 运行模式：NPU 运行、CPU调试、NPU仿真　　　　　　　|
+  | `CMAKE_ASC_ARCHITECTURES` | `dav-3510` | NPU 架构：dav-3510 对应 Ascend 950PR/Ascend 950DT |
+
+- 执行结果
+
+  执行结果如下，说明精度对比成功：
+  ```bash
+  test pass!
+  ```

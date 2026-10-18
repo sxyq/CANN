@@ -11,16 +11,16 @@
 
 当前保存的插件目录只含许可和 hook 资料；hook 还引用了该目录中没有的 `AGENTS.md`、`workflows/` 和插件内 `asc-devkit/`。因此这里用于保留来源，不能单独作为可运行插件安装。
 
-## 外部依赖
+## 依赖源码快照
 
-依赖源码由上游仓库独立维护，父项目不复制整份第三方源码：
+父仓库收录本机依赖工作区的完整源码快照，包含现存本地修改及各自许可证。上游仍由 GitCode 独立维护；父仓库保存当前文件内容，不保存这些嵌套仓库的 Git 元数据。
 
 | 本地目录 | 上游仓库 |
 |---|---|
 | `.cannbot/dependencies/ops-direct-invoke/asc-devkit/` | `https://gitcode.com/cann/asc-devkit.git` |
 | `.cannbot/dependencies/ops-direct-invoke/ops-tensor/` | `https://gitcode.com/cann/ops-tensor.git` |
-| `ops-tensor/include/tensor_api/` | `ops-tensor` 声明的 `asc-devkit` 子模块 |
+| `.cannbot/dependencies/ops-direct-invoke/ops-tensor/include/tensor_api/` | `ops-tensor` 声明的 `asc-devkit` 子模块 |
 
-本机这两份依赖目录不是父仓库的子模块。盘点时，`asc-devkit` 有 1 个本地提交和 2,711 个工作区文件改动；`ops-tensor` 有 2 个本地提交，且其 `tensor_api` 子模块另有独立本机提交。它们的本地 Git 历史和工作区差异不随父仓库提交；需要复用这些差异时，应先单独整理并明确目标仓库，避免将第三方源码或本机改动误推入 `CANN` 主仓库。
+纳入时的来源版本为：`asc-devkit` `cbe844c3f49a8f586bdf5f543b1a2cd858cc437c`（1 个本地提交，另含 2,711 个已跟踪文件的工作区改动）；`ops-tensor` `584f3f7b2870c13a298aaeb1ac903821116b59f8`（2 个本地提交）；`tensor_api` `ab8ad3aa1aacd1581ec7d6c54ceca4f1990667dd`（子模块当前提交）。这些 SHA 记录快照的起点，父仓提交中的文件树包含该时点的本机工作区内容。独立仓库的提交历史仍留在本机嵌套 `.git` 元数据中，不随父仓推送；从 GitHub 克隆父仓库可直接取得上述源码和许可文件。
 
 归档中的提交队列运行时、浏览器用户数据、编译产物、测试输入输出和 profiling 原始缓存均不纳入共享资料。

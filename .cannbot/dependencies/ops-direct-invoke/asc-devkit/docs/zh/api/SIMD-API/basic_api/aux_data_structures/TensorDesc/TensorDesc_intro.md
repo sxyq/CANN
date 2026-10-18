@@ -1,0 +1,26 @@
+# TensorDesc简介
+
+TensorDesc用于储存[ListTensorDesc](../ListTensorDesc.md).GetDesc\(\)中根据index获取对应的Tensor描述信息。
+
+## 原型定义
+
+```cpp
+template<class T> class TensorDesc {
+    TensorDesc();
+    ~TensorDesc();
+    void SetShapeAddr(uint64_t* shapePtr);
+    uint64_t GetDim();
+    uint64_t GetIndex();
+    uint64_t GetShape(uint32_t offset);
+    T* GetDataPtr();
+    GlobalTensor<T> GetDataObj();
+}
+```
+
+## 模板参数
+
+**表1**  模板参数说明
+
+| 参数名 | 描述 |
+| --- | --- |
+| T | Tensor数据类型。 |

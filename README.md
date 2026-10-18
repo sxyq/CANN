@@ -15,7 +15,7 @@
 
 - `.agents/skills/` 保存项目可复用的 Ascend C 技能和 CANN 路线技能。
 - `.codex/agents/` 与 `.codex/cannbot-plugin.json` 保存 Codex Agent 定义及插件清单；共享清单不包含本机插件安装路径。
-- `.cannbot/plugins/ops-direct-invoke/` 保存许可文本和 hook 资料。上游 `asc-devkit`、`ops-tensor` 是独立 GitCode 仓库，不作为本项目源码副本提交；来源和本机差异见 [`.cannbot/README.md`](.cannbot/README.md)。
+- `.cannbot/plugins/ops-direct-invoke/` 保存许可文本和 hook 资料；`.cannbot/dependencies/ops-direct-invoke/` 保存 `asc-devkit`、`ops-tensor` 与 `tensor_api` 的本机源码快照及许可文件。上游仓库仍在 GitCode 独立维护，父仓只收录文件快照，不包含嵌套 Git 元数据。来源版本和快照范围见 [`.cannbot/README.md`](.cannbot/README.md)。
 
 ## 归档索引
 

@@ -1,0 +1,44 @@
+{
+  "name": "vitepress-docs",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "node --test scripts/tests/*.test.mjs && python3 -m unittest discover -s scripts/tests -p \"test_*.py\"",
+    "docs:dev": "vitepress dev docs",
+    "docs:convert": "node scripts/convert-docs.js -s",
+    "docs:genstubs": "node scripts/gen-md-stubs.js",
+    "docs:cleanstubs": "node scripts/clean-md-stubs.js",
+    "docs:copy-api-sources": "node scripts/copy-api-sources.js",
+    "docs:prebuild": "node scripts/install-deps.js && npm run docs:convert && npm run docs:genstubs && npm run docs:copy-api-sources",
+    "docs:postbuild": "npm run docs:cleanstubs",
+    "docs:build": "npm run docs:prebuild && cross-env NODE_OPTIONS=--max-old-space-size=14336 vitepress build docs",
+    "docs:preview": "vitepress preview docs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  },
+  "devDependencies": {
+    "@vueuse/core": "^12.8.2",
+    "@vueuse/shared": "^12.8.2",
+    "cheerio": "^1.2.0",
+    "cross-env": "^10.1.0",
+    "markdown-it-mathjax3": "^4.3.0",
+    "pagefind": "1.5.2",
+    "vitepress": "1.6.4",
+    "vitepress-plugin-pagefind": "0.4.20",
+    "vue-command-palette": "^0.1.4",
+    "vue-demi": "^0.14.10"
+  },
+  "dependencies": {
+    "github-markdown-css": "^5.9.0",
+    "jszip": "^3.10.1",
+    "vue": "^3.5.34"
+  }
+}

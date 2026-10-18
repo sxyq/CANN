@@ -1,0 +1,145 @@
+# Log10
+
+## 产品支持情况
+
+<!-- npu="950" id1 -->
+- Ascend 950PR/Ascend 950DT：支持
+<!-- end id1 -->
+<!-- npu="A3" id2 -->
+- Atlas A3 训练系列产品/Atlas A3 推理系列产品：不支持
+<!-- end id2 -->
+<!-- npu="910b" id3 -->
+- Atlas A2 训练系列产品/Atlas A2 推理系列产品：不支持
+<!-- end id3 -->
+<!-- npu="310b" id4 -->
+- Atlas 200I/500 A2 推理产品：不支持
+<!-- end id4 -->
+<!-- npu="310p" id5 -->
+- Atlas 推理系列产品AI Core：不支持
+<!-- end id5 -->
+<!-- npu="310p" id6 -->
+- Atlas 推理系列产品Vector Core：不支持
+<!-- end id6 -->
+<!-- npu="910" id7 -->
+- Atlas 训练系列产品：不支持
+<!-- end id7 -->
+<!-- @ref: asc-devkit/res/docs/zh/api/SIMD-API/basic_api/reg_vector_compute/basic_arithmetic/Log10_res.md#id1 -->
+
+## 功能说明
+
+头文件路径：`"basic_api/reg_compute/kernel_reg_compute_vec_unary_intf.h"`。
+
+该接口根据mask逐元素对源操作数求以10为底的对数，将结果写入目的操作数。
+
+计算公式如下：
+
+$$
+dstReg_i = \log_{10}(srcReg_i)
+$$
+
+## 函数原型
+
+```cpp
+template <typename T = DefaultType, auto mode = MaskMergeMode::ZEROING, typename U>
+__simd_callee__ inline void Log10(U& dstReg, U& srcReg, MaskReg& mask)
+```
+
+## 参数说明
+
+**表1**  模板参数说明
+
+| 参数名 | 描述 |
+| --- | --- |
+| T | 操作数数据类型。支持的数据类型请参考[数据类型](#数据类型)。 |
+| mode | 可配置为[MaskMergeMode](../aux_data_types/MaskMergeMode.md)枚举值或指向Log10SpecificMode结构体的指针。
+&bull; 配置MaskMergeMode：选择MERGING模式或ZEROING模式。
+  &bull; ZEROING模式下，mask未筛选的元素在dstReg中置零。
+  &bull; MERGING模式当前不支持。
+&bull; 配置Log10SpecificMode，定义如下：
+<code>enum class Log10Algo {
+    INTRINSIC = 0,
+    PRECISION_1ULP_FTZ_TRUE,
+    PRECISION_1ULP_FTZ_FALSE,
+};
+struct Log10SpecificMode {
+    MaskMergeMode mrgMode = MaskMergeMode::ZEROING;
+    Log10Algo algo = Log10Algo::INTRINSIC;
+};</code>
+&bull; mrgMode：选择MERGING模式或ZEROING模式。
+&bull; algo：用于选择Log10算法及配置Subnormal模式，详细说明请参考[关键特性说明](#关键特性说明)。
+  &bull; Log10Algo::INTRINSIC：默认算法，最大精度误差为1ulp。对于half、float类型，Subnormal处理受编译选项--cce-ftz控制（默认值为true）。
+  &bull; Log10Algo::PRECISION_1ULP_FTZ_TRUE：使用单指令计算，最大精度误差为1ulp。
+  &bull; Log10Algo::PRECISION_1ULP_FTZ_FALSE：通过软件仿真实现，支持Subnormal数据计算，最大精度误差为1ulp。 |
+| U | 目的操作数的RegTensor类型，例如RegTensor<half>，由编译器自动推导，用户不需要填写。 |
+
+**表2**  参数说明
+
+| 参数名 | 输入/输出 | 描述 |
+| --- | --- | --- |
+| dstReg | 输出 | 目的操作数。
+类型为[RegTensor](../register_data_types/RegTensor.md)。 |
+| srcReg | 输入 | 源操作数。
+类型为[RegTensor](../register_data_types/RegTensor.md)。|
+| mask | 输入 | 源操作数元素操作的有效指示，详细说明请参考[MaskReg](../register_data_types/MaskReg.md)。 |
+
+## 数据类型
+
+目的操作数与源操作数的数据类型需要保持一致。支持的数据类型为：half、float。
+
+## 返回值说明
+
+无
+
+## 约束说明
+
+无
+
+## 关键特性说明
+
+### 精度提升
+
+当源操作数数据类型为half时，将half提升精度到float后进行计算，再将结果转为half后输出。
+
+### 最大精度误差
+
+Log10Algo::INTRINSIC、Log10Algo::PRECISION_1ULP_FTZ_TRUE和Log10Algo::PRECISION_1ULP_FTZ_FALSE的最大精度误差均为1ulp。
+
+### 配置Subnormal模式
+
+FTZ（Flush-To-Zero）：一种浮点运算模式，当结果为Subnormal时，将其直接清零（近似为0），而非保留其精确的微小数值。
+
+#### 默认算法
+
+Log10Algo::INTRINSIC为默认算法。--cce-ftz=false时保留Subnormal；--cce-ftz=true（默认值）时采用FTZ模式。
+
+#### 显式指定的算法
+
+- Log10Algo::PRECISION_1ULP_FTZ_TRUE使用单指令计算，始终采用FTZ模式。
+- Log10Algo::PRECISION_1ULP_FTZ_FALSE通过软件仿真实现，支持Subnormal数据计算。
+
+#### 使用建议
+
+由于保留Subnormal的计算行为通过软件仿真实现，在--cce-ftz=true（默认值）时，一般场景建议使用默认的Log10Algo::INTRINSIC或显式选择Log10Algo::PRECISION_1ULP_FTZ_TRUE，以获得更好的性能；需要精确输出Subnormal时，使用Log10Algo::PRECISION_1ULP_FTZ_FALSE。
+
+## 调用示例
+
+```cpp
+template<typename T>
+__simd_vf__ inline void Log10VF(__ubuf__ T* dstAddr, __ubuf__ T* srcAddr, uint32_t count, uint16_t oneRepeatSize, uint16_t repeatTimes)
+{
+    AscendC::Reg::RegTensor<T> srcReg;
+    AscendC::Reg::RegTensor<T> dstReg;
+    AscendC::Reg::MaskReg mask;
+    // 1ulp精度及Subnormal模式
+    // static constexpr AscendC::Reg::Log10SpecificMode mode = {
+    //     AscendC::Reg::MaskMergeMode::ZEROING, AscendC::Log10Algo::PRECISION_1ULP_FTZ_FALSE};
+    for (uint16_t i = 0; i < repeatTimes; i++) {
+        mask = AscendC::Reg::UpdateMask<T>(count);
+        AscendC::Reg::LoadAlign(srcReg, srcAddr + i * oneRepeatSize);
+        AscendC::Reg::Log10(dstReg, srcReg, mask);
+        // 1ulp精度及Subnormal模式
+        // AscendC::Reg::Log10<DTYPE, &mode>(dstReg, srcReg, mask);
+        AscendC::Reg::StoreAlign(dstAddr + i * oneRepeatSize, dstReg, mask);
+    }
+}
+```

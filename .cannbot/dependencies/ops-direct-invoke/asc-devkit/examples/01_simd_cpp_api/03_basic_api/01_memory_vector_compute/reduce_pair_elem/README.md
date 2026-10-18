@@ -1,0 +1,98 @@
+# `ReducePairElem<SUM>`样例
+
+## 概述
+
+本样例在归约场景下，基于接口`ReducePairElem<SUM>`对数据（a1, a2, a3, a4, a5, a6...）的相邻两个元素求和为（a1+a2, a3+a4, a5+a6, ......），即对每个pair（偶数下标与奇数下标组成的相邻元素对）进行求和归约，输出元素个数为输入的一半。
+
+注：`ReducePairElem`为 CANN 9.1.0 重命名后的 API。CANN 9.0.0 及之前版本请使用`PairReduceSum`。
+
+## 本样例支持的产品及CANN软件版本
+
+| 产品 | CANN软件版本 |
+|------|-------------|
+| Ascend 950PR/Ascend 950DT | >= CANN 9.1.0 |
+| Atlas A3 训练系列产品/Atlas A3 推理系列产品 | >= CANN 9.1.0 |
+| Atlas A2 训练系列产品/Atlas A2 推理系列产品 | >= CANN 9.1.0 |
+
+## 目录结构介绍
+
+``` text
+├── reduce_pair_elem
+│   ├── scripts
+│   │   ├── gen_data.py         // 输入数据和真值数据生成脚本
+│   │   └── verify_result.py    // 验证输出数据和真值数据是否一致的验证脚本
+│   ├── CMakeLists.txt          // 编译工程文件
+│   ├── data_utils.h            // 数据读入写出函数
+│   ├── reduce_pair_elem.asc    // Ascend C 样例实现 & 调用
+│   └── README.md               // 样例说明文档
+```
+
+## 样例描述
+
+- 样例功能：
+  本样例中调用`ReducePairElem<SUM>`接口，对输入元素中所有的相邻元素对执行求和计算。样例规格如下表所示：
+
+
+| 样例类型(OpType) | ReducePairElem<SUM> |  |  |  |
+| --- | --- | --- | --- | --- |
+| 样例输入 | name | shape | data type | format |
+| x | [1, 128] | half | ND |  |
+| 样例输出 |  |  |  |  |
+| z | [1, 64] | half | ND |  |
+| 核函数名 | reduce_pair_elem_custom |  |  |  |
+
+- 样例实现：
+  本样例中实现的是固定shape为输入x[1, 128]，输出z[1, 64]的`ReducePairElem<SUM>`样例。
+
+  核函数中，`ReducePairElem<SUM>`对`srcLocal`中每对相邻元素（偶数下标与奇数下标）求和，并将结果存储在`dstLocal`中。
+
+## 编译运行
+
+在本样例根目录下执行如下步骤，编译并运行样例。
+
+- 配置环境变量
+  请根据当前环境上CANN开发套件包的[安装方式](../../../../../docs/zh/quick_start.md#prepare&install)，配置环境变量。
+
+  ```bash
+  source ${install_path}/cann/set_env.sh
+  ```
+
+  > **说明：** `${install_path}` 为CANN包安装目录，未指定安装目录时默认安装至 `/usr/local/Ascend` 下。
+
+- 样例执行
+
+  在本样例目录下执行如下命令。
+
+  ```bash
+  mkdir -p build && cd build;   # 创建并进入build目录
+  cmake -DCMAKE_ASC_ARCHITECTURES=dav-2201 ..;make -j;             # 编译工程，默认npu模式
+  python3 ../scripts/gen_data.py   # 生成测试输入数据
+  ./demo                        # 执行编译生成的可执行程序，执行样例
+  python3 ../scripts/verify_result.py output/output.bin output/golden.bin   # 验证输出结果是否正确，确认算法逻辑正确
+  ```
+
+  使用CPU调试或NPU仿真模式时，添加`-DCMAKE_ASC_RUN_MODE=cpu`或`-DCMAKE_ASC_RUN_MODE=sim`参数即可。
+
+  示例如：
+
+  ```bash
+  cmake -DCMAKE_ASC_RUN_MODE=cpu -DCMAKE_ASC_ARCHITECTURES=dav-2201 ..;make -j; # cpu调试模式
+  cmake -DCMAKE_ASC_RUN_MODE=sim -DCMAKE_ASC_ARCHITECTURES=dav-2201 ..;make -j; # NPU仿真模式
+  ```
+
+  > **注意：** 切换编译模式前需清理 cmake 缓存，可在 build 目录下执行 `rm CMakeCache.txt` 后重新 cmake。
+
+- 编译选项说明
+
+  | 选项 | 可选值 | 说明 |
+  |------|--------|------|
+  | `CMAKE_ASC_RUN_MODE` | `npu`（默认）、`cpu`、`sim` | 运行模式：NPU 运行、CPU调试、NPU仿真 |
+  | `CMAKE_ASC_ARCHITECTURES` | `dav-2201`（默认）、`dav-3510` | NPU 架构：dav-2201 对应 Atlas A2 训练系列产品/Atlas A2 推理系列产品和 Atlas A3 训练系列产品/Atlas A3 推理系列产品，dav-3510 对应 Ascend 950PR/Ascend 950DT |
+
+- 执行结果
+
+  执行结果如下，说明精度对比成功。
+
+  ```bash
+  test pass!
+  ```

@@ -1,0 +1,101 @@
+# CreateVecIndex Example
+
+## Overview
+
+This example implements vector index creation functionality based on the CreateVecIndex API in a data padding scenario, used to generate a continuous integer sequence. The CreateVecIndex API supports creating a continuously incrementing index vector starting from a specified value, commonly used in scenarios that require generating sequence indices, such as generating subscripts for array elements and creating stride sequences.
+
+## Supported Products and CANN Versions
+
+| Product | CANN Version |
+|---------|-------------|
+| Ascend 950PR/Ascend 950DT | >= CANN 9.1.0 |
+| Atlas A3 Training Series Products/Atlas A3 Inference Series Products | >= CANN 9.0.0 |
+| Atlas A2 Training Series Products/Atlas A2 Inference Series Products | >= CANN 9.0.0 |
+
+## Directory Structure
+
+```
+├── create_vec_index
+│   ├── scripts
+│   │   ├── gen_data.py         // Script for generating input data and ground truth data
+│   │   └── verify_result.py    // Script for verifying whether output data matches ground truth data
+│   ├── CMakeLists.txt          // Build project file
+│   ├── data_utils.h            // Data read/write functions
+│   ├── create_vec_index.asc    // Ascend C example implementation & invocation example
+│   └── README.md               // Example documentation
+```
+
+## Example Description
+
+- Example function:
+  This example demonstrates using the CreateVecIndex API to create a vector index with a specified start value for generating a continuous integer sequence. The CreateVecIndex API is applicable to scenarios that require generating sequence indices, such as generating subscripts for array elements, creating stride sequences, and creating loop indices. The startIndex parameter specifies the start value, and the count parameter specifies the number of elements to generate. For detailed API documentation, refer to [CreateVecIndex API Documentation](https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/900beta1/API/ascendcopapi/atlasascendc_api_07_0090.html).
+
+- Example specifications:
+
+| Example Type | CreateVecIndex |  |  |  |
+| --- | --- | --- | --- | --- |
+| Example Input |  |  |  |  |
+| name | shape | data type | format |  |
+| - | - | - | - |  |
+| Example Output |  |  |  |  |
+| y | [1,128] | uint16_t | ND |  |
+| Kernel Function Name | testCreateVecIndex |  |  |  |
+
+- Example implementation:
+  This example implements a CreateVecIndex example with fixed output shape y[1,128], generating 128 continuous integer indices starting from 0 (0, 1, 2, ..., 127).
+
+  CreateVecIndex API parameter description:
+  - dst: destination operand for storing the generated index vector
+  - startIndex: start value of the index, in this example 0
+  - count: number of elements participating in computation, in this example 128
+
+  - Kernel implementation
+    - Call the Duplicate interface to initialize the UB (Unified Buffer) to 0
+    - Call the CreateVecIndex interface to generate a continuous index vector starting from 0
+    - Call the DataCopy basic API to transfer results from UB (Unified Buffer) to GM (Global Memory)
+
+  - Invocation implementation
+    Use the kernel invocation operator <<<>>> to call the kernel function.
+
+## Build and Run
+
+Run the following steps in the root directory of this example to build and run the example.
+
+- Configure environment variables
+  Configure environment variables according to the [installation method](../../../../../docs/en/quick_start.md#prepare&install) of the CANN development kit in the current environment.
+  ```bash
+  source ${install_path}/cann/set_env.sh
+  ```
+
+  > **Note:** `${install_path}` is the CANN package installation directory. When no installation directory is specified, the default installation path is `/usr/local/Ascend`.
+
+- Run the example
+
+  Run the following commands in the example directory.
+  ```bash
+  mkdir -p build && cd build;      # Create and enter the build directory
+  cmake .. -DCMAKE_ASC_ARCHITECTURES=dav-2201;make -j;    # Build the project, default npu mode
+  python3 ../scripts/gen_data.py   # Generate test input data
+  ./demo                           # Run the compiled executable to execute the example
+  python3 ../scripts/verify_result.py output/output.bin output/golden.bin   # Verify whether the output result is correct and confirm algorithm logic is correct
+  ```
+  The following execution result indicates that the accuracy comparison is successful.
+  ```bash
+  test pass!
+  ```
+
+  To use CPU debug or NPU simulation mode, add the `-DCMAKE_ASC_RUN_MODE=cpu` or `-DCMAKE_ASC_RUN_MODE=sim` parameter.
+
+  Examples:
+  ```bash
+  cmake .. -DCMAKE_ASC_RUN_MODE=cpu -DCMAKE_ASC_ARCHITECTURES=dav-2201;make -j; # CPU debug mode
+  cmake .. -DCMAKE_ASC_RUN_MODE=sim -DCMAKE_ASC_ARCHITECTURES=dav-2201;make -j; # NPU simulation mode
+  ```
+  > **Notice:** Clear the cmake cache before switching build modes. Run `rm CMakeCache.txt` in the build directory and then re-run cmake.
+
+- Build option description
+
+  | Option | Values | Description |
+  |--------|--------|-------------|
+  | `CMAKE_ASC_RUN_MODE` | `npu` (default), `cpu`, `sim` | Run mode: NPU execution, CPU debug, NPU simulation |
+  | `CMAKE_ASC_ARCHITECTURES` | `dav-2201` (default), `dav-3510` | NPU architecture: dav-2201 corresponds to Atlas A2 Training Series Products/Atlas A2 Inference Series Products and Atlas A3 Training Series Products/Atlas A3 Inference Series Products, dav-3510 corresponds to Ascend 950PR/Ascend 950DT |

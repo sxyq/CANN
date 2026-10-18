@@ -1,0 +1,61 @@
+#!/bin/bash
+# ----------------------------------------------------------------------------------------------------------
+# Copyright (c) 2026 Huawei Technologies Co., Ltd.
+# This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+# CANN Open Software License Agreement Version 2.0 (the "License").
+# Please refer to the License for details. You may not use this file except in compliance with the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+# INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+# See LICENSE in the root of the software repository for the full text of the License.
+# ----------------------------------------------------------------------------------------------------------
+
+set -euo pipefail
+
+find_real_make() {
+    local self_dir candidate candidate_dir
+    self_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    while IFS= read -r candidate; do
+        candidate_dir="$(cd "$(dirname "$candidate")" && pwd)"
+        if [[ "$candidate_dir" != "$self_dir" ]]; then
+            printf '%s\n' "$candidate"
+            return 0
+        fi
+    done < <(type -a -P make 2>/dev/null || true)
+    printf '%s\n' "/usr/bin/make"
+}
+
+limit="${PRESMOKE_MAKE_JOBS:-}"
+if [[ ! "$limit" =~ ^[0-9]+$ || "$limit" -lt 1 ]]; then
+    exec "$(find_real_make)" "$@"
+fi
+
+rewritten=()
+while [[ $# -gt 0 ]]; do
+    arg="$1"
+    shift
+    case "$arg" in
+        -j)
+            rewritten+=("-j${limit}")
+            if [[ "${1:-}" =~ ^[0-9]+$ ]]; then
+                shift
+            fi
+            ;;
+        -j[0-9]*)
+            rewritten+=("-j${limit}")
+            ;;
+        --jobs)
+            rewritten+=("--jobs=${limit}")
+            if [[ "${1:-}" =~ ^[0-9]+$ ]]; then
+                shift
+            fi
+            ;;
+        --jobs=*)
+            rewritten+=("--jobs=${limit}")
+            ;;
+        *)
+            rewritten+=("$arg")
+            ;;
+    esac
+done
+
+exec "$(find_real_make)" "${rewritten[@]}"

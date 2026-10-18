@@ -1,0 +1,27 @@
+# 构造&拷贝构造函数
+
+## 功能说明
+
+构造算子参数的OpParamDef，OpParamDef用于描述算子参数的信息，如数据类型、格式等。一般用户不会直接构造OpParamDef，而是通过Input、Output接口间接构造算子参数的OpParamDef。
+
+## 函数原型
+
+```
+explicit OpParamDef(const char *name);
+OpParamDef(const OpParamDef &def);
+```
+
+## 参数说明
+
+| 参数 | 输入/输出 | 说明 |
+| --- | --- | --- |
+| name | 输入 | 算子参数名，同一算子需保证所有参数名各不相同。 |
+| def | 输入 | 已构造完成的算子参数OpParamDef，用于拷贝构造OpParamDef。 |
+
+## 返回值说明
+
+无
+
+## 约束说明
+
+无

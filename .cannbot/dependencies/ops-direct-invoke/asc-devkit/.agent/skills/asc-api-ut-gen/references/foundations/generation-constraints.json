@@ -1,0 +1,114 @@
+{
+  "version": 1,
+  "sources": [
+    "asc-api-ut-gen/SKILL.md",
+    "asc-api-ut-gen/references/api-guides/membase-api-aiv-ut-guide.md",
+    "asc-api-ut-gen/references/api-guides/membase-api-aic-ut-guide.md",
+    "asc-api-ut-gen/references/api-guides/c-api-ut-guide.md",
+    "asc-api-ut-gen/references/api-guides/regbase-api-ut-guide.md",
+    "asc-api-ut-gen/references/api-guides/simt-api-ut-guide.md",
+    "asc-api-ut-gen/references/api-guides/utils-api-ut-guide.md",
+    "asc-npu-arch/references/npu-arch-facts.json"
+  ],
+  "api_types": {
+    "aiv": {
+      "enum_name": "AIV",
+      "description": "membase Vector core API"
+    },
+    "aic": {
+      "enum_name": "AIC",
+      "description": "membase Cube core API"
+    },
+    "c_api": {
+      "enum_name": "C_API",
+      "description": "C API"
+    },
+    "adv": {
+      "enum_name": "ADV",
+      "description": "Advanced API"
+    },
+    "simt": {
+      "enum_name": "SIMT",
+      "description": "SIMT API"
+    },
+    "reg": {
+      "enum_name": "REG_COMPUTE",
+      "description": "Register compute API"
+    },
+    "utils": {
+      "enum_name": "UTILS",
+      "description": "Utils API"
+    }
+  },
+  "api_restrictions": {
+    "simt": {
+      "allowed_chips": [
+        "ascend950pr_9599"
+      ],
+      "message": "SIMT API only supports ascend950pr_9599 (3510), current: {chip}"
+    },
+    "reg": {
+      "allowed_chips": [
+        "ascend950pr_9599"
+      ],
+      "message": "regbase API only supports ascend950pr_9599 (3510), current: {chip}"
+    }
+  },
+  "aiv_generation": {
+    "generic_binary_apis": [
+      "Add",
+      "Sub"
+    ],
+    "generic_scalar_tensor_dispatch_apis": [
+      "Duplicate"
+    ],
+    "explicit_templates": [
+      "binary",
+      "scalar_tensor_dispatch"
+    ],
+    "description": "Only APIs with verified generic binary or scalar/tensor-dispatch signatures may use an automatic AIV skeleton. Other AIV APIs must be analyzed first and either use an explicit template choice or an API-specific UT."
+  },
+  "aic_generation": {
+    "generic_mmad_like_apis": [
+      "Mmad"
+    ],
+    "explicit_templates": [
+      "mmad"
+    ],
+    "description": "Only APIs with a verified MMAD-like signature may use the automatic AIC skeleton. Other AIC APIs must be analyzed first and use an API-specific UT instead of a renamed MMAD body."
+  },
+  "reg_generation": {
+    "generic_templates": [],
+    "description": "Automatic regbase UT generation is disabled until an executable register-family template has been verified. Placeholder bodies are not valid UT output."
+  },
+  "simt_generation": {
+    "generic_templates": [],
+    "description": "Automatic SIMT UT generation is disabled until an executable SIMT-family template has been verified. Placeholder kernels and validation TODOs are not valid UT output."
+  },
+  "c_api_generation": {
+    "generic_templates": [],
+    "description": "Automatic C API UT generation is disabled until an executable signature-family template has been verified against the target architecture. One vector mock shape must not be reused for unrelated signatures."
+  },
+  "utils_generation": {
+    "generic_templates": [],
+    "description": "Automatic utils UT generation is disabled until an executable utils-family template has been verified. Runtime, compile-time, std, tiling, and context utilities must not share one generic skeleton."
+  },
+  "post_generation_report": {
+    "required_fields": [
+      "token_usage",
+      "elapsed_seconds",
+      "current_coverage"
+    ],
+    "token_usage": {
+      "description": "Report prompt/completion/total token usage when provided by the client or API. Local script generation does not consume LLM tokens by itself.",
+      "env": {
+        "prompt_tokens": "ASC_API_UT_PROMPT_TOKENS",
+        "completion_tokens": "ASC_API_UT_COMPLETION_TOKENS",
+        "total_tokens": "ASC_API_UT_TOTAL_TOKENS"
+      }
+    },
+    "coverage": {
+      "description": "Report current Lines/Functions coverage from build/cov_report when available. If no report is provided or refreshed, record unavailable with reason."
+    }
+  }
+}

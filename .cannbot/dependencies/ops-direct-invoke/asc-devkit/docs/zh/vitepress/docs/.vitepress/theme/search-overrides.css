@@ -1,0 +1,320 @@
+/* Pagefind search dialog — styled to match original VPLocalSearchBox */
+
+/* Modal shell */
+html [command-dialog-wrapper] {
+  border-radius: 12px !important;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.15), 0 1px 4px rgba(0, 0, 0, 0.08) !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  max-width: min(100vw - 60px, 750px) !important;
+  width: min(100vw - 60px, 750px) !important;
+  margin-top: 12vh !important;
+  background: var(--vp-c-bg-soft) !important;
+}
+
+html.dark [command-dialog-wrapper] {
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5), 0 1px 4px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Backdrop */
+html [command-dialog-mask] {
+  background: rgba(0, 0, 0, 0.5) !important;
+}
+
+html.dark [command-dialog-mask] {
+  background: rgba(0, 0, 0, 0.7) !important;
+}
+
+/* Search bar */
+html [command-dialog-header] {
+  border: none !important;
+  border-bottom: 1px solid var(--vp-c-divider) !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+}
+
+html [command-dialog-header] .search-bar {
+  border: none !important;
+  padding: 12px 16px !important;
+  gap: 8px !important;
+  border-radius: 0 !important;
+}
+
+html [command-input] {
+  padding: 8px 0 !important;
+  font-size: 16px !important;
+  background: transparent !important;
+  color: var(--vp-c-text-1) !important;
+  border: none !important;
+  outline: none !important;
+}
+
+html [command-input]::placeholder {
+  color: var(--vp-c-text-3) !important;
+}
+
+/* Close / back button */
+html [command-dialog-header] .back-button {
+  padding: 6px !important;
+  border-radius: 6px !important;
+  color: var(--vp-c-text-3) !important;
+}
+
+html [command-dialog-header] .back-button:hover {
+  background: var(--vp-c-bg-alt) !important;
+  color: var(--vp-c-text-1) !important;
+}
+
+/* Search icon before input */
+html [command-dialog-header] .search-actions.before .local-search-icon {
+  font-size: 20px !important;
+  color: var(--vp-c-text-3) !important;
+}
+
+/* Clear / toggle buttons */
+html [command-dialog-header] .search-actions button {
+  padding: 6px !important;
+  border-radius: 6px !important;
+  color: var(--vp-c-text-3) !important;
+}
+
+html [command-dialog-header] .search-actions button:hover {
+  background: var(--vp-c-bg-alt) !important;
+  color: var(--vp-c-brand-1) !important;
+}
+
+/* Results area */
+html [command-dialog-body] {
+  padding: 8px !important;
+}
+
+html [command-list] {
+  max-height: 460px !important;
+  padding: 0 !important;
+  overflow-y: auto !important;
+}
+
+/* Result heading */
+html [command-group-heading] {
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: var(--vp-c-brand-1) !important;
+  padding: 0 8px 4px !important;
+  margin: 0 !important;
+  line-height: 20px !important;
+}
+
+/* Each result item */
+html [command-item] {
+  display: flex !important;
+  align-items: flex-start !important;
+  border: none !important;
+  border-radius: 6px !important;
+  transition: background-color 0.15s ease !important;
+  margin: 0 4px !important;
+  padding: 0 !important;
+  height: auto !important;
+  min-height: auto !important;
+  background: transparent !important;
+}
+
+html [command-item] .link {
+  margin: 10px 14px !important;
+  flex: 1 !important;
+  min-width: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+html [command-item]:hover {
+  background: var(--vp-c-bg-alt) !important;
+}
+
+html [command-item][aria-selected="true"] {
+  background: var(--vp-c-bg-alt) !important;
+  box-shadow: inset 0 0 0 2px var(--vp-c-brand-1) !important;
+  color: inherit !important;
+}
+
+/* Breadcrumb row */
+html [command-item] .breadcrumb-row {
+  font-size: 11px !important;
+  color: var(--vp-c-text-3) !important;
+  line-height: 1.4 !important;
+  opacity: 0.7 !important;
+}
+
+/* Result title area */
+html [command-item] .title {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: baseline !important;
+  justify-content: flex-start !important;
+  gap: 0 !important;
+  row-gap: 2px !important;
+}
+
+html [command-item] .title .date {
+  margin-left: auto !important;
+}
+
+/* Breadcrumb path - from pagefind meta title */
+html [command-item] .headings {
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  color: var(--vp-c-text-1) !important;
+  line-height: 1.4 !important;
+}
+
+html [command-item] .section-title {
+  display: inline-block !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+  color: var(--vp-c-text-2) !important;
+  font-size: 12px !important;
+  font-weight: 400 !important;
+  line-height: 1.4 !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+html [command-item] .section-title::before {
+  content: '›';
+  margin: 0 6px;
+  color: var(--vp-c-text-3);
+}
+
+html [command-item] .headings i.prefix {
+  display: none !important;
+}
+
+/* Excerpt */
+html [command-item] .des {
+  max-height: 1.4em !important;
+  opacity: 0.75 !important;
+  font-size: 12px !important;
+  line-height: 1.4 !important;
+  overflow: hidden !important;
+  white-space: nowrap !important;
+  margin-top: 2px !important;
+  color: var(--vp-c-text-2) !important;
+}
+
+html [command-item][aria-selected="true"] .des {
+  opacity: 1 !important;
+}
+
+/* Highlight (mark) */
+html [command-item] .des mark,
+html [command-item] .headings mark,
+html [command-item] .section-title mark {
+  background-color: var(--vp-c-brand-soft) !important;
+  color: var(--vp-c-brand-1) !important;
+  border-radius: 2px !important;
+  padding: 0 2px !important;
+  font-weight: inherit !important;
+  text-decoration: none !important;
+}
+
+html [command-item][aria-selected="true"] .des mark,
+html [command-item][aria-selected="true"] .headings mark,
+html [command-item][aria-selected="true"] .section-title mark,
+html [command-item]:hover .des mark,
+html [command-item]:hover .headings mark,
+html [command-item]:hover .section-title mark {
+  background-color: var(--vp-c-brand-soft) !important;
+  color: var(--vp-c-brand-1) !important;
+  text-decoration: none !important;
+}
+
+/* Footer */
+html [command-dialog-footer] {
+  padding: 10px 16px !important;
+  border-top: 1px solid var(--vp-c-divider) !important;
+  font-size: 12px !important;
+  opacity: 0.7 !important;
+  background: var(--vp-c-bg-soft) !important;
+  gap: 16px !important;
+  justify-content: space-between !important;
+  flex-wrap: nowrap !important;
+  flex-direction: row !important;
+  height: auto !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+/* Footer shortcut keys */
+html [command-dialog-footer] .command-palette-commands-key {
+  border-radius: 4px !important;
+  padding: 2px 6px !important;
+  min-width: 20px !important;
+  font-size: 11px !important;
+  background: var(--vp-c-bg-alt) !important;
+  border: 1px solid var(--vp-c-divider) !important;
+  box-shadow: none !important;
+}
+
+html [command-dialog-footer] .command-palette-logo {
+  font-size: 12px !important;
+}
+
+html [command-dialog-footer] .command-palette-logo a {
+  text-decoration: none !important;
+  color: var(--vp-c-text-3) !important;
+}
+
+/* Empty state */
+html [command-empty] {
+  padding: 32px 16px !important;
+  font-size: 14px !important;
+  color: var(--vp-c-text-2) !important;
+  height: auto !important;
+}
+
+/* Toggle layout button */
+html [command-dialog-header] .toggle-layout-button {
+  opacity: 0.5 !important;
+}
+
+html [command-dialog-header] .toggle-layout-button:hover {
+  opacity: 1 !important;
+}
+
+/* Search button in nav bar */
+html .blog-search .nav-search-btn-wait {
+  color: var(--vp-c-text-2) !important;
+  border: 1px solid transparent !important;
+}
+
+html .blog-search .nav-search-btn-wait:hover {
+  border-color: var(--vp-c-brand-1) !important;
+  color: var(--vp-c-brand-1) !important;
+}
+
+html .blog-search .nav-search-btn-wait .search-tip {
+  color: var(--vp-c-text-2) !important;
+}
+
+/* Mobile overrides */
+@media (max-width: 767px) {
+  html [command-dialog-wrapper] {
+    margin: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    max-height: none !important;
+    border-radius: 0 !important;
+    max-width: none !important;
+  }
+
+  html [command-dialog-footer] .command-palette-commands {
+    display: none !important;
+  }
+}
+
+/* Remove default pagefind logo SVG sizing */
+html [command-dialog-footer] .command-palette-logo svg {
+  height: 16px !important;
+  width: auto !important;
+}

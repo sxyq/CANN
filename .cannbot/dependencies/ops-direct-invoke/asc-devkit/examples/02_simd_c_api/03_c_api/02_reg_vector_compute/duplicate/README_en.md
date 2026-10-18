@@ -1,0 +1,85 @@
+# duplicate Example
+
+## Overview
+This example implements the Duplicate operation (scalar fill mode) based on the C API programming interface, primarily calling the [asc_duplicate_scalar](../../../../../docs/zh/api/SIMD-API/c_api/reg_compute/reg_broadcast/asc_duplicate_scalar.md) API.
+- The `asc_duplicate_scalar(dst vector data register, scalar, mask)` API copies a scalar value multiple times and fills it into a vector
+- The `asc_duplicate(dst vector data register, src vector data register, mask)` API copies the first element of the source vector data register multiple times and fills it into a vector
+
+## Supported Products and CANN Versions
+
+| Product | CANN Version |
+| --- | --- |
+| Ascend 950PR/Ascend 950DT | >= CANN 9.2.0 |
+
+## Directory Structure
+```
+├── duplicate
+│   ├── scripts
+│   │   ├── gen_data.py            // Ground truth data generation script
+│   ├── CMakeLists.txt                 // Build configuration file
+│   ├── data_utils.h                   // Data read/write functions
+│   ├── duplicate.asc                  // Ascend C example implementation & invocation example
+│   ├── README.md                      // Example description
+│   └── README_en.md                   // Example description (English)
+```
+
+## Example Description
+- Example functionality:
+  Fills the scalar value 3.14 into every position of the output vector. The vector has 256 elements and the data type is float.
+- Example specifications:
+
+| Example Type (OpType) | AIV Example |  |  |
+| --- | --- | --- | --- |
+| Example Output | name | shape | data type |
+| y | [1, 256] | float |  |
+| Kernel Function Name | duplicate_custom |  |  |
+
+- Example implementation:
+  The duplicate_vf function calls the asc_duplicate_scalar API for scalar filling:
+  - Uses the asc_duplicate_scalar API to fill the scalar value into every element of dst vector data register
+  - Uses asc_storealign to write the result back to UB
+  - Invocation implementation
+    Uses the kernel invocation syntax <<<>>> to call the kernel function.
+
+## Build and Run
+Run the following steps in the root directory of this example to build and run it.
+- Configure environment variables
+  Configure environment variables based on the [installation method](../../../../../docs/en/quick_start.md#prepare&install) of the CANN development kit on the current environment.
+  ```bash
+  source ${install_path}/cann/set_env.sh
+  ```
+
+  > **Note:** `${install_path}` is the CANN package installation directory. The default is `/usr/local/Ascend` for the root user and `${HOME}/Ascend` for non-root users.
+
+- Run the example
+
+  Run the following commands in the example directory.
+  ```bash
+  mkdir -p build && cd build;                                               # Create and enter the build directory
+  cmake -DCMAKE_ASC_ARCHITECTURES=dav-3510 ..;make -j;                      # Build the project (default npu mode)
+  python3 ../scripts/gen_data.py                                            # Generate test ground truth data
+  ./demo                                                                    # Run the compiled executable to execute the example
+  ```
+
+  To use NPU simulation mode, add the `-DCMAKE_ASC_RUN_MODE=sim` parameter.
+
+  Examples:
+  ```bash
+  cmake -DCMAKE_ASC_RUN_MODE=sim -DCMAKE_ASC_ARCHITECTURES=dav-3510 ..;make -j; # NPU simulation mode
+  ```
+
+  > **Notice:** Clear the cmake cache before switching build modes. Run `rm CMakeCache.txt` in the build directory and re-run cmake.
+
+- Build option description
+
+  | Option | Values | Description |
+  | --- | --- | --- |
+  | `CMAKE_ASC_RUN_MODE` | `npu` (default), `sim` | Run mode: NPU execution, NPU simulation |
+  | `CMAKE_ASC_ARCHITECTURES` | `dav-3510` | NPU architecture: dav-3510 corresponds to Ascend 950PR/Ascend 950DT |
+
+- Execution result
+
+  The following execution result indicates that the precision comparison is successful.
+  ```bash
+  test pass!
+  ```

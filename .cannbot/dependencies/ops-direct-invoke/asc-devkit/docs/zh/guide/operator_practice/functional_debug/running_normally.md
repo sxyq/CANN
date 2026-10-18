@@ -1,0 +1,3 @@
+# 运行正常
+
+运行正常是算子开发后进行调测的前提，是后续进行性能优化的基础。Ascend C提供了多种调测方法和调测工具，供开发者使用，具体内容请参考[功能调试](../../programming_guide/debug_and_tuning/functional_debug/functional_debug.md)。
