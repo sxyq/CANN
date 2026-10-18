@@ -1,27 +1,27 @@
 # CANN 比赛结束归档
 
-状态：比赛已结束，N01-N10 十条源码路线及 W5-R01-R05 五条研究路线均已归档。全部本地支线历史已并入 `main`；归档整理期间曾清理 79 个非 `main` 本地分支名和五份重复路线克隆。随后 `main` 接入并推送 `origin/main` 的完整历史；原有 96 条非 `main` 远端分支尖端均由 `main` 保留，远端现在只保留 `main`。截至 2026-10-18，仓库登记 41 个本地分支引用（均已合入 `main`）和 34 个注册工作树；这些历史工作树仍保留。
+状态：比赛已结束，N01-N10 十条源码路线及 W5-R01-R05 五条研究路线均已归档。全部本地支线历史已并入 `main`；归档整理期间曾清理 79 个非 `main` 本地分支名和五份重复路线克隆。随后 `main` 接入并推送 `origin/main` 的完整历史；原有 96 条非 `main` 远端分支尖端均由 `main` 保留，远端现在只保留 `main`。截至 2026-10-18，归档元数据登记 7 个活动 worktree，另有 19 个外部路线目录作为文件快照保留。
 
 ## 2026-10-18 主线收口
 
-服务器 3 上已再次核对整个 `cann/`：本地 `main` 与 `origin/main` 当前均为
-`6f7095bdc3fae9b95581f763dca48eeab29a2c61`；`c5550935bdd971da076588e340343fa0659d0ab9` 是此前阶段性归档提交。工作区干净；41 个本地分支引用全部是 `main` 的祖先，没有待合并的已提交分支。34 个注册 worktree 中仍有 11 个带未提交内容，内容以 N06-N10 原始结果证据和 Runner 工作树改动为主；发现的路线源码 SHA 均已在本归档对象库中，没有遗漏的 Kernel 源码。
+服务器 3 上已再次核对整个 `cann/`：归档主线与 `origin/main` 当前均为
+`90e618e0f3c3789617bf9d5c23d2188e080f4ba5`；`6f7095bdc3fae9b95581f763dca48eeab29a2c61` 是此前阶段性归档提交。工作区干净；本地路线尖端均可从 `main` 追溯，没有待合并的已提交分支。当前登记 7 个活动 worktree，其中 N02、N07-N10 和 Runner 保留未提交原始结果/证据；另有 19 个外部路线目录作为文件快照保留。发现的路线源码 SHA 均已在本归档对象库或 `origin/main` 中，没有遗漏的 Kernel 源码。
 
-外部 worktree 和 `/home/data4t2/lelinfeng/cann-archive-20261017.Gz8SZ7/` 的完整恢复副本继续作为取证材料保留。各 worktree 的 CMake 生成目录、ELF、对象文件和共享库不属于 Git 归档，可在备份确认后单独清理；源码、结果摘要、失败日志和原始证据不得因清理 worktree 而删除。Runner 工作树的未验证改版不改变主线工具归档，也不代表 Correctness、Canonical Local 或 Official 结果。
+外部 worktree 快照和 `/home/data4t2/lelinfeng/cann-archive-20261017.Gz8SZ7/` 的完整恢复副本继续作为取证材料保留。明确可重建的 CMake/build 缓存、ELF、对象文件和共享库可单独清理；源码、结果摘要、失败日志和原始证据不得因清理 worktree 而删除。Runner 工作树的未验证改版不改变主线工具归档，也不代表 Correctness、Canonical Local 或 Official 结果。
 
 本次已从外部 worktree 移动 96 个明确生成的 CMake/build/out 缓存目录，共 102,486,518 bytes（约 97.74 MiB），放入仓外可恢复隔离区
 `/home/data4t2/lelinfeng/cann-archive-20261017.Gz8SZ7/移除产物/外部工作树-构建缓存-20261018/`。`MOVED.tsv` 保存每个来源 worktree、原相对路径和大小，清单 SHA 已登记在 `索引/移除产物.tsv`；这些缓存未进入 Git。结果 JSON/TSV、实验日志、失败诊断、源码和 N09 ELF 取证文件均未移动。
 
 ### 2026-10-18 工作树快照收口
 
-整个 `cann/` 及 34 个登记 worktree 已形成可恢复的仓外快照。归档主仓位于
+整个 `cann/` 及历史登记 worktree 已形成可恢复的仓外快照。归档主仓位于
 `/home/data4t2/lelinfeng/cann-archive-20261017.Gz8SZ7/worktrees-current-20261018/cann/`，活动 Git 元数据位于该主仓 `.git/`；另保留了一个早期 Git 元数据副本于
-`/home/data4t2/lelinfeng/cann-archive-20261017.Gz8SZ7/git-repository-20261018/.git/`。归档主仓逐项识别 34 个 worktree，所有共同 Git 目录检查通过。
+`/home/data4t2/lelinfeng/cann-archive-20261017.Gz8SZ7/git-repository-20261018/.git/`。当前归档主仓登记 7 个活动 worktree，外部路线目录另作为文件快照保留。
 
 快照共盘点 199,507 个未跟踪/忽略文件（197,096,411 bytes）：结果/证据 198,262 个，构建缓存 320 个，源码/配置 10 个，其他 915 个。完整清单和哈希保留在仓外
 `worktrees-current-20261018/WORKTREE_SNAPSHOT_MANIFEST.tsv`、`SNAPSHOT_CONTENT_CHECK.tsv`、`UNTRACKED_CLASS_SUMMARY.tsv` 和 `UNTRACKED_CONTENT_INVENTORY.tsv`；收据见 [`元数据/工作树快照-20261018.md`](元数据/工作树快照-20261018.md)。
 
-早期 bundle `git-repository-20261018/cann-all-refs.bundle` 保留原 SHA256 `4363fed05e4c4d3e48b2bc3d4b0c72edf3e7d2c8b18936c85e2bebe6a629057c`；中间 bundle 文件保留 `40262e92…` 和 `6f7095bd…` 检查点；最终 `git-repository-20261018/cann-all-refs-final-20261018.bundle` 在最终文档提交后生成，覆盖最终主线、178 个 refs 和完整历史，最终 SHA256 以交接时 `sha256sum` 与 `git bundle verify` 输出为准。外部原始 worktree 和仓外归档均保留；清理边界仅为用户指定的本地 `/home/data4t2/lelinfeng/cann` 主工作目录。
+早期 bundle `git-repository-20261018/cann-all-refs.bundle` 保留原 SHA256 `4363fed05e4c4d3e48b2bc3d4b0c72edf3e7d2c8b18936c85e2bebe6a629057c`；中间 bundle 文件保留 `40262e92…` 和 `6f7095bd…` 检查点；最终 bundle 位于 `/home/data4t2/lelinfeng/cann-archive-20261017.Gz8SZ7/cann-all-refs-final-20261018.bundle`，覆盖最终主线、178 个 refs 和完整历史，SHA256 与移动后校验结果记录在仓外 `FINAL_HANDOFF-20261018.txt`。外部原始 worktree 快照和仓外归档均保留；原 `/home/data4t2/lelinfeng/cann` 主工作目录已在验证后移除。
 
 ## 统一基础源码
 

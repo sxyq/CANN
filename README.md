@@ -26,7 +26,7 @@
 - Vector-Math V003 历史校验：`归档/比赛结束-20261017/项目材料/研究/VECTOR-MATH-X/V003/`（Canonical Local `60.477249`、POOR/LOCAL_NEUTRAL，不是 W5-R02 成绩）。
 - 历史补充日志：`归档/比赛结束-20261017/实验记录/历史补充/`（纯文本编译/配置诊断，不含构建目录或二进制）。
 - 来源映射与 Git 版本索引：`归档/比赛结束-20261017/索引/`
-- 工作树与仓外内容快照收据：`归档/比赛结束-20261017/元数据/工作树快照-20261018.md`（34 个登记 worktree、未跟踪内容分类、bundle 校验和清理边界）
+- 工作树与仓外内容快照收据：`归档/比赛结束-20261017/元数据/工作树快照-20261018.md`（历史快照、当前 7 个活动 worktree、未跟踪内容分类、bundle 校验和清理边界）
 - 旧 W4 五路线版本页：`技术路线/路线主线/ROW-SCALE-HOIST-X/`、`MODE-DISPATCH-CUTOFF-X/`、`SYNC-BARRIER-ELISION-X/`、`STAGING-LIVENESS-X/`、`ALIGNED-TAIL-DATACOPY-X/`
 - 路线入口：`技术路线/路线主线/`
 - 路线状态和成绩：`技术路线/技术路线总表.md`、`技术路线/全项目成绩与技术路线盘点.md`、`技术路线/路线成绩表.tsv`
@@ -37,6 +37,6 @@
 ## Git 状态
 
 本地 `main` 已包含此前的本地路线历史和 `origin/main` 历史，并已推送到 GitHub。原有 96 条非 `main` 远端分支尖端均可从 `main` 追溯，远端现只保留 `main`。
-截至 2026-10-18，Git 记录 41 个本地分支引用（均已合入 `main`）和 34 个工作树条目（主工作树加 33 个 linked worktree）。主仓完整副本及恢复入口为 `/home/data4t2/lelinfeng/cann-archive-20261017.Gz8SZ7/worktrees-current-20261018/cann/`；原有外部 worktree 与仓外证据均保留，`.git` 管理指针已重连至该归档仓。旧 `/home/data4t2/lelinfeng/cann` 主工作目录仅在归档提交推送并验证后移除，之后应从上述归档入口继续操作。
+截至 2026-10-18，`origin/main` 和归档主线均为 `90e618e0f3c3789617bf9d5c23d2188e080f4ba5`。归档 Git 元数据当前登记 7 个活动 worktree（主线、N02、N07、N08、N09、N10 和 hotloop-addr）；另有 19 个外部路线目录作为普通文件快照保存在 `worktrees-current-20261018/`，不再作为活动 linked worktree。主仓完整副本及恢复入口为 `/home/data4t2/lelinfeng/cann-archive-20261017.Gz8SZ7/worktrees-current-20261018/cann/`；原 `/home/data4t2/lelinfeng/cann` 主工作目录已在 bundle 验证后移除。最终 refs bundle 位于 `/home/data4t2/lelinfeng/cann-archive-20261017.Gz8SZ7/cann-all-refs-final-20261018.bundle`，当前 SHA256 以仓外 `FINAL_HANDOFF-20261018.txt` 为准。
 
 历史兼容入口 `本地实验/`、`线上结果/`、`研究/`、`调度/`、`管理/`、`证据集成/`、`工具/` 仍指向归档内容。目录细节见 [`项目结构.md`](项目结构.md)，归档事实见 [`归档/比赛结束-20261017/README.md`](归档/比赛结束-20261017/README.md)。
