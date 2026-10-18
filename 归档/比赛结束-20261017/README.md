@@ -9,6 +9,9 @@
 
 外部 worktree 和 `/home/data4t2/lelinfeng/cann-archive-20261017.Gz8SZ7/` 的完整恢复副本继续作为取证材料保留。各 worktree 的 CMake 生成目录、ELF、对象文件和共享库不属于 Git 归档，可在备份确认后单独清理；源码、结果摘要、失败日志和原始证据不得因清理 worktree 而删除。Runner 工作树的未验证改版不改变主线工具归档，也不代表 Correctness、Canonical Local 或 Official 结果。
 
+本次已从外部 worktree 移动 96 个明确生成的 CMake/build/out 缓存目录，共 102,486,518 bytes（约 97.74 MiB），放入仓外可恢复隔离区
+`/home/data4t2/lelinfeng/cann-archive-20261017.Gz8SZ7/移除产物/外部工作树-构建缓存-20261018/`。`MOVED.tsv` 保存每个来源 worktree、原相对路径和大小，清单 SHA 已登记在 `索引/移除产物.tsv`；这些缓存未进入 Git。结果 JSON/TSV、实验日志、失败诊断、源码和 N09 ELF 取证文件均未移动。
+
 ## 统一基础源码
 
 所有代码路线均以同一份基础源码作为归档参照：

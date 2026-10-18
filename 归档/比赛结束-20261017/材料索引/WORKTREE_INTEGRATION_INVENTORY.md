@@ -21,7 +21,7 @@
 `cann-tooling-runner` 工作树中的 Runner 文件与主线
 `归档/比赛结束-20261017/项目材料/工具/route-runner/` 逐文件 SHA 一致；其剩余差异是旧工作树索引状态和未验证构建目录，不产生新的主线源码。N09 的 R075/R076 ELF 取证文件仍只在原始工作树保留，未复制到 Git。
 
-清理边界：可在另行确认后移除各 worktree 的 CMake/ELF/`.o`/`.so` 等临时构建目录；不得删除路线源码、实验日志、结果 JSON/TSV、失败诊断或仓外原始证据。当前不执行 worktree 注销或仓外归档删除，以免丢失未提交证据。
+清理边界：本次已将 96 个明确生成的 CMake/build/out 目录（合计 102,486,518 bytes，约 97.74 MiB）从外部 worktree 移动到可恢复隔离区 `/home/data4t2/lelinfeng/cann-archive-20261017.Gz8SZ7/移除产物/外部工作树-构建缓存-20261018/`，来源和相对路径记录在 `MOVED.tsv`，并在 `索引/移除产物.tsv` 登记其 SHA。不得删除路线源码、实验日志、结果 JSON/TSV、失败诊断或仓外原始证据；当前不执行 worktree 注销或仓外归档删除。`cann-tooling-runner` 的 9 个已跟踪改动和 2 个 fixture 工作树状态仍按原样保留，未覆盖或回退。
 
 ## Final closeout status
 
