@@ -1,5 +1,28 @@
 # Worktree Integration Inventory
 
+## 2026-10-18 Main reconciliation
+
+本次收口在服务器 3（`hwnput3`）完成只读核对。当前主线状态如下：
+
+| 项目 | 当前事实 |
+|---|---|
+| `main` | `bef7300122514a39318cf51e1912e0a11041161d`，工作区干净 |
+| `origin/main` | 与本地 `main` 同一提交；远端实际保留 `main` |
+| 本地分支 | 41 个引用，全部是 `main` 的祖先，无待合并提交 |
+| 注册 worktree | 34 个；不包含主线之外的已提交历史 |
+| 有未提交内容的 worktree | 12 个，主要是结果证据或构建目录 |
+| N06-N10 源码核对 | 发现的 `.asc/.cpp/.h` SHA 全部已存在于主线归档对象库 |
+| 进程状态 | 未发现 CANN 测试、编译或 route-runner 进程；未停止其他用户进程 |
+
+外部 worktree 仍位于 `/home/data4t2/lelinfeng/cann-*` 和
+`/home/data4t2/lelinfeng/cann-archive-20261017.Gz8SZ7/`。N06-N10 的原始 JSON、TSV、日志和诊断材料已在主线保留摘要，完整恢复副本仍在仓外
+`压缩前原始记录/`；这些目录不是新的源码分支，也不能在未确认备份前删除。
+
+`cann-tooling-runner` 工作树中的 Runner 文件与主线
+`归档/比赛结束-20261017/项目材料/工具/route-runner/` 逐文件 SHA 一致；其剩余差异是旧工作树索引状态和未验证构建目录，不产生新的主线源码。N09 的 R075/R076 ELF 取证文件仍只在原始工作树保留，未复制到 Git。
+
+清理边界：可在另行确认后移除各 worktree 的 CMake/ELF/`.o`/`.so` 等临时构建目录；不得删除路线源码、实验日志、结果 JSON/TSV、失败诊断或仓外原始证据。当前不执行 worktree 注销或仓外归档删除，以免丢失未提交证据。
+
 ## Final closeout status
 
 `INTEGRATION_BRANCH_RECONCILED=YES`。本报告更新提交位于 Integration 工作树 `/Users/sunyiyang/Desktop/Project/cann/worktrees/integration/w4-closeout-20261008`，分支 `integration/w4-closeout-20261008`；更新前 HEAD=`6ec8c174c7352677ff623e760d6ddd55dc48e84e`。
