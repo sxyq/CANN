@@ -26,6 +26,7 @@
 - Vector-Math V003 历史校验：`归档/比赛结束-20261017/项目材料/研究/VECTOR-MATH-X/V003/`（Canonical Local `60.477249`、POOR/LOCAL_NEUTRAL，不是 W5-R02 成绩）。
 - 历史补充日志：`归档/比赛结束-20261017/实验记录/历史补充/`（纯文本编译/配置诊断，不含构建目录或二进制）。
 - 来源映射与 Git 版本索引：`归档/比赛结束-20261017/索引/`
+- 工作树与仓外内容快照收据：`归档/比赛结束-20261017/元数据/工作树快照-20261018.md`（34 个登记 worktree、未跟踪内容分类、bundle 校验和清理边界）
 - 旧 W4 五路线版本页：`技术路线/路线主线/ROW-SCALE-HOIST-X/`、`MODE-DISPATCH-CUTOFF-X/`、`SYNC-BARRIER-ELISION-X/`、`STAGING-LIVENESS-X/`、`ALIGNED-TAIL-DATACOPY-X/`
 - 路线入口：`技术路线/路线主线/`
 - 路线状态和成绩：`技术路线/技术路线总表.md`、`技术路线/全项目成绩与技术路线盘点.md`、`技术路线/路线成绩表.tsv`
