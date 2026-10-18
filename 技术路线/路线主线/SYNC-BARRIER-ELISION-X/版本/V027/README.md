@@ -1,0 +1,25 @@
+# SYNC-BARRIER-ELISION-X / V027
+
+本版本来自旧 W4 归档。源代码入口指向比赛结束归档中的去重对象；W4 原始对象、来源状态及结果边界仍保存在旧归档索引中。
+
+## 源码
+
+- [源码-25e7144625d6.asc](源码-25e7144625d6.asc)
+- SHA256: 25e7144625d6f381ac74f17e9d075a4506deffc2f8ae770cf5edd24d7251bca3
+- Git 提交: 3f5461d294ff8585ab901627e6cfd33ee697336f
+- 来源状态: COMMITTED / MATCH
+
+## 评分记录
+
+- [评分记录-001.json](评分记录-001.json)
+- Compile: NOT_RECORDED
+- Correctness: NOT_RECORDED
+- Local 状态 / 数值: NOT_RECORDED / NOT_RECORDED
+- 正式 Official / Submission: NOT_RECORDED / NOT_RECORDED
+
+## 来源资料
+
+- [W4 归档说明](../../../../../归档/W4/README.md)
+- [W4 版本来源表](../../../../../归档/W4/索引/revision-source-index.tsv)
+- [W4 结果摘要](../../../../../归档/W4/官方结果摘要.tsv)
+- [全版本记录](../../../../全版本记录.tsv)

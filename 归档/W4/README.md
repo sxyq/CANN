@@ -66,3 +66,17 @@ W4 的机制总结、失败原因和证据路径见 `W4技术总结.md`。
 | `STAGING-LIVENESS-X` | `3253bd52e04ec2267e22fbf0785f6fda38776680` | V034 Compile、Correctness 失败和复测结论 |
 
 这些补充路径及原始提交映射见 `索引/incremental-source-audit-20261009.tsv` 的 `MAINLINE_EVIDENCE_INTEGRATED` 行。它们不改变 W4 路线退役状态，也不产生新性能版本。
+
+## 路线主线入口
+
+旧 W4 五路线的 294 个 Revision 已各自整理到技术路线主线的版本小目录。每个版本页带有说明、源码入口和评分记录 JSON；源码链接复用 `归档/比赛结束-20261017/路线源码/对象/` 中按源码 SHA256 去重的对象。
+
+| 路线 | Revision 数 | 路线目录 |
+|---|---:|---|
+| ROW-SCALE-HOIST-X | 67 | `技术路线/路线主线/ROW-SCALE-HOIST-X/版本/` |
+| MODE-DISPATCH-CUTOFF-X | 111 | `技术路线/路线主线/MODE-DISPATCH-CUTOFF-X/版本/` |
+| SYNC-BARRIER-ELISION-X | 81 | `技术路线/路线主线/SYNC-BARRIER-ELISION-X/版本/` |
+| STAGING-LIVENESS-X | 34 | `技术路线/路线主线/STAGING-LIVENESS-X/版本/` |
+| ALIGNED-TAIL-DATACOPY-X | 1 | `技术路线/路线主线/ALIGNED-TAIL-DATACOPY-X/版本/` |
+
+原始版本映射仍以本目录的 `索引/revision-source-index.tsv` 为准；整合后的评分记录将正式结果和用户提供但未由正式结果文件确认的分数分开保存。
