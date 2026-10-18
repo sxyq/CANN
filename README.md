@@ -11,6 +11,12 @@
 - N06-N10 的最高实测 Local 分别为 96.815574、102.610179、99.440183、99.257867、99.089207，均未形成可靠 Local Best；归档没有新增 Official 分数。
 - 各路线没有拼接成未经验证的新 Kernel；源码和结果依原路线、原版本保存。
 
+## Agent 与插件资料
+
+- `.agents/skills/` 保存项目可复用的 Ascend C 技能和 CANN 路线技能。
+- `.codex/agents/` 与 `.codex/cannbot-plugin.json` 保存 Codex Agent 定义及插件清单；共享清单不包含本机插件安装路径。
+- `.cannbot/plugins/ops-direct-invoke/` 保存许可文本和 hook 资料。上游 `asc-devkit`、`ops-tensor` 是独立 GitCode 仓库，不作为本项目源码副本提交；来源和本机差异见 [`.cannbot/README.md`](.cannbot/README.md)。
+
 ## 归档索引
 
 - 路线源码对象：`归档/比赛结束-20261017/路线源码/对象/`
