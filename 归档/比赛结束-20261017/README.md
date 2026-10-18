@@ -1,6 +1,6 @@
 # CANN 比赛结束归档
 
-状态：比赛已结束，N01-N10 十条源码路线及 W5-R01-R05 五条研究路线均已归档。全部本地支线历史已并入 `main`；79 个非 `main` 本地分支名和五份重复路线克隆已清理。随后 `main` 接入并推送 `origin/main` 的完整历史；原有 96 条非 `main` 远端分支尖端均由 `main` 保留，远端现在只保留 `main`。
+状态：比赛已结束，N01-N10 十条源码路线及 W5-R01-R05 五条研究路线均已归档。全部本地支线历史已并入 `main`；归档整理期间曾清理 79 个非 `main` 本地分支名和五份重复路线克隆。随后 `main` 接入并推送 `origin/main` 的完整历史；原有 96 条非 `main` 远端分支尖端均由 `main` 保留，远端现在只保留 `main`。截至 2026-10-18，仓库登记 41 个本地分支引用（均已合入 `main`）和 34 个注册工作树；这些历史工作树仍保留。
 
 ## 统一基础源码
 
@@ -51,7 +51,7 @@ W5-R01 CROSSROW-EPI-PROLOGUE-X、W5-R02 REGISTER-SPILL-ELIMINATION-X、W5-R03 CO
 
 ## 全阶段路线目录
 
-项目根目录的 `技术路线/路线主线/` 有 132 个路线目录和 846 个版本说明页，按路线汇集 phase3、phase4、历史工作区和比赛结束材料。phase3 R001–R029 与 FULL-R001–FULL-R029 的对应实现可逐条查看；phase3 H001 与 phase4 Fresh Small-D 的 H001 分开列出。N01–N10、W5-R01–R05 各有独立入口；N01–N05 的旧名和新名仍按原账目区分。SHAPE-TILING、EPILOGUE-FUSE 和 EPILOGUE-ARITH 也各自保留路线目录。
+项目根目录的 `技术路线/路线主线/` 有 132 个路线目录和 1,140 个版本说明页（按 `版本/*/README.md` 统计），按路线汇集 phase3、phase4、历史工作区和比赛结束材料。phase3 R001–R029 与 FULL-R001–FULL-R029 的对应实现可逐条查看；phase3 H001 与 phase4 Fresh Small-D 的 H001 分开列出。N01–N10、W5-R01–R05 各有独立入口；N01–N05 的旧名和新名仍按原账目区分。SHAPE-TILING、EPILOGUE-FUSE 和 EPILOGUE-ARITH 也各自保留路线目录。
 
 外部 ChatGPT 轨道的 R029 V003/V004 单独归入 `LEGACY-R029-WIDE-CACHED-ROW-EXTERNAL/`；phase3 MIX-A、MIX-B、R006、R017 与 R031 reconstruction 各自保留路线入口，原始材料仍位于 `归档/phase3-before-reset-20260920/`。
 
@@ -60,6 +60,10 @@ W5-R01 CROSSROW-EPI-PROLOGUE-X、W5-R02 REGISTER-SPILL-ELIMINATION-X、W5-R03 CO
 - `项目材料/本地实验/`：全路线每个版本的源码和实验材料，包括 N01–N05、EPILOGUE-FUSE、EPILOGUE-ARITH 和 SHAPE-TILING。
 - `路线源码/对象/`：4,006 个去重源码及构建输入对象；`索引/` 保存 22,198 条来源路径映射、3,480 个 Git 源码对象和 9,414 条版本变更。
 - `实验记录/结果摘要/N06..N10/`：2,156 份逐版本结果摘要保存在 Git 中。另有 11 份原始工作树恢复副本，共 288,730 个文件（约 1.4G），保存在仓库外的 `/home/data4t2/lelinfeng/cann-archive-20261017.Gz8SZ7/压缩前原始记录/`；它们不属于远端 Git 归档。当前 `索引/` 提供源码映射和移除产物记录，不包含这些恢复副本的清单。
+- N02 `REGISTER-SPILL-ELIMINATION-X` 工作树中的 43 份原始诊断记录与仓外恢复副本逐字节一致，仍保留在 `/home/data4t2/lelinfeng/cann-archive-20261017.Gz8SZ7/压缩前原始记录/worktrees-N01-N05/n02-code-footprint/研究/REGISTER-SPILL-ELIMINATION-X/`；主线只补入两份收口收据，避免把单 Shape、UNCLASSIFIED 或 WIDE-X 诊断误列为 W5-R02 成绩。
+- `项目材料/工具/route-runner/` 保存 9 个 Runner 源码/脚本、2 个测试 fixture 和 3 份失败诊断记录。来源工作树的 `build-smoke/`、`build-abi-smoke/` 及其对象、共享库、可执行文件未纳入 Git；现有记录为工具构建/注册失败，未产生 Correctness、Canonical Local 或 Official 结果。
+- `实验记录/历史补充/HOTLOOP-INDEX-ARITH-X/V001/` 保存 5 份纯文本构建/probe 诊断日志；来源工作树的 `build-env/`、`build-formal-20261006/`、`support/build-rerun/` 等 CMake 生成目录未纳入 Git。
+- N09 R075、R076 各有一份约 0.5 MB 的 AArch64 ELF 取证文件，不属于源码，且不在 Git 历史、比赛归档或原始工作树恢复副本中；它们仍保留在 `/home/data4t2/lelinfeng/cann-archive-20261017.Gz8SZ7/worktrees/n09-rms-reduction-topology/results/canonical-sweep/` 下各自版本的 `evidence/` 目录中，本次未复制进 Git。R075 SHA256：`d1d65f21d4225e85272ad9c68efa8b87c088233235fd2b804acb3054444a11ef`；R076 SHA256：`67c932dbfe44bf289c13573185e9a0a9de3da846f7f48fa6654d95e92f65d204`。R077 ELF 的内容仍可从 main 历史提交 `a047e24b20053eb566028a2460005cf1ec3d644e` 恢复。
 - `项目材料/研究/`：W5-R01-R05 研究记录及各路线原始来源。
 - `项目材料/线上结果/`：比赛线上结果与回执；`R31B/V011/submission.asc` 为指向 `基础源码/submission.asc` 的符号链接。
 - `项目材料/研究/`、`项目材料/调度/`、`项目材料/管理/`、`项目材料/证据集成/`、`项目材料/工具/`：原目录及补入的路线研究和 W2 文档。

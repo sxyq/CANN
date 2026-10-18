@@ -36,3 +36,7 @@ FREE_HBM >= 100 MB 时，Compile、Correctness、Local、Profile 可以直接执
 ## 帮助
 
     npm run cannjudge:submit -- --help
+
+## 比赛结束工具归档
+
+`route-runner/` 保存未验证的 Canonical Runner 源码、fixture 和失败诊断记录。现有记录显示其构建/注册未完成，未产生可用 Runner、Correctness、Canonical Local 或 Official 结果；CMake 生成目录、对象文件和二进制均未纳入归档。
