@@ -5,7 +5,7 @@
 ## 2026-10-18 主线收口
 
 服务器 3 上已再次核对整个 `cann/`：归档主线与 `origin/main` 当前均为
-`90e618e0f3c3789617bf9d5c23d2188e080f4ba5`；`6f7095bdc3fae9b95581f763dca48eeab29a2c61` 是此前阶段性归档提交。工作区干净；本地路线尖端均可从 `main` 追溯，没有待合并的已提交分支。当前登记 7 个活动 worktree，其中 N02、N07-N10 和 Runner 保留未提交原始结果/证据；另有 19 个外部路线目录作为文件快照保留。发现的路线源码 SHA 均已在本归档对象库或 `origin/main` 中，没有遗漏的 Kernel 源码。
+`0e42a293f3c0f68dc9d4b4fed920bf2de8a24ea9`；`6f7095bdc3fae9b95581f763dca48eeab29a2c61` 是此前阶段性归档提交。工作区干净；本地路线尖端均可从 `main` 追溯，没有待合并的已提交分支。当前登记 7 个活动 worktree，其中 N02、N07-N10 和 Runner 保留未提交原始结果/证据；另有 19 个外部路线目录作为文件快照保留。发现的路线源码 SHA 均已在本归档对象库或 `origin/main` 中，没有遗漏的 Kernel 源码。
 
 外部 worktree 快照和 `/home/data4t2/lelinfeng/cann-archive-20261017.Gz8SZ7/` 的完整恢复副本继续作为取证材料保留。明确可重建的 CMake/build 缓存、ELF、对象文件和共享库可单独清理；源码、结果摘要、失败日志和原始证据不得因清理 worktree 而删除。Runner 工作树的未验证改版不改变主线工具归档，也不代表 Correctness、Canonical Local 或 Official 结果。
 
@@ -21,7 +21,7 @@
 快照共盘点 199,507 个未跟踪/忽略文件（197,096,411 bytes）：结果/证据 198,262 个，构建缓存 320 个，源码/配置 10 个，其他 915 个。完整清单和哈希保留在仓外
 `worktrees-current-20261018/WORKTREE_SNAPSHOT_MANIFEST.tsv`、`SNAPSHOT_CONTENT_CHECK.tsv`、`UNTRACKED_CLASS_SUMMARY.tsv` 和 `UNTRACKED_CONTENT_INVENTORY.tsv`；收据见 [`元数据/工作树快照-20261018.md`](元数据/工作树快照-20261018.md)。
 
-早期 bundle `git-repository-20261018/cann-all-refs.bundle` 保留原 SHA256 `4363fed05e4c4d3e48b2bc3d4b0c72edf3e7d2c8b18936c85e2bebe6a629057c`；中间 bundle 文件保留 `40262e92…` 和 `6f7095bd…` 检查点；最终 bundle 位于 `/home/data4t2/lelinfeng/cann-archive-20261017.Gz8SZ7/cann-all-refs-final-20261018.bundle`，覆盖最终主线、178 个 refs 和完整历史，SHA256 与移动后校验结果记录在仓外 `FINAL_HANDOFF-20261018.txt`。外部原始 worktree 快照和仓外归档均保留；原 `/home/data4t2/lelinfeng/cann` 主工作目录已在验证后移除。
+早期 bundle `git-repository-20261018/cann-all-refs.bundle` 保留原 SHA256 `4363fed05e4c4d3e48b2bc3d4b0c72edf3e7d2c8b18936c85e2bebe6a629057c`；中间 bundle 文件保留 `40262e92…` 和 `6f7095bd…` 检查点；旧最终 bundle `cann-all-refs-pre-docs-20261018.bundle` 保留 178 个历史 refs；当前最终 bundle 位于 `/home/data4t2/lelinfeng/cann-archive-20261017.Gz8SZ7/cann-all-refs-final-20261018.bundle`，覆盖当前主线、151 个活动 refs 和完整历史，SHA256 与移动后校验结果记录在仓外 `FINAL_HANDOFF-20261018.txt`。外部原始 worktree 快照和仓外归档均保留；原 `/home/data4t2/lelinfeng/cann` 主工作目录已在验证后移除。
 
 ## 统一基础源码
 
