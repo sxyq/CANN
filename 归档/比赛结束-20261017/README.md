@@ -21,7 +21,7 @@
 快照共盘点 199,507 个未跟踪/忽略文件（197,096,411 bytes）：结果/证据 198,262 个，构建缓存 320 个，源码/配置 10 个，其他 915 个。完整清单和哈希保留在仓外
 `worktrees-current-20261018/WORKTREE_SNAPSHOT_MANIFEST.tsv`、`SNAPSHOT_CONTENT_CHECK.tsv`、`UNTRACKED_CLASS_SUMMARY.tsv` 和 `UNTRACKED_CONTENT_INVENTORY.tsv`；收据见 [`元数据/工作树快照-20261018.md`](元数据/工作树快照-20261018.md)。
 
-早期 bundle `git-repository-20261018/cann-all-refs.bundle` 保留原 SHA256 `4363fed05e4c4d3e48b2bc3d4b0c72edf3e7d2c8b18936c85e2bebe6a629057c`；中间 bundle `cann-all-refs-through-40262-20261018.bundle` 保留 `40262e92b37c90c12a0174117ec53fe4433c4207` 检查点；最终 `git-repository-20261018/cann-all-refs-final-20261018.bundle` 包含最终提交 `6f7095bd…`、178 个 refs 和完整历史，SHA256 为 `a2143f72868b1e617519c31c2c10501e92464d54ee0f65f38f2d280373d3c837`。外部原始 worktree 和仓外归档均保留；清理边界仅为用户指定的本地 `/home/data4t2/lelinfeng/cann` 主工作目录。
+早期 bundle `git-repository-20261018/cann-all-refs.bundle` 保留原 SHA256 `4363fed05e4c4d3e48b2bc3d4b0c72edf3e7d2c8b18936c85e2bebe6a629057c`；中间 bundle 文件保留 `40262e92…` 和 `6f7095bd…` 检查点；最终 `git-repository-20261018/cann-all-refs-final-20261018.bundle` 在最终文档提交后生成，覆盖最终主线、178 个 refs 和完整历史，最终 SHA256 以交接时 `sha256sum` 与 `git bundle verify` 输出为准。外部原始 worktree 和仓外归档均保留；清理边界仅为用户指定的本地 `/home/data4t2/lelinfeng/cann` 主工作目录。
 
 ## 统一基础源码
 
