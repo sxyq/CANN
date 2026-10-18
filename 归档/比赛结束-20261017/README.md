@@ -15,14 +15,13 @@
 ### 2026-10-18 工作树快照收口
 
 整个 `cann/` 及 34 个登记 worktree 已形成可恢复的仓外快照。归档主仓位于
-`/home/data4t2/lelinfeng/cann-archive-20261017.Gz8SZ7/worktrees-current-20261018/cann/`，独立 Git 元数据位于
-`/home/data4t2/lelinfeng/cann-archive-20261017.Gz8SZ7/git-repository-20261018/.git/`；归档主仓逐项识别 34 个 worktree，所有共同 Git 目录检查通过。
+`/home/data4t2/lelinfeng/cann-archive-20261017.Gz8SZ7/worktrees-current-20261018/cann/`，活动 Git 元数据位于该主仓 `.git/`；另保留了一个早期 Git 元数据副本于
+`/home/data4t2/lelinfeng/cann-archive-20261017.Gz8SZ7/git-repository-20261018/.git/`。归档主仓逐项识别 34 个 worktree，所有共同 Git 目录检查通过。
 
 快照共盘点 199,507 个未跟踪/忽略文件（197,096,411 bytes）：结果/证据 198,262 个，构建缓存 320 个，源码/配置 10 个，其他 915 个。完整清单和哈希保留在仓外
 `worktrees-current-20261018/WORKTREE_SNAPSHOT_MANIFEST.tsv`、`SNAPSHOT_CONTENT_CHECK.tsv`、`UNTRACKED_CLASS_SUMMARY.tsv` 和 `UNTRACKED_CONTENT_INVENTORY.tsv`；收据见 [`元数据/工作树快照-20261018.md`](元数据/工作树快照-20261018.md)。
 
-归档 Git bundle `git-repository-20261018/cann-all-refs.bundle` 的 SHA256 为
-`4363fed05e4c4d3e48b2bc3d4b0c72edf3e7d2c8b18936c85e2bebe6a629057c`，`git bundle verify` 报告包含 178 个 refs 且历史完整。外部原始 worktree 和仓外归档均保留；清理边界仅为用户指定的本地 `/home/data4t2/lelinfeng/cann` 主工作目录。
+早期 bundle `git-repository-20261018/cann-all-refs.bundle` 保留原 SHA256 `4363fed05e4c4d3e48b2bc3d4b0c72edf3e7d2c8b18936c85e2bebe6a629057c`；最终归档提交推送后生成的 `git-repository-20261018/cann-all-refs-final-20261018.bundle` 包含 178 个 refs 和完整历史，最终 SHA256 在交接时复核。外部原始 worktree 和仓外归档均保留；清理边界仅为用户指定的本地 `/home/data4t2/lelinfeng/cann` 主工作目录。
 
 ## 统一基础源码
 
