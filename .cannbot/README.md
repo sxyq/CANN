@@ -21,6 +21,6 @@
 | `.cannbot/dependencies/ops-direct-invoke/ops-tensor/` | `https://gitcode.com/cann/ops-tensor.git` |
 | `.cannbot/dependencies/ops-direct-invoke/ops-tensor/include/tensor_api/` | `ops-tensor` 声明的 `asc-devkit` 子模块 |
 
-纳入时的来源版本为：`asc-devkit` `cbe844c3f49a8f586bdf5f543b1a2cd858cc437c`（1 个本地提交，另含 2,711 个已跟踪文件的工作区改动）；`ops-tensor` `584f3f7b2870c13a298aaeb1ac903821116b59f8`（2 个本地提交）；`tensor_api` `ab8ad3aa1aacd1581ec7d6c54ceca4f1990667dd`（子模块当前提交）。这些 SHA 记录快照的起点，父仓提交中的文件树包含该时点的本机工作区内容。独立仓库的提交历史仍留在本机嵌套 `.git` 元数据中，不随父仓推送；从 GitHub 克隆父仓库可直接取得上述源码和许可文件。
+纳入时的来源版本为：`asc-devkit` `cbe844c3f49a8f586bdf5f543b1a2cd858cc437c`（1 个本地提交，另含 2,711 个已跟踪文件的工作区改动）；`ops-tensor` `584f3f7b2870c13a298aaeb1ac903821116b59f8`（2 个本地提交）；`tensor_api` `ab8ad3aa1aacd1581ec7d6c54ceca4f1990667dd`（子模块当前提交）。这些 SHA 记录快照的起点，父仓提交中的文件树包含该时点的本机工作区内容。父仓只保存来源 SHA 和当前文件快照，不保存独立仓库的 Git 提交链；本地目录删除后，GitHub 仍可取得源码和许可文件，独立仓库的提交元数据无法从父仓恢复。
 
 归档中的提交队列运行时、浏览器用户数据、编译产物、测试输入输出和 profiling 原始缓存均不纳入共享资料。
