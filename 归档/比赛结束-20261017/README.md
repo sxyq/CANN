@@ -4,8 +4,8 @@
 
 ## 2026-10-18 主线收口
 
-服务器 3 上已再次核对整个 `cann/`：本地 `main` 与 `origin/main` 均为
-`bef7300122514a39318cf51e1912e0a11041161d`，工作区干净；41 个本地分支引用全部是 `main` 的祖先，没有待合并的已提交分支。34 个注册 worktree 中仍有 12 个带未提交内容，内容以 N06-N10 原始结果证据和临时构建目录为主；发现的路线源码 SHA 均已在本归档对象库中，没有遗漏的 Kernel 源码。
+服务器 3 上已再次核对整个 `cann/`：本地 `main` 已包含本次清理提交，`origin/main` 仍为
+`d73247aeec50a86f991f1537f7c4d82fd0028c60`；GitHub HTTPS 连接超时，推送待网络恢复。工作区干净；41 个本地分支引用全部是 `main` 的祖先，没有待合并的已提交分支。34 个注册 worktree 中仍有 12 个带未提交内容，内容以 N06-N10 原始结果证据和 Runner 工作树改动为主；发现的路线源码 SHA 均已在本归档对象库中，没有遗漏的 Kernel 源码。
 
 外部 worktree 和 `/home/data4t2/lelinfeng/cann-archive-20261017.Gz8SZ7/` 的完整恢复副本继续作为取证材料保留。各 worktree 的 CMake 生成目录、ELF、对象文件和共享库不属于 Git 归档，可在备份确认后单独清理；源码、结果摘要、失败日志和原始证据不得因清理 worktree 而删除。Runner 工作树的未验证改版不改变主线工具归档，也不代表 Correctness、Canonical Local 或 Official 结果。
 
