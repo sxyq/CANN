@@ -4,8 +4,7 @@
 
 ## 2026-10-18 主线收口
 
-服务器 3 上已再次核对整个 `cann/`：归档主线与 `origin/main` 当前均为
-`53146e9aa244d316e0229207d8a10baaba2770ea`；`6f7095bdc3fae9b95581f763dca48eeab29a2c61` 是此前阶段性归档提交。工作区干净；本地路线尖端均可从 `main` 追溯，没有待合并的已提交分支。当前登记 7 个活动 worktree，其中 N02、N07-N10 和 Runner 保留未提交原始结果/证据；另有 19 个外部路线目录作为文件快照保留。发现的路线源码 SHA 均已在本归档对象库或 `origin/main` 中，没有遗漏的 Kernel 源码。
+服务器 3 上已再次核对整个 `cann/`：归档主线与 `origin/main` 已同步，精确 HEAD SHA 见仓外 `FINAL_HANDOFF-20261018.txt`；`6f7095bdc3fae9b95581f763dca48eeab29a2c61` 是此前阶段性归档提交。工作区干净；本地路线尖端均可从 `main` 追溯，没有待合并的已提交分支。当前登记 7 个活动 worktree，其中 N02、N07-N10 和 Runner 保留未提交原始结果/证据；另有 19 个外部路线目录作为文件快照保留。发现的路线源码 SHA 均已在本归档对象库或 `origin/main` 中，没有遗漏的 Kernel 源码。
 
 外部 worktree 快照和 `/home/data4t2/lelinfeng/cann-archive-20261017.Gz8SZ7/` 的完整恢复副本继续作为取证材料保留。明确可重建的 CMake/build 缓存、ELF、对象文件和共享库可单独清理；源码、结果摘要、失败日志和原始证据不得因清理 worktree 而删除。Runner 工作树的未验证改版不改变主线工具归档，也不代表 Correctness、Canonical Local 或 Official 结果。
 
