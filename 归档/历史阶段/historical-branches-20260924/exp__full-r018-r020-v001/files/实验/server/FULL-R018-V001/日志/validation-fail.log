@@ -1,0 +1,49 @@
+ROUTE=FULL-R018-CAST-RINT-OUTPUT
+2026-09-19T05:43:06Z
+GEN=0 D=64 ROWS=1 DTYPE=fp16
+PROBE width=64 rows=1 rank=2 dtype=1 device=4 bytes=128
+PROBE_STATUS=0 CORES=40
+RUN=0
+VERIFY dtype=fp16 width=64 rows=1 max_abs=0.000878279319 max_rel=0.000405880095 status=PASS
+VERIFY=0
+GEN=0 D=67 ROWS=1 DTYPE=bf16
+PROBE width=67 rows=1 rank=2 dtype=2 device=4 bytes=134
+PROBE_STATUS=0 CORES=40
+RUN=0
+VERIFY dtype=bf16 width=67 rows=1 max_abs=0.00714849236 max_rel=0.00321798453 status=PASS
+VERIFY=0
+GEN=0 D=1000 ROWS=1 DTYPE=fp32
+SYNC_RET=507035 MSG=EZ9999: Inner Error!
+EZ9999[PID: 1041148] 2026-09-19-05:43:10.516.256 (EZ9999):  The error from device(chipId:4, dieId:0), serial number is 9, there is an exception of aivec error, core id is 24, error code = 0x4000000000000000, dump info: pc start: 0x124800000000, current: 0x124800000400, vec error info: 0xfe, mte error info: 0x1fbcb1c8fd, ifu error info: 0x6db7bfeb3d4c0, ccu error info: 0x9f149047000000fe, cube error info: 0, biu error info: 0, aic error mask: 0x6500020bd00028c, para base: 0x12c100000000.[FUNC:PrintCoreInfo][FILE:device_error_core_proc.cc][LINE:645]
+        TraceBack (most recent call last):
+       The extend info: errcode:(0x4000000000000000, 0x4000, 0) errorStr: VEC instruction error: the ub address out of bounds.CCU instruction address check error. fixp_error0 info: 0xcb1c8fd, fixp_error1 info: 0x1f, fsmId:0, tslot:7, thread:0, ctxid:0, blk:0, sublk:0, subErrType:4.[FUNC:PrintCoreInfo][FILE:device_error_core_proc.cc][LINE:658]
+       Kernel task happen error, retCode=0x31, [vector core exception].[FUNC:PreCheckTaskErr][FILE:davinci_kernel_task.cc][LINE:1729]
+       AIV Kernel happen error, retCode=0x31.[FUNC:GetError][FILE:stream.cc][LINE:1475]
+       [AIC_INFO] after execute:args print end[FUNC:GetError][FILE:stream.cc][LINE:1475]
+       [DFX_INFO]Aicore kernel execute failed, device_id=4, stream_id=499, report_stream_id=499, task_id=0, flip_num=0, fault kernel_name=_Z24add_rms_norm_bias_customIfEvPhS0_S0_S0_S0_mmmmjff, fault kernel info ext=none, program id=0, hash=17263945523448279160.[FUNC:GetError][FILE:stream.cc][LINE:1475]
+       rtStreamSynchronizeWithTimeout execution failed, reason=vector core exception[FUNC:FuncErrorReason][FILE:error_message_manage.cc][LINE:65]
+       synchronize stream with timeout failed, runtime result = 507035[FUNC:ReportCallError][FILE:log_inner.cpp][LINE:148]
+ CORES=40
+PROBE width=1000 rows=1 rank=3 dtype=0 device=4 bytes=4000
+RUN=1
+CASE_STATUS=0,0,1
+	NPU ID                         : 4
+	Chip Count                     : 1
+
+	DDR Capacity(MB)               : 0
+	DDR Usage Rate(%)              : 0
+	DDR Hugepages Total(page)      : 0
+	DDR Hugepages Usage Rate(%)    : 0
+	HBM Capacity(MB)               : 65536
+	HBM Usage Rate(%)              : 90
+	Aicore Usage Rate(%)           : 0
+	Aivector Usage Rate(%)         : 0
+	Aicpu Usage Rate(%)            : 0
+	Ctrlcpu Usage Rate(%)          : 13
+	DDR Bandwidth Usage Rate(%)    : 0
+	HBM Bandwidth Usage Rate(%)    : 0
+	Chip ID                        : 0
+
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/nvme1n1p1  3.5T  3.2T   82G  98% /home/data4t2
+2026-09-19T05:43:14Z

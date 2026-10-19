@@ -1,0 +1,18 @@
+# MIX-A-V003 compile on cann-server3
+# Target: Ascend910B3 / dav-2201 / CANN 8.5.0.alpha002 / bisheng
+#
+# CONFIGURE     RC=0  (configure-v003-server3.log)
+# DEVICE        RC=0  MIX-A-V003-device.cpp.o 129776 B
+# SUBMISSION    RC=0  compile_adapter.cpp.o 129776 B
+# FULL LINK     RC=0  MIX-A-V003-device.alink 130576 B
+#                   MIX-A-V003-submission.alink 130568 B
+#   symbols: add_rms_norm_bias_custom<float|half|bfloat16_t>
+#
+# ONLINE_READY source: MIX-A-V003-submission.asc
+#
+# V003 delta vs V002:
+#   1) ProcessNarrowMidFast: SyncVToMTE2 before each Load pair (multi-row
+#      xBuf_/resBuf_ V-write then MTE2-reuse race; A001 FreeTensor covers this).
+#   2) Fast gate adds localRows==1.  Multi-row mid (T04-class) uses original
+#      ProcessNarrowMidOverlap so T04 is correct by construction.  Single-row
+#      Fast stays (T03-class, already Pass).  Prefer 15/15 first.

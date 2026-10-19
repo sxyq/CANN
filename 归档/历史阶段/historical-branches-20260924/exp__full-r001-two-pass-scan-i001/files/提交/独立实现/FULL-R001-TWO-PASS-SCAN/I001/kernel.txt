@@ -1,0 +1,396 @@
+#include <math.h>
+#include <stdint.h>
+#include "kernel_operator.h"
+
+namespace full_r001_two_pass_scan {
+
+constexpr uint32_t kTileElements = 2048;
+constexpr uint32_t kReduceWorkElements = 1024;
+constexpr uint32_t kBytesPerCacheLine = 32;
+
+template <typename T>
+__aicore__ inline void CopyInOne(
+    const AscendC::GlobalTensor<T>& src,
+    AscendC::LocalTensor<T>& dst,
+    uint64_t offset,
+    uint32_t count,
+    uint32_t alignedCount)
+{
+    AscendC::DataCopyExtParams copyParams;
+    copyParams.blockCount = 1;
+    copyParams.blockLen = count * sizeof(T);
+    copyParams.srcStride = 0;
+    copyParams.dstStride = 0;
+    copyParams.rsv = 0;
+
+    AscendC::DataCopyPadExtParams<T> padParams;
+    padParams.isPad = true;
+    padParams.leftPadding = 0;
+    padParams.rightPadding = alignedCount - count;
+    padParams.paddingValue = static_cast<T>(0);
+    AscendC::DataCopyPad(dst, src[offset], copyParams, padParams);
+}
+
+template <typename T>
+__aicore__ inline void CopyOutOne(
+    const AscendC::LocalTensor<T>& src,
+    const AscendC::GlobalTensor<T>& dst,
+    uint64_t offset,
+    uint32_t count)
+{
+    AscendC::DataCopyExtParams copyParams;
+    copyParams.blockCount = 1;
+    copyParams.blockLen = count * sizeof(T);
+    copyParams.srcStride = 0;
+    copyParams.dstStride = 0;
+    copyParams.rsv = 0;
+    AscendC::DataCopyPad(dst[offset], src, copyParams);
+}
+
+template <typename T>
+__aicore__ inline uint32_t AlignElements(uint32_t count)
+{
+    constexpr uint32_t elementsPerBlock = kBytesPerCacheLine / sizeof(T);
+    return (count + elementsPerBlock - 1) / elementsPerBlock * elementsPerBlock;
+}
+
+template <typename T>
+__aicore__ inline void ConvertToFloat(
+    AscendC::LocalTensor<float>& dst,
+    const AscendC::LocalTensor<T>& src,
+    uint32_t count)
+{
+    AscendC::Cast<float, T>(dst, src, AscendC::RoundMode::CAST_NONE, count);
+}
+
+template <>
+__aicore__ inline void ConvertToFloat<float>(
+    AscendC::LocalTensor<float>& dst,
+    const AscendC::LocalTensor<float>& src,
+    uint32_t count)
+{
+    AscendC::DataCopy(dst, src, count);
+}
+
+template <typename T>
+__aicore__ inline void ConvertFromFloat(
+    AscendC::LocalTensor<T>& dst,
+    const AscendC::LocalTensor<float>& src,
+    uint32_t count)
+{
+    AscendC::Cast<T, float>(dst, src, AscendC::RoundMode::CAST_RINT, count);
+}
+
+template <>
+__aicore__ inline void ConvertFromFloat<float>(
+    AscendC::LocalTensor<float>& dst,
+    const AscendC::LocalTensor<float>& src,
+    uint32_t count)
+{
+    AscendC::DataCopy(dst, src, count);
+}
+
+template <typename T>
+class TwoPassScanKernel {
+public:
+    __aicore__ inline TwoPassScanKernel(
+        GM_ADDR x,
+        GM_ADDR residual,
+        GM_ADDR gamma,
+        GM_ADDR bias,
+        GM_ADDR output,
+        uint64_t dim,
+        uint64_t rowStart,
+        uint64_t rowEnd,
+        float epsilon,
+        float inverseDim,
+        AscendC::TPipe* pipe)
+        : pipe_(pipe), dim_(dim), rowStart_(rowStart), rowEnd_(rowEnd),
+          epsilon_(epsilon), inverseDim_(inverseDim)
+    {
+        xGm_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(x));
+        residualGm_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(residual));
+        gammaGm_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(gamma));
+        biasGm_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(bias));
+        outputGm_.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(output));
+
+        alignedTileElements_ = AlignElements<T>(kTileElements);
+        const uint32_t tileBytes = alignedTileElements_ * sizeof(T);
+        pipe_->InitBuffer(xQueue_, 2, tileBytes);
+        pipe_->InitBuffer(residualQueue_, 2, tileBytes);
+        pipe_->InitBuffer(parameterQueue_, 2, tileBytes);
+        pipe_->InitBuffer(outputQueue_, 2, tileBytes);
+
+        const uint32_t floatBytes = alignedTileElements_ * sizeof(float);
+        pipe_->InitBuffer(xFloatBuf_, floatBytes);
+        pipe_->InitBuffer(residualFloatBuf_, floatBytes);
+        pipe_->InitBuffer(yFloatBuf_, floatBytes);
+        pipe_->InitBuffer(squareBuf_, floatBytes);
+        pipe_->InitBuffer(reduceScalarBuf_, 32);
+        pipe_->InitBuffer(reduceWorkBuf_, kReduceWorkElements * sizeof(float));
+    }
+
+    __aicore__ inline void Process()
+    {
+        for (uint64_t row = rowStart_; row < rowEnd_; ++row) {
+            const float rms = FirstScan(row);
+            SecondScan(row, rms);
+        }
+    }
+
+private:
+    __aicore__ inline void EnqueueInputs(
+        uint64_t base,
+        uint32_t count,
+        uint32_t alignedCount)
+    {
+        AscendC::LocalTensor<T> xLocal = xQueue_.AllocTensor<T>();
+        AscendC::LocalTensor<T> residualLocal = residualQueue_.AllocTensor<T>();
+        CopyInOne(xGm_, xLocal, base, count, alignedCount);
+        CopyInOne(residualGm_, residualLocal, base, count, alignedCount);
+        xQueue_.EnQue(xLocal);
+        residualQueue_.EnQue(residualLocal);
+    }
+
+    __aicore__ inline float FirstScan(uint64_t row)
+    {
+        AscendC::LocalTensor<float> scalar = reduceScalarBuf_.Get<float>();
+        AscendC::LocalTensor<float> reduceWork = reduceWorkBuf_.Get<float>();
+        AscendC::LocalTensor<float> xFloat = xFloatBuf_.Get<float>();
+        AscendC::LocalTensor<float> residualFloat = residualFloatBuf_.Get<float>();
+        AscendC::LocalTensor<float> yFloat = yFloatBuf_.Get<float>();
+        AscendC::LocalTensor<float> square = squareBuf_.Get<float>();
+
+        float sum = 0.0f;
+        for (uint64_t offset = 0; offset < dim_;) {
+            const uint32_t count = static_cast<uint32_t>(
+                (dim_ - offset < kTileElements) ? dim_ - offset : kTileElements);
+            const uint32_t alignedCount = AlignElements<T>(count);
+            const uint64_t base = row * dim_ + offset;
+
+            EnqueueInputs(base, count, alignedCount);
+            AscendC::LocalTensor<T> xLocal = xQueue_.DeQue<T>();
+            AscendC::LocalTensor<T> residualLocal = residualQueue_.DeQue<T>();
+            ConvertToFloat<T>(xFloat, xLocal, alignedCount);
+            ConvertToFloat<T>(residualFloat, residualLocal, alignedCount);
+            AscendC::Add(yFloat, xFloat, residualFloat, alignedCount);
+            AscendC::Mul(square, yFloat, yFloat, alignedCount);
+            AscendC::ReduceSum<float, true>(scalar, square, reduceWork,
+                static_cast<int32_t>(count));
+            AscendC::PipeBarrier<PIPE_V>();
+            sum += scalar.GetValue(0);
+            xQueue_.FreeTensor(xLocal);
+            residualQueue_.FreeTensor(residualLocal);
+            offset += count;
+        }
+
+        AscendC::Duplicate(scalar, sum * inverseDim_ + epsilon_, 1);
+        AscendC::Sqrt(scalar, scalar, 1);
+        AscendC::PipeBarrier<PIPE_V>();
+        return scalar.GetValue(0);
+    }
+
+    __aicore__ inline void EnqueueSecondScanInputs(
+        uint64_t base,
+        uint32_t count,
+        uint32_t alignedCount)
+    {
+        AscendC::LocalTensor<T> xLocal = xQueue_.AllocTensor<T>();
+        AscendC::LocalTensor<T> residualLocal = residualQueue_.AllocTensor<T>();
+        AscendC::LocalTensor<T> gammaLocal = parameterQueue_.AllocTensor<T>();
+        CopyInOne(xGm_, xLocal, base, count, alignedCount);
+        CopyInOne(residualGm_, residualLocal, base, count, alignedCount);
+        CopyInOne(gammaGm_, gammaLocal, base % dim_, count, alignedCount);
+        xQueue_.EnQue(xLocal);
+        residualQueue_.EnQue(residualLocal);
+        parameterQueue_.EnQue(gammaLocal);
+    }
+
+    __aicore__ inline void SecondScan(uint64_t row, float rms)
+    {
+        AscendC::LocalTensor<float> xFloat = xFloatBuf_.Get<float>();
+        AscendC::LocalTensor<float> residualFloat = residualFloatBuf_.Get<float>();
+        AscendC::LocalTensor<float> yFloat = yFloatBuf_.Get<float>();
+        AscendC::LocalTensor<float> gammaFloat = squareBuf_.Get<float>();
+        AscendC::LocalTensor<float> biasFloat = reduceWorkBuf_.Get<float>();
+
+        for (uint64_t offset = 0; offset < dim_;) {
+            const uint32_t count = static_cast<uint32_t>(
+                (dim_ - offset < kTileElements) ? dim_ - offset : kTileElements);
+            const uint32_t alignedCount = AlignElements<T>(count);
+            const uint64_t base = row * dim_ + offset;
+
+            EnqueueSecondScanInputs(base, count, alignedCount);
+            AscendC::LocalTensor<T> xLocal = xQueue_.DeQue<T>();
+            AscendC::LocalTensor<T> residualLocal = residualQueue_.DeQue<T>();
+            AscendC::LocalTensor<T> gammaLocal = parameterQueue_.DeQue<T>();
+            AscendC::LocalTensor<T> outputLocal = outputQueue_.AllocTensor<T>();
+
+            ConvertToFloat<T>(xFloat, xLocal, alignedCount);
+            ConvertToFloat<T>(residualFloat, residualLocal, alignedCount);
+            ConvertToFloat<T>(gammaFloat, gammaLocal, alignedCount);
+            parameterQueue_.FreeTensor(gammaLocal);
+            AscendC::LocalTensor<T> biasLocal = parameterQueue_.AllocTensor<T>();
+            CopyInOne(biasGm_, biasLocal, base % dim_, count, alignedCount);
+            parameterQueue_.EnQue(biasLocal);
+            biasLocal = parameterQueue_.DeQue<T>();
+            ConvertToFloat<T>(biasFloat, biasLocal, alignedCount);
+            AscendC::Add(yFloat, xFloat, residualFloat, alignedCount);
+            AscendC::Muls(yFloat, yFloat, 1.0f / rms, count);
+            AscendC::Mul(yFloat, yFloat, gammaFloat, count);
+            AscendC::Add(yFloat, yFloat, biasFloat, count);
+            ConvertFromFloat<T>(outputLocal, yFloat, count);
+
+            AscendC::PipeBarrier<PIPE_V>();
+            outputQueue_.EnQue(outputLocal);
+            xQueue_.FreeTensor(xLocal);
+            residualQueue_.FreeTensor(residualLocal);
+            parameterQueue_.FreeTensor(biasLocal);
+
+            AscendC::LocalTensor<T> outputReady = outputQueue_.DeQue<T>();
+            CopyOutOne(outputReady, outputGm_, base, count);
+            outputQueue_.FreeTensor(outputReady);
+            offset += count;
+        }
+    }
+
+    AscendC::TPipe* pipe_;
+    AscendC::GlobalTensor<T> xGm_;
+    AscendC::GlobalTensor<T> residualGm_;
+    AscendC::GlobalTensor<T> gammaGm_;
+    AscendC::GlobalTensor<T> biasGm_;
+    AscendC::GlobalTensor<T> outputGm_;
+
+    AscendC::TQue<AscendC::TPosition::VECIN, 1> xQueue_;
+    AscendC::TQue<AscendC::TPosition::VECIN, 1> residualQueue_;
+    AscendC::TQue<AscendC::TPosition::VECIN, 1> parameterQueue_;
+    AscendC::TQue<AscendC::TPosition::VECOUT, 1> outputQueue_;
+
+    AscendC::TBuf<AscendC::TPosition::VECCALC> xFloatBuf_;
+    AscendC::TBuf<AscendC::TPosition::VECCALC> residualFloatBuf_;
+    AscendC::TBuf<AscendC::TPosition::VECCALC> yFloatBuf_;
+    AscendC::TBuf<AscendC::TPosition::VECCALC> squareBuf_;
+    AscendC::TBuf<AscendC::TPosition::VECCALC> reduceScalarBuf_;
+    AscendC::TBuf<AscendC::TPosition::VECCALC> reduceWorkBuf_;
+
+    uint64_t dim_;
+    uint64_t rowStart_;
+    uint64_t rowEnd_;
+    float epsilon_;
+    float inverseDim_;
+    uint32_t alignedTileElements_;
+};
+
+template <typename T>
+__aicore__ inline void LaunchKernel(
+    GM_ADDR x,
+    GM_ADDR residual,
+    GM_ADDR gamma,
+    GM_ADDR bias,
+    GM_ADDR output,
+    uint64_t dim,
+    uint64_t outer,
+    uint64_t groupRows,
+    uint64_t groupsPerBlock,
+    float epsilon,
+    float inverseDim)
+{
+    const uint64_t blockIndex = static_cast<uint64_t>(AscendC::GetBlockIdx());
+    const uint64_t startGroup = blockIndex * groupsPerBlock;
+    const uint64_t endGroup = startGroup + groupsPerBlock;
+    const uint64_t rowStart = startGroup * groupRows;
+    const uint64_t rowEnd = endGroup * groupRows < outer ? endGroup * groupRows : outer;
+    AscendC::TPipe pipe;
+    TwoPassScanKernel<T> kernel(x, residual, gamma, bias, output,
+        dim, rowStart, rowEnd, epsilon, inverseDim, &pipe);
+    kernel.Process();
+}
+
+}  // namespace full_r001_two_pass_scan
+
+__global__ __vector__ void add_rms_norm_bias_fp32(
+    GM_ADDR x, GM_ADDR residual, GM_ADDR gamma, GM_ADDR bias, GM_ADDR output,
+    uint64_t dim, uint64_t outer, uint64_t groupRows, uint64_t groupsPerBlock,
+    float epsilon, float inverseDim)
+{
+    full_r001_two_pass_scan::LaunchKernel<float>(
+        x, residual, gamma, bias, output, dim, outer, groupRows, groupsPerBlock,
+        epsilon, inverseDim);
+}
+
+__global__ __vector__ void add_rms_norm_bias_fp16(
+    GM_ADDR x, GM_ADDR residual, GM_ADDR gamma, GM_ADDR bias, GM_ADDR output,
+    uint64_t dim, uint64_t outer, uint64_t groupRows, uint64_t groupsPerBlock,
+    float epsilon, float inverseDim)
+{
+    full_r001_two_pass_scan::LaunchKernel<half>(
+        x, residual, gamma, bias, output, dim, outer, groupRows, groupsPerBlock,
+        epsilon, inverseDim);
+}
+
+__global__ __vector__ void add_rms_norm_bias_bf16(
+    GM_ADDR x, GM_ADDR residual, GM_ADDR gamma, GM_ADDR bias, GM_ADDR output,
+    uint64_t dim, uint64_t outer, uint64_t groupRows, uint64_t groupsPerBlock,
+    float epsilon, float inverseDim)
+{
+    full_r001_two_pass_scan::LaunchKernel<bfloat16_t>(
+        x, residual, gamma, bias, output, dim, outer, groupRows, groupsPerBlock,
+        epsilon, inverseDim);
+}
+
+extern "C" void run_kernel(
+    GM_ADDR x, const TensorGroupInfo& info_x,
+    GM_ADDR residual, const TensorGroupInfo& info_residual,
+    GM_ADDR gamma, const TensorGroupInfo& info_gamma,
+    GM_ADDR bias, const TensorGroupInfo& info_bias,
+    GM_ADDR output, const TensorGroupInfo& info_output,
+    int64_t availableCoreNum, aclrtStream stream, float epsilon)
+{
+    (void)info_residual;
+    (void)info_gamma;
+    (void)info_bias;
+    (void)info_output;
+
+    const TensorInfo& xInfo = info_x.tensors[0];
+    const int64_t dimSigned = xInfo.shape[xInfo.numDims - 1];
+    if (dimSigned <= 0 || availableCoreNum <= 0) {
+        return;
+    }
+
+    uint64_t dim = static_cast<uint64_t>(dimSigned);
+    uint64_t totalElements = 1;
+    for (int64_t i = 0; i < xInfo.numDims; ++i) {
+        totalElements *= static_cast<uint64_t>(xInfo.shape[i]);
+    }
+    uint64_t outer = totalElements / dim;
+    if (outer == 0) {
+        return;
+    }
+
+    const uint64_t rowBytes = dim * static_cast<uint64_t>(
+        xInfo.dtype == 0 ? sizeof(float) : sizeof(half));
+    uint64_t groupRows = 1;
+    while ((groupRows * rowBytes) % 32 != 0) {
+        groupRows += 1;
+    }
+    const uint64_t groupCount = (outer + groupRows - 1) / groupRows;
+    const uint64_t requestedBlocks = static_cast<uint64_t>(availableCoreNum);
+    const uint32_t blockCount = static_cast<uint32_t>(
+        groupCount < requestedBlocks ? groupCount : requestedBlocks);
+    const uint64_t groupsPerBlock = (groupCount + blockCount - 1) / blockCount;
+    const float inverseDim = 1.0f / static_cast<float>(dim);
+
+    if (xInfo.dtype == 0) {
+        add_rms_norm_bias_fp32<<<blockCount, nullptr, stream>>>(
+            x, residual, gamma, bias, output, dim, outer, groupRows, groupsPerBlock,
+            epsilon, inverseDim);
+    } else if (xInfo.dtype == 1) {
+        add_rms_norm_bias_fp16<<<blockCount, nullptr, stream>>>(
+            x, residual, gamma, bias, output, dim, outer, groupRows, groupsPerBlock,
+            epsilon, inverseDim);
+    } else if (xInfo.dtype == 2) {
+        add_rms_norm_bias_bf16<<<blockCount, nullptr, stream>>>(
+            x, residual, gamma, bias, output, dim, outer, groupRows, groupsPerBlock,
+            epsilon, inverseDim);
+    }
+}

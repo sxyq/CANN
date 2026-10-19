@@ -1,0 +1,101 @@
+candidate	revision	commit	main_change	compile	submission_id	pass_count	official_score	status	notes
+A001	V001	a7660ea	row-resident adapter S1	PASS	6ab058b9b0477ec41ed55dab	15	23.47	PASS	initial terminal
+B001	V001	acc19b6	two-dimensional panel adapter S1	PASS	6ab008f9b0477ec41eb86847	12		Wrong Answer	initial terminal
+C001	V001	8d2274d	cooperative D-slice adapter S1	PASS	6ab05afeb0477ec41ed6905c	0		Time Limit Exceeded	initial terminal
+D001	V001	00c9f6a	persistent stripe adapter and math-link attempt	PASS	6ab06a5bb0477ec41edafc09	0		Compile Error	entry attribute remained unresolved
+E001	V001	fed04e7	primitive-assisted adapter S1	PASS	6ab05e7db0477ec41ed7f4c4	0		Runtime Error	initial terminal
+F001	V001	03065b9	unconstrained clean-slate adapter	PASS	6ab007f4b0477ec41eb76770	0		Wrong Answer	initial terminal
+A001	V002	42a926c	increase large-D streaming chunk	PASS	6ab0b1bbb0477ec41e025e1d	15	25.50	PASS	large-D testcase 14 remained dominant; testcase 15 improved
+B001	V002	93d4b39	BF16 dispatch and aligned tail reduction buffer	PASS	6ab0b107b0477ec41e01f4de	0		Runtime Error	profiling expected 75 launches but received 60
+D001	V002	e078b96	add KERNEL_TASK_TYPE_DEFAULT AIV-only entry attribute	PASS	6ab0aefcb0477ec41e00e3d8	6		Time Limit Exceeded	6/15 passed; testcase 15 timed out
+A001	V003	f027ee8	aligned DataCopy for full 32B transfers	PASS	6ab0fdbcb0477ec41e342a33	15	25.74	PASS	case 14 improved to 118631.29 us; case 15 11909.16 us
+B001	V003	190506a	restore BF16 panel launches for TensorInfo dtype 2/27	PASS	6ab0feb4b0477ec41e34b0f5	15	20.46	PASS	all 15 testcases launched and passed; performance follow-up needed
+E001	V002	204485e	fix primitive row tiling and fallback workspace	PASS	6ab1001db0477ec41e357f83	0		Runtime Error	WA on small cases; 507035 at blockDim 40 remains
+E001	V003	1a2e064	route legal domain through private fallback	PASS	6ab10406b0477ec41e378288	0		Runtime Error	WA on first three cases; 507035 at blockDim 40
+E001	V004	f8577b1	add MTE-to-vector barriers in fallback	PASS	6ab10b530304f72a56bc446c	0		Runtime Error	unchanged 507035 at testcase 4
+A001	V004	00297cd	remove xFloat buffer and enlarge streamed chunks	PASS	6ab1160d0304f72a56c3a755	15	25.56	PASS	case 14 regressed to 124885.95 us; V003 remains faster
+D001	V003	62aa12a	use native BF16 conversions	PASS	6ab1074db0477ec41e3953d0	6		Time Limit Exceeded	same six passes; testcase 14 timed out
+D001	V004	73abe61	align cross-core reduction workspace	Compile Error	6ab126fa0304f72a56cf6b9b	0		Compile Error	full linker cannot resolve sqrtf from __builtin_sqrtf
+D001	V005	b50bf8a	replace scalar sqrt with target-linkable sqrt	PASS	6ab1339e0304f72a56d7a705	6		Time Limit Exceeded	cases 1,3,5,8,9,10,12 wrong; case 14 TLE; cases 2,4,6,7,11,13 pass
+A001	V005	fafb63c	reuse inverse RMS across output chunks	PASS	6ab13cbd0304f72a56de3b7a	15	25.97	PASS	case 14 124365.05 us; case 15 11955.49 us
+A001	V006	b5c355b	single-slot queues and larger streamed chunks	PASS	6ab1ff5b0304f72a5631169f	15	27.30	PASS	case 14 125075.65 us; case 15 10677.60 us; score improved through smaller-D cases
+R31A	V001	09a4a43	complete historical multimode source with self-defined judge types	Compile Error	6ab1e0de0304f72a5621670c	0		Compile Error	TensorInfo and TensorGroupInfo redefined by judge; computation body not reached
+R31A	V002	558dc35	remove judge ABI type definitions from submitted source; keep them in local wrapper	PASS	6ab1f4010304f72a562b2493	15	43.87	PASS	full historical multimode source reproduced; T14 16479.72 us, T15 9673.69 us
+R31A	V003	066badc	W-F32-BATCH tile 6112 to 5760	PASS	6ab236600304f72a564f8f28	15	43.16	PASS	regressed from champion; T14 16672.80 us; T15 9671.60 us
+R31B	V001	e5848d7	wide FP32 D-panel residency for 16384..32768	PASS	6ab200470304f72a563196e2	15	43.19	PASS	wide panel path passed; T14 16607.27 us, T15 9656.48 us
+R31B	V002	7bbe4a3	FP32 8193..16384 two-row full y cache	PASS	6ab22f830304f72a564b6716	15	43.78	PASS	T09 73.12 us; T14 16495.76 us; T15 9663.10 us; all 15 passed
+A001	V007	13aa73f	direct x conversion into existing u buffer	PASS	6ab206100304f72a56347d31	15	27.24	PASS	case 14 124964.64 us; case 15 10653.88 us; all 15 passed
+A001	V008	44eee9a	reuse squareFloat for residual conversion and enlarge chunks	PASS	6ab219bd0304f72a563e8037	15	28.10	PASS	case 14 118183.70 us; case 15 11402.05 us; all 15 passed
+A001	V009	5369682	FP32 D>=16384 retained-u output-GM path	PASS	6ab244120304f72a5658df08	15	27.72	PASS	regression: case 14 124619.49 us; case 15 11323.51 us; V008 remains Fresh Best
+B001	V004	6789070	FP16/BF16 panelRows=12 with FP32 panelRows=8	PASS	6ab20b140304f72a5636eb67	15	20.86	PASS	all 15 passed; case 14 31055.09 us; case 15 21390.98 us
+B001	V005	3693a0e	FP16/BF16/FP32 hot chunk width 544	PASS	6ab21c030304f72a563fd045	15	20.72	PASS	all 15 passed; case 14 31152.04 us; case 15 22651.44 us
+D001	V006	12141af	package existing stripe body with incomplete adapter suffix	PASS	6ab20d010304f72a5637f60b	0		Compile Error	adapter suffix omitted D001AdapterShape and D001AdapterDType; V007 restores existing helpers
+D001	V007	12141af	restore existing adapter helpers and run workspace-visible stripe body	PASS	6ab20edf0304f72a5638ce3c	6		Time Limit Exceeded	passes 2,4,6,7,11,13; wrong answers 1,3,5,8,9,10,12; case 14 TLE
+G001	V001	cd27db1	complete submission ABI, Vector entry and target scalar sqrt; Main-authored integration	PASS	6ab270d80304f72a56738ce8	6		Wrong Answer	passes 1,3,5,8,9,10; failures 2,4,6,7,11,12,13,14,15; T14 787707.43 us; not a purely Child-authored revision; further source changes reserved for G001 Child
+R31A	V005	5343687	wide FP32 full-y cache for D<=32768	PASS	6ab2897f0304f72a5683bdd9	15	43.60	PASS	regressed from champion 43.87; T14 16651.43; T07 60.96; T15 9673.92; V002 remains Champion
+R31B	V003	d467de9	wide adaptive full-y multirow residency	PASS	6ab28a3e0304f72a56843b84	15	43.68	PASS	slight regression vs V002 43.78; T07 59.60 improved; T14 16470 flat; T05 14.89 regressed from 10.91
+G001	V002	19593fa	FP32 intermediate math and BF16 bitcast fix	PASS	6ab28b010304f72a5684a7b6	11		Wrong Answer	improved 6->11; still WA T02 3.84% T04 5.81% T06 2.63% T07 3.84%; T14 593783.64; T15 1454420.13
+R31A	V006	a1774f9	narrow per-row V/S fold mean-eps-sqrt	PASS	6ab28c0b0304f72a56854868	15	43.77	PASS	near champion 43.87; T14 16438.44 best-so-far; T07 61.18 flat; V002 remains Champion
+A001	V010	a65be65	full-u UB residency + gamma/bias cache + 2D D-split	PASS	6ab28cc30304f72a5685b35b	15	33.25	PASS	NEW FRESH BEST from 28.10; T14 53176.88 from 118183; T04 23.66 from 85.33; T07 69.75 from 225.75; T08 204.87 from 381.92; T05 19.80 vs 13.94 slight regression
+H001	V001	787ff3d	small-D multi-row kernel with BF16 ToFloat fix	Compile Error	6ab28d8a0304f72a56862a40	0		Compile Error	local full link PASS but online CE; judge toolchain rejects submitted source
+I001	V001	3053eed	wide-D retained-y and D-stripe specialist	Compile Error	6ab28e5c0304f72a56869dc7	0		Compile Error	local full link PASS but online CE; judge rejects submitted source
+R31A	V007	0f36187	BF16 wide multi-row dual-buffer pipeline	PASS	6ab28f230304f72a56870e94	15	43.65	PASS	regression vs champion 43.87; T07 60.79 still flat; T14 16617 worse; V002 remains Champion
+G001	V003	b20d40b	native-u quantize and invRms multiply chain	PASS	6ab28feb0304f72a5687969f	7		Wrong Answer	regression vs V002 11/15; T12 21.45% T14 19.07% T15 18.01% newly wrong; T02/T04/T06/T07 still WA ~3-6%
+R31B	V004	78e4164	narrow deep-batch multirow		6ab290f40304f72a56883f49	3		Runtime Error	RE on T04; T05-T15 skipped; deep-batch path likely UB overflow or bad dispatch
+R31A	V008	7c7e594	narrow single-tile setup collapse	PASS	6ab291bf0304f72a5688bbb4	15	42.79	PASS	regression vs champion 43.87; T01 4.70 T02 3.38 best-on-route but T07 73.06 worse; V002 remains Champion
+A001	V011	43a4d8d	small FastKernel and single GetValue		6ab2927d0304f72a56893e5e	3		Runtime Error	T01 WA 100%; T05 RE; T06-T15 skipped; FastKernel/double-buffer crash; V010 33.25 remains Fresh Best
+H001	V002	d222243	judge-template rewrite	Compile Error	6ab293470304f72a5689dd38	0		Compile Error	local preflight 5/5 but online CE again; template still mismatches judge
+I001	V002	b3d0843	judge-template kernel rewrite	Compile Error	6ab294110304f72a568a5303	0		Compile Error	online CE after template rewrite; still not judge-compilable
+R31A	V009	243bc81	tiny R1 D<=128 setup collapse on V002 base	PASS	6ab294d60304f72a568aca68	15	42.97	PASS	T01 4.02 route-best; T04 18.88 better than V002; aggregate still below champion 43.87
+R31B	V005	4f5ee0f	deep-batch UB fix		6ab2959b0304f72a568b313b	2		Runtime Error	T02 WA 35%; T04 RE again; deep-batch still unsafe
+G001	V004	43fc523	RNE output cast restore V002 math	PASS	6ab296750304f72a568bb48c	10		Wrong Answer	10/15 vs V002 11/15; T02/T04/T06/T07 still WA 2.6-6%; T11 0.011% WA; T12/T14/T15 Pass again
+A001	V012	580b8bb	FastKernel sync fix + V010 fallback	PASS	6ab297760304f72a568c5134	15	34.38	PASS	NEW FRESH BEST from 33.25; T01 3.97 T02 3.80 FastKernel wins; T14 53243 still r=14.2
+H001	V003	510e5cd	B001-shape judge template rewrite	PASS	6ab298360304f72a568cc5e4	9		Wrong Answer	FIRST ONLINE RUN 9/15; T05/T09/T11/T12/T13/T15 ~99.9% err; wide/medium path broken
+I001	V003	510e5cd	ABI-correct judge template two-pass		6ab298fe0304f72a568d3023	10		Runtime Error	FIRST ONLINE RUN 10/15; T02 WA 99%; T11 WA 91%; T13 RE; T14/T15 skipped
+R31B	V006	4596a30	V003 + MTE3 queue depth 2	PASS	6ab299c90304f72a568da4c2	15	43.91	PASS	NEW OVERALL CHAMPION; T07 59.35; T09 70.86; T14 16670 still flat
+A001	V013	adf5fbb	param-once FastKernel + Resident single-GetValue		6ab29a940304f72a568e1a6f	4		Runtime Error	T05 RE again (2M gate too wide); T01-T04 fast; V012 34.38 remains Fresh Best
+R31A	V010	adf5fbb	N-MID-OVERLAP mid-size MTE2 overlap	PASS	6ab29b5e0304f72a568e8db3	15	44.09	PASS	NEW OVERALL CHAMPION; T07 52.82 from 61; T14 16448; supersedes R31B-V006 43.91
+H001	V004	fb02a11	wide two-pass RMS and uint64 offsets	PASS	6ab29c1b0304f72a568efc16	15	12.54	PASS	FIRST 15/15; correctness solved; performance low as expected
+G001	V005	fb02a11	native cast before bias add	PASS	6ab29cdf0304f72a568f701c	6		Wrong Answer	regression 6/15; T12/T14/T15 ~20% err again; T02/T04/T06/T07 still 2-6%
+I001	V004	78c6542	unaligned pad and ReduceSum fix	PASS	6ab29df80304f72a56900c05	15	15.53	PASS	FIRST 15/15; score 15.53 beats H001 12.54; wide still slow
+R31B	V007	018490b	full-y N>=2 tile shrink	PASS	6ab29eb30304f72a56907f42	15	42.07	PASS	regression vs V006 43.91; T05 23.51 worse; T14 16529 flat; V006 remains R31B best
+A001	V014	094369a	param-once FastKernel tight gate	PASS	6ab29f690304f72a5690f31e	15	35.89	PASS	NEW FRESH BEST from 34.38; T01 4.14 T02 3.52 T04 18.53; T14 53260 still r=14.2
+H001	V005	8abf015	fused hot-path ReduceSum and DB DMA		6ab2a0210304f72a56915aea	0		Time Limit Exceeded	TLE on T01; fused path deadlocks or infinite loop; V004 12.54 remains H001 best
+G001	V006	1623f97	gamma apply order u*gamma/rms	PASS	6ab2a2110304f72a56928153	9		Wrong Answer	9/15; T02/T04/T06/T07 still 2.7-6.6%; T11/T13 0.02%; gamma order not the fix
+R31A	V011	1623f97	W-F32-DSLICE few-row wide	PASS	6ab2a3200304f72a5693233a	15	42.18	PASS	regression vs V010 44.09; T14 16604 still flat; D-slice not the T14 driver; V010 remains Champion
+I001	V005	65595bb	retained-y large-tile and D-split		6ab2a3e10304f72a56938666	13		Wrong Answer	13/15; T02/T03 ~100% WA; huge speedups T09/T11/T15; calc 25.27 if correct
+R31B	V008	65595bb	D-slice small-R multi-kernel		6ab2a4b00304f72a5693f729	0		Runtime Error	all 15 RE; multi-kernel dispatch or scratch broken even on non-Dslice path
+A001	V015	65595bb	Resident single-GetValue and D-split		6ab2a5870304f72a56947b2a	4		Runtime Error	T05 RE again; FastKernel T01-T04 ok; V014 35.89 remains Fresh Best
+H001	V006	2eb6766	fused ApplyRow only	PASS	6ab2a6210304f72a5694d34a	15	12.55	PASS	15/15 held; score 12.55 ~ V004 12.54; fused ApplyRow no material gain
+G001	V007	919116c	u/rms intermediate native cast	PASS	6ab2a6f00304f72a56955890	6		Wrong Answer	6/15; u/rms cast broke T12/T14/T15 again; T02/T04/T06/T07 still 2-7%
+R31B	V009	542a3bc	MTE2 queue depth 2 wide full-y	PASS	6ab2a7fd0304f72a5695f4fe	15	43.81	PASS	near V006 43.91; T14 16424 still flat; MTE2 queue not T14 driver
+A001	V016	c696fb3	single GetValue Resident only	PASS	6ab2a8c60304f72a56965e2a	15	36.35	PASS	NEW FRESH BEST from 35.89; T14 50830 improved; T08 196 improved
+H001	V007	c696fb3	ReduceSum hot sum(u*u)	PASS	6ab2a98d0304f72a5696c7b5	15	23.29	PASS	BIG JUMP from 12.55; T03 4.40 T04 14.40 T06 24.04 T07 41.49 T08 94.82 T10 98.16 T14 22943
+R31A	V012	ee849da	N-TINY-MID merge tiny+mid overlap	PASS	6ab2aa670304f72a56973f4b	15	44.05	PASS	near champion V010 44.09; T01 4.35 improved; V010 remains Champion
+G001	V008	0260769	pairwise sumSquares reduction	PASS	6ab2ab270304f72a5697a23f	10		Wrong Answer	10/15; pairwise did not fix T02/T04/T06/T07; T11 0.012% WA; V002 11/15 remains best correctness
+R31B	V010	db6b562	N-MID-OVERLAP	PASS	6ab2ac460304f72a56983e6e	15	43.91	PASS	ties V006 43.91; T07 53.67 improved; T14 16443 still flat
+I001	V006	ee849da	padded uKeep slack fix		6ab2ad0c0304f72a5698a820	13		Wrong Answer	13/15; T02/T03 still ~100% WA; padding hypothesis incomplete
+A001	V017	c9d801c	x/res double-buffer issue-ahead	PASS	6ab2adce0304f72a5698fc00	15	36.41	PASS	NEW FRESH BEST from 36.35; T14 50050; double-buffer safe
+H001	V008	43a1049	wide ChunkSumSquares ReduceSum	PASS	6ab2ae940304f72a56995e32	15	29.04	PASS	BIG JUMP from 23.29; T05 36.77 T09 220 T11 418 T12 353 T13 1156 T15 23771
+G001	V009	33deee9	restore V002 math + param cache	PASS	6ab2af540304f72a5699be73	9		Wrong Answer	9/15; T11/T13 0.15% WA new; T02/T04/T06/T07 still 2-6%; V002 11/15 remains best
+MIX-A	V001	8f94509	R31A mid gate + A001 FastKernel		6ab2b6790304f72a569cd79f	14		Wrong Answer	T04 WA 55% but 16.40us; calc 44.35 would beat Champion 44.09; T01 5.18 not improved
+MIX-A	V002	74fdd6b	ReduceSum true + Duplicate fix		6ab2bbc00304f72a569ede8d	14		Wrong Answer	T04 still WA 53.8% at 17.04us; calc 44.46; ReduceSum fix incomplete
+MID-X	V001	74fdd6b	mid multi-row batch specialist		6ab2bc7a0304f72a569f2a54	2		Runtime Error	mid times promising T04 14 T07 35 but WA widespread; T15 RE
+R31A	V013	d7cac20	W-BF16-PIPE2 on V012 base	PASS	6ab2bd330304f72a569f6f09	15	44.70	PASS	NEW OVERALL CHAMPION; T04 16.70; T07 53.65; supersedes V010 44.09
+REDUCE-X	V001	dc448cd	zero-GetValue Brcb reduction		6ab2bdfb0304f72a569fb581	0		Runtime Error	T01/T02 WA 100%; T03 RE; zero-GetValue scale broken
+MIX-A	V003	a20d691	multi-row gate + V_MTE2 release	PASS	6ab2bebe0304f72a569ffda5	15	44.69	PASS	near Champion R31A-V013 44.70; T04 16.41; T07 51.54
+WIDE-X	V001	aafe3af	hierarchical UB reduction		6ab2bf730304f72a56a03bcd	1		Runtime Error	T01 Pass; T02 RE; hierarchical path crashes
+MID-X	V002	a88fccc	aligned ReduceSum correctness		6ab2c0390304f72a56a08308	1		Runtime Error	still T02 RE; V001 mid speed lost in crash class
+R31B	V011	43a1049	LP row pipeline on V010 base	PASS	6ab2c10c0304f72a56a0c5cb	15	45.16	PASS	NEW OVERALL CHAMPION; T05 9.93; T07 52.34; supersedes R31A-V013 44.70
+R31A	V014	acce832	W-F32-PIPE3 depth 3	PASS	6ab2c1ca0304f72a56a11039	15	44.25	PASS	regression vs V013 44.70; T14 16439 still flat; V013 remains R31A best
+REDUCE-X	V002	2384154	Brcb workspace and alignment fix		6ab2c2930304f72a56a158aa	0		Runtime Error	T01-T03 WA 100%; T04 RE; golden tiny still broken
+MIX-A	V004	d3bb0db	tiny SmallFp32 FastKernel	PASS	6ab2c3580304f72a56a19f58	15	43.73	PASS	regression vs V003 44.69; T01 4.63 better but T03 7.10 T09 75 worse
+MID-X	V003	fcd1bf1	tiny GetValue golden on V001		6ab2c4160304f72a56a1f183	1		Runtime Error	3rd failed rev; replace slot from idea pool
+R31B	V012	fcd1bf1	FP32 wide row pipeline	PASS	6ab2c4e50304f72a56a22f31	15	45.14	PASS	ties V011 45.16; T14 16481 still flat
+REDUCE-X	V003	83a89e7	textbook GetValue golden two-pass		6ab2c5aa0304f72a56a2701b	0		Wrong Answer	0/15 all WA ~100%; calc 31 if correct; 3 failed revs; replace slot
+R31A	V015	83a89e7	W-LP-PIPE3 depth 3	PASS	6ab2c6660304f72a56a2b182	15	44.75	PASS	R31A new best from V013 44.70; T14 16448 still flat; overall champ R31B-V011 45.16
+MIX-A	V005	92f4790	cherry-pick T01 tiny Fast	PASS	6ab2c7260304f72a56a2f5d6	15	44.07	PASS	below V003 44.69; T01 4.45 better but T03/T11 worse
+R31B	V013	de15088	midwide overlap D<=8192	PASS	6ab2c7e70304f72a56a33bcb	15	45.07	PASS	near V011 45.16; T14 16458 still flat; midwide not T14
+WIDE-X	V002	1a718a0	hierarchical hardening		6ab2c8af0304f72a56a383d2	1		Runtime Error	T02 RE despite local golden matrix
+R31A	V016	7792a25	FP32 D=32768 full-y dispatch	PASS	6ab2c9790304f72a56a3c465	15	45.00	PASS	R31A new best from 44.75; T14 16558 still flat; gap to champ 0.16
+R31A	V017	4e3c0ca	FP32 cached-row dispatch boundary D=24576..32768	PASS	6ab2e08b0304f72a56ab568d	15	44.45	PASS	regression vs R31A-V016 45.00; local D=24576 probe improved 4.33% but aggregate official score fell 0.55; local proxy misleading for score

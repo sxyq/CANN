@@ -1,0 +1,17 @@
+# MIX-A-V006 compile on cann-server3
+# Target: Ascend910B3 / dav-2201 / CANN 8.5.0.alpha002 / bisheng
+#
+# CONFIGURE     RC=0  (configure-v006-server3.log)
+# DEVICE        RC=0  MIX-A-V006-device.cpp.o 130680 B
+# SUBMISSION    RC=0  compile_adapter.cpp.o 130680 B
+# FULL LINK     RC=0  MIX-A-V006-device.alink 130576 B
+#                   MIX-A-V006-submission.alink 130568 B
+#   symbols: add_rms_norm_bias_custom<float|half|bfloat16_t>
+#
+# ONLINE_READY source: MIX-A-V006-submission.asc
+#
+# V006 = V003 (best 44.69) + ONE ultra-tight delta:
+#   FastKernel only if FP32 && localRows==1 && D<=128 && in-gate (T01).
+#   Multi-row tiny / SmallFp32 stay on ContiguousBatched (V005 showed tiny
+#   any-occupancy still hit T03's multi-row D<=128 cores).  Mid Fast gate
+#   (localRows==1, D in (128,4096]) is V003 unchanged.

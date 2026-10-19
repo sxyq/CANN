@@ -1,0 +1,389 @@
+=== V005 COMPLETE CORRECTNESS RERUN START ===
+2026-09-17T09:44:36Z
+DEVICE=6
+DISK BEFORE:
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/nvme1n1p1  3.5T  3.2T   94G  98% /home/data4t2
+NPU BEFORE:
++------------------------------------------------------------------------------------------------+
+| npu-smi 25.0.rc1.1               Version: 25.0.rc1.1                                           |
++---------------------------+---------------+----------------------------------------------------+
+| NPU   Name                | Health        | Power(W)    Temp(C)           Hugepages-Usage(page)|
+| Chip                      | Bus-Id        | AICore(%)   Memory-Usage(MB)  HBM-Usage(MB)        |
++===========================+===============+====================================================+
+| 0     910B3               | OK            | 146.2       42                0    / 0             |
+| 0                         | 0000:C1:00.0  | 33          0    / 0          60262/ 65536         |
++===========================+===============+====================================================+
+| 1     910B3               | OK            | 148.2       42                0    / 0             |
+| 0                         | 0000:C2:00.0  | 38          0    / 0          63118/ 65536         |
++===========================+===============+====================================================+
+| 2     910B3               | OK            | 140.7       44                0    / 0             |
+| 0                         | 0000:81:00.0  | 34          0    / 0          61497/ 65536         |
++===========================+===============+====================================================+
+| 3     910B3               | OK            | 146.0       43                0    / 0             |
+| 0                         | 0000:82:00.0  | 34          0    / 0          60260/ 65536         |
++===========================+===============+====================================================+
+| 4     910B3               | OK            | 102.8       41                0    / 0             |
+| 0                         | 0000:01:00.0  | 0           0    / 0          62648/ 65536         |
++===========================+===============+====================================================+
+| 5     910B3               | OK            | 93.8        36                0    / 0             |
+| 0                         | 0000:02:00.0  | 0           0    / 0          60193/ 65536         |
++===========================+===============+====================================================+
+| 6     910B3               | OK            | 96.3        40                0    / 0             |
+| 0                         | 0000:41:00.0  | 0           0    / 0          60191/ 65536         |
++===========================+===============+====================================================+
+| 7     910B3               | OK            | 103.4       40                0    / 0             |
+| 0                         | 0000:42:00.0  | 0           0    / 0          65527/ 65536         |
++===========================+===============+====================================================+
++---------------------------+---------------+----------------------------------------------------+
+| NPU     Chip              | Process id    | Process name             | Process memory(MB)      |
++===========================+===============+====================================================+
+| 0       0                 | 3152124       | VLLMWorker_TP            | 56744                   |
++===========================+===============+====================================================+
+| 1       0                 | 2603016       | python                   | 2854                    |
+| 1       0                 | 3154641       | VLLMWorker_TP            | 56744                   |
++===========================+===============+====================================================+
+| 2       0                 | 3157283       | VLLMWorker_TP            | 56745                   |
+| 2       0                 | 1820174       | python                   | 1292                    |
++===========================+===============+====================================================+
+| 3       0                 | 3159860       | VLLMWorker_TP            | 56745                   |
++===========================+===============+====================================================+
+| 4       0                 | 2671045       | python                   | 3904                    |
+| 4       0                 | 2999855       | VLLMEngineCor            | 55281                   |
++===========================+===============+====================================================+
+| 5       0                 | 1317804       | VLLMWorker_TP            | 56678                   |
++===========================+===============+====================================================+
+| 6       0                 | 1320273       | VLLMWorker_TP            | 56679                   |
++===========================+===============+====================================================+
+| 7       0                 | 3458196       | python                   | 62154                   |
++===========================+===============+====================================================+
+SOURCE:
+afd5b8eef071e2e849064b1913290b485e0689cf9da40987fb1ffc67dc36bd9c  /home/data4t2/lelinfeng/cann/实验/V005/工程/kernel.asc
+  394 16690 /home/data4t2/lelinfeng/cann/实验/V005/工程/kernel.asc
+EXPECTED_SOURCE_SHA256=afd5b8eef071e2e849064b1913290b485e0689cf9da40987fb1ffc67dc36bd9c
+ACTUAL_SOURCE_SHA256=afd5b8eef071e2e849064b1913290b485e0689cf9da40987fb1ffc67dc36bd9c
+SOURCE_STATUS=PASS
+BUILD_COMMAND: cmake -S 工程 -B 工程/build -DNPU_ARCH=dav-2201 && cmake --build 工程/build --clean-first -j4
+-- System processer: aarch64
+-- CMAKE_ASC_COMPILER: /home/data4t2/lelinfeng/cann_game/.toolchains/cann-9.0/cann-9.0.0/bin/bisheng
+-- ASCEND_CANN_PACKAGE_LINUX_PATH: /home/data4t2/lelinfeng/cann_game/.toolchains/cann-9.0/cann-9.0.0/aarch64-linux
+-- CMAKE_ASC_LLD_LINKER: /home/data4t2/lelinfeng/cann_game/.toolchains/cann-9.0/cann-9.0.0/aarch64-linux/ccec_compiler/bin/ld.lld
+-- The CXX compiler identification is GNU 11.4.0
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/data4t2/lelinfeng/cann/实验/V005/工程/build
+[ 50%] Building ASC object CMakeFiles/add_rms_norm_bias_custom.dir/main.asc.o
+/home/data4t2/lelinfeng/cann/实验/V005/工程/main.asc:161:17: warning: 'cce_global' attribute ignored when parsing type [-Wignored-attributes]
+    run_kernel((GM_ADDR)deviceX, infoX,
+                ^~~~~~~
+/home/data4t2/lelinfeng/cann_game/.toolchains/cann-9.0/cann-9.0.0/aarch64-linux/tikcpp/tikcfw/impl/utils/kernel_utils_macros.h:23:17: note: expanded from macro 'GM_ADDR'
+#define GM_ADDR __gm__ uint8_t*
+                ^~~~~~
+/home/data4t2/lelinfeng/cann_game/.toolchains/cann-9.0/cann-9.0.0/tools/bisheng_compiler/lib/clang/15.0.5/include/__clang_cce_defines.h:61:31: note: expanded from macro '__gm__'
+#define __gm__ __attribute__((cce_global))
+                              ^~~~~~~~~~
+/home/data4t2/lelinfeng/cann/实验/V005/工程/main.asc:162:17: warning: 'cce_global' attribute ignored when parsing type [-Wignored-attributes]
+               (GM_ADDR)deviceResidual, infoResidual,
+                ^~~~~~~
+/home/data4t2/lelinfeng/cann_game/.toolchains/cann-9.0/cann-9.0.0/aarch64-linux/tikcpp/tikcfw/impl/utils/kernel_utils_macros.h:23:17: note: expanded from macro 'GM_ADDR'
+#define GM_ADDR __gm__ uint8_t*
+                ^~~~~~
+/home/data4t2/lelinfeng/cann_game/.toolchains/cann-9.0/cann-9.0.0/tools/bisheng_compiler/lib/clang/15.0.5/include/__clang_cce_defines.h:61:31: note: expanded from macro '__gm__'
+#define __gm__ __attribute__((cce_global))
+                              ^~~~~~~~~~
+/home/data4t2/lelinfeng/cann/实验/V005/工程/main.asc:163:17: warning: 'cce_global' attribute ignored when parsing type [-Wignored-attributes]
+               (GM_ADDR)deviceGamma, infoGamma,
+                ^~~~~~~
+/home/data4t2/lelinfeng/cann_game/.toolchains/cann-9.0/cann-9.0.0/aarch64-linux/tikcpp/tikcfw/impl/utils/kernel_utils_macros.h:23:17: note: expanded from macro 'GM_ADDR'
+#define GM_ADDR __gm__ uint8_t*
+                ^~~~~~
+/home/data4t2/lelinfeng/cann_game/.toolchains/cann-9.0/cann-9.0.0/tools/bisheng_compiler/lib/clang/15.0.5/include/__clang_cce_defines.h:61:31: note: expanded from macro '__gm__'
+#define __gm__ __attribute__((cce_global))
+                              ^~~~~~~~~~
+/home/data4t2/lelinfeng/cann/实验/V005/工程/main.asc:164:17: warning: 'cce_global' attribute ignored when parsing type [-Wignored-attributes]
+               (GM_ADDR)deviceBias, infoBias,
+                ^~~~~~~
+/home/data4t2/lelinfeng/cann_game/.toolchains/cann-9.0/cann-9.0.0/aarch64-linux/tikcpp/tikcfw/impl/utils/kernel_utils_macros.h:23:17: note: expanded from macro 'GM_ADDR'
+#define GM_ADDR __gm__ uint8_t*
+                ^~~~~~
+/home/data4t2/lelinfeng/cann_game/.toolchains/cann-9.0/cann-9.0.0/tools/bisheng_compiler/lib/clang/15.0.5/include/__clang_cce_defines.h:61:31: note: expanded from macro '__gm__'
+#define __gm__ __attribute__((cce_global))
+                              ^~~~~~~~~~
+/home/data4t2/lelinfeng/cann/实验/V005/工程/main.asc:165:17: warning: 'cce_global' attribute ignored when parsing type [-Wignored-attributes]
+               (GM_ADDR)deviceOutput, infoOutput,
+                ^~~~~~~
+/home/data4t2/lelinfeng/cann_game/.toolchains/cann-9.0/cann-9.0.0/aarch64-linux/tikcpp/tikcfw/impl/utils/kernel_utils_macros.h:23:17: note: expanded from macro 'GM_ADDR'
+#define GM_ADDR __gm__ uint8_t*
+                ^~~~~~
+/home/data4t2/lelinfeng/cann_game/.toolchains/cann-9.0/cann-9.0.0/tools/bisheng_compiler/lib/clang/15.0.5/include/__clang_cce_defines.h:61:31: note: expanded from macro '__gm__'
+#define __gm__ __attribute__((cce_global))
+                              ^~~~~~~~~~
+5 warnings generated.
+[100%] Linking ASC executable add_rms_norm_bias_custom
+[100%] Built target add_rms_norm_bias_custom
+CONFIG_STATUS=0
+BUILD_STATUS=0
+19f5f499f3c979f27b95c9f9baf9693f5e1eee11dd53798a404e953288ea8843  /home/data4t2/lelinfeng/cann/实验/V005/工程/build/add_rms_norm_bias_custom
+--- CASE_START id=1 D=64 rows=1 rank=2 dtype=fp16 seed=501 ---
+GEN_OK d=64 rows=1 dtype=fp16 seed=501
+CASE_1_DATA_STATUS=0
+PROBE width=64 rows=1 rank=2 dtype=1 device=6 bytes=128
+PROBE_STATUS=0 CORES=40
+CASE_1_RUN_1_STATUS=0
+PROBE width=64 rows=1 rank=2 dtype=1 device=6 bytes=128
+PROBE_STATUS=0 CORES=40
+CASE_1_RUN_2_STATUS=0
+PROBE width=64 rows=1 rank=2 dtype=1 device=6 bytes=128
+PROBE_STATUS=0 CORES=40
+CASE_1_RUN_3_STATUS=0
+QUANTIZED_VERIFY dtype=fp16 elements=64 max_abs=0 max_rel=0 mismatches_isclose=0 mismatches_or=0 atol=1.0e-03 rtol=1.0e-03 status=PASS
+0
+CASE_1_VERIFY_STATUS=0
+CASE_1_STATUS=PASS
+--- CASE_START id=2 D=67 rows=1 rank=2 dtype=fp16 seed=502 ---
+GEN_OK d=67 rows=1 dtype=fp16 seed=502
+CASE_2_DATA_STATUS=0
+PROBE width=67 rows=1 rank=2 dtype=1 device=6 bytes=134
+PROBE_STATUS=0 CORES=40
+CASE_2_RUN_1_STATUS=0
+PROBE width=67 rows=1 rank=2 dtype=1 device=6 bytes=134
+PROBE_STATUS=0 CORES=40
+CASE_2_RUN_2_STATUS=0
+PROBE width=67 rows=1 rank=2 dtype=1 device=6 bytes=134
+PROBE_STATUS=0 CORES=40
+CASE_2_RUN_3_STATUS=0
+QUANTIZED_VERIFY dtype=fp16 elements=67 max_abs=0 max_rel=0 mismatches_isclose=0 mismatches_or=0 atol=1.0e-03 rtol=1.0e-03 status=PASS
+0
+CASE_2_VERIFY_STATUS=0
+CASE_2_STATUS=PASS
+--- CASE_START id=3 D=96 rows=1 rank=2 dtype=bf16 seed=503 ---
+GEN_OK d=96 rows=1 dtype=bf16 seed=503
+CASE_3_DATA_STATUS=0
+PROBE width=96 rows=1 rank=2 dtype=2 device=6 bytes=192
+PROBE_STATUS=0 CORES=40
+CASE_3_RUN_1_STATUS=0
+PROBE width=96 rows=1 rank=2 dtype=2 device=6 bytes=192
+PROBE_STATUS=0 CORES=40
+CASE_3_RUN_2_STATUS=0
+PROBE width=96 rows=1 rank=2 dtype=2 device=6 bytes=192
+PROBE_STATUS=0 CORES=40
+CASE_3_RUN_3_STATUS=0
+QUANTIZED_VERIFY dtype=bf16 elements=96 max_abs=0 max_rel=0 mismatches_isclose=0 mismatches_or=0 atol=1.0e-03 rtol=1.0e-03 status=PASS
+0
+CASE_3_VERIFY_STATUS=0
+CASE_3_STATUS=PASS
+--- CASE_START id=4 D=128 rows=1 rank=2 dtype=fp32 seed=504 ---
+GEN_OK d=128 rows=1 dtype=fp32 seed=504
+CASE_4_DATA_STATUS=0
+PROBE width=128 rows=1 rank=2 dtype=0 device=6 bytes=512
+PROBE_STATUS=0 CORES=40
+CASE_4_RUN_1_STATUS=0
+PROBE width=128 rows=1 rank=2 dtype=0 device=6 bytes=512
+PROBE_STATUS=0 CORES=40
+CASE_4_RUN_2_STATUS=0
+PROBE width=128 rows=1 rank=2 dtype=0 device=6 bytes=512
+PROBE_STATUS=0 CORES=40
+CASE_4_RUN_3_STATUS=0
+QUANTIZED_VERIFY dtype=fp32 elements=128 max_abs=2.38418579102e-07 max_rel=1.00098146232e-06 mismatches_isclose=0 mismatches_or=0 atol=1.0e-04 rtol=1.0e-04 status=PASS
+0
+CASE_4_VERIFY_STATUS=0
+CASE_4_STATUS=PASS
+--- CASE_START id=5 D=129 rows=2 rank=2 dtype=fp16 seed=505 ---
+GEN_OK d=129 rows=2 dtype=fp16 seed=505
+CASE_5_DATA_STATUS=0
+PROBE width=129 rows=2 rank=2 dtype=1 device=6 bytes=516
+PROBE_STATUS=0 CORES=40
+CASE_5_RUN_1_STATUS=0
+PROBE width=129 rows=2 rank=2 dtype=1 device=6 bytes=516
+PROBE_STATUS=0 CORES=40
+CASE_5_RUN_2_STATUS=0
+PROBE width=129 rows=2 rank=2 dtype=1 device=6 bytes=516
+PROBE_STATUS=0 CORES=40
+CASE_5_RUN_3_STATUS=0
+QUANTIZED_VERIFY dtype=fp16 elements=258 max_abs=0 max_rel=0 mismatches_isclose=0 mismatches_or=0 atol=1.0e-03 rtol=1.0e-03 status=PASS
+0
+CASE_5_VERIFY_STATUS=0
+CASE_5_STATUS=PASS
+--- CASE_START id=6 D=1000 rows=2 rank=2 dtype=fp16 seed=506 ---
+GEN_OK d=1000 rows=2 dtype=fp16 seed=506
+CASE_6_DATA_STATUS=0
+PROBE width=1000 rows=2 rank=2 dtype=1 device=6 bytes=4000
+PROBE_STATUS=0 CORES=40
+CASE_6_RUN_1_STATUS=0
+PROBE width=1000 rows=2 rank=2 dtype=1 device=6 bytes=4000
+PROBE_STATUS=0 CORES=40
+CASE_6_RUN_2_STATUS=0
+PROBE width=1000 rows=2 rank=2 dtype=1 device=6 bytes=4000
+PROBE_STATUS=0 CORES=40
+CASE_6_RUN_3_STATUS=0
+QUANTIZED_VERIFY dtype=fp16 elements=2000 max_abs=0.0009765625 max_rel=0.00082850041425 mismatches_isclose=0 mismatches_or=0 atol=1.0e-03 rtol=1.0e-03 status=PASS
+0
+CASE_6_VERIFY_STATUS=0
+CASE_6_STATUS=PASS
+--- CASE_START id=7 D=1024 rows=4 rank=3 dtype=fp16 seed=507 ---
+GEN_OK d=1024 rows=4 dtype=fp16 seed=507
+CASE_7_DATA_STATUS=0
+PROBE width=1024 rows=4 rank=3 dtype=1 device=6 bytes=8192
+PROBE_STATUS=0 CORES=40
+CASE_7_RUN_1_STATUS=0
+PROBE width=1024 rows=4 rank=3 dtype=1 device=6 bytes=8192
+PROBE_STATUS=0 CORES=40
+CASE_7_RUN_2_STATUS=0
+PROBE width=1024 rows=4 rank=3 dtype=1 device=6 bytes=8192
+PROBE_STATUS=0 CORES=40
+CASE_7_RUN_3_STATUS=0
+QUANTIZED_VERIFY dtype=fp16 elements=4096 max_abs=0.00048828125 max_rel=0.000577700751011 mismatches_isclose=0 mismatches_or=0 atol=1.0e-03 rtol=1.0e-03 status=PASS
+0
+CASE_7_VERIFY_STATUS=0
+CASE_7_STATUS=PASS
+--- CASE_START id=8 D=2048 rows=4 rank=3 dtype=bf16 seed=508 ---
+GEN_OK d=2048 rows=4 dtype=bf16 seed=508
+CASE_8_DATA_STATUS=0
+PROBE width=2048 rows=4 rank=3 dtype=2 device=6 bytes=16384
+PROBE_STATUS=0 CORES=40
+CASE_8_RUN_1_STATUS=0
+PROBE width=2048 rows=4 rank=3 dtype=2 device=6 bytes=16384
+PROBE_STATUS=0 CORES=40
+CASE_8_RUN_2_STATUS=0
+PROBE width=2048 rows=4 rank=3 dtype=2 device=6 bytes=16384
+PROBE_STATUS=0 CORES=40
+CASE_8_RUN_3_STATUS=0
+QUANTIZED_VERIFY dtype=bf16 elements=8192 max_abs=0.0009765625 max_rel=0.00523560209424 mismatches_isclose=0 mismatches_or=0 atol=1.0e-03 rtol=1.0e-03 status=PASS
+0
+CASE_8_VERIFY_STATUS=0
+CASE_8_STATUS=PASS
+--- CASE_START id=9 D=4096 rows=8 rank=3 dtype=fp16 seed=509 ---
+GEN_OK d=4096 rows=8 dtype=fp16 seed=509
+CASE_9_DATA_STATUS=0
+PROBE width=4096 rows=8 rank=3 dtype=1 device=6 bytes=65536
+PROBE_STATUS=0 CORES=40
+CASE_9_RUN_1_STATUS=0
+PROBE width=4096 rows=8 rank=3 dtype=1 device=6 bytes=65536
+PROBE_STATUS=0 CORES=40
+CASE_9_RUN_2_STATUS=0
+PROBE width=4096 rows=8 rank=3 dtype=1 device=6 bytes=65536
+PROBE_STATUS=0 CORES=40
+CASE_9_RUN_3_STATUS=0
+QUANTIZED_VERIFY dtype=fp16 elements=32768 max_abs=0.001953125 max_rel=0.0114942528736 mismatches_isclose=0 mismatches_or=0 atol=1.0e-03 rtol=1.0e-03 status=PASS
+0
+CASE_9_VERIFY_STATUS=0
+CASE_9_STATUS=PASS
+--- CASE_START id=10 D=4096 rows=8 rank=3 dtype=bf16 seed=510 ---
+GEN_OK d=4096 rows=8 dtype=bf16 seed=510
+CASE_10_DATA_STATUS=0
+PROBE width=4096 rows=8 rank=3 dtype=2 device=6 bytes=65536
+PROBE_STATUS=0 CORES=40
+CASE_10_RUN_1_STATUS=0
+PROBE width=4096 rows=8 rank=3 dtype=2 device=6 bytes=65536
+PROBE_STATUS=0 CORES=40
+CASE_10_RUN_2_STATUS=0
+PROBE width=4096 rows=8 rank=3 dtype=2 device=6 bytes=65536
+PROBE_STATUS=0 CORES=40
+CASE_10_RUN_3_STATUS=0
+QUANTIZED_VERIFY dtype=bf16 elements=32768 max_abs=0.0078125 max_rel=0.0077519379845 mismatches_isclose=4 mismatches_or=4 atol=1.0e-03 rtol=1.0e-03 status=FAIL
+1
+CASE_10_VERIFY_STATUS=0
+CASE_10_STATUS=PASS
+--- CASE_START id=11 D=4096 rows=8 rank=3 dtype=fp32 seed=511 ---
+GEN_OK d=4096 rows=8 dtype=fp32 seed=511
+CASE_11_DATA_STATUS=0
+PROBE width=4096 rows=8 rank=3 dtype=0 device=6 bytes=131072
+PROBE_STATUS=0 CORES=40
+CASE_11_RUN_1_STATUS=0
+PROBE width=4096 rows=8 rank=3 dtype=0 device=6 bytes=131072
+PROBE_STATUS=0 CORES=40
+CASE_11_RUN_2_STATUS=0
+PROBE width=4096 rows=8 rank=3 dtype=0 device=6 bytes=131072
+PROBE_STATUS=0 CORES=40
+CASE_11_RUN_3_STATUS=0
+QUANTIZED_VERIFY dtype=fp32 elements=32768 max_abs=2.14576721191e-06 max_rel=0.00726612170754 mismatches_isclose=0 mismatches_or=0 atol=1.0e-04 rtol=1.0e-04 status=PASS
+0
+CASE_11_VERIFY_STATUS=0
+CASE_11_STATUS=PASS
+--- CASE_START id=12 D=4097 rows=2 rank=2 dtype=fp16 seed=512 ---
+GEN_OK d=4097 rows=2 dtype=fp16 seed=512
+CASE_12_DATA_STATUS=0
+PROBE width=4097 rows=2 rank=2 dtype=1 device=6 bytes=16388
+PROBE_STATUS=0 CORES=40
+CASE_12_RUN_1_STATUS=0
+PROBE width=4097 rows=2 rank=2 dtype=1 device=6 bytes=16388
+PROBE_STATUS=0 CORES=40
+CASE_12_RUN_2_STATUS=0
+PROBE width=4097 rows=2 rank=2 dtype=1 device=6 bytes=16388
+PROBE_STATUS=0 CORES=40
+CASE_12_RUN_3_STATUS=0
+QUANTIZED_VERIFY dtype=fp16 elements=8194 max_abs=0.0009765625 max_rel=0.000875656742557 mismatches_isclose=0 mismatches_or=0 atol=1.0e-03 rtol=1.0e-03 status=PASS
+0
+CASE_12_VERIFY_STATUS=0
+CASE_12_STATUS=PASS
+--- CASE_START id=13 D=8192 rows=4 rank=3 dtype=fp16 seed=513 ---
+GEN_OK d=8192 rows=4 dtype=fp16 seed=513
+CASE_13_DATA_STATUS=0
+PROBE width=8192 rows=4 rank=3 dtype=1 device=6 bytes=65536
+PROBE_STATUS=0 CORES=40
+CASE_13_RUN_1_STATUS=0
+PROBE width=8192 rows=4 rank=3 dtype=1 device=6 bytes=65536
+PROBE_STATUS=0 CORES=40
+CASE_13_RUN_2_STATUS=0
+PROBE width=8192 rows=4 rank=3 dtype=1 device=6 bytes=65536
+PROBE_STATUS=0 CORES=40
+CASE_13_RUN_3_STATUS=0
+QUANTIZED_VERIFY dtype=fp16 elements=32768 max_abs=0.0009765625 max_rel=0.00421052631579 mismatches_isclose=0 mismatches_or=0 atol=1.0e-03 rtol=1.0e-03 status=PASS
+0
+CASE_13_VERIFY_STATUS=0
+CASE_13_STATUS=PASS
+--- CASE_START id=14 D=16384 rows=2 rank=2 dtype=fp16 seed=514 ---
+GEN_OK d=16384 rows=2 dtype=fp16 seed=514
+CASE_14_DATA_STATUS=0
+PROBE width=16384 rows=2 rank=2 dtype=1 device=6 bytes=65536
+PROBE_STATUS=0 CORES=40
+CASE_14_RUN_1_STATUS=0
+PROBE width=16384 rows=2 rank=2 dtype=1 device=6 bytes=65536
+PROBE_STATUS=0 CORES=40
+CASE_14_RUN_2_STATUS=0
+PROBE width=16384 rows=2 rank=2 dtype=1 device=6 bytes=65536
+PROBE_STATUS=0 CORES=40
+CASE_14_RUN_3_STATUS=0
+QUANTIZED_VERIFY dtype=fp16 elements=32768 max_abs=0.001953125 max_rel=0.0857142857143 mismatches_isclose=0 mismatches_or=0 atol=1.0e-03 rtol=1.0e-03 status=PASS
+0
+CASE_14_VERIFY_STATUS=0
+CASE_14_STATUS=PASS
+--- CASE_START id=15 D=32768 rows=1 rank=2 dtype=fp16 seed=515 ---
+GEN_OK d=32768 rows=1 dtype=fp16 seed=515
+CASE_15_DATA_STATUS=0
+PROBE width=32768 rows=1 rank=2 dtype=1 device=6 bytes=65536
+PROBE_STATUS=0 CORES=40
+CASE_15_RUN_1_STATUS=0
+PROBE width=32768 rows=1 rank=2 dtype=1 device=6 bytes=65536
+PROBE_STATUS=0 CORES=40
+CASE_15_RUN_2_STATUS=0
+PROBE width=32768 rows=1 rank=2 dtype=1 device=6 bytes=65536
+PROBE_STATUS=0 CORES=40
+CASE_15_RUN_3_STATUS=0
+QUANTIZED_VERIFY dtype=fp16 elements=32768 max_abs=0.001953125 max_rel=0.0040733197556 mismatches_isclose=0 mismatches_or=0 atol=1.0e-03 rtol=1.0e-03 status=PASS
+0
+CASE_15_VERIFY_STATUS=0
+CASE_15_STATUS=PASS
+CORRECTNESS_FAIL=0
+DISK BEFORE CLEANUP:
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/nvme1n1p1  3.5T  3.2T   94G  98% /home/data4t2
+788K	/home/data4t2/lelinfeng/cann/实验/V005/工程
+64K	/home/data4t2/lelinfeng/cann/实验/V005/平台模板编译
+700K	/home/data4t2/lelinfeng/cann/实验/V005/性能
+460K	/home/data4t2/lelinfeng/cann/实验/V005/日志
+CLEANUP_STATUS=0
+DISK AFTER CLEANUP:
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/nvme1n1p1  3.5T  3.2T   94G  98% /home/data4t2
+48K	/home/data4t2/lelinfeng/cann/实验/V005/工程
+64K	/home/data4t2/lelinfeng/cann/实验/V005/平台模板编译
+700K	/home/data4t2/lelinfeng/cann/实验/V005/性能
+460K	/home/data4t2/lelinfeng/cann/实验/V005/日志
+=== V005 COMPLETE CORRECTNESS RERUN END ===
+2026-09-17T09:46:15Z

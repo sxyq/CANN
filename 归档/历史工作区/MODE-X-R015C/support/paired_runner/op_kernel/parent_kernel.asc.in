@@ -1,0 +1,12 @@
+#include <acl/acl.h>
+#include <kernel_operator.h>
+
+#include "submission.asc"
+
+extern "C" void mode_r015c_parent_launch(uint32_t grid, void *input,
+                                           void *output, void *tiling,
+                                           aclrtStream stream)
+{
+    row_copy_kernel<<<grid, nullptr, stream>>>(
+        (GM_ADDR)input, (GM_ADDR)output, (GM_ADDR)tiling);
+}

@@ -1,0 +1,1690 @@
+diff --git a/phase4/workspaces/EPI-X/CMakeLists.txt b/phase4/workspaces/EPI-X/CMakeLists.txt
+new file mode 100644
+index 0000000..d0a6f10
+--- /dev/null
++++ b/phase4/workspaces/EPI-X/CMakeLists.txt
+@@ -0,0 +1,57 @@
++cmake_minimum_required(VERSION 3.16)
++
++set(CMAKE_ASC_ARCHITECTURES "dav-2201" CACHE STRING "NPU architecture: dav-2201")
++set(SOC_VERSION "Ascend910B3" CACHE STRING "SoC version")
++set(EPIX_REV "V001" CACHE STRING "Revision folder name")
++
++find_package(ASC REQUIRED)
++
++project(epi_x_v001 LANGUAGES ASC CXX)
++
++set(EPIX_SUBMISSION ${CMAKE_CURRENT_SOURCE_DIR}/${EPIX_REV}/kernel.asc)
++set(EPIX_TYPES ${CMAKE_CURRENT_SOURCE_DIR}/local_types.h)
++
++set(EPIX_HOST_INCLUDES
++    /usr/include/c++/11
++    /usr/include/aarch64-linux-gnu/c++/11
++    /usr/include
++    /usr/include/aarch64-linux-gnu
++    $ENV{ASCEND_HOME_PATH}/include
++    $ENV{ASCEND_HOME_PATH}/runtime/include
++    $ENV{ASCEND_HOME_PATH}/compiler/tikcpp/tikcfw
++)
++set(EPIX_LINK_DIRS
++    /usr/lib/gcc/aarch64-linux-gnu/11
++    /usr/lib/aarch64-linux-gnu
++    $ENV{ASCEND_HOME_PATH}/aarch64-linux/lib64
++)
++
++# 1) Device compile: submission source as ASC object (__global__ __vector__).
++add_library(epix_device OBJECT ${EPIX_SUBMISSION})
++target_include_directories(epix_device PRIVATE ${EPIX_HOST_INCLUDES} ${CMAKE_CURRENT_SOURCE_DIR})
++target_compile_options(epix_device PRIVATE
++    $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=${CMAKE_ASC_ARCHITECTURES}>
++    $<$<COMPILE_LANGUAGE:ASC>:-include>
++    $<$<COMPILE_LANGUAGE:ASC>:${EPIX_TYPES}>
++)
++
++# 2) Submission compile: judge-shaped source with locally provided types.
++add_library(epix_submission OBJECT ${CMAKE_CURRENT_SOURCE_DIR}/submission_shim.asc)
++target_include_directories(epix_submission PRIVATE ${EPIX_HOST_INCLUDES} ${CMAKE_CURRENT_SOURCE_DIR})
++target_compile_options(epix_submission PRIVATE
++    $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=${CMAKE_ASC_ARCHITECTURES}>
++    $<$<COMPILE_LANGUAGE:ASC>:-include>
++    $<$<COMPILE_LANGUAGE:ASC>:${EPIX_TYPES}>
++)
++
++# 3) Full link: host main + run_kernel + device kernel.
++add_executable(epix_full ${CMAKE_CURRENT_SOURCE_DIR}/local_full.asc)
++target_include_directories(epix_full PRIVATE ${EPIX_HOST_INCLUDES} ${CMAKE_CURRENT_SOURCE_DIR})
++target_link_directories(epix_full PRIVATE ${EPIX_LINK_DIRS})
++target_link_libraries(epix_full PRIVATE ascendcl stdc++ m dl)
++set_target_properties(epix_full PROPERTIES LINKER_LANGUAGE ASC)
++target_compile_options(epix_full PRIVATE
++    $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=${CMAKE_ASC_ARCHITECTURES}>
++    $<$<COMPILE_LANGUAGE:ASC>:-include>
++    $<$<COMPILE_LANGUAGE:ASC>:${EPIX_TYPES}>
++)
+diff --git a/phase4/workspaces/EPI-X/V001/kernel.asc b/phase4/workspaces/EPI-X/V001/kernel.asc
+new file mode 100644
+index 0000000..412a806
+--- /dev/null
++++ b/phase4/workspaces/EPI-X/V001/kernel.asc
+@@ -0,0 +1,435 @@
++#include <cmath>
++#include "kernel_operator.h"
++
++// EPI-X V001: fused normalize+gamma+bias epilogue after one u residency.
++// u = x + residual (FP32 resident)
++// invRms = rsqrt(mean(u*u) + eps)
++// out = u * invRms * gamma + bias   // single vector pass, no norm intermediate
++// Software mask zeroes 32B pad lanes past D before sum and scale.
++
++using AscendC::TPipe;
++using AscendC::TBuf;
++using AscendC::LocalTensor;
++using AscendC::GlobalTensor;
++using AscendC::DataCopyExtParams;
++using AscendC::DataCopyPadExtParams;
++using AscendC::ReduceSum;
++using AscendC::Rsqrt;
++using AscendC::Muls;
++using AscendC::Adds;
++using AscendC::Add;
++using AscendC::Mul;
++using AscendC::Cast;
++using AscendC::Duplicate;
++using AscendC::SetFlag;
++using AscendC::WaitFlag;
++using AscendC::HardEvent;
++using AscendC::GetBlockIdx;
++using AscendC::PipeBarrier;
++
++static constexpr int32_t kDtypeF32 = 0;
++static constexpr int32_t kDtypeF16 = 1;
++static constexpr int32_t kDtypeBF16 = 2;
++static constexpr int32_t kReduceTmpBytes = 8 * 1024;
++static constexpr int32_t kTileF32 = 1024;
++static constexpr int32_t kTileLow = 2048;
++static constexpr int32_t kMaxDim = 32768;
++static constexpr int32_t kMaxTiles = (kMaxDim + kTileF32 - 1) / kTileF32;
++// FP32 lanes per 32B block.
++static constexpr int32_t kAlignFloats = 8;
++
++static inline int32_t NormalizeDtype(int32_t raw)
++{
++    if (raw == 27) {
++        return kDtypeBF16;
++    }
++    return raw;
++}
++
++__aicore__ inline void SyncMTE2ToV()
++{
++    SetFlag<HardEvent::MTE2_V>(0);
++    WaitFlag<HardEvent::MTE2_V>(0);
++}
++
++__aicore__ inline void SyncVToMTE2()
++{
++    SetFlag<HardEvent::V_MTE2>(0);
++    WaitFlag<HardEvent::V_MTE2>(0);
++}
++
++__aicore__ inline void SyncVToMTE3()
++{
++    SetFlag<HardEvent::V_MTE3>(0);
++    WaitFlag<HardEvent::V_MTE3>(0);
++}
++
++__aicore__ inline void SyncMTE3ToV()
++{
++    SetFlag<HardEvent::MTE3_V>(0);
++    WaitFlag<HardEvent::MTE3_V>(0);
++}
++
++__aicore__ inline void SyncVToS()
++{
++    SetFlag<HardEvent::V_S>(0);
++    WaitFlag<HardEvent::V_S>(0);
++}
++
++__aicore__ inline void SyncSToV()
++{
++    SetFlag<HardEvent::S_V>(0);
++    WaitFlag<HardEvent::S_V>(0);
++}
++
++template <typename T>
++__aicore__ inline void LoadPad(
++    LocalTensor<T> dst,
++    GlobalTensor<T> srcGm,
++    int64_t gmOffset,
++    int32_t validCount)
++{
++    const uint32_t byteLen =
++        static_cast<uint32_t>(validCount) * static_cast<uint32_t>(sizeof(T));
++    DataCopyExtParams cp(1, byteLen, 0, 0, 0);
++    T padVal{};
++    const uint32_t rem = byteLen & 31u;
++    const uint16_t rightPadBytes = static_cast<uint16_t>((rem == 0u) ? 0u : (32u - rem));
++    DataCopyPadExtParams<T> pad(true, 0, rightPadBytes, padVal);
++    AscendC::DataCopyPad(dst, srcGm[static_cast<uint32_t>(gmOffset)], cp, pad);
++}
++
++template <typename T>
++__aicore__ inline void StorePad(
++    GlobalTensor<T> dstGm,
++    LocalTensor<T> src,
++    int64_t gmOffset,
++    int32_t validCount)
++{
++    const uint32_t byteLen =
++        static_cast<uint32_t>(validCount) * static_cast<uint32_t>(sizeof(T));
++    DataCopyExtParams cp(1, byteLen, 0, 0, 0);
++    AscendC::DataCopyPad(dstGm[static_cast<uint32_t>(gmOffset)], src, cp);
++}
++
++template <typename T>
++__aicore__ inline void ToFloat(
++    LocalTensor<float> dst,
++    LocalTensor<T> src,
++    int32_t n)
++{
++    if constexpr (sizeof(T) == 4) {
++        Adds(dst, src, 0.0f, n);
++    } else {
++        Cast(dst, src, AscendC::RoundMode::CAST_NONE, n);
++    }
++}
++
++template <typename T>
++__aicore__ inline void FromFloat(
++    LocalTensor<T> dst,
++    LocalTensor<float> src,
++    int32_t n)
++{
++    if constexpr (sizeof(T) == 4) {
++        Adds(dst, src, 0.0f, n);
++    } else {
++        Cast(dst, src, AscendC::RoundMode::CAST_ROUND, n);
++    }
++}
++
++template <typename T>
++__aicore__ inline void FormU(
++    LocalTensor<float> u32,
++    LocalTensor<float> scratchF,
++    LocalTensor<T> xLocal,
++    LocalTensor<T> resLocal,
++    int32_t n)
++{
++    if constexpr (sizeof(T) == 4) {
++        Add(u32, xLocal, resLocal, n);
++    } else {
++        ToFloat(u32, xLocal, n);
++        ToFloat(scratchF, resLocal, n);
++        Add(u32, u32, scratchF, n);
++    }
++}
++
++// MASK_STRATEGY: zero 32B pad lanes of resident u past valid D so ReduceSum
++// and the fused epilogue cannot pick up stale pad garbage.
++__aicore__ inline void SoftwareMaskTail(LocalTensor<float> u32, int32_t D)
++{
++    const int32_t slots = ((D + kAlignFloats - 1) / kAlignFloats) * kAlignFloats;
++    if (slots > D) {
++        LocalTensor<float> tail = u32[D];
++        Duplicate(tail, 0.0f, slots - D);
++    }
++}
++
++// FUSION_STAGES: (1) form resident u once (2) sum(u*u)+invRms
++// (3) fused scale*gamma+bias store — no intermediate norm row.
++template <typename T>
++__aicore__ void ProcessRowFused(
++    GlobalTensor<T>& xGm,
++    GlobalTensor<T>& resGm,
++    GlobalTensor<T>& gammaGm,
++    GlobalTensor<T>& biasGm,
++    GlobalTensor<T>& outGm,
++    LocalTensor<T>& xLocal,
++    LocalTensor<T>& resLocal,
++    LocalTensor<T>& gammaLocal,
++    LocalTensor<T>& biasLocal,
++    LocalTensor<T>& outLocal,
++    LocalTensor<float>& u32,
++    LocalTensor<float>& scratchF,
++    LocalTensor<float>& tileSum,
++    LocalTensor<float>& acc,
++    LocalTensor<float>& work,
++    LocalTensor<float>& tmpLocal,
++    int64_t row,
++    int32_t D,
++    int32_t tile,
++    float invD,
++    float eps)
++{
++    const int64_t base = row * static_cast<int64_t>(D);
++
++    // Stage 1: one GM read of x and residual into resident u32.
++    for (int32_t off = 0; off < D; off += tile) {
++        int32_t n = D - off;
++        if (n > tile) {
++            n = tile;
++        }
++        LoadPad(xLocal, xGm, base + off, n);
++        LoadPad(resLocal, resGm, base + off, n);
++        SyncMTE2ToV();
++        FormU(u32[off], scratchF, xLocal, resLocal, n);
++        PipeBarrier<PIPE_V>();
++        SyncVToMTE2();
++    }
++    SoftwareMaskTail(u32, D);
++    PipeBarrier<PIPE_V>();
++
++    // Stage 2: sum(u*u) over resident u, then invRms in V + one GetValue.
++    Duplicate(acc, 0.0f, 1);
++    PipeBarrier<PIPE_V>();
++    const int32_t tileCount = (D + tile - 1) / tile;
++    for (int32_t i = 0; i < tileCount; ++i) {
++        const int32_t off = i * tile;
++        int32_t n = D - off;
++        if (n > tile) {
++            n = tile;
++        }
++        LocalTensor<float> uTile = u32[off];
++        Mul(scratchF, uTile, uTile, n);
++        PipeBarrier<PIPE_V>();
++        // Dest is 8B-aligned (offset 0 of a 64B buffer).
++        ReduceSum<float, true>(tileSum, scratchF, tmpLocal, n);
++        PipeBarrier<PIPE_V>();
++        Add(acc, acc, tileSum, 1);
++        PipeBarrier<PIPE_V>();
++    }
++    Muls(acc, acc, invD, 1);
++    Adds(acc, acc, eps, 1);
++    PipeBarrier<PIPE_V>();
++    Rsqrt(work, acc, 1);
++    PipeBarrier<PIPE_V>();
++    SyncVToS();
++    const float invRms = work.GetValue(0);
++    SyncSToV();
++
++    // Stage 3: fused epilogue on resident u. out = u*invRms*gamma+bias.
++    for (int32_t off = 0; off < D; off += tile) {
++        int32_t n = D - off;
++        if (n > tile) {
++            n = tile;
++        }
++        LocalTensor<float> uTile = u32[off];
++        Muls(uTile, uTile, invRms, n);
++        PipeBarrier<PIPE_V>();
++
++        LoadPad(gammaLocal, gammaGm, off, n);
++        LoadPad(biasLocal, biasGm, off, n);
++        SyncMTE2ToV();
++        ToFloat(scratchF, gammaLocal, n);
++        PipeBarrier<PIPE_V>();
++        Mul(uTile, uTile, scratchF, n);
++        PipeBarrier<PIPE_V>();
++        ToFloat(scratchF, biasLocal, n);
++        PipeBarrier<PIPE_V>();
++        Add(uTile, uTile, scratchF, n);
++        PipeBarrier<PIPE_V>();
++        SyncVToMTE2();
++
++        FromFloat(outLocal, uTile, n);
++        PipeBarrier<PIPE_V>();
++        SyncVToMTE3();
++        StorePad(outGm, outLocal, base + off, n);
++        SyncMTE3ToV();
++    }
++}
++
++template <typename T>
++__aicore__ void EpiXKernelImpl(
++    GM_ADDR x, GM_ADDR residual, GM_ADDR gamma, GM_ADDR bias, GM_ADDR output,
++    int64_t rows, int64_t dim, uint32_t blockCount, float epsilon)
++{
++    GlobalTensor<T> xGm, resGm, gammaGm, biasGm, outGm;
++    xGm.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(x));
++    resGm.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(residual));
++    gammaGm.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(gamma));
++    biasGm.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(bias));
++    outGm.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(output));
++
++    const int32_t D = static_cast<int32_t>(dim);
++    const float invD = 1.0f / static_cast<float>(D);
++    const int32_t tile = (sizeof(T) == 4) ? kTileF32 : kTileLow;
++    const int32_t tBytes = static_cast<int32_t>(sizeof(T));
++    const int32_t nativeTile = (tile * tBytes + 31) / 32 * 32;
++    const int32_t floatTile = (tile * 4 + 31) / 32 * 32;
++    const int32_t uBytes = (D * 4 + 31) / 32 * 32;
++
++    uint32_t cores = blockCount;
++    if (cores == 0) {
++        cores = 1;
++    }
++    const uint64_t coreId = static_cast<uint64_t>(GetBlockIdx());
++    const int64_t per = (rows + static_cast<int64_t>(cores) - 1) / static_cast<int64_t>(cores);
++    const int64_t row0 = static_cast<int64_t>(coreId) * per;
++    int64_t row1 = row0 + per;
++    if (row1 > rows) {
++        row1 = rows;
++    }
++    if (row0 >= row1) {
++        return;
++    }
++
++    TPipe pipe;
++    TBuf bX, bRes, bGamma, bBias, bOut, bU, bS, bTile, bAcc, bWork, bTmp;
++    pipe.InitBuffer(bX, static_cast<uint32_t>(nativeTile));
++    pipe.InitBuffer(bRes, static_cast<uint32_t>(nativeTile));
++    pipe.InitBuffer(bGamma, static_cast<uint32_t>(nativeTile));
++    pipe.InitBuffer(bBias, static_cast<uint32_t>(nativeTile));
++    pipe.InitBuffer(bOut, static_cast<uint32_t>(nativeTile));
++    pipe.InitBuffer(bU, static_cast<uint32_t>(uBytes));
++    pipe.InitBuffer(bS, static_cast<uint32_t>(floatTile));
++    pipe.InitBuffer(bTile, 64);
++    pipe.InitBuffer(bAcc, 64);
++    pipe.InitBuffer(bWork, 64);
++    pipe.InitBuffer(bTmp, static_cast<uint32_t>(kReduceTmpBytes));
++
++    LocalTensor<T> xLocal = bX.Get<T>();
++    LocalTensor<T> resLocal = bRes.Get<T>();
++    LocalTensor<T> gammaLocal = bGamma.Get<T>();
++    LocalTensor<T> biasLocal = bBias.Get<T>();
++    LocalTensor<T> outLocal = bOut.Get<T>();
++    LocalTensor<float> u32 = bU.Get<float>();
++    LocalTensor<float> scratchF = bS.Get<float>();
++    LocalTensor<float> tileSum = bTile.Get<float>();
++    LocalTensor<float> acc = bAcc.Get<float>();
++    LocalTensor<float> work = bWork.Get<float>();
++    LocalTensor<float> tmpLocal = bTmp.Get<float>();
++
++    (void)kMaxTiles;
++    for (int64_t r = row0; r < row1; ++r) {
++        ProcessRowFused<T>(
++            xGm, resGm, gammaGm, biasGm, outGm,
++            xLocal, resLocal, gammaLocal, biasLocal, outLocal,
++            u32, scratchF, tileSum, acc, work, tmpLocal,
++            r, D, tile, invD, epsilon);
++    }
++}
++
++__global__ __vector__ void epi_x_fp32(
++    GM_ADDR x, GM_ADDR residual, GM_ADDR gamma, GM_ADDR bias, GM_ADDR output,
++    int64_t rows, int64_t dim, uint32_t blockCount, float epsilon)
++{
++    EpiXKernelImpl<float>(x, residual, gamma, bias, output, rows, dim, blockCount, epsilon);
++}
++
++__global__ __vector__ void epi_x_fp16(
++    GM_ADDR x, GM_ADDR residual, GM_ADDR gamma, GM_ADDR bias, GM_ADDR output,
++    int64_t rows, int64_t dim, uint32_t blockCount, float epsilon)
++{
++    EpiXKernelImpl<half>(x, residual, gamma, bias, output, rows, dim, blockCount, epsilon);
++}
++
++__global__ __vector__ void epi_x_bf16(
++    GM_ADDR x, GM_ADDR residual, GM_ADDR gamma, GM_ADDR bias, GM_ADDR output,
++    int64_t rows, int64_t dim, uint32_t blockCount, float epsilon)
++{
++    EpiXKernelImpl<bfloat16_t>(x, residual, gamma, bias, output, rows, dim, blockCount, epsilon);
++}
++
++static inline int64_t FlattenRows(const TensorGroupInfo& g)
++{
++    if (g.tensors == nullptr) {
++        return 0;
++    }
++    const TensorInfo& t = g.tensors[0];
++    if (t.shape == nullptr || t.numDims < 1) {
++        return 0;
++    }
++    int64_t rows = 1;
++    for (int64_t i = 0; i < t.numDims - 1; ++i) {
++        if (t.shape[i] <= 0) {
++            return 0;
++        }
++        rows *= t.shape[i];
++    }
++    return rows;
++}
++
++static inline int64_t LastDim(const TensorGroupInfo& g)
++{
++    if (g.tensors == nullptr) {
++        return 0;
++    }
++    const TensorInfo& t = g.tensors[0];
++    if (t.shape == nullptr || t.numDims < 1) {
++        return 0;
++    }
++    return t.shape[t.numDims - 1];
++}
++
++static inline int32_t GroupDtype(const TensorGroupInfo& g)
++{
++    if (g.tensors == nullptr) {
++        return kDtypeF32;
++    }
++    return NormalizeDtype(g.tensors[0].dtype);
++}
++
++extern "C" void run_kernel(GM_ADDR x, const TensorGroupInfo& info_x, GM_ADDR residual, const TensorGroupInfo& info_residual, GM_ADDR gamma, const TensorGroupInfo& info_gamma, GM_ADDR bias, const TensorGroupInfo& info_bias, GM_ADDR output, const TensorGroupInfo& info_output, int64_t availableCoreNum, aclrtStream stream, float epsilon)
++{
++    if (x == nullptr || residual == nullptr || gamma == nullptr || bias == nullptr ||
++        output == nullptr || info_x.tensors == nullptr || info_residual.tensors == nullptr ||
++        info_gamma.tensors == nullptr || info_bias.tensors == nullptr ||
++        info_output.tensors == nullptr) {
++        return;
++    }
++    const int64_t rows = FlattenRows(info_x);
++    const int64_t dim = LastDim(info_x);
++    if (rows <= 0 || dim <= 0 || dim > kMaxDim) {
++        return;
++    }
++    int64_t coreNum = availableCoreNum > 0 ? availableCoreNum : 1;
++    if (coreNum > rows) {
++        coreNum = rows;
++    }
++    if (coreNum < 1) {
++        coreNum = 1;
++    }
++    const uint32_t blockCount = static_cast<uint32_t>(coreNum);
++    const int32_t dtype = GroupDtype(info_x);
++    if (dtype == kDtypeF16) {
++        epi_x_fp16<<<blockCount, nullptr, stream>>>(
++            x, residual, gamma, bias, output, rows, dim, blockCount, epsilon);
++    } else if (dtype == kDtypeBF16) {
++        epi_x_bf16<<<blockCount, nullptr, stream>>>(
++            x, residual, gamma, bias, output, rows, dim, blockCount, epsilon);
++    } else {
++        epi_x_fp32<<<blockCount, nullptr, stream>>>(
++            x, residual, gamma, bias, output, rows, dim, blockCount, epsilon);
++    }
++}
+diff --git a/phase4/workspaces/EPI-X/architecture-metadata.md b/phase4/workspaces/EPI-X/architecture-metadata.md
+new file mode 100644
+index 0000000..4657756
+--- /dev/null
++++ b/phase4/workspaces/EPI-X/architecture-metadata.md
+@@ -0,0 +1,44 @@
++# EPI-X Architecture Metadata
++
++- ROUTE: EPI-X
++- IDEA POOL: R010 + R027 (manual tail + GPU-style epilogue fusion)
++- TARGET: Ascend 910B3 / DAV_2201
++- REVISION: V001
++
++## FUSION_STAGES
++
++1. FormU: one GM read of x and residual into resident FP32 `u`.
++2. SumInv: `ReduceSum(u*u)` with software-masked tail; `invRms = Rsqrt(mean+eps)` + one `GetValue`.
++3. FusedEpilogue: `out = u * invRms * gamma + bias` in one vector pass over resident `u`. No intermediate full-row norm store.
++
++## MASK_STRATEGY
++
++- DataCopyPad GM→UB uses 4-arg form with `rightPadding` in BYTES (32B tail fill with `T{}`).
++- Explicit software mask: `Duplicate` zeros FP32 lanes `[D, align8(D))` on resident `u` before sum and scale.
++- UB→GM uses 3-arg DataCopyPad and stores only valid bytes.
++
++## Why not two-pass reload
++
++GPU-style epilogue fusion keeps normalized `u` resident so gamma/bias apply in the same vector pass as the invRms scale. Avoids second GM traffic of x/residual and avoids any norm intermediate in GM or a second full-row UB buffer.
++
++## ABI hard requirements covered
++
++- first line `#include <cmath>`
++- `extern "C" void run_kernel(...)` exact signature
++- `__global__ __vector__` entries; launch `<<<blockCount, nullptr, stream>>>`
++- no TensorInfo / TensorGroupInfo redefinition in submission
++- dtype 0/1/2 and 27→BF16
++- ReduceSum 8KiB tmp, dest 8B-aligned
++- no `static_cast` bf16↔float; vector Cast / ToFloat / FromFloat
++- no `sqrtf` in `__aicore__`; Rsqrt + GetValue
++- accumulators zeroed with `Duplicate`, not `Adds(..., 0)`
++- SyncVToS / SyncSToV around GetValue
++
++## UB budget (184 KiB vec local)
++
++- resident u (D=32768 FP32): 128 KiB
++- load/store tiles (1024 or 2048 elems): ≤ 40 KiB
++- scratch FP32 tile: ≤ 8 KiB
++- ReduceSum tmp: 8 KiB
++- scalars/acc: < 1 KiB
++- peak ≈ 160–184 KiB depending on tile; tile chosen per dtype
+diff --git a/phase4/workspaces/EPI-X/build_server3.sh b/phase4/workspaces/EPI-X/build_server3.sh
+new file mode 100755
+index 0000000..dde8c19
+--- /dev/null
++++ b/phase4/workspaces/EPI-X/build_server3.sh
+@@ -0,0 +1,64 @@
++#!/usr/bin/env bash
++# EPI-X build on cann-server3 (Ascend910B3 / dav-2201).
++set -eo pipefail
++
++ROOT="$(cd "$(dirname "$0")" && pwd)"
++LOGDIR="${ROOT}/logs"
++BUILD="${ROOT}/build"
++mkdir -p "${LOGDIR}"
++
++TOOLKIT="${TOOLKIT:-/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002}"
++set +u
++source "${TOOLKIT}/bin/setenv.bash" >/dev/null 2>&1 || true
++set -u
++
++export ASCEND_HOME_PATH="${TOOLKIT}"
++export CMAKE_PREFIX_PATH="${TOOLKIT}/aarch64-linux/tikcpp/ascendc_kernel_cmake:${CMAKE_PREFIX_PATH:-}"
++export CPLUS_INCLUDE_PATH="/usr/include/c++/11:/usr/include/aarch64-linux-gnu/c++/11${CPLUS_INCLUDE_PATH:+:$CPLUS_INCLUDE_PATH}"
++export C_INCLUDE_PATH="/usr/include:/usr/include/aarch64-linux-gnu${C_INCLUDE_PATH:+:$C_INCLUDE_PATH}"
++
++REV="${REV:-V001}"
++SRC="${ROOT}/${REV}/kernel.asc"
++STAMP="$(date +%Y%m%d_%H%M%S)"
++
++rm -rf "${BUILD}"
++mkdir -p "${BUILD}"
++cd "${BUILD}"
++
++set +e
++cmake "${ROOT}" -DCMAKE_ASC_ARCHITECTURES=dav-2201 -DSOC_VERSION=Ascend910B3 \
++  -DCMAKE_PREFIX_PATH="${CMAKE_PREFIX_PATH}" -DEPIX_REV="${REV}" \
++  >"${LOGDIR}/cmake_configure_${REV}_${STAMP}.log" 2>&1
++CFG_RC=$?
++cmake --build . --target epix_device -j"$(nproc)" >"${LOGDIR}/device_compile_${REV}_${STAMP}.log" 2>&1
++DEV_RC=$?
++cmake --build . --target epix_submission -j"$(nproc)" >"${LOGDIR}/submission_compile_${REV}_${STAMP}.log" 2>&1
++SUB_RC=$?
++cmake --build . --target epix_full -j"$(nproc)" >"${LOGDIR}/full_link_${REV}_${STAMP}.log" 2>&1
++FULL_RC=$?
++set -e
++
++{
++  echo "EPI-X ${REV} build summary ${STAMP}"
++  echo "SOURCE=${SRC}"
++  echo "has_cmath=$(head -1 "$SRC" | grep -c '#include <cmath>' || true)"
++  echo "has_vector_entry=$(grep -c '__global__ __vector__' "$SRC" || true)"
++  echo "has_run_kernel=$(grep -c 'extern \"C\" void run_kernel' "$SRC" || true)"
++  echo "has_rightPadding=$(grep -c 'rightPadding\|rightPad' "$SRC" || true)"
++  echo "has_reduce_tmp_8k=$(grep -c 'kReduceTmpBytes = 8' "$SRC" || true)"
++  echo "has_duplicate=$(grep -c 'Duplicate' "$SRC" || true)"
++  echo "has_rsqrt=$(grep -c 'Rsqrt' "$SRC" || true)"
++  echo "cmake_configure_rc=${CFG_RC}"
++  echo "device_compile_rc=${DEV_RC}"
++  echo "submission_compile_rc=${SUB_RC}"
++  echo "full_link_rc=${FULL_RC}"
++} | tee "${LOGDIR}/build_summary_${REV}_${STAMP}.log"
++
++if [[ ${DEV_RC} -eq 0 && ${SUB_RC} -eq 0 && ${FULL_RC} -eq 0 ]]; then
++  find "${BUILD}" -type f \( -name '*.o' -o -name '*.d' -o -name '*.obj' \) -delete 2>/dev/null || true
++  echo "CLEANUP=ok"
++else
++  echo "CLEANUP=kept build tree"
++fi
++
++exit $(( CFG_RC != 0 || DEV_RC != 0 || SUB_RC != 0 || FULL_RC != 0 ))
+diff --git a/phase4/workspaces/EPI-X/local_full.asc b/phase4/workspaces/EPI-X/local_full.asc
+new file mode 100644
+index 0000000..35239b7
+--- /dev/null
++++ b/phase4/workspaces/EPI-X/local_full.asc
+@@ -0,0 +1,104 @@
++#include <acl/acl.h>
++#include <cstdint>
++#include <cstdio>
++#include <cstdlib>
++#include <vector>
++
++#include "local_types.h"
++#include "V001/kernel.asc"
++
++static bool ReadExact(const char *path, void *dst, size_t bytes)
++{
++    FILE *file = std::fopen(path, "rb");
++    if (file == nullptr) {
++        return false;
++    }
++    const size_t got = std::fread(dst, 1, bytes, file);
++    const bool ok = got == bytes && std::fgetc(file) == EOF;
++    std::fclose(file);
++    return ok;
++}
++
++static bool WriteExact(const char *path, const void *src, size_t bytes)
++{
++    FILE *file = std::fopen(path, "wb");
++    if (file == nullptr) {
++        return false;
++    }
++    const bool ok = std::fwrite(src, 1, bytes, file) == bytes;
++    std::fclose(file);
++    return ok;
++}
++
++int main(int argc, char **argv)
++{
++    if (argc != 4) {
++        std::fprintf(stderr, "usage: %s rows dim dtype\n", argv[0]);
++        return 2;
++    }
++    const int64_t rows = std::atoll(argv[1]);
++    const int64_t dim = std::atoll(argv[2]);
++    const int32_t dtype = std::atoi(argv[3]);
++    if (rows <= 0 || dim <= 0 || (dtype != 0 && dtype != 1 && dtype != 2 && dtype != 27)) {
++        return 2;
++    }
++    const size_t elemBytes = dtype == 0 ? sizeof(float) : sizeof(uint16_t);
++    const size_t xyBytes = static_cast<size_t>(rows) * static_cast<size_t>(dim) * elemBytes;
++    const size_t gbBytes = static_cast<size_t>(dim) * elemBytes;
++    std::vector<uint8_t> x(xyBytes), residual(xyBytes), gamma(gbBytes), bias(gbBytes), output(xyBytes);
++    if (!ReadExact("input/x.bin", x.data(), xyBytes) ||
++        !ReadExact("input/residual.bin", residual.data(), xyBytes) ||
++        !ReadExact("input/gamma.bin", gamma.data(), gbBytes) ||
++        !ReadExact("input/bias.bin", bias.data(), gbBytes)) {
++        std::fprintf(stderr, "input read failed\n");
++        return 1;
++    }
++
++    aclError ret = aclInit(nullptr);
++    if (ret != ACL_ERROR_NONE) return 1;
++    ret = aclrtSetDevice(0);
++    if (ret != ACL_ERROR_NONE) return 1;
++    int64_t coreCount = 0;
++    ret = aclrtGetDeviceInfo(0, ACL_DEV_ATTR_VECTOR_CORE_NUM, &coreCount);
++    if (ret != ACL_ERROR_NONE) return 1;
++    aclrtStream stream = nullptr;
++    ret = aclrtCreateStream(&stream);
++    if (ret != ACL_ERROR_NONE) return 1;
++
++    const long long xShape[] = {rows, dim};
++    const long long gShape[] = {dim};
++    TensorInfo xInfo[] = {{xShape, 2, dtype}};
++    TensorInfo gInfo[] = {{gShape, 1, dtype}};
++    TensorGroupInfo infoX = {xInfo, 1};
++    TensorGroupInfo infoG = {gInfo, 1};
++    std::vector<uint8_t *> device(5, nullptr);
++    const size_t sizes[] = {xyBytes, xyBytes, gbBytes, gbBytes, xyBytes};
++    std::vector<uint8_t *> host = {x.data(), residual.data(), gamma.data(), bias.data(), output.data()};
++    for (size_t i = 0; i < device.size(); ++i) {
++        ret = aclrtMalloc(reinterpret_cast<void **>(&device[i]), sizes[i], ACL_MEM_MALLOC_HUGE_FIRST);
++        if (ret != ACL_ERROR_NONE) return 1;
++        ret = aclrtMemcpy(device[i], sizes[i], host[i], sizes[i], ACL_MEMCPY_HOST_TO_DEVICE);
++        if (ret != ACL_ERROR_NONE) return 1;
++    }
++    run_kernel((GM_ADDR)device[0], infoX, (GM_ADDR)device[1], infoX,
++        (GM_ADDR)device[2], infoG, (GM_ADDR)device[3], infoG,
++        (GM_ADDR)device[4], infoX, coreCount, stream, 1e-5f);
++    ret = aclrtSynchronizeStreamWithTimeout(stream, 10000);
++    if (ret == ACL_ERROR_NONE) {
++        ret = aclrtMemcpy(output.data(), xyBytes, device[4], xyBytes, ACL_MEMCPY_DEVICE_TO_HOST);
++    }
++    if (ret == ACL_ERROR_NONE && !WriteExact("output/output.bin", output.data(), xyBytes)) {
++        ret = 1;
++    }
++    for (uint8_t *ptr : device) {
++        if (ptr != nullptr) aclrtFree(ptr);
++    }
++    aclrtDestroyStream(stream);
++    aclrtResetDevice(0);
++    aclFinalize();
++    if (ret != ACL_ERROR_NONE) {
++        std::fprintf(stderr, "runtime failed ret=%d\n", ret);
++        return 1;
++    }
++    return 0;
++}
+diff --git a/phase4/workspaces/EPI-X/local_probe.py b/phase4/workspaces/EPI-X/local_probe.py
+new file mode 100644
+index 0000000..ad4498b
+--- /dev/null
++++ b/phase4/workspaces/EPI-X/local_probe.py
+@@ -0,0 +1,78 @@
++#!/usr/bin/env python3
++import math
++import os
++import random
++import struct
++import subprocess
++import sys
++
++
++def pack(values, dtype):
++    if dtype == 0:
++        return struct.pack("<%df" % len(values), *values)
++    out = bytearray()
++    for value in values:
++        bits = struct.unpack("<I", struct.pack("<f", float(value)))[0]
++        if dtype in (2, 27):
++            bits = (bits + 0x7FFF + ((bits >> 16) & 1)) >> 16
++            out += struct.pack("<H", bits & 0xFFFF)
++        else:
++            out += struct.pack("<e", float(value))
++    return bytes(out)
++
++
++def unpack(data, dtype):
++    if dtype == 0:
++        return struct.unpack("<%df" % (len(data) // 4), data)
++    values = []
++    for (half,) in struct.iter_unpack("<H", data):
++        if dtype in (2, 27):
++            values.append(struct.unpack("<f", struct.pack("<I", half << 16))[0])
++        else:
++            values.append(struct.unpack("<e", struct.pack("<H", half))[0])
++    return values
++
++
++def run_case(exe, name, rows, dim, dtype, tolerance):
++    random.seed(1000 + rows * 17 + dim * 3 + dtype)
++    count = rows * dim
++    x = [random.uniform(-2.0, 2.0) for _ in range(count)]
++    residual = [random.uniform(-2.0, 2.0) for _ in range(count)]
++    gamma = [random.uniform(0.8, 1.2) for _ in range(dim)]
++    bias = [random.uniform(-0.3, 0.3) for _ in range(dim)]
++    os.makedirs("input", exist_ok=True)
++    os.makedirs("output", exist_ok=True)
++    for filename, values in (("x.bin", x), ("residual.bin", residual), ("gamma.bin", gamma), ("bias.bin", bias)):
++        with open(os.path.join("input", filename), "wb") as file:
++            file.write(pack(values, dtype))
++    reference = []
++    for row in range(rows):
++        start = row * dim
++        u = [x[start + i] + residual[start + i] for i in range(dim)]
++        inv = 1.0 / math.sqrt(sum(value * value for value in u) / dim + 1e-5)
++        reference.extend(u[i] * inv * gamma[i] + bias[i] for i in range(dim))
++    subprocess.run([exe, str(rows), str(dim), str(dtype)], check=True, timeout=30)
++    with open("output/output.bin", "rb") as file:
++        actual = unpack(file.read(), dtype)
++    expected = unpack(pack(reference, dtype), dtype)
++    errors = [abs(a - b) for a, b in zip(actual, expected)]
++    max_abs = max(errors) if errors else 0.0
++    bad = sum(error > tolerance for error in errors)
++    print("%s rows=%d dim=%d dtype=%d max_abs=%.6g bad=%d" % (name, rows, dim, dtype, max_abs, bad))
++    return bad == 0 and len(actual) == len(expected)
++
++
++def main():
++    exe = sys.argv[1] if len(sys.argv) > 1 else "./epix_full"
++    cases = [
++        ("wide_epilogue", 1, 32768, 1, 0.05),
++        ("adjacent_dtype_f16", 2, 2048, 1, 0.05),
++        ("adjacent_dtype_bf16_27", 2, 2048, 27, 0.12),
++        ("tail_fallback", 3, 511, 0, 0.01),
++        ("tail_fallback_low", 3, 511, 1, 0.05),
++    ]
++    return 0 if all(run_case(exe, *case) for case in cases) else 1
++
++
++if __name__ == "__main__":
++    sys.exit(main())
+diff --git a/phase4/workspaces/EPI-X/local_types.h b/phase4/workspaces/EPI-X/local_types.h
+new file mode 100644
+index 0000000..3534222
+--- /dev/null
++++ b/phase4/workspaces/EPI-X/local_types.h
+@@ -0,0 +1,23 @@
++// Local compile helper only. Judge predefines TensorInfo / TensorGroupInfo.
++#ifndef EPI_X_LOCAL_TYPES_H
++#define EPI_X_LOCAL_TYPES_H
++
++#ifndef TENSOR_GROUP_INFO_DEFINED
++#define TENSOR_GROUP_INFO_DEFINED
++struct TensorInfo {
++    const long long* shape;
++    long long numDims;
++    int dtype;
++};
++struct TensorGroupInfo {
++    const TensorInfo* tensors;
++    long long numTensors;
++};
++#endif
++
++#ifndef ACLRT_STREAM_T
++#define ACLRT_STREAM_T
++typedef void* aclrtStream;
++#endif
++
++#endif
+diff --git a/phase4/workspaces/EPI-X/logs/build_summary_V001_20260922_191031.log b/phase4/workspaces/EPI-X/logs/build_summary_V001_20260922_191031.log
+new file mode 100644
+index 0000000..ce2aa41
+--- /dev/null
++++ b/phase4/workspaces/EPI-X/logs/build_summary_V001_20260922_191031.log
+@@ -0,0 +1,13 @@
++EPI-X V001 build summary 20260922_191031
++SOURCE=/home/data4t2/lelinfeng/phase4-workspaces/EPI-X/V001/kernel.asc
++has_cmath=1
++has_vector_entry=3
++has_run_kernel=1
++has_rightPadding=2
++has_reduce_tmp_8k=1
++has_duplicate=3
++has_rsqrt=2
++cmake_configure_rc=0
++device_compile_rc=0
++submission_compile_rc=0
++full_link_rc=0
+diff --git a/phase4/workspaces/EPI-X/logs/build_summary_V001_20260922_191523.log b/phase4/workspaces/EPI-X/logs/build_summary_V001_20260922_191523.log
+new file mode 100644
+index 0000000..d3acbde
+--- /dev/null
++++ b/phase4/workspaces/EPI-X/logs/build_summary_V001_20260922_191523.log
+@@ -0,0 +1,13 @@
++EPI-X V001 build summary 20260922_191523
++SOURCE=/home/data4t2/lelinfeng/phase4-workspaces/EPI-X/V001/kernel.asc
++has_cmath=1
++has_vector_entry=3
++has_run_kernel=1
++has_rightPadding=2
++has_reduce_tmp_8k=1
++has_duplicate=3
++has_rsqrt=2
++cmake_configure_rc=0
++device_compile_rc=0
++submission_compile_rc=0
++full_link_rc=2
+diff --git a/phase4/workspaces/EPI-X/logs/build_summary_V001_20260922_191729.log b/phase4/workspaces/EPI-X/logs/build_summary_V001_20260922_191729.log
+new file mode 100644
+index 0000000..3bb3161
+--- /dev/null
++++ b/phase4/workspaces/EPI-X/logs/build_summary_V001_20260922_191729.log
+@@ -0,0 +1,13 @@
++EPI-X V001 build summary 20260922_191729
++SOURCE=/home/data4t2/lelinfeng/phase4-workspaces/EPI-X/V001/kernel.asc
++has_cmath=1
++has_vector_entry=3
++has_run_kernel=1
++has_rightPadding=2
++has_reduce_tmp_8k=1
++has_duplicate=3
++has_rsqrt=2
++cmake_configure_rc=0
++device_compile_rc=0
++submission_compile_rc=0
++full_link_rc=2
+diff --git a/phase4/workspaces/EPI-X/logs/build_summary_V001_20260922_191919.log b/phase4/workspaces/EPI-X/logs/build_summary_V001_20260922_191919.log
+new file mode 100644
+index 0000000..b3807ac
+--- /dev/null
++++ b/phase4/workspaces/EPI-X/logs/build_summary_V001_20260922_191919.log
+@@ -0,0 +1,13 @@
++EPI-X V001 build summary 20260922_191919
++SOURCE=/home/data4t2/lelinfeng/phase4-workspaces/EPI-X/V001/kernel.asc
++has_cmath=1
++has_vector_entry=3
++has_run_kernel=1
++has_rightPadding=2
++has_reduce_tmp_8k=1
++has_duplicate=3
++has_rsqrt=2
++cmake_configure_rc=0
++device_compile_rc=0
++submission_compile_rc=0
++full_link_rc=0
+diff --git a/phase4/workspaces/EPI-X/logs/cmake_configure_V001_20260922_191031.log b/phase4/workspaces/EPI-X/logs/cmake_configure_V001_20260922_191031.log
+new file mode 100644
+index 0000000..7987aef
+--- /dev/null
++++ b/phase4/workspaces/EPI-X/logs/cmake_configure_V001_20260922_191031.log
+@@ -0,0 +1,22 @@
++-- CMAKE_ASC_COMPILER: /usr/local/Ascend/ascend-toolkit/latest/toolkit/tools/ccec_compiler/bin/bisheng
++CMake Warning at /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/tikcpp/ascendc_kernel_cmake/ASC_CMake/CMakeDetermineASCCompiler.cmake:57 (message):
++  CMAKE_INSTALL_PREFIX is not set.  Set to default value
++  /home/data4t2/lelinfeng/phase4-workspaces/EPI-X/out.
++Call Stack (most recent call first):
++  CMakeLists.txt:9 (project)
++
++
++-- SOC_VERSION: Ascend910B3
++-- CMAKE_BUILD_TYPE: Release
++-- CMAKE_INSTALL_PREFIX: /home/data4t2/lelinfeng/phase4-workspaces/EPI-X/out
++-- ASCEND_CANN_PACKAGE_PATH: /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002
++-- CMAKE_ASC_LLD_LINKER: /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/tools/ccec_compiler/bin/ld.lld
++-- The CXX compiler identification is GNU 11.4.0
++-- Detecting CXX compiler ABI info
++-- Detecting CXX compiler ABI info - done
++-- Check for working CXX compiler: /usr/bin/c++ - skipped
++-- Detecting CXX compile features
++-- Detecting CXX compile features - done
++-- Configuring done
++-- Generating done
++-- Build files have been written to: /home/data4t2/lelinfeng/phase4-workspaces/EPI-X/build
+diff --git a/phase4/workspaces/EPI-X/logs/cmake_configure_V001_20260922_191523.log b/phase4/workspaces/EPI-X/logs/cmake_configure_V001_20260922_191523.log
+new file mode 100644
+index 0000000..7987aef
+--- /dev/null
++++ b/phase4/workspaces/EPI-X/logs/cmake_configure_V001_20260922_191523.log
+@@ -0,0 +1,22 @@
++-- CMAKE_ASC_COMPILER: /usr/local/Ascend/ascend-toolkit/latest/toolkit/tools/ccec_compiler/bin/bisheng
++CMake Warning at /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/tikcpp/ascendc_kernel_cmake/ASC_CMake/CMakeDetermineASCCompiler.cmake:57 (message):
++  CMAKE_INSTALL_PREFIX is not set.  Set to default value
++  /home/data4t2/lelinfeng/phase4-workspaces/EPI-X/out.
++Call Stack (most recent call first):
++  CMakeLists.txt:9 (project)
++
++
++-- SOC_VERSION: Ascend910B3
++-- CMAKE_BUILD_TYPE: Release
++-- CMAKE_INSTALL_PREFIX: /home/data4t2/lelinfeng/phase4-workspaces/EPI-X/out
++-- ASCEND_CANN_PACKAGE_PATH: /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002
++-- CMAKE_ASC_LLD_LINKER: /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/tools/ccec_compiler/bin/ld.lld
++-- The CXX compiler identification is GNU 11.4.0
++-- Detecting CXX compiler ABI info
++-- Detecting CXX compiler ABI info - done
++-- Check for working CXX compiler: /usr/bin/c++ - skipped
++-- Detecting CXX compile features
++-- Detecting CXX compile features - done
++-- Configuring done
++-- Generating done
++-- Build files have been written to: /home/data4t2/lelinfeng/phase4-workspaces/EPI-X/build
+diff --git a/phase4/workspaces/EPI-X/logs/cmake_configure_V001_20260922_191729.log b/phase4/workspaces/EPI-X/logs/cmake_configure_V001_20260922_191729.log
+new file mode 100644
+index 0000000..7987aef
+--- /dev/null
++++ b/phase4/workspaces/EPI-X/logs/cmake_configure_V001_20260922_191729.log
+@@ -0,0 +1,22 @@
++-- CMAKE_ASC_COMPILER: /usr/local/Ascend/ascend-toolkit/latest/toolkit/tools/ccec_compiler/bin/bisheng
++CMake Warning at /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/tikcpp/ascendc_kernel_cmake/ASC_CMake/CMakeDetermineASCCompiler.cmake:57 (message):
++  CMAKE_INSTALL_PREFIX is not set.  Set to default value
++  /home/data4t2/lelinfeng/phase4-workspaces/EPI-X/out.
++Call Stack (most recent call first):
++  CMakeLists.txt:9 (project)
++
++
++-- SOC_VERSION: Ascend910B3
++-- CMAKE_BUILD_TYPE: Release
++-- CMAKE_INSTALL_PREFIX: /home/data4t2/lelinfeng/phase4-workspaces/EPI-X/out
++-- ASCEND_CANN_PACKAGE_PATH: /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002
++-- CMAKE_ASC_LLD_LINKER: /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/tools/ccec_compiler/bin/ld.lld
++-- The CXX compiler identification is GNU 11.4.0
++-- Detecting CXX compiler ABI info
++-- Detecting CXX compiler ABI info - done
++-- Check for working CXX compiler: /usr/bin/c++ - skipped
++-- Detecting CXX compile features
++-- Detecting CXX compile features - done
++-- Configuring done
++-- Generating done
++-- Build files have been written to: /home/data4t2/lelinfeng/phase4-workspaces/EPI-X/build
+diff --git a/phase4/workspaces/EPI-X/logs/cmake_configure_V001_20260922_191919.log b/phase4/workspaces/EPI-X/logs/cmake_configure_V001_20260922_191919.log
+new file mode 100644
+index 0000000..7987aef
+--- /dev/null
++++ b/phase4/workspaces/EPI-X/logs/cmake_configure_V001_20260922_191919.log
+@@ -0,0 +1,22 @@
++-- CMAKE_ASC_COMPILER: /usr/local/Ascend/ascend-toolkit/latest/toolkit/tools/ccec_compiler/bin/bisheng
++CMake Warning at /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/tikcpp/ascendc_kernel_cmake/ASC_CMake/CMakeDetermineASCCompiler.cmake:57 (message):
++  CMAKE_INSTALL_PREFIX is not set.  Set to default value
++  /home/data4t2/lelinfeng/phase4-workspaces/EPI-X/out.
++Call Stack (most recent call first):
++  CMakeLists.txt:9 (project)
++
++
++-- SOC_VERSION: Ascend910B3
++-- CMAKE_BUILD_TYPE: Release
++-- CMAKE_INSTALL_PREFIX: /home/data4t2/lelinfeng/phase4-workspaces/EPI-X/out
++-- ASCEND_CANN_PACKAGE_PATH: /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002
++-- CMAKE_ASC_LLD_LINKER: /usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/tools/ccec_compiler/bin/ld.lld
++-- The CXX compiler identification is GNU 11.4.0
++-- Detecting CXX compiler ABI info
++-- Detecting CXX compiler ABI info - done
++-- Check for working CXX compiler: /usr/bin/c++ - skipped
++-- Detecting CXX compile features
++-- Detecting CXX compile features - done
++-- Configuring done
++-- Generating done
++-- Build files have been written to: /home/data4t2/lelinfeng/phase4-workspaces/EPI-X/build
+diff --git a/phase4/workspaces/EPI-X/logs/device_compile_V001_20260922_191031.log b/phase4/workspaces/EPI-X/logs/device_compile_V001_20260922_191031.log
+new file mode 100644
+index 0000000..cb3194b
+--- /dev/null
++++ b/phase4/workspaces/EPI-X/logs/device_compile_V001_20260922_191031.log
+@@ -0,0 +1,2 @@
++[100%] Building ASC object CMakeFiles/epix_device.dir/V001/kernel.asc.o
++[100%] Built target epix_device
+diff --git a/phase4/workspaces/EPI-X/logs/device_compile_V001_20260922_191523.log b/phase4/workspaces/EPI-X/logs/device_compile_V001_20260922_191523.log
+new file mode 100644
+index 0000000..cb3194b
+--- /dev/null
++++ b/phase4/workspaces/EPI-X/logs/device_compile_V001_20260922_191523.log
+@@ -0,0 +1,2 @@
++[100%] Building ASC object CMakeFiles/epix_device.dir/V001/kernel.asc.o
++[100%] Built target epix_device
+diff --git a/phase4/workspaces/EPI-X/logs/device_compile_V001_20260922_191729.log b/phase4/workspaces/EPI-X/logs/device_compile_V001_20260922_191729.log
+new file mode 100644
+index 0000000..cb3194b
+--- /dev/null
++++ b/phase4/workspaces/EPI-X/logs/device_compile_V001_20260922_191729.log
+@@ -0,0 +1,2 @@
++[100%] Building ASC object CMakeFiles/epix_device.dir/V001/kernel.asc.o
++[100%] Built target epix_device
+diff --git a/phase4/workspaces/EPI-X/logs/device_compile_V001_20260922_191919.log b/phase4/workspaces/EPI-X/logs/device_compile_V001_20260922_191919.log
+new file mode 100644
+index 0000000..cb3194b
+--- /dev/null
++++ b/phase4/workspaces/EPI-X/logs/device_compile_V001_20260922_191919.log
+@@ -0,0 +1,2 @@
++[100%] Building ASC object CMakeFiles/epix_device.dir/V001/kernel.asc.o
++[100%] Built target epix_device
+diff --git a/phase4/workspaces/EPI-X/logs/full_link_V001_20260922_191031.log b/phase4/workspaces/EPI-X/logs/full_link_V001_20260922_191031.log
+new file mode 100644
+index 0000000..368a89a
+--- /dev/null
++++ b/phase4/workspaces/EPI-X/logs/full_link_V001_20260922_191031.log
+@@ -0,0 +1,3 @@
++[ 50%] Building ASC object CMakeFiles/epix_full.dir/local_full.asc.o
++[100%] Linking ASC executable epix_full
++[100%] Built target epix_full
+diff --git a/phase4/workspaces/EPI-X/logs/full_link_V001_20260922_191523.log b/phase4/workspaces/EPI-X/logs/full_link_V001_20260922_191523.log
+new file mode 100644
+index 0000000..eff5321
+--- /dev/null
++++ b/phase4/workspaces/EPI-X/logs/full_link_V001_20260922_191523.log
+@@ -0,0 +1,12 @@
++[ 50%] Building ASC object CMakeFiles/epix_full.dir/local_full.asc.o
++/home/data4t2/lelinfeng/phase4-workspaces/EPI-X/local_full.asc:70:28: error: cannot initialize a member subobject of type 'const long long *' with an lvalue of type 'const int64_t[2]' (aka 'const long[2]')
++    TensorInfo xInfo[] = {{xShape, 2, dtype}};
++                           ^~~~~~
++/home/data4t2/lelinfeng/phase4-workspaces/EPI-X/local_full.asc:71:28: error: cannot initialize a member subobject of type 'const long long *' with an lvalue of type 'const int64_t[1]' (aka 'const long[1]')
++    TensorInfo gInfo[] = {{gShape, 1, dtype}};
++                           ^~~~~~
++2 errors generated.
++gmake[3]: *** [CMakeFiles/epix_full.dir/build.make:76: CMakeFiles/epix_full.dir/local_full.asc.o] Error 1
++gmake[2]: *** [CMakeFiles/Makefile2:139: CMakeFiles/epix_full.dir/all] Error 2
++gmake[1]: *** [CMakeFiles/Makefile2:146: CMakeFiles/epix_full.dir/rule] Error 2
++gmake: *** [Makefile:150: epix_full] Error 2
+diff --git a/phase4/workspaces/EPI-X/logs/full_link_V001_20260922_191729.log b/phase4/workspaces/EPI-X/logs/full_link_V001_20260922_191729.log
+new file mode 100644
+index 0000000..1653e26
+--- /dev/null
++++ b/phase4/workspaces/EPI-X/logs/full_link_V001_20260922_191729.log
+@@ -0,0 +1,9 @@
++[ 50%] Building ASC object CMakeFiles/epix_full.dir/local_full.asc.o
++/home/data4t2/lelinfeng/phase4-workspaces/EPI-X/local_full.asc:83:16: error: reinterpret_cast from '__gnu_cxx::__alloc_traits<std::allocator<unsigned char *>, unsigned char *>::value_type' (aka 'unsigned char *') to '__gm__ uint8_t *' (aka '__gm__ unsigned char *') is not allowed
++Fatal Err: A fatal error occurred in iternel process, and Diagnostic info can not be reported correctly
++/home/data4t2/lelinfeng/phase4-workspaces/EPI-X/local_full.asc:83:16: error: reinterpret_cast from '__gnu_cxx::__alloc_traits<std::allocator<unsigned char *>, unsigned char *>::value_type' (aka 'unsigned char *') to '__gm__ uint8_t *' (aka '__gm__ unsigned char *') is not allowed
++Fatal Err: A fatal error occurred in iternel process, and Diagnostic info can not be reported correctly
++gmake[3]: *** [CMakeFiles/epix_full.dir/build.make:76: CMakeFiles/epix_full.dir/local_full.asc.o] Error 1
++gmake[2]: *** [CMakeFiles/Makefile2:139: CMakeFiles/epix_full.dir/all] Error 2
++gmake[1]: *** [CMakeFiles/Makefile2:146: CMakeFiles/epix_full.dir/rule] Error 2
++gmake: *** [Makefile:150: epix_full] Error 2
+diff --git a/phase4/workspaces/EPI-X/logs/full_link_V001_20260922_191919.log b/phase4/workspaces/EPI-X/logs/full_link_V001_20260922_191919.log
+new file mode 100644
+index 0000000..9c4ca33
+--- /dev/null
++++ b/phase4/workspaces/EPI-X/logs/full_link_V001_20260922_191919.log
+@@ -0,0 +1,80 @@
++[ 50%] Building ASC object CMakeFiles/epix_full.dir/local_full.asc.o
++/home/data4t2/lelinfeng/phase4-workspaces/EPI-X/local_full.asc:83:17: warning: 'cce_global' attribute ignored when parsing type [-Wignored-attributes]
++    run_kernel((GM_ADDR)device[0], infoX, (GM_ADDR)device[1], infoX,
++                ^~~~~~~
++/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/compiler/tikcpp/tikcfw/impl/utils/kernel_utils_macros.h:18:17: note: expanded from macro 'GM_ADDR'
++#define GM_ADDR __gm__ uint8_t*
++                ^~~~~~
++/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/lib/clang/15.0.5/include/__clang_cce_defines.h:47:31: note: expanded from macro '__gm__'
++#define __gm__ __attribute__((cce_global))
++                              ^~~~~~~~~~
++/home/data4t2/lelinfeng/phase4-workspaces/EPI-X/local_full.asc:83:44: warning: 'cce_global' attribute ignored when parsing type [-Wignored-attributes]
++    run_kernel((GM_ADDR)device[0], infoX, (GM_ADDR)device[1], infoX,
++                                           ^~~~~~~
++/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/compiler/tikcpp/tikcfw/impl/utils/kernel_utils_macros.h:18:17: note: expanded from macro 'GM_ADDR'
++#define GM_ADDR __gm__ uint8_t*
++                ^~~~~~
++/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/lib/clang/15.0.5/include/__clang_cce_defines.h:47:31: note: expanded from macro '__gm__'
++#define __gm__ __attribute__((cce_global))
++                              ^~~~~~~~~~
++/home/data4t2/lelinfeng/phase4-workspaces/EPI-X/local_full.asc:84:10: warning: 'cce_global' attribute ignored when parsing type [-Wignored-attributes]
++        (GM_ADDR)device[2], infoG, (GM_ADDR)device[3], infoG,
++         ^~~~~~~
++/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/compiler/tikcpp/tikcfw/impl/utils/kernel_utils_macros.h:18:17: note: expanded from macro 'GM_ADDR'
++#define GM_ADDR __gm__ uint8_t*
++                ^~~~~~
++/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/lib/clang/15.0.5/include/__clang_cce_defines.h:47:31: note: expanded from macro '__gm__'
++#define __gm__ __attribute__((cce_global))
++                              ^~~~~~~~~~
++/home/data4t2/lelinfeng/phase4-workspaces/EPI-X/local_full.asc:84:37: warning: 'cce_global' attribute ignored when parsing type [-Wignored-attributes]
++        (GM_ADDR)device[2], infoG, (GM_ADDR)device[3], infoG,
++                                    ^~~~~~~
++/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/compiler/tikcpp/tikcfw/impl/utils/kernel_utils_macros.h:18:17: note: expanded from macro 'GM_ADDR'
++#define GM_ADDR __gm__ uint8_t*
++                ^~~~~~
++/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/lib/clang/15.0.5/include/__clang_cce_defines.h:47:31: note: expanded from macro '__gm__'
++#define __gm__ __attribute__((cce_global))
++                              ^~~~~~~~~~
++/home/data4t2/lelinfeng/phase4-workspaces/EPI-X/local_full.asc:85:10: warning: 'cce_global' attribute ignored when parsing type [-Wignored-attributes]
++        (GM_ADDR)device[4], infoX, coreCount, stream, 1e-5f);
++         ^~~~~~~
++/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/compiler/tikcpp/tikcfw/impl/utils/kernel_utils_macros.h:18:17: note: expanded from macro 'GM_ADDR'
++#define GM_ADDR __gm__ uint8_t*
++                ^~~~~~
++/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/lib/clang/15.0.5/include/__clang_cce_defines.h:47:31: note: expanded from macro '__gm__'
++#define __gm__ __attribute__((cce_global))
++                              ^~~~~~~~~~
++5 warnings generated.
++/home/data4t2/lelinfeng/phase4-workspaces/EPI-X/local_full.asc:83:17: warning: 'cce_global' attribute ignored when parsing type [-Wignored-attributes]
++/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/compiler/tikcpp/tikcfw/impl/utils/kernel_utils_macros.h:18:17: note: expanded from macro 'GM_ADDR'
++/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/lib/clang/15.0.5/include/__clang_cce_defines.h:47:31: note: expanded from macro '__gm__'
++/home/data4t2/lelinfeng/phase4-workspaces/EPI-X/local_full.asc:83:44: warning: 'cce_global' attribute ignored when parsing type [-Wignored-attributes]
++/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/compiler/tikcpp/tikcfw/impl/utils/kernel_utils_macros.h:18:17: note: expanded from macro 'GM_ADDR'
++/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/lib/clang/15.0.5/include/__clang_cce_defines.h:47:31: note: expanded from macro '__gm__'
++/home/data4t2/lelinfeng/phase4-workspaces/EPI-X/local_full.asc:84:10: warning: 'cce_global' attribute ignored when parsing type [-Wignored-attributes]
++/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/compiler/tikcpp/tikcfw/impl/utils/kernel_utils_macros.h:18:17: note: expanded from macro 'GM_ADDR'
++/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/lib/clang/15.0.5/include/__clang_cce_defines.h:47:31: note: expanded from macro '__gm__'
++/home/data4t2/lelinfeng/phase4-workspaces/EPI-X/local_full.asc:84:37: warning: 'cce_global' attribute ignored when parsing type [-Wignored-attributes]
++/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/compiler/tikcpp/tikcfw/impl/utils/kernel_utils_macros.h:18:17: note: expanded from macro 'GM_ADDR'
++/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/lib/clang/15.0.5/include/__clang_cce_defines.h:47:31: note: expanded from macro '__gm__'
++/home/data4t2/lelinfeng/phase4-workspaces/EPI-X/local_full.asc:85:10: warning: 'cce_global' attribute ignored when parsing type [-Wignored-attributes]
++/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/compiler/tikcpp/tikcfw/impl/utils/kernel_utils_macros.h:18:17: note: expanded from macro 'GM_ADDR'
++/usr/local/Ascend/ascend-toolkit/8.5.0.alpha002/aarch64-linux/ccec_compiler/lib/clang/15.0.5/include/__clang_cce_defines.h:47:31: note: expanded from macro '__gm__'
++5 warnings generated.
++Warning: please refer to the above warning message. 
++Warning: please refer to the above warning message. 
++Warning: please refer to the above warning message. 
++Warning: please refer to the above warning message. 
++Warning: please refer to the above warning message. 
++Warning: please refer to the above warning message. 
++Warning: please refer to the above warning message. 
++Warning: please refer to the above warning message. 
++Warning: please refer to the above warning message. 
++Warning: please refer to the above warning message. 
++Warning: please refer to the above warning message. 
++Warning: please refer to the above warning message. 
++Warning: please refer to the above warning message. 
++Warning: please refer to the above warning message. 
++Warning: please refer to the above warning message. 
++[100%] Linking ASC executable epix_full
++[100%] Built target epix_full
+diff --git a/phase4/workspaces/EPI-X/logs/local_probe_V001.log b/phase4/workspaces/EPI-X/logs/local_probe_V001.log
+new file mode 100644
+index 0000000..b8e903a
+--- /dev/null
++++ b/phase4/workspaces/EPI-X/logs/local_probe_V001.log
+@@ -0,0 +1,2 @@
++wide_epilogue rows=1 dim=32768 dtype=1 max_abs=2.823 bad=31404
++EXIT=1
+diff --git a/phase4/workspaces/EPI-X/logs/submission_compile_V001_20260922_191031.log b/phase4/workspaces/EPI-X/logs/submission_compile_V001_20260922_191031.log
+new file mode 100644
+index 0000000..0e18f5d
+--- /dev/null
++++ b/phase4/workspaces/EPI-X/logs/submission_compile_V001_20260922_191031.log
+@@ -0,0 +1,2 @@
++[100%] Building ASC object CMakeFiles/epix_submission.dir/submission_shim.asc.o
++[100%] Built target epix_submission
+diff --git a/phase4/workspaces/EPI-X/logs/submission_compile_V001_20260922_191523.log b/phase4/workspaces/EPI-X/logs/submission_compile_V001_20260922_191523.log
+new file mode 100644
+index 0000000..0e18f5d
+--- /dev/null
++++ b/phase4/workspaces/EPI-X/logs/submission_compile_V001_20260922_191523.log
+@@ -0,0 +1,2 @@
++[100%] Building ASC object CMakeFiles/epix_submission.dir/submission_shim.asc.o
++[100%] Built target epix_submission
+diff --git a/phase4/workspaces/EPI-X/logs/submission_compile_V001_20260922_191729.log b/phase4/workspaces/EPI-X/logs/submission_compile_V001_20260922_191729.log
+new file mode 100644
+index 0000000..0e18f5d
+--- /dev/null
++++ b/phase4/workspaces/EPI-X/logs/submission_compile_V001_20260922_191729.log
+@@ -0,0 +1,2 @@
++[100%] Building ASC object CMakeFiles/epix_submission.dir/submission_shim.asc.o
++[100%] Built target epix_submission
+diff --git a/phase4/workspaces/EPI-X/logs/submission_compile_V001_20260922_191919.log b/phase4/workspaces/EPI-X/logs/submission_compile_V001_20260922_191919.log
+new file mode 100644
+index 0000000..0e18f5d
+--- /dev/null
++++ b/phase4/workspaces/EPI-X/logs/submission_compile_V001_20260922_191919.log
+@@ -0,0 +1,2 @@
++[100%] Building ASC object CMakeFiles/epix_submission.dir/submission_shim.asc.o
++[100%] Built target epix_submission
+diff --git a/phase4/workspaces/EPI-X/submission.asc b/phase4/workspaces/EPI-X/submission.asc
+new file mode 100644
+index 0000000..549aedf
+--- /dev/null
++++ b/phase4/workspaces/EPI-X/submission.asc
+@@ -0,0 +1,441 @@
++#include <cmath>
++#include "kernel_operator.h"
++
++// EPI-X V001: fused normalize+gamma+bias epilogue after one u residency.
++// u = x + residual (FP32 resident)
++// invRms = rsqrt(mean(u*u) + eps)
++// out = u * invRms * gamma + bias   // single vector pass, no norm intermediate
++// Software mask zeroes 32B pad lanes past D before sum and scale.
++
++using AscendC::TPipe;
++using AscendC::TBuf;
++using AscendC::LocalTensor;
++using AscendC::GlobalTensor;
++using AscendC::DataCopyExtParams;
++using AscendC::DataCopyPadExtParams;
++using AscendC::ReduceSum;
++using AscendC::Rsqrt;
++using AscendC::Muls;
++using AscendC::Adds;
++using AscendC::Add;
++using AscendC::Mul;
++using AscendC::Cast;
++using AscendC::Duplicate;
++using AscendC::SetFlag;
++using AscendC::WaitFlag;
++using AscendC::HardEvent;
++using AscendC::GetBlockIdx;
++using AscendC::PipeBarrier;
++
++static constexpr int32_t kDtypeF32 = 0;
++static constexpr int32_t kDtypeF16 = 1;
++static constexpr int32_t kDtypeBF16 = 2;
++static constexpr int32_t kReduceTmpBytes = 8 * 1024;
++static constexpr int32_t kTileF32 = 1024;
++static constexpr int32_t kTileLow = 2048;
++static constexpr int32_t kMaxDim = 32768;
++static constexpr int32_t kMaxTiles = (kMaxDim + kTileF32 - 1) / kTileF32;
++// FP32 lanes per 32B block.
++static constexpr int32_t kAlignFloats = 8;
++
++static inline int32_t NormalizeDtype(int32_t raw)
++{
++    if (raw == 27) {
++        return kDtypeBF16;
++    }
++    return raw;
++}
++
++template <typename T>
++static constexpr int32_t TileElems()
++{
++    return (sizeof(T) == 4) ? kTileF32 : kTileLow;
++}
++
++static inline void SyncMTE2ToV()
++{
++    SetFlag<HardEvent::MTE2_V>(0);
++    WaitFlag<HardEvent::MTE2_V>(0);
++}
++
++static inline void SyncVToMTE2()
++{
++    SetFlag<HardEvent::V_MTE2>(0);
++    WaitFlag<HardEvent::V_MTE2>(0);
++}
++
++static inline void SyncVToMTE3()
++{
++    SetFlag<HardEvent::V_MTE3>(0);
++    WaitFlag<HardEvent::V_MTE3>(0);
++}
++
++static inline void SyncMTE3ToV()
++{
++    SetFlag<HardEvent::MTE3_V>(0);
++    WaitFlag<HardEvent::MTE3_V>(0);
++}
++
++static inline void SyncVToS()
++{
++    SetFlag<HardEvent::V_S>(0);
++    WaitFlag<HardEvent::V_S>(0);
++}
++
++static inline void SyncSToV()
++{
++    SetFlag<HardEvent::S_V>(0);
++    WaitFlag<HardEvent::S_V>(0);
++}
++
++template <typename T>
++__aicore__ inline void LoadPad(
++    LocalTensor<T> dst,
++    GlobalTensor<T> srcGm,
++    int64_t gmOffset,
++    int32_t validCount)
++{
++    const uint32_t byteLen =
++        static_cast<uint32_t>(validCount) * static_cast<uint32_t>(sizeof(T));
++    DataCopyExtParams cp(1, byteLen, 0, 0, 0);
++    T padVal{};
++    const uint32_t rem = byteLen & 31u;
++    const uint16_t rightPadBytes = static_cast<uint16_t>((rem == 0u) ? 0u : (32u - rem));
++    DataCopyPadExtParams<T> pad(true, 0, rightPadBytes, padVal);
++    AscendC::DataCopyPad(dst, srcGm[static_cast<uint32_t>(gmOffset)], cp, pad);
++}
++
++template <typename T>
++__aicore__ inline void StorePad(
++    GlobalTensor<T> dstGm,
++    LocalTensor<T> src,
++    int64_t gmOffset,
++    int32_t validCount)
++{
++    const uint32_t byteLen =
++        static_cast<uint32_t>(validCount) * static_cast<uint32_t>(sizeof(T));
++    DataCopyExtParams cp(1, byteLen, 0, 0, 0);
++    AscendC::DataCopyPad(dstGm[static_cast<uint32_t>(gmOffset)], src, cp);
++}
++
++template <typename T>
++__aicore__ inline void ToFloat(
++    LocalTensor<float> dst,
++    LocalTensor<T> src,
++    int32_t n)
++{
++    if constexpr (sizeof(T) == 4) {
++        Adds(dst, src, 0.0f, n);
++    } else {
++        Cast(dst, src, AscendC::RoundMode::CAST_NONE, n);
++    }
++}
++
++template <typename T>
++__aicore__ inline void FromFloat(
++    LocalTensor<T> dst,
++    LocalTensor<float> src,
++    int32_t n)
++{
++    if constexpr (sizeof(T) == 4) {
++        Adds(dst, src, 0.0f, n);
++    } else {
++        Cast(dst, src, AscendC::RoundMode::CAST_ROUND, n);
++    }
++}
++
++template <typename T>
++__aicore__ inline void FormU(
++    LocalTensor<float> u32,
++    LocalTensor<float> scratchF,
++    LocalTensor<T> xLocal,
++    LocalTensor<T> resLocal,
++    int32_t n)
++{
++    if constexpr (sizeof(T) == 4) {
++        Add(u32, xLocal, resLocal, n);
++    } else {
++        ToFloat(u32, xLocal, n);
++        ToFloat(scratchF, resLocal, n);
++        Add(u32, u32, scratchF, n);
++    }
++}
++
++// MASK_STRATEGY: zero 32B pad lanes of resident u past valid D so ReduceSum
++// and the fused epilogue cannot pick up stale pad garbage.
++__aicore__ inline void SoftwareMaskTail(LocalTensor<float> u32, int32_t D)
++{
++    const int32_t slots = ((D + kAlignFloats - 1) / kAlignFloats) * kAlignFloats;
++    if (slots > D) {
++        LocalTensor<float> tail = u32[D];
++        Duplicate(tail, 0.0f, slots - D);
++    }
++}
++
++// FUSION_STAGES: (1) form resident u once (2) sum(u*u)+invRms
++// (3) fused scale*gamma+bias store — no intermediate norm row.
++template <typename T>
++__aicore__ void ProcessRowFused(
++    GlobalTensor<T>& xGm,
++    GlobalTensor<T>& resGm,
++    GlobalTensor<T>& gammaGm,
++    GlobalTensor<T>& biasGm,
++    GlobalTensor<T>& outGm,
++    LocalTensor<T>& xLocal,
++    LocalTensor<T>& resLocal,
++    LocalTensor<T>& gammaLocal,
++    LocalTensor<T>& biasLocal,
++    LocalTensor<T>& outLocal,
++    LocalTensor<float>& u32,
++    LocalTensor<float>& scratchF,
++    LocalTensor<float>& tileSum,
++    LocalTensor<float>& acc,
++    LocalTensor<float>& work,
++    LocalTensor<float>& tmpLocal,
++    int64_t row,
++    int32_t D,
++    int32_t tile,
++    float invD,
++    float eps)
++{
++    const int64_t base = row * static_cast<int64_t>(D);
++
++    // Stage 1: one GM read of x and residual into resident u32.
++    for (int32_t off = 0; off < D; off += tile) {
++        int32_t n = D - off;
++        if (n > tile) {
++            n = tile;
++        }
++        LoadPad(xLocal, xGm, base + off, n);
++        LoadPad(resLocal, resGm, base + off, n);
++        SyncMTE2ToV();
++        FormU(u32[off], scratchF, xLocal, resLocal, n);
++        PipeBarrier<PIPE_V>();
++        SyncVToMTE2();
++    }
++    SoftwareMaskTail(u32, D);
++    PipeBarrier<PIPE_V>();
++
++    // Stage 2: sum(u*u) over resident u, then invRms in V + one GetValue.
++    Duplicate(acc, 0.0f, 1);
++    PipeBarrier<PIPE_V>();
++    const int32_t tileCount = (D + tile - 1) / tile;
++    for (int32_t i = 0; i < tileCount; ++i) {
++        const int32_t off = i * tile;
++        int32_t n = D - off;
++        if (n > tile) {
++            n = tile;
++        }
++        LocalTensor<float> uTile = u32[off];
++        Mul(scratchF, uTile, uTile, n);
++        PipeBarrier<PIPE_V>();
++        // Dest is 8B-aligned (offset 0 of a 64B buffer).
++        ReduceSum<float, true>(tileSum, scratchF, tmpLocal, n);
++        PipeBarrier<PIPE_V>();
++        Add(acc, acc, tileSum, 1);
++        PipeBarrier<PIPE_V>();
++    }
++    Muls(acc, acc, invD, 1);
++    Adds(acc, acc, eps, 1);
++    PipeBarrier<PIPE_V>();
++    Rsqrt(work, acc, 1);
++    PipeBarrier<PIPE_V>();
++    SyncVToS();
++    const float invRms = work.GetValue(0);
++    SyncSToV();
++
++    // Stage 3: fused epilogue on resident u. out = u*invRms*gamma+bias.
++    for (int32_t off = 0; off < D; off += tile) {
++        int32_t n = D - off;
++        if (n > tile) {
++            n = tile;
++        }
++        LocalTensor<float> uTile = u32[off];
++        Muls(uTile, uTile, invRms, n);
++        PipeBarrier<PIPE_V>();
++
++        LoadPad(gammaLocal, gammaGm, off, n);
++        LoadPad(biasLocal, biasGm, off, n);
++        SyncMTE2ToV();
++        ToFloat(scratchF, gammaLocal, n);
++        PipeBarrier<PIPE_V>();
++        Mul(uTile, uTile, scratchF, n);
++        PipeBarrier<PIPE_V>();
++        ToFloat(scratchF, biasLocal, n);
++        PipeBarrier<PIPE_V>();
++        Add(uTile, uTile, scratchF, n);
++        PipeBarrier<PIPE_V>();
++        SyncVToMTE2();
++
++        FromFloat(outLocal, uTile, n);
++        PipeBarrier<PIPE_V>();
++        SyncVToMTE3();
++        StorePad(outGm, outLocal, base + off, n);
++        SyncMTE3ToV();
++    }
++}
++
++template <typename T>
++__aicore__ void EpiXKernelImpl(
++    GM_ADDR x, GM_ADDR residual, GM_ADDR gamma, GM_ADDR bias, GM_ADDR output,
++    int64_t rows, int64_t dim, uint32_t blockCount, float epsilon)
++{
++    GlobalTensor<T> xGm, resGm, gammaGm, biasGm, outGm;
++    xGm.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(x));
++    resGm.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(residual));
++    gammaGm.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(gamma));
++    biasGm.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(bias));
++    outGm.SetGlobalBuffer(reinterpret_cast<__gm__ T*>(output));
++
++    const int32_t D = static_cast<int32_t>(dim);
++    const float invD = 1.0f / static_cast<float>(D);
++    const int32_t tile = TileElems<T>();
++    const int32_t tBytes = static_cast<int32_t>(sizeof(T));
++    const int32_t nativeTile = (tile * tBytes + 31) / 32 * 32;
++    const int32_t floatTile = (tile * 4 + 31) / 32 * 32;
++    const int32_t uBytes = (D * 4 + 31) / 32 * 32;
++
++    uint32_t cores = blockCount;
++    if (cores == 0) {
++        cores = 1;
++    }
++    const uint64_t coreId = static_cast<uint64_t>(GetBlockIdx());
++    const int64_t per = (rows + static_cast<int64_t>(cores) - 1) / static_cast<int64_t>(cores);
++    const int64_t row0 = static_cast<int64_t>(coreId) * per;
++    int64_t row1 = row0 + per;
++    if (row1 > rows) {
++        row1 = rows;
++    }
++    if (row0 >= row1) {
++        return;
++    }
++
++    TPipe pipe;
++    TBuf bX, bRes, bGamma, bBias, bOut, bU, bS, bTile, bAcc, bWork, bTmp;
++    pipe.InitBuffer(bX, static_cast<uint32_t>(nativeTile));
++    pipe.InitBuffer(bRes, static_cast<uint32_t>(nativeTile));
++    pipe.InitBuffer(bGamma, static_cast<uint32_t>(nativeTile));
++    pipe.InitBuffer(bBias, static_cast<uint32_t>(nativeTile));
++    pipe.InitBuffer(bOut, static_cast<uint32_t>(nativeTile));
++    pipe.InitBuffer(bU, static_cast<uint32_t>(uBytes));
++    pipe.InitBuffer(bS, static_cast<uint32_t>(floatTile));
++    pipe.InitBuffer(bTile, 64);
++    pipe.InitBuffer(bAcc, 64);
++    pipe.InitBuffer(bWork, 64);
++    pipe.InitBuffer(bTmp, static_cast<uint32_t>(kReduceTmpBytes));
++
++    LocalTensor<T> xLocal = bX.Get<T>();
++    LocalTensor<T> resLocal = bRes.Get<T>();
++    LocalTensor<T> gammaLocal = bGamma.Get<T>();
++    LocalTensor<T> biasLocal = bBias.Get<T>();
++    LocalTensor<T> outLocal = bOut.Get<T>();
++    LocalTensor<float> u32 = bU.Get<float>();
++    LocalTensor<float> scratchF = bS.Get<float>();
++    LocalTensor<float> tileSum = bTile.Get<float>();
++    LocalTensor<float> acc = bAcc.Get<float>();
++    LocalTensor<float> work = bWork.Get<float>();
++    LocalTensor<float> tmpLocal = bTmp.Get<float>();
++
++    (void)kMaxTiles;
++    for (int64_t r = row0; r < row1; ++r) {
++        ProcessRowFused<T>(
++            xGm, resGm, gammaGm, biasGm, outGm,
++            xLocal, resLocal, gammaLocal, biasLocal, outLocal,
++            u32, scratchF, tileSum, acc, work, tmpLocal,
++            r, D, tile, invD, epsilon);
++    }
++}
++
++__global__ __vector__ void epi_x_fp32(
++    GM_ADDR x, GM_ADDR residual, GM_ADDR gamma, GM_ADDR bias, GM_ADDR output,
++    int64_t rows, int64_t dim, uint32_t blockCount, float epsilon)
++{
++    EpiXKernelImpl<float>(x, residual, gamma, bias, output, rows, dim, blockCount, epsilon);
++}
++
++__global__ __vector__ void epi_x_fp16(
++    GM_ADDR x, GM_ADDR residual, GM_ADDR gamma, GM_ADDR bias, GM_ADDR output,
++    int64_t rows, int64_t dim, uint32_t blockCount, float epsilon)
++{
++    EpiXKernelImpl<half>(x, residual, gamma, bias, output, rows, dim, blockCount, epsilon);
++}
++
++__global__ __vector__ void epi_x_bf16(
++    GM_ADDR x, GM_ADDR residual, GM_ADDR gamma, GM_ADDR bias, GM_ADDR output,
++    int64_t rows, int64_t dim, uint32_t blockCount, float epsilon)
++{
++    EpiXKernelImpl<bfloat16_t>(x, residual, gamma, bias, output, rows, dim, blockCount, epsilon);
++}
++
++static inline int64_t FlattenRows(const TensorGroupInfo& g)
++{
++    if (g.tensors == nullptr) {
++        return 0;
++    }
++    const TensorInfo& t = g.tensors[0];
++    if (t.shape == nullptr || t.numDims < 1) {
++        return 0;
++    }
++    int64_t rows = 1;
++    for (int64_t i = 0; i < t.numDims - 1; ++i) {
++        if (t.shape[i] <= 0) {
++            return 0;
++        }
++        rows *= t.shape[i];
++    }
++    return rows;
++}
++
++static inline int64_t LastDim(const TensorGroupInfo& g)
++{
++    if (g.tensors == nullptr) {
++        return 0;
++    }
++    const TensorInfo& t = g.tensors[0];
++    if (t.shape == nullptr || t.numDims < 1) {
++        return 0;
++    }
++    return t.shape[t.numDims - 1];
++}
++
++static inline int32_t GroupDtype(const TensorGroupInfo& g)
++{
++    if (g.tensors == nullptr) {
++        return kDtypeF32;
++    }
++    return NormalizeDtype(g.tensors[0].dtype);
++}
++
++extern "C" void run_kernel(GM_ADDR x, const TensorGroupInfo& info_x, GM_ADDR residual, const TensorGroupInfo& info_residual, GM_ADDR gamma, const TensorGroupInfo& info_gamma, GM_ADDR bias, const TensorGroupInfo& info_bias, GM_ADDR output, const TensorGroupInfo& info_output, int64_t availableCoreNum, aclrtStream stream, float epsilon)
++{
++    if (x == nullptr || residual == nullptr || gamma == nullptr || bias == nullptr ||
++        output == nullptr || info_x.tensors == nullptr || info_residual.tensors == nullptr ||
++        info_gamma.tensors == nullptr || info_bias.tensors == nullptr ||
++        info_output.tensors == nullptr) {
++        return;
++    }
++    const int64_t rows = FlattenRows(info_x);
++    const int64_t dim = LastDim(info_x);
++    if (rows <= 0 || dim <= 0 || dim > kMaxDim) {
++        return;
++    }
++    int64_t coreNum = availableCoreNum > 0 ? availableCoreNum : 1;
++    if (coreNum > rows) {
++        coreNum = rows;
++    }
++    if (coreNum < 1) {
++        coreNum = 1;
++    }
++    const uint32_t blockCount = static_cast<uint32_t>(coreNum);
++    const int32_t dtype = GroupDtype(info_x);
++    if (dtype == kDtypeF16) {
++        epi_x_fp16<<<blockCount, nullptr, stream>>>(
++            x, residual, gamma, bias, output, rows, dim, blockCount, epsilon);
++    } else if (dtype == kDtypeBF16) {
++        epi_x_bf16<<<blockCount, nullptr, stream>>>(
++            x, residual, gamma, bias, output, rows, dim, blockCount, epsilon);
++    } else {
++        epi_x_fp32<<<blockCount, nullptr, stream>>>(
++            x, residual, gamma, bias, output, rows, dim, blockCount, epsilon);
++    }
++}
+diff --git a/phase4/workspaces/EPI-X/submission_shim.asc b/phase4/workspaces/EPI-X/submission_shim.asc
+new file mode 100644
+index 0000000..3c3afb7
+--- /dev/null
++++ b/phase4/workspaces/EPI-X/submission_shim.asc
+@@ -0,0 +1,2 @@
++#include "local_types.h"
++#include "V001/kernel.asc"

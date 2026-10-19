@@ -1,0 +1,486 @@
+#include "kernel_operator.h"
+#include "acl/acl.h"
+
+#include <cstddef>
+#include <cstdint>
+
+#ifndef TENSOR_GROUP_INFO_DEFINED
+#define TENSOR_GROUP_INFO_DEFINED
+struct TensorInfo {
+    const int64_t *shape;
+    int64_t numDims;
+    int32_t dtype;
+};
+
+struct TensorGroupInfo {
+    const TensorInfo *tensors;
+    int64_t numTensors;
+};
+#endif
+
+namespace retained_y_i001 {
+
+constexpr uint32_t kTileElements = 2048;
+constexpr uint32_t kDmaAlignment = 32;
+
+struct RetainedYTiling {
+    uint64_t outer;
+    uint64_t dim;
+    uint64_t rowGroup;
+    uint64_t groupsPerBlock;
+    uint32_t blockNum;
+    uint32_t tileElements;
+    float invDim;
+    float epsilon;
+};
+
+template <typename T>
+__aicore__ inline AscendC::DataCopyPadExtParams<T> MakeInputPad(uint32_t validElements)
+{
+    AscendC::DataCopyPadExtParams<T> params;
+    params.isPad = true;
+    params.leftPadding = 0;
+    params.rightPadding = kTileElements - validElements;
+    params.paddingValue = static_cast<T>(0);
+    return params;
+}
+
+__aicore__ inline AscendC::DataCopyExtParams MakeCopyParams(uint32_t validBytes)
+{
+    AscendC::DataCopyExtParams params;
+    params.blockCount = 1;
+    params.blockLen = validBytes;
+    params.srcStride = 0;
+    params.dstStride = 0;
+    params.rsv = 0;
+    return params;
+}
+
+__aicore__ inline uint64_t BlockRowBegin(const __gm__ RetainedYTiling *tiling)
+{
+    uint64_t block = static_cast<uint64_t>(AscendC::GetBlockIdx());
+    return block * tiling->groupsPerBlock * tiling->rowGroup;
+}
+
+__aicore__ inline uint64_t BlockRowEnd(const __gm__ RetainedYTiling *tiling)
+{
+    uint64_t end = BlockRowBegin(tiling) + tiling->groupsPerBlock * tiling->rowGroup;
+    return (end < tiling->outer) ? end : tiling->outer;
+}
+
+template <typename T>
+struct InputToFloat {
+    __aicore__ inline static void Run(const AscendC::LocalTensor<float> &dst,
+                                      const AscendC::LocalTensor<T> &src,
+                                      uint32_t count)
+    {
+        AscendC::Cast<float, T>(dst, src, AscendC::RoundMode::CAST_NONE, count);
+    }
+};
+
+template <>
+struct InputToFloat<float> {
+    __aicore__ inline static void Run(const AscendC::LocalTensor<float> &dst,
+                                      const AscendC::LocalTensor<float> &src,
+                                      uint32_t count)
+    {
+        AscendC::Adds<float>(dst, src, 0.0f, count);
+    }
+};
+
+template <typename T>
+struct FloatToOutput {
+    __aicore__ inline static void Run(const AscendC::LocalTensor<T> &dst,
+                                      const AscendC::LocalTensor<float> &src,
+                                      uint32_t count)
+    {
+        AscendC::Cast<T, float>(dst, src, AscendC::RoundMode::CAST_RINT, count);
+    }
+};
+
+template <>
+struct FloatToOutput<float> {
+    __aicore__ inline static void Run(const AscendC::LocalTensor<float> &dst,
+                                      const AscendC::LocalTensor<float> &src,
+                                      uint32_t count)
+    {
+        AscendC::Adds<float>(dst, src, 0.0f, count);
+    }
+};
+
+template <typename T>
+class RetainYPhase1 {
+public:
+    __aicore__ inline RetainYPhase1(AscendC::TPipe *pipe) : pipe_(pipe) {}
+
+    __aicore__ inline void Init(GM_ADDR x, GM_ADDR residual, GM_ADDR retainedY,
+                                GM_ADDR rowSums, const __gm__ RetainedYTiling *tiling)
+    {
+        tiling_ = tiling;
+        rowBegin_ = BlockRowBegin(tiling);
+        rowEnd_ = BlockRowEnd(tiling);
+        xGm_.SetGlobalBuffer(reinterpret_cast<__gm__ T *>(x), tiling->outer * tiling->dim);
+        residualGm_.SetGlobalBuffer(reinterpret_cast<__gm__ T *>(residual), tiling->outer * tiling->dim);
+        retainedYGm_.SetGlobalBuffer(reinterpret_cast<__gm__ float *>(retainedY), tiling->outer * tiling->dim);
+        rowSumsGm_.SetGlobalBuffer(reinterpret_cast<__gm__ float *>(rowSums), tiling->outer);
+
+        pipe_->InitBuffer(xQueue_, 2, kTileElements * sizeof(T));
+        pipe_->InitBuffer(residualQueue_, 2, kTileElements * sizeof(T));
+        pipe_->InitBuffer(yQueue_, 2, kTileElements * sizeof(float));
+        pipe_->InitBuffer(xFloatBuf_, kTileElements * sizeof(float));
+        pipe_->InitBuffer(residualFloatBuf_, kTileElements * sizeof(float));
+        pipe_->InitBuffer(squareBuf_, kTileElements * sizeof(float));
+        pipe_->InitBuffer(reduceBuf_, kTileElements * sizeof(float));
+        pipe_->InitBuffer(sumBuf_, kDmaAlignment);
+        eventVToS_ = static_cast<int32_t>(pipe_->AllocEventID<AscendC::HardEvent::V_S>());
+    }
+
+    __aicore__ inline void Process()
+    {
+        for (uint64_t row = rowBegin_; row < rowEnd_; ++row) {
+            ProcessRow(row);
+        }
+    }
+
+private:
+    __aicore__ inline void ProcessRow(uint64_t row)
+    {
+        uint64_t rowBase = row * tiling_->dim;
+        uint64_t tileCount = (tiling_->dim + tiling_->tileElements - 1) / tiling_->tileElements;
+        float sumSquares = 0.0f;
+
+        for (uint64_t tile = 0; tile < tileCount; ++tile) {
+            uint64_t offset = tile * tiling_->tileElements;
+            uint32_t count = static_cast<uint32_t>(
+                (offset + tiling_->tileElements <= tiling_->dim) ?
+                    tiling_->tileElements : (tiling_->dim - offset));
+
+            AscendC::LocalTensor<T> xLocal = xQueue_.AllocTensor<T>();
+            AscendC::LocalTensor<T> residualLocal = residualQueue_.AllocTensor<T>();
+            AscendC::DataCopyExtParams copyParams = MakeCopyParams(count * sizeof(T));
+            auto padParams = MakeInputPad<T>(count);
+            AscendC::DataCopyPad(xLocal, xGm_[rowBase + offset], copyParams, padParams);
+            AscendC::DataCopyPad(residualLocal, residualGm_[rowBase + offset], copyParams, padParams);
+            xQueue_.EnQue(xLocal);
+            residualQueue_.EnQue(residualLocal);
+
+            xLocal = xQueue_.DeQue<T>();
+            residualLocal = residualQueue_.DeQue<T>();
+            AscendC::LocalTensor<float> xFloat = xFloatBuf_.Get<float>();
+            AscendC::LocalTensor<float> residualFloat = residualFloatBuf_.Get<float>();
+            AscendC::LocalTensor<float> yLocal = yQueue_.AllocTensor<float>();
+            AscendC::LocalTensor<float> squareLocal = squareBuf_.Get<float>();
+            AscendC::LocalTensor<float> reduceTmp = reduceBuf_.Get<float>();
+            AscendC::LocalTensor<float> tileSum = sumBuf_.Get<float>();
+
+            InputToFloat<T>::Run(xFloat, xLocal, count);
+            InputToFloat<T>::Run(residualFloat, residualLocal, count);
+            AscendC::Add<float>(yLocal, xFloat, residualFloat, count);
+            AscendC::Mul<float>(squareLocal, yLocal, yLocal, count);
+            AscendC::ReduceSum<float, true>(tileSum, squareLocal, reduceTmp,
+                                             static_cast<int32_t>(count));
+            AscendC::SetFlag<AscendC::HardEvent::V_S>(eventVToS_);
+            AscendC::WaitFlag<AscendC::HardEvent::V_S>(eventVToS_);
+            sumSquares += tileSum.GetValue(0);
+
+            AscendC::DataCopyExtParams outputParams = MakeCopyParams(count * sizeof(float));
+            yQueue_.EnQue(yLocal);
+            AscendC::LocalTensor<float> retainedYLocal = yQueue_.DeQue<float>();
+            AscendC::DataCopyPad(retainedYGm_[rowBase + offset], retainedYLocal, outputParams);
+            yQueue_.FreeTensor(retainedYLocal);
+            xQueue_.FreeTensor(xLocal);
+            residualQueue_.FreeTensor(residualLocal);
+        }
+
+        AscendC::LocalTensor<float> rowSumLocal = sumBuf_.Get<float>();
+        AscendC::Duplicate<float>(rowSumLocal, sumSquares, 1);
+        AscendC::DataCopyExtParams rowParams = MakeCopyParams(sizeof(float));
+        AscendC::DataCopyPad(rowSumsGm_[row], rowSumLocal, rowParams);
+    }
+
+private:
+    AscendC::TPipe *pipe_;
+    const __gm__ RetainedYTiling *tiling_;
+    AscendC::GlobalTensor<T> xGm_;
+    AscendC::GlobalTensor<T> residualGm_;
+    AscendC::GlobalTensor<float> retainedYGm_;
+    AscendC::GlobalTensor<float> rowSumsGm_;
+    AscendC::TQue<AscendC::TPosition::VECIN, 1> xQueue_;
+    AscendC::TQue<AscendC::TPosition::VECIN, 1> residualQueue_;
+    AscendC::TQue<AscendC::TPosition::VECOUT, 1> yQueue_;
+    AscendC::TBuf<AscendC::TPosition::VECCALC> xFloatBuf_;
+    AscendC::TBuf<AscendC::TPosition::VECCALC> residualFloatBuf_;
+    AscendC::TBuf<AscendC::TPosition::VECCALC> squareBuf_;
+    AscendC::TBuf<AscendC::TPosition::VECCALC> reduceBuf_;
+    AscendC::TBuf<AscendC::TPosition::VECCALC> sumBuf_;
+    uint64_t rowBegin_ = 0;
+    uint64_t rowEnd_ = 0;
+    int32_t eventVToS_ = 0;
+};
+
+template <typename T>
+class RetainYPhase2 {
+public:
+    __aicore__ inline RetainYPhase2(AscendC::TPipe *pipe) : pipe_(pipe) {}
+
+    __aicore__ inline void Init(GM_ADDR retainedY, GM_ADDR rowSums,
+                                GM_ADDR gamma, GM_ADDR bias, GM_ADDR output,
+                                const __gm__ RetainedYTiling *tiling)
+    {
+        tiling_ = tiling;
+        rowBegin_ = BlockRowBegin(tiling);
+        rowEnd_ = BlockRowEnd(tiling);
+        retainedYGm_.SetGlobalBuffer(reinterpret_cast<__gm__ float *>(retainedY), tiling->outer * tiling->dim);
+        rowSumsGm_.SetGlobalBuffer(reinterpret_cast<__gm__ float *>(rowSums), tiling->outer);
+        gammaGm_.SetGlobalBuffer(reinterpret_cast<__gm__ T *>(gamma), tiling->dim);
+        biasGm_.SetGlobalBuffer(reinterpret_cast<__gm__ T *>(bias), tiling->dim);
+        outputGm_.SetGlobalBuffer(reinterpret_cast<__gm__ T *>(output), tiling->outer * tiling->dim);
+
+        pipe_->InitBuffer(yQueue_, 2, kTileElements * sizeof(float));
+        pipe_->InitBuffer(gammaQueue_, 2, kTileElements * sizeof(T));
+        pipe_->InitBuffer(biasQueue_, 2, kTileElements * sizeof(T));
+        pipe_->InitBuffer(outputQueue_, 2, kTileElements * sizeof(T));
+        pipe_->InitBuffer(gammaFloatBuf_, kTileElements * sizeof(float));
+        pipe_->InitBuffer(biasFloatBuf_, kTileElements * sizeof(float));
+        pipe_->InitBuffer(normBuf_, kTileElements * sizeof(float));
+        pipe_->InitBuffer(statBuf_, kDmaAlignment);
+        pipe_->InitBuffer(reduceBuf_, kTileElements * sizeof(float));
+        pipe_->InitBuffer(statQueue_, 1, kDmaAlignment);
+        eventVToS_ = static_cast<int32_t>(pipe_->AllocEventID<AscendC::HardEvent::V_S>());
+    }
+
+    __aicore__ inline void Process()
+    {
+        for (uint64_t row = rowBegin_; row < rowEnd_; ++row) {
+            ProcessRow(row);
+        }
+    }
+
+private:
+    __aicore__ inline float LoadRms(uint64_t row)
+    {
+        AscendC::LocalTensor<float> stat = statQueue_.AllocTensor<float>();
+        AscendC::DataCopyExtParams copyParams = MakeCopyParams(sizeof(float));
+        AscendC::DataCopyPad(stat, rowSumsGm_[row], copyParams, MakeInputPad<float>(1));
+        statQueue_.EnQue(stat);
+        stat = statQueue_.DeQue<float>();
+
+        AscendC::LocalTensor<float> scalar = statBuf_.Get<float>();
+        float invDim = tiling_->invDim;
+        float epsilon = tiling_->epsilon;
+        AscendC::Muls<float>(scalar, stat, invDim, 1);
+        AscendC::Adds<float>(scalar, scalar, epsilon, 1);
+        AscendC::Sqrt<float>(scalar, scalar, 1);
+        AscendC::SetFlag<AscendC::HardEvent::V_S>(eventVToS_);
+        AscendC::WaitFlag<AscendC::HardEvent::V_S>(eventVToS_);
+        float rms = scalar.GetValue(0);
+        statQueue_.FreeTensor(stat);
+        return rms;
+    }
+
+    __aicore__ inline void ProcessRow(uint64_t row)
+    {
+        uint64_t rowBase = row * tiling_->dim;
+        float rms = LoadRms(row);
+        uint64_t tileCount = (tiling_->dim + tiling_->tileElements - 1) / tiling_->tileElements;
+
+        for (uint64_t tile = 0; tile < tileCount; ++tile) {
+            uint64_t offset = tile * tiling_->tileElements;
+            uint32_t count = static_cast<uint32_t>(
+                (offset + tiling_->tileElements <= tiling_->dim) ?
+                    tiling_->tileElements : (tiling_->dim - offset));
+
+            AscendC::LocalTensor<float> yLocal = yQueue_.AllocTensor<float>();
+            AscendC::LocalTensor<T> gammaLocal = gammaQueue_.AllocTensor<T>();
+            AscendC::LocalTensor<T> biasLocal = biasQueue_.AllocTensor<T>();
+            AscendC::DataCopyExtParams yParams = MakeCopyParams(count * sizeof(float));
+            AscendC::DataCopyExtParams parameterParams = MakeCopyParams(count * sizeof(T));
+            auto padParams = MakeInputPad<T>(count);
+            AscendC::DataCopyPad(yLocal, retainedYGm_[rowBase + offset], yParams,
+                                 MakeInputPad<float>(count));
+            AscendC::DataCopyPad(gammaLocal, gammaGm_[offset], parameterParams, padParams);
+            AscendC::DataCopyPad(biasLocal, biasGm_[offset], parameterParams, padParams);
+            yQueue_.EnQue(yLocal);
+            gammaQueue_.EnQue(gammaLocal);
+            biasQueue_.EnQue(biasLocal);
+
+            yLocal = yQueue_.DeQue<float>();
+            gammaLocal = gammaQueue_.DeQue<T>();
+            biasLocal = biasQueue_.DeQue<T>();
+            AscendC::LocalTensor<float> gammaFloat = gammaFloatBuf_.Get<float>();
+            AscendC::LocalTensor<float> biasFloat = biasFloatBuf_.Get<float>();
+            AscendC::LocalTensor<float> normalized = normBuf_.Get<float>();
+            AscendC::LocalTensor<T> outputLocal = outputQueue_.AllocTensor<T>();
+
+            AscendC::LocalTensor<float> divisor = reduceBuf_.Get<float>();
+            AscendC::Duplicate<float>(divisor, rms, count);
+            AscendC::Div<float>(yLocal, yLocal, divisor, count);
+            InputToFloat<T>::Run(gammaFloat, gammaLocal, count);
+            InputToFloat<T>::Run(biasFloat, biasLocal, count);
+            AscendC::Mul<float>(normalized, yLocal, gammaFloat, count);
+            AscendC::Add<float>(normalized, normalized, biasFloat, count);
+            FloatToOutput<T>::Run(outputLocal, normalized, count);
+            outputQueue_.EnQue(outputLocal);
+            outputLocal = outputQueue_.DeQue<T>();
+            AscendC::DataCopyPad(outputGm_[rowBase + offset], outputLocal,
+                                 parameterParams);
+
+            outputQueue_.FreeTensor(outputLocal);
+            yQueue_.FreeTensor(yLocal);
+            gammaQueue_.FreeTensor(gammaLocal);
+            biasQueue_.FreeTensor(biasLocal);
+        }
+    }
+
+private:
+    AscendC::TPipe *pipe_;
+    const __gm__ RetainedYTiling *tiling_;
+    AscendC::GlobalTensor<float> retainedYGm_;
+    AscendC::GlobalTensor<float> rowSumsGm_;
+    AscendC::GlobalTensor<T> gammaGm_;
+    AscendC::GlobalTensor<T> biasGm_;
+    AscendC::GlobalTensor<T> outputGm_;
+    AscendC::TQue<AscendC::TPosition::VECIN, 1> yQueue_;
+    AscendC::TQue<AscendC::TPosition::VECIN, 1> gammaQueue_;
+    AscendC::TQue<AscendC::TPosition::VECIN, 1> biasQueue_;
+    AscendC::TQue<AscendC::TPosition::VECIN, 1> statQueue_;
+    AscendC::TQue<AscendC::TPosition::VECOUT, 1> outputQueue_;
+    AscendC::TBuf<AscendC::TPosition::VECCALC> gammaFloatBuf_;
+    AscendC::TBuf<AscendC::TPosition::VECCALC> biasFloatBuf_;
+    AscendC::TBuf<AscendC::TPosition::VECCALC> normBuf_;
+    AscendC::TBuf<AscendC::TPosition::VECCALC> statBuf_;
+    AscendC::TBuf<AscendC::TPosition::VECCALC> reduceBuf_;
+    uint64_t rowBegin_ = 0;
+    uint64_t rowEnd_ = 0;
+    int32_t eventVToS_ = 0;
+};
+
+template <typename T>
+__global__ __vector__ void retained_y_phase1(GM_ADDR x, GM_ADDR residual,
+                                             GM_ADDR retainedY, GM_ADDR rowSums,
+                                             const __gm__ RetainedYTiling *tiling)
+{
+    AscendC::TPipe pipe;
+    RetainYPhase1<T> op(&pipe);
+    op.Init(x, residual, retainedY, rowSums, tiling);
+    op.Process();
+}
+
+template <typename T>
+__global__ __vector__ void retained_y_phase2(GM_ADDR retainedY, GM_ADDR rowSums,
+                                             GM_ADDR gamma, GM_ADDR bias, GM_ADDR output,
+                                             const __gm__ RetainedYTiling *tiling)
+{
+    AscendC::TPipe pipe;
+    RetainYPhase2<T> op(&pipe);
+    op.Init(retainedY, rowSums, gamma, bias, output, tiling);
+    op.Process();
+}
+
+inline uint64_t ProductOfOuter(const TensorInfo &info)
+{
+    uint64_t result = 1;
+    for (int64_t i = 0; i + 1 < info.numDims; ++i) {
+        result *= static_cast<uint64_t>(info.shape[i]);
+    }
+    return result;
+}
+
+inline uint64_t Gcd(uint64_t lhs, uint64_t rhs)
+{
+    while (rhs != 0) {
+        uint64_t next = lhs % rhs;
+        lhs = rhs;
+        rhs = next;
+    }
+    return lhs;
+}
+
+inline uint32_t DtypeBytes(int32_t dtype)
+{
+    return (dtype == 0) ? 4U : 2U;
+}
+
+template <typename T>
+void LaunchRetainedY(GM_ADDR x, GM_ADDR residual, GM_ADDR gamma, GM_ADDR bias,
+                     GM_ADDR output, GM_ADDR retainedY, GM_ADDR rowSums,
+                     const RetainedYTiling &hostTiling, aclrtStream stream)
+{
+    RetainedYTiling *deviceTiling = nullptr;
+    aclrtMalloc(reinterpret_cast<void **>(&deviceTiling), sizeof(RetainedYTiling),
+                ACL_MEM_MALLOC_HUGE_FIRST);
+    aclrtMemcpy(deviceTiling, sizeof(RetainedYTiling), &hostTiling,
+                sizeof(RetainedYTiling), ACL_MEMCPY_HOST_TO_DEVICE);
+
+    retained_y_phase1<T><<<hostTiling.blockNum, nullptr, stream>>>(
+        x, residual, retainedY, rowSums, deviceTiling);
+    retained_y_phase2<T><<<hostTiling.blockNum, nullptr, stream>>>(
+        retainedY, rowSums, gamma, bias, output, deviceTiling);
+
+    aclrtSynchronizeStream(stream);
+    aclrtFree(deviceTiling);
+}
+
+}  // namespace retained_y_i001
+
+extern "C" void run_kernel(GM_ADDR x, const TensorGroupInfo &info_x,
+                            GM_ADDR residual, const TensorGroupInfo &info_residual,
+                            GM_ADDR gamma, const TensorGroupInfo &info_gamma,
+                            GM_ADDR bias, const TensorGroupInfo &info_bias,
+                            GM_ADDR output, const TensorGroupInfo &info_output,
+                            int64_t availableCoreNum, aclrtStream stream, float epsilon)
+{
+    (void)info_residual;
+    (void)info_gamma;
+    (void)info_bias;
+    (void)info_output;
+
+    const TensorInfo &xInfo = info_x.tensors[0];
+    uint64_t outer = retained_y_i001::ProductOfOuter(xInfo);
+    uint64_t dim = static_cast<uint64_t>(xInfo.shape[xInfo.numDims - 1]);
+    uint32_t elementBytes = retained_y_i001::DtypeBytes(xInfo.dtype);
+    uint64_t rowBytes = dim * elementBytes;
+    uint64_t rowGroup = retained_y_i001::kDmaAlignment /
+                        retained_y_i001::Gcd(rowBytes, retained_y_i001::kDmaAlignment);
+    uint64_t groupCount = (outer + rowGroup - 1) / rowGroup;
+    uint32_t blockNum = static_cast<uint32_t>(
+        (availableCoreNum > 0 && static_cast<uint64_t>(availableCoreNum) < groupCount) ?
+            availableCoreNum : groupCount);
+    if (blockNum == 0) {
+        return;
+    }
+
+    retained_y_i001::RetainedYTiling tiling;
+    tiling.outer = outer;
+    tiling.dim = dim;
+    tiling.rowGroup = rowGroup;
+    tiling.groupsPerBlock = (groupCount + blockNum - 1) / blockNum;
+    tiling.blockNum = blockNum;
+    tiling.tileElements = retained_y_i001::kTileElements;
+    tiling.invDim = 1.0f / static_cast<float>(dim);
+    tiling.epsilon = epsilon;
+
+    uint64_t totalElements = outer * dim;
+    size_t retainedBytes = static_cast<size_t>(totalElements * sizeof(float));
+    size_t rowSumsBytes = static_cast<size_t>(outer * sizeof(float));
+    uint8_t *workspace = nullptr;
+    if (aclrtMalloc(reinterpret_cast<void **>(&workspace), retainedBytes + rowSumsBytes,
+                    ACL_MEM_MALLOC_HUGE_FIRST) != ACL_SUCCESS) {
+        return;
+    }
+    GM_ADDR retainedY = workspace;
+    GM_ADDR rowSums = workspace + retainedBytes;
+
+    if (xInfo.dtype == 0) {
+        retained_y_i001::LaunchRetainedY<float>(x, residual, gamma, bias, output,
+                                                 retainedY, rowSums, tiling, stream);
+    } else if (xInfo.dtype == 1) {
+        retained_y_i001::LaunchRetainedY<half>(x, residual, gamma, bias, output,
+                                               retainedY, rowSums, tiling, stream);
+    } else if (xInfo.dtype == 2) {
+        retained_y_i001::LaunchRetainedY<bfloat16_t>(x, residual, gamma, bias, output,
+                                                     retainedY, rowSums, tiling, stream);
+    }
+
+    aclrtFree(workspace);
+}

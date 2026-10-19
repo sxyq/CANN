@@ -1,0 +1,61 @@
+--- frozen-seed/R31B-V011-LP-ROW-PIPELINE_kernel.asc	2026-09-27 03:50:14
++++ V001/src/submission.asc	2026-09-27 05:20:20
+@@ -168,12 +168,31 @@
+             }
+             return;
+         }
++        // Whole-group ownership: consecutive rows are grouped so each group's
++        // byte span is a multiple of 32B, and a group is never split across
++        // cores. When rowGroup == 1 this reduces to the prior row-unit split.
+         const uint64_t blockIdx = static_cast<uint64_t>(AscendC::GetBlockIdx());
+-        const uint64_t baseRows = rowCount / blockCount;
+-        const uint64_t extraRows = rowCount % blockCount;
+-        const uint64_t beginRow = blockIdx * baseRows +
+-                                  (blockIdx < extraRows ? blockIdx : extraRows);
+-        const uint64_t localRows = baseRows + (blockIdx < extraRows ? 1 : 0);
++        const uint64_t rowBytes = rowWidth * static_cast<uint64_t>(sizeof(T));
++        uint64_t gcdVal = rowBytes;
++        uint64_t gcdTmp = 32;
++        while (gcdTmp != 0) {
++            const uint64_t gcdNext = gcdVal % gcdTmp;
++            gcdVal = gcdTmp;
++            gcdTmp = gcdNext;
++        }
++        const uint64_t rowGroup = 32 / gcdVal;
++        const uint64_t totalGroups = (rowCount + rowGroup - 1) / rowGroup;
++        const uint64_t baseGroups = totalGroups / blockCount;
++        const uint64_t extraGroups = totalGroups % blockCount;
++        const uint64_t beginGroup = blockIdx * baseGroups +
++                                    (blockIdx < extraGroups ? blockIdx : extraGroups);
++        const uint64_t localGroups = baseGroups + (blockIdx < extraGroups ? 1 : 0);
++        const uint64_t beginRow = beginGroup * rowGroup;
++        const uint64_t groupSpan = localGroups * rowGroup;
++        const uint64_t remainingRows =
++            beginRow < rowCount ? (rowCount - beginRow) : 0;
++        const uint64_t localRows =
++            groupSpan < remainingRows ? groupSpan : remainingRows;
+         if constexpr (AscendC::IsSameType<T, float>::value) {
+             if (rowWidth == static_cast<uint64_t>(kCacheElems) && localRows > 1) {
+                 ProcessFp32FullRowOutputPipelined(beginRow, localRows, invRowWidth, epsilon);
+@@ -558,8 +577,6 @@
+             AscendC::Mul(xFp32, valueLocal, valueLocal, valid);
+             AscendC::PipeBarrier<PIPE_V>();
+             AscendC::ReduceSum(reduceLocal, xFp32, residualFp32, valid);
+-            AscendC::SetFlag<AscendC::HardEvent::V_MTE2>(inputRelease);
+-            needInputRelease = true;
+ 
+             // Param MTE2 overlaps this scalar tail (single-row case).
+             SyncVToS();
+@@ -609,6 +626,12 @@
+                 SyncVToMTE3();
+                 Store(outputGm_, rowOffset, outputLocal, valid);
+             }
++            // BF16 output reuses xBuf_ as the MTE3 source. Wait for the store
++            // to drain before releasing xBuf_ to MTE2, otherwise the next row's
++            // input load can clobber the in-flight store.
++            SyncMTE3ToV();
++            AscendC::SetFlag<AscendC::HardEvent::V_MTE2>(inputRelease);
++            needInputRelease = true;
+         }
+         if (needInputRelease) {
+             AscendC::WaitFlag<AscendC::HardEvent::V_MTE2>(inputRelease);

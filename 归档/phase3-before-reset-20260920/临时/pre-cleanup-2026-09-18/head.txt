@@ -1,0 +1,33 @@
+dfa0af05ac63c0c1dc7d9c50cf16a58ab7aa5dd6
+commit dfa0af05ac63c0c1dc7d9c50cf16a58ab7aa5dd6
+Author:     孙一洋 <sunyiyang@sunyiyangdeMacBook-Air.local>
+AuthorDate: Thu Sep 17 17:20:05 2026 +0800
+Commit:     孙一洋 <sunyiyang@sunyiyangdeMacBook-Air.local>
+CommitDate: Thu Sep 17 17:20:05 2026 +0800
+
+    Validate V005 on server 3 against online-scored external versions
+    
+    Server 3 (device 5, shared env):
+    - V005 rebuilt from kernel.asc (SHA afd5b8ee..., unchanged): CMAKE=0 BUILD=0,
+      16/16 FP16 probes RUN_STATUS=0.
+    - R029-V003 sandbox file (aebe961d..., online 28.68) and R029-V004
+      (02bd5dc8..., online 29.01) synced, compiled and probed: both 16/16.
+    - msprof AI Vector Kernel timing (us), D=64/1024/4096/4096x8/8192/32768 r1:
+      V005 6.46/7.14/8.22/10.88/10.86/30.28; V004 6.68/6.84/8.82/11.64/10.32/22.00.
+      Anchor check vs 09-15 (10.580 -> 10.456/10.884) confirms the pipeline.
+    - Finding: V005 matches V004 on small/mid D (geomean ratio 0.984); the only
+      real gap is D=32768 single-row, median 31.200 vs 23.664 (+31.8%), exactly
+      the wide cached-y activation domain V005 lacks. Hypothesis-labeled online
+      estimate for V005: ~27.6-29.0.
+    
+    Docs:
+    - V005/结果.md, external R029-V003/V004 结果.md: server validation records.
+    - 文档/外部对话-探索流程与要求-一比一复述.md: verbatim process/requirements
+      from the external conversation (42 mermaid + 6 gitGraph).
+    - 文档/探索流程要求-对话与仓库条款对照.md: coverage matrix vs repo rules
+      (17 recorded-identical, 17 conversation-only, 2 real conflicts).
+    - 调研/结果.md: disk gate corrected to "free space < 20G" per user.
+    
+    Server side cleaned per policy: build/, binaries, PROF_*, input/output removed;
+    95G free remains.
+main

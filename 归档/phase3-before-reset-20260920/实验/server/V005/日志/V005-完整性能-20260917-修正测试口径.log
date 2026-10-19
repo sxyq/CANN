@@ -1,0 +1,1125 @@
+=== V005 COMPLETE PERFORMANCE CORRECTED START ===
+2026-09-17T09:34:10Z
+DEVICE=6
+DISK BEFORE:
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/nvme1n1p1  3.5T  3.2T   94G  98% /home/data4t2
+48K	/home/data4t2/lelinfeng/cann/AGENTS.md
+4.0K	/home/data4t2/lelinfeng/cann/README.md
+8.0K	/home/data4t2/lelinfeng/cann/scripts
+724K	/home/data4t2/lelinfeng/cann/临时
+3.7M	/home/data4t2/lelinfeng/cann/实验
+396K	/home/data4t2/lelinfeng/cann/提交
+72K	/home/data4t2/lelinfeng/cann/文档
+228K	/home/data4t2/lelinfeng/cann/源码
+180K	/home/data4t2/lelinfeng/cann/管理
+64K	/home/data4t2/lelinfeng/cann/缓存
+3.0M	/home/data4t2/lelinfeng/cann/调研
+NPU BEFORE:
++------------------------------------------------------------------------------------------------+
+| npu-smi 25.0.rc1.1               Version: 25.0.rc1.1                                           |
++---------------------------+---------------+----------------------------------------------------+
+| NPU   Name                | Health        | Power(W)    Temp(C)           Hugepages-Usage(page)|
+| Chip                      | Bus-Id        | AICore(%)   Memory-Usage(MB)  HBM-Usage(MB)        |
++===========================+===============+====================================================+
+| 0     910B3               | OK            | 145.2       36                0    / 0             |
+| 0                         | 0000:C1:00.0  | 34          0    / 0          64090/ 65536         |
++===========================+===============+====================================================+
+| 1     910B3               | OK            | 134.1       34                0    / 0             |
+| 0                         | 0000:C2:00.0  | 29          0    / 0          61551/ 65536         |
++===========================+===============+====================================================+
+| 2     910B3               | OK            | 142.1       38                0    / 0             |
+| 0                         | 0000:81:00.0  | 33          0    / 0          61498/ 65536         |
++===========================+===============+====================================================+
+| 3     910B3               | OK            | 138.7       35                0    / 0             |
+| 0                         | 0000:82:00.0  | 31          0    / 0          60260/ 65536         |
++===========================+===============+====================================================+
+| 4     910B3               | OK            | 207.3       54                0    / 0             |
+| 0                         | 0000:01:00.0  | 67          0    / 0          62648/ 65536         |
++===========================+===============+====================================================+
+| 5     910B3               | OK            | 91.6        30                0    / 0             |
+| 0                         | 0000:02:00.0  | 0           0    / 0          60193/ 65536         |
++===========================+===============+====================================================+
+| 6     910B3               | OK            | 92.9        33                0    / 0             |
+| 0                         | 0000:41:00.0  | 0           0    / 0          60187/ 65536         |
++===========================+===============+====================================================+
+| 7     910B3               | OK            | 100.0       33                0    / 0             |
+| 0                         | 0000:42:00.0  | 0           0    / 0          65525/ 65536         |
++===========================+===============+====================================================+
++---------------------------+---------------+----------------------------------------------------+
+| NPU     Chip              | Process id    | Process name             | Process memory(MB)      |
++===========================+===============+====================================================+
+| 0       0                 | 2290236       | python                   | 3880                    |
+| 0       0                 | 3152124       | VLLMWorker_TP            | 56744                   |
++===========================+===============+====================================================+
+| 1       0                 | 2603016       | python                   | 1288                    |
+| 1       0                 | 3154641       | VLLMWorker_TP            | 56744                   |
++===========================+===============+====================================================+
+| 2       0                 | 3157283       | VLLMWorker_TP            | 56745                   |
+| 2       0                 | 1820174       | python                   | 1292                    |
++===========================+===============+====================================================+
+| 3       0                 | 3159860       | VLLMWorker_TP            | 56745                   |
++===========================+===============+====================================================+
+| 4       0                 | 2671045       | python                   | 3904                    |
+| 4       0                 | 2999855       | VLLMEngineCor            | 55281                   |
++===========================+===============+====================================================+
+| 5       0                 | 1317804       | VLLMWorker_TP            | 56678                   |
++===========================+===============+====================================================+
+| 6       0                 | 1320273       | VLLMWorker_TP            | 56679                   |
++===========================+===============+====================================================+
+| 7       0                 | 3458196       | python                   | 62152                   |
++===========================+===============+====================================================+
+SOURCE BEFORE:
+afd5b8eef071e2e849064b1913290b485e0689cf9da40987fb1ffc67dc36bd9c  /home/data4t2/lelinfeng/cann/实验/V005/工程/kernel.asc
+  394 16690 /home/data4t2/lelinfeng/cann/实验/V005/工程/kernel.asc
+EXPECTED_SOURCE_SHA256=afd5b8eef071e2e849064b1913290b485e0689cf9da40987fb1ffc67dc36bd9c
+ACTUAL_SOURCE_SHA256=afd5b8eef071e2e849064b1913290b485e0689cf9da40987fb1ffc67dc36bd9c
+SOURCE_STATUS=PASS
+CMAKE_CONFIG_COMMAND: cmake -S 工程 -B 工程/build -DNPU_ARCH=dav-2201
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/data4t2/lelinfeng/cann/实验/V005/工程/build
+CONFIG_STATUS=0
+BUILD_COMMAND: cmake --build 工程/build --clean-first -j4
+[ 50%] Building ASC object CMakeFiles/add_rms_norm_bias_custom.dir/main.asc.o
+/home/data4t2/lelinfeng/cann/实验/V005/工程/main.asc:161:17: warning: 'cce_global' attribute ignored when parsing type [-Wignored-attributes]
+    run_kernel((GM_ADDR)deviceX, infoX,
+                ^~~~~~~
+/home/data4t2/lelinfeng/cann_game/.toolchains/cann-9.0/cann-9.0.0/aarch64-linux/tikcpp/tikcfw/impl/utils/kernel_utils_macros.h:23:17: note: expanded from macro 'GM_ADDR'
+#define GM_ADDR __gm__ uint8_t*
+                ^~~~~~
+/home/data4t2/lelinfeng/cann_game/.toolchains/cann-9.0/cann-9.0.0/tools/bisheng_compiler/lib/clang/15.0.5/include/__clang_cce_defines.h:61:31: note: expanded from macro '__gm__'
+#define __gm__ __attribute__((cce_global))
+                              ^~~~~~~~~~
+/home/data4t2/lelinfeng/cann/实验/V005/工程/main.asc:162:17: warning: 'cce_global' attribute ignored when parsing type [-Wignored-attributes]
+               (GM_ADDR)deviceResidual, infoResidual,
+                ^~~~~~~
+/home/data4t2/lelinfeng/cann_game/.toolchains/cann-9.0/cann-9.0.0/aarch64-linux/tikcpp/tikcfw/impl/utils/kernel_utils_macros.h:23:17: note: expanded from macro 'GM_ADDR'
+#define GM_ADDR __gm__ uint8_t*
+                ^~~~~~
+/home/data4t2/lelinfeng/cann_game/.toolchains/cann-9.0/cann-9.0.0/tools/bisheng_compiler/lib/clang/15.0.5/include/__clang_cce_defines.h:61:31: note: expanded from macro '__gm__'
+#define __gm__ __attribute__((cce_global))
+                              ^~~~~~~~~~
+/home/data4t2/lelinfeng/cann/实验/V005/工程/main.asc:163:17: warning: 'cce_global' attribute ignored when parsing type [-Wignored-attributes]
+               (GM_ADDR)deviceGamma, infoGamma,
+                ^~~~~~~
+/home/data4t2/lelinfeng/cann_game/.toolchains/cann-9.0/cann-9.0.0/aarch64-linux/tikcpp/tikcfw/impl/utils/kernel_utils_macros.h:23:17: note: expanded from macro 'GM_ADDR'
+#define GM_ADDR __gm__ uint8_t*
+                ^~~~~~
+/home/data4t2/lelinfeng/cann_game/.toolchains/cann-9.0/cann-9.0.0/tools/bisheng_compiler/lib/clang/15.0.5/include/__clang_cce_defines.h:61:31: note: expanded from macro '__gm__'
+#define __gm__ __attribute__((cce_global))
+                              ^~~~~~~~~~
+/home/data4t2/lelinfeng/cann/实验/V005/工程/main.asc:164:17: warning: 'cce_global' attribute ignored when parsing type [-Wignored-attributes]
+               (GM_ADDR)deviceBias, infoBias,
+                ^~~~~~~
+/home/data4t2/lelinfeng/cann_game/.toolchains/cann-9.0/cann-9.0.0/aarch64-linux/tikcpp/tikcfw/impl/utils/kernel_utils_macros.h:23:17: note: expanded from macro 'GM_ADDR'
+#define GM_ADDR __gm__ uint8_t*
+                ^~~~~~
+/home/data4t2/lelinfeng/cann_game/.toolchains/cann-9.0/cann-9.0.0/tools/bisheng_compiler/lib/clang/15.0.5/include/__clang_cce_defines.h:61:31: note: expanded from macro '__gm__'
+#define __gm__ __attribute__((cce_global))
+                              ^~~~~~~~~~
+/home/data4t2/lelinfeng/cann/实验/V005/工程/main.asc:165:17: warning: 'cce_global' attribute ignored when parsing type [-Wignored-attributes]
+               (GM_ADDR)deviceOutput, infoOutput,
+                ^~~~~~~
+/home/data4t2/lelinfeng/cann_game/.toolchains/cann-9.0/cann-9.0.0/aarch64-linux/tikcpp/tikcfw/impl/utils/kernel_utils_macros.h:23:17: note: expanded from macro 'GM_ADDR'
+#define GM_ADDR __gm__ uint8_t*
+                ^~~~~~
+/home/data4t2/lelinfeng/cann_game/.toolchains/cann-9.0/cann-9.0.0/tools/bisheng_compiler/lib/clang/15.0.5/include/__clang_cce_defines.h:61:31: note: expanded from macro '__gm__'
+#define __gm__ __attribute__((cce_global))
+                              ^~~~~~~~~~
+5 warnings generated.
+[100%] Linking ASC executable add_rms_norm_bias_custom
+[100%] Built target add_rms_norm_bias_custom
+BUILD_STATUS=0
+BINARY_STATUS=PASS
+19f5f499f3c979f27b95c9f9baf9693f5e1eee11dd53798a404e953288ea8843  /home/data4t2/lelinfeng/cann/实验/V005/工程/build/add_rms_norm_bias_custom
+390856 /home/data4t2/lelinfeng/cann/实验/V005/工程/build/add_rms_norm_bias_custom
+--- CASE_START id=1 D=64 rows=1 rank=2 dtype=fp16 seed=501 ---
+GEN_OK d=64 rows=1 dtype=fp16 seed=501
+CASE_1_DATA_STATUS=0
+QUANTIZED_GOLDEN_STATUS=0 elements=64
+CASE_1_GOLDEN_STATUS=0
+PROBE width=64 rows=1 rank=2 dtype=1 device=6 bytes=128
+PROBE_STATUS=0 CORES=40
+CASE_1_WARMUP_1_STATUS=0
+PROBE width=64 rows=1 rank=2 dtype=1 device=6 bytes=128
+PROBE_STATUS=0 CORES=40
+CASE_1_WARMUP_2_STATUS=0
+PROBE width=64 rows=1 rank=2 dtype=1 device=6 bytes=128
+PROBE_STATUS=0 CORES=40
+CASE_1_WARMUP_3_STATUS=0
+CASE_1_WARMUP_STATUS=0
+EXACT_VERIFY dtype=fp16 elements=64 max_abs=0.000631175674383 max_rel=1.00035858544 bad_or=0 bad_strict=32 threshold=1.0e-03 status=PASS
+EXACT_VERIFY_STRICT_STATUS=FAIL
+0
+CASE_1_VERIFY_RC=0
+CASE_1_PROFILE_COMMAND: msprof --output=/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_1 --application=/home/data4t2/lelinfeng/cann/实验/V005/工程/build/add_rms_norm_bias_custom --aic-metrics=PipeUtilization --ai-core=on --task-time=on --parse=on --export=on --query=on --clear=off
+[WARNING] The argument --parse --query --export  --clear is useless when --application is not empty
+[INFO] Start profiling....
+PROBE width=64 rows=1 rank=2 dtype=1 device=6 bytes=128
+PROBE_STATUS=0 CORES=40
+[INFO] Start export data in PROF_000001_20260917093428778_03132271DQMLCOPK.
+Thu 17 Sep 2026 09:34:31 [INFO] [MSVP] [3132928] msprof_common.py: Start analyzing data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_1/PROF_000001_20260917093428778_03132271DQMLCOPK/host" ...
+Thu 17 Sep 2026 09:34:31 [INFO] [MSVP] [3132928] msprof_common.py: It may take few minutes, please be patient ...
+Thu 17 Sep 2026 09:34:32 [INFO] [MSVP] [3132928] msprof_common.py: Analysis data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_1/PROF_000001_20260917093428778_03132271DQMLCOPK/host" finished.
+Thu 17 Sep 2026 09:34:32 [INFO] [MSVP] [3132928] msprof_common.py: Start analyzing data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_1/PROF_000001_20260917093428778_03132271DQMLCOPK/device_6" ...
+Thu 17 Sep 2026 09:34:32 [INFO] [MSVP] [3132928] msprof_common.py: It may take few minutes, please be patient ...
+Thu 17 Sep 2026 09:34:32 [INFO] [MSVP] [3132928] msprof_common.py: Analysis data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_1/PROF_000001_20260917093428778_03132271DQMLCOPK/device_6" finished.
+Thu 17 Sep 2026 09:34:32 [INFO] [MSVP] [3132928] msprof_export.py: All collected data will be exported, path is: /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_1/PROF_000001_20260917093428778_03132271DQMLCOPK/device_6.
+Thu 17 Sep 2026 09:34:32 [INFO] [MSVP] [3133257] msprof_export.py: The data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_1/PROF_000001_20260917093428778_03132271DQMLCOPK/host" has been analyzed. Parsing phase will be skipped.
+Thu 17 Sep 2026 09:34:32 [INFO] [MSVP] [3133257] msprof_export.py: The data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_1/PROF_000001_20260917093428778_03132271DQMLCOPK/device_6" has been analyzed. Parsing phase will be skipped.
+Thu 17 Sep 2026 09:34:32 [INFO] [MSVP] [3133257] msprof_export.py: All collected data will be exported, path is: /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_1/PROF_000001_20260917093428778_03132271DQMLCOPK/device_6.
+Thu 17 Sep 2026 09:34:33 [INFO] [MSVP] [3133257] msprof_export.py: There is no summary data to export for "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_1/PROF_000001_20260917093428778_03132271DQMLCOPK/host"
+Thu 17 Sep 2026 09:34:33 [INFO] [MSVP] [3133257] msprof_export.py: All collected data will be exported, path is: /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_1/PROF_000001_20260917093428778_03132271DQMLCOPK/device_6.
+Thu 17 Sep 2026 09:34:33 [INFO] [MSVP] [3133257] msprof_export.py: There is no summary data to export for "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_1/PROF_000001_20260917093428778_03132271DQMLCOPK/device_6"
+Thu 17 Sep 2026 09:34:33 [INFO] [MSVP] [3133257] msprof_common.py: Start exporting summary output_file.
+Thu 17 Sep 2026 09:34:33 [INFO] [MSVP] [3133257] msprof_common.py: End exporting summary output_file.The file is stored in the /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_1/PROF_000001_20260917093428778_03132271DQMLCOPK/mindstudio_profiler_output path.
+[INFO] Export all data in PROF_000001_20260917093428778_03132271DQMLCOPK done.
+[INFO] Start query data in PROF_000001_20260917093428778_03132271DQMLCOPK.
+Job Info	Device ID	Dir Name	Collection Time           	Model ID	Iteration Number	Top Time Iteration	Rank ID	
+
+NA      	         	host    	2026-09-17 09:34:29.184133	N/A     	N/A             	N/A               	-1     	
+
+NA      	6        	device_6	2026-09-17 09:34:29.189733	N/A     	N/A             	N/A               	-1     	
+
+[INFO] Query all data in PROF_000001_20260917093428778_03132271DQMLCOPK done.
+[INFO] Profiling finished.
+[INFO] Process profiling data complete. Data is saved in /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_1/PROF_000001_20260917093428778_03132271DQMLCOPK
+CASE_1_PROFILE_STATUS=0
+PROFILE_CSV_COUNT=1
+TASK_TIMES_US=0.020000000,6.320000000,0.024000000,0.020000000
+TASK_TIME_COUNT=4
+TASK_TIME_MAX_US=6.320000000
+CASE_1_STATUS=PASS
+--- CASE_END id=1 ---
+--- CASE_START id=2 D=67 rows=1 rank=2 dtype=fp16 seed=502 ---
+GEN_OK d=67 rows=1 dtype=fp16 seed=502
+CASE_2_DATA_STATUS=0
+QUANTIZED_GOLDEN_STATUS=0 elements=67
+CASE_2_GOLDEN_STATUS=0
+PROBE width=67 rows=1 rank=2 dtype=1 device=6 bytes=134
+PROBE_STATUS=0 CORES=40
+CASE_2_WARMUP_1_STATUS=0
+PROBE width=67 rows=1 rank=2 dtype=1 device=6 bytes=134
+PROBE_STATUS=0 CORES=40
+CASE_2_WARMUP_2_STATUS=0
+PROBE width=67 rows=1 rank=2 dtype=1 device=6 bytes=134
+PROBE_STATUS=0 CORES=40
+CASE_2_WARMUP_3_STATUS=0
+CASE_2_WARMUP_STATUS=0
+EXACT_VERIFY dtype=fp16 elements=67 max_abs=0.000668934918747 max_rel=1.00036656997 bad_or=0 bad_strict=30 threshold=1.0e-03 status=PASS
+EXACT_VERIFY_STRICT_STATUS=FAIL
+0
+CASE_2_VERIFY_RC=0
+CASE_2_PROFILE_COMMAND: msprof --output=/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_2 --application=/home/data4t2/lelinfeng/cann/实验/V005/工程/build/add_rms_norm_bias_custom --aic-metrics=PipeUtilization --ai-core=on --task-time=on --parse=on --export=on --query=on --clear=off
+[WARNING] The argument --parse --query --export  --clear is useless when --application is not empty
+[INFO] Start profiling....
+PROBE width=67 rows=1 rank=2 dtype=1 device=6 bytes=134
+PROBE_STATUS=0 CORES=40
+[INFO] Start export data in PROF_000001_20260917093439955_03134846MBHEGHGN.
+Thu 17 Sep 2026 09:34:43 [INFO] [MSVP] [3135477] msprof_common.py: Start analyzing data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_2/PROF_000001_20260917093439955_03134846MBHEGHGN/host" ...
+Thu 17 Sep 2026 09:34:43 [INFO] [MSVP] [3135477] msprof_common.py: It may take few minutes, please be patient ...
+Thu 17 Sep 2026 09:34:43 [INFO] [MSVP] [3135477] msprof_common.py: Analysis data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_2/PROF_000001_20260917093439955_03134846MBHEGHGN/host" finished.
+Thu 17 Sep 2026 09:34:43 [INFO] [MSVP] [3135477] msprof_common.py: Start analyzing data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_2/PROF_000001_20260917093439955_03134846MBHEGHGN/device_6" ...
+Thu 17 Sep 2026 09:34:43 [INFO] [MSVP] [3135477] msprof_common.py: It may take few minutes, please be patient ...
+Thu 17 Sep 2026 09:34:43 [INFO] [MSVP] [3135477] msprof_common.py: Analysis data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_2/PROF_000001_20260917093439955_03134846MBHEGHGN/device_6" finished.
+Thu 17 Sep 2026 09:34:43 [INFO] [MSVP] [3135477] msprof_export.py: All collected data will be exported, path is: /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_2/PROF_000001_20260917093439955_03134846MBHEGHGN/device_6.
+Thu 17 Sep 2026 09:34:45 [INFO] [MSVP] [3135949] msprof_export.py: The data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_2/PROF_000001_20260917093439955_03134846MBHEGHGN/host" has been analyzed. Parsing phase will be skipped.
+Thu 17 Sep 2026 09:34:45 [INFO] [MSVP] [3135949] msprof_export.py: The data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_2/PROF_000001_20260917093439955_03134846MBHEGHGN/device_6" has been analyzed. Parsing phase will be skipped.
+Thu 17 Sep 2026 09:34:45 [INFO] [MSVP] [3135949] msprof_export.py: All collected data will be exported, path is: /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_2/PROF_000001_20260917093439955_03134846MBHEGHGN/device_6.
+Thu 17 Sep 2026 09:34:45 [INFO] [MSVP] [3135949] msprof_export.py: There is no summary data to export for "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_2/PROF_000001_20260917093439955_03134846MBHEGHGN/host"
+Thu 17 Sep 2026 09:34:45 [INFO] [MSVP] [3135949] msprof_export.py: All collected data will be exported, path is: /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_2/PROF_000001_20260917093439955_03134846MBHEGHGN/device_6.
+Thu 17 Sep 2026 09:34:45 [INFO] [MSVP] [3135949] msprof_export.py: There is no summary data to export for "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_2/PROF_000001_20260917093439955_03134846MBHEGHGN/device_6"
+Thu 17 Sep 2026 09:34:45 [INFO] [MSVP] [3135949] msprof_common.py: Start exporting summary output_file.
+Thu 17 Sep 2026 09:34:45 [INFO] [MSVP] [3135949] msprof_common.py: End exporting summary output_file.The file is stored in the /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_2/PROF_000001_20260917093439955_03134846MBHEGHGN/mindstudio_profiler_output path.
+[INFO] Export all data in PROF_000001_20260917093439955_03134846MBHEGHGN done.
+[INFO] Start query data in PROF_000001_20260917093439955_03134846MBHEGHGN.
+Job Info	Device ID	Dir Name	Collection Time           	Model ID	Iteration Number	Top Time Iteration	Rank ID	
+
+NA      	         	host    	2026-09-17 09:34:40.369464	N/A     	N/A             	N/A               	-1     	
+
+NA      	6        	device_6	2026-09-17 09:34:40.374747	N/A     	N/A             	N/A               	-1     	
+
+[INFO] Query all data in PROF_000001_20260917093439955_03134846MBHEGHGN done.
+[INFO] Profiling finished.
+[INFO] Process profiling data complete. Data is saved in /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_2/PROF_000001_20260917093439955_03134846MBHEGHGN
+CASE_2_PROFILE_STATUS=0
+PROFILE_CSV_COUNT=1
+TASK_TIMES_US=0.020000000,6.500000000,0.000000000,0.016000000
+TASK_TIME_COUNT=4
+TASK_TIME_MAX_US=6.500000000
+CASE_2_STATUS=PASS
+--- CASE_END id=2 ---
+--- CASE_START id=3 D=96 rows=1 rank=2 dtype=bf16 seed=503 ---
+GEN_OK d=96 rows=1 dtype=bf16 seed=503
+CASE_3_DATA_STATUS=0
+QUANTIZED_GOLDEN_STATUS=0 elements=96
+CASE_3_GOLDEN_STATUS=0
+PROBE width=96 rows=1 rank=2 dtype=2 device=6 bytes=192
+PROBE_STATUS=0 CORES=40
+CASE_3_WARMUP_1_STATUS=0
+PROBE width=96 rows=1 rank=2 dtype=2 device=6 bytes=192
+PROBE_STATUS=0 CORES=40
+CASE_3_WARMUP_2_STATUS=0
+PROBE width=96 rows=1 rank=2 dtype=2 device=6 bytes=192
+PROBE_STATUS=0 CORES=40
+CASE_3_WARMUP_3_STATUS=0
+CASE_3_WARMUP_STATUS=0
+EXACT_VERIFY dtype=bf16 elements=96 max_abs=0.0044185126348 max_rel=1.00360701148 bad_or=22 bad_strict=72 threshold=1.0e-03 status=FAIL
+EXACT_VERIFY_STRICT_STATUS=FAIL
+1
+CASE_3_VERIFY_RC=0
+CASE_3_PROFILE_COMMAND: msprof --output=/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_3 --application=/home/data4t2/lelinfeng/cann/实验/V005/工程/build/add_rms_norm_bias_custom --aic-metrics=PipeUtilization --ai-core=on --task-time=on --parse=on --export=on --query=on --clear=off
+[WARNING] The argument --parse --query --export  --clear is useless when --application is not empty
+[INFO] Start profiling....
+PROBE width=96 rows=1 rank=2 dtype=2 device=6 bytes=192
+PROBE_STATUS=0 CORES=40
+[INFO] Start export data in PROF_000001_20260917093453138_03137717RCHPKGCO.
+Thu 17 Sep 2026 09:34:56 [INFO] [MSVP] [3138371] msprof_common.py: Start analyzing data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_3/PROF_000001_20260917093453138_03137717RCHPKGCO/host" ...
+Thu 17 Sep 2026 09:34:56 [INFO] [MSVP] [3138371] msprof_common.py: It may take few minutes, please be patient ...
+Thu 17 Sep 2026 09:34:56 [INFO] [MSVP] [3138371] msprof_common.py: Analysis data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_3/PROF_000001_20260917093453138_03137717RCHPKGCO/host" finished.
+Thu 17 Sep 2026 09:34:56 [INFO] [MSVP] [3138371] msprof_common.py: Start analyzing data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_3/PROF_000001_20260917093453138_03137717RCHPKGCO/device_6" ...
+Thu 17 Sep 2026 09:34:56 [INFO] [MSVP] [3138371] msprof_common.py: It may take few minutes, please be patient ...
+Thu 17 Sep 2026 09:34:56 [INFO] [MSVP] [3138371] msprof_common.py: Analysis data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_3/PROF_000001_20260917093453138_03137717RCHPKGCO/device_6" finished.
+Thu 17 Sep 2026 09:34:56 [INFO] [MSVP] [3138371] msprof_export.py: All collected data will be exported, path is: /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_3/PROF_000001_20260917093453138_03137717RCHPKGCO/device_6.
+Thu 17 Sep 2026 09:34:58 [INFO] [MSVP] [3138854] msprof_export.py: The data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_3/PROF_000001_20260917093453138_03137717RCHPKGCO/host" has been analyzed. Parsing phase will be skipped.
+Thu 17 Sep 2026 09:34:58 [INFO] [MSVP] [3138854] msprof_export.py: The data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_3/PROF_000001_20260917093453138_03137717RCHPKGCO/device_6" has been analyzed. Parsing phase will be skipped.
+Thu 17 Sep 2026 09:34:58 [INFO] [MSVP] [3138854] msprof_export.py: All collected data will be exported, path is: /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_3/PROF_000001_20260917093453138_03137717RCHPKGCO/device_6.
+Thu 17 Sep 2026 09:34:58 [INFO] [MSVP] [3138854] msprof_export.py: There is no summary data to export for "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_3/PROF_000001_20260917093453138_03137717RCHPKGCO/host"
+Thu 17 Sep 2026 09:34:58 [INFO] [MSVP] [3138854] msprof_export.py: All collected data will be exported, path is: /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_3/PROF_000001_20260917093453138_03137717RCHPKGCO/device_6.
+Thu 17 Sep 2026 09:34:58 [INFO] [MSVP] [3138854] msprof_export.py: There is no summary data to export for "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_3/PROF_000001_20260917093453138_03137717RCHPKGCO/device_6"
+Thu 17 Sep 2026 09:34:58 [INFO] [MSVP] [3138854] msprof_common.py: Start exporting summary output_file.
+Thu 17 Sep 2026 09:34:58 [INFO] [MSVP] [3138854] msprof_common.py: End exporting summary output_file.The file is stored in the /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_3/PROF_000001_20260917093453138_03137717RCHPKGCO/mindstudio_profiler_output path.
+[INFO] Export all data in PROF_000001_20260917093453138_03137717RCHPKGCO done.
+[INFO] Start query data in PROF_000001_20260917093453138_03137717RCHPKGCO.
+Job Info	Device ID	Dir Name	Collection Time           	Model ID	Iteration Number	Top Time Iteration	Rank ID	
+
+NA      	         	host    	2026-09-17 09:34:53.555046	N/A     	N/A             	N/A               	-1     	
+
+NA      	6        	device_6	2026-09-17 09:34:53.560274	N/A     	N/A             	N/A               	-1     	
+
+[INFO] Query all data in PROF_000001_20260917093453138_03137717RCHPKGCO done.
+[INFO] Profiling finished.
+[INFO] Process profiling data complete. Data is saved in /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_3/PROF_000001_20260917093453138_03137717RCHPKGCO
+CASE_3_PROFILE_STATUS=0
+PROFILE_CSV_COUNT=1
+TASK_TIMES_US=0.020000000,6.176000000,0.020000000,0.020000000
+TASK_TIME_COUNT=4
+TASK_TIME_MAX_US=6.176000000
+CASE_3_STATUS=PASS
+--- CASE_END id=3 ---
+--- CASE_START id=4 D=128 rows=1 rank=2 dtype=fp32 seed=504 ---
+GEN_OK d=128 rows=1 dtype=fp32 seed=504
+CASE_4_DATA_STATUS=0
+QUANTIZED_GOLDEN_STATUS=0 elements=128
+CASE_4_GOLDEN_STATUS=0
+PROBE width=128 rows=1 rank=2 dtype=0 device=6 bytes=512
+PROBE_STATUS=0 CORES=40
+CASE_4_WARMUP_1_STATUS=0
+PROBE width=128 rows=1 rank=2 dtype=0 device=6 bytes=512
+PROBE_STATUS=0 CORES=40
+CASE_4_WARMUP_2_STATUS=0
+PROBE width=128 rows=1 rank=2 dtype=0 device=6 bytes=512
+PROBE_STATUS=0 CORES=40
+CASE_4_WARMUP_3_STATUS=0
+CASE_4_WARMUP_STATUS=0
+EXACT_VERIFY dtype=fp32 elements=128 max_abs=2.67640984042e-07 max_rel=1.00000018656 bad_or=0 bad_strict=67 threshold=1.0e-04 status=PASS
+EXACT_VERIFY_STRICT_STATUS=FAIL
+0
+CASE_4_VERIFY_RC=0
+CASE_4_PROFILE_COMMAND: msprof --output=/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_4 --application=/home/data4t2/lelinfeng/cann/实验/V005/工程/build/add_rms_norm_bias_custom --aic-metrics=PipeUtilization --ai-core=on --task-time=on --parse=on --export=on --query=on --clear=off
+[WARNING] The argument --parse --query --export  --clear is useless when --application is not empty
+[INFO] Start profiling....
+PROBE width=128 rows=1 rank=2 dtype=0 device=6 bytes=512
+PROBE_STATUS=0 CORES=40
+[INFO] Start export data in PROF_000001_20260917093505315_03140155GOGCRFIC.
+Thu 17 Sep 2026 09:35:07 [INFO] [MSVP] [3140609] msprof_common.py: Start analyzing data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_4/PROF_000001_20260917093505315_03140155GOGCRFIC/host" ...
+Thu 17 Sep 2026 09:35:07 [INFO] [MSVP] [3140609] msprof_common.py: It may take few minutes, please be patient ...
+Thu 17 Sep 2026 09:35:07 [INFO] [MSVP] [3140609] msprof_common.py: Analysis data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_4/PROF_000001_20260917093505315_03140155GOGCRFIC/host" finished.
+Thu 17 Sep 2026 09:35:07 [INFO] [MSVP] [3140609] msprof_common.py: Start analyzing data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_4/PROF_000001_20260917093505315_03140155GOGCRFIC/device_6" ...
+Thu 17 Sep 2026 09:35:07 [INFO] [MSVP] [3140609] msprof_common.py: It may take few minutes, please be patient ...
+Thu 17 Sep 2026 09:35:07 [INFO] [MSVP] [3140609] msprof_common.py: Analysis data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_4/PROF_000001_20260917093505315_03140155GOGCRFIC/device_6" finished.
+Thu 17 Sep 2026 09:35:07 [INFO] [MSVP] [3140609] msprof_export.py: All collected data will be exported, path is: /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_4/PROF_000001_20260917093505315_03140155GOGCRFIC/device_6.
+Thu 17 Sep 2026 09:35:09 [INFO] [MSVP] [3141156] msprof_export.py: The data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_4/PROF_000001_20260917093505315_03140155GOGCRFIC/host" has been analyzed. Parsing phase will be skipped.
+Thu 17 Sep 2026 09:35:09 [INFO] [MSVP] [3141156] msprof_export.py: The data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_4/PROF_000001_20260917093505315_03140155GOGCRFIC/device_6" has been analyzed. Parsing phase will be skipped.
+Thu 17 Sep 2026 09:35:09 [INFO] [MSVP] [3141156] msprof_export.py: All collected data will be exported, path is: /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_4/PROF_000001_20260917093505315_03140155GOGCRFIC/device_6.
+Thu 17 Sep 2026 09:35:09 [INFO] [MSVP] [3141156] msprof_export.py: There is no summary data to export for "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_4/PROF_000001_20260917093505315_03140155GOGCRFIC/host"
+Thu 17 Sep 2026 09:35:09 [INFO] [MSVP] [3141156] msprof_export.py: All collected data will be exported, path is: /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_4/PROF_000001_20260917093505315_03140155GOGCRFIC/device_6.
+Thu 17 Sep 2026 09:35:09 [INFO] [MSVP] [3141156] msprof_export.py: There is no summary data to export for "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_4/PROF_000001_20260917093505315_03140155GOGCRFIC/device_6"
+Thu 17 Sep 2026 09:35:09 [INFO] [MSVP] [3141156] msprof_common.py: Start exporting summary output_file.
+Thu 17 Sep 2026 09:35:09 [INFO] [MSVP] [3141156] msprof_common.py: End exporting summary output_file.The file is stored in the /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_4/PROF_000001_20260917093505315_03140155GOGCRFIC/mindstudio_profiler_output path.
+[INFO] Export all data in PROF_000001_20260917093505315_03140155GOGCRFIC done.
+[INFO] Start query data in PROF_000001_20260917093505315_03140155GOGCRFIC.
+Job Info	Device ID	Dir Name	Collection Time           	Model ID	Iteration Number	Top Time Iteration	Rank ID	
+
+NA      	         	host    	2026-09-17 09:35:05.726505	N/A     	N/A             	N/A               	-1     	
+
+NA      	6        	device_6	2026-09-17 09:35:05.732189	N/A     	N/A             	N/A               	-1     	
+
+[INFO] Query all data in PROF_000001_20260917093505315_03140155GOGCRFIC done.
+[INFO] Profiling finished.
+[INFO] Process profiling data complete. Data is saved in /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_4/PROF_000001_20260917093505315_03140155GOGCRFIC
+CASE_4_PROFILE_STATUS=0
+PROFILE_CSV_COUNT=1
+TASK_TIMES_US=0.000000000,6.020000000,0.016000000,0.020000000
+TASK_TIME_COUNT=4
+TASK_TIME_MAX_US=6.020000000
+CASE_4_STATUS=PASS
+--- CASE_END id=4 ---
+--- CASE_START id=5 D=129 rows=2 rank=2 dtype=fp16 seed=505 ---
+GEN_OK d=129 rows=2 dtype=fp16 seed=505
+CASE_5_DATA_STATUS=0
+QUANTIZED_GOLDEN_STATUS=0 elements=258
+CASE_5_GOLDEN_STATUS=0
+PROBE width=129 rows=2 rank=2 dtype=1 device=6 bytes=516
+PROBE_STATUS=0 CORES=40
+CASE_5_WARMUP_1_STATUS=0
+PROBE width=129 rows=2 rank=2 dtype=1 device=6 bytes=516
+PROBE_STATUS=0 CORES=40
+CASE_5_WARMUP_2_STATUS=0
+PROBE width=129 rows=2 rank=2 dtype=1 device=6 bytes=516
+PROBE_STATUS=0 CORES=40
+CASE_5_WARMUP_3_STATUS=0
+CASE_5_WARMUP_STATUS=0
+EXACT_VERIFY dtype=fp16 elements=258 max_abs=0.000945870531805 max_rel=1.00046304372 bad_or=0 bad_strict=120 threshold=1.0e-03 status=PASS
+EXACT_VERIFY_STRICT_STATUS=FAIL
+0
+CASE_5_VERIFY_RC=0
+CASE_5_PROFILE_COMMAND: msprof --output=/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_5 --application=/home/data4t2/lelinfeng/cann/实验/V005/工程/build/add_rms_norm_bias_custom --aic-metrics=PipeUtilization --ai-core=on --task-time=on --parse=on --export=on --query=on --clear=off
+[WARNING] The argument --parse --query --export  --clear is useless when --application is not empty
+[INFO] Start profiling....
+PROBE width=129 rows=2 rank=2 dtype=1 device=6 bytes=516
+PROBE_STATUS=0 CORES=40
+[INFO] Start export data in PROF_000001_20260917093517515_03143213FHHDGCDA.
+Thu 17 Sep 2026 09:35:19 [INFO] [MSVP] [3143627] msprof_common.py: Start analyzing data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_5/PROF_000001_20260917093517515_03143213FHHDGCDA/host" ...
+Thu 17 Sep 2026 09:35:19 [INFO] [MSVP] [3143627] msprof_common.py: It may take few minutes, please be patient ...
+Thu 17 Sep 2026 09:35:19 [INFO] [MSVP] [3143627] msprof_common.py: Analysis data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_5/PROF_000001_20260917093517515_03143213FHHDGCDA/host" finished.
+Thu 17 Sep 2026 09:35:19 [INFO] [MSVP] [3143627] msprof_common.py: Start analyzing data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_5/PROF_000001_20260917093517515_03143213FHHDGCDA/device_6" ...
+Thu 17 Sep 2026 09:35:19 [INFO] [MSVP] [3143627] msprof_common.py: It may take few minutes, please be patient ...
+Thu 17 Sep 2026 09:35:20 [INFO] [MSVP] [3143627] msprof_common.py: Analysis data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_5/PROF_000001_20260917093517515_03143213FHHDGCDA/device_6" finished.
+Thu 17 Sep 2026 09:35:20 [INFO] [MSVP] [3143627] msprof_export.py: All collected data will be exported, path is: /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_5/PROF_000001_20260917093517515_03143213FHHDGCDA/device_6.
+Thu 17 Sep 2026 09:35:20 [INFO] [MSVP] [3143909] msprof_export.py: The data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_5/PROF_000001_20260917093517515_03143213FHHDGCDA/host" has been analyzed. Parsing phase will be skipped.
+Thu 17 Sep 2026 09:35:20 [INFO] [MSVP] [3143909] msprof_export.py: The data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_5/PROF_000001_20260917093517515_03143213FHHDGCDA/device_6" has been analyzed. Parsing phase will be skipped.
+Thu 17 Sep 2026 09:35:20 [INFO] [MSVP] [3143909] msprof_export.py: All collected data will be exported, path is: /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_5/PROF_000001_20260917093517515_03143213FHHDGCDA/device_6.
+Thu 17 Sep 2026 09:35:20 [INFO] [MSVP] [3143909] msprof_export.py: There is no summary data to export for "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_5/PROF_000001_20260917093517515_03143213FHHDGCDA/host"
+Thu 17 Sep 2026 09:35:20 [INFO] [MSVP] [3143909] msprof_export.py: All collected data will be exported, path is: /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_5/PROF_000001_20260917093517515_03143213FHHDGCDA/device_6.
+Thu 17 Sep 2026 09:35:20 [INFO] [MSVP] [3143909] msprof_export.py: There is no summary data to export for "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_5/PROF_000001_20260917093517515_03143213FHHDGCDA/device_6"
+Thu 17 Sep 2026 09:35:20 [INFO] [MSVP] [3143909] msprof_common.py: Start exporting summary output_file.
+Thu 17 Sep 2026 09:35:20 [INFO] [MSVP] [3143909] msprof_common.py: End exporting summary output_file.The file is stored in the /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_5/PROF_000001_20260917093517515_03143213FHHDGCDA/mindstudio_profiler_output path.
+[INFO] Export all data in PROF_000001_20260917093517515_03143213FHHDGCDA done.
+[INFO] Start query data in PROF_000001_20260917093517515_03143213FHHDGCDA.
+Job Info	Device ID	Dir Name	Collection Time           	Model ID	Iteration Number	Top Time Iteration	Rank ID	
+
+NA      	         	host    	2026-09-17 09:35:17.928085	N/A     	N/A             	N/A               	-1     	
+
+NA      	6        	device_6	2026-09-17 09:35:17.933273	N/A     	N/A             	N/A               	-1     	
+
+[INFO] Query all data in PROF_000001_20260917093517515_03143213FHHDGCDA done.
+[INFO] Profiling finished.
+[INFO] Process profiling data complete. Data is saved in /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_5/PROF_000001_20260917093517515_03143213FHHDGCDA
+CASE_5_PROFILE_STATUS=0
+PROFILE_CSV_COUNT=1
+TASK_TIMES_US=0.024000000,7.200000000,0.000000000,0.000000000
+TASK_TIME_COUNT=4
+TASK_TIME_MAX_US=7.200000000
+CASE_5_STATUS=PASS
+--- CASE_END id=5 ---
+--- CASE_START id=6 D=1000 rows=2 rank=2 dtype=fp16 seed=506 ---
+GEN_OK d=1000 rows=2 dtype=fp16 seed=506
+CASE_6_DATA_STATUS=0
+QUANTIZED_GOLDEN_STATUS=0 elements=2000
+CASE_6_GOLDEN_STATUS=0
+PROBE width=1000 rows=2 rank=2 dtype=1 device=6 bytes=4000
+PROBE_STATUS=0 CORES=40
+CASE_6_WARMUP_1_STATUS=0
+PROBE width=1000 rows=2 rank=2 dtype=1 device=6 bytes=4000
+PROBE_STATUS=0 CORES=40
+CASE_6_WARMUP_2_STATUS=0
+PROBE width=1000 rows=2 rank=2 dtype=1 device=6 bytes=4000
+PROBE_STATUS=0 CORES=40
+CASE_6_WARMUP_3_STATUS=0
+CASE_6_WARMUP_STATUS=0
+EXACT_VERIFY dtype=fp16 elements=2000 max_abs=0.000972114889985 max_rel=1.00047420645 bad_or=0 bad_strict=1013 threshold=1.0e-03 status=PASS
+EXACT_VERIFY_STRICT_STATUS=FAIL
+0
+CASE_6_VERIFY_RC=0
+CASE_6_PROFILE_COMMAND: msprof --output=/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_6 --application=/home/data4t2/lelinfeng/cann/实验/V005/工程/build/add_rms_norm_bias_custom --aic-metrics=PipeUtilization --ai-core=on --task-time=on --parse=on --export=on --query=on --clear=off
+[WARNING] The argument --parse --query --export  --clear is useless when --application is not empty
+[INFO] Start profiling....
+PROBE width=1000 rows=2 rank=2 dtype=1 device=6 bytes=4000
+PROBE_STATUS=0 CORES=40
+[INFO] Start export data in PROF_000001_20260917093528692_03145374OOJLFNQJ.
+Thu 17 Sep 2026 09:35:30 [INFO] [MSVP] [3145801] msprof_common.py: Start analyzing data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_6/PROF_000001_20260917093528692_03145374OOJLFNQJ/host" ...
+Thu 17 Sep 2026 09:35:30 [INFO] [MSVP] [3145801] msprof_common.py: It may take few minutes, please be patient ...
+Thu 17 Sep 2026 09:35:31 [INFO] [MSVP] [3145801] msprof_common.py: Analysis data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_6/PROF_000001_20260917093528692_03145374OOJLFNQJ/host" finished.
+Thu 17 Sep 2026 09:35:31 [INFO] [MSVP] [3145801] msprof_common.py: Start analyzing data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_6/PROF_000001_20260917093528692_03145374OOJLFNQJ/device_6" ...
+Thu 17 Sep 2026 09:35:31 [INFO] [MSVP] [3145801] msprof_common.py: It may take few minutes, please be patient ...
+Thu 17 Sep 2026 09:35:31 [INFO] [MSVP] [3145801] msprof_common.py: Analysis data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_6/PROF_000001_20260917093528692_03145374OOJLFNQJ/device_6" finished.
+Thu 17 Sep 2026 09:35:31 [INFO] [MSVP] [3145801] msprof_export.py: All collected data will be exported, path is: /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_6/PROF_000001_20260917093528692_03145374OOJLFNQJ/device_6.
+Thu 17 Sep 2026 09:35:32 [INFO] [MSVP] [3146287] msprof_export.py: The data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_6/PROF_000001_20260917093528692_03145374OOJLFNQJ/host" has been analyzed. Parsing phase will be skipped.
+Thu 17 Sep 2026 09:35:32 [INFO] [MSVP] [3146287] msprof_export.py: The data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_6/PROF_000001_20260917093528692_03145374OOJLFNQJ/device_6" has been analyzed. Parsing phase will be skipped.
+Thu 17 Sep 2026 09:35:32 [INFO] [MSVP] [3146287] msprof_export.py: All collected data will be exported, path is: /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_6/PROF_000001_20260917093528692_03145374OOJLFNQJ/device_6.
+Thu 17 Sep 2026 09:35:33 [INFO] [MSVP] [3146287] msprof_export.py: There is no summary data to export for "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_6/PROF_000001_20260917093528692_03145374OOJLFNQJ/host"
+Thu 17 Sep 2026 09:35:33 [INFO] [MSVP] [3146287] msprof_export.py: All collected data will be exported, path is: /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_6/PROF_000001_20260917093528692_03145374OOJLFNQJ/device_6.
+Thu 17 Sep 2026 09:35:33 [INFO] [MSVP] [3146287] msprof_export.py: There is no summary data to export for "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_6/PROF_000001_20260917093528692_03145374OOJLFNQJ/device_6"
+Thu 17 Sep 2026 09:35:33 [INFO] [MSVP] [3146287] msprof_common.py: Start exporting summary output_file.
+Thu 17 Sep 2026 09:35:33 [INFO] [MSVP] [3146287] msprof_common.py: End exporting summary output_file.The file is stored in the /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_6/PROF_000001_20260917093528692_03145374OOJLFNQJ/mindstudio_profiler_output path.
+[INFO] Export all data in PROF_000001_20260917093528692_03145374OOJLFNQJ done.
+[INFO] Start query data in PROF_000001_20260917093528692_03145374OOJLFNQJ.
+Job Info	Device ID	Dir Name	Collection Time           	Model ID	Iteration Number	Top Time Iteration	Rank ID	
+
+NA      	         	host    	2026-09-17 09:35:28.108233	N/A     	N/A             	N/A               	-1     	
+
+NA      	6        	device_6	2026-09-17 09:35:28.113106	N/A     	N/A             	N/A               	-1     	
+
+[INFO] Query all data in PROF_000001_20260917093528692_03145374OOJLFNQJ done.
+[INFO] Profiling finished.
+[INFO] Process profiling data complete. Data is saved in /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_6/PROF_000001_20260917093528692_03145374OOJLFNQJ
+CASE_6_PROFILE_STATUS=0
+PROFILE_CSV_COUNT=1
+TASK_TIMES_US=0.000000000,8.220000000,0.000000000,0.020000000
+TASK_TIME_COUNT=4
+TASK_TIME_MAX_US=8.220000000
+CASE_6_STATUS=PASS
+--- CASE_END id=6 ---
+--- CASE_START id=7 D=1024 rows=4 rank=3 dtype=fp16 seed=507 ---
+GEN_OK d=1024 rows=4 dtype=fp16 seed=507
+CASE_7_DATA_STATUS=0
+QUANTIZED_GOLDEN_STATUS=0 elements=4096
+CASE_7_GOLDEN_STATUS=0
+PROBE width=1024 rows=4 rank=3 dtype=1 device=6 bytes=8192
+PROBE_STATUS=0 CORES=40
+CASE_7_WARMUP_1_STATUS=0
+PROBE width=1024 rows=4 rank=3 dtype=1 device=6 bytes=8192
+PROBE_STATUS=0 CORES=40
+CASE_7_WARMUP_2_STATUS=0
+PROBE width=1024 rows=4 rank=3 dtype=1 device=6 bytes=8192
+PROBE_STATUS=0 CORES=40
+CASE_7_WARMUP_3_STATUS=0
+CASE_7_WARMUP_STATUS=0
+EXACT_VERIFY dtype=fp16 elements=4096 max_abs=0.00097533627984 max_rel=1.0004756476 bad_or=0 bad_strict=2093 threshold=1.0e-03 status=PASS
+EXACT_VERIFY_STRICT_STATUS=FAIL
+0
+CASE_7_VERIFY_RC=0
+CASE_7_PROFILE_COMMAND: msprof --output=/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_7 --application=/home/data4t2/lelinfeng/cann/实验/V005/工程/build/add_rms_norm_bias_custom --aic-metrics=PipeUtilization --ai-core=on --task-time=on --parse=on --export=on --query=on --clear=off
+[WARNING] The argument --parse --query --export  --clear is useless when --application is not empty
+[INFO] Start profiling....
+PROBE width=1024 rows=4 rank=3 dtype=1 device=6 bytes=8192
+PROBE_STATUS=0 CORES=40
+[INFO] Start export data in PROF_000001_20260917093539915_03147828ADEGOQBP.
+Thu 17 Sep 2026 09:35:43 [INFO] [MSVP] [3148404] msprof_common.py: Start analyzing data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_7/PROF_000001_20260917093539915_03147828ADEGOQBP/host" ...
+Thu 17 Sep 2026 09:35:43 [INFO] [MSVP] [3148404] msprof_common.py: It may take few minutes, please be patient ...
+Thu 17 Sep 2026 09:35:43 [INFO] [MSVP] [3148404] msprof_common.py: Analysis data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_7/PROF_000001_20260917093539915_03147828ADEGOQBP/host" finished.
+Thu 17 Sep 2026 09:35:43 [INFO] [MSVP] [3148404] msprof_common.py: Start analyzing data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_7/PROF_000001_20260917093539915_03147828ADEGOQBP/device_6" ...
+Thu 17 Sep 2026 09:35:43 [INFO] [MSVP] [3148404] msprof_common.py: It may take few minutes, please be patient ...
+Thu 17 Sep 2026 09:35:43 [INFO] [MSVP] [3148404] msprof_common.py: Analysis data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_7/PROF_000001_20260917093539915_03147828ADEGOQBP/device_6" finished.
+Thu 17 Sep 2026 09:35:43 [INFO] [MSVP] [3148404] msprof_export.py: All collected data will be exported, path is: /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_7/PROF_000001_20260917093539915_03147828ADEGOQBP/device_6.
+Thu 17 Sep 2026 09:35:45 [INFO] [MSVP] [3149118] msprof_export.py: The data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_7/PROF_000001_20260917093539915_03147828ADEGOQBP/host" has been analyzed. Parsing phase will be skipped.
+Thu 17 Sep 2026 09:35:45 [INFO] [MSVP] [3149118] msprof_export.py: The data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_7/PROF_000001_20260917093539915_03147828ADEGOQBP/device_6" has been analyzed. Parsing phase will be skipped.
+Thu 17 Sep 2026 09:35:45 [INFO] [MSVP] [3149118] msprof_export.py: All collected data will be exported, path is: /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_7/PROF_000001_20260917093539915_03147828ADEGOQBP/device_6.
+Thu 17 Sep 2026 09:35:45 [INFO] [MSVP] [3149118] msprof_export.py: There is no summary data to export for "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_7/PROF_000001_20260917093539915_03147828ADEGOQBP/host"
+Thu 17 Sep 2026 09:35:45 [INFO] [MSVP] [3149118] msprof_export.py: All collected data will be exported, path is: /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_7/PROF_000001_20260917093539915_03147828ADEGOQBP/device_6.
+Thu 17 Sep 2026 09:35:45 [INFO] [MSVP] [3149118] msprof_export.py: There is no summary data to export for "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_7/PROF_000001_20260917093539915_03147828ADEGOQBP/device_6"
+Thu 17 Sep 2026 09:35:45 [INFO] [MSVP] [3149118] msprof_common.py: Start exporting summary output_file.
+Thu 17 Sep 2026 09:35:45 [INFO] [MSVP] [3149118] msprof_common.py: End exporting summary output_file.The file is stored in the /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_7/PROF_000001_20260917093539915_03147828ADEGOQBP/mindstudio_profiler_output path.
+[INFO] Export all data in PROF_000001_20260917093539915_03147828ADEGOQBP done.
+[INFO] Start query data in PROF_000001_20260917093539915_03147828ADEGOQBP.
+Job Info	Device ID	Dir Name	Collection Time           	Model ID	Iteration Number	Top Time Iteration	Rank ID	
+
+NA      	         	host    	2026-09-17 09:35:40.336951	N/A     	N/A             	N/A               	-1     	
+
+NA      	6        	device_6	2026-09-17 09:35:40.341843	N/A     	N/A             	N/A               	-1     	
+
+[INFO] Query all data in PROF_000001_20260917093539915_03147828ADEGOQBP done.
+[INFO] Profiling finished.
+[INFO] Process profiling data complete. Data is saved in /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_7/PROF_000001_20260917093539915_03147828ADEGOQBP
+CASE_7_PROFILE_STATUS=0
+PROFILE_CSV_COUNT=1
+TASK_TIMES_US=0.000000000,7.280000000,0.020000000,0.020000000
+TASK_TIME_COUNT=4
+TASK_TIME_MAX_US=7.280000000
+CASE_7_STATUS=PASS
+--- CASE_END id=7 ---
+--- CASE_START id=8 D=2048 rows=4 rank=3 dtype=bf16 seed=508 ---
+GEN_OK d=2048 rows=4 dtype=bf16 seed=508
+CASE_8_DATA_STATUS=0
+QUANTIZED_GOLDEN_STATUS=0 elements=8192
+CASE_8_GOLDEN_STATUS=0
+PROBE width=2048 rows=4 rank=3 dtype=2 device=6 bytes=16384
+PROBE_STATUS=0 CORES=40
+CASE_8_WARMUP_1_STATUS=0
+PROBE width=2048 rows=4 rank=3 dtype=2 device=6 bytes=16384
+PROBE_STATUS=0 CORES=40
+CASE_8_WARMUP_2_STATUS=0
+PROBE width=2048 rows=4 rank=3 dtype=2 device=6 bytes=16384
+PROBE_STATUS=0 CORES=40
+CASE_8_WARMUP_3_STATUS=0
+CASE_8_WARMUP_STATUS=0
+EXACT_VERIFY dtype=bf16 elements=8192 max_abs=0.00780236620247 max_rel=1.00384636615 bad_or=1688 bad_strict=5743 threshold=1.0e-03 status=FAIL
+EXACT_VERIFY_STRICT_STATUS=FAIL
+1
+CASE_8_VERIFY_RC=0
+CASE_8_PROFILE_COMMAND: msprof --output=/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_8 --application=/home/data4t2/lelinfeng/cann/实验/V005/工程/build/add_rms_norm_bias_custom --aic-metrics=PipeUtilization --ai-core=on --task-time=on --parse=on --export=on --query=on --clear=off
+[WARNING] The argument --parse --query --export  --clear is useless when --application is not empty
+[INFO] Start profiling....
+PROBE width=2048 rows=4 rank=3 dtype=2 device=6 bytes=16384
+PROBE_STATUS=0 CORES=40
+[INFO] Start export data in PROF_000001_20260917093553181_03150756HIJPMCHO.
+Thu 17 Sep 2026 09:35:56 [INFO] [MSVP] [3151660] msprof_common.py: Start analyzing data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_8/PROF_000001_20260917093553181_03150756HIJPMCHO/host" ...
+Thu 17 Sep 2026 09:35:56 [INFO] [MSVP] [3151660] msprof_common.py: It may take few minutes, please be patient ...
+Thu 17 Sep 2026 09:35:56 [INFO] [MSVP] [3151660] msprof_common.py: Analysis data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_8/PROF_000001_20260917093553181_03150756HIJPMCHO/host" finished.
+Thu 17 Sep 2026 09:35:56 [INFO] [MSVP] [3151660] msprof_common.py: Start analyzing data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_8/PROF_000001_20260917093553181_03150756HIJPMCHO/device_6" ...
+Thu 17 Sep 2026 09:35:56 [INFO] [MSVP] [3151660] msprof_common.py: It may take few minutes, please be patient ...
+Thu 17 Sep 2026 09:35:56 [INFO] [MSVP] [3151660] msprof_common.py: Analysis data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_8/PROF_000001_20260917093553181_03150756HIJPMCHO/device_6" finished.
+Thu 17 Sep 2026 09:35:56 [INFO] [MSVP] [3151660] msprof_export.py: All collected data will be exported, path is: /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_8/PROF_000001_20260917093553181_03150756HIJPMCHO/device_6.
+Thu 17 Sep 2026 09:35:58 [INFO] [MSVP] [3152191] msprof_export.py: The data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_8/PROF_000001_20260917093553181_03150756HIJPMCHO/host" has been analyzed. Parsing phase will be skipped.
+Thu 17 Sep 2026 09:35:58 [INFO] [MSVP] [3152191] msprof_export.py: The data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_8/PROF_000001_20260917093553181_03150756HIJPMCHO/device_6" has been analyzed. Parsing phase will be skipped.
+Thu 17 Sep 2026 09:35:58 [INFO] [MSVP] [3152191] msprof_export.py: All collected data will be exported, path is: /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_8/PROF_000001_20260917093553181_03150756HIJPMCHO/device_6.
+Thu 17 Sep 2026 09:35:58 [INFO] [MSVP] [3152191] msprof_export.py: There is no summary data to export for "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_8/PROF_000001_20260917093553181_03150756HIJPMCHO/host"
+Thu 17 Sep 2026 09:35:58 [INFO] [MSVP] [3152191] msprof_export.py: All collected data will be exported, path is: /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_8/PROF_000001_20260917093553181_03150756HIJPMCHO/device_6.
+Thu 17 Sep 2026 09:35:58 [INFO] [MSVP] [3152191] msprof_export.py: There is no summary data to export for "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_8/PROF_000001_20260917093553181_03150756HIJPMCHO/device_6"
+Thu 17 Sep 2026 09:35:58 [INFO] [MSVP] [3152191] msprof_common.py: Start exporting summary output_file.
+Thu 17 Sep 2026 09:35:58 [INFO] [MSVP] [3152191] msprof_common.py: End exporting summary output_file.The file is stored in the /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_8/PROF_000001_20260917093553181_03150756HIJPMCHO/mindstudio_profiler_output path.
+[INFO] Export all data in PROF_000001_20260917093553181_03150756HIJPMCHO done.
+[INFO] Start query data in PROF_000001_20260917093553181_03150756HIJPMCHO.
+Job Info	Device ID	Dir Name	Collection Time           	Model ID	Iteration Number	Top Time Iteration	Rank ID	
+
+NA      	         	host    	2026-09-17 09:35:53.598584	N/A     	N/A             	N/A               	-1     	
+
+NA      	6        	device_6	2026-09-17 09:35:53.603618	N/A     	N/A             	N/A               	-1     	
+
+[INFO] Query all data in PROF_000001_20260917093553181_03150756HIJPMCHO done.
+[INFO] Profiling finished.
+[INFO] Process profiling data complete. Data is saved in /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_8/PROF_000001_20260917093553181_03150756HIJPMCHO
+CASE_8_PROFILE_STATUS=0
+PROFILE_CSV_COUNT=1
+TASK_TIMES_US=0.000000000,7.600000000,0.000000000,0.000000000
+TASK_TIME_COUNT=4
+TASK_TIME_MAX_US=7.600000000
+CASE_8_STATUS=PASS
+--- CASE_END id=8 ---
+--- CASE_START id=9 D=4096 rows=8 rank=3 dtype=fp16 seed=509 ---
+GEN_OK d=4096 rows=8 dtype=fp16 seed=509
+CASE_9_DATA_STATUS=0
+QUANTIZED_GOLDEN_STATUS=0 elements=32768
+CASE_9_GOLDEN_STATUS=0
+PROBE width=4096 rows=8 rank=3 dtype=1 device=6 bytes=65536
+PROBE_STATUS=0 CORES=40
+CASE_9_WARMUP_1_STATUS=0
+PROBE width=4096 rows=8 rank=3 dtype=1 device=6 bytes=65536
+PROBE_STATUS=0 CORES=40
+CASE_9_WARMUP_2_STATUS=0
+PROBE width=4096 rows=8 rank=3 dtype=1 device=6 bytes=65536
+PROBE_STATUS=0 CORES=40
+CASE_9_WARMUP_3_STATUS=0
+CASE_9_WARMUP_STATUS=0
+EXACT_VERIFY dtype=fp16 elements=32768 max_abs=0.000976109380087 max_rel=1.00048152821 bad_or=0 bad_strict=16438 threshold=1.0e-03 status=PASS
+EXACT_VERIFY_STRICT_STATUS=FAIL
+0
+CASE_9_VERIFY_RC=0
+CASE_9_PROFILE_COMMAND: msprof --output=/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_9 --application=/home/data4t2/lelinfeng/cann/实验/V005/工程/build/add_rms_norm_bias_custom --aic-metrics=PipeUtilization --ai-core=on --task-time=on --parse=on --export=on --query=on --clear=off
+[WARNING] The argument --parse --query --export  --clear is useless when --application is not empty
+[INFO] Start profiling....
+PROBE width=4096 rows=8 rank=3 dtype=1 device=6 bytes=65536
+PROBE_STATUS=0 CORES=40
+[INFO] Start export data in PROF_000001_20260917093605594_03153548OEAOHONF.
+Thu 17 Sep 2026 09:36:07 [INFO] [MSVP] [3154179] msprof_common.py: Start analyzing data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_9/PROF_000001_20260917093605594_03153548OEAOHONF/host" ...
+Thu 17 Sep 2026 09:36:07 [INFO] [MSVP] [3154179] msprof_common.py: It may take few minutes, please be patient ...
+Thu 17 Sep 2026 09:36:07 [INFO] [MSVP] [3154179] msprof_common.py: Analysis data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_9/PROF_000001_20260917093605594_03153548OEAOHONF/host" finished.
+Thu 17 Sep 2026 09:36:07 [INFO] [MSVP] [3154179] msprof_common.py: Start analyzing data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_9/PROF_000001_20260917093605594_03153548OEAOHONF/device_6" ...
+Thu 17 Sep 2026 09:36:07 [INFO] [MSVP] [3154179] msprof_common.py: It may take few minutes, please be patient ...
+Thu 17 Sep 2026 09:36:08 [INFO] [MSVP] [3154179] msprof_common.py: Analysis data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_9/PROF_000001_20260917093605594_03153548OEAOHONF/device_6" finished.
+Thu 17 Sep 2026 09:36:08 [INFO] [MSVP] [3154179] msprof_export.py: All collected data will be exported, path is: /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_9/PROF_000001_20260917093605594_03153548OEAOHONF/device_6.
+Thu 17 Sep 2026 09:36:09 [INFO] [MSVP] [3154683] msprof_export.py: The data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_9/PROF_000001_20260917093605594_03153548OEAOHONF/host" has been analyzed. Parsing phase will be skipped.
+Thu 17 Sep 2026 09:36:09 [INFO] [MSVP] [3154683] msprof_export.py: The data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_9/PROF_000001_20260917093605594_03153548OEAOHONF/device_6" has been analyzed. Parsing phase will be skipped.
+Thu 17 Sep 2026 09:36:09 [INFO] [MSVP] [3154683] msprof_export.py: All collected data will be exported, path is: /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_9/PROF_000001_20260917093605594_03153548OEAOHONF/device_6.
+Thu 17 Sep 2026 09:36:09 [INFO] [MSVP] [3154683] msprof_export.py: There is no summary data to export for "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_9/PROF_000001_20260917093605594_03153548OEAOHONF/host"
+Thu 17 Sep 2026 09:36:09 [INFO] [MSVP] [3154683] msprof_export.py: All collected data will be exported, path is: /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_9/PROF_000001_20260917093605594_03153548OEAOHONF/device_6.
+Thu 17 Sep 2026 09:36:09 [INFO] [MSVP] [3154683] msprof_export.py: There is no summary data to export for "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_9/PROF_000001_20260917093605594_03153548OEAOHONF/device_6"
+Thu 17 Sep 2026 09:36:09 [INFO] [MSVP] [3154683] msprof_common.py: Start exporting summary output_file.
+Thu 17 Sep 2026 09:36:09 [INFO] [MSVP] [3154683] msprof_common.py: End exporting summary output_file.The file is stored in the /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_9/PROF_000001_20260917093605594_03153548OEAOHONF/mindstudio_profiler_output path.
+[INFO] Export all data in PROF_000001_20260917093605594_03153548OEAOHONF done.
+[INFO] Start query data in PROF_000001_20260917093605594_03153548OEAOHONF.
+Job Info	Device ID	Dir Name	Collection Time           	Model ID	Iteration Number	Top Time Iteration	Rank ID	
+
+NA      	         	host    	2026-09-17 09:36:05.006574	N/A     	N/A             	N/A               	-1     	
+
+NA      	6        	device_6	2026-09-17 09:36:05.011516	N/A     	N/A             	N/A               	-1     	
+
+[INFO] Query all data in PROF_000001_20260917093605594_03153548OEAOHONF done.
+[INFO] Profiling finished.
+[INFO] Process profiling data complete. Data is saved in /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_9/PROF_000001_20260917093605594_03153548OEAOHONF
+CASE_9_PROFILE_STATUS=0
+PROFILE_CSV_COUNT=1
+TASK_TIMES_US=0.000000000,10.740000000,0.000000000,0.000000000
+TASK_TIME_COUNT=4
+TASK_TIME_MAX_US=10.740000000
+CASE_9_STATUS=PASS
+--- CASE_END id=9 ---
+--- CASE_START id=10 D=4096 rows=8 rank=3 dtype=bf16 seed=510 ---
+GEN_OK d=4096 rows=8 dtype=bf16 seed=510
+CASE_10_DATA_STATUS=0
+QUANTIZED_GOLDEN_STATUS=0 elements=32768
+CASE_10_GOLDEN_STATUS=0
+PROBE width=4096 rows=8 rank=3 dtype=2 device=6 bytes=65536
+PROBE_STATUS=0 CORES=40
+CASE_10_WARMUP_1_STATUS=0
+PROBE width=4096 rows=8 rank=3 dtype=2 device=6 bytes=65536
+PROBE_STATUS=0 CORES=40
+CASE_10_WARMUP_2_STATUS=0
+PROBE width=4096 rows=8 rank=3 dtype=2 device=6 bytes=65536
+PROBE_STATUS=0 CORES=40
+CASE_10_WARMUP_3_STATUS=0
+CASE_10_WARMUP_STATUS=0
+EXACT_VERIFY dtype=bf16 elements=32768 max_abs=0.00781012254252 max_rel=1.0038342116 bad_or=6518 bad_strict=22919 threshold=1.0e-03 status=FAIL
+EXACT_VERIFY_STRICT_STATUS=FAIL
+1
+CASE_10_VERIFY_RC=0
+CASE_10_PROFILE_COMMAND: msprof --output=/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_10 --application=/home/data4t2/lelinfeng/cann/实验/V005/工程/build/add_rms_norm_bias_custom --aic-metrics=PipeUtilization --ai-core=on --task-time=on --parse=on --export=on --query=on --clear=off
+[WARNING] The argument --parse --query --export  --clear is useless when --application is not empty
+[INFO] Start profiling....
+PROBE width=4096 rows=8 rank=3 dtype=2 device=6 bytes=65536
+PROBE_STATUS=0 CORES=40
+[INFO] Start export data in PROF_000001_20260917093617140_03156329RQEDJAJE.
+Thu 17 Sep 2026 09:36:20 [INFO] [MSVP] [3156932] msprof_common.py: Start analyzing data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_10/PROF_000001_20260917093617140_03156329RQEDJAJE/host" ...
+Thu 17 Sep 2026 09:36:20 [INFO] [MSVP] [3156932] msprof_common.py: It may take few minutes, please be patient ...
+Thu 17 Sep 2026 09:36:20 [INFO] [MSVP] [3156932] msprof_common.py: Analysis data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_10/PROF_000001_20260917093617140_03156329RQEDJAJE/host" finished.
+Thu 17 Sep 2026 09:36:20 [INFO] [MSVP] [3156932] msprof_common.py: Start analyzing data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_10/PROF_000001_20260917093617140_03156329RQEDJAJE/device_6" ...
+Thu 17 Sep 2026 09:36:20 [INFO] [MSVP] [3156932] msprof_common.py: It may take few minutes, please be patient ...
+Thu 17 Sep 2026 09:36:20 [INFO] [MSVP] [3156932] msprof_common.py: Analysis data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_10/PROF_000001_20260917093617140_03156329RQEDJAJE/device_6" finished.
+Thu 17 Sep 2026 09:36:20 [INFO] [MSVP] [3156932] msprof_export.py: All collected data will be exported, path is: /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_10/PROF_000001_20260917093617140_03156329RQEDJAJE/device_6.
+Thu 17 Sep 2026 09:36:22 [INFO] [MSVP] [3157420] msprof_export.py: The data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_10/PROF_000001_20260917093617140_03156329RQEDJAJE/host" has been analyzed. Parsing phase will be skipped.
+Thu 17 Sep 2026 09:36:22 [INFO] [MSVP] [3157420] msprof_export.py: The data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_10/PROF_000001_20260917093617140_03156329RQEDJAJE/device_6" has been analyzed. Parsing phase will be skipped.
+Thu 17 Sep 2026 09:36:22 [INFO] [MSVP] [3157420] msprof_export.py: All collected data will be exported, path is: /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_10/PROF_000001_20260917093617140_03156329RQEDJAJE/device_6.
+Thu 17 Sep 2026 09:36:22 [INFO] [MSVP] [3157420] msprof_export.py: There is no summary data to export for "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_10/PROF_000001_20260917093617140_03156329RQEDJAJE/host"
+Thu 17 Sep 2026 09:36:22 [INFO] [MSVP] [3157420] msprof_export.py: All collected data will be exported, path is: /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_10/PROF_000001_20260917093617140_03156329RQEDJAJE/device_6.
+Thu 17 Sep 2026 09:36:22 [INFO] [MSVP] [3157420] msprof_export.py: There is no summary data to export for "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_10/PROF_000001_20260917093617140_03156329RQEDJAJE/device_6"
+Thu 17 Sep 2026 09:36:22 [INFO] [MSVP] [3157420] msprof_common.py: Start exporting summary output_file.
+Thu 17 Sep 2026 09:36:22 [INFO] [MSVP] [3157420] msprof_common.py: End exporting summary output_file.The file is stored in the /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_10/PROF_000001_20260917093617140_03156329RQEDJAJE/mindstudio_profiler_output path.
+[INFO] Export all data in PROF_000001_20260917093617140_03156329RQEDJAJE done.
+[INFO] Start query data in PROF_000001_20260917093617140_03156329RQEDJAJE.
+Job Info	Device ID	Dir Name	Collection Time           	Model ID	Iteration Number	Top Time Iteration	Rank ID	
+
+NA      	         	host    	2026-09-17 09:36:17.569450	N/A     	N/A             	N/A               	-1     	
+
+NA      	6        	device_6	2026-09-17 09:36:17.574054	N/A     	N/A             	N/A               	-1     	
+
+[INFO] Query all data in PROF_000001_20260917093617140_03156329RQEDJAJE done.
+[INFO] Profiling finished.
+[INFO] Process profiling data complete. Data is saved in /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_10/PROF_000001_20260917093617140_03156329RQEDJAJE
+CASE_10_PROFILE_STATUS=0
+PROFILE_CSV_COUNT=1
+TASK_TIMES_US=0.000000000,10.420000000,0.020000000,0.000000000,0.000000000
+TASK_TIME_COUNT=5
+TASK_TIME_MAX_US=10.420000000
+CASE_10_STATUS=PASS
+--- CASE_END id=10 ---
+--- CASE_START id=11 D=4096 rows=8 rank=3 dtype=fp32 seed=511 ---
+GEN_OK d=4096 rows=8 dtype=fp32 seed=511
+CASE_11_DATA_STATUS=0
+QUANTIZED_GOLDEN_STATUS=0 elements=32768
+CASE_11_GOLDEN_STATUS=0
+PROBE width=4096 rows=8 rank=3 dtype=0 device=6 bytes=131072
+PROBE_STATUS=0 CORES=40
+CASE_11_WARMUP_1_STATUS=0
+PROBE width=4096 rows=8 rank=3 dtype=0 device=6 bytes=131072
+PROBE_STATUS=0 CORES=40
+CASE_11_WARMUP_2_STATUS=0
+PROBE width=4096 rows=8 rank=3 dtype=0 device=6 bytes=131072
+PROBE_STATUS=0 CORES=40
+CASE_11_WARMUP_3_STATUS=0
+CASE_11_WARMUP_STATUS=0
+EXACT_VERIFY dtype=fp32 elements=32768 max_abs=6.58793682717e-07 max_rel=1.00010953173 bad_or=0 bad_strict=16376 threshold=1.0e-04 status=PASS
+EXACT_VERIFY_STRICT_STATUS=FAIL
+0
+CASE_11_VERIFY_RC=0
+CASE_11_PROFILE_COMMAND: msprof --output=/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_11 --application=/home/data4t2/lelinfeng/cann/实验/V005/工程/build/add_rms_norm_bias_custom --aic-metrics=PipeUtilization --ai-core=on --task-time=on --parse=on --export=on --query=on --clear=off
+[WARNING] The argument --parse --query --export  --clear is useless when --application is not empty
+[INFO] Start profiling....
+PROBE width=4096 rows=8 rank=3 dtype=0 device=6 bytes=131072
+PROBE_STATUS=0 CORES=40
+[INFO] Start export data in PROF_000001_20260917093630561_03159041JBAFIDLI.
+Thu 17 Sep 2026 09:36:32 [INFO] [MSVP] [3159558] msprof_common.py: Start analyzing data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_11/PROF_000001_20260917093630561_03159041JBAFIDLI/host" ...
+Thu 17 Sep 2026 09:36:32 [INFO] [MSVP] [3159558] msprof_common.py: It may take few minutes, please be patient ...
+Thu 17 Sep 2026 09:36:32 [INFO] [MSVP] [3159558] msprof_common.py: Analysis data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_11/PROF_000001_20260917093630561_03159041JBAFIDLI/host" finished.
+Thu 17 Sep 2026 09:36:32 [INFO] [MSVP] [3159558] msprof_common.py: Start analyzing data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_11/PROF_000001_20260917093630561_03159041JBAFIDLI/device_6" ...
+Thu 17 Sep 2026 09:36:32 [INFO] [MSVP] [3159558] msprof_common.py: It may take few minutes, please be patient ...
+Thu 17 Sep 2026 09:36:33 [INFO] [MSVP] [3159558] msprof_common.py: Analysis data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_11/PROF_000001_20260917093630561_03159041JBAFIDLI/device_6" finished.
+Thu 17 Sep 2026 09:36:33 [INFO] [MSVP] [3159558] msprof_export.py: All collected data will be exported, path is: /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_11/PROF_000001_20260917093630561_03159041JBAFIDLI/device_6.
+Thu 17 Sep 2026 09:36:34 [INFO] [MSVP] [3160046] msprof_export.py: The data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_11/PROF_000001_20260917093630561_03159041JBAFIDLI/host" has been analyzed. Parsing phase will be skipped.
+Thu 17 Sep 2026 09:36:34 [INFO] [MSVP] [3160046] msprof_export.py: The data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_11/PROF_000001_20260917093630561_03159041JBAFIDLI/device_6" has been analyzed. Parsing phase will be skipped.
+Thu 17 Sep 2026 09:36:34 [INFO] [MSVP] [3160046] msprof_export.py: All collected data will be exported, path is: /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_11/PROF_000001_20260917093630561_03159041JBAFIDLI/device_6.
+Thu 17 Sep 2026 09:36:34 [INFO] [MSVP] [3160046] msprof_export.py: There is no summary data to export for "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_11/PROF_000001_20260917093630561_03159041JBAFIDLI/host"
+Thu 17 Sep 2026 09:36:34 [INFO] [MSVP] [3160046] msprof_export.py: All collected data will be exported, path is: /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_11/PROF_000001_20260917093630561_03159041JBAFIDLI/device_6.
+Thu 17 Sep 2026 09:36:34 [INFO] [MSVP] [3160046] msprof_export.py: There is no summary data to export for "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_11/PROF_000001_20260917093630561_03159041JBAFIDLI/device_6"
+Thu 17 Sep 2026 09:36:34 [INFO] [MSVP] [3160046] msprof_common.py: Start exporting summary output_file.
+Thu 17 Sep 2026 09:36:34 [INFO] [MSVP] [3160046] msprof_common.py: End exporting summary output_file.The file is stored in the /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_11/PROF_000001_20260917093630561_03159041JBAFIDLI/mindstudio_profiler_output path.
+[INFO] Export all data in PROF_000001_20260917093630561_03159041JBAFIDLI done.
+[INFO] Start query data in PROF_000001_20260917093630561_03159041JBAFIDLI.
+Job Info	Device ID	Dir Name	Collection Time           	Model ID	Iteration Number	Top Time Iteration	Rank ID	
+
+NA      	         	host    	2026-09-17 09:36:30.975898	N/A     	N/A             	N/A               	-1     	
+
+NA      	6        	device_6	2026-09-17 09:36:30.981300	N/A     	N/A             	N/A               	-1     	
+
+[INFO] Query all data in PROF_000001_20260917093630561_03159041JBAFIDLI done.
+[INFO] Profiling finished.
+[INFO] Process profiling data complete. Data is saved in /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_11/PROF_000001_20260917093630561_03159041JBAFIDLI
+CASE_11_PROFILE_STATUS=0
+PROFILE_CSV_COUNT=1
+TASK_TIMES_US=0.016000000,13.460000000,0.024000000,0.016000000
+TASK_TIME_COUNT=4
+TASK_TIME_MAX_US=13.460000000
+CASE_11_STATUS=PASS
+--- CASE_END id=11 ---
+--- CASE_START id=12 D=4097 rows=2 rank=2 dtype=fp16 seed=512 ---
+GEN_OK d=4097 rows=2 dtype=fp16 seed=512
+CASE_12_DATA_STATUS=0
+QUANTIZED_GOLDEN_STATUS=0 elements=8194
+CASE_12_GOLDEN_STATUS=0
+PROBE width=4097 rows=2 rank=2 dtype=1 device=6 bytes=16388
+PROBE_STATUS=0 CORES=40
+CASE_12_WARMUP_1_STATUS=0
+PROBE width=4097 rows=2 rank=2 dtype=1 device=6 bytes=16388
+PROBE_STATUS=0 CORES=40
+CASE_12_WARMUP_2_STATUS=0
+PROBE width=4097 rows=2 rank=2 dtype=1 device=6 bytes=16388
+PROBE_STATUS=0 CORES=40
+CASE_12_WARMUP_3_STATUS=0
+CASE_12_WARMUP_STATUS=0
+EXACT_VERIFY dtype=fp16 elements=8194 max_abs=0.000969312574675 max_rel=1.00047936563 bad_or=0 bad_strict=4135 threshold=1.0e-03 status=PASS
+EXACT_VERIFY_STRICT_STATUS=FAIL
+0
+CASE_12_VERIFY_RC=0
+CASE_12_PROFILE_COMMAND: msprof --output=/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_12 --application=/home/data4t2/lelinfeng/cann/实验/V005/工程/build/add_rms_norm_bias_custom --aic-metrics=PipeUtilization --ai-core=on --task-time=on --parse=on --export=on --query=on --clear=off
+[WARNING] The argument --parse --query --export  --clear is useless when --application is not empty
+[INFO] Start profiling....
+PROBE width=4097 rows=2 rank=2 dtype=1 device=6 bytes=16388
+PROBE_STATUS=0 CORES=40
+[INFO] Start export data in PROF_000001_20260917093642823_03161539NNRJRREH.
+Thu 17 Sep 2026 09:36:46 [INFO] [MSVP] [3162164] msprof_common.py: Start analyzing data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_12/PROF_000001_20260917093642823_03161539NNRJRREH/host" ...
+Thu 17 Sep 2026 09:36:46 [INFO] [MSVP] [3162164] msprof_common.py: It may take few minutes, please be patient ...
+Thu 17 Sep 2026 09:36:46 [INFO] [MSVP] [3162164] msprof_common.py: Analysis data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_12/PROF_000001_20260917093642823_03161539NNRJRREH/host" finished.
+Thu 17 Sep 2026 09:36:46 [INFO] [MSVP] [3162164] msprof_common.py: Start analyzing data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_12/PROF_000001_20260917093642823_03161539NNRJRREH/device_6" ...
+Thu 17 Sep 2026 09:36:46 [INFO] [MSVP] [3162164] msprof_common.py: It may take few minutes, please be patient ...
+Thu 17 Sep 2026 09:36:46 [INFO] [MSVP] [3162164] msprof_common.py: Analysis data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_12/PROF_000001_20260917093642823_03161539NNRJRREH/device_6" finished.
+Thu 17 Sep 2026 09:36:46 [INFO] [MSVP] [3162164] msprof_export.py: All collected data will be exported, path is: /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_12/PROF_000001_20260917093642823_03161539NNRJRREH/device_6.
+Thu 17 Sep 2026 09:36:48 [INFO] [MSVP] [3162672] msprof_export.py: The data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_12/PROF_000001_20260917093642823_03161539NNRJRREH/host" has been analyzed. Parsing phase will be skipped.
+Thu 17 Sep 2026 09:36:48 [INFO] [MSVP] [3162672] msprof_export.py: The data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_12/PROF_000001_20260917093642823_03161539NNRJRREH/device_6" has been analyzed. Parsing phase will be skipped.
+Thu 17 Sep 2026 09:36:48 [INFO] [MSVP] [3162672] msprof_export.py: All collected data will be exported, path is: /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_12/PROF_000001_20260917093642823_03161539NNRJRREH/device_6.
+Thu 17 Sep 2026 09:36:48 [INFO] [MSVP] [3162672] msprof_export.py: There is no summary data to export for "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_12/PROF_000001_20260917093642823_03161539NNRJRREH/host"
+Thu 17 Sep 2026 09:36:48 [INFO] [MSVP] [3162672] msprof_export.py: All collected data will be exported, path is: /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_12/PROF_000001_20260917093642823_03161539NNRJRREH/device_6.
+Thu 17 Sep 2026 09:36:48 [INFO] [MSVP] [3162672] msprof_export.py: There is no summary data to export for "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_12/PROF_000001_20260917093642823_03161539NNRJRREH/device_6"
+Thu 17 Sep 2026 09:36:48 [INFO] [MSVP] [3162672] msprof_common.py: Start exporting summary output_file.
+Thu 17 Sep 2026 09:36:48 [INFO] [MSVP] [3162672] msprof_common.py: End exporting summary output_file.The file is stored in the /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_12/PROF_000001_20260917093642823_03161539NNRJRREH/mindstudio_profiler_output path.
+[INFO] Export all data in PROF_000001_20260917093642823_03161539NNRJRREH done.
+[INFO] Start query data in PROF_000001_20260917093642823_03161539NNRJRREH.
+Job Info	Device ID	Dir Name	Collection Time           	Model ID	Iteration Number	Top Time Iteration	Rank ID	
+
+NA      	         	host    	2026-09-17 09:36:43.240603	N/A     	N/A             	N/A               	-1     	
+
+NA      	6        	device_6	2026-09-17 09:36:43.245488	N/A     	N/A             	N/A               	-1     	
+
+[INFO] Query all data in PROF_000001_20260917093642823_03161539NNRJRREH done.
+[INFO] Profiling finished.
+[INFO] Process profiling data complete. Data is saved in /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_12/PROF_000001_20260917093642823_03161539NNRJRREH
+CASE_12_PROFILE_STATUS=0
+PROFILE_CSV_COUNT=1
+TASK_TIMES_US=0.024000000,13.180000000,0.020000000,0.000000000
+TASK_TIME_COUNT=4
+TASK_TIME_MAX_US=13.180000000
+CASE_12_STATUS=PASS
+--- CASE_END id=12 ---
+--- CASE_START id=13 D=8192 rows=4 rank=3 dtype=fp16 seed=513 ---
+GEN_OK d=8192 rows=4 dtype=fp16 seed=513
+CASE_13_DATA_STATUS=0
+QUANTIZED_GOLDEN_STATUS=0 elements=32768
+CASE_13_GOLDEN_STATUS=0
+PROBE width=8192 rows=4 rank=3 dtype=1 device=6 bytes=65536
+PROBE_STATUS=0 CORES=40
+CASE_13_WARMUP_1_STATUS=0
+PROBE width=8192 rows=4 rank=3 dtype=1 device=6 bytes=65536
+PROBE_STATUS=0 CORES=40
+CASE_13_WARMUP_2_STATUS=0
+PROBE width=8192 rows=4 rank=3 dtype=1 device=6 bytes=65536
+PROBE_STATUS=0 CORES=40
+CASE_13_WARMUP_3_STATUS=0
+CASE_13_WARMUP_STATUS=0
+EXACT_VERIFY dtype=fp16 elements=32768 max_abs=0.000975523240573 max_rel=1.00048306072 bad_or=0 bad_strict=16471 threshold=1.0e-03 status=PASS
+EXACT_VERIFY_STRICT_STATUS=FAIL
+0
+CASE_13_VERIFY_RC=0
+CASE_13_PROFILE_COMMAND: msprof --output=/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_13 --application=/home/data4t2/lelinfeng/cann/实验/V005/工程/build/add_rms_norm_bias_custom --aic-metrics=PipeUtilization --ai-core=on --task-time=on --parse=on --export=on --query=on --clear=off
+[WARNING] The argument --parse --query --export  --clear is useless when --application is not empty
+[INFO] Start profiling....
+PROBE width=8192 rows=4 rank=3 dtype=1 device=6 bytes=65536
+PROBE_STATUS=0 CORES=40
+[INFO] Start export data in PROF_000001_20260917093656255_03164266PDMDFJLD.
+Thu 17 Sep 2026 09:36:59 [INFO] [MSVP] [3165162] msprof_common.py: Start analyzing data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_13/PROF_000001_20260917093656255_03164266PDMDFJLD/host" ...
+Thu 17 Sep 2026 09:36:59 [INFO] [MSVP] [3165162] msprof_common.py: It may take few minutes, please be patient ...
+Thu 17 Sep 2026 09:36:59 [INFO] [MSVP] [3165162] msprof_common.py: Analysis data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_13/PROF_000001_20260917093656255_03164266PDMDFJLD/host" finished.
+Thu 17 Sep 2026 09:36:59 [INFO] [MSVP] [3165162] msprof_common.py: Start analyzing data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_13/PROF_000001_20260917093656255_03164266PDMDFJLD/device_6" ...
+Thu 17 Sep 2026 09:36:59 [INFO] [MSVP] [3165162] msprof_common.py: It may take few minutes, please be patient ...
+Thu 17 Sep 2026 09:36:59 [INFO] [MSVP] [3165162] msprof_common.py: Analysis data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_13/PROF_000001_20260917093656255_03164266PDMDFJLD/device_6" finished.
+Thu 17 Sep 2026 09:36:59 [INFO] [MSVP] [3165162] msprof_export.py: All collected data will be exported, path is: /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_13/PROF_000001_20260917093656255_03164266PDMDFJLD/device_6.
+Thu 17 Sep 2026 09:37:01 [INFO] [MSVP] [3165874] msprof_export.py: The data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_13/PROF_000001_20260917093656255_03164266PDMDFJLD/host" has been analyzed. Parsing phase will be skipped.
+Thu 17 Sep 2026 09:37:01 [INFO] [MSVP] [3165874] msprof_export.py: The data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_13/PROF_000001_20260917093656255_03164266PDMDFJLD/device_6" has been analyzed. Parsing phase will be skipped.
+Thu 17 Sep 2026 09:37:01 [INFO] [MSVP] [3165874] msprof_export.py: All collected data will be exported, path is: /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_13/PROF_000001_20260917093656255_03164266PDMDFJLD/device_6.
+Thu 17 Sep 2026 09:37:01 [INFO] [MSVP] [3165874] msprof_export.py: There is no summary data to export for "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_13/PROF_000001_20260917093656255_03164266PDMDFJLD/host"
+Thu 17 Sep 2026 09:37:01 [INFO] [MSVP] [3165874] msprof_export.py: All collected data will be exported, path is: /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_13/PROF_000001_20260917093656255_03164266PDMDFJLD/device_6.
+Thu 17 Sep 2026 09:37:01 [INFO] [MSVP] [3165874] msprof_export.py: There is no summary data to export for "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_13/PROF_000001_20260917093656255_03164266PDMDFJLD/device_6"
+Thu 17 Sep 2026 09:37:01 [INFO] [MSVP] [3165874] msprof_common.py: Start exporting summary output_file.
+Thu 17 Sep 2026 09:37:01 [INFO] [MSVP] [3165874] msprof_common.py: End exporting summary output_file.The file is stored in the /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_13/PROF_000001_20260917093656255_03164266PDMDFJLD/mindstudio_profiler_output path.
+[INFO] Export all data in PROF_000001_20260917093656255_03164266PDMDFJLD done.
+[INFO] Start query data in PROF_000001_20260917093656255_03164266PDMDFJLD.
+Job Info	Device ID	Dir Name	Collection Time           	Model ID	Iteration Number	Top Time Iteration	Rank ID	
+
+NA      	         	host    	2026-09-17 09:36:56.664022	N/A     	N/A             	N/A               	-1     	
+
+NA      	6        	device_6	2026-09-17 09:36:56.668597	N/A     	N/A             	N/A               	-1     	
+
+[INFO] Query all data in PROF_000001_20260917093656255_03164266PDMDFJLD done.
+[INFO] Profiling finished.
+[INFO] Process profiling data complete. Data is saved in /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_13/PROF_000001_20260917093656255_03164266PDMDFJLD
+CASE_13_PROFILE_STATUS=0
+PROFILE_CSV_COUNT=1
+TASK_TIMES_US=0.016000000,12.760000000,0.000000000,0.020000000
+TASK_TIME_COUNT=4
+TASK_TIME_MAX_US=12.760000000
+CASE_13_STATUS=PASS
+--- CASE_END id=13 ---
+--- CASE_START id=14 D=16384 rows=2 rank=2 dtype=fp16 seed=514 ---
+GEN_OK d=16384 rows=2 dtype=fp16 seed=514
+CASE_14_DATA_STATUS=0
+QUANTIZED_GOLDEN_STATUS=0 elements=32768
+CASE_14_GOLDEN_STATUS=0
+PROBE width=16384 rows=2 rank=2 dtype=1 device=6 bytes=65536
+PROBE_STATUS=0 CORES=40
+CASE_14_WARMUP_1_STATUS=0
+PROBE width=16384 rows=2 rank=2 dtype=1 device=6 bytes=65536
+PROBE_STATUS=0 CORES=40
+CASE_14_WARMUP_2_STATUS=0
+PROBE width=16384 rows=2 rank=2 dtype=1 device=6 bytes=65536
+PROBE_STATUS=0 CORES=40
+CASE_14_WARMUP_3_STATUS=0
+CASE_14_WARMUP_STATUS=0
+EXACT_VERIFY dtype=fp16 elements=32768 max_abs=0.000975402410463 max_rel=1.00665738311 bad_or=0 bad_strict=16476 threshold=1.0e-03 status=PASS
+EXACT_VERIFY_STRICT_STATUS=FAIL
+0
+CASE_14_VERIFY_RC=0
+CASE_14_PROFILE_COMMAND: msprof --output=/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_14 --application=/home/data4t2/lelinfeng/cann/实验/V005/工程/build/add_rms_norm_bias_custom --aic-metrics=PipeUtilization --ai-core=on --task-time=on --parse=on --export=on --query=on --clear=off
+[WARNING] The argument --parse --query --export  --clear is useless when --application is not empty
+[INFO] Start profiling....
+PROBE width=16384 rows=2 rank=2 dtype=1 device=6 bytes=65536
+PROBE_STATUS=0 CORES=40
+[INFO] Start export data in PROF_000001_20260917093708739_03167649FLKMQOAH.
+Thu 17 Sep 2026 09:37:11 [INFO] [MSVP] [3168282] msprof_common.py: Start analyzing data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_14/PROF_000001_20260917093708739_03167649FLKMQOAH/host" ...
+Thu 17 Sep 2026 09:37:11 [INFO] [MSVP] [3168282] msprof_common.py: It may take few minutes, please be patient ...
+Thu 17 Sep 2026 09:37:12 [INFO] [MSVP] [3168282] msprof_common.py: Analysis data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_14/PROF_000001_20260917093708739_03167649FLKMQOAH/host" finished.
+Thu 17 Sep 2026 09:37:12 [INFO] [MSVP] [3168282] msprof_common.py: Start analyzing data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_14/PROF_000001_20260917093708739_03167649FLKMQOAH/device_6" ...
+Thu 17 Sep 2026 09:37:12 [INFO] [MSVP] [3168282] msprof_common.py: It may take few minutes, please be patient ...
+Thu 17 Sep 2026 09:37:12 [INFO] [MSVP] [3168282] msprof_common.py: Analysis data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_14/PROF_000001_20260917093708739_03167649FLKMQOAH/device_6" finished.
+Thu 17 Sep 2026 09:37:12 [INFO] [MSVP] [3168282] msprof_export.py: All collected data will be exported, path is: /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_14/PROF_000001_20260917093708739_03167649FLKMQOAH/device_6.
+Thu 17 Sep 2026 09:37:13 [INFO] [MSVP] [3168820] msprof_export.py: The data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_14/PROF_000001_20260917093708739_03167649FLKMQOAH/host" has been analyzed. Parsing phase will be skipped.
+Thu 17 Sep 2026 09:37:13 [INFO] [MSVP] [3168820] msprof_export.py: The data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_14/PROF_000001_20260917093708739_03167649FLKMQOAH/device_6" has been analyzed. Parsing phase will be skipped.
+Thu 17 Sep 2026 09:37:13 [INFO] [MSVP] [3168820] msprof_export.py: All collected data will be exported, path is: /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_14/PROF_000001_20260917093708739_03167649FLKMQOAH/device_6.
+Thu 17 Sep 2026 09:37:14 [INFO] [MSVP] [3168820] msprof_export.py: There is no summary data to export for "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_14/PROF_000001_20260917093708739_03167649FLKMQOAH/host"
+Thu 17 Sep 2026 09:37:14 [INFO] [MSVP] [3168820] msprof_export.py: All collected data will be exported, path is: /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_14/PROF_000001_20260917093708739_03167649FLKMQOAH/device_6.
+Thu 17 Sep 2026 09:37:14 [INFO] [MSVP] [3168820] msprof_export.py: There is no summary data to export for "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_14/PROF_000001_20260917093708739_03167649FLKMQOAH/device_6"
+Thu 17 Sep 2026 09:37:14 [INFO] [MSVP] [3168820] msprof_common.py: Start exporting summary output_file.
+Thu 17 Sep 2026 09:37:14 [INFO] [MSVP] [3168820] msprof_common.py: End exporting summary output_file.The file is stored in the /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_14/PROF_000001_20260917093708739_03167649FLKMQOAH/mindstudio_profiler_output path.
+[INFO] Export all data in PROF_000001_20260917093708739_03167649FLKMQOAH done.
+[INFO] Start query data in PROF_000001_20260917093708739_03167649FLKMQOAH.
+Job Info	Device ID	Dir Name	Collection Time           	Model ID	Iteration Number	Top Time Iteration	Rank ID	
+
+NA      	         	host    	2026-09-17 09:37:09.179365	N/A     	N/A             	N/A               	-1     	
+
+NA      	6        	device_6	2026-09-17 09:37:09.184937	N/A     	N/A             	N/A               	-1     	
+
+[INFO] Query all data in PROF_000001_20260917093708739_03167649FLKMQOAH done.
+[INFO] Profiling finished.
+[INFO] Process profiling data complete. Data is saved in /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_14/PROF_000001_20260917093708739_03167649FLKMQOAH
+CASE_14_PROFILE_STATUS=0
+PROFILE_CSV_COUNT=1
+TASK_TIMES_US=0.024000000,19.560000000,0.000000000,0.020000000
+TASK_TIME_COUNT=4
+TASK_TIME_MAX_US=19.560000000
+CASE_14_STATUS=PASS
+--- CASE_END id=14 ---
+--- CASE_START id=15 D=32768 rows=1 rank=2 dtype=fp16 seed=515 ---
+GEN_OK d=32768 rows=1 dtype=fp16 seed=515
+CASE_15_DATA_STATUS=0
+QUANTIZED_GOLDEN_STATUS=0 elements=32768
+CASE_15_GOLDEN_STATUS=0
+PROBE width=32768 rows=1 rank=2 dtype=1 device=6 bytes=65536
+PROBE_STATUS=0 CORES=40
+CASE_15_WARMUP_1_STATUS=0
+PROBE width=32768 rows=1 rank=2 dtype=1 device=6 bytes=65536
+PROBE_STATUS=0 CORES=40
+CASE_15_WARMUP_2_STATUS=0
+PROBE width=32768 rows=1 rank=2 dtype=1 device=6 bytes=65536
+PROBE_STATUS=0 CORES=40
+CASE_15_WARMUP_3_STATUS=0
+CASE_15_WARMUP_STATUS=0
+EXACT_VERIFY dtype=fp16 elements=32768 max_abs=0.000976096182417 max_rel=1.00047638568 bad_or=0 bad_strict=16382 threshold=1.0e-03 status=PASS
+EXACT_VERIFY_STRICT_STATUS=FAIL
+0
+CASE_15_VERIFY_RC=0
+CASE_15_PROFILE_COMMAND: msprof --output=/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_15 --application=/home/data4t2/lelinfeng/cann/实验/V005/工程/build/add_rms_norm_bias_custom --aic-metrics=PipeUtilization --ai-core=on --task-time=on --parse=on --export=on --query=on --clear=off
+[WARNING] The argument --parse --query --export  --clear is useless when --application is not empty
+[INFO] Start profiling....
+PROBE width=32768 rows=1 rank=2 dtype=1 device=6 bytes=65536
+PROBE_STATUS=0 CORES=40
+[INFO] Start export data in PROF_000001_20260917093722252_03170410ONLGOMIF.
+Thu 17 Sep 2026 09:37:25 [INFO] [MSVP] [3171044] msprof_common.py: Start analyzing data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_15/PROF_000001_20260917093722252_03170410ONLGOMIF/host" ...
+Thu 17 Sep 2026 09:37:25 [INFO] [MSVP] [3171044] msprof_common.py: It may take few minutes, please be patient ...
+Thu 17 Sep 2026 09:37:25 [INFO] [MSVP] [3171044] msprof_common.py: Analysis data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_15/PROF_000001_20260917093722252_03170410ONLGOMIF/host" finished.
+Thu 17 Sep 2026 09:37:25 [INFO] [MSVP] [3171044] msprof_common.py: Start analyzing data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_15/PROF_000001_20260917093722252_03170410ONLGOMIF/device_6" ...
+Thu 17 Sep 2026 09:37:25 [INFO] [MSVP] [3171044] msprof_common.py: It may take few minutes, please be patient ...
+Thu 17 Sep 2026 09:37:25 [INFO] [MSVP] [3171044] msprof_common.py: Analysis data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_15/PROF_000001_20260917093722252_03170410ONLGOMIF/device_6" finished.
+Thu 17 Sep 2026 09:37:25 [INFO] [MSVP] [3171044] msprof_export.py: All collected data will be exported, path is: /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_15/PROF_000001_20260917093722252_03170410ONLGOMIF/device_6.
+Thu 17 Sep 2026 09:37:26 [INFO] [MSVP] [3171348] msprof_export.py: The data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_15/PROF_000001_20260917093722252_03170410ONLGOMIF/host" has been analyzed. Parsing phase will be skipped.
+Thu 17 Sep 2026 09:37:26 [INFO] [MSVP] [3171348] msprof_export.py: The data in "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_15/PROF_000001_20260917093722252_03170410ONLGOMIF/device_6" has been analyzed. Parsing phase will be skipped.
+Thu 17 Sep 2026 09:37:26 [INFO] [MSVP] [3171348] msprof_export.py: All collected data will be exported, path is: /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_15/PROF_000001_20260917093722252_03170410ONLGOMIF/device_6.
+Thu 17 Sep 2026 09:37:26 [INFO] [MSVP] [3171348] msprof_export.py: There is no summary data to export for "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_15/PROF_000001_20260917093722252_03170410ONLGOMIF/host"
+Thu 17 Sep 2026 09:37:26 [INFO] [MSVP] [3171348] msprof_export.py: All collected data will be exported, path is: /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_15/PROF_000001_20260917093722252_03170410ONLGOMIF/device_6.
+Thu 17 Sep 2026 09:37:26 [INFO] [MSVP] [3171348] msprof_export.py: There is no summary data to export for "/home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_15/PROF_000001_20260917093722252_03170410ONLGOMIF/device_6"
+Thu 17 Sep 2026 09:37:26 [INFO] [MSVP] [3171348] msprof_common.py: Start exporting summary output_file.
+Thu 17 Sep 2026 09:37:26 [INFO] [MSVP] [3171348] msprof_common.py: End exporting summary output_file.The file is stored in the /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_15/PROF_000001_20260917093722252_03170410ONLGOMIF/mindstudio_profiler_output path.
+[INFO] Export all data in PROF_000001_20260917093722252_03170410ONLGOMIF done.
+[INFO] Start query data in PROF_000001_20260917093722252_03170410ONLGOMIF.
+Job Info	Device ID	Dir Name	Collection Time           	Model ID	Iteration Number	Top Time Iteration	Rank ID	
+
+NA      	         	host    	2026-09-17 09:37:22.655880	N/A     	N/A             	N/A               	-1     	
+
+NA      	6        	device_6	2026-09-17 09:37:22.662392	N/A     	N/A             	N/A               	-1     	
+
+[INFO] Query all data in PROF_000001_20260917093722252_03170410ONLGOMIF done.
+[INFO] Profiling finished.
+[INFO] Process profiling data complete. Data is saved in /home/data4t2/lelinfeng/cann/实验/V005/性能/full-corrected-20260917/case_15/PROF_000001_20260917093722252_03170410ONLGOMIF
+CASE_15_PROFILE_STATUS=0
+PROFILE_CSV_COUNT=1
+TASK_TIMES_US=0.016000000,29.880000000,0.020000000,0.020000000
+TASK_TIME_COUNT=4
+TASK_TIME_MAX_US=29.880000000
+CASE_15_STATUS=PASS
+--- CASE_END id=15 ---
+=== PERFORMANCE CASE SUMMARY ===
+\nCASE=1 D=64 rows=1 rank=2 dtype=fp16 PROFILE_CSV_COUNT=1
+TASK_TIMES_US=0.020000000,6.320000000,0.024000000,0.020000000
+TASK_TIME_COUNT=4
+TASK_TIME_MAX_US=6.320000000\nCASE=2 D=67 rows=1 rank=2 dtype=fp16 PROFILE_CSV_COUNT=1
+TASK_TIMES_US=0.020000000,6.500000000,0.000000000,0.016000000
+TASK_TIME_COUNT=4
+TASK_TIME_MAX_US=6.500000000\nCASE=3 D=96 rows=1 rank=2 dtype=bf16 PROFILE_CSV_COUNT=1
+TASK_TIMES_US=0.020000000,6.176000000,0.020000000,0.020000000
+TASK_TIME_COUNT=4
+TASK_TIME_MAX_US=6.176000000\nCASE=4 D=128 rows=1 rank=2 dtype=fp32 PROFILE_CSV_COUNT=1
+TASK_TIMES_US=0.000000000,6.020000000,0.016000000,0.020000000
+TASK_TIME_COUNT=4
+TASK_TIME_MAX_US=6.020000000\nCASE=5 D=129 rows=2 rank=2 dtype=fp16 PROFILE_CSV_COUNT=1
+TASK_TIMES_US=0.024000000,7.200000000,0.000000000,0.000000000
+TASK_TIME_COUNT=4
+TASK_TIME_MAX_US=7.200000000\nCASE=6 D=1000 rows=2 rank=2 dtype=fp16 PROFILE_CSV_COUNT=1
+TASK_TIMES_US=0.000000000,8.220000000,0.000000000,0.020000000
+TASK_TIME_COUNT=4
+TASK_TIME_MAX_US=8.220000000\nCASE=7 D=1024 rows=4 rank=3 dtype=fp16 PROFILE_CSV_COUNT=1
+TASK_TIMES_US=0.000000000,7.280000000,0.020000000,0.020000000
+TASK_TIME_COUNT=4
+TASK_TIME_MAX_US=7.280000000\nCASE=8 D=2048 rows=4 rank=3 dtype=bf16 PROFILE_CSV_COUNT=1
+TASK_TIMES_US=0.000000000,7.600000000,0.000000000,0.000000000
+TASK_TIME_COUNT=4
+TASK_TIME_MAX_US=7.600000000\nCASE=9 D=4096 rows=8 rank=3 dtype=fp16 PROFILE_CSV_COUNT=1
+TASK_TIMES_US=0.000000000,10.740000000,0.000000000,0.000000000
+TASK_TIME_COUNT=4
+TASK_TIME_MAX_US=10.740000000\nCASE=10 D=4096 rows=8 rank=3 dtype=bf16 PROFILE_CSV_COUNT=1
+TASK_TIMES_US=0.000000000,10.420000000,0.020000000,0.000000000,0.000000000
+TASK_TIME_COUNT=5
+TASK_TIME_MAX_US=10.420000000\nCASE=11 D=4096 rows=8 rank=3 dtype=fp32 PROFILE_CSV_COUNT=1
+TASK_TIMES_US=0.016000000,13.460000000,0.024000000,0.016000000
+TASK_TIME_COUNT=4
+TASK_TIME_MAX_US=13.460000000\nCASE=12 D=4097 rows=2 rank=2 dtype=fp16 PROFILE_CSV_COUNT=1
+TASK_TIMES_US=0.024000000,13.180000000,0.020000000,0.000000000
+TASK_TIME_COUNT=4
+TASK_TIME_MAX_US=13.180000000\nCASE=13 D=8192 rows=4 rank=3 dtype=fp16 PROFILE_CSV_COUNT=1
+TASK_TIMES_US=0.016000000,12.760000000,0.000000000,0.020000000
+TASK_TIME_COUNT=4
+TASK_TIME_MAX_US=12.760000000\nCASE=14 D=16384 rows=2 rank=2 dtype=fp16 PROFILE_CSV_COUNT=1
+TASK_TIMES_US=0.024000000,19.560000000,0.000000000,0.020000000
+TASK_TIME_COUNT=4
+TASK_TIME_MAX_US=19.560000000\nCASE=15 D=32768 rows=1 rank=2 dtype=fp16 PROFILE_CSV_COUNT=1
+TASK_TIMES_US=0.016000000,29.880000000,0.020000000,0.020000000
+TASK_TIME_COUNT=4
+TASK_TIME_MAX_US=29.880000000
+PERFORMANCE_FAIL=0
+NPU AFTER:
++------------------------------------------------------------------------------------------------+
+| npu-smi 25.0.rc1.1               Version: 25.0.rc1.1                                           |
++---------------------------+---------------+----------------------------------------------------+
+| NPU   Name                | Health        | Power(W)    Temp(C)           Hugepages-Usage(page)|
+| Chip                      | Bus-Id        | AICore(%)   Memory-Usage(MB)  HBM-Usage(MB)        |
++===========================+===============+====================================================+
+| 0     910B3               | OK            | 143.2       37                0    / 0             |
+| 0                         | 0000:C1:00.0  | 33          0    / 0          60263/ 65536         |
++===========================+===============+====================================================+
+| 1     910B3               | OK            | 138.9       37                0    / 0             |
+| 0                         | 0000:C2:00.0  | 35          0    / 0          61551/ 65536         |
++===========================+===============+====================================================+
+| 2     910B3               | OK            | 143.6       40                0    / 0             |
+| 0                         | 0000:81:00.0  | 38          0    / 0          61498/ 65536         |
++===========================+===============+====================================================+
+| 3     910B3               | OK            | 135.1       37                0    / 0             |
+| 0                         | 0000:82:00.0  | 31          0    / 0          60261/ 65536         |
++===========================+===============+====================================================+
+| 4     910B3               | OK            | 101.8       36                0    / 0             |
+| 0                         | 0000:01:00.0  | 0           0    / 0          62648/ 65536         |
++===========================+===============+====================================================+
+| 5     910B3               | OK            | 90.5        32                0    / 0             |
+| 0                         | 0000:02:00.0  | 0           0    / 0          60193/ 65536         |
++===========================+===============+====================================================+
+| 6     910B3               | OK            | 92.8        35                0    / 0             |
+| 0                         | 0000:41:00.0  | 0           0    / 0          60194/ 65536         |
++===========================+===============+====================================================+
+| 7     910B3               | OK            | 108.2       35                0    / 0             |
+| 0                         | 0000:42:00.0  | 0           0    / 0          65081/ 65536         |
++===========================+===============+====================================================+
++---------------------------+---------------+----------------------------------------------------+
+| NPU     Chip              | Process id    | Process name             | Process memory(MB)      |
++===========================+===============+====================================================+
+| 0       0                 | 3152124       | VLLMWorker_TP            | 56744                   |
++===========================+===============+====================================================+
+| 1       0                 | 2603016       | python                   | 1288                    |
+| 1       0                 | 3154641       | VLLMWorker_TP            | 56744                   |
++===========================+===============+====================================================+
+| 2       0                 | 3157283       | VLLMWorker_TP            | 56745                   |
+| 2       0                 | 1820174       | python                   | 1292                    |
++===========================+===============+====================================================+
+| 3       0                 | 3159860       | VLLMWorker_TP            | 56745                   |
++===========================+===============+====================================================+
+| 4       0                 | 2671045       | python                   | 3904                    |
+| 4       0                 | 2999855       | VLLMEngineCor            | 55281                   |
++===========================+===============+====================================================+
+| 5       0                 | 1317804       | VLLMWorker_TP            | 56678                   |
++===========================+===============+====================================================+
+| 6       0                 | 1320273       | VLLMWorker_TP            | 56679                   |
++===========================+===============+====================================================+
+| 7       0                 | 3458196       | python                   | 61708                   |
++===========================+===============+====================================================+
+DISK BEFORE CLEANUP:
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/nvme1n1p1  3.5T  3.2T   94G  98% /home/data4t2
+820K	/home/data4t2/lelinfeng/cann/实验/V005/工程
+64K	/home/data4t2/lelinfeng/cann/实验/V005/平台模板编译
+11M	/home/data4t2/lelinfeng/cann/实验/V005/性能
+436K	/home/data4t2/lelinfeng/cann/实验/V005/日志
+CLEANUP: remove current V005 generated build, input/output and current profiling data
+CLEANUP_STATUS=0
+DISK AFTER CLEANUP:
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/nvme1n1p1  3.5T  3.2T   94G  98% /home/data4t2
+48K	/home/data4t2/lelinfeng/cann/实验/V005/工程
+64K	/home/data4t2/lelinfeng/cann/实验/V005/平台模板编译
+700K	/home/data4t2/lelinfeng/cann/实验/V005/性能
+436K	/home/data4t2/lelinfeng/cann/实验/V005/日志
+=== V005 COMPLETE PERFORMANCE CORRECTED END ===
+2026-09-17T09:37:29Z
