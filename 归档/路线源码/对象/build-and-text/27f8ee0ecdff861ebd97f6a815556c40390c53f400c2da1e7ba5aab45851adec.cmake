@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 3.16)
+find_package(ASC REQUIRED)
+project(k_ALIGN-TAIL-X__parent LANGUAGES ASC CXX)
+set(CMAKE_CXX_STANDARD 17)
+ascendc_library(k SHARED "/ALIGN-TAIL-X__parent.asc")
+target_compile_options(k PRIVATE $<$<COMPILE_LANGUAGE:ASC>:--npu-arch=dav-2201>)
+target_compile_options(k PRIVATE $<$<COMPILE_LANGUAGE:ASC>:--npu-soc=Ascend910B3>)
